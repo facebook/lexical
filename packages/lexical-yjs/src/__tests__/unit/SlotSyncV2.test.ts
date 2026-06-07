@@ -65,6 +65,42 @@ class BlockDecoratorNode extends DecoratorNode<null> {
   }
 }
 
+// Variant of BlockDecoratorNode with a settable own attribute (__caption).
+// Used to probe whether V2 sync writes a decorator slot value's own-attribute
+// change to yjs when no nested children/slots are dirty (the dirtyLeaves vs
+// dirtyElements routing question).
+class BlockDecoratorAttrNode extends DecoratorNode<null> {
+  __caption: string = '';
+  static getType(): string {
+    return 'block_decorator_attr_slot';
+  }
+  static clone(prev: BlockDecoratorAttrNode): BlockDecoratorAttrNode {
+    const n = new BlockDecoratorAttrNode(prev.__key);
+    n.__caption = prev.__caption;
+    return n;
+  }
+  isInline(): boolean {
+    return false;
+  }
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+  updateDOM(): boolean {
+    return false;
+  }
+  decorate(): null {
+    return null;
+  }
+  setCaption(caption: string): this {
+    const self = this.getWritable();
+    self.__caption = caption;
+    return self;
+  }
+  getCaption(): string {
+    return this.getLatest().__caption;
+  }
+}
+
 describe('named-slots collab-v2: lexical <-> yjs', () => {
   const editors: LexicalEditor[] = [];
   afterEach(() => {
@@ -538,6 +574,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         prevEditorState,
         editorState,
         dirtyElements,
+        dirtyLeaves,
         normalizedNodes,
         tags,
       }) => {
@@ -547,6 +584,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
           prevEditorState,
           editorState,
           dirtyElements,
+          dirtyLeaves,
           normalizedNodes,
           tags,
         );
@@ -1136,5 +1174,52 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     const titleText = titleParaY.toArray()[0];
     assert(titleText instanceof XmlText);
     expect(titleText.toString()).toBe('Title!!');
+  });
+
+  // Hypothesis from a pre-push audit: V2 sync entry passes only
+  // `dirtyElements.keys()` to $updateYFragment / $updateSlotsYType, but a
+  // DecoratorNode slot value's own dirty mark lives in dirtyLeaves (only
+  // ElementNodes go to dirtyElements). The same-identity branch in
+  // $updateSlotsYType gates recursion on dirtyElements.has(slotNode.getKey()),
+  // so a decorator slot value's own-attribute change would be skipped — the
+  // attribute never reaches the yjs XmlElement.
+  test('H-2: decorator slot value own-attribute change propagates to yjs', () => {
+    const {binding, editor} = buildBinding([BlockDecoratorAttrNode]);
+
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const body = $createParagraphNode();
+        body.append($createTextNode('Body'));
+        $getRoot().clear().append(host);
+        host.append(body);
+        const cover = new BlockDecoratorAttrNode();
+        cover.setCaption('before');
+        $setSlot(host, 'cover', cover);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const hostY = binding.root.toArray()[0];
+    assert(hostY instanceof XmlElement);
+    const slotsY = hostY.getAttribute('slots') as unknown as YMap<unknown>;
+    const coverYBefore = slotsY.get('cover');
+    assert(coverYBefore instanceof XmlElement);
+    expect(coverYBefore.getAttribute('__caption')).toBe('before');
+
+    applyLocalUpdate(binding, editor, () => {
+      const host = $getRoot().getFirstChild();
+      assert($isElementNode(host));
+      const cover = $getSlot(host, 'cover');
+      assert(cover instanceof BlockDecoratorAttrNode);
+      cover.setCaption('after');
+    });
+
+    // If hypothesis holds, the attribute is still 'before' (V2 sync skipped
+    // the recursion because the decorator key was in dirtyLeaves, not
+    // dirtyElements). If V2 sync handles this correctly, it's 'after'.
+    expect(coverYBefore.getAttribute('__caption')).toBe('after');
   });
 });

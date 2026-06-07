@@ -165,7 +165,7 @@ export function $setSlot<T extends LexicalNode & SlotHostNode>(
     writableSelf.__slots = new Map();
   }
   const previousKey = writableSelf.__slots.get(name);
-  if (previousKey !== undefined && previousKey !== node.__key) {
+  if (previousKey !== undefined) {
     $detachSlottedNode(previousKey);
   }
   const writableNode = node.getWritable();

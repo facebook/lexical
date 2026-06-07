@@ -30,7 +30,12 @@ import {
 import {afterEach, assert, describe, expect, test} from 'vitest';
 
 import {$internalCreateRangeSelection} from '../../LexicalSelection';
-import {$createTestShadowRootNode, TestShadowRootNode} from '../utils';
+import {
+  $createTestDecoratorNode,
+  $createTestShadowRootNode,
+  TestDecoratorNode,
+  TestShadowRootNode,
+} from '../utils';
 
 // Walk up via getParent() to the innermost slot-root ancestor (a node that
 // reports a slot host), mirroring the production $getPointSlotFrame. Returns
@@ -362,6 +367,83 @@ describe('named-slots: selection containment (slot isolation)', () => {
         // focus is clamped into the anchor's slot, not the subtitle slot it was set to
         expect($slotFrameKeyOf(active.focus.getNode())).toBe(keys.title);
         expect(active.focus.key).not.toBe(keys.subtitleText);
+      },
+      {discrete: true},
+    );
+  });
+});
+
+// Hypothesis from a pre-push audit: the else branch in
+// $clampSelectionPointsToSlotFrame (anchorFrame is a non-Element slot value =
+// a non-inline DecoratorNode) calls focusPoint.set(decoratorKey, _, 'text'),
+// which the Point.set __DEV__ invariant rejects (text type requires TextNode).
+// These probes check whether that else branch is reachable at all via the
+// public API. Both Point.set rejections AND the slot-leaf rewrite in
+// $internalResolveSelectionPoint should make the scenario unreachable.
+describe('named-slots: I-1 hypothesis — DecoratorNode anchorFrame else branch', () => {
+  const mountedRoots: HTMLElement[] = [];
+  afterEach(() => {
+    while (mountedRoots.length > 0) {
+      const node = mountedRoots.pop();
+      if (node && node.parentNode) {
+        node.parentNode.removeChild(node);
+      }
+    }
+  });
+
+  function mountRoot(editor: LexicalEditorWithDispose) {
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    mountedRoots.push(root);
+    editor.setRootElement(root);
+    return root;
+  }
+
+  const keys: Record<string, string> = {};
+  function buildDecoratorSlotEditor() {
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          const host = $createParagraphNode();
+          const decoratorSlot = $createTestDecoratorNode().setIsInline(false);
+          const body = $createParagraphNode();
+          const bodyText = $createTextNode('Body');
+          body.append(bodyText);
+          $getRoot().clear().append(host);
+          host.append(body);
+          $setSlot(host, 'media', decoratorSlot);
+          keys.host = host.getKey();
+          keys.decoratorSlot = decoratorSlot.getKey();
+          keys.body = body.getKey();
+          keys.bodyText = bodyText.getKey();
+        },
+        name: '[slot-selection-i1-hypothesis]',
+        nodes: [TestShadowRootNode, TestDecoratorNode],
+      }),
+    );
+    mountRoot(editor);
+    return editor;
+  }
+
+  test('I-1: Point.set rejects decorator key with text type', () => {
+    using editor = buildDecoratorSlotEditor();
+    editor.update(
+      () => {
+        const sel = $createRangeSelection();
+        expect(() => sel.anchor.set(keys.decoratorSlot, 0, 'text')).toThrow();
+      },
+      {discrete: true},
+    );
+  });
+
+  test('I-1: Point.set rejects decorator key with element type', () => {
+    using editor = buildDecoratorSlotEditor();
+    editor.update(
+      () => {
+        const sel = $createRangeSelection();
+        expect(() =>
+          sel.anchor.set(keys.decoratorSlot, 0, 'element'),
+        ).toThrow();
       },
       {discrete: true},
     );

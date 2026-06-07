@@ -28,10 +28,10 @@ import {
   $setSlot,
   createEditor,
   defineExtension,
+ElementNode,
   getDOMSelection,
   ParagraphNode,
-  TextNode,
-} from 'lexical';
+  TextNode} from 'lexical';
 import {afterEach, assert, describe, expect, test} from 'vitest';
 
 import {$internalCreateRangeSelection} from '../../LexicalSelection';
@@ -45,6 +45,34 @@ import {
   TestInlineElementNode,
   TestShadowRootNode,
 } from '../utils';
+
+// Host with updateDOM()=true: every host edit triggers $createNode(key, null)
+// + $destroyNode(key, null) — host DOM is recreated. Used to probe H-1b
+// (does the slot subtree DOM survive the host wrapper recreate?).
+class TestUpdateDOMTrueHostNode extends ElementNode {
+  __toggle: number = 0;
+  static getType(): string {
+    return 'test_update_dom_true_host';
+  }
+  static clone(prev: TestUpdateDOMTrueHostNode): TestUpdateDOMTrueHostNode {
+    const n = new TestUpdateDOMTrueHostNode(prev.__key);
+    n.__toggle = prev.__toggle;
+    return n;
+  }
+  createDOM(): HTMLElement {
+    const div = document.createElement('div');
+    div.setAttribute('data-toggle', String(this.__toggle));
+    return div;
+  }
+  updateDOM(): boolean {
+    return true;
+  }
+  setToggle(toggle: number): this {
+    const self = this.getWritable();
+    self.__toggle = toggle;
+    return self;
+  }
+}
 
 // Under the strengthened setSlot guard a slot value must be a shadow-root
 // container. Text content lives in a paragraph inside it, since a shadow root's
@@ -1765,5 +1793,106 @@ describe('named-slots: selection resolution onto a slotted decorator', () => {
     // captured as a RangeSelection (returns null).
     expect(resolveCaretOnDecorator(editor, childKey)).toBe(null);
     expect(resolveCaretOnDecorator(editor, slottedKey)).toBe(null);
+  });
+});
+
+// Hypothesis from a pre-push audit: $createNode's cross-parent reuse guard at
+// LexicalReconciler.ts checks prevNode.__parent !== node.__parent but ignores
+// __slotHost. A slot value has __parent === null in both states, so a slot
+// value moving between hosts in one update should bypass the reuse fast path
+// and remount its DOM (orphan portal state, lose decorator-internal state).
+describe('named-slots: H-1 hypothesis — cross-host slot move DOM reuse', () => {
+  test('H-1a: $removeSlot(A) + $setSlot(B, sameNode) in one update', () => {
+    using editor = createSlotEditor();
+    let valueKey = '';
+    let hostAKey = '';
+    let hostBKey = '';
+
+    editor.update(
+      () => {
+        const hostA = $createParagraphNode();
+        const hostB = $createParagraphNode();
+        const value = $slotContainer('Hello');
+        $getRoot().append(hostA);
+        $getRoot().append(hostB);
+        $setSlot(hostA, 'media', value);
+        hostAKey = hostA.getKey();
+        hostBKey = hostB.getKey();
+        valueKey = value.getKey();
+      },
+      {discrete: true},
+    );
+
+    const domBefore = editor.getElementByKey(valueKey);
+    expect(domBefore).not.toBeNull();
+
+    editor.update(
+      () => {
+        const hostA = $getNodeByKey<ParagraphNode>(hostAKey)!;
+        const hostB = $getNodeByKey<ParagraphNode>(hostBKey)!;
+        const value = $getNodeByKey<TestShadowRootNode>(valueKey)!;
+        $removeSlot(hostA, 'media');
+        $setSlot(hostB, 'media', value);
+      },
+      {discrete: true},
+    );
+
+    const domAfter = editor.getElementByKey(valueKey);
+    expect(domAfter).not.toBeNull();
+    // If the reuse guard treats slot moves correctly, domAfter === domBefore
+    // (DOM reused, just re-parented). If the audit hypothesis holds, the DOM
+    // was remounted and domAfter !== domBefore.
+    expect(domAfter).toBe(domBefore);
+  });
+
+  test('H-1b: host updateDOM=true preserves slot subtree DOM', () => {
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $getRoot().clear();
+        },
+        name: '[h-1b]',
+        nodes: [TestShadowRootNode, TestUpdateDOMTrueHostNode],
+      }),
+    );
+    const root = document.createElement('div');
+    root.contentEditable = 'true';
+    document.body.appendChild(root);
+    mountedRoots.push(root);
+    editor.setRootElement(root);
+
+    let hostKey = '';
+    let valueKey = '';
+    editor.update(
+      () => {
+        const host = new TestUpdateDOMTrueHostNode();
+        const value = $slotContainer('Hello');
+        $getRoot().append(host);
+        $setSlot(host, 'media', value);
+        hostKey = host.getKey();
+        valueKey = value.getKey();
+      },
+      {discrete: true},
+    );
+
+    const domBefore = editor.getElementByKey(valueKey);
+    expect(domBefore).not.toBeNull();
+
+    editor.update(
+      () => {
+        const host = $getNodeByKey<TestUpdateDOMTrueHostNode>(hostKey)!;
+        host.setToggle(host.__toggle + 1);
+      },
+      {discrete: true},
+    );
+
+    const domAfter = editor.getElementByKey(valueKey);
+    expect(domAfter).not.toBeNull();
+    // If the host's wrapper DOM is recreated but the slot subtree DOM is
+    // reused, domAfter === domBefore (decorator portal state survives).
+    // If the audit hypothesis holds, slot subtree is remounted.
+    expect(domAfter).toBe(domBefore);
+
+    editor.dispose();
   });
 });

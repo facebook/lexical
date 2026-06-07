@@ -2788,16 +2788,21 @@ function $clampSelectionPointsToSlotFrame(
   return true;
 }
 
-// @experimental named-slots. Programmatic counterpart of the DOM-read clamp:
-// applied when a RangeSelection is committed via $setSelection so an API-built
-// selection cannot straddle a slot boundary either. Direction comes from the
-// model comparator (slots-first content order), not the caret system — a
-// straddling pair has no common ancestor through __parent, so the caret
-// comparison would throw (that integration is the deferred caret-slot work),
-// and not from the DOM either, since $setSelection also runs in headless mode
-// where there is no DOM. Marks the selection dirty when it mutates a point.
-// No-op for non-slot trees (both frames null), evaluated before any direction
-// work, so non-slot and headless callers are unaffected.
+/**
+ * Programmatic counterpart of the DOM-read clamp: applied when a
+ * RangeSelection is committed via $setSelection so an API-built selection
+ * cannot straddle a slot boundary either. Direction comes from the model
+ * comparator (slots-first content order), not the caret system — a
+ * straddling pair has no common ancestor through __parent, so the caret
+ * comparison would throw (that integration is the deferred caret-slot work),
+ * and not from the DOM either, since $setSelection also runs in headless
+ * mode where there is no DOM. Marks the selection dirty when it mutates a
+ * point. No-op for non-slot trees (both frames null), evaluated before any
+ * direction work, so non-slot and headless callers are unaffected.
+ *
+ * @experimental named-slots
+ * @internal
+ */
 export function $clampRangeSelectionToSlotFrame(
   selection: RangeSelection,
 ): boolean {
@@ -2874,15 +2879,19 @@ function $internalResolveSelectionPoints(
   // @experimental named-slots. Clamp a slot-straddling drag into the
   // anchor's frame before normalization cleans up the resulting edge points.
   // The DOM order of the resolved nodes gives the drag direction (slot DOM is
-  // slots-first, so DOM order matches content order).
-  const slotClamped = $clampSelectionPointsToSlotFrame(
-    resolvedAnchorPoint,
-    resolvedFocusPoint,
-    () =>
-      (anchorDOM.compareDocumentPosition(focusDOM) &
-        Node.DOCUMENT_POSITION_FOLLOWING) !==
-      0,
-  );
+  // slots-first, so DOM order matches content order). Gated on `_slotsUsed`
+  // so editors that never slot anything skip the walk, mirroring the
+  // commit-time and `$setSelection` clamps.
+  const slotClamped =
+    editor._slotsUsed &&
+    $clampSelectionPointsToSlotFrame(
+      resolvedAnchorPoint,
+      resolvedFocusPoint,
+      () =>
+        (anchorDOM.compareDocumentPosition(focusDOM) &
+          Node.DOCUMENT_POSITION_FOLLOWING) !==
+        0,
+    );
 
   // Handle normalization of selection when it is at the boundaries.
   $normalizeSelectionPointsForBoundaries(

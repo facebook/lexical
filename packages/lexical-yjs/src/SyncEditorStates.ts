@@ -497,6 +497,7 @@ export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
   prevEditorState: EditorState,
   currEditorState: EditorState,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
+  dirtyLeaves: Set<NodeKey>,
   normalizedNodes: Set<NodeKey>,
   tags: Set<string>,
 ): void {
@@ -515,12 +516,16 @@ export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
     currEditorState.read(() => {
       if (dirtyElements.has('root')) {
         const nextLexicalRoot = $getRoot();
+        // A DecoratorNode slot value lands in dirtyLeaves (only ElementNodes
+        // are routed to dirtyElements), so unioning the two ensures
+        // $updateSlotsYType's same-identity recursion gate sees a dirty
+        // decorator slot value and propagates its own-attribute changes.
         $updateYFragment(
           binding.doc,
           binding.root,
           nextLexicalRoot,
           binding,
-          new Set(dirtyElements.keys()),
+          new Set([...dirtyElements.keys(), ...dirtyLeaves]),
         );
         // If a local edit emptied the root, schedule recovery outside the
         // collaboration/historic tag so the paragraph syncs back to Yjs.

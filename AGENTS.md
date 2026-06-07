@@ -163,6 +163,16 @@ This codebase uses **both TypeScript and Flow**:
 
 When adding/modifying APIs, types must be maintained for both systems.
 
+## Backwards Compatibility
+
+**All changes MUST be backwards compatible.** Lexical is a widely-adopted OSS library, and breaking changes ripple out to every downstream consumer.
+
+- Do NOT remove or rename existing public APIs, exported functions, types, or `$` functions. Add new APIs alongside the old ones instead.
+- Do NOT change the signature, return type, or behavior of existing public APIs in ways that could break callers. Prefer additive, optional parameters.
+- Preserve the serialization format of `EditorState` and node JSON. Serialized content produced by older versions must continue to deserialize correctly.
+- If an API genuinely must change, deprecate the old one first (keep it working, document the replacement) rather than removing it outright.
+- When in doubt, assume external code depends on the current behavior and keep it intact.
+
 ## Important Development Notes
 
 ### Reconciliation and Updates

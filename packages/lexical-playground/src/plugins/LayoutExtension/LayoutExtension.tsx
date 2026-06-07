@@ -10,15 +10,14 @@ import type {ElementNode, LexicalCommand, LexicalNode, NodeKey} from 'lexical';
 
 import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {
-  $findMatchingParent,
   $insertNodeToNearestRoot,
+  $onEscapeDown,
+  $onEscapeUp,
   mergeRegister,
 } from '@lexical/utils';
 import {
   $createParagraphNode,
   $getNodeByKey,
-  $getSelection,
-  $isRangeSelection,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   configExtension,
@@ -73,46 +72,6 @@ const LayoutItemImportRule = defineImportRule({
   name: '@lexical/playground/layout-item',
 });
 
-const $onEscape = (before: boolean) => {
-  const selection = $getSelection();
-  if (
-    $isRangeSelection(selection) &&
-    selection.isCollapsed() &&
-    selection.anchor.offset === 0
-  ) {
-    const container = $findMatchingParent(
-      selection.anchor.getNode(),
-      $isLayoutContainerNode,
-    );
-
-    if ($isLayoutContainerNode(container)) {
-      const parent = container.getParent<ElementNode>();
-      const child =
-        parent &&
-        (before
-          ? parent.getFirstChild<LexicalNode>()
-          : parent?.getLastChild<LexicalNode>());
-      const descendant = before
-        ? container.getFirstDescendant<LexicalNode>()?.getKey()
-        : container.getLastDescendant<LexicalNode>()?.getKey();
-
-      if (
-        parent !== null &&
-        child === container &&
-        selection.anchor.key === descendant
-      ) {
-        if (before) {
-          container.insertBefore($createParagraphNode());
-        } else {
-          container.insertAfter($createParagraphNode());
-        }
-      }
-    }
-  }
-
-  return false;
-};
-
 const $fillLayoutItemIfEmpty = (node: LayoutItemNode) => {
   if (node.isEmpty()) {
     node.append($createParagraphNode());
@@ -147,23 +106,23 @@ export const LayoutExtension = defineExtension({
       // work even if a trailing paragraph is accidentally deleted.
       editor.registerCommand(
         KEY_ARROW_DOWN_COMMAND,
-        () => $onEscape(false),
+        () => $onEscapeDown($isLayoutContainerNode),
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_ARROW_RIGHT_COMMAND,
-        () => $onEscape(false),
+        () => $onEscapeDown($isLayoutContainerNode),
         COMMAND_PRIORITY_LOW,
       ),
       // Inverse: leading paragraph escape on up/left.
       editor.registerCommand(
         KEY_ARROW_UP_COMMAND,
-        () => $onEscape(true),
+        () => $onEscapeUp($isLayoutContainerNode),
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_ARROW_LEFT_COMMAND,
-        () => $onEscape(true),
+        () => $onEscapeUp($isLayoutContainerNode),
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(

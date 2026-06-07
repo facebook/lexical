@@ -374,6 +374,55 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     });
   });
 
+  // observer (f): a remote slot REPLACE under the same name. The slots Y.Map
+  // keeps 'title' but repoints it at a different shared type. The old add-loop
+  // did `if ($getSlot(host, name) !== null) continue`, so a same-name replace
+  // was silently dropped on the remote client — the lexical slot kept the stale
+  // value and the departing collab dangled in collabNodeMap. The fix compares
+  // the existing slot collab's shared type against the incoming one; a mismatch
+  // destroys the departing collab and re-slots the new value.
+  test('observer: a remote slot replace under the same name swaps the slot', async () => {
+    const {binding2, doc2, editor2, slotsY} = setupRestoredSlotTree();
+
+    let oldKey = '';
+    editor2.read(() => {
+      const hostR = $getRoot().getFirstChild();
+      assert($isElementNode(hostR));
+      const title = $getSlot(hostR, 'title');
+      assert(title != null);
+      oldKey = title.__key;
+    });
+    expect(binding2.collabNodeMap.has(oldKey)).toBe(true);
+
+    const oldTitleY = slotsY.get('title');
+    applyRemoteChange(binding2, () => {
+      doc2.transact(() => {
+        const next = new XmlText();
+        next.setAttribute('__type', 'test_shadow_root');
+        slotsY.set('title', next);
+      });
+    });
+    await flush();
+
+    // the Y.Map entry is a different shared type now
+    expect(slotsY.get('title')).not.toBe(oldTitleY);
+
+    editor2.read(() => {
+      const hostR = $getRoot().getFirstChild();
+      assert($isElementNode(hostR));
+      // still exactly one slot under 'title', but a fresh node, not the original
+      expect($getSlotNames(hostR)).toEqual(['title']);
+      const titleR = $getSlot(hostR, 'title');
+      assert(titleR != null);
+      assert($isElementNode(titleR));
+      expect(titleR.__key).not.toBe(oldKey);
+      expect(titleR.getParent()).toBe(null);
+    });
+
+    // the departing slot's collab node no longer dangles in the map
+    expect(binding2.collabNodeMap.has(oldKey)).toBe(false);
+  });
+
   // Build a host with a 'title' slot + 'Body' child in a single editor and run
   // the initial full serialization (creation path seeds the slots Y.Map). The
   // returned hostCollab + its slots Y.Map are the local serializer's own collab
@@ -954,6 +1003,45 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
       expect(titleR.getTextContent()).toBe('Title!!');
       expect(titleR.getParent()).toBe(null);
     });
+  });
+
+  test('observer: a remote slot replace under the same name swaps the decorator-host slot', async () => {
+    const {binding2, doc2, editor2, slotsY} = setupRestoredSlotTree();
+
+    let oldKey = '';
+    editor2.read(() => {
+      const hostR = $getRoot().getFirstChild();
+      assert($isDecoratorNode(hostR));
+      const title = $getSlot(hostR, 'title');
+      assert(title != null);
+      oldKey = title.__key;
+    });
+    expect(binding2.collabNodeMap.has(oldKey)).toBe(true);
+
+    const oldTitleY = slotsY.get('title');
+    applyRemoteChange(binding2, () => {
+      doc2.transact(() => {
+        const next = new XmlText();
+        next.setAttribute('__type', 'test_shadow_root');
+        slotsY.set('title', next);
+      });
+    });
+    await flush();
+
+    expect(slotsY.get('title')).not.toBe(oldTitleY);
+
+    editor2.read(() => {
+      const hostR = $getRoot().getFirstChild();
+      assert($isDecoratorNode(hostR));
+      expect($getSlotNames(hostR)).toEqual(['title']);
+      const titleR = $getSlot(hostR, 'title');
+      assert(titleR != null);
+      assert($isElementNode(titleR));
+      expect(titleR.__key).not.toBe(oldKey);
+      expect(titleR.getParent()).toBe(null);
+    });
+
+    expect(binding2.collabNodeMap.has(oldKey)).toBe(false);
   });
 
   function setupLocalSlotTree() {

@@ -148,8 +148,8 @@ export function $setSlot<T extends LexicalNode & SlotHostNode>(
     node.__key,
   );
   invariant(
-    !node.is(host) && !node.isParentOf(host),
-    'setSlot: node %s cannot be slotted into %s; a node may not host itself or an ancestor — the slot up-link would form a cycle that loops isAttached/GC.',
+    !$isSlotAncestorOrSelf(node, host),
+    'setSlot: node %s cannot be slotted into %s; a node may not host itself or an ancestor reached through children or slot up-links — the slot up-link would form a cycle that loops isAttached/GC.',
     node.__key,
     host.__key,
   );
@@ -196,6 +196,27 @@ export function $removeSlot<T extends LexicalNode & SlotHostNode>(
     writableSelf.__slots.delete(name);
   }
   return writableSelf;
+}
+
+// @experimental named-slots. True when `node` is `host` itself or any ancestor
+// of `host` reachable by walking up the combined parent/slot up-link chain (the
+// same traversal isAttached uses). isParentOf only follows __parent, so it can't
+// see a host that sits above `node` through slot up-links; slotting `node` there
+// would close a cycle that loops isAttached/GC.
+function $isSlotAncestorOrSelf(node: LexicalNode, host: LexicalNode): boolean {
+  let key: NodeKey | null = host.__key;
+  while (key !== null) {
+    if (key === node.__key) {
+      return true;
+    }
+    const current: LexicalNode | null = $getNodeByKey(key);
+    if (current === null) {
+      break;
+    }
+    key =
+      current.__parent !== null ? current.__parent : $getSlotHostKey(current);
+  }
+  return false;
 }
 
 // @experimental named-slots. Detaches the node currently slotted under a key,

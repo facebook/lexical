@@ -33,9 +33,11 @@ import {
   $createCollabNodeFromLexicalNode,
   $getOrInitCollabNodeFromSharedType,
   $syncPropertiesFromYjs,
+  $syncSlotContentFromLexical,
   createLexicalNodeFromCollabNode,
   getNodeTypeFromSharedType,
   getPositionFromElementAndOffset,
+  setSlotsAttr,
   SLOTS_ATTR_KEY,
   spliceString,
   syncPropertiesFromLexical,
@@ -452,8 +454,23 @@ export class CollabElementNode {
       return;
     }
     for (const [name, slotSharedType] of slotsY.entries()) {
-      if ($getSlot(lexicalNode, name) !== null) {
-        continue;
+      const existingSlot = $getSlot(lexicalNode, name);
+      if (existingSlot !== null) {
+        const existingCollab = binding.collabNodeMap.get(existingSlot.__key);
+        if (
+          existingCollab !== undefined &&
+          existingCollab.getSharedType() === slotSharedType
+        ) {
+          // Same shared type still occupies this name; its own observer syncs
+          // the slot's content, so leave the slot in place.
+          continue;
+        }
+        // A different shared type means the slot was replaced remotely. Destroy
+        // the departing collab node so it doesn't dangle in binding.collabNodeMap
+        // ($setSlot below detaches the stale lexical occupant).
+        if (existingCollab !== undefined) {
+          existingCollab.destroy(binding);
+        }
       }
       const slotCollab = $getOrInitCollabNodeFromSharedType(
         binding,
@@ -574,8 +591,7 @@ export class CollabElementNode {
       slotsY = existing;
     } else {
       slotsY = new YMap();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      this._xmlText.setAttribute(SLOTS_ATTR_KEY, slotsY as any);
+      setSlotsAttr(this._xmlText, slotsY);
     }
 
     const nextNames = new Set(slotNames);
@@ -602,7 +618,7 @@ export class CollabElementNode {
         slotCollab !== undefined &&
         slotsY.get(name) === slotCollab.getSharedType()
       ) {
-        this._syncSlotContentFromLexical(
+        $syncSlotContentFromLexical(
           binding,
           slotCollab,
           slotNode,
@@ -627,55 +643,6 @@ export class CollabElementNode {
         collabNodeMap.set(slotNode.__key, created);
         slotsY.set(name, created.getSharedType());
       }
-    }
-  }
-
-  _syncSlotContentFromLexical(
-    binding: Binding,
-    slotCollab:
-      | CollabElementNode
-      | CollabTextNode
-      | CollabDecoratorNode
-      | CollabLineBreakNode,
-    slotNode: LexicalNode,
-    prevNodeMap: null | NodeMap,
-    dirtyElements: null | Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
-    dirtyLeaves: null | Set<NodeKey>,
-  ): void {
-    if (slotCollab instanceof CollabElementNode && $isElementNode(slotNode)) {
-      slotCollab.syncPropertiesFromLexical(binding, slotNode, prevNodeMap);
-      slotCollab.syncChildrenFromLexical(
-        binding,
-        slotNode,
-        prevNodeMap,
-        dirtyElements,
-        dirtyLeaves,
-      );
-      slotCollab.syncSlotsFromLexical(
-        binding,
-        slotNode,
-        prevNodeMap,
-        dirtyElements,
-        dirtyLeaves,
-      );
-    } else if (slotCollab instanceof CollabTextNode && $isTextNode(slotNode)) {
-      slotCollab.syncPropertiesAndTextFromLexical(
-        binding,
-        slotNode,
-        prevNodeMap,
-      );
-    } else if (
-      slotCollab instanceof CollabDecoratorNode &&
-      $isDecoratorNode(slotNode)
-    ) {
-      slotCollab.syncPropertiesFromLexical(binding, slotNode, prevNodeMap);
-      slotCollab.syncSlotsFromLexical(
-        binding,
-        slotNode,
-        prevNodeMap,
-        dirtyElements,
-        dirtyLeaves,
-      );
     }
   }
 

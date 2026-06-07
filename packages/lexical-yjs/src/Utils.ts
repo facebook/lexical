@@ -27,6 +27,7 @@ import {
   isLexicalEditor,
   LexicalNode,
   NodeKey,
+  NodeMap,
   RangeSelection,
   TextNode,
 } from 'lexical';
@@ -70,6 +71,17 @@ const textExcludedProperties = new Set<string>(['__text']);
 // sets above) and live under this reserved attribute key. '$' can't prefix the
 // key — it breaks XmlElement.toDOM — so a plain key is used.
 export const SLOTS_ATTR_KEY = 'slots';
+
+// @experimental named-slots. Writes the slots Y.Map onto a host shared type.
+// yjs types an XmlElement attribute value as string (its default KV), so a
+// YMap value needs a cast; isolated here instead of repeated at each host call.
+export function setSlotsAttr(
+  sharedType: XmlText | XmlElement,
+  slotsY: YMap<unknown>,
+): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sharedType.setAttribute(SLOTS_ATTR_KEY, slotsY as any);
+}
 
 function isExcludedProperty(
   name: string,
@@ -161,6 +173,90 @@ export function getIndexOfYjsNode(
   return i;
 }
 
+// @experimental named-slots. Syncs one slot value's content (lexical -> yjs),
+// dispatching on the collab/lexical node pair. Shared by element and decorator
+// hosts; the CollabTextNode branch is inert for a decorator host, where a slot
+// value is always a shadow-root element or non-inline decorator, never text.
+export function $syncSlotContentFromLexical(
+  binding: Binding,
+  slotCollab:
+    | CollabElementNode
+    | CollabTextNode
+    | CollabDecoratorNode
+    | CollabLineBreakNode,
+  slotNode: LexicalNode,
+  prevNodeMap: null | NodeMap,
+  dirtyElements: null | Map<NodeKey, boolean>,
+  dirtyLeaves: null | Set<NodeKey>,
+): void {
+  if (slotCollab instanceof CollabElementNode && $isElementNode(slotNode)) {
+    slotCollab.syncPropertiesFromLexical(binding, slotNode, prevNodeMap);
+    slotCollab.syncChildrenFromLexical(
+      binding,
+      slotNode,
+      prevNodeMap,
+      dirtyElements,
+      dirtyLeaves,
+    );
+    slotCollab.syncSlotsFromLexical(
+      binding,
+      slotNode,
+      prevNodeMap,
+      dirtyElements,
+      dirtyLeaves,
+    );
+  } else if (slotCollab instanceof CollabTextNode && $isTextNode(slotNode)) {
+    slotCollab.syncPropertiesAndTextFromLexical(binding, slotNode, prevNodeMap);
+  } else if (
+    slotCollab instanceof CollabDecoratorNode &&
+    $isDecoratorNode(slotNode)
+  ) {
+    slotCollab.syncPropertiesFromLexical(binding, slotNode, prevNodeMap);
+    slotCollab.syncSlotsFromLexical(
+      binding,
+      slotNode,
+      prevNodeMap,
+      dirtyElements,
+      dirtyLeaves,
+    );
+  }
+}
+
+// @experimental named-slots. Seeds a freshly created host's slots Y.Map. Both
+// element (xmlText) and decorator (xmlElem) hosts reach this through the create
+// path, where no matched key exists for syncSlotsFromLexical to recurse through,
+// so each slot value's collab node is built and registered here.
+function $seedHostSlots(
+  binding: Binding,
+  lexicalNode: LexicalNode,
+  hostCollab: CollabElementNode | CollabDecoratorNode,
+  sharedType: XmlText | XmlElement,
+): void {
+  const slotNames = $getSlotNames(lexicalNode);
+  if (slotNames.length === 0) {
+    return;
+  }
+  const slotsY = new YMap();
+  let hasSlot = false;
+  for (const name of slotNames) {
+    const slotNode = $getSlot(lexicalNode, name);
+    if (slotNode === null) {
+      continue;
+    }
+    const slotCollab = $createCollabNodeFromLexicalNode(
+      binding,
+      slotNode,
+      hostCollab,
+    );
+    binding.collabNodeMap.set(slotNode.__key, slotCollab);
+    slotsY.set(name, slotCollab.getSharedType());
+    hasSlot = true;
+  }
+  if (hasSlot) {
+    setSlotsAttr(sharedType, slotsY);
+  }
+}
+
 export function $createCollabNodeFromLexicalNode(
   binding: Binding,
   lexicalNode: LexicalNode,
@@ -180,29 +276,7 @@ export function $createCollabNodeFromLexicalNode(
     collabNode = $createCollabElementNode(xmlText, parent, nodeType);
     collabNode.syncPropertiesFromLexical(binding, lexicalNode, null);
     collabNode.syncChildrenFromLexical(binding, lexicalNode, null, null, null);
-    const slotNames = $getSlotNames(lexicalNode);
-    if (slotNames.length > 0) {
-      const slotsY = new YMap();
-      let hasSlot = false;
-      for (const name of slotNames) {
-        const slotNode = $getSlot(lexicalNode, name);
-        if (slotNode === null) {
-          continue;
-        }
-        const slotCollab = $createCollabNodeFromLexicalNode(
-          binding,
-          slotNode,
-          collabNode,
-        );
-        binding.collabNodeMap.set(slotNode.__key, slotCollab);
-        slotsY.set(name, slotCollab.getSharedType());
-        hasSlot = true;
-      }
-      if (hasSlot) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        xmlText.setAttribute(SLOTS_ATTR_KEY, slotsY as any);
-      }
-    }
+    $seedHostSlots(binding, lexicalNode, collabNode, xmlText);
   } else if ($isTextNode(lexicalNode)) {
     // Text and linebreak nodes can never be named-slot values, so their parent
     // is always a collab element node.
@@ -231,33 +305,7 @@ export function $createCollabNodeFromLexicalNode(
     const xmlElem = new XmlElement();
     collabNode = $createCollabDecoratorNode(xmlElem, parent, nodeType);
     collabNode.syncPropertiesFromLexical(binding, lexicalNode, null);
-    // A non-inline decorator can host named slots. It has no children channel,
-    // so seed the slots Y.Map on its `_xmlElem` here (mirrors the element-host
-    // seed above): a freshly appended host is created through this path, with no
-    // matched key for syncSlotsFromLexical to recurse through.
-    const slotNames = $getSlotNames(lexicalNode);
-    if (slotNames.length > 0) {
-      const slotsY = new YMap();
-      let hasSlot = false;
-      for (const name of slotNames) {
-        const slotNode = $getSlot(lexicalNode, name);
-        if (slotNode === null) {
-          continue;
-        }
-        const slotCollab = $createCollabNodeFromLexicalNode(
-          binding,
-          slotNode,
-          collabNode,
-        );
-        binding.collabNodeMap.set(slotNode.__key, slotCollab);
-        slotsY.set(name, slotCollab.getSharedType());
-        hasSlot = true;
-      }
-      if (hasSlot) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        xmlElem.setAttribute(SLOTS_ATTR_KEY, slotsY as any);
-      }
-    }
+    $seedHostSlots(binding, lexicalNode, collabNode, xmlElem);
   } else {
     invariant(false, 'Expected text, element, decorator, or linebreak node');
   }

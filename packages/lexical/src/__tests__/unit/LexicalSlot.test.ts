@@ -253,8 +253,28 @@ describe('named-slots: core foundation', () => {
 
         // self-host
         expect(() => $setSlot(outer, 'x', outer)).toThrow(/cycle/);
-        // ancestor-host: inner would slot its own ancestor
+        // ancestor-host via children: inner would slot its own parent
         expect(() => $setSlot(inner, 'x', outer)).toThrow(/cycle/);
+      },
+      {discrete: true},
+    );
+  });
+
+  // The ancestor may be reachable only through a slot up-link, not the
+  // __parent chain isParentOf walks: a hosts b in a slot, so b.__parent is
+  // null and b's only up-link is __slotHost -> a. Slotting a back into b must
+  // still be rejected, or the two __slotHost links close a cycle.
+  test('setSlot rejects an ancestor reachable through a slot up-link', () => {
+    using editor = createSlotEditor();
+
+    editor.update(
+      () => {
+        const a = $createTestShadowRootNode();
+        const b = $createTestShadowRootNode();
+        $getRoot().append(a);
+        $setSlot(a, 'x', b);
+
+        expect(() => $setSlot(b, 'y', a)).toThrow(/cycle/);
       },
       {discrete: true},
     );

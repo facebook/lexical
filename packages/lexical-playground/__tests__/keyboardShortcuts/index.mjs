@@ -172,7 +172,6 @@ export async function selectAll(page) {
         while (node.firstChild) {
           node = node.firstChild;
         }
-
         if (node.nodeType === Node.TEXT_NODE) {
           return {node, offset: 0};
         }

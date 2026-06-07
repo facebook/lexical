@@ -1187,7 +1187,6 @@ declare export function $isSlotHost(
 declare export function $isSlotChild(
   node: LexicalNode,
 ): node is LexicalNode & SlotChildNode;
-declare export function $getSlotHostKey(node: LexicalNode): null | NodeKey;
 declare export function $getSlotHost(
   node: LexicalNode,
 ): ElementNode | DecoratorNode<unknown> | null;
@@ -1778,6 +1777,9 @@ declare export function getStaticNodeConfig(cls: Class<LexicalNode>): {
   ownNodeType: void | string;
   ownNodeConfig: void | StaticNodeConfigValue<LexicalNode, string>;
 };
+declare export function getRegisteredSubtypeMap(
+  nodes: Iterable<Class<LexicalNode>>,
+): Map<string, Set<string>>;
 
 declare export function $isEditorState(x: unknown): x is EditorState;
 

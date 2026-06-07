@@ -2606,6 +2606,8 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
  * The result lets callers expand a base node type to all of its registered
  * subclass types up front, so a subclass instance can be matched by type
  * without a runtime `instanceof`.
+ *
+ * @experimental
  */
 export function getRegisteredSubtypeMap(
   nodes: Iterable<Klass<LexicalNode>>,

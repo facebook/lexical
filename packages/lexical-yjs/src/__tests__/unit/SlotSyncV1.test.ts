@@ -62,7 +62,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
   function buildBinding() {
     const editor = createEditor({
       namespace: 'slot-sync-v1',
-      nodes: [TestShadowRootNode],
+      nodes: [TestShadowRootNode, TestDecoratorNode],
       onError: e => {
         throw e;
       },
@@ -706,6 +706,52 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     expect(titleYAfter).toBe(titleYBefore);
     assert(titleYAfter instanceof XmlText);
     expect(titleYAfter.toString()).toContain('Title');
+  });
+
+  // local (b): a decorator-valued slot. A non-inline DecoratorNode is a valid
+  // slot value; when it carries a nested slot of its own its `_xmlElem` is
+  // tracked, so an unrelated host edit must leave that shared type identical
+  // (diffed in place, not recreated with a new yjs id). Mirrors the element/text
+  // slot case above for the decorator-value path.
+  test('local: an unrelated host edit leaves an untouched decorator slot identical', () => {
+    const {binding, editor} = buildBinding();
+
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const body = $createParagraphNode();
+        body.append($createTextNode('Body'));
+        const cover = $createTestDecoratorNode().setIsInline(false);
+        const caption = $createTestShadowRootNode();
+        caption.append($createParagraphNode().append($createTextNode('Cap')));
+        $setSlot(cover, 'caption', caption);
+        $getRoot().clear().append(host);
+        host.append(body);
+        $setSlot(host, 'cover', cover);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const hostCollab = binding.root._children[0];
+    assert(hostCollab instanceof CollabElementNode);
+    const slotsY = hostCollab._xmlText.getAttribute('slots') as YMap<unknown>;
+    const coverYBefore = slotsY.get('cover');
+    assert(coverYBefore != null);
+
+    applyLocalUpdate(binding, editor, () => {
+      const host = $getRoot().getFirstChild();
+      assert($isElementNode(host));
+      const body = host.getFirstChild();
+      assert($isElementNode(body));
+      const text = body.getFirstChild();
+      assert($isTextNode(text));
+      text.setTextContent('Body changed');
+    });
+
+    const coverYAfter = slotsY.get('cover');
+    expect(coverYAfter).toBe(coverYBefore);
   });
 });
 

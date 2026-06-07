@@ -183,7 +183,7 @@ declare export function $reverseDfsWithSlots(
 declare export function $reverseDfsWithSlotsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
-): Iterable<DFSNode>;
+): DFSIterator;
 
 declare export function $descendantsMatching<T extends LexicalNode>(
   children: LexicalNode[],

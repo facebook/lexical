@@ -49,9 +49,10 @@ export function $isSlotChild(
 /**
  * Returns the key of the host this node is slotted into, or null when the node
  * is not slotted. Accepts any node and narrows internally so generic callers
- * (removal guard, up-walk, GC, caret) don't have to.
+ * (removal guard, up-walk, GC, caret) don't have to. Exposes a raw key, so it
+ * stays internal to the package; public callers use {@link $getSlotHost}.
  *
- * @experimental
+ * @internal
  */
 export function $getSlotHostKey(node: LexicalNode): null | NodeKey {
   const latest = node.getLatest();

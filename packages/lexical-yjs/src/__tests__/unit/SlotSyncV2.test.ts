@@ -634,6 +634,51 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     }
   });
 
+  // local (c2): removing a slot also clears the departing shared type from the
+  // binding mapping, mirroring the children path (which calls
+  // binding.mapping.delete on a removed fragment). Without it the stale slot
+  // type lingers in the mapping for the doc's lifetime.
+  test('local: removing a slot clears the departing shared type from the mapping', () => {
+    const {binding, editor, hostY} = setupLocalSlotTree();
+    const slotsY = hostY.getAttribute('slots') as unknown as YMap<XmlElement>;
+    const oldType = slotsY.get('title');
+    assert(oldType != null);
+    expect(binding.mapping.has(oldType)).toBe(true);
+
+    applyLocalUpdate(binding, editor, () => {
+      const host = $getRoot().getFirstChild();
+      assert($isElementNode(host));
+      $removeSlot(host, 'title');
+    });
+
+    expect(binding.mapping.has(oldType)).toBe(false);
+  });
+
+  // local (c3): replacing a slot under the same name clears the departing shared
+  // type from the mapping before the new value is created (the same-name set
+  // would otherwise overwrite the Y.Map entry while the old type lingers).
+  test('local: replacing a slot under the same name clears the old shared type from the mapping', () => {
+    const {binding, editor, hostY} = setupLocalSlotTree();
+    const slotsY = hostY.getAttribute('slots') as unknown as YMap<XmlElement>;
+    const oldType = slotsY.get('title');
+    assert(oldType != null);
+
+    applyLocalUpdate(binding, editor, () => {
+      const host = $getRoot().getFirstChild();
+      assert($isElementNode(host));
+      $removeSlot(host, 'title');
+      const next = $createTestShadowRootNode();
+      next.append($createParagraphNode().append($createTextNode('New')));
+      $setSlot(host, 'title', next);
+    });
+
+    expect(binding.mapping.has(oldType)).toBe(false);
+    const newType = slotsY.get('title');
+    assert(newType != null);
+    expect(newType).not.toBe(oldType);
+    expect(binding.mapping.has(newType)).toBe(true);
+  });
+
   // local (d): the diff (not whole-recreate) evidence. An unrelated child edit
   // re-syncs the host, but the untouched 'title' slot keeps the same XmlElement
   // object identity — $updateSlotsYType left it in place (it was not dirty)

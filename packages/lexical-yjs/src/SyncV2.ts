@@ -450,6 +450,11 @@ const $updateSlotsYType = (
   const existing = yDomFragment.getAttribute(SLOTS_ATTR_KEY) as unknown;
 
   if (names.length === 0) {
+    if (existing instanceof YMap) {
+      for (const removed of (existing as YMap<XmlElement>).values()) {
+        binding.mapping.delete(removed);
+      }
+    }
     if (existing !== undefined) {
       yDomFragment.removeAttribute(SLOTS_ATTR_KEY);
     }
@@ -469,6 +474,10 @@ const $updateSlotsYType = (
   const nextNames = new Set(names);
   for (const name of Array.from(slotsY.keys())) {
     if (!nextNames.has(name)) {
+      const removed = slotsY.get(name);
+      if (removed !== undefined) {
+        binding.mapping.delete(removed);
+      }
       slotsY.delete(name);
     }
   }
@@ -488,6 +497,9 @@ const $updateSlotsYType = (
         $updateYFragment(y, slotY, slotNode, binding, dirtyElements);
       }
     } else {
+      if (slotY instanceof XmlElement) {
+        binding.mapping.delete(slotY);
+      }
       slotsY.set(name, $createSlotValueType(slotNode, binding));
     }
   }

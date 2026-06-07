@@ -663,6 +663,100 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     expect(titleText.toString()).toBe('Title');
   });
 
+  // local (f): a decorator-valued slot. A non-inline DecoratorNode is a valid
+  // slot value; when it carries its own nested slot it is mapped, so an
+  // unrelated host edit must leave its XmlElement identity intact (diffed in
+  // place, not recreated). Mirrors local (d) but with a decorator slot value, to
+  // cover $updateSlotsYType's same-identity branch for the decorator case.
+  test('local: an unrelated host edit leaves an untouched decorator slot identical', () => {
+    const {binding, editor} = buildBinding([
+      BlockDecoratorNode,
+      TestShadowRootNode,
+    ]);
+
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const body = $createParagraphNode();
+        body.append($createTextNode('Body'));
+        // a decorator slot value that itself hosts a nested slot, so it gets
+        // mapped (an unmapped plain decorator can't hit the same-identity path)
+        const cover = new BlockDecoratorNode();
+        const caption = $createTestShadowRootNode();
+        caption.append($createParagraphNode().append($createTextNode('Cap')));
+        $setSlot(cover, 'caption', caption);
+        $getRoot().clear().append(host);
+        host.append(body);
+        $setSlot(host, 'cover', cover);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const hostY = binding.root.toArray()[0];
+    assert(hostY instanceof XmlElement);
+    const slotsY = hostY.getAttribute('slots') as unknown as YMap<unknown>;
+    const coverYBefore = slotsY.get('cover');
+    assert(coverYBefore instanceof XmlElement);
+
+    applyLocalUpdate(binding, editor, () => {
+      const host = $getRoot().getFirstChild();
+      assert($isElementNode(host));
+      const body = host.getFirstChild();
+      assert($isElementNode(body));
+      const text = body.getFirstChild();
+      assert($isTextNode(text));
+      text.setTextContent('Body changed');
+    });
+
+    const coverYAfter = slotsY.get('cover');
+    // same shared type object: the decorator slot was diffed in place, not
+    // recreated with a new yjs id on every host update
+    expect(coverYAfter).toBe(coverYBefore);
+  });
+
+  // local (g): a plain decorator-valued slot (no nested slots of its own).
+  // createTypeFromElementNode only maps a slot-hosting decorator, so a plain
+  // decorator slot must still be identity-tracked to survive an unrelated host
+  // edit in place rather than being recreated with a new yjs id.
+  test('local: an unrelated host edit leaves an untouched plain decorator slot identical', () => {
+    const {binding, editor} = buildBinding([BlockDecoratorNode]);
+
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const body = $createParagraphNode();
+        body.append($createTextNode('Body'));
+        $getRoot().clear().append(host);
+        host.append(body);
+        $setSlot(host, 'cover', new BlockDecoratorNode());
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const hostY = binding.root.toArray()[0];
+    assert(hostY instanceof XmlElement);
+    const slotsY = hostY.getAttribute('slots') as unknown as YMap<unknown>;
+    const coverYBefore = slotsY.get('cover');
+    assert(coverYBefore instanceof XmlElement);
+
+    applyLocalUpdate(binding, editor, () => {
+      const host = $getRoot().getFirstChild();
+      assert($isElementNode(host));
+      const body = host.getFirstChild();
+      assert($isElementNode(body));
+      const text = body.getFirstChild();
+      assert($isTextNode(text));
+      text.setTextContent('Body changed');
+    });
+
+    const coverYAfter = slotsY.get('cover');
+    expect(coverYAfter).toBe(coverYBefore);
+  });
+
   // local (e): setSlot enforces block-only slot values (a non-inline
   // ElementNode or DecoratorNode), so a bare TextNode is rejected. This is why
   // the slots channel only ever (de)serializes XmlElement — a raw-text slot can

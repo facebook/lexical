@@ -426,7 +426,7 @@ const $createSlotsYType = (
     if (slotNode == null) {
       continue;
     }
-    slotsY.set(name, $createTypeFromElementNode(slotNode, binding));
+    slotsY.set(name, $createSlotValueType(slotNode, binding));
   }
   return slotsY;
 };
@@ -481,14 +481,14 @@ const $updateSlotsYType = (
     const slotY = slotsY.get(name);
     if (
       slotY instanceof XmlElement &&
-      slotNode instanceof ElementNode &&
+      (slotNode instanceof ElementNode || $isDecoratorNode(slotNode)) &&
       slotY === binding.mapping.getSharedType(slotNode)
     ) {
       if (dirtyElements.has(slotNode.getKey())) {
         $updateYFragment(y, slotY, slotNode, binding, dirtyElements);
       }
     } else {
-      slotsY.set(name, $createTypeFromElementNode(slotNode, binding));
+      slotsY.set(name, $createSlotValueType(slotNode, binding));
     }
   }
 };
@@ -537,6 +537,25 @@ const $createTypeFromElementNode = (
     ),
   );
   binding.mapping.set(type, node);
+  return type;
+};
+
+// Slot values are diffed by node identity in $updateSlotsYType, so every slot
+// value must be mapped to keep its yjs id across host updates.
+// createTypeFromElementNode maps ElementNodes and slot-hosting decorators but
+// leaves a plain decorator unmapped (it has nothing to diff in place as a
+// child); as a slot value it still needs the mapping, so add it here.
+const $createSlotValueType = (
+  slotNode: LexicalNode,
+  binding: BindingV2,
+): XmlElement => {
+  const type = $createTypeFromElementNode(slotNode, binding);
+  if (
+    $isDecoratorNode(slotNode) &&
+    binding.mapping.getSharedType(slotNode) === undefined
+  ) {
+    binding.mapping.set(type, slotNode);
+  }
   return type;
 };
 

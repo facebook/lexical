@@ -81,7 +81,14 @@ export function $getSlotHost(
   return host;
 }
 
-function $getSlotMap(node: LexicalNode): ReadonlyMap<string, NodeKey> {
+/**
+ * Returns the latest slot map (name -> child key, insertion order). Exposes raw
+ * keys, so it stays internal to the package; public callers use
+ * {@link $getSlotNames} / {@link $getSlot}.
+ *
+ * @internal
+ */
+export function $getSlotMap(node: LexicalNode): ReadonlyMap<string, NodeKey> {
   const latest = node.getLatest();
   return $isSlotHost(latest) && latest.__slots !== null
     ? latest.__slots

@@ -67,6 +67,7 @@ import {
   $getSlot,
   $getSlotHost,
   $getSlotHostKey,
+  $getSlotMap,
   $getSlotNames,
 } from './LexicalSlot';
 import {
@@ -2682,11 +2683,9 @@ function $slotStraddleFocusAfterAnchor(
     const anchorHost = $getSlotHost(anchorFrame);
     const focusHost = $getSlotHost(focusFrame);
     if (anchorHost !== null && anchorHost.is(focusHost)) {
-      // Two slots of the same host: __slots iteration is insertion order, which
-      // is the order the reconciler renders them (content order).
-      for (const slotKey of anchorHost.__slots !== null
-        ? anchorHost.__slots.values()
-        : []) {
+      // Two slots of the same host: slot-map iteration is insertion order,
+      // which is the order the reconciler renders them (content order).
+      for (const slotKey of $getSlotMap(anchorHost).values()) {
         if (slotKey === anchorFrame.getKey()) {
           return true;
         }

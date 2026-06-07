@@ -727,7 +727,9 @@ export function $setSelection(selection: null | BaseSelection): void {
     // @experimental named-slots. A RangeSelection committed through the API
     // must not straddle a slot boundary (slots are shadow-root-isolated), the
     // programmatic counterpart of the DOM-read clamp in selection resolution.
-    if ($isRangeSelection(selection)) {
+    // Gated on `_slotsUsed` so editors that never slot anything skip the walk,
+    // mirroring the commit-time clamp.
+    if ($isRangeSelection(selection) && getActiveEditor()._slotsUsed) {
       $clampRangeSelectionToSlotFrame(selection);
     }
   }

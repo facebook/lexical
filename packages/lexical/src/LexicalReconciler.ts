@@ -1859,10 +1859,14 @@ function $reconcileNode(
         reconcileDecorator(key, decorator);
       }
       // @experimental named-slots. Mirror the element-host slot reconcile for
-      // decorator hosts. Slot text is already folded into `text` by
+      // decorator hosts (including its isDirty gate: a clean host means its
+      // slots are unchanged). Slot text is already folded into `text` by
       // getTextContent, so this is render-only ($reconcileSlotChildren
       // preserves subTreeTextContent).
-      if (readSlots(nextNode).size > 0 || readSlots(prevNode).size > 0) {
+      if (
+        isDirty &&
+        (readSlots(nextNode).size > 0 || readSlots(prevNode).size > 0)
+      ) {
         $reconcileSlotChildren(prevNode, nextNode, dom);
       }
     }

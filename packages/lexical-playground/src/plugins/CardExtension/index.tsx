@@ -31,6 +31,7 @@ import {
   configExtension,
   createCommand,
   defineExtension,
+  getDOMSelection,
   isHTMLElement,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -109,19 +110,19 @@ function $resolveCardChromeTarget(
 
 export const CardExtension = defineExtension({
   dependencies: [
-    // Card is an ElementNode (not a DecoratorNode), so the extension's
-    // default `$shouldInsertAfter` predicate doesn't pick it up. Without
-    // this override, clicking the empty area below a trailing Card leaves
-    // the caret in an awkward place; with it, the click inserts a fresh
-    // paragraph after the Card.
+    // The default `$shouldInsertAfter` predicate only picks up block
+    // decorators that opt in; this override adds the Card so that clicking
+    // the empty area below a trailing Card inserts a fresh paragraph after
+    // it instead of leaving the caret in an awkward place.
     configExtension(ClickAfterLastBlockExtension, {
       $shouldInsertAfter: node =>
         $defaultShouldInsertAfter(node) || $isCardNode(node),
     }),
-    // CardNode is an ElementNode, so there's no `decorate()` path to hang
-    // `useLexicalNodeSelection` off. This mirrors the NodeSelection state
-    // onto a `data-selected` attribute on each Card's host DOM so CSS can
-    // render the selected outline.
+    // Mirror the NodeSelection state onto a `data-selected` attribute on each
+    // Card's host DOM so CSS can render the selected outline. The Card's
+    // chrome is rendered through `decorate()`, but selecting the whole Card is
+    // driven from the extension's CLICK_COMMAND below, so the attribute is set
+    // here rather than via `useLexicalNodeSelection` inside the component.
     configExtension(NodeSelectionDataSelectedExtension, {nodes: [CardNode]}),
   ],
   name: '@lexical/playground/Card',
@@ -136,6 +137,26 @@ export const CardExtension = defineExtension({
       );
       if (isChrome) {
         event.preventDefault();
+        // Move focus off any slot's contentEditable onto the editor root so
+        // the chrome click resolves to a clean whole-Card NodeSelection. The
+        // preventDefault above suppresses the native focus shift, so without
+        // this the slot keeps DOM focus: its :focus-within highlight stays lit
+        // alongside the Card's selected outline, and the keyboard selection
+        // (now a NodeSelection) is out of sync with the focused slot, so
+        // Backspace never reaches the Card-delete path.
+        const root = editor.getRootElement();
+        if (root !== null && root !== document.activeElement) {
+          root.focus({preventScroll: true});
+          // root.focus() drops a native caret where the slot focus was; clear
+          // it in this same synchronous turn so it never paints before the
+          // click promotes the chrome interaction to a whole-Card
+          // NodeSelection. Safari/Chrome would otherwise flash the caret in
+          // the paragraph above the Card for a frame.
+          const domSelection = getDOMSelection(root.ownerDocument.defaultView);
+          if (domSelection !== null) {
+            domSelection.removeAllRanges();
+          }
+        }
       }
     };
     return mergeRegister(

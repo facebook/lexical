@@ -1815,6 +1815,38 @@
         "default": "./dist/useLexicalNodeSelection.js"
       }
     },
+    "./useLexicalSlot": {
+      "source": "./src/useLexicalSlot.ts",
+      "import": {
+        "types": "./dist/useLexicalSlot.d.ts",
+        "development": "./dist/useLexicalSlot.dev.mjs",
+        "production": "./dist/useLexicalSlot.prod.mjs",
+        "node": "./dist/useLexicalSlot.node.mjs",
+        "default": "./dist/useLexicalSlot.mjs"
+      },
+      "require": {
+        "types": "./dist/useLexicalSlot.d.ts",
+        "development": "./dist/useLexicalSlot.dev.js",
+        "production": "./dist/useLexicalSlot.prod.js",
+        "default": "./dist/useLexicalSlot.js"
+      }
+    },
+    "./useLexicalSlot.js": {
+      "source": "./src/useLexicalSlot.ts",
+      "import": {
+        "types": "./dist/useLexicalSlot.d.ts",
+        "development": "./dist/useLexicalSlot.dev.mjs",
+        "production": "./dist/useLexicalSlot.prod.mjs",
+        "node": "./dist/useLexicalSlot.node.mjs",
+        "default": "./dist/useLexicalSlot.mjs"
+      },
+      "require": {
+        "types": "./dist/useLexicalSlot.d.ts",
+        "development": "./dist/useLexicalSlot.dev.js",
+        "production": "./dist/useLexicalSlot.prod.js",
+        "default": "./dist/useLexicalSlot.js"
+      }
+    },
     "./useLexicalSubscription": {
       "source": "./src/useLexicalSubscription.tsx",
       "import": {

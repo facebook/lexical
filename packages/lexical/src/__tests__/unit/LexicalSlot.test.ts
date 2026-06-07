@@ -18,6 +18,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $getSlotContainer,
   $isRangeSelection,
   $setSelection,
   createEditor,
@@ -231,6 +232,29 @@ describe('named-slots: core foundation', () => {
     );
   });
 
+  // A node hosting itself, or an ancestor, would make __slotHost point back
+  // into the host's own up-chain, so isAttached/GC loop forever. The value-type
+  // guard runs first, so the cycle is only reachable for nodes that are valid
+  // slot values too (shadow roots / non-inline decorators) — use shadow roots.
+  test('setSlot rejects hosting itself or an ancestor (cycle guard)', () => {
+    using editor = createSlotEditor();
+
+    editor.update(
+      () => {
+        const outer = $createTestShadowRootNode();
+        const inner = $createTestShadowRootNode();
+        $getRoot().append(outer);
+        outer.append(inner);
+
+        // self-host
+        expect(() => outer.setSlot('x', outer)).toThrow(/cycle/);
+        // ancestor-host: inner would slot its own ancestor
+        expect(() => inner.setSlot('x', outer)).toThrow(/cycle/);
+      },
+      {discrete: true},
+    );
+  });
+
   test('moving a slotted node into a child list throws (reverse guard)', () => {
     using editor = createSlotEditor();
 
@@ -407,7 +431,11 @@ describe('named-slots: core foundation', () => {
       () => {
         const host = $createParagraphNode();
         $getRoot().append(host);
-        host.getWritable().__slots.set('ghost', 'nonexistent-key');
+        const writableHost = host.getWritable();
+        if (writableHost.__slots === null) {
+          writableHost.__slots = new Map();
+        }
+        writableHost.__slots.set('ghost', 'nonexistent-key');
       },
       {discrete: true},
     );
@@ -468,6 +496,47 @@ describe('named-slots: core foundation', () => {
     // after the host is detached, its slot node must not leak
     editor.read(() => {
       expect($getNodeByKey(slotKey)).toBe(null);
+    });
+  });
+
+  test('detaching a decorator host garbage-collects its slot node', () => {
+    using editor = createSlotEditor();
+    let slotKey = '';
+    let textKey = '';
+
+    editor.update(
+      () => {
+        const host = $createTestDecoratorNode().setIsInline(false);
+        const slot = $createTestShadowRootNode();
+        const para = $createParagraphNode();
+        const text = $createTextNode('Slotted');
+        para.append(text);
+        slot.append(para);
+        $getRoot().append(host);
+        host.setSlot('title', slot);
+        slotKey = slot.getKey();
+        textKey = text.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      expect($getNodeByKey(slotKey)).not.toBe(null);
+      expect($getNodeByKey(textKey)).not.toBe(null);
+    });
+
+    editor.update(
+      () => {
+        $getRoot().getFirstChild()!.remove();
+      },
+      {discrete: true},
+    );
+
+    // a decorator host is a leaf, so without the slot-aware leaf walk its
+    // slot subtree would orphan in the node map
+    editor.read(() => {
+      expect($getNodeByKey(slotKey)).toBe(null);
+      expect($getNodeByKey(textKey)).toBe(null);
     });
   });
 
@@ -574,6 +643,122 @@ describe('named-slots: core foundation', () => {
     expect(hostDom.firstChild).toBe(slotContainer);
     // the slot's text node DOM is reachable by key (it reconciles normally)
     expect(editor.getElementByKey(titleTextKey)).not.toBe(null);
+  });
+
+  test('a decorator host renders its slot into an editable detached keyed container', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+    let slotKey = '';
+    let titleTextKey = '';
+
+    editor.update(
+      () => {
+        const host = $createTestDecoratorNode().setIsInline(false);
+        const title = $createTestShadowRootNode();
+        const titlePara = $createParagraphNode();
+        const titleText = $createTextNode('Title');
+        titlePara.append(titleText);
+        title.append(titlePara);
+        $getRoot().append(host);
+        host.setSlot('title', title);
+        hostKey = host.getKey();
+        slotKey = title.getKey();
+        titleTextKey = titleText.getKey();
+      },
+      {discrete: true},
+    );
+
+    const hostDom = editor.getElementByKey(hostKey)!;
+    // the decorator dom itself stays non-editable
+    expect(hostDom.contentEditable).toBe('false');
+    // a decorator host leaves its slot container detached for the
+    // lexical-react component to place; it never lands in the host DOM
+    expect(hostDom.querySelector('[data-lexical-slot="title"]')).toBe(null);
+    // the container is discoverable by the slotted key (its DOM's parent)
+    const slotContainer = editor.getElementByKey(slotKey)!.parentElement!;
+    expect(slotContainer.getAttribute('data-lexical-slot')).toBe('title');
+    expect(hostDom.contains(slotContainer)).toBe(false);
+    // a decorator-host slot opts its container into editing so the otherwise
+    // non-editable decorator chrome still hosts an editable region
+    expect(slotContainer.contentEditable).toBe('true');
+    expect(slotContainer.textContent).toBe('Title');
+    expect(editor.getElementByKey(titleTextKey)).not.toBe(null);
+  });
+
+  test('editing a decorator-host slot re-reconciles it in place', () => {
+    using editor = createSlotEditor();
+    let slotKey = '';
+    let textKey = '';
+
+    editor.update(
+      () => {
+        const host = $createTestDecoratorNode().setIsInline(false);
+        const title = $createTestShadowRootNode();
+        const para = $createParagraphNode();
+        const text = $createTextNode('Before');
+        para.append(text);
+        title.append(para);
+        $getRoot().append(host);
+        host.setSlot('title', title);
+        slotKey = title.getKey();
+        textKey = text.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        $getNodeByKey<TextNode>(textKey)!.setTextContent('After');
+      },
+      {discrete: true},
+    );
+
+    const slotContainer = editor.getElementByKey(slotKey)!.parentElement!;
+    expect(slotContainer.getAttribute('data-lexical-slot')).toBe('title');
+    expect(slotContainer.textContent).toBe('After');
+  });
+
+  test('$getSlotContainer resolves a host slot container by key, null when empty', () => {
+    using editor = createSlotEditor();
+    let decoratorKey = '';
+    let elementKey = '';
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const decorator = $createTestDecoratorNode().setIsInline(false);
+        decorator.setSlot('title', $slotContainer('Deco'));
+        root.append(decorator);
+        const element = $createParagraphNode();
+        element.setSlot('title', $slotContainer('Elem'));
+        element.append($createTextNode('body'));
+        root.append(element);
+        decoratorKey = decorator.getKey();
+        elementKey = element.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const decorator = $getNodeByKey(decoratorKey)!;
+      const element = $getNodeByKey(elementKey)!;
+      const decoratorContainer = $getSlotContainer(decorator, 'title')!;
+      const elementContainer = $getSlotContainer(element, 'title')!;
+      expect(decoratorContainer.getAttribute('data-lexical-slot')).toBe(
+        'title',
+      );
+      expect(elementContainer.getAttribute('data-lexical-slot')).toBe('title');
+      expect(decoratorContainer.textContent).toBe('Deco');
+      expect(elementContainer.textContent).toBe('Elem');
+      // a decorator host's container is detached; an element host's sits inside
+      // the host DOM
+      const decoratorDom = editor.getElementByKey(decoratorKey)!;
+      const elementDom = editor.getElementByKey(elementKey)!;
+      expect(decoratorDom.contains(decoratorContainer)).toBe(false);
+      expect(elementDom.contains(elementContainer)).toBe(true);
+      // an empty slot name resolves to null
+      expect($getSlotContainer(decorator, 'missing')).toBe(null);
+    });
   });
 
   test('reconciler text cache folds slot text in slots-first (RootNode.__cachedText)', () => {
@@ -922,7 +1107,7 @@ describe('named-slots: core foundation', () => {
         // no removeSlot API yet; delete from the writable slot map directly
         $getNodeByKey<ParagraphNode>(hostKey)!
           .getWritable()
-          .__slots.delete('title');
+          .__slots!.delete('title');
       },
       {discrete: true},
     );
@@ -1021,6 +1206,106 @@ describe('named-slots: core foundation', () => {
       {discrete: true},
     );
     expect(survived).toBe(true);
+  });
+
+  // Decorator hosts can't carry children (includeChildren stays false), so the
+  // slot re-home must run independently of that gate; otherwise replacing a
+  // decorator host orphans its slots. Fails before the re-home left the
+  // includeChildren branch, passes after.
+  test('replace carries slots onto a decorator host without includeChildren', () => {
+    using editor = createSlotEditor();
+    let survived = false;
+    let oldHostAttached = true;
+    editor.update(
+      () => {
+        const host = $createTestDecoratorNode().setIsInline(false);
+        const slot = $slotContainer('SLOTTEXT');
+        $getRoot().append(host);
+        host.setSlot('media', slot);
+        const newHost = $createTestDecoratorNode().setIsInline(false);
+        host.replace(newHost);
+        const got = newHost.getSlot<TestShadowRootNode>('media');
+        survived = got !== null && got.getTextContent() === 'SLOTTEXT';
+        oldHostAttached = host.isAttached();
+      },
+      {discrete: true},
+    );
+    expect(survived).toBe(true);
+    expect(oldHostAttached).toBe(false);
+  });
+
+  // Slots are a separate channel, so $destroyNode's child recursion doesn't
+  // reach them. Removing a host must still clear its slot subtree from the
+  // editor's DOM map (getElementByKey); otherwise those entries leak across
+  // create/remove cycles. Fails before $destroyNode gained a slot branch.
+  test('removing an element host clears its slot subtree from the DOM map', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+    let slotKey = '';
+    let innerKey = '';
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const slot = $slotContainer('SLOTTEXT');
+        $getRoot().append(host);
+        host.setSlot('title', slot);
+        hostKey = host.getKey();
+        slotKey = slot.getKey();
+        innerKey = slot.getFirstChildOrThrow().getKey();
+      },
+      {discrete: true},
+    );
+    expect(editor.getElementByKey(slotKey)).not.toBe(null);
+
+    editor.update(
+      () => {
+        $getNodeByKey(hostKey)!.remove();
+      },
+      {discrete: true},
+    );
+    expect(editor.getElementByKey(slotKey)).toBe(null);
+    expect(editor.getElementByKey(innerKey)).toBe(null);
+  });
+
+  test('removing a decorator host clears its slot subtree from the DOM map', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+    let slotKey = '';
+    editor.update(
+      () => {
+        const host = $createTestDecoratorNode().setIsInline(false);
+        const slot = $slotContainer('SLOTTEXT');
+        $getRoot().append(host);
+        host.setSlot('media', slot);
+        hostKey = host.getKey();
+        slotKey = slot.getKey();
+      },
+      {discrete: true},
+    );
+    expect(editor.getElementByKey(slotKey)).not.toBe(null);
+
+    editor.update(
+      () => {
+        $getNodeByKey(hostKey)!.remove();
+      },
+      {discrete: true},
+    );
+    expect(editor.getElementByKey(slotKey)).toBe(null);
+  });
+
+  test('setSlot throws when the host is neither an element nor a decorator', () => {
+    using editor = createSlotEditor();
+    editor.update(
+      () => {
+        const text = $createTextNode('host?');
+        $getRoot().append($createParagraphNode().append(text));
+        const slot = $slotContainer('SLOTTEXT');
+        expect(() => text.setSlot('title', slot)).toThrow(
+          /not a valid slot host/,
+        );
+      },
+      {discrete: true},
+    );
   });
 
   test('NodeSelection.insertNodes leaves a slotted node intact', () => {

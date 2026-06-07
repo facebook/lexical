@@ -6,21 +6,45 @@
  *
  */
 
-import type {DOMExportOutput, LexicalEditor, LexicalNode} from 'lexical';
+import type {
+  DOMExportOutput,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+} from 'lexical';
+import type {JSX} from 'react';
 
 import {$appendNodeToHTML} from '@lexical/html';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalSlot} from '@lexical/react/useLexicalSlot';
 import {
   $createParagraphNode,
   $createTextNode,
   $isElementNode,
-  ElementNode,
+  DecoratorNode,
 } from 'lexical';
+import * as React from 'react';
 
 import {$createSlotContainerNode} from '../SlotContainerNode';
 
-export class CardNode extends ElementNode {
+// The Card is a DecoratorNode host: its slot containers are reconciled
+// detached (the reconciler owns no inline layout for a decorator host) and
+// useLexicalSlot moves each one into the React-rendered chrome below.
+function CardComponent({nodeKey}: {nodeKey: NodeKey}): JSX.Element {
+  const [editor] = useLexicalComposerContext();
+  const titleRef = useLexicalSlot<HTMLDivElement>(editor, nodeKey, 'title');
+  const bodyRef = useLexicalSlot<HTMLDivElement>(editor, nodeKey, 'body');
+  return (
+    <div className="lexical-card-chrome">
+      <div ref={titleRef} />
+      <div ref={bodyRef} />
+    </div>
+  );
+}
+
+export class CardNode extends DecoratorNode<JSX.Element> {
   $config() {
-    return this.config('card', {extends: ElementNode});
+    return this.config('card', {extends: DecoratorNode});
   }
 
   createDOM(): HTMLElement {
@@ -31,6 +55,14 @@ export class CardNode extends ElementNode {
 
   updateDOM(): false {
     return false;
+  }
+
+  isInline(): false {
+    return false;
+  }
+
+  decorate(): JSX.Element {
+    return <CardComponent nodeKey={this.__key} />;
   }
 
   // Slots ride in a separate Map, so the HTML exporter never descends into

@@ -166,6 +166,13 @@ export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
   if (!isHTMLElement(activeElement)) {
     return false;
   }
+  // @experimental named-slots. A slot container is contentEditable inside an
+  // otherwise non-editable decorator host, but its content is Lexical-managed —
+  // not a foreign editor input — so it must stay under Lexical's DOM-selection
+  // control instead of being treated as captured.
+  if (activeElement.hasAttribute('data-lexical-slot')) {
+    return false;
+  }
   const nodeName = activeElement.nodeName;
 
   return (
@@ -2124,6 +2131,33 @@ export function $getDOMSlot<N extends LexicalNode>(
 /**
  * @experimental
  *
+ * Returns the scaffolding container element that `host`'s named slot renders
+ * into, or null if the slot is empty or not yet mounted. The container is the
+ * parent of the slotted node's DOM, resolved by key so it is found wherever it
+ * sits: a decorator host leaves its slot container detached for the framework
+ * binding to place inside the `decorate()` chrome, and this lookup still
+ * resolves it after that relocation. Use it to mount a decorator host's
+ * editable slot region into its rendered chrome (see lexical-react's
+ * `useLexicalSlot`). Editor-time analog of the reconciler's internal
+ * `$slotContainerForKey`, which resolves the same container from the
+ * reconcile-time DOM map instead of `editor.getElementByKey`.
+ */
+export function $getSlotContainer(
+  host: LexicalNode,
+  name: string,
+  editor: LexicalEditor = $getEditor(),
+): HTMLElement | null {
+  const slot = host.getSlot(name);
+  if (slot === null) {
+    return null;
+  }
+  const slotDom = editor.getElementByKey(slot.getKey());
+  return slotDom !== null ? slotDom.parentElement : null;
+}
+
+/**
+ * @experimental
+ *
  * Type guard narrowing a {@link DOMSlot} to an {@link ElementDOMSlot}, which
  * exposes children-management methods like `insertChild` and the managed
  * line-break helpers.
@@ -2388,6 +2422,15 @@ export function isDOMCapturingSelection(
   while (dom != null) {
     if (dom.__lexicalCapturedSelection === true) {
       return true;
+    }
+    // @experimental named-slots. A decorator host's slot container is a
+    // key-less scaffolding wrapper made contentEditable so its Lexical-managed
+    // content stays editable. Walking up from inside a slot would otherwise
+    // reach the decorator host's captured-selection flag and misread the slot
+    // as foreign-captured DOM, suppressing Lexical's input / selection
+    // handling. The container is a capturing boundary: stop here.
+    if (isHTMLElement(dom) && dom.hasAttribute('data-lexical-slot')) {
+      return false;
     }
     if (getNodeKeyFromDOMNode(dom, editor) !== undefined) {
       return false;

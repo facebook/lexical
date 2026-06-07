@@ -28,6 +28,7 @@ import invariant from '@lexical/internal/invariant';
 import {
   $getSelection,
   $getWritableNodeState,
+  $isDecoratorNode,
   $isRangeSelection,
   $isTextNode,
   ElementNode,
@@ -207,8 +208,10 @@ export const $createOrUpdateNodeFromYElement = (
 
   // Reconcile the dedicated `slots` channel against the host's `slots` Y.Map.
   // Diff (not blind setSlot) so the observer path is safe: re-setSlot on an
-  // already-slotted node would trip setSlot's `__slotHost === null` invariant.
-  if (node instanceof ElementNode) {
+  // already-slotted node would trip setSlot's `__slotHost === null` invariant. A
+  // host is an ElementNode or a non-inline DecoratorNode; both store slots as a
+  // `slots` Y.Map attribute, and the reconcile only uses base-node slot methods.
+  if (node instanceof ElementNode || $isDecoratorNode(node)) {
     // `slots` is stored as a Y.Map attribute; widen to unknown so instanceof
     // can narrow it (getAttribute is typed as returning a string).
     const slotsY = el.getAttribute(SLOTS_ATTR_KEY) as unknown;
@@ -406,7 +409,7 @@ const $createTypeFromTextNodes = (
 // recursively. Returns undefined for a host with no slots so non-slot hosts set
 // no attribute.
 const $createSlotsYType = (
-  node: ElementNode,
+  node: LexicalNode,
   binding: BindingV2,
 ): YMap<XmlElement> | undefined => {
   const names = node.getSlotNames();
@@ -434,7 +437,7 @@ const $createSlotsYType = (
 // slots for a freshly inserted host.
 const $updateSlotsYType = (
   yDomFragment: XmlElement,
-  node: ElementNode,
+  node: LexicalNode,
   binding: BindingV2,
   dirtyElements: Set<NodeKey>,
   y: YDoc,
@@ -503,7 +506,18 @@ const $createTypeFromElementNode = (
       type.setAttribute(key, val as any);
     }
   }
+  // A non-inline DecoratorNode can host named slots too. It has no children
+  // channel, so build only the slots and map the host (so its later in-place
+  // slot update can find it). A plain decorator with no slots stays unmapped, as
+  // before.
   if (!(node instanceof ElementNode)) {
+    const decoratorSlotsY = $createSlotsYType(node, binding);
+    if (decoratorSlotsY !== undefined) {
+      // TODO(collab-v2): typing for XmlElement generic
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      type.setAttribute(SLOTS_ATTR_KEY, decoratorSlotsY as any);
+      binding.mapping.set(type, node);
+    }
     return type;
   }
   const slotsY = $createSlotsYType(node, binding);
@@ -879,8 +893,9 @@ export const $updateYFragment = (
       }
     }
     // @experimental named-slots. Diff the slots channel in place (preserving
-    // the yjs IDs of unchanged slots) rather than rebuilding it wholesale.
-    if (node instanceof ElementNode) {
+    // the yjs IDs of unchanged slots) rather than rebuilding it wholesale. A
+    // non-inline DecoratorNode hosts slots too (it has no children channel).
+    if (node instanceof ElementNode || $isDecoratorNode(node)) {
       $updateSlotsYType(yDomFragment, node, binding, dirtyElements, y);
     }
   }
@@ -899,7 +914,14 @@ export const $updateYFragment = (
     if (leftY instanceof XmlHook) {
       break;
     } else if (mappedIdentity(binding.mapping.get(leftY), leftL)) {
-      if (leftL instanceof ElementNode && dirtyElements.has(leftL.getKey())) {
+      // A mapped decorator host (one with slots) needs an in-place update too so
+      // its slot channel propagates; only slotted decorators are mapped, so a
+      // plain decorator never reaches this branch.
+      if (
+        !(leftL instanceof Array) &&
+        (leftL instanceof ElementNode || $isDecoratorNode(leftL)) &&
+        dirtyElements.has(leftL.getKey())
+      ) {
         $updateYFragment(
           y,
           leftY as XmlElement,
@@ -922,7 +944,11 @@ export const $updateYFragment = (
     if (rightY instanceof XmlHook) {
       break;
     } else if (mappedIdentity(binding.mapping.get(rightY), rightL)) {
-      if (rightL instanceof ElementNode && dirtyElements.has(rightL.getKey())) {
+      if (
+        !(rightL instanceof Array) &&
+        (rightL instanceof ElementNode || $isDecoratorNode(rightL)) &&
+        dirtyElements.has(rightL.getKey())
+      ) {
         $updateYFragment(
           y,
           rightY as XmlElement,

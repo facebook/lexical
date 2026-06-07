@@ -6,10 +6,9 @@
  *
  */
 
-import type {ElementNode} from '.';
 import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
-import type {NodeKey, NodeMap} from './LexicalNode';
+import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
 
 import {$isElementNode} from '.';
 import {cloneDecorators} from './LexicalUtils';
@@ -38,46 +37,50 @@ export function $garbageCollectDetachedDecorators(
 type IntentionallyMarkedAsDirtyElement = boolean;
 
 function $garbageCollectDetachedDeepChildNodes(
-  node: ElementNode,
+  node: LexicalNode,
   parentKey: NodeKey,
   prevNodeMap: NodeMap,
   nodeMap: NodeMap,
   nodeMapDelete: Array<NodeKey>,
-  dirtyNodes: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
+  dirtyNodes: Map<NodeKey, IntentionallyMarkedAsDirtyElement> | Set<NodeKey>,
 ): void {
-  let child = node.getFirstChild();
+  if ($isElementNode(node)) {
+    let child = node.getFirstChild();
 
-  while (child !== null) {
-    const childKey = child.__key;
-    // TODO Revise condition below, redundant? LexicalNode already cleans up children when moving Nodes
-    if (child.__parent === parentKey) {
-      if ($isElementNode(child)) {
-        $garbageCollectDetachedDeepChildNodes(
-          child,
-          childKey,
-          prevNodeMap,
-          nodeMap,
-          nodeMapDelete,
-          dirtyNodes,
-        );
-      }
+    while (child !== null) {
+      const childKey = child.__key;
+      // TODO Revise condition below, redundant? LexicalNode already cleans up children when moving Nodes
+      if (child.__parent === parentKey) {
+        if ($isElementNode(child) || child.__slots !== null) {
+          $garbageCollectDetachedDeepChildNodes(
+            child,
+            childKey,
+            prevNodeMap,
+            nodeMap,
+            nodeMapDelete,
+            dirtyNodes,
+          );
+        }
 
-      // If we have created a node and it was dereferenced, then also
-      // remove it from out dirty nodes Set.
-      if (!prevNodeMap.has(childKey)) {
-        dirtyNodes.delete(childKey);
+        // If we have created a node and it was dereferenced, then also
+        // remove it from out dirty nodes Set.
+        if (!prevNodeMap.has(childKey)) {
+          dirtyNodes.delete(childKey);
+        }
+        nodeMapDelete.push(childKey);
       }
-      nodeMapDelete.push(childKey);
+      child = child.getNextSibling();
     }
-    child = child.getNextSibling();
   }
 
   // Slot nodes are not in the linked-list child channel; reach them through
   // the slot map, gating on the slot host the mirror of the __parent check.
-  for (const slotKey of node.__slots.values()) {
+  // Slots hang off any host (element or decorator), so this runs regardless
+  // of the host node type.
+  for (const slotKey of node.__slots !== null ? node.__slots.values() : []) {
     const slotNode = nodeMap.get(slotKey);
     if (slotNode !== undefined && slotNode.__slotHost === parentKey) {
-      if ($isElementNode(slotNode)) {
+      if ($isElementNode(slotNode) || slotNode.__slots !== null) {
         $garbageCollectDetachedDeepChildNodes(
           slotNode,
           slotKey,
@@ -131,17 +134,31 @@ export function $garbageCollectDetachedNodes(
       }
     }
   }
-  for (const nodeKey of nodeMapDelete) {
-    nodeMap.delete(nodeKey);
-  }
-
   for (const nodeKey of dirtyLeaves) {
     const node = nodeMap.get(nodeKey);
     if (node !== undefined && !node.isAttached()) {
+      // A decorator host is a leaf, so the element deep-walk above never
+      // reaches its slots; collect them here to avoid orphaning the slot
+      // subtree. Deletion is deferred to the shared queue so the walk can
+      // still read the slot nodes.
+      if (node.__slots !== null) {
+        $garbageCollectDetachedDeepChildNodes(
+          node,
+          nodeKey,
+          prevNodeMap,
+          nodeMap,
+          nodeMapDelete,
+          dirtyLeaves,
+        );
+      }
       if (!prevNodeMap.has(nodeKey)) {
         dirtyLeaves.delete(nodeKey);
       }
-      nodeMap.delete(nodeKey);
+      nodeMapDelete.push(nodeKey);
     }
+  }
+
+  for (const nodeKey of nodeMapDelete) {
+    nodeMap.delete(nodeKey);
   }
 }

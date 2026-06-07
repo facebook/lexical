@@ -678,4 +678,320 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
       ),
     ).toThrow(/not a valid slot value/);
   });
+
+  // DECORATOR host: a non-inline decorator hosts named slots even though it has
+  // no linked-list children channel. In V2 it serializes to an XmlElement named
+  // after its node type, carrying the `slots` Y.Map attribute, and is mapped
+  // (only because it has slots) so its in-place slot updates can find it. These
+  // mirror the element-host cases through the same V2 entry points
+  // (createTypeFromElementNode non-element branch, the generic slot reconcile,
+  // and the widened fast-match recursion for a mapped dirty decorator host).
+  test('decorator host: a "title" slot serializes into a `slots` Y.Map', () => {
+    const {binding, editor} = buildBinding([
+      BlockDecoratorNode,
+      TestShadowRootNode,
+    ]);
+
+    editor.update(
+      () => {
+        const host = new BlockDecoratorNode();
+        const title = $createTestShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Title')));
+        $getRoot().clear().append(host);
+        host.setSlot('title', title);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const hostY = binding.root.toArray()[0];
+    assert(hostY instanceof XmlElement);
+    expect(hostY.nodeName).toBe('block_decorator_slot');
+    // a decorator host has no children channel
+    expect(hostY.toArray()).toEqual([]);
+
+    const slotsY = hostY.getAttribute('slots') as unknown;
+    assert(slotsY instanceof YMap);
+    expect(Array.from(slotsY.keys())).toEqual(['title']);
+    const titleY = slotsY.get('title');
+    assert(titleY instanceof XmlElement);
+    expect(titleY.nodeName).toBe('test_shadow_root');
+    const titleParaY = titleY.toArray()[0];
+    assert(titleParaY instanceof XmlElement);
+    const titleText = titleParaY.toArray()[0];
+    assert(titleText instanceof XmlText);
+    expect(titleText.toString()).toBe('Title');
+  });
+
+  test('decorator host: a host with no slots stays unmapped with no `slots` attribute', () => {
+    const {binding, editor} = buildBinding([BlockDecoratorNode]);
+
+    editor.update(
+      () => {
+        $getRoot().clear().append(new BlockDecoratorNode());
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const hostY = binding.root.toArray()[0];
+    assert(hostY instanceof XmlElement);
+    expect(hostY.getAttribute('slots')).toBeUndefined();
+  });
+
+  test('decorator host round-trip: a serialized slot restores into a fresh editor', () => {
+    const {binding, doc, editor} = buildBinding([
+      BlockDecoratorNode,
+      TestShadowRootNode,
+    ]);
+
+    editor.update(
+      () => {
+        const host = new BlockDecoratorNode();
+        const title = $createTestShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Title')));
+        $getRoot().clear().append(host);
+        host.setSlot('title', title);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const {binding: binding2, editor: editor2} = buildRestoreBinding(doc, [
+      BlockDecoratorNode,
+      TestShadowRootNode,
+    ]);
+    editor2.update(
+      () => {
+        $getRoot().clear();
+        $createOrUpdateNodeFromYElement(binding2.root, binding2, null, true);
+      },
+      {discrete: true},
+    );
+
+    editor2.read(() => {
+      const hostR = $getRoot().getFirstChild();
+      assert(hostR instanceof BlockDecoratorNode);
+      const titleR = hostR.getSlot('title');
+      assert(titleR != null);
+      assert($isElementNode(titleR));
+      expect(titleR.getTextContent()).toBe('Title');
+      expect(titleR.getParent()).toBe(null);
+    });
+  });
+
+  test('decorator host observer: editing text inside a slot updates it in place', () => {
+    const {binding, doc, editor} = buildBinding([
+      BlockDecoratorNode,
+      TestShadowRootNode,
+    ]);
+
+    editor.update(
+      () => {
+        const host = new BlockDecoratorNode();
+        const title = $createTestShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Title')));
+        $getRoot().clear().append(host);
+        host.setSlot('title', title);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const {binding: binding2, editor: editor2} = buildRestoreBinding(doc, [
+      BlockDecoratorNode,
+      TestShadowRootNode,
+    ]);
+    editor2.update(
+      () => {
+        $getRoot().clear();
+        $createOrUpdateNodeFromYElement(binding2.root, binding2, null, true);
+      },
+      {discrete: true},
+    );
+
+    const hostY = binding2.root.toArray()[0];
+    assert(hostY instanceof XmlElement);
+    const slotsY = hostY.getAttribute('slots') as unknown;
+    assert(slotsY instanceof YMap);
+    const titleY = slotsY.get('title');
+    assert(titleY instanceof XmlElement);
+    const titleParaY = titleY.toArray()[0];
+    assert(titleParaY instanceof XmlElement);
+    const titleTextY = titleParaY.toArray()[0];
+    assert(titleTextY instanceof XmlText);
+    doc.transact(() => {
+      titleTextY.insert(5, '!!');
+    });
+
+    editor2.update(
+      () => {
+        $createOrUpdateNodeFromYElement(titleParaY, binding2, new Set(), true);
+      },
+      {discrete: true},
+    );
+
+    editor2.read(() => {
+      const hostR = $getRoot().getFirstChild();
+      assert(hostR instanceof BlockDecoratorNode);
+      const titleR = hostR.getSlot('title');
+      assert(titleR != null);
+      assert($isElementNode(titleR));
+      expect(titleR.getTextContent()).toBe('Title!!');
+      expect(titleR.getParent()).toBe(null);
+    });
+  });
+
+  test('decorator host observer: a remote slot delete removes the slot', () => {
+    const {binding, doc, editor} = buildBinding([
+      BlockDecoratorNode,
+      TestShadowRootNode,
+    ]);
+
+    editor.update(
+      () => {
+        const host = new BlockDecoratorNode();
+        const title = $createTestShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Title')));
+        $getRoot().clear().append(host);
+        host.setSlot('title', title);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const {binding: binding2, editor: editor2} = buildRestoreBinding(doc, [
+      BlockDecoratorNode,
+      TestShadowRootNode,
+    ]);
+    editor2.update(
+      () => {
+        $getRoot().clear();
+        $createOrUpdateNodeFromYElement(binding2.root, binding2, null, true);
+      },
+      {discrete: true},
+    );
+
+    const hostY = binding2.root.toArray()[0];
+    assert(hostY instanceof XmlElement);
+    const slotsY = hostY.getAttribute('slots') as unknown;
+    assert(slotsY instanceof YMap);
+    doc.transact(() => {
+      slotsY.delete('title');
+    });
+
+    editor2.update(
+      () => {
+        $createOrUpdateNodeFromYElement(
+          hostY,
+          binding2,
+          new Set(['slots']),
+          false,
+        );
+      },
+      {discrete: true},
+    );
+
+    editor2.read(() => {
+      const hostR = $getRoot().getFirstChild();
+      assert(hostR instanceof BlockDecoratorNode);
+      expect(hostR.getSlotNames()).toEqual([]);
+      expect(hostR.getSlot('title')).toBe(null);
+    });
+  });
+
+  test('decorator host local: a slot added to an existing host serializes into the slots Y.Map', () => {
+    const {binding, editor} = buildBinding([
+      BlockDecoratorNode,
+      TestShadowRootNode,
+    ]);
+
+    editor.update(
+      () => {
+        const host = new BlockDecoratorNode();
+        const title = $createTestShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Title')));
+        $getRoot().clear().append(host);
+        host.setSlot('title', title);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const hostY = binding.root.toArray()[0];
+    assert(hostY instanceof XmlElement);
+
+    applyLocalUpdate(binding, editor, () => {
+      const host = $getRoot().getFirstChild();
+      assert(host instanceof BlockDecoratorNode);
+      const subtitle = $createTestShadowRootNode();
+      subtitle.append($createParagraphNode().append($createTextNode('Sub')));
+      host.setSlot('subtitle', subtitle);
+    });
+
+    const slotsY = hostY.getAttribute('slots') as unknown;
+    assert(slotsY instanceof YMap);
+    expect(Array.from(slotsY.keys()).sort()).toEqual(['subtitle', 'title']);
+    const subY = slotsY.get('subtitle');
+    assert(subY instanceof XmlElement);
+    const subParaY = subY.toArray()[0];
+    assert(subParaY instanceof XmlElement);
+    const subText = subParaY.toArray()[0];
+    assert(subText instanceof XmlText);
+    expect(subText.toString()).toBe('Sub');
+  });
+
+  test('decorator host local: editing text inside a slot updates the shared type in place', () => {
+    const {binding, editor} = buildBinding([
+      BlockDecoratorNode,
+      TestShadowRootNode,
+    ]);
+
+    editor.update(
+      () => {
+        const host = new BlockDecoratorNode();
+        const title = $createTestShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Title')));
+        $getRoot().clear().append(host);
+        host.setSlot('title', title);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const hostY = binding.root.toArray()[0];
+    assert(hostY instanceof XmlElement);
+    const slotsY = hostY.getAttribute('slots') as unknown as YMap<unknown>;
+    const titleYBefore = slotsY.get('title');
+
+    applyLocalUpdate(binding, editor, () => {
+      const host = $getRoot().getFirstChild();
+      assert(host instanceof BlockDecoratorNode);
+      const title = host.getSlot('title');
+      assert($isElementNode(title));
+      const para = title.getFirstChild();
+      assert($isElementNode(para));
+      const text = para.getFirstChild();
+      assert($isTextNode(text));
+      text.setTextContent('Title!!');
+    });
+
+    const titleYAfter = slotsY.get('title');
+    // same shared type object: edited in place via the widened fast-match
+    // recursion (mapped dirty decorator host -> $updateSlotsYType), not recreated
+    expect(titleYAfter).toBe(titleYBefore);
+    assert(titleYAfter instanceof XmlElement);
+    const titleParaY = titleYAfter.toArray()[0];
+    assert(titleParaY instanceof XmlElement);
+    const titleText = titleParaY.toArray()[0];
+    assert(titleText instanceof XmlText);
+    expect(titleText.toString()).toBe('Title!!');
+  });
 });

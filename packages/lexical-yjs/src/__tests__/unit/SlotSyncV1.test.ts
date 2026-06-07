@@ -12,13 +12,16 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isDecoratorNode,
   $isElementNode,
   $isTextNode,
   createEditor,
   type LexicalEditor,
 } from 'lexical';
 import {
+  $createTestDecoratorNode,
   $createTestShadowRootNode,
+  TestDecoratorNode,
   TestShadowRootNode,
 } from 'lexical/src/__tests__/utils';
 import {afterEach, assert, describe, expect, test} from 'vitest';
@@ -33,6 +36,7 @@ import {
 } from 'yjs';
 
 import {createBinding} from '../../Bindings';
+import {CollabDecoratorNode} from '../../CollabDecoratorNode';
 import {CollabElementNode} from '../../CollabElementNode';
 import {
   syncLexicalUpdateToYjs,
@@ -649,5 +653,394 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     expect(titleYAfter).toBe(titleYBefore);
     assert(titleYAfter instanceof XmlText);
     expect(titleYAfter.toString()).toContain('Title');
+  });
+});
+
+// V1 with a DECORATOR host. A non-inline decorator can host named slots even
+// though it has no linked-list children channel: its CollabDecoratorNode stores
+// the slots Y.Map on its `_xmlElem` (XmlElement) rather than an element host's
+// `_xmlText`. These mirror the element-host cases above through the same real
+// entry points (serialize, restore, observer, local update), exercising the
+// decorator-specific create-seed / restore / re-route / destroy paths.
+describe('named-slots collab-v1: decorator host <-> yjs', () => {
+  const editors: LexicalEditor[] = [];
+  afterEach(() => {
+    editors.length = 0;
+  });
+
+  function buildBinding() {
+    const editor = createEditor({
+      namespace: 'slot-sync-v1',
+      nodes: [TestShadowRootNode, TestDecoratorNode],
+      onError: e => {
+        throw e;
+      },
+    });
+    editors.push(editor);
+    const doc = new Doc();
+    const docMap = new Map<string, Doc>([['slot-sync-v1', doc]]);
+    const binding = createBinding(
+      editor,
+      null as unknown as Provider,
+      'slot-sync-v1',
+      doc,
+      docMap,
+    );
+    return {binding, doc, editor};
+  }
+
+  function buildRestoreBinding(doc: Doc) {
+    const editor = createEditor({
+      namespace: 'slot-sync-v1',
+      nodes: [TestShadowRootNode, TestDecoratorNode],
+      onError: e => {
+        throw e;
+      },
+    });
+    editors.push(editor);
+    const docMap = new Map<string, Doc>([['slot-sync-v1', doc]]);
+    const binding = createBinding(
+      editor,
+      null as unknown as Provider,
+      'slot-sync-v1',
+      doc,
+      docMap,
+    );
+    return {binding, editor};
+  }
+
+  function serialize(
+    editor: LexicalEditor,
+    binding: ReturnType<typeof createBinding>,
+  ) {
+    editor.read(() => {
+      binding.doc.transact(() => {
+        binding.root.syncChildrenFromLexical(
+          binding,
+          $getRoot(),
+          null,
+          null,
+          null,
+        );
+      });
+    });
+  }
+
+  function restore(
+    editor: LexicalEditor,
+    binding: ReturnType<typeof createBinding>,
+  ) {
+    editor.update(
+      () => {
+        $getRoot().clear();
+        binding.root.applyChildrenYjsDelta(
+          binding,
+          binding.root._xmlText.toDelta(),
+        );
+        binding.root.syncChildrenFromYjs(binding);
+      },
+      {discrete: true},
+    );
+  }
+
+  function applyRemoteChange(
+    binding: ReturnType<typeof createBinding>,
+    mutate: () => void,
+  ) {
+    const sharedRoot = binding.root.getSharedType();
+    const handler = (events: YEvent<YText>[]) => {
+      syncYjsChangesToLexical(
+        binding,
+        null as unknown as Provider,
+        events,
+        false,
+        () => undefined,
+      );
+    };
+    sharedRoot.observeDeep(handler);
+    try {
+      mutate();
+    } finally {
+      sharedRoot.unobserveDeep(handler);
+    }
+  }
+
+  async function flush() {
+    await Promise.resolve();
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+
+  function applyLocalUpdate(
+    binding: ReturnType<typeof createBinding>,
+    editor: LexicalEditor,
+    mutate: () => void,
+  ) {
+    const provider = {
+      awareness: {getLocalState: () => null},
+    } as unknown as Provider;
+    const removeListener = editor.registerUpdateListener(
+      ({
+        prevEditorState,
+        editorState,
+        dirtyElements,
+        dirtyLeaves,
+        normalizedNodes,
+        tags,
+      }) => {
+        syncLexicalUpdateToYjs(
+          binding,
+          provider,
+          prevEditorState,
+          editorState,
+          dirtyElements,
+          dirtyLeaves,
+          normalizedNodes,
+          tags,
+        );
+      },
+    );
+    try {
+      editor.update(mutate, {discrete: true});
+    } finally {
+      removeListener();
+    }
+  }
+
+  test('a decorator host with a "title" slot seeds the slots Y.Map on `_xmlElem`', () => {
+    const {binding, editor} = buildBinding();
+
+    editor.update(
+      () => {
+        const host = $createTestDecoratorNode().setIsInline(false);
+        const title = $createTestShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Title')));
+        $getRoot().clear().append(host);
+        host.setSlot('title', title);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const hostCollab = binding.root._children[0];
+    assert(hostCollab instanceof CollabDecoratorNode);
+    // a decorator host stores its slots on `_xmlElem`, not a `_xmlText` channel.
+    const slotsY = hostCollab._xmlElem.getAttribute('slots') as unknown;
+    assert(slotsY instanceof YMap);
+    expect(Array.from(slotsY.keys())).toEqual(['title']);
+
+    const titleY = slotsY.get('title');
+    assert(titleY instanceof XmlText);
+    expect(titleY.toString()).toContain('Title');
+  });
+
+  test('a decorator host with no slots sets no `slots` attribute', () => {
+    const {binding, editor} = buildBinding();
+
+    editor.update(
+      () => {
+        const host = $createTestDecoratorNode().setIsInline(false);
+        $getRoot().clear().append(host);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const hostCollab = binding.root._children[0];
+    assert(hostCollab instanceof CollabDecoratorNode);
+    expect(hostCollab._xmlElem.getAttribute('slots')).toBeUndefined();
+  });
+
+  function setupRestoredSlotTree() {
+    const {binding, doc, editor} = buildBinding();
+
+    editor.update(
+      () => {
+        const host = $createTestDecoratorNode().setIsInline(false);
+        const title = $createTestShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Title')));
+        $getRoot().clear().append(host);
+        host.setSlot('title', title);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const doc2 = new Doc();
+    applyUpdate(doc2, encodeStateAsUpdate(doc));
+
+    const {binding: binding2, editor: editor2} = buildRestoreBinding(doc2);
+    restore(editor2, binding2);
+
+    const hostCollab = binding2.root._children[0];
+    assert(hostCollab instanceof CollabDecoratorNode);
+    const slotsY = hostCollab._xmlElem.getAttribute('slots') as unknown;
+    assert(slotsY instanceof YMap);
+
+    return {binding2, doc2, editor2, hostCollab, slotsY};
+  }
+
+  test('round-trip: a serialized decorator-host slot restores into a fresh editor', () => {
+    const {editor2} = setupRestoredSlotTree();
+
+    editor2.read(() => {
+      const hostR = $getRoot().getFirstChild();
+      assert($isDecoratorNode(hostR));
+      const titleR = hostR.getSlot('title');
+      assert(titleR != null);
+      assert($isElementNode(titleR));
+      expect(titleR.getTextContent()).toBe('Title');
+      // the restored slot is shadow-rooted: no parent in the children tree
+      expect(titleR.getParent()).toBe(null);
+    });
+  });
+
+  test('observer: a remote slot delete removes the slot from the decorator host', async () => {
+    const {binding2, doc2, editor2, slotsY} = setupRestoredSlotTree();
+
+    let slotKey = '';
+    editor2.read(() => {
+      const hostR = $getRoot().getFirstChild();
+      assert($isDecoratorNode(hostR));
+      const title = hostR.getSlot('title');
+      assert(title != null);
+      slotKey = title.__key;
+    });
+    expect(binding2.collabNodeMap.has(slotKey)).toBe(true);
+
+    applyRemoteChange(binding2, () => {
+      doc2.transact(() => {
+        slotsY.delete('title');
+      });
+    });
+    await flush();
+
+    editor2.read(() => {
+      const hostR = $getRoot().getFirstChild();
+      assert($isDecoratorNode(hostR));
+      expect(hostR.getSlotNames()).toEqual([]);
+      expect(hostR.getSlot('title')).toBe(null);
+    });
+    // the slot's collab node must not dangle in the map after removal
+    expect(binding2.collabNodeMap.has(slotKey)).toBe(false);
+  });
+
+  test('observer: editing text inside a decorator-host slot updates it in place', async () => {
+    const {binding2, doc2, editor2, slotsY} = setupRestoredSlotTree();
+    const titleY = slotsY.get('title');
+    assert(titleY instanceof XmlText);
+    const paraY = titleY.toDelta()[0].insert;
+    assert(paraY instanceof XmlText);
+
+    applyRemoteChange(binding2, () => {
+      doc2.transact(() => {
+        paraY.insert(paraY.length, '!!');
+      });
+    });
+    await flush();
+
+    editor2.read(() => {
+      const hostR = $getRoot().getFirstChild();
+      assert($isDecoratorNode(hostR));
+      const titleR = hostR.getSlot('title');
+      assert(titleR != null);
+      assert($isElementNode(titleR));
+      expect(titleR.getTextContent()).toBe('Title!!');
+      expect(titleR.getParent()).toBe(null);
+    });
+  });
+
+  function setupLocalSlotTree() {
+    const {binding, editor} = buildBinding();
+
+    editor.update(
+      () => {
+        const host = $createTestDecoratorNode().setIsInline(false);
+        const title = $createTestShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Title')));
+        $getRoot().clear().append(host);
+        host.setSlot('title', title);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const hostCollab = binding.root._children[0];
+    assert(hostCollab instanceof CollabDecoratorNode);
+    return {binding, editor, hostCollab};
+  }
+
+  test('local: a slot added to an existing decorator host serializes into the slots Y.Map', () => {
+    const {binding, editor, hostCollab} = setupLocalSlotTree();
+
+    applyLocalUpdate(binding, editor, () => {
+      const host = $getRoot().getFirstChild();
+      assert($isDecoratorNode(host));
+      const subtitle = $createTestShadowRootNode();
+      subtitle.append($createParagraphNode().append($createTextNode('Sub')));
+      host.setSlot('subtitle', subtitle);
+    });
+
+    const slotsY = hostCollab._xmlElem.getAttribute('slots') as unknown;
+    assert(slotsY instanceof YMap);
+    expect(Array.from(slotsY.keys()).sort()).toEqual(['subtitle', 'title']);
+    const subY = slotsY.get('subtitle');
+    assert(subY instanceof XmlText);
+    expect(subY.toString()).toContain('Sub');
+  });
+
+  test('local: editing text inside a decorator-host slot updates the shared type in place', () => {
+    const {binding, editor, hostCollab} = setupLocalSlotTree();
+    const slotsY = hostCollab._xmlElem.getAttribute(
+      'slots',
+    ) as unknown as YMap<unknown>;
+    const titleYBefore = slotsY.get('title');
+
+    applyLocalUpdate(binding, editor, () => {
+      const host = $getRoot().getFirstChild();
+      assert($isDecoratorNode(host));
+      const title = host.getSlot('title');
+      assert($isElementNode(title));
+      const para = title.getFirstChild();
+      assert($isElementNode(para));
+      const text = para.getFirstChild();
+      assert($isTextNode(text));
+      text.setTextContent('Title!!');
+    });
+
+    const titleYAfter = slotsY.get('title');
+    // same shared type object: edited in place, not recreated
+    expect(titleYAfter).toBe(titleYBefore);
+    assert(titleYAfter instanceof XmlText);
+    expect(titleYAfter.toString()).toContain('Title!!');
+  });
+
+  test('local: removing the decorator host clears its slot collab node from the map', () => {
+    const {binding, editor} = setupLocalSlotTree();
+
+    let slotKey = '';
+    let hostKey = '';
+    editor.read(() => {
+      const host = $getRoot().getFirstChild();
+      assert($isDecoratorNode(host));
+      hostKey = host.__key;
+      const title = host.getSlot('title');
+      assert(title != null);
+      slotKey = title.__key;
+    });
+    expect(binding.collabNodeMap.has(slotKey)).toBe(true);
+    expect(binding.collabNodeMap.has(hostKey)).toBe(true);
+
+    applyLocalUpdate(binding, editor, () => {
+      const host = $getRoot().getFirstChild();
+      assert($isDecoratorNode(host));
+      host.remove();
+    });
+
+    expect(binding.collabNodeMap.has(hostKey)).toBe(false);
+    expect(binding.collabNodeMap.has(slotKey)).toBe(false);
   });
 });

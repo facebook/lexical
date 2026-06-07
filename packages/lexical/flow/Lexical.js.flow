@@ -1170,6 +1170,11 @@ declare export function $getDOMSlot<N extends LexicalNode>(
   dom: HTMLElement,
   editor?: LexicalEditor,
 ): DOMSlotForNode<N>;
+declare export function $getSlotContainer(
+  host: LexicalNode,
+  name: string,
+  editor?: LexicalEditor,
+): HTMLElement | null;
 declare export function $getDOMTextNode(
   node: TextNode,
   dom: HTMLElement,

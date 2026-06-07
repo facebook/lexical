@@ -49,12 +49,16 @@ const baseExcludedProperties = new Set<string>([
   '__prev',
   '__state',
   '__slotHost',
+  // `__slots` lives on the base LexicalNode (an ElementNode or DecoratorNode can
+  // host slots), so it is a structural channel excluded for every node type, not
+  // just elements — otherwise a decorator host's `__slots` Map leaks into the
+  // property->attribute sync.
+  '__slots',
 ]);
 const elementExcludedProperties = new Set<string>([
   '__first',
   '__last',
   '__size',
-  '__slots',
 ]);
 const rootExcludedProperties = new Set<string>(['__cachedText']);
 const textExcludedProperties = new Set<string>(['__text']);
@@ -158,7 +162,9 @@ export function getIndexOfYjsNode(
 export function $createCollabNodeFromLexicalNode(
   binding: Binding,
   lexicalNode: LexicalNode,
-  parent: CollabElementNode,
+  // A slot value (element or decorator) can be parented to a decorator host, so
+  // the parent is not necessarily an element.
+  parent: CollabElementNode | CollabDecoratorNode,
 ):
   | CollabElementNode
   | CollabTextNode
@@ -196,6 +202,12 @@ export function $createCollabNodeFromLexicalNode(
       }
     }
   } else if ($isTextNode(lexicalNode)) {
+    // Text and linebreak nodes can never be named-slot values, so their parent
+    // is always a collab element node.
+    invariant(
+      parent instanceof CollabElementNode,
+      'Expected parent of a text node to be a collab element node',
+    );
     // TODO create a token text node for token, segmented nodes.
     const map = new YMap();
     collabNode = $createCollabTextNode(
@@ -206,6 +218,10 @@ export function $createCollabNodeFromLexicalNode(
     );
     collabNode.syncPropertiesAndTextFromLexical(binding, lexicalNode, null);
   } else if ($isLineBreakNode(lexicalNode)) {
+    invariant(
+      parent instanceof CollabElementNode,
+      'Expected parent of a linebreak node to be a collab element node',
+    );
     const map = new YMap();
     map.set('__type', 'linebreak');
     collabNode = $createCollabLineBreakNode(map, parent);
@@ -213,6 +229,33 @@ export function $createCollabNodeFromLexicalNode(
     const xmlElem = new XmlElement();
     collabNode = $createCollabDecoratorNode(xmlElem, parent, nodeType);
     collabNode.syncPropertiesFromLexical(binding, lexicalNode, null);
+    // A non-inline decorator can host named slots. It has no children channel,
+    // so seed the slots Y.Map on its `_xmlElem` here (mirrors the element-host
+    // seed above): a freshly appended host is created through this path, with no
+    // matched key for syncSlotsFromLexical to recurse through.
+    const slotNames = lexicalNode.getSlotNames();
+    if (slotNames.length > 0) {
+      const slotsY = new YMap();
+      let hasSlot = false;
+      for (const name of slotNames) {
+        const slotNode = lexicalNode.getSlot(name);
+        if (slotNode === null) {
+          continue;
+        }
+        const slotCollab = $createCollabNodeFromLexicalNode(
+          binding,
+          slotNode,
+          collabNode,
+        );
+        binding.collabNodeMap.set(slotNode.__key, slotCollab);
+        slotsY.set(name, slotCollab.getSharedType());
+        hasSlot = true;
+      }
+      if (hasSlot) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        xmlElem.setAttribute(SLOTS_ATTR_KEY, slotsY as any);
+      }
+    }
   } else {
     invariant(false, 'Expected text, element, decorator, or linebreak node');
   }
@@ -232,10 +275,32 @@ export function getNodeTypeFromSharedType(
   return type;
 }
 
+// A decorator host stores its named slots as a `slots` Y.Map attribute on its
+// `_xmlElem`. A decorator may only parent a node that is genuinely one of its
+// slot values; this confirms that relationship so the parent invariant below
+// stays tight (a non-slot node mis-parented to a decorator is still rejected,
+// and decorators have no children channel, so this is the only legitimate way a
+// decorator becomes a parent).
+function decoratorHostsSlotSharedType(
+  parent: CollabDecoratorNode,
+  sharedType: XmlText | YMap<unknown> | XmlElement,
+): boolean {
+  const slotsY = parent._xmlElem.getAttribute(SLOTS_ATTR_KEY) as unknown;
+  if (!(slotsY instanceof YMap)) {
+    return false;
+  }
+  for (const value of slotsY.values()) {
+    if (value === sharedType) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function $getOrInitCollabNodeFromSharedType(
   binding: Binding,
   sharedType: XmlText | YMap<unknown> | XmlElement,
-  parent?: CollabElementNode,
+  parent?: CollabElementNode | CollabDecoratorNode,
 ):
   | CollabElementNode
   | CollabTextNode
@@ -263,13 +328,22 @@ export function $getOrInitCollabNodeFromSharedType(
         : parent || null;
 
     invariant(
-      targetParent instanceof CollabElementNode,
-      'Expected parent to be a collab element node',
+      targetParent instanceof CollabElementNode ||
+        (targetParent instanceof CollabDecoratorNode &&
+          decoratorHostsSlotSharedType(targetParent, sharedType)),
+      'Expected parent to be a collab element node, or a collab decorator node hosting this shared type as a named slot',
     );
 
     if (sharedType instanceof XmlText) {
       return $createCollabElementNode(sharedType, targetParent, type);
     } else if (sharedType instanceof YMap) {
+      // Text and linebreak nodes can never be named-slot values (setSlot only
+      // accepts non-inline elements/decorators), so their parent is always a
+      // collab element node — a decorator parent here would be a bug.
+      invariant(
+        targetParent instanceof CollabElementNode,
+        'Expected parent of a text or linebreak node to be a collab element node',
+      );
       if (type === 'linebreak') {
         return $createCollabLineBreakNode(sharedType, targetParent);
       }
@@ -312,6 +386,11 @@ export function createLexicalNodeFromCollabNode(
     collabNode.syncPropertiesAndTextFromYjs(binding, null);
   } else if (collabNode instanceof CollabDecoratorNode) {
     collabNode.syncPropertiesFromYjs(binding, null);
+    invariant(
+      $isDecoratorNode(lexicalNode),
+      'Expected a decorator node for a collab decorator node',
+    );
+    collabNode.syncSlotsFromYjs(binding, lexicalNode);
   }
 
   binding.collabNodeMap.set(lexicalNode.__key, collabNode);

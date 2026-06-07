@@ -431,8 +431,10 @@ function $parseSerializedNodeImpl<
     }
   }
 
+  // Slots live in a separate Map on every LexicalNode (an ElementNode or a
+  // DecoratorNode host), so re-attach them outside the element branch.
   const slots = serializedNode.slots;
-  if ($isElementNode(node) && slots) {
+  if (slots) {
     for (const name in slots) {
       const slotNode = $parseSerializedNodeImpl(slots[name], registeredNodes);
       node.setSlot(name, slotNode);

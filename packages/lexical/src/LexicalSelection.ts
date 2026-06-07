@@ -1999,6 +1999,20 @@ export class RangeSelection implements BaseSelection {
    * @param isBackward whether or not the selection is backwards.
    */
   deleteLine(isBackward: boolean): void {
+    // A slot is shadow-root isolated and its DOM is relocated out of document
+    // order, so a deletion that starts inside one cannot be expressed by the
+    // native range the browser hands us: forward delete at a slot edge extends
+    // backward over the whole line, and the lineboundary extend below resolves
+    // in the wrong direction too. The anchor is still the user's caret, so
+    // collapse to it and defer to deleteCharacter, which clamps at the slot
+    // boundary while still handling in-slot character and paragraph deletion.
+    if ($getPointSlotFrame(this.anchor) !== null) {
+      if (!this.isCollapsed()) {
+        this.focus.set(this.anchor.key, this.anchor.offset, this.anchor.type);
+      }
+      this.deleteCharacter(isBackward);
+      return;
+    }
     if (this.isCollapsed()) {
       this.modify('extend', isBackward, 'lineboundary');
     }
@@ -2662,7 +2676,9 @@ function $slotStraddleFocusAfterAnchor(
     if (anchorHost !== null && anchorHost.is(focusHost)) {
       // Two slots of the same host: __slots iteration is insertion order, which
       // is the order the reconciler renders them (content order).
-      for (const slotKey of anchorHost.__slots.values()) {
+      for (const slotKey of anchorHost.__slots !== null
+        ? anchorHost.__slots.values()
+        : []) {
         if (slotKey === anchorFrame.getKey()) {
           return true;
         }

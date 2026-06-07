@@ -531,7 +531,7 @@ function $appendNodesToJSON(
   // same condition as the push below (and as the HTML exporter): only emit
   // slots for a host that is itself emitted, so a host outside the selection
   // is never walked — its slots must not influence (or break) this export.
-  if (shouldInclude && !shouldExclude && $isElementNode(target)) {
+  if (shouldInclude && !shouldExclude) {
     const slotNames = target.getSlotNames();
     if (slotNames.length > 0) {
       const serializedSlots: Record<string, BaseSerializedNode> = {};

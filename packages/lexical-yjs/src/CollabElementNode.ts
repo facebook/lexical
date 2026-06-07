@@ -49,11 +49,13 @@ export class CollabElementNode {
   >;
   _xmlText: XmlText;
   _type: string;
-  _parent: null | CollabElementNode;
+  // Normally an element's parent is another element, but a slot-value element
+  // hosted by a decorator has that decorator as its parent.
+  _parent: null | CollabElementNode | CollabDecoratorNode;
 
   constructor(
     xmlText: XmlText,
-    parent: null | CollabElementNode,
+    parent: null | CollabElementNode | CollabDecoratorNode,
     type: string,
   ) {
     this._key = '';
@@ -99,8 +101,11 @@ export class CollabElementNode {
 
   getOffset(): number {
     const collabElementNode = this._parent;
+    // A slot-value element has a decorator parent, but slots live outside the
+    // linked-list children channel so getOffset is never called on one — only
+    // real children (whose parent is an element) reach here.
     invariant(
-      collabElementNode !== null,
+      collabElementNode instanceof CollabElementNode,
       'getOffset: could not find collab element node',
     );
 
@@ -526,6 +531,13 @@ export class CollabElementNode {
         nextChildNode,
         prevNodeMap,
       );
+      childCollabNode.syncSlotsFromLexical(
+        binding,
+        nextChildNode,
+        prevNodeMap,
+        dirtyElements,
+        dirtyLeaves,
+      );
     }
   }
 
@@ -653,6 +665,13 @@ export class CollabElementNode {
       $isDecoratorNode(slotNode)
     ) {
       slotCollab.syncPropertiesFromLexical(binding, slotNode, prevNodeMap);
+      slotCollab.syncSlotsFromLexical(
+        binding,
+        slotNode,
+        prevNodeMap,
+        dirtyElements,
+        dirtyLeaves,
+      );
     }
   }
 
@@ -904,7 +923,7 @@ export class CollabElementNode {
 
 export function $createCollabElementNode(
   xmlText: XmlText,
-  parent: null | CollabElementNode,
+  parent: null | CollabElementNode | CollabDecoratorNode,
   type: string,
 ): CollabElementNode {
   const collabNode = new CollabElementNode(xmlText, parent, type);

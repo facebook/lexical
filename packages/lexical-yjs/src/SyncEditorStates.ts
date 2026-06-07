@@ -92,22 +92,28 @@ function $syncEvent(binding: Binding, event: any): void {
     return;
   }
   const {target} = event;
-  // Slots channel: a slot add / delete lands on the host `_xmlText`'s `slots`
-  // attribute Y.Map (parentSub === 'slots', parent === the host XmlText). The
-  // Y.Map carries no `__type`, so the default dispatch below would trip the
-  // shared-type invariant. Re-route it to a host slot reconcile instead.
+  // Slots channel: a slot add / delete lands on the host's `slots` attribute
+  // Y.Map (parentSub === 'slots'). An element host stores it on its `_xmlText`,
+  // a decorator host on its `_xmlElem` (XmlElement). The Y.Map carries no
+  // `__type`, so the default dispatch below would trip the shared-type
+  // invariant. Re-route it to a host slot reconcile instead.
   if (
     event instanceof YMapEvent &&
     target instanceof YMap &&
     target._item != null &&
     target._item.parentSub === SLOTS_ATTR_KEY &&
-    target.parent instanceof XmlText
+    (target.parent instanceof XmlText || target.parent instanceof XmlElement)
   ) {
     const hostCollab = $getOrInitCollabNodeFromSharedType(
       binding,
       target.parent,
     );
     if (hostCollab instanceof CollabElementNode) {
+      const hostNode = hostCollab.getNode();
+      if (hostNode) {
+        hostCollab.syncSlotsFromYjs(binding, hostNode);
+      }
+    } else if (hostCollab instanceof CollabDecoratorNode) {
       const hostNode = hostCollab.getNode();
       if (hostNode) {
         hostCollab.syncSlotsFromYjs(binding, hostNode);

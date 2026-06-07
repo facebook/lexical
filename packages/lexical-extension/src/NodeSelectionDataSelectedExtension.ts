@@ -8,10 +8,9 @@
 
 import {
   $getSelection,
-  $isLexicalNode,
   $isNodeSelection,
   defineExtension,
-  getStaticNodeConfig,
+  getRegisteredSubtypeMap,
   type Klass,
   type LexicalNode,
   type NodeKey,
@@ -63,16 +62,14 @@ export const NodeSelectionDataSelectedExtension = defineExtension({
   init(editorConfig, config) {
     const wantedTypes = new Set(config.nodes.map(klass => klass.getType()));
     const matchTypes = new Set(wantedTypes);
-    for (const klass of getKnownTypesAndNodes(editorConfig).nodes) {
-      for (
-        let current = klass;
-        $isLexicalNode(current.prototype);
-        current = Object.getPrototypeOf(current)
-      ) {
-        const {ownNodeType} = getStaticNodeConfig(current);
-        if (ownNodeType && wantedTypes.has(ownNodeType)) {
-          matchTypes.add(klass.getType());
-          break;
+    const subtypeMap = getRegisteredSubtypeMap(
+      getKnownTypesAndNodes(editorConfig).nodes,
+    );
+    for (const wanted of wantedTypes) {
+      const subtypes = subtypeMap.get(wanted);
+      if (subtypes) {
+        for (const subtype of subtypes) {
+          matchTypes.add(subtype);
         }
       }
     }

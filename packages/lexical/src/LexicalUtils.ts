@@ -79,6 +79,7 @@ import {LexicalEditor} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
 import {
   $isEphemeral,
+  $isLexicalNode,
   $markEphemeral,
   LexicalNode,
   type LexicalPrivateDOM,
@@ -2592,6 +2593,44 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
     }
   }
   return {ownNodeConfig, ownNodeType};
+}
+
+/**
+ * Build a map from each registered node type to the set of registered node
+ * types that are it or extend it (including the type itself). For every node
+ * class in `nodes`, its prototype chain is walked and the class's own type is
+ * added to the bucket of each registered ancestor type it inherits from.
+ *
+ * The result lets callers expand a base node type to all of its registered
+ * subclass types up front, so a subclass instance can be matched by type
+ * without a runtime `instanceof`.
+ */
+export function getRegisteredSubtypeMap(
+  nodes: Iterable<Klass<LexicalNode>>,
+): Map<string, Set<string>> {
+  const subtypes = new Map<string, Set<string>>();
+  const klassByType = new Map<string, Klass<LexicalNode>>();
+  for (const klass of nodes) {
+    const {ownNodeType} = getStaticNodeConfig(klass);
+    if (ownNodeType) {
+      klassByType.set(ownNodeType, klass);
+      subtypes.set(ownNodeType, new Set());
+    }
+  }
+  for (const [type, klass] of klassByType) {
+    for (
+      let current: Klass<LexicalNode> = klass;
+      $isLexicalNode(current.prototype);
+      current = Object.getPrototypeOf(current)
+    ) {
+      const {ownNodeType} = getStaticNodeConfig(current);
+      const bucket = ownNodeType && subtypes.get(ownNodeType);
+      if (bucket) {
+        bucket.add(type);
+      }
+    }
+  }
+  return subtypes;
 }
 
 /**

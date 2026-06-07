@@ -11,7 +11,7 @@ import {
   $isLexicalNode,
   DEFAULT_EDITOR_DOM_CONFIG,
   type EditorDOMRenderConfig,
-  getStaticNodeConfig,
+  getRegisteredSubtypeMap,
   InitialEditorConfig,
   Klass,
   LexicalEditor,
@@ -20,43 +20,6 @@ import {
 
 import {ALWAYS_TRUE} from './constants';
 import {AnyDOMRenderMatch, DOMRenderConfig, DOMRenderMatch} from './types';
-
-interface TypeRecord {
-  readonly klass: Klass<LexicalNode>;
-  readonly types: {[NodeAndSubclasses in string]?: boolean};
-}
-
-type TypeTree = {
-  [NodeType in string]?: TypeRecord;
-};
-
-export function buildTypeTree(
-  editorConfig: Pick<InitialEditorConfig, 'nodes'>,
-): TypeTree {
-  const t: TypeTree = {};
-  const {nodes} = getKnownTypesAndNodes(editorConfig);
-  for (const klass of nodes) {
-    const type = klass.getType();
-    t[type] = {klass, types: {}};
-  }
-  for (const baseRec of Object.values(t)) {
-    if (baseRec) {
-      const baseType = baseRec.klass.getType();
-      for (
-        let {klass} = baseRec;
-        $isLexicalNode(klass.prototype);
-        klass = Object.getPrototypeOf(klass)
-      ) {
-        const {ownNodeType} = getStaticNodeConfig(klass);
-        const superRec = ownNodeType && t[ownNodeType];
-        if (superRec) {
-          superRec.types[baseType] = true;
-        }
-      }
-    }
-  }
-  return t;
-}
 
 type PredicateOrTypes =
   | ((node: LexicalNode) => boolean)
@@ -75,7 +38,7 @@ function buildNodePredicate<T extends LexicalNode>(klass: Klass<T>) {
 }
 
 function getPredicate(
-  typeTree: TypeTree,
+  subtypeMap: Map<string, Set<string>>,
   {nodes}: DOMRenderMatch<LexicalNode>,
 ): {[NodeType in string]?: true} | ((node: LexicalNode) => boolean) {
   if (nodes === '*') {
@@ -87,14 +50,16 @@ function getPredicate(
     if ('getType' in klassOrPredicate) {
       const type = klassOrPredicate.getType();
       if (types) {
-        const tree = typeTree[type];
+        const subtypes = subtypeMap.get(type);
         invariant(
-          tree !== undefined,
+          subtypes !== undefined,
           'Node class %s with type %s not registered in editor',
           klassOrPredicate.name,
           type,
         );
-        types = Object.assign(types, tree.types);
+        for (const subtype of subtypes) {
+          types[subtype] = true;
+        }
       }
       predicates.push(buildNodePredicate(klassOrPredicate));
     } else {
@@ -375,10 +340,12 @@ export function precompileDOMRenderConfigOverrides(
   editorConfig: Pick<InitialEditorConfig, 'nodes'>,
   overrides: DOMRenderConfig['overrides'],
 ): PreEditorDOMRenderConfig {
-  const typeTree = buildTypeTree(editorConfig);
+  const subtypeMap = getRegisteredSubtypeMap(
+    getKnownTypesAndNodes(editorConfig).nodes,
+  );
   const prerender = makePrerender();
   for (const override of sortedOverrides(overrides)) {
-    const predicateOrTypes = getPredicate(typeTree, override);
+    const predicateOrTypes = getPredicate(subtypeMap, override);
     for (const k_ in prerender) {
       const k = k_ as keyof typeof prerender;
       addOverride(prerender, k, predicateOrTypes, override[k]);

@@ -20,12 +20,15 @@ import {
   $setState,
   createEditor,
   createState,
+  getRegisteredSubtypeMap,
   IS_APPLE,
   isSelectionWithinEditor,
+  LineBreakNode,
   ParagraphNode,
   resetRandomKey,
   SerializedParagraphNode,
   SerializedTextNode,
+  TabNode,
   TextNode,
 } from 'lexical';
 import {describe, expect, test, vi} from 'vitest';
@@ -965,5 +968,53 @@ describe('$copyNode', () => {
       expect(initialParagraph.__string).toBe('not-aliased');
       expect(copiedParagraph.__string).toBe('non-default');
     });
+  });
+});
+
+describe('getRegisteredSubtypeMap', () => {
+  const toObject = (map: Map<string, Set<string>>) =>
+    Object.fromEntries(
+      [...map].map(([type, subtypes]) => [type, [...subtypes].sort()]),
+    );
+
+  test('maps each type to itself and its registered subclass types', () => {
+    expect(
+      toObject(
+        getRegisteredSubtypeMap([
+          TextNode,
+          TabNode,
+          ParagraphNode,
+          LineBreakNode,
+        ]),
+      ),
+    ).toEqual({
+      linebreak: ['linebreak'],
+      paragraph: ['paragraph'],
+      tab: ['tab'],
+      text: ['tab', 'text'],
+    });
+  });
+
+  test('expands a $config subclass under its base type', () => {
+    class TextNodeA extends TextNode {
+      $config() {
+        return this.config('text-a', {extends: TextNode});
+      }
+    }
+    expect(toObject(getRegisteredSubtypeMap([TextNode, TextNodeA]))).toEqual({
+      text: ['text', 'text-a'],
+      'text-a': ['text-a'],
+    });
+  });
+
+  test('omits an unregistered base type even when a subclass is registered', () => {
+    class TextNodeA extends TextNode {
+      $config() {
+        return this.config('text-a', {extends: TextNode});
+      }
+    }
+    const map = getRegisteredSubtypeMap([TextNodeA]);
+    expect(map.has('text')).toBe(false);
+    expect([...map.get('text-a')!].sort()).toEqual(['text-a']);
   });
 });

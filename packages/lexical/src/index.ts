@@ -321,6 +321,7 @@ export {
   getNearestEditorFromDOMNode,
   getRegisteredNode,
   getRegisteredNodeOrThrow,
+  getRegisteredSubtypeMap,
   getStaticNodeConfig,
   getTextDirection,
   INTERNAL_$isBlock,

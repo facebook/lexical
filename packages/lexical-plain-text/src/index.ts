@@ -33,6 +33,7 @@ import {
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
+  CUT_TAG,
   defineExtension,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
@@ -100,6 +101,9 @@ function onPasteForPlainText(
       }
     },
     {
+      // PASTE_TAG gives the paste its own undo entry: @lexical/history treats
+      // the tag as a history boundary so undoing a paste does not also undo any
+      // typing that preceded it (see #8609).
       tag: PASTE_TAG,
     },
   );
@@ -110,13 +114,21 @@ function onCutForPlainText(
   editor: LexicalEditor,
 ): void {
   onCopyForPlainText(event, editor);
-  editor.update(() => {
-    const selection = $getSelection();
+  editor.update(
+    () => {
+      const selection = $getSelection();
 
-    if ($isRangeSelection(selection)) {
-      selection.removeText();
-    }
-  });
+      if ($isRangeSelection(selection)) {
+        selection.removeText();
+      }
+    },
+    {
+      // CUT_TAG gives the cut its own undo entry: @lexical/history treats the
+      // tag as a history boundary so undoing a cut does not also undo any typing
+      // that preceded it (see #8609).
+      tag: CUT_TAG,
+    },
+  );
 }
 
 export function registerPlainText(editor: LexicalEditor): () => void {

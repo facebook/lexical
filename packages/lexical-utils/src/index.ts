@@ -47,6 +47,7 @@ import {
   $isElementNode,
   $isRangeSelection,
   $isSiblingCaret,
+  $isSlotHost,
   $isTextPointCaret,
   $normalizeCaret,
   $removeTextFromCaretRange,
@@ -257,7 +258,7 @@ export function* $dfsWithSlotsIterator(
   for (const dfsNode of $dfsCaretIterator('next', startNode, endNode)) {
     yield dfsNode;
     const {node, depth} = dfsNode;
-    if ($isElementNode(node)) {
+    if ($isSlotHost(node)) {
       for (const name of $getSlotNames(node)) {
         const slot = $getSlot(node, name);
         if (slot !== null) {
@@ -277,14 +278,16 @@ function* $dfsSubtreeIterator(
   depth: number,
 ): IterableIterator<DFSNode> {
   yield {depth, node};
-  if ($isElementNode(node)) {
-    const childDepth = depth + 1;
+  const childDepth = depth + 1;
+  if ($isSlotHost(node)) {
     for (const name of $getSlotNames(node)) {
       const slot = $getSlot(node, name);
       if (slot !== null) {
         yield* $dfsSubtreeIterator(slot, childDepth);
       }
     }
+  }
+  if ($isElementNode(node)) {
     for (const child of node.getChildren()) {
       yield* $dfsSubtreeIterator(child, childDepth);
     }
@@ -429,7 +432,7 @@ export function* $reverseDfsWithSlotsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
 ): IterableIterator<DFSNode> {
-  const pending: {depth: number; node: ElementNode}[] = [];
+  const pending: {depth: number; node: LexicalNode}[] = [];
   for (const dfsNode of $dfsCaretIterator('previous', startNode, endNode)) {
     while (
       pending.length > 0 &&
@@ -440,7 +443,7 @@ export function* $reverseDfsWithSlotsIterator(
     }
     yield dfsNode;
     const {node, depth} = dfsNode;
-    if ($isElementNode(node) && $getSlotNames(node).length > 0) {
+    if ($isSlotHost(node) && $getSlotNames(node).length > 0) {
       pending.push({depth, node});
     }
   }
@@ -452,7 +455,7 @@ export function* $reverseDfsWithSlotsIterator(
 
 /** Emit a host's slot subtrees in reverse slot order (mirror of slots-first). */
 function* $reverseSlotsOf(
-  host: ElementNode,
+  host: LexicalNode,
   childDepth: number,
 ): IterableIterator<DFSNode> {
   const names = $getSlotNames(host);
@@ -473,12 +476,14 @@ function* $reverseDfsSubtreeIterator(
   depth: number,
 ): IterableIterator<DFSNode> {
   yield {depth, node};
+  const childDepth = depth + 1;
   if ($isElementNode(node)) {
-    const childDepth = depth + 1;
     const children = node.getChildren();
     for (let i = children.length - 1; i >= 0; i--) {
       yield* $reverseDfsSubtreeIterator(children[i], childDepth);
     }
+  }
+  if ($isSlotHost(node)) {
     yield* $reverseSlotsOf(node, childDepth);
   }
 }

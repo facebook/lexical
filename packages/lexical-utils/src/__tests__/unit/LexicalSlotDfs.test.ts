@@ -20,7 +20,9 @@ import {
   ParagraphNode,
 } from 'lexical';
 import {
+  $createTestDecoratorNode,
   $createTestShadowRootNode,
+  TestDecoratorNode,
   TestShadowRootNode,
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
@@ -171,6 +173,71 @@ describe('named-slots: $dfs traversal', () => {
       // RootNode.getTextContent() returns the reconciler-built cache,
       // which now folds slot text in slots-first, matching the walk.
       expect(root.getTextContent()).toBe('TitleBody');
+    });
+  });
+});
+
+describe('named-slots: $dfs traversal into a decorator host', () => {
+  // A DecoratorNode can host slots too, but the slot-descent gate used to test
+  // $isElementNode, so a decorator host's slots were silently skipped by
+  // $dfsWithSlots / $reverseDfsWithSlots. Gate on $isSlotHost instead.
+  // decorator host -> (slot media: shadow root -> para -> "Eq")
+  const keys: Record<string, NodeKey> = {};
+  function $buildTree(): void {
+    const host = $createTestDecoratorNode().setIsInline(false);
+    const media = $createTestShadowRootNode();
+    const mediaPara = $createParagraphNode();
+    const mediaText = $createTextNode('Eq');
+    mediaPara.append(mediaText);
+    media.append(mediaPara);
+    $getRoot().append(host);
+    $setSlot(host, 'media', media);
+    keys.host = host.getKey();
+    keys.media = media.getKey();
+    keys.mediaPara = mediaPara.getKey();
+    keys.mediaText = mediaText.getKey();
+  }
+
+  const decoratorSlotExtension = defineExtension({
+    $initialEditorState: $buildTree,
+    name: '[slot-dfs-decorator]',
+    nodes: [TestShadowRootNode, TestDecoratorNode],
+  });
+
+  test("$dfsWithSlots descends into a decorator host's slots", () => {
+    using editor = buildEditorFromExtensions(decoratorSlotExtension);
+
+    editor.read(() => {
+      const host = $getRoot().getFirstChild<TestDecoratorNode>()!;
+      const visited = $dfsWithSlots(host).map(({depth, node}) => ({
+        depth,
+        key: node.getKey(),
+      }));
+      // host(1) -> media slot subtree (shadow root 2 -> para 3 -> text 4)
+      expect(visited).toEqual([
+        {depth: 1, key: keys.host},
+        {depth: 2, key: keys.media},
+        {depth: 3, key: keys.mediaPara},
+        {depth: 4, key: keys.mediaText},
+      ]);
+    });
+  });
+
+  test("$reverseDfsWithSlots descends into a decorator host's slots", () => {
+    using editor = buildEditorFromExtensions(decoratorSlotExtension);
+
+    editor.read(() => {
+      const host = $getRoot().getFirstChild<TestDecoratorNode>()!;
+      const visited = $reverseDfsWithSlots(host).map(({depth, node}) => ({
+        depth,
+        key: node.getKey(),
+      }));
+      expect(visited).toEqual([
+        {depth: 1, key: keys.host},
+        {depth: 2, key: keys.media},
+        {depth: 3, key: keys.mediaPara},
+        {depth: 4, key: keys.mediaText},
+      ]);
     });
   });
 });

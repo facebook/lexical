@@ -41,10 +41,7 @@ function $hasCommonTopParent(
   nodes: LexicalNode[],
   commonTopParent: LexicalNode,
 ): boolean {
-  return nodes.every(node => {
-    const topParent = node.getTopLevelElement();
-    return topParent && topParent.is(commonTopParent);
-  });
+  return nodes.every(node => commonTopParent.is(node.getTopLevelElement()));
 }
 
 /**
@@ -54,31 +51,28 @@ export function $isBlockFullySelected(
   blockNode: ElementNode,
   selection: RangeSelection,
 ): boolean {
-  const firstDesc = blockNode.getFirstDescendant();
-  const lastDesc = blockNode.getLastDescendant();
+  const first = blockNode.getFirstDescendant();
+  const last = blockNode.getLastDescendant();
 
-  if (!firstDesc || !lastDesc) return false;
-  // type narrowing
-  const first = firstDesc;
-  const last = lastDesc;
+  if (!first || !last) return false;
 
-  function isAtStart(node: LexicalNode, offset: number): boolean {
+  const isAtStart = (node: LexicalNode, offset: number): boolean => {
     if (node.is(first) && offset === 0) return true;
     // anchor/focus on top-level before first child decorator
     if ($isElementNode(node) && node.isParentOf(first)) {
       return offset === 0;
     }
     return false;
-  }
+  };
 
-  function isAtEnd(node: LexicalNode, offset: number): boolean {
+  const isAtEnd = (node: LexicalNode, offset: number): boolean => {
     if (node.is(last) && offset === getEndOffset(last)) return true;
     // anchor/focus on top-level after last child decorator
     if ($isElementNode(node) && node.isParentOf(last)) {
       return offset === node.getChildrenSize();
     }
     return false;
-  }
+  };
 
   const [startPoint, endPoint] = selection.getStartEndPoints();
 

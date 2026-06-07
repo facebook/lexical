@@ -162,16 +162,46 @@ export async function moveToParagraphEnd(page) {
 }
 
 export async function selectAll(page) {
-  // TODO Normalize #4665
   if (E2E_BROWSER === 'firefox' && IS_LINUX) {
     await evaluate(page, () => {
       const rootElement = document.querySelector('div[contenteditable="true"]');
       const selection = window.getSelection();
+
+      function getStartPosition(root) {
+        let node = root;
+        while (node.firstChild) {
+          node = node.firstChild;
+        }
+
+        if (node.nodeType === Node.TEXT_NODE) {
+          return {node, offset: 0};
+        }
+        // If the element is empty (br, empty span, e.g.), then we point to the parent
+        return {node: node.parentNode, offset: 0};
+      }
+
+      function getEndPosition(root) {
+        let node = root;
+        while (node.lastChild) {
+          node = node.lastChild;
+        }
+        if (node.nodeType === Node.TEXT_NODE) {
+          return {node, offset: node.textContent.length};
+        }
+        // If the element is empty, point to the parent, offset after this element
+        const parent = node.parentNode;
+        const offset = Array.from(parent.childNodes).indexOf(node) + 1;
+        return {node: parent, offset};
+      }
+
+      const start = getStartPosition(rootElement);
+      const end = getEndPosition(rootElement);
+
       selection.setBaseAndExtent(
-        rootElement,
-        0,
-        rootElement,
-        rootElement.childNodes.length,
+        start.node,
+        start.offset,
+        end.node,
+        end.offset,
       );
     });
   } else {

@@ -25,7 +25,7 @@ import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
-import {$createQuoteNode} from '@lexical/rich-text';
+import {$createQuoteNode, RichTextExtension} from '@lexical/rich-text';
 import {$setBlocksType} from '@lexical/selection';
 import {$restoreEditorState} from '@lexical/utils';
 import {
@@ -37,8 +37,10 @@ import {
   $createTextNode,
   $getNodeByKey,
   $getRoot,
+  $getSelection,
   $getState,
   $isNodeSelection,
+  $isRangeSelection,
   $selectAll,
   $setSelection,
   $setState,
@@ -48,15 +50,18 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   configExtension,
   createState,
+  CUT_COMMAND,
   DecoratorNode,
   defineExtension,
   EditorConfig,
+  ElementNode,
   HISTORY_MERGE_TAG,
   type KlassConstructor,
   LexicalEditor,
   LexicalEditorWithDispose,
   LexicalNode,
   type NodeKey,
+  PASTE_COMMAND,
   REDO_COMMAND,
   SerializedElementNode,
   type SerializedTextNode,
@@ -851,5 +856,209 @@ describe('SharedHistoryExtension', () => {
         <p dir="auto"><span data-lexical-text="true">parent editor</span></p>
       `,
     );
+  });
+});
+
+describe('History snapshot before cut or paste', () => {
+  // These tests use a controlled now function so that every update appears
+  // to happen at the same virtual millisecond. With delay 1000
+  // and timeDiff 0 less than delay the delay based merge fires for consecutive
+  // same type character level changes. That is exactly what real typing produces
+  // where each keystroke is an insert update and they all collapse.
+  //
+  // The scenario: typing within the merge window would also merge
+  // a single char paste without the push tag. Our fix adds the tag so
+  // the paste or cut always pushes a clean snapshot first. We verify
+  // this by dispatching real PASTE_COMMAND and CUT_COMMAND.
+  const DELAY = 1000;
+
+  // Seed the editor: create a paragraph with text and select end of text so
+  // that subsequent insertText calls are character level inserts.
+  function $initParagraph(text: string): void {
+    const textNode = $createTextNode(text);
+    $getRoot().clear().append($createParagraphNode().append(textNode));
+    textNode.select(text.length, text.length);
+  }
+
+  function buildEditor(now: () => number) {
+    return buildEditorFromExtensions({
+      dependencies: [
+        RichTextExtension,
+        configExtension(HistoryExtension, {delay: DELAY, now}),
+      ],
+      name: 'test',
+    });
+  }
+
+  function dispatchUndo(editor: LexicalEditor) {
+    editor.update(() => editor.dispatchCommand(UNDO_COMMAND, undefined), {
+      discrete: true,
+    });
+  }
+
+  test('paste creates a distinct history entry even when within the merge window', async () => {
+    // With virtual now always returning 0 the time difference is less than delay
+    // so every consecutive insert character update would be merged. A paste
+    // triggered by PASTE_COMMAND must break the merge chain and push a snapshot.
+    const virtualNow = () => 0;
+    using editor = buildEditor(virtualNow);
+
+    const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
+
+    // Seed with Hello and place cursor at end. This first update sets
+    // historyState.current.
+    editor.update(
+      () => {
+        $initParagraph('Hello');
+      },
+      {discrete: true},
+    );
+
+    // Type a space to produce INSERT_CHARACTER_AFTER_SELECTION.
+    editor.update(
+      () => {
+        const sel = $getSelection();
+        if ($isRangeSelection(sel)) {
+          sel.insertText(' ');
+        }
+      },
+      {discrete: true},
+    );
+
+    const stackBeforePaste = output.historyState.peek().undoStack.length;
+
+    // Paste W with same change type and same virtual time.
+    // Dispatch PASTE_COMMAND with a ClipboardEvent.
+    const clipboardData = new DataTransfer();
+    clipboardData.setData('text/plain', 'W');
+    const event = new ClipboardEvent('paste', {
+      bubbles: true,
+      cancelable: true,
+    });
+    Object.defineProperty(event, 'clipboardData', {
+      value: clipboardData,
+    });
+    editor.dispatchCommand(PASTE_COMMAND, event);
+
+    // Wait for the subsequent editor update to complete.
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(output.historyState.peek().undoStack.length).toBeGreaterThan(
+      stackBeforePaste,
+    );
+
+    // One undo returns to the pre paste state Hello.
+    dispatchUndo(editor);
+    const textAfterUndo = editor
+      .getEditorState()
+      .read(() => $getRoot().getTextContent());
+    expect(textAfterUndo).toBe('Hello ');
+  });
+
+  test('cut creates a distinct history entry even when within the merge window', async () => {
+    // A cut removes text. We select the exclamation mark and dispatch CUT_COMMAND.
+    // Since CUT_COMMAND is async we await it and check that a snapshot is pushed.
+    const virtualNow = () => 0;
+    using editor = buildEditor(virtualNow);
+
+    const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
+
+    editor.update(
+      () => {
+        $initParagraph('Hello!');
+      },
+      {discrete: true},
+    );
+
+    // Select the exclamation mark from anchor 5 to focus 6.
+    editor.update(
+      () => {
+        const textNode = $getRoot()
+          .getFirstChildOrThrow<ElementNode>()
+          .getFirstChildOrThrow<TextNode>();
+        textNode.select(5, 6);
+      },
+      {discrete: true},
+    );
+
+    const stackBeforeCut = output.historyState.peek().undoStack.length;
+
+    // Dispatch CUT_COMMAND.
+    const event = new ClipboardEvent('cut');
+    editor.dispatchCommand(CUT_COMMAND, event);
+
+    // Wait for the async copyToClipboard and the subsequent update to complete.
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(output.historyState.peek().undoStack.length).toBeGreaterThan(
+      stackBeforeCut,
+    );
+
+    // Undo returns to the pre cut snapshot Hello!
+    dispatchUndo(editor);
+    const textAfterUndo = editor
+      .getEditorState()
+      .read(() => $getRoot().getTextContent());
+    expect(textAfterUndo).toBe('Hello!');
+  });
+
+  test('paste after typing does not merge with the preceding typing', async () => {
+    // Typing e l l o after H all within the merge window collapses
+    // into one history entry. Without the push tag on the paste pasting
+    // W would also merge. With it one undo returns to Hello and not Hell or Hel.
+    const virtualNow = () => 0;
+    using editor = buildEditor(virtualNow);
+
+    const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
+
+    // Seed with H.
+    editor.update(
+      () => {
+        $initParagraph('H');
+      },
+      {discrete: true},
+    );
+
+    // Type e l l o so they all collapse into the current entry.
+    for (const ch of ['e', 'l', 'l', 'o']) {
+      editor.update(
+        () => {
+          const sel = $getSelection();
+          if ($isRangeSelection(sel)) {
+            sel.insertText(ch);
+          }
+        },
+        {discrete: true},
+      );
+    }
+
+    const stackAfterTyping = output.historyState.peek().undoStack.length;
+
+    // Paste W with same change type and same virtual time.
+    // Dispatch PASTE_COMMAND with a ClipboardEvent.
+    const clipboardData = new DataTransfer();
+    clipboardData.setData('text/plain', 'W');
+    const event = new ClipboardEvent('paste', {
+      bubbles: true,
+      cancelable: true,
+    });
+    Object.defineProperty(event, 'clipboardData', {
+      value: clipboardData,
+    });
+    editor.dispatchCommand(PASTE_COMMAND, event);
+
+    // Wait for the subsequent editor update to complete.
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(output.historyState.peek().undoStack.length).toBeGreaterThan(
+      stackAfterTyping,
+    );
+
+    // One undo jumps to Hello which is the full merged typing result.
+    dispatchUndo(editor);
+    const textAfterUndo = editor
+      .getEditorState()
+      .read(() => $getRoot().getTextContent());
+    expect(textAfterUndo).toBe('Hello');
   });
 });

@@ -1384,11 +1384,13 @@ declare export var HISTORIC_TAG: 'historic';
 declare export var HISTORY_MERGE_TAG: 'history-merge';
 declare export var HISTORY_PUSH_TAG: 'history-push';
 declare export var PASTE_TAG: 'paste';
+declare export var CUT_TAG: 'cut';
 declare export var SKIP_COLLAB_TAG: 'skip-collab';
 declare export var SKIP_DOM_SELECTION_TAG: 'skip-dom-selection';
 declare export var SKIP_SCROLL_INTO_VIEW_TAG: 'skip-scroll-into-view';
 export type UpdateTag =
   typeof COLLABORATION_TAG
+  | typeof CUT_TAG
   | typeof HISTORIC_TAG
   | typeof HISTORY_MERGE_TAG
   | typeof HISTORY_PUSH_TAG

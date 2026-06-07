@@ -81,6 +81,7 @@ import {
   COPY_COMMAND,
   createCommand,
   CUT_COMMAND,
+  CUT_TAG,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
@@ -90,6 +91,7 @@ import {
   ElementNode,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  HISTORY_PUSH_TAG,
   INDENT_CONTENT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
@@ -479,7 +481,7 @@ function onPasteForRichText(
       }
     },
     {
-      tag: PASTE_TAG,
+      tag: [HISTORY_PUSH_TAG, PASTE_TAG],
     },
   );
 }
@@ -492,14 +494,19 @@ async function onCutForRichText(
     editor,
     objectKlassEquals(event, ClipboardEvent) ? event : null,
   );
-  editor.update(() => {
-    const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      selection.removeText();
-    } else if ($isNodeSelection(selection)) {
-      selection.getNodes().forEach(node => node.remove());
-    }
-  });
+  editor.update(
+    () => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        selection.removeText();
+      } else if ($isNodeSelection(selection)) {
+        selection.getNodes().forEach(node => node.remove());
+      }
+    },
+    {
+      tag: [HISTORY_PUSH_TAG, CUT_TAG],
+    },
+  );
 }
 
 // Clipboard may contain files that we aren't allowed to read. While the event is arguably useless,

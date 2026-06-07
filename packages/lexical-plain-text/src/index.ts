@@ -33,12 +33,14 @@ import {
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
+  CUT_TAG,
   defineExtension,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
+  HISTORY_PUSH_TAG,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   IS_APPLE_WEBKIT,
@@ -100,7 +102,7 @@ function onPasteForPlainText(
       }
     },
     {
-      tag: PASTE_TAG,
+      tag: [HISTORY_PUSH_TAG, PASTE_TAG],
     },
   );
 }
@@ -110,13 +112,18 @@ function onCutForPlainText(
   editor: LexicalEditor,
 ): void {
   onCopyForPlainText(event, editor);
-  editor.update(() => {
-    const selection = $getSelection();
+  editor.update(
+    () => {
+      const selection = $getSelection();
 
-    if ($isRangeSelection(selection)) {
-      selection.removeText();
-    }
-  });
+      if ($isRangeSelection(selection)) {
+        selection.removeText();
+      }
+    },
+    {
+      tag: [HISTORY_PUSH_TAG, CUT_TAG],
+    },
+  );
 }
 
 export function registerPlainText(editor: LexicalEditor): () => void {

@@ -1099,7 +1099,7 @@ export class LexicalEditor {
   /**
    * @internal @experimental
    *
-   * Latches to `true` the first time {@link ElementNode.setSlot} runs in this
+   * Latches to `true` the first time {@link $setSlot} runs in this
    * editor. Gates the commit-time slot-containment clamp so editors that never
    * use slots skip the per-update frame walk entirely.
    */

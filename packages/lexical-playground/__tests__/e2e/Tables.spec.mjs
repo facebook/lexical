@@ -1890,10 +1890,6 @@ test.describe('Tables', () => {
     isPlainText,
     isCollab,
   }) => {
-    test.fixme(
-      isCollab && IS_LINUX && browserName === 'firefox',
-      'Flaky on Linux + Collab',
-    );
     test.skip(isPlainText);
     await initialize({isCollab, page});
 
@@ -2068,7 +2064,6 @@ test.describe('Tables', () => {
     isCollab,
   }) => {
     test.skip(isPlainText);
-    test.fixme(IS_COLLAB && IS_LINUX && browserName === 'firefox');
     await initialize({isCollab, page});
 
     await focusEditor(page);
@@ -6970,7 +6965,6 @@ test.describe('Tables', () => {
     isCollab,
   }) => {
     test.skip(isPlainText);
-    test.fixme(IS_COLLAB && IS_LINUX && browserName === 'firefox');
     await initialize({isCollab, page});
 
     await focusEditor(page);

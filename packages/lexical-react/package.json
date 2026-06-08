@@ -1818,6 +1818,7 @@
     "./useLexicalSlot": {
       "source": "./src/useLexicalSlot.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalSlot.d.ts",
         "development": "./dist/useLexicalSlot.dev.mjs",
         "production": "./dist/useLexicalSlot.prod.mjs",
@@ -1825,6 +1826,7 @@
         "default": "./dist/useLexicalSlot.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalSlot.d.ts",
         "development": "./dist/useLexicalSlot.dev.js",
         "production": "./dist/useLexicalSlot.prod.js",
@@ -1834,6 +1836,7 @@
     "./useLexicalSlot.js": {
       "source": "./src/useLexicalSlot.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalSlot.d.ts",
         "development": "./dist/useLexicalSlot.dev.mjs",
         "production": "./dist/useLexicalSlot.prod.mjs",
@@ -1841,6 +1844,7 @@
         "default": "./dist/useLexicalSlot.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalSlot.d.ts",
         "development": "./dist/useLexicalSlot.dev.js",
         "production": "./dist/useLexicalSlot.prod.js",

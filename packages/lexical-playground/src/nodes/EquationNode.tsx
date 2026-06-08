@@ -7,6 +7,8 @@
  */
 
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   EditorConfig,
   LexicalNode,
   NodeKey,
@@ -28,6 +30,13 @@ export type SerializedEquationNode = Spread<
   },
   SerializedLexicalNode
 >;
+
+function $convertEquationElement(domNode: HTMLElement): DOMConversionOutput {
+  const encoded = domNode.getAttribute('data-lexical-equation');
+  const equation = encoded ? atob(encoded) : '';
+  const inline = domNode.getAttribute('data-lexical-inline') === 'true';
+  return {node: $createEquationNode(equation, inline)};
+}
 
 export class EquationNode extends DecoratorNode<JSX.Element> {
   __equation: string;
@@ -90,6 +99,20 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
       trust: false,
     });
     return {element};
+  }
+
+  // Mirror of exportDOM: decode `data-lexical-equation` (base64) and
+  // `data-lexical-inline` back into an EquationNode. Both `<div>` and
+  // `<span>` carry the attrs depending on inline-ness, so accept either.
+  static importDOM(): DOMConversionMap | null {
+    const convert = (domNode: HTMLElement) =>
+      domNode.hasAttribute('data-lexical-equation')
+        ? {conversion: $convertEquationElement, priority: 2 as const}
+        : null;
+    return {
+      div: convert,
+      span: convert,
+    };
   }
 
   updateDOM(prevNode: this): boolean {

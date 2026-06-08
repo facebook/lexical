@@ -83,10 +83,10 @@ describe('FigureNode atomic decorator slot', () => {
         'media slot value must be an EquationNode',
       );
       // Slot invariant: value has no parent and is reached through getSlotHost,
-      // so it never appears in the host's child list.
+      // so it never appears in the host's child list. Figure is a
+      // DecoratorNode host (atomic), so it carries no children channel at all.
       expect(media.getParent()).toBe(null);
       expect($getSlotHost(media)).toBe(figure);
-      expect(figure.getChildrenSize()).toBe(0);
     });
   });
 

@@ -6,6 +6,7 @@
  *
  */
 
+import type {DOMPreprocessFn} from '@lexical/html';
 import type {LexicalNode} from 'lexical';
 
 import {ClipboardDOMImportExtension} from '@lexical/clipboard';
@@ -17,16 +18,19 @@ import {
 } from '@lexical/html';
 import {LinkExtension} from '@lexical/link';
 import {
+  $isDecoratorNode,
   $isElementNode,
   $isTextNode,
   $setSlot,
   configExtension,
   defineExtension,
+  isDOMDocumentNode,
 } from 'lexical';
 
 import {parseAllowedFontSize} from '../plugins/ToolbarPlugin/fontSize';
 import {parseAllowedColor} from '../ui/ColorPicker';
 import {$createCardNode} from './CardNode';
+import {$createFigureNode} from './FigureNode';
 import {$createSlotContainerNode} from './SlotContainerNode';
 
 function getPlaygroundExtraStyles(element: HTMLElement): string {
@@ -126,6 +130,54 @@ const CardImportRule = defineImportRule({
 });
 
 /**
+ * A browser's contenteditable Cmd+A → Cmd+C strips the outer
+ * `<div class="lexical-card-node">` / `<div class="lexical-figure-node">`
+ * wrapper that the host's exportDOM emits, leaving the
+ * `<div data-lexical-slot="...">` children as fragment-root siblings.
+ * Re-assemble them under a synthetic host div before the import walk so
+ * CardImportRule / FigureImportRule pick them up and the slot HTML round-trip
+ * closes through external paste targets too.
+ */
+const $rewrapOrphanedSlotWrappers: DOMPreprocessFn = (dom, _ctx, $next) => {
+  const doc = isDOMDocumentNode(dom) ? dom : dom.ownerDocument;
+  if (doc !== null) {
+    const root: ParentNode = isDOMDocumentNode(dom) ? dom.body : dom;
+    const cardOrphans: HTMLElement[] = [];
+    const figureOrphans: HTMLElement[] = [];
+    for (const child of Array.from(root.children)) {
+      if (!(child instanceof HTMLElement)) {
+        continue;
+      }
+      const slotName = child.getAttribute('data-lexical-slot');
+      if (slotName === 'title' || slotName === 'body') {
+        cardOrphans.push(child);
+      } else if (slotName === 'media') {
+        figureOrphans.push(child);
+      }
+    }
+    if (cardOrphans.length > 0) {
+      const cardDiv = doc.createElement('div');
+      cardDiv.className = 'lexical-card-node';
+      const firstSlot = cardOrphans[0];
+      firstSlot.parentNode?.insertBefore(cardDiv, firstSlot);
+      for (const wrapper of cardOrphans) {
+        cardDiv.appendChild(wrapper);
+      }
+    }
+    if (figureOrphans.length > 0) {
+      const figureDiv = doc.createElement('div');
+      figureDiv.className = 'lexical-figure-node';
+      const firstSlot = figureOrphans[0];
+      firstSlot.parentNode?.insertBefore(figureDiv, firstSlot);
+      for (const wrapper of figureOrphans) {
+        figureDiv.appendChild(wrapper);
+      }
+    }
+  }
+  $next();
+};
+
+/**
  * Aggregate of every playground-specific DOM import rule, ordered so the
  * more-specific selectors win dispatch over the generic ones (rule at
  * index 0 has the highest priority).
@@ -133,12 +185,45 @@ const CardImportRule = defineImportRule({
 export const PlaygroundImportRules = [PlaygroundInlineStyleRule];
 
 /**
+ * Reconstruct a {@link FigureNode} from its exported HTML. Mirrors
+ * `FigureNode.exportDOM`: a `<div class="lexical-figure-node">` wrapping a
+ * single `<div data-lexical-slot="media">` whose child is the imported
+ * EquationNode (via EquationNode.importDOM). The default Equation seeded by
+ * `$createFigureNode` is replaced via `$setSlot` once the imported slot value
+ * arrives. Slots are intentionally NOT auto-imported (mirroring the export
+ * side and NodeState) — a host opts in with a rule.
+ */
+const FigureImportRule = defineImportRule({
+  $import: (ctx, el) => {
+    const figure = $createFigureNode();
+    for (const wrapper of Array.from(
+      el.querySelectorAll(':scope > [data-lexical-slot]'),
+    )) {
+      if (wrapper.getAttribute('data-lexical-slot') !== 'media') {
+        continue;
+      }
+      // setSlot requires a non-inline DecoratorNode for the `media` slot
+      // value; pick the first imported child that satisfies the same guard.
+      const slotValue = ctx
+        .$importChildren(wrapper)
+        .find(node => $isDecoratorNode(node) && !node.isInline());
+      if (slotValue !== undefined) {
+        $setSlot(figure, 'media', slotValue);
+      }
+    }
+    return [figure];
+  },
+  match: sel.tag('div').classAll('lexical-figure-node'),
+  name: '@lexical/playground/figure-host',
+});
+
+/**
  * Rich-text-only playground import rules. Lives with
  * {@link PlaygroundRichTextImportExtension} so plain-text editors — which never
- * register `CardNode` — don't carry a rule that would build an unregistered
- * node.
+ * register `CardNode`/`FigureNode` — don't carry a rule that would build an
+ * unregistered node.
  */
-export const PlaygroundRichTextImportRules = [CardImportRule];
+export const PlaygroundRichTextImportRules = [CardImportRule, FigureImportRule];
 
 /**
  * Plain-text-safe DOM-import baseline, added in `AppExtension` so it applies in
@@ -183,7 +268,10 @@ export const PlaygroundRichTextImportExtension = defineExtension({
     TableImportExtension,
     CodeImportExtension,
     HorizontalRuleImportExtension,
-    configExtension(DOMImportExtension, {rules: PlaygroundRichTextImportRules}),
+    configExtension(DOMImportExtension, {
+      preprocess: [$rewrapOrphanedSlotWrappers],
+      rules: PlaygroundRichTextImportRules,
+    }),
   ],
   name: '@lexical/playground/RichTextImport',
 });

@@ -70,8 +70,9 @@ export class CardNode extends DecoratorNode<JSX.Element> {
 
   // Slots ride in a separate Map, so the HTML exporter never descends into
   // them on its own — like NodeState, slot serialization is opt-in. Emit each
-  // slot's contents into a `data-lexical-slot` wrapper the import rule maps
-  // back to setSlot(). JSON still serializes slots automatically.
+  // slot's contents into a `data-lexical-slot` wrapper that the
+  // PlaygroundImportExtension's CardImportRule maps back to setSlot(). JSON
+  // still serializes slots automatically.
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = document.createElement('div');
     element.className = 'lexical-card-node';

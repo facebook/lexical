@@ -1071,7 +1071,8 @@ export class LexicalEditor {
     this._key = createUID();
 
     this._onError = onError;
-    this._onWarn = createEditorArgs?.onWarn || console.warn;
+    this._onWarn =
+      (createEditorArgs && createEditorArgs.onWarn) || console.warn;
     this._htmlConversions = htmlConversions;
     this._editable = editable;
     this._headless = parentEditor !== null && parentEditor._headless;

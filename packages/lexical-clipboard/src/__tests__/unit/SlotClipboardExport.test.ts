@@ -189,7 +189,7 @@ describe('slot clipboard export', () => {
       () => {
         const target = $createParagraphNode();
         $getRoot().append(target);
-        target.selectStart();
+        target.select();
         const nodes = $generateNodesFromSerializedNodes(serialized!.nodes);
         $insertGeneratedNodes(editor2, nodes, $getSelection()!);
       },

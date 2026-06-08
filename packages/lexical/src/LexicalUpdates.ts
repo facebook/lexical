@@ -879,15 +879,23 @@ function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
     editor._updates = [];
     editor._cascadeCount = 0;
     // The cascade has already been broken above by clearing the update queue,
-    // so this is a recoverable internal guard rather than a fatal error. Use
-    // devInvariant so it throws loudly in development but only warns in
-    // production, instead of routing a recovered condition through _onError
-    // (typically console.error) and reporting it as an uncaught error.
-    devInvariant(
-      false,
-      'One or more update listeners are endlessly enqueueing more updates. May have encountered infinite recursion caused by update listeners that trigger additional updates without a stop condition. Editor namespace: %s',
-      editor._config.namespace,
-    );
+    // so this is a recoverable internal guard rather than a fatal error. Route
+    // through _onWarn so embedders can capture telemetry (e.g. FBLOGGER) while
+    // keeping default OSS behavior as console.warn. In __DEV__ we still throw
+    // loudly via devInvariant for immediate developer feedback.
+    if (__DEV__) {
+      devInvariant(
+        false,
+        'One or more update listeners are endlessly enqueueing more updates. May have encountered infinite recursion caused by update listeners that trigger additional updates without a stop condition. Editor namespace: %s',
+        editor._config.namespace,
+      );
+    } else {
+      editor._onWarn(
+        new Error(
+          `One or more update listeners are endlessly enqueueing more updates. May have encountered infinite recursion caused by update listeners that trigger additional updates without a stop condition. Editor namespace: ${editor._config.namespace}`,
+        ),
+      );
+    }
     return;
   }
   const queuedUpdate = queuedUpdates.shift();

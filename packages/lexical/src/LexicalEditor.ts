@@ -343,6 +343,7 @@ export interface CreateEditorArgs {
   namespace?: string;
   nodes?: ReadonlyArray<LexicalNodeConfig>;
   onError?: ErrorHandler;
+  onWarn?: ErrorHandler;
   parentEditor?: LexicalEditor;
   editable?: boolean;
   theme?: EditorThemeClasses;
@@ -1000,6 +1001,8 @@ export class LexicalEditor {
   /** @internal */
   _onError: ErrorHandler;
   /** @internal */
+  _onWarn: ErrorHandler;
+  /** @internal */
   _htmlConversions: DOMConversionCache;
   /** @internal */
   _window: null | Window;
@@ -1068,6 +1071,7 @@ export class LexicalEditor {
     this._key = createUID();
 
     this._onError = onError;
+    this._onWarn = createEditorArgs?.onWarn || console.warn;
     this._htmlConversions = htmlConversions;
     this._editable = editable;
     this._headless = parentEditor !== null && parentEditor._headless;

@@ -598,11 +598,9 @@ export class CollabElementNode {
     const child = children[index];
 
     if (child === undefined) {
-      invariant(
-        collabNode !== undefined,
-        'splice: could not find collab element node',
-      );
-      this.append(collabNode);
+      if (collabNode !== undefined) {
+        this.append(collabNode);
+      }
       return;
     }
 

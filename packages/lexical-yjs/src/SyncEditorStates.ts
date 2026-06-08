@@ -314,7 +314,13 @@ export function syncLexicalUpdateToYjs(
         // If a local edit emptied the root, schedule recovery outside the
         // collaboration/historic tag so the paragraph syncs back to Yjs.
         // Mirrors the $ensureEditorNotEmpty call in syncYjsChangesToLexical's onUpdate.
-        if (nextLexicalRoot.getChildrenSize() === 0) {
+        // Only trigger when the previous state had content (prevNodeMap.size > 1 means
+        // there were nodes beyond root), so we don't fire on initial empty-editor updates
+        // (e.g. a focus update before the editor has been bootstrapped).
+        if (
+          nextLexicalRoot.getChildrenSize() === 0 &&
+          prevEditorState._nodeMap.size > 1
+        ) {
           binding.editor.update(() => $ensureEditorNotEmpty());
         }
       }
@@ -469,7 +475,13 @@ export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
         // If a local edit emptied the root, schedule recovery outside the
         // collaboration/historic tag so the paragraph syncs back to Yjs.
         // Mirrors the $ensureEditorNotEmpty call in syncYjsChangesToLexicalV2's onUpdate.
-        if (!isFromYjs && nextLexicalRoot.getChildrenSize() === 0) {
+        // Only trigger when the previous state had content (prevNodeMap.size > 1 means
+        // there were nodes beyond root), so we don't fire on initial empty-editor updates.
+        if (
+          !isFromYjs &&
+          nextLexicalRoot.getChildrenSize() === 0 &&
+          prevEditorState._nodeMap.size > 1
+        ) {
           binding.editor.update(() => $ensureEditorNotEmpty());
         }
       }

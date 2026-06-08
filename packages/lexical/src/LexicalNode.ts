@@ -48,6 +48,7 @@ import {
 } from './LexicalSelection';
 import {
   $getSlot,
+  $getSlotHost,
   $getSlotHostKey,
   $getSlotNames,
   $isSlotHost,
@@ -1942,6 +1943,13 @@ export class LexicalNode {
    * */
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
+    // Slot value root has __parent === null, so the regular sibling walk
+    // would throw via getParentOrThrow. Defer to the host so the cursor
+    // moves past the slot-bearing host's previous sibling.
+    const slotHost = $getSlotHost(this);
+    if (slotHost !== null) {
+      return slotHost.selectPrevious(anchorOffset, focusOffset);
+    }
     const prevSibling = this.getPreviousSibling();
     const parent = this.getParentOrThrow();
     if (prevSibling === null) {
@@ -1964,6 +1972,13 @@ export class LexicalNode {
    * */
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
+    // Slot value root has __parent === null, so the regular sibling walk
+    // would throw via getParentOrThrow. Defer to the host so the cursor
+    // moves past the slot-bearing host's next sibling.
+    const slotHost = $getSlotHost(this);
+    if (slotHost !== null) {
+      return slotHost.selectNext(anchorOffset, focusOffset);
+    }
     const nextSibling = this.getNextSibling();
     const parent = this.getParentOrThrow();
     if (nextSibling === null) {

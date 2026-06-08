@@ -1400,6 +1400,28 @@ export class RangeSelection implements BaseSelection {
       );
       return selection.insertNodes(nodes);
     }
+    // @experimental named-slots. Anchor on a slot value root (e.g. after a
+    // slot-scoped Cmd+A leaves the selection on the slot's element point)
+    // has __parent === null, so the block-finding walk below would throw.
+    // Redirect into the slot subtree by collapsing the selection at the
+    // slot's first child and re-running insertNodes.
+    const anchorNode = this.anchor.getNode();
+    if (
+      this.anchor.type === 'element' &&
+      $isElementNode(anchorNode) &&
+      $getSlotHostKey(anchorNode) !== null
+    ) {
+      const firstChild = anchorNode.getFirstChild();
+      if (firstChild !== null) {
+        firstChild.selectStart();
+        const redirected = $getSelection();
+        invariant(
+          $isRangeSelection(redirected),
+          'Expected RangeSelection after redirecting into slot subtree',
+        );
+        return redirected.insertNodes(nodes);
+      }
+    }
 
     const firstPoint = this.isBackward() ? this.focus : this.anchor;
     const firstNode = firstPoint.getNode();

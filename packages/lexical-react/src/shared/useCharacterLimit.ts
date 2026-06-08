@@ -16,7 +16,7 @@ import {
 } from '@lexical/overflow';
 import {$rootTextContent} from '@lexical/text';
 import {
-  $dfs,
+  $dfsWithSlots,
   $findMatchingParent,
   $unwrapNode,
   mergeRegister,
@@ -171,7 +171,11 @@ function findOffset(
 }
 
 function $wrapOverflowedNodes(offset: number): void {
-  const dfsNodes = $dfs();
+  // $dfsWithSlots (not $dfs) so slot-bearing hosts contribute their slot
+  // subtree text to the character count and overflow wrapping. Without this
+  // a slot-host (e.g. Card with title/body) would report 0 characters and
+  // overflow logic would never wrap slotted content.
+  const dfsNodes = $dfsWithSlots();
   const dfsNodesLength = dfsNodes.length;
   let accumulatedLength = 0;
 

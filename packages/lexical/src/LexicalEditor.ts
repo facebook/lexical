@@ -1101,7 +1101,10 @@ export class LexicalEditor {
    *
    * Latches to `true` the first time {@link $setSlot} runs in this
    * editor. Gates the commit-time slot-containment clamp so editors that never
-   * use slots skip the per-update frame walk entirely.
+   * use slots skip the per-update frame walk entirely. The latch persists for
+   * the lifetime of the editor instance — `resetEditor` and `setEditorState`
+   * do not clear it, so an editor that once used slots keeps paying the clamp
+   * cost even after switching to a slot-free state.
    */
   _slotsUsed: boolean;
   /** @internal */

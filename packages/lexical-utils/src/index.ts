@@ -216,6 +216,12 @@ export function $reverseDfs(
 /**
  * $dfs iterator (left to right). Tree traversal is done on the fly as new values are requested with O(1) memory.
  * Preorder traversal is used, meaning that nodes are iterated over in the order of when they are FIRST encountered.
+ *
+ * Children-only spine: named slot subtrees are skipped. Use {@link $dfsWithSlotsIterator}
+ * (or {@link $dfsWithSlots}) when you need to descend into slots — e.g. character
+ * counting, content extraction, or any cross-tree analysis where slotted content
+ * should be visited.
+ *
  * @param startNode - The node to start the search (inclusive), if omitted, it will start at the root node.
  * @param endNode - The node to end the search (inclusive), if omitted, it will find all descendants of the startingNode.
  * If endNode is an ElementNode, the iterator will end as soon as it reaches the endNode (no children will be visited).

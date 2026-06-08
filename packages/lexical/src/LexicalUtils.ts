@@ -89,7 +89,12 @@ import {
 } from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
 import {$clampRangeSelectionToSlotFrame} from './LexicalSelection';
-import {$getSlot, $getSlotHostKey, $isSlotChild} from './LexicalSlot';
+import {
+  $getSlot,
+  $getSlotHostKey,
+  $isSlotChild,
+  $isSlotHost,
+} from './LexicalSlot';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,
@@ -2281,6 +2286,30 @@ export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
       constructor.name,
       constructor.getType(),
     );
+    if ($isSlotChild(mutableNode) && $isSlotChild(latestNode)) {
+      invariant(
+        mutableNode.__slotHost === latestNode.__slotHost,
+        "$cloneWithProperties: %s.clone(node) (with type '%s') overrode afterCloneFrom but did not preserve __slotHost",
+        constructor.name,
+        constructor.getType(),
+      );
+    }
+    if ($isSlotHost(mutableNode) && $isSlotHost(latestNode)) {
+      const mutSlots = mutableNode.__slots;
+      const latSlots = latestNode.__slots;
+      const slotsMatch =
+        mutSlots === latSlots ||
+        (mutSlots !== null &&
+          latSlots !== null &&
+          mutSlots.size === latSlots.size &&
+          Array.from(mutSlots).every(([k, v]) => latSlots.get(k) === v));
+      invariant(
+        slotsMatch,
+        "$cloneWithProperties: %s.clone(node) (with type '%s') overrode afterCloneFrom but did not preserve __slots",
+        constructor.name,
+        constructor.getType(),
+      );
+    }
   }
   return mutableNode;
 }

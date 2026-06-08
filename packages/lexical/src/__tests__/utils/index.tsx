@@ -279,6 +279,52 @@ export function $createTestShadowRootNode(): TestShadowRootNode {
   return new TestShadowRootNode();
 }
 
+export type SerializedTestUpdateDOMTrueHostNode = SerializedElementNode;
+
+// Slot host that always reports updateDOM=true, so every host edit triggers
+// $createNode(key, null) + $destroyNode(key, null) — the host wrapper DOM is
+// recreated. Used to exercise the reuse path for slot subtree DOM across a
+// host wrapper recreate.
+export class TestUpdateDOMTrueHostNode extends ElementNode {
+  __toggle: number = 0;
+
+  static getType(): string {
+    return 'test_update_dom_true_host';
+  }
+
+  static clone(node: TestUpdateDOMTrueHostNode): TestUpdateDOMTrueHostNode {
+    const next = new TestUpdateDOMTrueHostNode(node.__key);
+    next.__toggle = node.__toggle;
+    return next;
+  }
+
+  static importJSON(
+    serializedNode: SerializedTestUpdateDOMTrueHostNode,
+  ): TestUpdateDOMTrueHostNode {
+    return $createTestUpdateDOMTrueHostNode().updateFromJSON(serializedNode);
+  }
+
+  createDOM(): HTMLElement {
+    const div = document.createElement('div');
+    div.setAttribute('data-toggle', String(this.__toggle));
+    return div;
+  }
+
+  updateDOM(): boolean {
+    return true;
+  }
+
+  setToggle(toggle: number): this {
+    const self = this.getWritable();
+    self.__toggle = toggle;
+    return self;
+  }
+}
+
+export function $createTestUpdateDOMTrueHostNode(): TestUpdateDOMTrueHostNode {
+  return new TestUpdateDOMTrueHostNode();
+}
+
 export type SerializedTestSegmentedNode = SerializedTextNode;
 
 export class TestSegmentedNode extends TextNode {

@@ -6,7 +6,11 @@
  *
  */
 
-import {$generateJSONFromSelectedNodes} from '@lexical/clipboard';
+import {
+  $generateJSONFromSelectedNodes,
+  $generateNodesFromSerializedNodes,
+  $insertGeneratedNodes,
+} from '@lexical/clipboard';
 import {createHeadlessEditor} from '@lexical/headless';
 import {
   $createParagraphNode,
@@ -14,12 +18,45 @@ import {
   $getNodeByKey,
   $getRoot,
   $getSelection,
+  $getSlot,
+  $getSlotNames,
   $setSlot,
   ElementNode,
   type SerializedElementNode,
   type TextNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
+
+// A plain shadow-root ElementNode used as a slot value for the positive
+// round-trip test. Mirrors the production playground's slot-value shape
+// (shadow-root container holding regular block content) without the
+// excludeFromCopy override that ExcludedShadowRootNode adds.
+class PlainShadowRootNode extends ElementNode {
+  static getType(): string {
+    return 'plain_shadow_root';
+  }
+  static clone(node: PlainShadowRootNode): PlainShadowRootNode {
+    return new PlainShadowRootNode(node.__key);
+  }
+  static importJSON(
+    serializedNode: SerializedElementNode,
+  ): PlainShadowRootNode {
+    return $createPlainShadowRootNode().updateFromJSON(serializedNode);
+  }
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+  updateDOM(): boolean {
+    return false;
+  }
+  isShadowRoot(): boolean {
+    return true;
+  }
+}
+
+function $createPlainShadowRootNode(): PlainShadowRootNode {
+  return new PlainShadowRootNode();
+}
 
 // A shadow-root slot value that also excludes itself from copy — an
 // unsupported combination the export guard must reject loudly instead of
@@ -105,6 +142,68 @@ describe('slot clipboard export', () => {
       expect(() =>
         $generateJSONFromSelectedNodes(editor, $getSelection()),
       ).not.toThrow();
+    });
+  });
+
+  // Positive round-trip: a slot-bearing host (host + named slot whose value is
+  // a shadow-root ElementNode holding regular content) serializes through
+  // $generateJSONFromSelectedNodes and restores via
+  // $generateNodesFromSerializedNodes + $insertGeneratedNodes with the slot
+  // name and slot subtree text preserved.
+  test('a slot-bearing host round-trips through JSON copy + insert', () => {
+    const editor = createHeadlessEditor({
+      namespace: 'slot-roundtrip',
+      nodes: [PlainShadowRootNode],
+    });
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        host.append($createTextNode('HostChild'));
+        const slot = $createPlainShadowRootNode();
+        slot.append($createParagraphNode().append($createTextNode('SlotText')));
+        $getRoot().append(host);
+        $setSlot(host, 'media', slot);
+      },
+      {discrete: true},
+    );
+
+    // Copy: null selection → whole tree.
+    let serialized: ReturnType<typeof $generateJSONFromSelectedNodes>;
+    editor.read(() => {
+      serialized = $generateJSONFromSelectedNodes(editor, null);
+    });
+    expect(serialized!.nodes).toHaveLength(1);
+    const hostJson = serialized!.nodes[0] as SerializedElementNode & {
+      slots?: Record<string, SerializedElementNode>;
+    };
+    expect(hostJson.slots).toBeDefined();
+    expect(hostJson.slots!.media).toBeDefined();
+
+    // Paste into a fresh editor and verify the slot survived.
+    const editor2 = createHeadlessEditor({
+      namespace: 'slot-roundtrip',
+      nodes: [PlainShadowRootNode],
+    });
+    editor2.update(
+      () => {
+        const target = $createParagraphNode();
+        $getRoot().append(target);
+        target.selectStart();
+        const nodes = $generateNodesFromSerializedNodes(serialized!.nodes);
+        $insertGeneratedNodes(editor2, nodes, $getSelection()!);
+      },
+      {discrete: true},
+    );
+
+    editor2.read(() => {
+      const inserted = $getRoot()
+        .getChildren()
+        .find(n => $getSlotNames(n).length > 0);
+      expect(inserted).toBeDefined();
+      expect($getSlotNames(inserted!)).toEqual(['media']);
+      const slot = $getSlot(inserted!, 'media');
+      expect(slot).not.toBeNull();
+      expect(slot!.getTextContent()).toContain('SlotText');
     });
   });
 });

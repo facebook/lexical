@@ -45,7 +45,7 @@ import {
 } from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
 import {cloneMap} from './LexicalGenMap';
-import {$isSlotChild, $isSlotHost} from './LexicalSlot';
+import {$isSlotChild, $isSlotHost, EMPTY_SLOTS} from './LexicalSlot';
 import {
   $createChildrenArray,
   $getDOMSlot,
@@ -517,10 +517,7 @@ function $mountSlotChildren(
   return totalText;
 }
 
-// @experimental named-slots. __slots is allocated lazily (null until the first
-// setSlot), so reads coalesce to this shared empty map. Never mutated.
-const EMPTY_SLOTS: Map<string, NodeKey> = new Map();
-function $readSlots(node: LexicalNode): Map<string, NodeKey> {
+function $readSlots(node: LexicalNode): ReadonlyMap<string, NodeKey> {
   return $isSlotHost(node) && node.__slots !== null
     ? node.__slots
     : EMPTY_SLOTS;

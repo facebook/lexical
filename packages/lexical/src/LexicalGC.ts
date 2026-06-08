@@ -12,6 +12,7 @@ import type {LexicalNode, NodeKey, NodeMap} from './LexicalNode';
 
 import {$isElementNode} from '.';
 import {$isSlotChild, $isSlotHost} from './LexicalSlot';
+import {getActiveEditor} from './LexicalUpdates';
 import {cloneDecorators} from './LexicalUtils';
 
 export function $garbageCollectDetachedDecorators(
@@ -153,7 +154,11 @@ export function $garbageCollectDetachedNodes(
       // A decorator host is a leaf, so the element deep-walk above never
       // reaches its slots; collect them here to avoid orphaning the slot
       // subtree. Deletion is deferred to the shared queue so the walk can
-      // still read the slot nodes.
+      // still read the slot nodes. When a host is in dirtyElements and one of
+      // its slot values is also dirty, the two loops can both push the same
+      // slot subtree key into nodeMapDelete — that redundancy is harmless
+      // because nodeMap.delete is idempotent and the dirtyNodes.delete calls
+      // are too.
       if ($isSlotHost(node) && node.__slots !== null) {
         $garbageCollectDetachedDeepChildNodes(
           node,
@@ -173,5 +178,16 @@ export function $garbageCollectDetachedNodes(
 
   for (const nodeKey of nodeMapDelete) {
     nodeMap.delete(nodeKey);
+  }
+
+  // Clear the composition key if it points at a node that just got collected.
+  // Without this, isComposing() keeps reporting true after a remote yjs
+  // update (or any host removal) drops the composing TextNode — most often
+  // observable when the composing node sits inside a slot subtree that gets
+  // collected wholesale via the dual-channel slot GC above.
+  const editor = getActiveEditor();
+  const compositionKey = editor._compositionKey;
+  if (compositionKey !== null && !nodeMap.has(compositionKey)) {
+    editor._compositionKey = null;
   }
 }

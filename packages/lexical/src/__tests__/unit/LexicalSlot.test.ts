@@ -28,10 +28,10 @@ import {
   $setSlot,
   createEditor,
   defineExtension,
-ElementNode,
   getDOMSelection,
   ParagraphNode,
-  TextNode} from 'lexical';
+  TextNode,
+} from 'lexical';
 import {afterEach, assert, describe, expect, test} from 'vitest';
 
 import {$internalCreateRangeSelection} from '../../LexicalSelection';
@@ -44,35 +44,8 @@ import {
   TestDecoratorNode,
   TestInlineElementNode,
   TestShadowRootNode,
+  TestUpdateDOMTrueHostNode,
 } from '../utils';
-
-// Host with updateDOM()=true: every host edit triggers $createNode(key, null)
-// + $destroyNode(key, null) — host DOM is recreated. Used to probe H-1b
-// (does the slot subtree DOM survive the host wrapper recreate?).
-class TestUpdateDOMTrueHostNode extends ElementNode {
-  __toggle: number = 0;
-  static getType(): string {
-    return 'test_update_dom_true_host';
-  }
-  static clone(prev: TestUpdateDOMTrueHostNode): TestUpdateDOMTrueHostNode {
-    const n = new TestUpdateDOMTrueHostNode(prev.__key);
-    n.__toggle = prev.__toggle;
-    return n;
-  }
-  createDOM(): HTMLElement {
-    const div = document.createElement('div');
-    div.setAttribute('data-toggle', String(this.__toggle));
-    return div;
-  }
-  updateDOM(): boolean {
-    return true;
-  }
-  setToggle(toggle: number): this {
-    const self = this.getWritable();
-    self.__toggle = toggle;
-    return self;
-  }
-}
 
 // Under the strengthened setSlot guard a slot value must be a shadow-root
 // container. Text content lives in a paragraph inside it, since a shadow root's
@@ -1846,7 +1819,7 @@ describe('named-slots: H-1 hypothesis — cross-host slot move DOM reuse', () =>
   });
 
   test('H-1b: host updateDOM=true preserves slot subtree DOM', () => {
-    const editor = buildEditorFromExtensions(
+    using editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: () => {
           $getRoot().clear();
@@ -1892,7 +1865,5 @@ describe('named-slots: H-1 hypothesis — cross-host slot move DOM reuse', () =>
     // reused, domAfter === domBefore (decorator portal state survives).
     // If the audit hypothesis holds, slot subtree is remounted.
     expect(domAfter).toBe(domBefore);
-
-    editor.dispose();
   });
 });

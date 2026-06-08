@@ -18,8 +18,15 @@ import type {ElementNode} from './nodes/LexicalElementNode';
 import invariant from '@lexical/internal/invariant';
 
 import {$getEditor, $getNodeByKey, $isDecoratorNode, $isElementNode} from '.';
+import {$removeFromParent} from './LexicalUtils';
 
-const EMPTY_SLOTS: ReadonlyMap<string, NodeKey> = new Map();
+/**
+ * Shared empty slot map. Reads coalesce here when a host's `__slots` is null
+ * (lazy allocation), so non-slot trees don't pay a per-node allocation cost.
+ *
+ * @internal
+ */
+export const EMPTY_SLOTS: ReadonlyMap<string, NodeKey> = new Map();
 
 /**
  * True when `node` can host named slots — i.e. it is an {@link ElementNode} or
@@ -169,7 +176,11 @@ export function $setSlot<T extends LexicalNode & SlotHostNode>(
     $detachSlottedNode(previousKey);
   }
   const writableNode = node.getWritable();
-  writableNode.remove();
+  // $removeFromParent (not node.remove()) so the host survives even when it
+  // would otherwise cascade on becoming empty (e.g. a third-party host with
+  // canBeEmpty()=false whose single shadow-root child is being slotted in).
+  // Mirrors the patterns in ElementNode.append / replace / insertBefore.
+  $removeFromParent(writableNode);
   writableNode.__slotHost = writableSelf.__key;
   writableSelf.__slots.set(name, writableNode.__key);
   $getEditor()._slotsUsed = true;

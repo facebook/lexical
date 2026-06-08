@@ -71,13 +71,12 @@ class BlockDecoratorNode extends DecoratorNode<null> {
 // dirtyElements routing question).
 class BlockDecoratorAttrNode extends DecoratorNode<null> {
   __caption: string = '';
-  static getType(): string {
-    return 'block_decorator_attr_slot';
+  $config() {
+    return this.config('block_decorator_attr_slot', {extends: DecoratorNode});
   }
-  static clone(prev: BlockDecoratorAttrNode): BlockDecoratorAttrNode {
-    const n = new BlockDecoratorAttrNode(prev.__key);
-    n.__caption = prev.__caption;
-    return n;
+  afterCloneFrom(prev: this): void {
+    super.afterCloneFrom(prev);
+    this.__caption = prev.__caption;
   }
   isInline(): boolean {
     return false;

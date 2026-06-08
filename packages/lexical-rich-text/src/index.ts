@@ -81,6 +81,7 @@ import {
   COPY_COMMAND,
   createCommand,
   CUT_COMMAND,
+  CUT_TAG,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
@@ -479,6 +480,9 @@ function onPasteForRichText(
       }
     },
     {
+      // PASTE_TAG gives the paste its own undo entry: @lexical/history treats
+      // the tag as a history boundary so undoing a paste does not also undo any
+      // typing that preceded it (see #8609).
       tag: PASTE_TAG,
     },
   );
@@ -492,14 +496,22 @@ async function onCutForRichText(
     editor,
     objectKlassEquals(event, ClipboardEvent) ? event : null,
   );
-  editor.update(() => {
-    const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      selection.removeText();
-    } else if ($isNodeSelection(selection)) {
-      selection.getNodes().forEach(node => node.remove());
-    }
-  });
+  editor.update(
+    () => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        selection.removeText();
+      } else if ($isNodeSelection(selection)) {
+        selection.getNodes().forEach(node => node.remove());
+      }
+    },
+    {
+      // CUT_TAG gives the cut its own undo entry: @lexical/history treats the
+      // tag as a history boundary so undoing a cut does not also undo any typing
+      // that preceded it (see #8609).
+      tag: CUT_TAG,
+    },
+  );
 }
 
 // Clipboard may contain files that we aren't allowed to read. While the event is arguably useless,

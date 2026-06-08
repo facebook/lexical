@@ -1175,14 +1175,13 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     expect(titleText.toString()).toBe('Title!!');
   });
 
-  // Hypothesis from a pre-push audit: V2 sync entry passes only
-  // `dirtyElements.keys()` to $updateYFragment / $updateSlotsYType, but a
-  // DecoratorNode slot value's own dirty mark lives in dirtyLeaves (only
-  // ElementNodes go to dirtyElements). The same-identity branch in
-  // $updateSlotsYType gates recursion on dirtyElements.has(slotNode.getKey()),
-  // so a decorator slot value's own-attribute change would be skipped — the
-  // attribute never reaches the yjs XmlElement.
-  test('H-2: decorator slot value own-attribute change propagates to yjs', () => {
+  // A DecoratorNode slot value's own dirty mark lives in `dirtyLeaves` (only
+  // ElementNodes go to `dirtyElements`), and `$updateSlotsYType`'s
+  // same-identity recursion gates on the dirty set passed in from the V2
+  // sync entry. Without unioning `dirtyLeaves` into that set, a decorator
+  // slot value's own-attribute change would be skipped — the attribute would
+  // never reach the yjs XmlElement. This test pins that propagation.
+  test('decorator slot value own-attribute change propagates to yjs', () => {
     const {binding, editor} = buildBinding([BlockDecoratorAttrNode]);
 
     editor.update(

@@ -23,6 +23,7 @@ import {
 } from '@lexical/utils';
 import {
   $getSelection,
+  $getSlotHost,
   $isElementNode,
   $isLeafNode,
   $isRangeSelection,
@@ -182,8 +183,15 @@ function $wrapOverflowedNodes(offset: number): void {
   for (let i = 0; i < dfsNodesLength; i += 1) {
     const {node} = dfsNodes[i];
 
+    // Slot value roots (a non-inline DecoratorNode slotted into a host) are
+    // leaf nodes with __parent === null; wrapping them in OverflowNode would
+    // call node.replace() and throw. Their content is also not user-typed
+    // text, so excluding them from both the counter and the wrap loop matches
+    // the character-limit's intent.
     const needsOverflowParent =
-      $isLeafNode(node) && !$findMatchingParent(node, $isOverflowNode);
+      $isLeafNode(node) &&
+      $getSlotHost(node) === null &&
+      !$findMatchingParent(node, $isOverflowNode);
 
     if ($isOverflowNode(node)) {
       const previousLength = accumulatedLength;

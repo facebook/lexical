@@ -19,6 +19,7 @@ import {
   $getRoot,
   $getSelection,
   $getSlot,
+  $getSlotHost,
   $getSlotNames,
   $setSlot,
   ElementNode,
@@ -204,6 +205,9 @@ describe('slot clipboard export', () => {
       const slot = $getSlot(inserted!, 'media');
       expect(slot).not.toBeNull();
       expect(slot!.getTextContent()).toContain('SlotText');
+      // The slot up-link must point back to the inserted host (not the
+      // original copy-side host whose key may not exist in this editor).
+      expect($getSlotHost(slot!)!.is(inserted!)).toBe(true);
     });
   });
 });

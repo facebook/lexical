@@ -1769,13 +1769,15 @@ describe('named-slots: selection resolution onto a slotted decorator', () => {
   });
 });
 
-// Hypothesis from a pre-push audit: $createNode's cross-parent reuse guard at
-// LexicalReconciler.ts checks prevNode.__parent !== node.__parent but ignores
-// __slotHost. A slot value has __parent === null in both states, so a slot
-// value moving between hosts in one update should bypass the reuse fast path
-// and remount its DOM (orphan portal state, lose decorator-internal state).
-describe('named-slots: H-1 hypothesis — cross-host slot move DOM reuse', () => {
-  test('H-1a: $removeSlot(A) + $setSlot(B, sameNode) in one update', () => {
+// $createNode's cross-parent reuse guard checks prevNode.__parent !==
+// node.__parent. A slot value has __parent === null in both states, so a
+// cross-host slot move would bypass the reuse fast path on a __parent-only
+// check and remount the DOM (orphaning portal state, losing decorator-internal
+// state). These tests pin that the reuse path also covers slot moves
+// (detected via __slotHost) and DOM-detached slot subtrees (host wrapper
+// recreated via updateDOM=true).
+describe('named-slots: cross-host slot move DOM reuse', () => {
+  test('$removeSlot(A) + $setSlot(B, sameNode) in one update reuses the DOM', () => {
     using editor = createSlotEditor();
     let valueKey = '';
     let hostAKey = '';
@@ -1812,13 +1814,12 @@ describe('named-slots: H-1 hypothesis — cross-host slot move DOM reuse', () =>
 
     const domAfter = editor.getElementByKey(valueKey);
     expect(domAfter).not.toBeNull();
-    // If the reuse guard treats slot moves correctly, domAfter === domBefore
-    // (DOM reused, just re-parented). If the audit hypothesis holds, the DOM
-    // was remounted and domAfter !== domBefore.
+    // domAfter === domBefore — DOM reused, just re-parented. Without the
+    // slot-host case in the reuse guard, the DOM would be remounted.
     expect(domAfter).toBe(domBefore);
   });
 
-  test('H-1b: host updateDOM=true preserves slot subtree DOM', () => {
+  test('host updateDOM=true preserves slot subtree DOM', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: () => {
@@ -1861,9 +1862,10 @@ describe('named-slots: H-1 hypothesis — cross-host slot move DOM reuse', () =>
 
     const domAfter = editor.getElementByKey(valueKey);
     expect(domAfter).not.toBeNull();
-    // If the host's wrapper DOM is recreated but the slot subtree DOM is
-    // reused, domAfter === domBefore (decorator portal state survives).
-    // If the audit hypothesis holds, slot subtree is remounted.
+    // Host wrapper DOM recreated (updateDOM=true) but slot subtree DOM
+    // reused, so domAfter === domBefore (decorator portal state survives).
+    // Without the DOM-detached case in the reuse guard, the slot subtree
+    // would be remounted.
     expect(domAfter).toBe(domBefore);
   });
 });

@@ -175,6 +175,11 @@ export interface DFSNode {
  * branch until you hit a dead-end (leaf) and backtracking to find the nearest branching path and repeat.
  * It will then return all the nodes found in the search in an array of objects.
  * Preorder traversal is used, meaning that nodes are listed in the order of when they are FIRST encountered.
+ *
+ * Children-only spine: named slot subtrees are skipped. Use {@link $dfsWithSlots}
+ * when you need to descend into slots (e.g. character counting, slot-aware
+ * content extraction).
+ *
  * @param startNode - The node to start the search (inclusive), if omitted, it will start at the root node.
  * @param endNode - The node to end the search (inclusive), if omitted, it will find all descendants of the startingNode. If endNode
  * is an ElementNode, it will stop before visiting any of its children.

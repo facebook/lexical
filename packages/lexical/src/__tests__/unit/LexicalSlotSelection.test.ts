@@ -373,14 +373,13 @@ describe('named-slots: selection containment (slot isolation)', () => {
   });
 });
 
-// Hypothesis from a pre-push audit: the else branch in
-// $clampSelectionPointsToSlotFrame (anchorFrame is a non-Element slot value =
-// a non-inline DecoratorNode) calls focusPoint.set(decoratorKey, _, 'text'),
-// which the Point.set __DEV__ invariant rejects (text type requires TextNode).
-// These probes check whether that else branch is reachable at all via the
-// public API. Both Point.set rejections AND the slot-leaf rewrite in
-// $internalResolveSelectionPoint should make the scenario unreachable.
-describe('named-slots: I-1 hypothesis — DecoratorNode anchorFrame else branch', () => {
+// Point.set's __DEV__ invariant rejects a Point keyed on a DecoratorNode for
+// both 'text' (requires TextNode) and 'element' (requires ElementNode). These
+// probes pin that the public API never lands an anchor on a slotted decorator
+// key, so the non-Element branch in $clampSelectionPointsToSlotFrame (which
+// would emit a text point on the decorator key) stays unreachable from any
+// well-typed selection construction.
+describe('named-slots: Point.set rejects decorator key targets', () => {
   const mountedRoots: HTMLElement[] = [];
   afterEach(() => {
     while (mountedRoots.length > 0) {
@@ -417,7 +416,7 @@ describe('named-slots: I-1 hypothesis — DecoratorNode anchorFrame else branch'
           keys.body = body.getKey();
           keys.bodyText = bodyText.getKey();
         },
-        name: '[slot-selection-i1-hypothesis]',
+        name: '[slot-selection-decorator-key-reject]',
         nodes: [TestShadowRootNode, TestDecoratorNode],
       }),
     );
@@ -425,7 +424,7 @@ describe('named-slots: I-1 hypothesis — DecoratorNode anchorFrame else branch'
     return editor;
   }
 
-  test('I-1: Point.set rejects decorator key with text type', () => {
+  test('Point.set rejects decorator key with text type', () => {
     using editor = buildDecoratorSlotEditor();
     editor.update(
       () => {
@@ -436,7 +435,7 @@ describe('named-slots: I-1 hypothesis — DecoratorNode anchorFrame else branch'
     );
   });
 
-  test('I-1: Point.set rejects decorator key with element type', () => {
+  test('Point.set rejects decorator key with element type', () => {
     using editor = buildDecoratorSlotEditor();
     editor.update(
       () => {

@@ -27,16 +27,11 @@ export default function viteCopyEsm() {
       {dest: './build/', src: ['./*.png', './*.ico']},
       ...parseImportMapImportEntries().map(([mod, fn]) => ({
         dest: './build/esm/dist/',
-        // The importmap points at each package's fork module (e.g.
-        // `./dist/Lexical.mjs`), but that fork module only re-exports from a
-        // sibling bundle (`./Lexical.dev.mjs` in a dev/CI build, `.prod.mjs`
-        // in a production build). Copy every `.mjs` in the package's dist so
-        // the fork module's relative import resolves instead of 404ing.
-        src: path.join(
-          `../${mod.replace(/^@/, '').replace(/\//g, '-')}`,
-          path.dirname(fn),
-          '*.mjs',
-        ),
+        // The importmap points directly at each package's `.dev` bundle
+        // (e.g. `./dist/Lexical.dev.mjs`) rather than the fork module, so we
+        // copy exactly that self-contained file. The bundles only import bare
+        // specifiers, which the importmap resolves to their sibling bundles.
+        src: path.join(`../${mod.replace(/^@/, '').replace(/\//g, '-')}`, fn),
       })),
     ],
     verbose: true,

@@ -19,7 +19,6 @@ function parseImportMapImportEntries() {
   return Object.entries<string>(JSON.parse(m[1]).imports);
 }
 
-// Fork modules are only produced by the build script
 export default function viteCopyEsm() {
   return copy({
     hook: 'writeBundle',
@@ -28,11 +27,15 @@ export default function viteCopyEsm() {
       {dest: './build/', src: ['./*.png', './*.ico']},
       ...parseImportMapImportEntries().map(([mod, fn]) => ({
         dest: './build/esm/dist/',
+        // The importmap points at each package's fork module (e.g.
+        // `./dist/Lexical.mjs`), but that fork module only re-exports from a
+        // sibling bundle (`./Lexical.dev.mjs` in a dev/CI build, `.prod.mjs`
+        // in a production build). Copy every `.mjs` in the package's dist so
+        // the fork module's relative import resolves instead of 404ing.
         src: path.join(
           `../${mod.replace(/^@/, '').replace(/\//g, '-')}`,
-          // Fork modules are only produced by build-release, which is not run
-          // in CI, so we don't need to worry about choosing dev or prod
-          fn,
+          path.dirname(fn),
+          '*.mjs',
         ),
       })),
     ],

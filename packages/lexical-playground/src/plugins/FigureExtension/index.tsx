@@ -124,9 +124,10 @@ function $resolveFigureChromeTarget(
 export const FigureExtension = defineExtension({
   dependencies: [
     // The slotted decorator owns `useLexicalNodeSelection` for its own
-    // selected outline, but the Figure host is a plain ElementNode with no
-    // decorate() path. This mirrors the host's NodeSelection state onto a
-    // `data-selected` attribute so CSS can render the host outline.
+    // selected outline. The Figure host has its own decorate() chrome but
+    // doesn't subscribe to NodeSelection there, so this mirrors the host's
+    // NodeSelection state onto a `data-selected` attribute and CSS renders
+    // the host outline.
     configExtension(NodeSelectionDataSelectedExtension, {nodes: [FigureNode]}),
   ],
   name: '@lexical/playground/Figure',

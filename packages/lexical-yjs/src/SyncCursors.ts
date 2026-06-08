@@ -769,7 +769,7 @@ function getCollabNodeAndOffset(
     );
 
     if (node === null) {
-      return [collabNode, 0];
+      return [collabNode, collabNode._children.length];
     } else {
       return [node, collabNodeOffset];
     }

@@ -46,8 +46,6 @@ import {
   insertTableColumnBefore,
   insertTableRowAbove,
   insertTableRowBelow,
-  IS_COLLAB,
-  IS_LINUX,
   IS_TABLE_HORIZONTAL_SCROLL,
   mergeTableCells,
   pasteFromClipboard,

@@ -25,6 +25,7 @@ import {
   createUndoManager,
   DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
   initLocalState,
+  removeCursorHighlightRule,
   renderSnapshot__EXPERIMENTAL,
   setLocalStateFocus,
   syncCursorPositions,
@@ -89,6 +90,7 @@ export function useYjsCollaboration(
   initialEditorState?: InitialEditorStateType,
   awarenessData?: object,
   syncCursorPositionsFn: SyncCursorPositionsFn = syncCursorPositions,
+  selectionHighlight: boolean = false,
 ): JSX.Element {
   const isReloadingDoc = useRef(false);
 
@@ -180,7 +182,7 @@ export function useYjsCollaboration(
     onBootstrap,
   );
 
-  useAwareness(binding, provider);
+  useAwareness(binding, provider, selectionHighlight);
 
   return useYjsCursors(binding, cursorsContainerRef);
 }
@@ -197,6 +199,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     awarenessData?: object;
     excludedProperties?: ExcludedProperties;
     rootName?: string;
+    selectionHighlight?: boolean;
     __shouldBootstrapUnsafe?: boolean;
   } = {},
 ): BindingV2 {
@@ -204,6 +207,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     awarenessData,
     excludedProperties,
     rootName,
+    selectionHighlight = false,
     __shouldBootstrapUnsafe: shouldBootstrap,
   } = options;
 
@@ -327,7 +331,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     onBootstrap,
   );
 
-  useAwareness(binding, provider);
+  useAwareness(binding, provider, selectionHighlight);
 
   return binding;
 }
@@ -457,18 +461,22 @@ function useProvider(
   }, [provider]);
 }
 
-function useAwareness(binding: Binding | BindingV2, provider: Provider) {
+function useAwareness(
+  binding: Binding | BindingV2,
+  provider: Provider,
+  selectionHighlight: boolean,
+) {
   useEffect(() => {
     const {awareness} = provider;
     const onAwarenessUpdate = () => {
-      syncCursorPositions(binding, provider);
+      syncCursorPositions(binding, provider, {selectionHighlight});
     };
     awareness.on('update', onAwarenessUpdate);
 
     return () => {
       awareness.off('update', onAwarenessUpdate);
     };
-  }, [binding, provider]);
+  }, [binding, provider, selectionHighlight]);
 }
 
 export function useYjsCursors(
@@ -700,19 +708,23 @@ function clearEditorSkipCollab(editor: LexicalEditor, binding: BaseBinding) {
     return;
   }
 
-  // reset cursors in dom
-  const cursorsArr = Array.from(cursors.values());
-
-  for (let i = 0; i < cursorsArr.length; i++) {
-    const cursor = cursorsArr[i];
+  for (const cursor of cursors.values()) {
     const selection = cursor.selection;
-
-    if (selection && selection.selections != null) {
-      const selections = selection.selections;
-
-      for (let j = 0; j < selections.length; j++) {
-        cursorsContainer.removeChild(selections[i]);
+    if (selection === null) {
+      continue;
+    }
+    if (selection.highlight !== null) {
+      CSS.highlights.delete(selection.highlightName);
+      removeCursorHighlightRule(binding, selection.highlightName);
+    }
+    if (selection.caret.parentNode === cursorsContainer) {
+      cursorsContainer.removeChild(selection.caret);
+    }
+    for (const span of selection.selections) {
+      if (span.parentNode === cursorsContainer) {
+        cursorsContainer.removeChild(span);
       }
     }
+    cursor.selection = null;
   }
 }

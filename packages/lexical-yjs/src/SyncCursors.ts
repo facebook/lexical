@@ -61,9 +61,83 @@ export type CursorSelection = {
     key: NodeKey;
     offset: number;
   };
+  /** Modern path: one CSS Custom Highlight per remote cursor. */
+  highlight: Highlight | null;
+  highlightName: string;
   name: HTMLSpanElement;
+  /** Legacy fallback only: absolutely-positioned rect spans, one per visual rect. */
   selections: Array<HTMLElement>;
 };
+
+const SUPPORTS_CSS_HIGHLIGHTS =
+  typeof Highlight !== 'undefined' &&
+  typeof CSS !== 'undefined' &&
+  'highlights' in CSS;
+
+/**
+ * Resolve the per-binding stylesheet that hosts `::highlight(...)` rules.
+ */
+function getCursorHighlightSheet(binding: BaseBinding): CSSStyleSheet {
+  if (binding.cursorHighlightSheet === null) {
+    const rootElement = binding.editor.getRootElement();
+    const ownerDocument =
+      rootElement !== null ? rootElement.ownerDocument : document;
+    const view = ownerDocument.defaultView || window;
+    const sheet = new view.CSSStyleSheet();
+    ownerDocument.adoptedStyleSheets = [
+      ...ownerDocument.adoptedStyleSheets,
+      sheet,
+    ];
+    binding.cursorHighlightSheet = sheet;
+  }
+  return binding.cursorHighlightSheet;
+}
+
+function addCursorHighlightRule(
+  binding: BaseBinding,
+  highlightName: string,
+  color: string,
+): void {
+  // `color` flows in from peer-controlled awareness state. Reject anything
+  // the browser doesn't recognize as a valid <color> so a malicious user can't
+  // inject extra declarations through string interpolation below.
+  if (!CSS.supports('color', color)) {
+    return;
+  }
+  const sheet = getCursorHighlightSheet(binding);
+  const idx = sheet.insertRule(
+    `::highlight(${highlightName}) { }`,
+    sheet.cssRules.length,
+  );
+  const rule = sheet.cssRules[idx] as CSSStyleRule;
+  // color-mix because the Highlight API doesn't honor opacity on highlights.
+  rule.style.setProperty(
+    'background-color',
+    `color-mix(in srgb, ${color} 30%, transparent)`,
+  );
+  rule.style.setProperty('color', 'inherit');
+}
+
+export function removeCursorHighlightRule(
+  binding: BaseBinding,
+  highlightName: string,
+): void {
+  const sheet = binding.cursorHighlightSheet;
+  if (sheet === null) {
+    return;
+  }
+  const selector = `::highlight(${highlightName})`;
+  for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
+    const rule = sheet.cssRules[i] as CSSStyleRule;
+    // Structural check rather than `instanceof CSSStyleRule`: editors in
+    // different frames have their own `CSSStyleRule` constructor.
+    if (rule != null && rule.selectorText === selector) {
+      sheet.deleteRule(i);
+      return;
+    }
+  }
+}
+
 export type Cursor = {
   color: string;
   name: string;
@@ -191,13 +265,20 @@ function createCursor(name: string, color: string): Cursor {
 }
 
 function destroySelection(binding: BaseBinding, selection: CursorSelection) {
+  if (selection.highlight !== null) {
+    CSS.highlights.delete(selection.highlightName);
+    removeCursorHighlightRule(binding, selection.highlightName);
+  }
   const cursorsContainer = binding.cursorsContainer;
-
-  if (cursorsContainer !== null) {
-    const selections = selection.selections;
-    const selectionsLength = selections.length;
-
-    for (let i = 0; i < selectionsLength; i++) {
+  if (cursorsContainer === null) {
+    return;
+  }
+  if (selection.caret.parentNode === cursorsContainer) {
+    cursorsContainer.removeChild(selection.caret);
+  }
+  const selections = selection.selections;
+  for (let i = 0; i < selections.length; i++) {
+    if (selections[i].parentNode === cursorsContainer) {
       cursorsContainer.removeChild(selections[i]);
     }
   }
@@ -213,11 +294,17 @@ function destroyCursor(binding: BaseBinding, cursor: Cursor) {
 
 function createCursorSelection(
   cursor: Cursor,
+  binding: BaseBinding,
+  clientID: number,
   anchorKey: NodeKey,
   anchorOffset: number,
   focusKey: NodeKey,
   focusOffset: number,
-  theme: {cursor?: string; cursorName?: string} = {},
+  selectionHighlight: boolean,
+  theme: {
+    cursor?: string;
+    cursorName?: string;
+  } = {},
 ): CursorSelection {
   const color = cursor.color;
   const caret = document.createElement('span');
@@ -261,6 +348,20 @@ function createCursorSelection(
     });
   }
   caret.appendChild(name);
+
+  // CSS.highlights is a document-wide registry, but multiple editors can be
+  // mounted in same page.
+  const highlightName = `lexical-cursor-${binding.id}-${clientID}`;
+  let highlight: Highlight | null = null;
+  // Opt-in via the plugin's `selectionHighlight` prop. Without it, fall
+  // through to the legacy rect-overlay path so existing setups that style
+  // `theme.collaboration.selection` keep working.
+  if (selectionHighlight && SUPPORTS_CSS_HIGHLIGHTS) {
+    highlight = new Highlight();
+    CSS.highlights.set(highlightName, highlight);
+    addCursorHighlightRule(binding, highlightName, color);
+  }
+
   return {
     anchor: {
       key: anchorKey,
@@ -272,6 +373,8 @@ function createCursorSelection(
       key: focusKey,
       offset: focusOffset,
     },
+    highlight,
+    highlightName,
     name,
     selections: [],
   };
@@ -282,7 +385,11 @@ function updateCursor(
   cursor: Cursor,
   nextSelection: null | CursorSelection,
   nodeMap: NodeMap,
-  theme: {selection?: string; selectionBg?: string} = {},
+  theme: {
+    cursor?: string;
+    selection?: string;
+    selectionBg?: string;
+  } = {},
 ): void {
   const editor = binding.editor;
   const rootElement = editor.getRootElement();
@@ -314,7 +421,7 @@ function updateCursor(
 
   const caret = nextSelection.caret;
   const color = nextSelection.color;
-  const selections = nextSelection.selections;
+  const highlight = nextSelection.highlight;
   const anchor = nextSelection.anchor;
   const focus = nextSelection.focus;
   const anchorKey = anchor.key;
@@ -325,6 +432,60 @@ function updateCursor(
   if (anchorNode == null || focusNode == null) {
     return;
   }
+
+  if (highlight !== null) {
+    // modern path: CSS Custom Highlight API
+    const range = createDOMRange(
+      editor,
+      anchorNode,
+      anchor.offset,
+      focusNode,
+      focus.offset,
+    );
+    if (range === null) {
+      return;
+    }
+
+    // The browser handles line wrapping, RTL, and font metrics — no rect math.
+    highlight.clear();
+    if (!range.collapsed) {
+      highlight.add(range);
+    }
+
+    // Caret stays as a positioned element; anchor it to the focus end.
+    const caretRange = range.cloneRange();
+    caretRange.collapse(false);
+    let caretRect: DOMRect = caretRange.getBoundingClientRect();
+    if (caretRect.height === 0 && $isLineBreakNode(focusNode)) {
+      // Bare <br>: collapsed range reports zero size. Fall back to the
+      // line break's own box so the caret still renders.
+      const focusEl = editor.getElementByKey(focusKey) as HTMLElement | null;
+      if (focusEl !== null) {
+        caretRect = focusEl.getBoundingClientRect();
+      }
+    }
+
+    setDOMStyleObject(caret.style, {
+      'background-color': theme.cursor ? '' : color,
+      bottom: '',
+      height: `${caretRect.height || 16}px`,
+      left: `${caretRect.left - containerRect.left}px`,
+      'pointer-events': 'none',
+      position: 'absolute',
+      right: '',
+      top: `${caretRect.top - containerRect.top}px`,
+      width: '1px',
+      'z-index': '10',
+    });
+
+    if (caret.parentNode !== cursorsContainer) {
+      cursorsContainer.appendChild(caret);
+    }
+    return;
+  }
+
+  // legacy fallback path: per-rect absolutely-positioned span
+  const selections = nextSelection.selections;
   let selectionRects: Array<DOMRect>;
 
   // In the case of a collapsed selection on a linebreak, we need
@@ -678,6 +839,9 @@ export type SyncCursorPositionsOptions = {
     binding: BaseBinding,
     provider: Provider,
   ) => Map<number, UserState>;
+  // Opt in to the CSS Custom Highlight API rendering for remote selections.
+  // Plumbed in from the React collaboration plugin's `selectionHighlight` prop.
+  selectionHighlight?: boolean;
 };
 
 function getAwarenessStatesDefault(
@@ -692,7 +856,10 @@ export function syncCursorPositions(
   provider: Provider,
   options?: SyncCursorPositionsOptions,
 ): void {
-  const {getAwarenessStates = getAwarenessStatesDefault} = options ?? {};
+  const {
+    getAwarenessStates = getAwarenessStatesDefault,
+    selectionHighlight = false,
+  } = options ?? {};
   const awarenessStates = Array.from(getAwarenessStates(binding, provider));
   const localClientID = binding.clientID;
   const cursors = binding.cursors;
@@ -728,10 +895,13 @@ export function syncCursorPositions(
           if (selection === null) {
             selection = createCursorSelection(
               cursor,
+              binding,
+              clientID,
               anchorKey,
               anchorOffset,
               focusKey,
               focusOffset,
+              selectionHighlight,
               collabTheme,
             );
           } else {

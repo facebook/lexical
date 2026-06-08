@@ -49,7 +49,7 @@ export const CodeHighlightExtension = defineExtension({
       disabled: true,
       tokenizer: NULL_LANG_SHIKI_TOKENIZER,
     }),
-    configExtension(CodeIndentExtension, {tabSize: 2}),
+    configExtension(CodeIndentExtension, {escapeWithArrows: true, tabSize: 2}),
   ],
   name: '@lexical/playground/CodeHighlight',
   register: (editor, config, state) => {

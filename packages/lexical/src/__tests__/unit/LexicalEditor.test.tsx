@@ -193,12 +193,14 @@ describe('LexicalEditor tests', () => {
     rootElementRef: React.RefObject<null | HTMLDivElement>,
     onError?: (error: Error) => void,
     nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
+    onWarn?: (error: Error) => void,
   ) {
     const editor = useMemo(
       () =>
         createTestEditor({
           nodes: nodes ?? [],
           onError: onError || vi.fn(),
+          onWarn,
           theme: {
             tableAlignment: {
               center: 'editor-table-alignment-center',
@@ -211,7 +213,7 @@ describe('LexicalEditor tests', () => {
             },
           },
         }),
-      [onError, nodes],
+      [onError, nodes, onWarn],
     );
 
     useEffect(() => {
@@ -228,11 +230,12 @@ describe('LexicalEditor tests', () => {
   function init(
     onError?: (error: Error) => void,
     nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
+    onWarn?: (error: Error) => void,
   ) {
     const ref = createRef<HTMLDivElement>();
 
     function TestBase() {
-      editor = useLexicalEditor(ref, onError, nodes);
+      editor = useLexicalEditor(ref, onError, nodes, onWarn);
 
       return <div ref={ref} contentEditable={true} />;
     }
@@ -1191,39 +1194,69 @@ describe('LexicalEditor tests', () => {
     boldListener();
   });
 
-  it('Detects infinite recursivity on update listeners', async () => {
+  // The recursion guard in $triggerEnqueuedUpdates breaks the cascade (clears
+  // the update queue) and then routes the recovered condition through the
+  // editor's warn-level hook, editor._onWarn, rather than reporting a recovered
+  // condition as an uncaught error via editor._onError. The default _onWarn
+  // throws in development (so the recursion is impossible to miss) and only
+  // console.warns in production; embedders can supply their own onWarn to
+  // capture guard trips as warn-severity telemetry without an error alarm.
+  function runCascade(onWarn?: (error: Error) => void): {
+    errorListener: ReturnType<typeof vi.fn>;
+    unregister: () => void;
+  } {
     const errorListener = vi.fn();
-    init(errorListener);
+    init(errorListener, undefined, onWarn);
 
-    const unregisterListener = editor.registerUpdateListener(() => {
+    const unregister = editor.registerUpdateListener(() => {
       editor.update(() => {
         $getRoot().markDirty();
       });
     });
 
     expect(errorListener).toHaveBeenCalledTimes(0);
+    return {errorListener, unregister};
+  }
 
-    editor.update(() => {
-      $getRoot().markDirty();
-    });
+  it('Detects infinite recursivity on update listeners (dev: default onWarn throws)', async () => {
+    // Development behavior: with the default onWarn, the guard throws once the
+    // cascade limit is exceeded. The cascade is broken (update queue cleared)
+    // before the guard signals, so the throw surfaces from the scheduled
+    // microtask rather than synchronously from editor.update(), and is NOT
+    // routed through editor._onError.
+    const {errorListener, unregister} = runCascade();
 
-    // drain the microtask chain produced by the cascade
-    for (let i = 0; i < 200 && errorListener.mock.calls.length === 0; i++) {
-      await Promise.resolve();
+    const caught: Error[] = [];
+    const onUnhandled = (reason: unknown) => {
+      caught.push(reason instanceof Error ? reason : new Error(String(reason)));
+    };
+    process.on('unhandledRejection', onUnhandled);
+    process.on('uncaughtException', onUnhandled);
+
+    try {
+      editor.update(() => {
+        $getRoot().markDirty();
+      });
+
+      // drain the microtask chain produced by the cascade
+      for (let i = 0; i < 200 && caught.length === 0; i++) {
+        await Promise.resolve();
+      }
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+      process.off('uncaughtException', onUnhandled);
     }
 
-    expect(errorListener).toHaveBeenCalledTimes(1);
-    expect(errorListener.mock.calls[0][0].message).toMatch(
-      /endlessly enqueueing/,
-    );
+    expect(caught).toHaveLength(1);
+    expect(caught[0].message).toMatch(/endlessly enqueueing/);
     // The error message should include the editor's namespace so the loop can
     // be attributed to a specific product/editor in error aggregation, even
     // when the production stack is minified to core frames.
-    expect(errorListener.mock.calls[0][0].message).toContain(
+    expect(caught[0].message).toContain(
       `Editor namespace: ${editor._config.namespace}`,
     );
 
-    unregisterListener();
+    unregister();
 
     // editor should be usable again after the cascade is cut
     editor.update(
@@ -1236,7 +1269,68 @@ describe('LexicalEditor tests', () => {
     for (let i = 0; i < 10; i++) {
       await Promise.resolve();
     }
-    expect(errorListener).toHaveBeenCalledTimes(1);
+    // The guard never routes through editor._onError — recovered conditions go
+    // through editor._onWarn instead.
+    expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('routes the recursion guard through a custom onWarn for embedder telemetry', async () => {
+    // Embedder behavior: a custom onWarn fully replaces the default and does
+    // not throw, so the recovered condition is captured for telemetry without
+    // surfacing as an uncaught error (neither via editor._onError nor as an
+    // unhandled rejection/exception). The cascade must still be broken and the
+    // editor must remain usable.
+    const warnListener = vi.fn();
+    const {errorListener, unregister} = runCascade(warnListener);
+
+    const caught: Error[] = [];
+    const onUnhandled = (reason: unknown) => {
+      caught.push(reason instanceof Error ? reason : new Error(String(reason)));
+    };
+    process.on('unhandledRejection', onUnhandled);
+    process.on('uncaughtException', onUnhandled);
+
+    try {
+      editor.update(() => {
+        $getRoot().markDirty();
+      });
+
+      // drain the microtask chain produced by the cascade; the custom onWarn
+      // does not throw, so just give the queue a chance to settle.
+      for (let i = 0; i < 200; i++) {
+        await Promise.resolve();
+      }
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+      process.off('uncaughtException', onUnhandled);
+    }
+
+    // onWarn received the namespace-tagged Error exactly once, so the guard
+    // trip is observable as warn-level telemetry...
+    expect(warnListener).toHaveBeenCalledTimes(1);
+    const warnArg = warnListener.mock.calls[0][0];
+    expect(warnArg).toBeInstanceOf(Error);
+    expect(warnArg.message).toMatch(/endlessly enqueueing/);
+    expect(warnArg.message).toContain(
+      `Editor namespace: ${editor._config.namespace}`,
+    );
+    // ...and nothing surfaced as an uncaught error or via editor._onError.
+    expect(caught).toHaveLength(0);
+    expect(errorListener).toHaveBeenCalledTimes(0);
+
+    unregister();
+
+    // editor should still be usable after the cascade is cut
+    editor.update(
+      () => {
+        $getRoot().markDirty();
+      },
+      {discrete: true},
+    );
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+    expect(errorListener).toHaveBeenCalledTimes(0);
   });
 
   it('Should be able to update an editor state without a root element', () => {

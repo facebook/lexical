@@ -13,7 +13,7 @@
   "license": "MIT",
   "version": "0.45.0",
   "main": "./dist/LexicalYjs.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/internal": "workspace:*",
     "@lexical/selection": "workspace:*",
@@ -23,6 +23,7 @@
     "yjs": "^13.6.31"
   },
   "peerDependencies": {
+    "typescript": ">=5.2",
     "yjs": ">=13.5.22"
   },
   "repository": {
@@ -36,6 +37,7 @@
     ".": {
       "source": "./src/index.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/index.d.ts",
         "development": "./dist/LexicalYjs.dev.mjs",
         "production": "./dist/LexicalYjs.prod.mjs",
@@ -43,6 +45,7 @@
         "default": "./dist/LexicalYjs.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/index.d.ts",
         "development": "./dist/LexicalYjs.dev.js",
         "production": "./dist/LexicalYjs.prod.js",
@@ -62,5 +65,17 @@
     "!src/**/*.bench.tsx",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/typescript-too-old.d.ts"
+      ]
+    }
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  }
 }

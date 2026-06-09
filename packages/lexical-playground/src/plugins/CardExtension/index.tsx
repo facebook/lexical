@@ -6,7 +6,13 @@
  *
  */
 
-import type {LexicalCommand, LexicalEditor, LexicalNode} from 'lexical';
+import type {
+  LexicalCommand,
+  LexicalEditor,
+  LexicalNode,
+  NodeKey,
+  PointType,
+} from 'lexical';
 
 import {
   $defaultShouldInsertAfter,
@@ -24,6 +30,8 @@ import {
   $getSlotNameWithinHost,
   $isElementNode,
   $isRangeSelection,
+  $isTextNode,
+  $nodesOfType,
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_BEFORE_EDITOR,
@@ -105,16 +113,55 @@ function $findCardSlotContext(
   return null;
 }
 
-// Tab moves focus between the title slot and the body — Shift+Tab goes
-// backward. This is a small PoC for the use case `$getSlotNameWithinHost`
-// was introduced for: an event handler that needs to know which slot the
-// caret came from so it can pick the right destination.
+// True when `point` sits at the very end of `block`'s text content — the
+// caret is on the block's last text child at the text length, or on an empty
+// block at offset 0. Used by the Tab handler so it only fires at the slot's
+// trailing edge and leaves Tab as a normal indent everywhere else.
+function $isAtBlockEnd(point: PointType, block: LexicalNode): boolean {
+  if (!$isElementNode(block)) {
+    return false;
+  }
+  const last = block.getLastDescendant();
+  if (last === null) {
+    return point.key === block.getKey() && point.offset === 0;
+  }
+  if ($isTextNode(last)) {
+    return (
+      point.key === last.getKey() && point.offset === last.getTextContentSize()
+    );
+  }
+  return false;
+}
+
+// Mirror of $isAtBlockEnd for the leading edge.
+function $isAtBlockStart(point: PointType, block: LexicalNode): boolean {
+  if (!$isElementNode(block)) {
+    return false;
+  }
+  const first = block.getFirstDescendant();
+  if (first === null) {
+    return point.key === block.getKey() && point.offset === 0;
+  }
+  if ($isTextNode(first)) {
+    return point.key === first.getKey() && point.offset === 0;
+  }
+  return false;
+}
+
+// Tab moves focus between the title slot and the body, but only at the slot
+// boundary — Tab at the end of the title slot's last paragraph drops the
+// caret at the start of the body, Shift+Tab at the start of the body's first
+// paragraph drops it at the end of the title slot. Mid-title and mid-body
+// Tab / Shift+Tab fall through to the rich-text indent default. This is a
+// small PoC for the use case `$getSlotNameWithinHost` was introduced for: an
+// event handler that needs to know which slot the caret came from so it can
+// pick the right destination.
 function $handleCardTab(
   event: KeyboardEvent | null,
   isBackward: boolean,
 ): boolean {
   const selection = $getSelection();
-  if (!$isRangeSelection(selection)) {
+  if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
     return false;
   }
   const context = $findCardSlotContext(selection.anchor.getNode());
@@ -122,6 +169,13 @@ function $handleCardTab(
     return false;
   }
   if (!isBackward && context.in === 'title') {
+    const titleSlot = context.slotValue;
+    const titleLast = $isElementNode(titleSlot)
+      ? titleSlot.getLastChild()
+      : null;
+    if (titleLast === null || !$isAtBlockEnd(selection.anchor, titleLast)) {
+      return false;
+    }
     const bodyFirst = context.card.getFirstChild();
     if ($isElementNode(bodyFirst)) {
       event?.preventDefault();
@@ -129,12 +183,16 @@ function $handleCardTab(
       return true;
     }
   } else if (isBackward && context.in === 'body') {
+    const bodyFirst = context.card.getFirstChild();
+    if (bodyFirst === null || !$isAtBlockStart(selection.anchor, bodyFirst)) {
+      return false;
+    }
     const titleSlot = $getSlot(context.card, 'title');
     if ($isElementNode(titleSlot)) {
-      const titleFirst = titleSlot.getFirstChild();
-      if ($isElementNode(titleFirst)) {
+      const titleLast = titleSlot.getLastChild();
+      if ($isElementNode(titleLast)) {
         event?.preventDefault();
-        titleFirst.selectEnd();
+        titleLast.selectEnd();
         return true;
       }
     }
@@ -278,6 +336,38 @@ export const CardExtension = defineExtension({
         if (rootElement !== null) {
           rootElement.addEventListener('mousedown', onChromeMouseDown);
         }
+      }),
+      // Mirror the caret's slot context onto a `data-current-slot` attribute
+      // on the active Card so CSS can render a focus hint. The
+      // selection-change → DOM-attribute mirror is the same shape as the
+      // NodeSelectionDataSelectedExtension above, but the source value here
+      // is the slot the caret sits in (resolved through
+      // $getSlotNameWithinHost), not whether the host itself is in a
+      // NodeSelection.
+      editor.registerUpdateListener(({editorState}) => {
+        editorState.read(() => {
+          const selection = $getSelection();
+          let activeCardKey: NodeKey | null = null;
+          let activeSlot: 'title' | 'body' | null = null;
+          if ($isRangeSelection(selection)) {
+            const context = $findCardSlotContext(selection.anchor.getNode());
+            if (context !== null) {
+              activeCardKey = context.card.getKey();
+              activeSlot = context.in;
+            }
+          }
+          for (const card of $nodesOfType(CardNode)) {
+            const dom = editor.getElementByKey(card.getKey());
+            if (dom === null) {
+              continue;
+            }
+            if (card.getKey() === activeCardKey && activeSlot !== null) {
+              dom.setAttribute('data-current-slot', activeSlot);
+            } else {
+              dom.removeAttribute('data-current-slot');
+            }
+          }
+        });
       }),
     );
   },

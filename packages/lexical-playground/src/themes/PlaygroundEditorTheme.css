@@ -856,3 +856,17 @@
   border-color: #fb923c;
   box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.3);
 }
+.lexical-card-node[data-current-slot='title']
+  [data-lexical-slot='title']::before {
+  color: #c2410c;
+}
+.lexical-card-node[data-current-slot='body']::before {
+  color: #c2410c;
+  content: 'Body';
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 4px 0;
+  user-select: none;
+  -webkit-user-select: none;
+}

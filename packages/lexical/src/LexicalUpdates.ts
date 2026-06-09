@@ -640,8 +640,18 @@ export function $commitPendingUpdates(
     editor._dirtyLeaves = new Set();
     editor._dirtyElements = new Map();
     editor._normalizedNodes = new Set();
-    editor._updateTags = new Set();
   }
+  // Always reset the accumulated update tags, even when this commit produced no
+  // dirty nodes (needsUpdate === false). Tags are added from the `tag` update
+  // option independently of whether any node is dirtied, and the 'update'
+  // listener below fires for every commit (including no-op ones) with these
+  // tags. If we only cleared them when needsUpdate is true, the tags of a no-op
+  // update would leak into the *next* update. For collaboration this is a
+  // correctness bug: a local edit that immediately follows a remote sync which
+  // happened to be a no-op (e.g. a concurrently-deleted node, so nothing
+  // reconciles) would inherit the COLLABORATION tag and be skipped by
+  // syncLexicalUpdateToYjs, desyncing the peers.
+  editor._updateTags = new Set();
   $garbageCollectDetachedDecorators(editor, pendingEditorState);
 
   // ======

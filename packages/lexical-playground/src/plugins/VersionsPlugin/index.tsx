@@ -150,7 +150,7 @@ export function VersionsPlugin({id}: {id: string}) {
             if (mutation === 'destroyed') {
               continue;
             }
-            const node = $getNodeByKeyOrThrow<TextNode>(nodeKey);
+            const node = $getNodeByKeyOrThrow(nodeKey);
             const ychange = $getYChangeState<User>(node);
             const element = editor.getElementByKey(nodeKey);
             if (!ychange || !element) {

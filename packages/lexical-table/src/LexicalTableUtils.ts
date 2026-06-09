@@ -186,7 +186,7 @@ export function $insertTableRow(
 
   if ($isTableRowNode(targetRowNode)) {
     for (let r = 0; r < rowCount; r++) {
-      const tableRowCells = targetRowNode.getChildren<TableCellNode>();
+      const tableRowCells = targetRowNode.getChildren();
       const tableColumnCount = tableRowCells.length;
       const newTableRowNode = $createTableRowNode();
 
@@ -631,9 +631,7 @@ export function $deleteTableRowAtSelection(): void {
   }
   const columnCount = gridMap[0].length;
   const nextRow = gridMap[focusEndRow + 1];
-  const nextRowNode: null | TableRowNode = grid.getChildAtIndex(
-    focusEndRow + 1,
-  );
+  const nextRowNode = grid.getChildAtIndex(focusEndRow + 1);
   for (let row = focusEndRow; row >= anchorStartRow; row--) {
     for (let column = columnCount - 1; column >= 0; column--) {
       const {
@@ -669,7 +667,7 @@ export function $deleteTableRowAtSelection(): void {
         // Handle overflow only once
         row === focusEndRow
       ) {
-        invariant(nextRowNode !== null, 'Expected nextRowNode not to be null');
+        invariant($isTableRowNode(nextRowNode), 'Expected a TableRowNode');
         let insertAfterCell: null | TableCellNode = null;
         for (let columnIndex = 0; columnIndex < column; columnIndex++) {
           const currentCellMap = nextRow[columnIndex];
@@ -1336,7 +1334,7 @@ export function $getTableCellNodeRect(tableCellNode: TableCellNode): {
   colSpan: number;
 } | null {
   const [cellNode, , gridNode] = $getNodeTriplet(tableCellNode);
-  const rows = gridNode.getChildren<TableRowNode>();
+  const rows = gridNode.getChildren().filter($isTableRowNode);
   const rowCount = rows.length;
   const columnCount = rows[0].getChildren().length;
 
@@ -1348,7 +1346,7 @@ export function $getTableCellNodeRect(tableCellNode: TableCellNode): {
 
   for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
     const row = rows[rowIndex];
-    const cells = row.getChildren<TableCellNode>();
+    const cells = row.getChildren().filter($isTableCellNode);
     let columnIndex = 0;
 
     for (let cellIndex = 0; cellIndex < cells.length; cellIndex++) {

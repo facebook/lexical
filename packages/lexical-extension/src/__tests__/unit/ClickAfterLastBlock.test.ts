@@ -101,7 +101,7 @@ describe('ClickAfterLastBlockExtension', () => {
     editor.read(() => {
       const rootNode = $getRoot();
       expect(rootNode.getChildrenSize()).toBe(3);
-      const lastChild: LexicalNode | null = rootNode.getLastChild();
+      const lastChild = rootNode.getLastChild();
       assert(
         lastChild !== null && $isParagraphNode(lastChild),
         'last child after click should be an empty paragraph',

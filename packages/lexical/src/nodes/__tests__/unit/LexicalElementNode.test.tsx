@@ -12,6 +12,7 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   createEditor,
   ElementNode,
@@ -22,7 +23,15 @@ import {
 import * as React from 'react';
 import {act, createRef, useEffect} from 'react';
 import {createRoot} from 'react-dom/client';
-import {afterEach, beforeEach, describe, expect, it, test} from 'vitest';
+import {
+  afterEach,
+  assert,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  test,
+} from 'vitest';
 
 import {
   $createTestElementNode,
@@ -345,7 +354,9 @@ describe('LexicalElementNode tests', () => {
 
     beforeEach(async () => {
       await update(() => {
-        block = $getRoot().getFirstChildOrThrow();
+        const firstChild = $getRoot().getFirstChildOrThrow();
+        assert($isElementNode(firstChild), 'Expected an ElementNode');
+        block = firstChild;
       });
     });
 

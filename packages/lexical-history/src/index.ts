@@ -30,10 +30,12 @@ import {
   COMPOSITION_END_TAG,
   COMPOSITION_START_TAG,
   configExtension,
+  CUT_TAG,
   defineExtension,
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,
+  PASTE_TAG,
   REDO_COMMAND,
   safeCast,
   UNDO_COMMAND,
@@ -284,13 +286,23 @@ function createMergeActionGetter(
       prevEditorState = compositionStartState;
     }
 
-    const changeType = getChangeType(
-      prevEditorState,
-      nextEditorState,
-      dirtyLeaves,
-      dirtyElements,
-      editor.isComposing(),
-    );
+    // A paste or cut is never a continuation of the surrounding typing, so
+    // classify it as OTHER. This both prevents it from merging into the
+    // preceding keystrokes and, because it becomes `prevChangeType`, stops the
+    // following keystrokes from merging into it — giving the clipboard
+    // operation its own undo entry (see #8609). Centralizing this here means any
+    // update carrying these tags gets an undo boundary, regardless of which
+    // handler produced it.
+    const changeType =
+      tags.has(PASTE_TAG) || tags.has(CUT_TAG)
+        ? OTHER
+        : getChangeType(
+            prevEditorState,
+            nextEditorState,
+            dirtyLeaves,
+            dirtyElements,
+            editor.isComposing(),
+          );
 
     const mergeAction = (() => {
       const isSameEditor =

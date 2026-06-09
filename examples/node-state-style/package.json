@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ark-ui/react": "^5.6.0",
+    "@ark-ui/react": ">=5.6.0 <5.37.1 || >5.37.1 <6.0.0",
     "@lexical/extension": "0.45.0",
     "@lexical/history": "0.45.0",
     "@lexical/html": "0.45.0",

@@ -29,7 +29,7 @@ import {PreventSelectAllExtension} from '.';
 import {namedSignals} from './namedSignals';
 import {effect} from './signals';
 
-function getEndOffset(node: LexicalNode): number {
+function $getEndOffset(node: LexicalNode): number {
   return $isTextNode(node)
     ? node.getTextContentSize()
     : $isElementNode(node)
@@ -38,7 +38,7 @@ function getEndOffset(node: LexicalNode): number {
 }
 
 function $hasCommonTopParent(
-  nodes: LexicalNode[],
+  nodes: readonly LexicalNode[],
   commonTopParent: LexicalNode,
 ): boolean {
   return nodes.every(node => commonTopParent.is(node.getTopLevelElement()));
@@ -66,7 +66,7 @@ export function $isBlockFullySelected(
   };
 
   const isAtEnd = (node: LexicalNode, offset: number): boolean => {
-    if (node.is(last) && offset === getEndOffset(last)) return true;
+    if (node.is(last) && offset === $getEndOffset(last)) return true;
     // anchor/focus on top-level after last child decorator
     if ($isElementNode(node) && node.isParentOf(last)) {
       return offset === node.getChildrenSize();
@@ -110,7 +110,7 @@ export const SelectBlockExtension = defineExtension({
         return editor.registerCommand(
           SELECT_ALL_COMMAND,
           (event, triggerEditor) => {
-            if (stores.cascadeSelection.value && triggerEditor !== editor) {
+            if (stores.cascadeSelection.peek() && triggerEditor !== editor) {
               const isAllSelected = triggerEditor.getEditorState().read(() => {
                 const nestedSelection = $getSelection();
                 return (
@@ -123,61 +123,57 @@ export const SelectBlockExtension = defineExtension({
                 return false;
               }
 
-              editor.update(() => {
-                prevSelectionAll = $selectAll();
-              });
+              prevSelectionAll = $selectAll();
               return true;
             }
 
-            triggerEditor.update(() => {
-              const selection = $getSelection();
-              if ($isNodeSelection(selection)) {
-                const selectedNodes = selection.getNodes();
-                const firstNode = selectedNodes[0];
+            const selection = $getSelection();
+            if ($isNodeSelection(selection)) {
+              const selectedNodes = selection.getNodes();
+              const firstNode = selectedNodes[0];
 
-                const topParent = firstNode.getTopLevelElement();
-                if (
-                  !topParent ||
-                  $isRootNode(topParent) ||
-                  topParent.is(firstNode) ||
-                  // if multiple nodes are selected and they do not share a common ancestor
-                  (selectedNodes.length > 1 &&
-                    !$hasCommonTopParent(selectedNodes, topParent))
-                ) {
-                  prevSelectionAll = $selectAll();
-                  // This is type narrowing.
-                  // If firstNode is a decorator, then it is equal to topParent
-                } else if ($isElementNode(topParent)) {
-                  $setSelection(
-                    topParent.select(0, topParent.getChildrenSize()),
-                  );
-                  prevSelectionAll = null;
-                }
-                return true;
-              }
-
-              if (!$isRangeSelection(selection)) {
-                return false;
-              }
-
-              const anchorNode = selection.anchor.getNode();
-              const blockNode = anchorNode.getTopLevelElement();
+              const topParent = firstNode.getTopLevelElement();
               if (
-                !selection.is(prevSelectionAll) &&
-                blockNode &&
-                !blockNode.isEmpty() &&
-                !$isBlockFullySelected(blockNode, selection)
-              ) {
-                prevSelectionAll = null;
-                $setSelection(blockNode.select(0, blockNode.getChildrenSize()));
-              } else if (
-                (blockNode && blockNode.isEmpty()) ||
-                // don't trigger selectAll if it's already set
-                !prevSelectionAll
+                !topParent ||
+                $isRootNode(topParent) ||
+                topParent.is(firstNode) ||
+                // if multiple nodes are selected and they do not share a common ancestor
+                (selectedNodes.length > 1 &&
+                  !$hasCommonTopParent(selectedNodes, topParent))
               ) {
                 prevSelectionAll = $selectAll();
+                // This is type narrowing.
+                // If firstNode is a decorator, then it is equal to topParent
+              } else if ($isElementNode(topParent)) {
+                $setSelection(
+                  topParent.select(0, topParent.getChildrenSize()),
+                );
+                prevSelectionAll = null;
               }
-            });
+              return true;
+            }
+
+            if (!$isRangeSelection(selection)) {
+              return false;
+            }
+
+            const anchorNode = selection.anchor.getNode();
+            const blockNode = anchorNode.getTopLevelElement();
+            if (
+              !selection.is(prevSelectionAll) &&
+              blockNode &&
+              !blockNode.isEmpty() &&
+              !$isBlockFullySelected(blockNode, selection)
+            ) {
+              prevSelectionAll = null;
+              $setSelection(blockNode.select(0, blockNode.getChildrenSize()));
+            } else if (
+              (blockNode && blockNode.isEmpty()) ||
+              // don't trigger selectAll if it's already set
+              !prevSelectionAll
+            ) {
+              prevSelectionAll = $selectAll();
+            }
             return true;
           },
           COMMAND_PRIORITY_LOW,

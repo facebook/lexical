@@ -150,7 +150,8 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
 
   while (node !== null && !$isRootOrShadowRoot(node)) {
     const latest = node.getLatest();
-    // Annotation breaks a circular inference through the loop (TS7022)
+    // Annotation breaks a circular inference through the loop (TS7022),
+    // remove when the deprecated generic signatures from #8661 are removed
     const parentNode: ElementNode | null = node.getParent();
 
     if (latest.getChildrenSize() === 0) {

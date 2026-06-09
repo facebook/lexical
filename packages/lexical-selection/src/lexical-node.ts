@@ -139,19 +139,22 @@ export function $trimTextContentFromAnchor(
 
   while (remaining > 0 && currentNode !== null) {
     if ($isElementNode(currentNode)) {
-      // Annotation breaks a circular inference through the loop (TS7022)
+      // Annotation breaks a circular inference through the loop (TS7022),
+      // remove when the deprecated generic signatures from #8661 are removed
       const lastDescendant: null | LexicalNode =
         currentNode.getLastDescendant();
       if (lastDescendant !== null) {
         currentNode = lastDescendant;
       }
     }
-    // Annotation breaks a circular inference through the loop (TS7022)
+    // Annotation breaks a circular inference through the loop (TS7022),
+    // remove when the deprecated generic signatures from #8661 are removed
     let nextNode: LexicalNode | null = currentNode.getPreviousSibling();
     let additionalElementWhitespace = 0;
     if (nextNode === null) {
       let parent: LexicalNode | null = currentNode.getParentOrThrow();
-      // Annotation breaks a circular inference through the loop (TS7022)
+      // Annotation breaks a circular inference through the loop (TS7022),
+      // remove when the deprecated generic signatures from #8661 are removed
       let parentSibling: LexicalNode | null = parent.getPreviousSibling();
 
       while (parentSibling === null) {

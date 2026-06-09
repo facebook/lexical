@@ -92,11 +92,9 @@ function selectInnerText(
 ): {domSelection: Selection; textNode: Text} {
   const textNode = getInnerTextNode(contentEditable);
   const domSelection = getDOMSelection(window)!;
-  domSelection.removeAllRanges();
-  const range = document.createRange();
-  range.setStart(textNode, start);
-  range.setEnd(textNode, end);
-  domSelection.addRange(range);
+  // setBaseAndExtent rather than addRange: WebKit does not reliably register a
+  // Range added with addRange when it points inside a shadow tree.
+  domSelection.setBaseAndExtent(textNode, start, textNode, end);
   return {domSelection, textNode};
 }
 

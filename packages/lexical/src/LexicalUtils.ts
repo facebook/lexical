@@ -1932,24 +1932,25 @@ export function getComposedStaticRange(
   if (shadowRoots.length === 0) {
     return null;
   }
-  try {
-    return domSelection.getComposedRanges({shadowRoots})[0] || null;
-  } catch (_error) {
-    // Fall through to the legacy call below.
+  // Prefer the standard dictionary form (Chrome, modern WebKit, Firefox), then
+  // fall back to the legacy variadic form shipped by Safari 17–18.1. A browser
+  // that doesn't understand the dictionary may return an empty array rather
+  // than throwing, so fall through on an empty result as well as on a throw.
+  const getComposedRanges = domSelection.getComposedRanges as (
+    ...args: unknown[]
+  ) => StaticRange[];
+  const callForms: unknown[][] = [[{shadowRoots}], shadowRoots];
+  for (const args of callForms) {
+    try {
+      const staticRange = getComposedRanges.apply(domSelection, args)[0];
+      if (staticRange !== undefined) {
+        return staticRange;
+      }
+    } catch (_error) {
+      // Try the next call form.
+    }
   }
-  try {
-    // Safari 17 through 18.1 implement the earlier draft of the spec where
-    // the shadow roots are passed variadically instead of in a dictionary.
-    return (
-      (
-        domSelection.getComposedRanges as unknown as (
-          ...legacyShadowRoots: ShadowRoot[]
-        ) => StaticRange[]
-      )(...shadowRoots)[0] || null
-    );
-  } catch (_error) {
-    return null;
-  }
+  return null;
 }
 
 /**

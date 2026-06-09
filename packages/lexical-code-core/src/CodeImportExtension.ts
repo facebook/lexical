@@ -55,7 +55,7 @@ function isMonospaceDescendant(node: HTMLElement): boolean {
  * `<td>` pastes.
  */
 const GitHubCodeTableOverlayRules = /* @__PURE__ */ defineOverlayRules([
-  defineImportRule({
+  /* @__PURE__ */ defineImportRule({
     $import: (ctx, el) => ctx.$importChildren(el),
     match: sel.tag('tr', 'td'),
     name: '@lexical/code/github-code-table/unwrap',

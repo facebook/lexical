@@ -146,7 +146,7 @@ export const ImportTextFormat: ImportStateConfig<number> =
  */
 export const ImportTextStyle: ImportStateConfig<
   Readonly<Record<string, string>>
-> = createImportState<Readonly<Record<string, string>>>(
+> = /* @__PURE__ */ createImportState<Readonly<Record<string, string>>>(
   'textStyle',
   () => ({}),
 );
@@ -268,7 +268,7 @@ export const ImportWhitespaceConfig: ImportStateConfig<WhitespaceImportConfig> =
  */
 export const ImportOverlays: ImportStateConfig<
   readonly CompiledOverlayRules[]
-> = createImportState<readonly CompiledOverlayRules[]>(
+> = /* @__PURE__ */ createImportState<readonly CompiledOverlayRules[]>(
   'importOverlays',
   () => [],
 );

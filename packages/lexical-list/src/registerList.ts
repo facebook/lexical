@@ -33,7 +33,7 @@ import {$getListDepth} from './utils';
 export const UPDATE_LIST_START_COMMAND: LexicalCommand<{
   listNodeKey: NodeKey;
   newStart: number;
-}> = createCommand('UPDATE_LIST_START_COMMAND');
+}> = /* @__PURE__ */ createCommand('UPDATE_LIST_START_COMMAND');
 export const INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void> =
   /* @__PURE__ */ createCommand('INSERT_UNORDERED_LIST_COMMAND');
 export const INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void> =

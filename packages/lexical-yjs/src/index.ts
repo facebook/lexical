@@ -41,7 +41,7 @@ export const DIFF_VERSIONS_COMMAND__EXPERIMENTAL: LexicalCommand<{
   prevSnapshot?: Snapshot;
   // Ending snapshot if defined, otherwise compare against current state of the Yjs document.
   snapshot?: Snapshot;
-}> = createCommand('DIFF_VERSIONS_COMMAND');
+}> = /* @__PURE__ */ createCommand('DIFF_VERSIONS_COMMAND');
 export const CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL: LexicalCommand<void> =
   /* @__PURE__ */ createCommand('CLEAR_DIFF_VERSIONS_COMMAND');
 export {$getYChangeState, renderSnapshot__EXPERIMENTAL} from './RenderSnapshot';

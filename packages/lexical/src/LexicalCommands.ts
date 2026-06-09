@@ -33,7 +33,7 @@ export const SELECTION_CHANGE_COMMAND: LexicalCommand<void> =
 export const SELECTION_INSERT_CLIPBOARD_NODES_COMMAND: LexicalCommand<{
   nodes: Array<LexicalNode>;
   selection: BaseSelection;
-}> = createCommand('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND');
+}> = /* @__PURE__ */ createCommand('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND');
 export const CLICK_COMMAND: LexicalCommand<MouseEvent> =
   /* @__PURE__ */ createCommand('CLICK_COMMAND');
 export const BEFORE_INPUT_COMMAND: LexicalCommand<InputEvent> =
@@ -62,7 +62,7 @@ export const INSERT_PARAGRAPH_COMMAND: LexicalCommand<void> =
   /* @__PURE__ */ createCommand('INSERT_PARAGRAPH_COMMAND');
 export const CONTROLLED_TEXT_INSERTION_COMMAND: LexicalCommand<
   InputEvent | string
-> = createCommand('CONTROLLED_TEXT_INSERTION_COMMAND');
+> = /* @__PURE__ */ createCommand('CONTROLLED_TEXT_INSERTION_COMMAND');
 export const PASTE_COMMAND: LexicalCommand<PasteCommandType> =
   /* @__PURE__ */ createCommand('PASTE_COMMAND');
 export const REMOVE_TEXT_COMMAND: LexicalCommand<InputEvent | null> =
@@ -195,14 +195,14 @@ export const DRAGEND_COMMAND: LexicalCommand<DragEvent> =
  */
 export const COPY_COMMAND: LexicalCommand<
   ClipboardEvent | KeyboardEvent | null
-> = createCommand('COPY_COMMAND');
+> = /* @__PURE__ */ createCommand('COPY_COMMAND');
 /**
  * Dispatched on a cut event, either via the clipboard or a KeyboardEvent
  * (Cmd+X on macOS, Ctrl+X elsewhere).
  */
 export const CUT_COMMAND: LexicalCommand<
   ClipboardEvent | KeyboardEvent | null
-> = createCommand('CUT_COMMAND');
+> = /* @__PURE__ */ createCommand('CUT_COMMAND');
 /**
  * Dispatched on the select all keyboard shortcut
  * (Cmd+A on macOS, Ctrl+A elsehwere).

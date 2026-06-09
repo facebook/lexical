@@ -31,7 +31,6 @@ import {
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
-  $nodesOfType,
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_BEFORE_EDITOR,
@@ -338,37 +337,53 @@ export const CardExtension = defineExtension({
         }
       }),
       // Mirror the caret's slot context onto a `data-current-slot` attribute
-      // on the active Card so CSS can render a focus hint. The
-      // selection-change → DOM-attribute mirror is the same shape as the
-      // NodeSelectionDataSelectedExtension above, but the source value here
-      // is the slot the caret sits in (resolved through
-      // $getSlotNameWithinHost), not whether the host itself is in a
-      // NodeSelection.
-      editor.registerUpdateListener(({editorState}) => {
-        editorState.read(() => {
-          const selection = $getSelection();
+      // on the active Card so CSS can render a focus hint. The (cardKey,
+      // slot) memo + read-scope-outside mutation mirror the
+      // NodeSelectionDataSelectedExtension shape so this stays off the
+      // every-keystroke hot path; the matching CSS sticks to border-color
+      // and box-shadow (no `content` / `display` changes) to avoid any
+      // layout reflow on the same frame as a forward-delete keystroke,
+      // which would otherwise drop the keystroke in Firefox / WebKit.
+      (() => {
+        let prevCardKey: NodeKey | null = null;
+        let prevSlot: 'title' | 'body' | null = null;
+        return editor.registerUpdateListener(({editorState}) => {
           let activeCardKey: NodeKey | null = null;
           let activeSlot: 'title' | 'body' | null = null;
-          if ($isRangeSelection(selection)) {
-            const context = $findCardSlotContext(selection.anchor.getNode());
-            if (context !== null) {
-              activeCardKey = context.card.getKey();
-              activeSlot = context.in;
+          editorState.read(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+              const context = $findCardSlotContext(selection.anchor.getNode());
+              if (context !== null) {
+                activeCardKey = context.card.getKey();
+                activeSlot = context.in;
+              }
             }
+          });
+          if (prevCardKey === activeCardKey && prevSlot === activeSlot) {
+            return;
           }
-          for (const card of $nodesOfType(CardNode)) {
-            const dom = editor.getElementByKey(card.getKey());
-            if (dom === null) {
-              continue;
-            }
-            if (card.getKey() === activeCardKey && activeSlot !== null) {
-              dom.setAttribute('data-current-slot', activeSlot);
-            } else {
+          if (prevCardKey !== null && prevCardKey !== activeCardKey) {
+            const dom = editor.getElementByKey(prevCardKey);
+            if (dom !== null) {
               dom.removeAttribute('data-current-slot');
             }
           }
+          if (activeCardKey !== null && activeSlot !== null) {
+            const dom = editor.getElementByKey(activeCardKey);
+            if (dom !== null) {
+              dom.setAttribute('data-current-slot', activeSlot);
+            }
+          } else if (prevCardKey !== null && prevCardKey === activeCardKey) {
+            const dom = editor.getElementByKey(prevCardKey);
+            if (dom !== null) {
+              dom.removeAttribute('data-current-slot');
+            }
+          }
+          prevCardKey = activeCardKey;
+          prevSlot = activeSlot;
         });
-      }),
+      })(),
     );
   },
 });

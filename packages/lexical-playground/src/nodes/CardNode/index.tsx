@@ -41,6 +41,17 @@ export class CardNode extends ElementNode {
     return false;
   }
 
+  // The Card is a shadow-root container so block-level inserts driven by
+  // `$insertNodeToNearestRoot` (e.g. INSERT_TABLE_COMMAND, the Markdown
+  // shortcut paragraph→heading transform) land inside the body channel
+  // instead of splitting the Card and dropping the new block at the
+  // document root. SELECT_ALL inside the title slot still scopes to the
+  // (inner) slot container since shadow-root resolution picks the
+  // innermost host.
+  isShadowRoot(): true {
+    return true;
+  }
+
   // When the Card is the only thing in a NodeSelection (the atomic chrome
   // click promotes a click into one), the body children would otherwise be
   // dropped on clipboard copy / HTML export because none of them are in the

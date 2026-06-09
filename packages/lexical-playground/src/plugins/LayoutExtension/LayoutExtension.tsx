@@ -6,7 +6,7 @@
  *
  */
 
-import type {ElementNode, LexicalCommand, LexicalNode, NodeKey} from 'lexical';
+import type {LexicalCommand, NodeKey} from 'lexical';
 
 import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {
@@ -79,9 +79,9 @@ const $fillLayoutItemIfEmpty = (node: LayoutItemNode) => {
 };
 
 const $removeIsolatedLayoutItem = (node: LayoutItemNode): boolean => {
-  const parent = node.getParent<ElementNode>();
+  const parent = node.getParent();
   if (!$isLayoutContainerNode(parent)) {
-    const children = node.getChildren<LexicalNode>();
+    const children = node.getChildren();
     for (const child of children) {
       node.insertBefore(child);
     }
@@ -150,7 +150,7 @@ export const LayoutExtension = defineExtension({
         UPDATE_LAYOUT_COMMAND,
         ({template, nodeKey}) => {
           editor.update(() => {
-            const container = $getNodeByKey<LexicalNode>(nodeKey);
+            const container = $getNodeByKey(nodeKey);
 
             if (!$isLayoutContainerNode(container)) {
               return;
@@ -170,7 +170,7 @@ export const LayoutExtension = defineExtension({
               }
             } else if (itemsCount < prevItemsCount) {
               for (let i = prevItemsCount - 1; i >= itemsCount; i--) {
-                const layoutItem = container.getChildAtIndex<LexicalNode>(i);
+                const layoutItem = container.getChildAtIndex(i);
 
                 if ($isLayoutItemNode(layoutItem)) {
                   layoutItem.remove();
@@ -197,7 +197,7 @@ export const LayoutExtension = defineExtension({
         }
       }),
       editor.registerNodeTransform(LayoutContainerNode, node => {
-        const children = node.getChildren<LexicalNode>();
+        const children = node.getChildren();
         if (!children.every($isLayoutItemNode)) {
           for (const child of children) {
             node.insertBefore(child);

@@ -587,7 +587,7 @@ function CommentsPanelList({
               editor.update(
                 () => {
                   const markNodeKey = Array.from(markNodeKeys)[0];
-                  const markNode = $getNodeByKey<MarkNode>(markNodeKey);
+                  const markNode = $getNodeByKey(markNodeKey);
                   if ($isMarkNode(markNode)) {
                     markNode.selectStart();
                   }
@@ -773,7 +773,7 @@ export default function CommentPlugin({
           setTimeout(() => {
             editor.update(() => {
               for (const key of markNodeKeys) {
-                const node: null | MarkNode = $getNodeByKey(key);
+                const node = $getNodeByKey(key);
                 if ($isMarkNode(node)) {
                   node.deleteID(id);
                   if (node.getIDs().length === 0) {
@@ -861,7 +861,7 @@ export default function CommentPlugin({
         mutations => {
           editor.getEditorState().read(() => {
             for (const [key, mutation] of mutations) {
-              const node: null | MarkNode = $getNodeByKey(key);
+              const node = $getNodeByKey(key);
               let ids: NodeKey[] = [];
 
               if (mutation === 'destroyed') {

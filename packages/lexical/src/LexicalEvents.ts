@@ -825,12 +825,36 @@ function $handleBeforeInput(event: InputEvent): boolean {
           isSelectionAnchorSameAsFocus &&
           !hasSelectedAllTextInNode &&
           selectedNodeCanInsertTextAfter;
-        // Check if selection is collapsed and if the previous node is a decorator node
-        // If so, the browser will not be able to handle the deletion
+        // Check if selection is collapsed and if the previous node is one the
+        // browser cannot atomically delete. If so, let Lexical handle the
+        // deletion instead of deferring to the browser.
+        //
+        // This covers two cases:
+        //   1. DecoratorNodes - the browser has no concept of these, so a
+        //      native deleteContentBackward leaves them untouched.
+        //   2. Token / segmented TextNodes (e.g. mentions, hashtags) - these
+        //      are meant to be deleted as a single unit. Some Android IMEs
+        //      (notably Microsoft SwiftKey, which fires keydown with
+        //      keyCode 229) issue a deleteContentBackward that the browser
+        //      walks character-by-character. Because the node is atomic, the
+        //      browser ends up skipping over it entirely and nothing is
+        //      deleted. Routing these through Lexical's DELETE_CHARACTER_COMMAND
+        //      removes the whole token as expected.
         if (shouldLetBrowserHandleDelete && selection.isCollapsed()) {
-          shouldLetBrowserHandleDelete = !$isDecoratorNode(
-            $getAdjacentNode(selection.anchor, true),
-          );
+          // Find the node the caret would delete into (backward). When the
+          // caret sits at the start of a node, that's the previous sibling;
+          // otherwise it's the node the caret is currently inside.
+          const anchorPoint = selection.anchor;
+          const anchorOwnNode = anchorPoint.getNode();
+          const nodeBeforeCaret =
+            anchorPoint.type === 'text' && anchorPoint.offset > 0
+              ? anchorOwnNode
+              : $getAdjacentNode(anchorPoint, true);
+          const isAtomicNode =
+            $isDecoratorNode(nodeBeforeCaret) ||
+            ($isTextNode(nodeBeforeCaret) &&
+              (nodeBeforeCaret.isToken() || nodeBeforeCaret.isSegmented()));
+          shouldLetBrowserHandleDelete = !isAtomicNode;
         }
         if (!shouldLetBrowserHandleDelete) {
           dispatchCommand(editor, DELETE_CHARACTER_COMMAND, true);

@@ -12,6 +12,8 @@ import {
   $createLineBreakNode,
   $createRangeSelection,
   $createTabNode,
+  $getNodeByKey,
+  $getNodeByKeyOrThrow,
   $getRoot,
   $getSelection,
   $isDecoratorNode,
@@ -2212,6 +2214,12 @@ describe('LexicalNode.$config() without registration', () => {
       expectTypeOf(
         element.getDescendantByIndex(0),
       ).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(
+        $getNodeByKey(node.getKey()),
+      ).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(
+        $getNodeByKeyOrThrow(node.getKey()),
+      ).toEqualTypeOf<LexicalNode>();
       // The deprecated generic overloads remain callable so that existing
       // code continues to compile during migration.
       expectTypeOf(
@@ -2220,6 +2228,12 @@ describe('LexicalNode.$config() without registration', () => {
       expectTypeOf(
         element.getFirstChild<TextNode>(),
       ).toEqualTypeOf<TextNode | null>();
+      expectTypeOf(
+        $getNodeByKey<TextNode>(node.getKey()),
+      ).toEqualTypeOf<TextNode | null>();
+      expectTypeOf(
+        $getNodeByKeyOrThrow<TextNode>(node.getKey()),
+      ).toEqualTypeOf<TextNode>();
       // The type parameter is no longer inferred from the contextual type,
       // so this implicit unchecked cast is a compile error.
       // @ts-expect-error - getFirstChild() returns LexicalNode | null

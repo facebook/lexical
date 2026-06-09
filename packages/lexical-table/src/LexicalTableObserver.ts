@@ -426,7 +426,7 @@ export class TableObserver {
 
   $getAnchorTableCell(): TableCellNode | null {
     return this.anchorCellNodeKey
-      ? $getNodeByKey(this.anchorCellNodeKey)
+      ? ($getNodeByKey(this.anchorCellNodeKey) as TableCellNode | null)
       : null;
   }
   $getAnchorTableCellOrThrow(): TableCellNode {
@@ -439,7 +439,9 @@ export class TableObserver {
   }
 
   $getFocusTableCell(): TableCellNode | null {
-    return this.focusCellNodeKey ? $getNodeByKey(this.focusCellNodeKey) : null;
+    return this.focusCellNodeKey
+      ? ($getNodeByKey(this.focusCellNodeKey) as TableCellNode | null)
+      : null;
   }
 
   $getFocusTableCellOrThrow(): TableCellNode {

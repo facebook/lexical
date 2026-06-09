@@ -960,7 +960,8 @@ export class LexicalNode {
     if (parent === null) {
       return null;
     }
-    return $getNodeByKey<ElementNode>(parent);
+    // Cast: a parent key always refers to an ElementNode
+    return $getNodeByKey(parent) as ElementNode | null;
   }
 
   /**
@@ -1304,7 +1305,8 @@ export class LexicalNode {
     if ($isEphemeral(this)) {
       return this;
     }
-    const latest = $getNodeByKey<this>(this.__key);
+    // Cast: the nodeMap entry for this key is always the same node class
+    const latest = $getNodeByKey(this.__key) as this | null;
     if (latest === null) {
       invariant(
         false,

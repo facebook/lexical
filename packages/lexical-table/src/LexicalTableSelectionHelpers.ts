@@ -328,7 +328,9 @@ function $handleTableClick(
   };
 
   tableObserver.pointerType = event.pointerType;
-  const tableNode = $getNodeByKeyOrThrow<TableNode>(tableObserver.tableNodeKey);
+  const tableNode = $getNodeByKeyOrThrow(
+    tableObserver.tableNodeKey,
+  ) as TableNode;
   const prevSelection = $getPreviousSelection();
   // We can't trust Firefox to do the right thing with the selection and
   // we don't have a proper state machine to do this "correctly" but
@@ -893,9 +895,9 @@ export function $handleTableSelectionChangeCommand(
     $isRangeSelection(selection) &&
     selection.isCollapsed()
   ) {
-    const tableNode = $getNodeByKeyOrThrow<TableNode>(
+    const tableNode = $getNodeByKeyOrThrow(
       shouldCheckSelectionForTable,
-    );
+    ) as TableNode;
     const anchor = selection.anchor.getNode();
     const firstRow = tableNode.getFirstChild();
     const anchorCell = $findCellNode(anchor);
@@ -931,7 +933,7 @@ export function $handleTableSelectionChangeCommand(
   const tableNodesAndObservers = Array.from(
     tableObservers.observers.entries(),
   ).map(([tableKey, [tableObserver]]) => ({
-    tableNode: $getNodeByKeyOrThrow<TableNode>(tableKey),
+    tableNode: $getNodeByKeyOrThrow(tableKey) as TableNode,
     tableObserver,
   }));
   for (const {tableNode, tableObserver} of tableNodesAndObservers) {
@@ -1076,7 +1078,7 @@ function $fixTableSelectionForSelectedTable(
   if (!selection.is(prevSelection)) {
     return;
   }
-  const tableNode = $getNodeByKeyOrThrow<TableNode>(selection.tableKey);
+  const tableNode = $getNodeByKeyOrThrow(selection.tableKey) as TableNode;
   // if selection goes outside of the table we need to change it to Range selection
   const domSelection = getDOMSelection(editorWindow);
   if (domSelection && domSelection.anchorNode && domSelection.focusNode) {

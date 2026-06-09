@@ -12,4 +12,7 @@ import lexicalMonorepoPlugin from '../../scripts/vite/lexicalMonorepoPlugin';
 
 export default defineConfig({
   plugins: [react(), lexicalMonorepoPlugin()],
+  // Pinned so the Playwright config can point a webServer at it.
+  preview: {port: 4326, strictPort: true},
+  server: {port: 4326, strictPort: true},
 });

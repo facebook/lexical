@@ -47,3 +47,15 @@ Then open the printed URL. Try:
 - Typing, then selecting words with `Alt`/`Ctrl` + `Shift` + arrow keys.
 - Pressing **Bold** / **Italic** / **Underline** in the (light-DOM) toolbar.
 - Word and line deletion with `Alt`/`Ctrl` + `Backspace`/`Delete`.
+
+## Tests
+
+[Playwright](https://playwright.dev/) tests in [`tests/`](./tests) cover
+rendering into the shadow root, typing, formatting a shadow-DOM selection from
+the light-DOM toolbar, and word deletion. They start the dev server
+automatically:
+
+```sh
+pnpm -C dev-examples/shadow-dom exec playwright install chromium
+pnpm -C dev-examples/shadow-dom test
+```

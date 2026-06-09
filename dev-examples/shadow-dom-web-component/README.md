@@ -43,3 +43,16 @@ Then open the printed URL. Try:
   in-shadow toolbar buttons — they reflect the selection's formats.
 - Word/line deletion with `Alt`/`Ctrl` + `Backspace`/`Delete`.
 - Submitting the form to see each editor's serialized state in the output.
+
+## Tests
+
+[Playwright](https://playwright.dev/) tests in [`tests/`](./tests) cover the
+two editors rendering in independent shadow roots, typing and formatting,
+editor independence, word deletion, `ElementInternals` form association, and
+the composed `input` event crossing the shadow boundary. They start the dev
+server automatically:
+
+```sh
+pnpm -C dev-examples/shadow-dom-web-component exec playwright install chromium
+pnpm -C dev-examples/shadow-dom-web-component test
+```

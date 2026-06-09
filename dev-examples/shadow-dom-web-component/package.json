@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "playwright test"
   },
   "dependencies": {
     "@lexical/extension": "workspace:*",
@@ -15,6 +16,7 @@
     "lexical": "workspace:*"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "typescript": "^6.0.3",
     "vite": "^8.0.16"
   },

@@ -165,7 +165,9 @@ export async function selectAll(page) {
   // TODO Normalize #4665
   if (E2E_BROWSER === 'firefox' && IS_LINUX) {
     await evaluate(page, () => {
-      const rootElement = document.querySelector('div[contenteditable="true"]');
+      // Use the editor's root element (not document.querySelector, which does
+      // not pierce shadow roots) so this works with the Shadow DOM setting too.
+      const rootElement = window.lexicalEditor.getRootElement();
       const selection = window.getSelection();
       selection.setBaseAndExtent(
         rootElement,

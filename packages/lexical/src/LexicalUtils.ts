@@ -750,8 +750,11 @@ export function $updateSelectedTextFromDOM(
   if (domSelection === null) {
     return;
   }
-  const anchorNode = domSelection.anchorNode;
-  let {anchorOffset, focusOffset} = domSelection;
+  const points =
+    getComposedSelectionPoints(domSelection, editor._rootElement) ||
+    domSelection;
+  const anchorNode = points.anchorNode;
+  let {anchorOffset, focusOffset} = points;
   if (anchorNode !== null) {
     let textContent = getAnchorTextFromDOM(anchorNode);
     const node = $getNearestNodeFromDOMNode(anchorNode);
@@ -1846,6 +1849,165 @@ export function getDOMSelectionFromTarget(
 ): null | Selection {
   const defaultView = getDefaultView(eventTarget);
   return defaultView ? defaultView.getSelection() : null;
+}
+
+/**
+ * @param node a value that may be a DOM ShadowRoot
+ * @returns true if node is a DOM ShadowRoot (an open or closed shadow tree
+ *   root), false otherwise. A ShadowRoot is a DocumentFragment with a host.
+ */
+export function isDOMShadowRoot(node: unknown): node is ShadowRoot {
+  return isDocumentFragment(node) && 'host' in node;
+}
+
+/**
+ * Collects the DOM ShadowRoots between `node` and its document, innermost
+ * first. Returns an empty array when `node` is in the light DOM (its root is
+ * the Document) or is detached.
+ *
+ * Uses the standard {@link https://developer.mozilla.org/docs/Web/API/Node/getRootNode | Node.getRootNode}
+ * and `ShadowRoot.host` platform APIs to walk out of any nested shadow trees.
+ *
+ * @param node the DOM node to start from (typically the editor root element)
+ * @returns the enclosing ShadowRoots, innermost first
+ */
+export function getDOMShadowRoots(node: Node): ShadowRoot[] {
+  const shadowRoots: ShadowRoot[] = [];
+  let current: Node = node;
+  for (;;) {
+    const root = current.getRootNode();
+    if (root === current || !isDOMShadowRoot(root)) {
+      break;
+    }
+    shadowRoots.push(root);
+    current = root.host;
+  }
+  return shadowRoots;
+}
+
+export interface DOMSelectionPoints {
+  anchorNode: Node | null;
+  anchorOffset: number;
+  focusNode: Node | null;
+  focusOffset: number;
+}
+
+/**
+ * Resolves a DOM Selection's range through any DOM ShadowRoots enclosing
+ * `rootElement`, using the standard
+ * {@link https://developer.mozilla.org/docs/Web/API/Selection/getComposedRanges | Selection.getComposedRanges}
+ * platform API.
+ *
+ * When a selection is inside a shadow tree the browser retargets
+ * `Selection.getRangeAt`/`anchorNode`/`focusNode` to the shadow host, which
+ * hides the real nodes Lexical needs to resolve. Passing the enclosing shadow
+ * roots to `getComposedRanges` returns the un-retargeted boundary points as a
+ * {@link https://developer.mozilla.org/docs/Web/API/StaticRange | StaticRange}
+ * (in tree order, i.e. start before end).
+ *
+ * @returns the composed StaticRange, or `null` when `rootElement` is in the
+ *   light DOM, the platform does not implement `getComposedRanges`, or there
+ *   is no selection.
+ */
+export function getComposedStaticRange(
+  domSelection: Selection,
+  rootElement: HTMLElement | null,
+): StaticRange | null {
+  if (
+    rootElement === null ||
+    typeof domSelection.getComposedRanges !== 'function'
+  ) {
+    return null;
+  }
+  const shadowRoots = getDOMShadowRoots(rootElement);
+  if (shadowRoots.length === 0) {
+    return null;
+  }
+  try {
+    return domSelection.getComposedRanges({shadowRoots})[0] || null;
+  } catch (_error) {
+    // Browsers that predate the dictionary form of getComposedRanges may
+    // throw; fall back to the plain (retargeted) reads.
+    return null;
+  }
+}
+
+/**
+ * Resolves a DOM Selection's anchor/focus boundary points through any DOM
+ * ShadowRoots enclosing `rootElement`. Combines {@link getComposedStaticRange}
+ * with the standard
+ * {@link https://developer.mozilla.org/docs/Web/API/Selection/direction | Selection.direction}
+ * to map the (tree-ordered) StaticRange back onto anchor/focus.
+ *
+ * @returns the composed points, or `null` when `rootElement` is in the light
+ *   DOM or the platform does not implement `getComposedRanges` — callers
+ *   should then fall back to the Selection's own anchorNode/focusNode, which
+ *   are already correct in the light DOM.
+ */
+export function getComposedSelectionPoints(
+  domSelection: Selection,
+  rootElement: HTMLElement | null,
+): DOMSelectionPoints | null {
+  const staticRange = getComposedStaticRange(domSelection, rootElement);
+  if (staticRange === null) {
+    return null;
+  }
+  const {startContainer, startOffset, endContainer, endOffset} = staticRange;
+  return domSelection.direction === 'backward'
+    ? {
+        anchorNode: endContainer,
+        anchorOffset: endOffset,
+        focusNode: startContainer,
+        focusOffset: startOffset,
+      }
+    : {
+        anchorNode: startContainer,
+        anchorOffset: startOffset,
+        focusNode: endContainer,
+        focusOffset: endOffset,
+      };
+}
+
+/**
+ * Returns the focused element within the same Document or ShadowRoot as
+ * `node`, using the standard `DocumentOrShadowRoot.activeElement`.
+ *
+ * Unlike `document.activeElement` — which is retargeted to the outermost
+ * shadow host when focus is inside a shadow tree — this returns the focused
+ * element within `node`'s own tree (e.g. the editor's contentEditable when it
+ * lives inside a shadow root).
+ *
+ * @param node a node whose tree's active element is wanted
+ * @returns the active element, or null
+ */
+export function getActiveElement(node: Node): Element | null {
+  const root = node.getRootNode();
+  return isDOMDocumentNode(root) || isDOMShadowRoot(root)
+    ? root.activeElement
+    : null;
+}
+
+/**
+ * Descends from `root.activeElement` through nested open ShadowRoots to the
+ * deepest focused element. `document.activeElement` only reports the outermost
+ * shadow host; this walks into the shadow trees via `ShadowRoot.activeElement`
+ * to find the element that actually has focus.
+ *
+ * @param root the Document or ShadowRoot to start from
+ * @returns the deepest active element, or null
+ */
+export function getActiveElementDeep(
+  root: Document | ShadowRoot,
+): Element | null {
+  let active: Element | null = root.activeElement;
+  while (active !== null && active.shadowRoot !== null) {
+    const inner = active.shadowRoot.activeElement;
+    if (inner === null) {
+      break;
+    }
+    active = inner;
+  }
+  return active;
 }
 
 export function $splitNode(

@@ -176,9 +176,9 @@ function $prepopulatedRichText() {
 }
 
 // These are only enabled for rich-text mode
-const PlaygroundRichTextExtension = defineExtension({
+const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    configExtension(RichTextExtension, {
+    /* @__PURE__ */ configExtension(RichTextExtension, {
       escapeFormatTriggers: {
         code: {arrow: true, click: true, enter: true, onlyAtBoundary: true},
       },
@@ -197,7 +197,9 @@ const PlaygroundRichTextExtension = defineExtension({
     TabFocusExtension,
     CollapsibleExtension,
     CodeHighlightExtension,
-    configExtension(ListExtension, {shouldPreserveNumbering: false}),
+    /* @__PURE__ */ configExtension(ListExtension, {
+      shouldPreserveNumbering: false,
+    }),
     CheckListExtension,
     PlaygroundMarkdownShortcutsExtension,
     PageBreakExtension,
@@ -210,7 +212,7 @@ const PlaygroundRichTextExtension = defineExtension({
   name: '@lexical/playground/RichText',
 });
 
-const AppExtension = defineExtension({
+const AppExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     AutoFocusExtension,
     ClearEditorExtension,
@@ -227,17 +229,19 @@ const AppExtension = defineExtension({
     DragDropPasteExtension,
     EmojisExtension,
     MentionsExtension,
-    configExtension(LinkExtension, {validateUrl}),
+    /* @__PURE__ */ configExtension(LinkExtension, {validateUrl}),
     PlaygroundAutoLinkExtension,
     ClickableLinkExtension,
     SelectionAlwaysOnDisplayExtension,
     TerseExportExtension,
-    configExtension(ClickAfterLastBlockExtension, {
+    /* @__PURE__ */ configExtension(ClickAfterLastBlockExtension, {
       $shouldInsertAfter: node =>
         $defaultShouldInsertAfter(node) || $isCodeNode(node),
     }),
-    configExtension(AutocompleteExtension, {disabled: true}),
-    configExtension(VisibleNonPrintingExtension, {disabled: true}),
+    /* @__PURE__ */ configExtension(AutocompleteExtension, {disabled: true}),
+    /* @__PURE__ */ configExtension(VisibleNonPrintingExtension, {
+      disabled: true,
+    }),
     // DOMImportExtension pipeline — `PlaygroundImportExtension` bundles
     // the shared `CoreImportExtension` baseline, the playground-specific
     // inline-style overlay and the `ClipboardDOMImportExtension` paste
@@ -285,7 +289,7 @@ function buildExtensionFromSettings(settings: DynamicSettings) {
         : $prepopulatedRichText,
     dependencies: [
       AppExtension,
-      configExtension(HistoryExtension, {disabled: isCollab}),
+      /* @__PURE__ */ configExtension(HistoryExtension, {disabled: isCollab}),
       isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
     ],
     name: '@lexical/playground/dynamic-config',

@@ -30,11 +30,11 @@ export interface ListConfig {
  * Configures {@link ListNode}, {@link ListItemNode} and registers
  * the strict indent transform if `hasStrictIndent` is true (default false).
  */
-export const ListExtension = defineExtension({
+export const ListExtension = /* @__PURE__ */ defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
-  config: safeCast<ListConfig>({
+  config: /* @__PURE__ */ safeCast<ListConfig>({
     hasStrictIndent: false,
     shouldPreserveNumbering: false,
   }),
@@ -43,7 +43,9 @@ export const ListExtension = defineExtension({
     // unless the editor routes HTML through the pipeline (e.g. via
     // ClipboardDOMImportExtension or $generateNodesFromDOMViaExtension).
     CoreImportExtension,
-    configExtension(DOMImportExtension, {rules: ListImportRules}),
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: ListImportRules,
+    }),
   ],
   name: '@lexical/list/List',
   nodes: () => [ListNode, ListItemNode],
@@ -73,9 +75,9 @@ export interface CheckListConfig {
  * {@link ListItemNode} with a `INSERT_CHECK_LIST_COMMAND` listener and
  * the expected keyboard and mouse interactions for checkboxes.
  */
-export const CheckListExtension = defineExtension({
+export const CheckListExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config) => namedSignals(config),
-  config: safeCast<CheckListConfig>({
+  config: /* @__PURE__ */ safeCast<CheckListConfig>({
     disableTakeFocusOnClick: false,
   }),
   dependencies: [ListExtension],
@@ -93,7 +95,7 @@ export const CheckListExtension = defineExtension({
  * {@link ListImportRules} (and `CoreImportExtension`) itself — depend on
  * it directly instead.
  */
-export const ListImportExtension = defineExtension({
+export const ListImportExtension = /* @__PURE__ */ defineExtension({
   dependencies: [ListExtension],
   name: '@lexical/list/Import',
 });

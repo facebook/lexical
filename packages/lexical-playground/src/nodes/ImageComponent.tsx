@@ -64,7 +64,7 @@ type ImageStatus =
 const imageCache = new Map<string, Promise<ImageStatus> | ImageStatus>();
 
 export const RIGHT_CLICK_IMAGE_COMMAND: LexicalCommand<MouseEvent> =
-  createCommand('RIGHT_CLICK_IMAGE_COMMAND');
+  /* @__PURE__ */ createCommand('RIGHT_CLICK_IMAGE_COMMAND');
 
 function DisableCaptionOnBlur({
   setShowCaption,

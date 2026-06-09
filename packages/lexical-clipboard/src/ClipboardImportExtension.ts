@@ -440,14 +440,14 @@ export function $getImportOutput(): ClipboardImportOutput {
  * });
  * ```
  */
-export const ClipboardImportExtension = defineExtension({
+export const ClipboardImportExtension = /* @__PURE__ */ defineExtension({
   build: (_editor, config): ClipboardImportOutput => ({
     $importMimeType: config.$importMimeType,
     $insertDataTransfer: (dataTransfer, selection) =>
       $runImport(config, dataTransfer, selection),
     priority: config.priority,
   }),
-  config: safeCast<ClipboardImportConfig>({
+  config: /* @__PURE__ */ safeCast<ClipboardImportConfig>({
     $importMimeType: DEFAULT_IMPORT_MIME_TYPE,
     priority: DEFAULT_IMPORT_MIME_TYPE_PRIORITY,
   }),
@@ -513,10 +513,10 @@ export const ClipboardImportExtension = defineExtension({
  * });
  * ```
  */
-export const ClipboardDOMImportExtension = defineExtension({
+export const ClipboardDOMImportExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     CoreImportExtension,
-    configExtension(ClipboardImportExtension, {
+    /* @__PURE__ */ configExtension(ClipboardImportExtension, {
       $importMimeType: {
         'text/html': [
           (html, selection, _$next, dataTransfer) => {

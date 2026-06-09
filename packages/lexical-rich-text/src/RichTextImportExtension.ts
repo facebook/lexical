@@ -34,7 +34,7 @@ function isGoogleDocsTitleSpan(node: Node): boolean {
   );
 }
 
-const HeadingRule = defineImportRule({
+const HeadingRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const tag = el.nodeName.toLowerCase() as HeadingTagType;
     const node = $createHeadingNode(tag);
@@ -47,7 +47,7 @@ const HeadingRule = defineImportRule({
   name: '@lexical/rich-text/heading',
 });
 
-const QuoteRule = defineImportRule({
+const QuoteRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const node = $createQuoteNode();
     $setFormatFromDOM(node, el);
@@ -66,7 +66,7 @@ const QuoteRule = defineImportRule({
  * descendant rules — including {@link GoogleDocsTitleSpanRule} — fire and
  * produce the heading at this level.
  */
-const GoogleDocsTitleParagraphRule = defineImportRule({
+const GoogleDocsTitleParagraphRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el, $next) => {
     const first = el.firstChild;
     if (first && isGoogleDocsTitleSpan(first)) {
@@ -78,7 +78,7 @@ const GoogleDocsTitleParagraphRule = defineImportRule({
   name: '@lexical/rich-text/google-docs-title-p',
 });
 
-const GoogleDocsTitleSpanRule = defineImportRule({
+const GoogleDocsTitleSpanRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el, $next) =>
     el.style.fontSize !== '26pt'
       ? $next()

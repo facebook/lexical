@@ -54,7 +54,7 @@ function isMonospaceDescendant(node: HTMLElement): boolean {
  * the cost of these rules is never paid against unrelated `<tr>` /
  * `<td>` pastes.
  */
-const GitHubCodeTableOverlayRules = defineOverlayRules([
+const GitHubCodeTableOverlayRules = /* @__PURE__ */ defineOverlayRules([
   defineImportRule({
     $import: (ctx, el) => ctx.$importChildren(el),
     match: sel.tag('tr', 'td'),
@@ -62,7 +62,7 @@ const GitHubCodeTableOverlayRules = defineOverlayRules([
   }),
 ]);
 
-const PreRule = defineImportRule({
+const PreRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => [
     $createCodeNode(el.getAttribute(LANGUAGE_DATA_ATTRIBUTE)).splice(
       0,
@@ -80,7 +80,7 @@ const PreRule = defineImportRule({
  * defers to the inline-format rule from `CoreImportExtension` so it
  * becomes a TextNode with IS_CODE.
  */
-const MultilineCodeRule = defineImportRule({
+const MultilineCodeRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el, $next) => {
     const text = el.textContent || '';
     const isMultiLine = /\r?\n/.test(text) || el.querySelector('br') !== null;
@@ -206,7 +206,7 @@ function looksLikeVscodePaste(root: ParentNode): boolean {
  * around per-line `<div>`s and `<br>`s. Emits a single CodeNode whose
  * text is the wrapper's lines joined by `\n`.
  */
-const VscodeWrapperRule = defineImportRule({
+const VscodeWrapperRule = /* @__PURE__ */ defineImportRule({
   $import: (_ctx, el, $next) => {
     if (!isMonospacePreElement(el) || isMonospaceDescendant(el)) {
       return $next();
@@ -234,7 +234,7 @@ const VscodeWrapperRule = defineImportRule({
  * subsequent sibling in the same run, the prev-sibling check below
  * returns `[]` so the run is only emitted once.
  */
-const VscodeLineRunRule = defineImportRule({
+const VscodeLineRunRule = /* @__PURE__ */ defineImportRule({
   $import: (_ctx, el, $next) => {
     if (!isMonospacePreElement(el) || isMonospaceDescendant(el)) {
       return $next();
@@ -265,7 +265,7 @@ const VscodeLineRunRule = defineImportRule({
   name: '@lexical/code/vscode-line-run',
 });
 
-const VscodeCodePasteOverlay = defineOverlayRules([
+const VscodeCodePasteOverlay = /* @__PURE__ */ defineOverlayRules([
   VscodeWrapperRule,
   VscodeLineRunRule,
 ]);
@@ -313,7 +313,7 @@ export const $installVscodeCodePasteOverlay: DOMPreprocessFn = (
  * wrapper just unwrap so their text content flows into the surrounding
  * CodeNode.
  */
-const DivRule = defineImportRule({
+const DivRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el, $next) => {
     if (isMonospaceElement(el)) {
       return [$createCodeNode().splice(0, 0, ctx.$importChildren(el))];
@@ -335,7 +335,7 @@ const DivRule = defineImportRule({
  * subtree unwrap unconditionally — without paying the predicate cost
  * on every other `<tr>` / `<td>` paste elsewhere.
  */
-const GitHubCodeTableRule = defineImportRule({
+const GitHubCodeTableRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => [
     $createCodeNode().splice(
       0,
@@ -353,7 +353,7 @@ const GitHubCodeTableRule = defineImportRule({
  * descendant text flows up into whatever context the cell is in. The
  * class is part of the selector itself, so no runtime guard.
  */
-const GitHubCodeCellByClassRule = defineImportRule({
+const GitHubCodeCellByClassRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => ctx.$importChildren(el),
   match: sel.tag('td').classAll('js-file-line'),
   name: '@lexical/code/github-code-cell-by-class',

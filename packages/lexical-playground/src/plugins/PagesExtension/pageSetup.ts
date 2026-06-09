@@ -53,7 +53,7 @@ function parseMargins(v: unknown): PageSetup['margins'] {
   return DEFAULT_PAGE_SETUP.margins;
 }
 
-export const pageSetupState = createState('pageSetup', {
+export const pageSetupState = /* @__PURE__ */ createState('pageSetup', {
   isEqual: (a: null | PageSetup, b: null | PageSetup) =>
     a === b ||
     (a != null &&

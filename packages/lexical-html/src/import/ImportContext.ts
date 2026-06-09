@@ -82,7 +82,10 @@ export type ImportSourceKind = 'paste' | 'unknown';
  * @experimental
  */
 export const ImportSource: ImportStateConfig<ImportSourceKind> =
-  createImportState<ImportSourceKind>('importSource', () => 'unknown');
+  /* @__PURE__ */ createImportState<ImportSourceKind>(
+    'importSource',
+    () => 'unknown',
+  );
 
 /**
  * Built-in import-context state holding the {@link DataTransfer} the
@@ -108,7 +111,7 @@ export const ImportSource: ImportStateConfig<ImportSourceKind> =
  * @experimental
  */
 export const ImportSourceDataTransfer: ImportStateConfig<DataTransfer | null> =
-  createImportState<DataTransfer | null>(
+  /* @__PURE__ */ createImportState<DataTransfer | null>(
     'importSourceDataTransfer',
     () => null,
   );
@@ -122,10 +125,8 @@ export const ImportSourceDataTransfer: ImportStateConfig<DataTransfer | null> =
  *
  * @experimental
  */
-export const ImportTextFormat: ImportStateConfig<number> = createImportState(
-  'textFormat',
-  () => 0,
-);
+export const ImportTextFormat: ImportStateConfig<number> =
+  /* @__PURE__ */ createImportState('textFormat', () => 0);
 
 /**
  * Built-in import-context state holding a parsed CSS-style record
@@ -239,10 +240,13 @@ export function defaultIsInline(node: Node): boolean {
  * @experimental
  */
 export const ImportWhitespaceConfig: ImportStateConfig<WhitespaceImportConfig> =
-  createImportState<WhitespaceImportConfig>('whitespaceConfig', () => ({
-    isInline: defaultIsInline,
-    preservesWhitespace: defaultPreservesWhitespace,
-  }));
+  /* @__PURE__ */ createImportState<WhitespaceImportConfig>(
+    'whitespaceConfig',
+    () => ({
+      isInline: defaultIsInline,
+      preservesWhitespace: defaultPreservesWhitespace,
+    }),
+  );
 
 /**
  * Built-in session slot for runtime overlay rules that should be in

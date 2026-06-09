@@ -688,7 +688,7 @@ export interface HistoryExtensionOutput {
  * Registers necessary listeners to manage undo/redo history stack and related
  * editor commands, via the \@lexical/history module.
  */
-export const HistoryExtension = defineExtension({
+export const HistoryExtension = /* @__PURE__ */ defineExtension({
   build: (
     editor,
     {delay, createInitialHistoryState, disabled, maxDepth, now},
@@ -710,7 +710,7 @@ export const HistoryExtension = defineExtension({
       ...state.getInitResult(),
     };
   },
-  config: safeCast<HistoryConfig>({
+  config: /* @__PURE__ */ safeCast<HistoryConfig>({
     createInitialHistoryState: createEmptyHistoryState,
     delay: 300,
     disabled: typeof window === 'undefined',
@@ -780,18 +780,18 @@ export interface SharedHistoryConfig {
  * editor commands, via the \@lexical/history module, only if the parent editor
  * has a history plugin implementation.
  */
-export const SharedHistoryExtension = defineExtension({
+export const SharedHistoryExtension = /* @__PURE__ */ defineExtension({
   build: (editor, {disabled, parentEditor}) =>
     namedSignals({
       disabled,
       parentEditor: parentEditor || editor._parentEditor,
     }),
-  config: safeCast<SharedHistoryConfig>({
+  config: /* @__PURE__ */ safeCast<SharedHistoryConfig>({
     disabled: false,
     parentEditor: null,
   }),
   dependencies: [
-    configExtension(HistoryExtension, {
+    /* @__PURE__ */ configExtension(HistoryExtension, {
       disabled: true,
     }),
   ],

@@ -32,7 +32,7 @@ export const HorizontalRuleImportRules = [HorizontalRuleRule];
  * registered — depend on `HorizontalRuleExtension` (plus any extension
  * that brings in `CoreImportExtension`) directly instead.
  */
-export const HorizontalRuleImportExtension = defineExtension({
+export const HorizontalRuleImportExtension = /* @__PURE__ */ defineExtension({
   dependencies: [HorizontalRuleExtension, CoreImportExtension],
   name: '@lexical/html/HorizontalRuleImport',
 });

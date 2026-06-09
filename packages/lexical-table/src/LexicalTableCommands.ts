@@ -24,4 +24,4 @@ export type InsertTableCommandPayload = Readonly<{
 }>;
 
 export const INSERT_TABLE_COMMAND: LexicalCommand<InsertTableCommandPayload> =
-  createCommand('INSERT_TABLE_COMMAND');
+  /* @__PURE__ */ createCommand('INSERT_TABLE_COMMAND');

@@ -66,7 +66,7 @@ function $appendStyleToTextDescendants(
  * style of every TextNode descendant produced by the lower-priority
  * `InlineFormatRule`.
  */
-const PlaygroundInlineStyleRule = defineImportRule({
+const PlaygroundInlineStyleRule = /* @__PURE__ */ defineImportRule({
   $import: (_ctx, el, $next) => {
     const extraStyle = getPlaygroundExtraStyles(el);
     const result = $next();
@@ -118,12 +118,14 @@ export const PlaygroundImportRules = [PlaygroundInlineStyleRule];
  * mode, and plain-text mode never pulls in `RichTextExtension` (which
  * *conflicts* with `PlainTextExtension`).
  */
-export const PlaygroundImportExtension = defineExtension({
+export const PlaygroundImportExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     CoreImportExtension,
     LinkExtension,
     ClipboardDOMImportExtension,
-    configExtension(DOMImportExtension, {rules: PlaygroundImportRules}),
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: PlaygroundImportRules,
+    }),
   ],
   name: '@lexical/playground/Import',
 });

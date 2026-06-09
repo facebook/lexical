@@ -23,7 +23,11 @@ import {DOMImportExtension} from './DOMImportExtension';
  *
  * @experimental
  */
-export const CoreImportExtension = defineExtension({
-  dependencies: [configExtension(DOMImportExtension, {rules: CoreImportRules})],
+export const CoreImportExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: CoreImportRules,
+    }),
+  ],
   name: '@lexical/html/CoreImport',
 });

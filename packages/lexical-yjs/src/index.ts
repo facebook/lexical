@@ -32,10 +32,9 @@ export type UserState = {
   [key: string]: unknown;
 };
 export const CONNECTED_COMMAND: LexicalCommand<boolean> =
-  createCommand('CONNECTED_COMMAND');
-export const TOGGLE_CONNECT_COMMAND: LexicalCommand<boolean> = createCommand(
-  'TOGGLE_CONNECT_COMMAND',
-);
+  /* @__PURE__ */ createCommand('CONNECTED_COMMAND');
+export const TOGGLE_CONNECT_COMMAND: LexicalCommand<boolean> =
+  /* @__PURE__ */ createCommand('TOGGLE_CONNECT_COMMAND');
 
 export const DIFF_VERSIONS_COMMAND__EXPERIMENTAL: LexicalCommand<{
   // Starting snapshot if defined, otherwise compare since start of time.
@@ -44,7 +43,7 @@ export const DIFF_VERSIONS_COMMAND__EXPERIMENTAL: LexicalCommand<{
   snapshot?: Snapshot;
 }> = createCommand('DIFF_VERSIONS_COMMAND');
 export const CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL: LexicalCommand<void> =
-  createCommand('CLEAR_DIFF_VERSIONS_COMMAND');
+  /* @__PURE__ */ createCommand('CLEAR_DIFF_VERSIONS_COMMAND');
 export {$getYChangeState, renderSnapshot__EXPERIMENTAL} from './RenderSnapshot';
 
 export type ProviderAwareness = {

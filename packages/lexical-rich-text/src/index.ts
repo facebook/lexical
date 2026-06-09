@@ -127,9 +127,8 @@ export type SerializedHeadingNode = Spread<
   SerializedElementNode
 >;
 
-export const DRAG_DROP_PASTE: LexicalCommand<Array<File>> = createCommand(
-  'DRAG_DROP_PASTE_FILE',
-);
+export const DRAG_DROP_PASTE: LexicalCommand<Array<File>> =
+  /* @__PURE__ */ createCommand('DRAG_DROP_PASTE_FILE');
 
 export type SerializedQuoteNode = SerializedElementNode;
 

@@ -60,11 +60,11 @@ export interface TableConfig {
  * Configures {@link TableNode}, {@link TableRowNode}, {@link TableCellNode} and
  * registers table behaviors (see {@link TableConfig})
  */
-export const TableExtension = defineExtension({
+export const TableExtension = /* @__PURE__ */ defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
-  config: safeCast<TableConfig>({
+  config: /* @__PURE__ */ safeCast<TableConfig>({
     hasCellBackgroundColor: true,
     hasCellMerge: true,
     hasHorizontalScroll: true,
@@ -76,7 +76,9 @@ export const TableExtension = defineExtension({
     // unless the editor routes HTML through the pipeline (e.g. via
     // ClipboardDOMImportExtension or $generateNodesFromDOMViaExtension).
     CoreImportExtension,
-    configExtension(DOMImportExtension, {rules: TableImportRules}),
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: TableImportRules,
+    }),
   ],
   name: '@lexical/table/Table',
   nodes: () => [TableNode, TableRowNode, TableCellNode],
@@ -126,7 +128,7 @@ export const TableExtension = defineExtension({
  * {@link TableImportRules} (and `CoreImportExtension`) itself — depend on
  * it directly instead.
  */
-export const TableImportExtension = defineExtension({
+export const TableImportExtension = /* @__PURE__ */ defineExtension({
   dependencies: [TableExtension],
   name: '@lexical/table/Import',
 });

@@ -55,7 +55,7 @@ import {
   CollapsibleTitleNode,
 } from './CollapsibleTitleNode';
 
-const SummaryRule = defineImportRule({
+const SummaryRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => [
     $createCollapsibleTitleNode().splice(0, 0, ctx.$importChildren(el)),
   ],
@@ -63,7 +63,7 @@ const SummaryRule = defineImportRule({
   name: '@lexical/playground/summary',
 });
 
-const CollapsibleContentRule = defineImportRule({
+const CollapsibleContentRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => [
     $createCollapsibleContentNode().splice(
       0,
@@ -75,7 +75,7 @@ const CollapsibleContentRule = defineImportRule({
   name: '@lexical/playground/collapsible-content',
 });
 
-const DetailsRule = defineImportRule({
+const DetailsRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     let titleNode: CollapsibleTitleNode | null = null;
     // BlockSchema wraps inline runs in paragraphs, and `$onChild` siphons
@@ -126,7 +126,7 @@ const DetailsRule = defineImportRule({
   name: '@lexical/playground/details',
 });
 
-export const INSERT_COLLAPSIBLE_COMMAND = createCommand<void>(
+export const INSERT_COLLAPSIBLE_COMMAND = /* @__PURE__ */ createCommand<void>(
   'INSERT_COLLAPSIBLE_COMMAND',
 );
 
@@ -217,9 +217,9 @@ const $wrapInlineContentChildren = (node: CollapsibleContentNode) => {
   }
 };
 
-export const CollapsibleExtension = defineExtension({
+export const CollapsibleExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    configExtension(DOMImportExtension, {
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
       rules: [DetailsRule, SummaryRule, CollapsibleContentRule],
     }),
   ],

@@ -26,13 +26,13 @@ import {$exitCodeNodeOnEnter, CodeNode} from './CodeNode';
 /**
  * Add code blocks to the editor (syntax highlighting provided separately)
  */
-export const CodeExtension = defineExtension({
+export const CodeExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     // DOMImportExtension support for the nodes registered here. Inert
     // unless the editor routes HTML through the pipeline (e.g. via
     // ClipboardDOMImportExtension or $generateNodesFromDOMViaExtension).
     CoreImportExtension,
-    configExtension(DOMImportExtension, {
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
       preprocess: [$installVscodeCodePasteOverlay],
       rules: CodeImportRules,
     }),
@@ -64,7 +64,7 @@ export const CodeExtension = defineExtension({
  * {@link CodeImportRules} (and `CoreImportExtension`) itself — depend on
  * it directly instead.
  */
-export const CodeImportExtension = defineExtension({
+export const CodeImportExtension = /* @__PURE__ */ defineExtension({
   dependencies: [CodeExtension],
   name: '@lexical/code/Import',
 });

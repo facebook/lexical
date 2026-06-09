@@ -68,7 +68,7 @@ function $normalizeListChildren(children: LexicalNode[]): ListItemNode[] {
   return out;
 }
 
-const ListRule = defineImportRule({
+const ListRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     let node;
     if (isElementOfTag(el, 'ol')) {
@@ -179,7 +179,7 @@ function $flattenListItemBlocks(children: LexicalNode[]): LexicalNode[] {
   return out;
 }
 
-const ListItemRule = defineImportRule({
+const ListItemRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const ariaChecked = el.getAttribute('aria-checked');
     const checked =
@@ -234,7 +234,7 @@ function $buildChecklistItem(
   ];
 }
 
-const TaskListItemRule = defineImportRule({
+const TaskListItemRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el, $next) => {
     const input = el.querySelector(':scope > input[type="checkbox"]');
     if (!input) {
@@ -246,7 +246,7 @@ const TaskListItemRule = defineImportRule({
   name: '@lexical/list/li-task-list-item',
 });
 
-const JoplinChecklistItemRule = defineImportRule({
+const JoplinChecklistItemRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el, $next) => {
     const wrapper = el.querySelector(':scope > .checkbox-wrapper');
     if (!wrapper) {

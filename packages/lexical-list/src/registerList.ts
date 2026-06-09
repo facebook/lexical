@@ -35,13 +35,11 @@ export const UPDATE_LIST_START_COMMAND: LexicalCommand<{
   newStart: number;
 }> = createCommand('UPDATE_LIST_START_COMMAND');
 export const INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void> =
-  createCommand('INSERT_UNORDERED_LIST_COMMAND');
-export const INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void> = createCommand(
-  'INSERT_ORDERED_LIST_COMMAND',
-);
-export const REMOVE_LIST_COMMAND: LexicalCommand<void> = createCommand(
-  'REMOVE_LIST_COMMAND',
-);
+  /* @__PURE__ */ createCommand('INSERT_UNORDERED_LIST_COMMAND');
+export const INSERT_ORDERED_LIST_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('INSERT_ORDERED_LIST_COMMAND');
+export const REMOVE_LIST_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('REMOVE_LIST_COMMAND');
 
 export interface RegisterListOptions {
   restoreNumbering?: boolean;

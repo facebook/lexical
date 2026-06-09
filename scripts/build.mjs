@@ -343,7 +343,10 @@ async function build(
       isProd &&
         terser({
           ecma: 2019,
-          format: {ascii_only: true},
+          // Keep /* @__PURE__ */ and @__NO_SIDE_EFFECTS__ annotations in the
+          // prod output so downstream bundlers can tree-shake unused
+          // extension/command/rule definitions out of application bundles.
+          format: {ascii_only: true, preserve_annotations: true},
           module: format === 'esm',
         }),
       {

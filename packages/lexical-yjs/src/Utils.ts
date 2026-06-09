@@ -624,7 +624,7 @@ export function $moveSelectionToPreviousNode(
   }
   // Get previous node
   const prevNodeKey = anchorNode.__prev;
-  let prevNode: ElementNode | null = null;
+  let prevNode: LexicalNode | null = null;
   if (prevNodeKey) {
     prevNode = $getNodeByKey(prevNodeKey);
   }

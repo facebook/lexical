@@ -207,8 +207,8 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
         editor.getEditorState().read(() => {
           for (const [nodeKey, mutation] of mutatedNodes) {
             if (mutation === 'created') {
-              const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
-              if (newHeading !== null) {
+              const newHeading = $getNodeByKey(nodeKey);
+              if ($isHeadingNode(newHeading)) {
                 const prevHeading = $getPreviousHeading(newHeading);
                 currentTableOfContents = $insertHeadingIntoTableOfContents(
                   prevHeading,
@@ -222,8 +222,8 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
                 currentTableOfContents,
               );
             } else if (mutation === 'updated') {
-              const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
-              if (newHeading !== null) {
+              const newHeading = $getNodeByKey(nodeKey);
+              if ($isHeadingNode(newHeading)) {
                 const prevHeading = $getPreviousHeading(newHeading);
                 currentTableOfContents = $updateHeadingPosition(
                   prevHeading,

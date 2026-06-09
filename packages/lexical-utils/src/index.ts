@@ -417,8 +417,8 @@ export function registerNestedElementResolver<N extends ElementNode>(
       }
     }
 
-    let parentNode: N | null = node;
-    let childNode = node;
+    let parentNode: ElementNode | null = node;
+    let childNode: ElementNode = node;
 
     while (parentNode !== null) {
       childNode = parentNode;

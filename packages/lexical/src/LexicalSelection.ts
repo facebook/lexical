@@ -871,11 +871,12 @@ export class RangeSelection implements BaseSelection {
         (!firstNodeParent.canInsertTextAfter() &&
           firstNode.getNextSibling() === null))
     ) {
-      let nextSibling = firstNode.getNextSibling<TextNode>();
+      const candidateNextSibling = firstNode.getNextSibling();
+      let nextSibling: TextNode;
       if (
-        !$isTextNode(nextSibling) ||
-        !nextSibling.canInsertTextBefore() ||
-        $isTokenOrSegmented(nextSibling)
+        !$isTextNode(candidateNextSibling) ||
+        !candidateNextSibling.canInsertTextBefore() ||
+        $isTokenOrSegmented(candidateNextSibling)
       ) {
         nextSibling = $createTextNode();
         nextSibling.setFormat(format);
@@ -885,6 +886,8 @@ export class RangeSelection implements BaseSelection {
         } else {
           firstNode.insertAfter(nextSibling);
         }
+      } else {
+        nextSibling = candidateNextSibling;
       }
       nextSibling.select(0, 0);
       firstNode = nextSibling;
@@ -900,8 +903,12 @@ export class RangeSelection implements BaseSelection {
         (!firstNodeParent.canInsertTextBefore() &&
           firstNode.getPreviousSibling() === null))
     ) {
-      let prevSibling = firstNode.getPreviousSibling<TextNode>();
-      if (!$isTextNode(prevSibling) || $isTokenOrSegmented(prevSibling)) {
+      const candidatePrevSibling = firstNode.getPreviousSibling();
+      let prevSibling: TextNode;
+      if (
+        !$isTextNode(candidatePrevSibling) ||
+        $isTokenOrSegmented(candidatePrevSibling)
+      ) {
         prevSibling = $createTextNode();
         prevSibling.setFormat(format);
         if (!firstNodeParent.canInsertTextBefore()) {
@@ -909,6 +916,8 @@ export class RangeSelection implements BaseSelection {
         } else {
           firstNode.insertBefore(prevSibling);
         }
+      } else {
+        prevSibling = candidatePrevSibling;
       }
       prevSibling.select();
       firstNode = prevSibling;

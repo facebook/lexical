@@ -122,16 +122,20 @@ export function $getStartOfCodeInLine(
 
   while (true) {
     if (nodeOffset === 0) {
-      node = node.getPreviousSibling();
-      if (node === null) {
+      // Annotation breaks a circular inference through the loop (TS7022),
+      // remove when the deprecated generic signatures from #8661 are removed
+      const prevSibling: LexicalNode | null = node.getPreviousSibling();
+      if (prevSibling === null) {
+        node = null;
         break;
       }
       invariant(
-        $isCodeHighlightNode(node) ||
-          $isTabNode(node) ||
-          $isLineBreakNode(node),
+        $isCodeHighlightNode(prevSibling) ||
+          $isTabNode(prevSibling) ||
+          $isLineBreakNode(prevSibling),
         'Expected a valid Code Node: CodeHighlightNode, TabNode, LineBreakNode',
       );
+      node = prevSibling;
       if ($isLineBreakNode(node)) {
         last = {
           node,

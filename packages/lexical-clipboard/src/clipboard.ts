@@ -222,8 +222,15 @@ function findEditorRootByKey(key: string, doc: Document): HTMLElement | null {
   return null;
 }
 
-function $resolveDropPointCaret(event: DragEvent): null | PointCaret<'next'> {
-  const hit = caretFromPoint(event.clientX, event.clientY);
+function $resolveDropPointCaret(
+  event: DragEvent,
+  editor: LexicalEditor,
+): null | PointCaret<'next'> {
+  const hit = caretFromPoint(
+    event.clientX,
+    event.clientY,
+    editor.getRootElement(),
+  );
   if (hit === null) {
     return null;
   }
@@ -281,7 +288,7 @@ function $doDrop(
     return false;
   }
 
-  const dropCaret = $resolveDropPointCaret(event);
+  const dropCaret = $resolveDropPointCaret(event, editor);
   if (dropCaret === null) {
     return false;
   }

@@ -12,6 +12,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   defineExtension,
+  getActiveElement,
   LexicalEditor,
   safeCast,
 } from 'lexical';
@@ -24,7 +25,9 @@ export function registerDragonSupport(editor: LexicalEditor): () => void {
     }
     const rootElement = editor.getRootElement();
 
-    if (document.activeElement !== rootElement) {
+    // getActiveElement rather than document.activeElement, which reports the
+    // shadow host (not the editor) when the editor lives in a shadow root.
+    if (rootElement === null || getActiveElement(rootElement) !== rootElement) {
       return;
     }
 

@@ -20,13 +20,7 @@ if (setupEnv.emptyEditor) {
 }
 
 // Handle runtime errors
-const showErrorOverlay = (err: unknown) => {
-  if (!(err instanceof Error)) {
-    // Events without an Error payload — e.g. the benign "ResizeObserver loop
-    // completed with undelivered notifications" warning — would crash the
-    // overlay itself, which expects message/stack.
-    return;
-  }
+const showErrorOverlay = (err: Event) => {
   const ErrorOverlay = customElements.get('vite-error-overlay');
   if (!ErrorOverlay) {
     return;
@@ -38,7 +32,7 @@ const showErrorOverlay = (err: unknown) => {
   }
 };
 
-window.addEventListener('error', ({error}) => showErrorOverlay(error));
+window.addEventListener('error', showErrorOverlay);
 window.addEventListener('unhandledrejection', ({reason}) =>
   showErrorOverlay(reason),
 );

@@ -15,7 +15,10 @@ import {
   $writeDragSourceToDataTransfer,
 } from '@lexical/clipboard';
 import {DragonExtension} from '@lexical/dragon';
-import {NormalizeInlineElementsExtension} from '@lexical/extension';
+import {
+  NormalizeInlineElementsExtension,
+  NormalizeTripleClickSelectionExtension,
+} from '@lexical/extension';
 import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
@@ -25,10 +28,12 @@ import {
   $getSelection,
   $isRangeSelection,
   $selectAll,
+  CAN_USE_BEFORE_INPUT,
   COMMAND_PRIORITY_EDITOR,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
+  CUT_TAG,
   defineExtension,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
@@ -37,6 +42,9 @@ import {
   DROP_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
+  IS_APPLE_WEBKIT,
+  IS_IOS,
+  IS_SAFARI,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_BACKSPACE_COMMAND,
@@ -47,12 +55,6 @@ import {
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
 } from 'lexical';
-import {
-  CAN_USE_BEFORE_INPUT,
-  IS_APPLE_WEBKIT,
-  IS_IOS,
-  IS_SAFARI,
-} from 'shared/environment';
 
 function onCopyForPlainText(
   event: CommandPayloadType<typeof COPY_COMMAND>,
@@ -99,6 +101,9 @@ function onPasteForPlainText(
       }
     },
     {
+      // PASTE_TAG gives the paste its own undo entry: @lexical/history treats
+      // the tag as a history boundary so undoing a paste does not also undo any
+      // typing that preceded it (see #8609).
       tag: PASTE_TAG,
     },
   );
@@ -109,13 +114,21 @@ function onCutForPlainText(
   editor: LexicalEditor,
 ): void {
   onCopyForPlainText(event, editor);
-  editor.update(() => {
-    const selection = $getSelection();
+  editor.update(
+    () => {
+      const selection = $getSelection();
 
-    if ($isRangeSelection(selection)) {
-      selection.removeText();
-    }
-  });
+      if ($isRangeSelection(selection)) {
+        selection.removeText();
+      }
+    },
+    {
+      // CUT_TAG gives the cut its own undo entry: @lexical/history treats the
+      // tag as a history boundary so undoing a cut does not also undo any typing
+      // that preceded it (see #8609).
+      tag: CUT_TAG,
+    },
+  );
 }
 
 export function registerPlainText(editor: LexicalEditor): () => void {
@@ -423,7 +436,11 @@ export function registerPlainText(editor: LexicalEditor): () => void {
  */
 export const PlainTextExtension = defineExtension({
   conflictsWith: ['@lexical/rich-text'],
-  dependencies: [DragonExtension, NormalizeInlineElementsExtension],
+  dependencies: [
+    DragonExtension,
+    NormalizeInlineElementsExtension,
+    NormalizeTripleClickSelectionExtension,
+  ],
   name: '@lexical/plain-text',
   register: registerPlainText,
 });

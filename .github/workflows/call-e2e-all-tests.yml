@@ -59,7 +59,7 @@ jobs:
   build-windows:
     env:
       node-version: 24.x
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-pnpm
@@ -123,7 +123,7 @@ jobs:
         editor-mode: ['rich-text', 'plain-text']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
-      os: 'windows-latest'
+      os: 'windows-2022'
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
@@ -154,6 +154,19 @@ jobs:
       browser: ${{ matrix.browser }}
       editor-mode: 'rich-text-with-collab'
 
+  collab-v2-linux:
+    needs: [build-ubuntu]
+    strategy:
+      matrix:
+        node-version: [24.x]
+        browser: ['chromium', 'firefox']
+    uses: ./.github/workflows/call-e2e-test.yml
+    with:
+      os: 'ubuntu-latest'
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: 'rich-text-with-collab-v2'
+
   collab-windows:
     needs: [build-windows]
     strategy:
@@ -162,7 +175,7 @@ jobs:
         browser: ['chromium', 'firefox']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
-      os: 'windows-latest'
+      os: 'windows-2022'
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: 'rich-text-with-collab'
@@ -195,20 +208,6 @@ jobs:
     with:
       prod: true
       os: ${{ matrix.os }}
-      node-version: ${{ matrix.node-version }}
-      browser: ${{ matrix.browser }}
-      editor-mode: ${{ matrix.editor-mode }}
-  flaky:
-    needs: [build-ubuntu]
-    strategy:
-      matrix:
-        node-version: [24.x]
-        browser: ['chromium', 'firefox']
-        editor-mode: ['rich-text', 'plain-text', 'rich-text-with-collab']
-    uses: ./.github/workflows/call-e2e-test.yml
-    with:
-      os: 'ubuntu-latest'
-      flaky: true
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}

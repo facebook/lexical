@@ -17,6 +17,7 @@ export {
   $isCodeHighlightNode,
   CodeHighlightNode,
 } from './CodeHighlightNode';
+export {CodeImportExtension, CodeImportRules} from './CodeImportExtension';
 export {
   type CodeIndentConfig,
   CodeIndentExtension,
@@ -37,4 +38,5 @@ export {
   $getLastCodeNodeOfLine,
   $getStartOfCodeInLine,
   $outdentLeadingSpaces,
+  $plainifyCodeContent,
 } from './FlatStructureUtils';

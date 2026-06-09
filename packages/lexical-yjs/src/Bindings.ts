@@ -13,8 +13,8 @@ import type {CollabTextNode} from './CollabTextNode';
 import type {Cursor} from './SyncCursors';
 import type {LexicalEditor, NodeKey} from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {Klass, LexicalNode} from 'lexical';
-import invariant from 'shared/invariant';
 import {Doc, XmlElement, XmlText} from 'yjs';
 
 import {Provider} from '.';
@@ -27,6 +27,11 @@ export interface BaseBinding {
   clientID: number;
   cursors: Map<ClientID, Cursor>;
   cursorsContainer: null | HTMLElement;
+  /**
+   * For remote cursors, we lazily create stylesheet that hosts the `::highlight(...)` rules.
+   * Editors mounted in different frames each adopt the sheet into their own document.
+   */
+  cursorHighlightSheet: CSSStyleSheet | null;
   doc: Doc;
   docMap: Map<string, Doc>;
   editor: LexicalEditor;
@@ -68,6 +73,7 @@ function createBaseBinding(
   );
   const binding = {
     clientID: doc.clientID,
+    cursorHighlightSheet: null,
     cursors: new Map(),
     cursorsContainer: null,
     doc,
@@ -127,9 +133,9 @@ export function createBindingV2__EXPERIMENTAL(
 }
 
 export function isBindingV1(binding: BaseBinding): binding is Binding {
-  return Object.hasOwn(binding, 'collabNodeMap');
+  return Object.prototype.hasOwnProperty.call(binding, 'collabNodeMap');
 }
 
 export function isBindingV2(binding: BaseBinding): binding is BindingV2 {
-  return Object.hasOwn(binding, 'mapping');
+  return Object.prototype.hasOwnProperty.call(binding, 'mapping');
 }

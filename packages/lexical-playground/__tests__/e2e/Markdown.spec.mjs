@@ -52,7 +52,7 @@ async function checkHTMLExpectationsIncludingUndoRedo(
   await assertHTML(page, forwardHTML);
 }
 
-test.describe.parallel('Markdown', () => {
+test.describe('Markdown', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   const triggersAndExpectations = [
     {
@@ -105,7 +105,7 @@ test.describe.parallel('Markdown', () => {
     },
     {
       expectation:
-        '<code class="PlaygroundEditorTheme__code" dir="auto" spellcheck="false" data-gutter="1" data-language="javascript" data-highlight-language="javascript"><br></code>',
+        '<code class="PlaygroundEditorTheme__code" dir="auto" spellcheck="false" data-gutter="1"><br></code>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -377,7 +377,7 @@ async function assertMarkdownImportExport(
   await assertHTML(page, expectedHTML);
 }
 
-test.describe.parallel('Markdown', () => {
+test.describe('Markdown', () => {
   test.beforeEach(({isCollab, isPlainText, page}) => {
     test.skip(isPlainText);
     return initialize({isCollab, page});
@@ -982,7 +982,7 @@ test.describe.parallel('Markdown', () => {
               height="0"
               src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
               width="0" />
-            <span role="button" tabindex="-1">
+            <span>
               <span class="katex">
                 <span class="katex-html" aria-hidden="true">
                   <span class="base">

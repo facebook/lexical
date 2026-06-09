@@ -161,6 +161,10 @@ type DOMConversionCache = Map<
   Array<(node: Node) => DOMConversion | null>,
 >;
 
+export type DOMSlotForNode<N extends LexicalNode> = N extends ElementNode
+  ? ElementDOMSlot<HTMLElement>
+  : DOMSlot<HTMLElement>;
+
 export type EditorDOMRenderConfig = {
   /** @internal @experimental */
   $createDOM: <T extends LexicalNode>(
@@ -168,11 +172,11 @@ export type EditorDOMRenderConfig = {
     editor: LexicalEditor,
   ) => HTMLElement;
   /** @internal @experimental */
-  $getDOMSlot: <T extends LexicalNode>(
-    node: T,
+  $getDOMSlot: <N extends LexicalNode>(
+    node: N,
     dom: HTMLElement,
     editor: LexicalEditor,
-  ) => ElementDOMSlot<HTMLElement>;
+  ) => DOMSlotForNode<N>;
   /** @internal @experimental */
   $exportDOM: <T extends LexicalNode>(
     node: T,
@@ -215,6 +219,7 @@ export type CreateEditorArgs = {
   namespace?: string;
   nodes?: ReadonlyArray<Class<LexicalNode> | LexicalNodeReplacement>;
   onError?: ErrorHandler;
+  onWarn?: ErrorHandler;
   parentEditor?: LexicalEditor;
   editable?: boolean;
   theme?: EditorThemeClasses;
@@ -236,6 +241,7 @@ declare export class LexicalEditor {
   _commands: Commands;
   _nodes: RegisteredNodes;
   _onError: ErrorHandler;
+  _onWarn: ErrorHandler;
   _decorators: {
     [NodeKey]: unknown,
   };
@@ -513,6 +519,7 @@ declare export class LexicalNode {
     dom: HTMLElement,
     config: EditorConfig,
   ): boolean;
+  getDOMSlot(element: HTMLElement): DOMSlot<HTMLElement>;
   remove(preserveEmptyParent?: boolean): void;
   replace<N extends LexicalNode>(replaceWith: N): N;
   insertAfter(
@@ -897,27 +904,37 @@ declare export class ElementNode extends LexicalNode {
     nodesToInsert: Array<LexicalNode>,
   ): this;
   exportJSON(): SerializedElementNode;
-  getDOMSlot(dom: HTMLElement): ElementDOMSlot<HTMLElement>;
+  getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement>;
 }
 declare export function $isElementNode(
   node: ?LexicalNode,
 ): node is ElementNode;
 
 /**
- * ElementDOMSlot
+ * DOMSlot
  */
-declare export class ElementDOMSlot<+T extends HTMLElement> {
-  +element: HTMLElement;
-  +before: Node | null;
-  +after: Node | null;
-  constructor(element: HTMLElement, before?: Node | null | void, after?: Node | null | void): void;
-  withBefore(before: Node | null | void): ElementDOMSlot<T>;
-  withAfter(after: Node | null | void): ElementDOMSlot<T>;
-  withElement<ElementType extends HTMLElement>(element: ElementType): ElementDOMSlot<ElementType>;
+declare export class DOMSlot<out T extends HTMLElement> {
+  readonly element: T;
+  readonly before: Node | null;
+  readonly after: Node | null;
+  constructor(element: T, before?: Node | null | void, after?: Node | null | void): void;
+  withBefore(before: Node | null | void): DOMSlot<T>;
+  withAfter(after: Node | null | void): DOMSlot<T>;
+  withElement<ElementType extends HTMLElement>(element: ElementType): DOMSlot<ElementType>;
   insertChild(dom: Node): this;
   removeChild(dom: Node): this;
   replaceChild(dom: Node, prevDom: Node): this;
   getFirstChild(): Node | null;
+  resolveLeafPosition(leafDOM: HTMLElement, initialDOM: Node, initialOffset: number): 'before' | 'after';
+}
+
+/**
+ * ElementDOMSlot
+ */
+declare export class ElementDOMSlot<out T extends HTMLElement> extends DOMSlot<T> {
+  withBefore(before: Node | null | void): ElementDOMSlot<T>;
+  withAfter(after: Node | null | void): ElementDOMSlot<T>;
+  withElement<ElementType extends HTMLElement>(element: ElementType): ElementDOMSlot<ElementType>;
   //
   getManagedLineBreak(): HTMLElement | null;
   removeManagedLineBreak(): void;
@@ -926,8 +943,16 @@ declare export class ElementDOMSlot<+T extends HTMLElement> {
   resolveChildIndex(element: ElementNode, elementDOM: HTMLElement, initialDOM: Node, initialOffset: number): [node: ElementNode, idx: number];
 }
 
-declare export function setDOMUnmanaged(elementDOM: HTMLElement): void;
+export type SetDOMUnmanagedOptions = {captureSelection?: boolean};
+declare export function setDOMUnmanaged(
+  elementDOM: HTMLElement,
+  options?: SetDOMUnmanagedOptions,
+): void;
 declare export function isDOMUnmanaged(elementDOM: HTMLElement): boolean;
+declare export function isDOMCapturingSelection(
+  elementDOM: Node,
+  editor: LexicalEditor,
+): boolean;
 
 /**
  * LexicalDecoratorNode
@@ -978,6 +1003,7 @@ declare export function $isParagraphNode(
  * LexicalUtils
  */
 export type EventHandler = (event: Event, editor: LexicalEditor) => void;
+declare export function stopLexicalPropagation(event: Event): void;
 declare export function $hasUpdateTag(tag: UpdateTag): boolean;
 declare export function $addUpdateTag(tag: UpdateTag): void;
 declare export function $onUpdate(updateFn: () => void): void;
@@ -1023,6 +1049,19 @@ declare export function $getEditor(): LexicalEditor;
 declare export function $getEditorDOMRenderConfig(
   editor?: LexicalEditor,
 ): EditorDOMRenderConfig;
+declare export function $getDOMSlot<N extends LexicalNode>(
+  node: N,
+  dom: HTMLElement,
+  editor?: LexicalEditor,
+): DOMSlotForNode<N>;
+declare export function $getDOMTextNode(
+  node: TextNode,
+  dom: HTMLElement,
+  editor?: LexicalEditor,
+): Text | null;
+declare export function $isElementDOMSlot(
+  slot: DOMSlot<HTMLElement>,
+): slot is ElementDOMSlot<HTMLElement>;
 declare export var DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig;
 
 /**
@@ -1114,9 +1153,9 @@ export type SerializedEditor = {
  * LexicalCaret
  */
 export interface BaseCaret<T extends LexicalNode, D extends CaretDirection, Type> extends Iterable<SiblingCaret<LexicalNode, D>> {
-  +origin: T;
-  +type: Type;
-  +direction: D;
+  readonly origin: T;
+  readonly type: Type;
+  readonly direction: D;
   getParentAtCaret(): null | ElementNode;
   getNodeAtCaret(): null | LexicalNode;
   getAdjacentCaret(): null | SiblingCaret<LexicalNode, D>;
@@ -1129,8 +1168,8 @@ export interface BaseCaret<T extends LexicalNode, D extends CaretDirection, Type
 export type CaretDirection = 'next' | 'previous';
 type FLIP_DIRECTION = {'next' : 'previous', 'previous': 'next'};
 export interface CaretRange<D extends CaretDirection = CaretDirection> extends Iterable<NodeCaret<D>> {
-  +type: 'node-caret-range';
-  +direction: D;
+  readonly type: 'node-caret-range';
+  readonly direction: D;
   anchor: PointCaret<D>;
   focus: PointCaret<D>;
   isCollapsed(): boolean;
@@ -1170,13 +1209,13 @@ export interface SiblingCaret<T extends LexicalNode = LexicalNode, D extends Car
   splice(deleteCount: number, nodes: Iterable<LexicalNode>, nodesDirection?: CaretDirection): SiblingCaret<T, D>;
 }
 export interface StepwiseIteratorConfig<State, Stop, Value> {
-  +initial: State | Stop;
-  +hasNext: (value: State | Stop) => implies value is State;
-  +step: (value: State) => State | Stop;
-  +map: (value: State) => Value;
+  readonly initial: State | Stop;
+  readonly hasNext: (value: State | Stop) => implies value is State;
+  readonly step: (value: State) => State | Stop;
+  readonly map: (value: State) => Value;
 }
 export interface TextPointCaret<T extends TextNode = TextNode, D extends CaretDirection = CaretDirection> extends BaseCaret<T, D, 'text'> {
-  +offset: number;
+  readonly offset: number;
   getLatest(): TextPointCaret<T, D>;
   getChildCaret(): null;
   getParentCaret(): null | SiblingCaret<ElementNode, D>;
@@ -1185,18 +1224,18 @@ export interface TextPointCaret<T extends TextNode = TextNode, D extends CaretDi
   getFlipped(): TextPointCaret<T, FlipDirection<D>>;
 }
 export interface TextPointCaretSlice<T extends TextNode = TextNode, D extends CaretDirection = CaretDirection> {
-  +type: 'slice';
-  +caret: TextPointCaret<T, D>;
-  +distance: number;
+  readonly type: 'slice';
+  readonly caret: TextPointCaret<T, D>;
+  readonly distance: number;
   getSliceIndices(): [startIndex: number, endIndex: number];
   getTextContent(): string;
   getTextContentSize(): number;
   removeTextSlice(): TextPointCaret<T, D>;
 }
-export type TextPointCaretSliceTuple<D extends CaretDirection> = [
-  +anchorSlice: null | TextPointCaretSlice<TextNode, D>,
-  +focusSlice: null | TextPointCaretSlice<TextNode, D>,
-];
+export type TextPointCaretSliceTuple<D extends CaretDirection> = Readonly<[
+  anchorSlice: null | TextPointCaretSlice<TextNode, D>,
+  focusSlice: null | TextPointCaretSlice<TextNode, D>,
+]>;
 declare export function $getAdjacentChildCaret<D extends CaretDirection>(caret: null | NodeCaret<D>): null | NodeCaret<D>;
 declare export function $getCaretRange<D extends CaretDirection>(anchor: PointCaret<D>, focus: PointCaret<D>): CaretRange<D>;
 declare export function $getChildCaret<T extends null | ElementNode, D extends CaretDirection>(origin: T, direction: D): ChildCaret<Exclude<null, T>, D> | Extract<null, T>;
@@ -1287,22 +1326,22 @@ export interface CommonAncestorResultBranch<
   A extends LexicalNode,
   B extends LexicalNode,
 > {
-  +type: 'branch';
-  +commonAncestor: ElementNode;
-  +a: A | ElementNode;
-  +b: B | ElementNode;
+  readonly type: 'branch';
+  readonly commonAncestor: ElementNode;
+  readonly a: A | ElementNode;
+  readonly b: B | ElementNode;
 }
 export interface CommonAncestorResultAncestor<A extends ElementNode> {
-  +type: 'ancestor';
-  +commonAncestor: A;
+  readonly type: 'ancestor';
+  readonly commonAncestor: A;
 }
 export interface CommonAncestorResultDescendant<B extends ElementNode> {
-  +type: 'descendant';
-  +commonAncestor: B;
+  readonly type: 'descendant';
+  readonly commonAncestor: B;
 }
 export interface CommonAncestorResultSame<A extends LexicalNode> {
-  +type: 'same';
-  +commonAncestor: A;
+  readonly type: 'same';
+  readonly commonAncestor: A;
 }
 declare export function $comparePointCaretNext(
   a: PointCaret<'next'>,
@@ -1343,6 +1382,7 @@ declare export function $splitAtPointCaretNext(
  * LexicalUpdateTags
  */
 declare export var COLLABORATION_TAG: 'collaboration';
+declare export var CUT_TAG: 'cut';
 declare export var HISTORIC_TAG: 'historic';
 declare export var HISTORY_MERGE_TAG: 'history-merge';
 declare export var HISTORY_PUSH_TAG: 'history-push';
@@ -1352,6 +1392,7 @@ declare export var SKIP_DOM_SELECTION_TAG: 'skip-dom-selection';
 declare export var SKIP_SCROLL_INTO_VIEW_TAG: 'skip-scroll-into-view';
 export type UpdateTag =
   typeof COLLABORATION_TAG
+  | typeof CUT_TAG
   | typeof HISTORIC_TAG
   | typeof HISTORY_MERGE_TAG
   | typeof HISTORY_PUSH_TAG
@@ -1413,12 +1454,12 @@ export type NodeStateJSON<T extends LexicalNode> = Partial<{
   }> & CollectStateJSON<GetNodeStateConfig<T>, true>;
 
 declare export class StateConfig<K extends string, V> {
-  +key: K;
-  +parse: (value?: unknown) => V;
-  +unparse: (value: V) => unknown;
-  +isEqual: (a: V, b: V) => boolean;
-  +defaultValue: V;
-  +resetOnCopyNode: boolean;
+  readonly key: K;
+  readonly parse: (value?: unknown) => V;
+  readonly unparse: (value: V) => unknown;
+  readonly isEqual: (a: V, b: V) => boolean;
+  readonly defaultValue: V;
+  readonly resetOnCopyNode: boolean;
   constructor(key: K, stateValueConfig: StateValueConfig<V>): this;
 }
 
@@ -1450,12 +1491,12 @@ export interface StaticNodeConfigValue<
   T extends LexicalNode,
   Type extends string,
 > {
-  +type?: Type;
-  +$transform?: (node: T) => void;
-  +$importJSON?: (serializedNode: SerializedLexicalNode) => T;
-  +importDOM?: DOMConversionMap;
-  +stateConfigs?: ReadonlyArray<RequiredNodeStateConfig>;
-  +extends?: Class<LexicalNode>;
+  readonly type?: Type;
+  readonly $transform?: (node: T) => void;
+  readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T;
+  readonly importDOM?: DOMConversionMap;
+  readonly stateConfigs?: ReadonlyArray<RequiredNodeStateConfig>;
+  readonly extends?: Class<LexicalNode>;
 }
 
 /**
@@ -1463,7 +1504,7 @@ export interface StaticNodeConfigValue<
  * overridden by subclasses.
  */
 export type BaseStaticNodeConfig = {
-  +[K in string]?: StaticNodeConfigValue<LexicalNode, string>;
+  readonly [K in string]?: StaticNodeConfigValue<LexicalNode, string>;
 };
 
 /**
@@ -1473,7 +1514,7 @@ export type StaticNodeConfig<
   T extends LexicalNode,
   Type extends string,
 > = BaseStaticNodeConfig & {
-  +[K in Type]?: StaticNodeConfigValue<T, Type>;
+  readonly [K in Type]?: StaticNodeConfigValue<T, Type>;
 };
 
 // $FlowFixMe[unclear-type]
@@ -1483,14 +1524,14 @@ export type StaticNodeConfigRecord<
   Type extends string,
   Config extends AnyStaticNodeConfigValue,
 > = BaseStaticNodeConfig & {
-  +[K in Type]?: Config;
+  readonly [K in Type]?: Config;
 };
 
 type GetStaticNodeConfig<T extends LexicalNode> = ReturnType<
   T[typeof PROTOTYPE_CONFIG_METHOD]
 > extends infer Record
   ? Record extends StaticNodeConfigRecord<infer Type, infer Config>
-    ? Config & {+type: Type}
+    ? Config & {readonly type: Type}
     : empty
   : empty;
 type GetStaticNodeConfigs<T extends LexicalNode> =
@@ -1542,10 +1583,10 @@ export type SharedNodeState = {
   flatKeys: Set<string>;
 };
 declare export class NodeState<T extends LexicalNode> {
-  +node: LexicalNode;
-  +knownState: KnownStateMap;
+  readonly node: LexicalNode;
+  readonly knownState: KnownStateMap;
   unknownState: void | UnknownStateRecord;
-  +sharedNodeState: SharedNodeState;
+  readonly sharedNodeState: SharedNodeState;
   size: number;
   constructor(
     node: T,
@@ -1556,7 +1597,7 @@ declare export class NodeState<T extends LexicalNode> {
   ): this;
   getValue<K extends string, V>(stateConfig: StateConfig<K, V>): V;
   getInternalState(): [
-    {+[k in string]: unknown} | void,
+    {readonly [k in string]: unknown} | void,
     ReadonlyMap<AnyStateConfig, unknown>,
   ];
   toJSON(): NodeStateJSON<T>;
@@ -1657,6 +1698,7 @@ export interface InitialEditorConfig {
   html?: CreateEditorArgs['html'];
   editable?: CreateEditorArgs['editable'];
   onError?: (error: Error, editor: LexicalEditor) => void;
+  onWarn?: (error: Error, editor: LexicalEditor) => void;
   $initialEditorState?: InitialEditorStateType;
 }
 export type InitialEditorStateType =
@@ -1679,7 +1721,7 @@ export interface LexicalExtension<
   Init,
 > extends InitialEditorConfig,
     LexicalExtensionInternal<Config, Output, Init> {
-  +name: Name;
+  readonly name: Name;
   conflictsWith?: string[];
   dependencies?: AnyLexicalExtensionArgument[];
   peerDependencies?: NormalizedPeerDependency<AnyLexicalExtension>[];
@@ -1714,13 +1756,13 @@ export type LexicalExtensionArgument<
 > =
   | LexicalExtension<Config, Name, Output, Init>
   | NormalizedLexicalExtensionArgument<Config, Name, Output, Init>;
-export type LexicalExtensionConfig<+Extension extends AnyLexicalExtension> =
+export type LexicalExtensionConfig<out Extension extends AnyLexicalExtension> =
   NonNullable<Extension[typeof configTypeSymbol]>;
 export interface LexicalExtensionDependency<
-  +Dependency extends AnyLexicalExtension,
+  out Dependency extends AnyLexicalExtension,
 > {
-  +config: LexicalExtensionConfig<Dependency>;
-  +output: LexicalExtensionOutput<Dependency>;
+  readonly config: LexicalExtensionConfig<Dependency>;
+  readonly output: LexicalExtensionOutput<Dependency>;
 }
 export type LexicalExtensionInit<Extension extends AnyLexicalExtension> =
   NonNullable<Extension[typeof initTypeSymbol]>;
@@ -1737,7 +1779,7 @@ interface LexicalExtensionInternalOutput<Output> {
 export type LexicalExtensionName<Extension extends AnyLexicalExtension> =
   Extension['name'];
 
-export type LexicalExtensionOutput<+Extension extends AnyLexicalExtension> =
+export type LexicalExtensionOutput<out Extension extends AnyLexicalExtension> =
   NonNullable<Extension[typeof outputTypeSymbol]>;
 declare export const peerDependencySymbol: symbol;
 export type NormalizedLexicalExtensionArgument<
@@ -1749,7 +1791,7 @@ export type NormalizedLexicalExtensionArgument<
 export type NormalizedPeerDependency<Extension extends AnyLexicalExtension> = [
   Extension['name'],
   Partial<LexicalExtensionConfig<Extension>> | void,
-] & {+[typeof peerDependencySymbol]: Extension};
+] & {readonly [typeof peerDependencySymbol]: Extension};
 export type OutputComponentExtension<ComponentType> =
   // $FlowFixMe[unclear-type]
   LexicalExtension<any, any, {Component: ComponentType}, any>;
@@ -1785,3 +1827,13 @@ declare export function setDOMStyleFromCSS(
   cssText: string,
   prevCSSText?: string,
 ): void;
+declare export var CAN_USE_BEFORE_INPUT: boolean;
+declare export var CAN_USE_DOM: boolean;
+declare export var IS_ANDROID: boolean;
+declare export var IS_ANDROID_CHROME: boolean;
+declare export var IS_APPLE: boolean;
+declare export var IS_APPLE_WEBKIT: boolean;
+declare export var IS_CHROME: boolean;
+declare export var IS_FIREFOX: boolean;
+declare export var IS_IOS: boolean;
+declare export var IS_SAFARI: boolean;

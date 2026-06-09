@@ -8,6 +8,7 @@
 
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {
   $createOverflowNode,
   $isOverflowNode,
@@ -32,7 +33,6 @@ import {
   HISTORY_MERGE_TAG,
 } from 'lexical';
 import {useEffect} from 'react';
-import invariant from 'shared/invariant';
 
 type OptionalProps = {
   remainingCharacters?: (characters: number) => void;
@@ -133,12 +133,11 @@ function findOffset(
   maxCharacters: number,
   strlen: (input: string) => number,
 ): number {
-  const Segmenter = Intl.Segmenter;
   let offsetUtf16 = 0;
   let offset = 0;
 
-  if (typeof Segmenter === 'function') {
-    const segmenter = new Segmenter();
+  if (typeof Intl.Segmenter === 'function') {
+    const segmenter = new Intl.Segmenter();
     const graphemes = segmenter.segment(text);
 
     for (const {segment: grapheme} of graphemes) {

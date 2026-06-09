@@ -88,6 +88,12 @@ export type ElementTransformer = {
     isImport: boolean,
   ) => boolean | void;
   type: 'element';
+  /**
+   * When set, `registerMarkdownShortcuts` may run this transformer from `KEY_ENTER_COMMAND`
+   * at end-of-line without requiring a trailing space (the update listener still uses the
+   * space after the markdown token). Omit or false to disable Enter-triggered shortcuts.
+   */
+  triggerOnEnter?: boolean;
 };
 
 export type MultilineElementTransformer = {
@@ -222,7 +228,55 @@ const CODE_END_REGEX = /^[ \t]*`{3,}$/;
 const CODE_SINGLE_LINE_REGEX =
   /^[ \t]*```[^`]+(?:(?:`{1,2}|`{4,})[^`]+)*```(?:[^`]|$)/;
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
-const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
+
+/**
+ * Whether `line` is a Markdown table delimiter row such as `| --- | :--: |`.
+ *
+ * This is the linear-time equivalent of `/^(\| ?:?-*:? ?)+\|\s?$/`. That
+ * pattern nests `-*` inside a `(...)+` group, a shape that backtracking regexp
+ * engines (e.g. Safari/JavaScriptCore) may run in super-linear time. A manual
+ * scan is guaranteed O(n).
+ */
+export function isTableRowDivider(line: string): boolean {
+  // Must start with a leading pipe.
+  if (line[0] !== '|') {
+    return false;
+  }
+  const {length} = line;
+  let i = 1;
+  let cells = 0;
+  // Each iteration consumes one ` ?:?-*:? ?\|` cell-and-pipe unit. Cell
+  // characters (space, colon, dash) are disjoint from the `|` delimiter, so a
+  // greedy scan never needs to backtrack.
+  while (i < length) {
+    let j = i;
+    if (line[j] === ' ') {
+      j++;
+    }
+    if (line[j] === ':') {
+      j++;
+    }
+    while (line[j] === '-') {
+      j++;
+    }
+    if (line[j] === ':') {
+      j++;
+    }
+    if (line[j] === ' ') {
+      j++;
+    }
+    if (line[j] !== '|') {
+      break;
+    }
+    cells++;
+    i = j + 1;
+  }
+  // Require at least one cell, then an optional single trailing whitespace
+  // character (`\s?`) before the end of the line (`$`).
+  return (
+    cells > 0 && (i === length || (i === length - 1 && /\s/.test(line[i])))
+  );
+}
 const TAG_START_REGEX = /^<[a-z_][\w-]*(?:\s[^<>]*)?\/?>/i;
 const TAG_END_REGEX = /^<\/[a-z_][\w-]*\s*>/i;
 const ENDS_WITH = (regex: RegExp) =>
@@ -483,6 +537,7 @@ export const HEADING: ElementTransformer = {
     const tag = ('h' + match[1].length) as HeadingTagType;
     return $createHeadingNode(tag);
   }),
+  triggerOnEnter: true,
   type: 'element',
 };
 
@@ -521,12 +576,12 @@ export const QUOTE: ElementTransformer = {
       node.select(0, 0);
     }
   },
+  triggerOnEnter: true,
   type: 'element',
 };
 
 export const CODE: MultilineElementTransformer = {
   dependencies: [CodeNode],
-
   export: (node: LexicalNode) => {
     if (!$isCodeNode(node)) {
       return null;
@@ -616,11 +671,11 @@ export const CODE: MultilineElementTransformer = {
     CODE.replace(rootNode, null, startMatch, null, linesInBetween, true);
     return [true, lines.length - 1];
   },
+
   regExpEnd: {
     optional: true,
     regExp: CODE_END_REGEX,
   },
-
   regExpStart: CODE_START_REGEX,
 
   replace: (
@@ -680,6 +735,7 @@ export const CODE: MultilineElementTransformer = {
       })(rootNode, children, startMatch, isImport);
     }
   },
+
   type: 'multiline-element',
 };
 
@@ -692,6 +748,7 @@ export const UNORDERED_LIST: ElementTransformer = {
   },
   regExp: UNORDERED_LIST_REGEX,
   replace: listReplace('bullet'),
+  triggerOnEnter: true,
   type: 'element',
 };
 
@@ -704,6 +761,7 @@ export const CHECK_LIST: ElementTransformer = {
   },
   regExp: CHECK_LIST_REGEX,
   replace: listReplace('check'),
+  triggerOnEnter: true,
   type: 'element',
 };
 
@@ -716,6 +774,7 @@ export const ORDERED_LIST: ElementTransformer = {
   },
   regExp: ORDERED_LIST_REGEX,
   replace: listReplace('number'),
+  triggerOnEnter: true,
   type: 'element',
 };
 
@@ -923,7 +982,7 @@ export function normalizeMarkdown(
       UNORDERED_LIST_REGEX.test(line) ||
       CHECK_LIST_REGEX.test(line) ||
       TABLE_ROW_REG_EXP.test(line) ||
-      TABLE_ROW_DIVIDER_REG_EXP.test(line) ||
+      isTableRowDivider(line) ||
       lastLineHasHardLineBreak ||
       !shouldMergeAdjacentLines ||
       TAG_START_REGEX.test(line) ||

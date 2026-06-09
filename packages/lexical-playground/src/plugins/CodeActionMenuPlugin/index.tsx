@@ -11,6 +11,7 @@ import type {JSX} from 'react';
 import './index.css';
 
 import {$isCodeNode, CodeNode} from '@lexical/code';
+import {DEFAULT_CODE_LANGUAGE} from '@lexical/code-core';
 import {
   getLanguageFriendlyName,
   normalizeCodeLanguage,
@@ -138,8 +139,15 @@ function CodeActionMenuContainer({
     );
   }, [editor]);
 
-  const normalizedLang = normalizeCodeLanguage(lang);
-  const codeFriendlyName = getLanguageFriendlyName(lang);
+  // Code blocks created without an explicit language (markdown ``` with
+  // no info string, the `/code` slash menu) leave `__language` as
+  // `undefined`, which surfaces here as an empty `lang`. Show the same
+  // `(No language)` label the main toolbar uses, but still hand prettier
+  // the highlight default so users can format these blocks.
+  const normalizedLang = normalizeCodeLanguage(lang || DEFAULT_CODE_LANGUAGE);
+  const codeFriendlyName = lang
+    ? getLanguageFriendlyName(lang)
+    : '(No language)';
 
   return (
     <>

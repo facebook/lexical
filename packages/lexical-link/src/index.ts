@@ -37,6 +37,7 @@ export {
   type SerializedLinkNode,
   TOGGLE_LINK_COMMAND,
 } from './LexicalLinkNode';
+export {LinkImportExtension, LinkImportRules} from './LinkImportExtension';
 
 /** @deprecated renamed to {@link $toggleLink} by @lexical/eslint-plugin rules-of-lexical */
 export const toggleLink = $toggleLink;

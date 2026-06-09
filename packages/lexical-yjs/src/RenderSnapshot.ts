@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import invariant from '@lexical/internal/invariant';
 import {$getRoot, $getState, createState, LexicalNode} from 'lexical';
-import invariant from 'shared/invariant';
 import {
   emptySnapshot,
   ID,
@@ -60,7 +60,7 @@ export const renderSnapshot__EXPERIMENTAL = (
 
   doc.transact(transaction => {
     // Before rendering, we are going to sanitize ops and split deleted ops
-    // if they were deleted by seperate users.
+    // if they were deleted by separate users.
     const pud = new PermanentUserData(doc);
     if (pud) {
       pud.dss.forEach(ds => {

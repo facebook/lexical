@@ -24,8 +24,8 @@ import {
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import {LexicalEditor} from 'lexical';
 import {initializeClipboard, TestComposer} from 'lexical/src/__tests__/utils';
+import {act} from 'react';
 import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 Range.prototype.getBoundingClientRect = function (): DOMRect {
@@ -155,13 +155,13 @@ describe('LexicalEventHelpers', () => {
       );
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       createRoot(container!).render(<TestBase />);
     });
   }
 
   async function update(fn: () => void) {
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor!.update(fn);
     });
 

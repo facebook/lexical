@@ -6,6 +6,8 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
+import {LEXICAL_VERSION} from '@lexical/internal/version';
 import {
   type AnyLexicalExtension,
   type AnyLexicalExtensionArgument,
@@ -22,7 +24,6 @@ import {
   type LexicalNode,
   mergeRegister,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {getNodeConfig} from './config';
 import {deepThemeMergeInPlace} from './deepThemeMergeInPlace';
@@ -38,8 +39,8 @@ import {InitialStateExtension} from './InitialStateExtension';
 /** @internal Use a well-known symbol for dev tools purposes */
 export const builderSymbol = Symbol.for('@lexical/extension/LexicalBuilder');
 
-type BuildCreateEditorArgs = Omit<CreateEditorArgs, 'onError'> &
-  Pick<InitialEditorConfig, 'onError' | '$initialEditorState'>;
+type BuildCreateEditorArgs = Omit<CreateEditorArgs, 'onError' | 'onWarn'> &
+  Pick<InitialEditorConfig, 'onError' | 'onWarn' | '$initialEditorState'>;
 
 /**
  * Build a LexicalEditor by combining together one or more extensions, optionally
@@ -108,7 +109,7 @@ function normalizeExtensionArgument(
   return Array.isArray(arg) ? arg : [arg];
 }
 
-const PACKAGE_VERSION = process.env.LEXICAL_VERSION!;
+const PACKAGE_VERSION = LEXICAL_VERSION;
 
 /** @internal */
 export class LexicalBuilder {
@@ -177,6 +178,7 @@ export class LexicalBuilder {
     const {
       $initialEditorState: _$initialEditorState,
       onError,
+      onWarn,
       ...editorConfig
     } = this.buildCreateEditorArgs();
     const editor = Object.assign(
@@ -186,6 +188,13 @@ export class LexicalBuilder {
           ? {
               onError: err => {
                 onError(err, editor);
+              },
+            }
+          : {}),
+        ...(onWarn
+          ? {
+              onWarn: err => {
+                onWarn(err, editor);
               },
             }
           : {}),
@@ -416,6 +425,9 @@ export class LexicalBuilder {
       const {extension} = extensionRep;
       if (extension.onError !== undefined) {
         config.onError = extension.onError;
+      }
+      if (extension.onWarn !== undefined) {
+        config.onWarn = extension.onWarn;
       }
       if (extension.disableEvents !== undefined) {
         config.disableEvents = extension.disableEvents;

@@ -51,13 +51,27 @@ function getErrorMap(filepath) {
 const invariantExpressions = [
   {
     dev: 'formatDevErrorMessage',
+    messageIndex: 1,
     name: 'invariant',
     prod: 'formatProdErrorMessage',
     prodNoCode: 'formatDevErrorMessage',
   },
   {
     dev: 'formatDevErrorMessage',
+    messageIndex: 1,
     name: 'devInvariant',
+    prod: 'formatProdWarningMessage',
+    prodNoCode: 'formatDevWarningMessage',
+  },
+  // `$devInvariant(editor, cond, message, ...args)` carries the editor as the
+  // first argument (used by the untransformed source build to route warn-level
+  // telemetry through the editor), so the condition and message are shifted one
+  // slot to the right relative to `invariant`/`devInvariant`.
+  {
+    conditionIndex: 1,
+    dev: 'formatDevErrorMessage',
+    messageIndex: 2,
+    name: '$devInvariant',
     prod: 'formatProdWarningMessage',
     prodNoCode: 'formatDevWarningMessage',
   },
@@ -66,7 +80,7 @@ const invariantExpressions = [
 /**
  * @param {import('@babel/core')} babel
  * @param {Partial<TransformErrorMessagesOptions>} opts
- * @returns {Promise<import('@babel/core').PluginObj>}
+ * @returns {{visitor: {CallExpression: (path: any, file: any) => void}}} a Babel plugin (path/file are untyped Babel AST nodes)
  */
 export default function transformErrorMessages(babel, opts) {
   const t = babel.types;
@@ -79,7 +93,14 @@ export default function transformErrorMessages(babel, opts) {
         const node = path.node;
         const {extractCodes, noMinify} =
           /** @type Partial<TransformErrorMessagesOptions> */ (file.opts);
-        for (const {name, dev, prod, prodNoCode} of invariantExpressions) {
+        for (const {
+          name,
+          dev,
+          prod,
+          prodNoCode,
+          conditionIndex = 0,
+          messageIndex = 1,
+        } of invariantExpressions) {
           if (path.get('callee').isIdentifier({name})) {
             // Turns this code:
             //
@@ -98,9 +119,11 @@ export default function transformErrorMessages(babel, opts) {
             // where ERR_CODE is an error code: a unique identifier (a number
             // string) that references a verbose error message. The mapping is
             // stored in `scripts/error-codes/codes.json`.
-            const condition = node.arguments[0];
-            const errorMsgLiteral = evalToString(node.arguments[1]);
-            const errorMsgExpressions = Array.from(node.arguments.slice(2));
+            const condition = node.arguments[conditionIndex];
+            const errorMsgLiteral = evalToString(node.arguments[messageIndex]);
+            const errorMsgExpressions = Array.from(
+              node.arguments.slice(messageIndex + 1),
+            );
             const errorMsgQuasis = errorMsgLiteral
               .split('%s')
               .map(raw => t.templateElement({cooked: String.raw({raw}), raw}));
@@ -123,7 +146,7 @@ export default function transformErrorMessages(babel, opts) {
             // so we can extractCodes in a non-production build.
             let prodErrorId = errorMap.getOrAddToErrorMap(
               errorMsgLiteral,
-              extractCodes,
+              extractCodes ?? false,
             );
 
             /** @type {babel.types.CallExpression} */
@@ -138,9 +161,11 @@ export default function transformErrorMessages(babel, opts) {
               const moduleName =
                 prodErrorId === undefined && !noMinify ? prodNoCode : dev;
               const formatDevErrorMessageIdentifier =
-                helperModuleImports.addDefault(path, `shared/${moduleName}`, {
-                  nameHint: moduleName,
-                });
+                helperModuleImports.addDefault(
+                  path,
+                  `@lexical/internal/${moduleName}`,
+                  {nameHint: moduleName},
+                );
               callExpression = t.callExpression(
                 formatDevErrorMessageIdentifier,
                 [devMessage],
@@ -155,9 +180,11 @@ export default function transformErrorMessages(babel, opts) {
 
               // Import ReactErrorProd
               const formatProdErrorMessageIdentifier =
-                helperModuleImports.addDefault(path, `shared/${prod}`, {
-                  nameHint: prod,
-                });
+                helperModuleImports.addDefault(
+                  path,
+                  `@lexical/internal/${prod}`,
+                  {nameHint: prod},
+                );
 
               // Outputs:
               //   formatProdErrorMessage(ERR_CODE, adj, noun);

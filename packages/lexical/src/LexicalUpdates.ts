@@ -9,7 +9,8 @@
 import type {SerializedEditorState} from './LexicalEditorState';
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
-import invariant from 'shared/invariant';
+import devInvariant from '@lexical/internal/devInvariant';
+import invariant from '@lexical/internal/invariant';
 
 import {
   $isElementNode,
@@ -51,6 +52,7 @@ import {
 } from './LexicalSelection';
 import {
   $getCompositionKey,
+  $updateDOMBlockCursorElement,
   getDOMSelection,
   getEditorPropertyFromDOMNode,
   getEditorStateTextContent,
@@ -61,8 +63,46 @@ import {
   removeDOMBlockCursorElement,
   scheduleMicroTask,
   setPendingNodeToClone,
-  updateDOMBlockCursorElement,
 } from './LexicalUtils';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
+/**
+ * @internal
+ *
+ * Warn-level counterpart to {@link invariant} for recoverable conditions the
+ * editor has already handled (e.g. the update-recursion guard tripping).
+ *
+ * When `!cond`, this routes a warning through the given editor's `_onWarn`
+ * hook (default: throw in dev / `console.warn` in prod) so embedders can
+ * capture the condition as warn-severity telemetry. The message is stripped
+ * from the production bundle via the `transform-error-messages` Babel plugin
+ * (it is registered there alongside `invariant`/`devInvariant`, with the
+ * editor carried as the first argument so the message stays at a string
+ * literal the plugin can extract).
+ *
+ * In a production build the plugin rewrites call sites to a hoisted
+ * `if (!cond)` guard plus `formatProdWarningMessage(code, ...args)`, dropping
+ * this body (and the editor routing) entirely. The body is therefore only
+ * reached when the source is consumed untransformed (the `source` export
+ * condition or a dev build), which is exactly where embedder telemetry should
+ * be delivered. It interpolates `%s` placeholders against args.
+ */
+function $devInvariant(
+  editor: LexicalEditor,
+  cond?: boolean,
+  message = 'Internal Lexical error: $devInvariant() called without a message',
+  ...args: string[]
+): void {
+  if (cond) {
+    return;
+  }
+  const formatted = args.reduce(
+    (msg, arg) => msg.replace('%s', String(arg)),
+    message,
+  );
+  editor._onWarn(new Error(formatted));
+}
 
 let activeEditorState: null | EditorState = null;
 let activeEditor: null | LexicalEditor = null;
@@ -113,6 +153,18 @@ export function getActiveEditorState(): EditorState {
   return activeEditorState;
 }
 
+/** @internal */
+export function $assumeActiveEditor(editor: LexicalEditor): void {
+  // Throw if called outside of an update
+  if (getActiveEditorState() !== null && activeEditor === null) {
+    activeEditor = editor;
+  }
+  devInvariant(
+    activeEditor === editor,
+    'The given editor argument does not match $getEditor() in this context. Use editor.getEditorState().read(..., {editor}) if this cross-editor call is intentional.',
+  );
+}
+
 export function getActiveEditor(): LexicalEditor {
   if (activeEditor === null) {
     invariant(
@@ -126,6 +178,19 @@ export function getActiveEditor(): LexicalEditor {
     );
   }
   return activeEditor;
+}
+
+/**
+ * Schedule a full reconcile of the active editor, so that every node is
+ * re-rendered through the current {@link EditorDOMRenderConfig} on the next
+ * commit. Unlike {@link LexicalNode.markDirty}, this does not clone or
+ * otherwise mutate the node map, so no mutation/collaboration listeners
+ * observe a change. Must be called within an `editor.update`.
+ *
+ * @internal
+ */
+export function $fullReconcile(): void {
+  getActiveEditor()._dirtyType = FULL_RECONCILE;
 }
 
 function collectBuildInformation(): string {
@@ -420,7 +485,7 @@ export function parseEditorState(
   editor._dirtyElements = new Map();
   editor._dirtyLeaves = new Set();
   editor._cloneNotNeeded = new Set();
-  editor._dirtyType = 0;
+  editor._dirtyType = NO_DIRTY_NODES;
   activeEditorState = editorState;
   isReadOnlyMode = false;
   activeEditor = editor;
@@ -605,7 +670,6 @@ export function $commitPendingUpdates(
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
   const deferred = editor._deferred;
-  const nodeCount = pendingEditorState._nodeMap.size;
 
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
@@ -656,10 +720,9 @@ export function $commitPendingUpdates(
           domSelection,
           tags,
           rootElement,
-          nodeCount,
         );
       }
-      updateDOMBlockCursorElement(editor, rootElement, pendingSelection);
+      $updateDOMBlockCursorElement(editor, rootElement, pendingSelection);
     } finally {
       if (observer !== null) {
         observer.observe(rootElement, observerOptions);
@@ -845,12 +908,30 @@ export function triggerCommandListeners<
 function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
   const queuedUpdates = editor._updates;
 
-  if (queuedUpdates.length !== 0) {
-    const queuedUpdate = queuedUpdates.shift();
-    if (queuedUpdate) {
-      const [updateFn, options] = queuedUpdate;
-      $beginUpdate(editor, updateFn, options);
-    }
+  if (queuedUpdates.length === 0) {
+    editor._cascadeCount = 0;
+    return;
+  }
+  if (editor._cascadeCount++ > 99) {
+    editor._updates = [];
+    editor._cascadeCount = 0;
+    // The cascade has already been broken above by clearing the update queue,
+    // so this is a recoverable internal guard rather than a fatal error.
+    // `$devInvariant` routes it through the editor's warn-level hook
+    // (`_onWarn`) for telemetry and throws in development, while keeping the
+    // message out of the production bundle via `transform-error-messages`.
+    $devInvariant(
+      editor,
+      false,
+      'One or more update listeners are endlessly enqueueing more updates. May have encountered infinite recursion caused by update listeners that trigger additional updates without a stop condition. Editor namespace: %s',
+      editor._config.namespace,
+    );
+    return;
+  }
+  const queuedUpdate = queuedUpdates.shift();
+  if (queuedUpdate) {
+    const [updateFn, options] = queuedUpdate;
+    $beginUpdate(editor, updateFn, options);
   }
 }
 

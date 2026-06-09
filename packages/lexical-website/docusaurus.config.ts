@@ -17,6 +17,7 @@ import {fileURLToPath} from 'node:url';
 import {themes} from 'prism-react-renderer';
 
 import {packagesManager} from '../../scripts/shared/packagesManager.mjs';
+import copyPageButtonPlugin from './plugins/copy-page-button/index.mjs';
 import packageDocsPlugin from './plugins/package-docs/index.mjs';
 import slugifyPlugin from './src/plugins/lexical-remark-slugify-anchors/index.js';
 
@@ -345,9 +346,10 @@ const config: Config = {
           },
         ],
     './plugins/webpack-buffer',
+    copyPageButtonPlugin,
     async function webpackLexicalModules() {
       return {
-        configureWebpack() {
+        configureWebpack(_config, _isServer, {currentBundler}) {
           const alias: Record<string, string | false | string[]> = {
             ...buildLexicalWebpackAliases(),
             '@examples/agent-example': path.resolve(
@@ -393,7 +395,19 @@ const config: Config = {
             'onnxruntime-node': false,
             sharp: false,
           };
-          return {resolve: {alias}};
+          return {
+            plugins: [
+              // FB_INTERNAL only exists in Meta's internal build. Define it for
+              // the browser bundle so client code (e.g. ErrorCodePage) can read
+              // process.env.FB_INTERNAL without a ReferenceError on `process`.
+              new currentBundler.instance.DefinePlugin({
+                'process.env.FB_INTERNAL': JSON.stringify(
+                  process.env.FB_INTERNAL ?? '',
+                ),
+              }),
+            ],
+            resolve: {alias},
+          };
         },
         name: 'webpack-lexical-modules',
       };
@@ -422,7 +436,7 @@ const config: Config = {
   ].filter(plugin => plugin != null),
   presets: [
     [
-      require.resolve('docusaurus-plugin-internaldocs-fb/docusaurus-preset'),
+      'classic',
       {
         blog: false,
         docs: {
@@ -435,7 +449,6 @@ const config: Config = {
         gtag: {
           trackingID: 'G-7C6YYBYBBT',
         },
-        staticDocsProject: 'lexical',
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },

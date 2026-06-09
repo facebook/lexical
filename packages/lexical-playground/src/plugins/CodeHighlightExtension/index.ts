@@ -7,8 +7,8 @@
  */
 
 import {CodeIndentExtension} from '@lexical/code-core';
-import {CodePrismExtension} from '@lexical/code-prism';
-import {CodeShikiExtension} from '@lexical/code-shiki';
+import {CodePrismExtension, PrismTokenizer} from '@lexical/code-prism';
+import {CodeShikiExtension, ShikiTokenizer} from '@lexical/code-shiki';
 import {
   effect,
   getExtensionDependencyFromEditor,
@@ -22,6 +22,15 @@ export interface CodeHighlightConfig {
   mode: CodeHighlightMode;
 }
 
+const NULL_LANG_PRISM_TOKENIZER = {
+  ...PrismTokenizer,
+  defaultLanguage: null,
+};
+const NULL_LANG_SHIKI_TOKENIZER = {
+  ...ShikiTokenizer,
+  defaultLanguage: null,
+};
+
 /**
  * Playground aggregator that switches between {@link CodePrismExtension}
  * and {@link CodeShikiExtension} based on a `mode` signal. Both sub-
@@ -32,9 +41,15 @@ export const CodeHighlightExtension = defineExtension({
   build: (editor, config) => namedSignals(config),
   config: safeCast<CodeHighlightConfig>({mode: 'off'}),
   dependencies: [
-    configExtension(CodePrismExtension, {disabled: true}),
-    configExtension(CodeShikiExtension, {disabled: true}),
-    configExtension(CodeIndentExtension, {tabSize: 2}),
+    configExtension(CodePrismExtension, {
+      disabled: true,
+      tokenizer: NULL_LANG_PRISM_TOKENIZER,
+    }),
+    configExtension(CodeShikiExtension, {
+      disabled: true,
+      tokenizer: NULL_LANG_SHIKI_TOKENIZER,
+    }),
+    configExtension(CodeIndentExtension, {escapeWithArrows: true, tabSize: 2}),
   ],
   name: '@lexical/playground/CodeHighlight',
   register: (editor, config, state) => {

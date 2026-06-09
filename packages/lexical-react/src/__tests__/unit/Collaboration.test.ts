@@ -11,6 +11,7 @@ import {
   $createTextNode,
   $getRoot,
   $getState,
+  $isTextNode,
   $setState,
   createState,
   ParagraphNode,
@@ -18,7 +19,7 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import {act} from 'react';
-import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {afterEach, assert, beforeEach, describe, expect, it} from 'vitest';
 import * as Y from 'yjs';
 
 import {
@@ -450,6 +451,95 @@ describe('Collaboration', () => {
         );
         expect(client1.getHTML()).toEqual(client2.getHTML());
         expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
+
+        client1.stop();
+        client2.stop();
+      });
+
+      it('Should not grow a selection when a remote peer types at its right edge (#8608)', async () => {
+        const connector = createTestConnection(useCollabV2);
+        const client1 = connector.createClient('1');
+        const client2 = connector.createClient('2');
+        client1.start(container!);
+        client2.start(container!);
+
+        await expectCorrectInitialContent(client1, client2);
+
+        // Client 1 inserts "foo bar".
+        await waitForReact(() => {
+          client1.update(() => {
+            $getRoot().selectEnd().insertRawText('foo bar');
+          });
+        });
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><span data-lexical-text="true">foo bar</span></p>',
+        );
+        expect(client1.getHTML()).toEqual(client2.getHTML());
+
+        // Client 1 selects the whole word as a forward range (anchor 0 -> focus 7).
+        await waitForReact(() => {
+          client1.update(() => {
+            const firstNode = $getRoot().getFirstDescendant();
+            assert(
+              $isTextNode(firstNode),
+              'First descendant must be a TextNode',
+            );
+            expect(firstNode.getTextContent()).toBe('foo bar');
+            firstNode.select(0);
+          });
+        });
+
+        // The focus endpoint is stored in awareness as a Yjs relative position.
+        // Capture it now, while the selection is still a live range and before any
+        // remote edit arrives. The fix gives the right (focus) endpoint a left
+        // association (assoc = -1) so it sticks to the last selected character
+        // instead of drifting to the end of the XmlText.
+        //
+        // We assert on the relative position directly rather than on
+        // $getSelection() afterwards because this two-editors-in-one-jsdom harness
+        // shares a single global document selection, so a live RangeSelection does
+        // not survive a remote round-trip here (which is also why no other test in
+        // this file asserts on selection state).
+        const focusPos = client1.awareness.getLocalState()!.focusPos!;
+        expect(focusPos).not.toBeNull();
+        expect(focusPos.assoc).toBe(-1);
+
+        // Where does that focus position resolve to before the remote edit?
+        const resolvedBefore = Y.createAbsolutePositionFromRelativePosition(
+          focusPos,
+          client1.getDoc(),
+        )!;
+        expect(resolvedBefore).not.toBeNull();
+
+        // Client 2 types "ZZZ" immediately after the right edge of the selection.
+        await waitForReact(() => {
+          client2.update(() => {
+            const firstNode = $getRoot().getFirstDescendant();
+            assert(
+              $isTextNode(firstNode),
+              'First descendant must be a TextNode',
+            );
+            expect(firstNode.getTextContent()).toBe('foo bar');
+            firstNode.select().insertRawText('ZZZ');
+          });
+        });
+
+        // The edit itself propagates to both clients (document content is correct).
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><span data-lexical-text="true">foo barZZZ</span></p>',
+        );
+        expect(client1.getHTML()).toEqual(client2.getHTML());
+
+        // Re-resolve the same focus position against the updated document. With the
+        // fix it must not have moved (still at the end of "foo bar"); the pre-fix
+        // behaviour drifted it right by the length of "ZZZ", swallowing the
+        // remotely typed text into the selection (and therefore the clipboard).
+        const resolvedAfter = Y.createAbsolutePositionFromRelativePosition(
+          focusPos,
+          client1.getDoc(),
+        )!;
+        expect(resolvedAfter).not.toBeNull();
+        expect(resolvedAfter.index).toBe(resolvedBefore.index);
 
         client1.stop();
         client2.stop();

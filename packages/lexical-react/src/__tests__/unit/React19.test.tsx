@@ -7,8 +7,8 @@
  */
 
 import * as React from 'react';
+import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {beforeEach, describe, expect, test, vi} from 'vitest';
 
 const IS_REACT_19 = parseInt(React.version.split('.')[0], 10) >= 19;
@@ -39,7 +39,7 @@ describe(`React expectations (${React.version}) OVERRIDE_REACT_VERSION=${OVERRID
     function MemoComponent() {
       return React.useMemo(memoFun, []);
     }
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(
         <React.StrictMode>
           <MemoComponent />

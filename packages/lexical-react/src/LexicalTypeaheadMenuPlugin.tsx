@@ -29,9 +29,9 @@ import {
   TextNode,
 } from 'lexical';
 import {useCallback, useEffect, useState} from 'react';
-import {startTransition} from 'shared/reactPatches';
 
 import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
+import {startTransition} from './shared/reactPatches';
 
 export const PUNCTUATION =
   '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';
@@ -204,7 +204,7 @@ export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
   triggerFn: TriggerFn;
   menuRenderFn?: MenuRenderFn<TOption>;
   onOpen?: (resolution: MenuResolution) => void;
-  onClose?: () => void;
+  onClose?: () => void | PromiseLike<void>;
   anchorClassName?: string;
   commandPriority?: CommandListenerPriority;
   parent?: HTMLElement;
@@ -236,9 +236,21 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   );
 
   const closeTypeahead = useCallback(() => {
-    setResolution(null);
-    if (onClose != null && resolution !== null) {
-      onClose();
+    if (resolution === null) {
+      return;
+    }
+    const finish = () => {
+      setResolution(null);
+    };
+    let result;
+    try {
+      result = onClose && onClose();
+    } finally {
+      if (result) {
+        result.then(finish, finish);
+      } else {
+        finish();
+      }
     }
   }, [onClose, resolution]);
 

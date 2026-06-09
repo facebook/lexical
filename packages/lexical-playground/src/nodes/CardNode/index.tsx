@@ -6,17 +6,9 @@
  *
  */
 
-import type {
-  DOMExportOutput,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-} from 'lexical';
-import type {JSX} from 'react';
+import type {DOMExportOutput, LexicalEditor, LexicalNode} from 'lexical';
 
 import {$appendNodeToHTML} from '@lexical/html';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useLexicalSlot} from '@lexical/react/useLexicalSlot';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -24,30 +16,19 @@ import {
   $getSlotNames,
   $isElementNode,
   $setSlot,
-  DecoratorNode,
+  ElementNode,
 } from 'lexical';
-import * as React from 'react';
 
 import {$createSlotContainerNode} from '../SlotContainerNode';
 
-// The Card is a DecoratorNode host: its slot containers are reconciled
-// detached (the reconciler owns no inline layout for a decorator host) and
-// useLexicalSlot moves each one into the React-rendered chrome below.
-function CardComponent({nodeKey}: {nodeKey: NodeKey}): JSX.Element {
-  const [editor] = useLexicalComposerContext();
-  const titleRef = useLexicalSlot<HTMLDivElement>(editor, nodeKey, 'title');
-  const bodyRef = useLexicalSlot<HTMLDivElement>(editor, nodeKey, 'body');
-  return (
-    <div className="lexical-card-chrome">
-      <div ref={titleRef} />
-      <div ref={bodyRef} />
-    </div>
-  );
-}
-
-export class CardNode extends DecoratorNode<JSX.Element> {
+// The Card is an ElementNode host that demonstrates the dual capability of
+// hosting both a named slot (`title`, exactly one block) and regular
+// children (the body, zero or more blocks). The reconciler renders the named
+// slot ahead of the children, so the DOM order is `<title>` then the body
+// blocks, no React chrome required.
+export class CardNode extends ElementNode {
   $config() {
-    return this.config('card', {extends: DecoratorNode});
+    return this.config('card', {extends: ElementNode});
   }
 
   createDOM(): HTMLElement {
@@ -60,19 +41,22 @@ export class CardNode extends DecoratorNode<JSX.Element> {
     return false;
   }
 
-  isInline(): false {
-    return false;
-  }
-
-  decorate(): JSX.Element {
-    return <CardComponent nodeKey={this.__key} />;
+  // When the Card is the only thing in a NodeSelection (the atomic chrome
+  // click promotes a click into one), the body children would otherwise be
+  // dropped on clipboard copy / HTML export because none of them are in the
+  // selection themselves. Opting in to `includeChildrenWhenSelected` pulls
+  // them in, mirroring how the Card reads to the user — clicking the chrome
+  // selects "the whole Card", not "the Card minus its body".
+  includeChildrenWhenSelected(): boolean {
+    return true;
   }
 
   // Slots ride in a separate Map, so the HTML exporter never descends into
-  // them on its own — like NodeState, slot serialization is opt-in. Emit each
-  // slot's contents into a `data-lexical-slot` wrapper that the
-  // PlaygroundImportExtension's CardImportRule maps back to setSlot(). JSON
-  // still serializes slots automatically.
+  // them on its own — like NodeState, slot serialization is opt-in. Emit the
+  // named title slot into a `data-lexical-slot` wrapper that the
+  // PlaygroundImportExtension's CardImportRule maps back to setSlot(); the
+  // body is regular children, so it serializes through the normal child path
+  // alongside any other ElementNode.
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = document.createElement('div');
     element.className = 'lexical-card-node';
@@ -88,6 +72,9 @@ export class CardNode extends DecoratorNode<JSX.Element> {
       }
       element.append(wrapper);
     }
+    for (const child of this.getChildren()) {
+      $appendNodeToHTML(editor, child, element);
+    }
     return {element};
   }
 }
@@ -101,13 +88,7 @@ export function $createCardNode(): CardNode {
       $createParagraphNode().append($createTextNode('Title')),
     ),
   );
-  $setSlot(
-    node,
-    'body',
-    $createSlotContainerNode().append(
-      $createParagraphNode().append($createTextNode('Body')),
-    ),
-  );
+  node.append($createParagraphNode().append($createTextNode('Body')));
   return node;
 }
 

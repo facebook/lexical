@@ -60,7 +60,7 @@ const CardImportTestExtension = defineExtension({
 });
 
 describe('CardNode named slots', () => {
-  it('round-trips title/body slots through clipboard copy -> paste', () => {
+  it('round-trips the title slot and body children through clipboard copy -> paste', () => {
     using editor = buildEditorFromExtensions(CardTestExtension);
 
     let exported: ReturnType<typeof $generateJSONFromSelectedNodes>;
@@ -88,13 +88,15 @@ describe('CardNode named slots', () => {
     editor.read(() => {
       const card = $getRoot().getFirstChild();
       assert($isCardNode(card), 'Pasted top-level node must be a CardNode');
-      expect($getSlotNames(card).sort()).toEqual(['body', 'title']);
+      // Only `title` is a named slot; the body is regular children that go
+      // through the normal child channel.
+      expect($getSlotNames(card)).toEqual(['title']);
       expect($getSlot(card, 'title')?.getTextContent()).toBe('Title');
-      expect($getSlot(card, 'body')?.getTextContent()).toBe('Body');
+      expect(card.getChildren()[0]?.getTextContent()).toBe('Body');
     });
   });
 
-  it('round-trips title/body slots through HTML export -> DOMImportExtension', () => {
+  it('round-trips the title slot and body children through HTML export -> DOMImportExtension', () => {
     using editor = buildEditorFromExtensions(CardImportTestExtension);
 
     editor.update(
@@ -105,10 +107,11 @@ describe('CardNode named slots', () => {
     );
     const html = editor.read(() => $generateHtmlFromNodes(editor, null));
 
-    // Each slot rides in its own named wrapper — explicit serialization from
-    // CardNode.exportDOM, not the removed automatic slot export.
+    // The title slot rides in its own named wrapper; the body is regular
+    // ElementNode children, so its paragraph serializes through the normal
+    // child path with no slot wrapper.
     expect(html).toContain('data-lexical-slot="title"');
-    expect(html).toContain('data-lexical-slot="body"');
+    expect(html).not.toContain('data-lexical-slot="body"');
 
     editor.update(
       () => {
@@ -122,13 +125,13 @@ describe('CardNode named slots', () => {
     editor.read(() => {
       const card = $getRoot().getFirstChild();
       assert($isCardNode(card), 'Imported top-level node must be a CardNode');
-      expect($getSlotNames(card).sort()).toEqual(['body', 'title']);
+      expect($getSlotNames(card)).toEqual(['title']);
       expect($getSlot(card, 'title')?.getTextContent()).toBe('Title');
-      expect($getSlot(card, 'body')?.getTextContent()).toBe('Body');
+      expect(card.getChildren()[0]?.getTextContent()).toBe('Body');
     });
   });
 
-  it('wraps each slot value in a shadow-root SlotContainerNode', () => {
+  it('wraps the title slot value in a shadow-root SlotContainerNode', () => {
     using editor = buildEditorFromExtensions(CardTestExtension);
 
     editor.update(
@@ -141,21 +144,19 @@ describe('CardNode named slots', () => {
     editor.read(() => {
       const card = $getRoot().getFirstChild();
       assert($isCardNode(card), 'Top-level node must be a CardNode');
-      for (const name of ['title', 'body']) {
-        const slot = $getSlot(card, name);
-        assert(
-          $isSlotContainerNode(slot),
-          `Slot ${name} value must be a SlotContainerNode`,
-        );
-        // The container is a shadow root: SELECT_ALL / collapseAtStart scope
-        // to its contents instead of escaping into the host document.
-        expect(slot.isShadowRoot()).toBe(true);
-        const inner = slot.getFirstChild();
-        assert($isElementNode(inner), `Slot ${name} must hold a paragraph`);
-        // getTopLevelElement of the inner paragraph stops at the container
-        // boundary rather than walking to the editor root.
-        expect(inner.getTopLevelElement()).toBe(inner);
-      }
+      const slot = $getSlot(card, 'title');
+      assert(
+        $isSlotContainerNode(slot),
+        'Title slot value must be a SlotContainerNode',
+      );
+      // The container is a shadow root: SELECT_ALL / collapseAtStart scope
+      // to its contents instead of escaping into the host document.
+      expect(slot.isShadowRoot()).toBe(true);
+      const inner = slot.getFirstChild();
+      assert($isElementNode(inner), 'Title slot must hold a paragraph');
+      // getTopLevelElement of the inner paragraph stops at the container
+      // boundary rather than walking to the editor root.
+      expect(inner.getTopLevelElement()).toBe(inner);
     });
   });
 
@@ -230,7 +231,7 @@ describe('CardNode named slots', () => {
       const card = $getRoot().getFirstChild();
       assert($isCardNode(card), 'Card must survive backspace at slot start');
       expect($getSlot(card, 'title')?.getTextContent()).toBe('Title');
-      expect($getSlot(card, 'body')?.getTextContent()).toBe('Body');
+      expect(card.getChildren()[0]?.getTextContent()).toBe('Body');
       // Nothing escaped into the root: the card is still the only child.
       expect($getRoot().getChildrenSize()).toBe(1);
     });

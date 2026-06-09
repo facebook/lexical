@@ -13,11 +13,7 @@ import {
   ClickAfterLastBlockExtension,
   NodeSelectionDataSelectedExtension,
 } from '@lexical/extension';
-import {
-  $findMatchingParent,
-  $insertNodeToNearestRoot,
-  mergeRegister,
-} from '@lexical/utils';
+import {$insertNodeToNearestRoot, mergeRegister} from '@lexical/utils';
 import {
   $createNodeSelection,
   $getAdjacentNode,
@@ -73,39 +69,27 @@ function $handleCardArrow(
 }
 
 // Resolve a click / mousedown target to the CardNode a chrome interaction
-// should select, or null when the target is outside any Card or inside an
-// editable slot (where the caret must enter the paragraph normally). Shared
-// by the CLICK_COMMAND promotion and the mousedown caret suppression so the
-// two stay in lockstep.
+// should select, or null when the target is inside the title slot or body
+// children (where the caret must enter the paragraph normally). The Card is
+// an ElementNode host, so $getNearestNodeFromDOMNode resolves the target to
+// the CardNode itself only when the click landed on the card's own chrome
+// (border / padding around its children); a click on a body paragraph or a
+// title slot descendant resolves to that node, not the card. Shared by the
+// CLICK_COMMAND promotion and the mousedown caret suppression so the two
+// stay in lockstep.
 function $resolveCardChromeTarget(
   editor: LexicalEditor,
   target: HTMLElement,
 ): CardNode | null {
   const node = $getNearestNodeFromDOMNode(target);
-  if (node === null) {
+  if (!$isCardNode(node)) {
     return null;
   }
-  const card = $isCardNode(node)
-    ? node
-    : $findMatchingParent(node, $isCardNode);
-  if (card === null) {
-    return null;
-  }
-  const hostElement = editor.getElementByKey(card.getKey());
+  const hostElement = editor.getElementByKey(node.getKey());
   if (hostElement === null || !hostElement.contains(target)) {
     return null;
   }
-  // Clicks inside an editable slot region (the title / body paragraph or any
-  // descendant) keep the lexical default — the caret enters the paragraph
-  // normally. The closest() walk is bounded with
-  // `hostElement.contains(editableAncestor)` so an editable widget that sits
-  // outside the host (or contentEditable=true scaffolding above the editor)
-  // does not suppress the chrome interaction.
-  const editableAncestor = target.closest('[contenteditable="true"]');
-  if (editableAncestor !== null && hostElement.contains(editableAncestor)) {
-    return null;
-  }
-  return card;
+  return node;
 }
 
 export const CardExtension = defineExtension({

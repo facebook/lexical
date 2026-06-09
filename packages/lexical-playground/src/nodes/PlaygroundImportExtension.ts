@@ -102,26 +102,33 @@ const PlaygroundInlineStyleRule = /* @__PURE__ */ defineImportRule({
 
 /**
  * Reconstruct a {@link CardNode} from its exported HTML. `CardNode.exportDOM`
- * emits each named slot as a `<div data-lexical-slot="name">` child; this rule
- * imports each wrapper's contents and re-attaches them via `setSlot`, closing
- * the explicit slot HTML round-trip. Slots are intentionally NOT auto-imported
- * (mirroring the export side and NodeState) — a host opts in with a rule.
+ * emits the named title slot as a `<div data-lexical-slot="title">` child and
+ * the body as regular paragraph siblings (Card is an ElementNode host with
+ * children, so body serializes through the normal child path). This rule
+ * re-attaches the title via `setSlot` and appends every other direct child as
+ * a regular Card child. Slots are intentionally NOT auto-imported (mirroring
+ * the export side and NodeState) — a host opts in with a rule.
  */
 const CardImportRule = defineImportRule({
   $import: (ctx, el) => {
     const card = $createCardNode();
-    for (const wrapper of Array.from(
-      el.querySelectorAll(':scope > [data-lexical-slot]'),
-    )) {
-      const name = wrapper.getAttribute('data-lexical-slot');
-      if (name === null) {
+    // Clear the seeded default body paragraph so imported children replace it.
+    for (const child of card.getChildren()) {
+      child.remove();
+    }
+    for (const domChild of Array.from(el.children)) {
+      const slotName = domChild.getAttribute('data-lexical-slot');
+      if (slotName === 'title') {
+        $setSlot(
+          card,
+          'title',
+          $createSlotContainerNode().append(...ctx.$importChildren(domChild)),
+        );
         continue;
       }
-      $setSlot(
-        card,
-        name,
-        $createSlotContainerNode().append(...ctx.$importChildren(wrapper)),
-      );
+      for (const node of ctx.$importOne(domChild)) {
+        card.append(node);
+      }
     }
     return [card];
   },
@@ -149,7 +156,7 @@ const $rewrapOrphanedSlotWrappers: DOMPreprocessFn = (dom, _ctx, $next) => {
         continue;
       }
       const slotName = child.getAttribute('data-lexical-slot');
-      if (slotName === 'title' || slotName === 'body') {
+      if (slotName === 'title') {
         cardOrphans.push(child);
       } else if (slotName === 'media') {
         figureOrphans.push(child);

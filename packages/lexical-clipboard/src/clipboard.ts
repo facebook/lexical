@@ -507,11 +507,22 @@ function $appendNodesToJSON(
     shouldInclude = false;
   }
 
+  // An atomic host that opts in via `includeChildrenWhenSelected` (e.g. a Card
+  // promoted to a whole-host NodeSelection by a chrome click) recurses into
+  // its children with a null selection so the whole subtree serializes even
+  // when none of the children are in the outer selection themselves.
+  const childSelection =
+    shouldInclude &&
+    $isElementNode(currentNode) &&
+    currentNode.includeChildrenWhenSelected()
+      ? null
+      : selection;
+
   for (let i = 0; i < children.length; i++) {
     const childNode = children[i];
     const shouldIncludeChild = $appendNodesToJSON(
       editor,
-      selection,
+      childSelection,
       childNode,
       serializedNode.children,
     );

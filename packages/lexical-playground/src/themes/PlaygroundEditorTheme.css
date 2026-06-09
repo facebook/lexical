@@ -833,32 +833,26 @@
   border-color: #2563eb;
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
 }
-.lexical-card-node [data-lexical-slot] {
+.lexical-card-node [data-lexical-slot='title'] {
   outline: none;
 }
-.lexical-card-node [data-lexical-slot]::before {
+.lexical-card-node [data-lexical-slot='title']::before {
   color: #9a3412;
+  content: 'Title';
   display: block;
   font-size: 12px;
   font-weight: 600;
   user-select: none;
   -webkit-user-select: none;
 }
-.lexical-card-node [data-lexical-slot='title']::before {
-  content: 'Title';
-}
-.lexical-card-node [data-lexical-slot='body']::before {
-  content: 'Body';
-  margin-top: 8px;
-}
-.lexical-card-node [data-lexical-slot] > * {
+.lexical-card-node [data-lexical-slot='title'] > * {
   background: #fff;
   border: 1px solid #fed7aa;
   border-radius: 4px;
   margin-top: 4px;
   padding: 4px;
 }
-.lexical-card-node [data-lexical-slot]:focus-within > * {
+.lexical-card-node [data-lexical-slot='title']:focus-within > * {
   border-color: #fb923c;
   box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.3);
 }

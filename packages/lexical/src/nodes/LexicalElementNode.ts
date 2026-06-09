@@ -893,6 +893,23 @@ export class ElementNode
   }
 
   /**
+   * When this node is itself included in a selection (e.g. a NodeSelection
+   * promoting the whole node from a chrome click), should its children be
+   * force-included in the clipboard / export output even when they aren't in
+   * the selection themselves? Defaults to false — only nodes that present as a
+   * single atomic unit from the user's perspective should opt in.
+   *
+   * Complements {@link extractWithChild}, which pulls the parent in when a
+   * descendant is selected (the "child carries parent" direction); this opt-in
+   * runs in the opposite direction ("parent carries descendants").
+   *
+   * @experimental
+   */
+  includeChildrenWhenSelected(): boolean {
+    return false;
+  }
+
+  /**
    * Determines whether this node, when empty, can merge with a first block
    * of nodes being inserted.
    *

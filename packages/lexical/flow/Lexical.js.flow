@@ -993,6 +993,7 @@ declare export class ElementNode extends LexicalNode {
     selection: BaseSelection,
     destination: 'clone' | 'html',
   ): boolean;
+  includeChildrenWhenSelected(): boolean;
   canBeEmpty(): boolean;
   canInsertTextBefore(): boolean;
   canInsertTextAfter(): boolean;

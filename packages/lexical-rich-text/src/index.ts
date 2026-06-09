@@ -1455,8 +1455,6 @@ export function registerRichText(
 export {
   type RichTextConfig,
   RichTextExtension,
-} from './LexicalRichTextExtension';
-export {
   RichTextImportExtension,
-  RichTextImportRules,
-} from './RichTextImportExtension';
+} from './LexicalRichTextExtension';
+export {RichTextImportRules} from './RichTextImportExtension';

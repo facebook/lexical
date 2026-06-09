@@ -6,10 +6,15 @@
  *
  */
 import {
+  $createHorizontalRuleNode,
+  HorizontalRuleNode,
+} from '@lexical/extension';
+import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $generateNodesFromRawText,
+  $getEditor,
   $isTextNode,
   $setDirectionFromDOM,
   $setFormatFromDOM,
@@ -481,6 +486,31 @@ const ParagraphRule = defineImportRule({
 });
 
 /**
+ * `<hr>` rule, gated on {@link HorizontalRuleNode} registration so it
+ * mirrors the legacy `importDOM` contract (a node's conversions are only
+ * active when the node itself is registered). It lives here rather than
+ * next to `HorizontalRuleExtension` because `@lexical/extension`
+ * is upstream of `@lexical/html` in the package graph and cannot define
+ * import rules — this is the one node-providing extension whose import
+ * support cannot be implied by depending on it.
+ *
+ * Registered ahead of {@link TransparentBlockRule}: `<hr>` matches
+ * `isBlockDomNode`, so the wildcard block rule would otherwise consume
+ * it. When `HorizontalRuleNode` is not registered, `$next()` restores
+ * the old behavior (the childless element vanishes).
+ *
+ * @internal
+ */
+export const HorizontalRuleRule = defineImportRule({
+  $import: (_ctx, _el, $next) =>
+    $getEditor().hasNode(HorizontalRuleNode)
+      ? [$createHorizontalRuleNode()]
+      : $next(),
+  match: sel.tag('hr'),
+  name: '@lexical/html/hr',
+});
+
+/**
  * Transparent block-container rule for any unconverted block-level DOM
  * element — `<div>`, but also `<section>`, `<article>`, `<header>`,
  * `<figure>`, … (everything {@link isBlockDomNode} recognizes via the
@@ -529,15 +559,17 @@ const TransparentBlockRule = defineImportRule({
 /**
  * Rules covering the {@link ParagraphNode}, {@link TextNode},
  * {@link LineBreakNode}, and {@link TabNode} cases that the legacy
- * `importDOM` machinery in `@lexical/lexical` handled. Intended to be
- * registered as a dependency of every editor that uses
- * {@link DOMImportExtension}.
+ * `importDOM` machinery in `@lexical/lexical` handled, plus the
+ * registration-gated `<hr>` rule for {@link HorizontalRuleNode} (see
+ * {@link HorizontalRuleRule}). Intended to be registered as a dependency
+ * of every editor that uses {@link DOMImportExtension}.
  *
  * @experimental
  */
 export const CoreImportRules = [
   IgnoreScriptStyleRule,
   ParagraphRule,
+  HorizontalRuleRule,
   TransparentBlockRule,
   TextRule,
   LineBreakRule,

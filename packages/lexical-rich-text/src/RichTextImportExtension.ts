@@ -6,12 +6,10 @@
  *
  */
 
-import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
+import {defineImportRule, sel} from '@lexical/html';
 import {
   $setDirectionFromDOM,
   $setFormatFromDOM,
-  configExtension,
-  defineExtension,
   isHTMLElement,
   setNodeIndentFromDOM,
 } from 'lexical';
@@ -21,7 +19,6 @@ import {
   $createQuoteNode,
   type HeadingTagType,
 } from './index';
-import {RichTextExtension} from './LexicalRichTextExtension';
 
 /**
  * Heuristic copied (in spirit) from the legacy `isGoogleDocsTitle`:
@@ -97,6 +94,11 @@ const GoogleDocsTitleSpanRule = defineImportRule({
  * so they precede the generic `<p>` and `<span>` rules from
  * {@link CoreImportRules}.
  *
+ * Registered by {@link RichTextExtension} itself (together with
+ * `CoreImportExtension`), so any editor that uses the rich-text
+ * extension can import these tags through the `DOMImportExtension`
+ * pipeline without further configuration.
+ *
  * @experimental
  */
 export const RichTextImportRules = [
@@ -105,20 +107,3 @@ export const RichTextImportRules = [
   GoogleDocsTitleParagraphRule,
   GoogleDocsTitleSpanRule,
 ];
-
-/**
- * Bundles {@link RichTextImportRules} together with the runtime
- * {@link RichTextExtension}. The application is expected to already
- * have `CoreImportExtension` (or some equivalent) in its dependency
- * graph — the core/text/paragraph/inline-format rules are a shared
- * baseline, not something this leaf importer should re-declare.
- *
- * @experimental
- */
-export const RichTextImportExtension = defineExtension({
-  dependencies: [
-    RichTextExtension,
-    configExtension(DOMImportExtension, {rules: RichTextImportRules}),
-  ],
-  name: '@lexical/rich-text/Import',
-});

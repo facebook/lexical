@@ -7,8 +7,14 @@
  */
 
 import {effect, namedSignals} from '@lexical/extension';
+import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
 import {mergeRegister} from '@lexical/utils';
-import {$fullReconcile, defineExtension, safeCast} from 'lexical';
+import {
+  $fullReconcile,
+  configExtension,
+  defineExtension,
+  safeCast,
+} from 'lexical';
 
 import {TableCellNode} from './LexicalTableCellNode';
 import {
@@ -22,6 +28,7 @@ import {
   registerTableSelectionObserver,
 } from './LexicalTablePluginHelpers';
 import {TableRowNode} from './LexicalTableRowNode';
+import {TableImportRules} from './TableImportExtension';
 
 export interface TableConfig {
   /**
@@ -64,6 +71,13 @@ export const TableExtension = defineExtension({
     hasNestedTables: false,
     hasTabHandler: true,
   }),
+  dependencies: [
+    // DOMImportExtension support for the nodes registered here. Inert
+    // unless the editor routes HTML through the pipeline (e.g. via
+    // ClipboardDOMImportExtension or $generateNodesFromDOMViaExtension).
+    CoreImportExtension,
+    configExtension(DOMImportExtension, {rules: TableImportRules}),
+  ],
   name: '@lexical/table/Table',
   nodes: () => [TableNode, TableRowNode, TableCellNode],
   register(editor, config, state) {
@@ -101,4 +115,18 @@ export const TableExtension = defineExtension({
       ),
     );
   },
+});
+
+/**
+ * Bundles {@link TableImportRules} together with the runtime
+ * {@link TableExtension}.
+ *
+ * @experimental
+ * @deprecated {@link TableExtension} now registers
+ * {@link TableImportRules} (and `CoreImportExtension`) itself — depend on
+ * it directly instead.
+ */
+export const TableImportExtension = defineExtension({
+  dependencies: [TableExtension],
+  name: '@lexical/table/Import',
 });

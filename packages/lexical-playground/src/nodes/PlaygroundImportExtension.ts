@@ -9,18 +9,13 @@
 import type {LexicalNode} from 'lexical';
 
 import {ClipboardDOMImportExtension} from '@lexical/clipboard';
-import {CodeImportExtension} from '@lexical/code-core';
 import {
   CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
-  HorizontalRuleImportExtension,
   sel,
 } from '@lexical/html';
-import {LinkImportExtension} from '@lexical/link';
-import {ListImportExtension} from '@lexical/list';
-import {RichTextImportExtension} from '@lexical/rich-text';
-import {TableImportExtension} from '@lexical/table';
+import {LinkExtension} from '@lexical/link';
 import {
   $isElementNode,
   $isTextNode,
@@ -111,39 +106,24 @@ export const PlaygroundImportRules = [PlaygroundInlineStyleRule];
  *
  *  - {@link CoreImportExtension} (paragraphs, text, line breaks, generic
  *    block/inline handling)
- *  - {@link LinkImportExtension} (`LinkExtension` is always in the playground)
+ *  - {@link LinkExtension} (always in the playground; registers its own
+ *    `<a>` import rule)
  *  - {@link ClipboardDOMImportExtension} so pastes flow through the pipeline
  *  - the playground-specific {@link PlaygroundImportRules} overlay
  *
- * The rich-text-only importers (rich-text, list, table, code, horizontal-rule)
- * live in {@link PlaygroundRichTextImportExtension} instead: they pull node
- * extensions that must not exist in plain-text mode — notably
- * `RichTextExtension`, which *conflicts* with `PlainTextExtension`. Keeping the
- * importer set aligned with the node set per mode avoids that conflict.
+ * The rich-text-only import rules (rich-text, list, table, code,
+ * horizontal-rule) come along with the corresponding node extensions in
+ * `PlaygroundRichTextExtension` — each node package registers its own
+ * rules — so the importer set automatically matches the node set per
+ * mode, and plain-text mode never pulls in `RichTextExtension` (which
+ * *conflicts* with `PlainTextExtension`).
  */
 export const PlaygroundImportExtension = defineExtension({
   dependencies: [
     CoreImportExtension,
-    LinkImportExtension,
+    LinkExtension,
     ClipboardDOMImportExtension,
     configExtension(DOMImportExtension, {rules: PlaygroundImportRules}),
   ],
   name: '@lexical/playground/Import',
-});
-
-/**
- * The rich-text-only per-package importers, mirroring the rich-text node set.
- * Added to `PlaygroundRichTextExtension` (not the always-on
- * {@link PlaygroundImportExtension}) so plain-text editors never pull in
- * `RichText`/`List`/`Table`/`Code`/`HorizontalRule`.
- */
-export const PlaygroundRichTextImportExtension = defineExtension({
-  dependencies: [
-    RichTextImportExtension,
-    ListImportExtension,
-    TableImportExtension,
-    CodeImportExtension,
-    HorizontalRuleImportExtension,
-  ],
-  name: '@lexical/playground/RichTextImport',
 });

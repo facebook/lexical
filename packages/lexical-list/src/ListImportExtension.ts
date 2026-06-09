@@ -12,7 +12,6 @@ import {
   $isBlockLevel,
   $propagateTextAlignToBlockChildren,
   defineImportRule,
-  DOMImportExtension,
   isElementOfTag,
   sel,
 } from '@lexical/html';
@@ -22,12 +21,9 @@ import {
   $isParagraphNode,
   $setDirectionFromDOM,
   $setFormatFromDOM,
-  configExtension,
-  defineExtension,
   type LexicalNode,
 } from 'lexical';
 
-import {ListExtension} from './LexicalListExtension';
 import {
   $createListItemNode,
   $isListItemNode,
@@ -289,6 +285,11 @@ export const ListSchema: ChildSchema = {
  * Import rules for {@link ListNode} and {@link ListItemNode}, including
  * GitHub task-list and Joplin checkbox heuristics.
  *
+ * Registered by {@link ListExtension} itself (together with
+ * `CoreImportExtension`), so any editor that uses the list extension can
+ * import these tags through the `DOMImportExtension` pipeline without
+ * further configuration.
+ *
  * @experimental
  */
 export const ListImportRules = [
@@ -300,20 +301,3 @@ export const ListImportRules = [
   ListRule,
   ListItemRule,
 ];
-
-/**
- * Bundles {@link ListImportRules} together with the runtime
- * {@link ListExtension}. The application is expected to already have
- * `CoreImportExtension` (or some equivalent) in its dependency graph —
- * the core/text/paragraph/inline-format rules are a shared baseline,
- * not something this leaf importer should re-declare.
- *
- * @experimental
- */
-export const ListImportExtension = defineExtension({
-  dependencies: [
-    ListExtension,
-    configExtension(DOMImportExtension, {rules: ListImportRules}),
-  ],
-  name: '@lexical/list/Import',
-});

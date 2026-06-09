@@ -15,7 +15,13 @@ import {
   NormalizeInlineElementsExtension,
   NormalizeTripleClickSelectionExtension,
 } from '@lexical/extension';
-import {defineExtension, safeCast, shallowMergeConfig} from 'lexical';
+import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
+import {
+  configExtension,
+  defineExtension,
+  safeCast,
+  shallowMergeConfig,
+} from 'lexical';
 
 import {
   type EscapeFormatTriggerConfig,
@@ -24,6 +30,7 @@ import {
   registerRichText,
   type TriggerConfig,
 } from './index';
+import {RichTextImportRules} from './RichTextImportExtension';
 
 /**
  * Configuration for {@link RichTextExtension}.
@@ -105,6 +112,11 @@ export const RichTextExtension = defineExtension({
     DragonExtension,
     NormalizeInlineElementsExtension,
     NormalizeTripleClickSelectionExtension,
+    // DOMImportExtension support for the nodes registered here. Inert
+    // unless the editor routes HTML through the pipeline (e.g. via
+    // ClipboardDOMImportExtension or $generateNodesFromDOMViaExtension).
+    CoreImportExtension,
+    configExtension(DOMImportExtension, {rules: RichTextImportRules}),
   ],
   mergeConfig: mergeRichTextConfig,
   name: '@lexical/rich-text',
@@ -113,4 +125,18 @@ export const RichTextExtension = defineExtension({
     effect(() =>
       registerRichText(editor, state.getOutput().escapeFormatTriggers),
     ),
+});
+
+/**
+ * Bundles {@link RichTextImportRules} together with the runtime
+ * {@link RichTextExtension}.
+ *
+ * @experimental
+ * @deprecated {@link RichTextExtension} now registers
+ * {@link RichTextImportRules} (and `CoreImportExtension`) itself —
+ * depend on it directly instead.
+ */
+export const RichTextImportExtension = defineExtension({
+  dependencies: [RichTextExtension],
+  name: '@lexical/rich-text/Import',
 });

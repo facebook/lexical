@@ -7,12 +7,14 @@
  */
 
 import {effect, namedSignals} from '@lexical/extension';
+import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
 import {mergeRegister} from '@lexical/utils';
-import {defineExtension, safeCast} from 'lexical';
+import {configExtension, defineExtension, safeCast} from 'lexical';
 
 import {registerCheckList} from './checkList';
 import {ListItemNode} from './LexicalListItemNode';
 import {ListNode} from './LexicalListNode';
+import {ListImportRules} from './ListImportExtension';
 import {registerList, registerListStrictIndentTransform} from './registerList';
 
 export interface ListConfig {
@@ -36,6 +38,13 @@ export const ListExtension = defineExtension({
     hasStrictIndent: false,
     shouldPreserveNumbering: false,
   }),
+  dependencies: [
+    // DOMImportExtension support for the nodes registered here. Inert
+    // unless the editor routes HTML through the pipeline (e.g. via
+    // ClipboardDOMImportExtension or $generateNodesFromDOMViaExtension).
+    CoreImportExtension,
+    configExtension(DOMImportExtension, {rules: ListImportRules}),
+  ],
   name: '@lexical/list/List',
   nodes: () => [ListNode, ListItemNode],
   register(editor, config, state) {
@@ -73,4 +82,18 @@ export const CheckListExtension = defineExtension({
   name: '@lexical/list/CheckList',
   register: (editor, config, state) =>
     registerCheckList(editor, state.getOutput()),
+});
+
+/**
+ * Bundles {@link ListImportRules} together with the runtime
+ * {@link ListExtension}.
+ *
+ * @experimental
+ * @deprecated {@link ListExtension} now registers
+ * {@link ListImportRules} (and `CoreImportExtension`) itself — depend on
+ * it directly instead.
+ */
+export const ListImportExtension = defineExtension({
+  dependencies: [ListExtension],
+  name: '@lexical/list/Import',
 });

@@ -13,6 +13,7 @@ import {
   $generateNodesFromDOM,
   $generateNodesFromDOMViaExtension,
   contextValue,
+  CoreImportExtension,
   ImportSource,
   ImportSourceDataTransfer,
 } from '@lexical/html';
@@ -481,9 +482,14 @@ export const ClipboardImportExtension = defineExtension({
  * Drop-in extension that routes `text/html` clipboard pastes and drops
  * through the {@link DOMImportExtension} pipeline (rules, schemas,
  * preprocessors, overlays) instead of the legacy
- * {@link $generateNodesFromDOM}. Add to your extension dependencies along
- * with the per-package import extensions you want active
- * ({@link CoreImportExtension}, {@link RichTextImportExtension}, etc.).
+ * {@link $generateNodesFromDOM}. Node-providing extensions
+ * (`RichTextExtension`, `ListExtension`, `LinkExtension`,
+ * `TableExtension`, `CodeExtension`, …) register their own import rules,
+ * so adding this extension to an editor built from them is all it takes
+ * to activate the pipeline for pastes. {@link CoreImportExtension} (the
+ * paragraph/text/inline-format baseline) is a dependency of this
+ * extension, so even an editor with no rule-contributing node extensions
+ * gets sensible text handling.
  *
  * The original {@link DataTransfer} and `'paste'` source kind are forwarded
  * into the import context so rules and preprocessors can read them via
@@ -496,13 +502,12 @@ export const ClipboardImportExtension = defineExtension({
  * ```ts
  * import {defineExtension} from 'lexical';
  * import {ClipboardDOMImportExtension} from '@lexical/clipboard';
- * import {CoreImportExtension, RichTextImportExtension} from '@lexical/html';
+ * import {RichTextExtension} from '@lexical/rich-text';
  *
  * defineExtension({
  *   name: 'app',
  *   dependencies: [
- *     CoreImportExtension,
- *     RichTextImportExtension,
+ *     RichTextExtension,
  *     ClipboardDOMImportExtension,
  *   ],
  * });
@@ -510,6 +515,7 @@ export const ClipboardImportExtension = defineExtension({
  */
 export const ClipboardDOMImportExtension = defineExtension({
   dependencies: [
+    CoreImportExtension,
     configExtension(ClipboardImportExtension, {
       $importMimeType: {
         'text/html': [

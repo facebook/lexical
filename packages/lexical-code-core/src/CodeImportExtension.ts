@@ -9,23 +9,18 @@
 import type {DOMPreprocessFn} from '@lexical/html';
 
 import {
-  CoreImportExtension,
   defineImportRule,
   defineOverlayRules,
-  DOMImportExtension,
   ImportOverlays,
   sel,
 } from '@lexical/html';
 import {
   $generateNodesFromRawText,
-  configExtension,
-  defineExtension,
   isDOMDocumentNode,
   isDOMTextNode,
   isHTMLElement,
 } from 'lexical';
 
-import {CodeExtension} from './CodeExtension';
 import {$createCodeNode} from './CodeNode';
 
 const LANGUAGE_DATA_ATTRIBUTE = 'data-language';
@@ -371,6 +366,12 @@ const GitHubCodeCellByClassRule = defineImportRule({
  * registered before the generic `<table>` / `<tr>` / `<td>` rules so
  * they win dispatch.
  *
+ * Registered by {@link CodeExtension} itself (together with
+ * `CoreImportExtension` and the {@link $installVscodeCodePasteOverlay}
+ * preprocess), so any editor that uses the code extension can import
+ * these shapes through the `DOMImportExtension` pipeline without further
+ * configuration.
+ *
  * @experimental
  */
 export const CodeImportRules = [
@@ -381,23 +382,3 @@ export const CodeImportRules = [
   PreRule,
   DivRule,
 ];
-
-/**
- * Bundles {@link CodeImportRules} (plus {@link CoreImportExtension}) into
- * a single dependency. The legacy {@link CodeNode.importDOM} continues to
- * work in parallel; depend on this extension to opt into the new
- * pipeline.
- *
- * @experimental
- */
-export const CodeImportExtension = defineExtension({
-  dependencies: [
-    CoreImportExtension,
-    CodeExtension,
-    configExtension(DOMImportExtension, {
-      preprocess: [$installVscodeCodePasteOverlay],
-      rules: CodeImportRules,
-    }),
-  ],
-  name: '@lexical/code/Import',
-});

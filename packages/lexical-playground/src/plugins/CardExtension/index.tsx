@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalCommand, LexicalEditor} from 'lexical';
+import type {LexicalCommand, LexicalEditor, LexicalNode} from 'lexical';
 
 import {
   $defaultShouldInsertAfter,
@@ -19,6 +19,10 @@ import {
   $getAdjacentNode,
   $getNearestNodeFromDOMNode,
   $getSelection,
+  $getSlot,
+  $getSlotHost,
+  $getSlotNameWithinHost,
+  $isElementNode,
   $isRangeSelection,
   $setSelection,
   CLICK_COMMAND,
@@ -31,6 +35,7 @@ import {
   isHTMLElement,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
+  KEY_TAB_COMMAND,
 } from 'lexical';
 
 import {$createCardNode, $isCardNode, CardNode} from '../../nodes/CardNode';
@@ -66,6 +71,75 @@ function $handleCardArrow(
   ns.add(adjacent.getKey());
   $setSelection(ns);
   return true;
+}
+
+// Walk up from `start` looking for a slot child whose host is a Card; report
+// which named slot (or the body's regular children) the caret sits in.
+// Returns `null` when the caret is not inside a CardNode at all. Used by the
+// Tab handler — the first real consumer of `$getSlotNameWithinHost`, which
+// answers "which named slot does this node sit in?" so an event-bubbling
+// handler can establish relative order between slots and children.
+function $findCardSlotContext(
+  start: LexicalNode,
+):
+  | {card: CardNode; in: 'title'; slotValue: LexicalNode}
+  | {card: CardNode; in: 'body'}
+  | null {
+  let cursor: LexicalNode | null = start;
+  while (cursor !== null) {
+    const slotName = $getSlotNameWithinHost(cursor);
+    if (slotName !== null) {
+      const host = $getSlotHost(cursor);
+      if ($isCardNode(host)) {
+        return slotName === 'title'
+          ? {card: host, in: 'title', slotValue: cursor}
+          : null;
+      }
+    }
+    const parent: LexicalNode | null = cursor.getParent();
+    if ($isCardNode(parent)) {
+      return {card: parent, in: 'body'};
+    }
+    cursor = parent ?? $getSlotHost(cursor);
+  }
+  return null;
+}
+
+// Tab moves focus between the title slot and the body — Shift+Tab goes
+// backward. This is a small PoC for the use case `$getSlotNameWithinHost`
+// was introduced for: an event handler that needs to know which slot the
+// caret came from so it can pick the right destination.
+function $handleCardTab(
+  event: KeyboardEvent | null,
+  isBackward: boolean,
+): boolean {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) {
+    return false;
+  }
+  const context = $findCardSlotContext(selection.anchor.getNode());
+  if (context === null) {
+    return false;
+  }
+  if (!isBackward && context.in === 'title') {
+    const bodyFirst = context.card.getFirstChild();
+    if ($isElementNode(bodyFirst)) {
+      event?.preventDefault();
+      bodyFirst.selectStart();
+      return true;
+    }
+  } else if (isBackward && context.in === 'body') {
+    const titleSlot = $getSlot(context.card, 'title');
+    if ($isElementNode(titleSlot)) {
+      const titleFirst = titleSlot.getFirstChild();
+      if ($isElementNode(titleFirst)) {
+        event?.preventDefault();
+        titleFirst.selectEnd();
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 // Resolve a click / mousedown target to the CardNode a chrome interaction
@@ -160,6 +234,11 @@ export const CardExtension = defineExtension({
       editor.registerCommand<KeyboardEvent | null>(
         KEY_ARROW_LEFT_COMMAND,
         event => $handleCardArrow(event, true),
+        COMMAND_PRIORITY_BEFORE_EDITOR,
+      ),
+      editor.registerCommand<KeyboardEvent>(
+        KEY_TAB_COMMAND,
+        event => $handleCardTab(event, event.shiftKey),
         COMMAND_PRIORITY_BEFORE_EDITOR,
       ),
       // Click on the Card chrome (the host DOM itself, outside the slot

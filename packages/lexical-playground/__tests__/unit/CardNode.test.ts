@@ -20,13 +20,16 @@ import {
 import {
   $createNodeSelection,
   $getRoot,
+  $getSelection,
   $getSlot,
   $getSlotNames,
   $isElementNode,
+  $isRangeSelection,
   $selectAll,
   $setSelection,
   configExtension,
   defineExtension,
+  KEY_TAB_COMMAND,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
@@ -234,6 +237,88 @@ describe('CardNode named slots', () => {
       expect(card.getChildren()[0]?.getTextContent()).toBe('Body');
       // Nothing escaped into the root: the card is still the only child.
       expect($getRoot().getChildrenSize()).toBe(1);
+    });
+  });
+
+  // The Tab handler is the first real consumer of $getSlotNameWithinHost —
+  // it walks the caret's ancestors to determine whether the caret sits in
+  // the title slot or in the body children, and picks the destination
+  // accordingly. These two cases pin both directions.
+  it('Tab from the title slot moves the caret into the body', () => {
+    using editor = buildEditorFromExtensions(CardTestExtension);
+
+    editor.update(
+      () => {
+        $getRoot().clear().append($createCardNode());
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const card = $getRoot().getFirstChild();
+        assert($isCardNode(card), 'Top-level node must be a CardNode');
+        const titleSlot = $getSlot(card, 'title');
+        assert($isElementNode(titleSlot), 'title slot must be an element');
+        const titlePara = titleSlot.getFirstChild();
+        assert($isElementNode(titlePara), 'title slot must hold a paragraph');
+        titlePara.selectEnd();
+      },
+      {discrete: true},
+    );
+
+    editor.dispatchCommand(
+      KEY_TAB_COMMAND,
+      new KeyboardEvent('keydown', {key: 'Tab'}),
+    );
+
+    editor.read(() => {
+      const card = $getRoot().getFirstChild();
+      assert($isCardNode(card), 'CardNode must survive Tab');
+      const bodyFirst = card.getChildren()[0];
+      assert($isElementNode(bodyFirst), 'Body must hold a paragraph after Tab');
+      const selection = $getSelection();
+      assert($isRangeSelection(selection), 'Tab must leave a RangeSelection');
+      // Caret landed inside the body's first paragraph.
+      expect(bodyFirst.isParentOf(selection.anchor.getNode())).toBe(true);
+    });
+  });
+
+  it('Shift+Tab from the body moves the caret into the title slot', () => {
+    using editor = buildEditorFromExtensions(CardTestExtension);
+
+    editor.update(
+      () => {
+        $getRoot().clear().append($createCardNode());
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const card = $getRoot().getFirstChild();
+        assert($isCardNode(card), 'Top-level node must be a CardNode');
+        const bodyFirst = card.getChildren()[0];
+        assert($isElementNode(bodyFirst), 'Body must hold a paragraph');
+        bodyFirst.selectStart();
+      },
+      {discrete: true},
+    );
+
+    editor.dispatchCommand(
+      KEY_TAB_COMMAND,
+      new KeyboardEvent('keydown', {key: 'Tab', shiftKey: true}),
+    );
+
+    editor.read(() => {
+      const card = $getRoot().getFirstChild();
+      assert($isCardNode(card), 'CardNode must survive Shift+Tab');
+      const titleSlot = $getSlot(card, 'title');
+      assert($isElementNode(titleSlot), 'title slot must be an element');
+      const selection = $getSelection();
+      assert($isRangeSelection(selection), 'Shift+Tab must leave a selection');
+      // Caret landed inside the title slot.
+      expect(titleSlot.isParentOf(selection.anchor.getNode())).toBe(true);
     });
   });
 });

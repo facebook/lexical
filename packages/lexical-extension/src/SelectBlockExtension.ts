@@ -145,9 +145,7 @@ export const SelectBlockExtension = defineExtension({
                 // This is type narrowing.
                 // If firstNode is a decorator, then it is equal to topParent
               } else if ($isElementNode(topParent)) {
-                $setSelection(
-                  topParent.select(0, topParent.getChildrenSize()),
-                );
+                $setSelection(topParent.select(0, topParent.getChildrenSize()));
                 prevSelectionAll = null;
               }
               return true;

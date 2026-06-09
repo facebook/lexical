@@ -26,6 +26,7 @@ import type {
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
   PointCaret,
   RangeSelection,
   SiblingCaret,
@@ -109,6 +110,12 @@ import {
 } from './LexicalTableUtils';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
+
+function $getTableNodeByKeyOrThrow(key: NodeKey): TableNode {
+  const tableNode = $getNodeByKeyOrThrow(key);
+  invariant($isTableNode(tableNode), 'Expected TableNode for key %s', key);
+  return tableNode;
+}
 
 const isPointerDownOnEvent = (event: PointerEvent) => {
   return (event.buttons & 1) === 1;
@@ -328,9 +335,7 @@ function $handleTableClick(
   };
 
   tableObserver.pointerType = event.pointerType;
-  const tableNode = $getNodeByKeyOrThrow(
-    tableObserver.tableNodeKey,
-  ) as TableNode;
+  const tableNode = $getTableNodeByKeyOrThrow(tableObserver.tableNodeKey);
   const prevSelection = $getPreviousSelection();
   // We can't trust Firefox to do the right thing with the selection and
   // we don't have a proper state machine to do this "correctly" but
@@ -895,9 +900,7 @@ export function $handleTableSelectionChangeCommand(
     $isRangeSelection(selection) &&
     selection.isCollapsed()
   ) {
-    const tableNode = $getNodeByKeyOrThrow(
-      shouldCheckSelectionForTable,
-    ) as TableNode;
+    const tableNode = $getTableNodeByKeyOrThrow(shouldCheckSelectionForTable);
     const anchor = selection.anchor.getNode();
     const firstRow = tableNode.getFirstChild();
     const anchorCell = $findCellNode(anchor);
@@ -933,7 +936,7 @@ export function $handleTableSelectionChangeCommand(
   const tableNodesAndObservers = Array.from(
     tableObservers.observers.entries(),
   ).map(([tableKey, [tableObserver]]) => ({
-    tableNode: $getNodeByKeyOrThrow(tableKey) as TableNode,
+    tableNode: $getTableNodeByKeyOrThrow(tableKey),
     tableObserver,
   }));
   for (const {tableNode, tableObserver} of tableNodesAndObservers) {
@@ -1078,7 +1081,7 @@ function $fixTableSelectionForSelectedTable(
   if (!selection.is(prevSelection)) {
     return;
   }
-  const tableNode = $getNodeByKeyOrThrow(selection.tableKey) as TableNode;
+  const tableNode = $getTableNodeByKeyOrThrow(selection.tableKey);
   // if selection goes outside of the table we need to change it to Range selection
   const domSelection = getDOMSelection(editorWindow);
   if (domSelection && domSelection.anchorNode && domSelection.focusNode) {

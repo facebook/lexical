@@ -11,10 +11,12 @@ import {
   $createTextNode,
   $getEditor,
   $getRoot,
+  $isParagraphNode,
+  $isTextNode,
   ParagraphNode,
   TextNode,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 import {EditorState} from '../../LexicalEditorState';
 import {$createRootNode, RootNode} from '../../nodes/LexicalRootNode';
@@ -47,8 +49,12 @@ describe('LexicalEditorState tests', () => {
 
       editor.getEditorState().read(() => {
         root = $getRoot();
-        paragraph = root.getFirstChild() as ParagraphNode;
-        text = paragraph.getFirstChild() as TextNode;
+        const firstChild = root.getFirstChild();
+        assert($isParagraphNode(firstChild), 'Expected a ParagraphNode');
+        paragraph = firstChild;
+        const firstGrandchild = firstChild.getFirstChild();
+        assert($isTextNode(firstGrandchild), 'Expected a TextNode');
+        text = firstGrandchild;
       });
 
       expect(root).toEqual({

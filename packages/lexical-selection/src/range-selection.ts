@@ -275,20 +275,18 @@ export function $wrapNodesImpl(
   // either insertAfter/insertBefore/append the corresponding
   // elements to. This is made more complicated due to nested
   // structures.
-  let target = $isElementNode(firstNode)
+  const firstNodeBlock = $isElementNode(firstNode)
     ? firstNode
     : firstNode.getParentOrThrow();
-
-  if (target.isInline()) {
-    target = target.getParentOrThrow();
-  }
+  let target: LexicalNode = firstNodeBlock.isInline()
+    ? firstNodeBlock.getParentOrThrow()
+    : firstNodeBlock;
 
   let targetIsPrevSibling = false;
   while (target !== null) {
-    // The previous sibling is not necessarily an ElementNode, but this
-    // pre-existing cast preserves the historical behavior of treating it
-    // as the wrap target regardless of its actual type.
-    const prevSibling = target.getPreviousSibling() as ElementNode | null;
+    // Annotation breaks a circular inference through the loop (TS7022),
+    // remove when the deprecated generic signatures from #8661 are removed
+    const prevSibling: LexicalNode | null = target.getPreviousSibling();
 
     if (prevSibling !== null) {
       target = prevSibling;
@@ -389,7 +387,10 @@ export function $wrapNodesImpl(
         }
       }
     } else {
-      const firstChild = target.getFirstChild();
+      // Capture the narrowed type, the reassignment of target below would
+      // otherwise widen it back to LexicalNode
+      const rootTarget = target;
+      const firstChild = rootTarget.getFirstChild();
 
       if ($isElementNode(firstChild)) {
         target = firstChild;
@@ -397,11 +398,11 @@ export function $wrapNodesImpl(
 
       if (firstChild === null) {
         if (wrappingElement) {
-          target.append(wrappingElement);
+          rootTarget.append(wrappingElement);
         } else {
           for (let i = 0; i < elements.length; i++) {
             const element = elements[i];
-            target.append(element);
+            rootTarget.append(element);
             lastElement = element;
           }
         }

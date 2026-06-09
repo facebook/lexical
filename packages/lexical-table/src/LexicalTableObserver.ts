@@ -425,9 +425,10 @@ export class TableObserver {
   }
 
   $getAnchorTableCell(): TableCellNode | null {
-    return this.anchorCellNodeKey
-      ? ($getNodeByKey(this.anchorCellNodeKey) as TableCellNode | null)
+    const node = this.anchorCellNodeKey
+      ? $getNodeByKey(this.anchorCellNodeKey)
       : null;
+    return $isTableCellNode(node) ? node : null;
   }
   $getAnchorTableCellOrThrow(): TableCellNode {
     const anchorTableCell = this.$getAnchorTableCell();
@@ -439,9 +440,10 @@ export class TableObserver {
   }
 
   $getFocusTableCell(): TableCellNode | null {
-    return this.focusCellNodeKey
-      ? ($getNodeByKey(this.focusCellNodeKey) as TableCellNode | null)
+    const node = this.focusCellNodeKey
+      ? $getNodeByKey(this.focusCellNodeKey)
       : null;
+    return $isTableCellNode(node) ? node : null;
   }
 
   $getFocusTableCellOrThrow(): TableCellNode {

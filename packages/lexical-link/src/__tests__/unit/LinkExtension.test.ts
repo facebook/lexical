@@ -19,7 +19,6 @@ import {
   $toggleLink,
   AutoLinkNode,
   LinkExtension,
-  LinkNode,
 } from '@lexical/link';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
@@ -33,7 +32,6 @@ import {
   configExtension,
   LexicalEditorWithDispose,
   PASTE_COMMAND,
-  TextNode,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
@@ -51,12 +49,14 @@ describe('Link', () => {
     using editor = buildEditorFromExtensions(extension);
     editor.update(
       () => {
-        const textNode = $getRoot().getLastDescendant() as TextNode;
+        const textNode = $getRoot().getLastDescendant();
+        assert($isTextNode(textNode), 'Expected a TextNode');
         textNode.select(0);
         expect($isLinkNode(textNode.getParent())).toBe(false);
         $toggleLink('https://lexical.dev/');
         expect($isLinkNode(textNode.getParent())).toBe(true);
-        let linkNode = textNode.getParent() as LinkNode;
+        let linkNode = textNode.getParent();
+        assert($isLinkNode(linkNode), 'Expected a LinkNode');
         expect(linkNode.getURL()).toBe('https://lexical.dev/');
         expect(linkNode.getTarget()).toBe(null);
         expect($getRoot().getTextContent()).toBe('Hello');
@@ -69,7 +69,8 @@ describe('Link', () => {
           title: 'title',
           url: 'https://lexical.dev/',
         });
-        linkNode = textNode.getParent() as LinkNode;
+        linkNode = textNode.getParent();
+        assert($isLinkNode(linkNode), 'Expected a LinkNode');
         expect(linkNode.getURL()).toBe('https://lexical.dev/');
         expect(linkNode.getTarget()).toBe('_blank');
         expect(linkNode.getRel()).toBe('noopener');
@@ -108,8 +109,8 @@ describe('Link', () => {
         assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
         const children = p.getChildren();
         expect(children.length).toBe(1);
-        expect($isLinkNode(children[0])).toBe(true);
-        const link = children[0] as LinkNode;
+        const link = children[0];
+        assert($isLinkNode(link), 'Expected a LinkNode');
         expect(link.getURL()).toBe('https://lexical.dev/');
         expect(link.getTarget()).toBe('_blank');
         expect(link.getRel()).toBe('noreferrer');

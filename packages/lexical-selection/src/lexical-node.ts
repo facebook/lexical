@@ -139,16 +139,19 @@ export function $trimTextContentFromAnchor(
 
   while (remaining > 0 && currentNode !== null) {
     if ($isElementNode(currentNode)) {
+      // Annotation breaks a circular inference through the loop (TS7022)
       const lastDescendant: null | LexicalNode =
         currentNode.getLastDescendant();
       if (lastDescendant !== null) {
         currentNode = lastDescendant;
       }
     }
+    // Annotation breaks a circular inference through the loop (TS7022)
     let nextNode: LexicalNode | null = currentNode.getPreviousSibling();
     let additionalElementWhitespace = 0;
     if (nextNode === null) {
       let parent: LexicalNode | null = currentNode.getParentOrThrow();
+      // Annotation breaks a circular inference through the loop (TS7022)
       let parentSibling: LexicalNode | null = parent.getPreviousSibling();
 
       while (parentSibling === null) {

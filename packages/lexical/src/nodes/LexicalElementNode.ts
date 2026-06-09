@@ -161,7 +161,7 @@ export class ElementNode extends LexicalNode {
   getChildren<T extends LexicalNode>(): Array<T>;
   getChildren(): Array<LexicalNode> {
     const children: Array<LexicalNode> = [];
-    let child: LexicalNode | null = this.getFirstChild();
+    let child = this.getFirstChild();
     while (child !== null) {
       children.push(child);
       child = child.getNextSibling();
@@ -170,7 +170,7 @@ export class ElementNode extends LexicalNode {
   }
   getChildrenKeys(): Array<NodeKey> {
     const children: Array<NodeKey> = [];
-    let child: LexicalNode | null = this.getFirstChild();
+    let child = this.getFirstChild();
     while (child !== null) {
       children.push(child.__key);
       child = child.getNextSibling();
@@ -196,7 +196,7 @@ export class ElementNode extends LexicalNode {
   }
   getAllTextNodes(): Array<TextNode> {
     const textNodes = [];
-    let child: LexicalNode | null = this.getFirstChild();
+    let child = this.getFirstChild();
     while (child !== null) {
       if ($isTextNode(child)) {
         textNodes.push(child);
@@ -222,7 +222,7 @@ export class ElementNode extends LexicalNode {
    */
   getFirstDescendant<T extends LexicalNode>(): null | T;
   getFirstDescendant(): null | LexicalNode {
-    let node: null | LexicalNode = this.getFirstChild();
+    let node = this.getFirstChild();
     while ($isElementNode(node)) {
       const child = node.getFirstChild();
       if (child === null) {
@@ -245,7 +245,7 @@ export class ElementNode extends LexicalNode {
    */
   getLastDescendant<T extends LexicalNode>(): null | T;
   getLastDescendant(): null | LexicalNode {
-    let node: null | LexicalNode = this.getLastChild();
+    let node = this.getLastChild();
     while ($isElementNode(node)) {
       const child = node.getLastChild();
       if (child === null) {

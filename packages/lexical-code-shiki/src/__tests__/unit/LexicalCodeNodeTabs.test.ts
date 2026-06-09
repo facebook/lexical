@@ -7,7 +7,7 @@
  */
 
 import type {CodeNode} from '@lexical/code';
-import type {LexicalCommand, LexicalNode} from 'lexical';
+import type {LexicalCommand} from 'lexical';
 
 import {
   $createCodeNode,
@@ -187,7 +187,7 @@ describe('LexicalCodeNode tests', () => {
                   selLast -= 1;
                 }
 
-                let matching: null | LexicalNode = codeNode.getFirstChild();
+                let matching = codeNode.getFirstChild();
                 let parentIndex = 0;
                 let offset = 0;
                 while (

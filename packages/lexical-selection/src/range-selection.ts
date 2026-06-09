@@ -150,6 +150,7 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
 
   while (node !== null && !$isRootOrShadowRoot(node)) {
     const latest = node.getLatest();
+    // Annotation breaks a circular inference through the loop (TS7022)
     const parentNode: ElementNode | null = node.getParent();
 
     if (latest.getChildrenSize() === 0) {

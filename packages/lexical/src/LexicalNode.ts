@@ -857,6 +857,7 @@ export class LexicalNode {
         return true;
       }
 
+      // Annotation breaks a circular inference through the loop (TS7022)
       const node: LexicalNode | null = $getNodeByKey(nodeKey);
 
       if (node === null) {
@@ -991,6 +992,7 @@ export class LexicalNode {
   getTopLevelElement(): ElementNode | DecoratorNode<unknown> | null {
     let node: ElementNode | this | null = this;
     while (node !== null) {
+      // Annotation breaks a circular inference through the loop (TS7022)
       const parent: ElementNode | null = node.getParent();
       if ($isRootOrShadowRoot(parent)) {
         invariant(
@@ -1052,9 +1054,8 @@ export class LexicalNode {
   }
 
   /**
-   * Returns the "previous" siblings - that is, the node that comes
-   * before this one in the same parent.
-   *
+   * Returns the node before this one in the same parent, or null
+   * if there is no such node.
    */
   getPreviousSibling(): LexicalNode | null;
   /**
@@ -1071,9 +1072,8 @@ export class LexicalNode {
   }
 
   /**
-   * Returns the "previous" siblings - that is, the nodes that come between
-   * this one and the first child of it's parent, inclusive.
-   *
+   * Returns all nodes before this one in the same parent,
+   * in document order.
    */
   getPreviousSiblings(): Array<LexicalNode>;
   /**
@@ -1089,7 +1089,7 @@ export class LexicalNode {
     if (parent === null) {
       return siblings;
     }
-    let node: null | LexicalNode = parent.getFirstChild();
+    let node = parent.getFirstChild();
     while (node !== null) {
       if (node.is(this)) {
         break;
@@ -1101,9 +1101,8 @@ export class LexicalNode {
   }
 
   /**
-   * Returns the "next" siblings - that is, the node that comes
-   * after this one in the same parent
-   *
+   * Returns the node after this one in the same parent, or null
+   * if there is no such node.
    */
   getNextSibling(): LexicalNode | null;
   /**
@@ -1120,9 +1119,8 @@ export class LexicalNode {
   }
 
   /**
-   * Returns all "next" siblings - that is, the nodes that come between this
-   * one and the last child of it's parent, inclusive.
-   *
+   * Returns all nodes after this one in the same parent,
+   * in document order.
    */
   getNextSiblings(): Array<LexicalNode>;
   /**
@@ -1134,7 +1132,7 @@ export class LexicalNode {
   getNextSiblings<T extends LexicalNode>(): Array<T>;
   getNextSiblings(): Array<LexicalNode> {
     const siblings: Array<LexicalNode> = [];
-    let node: null | LexicalNode = this.getNextSibling();
+    let node = this.getNextSibling();
     while (node !== null) {
       siblings.push(node);
       node = node.getNextSibling();

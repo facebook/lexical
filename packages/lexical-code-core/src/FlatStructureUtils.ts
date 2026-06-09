@@ -122,6 +122,8 @@ export function $getStartOfCodeInLine(
 
   while (true) {
     if (nodeOffset === 0) {
+      // The annotation is necessary to break a circular inference through
+      // the loop back-edge (TS7022)
       const prevSibling: LexicalNode | null = node.getPreviousSibling();
       if (prevSibling === null) {
         node = null;

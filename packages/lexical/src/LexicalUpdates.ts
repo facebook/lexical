@@ -53,12 +53,11 @@ import {
 import {
   $getCompositionKey,
   $updateDOMBlockCursorElement,
-  getDOMSelection,
+  getDOMSelectionForEditor,
   getEditorPropertyFromDOMNode,
   getEditorStateTextContent,
   getEditorsToPropagate,
   getRegisteredNodeOrThrow,
-  getWindow,
   isLexicalEditor,
   removeDOMBlockCursorElement,
   scheduleMicroTask,
@@ -648,9 +647,7 @@ export function $commitPendingUpdates(
   // Reconciliation has finished. Now update selection and trigger listeners.
   // ======
 
-  const domSelection = shouldSkipDOM
-    ? null
-    : getDOMSelection(getWindow(editor));
+  const domSelection = shouldSkipDOM ? null : getDOMSelectionForEditor(editor);
 
   // Attempt to update the DOM selection, including focusing of the root element,
   // and scroll into view if needed.

@@ -109,7 +109,7 @@ import {
   dispatchCommand,
   doesContainSurrogatePair,
   getAnchorTextFromDOM,
-  getDOMSelection,
+  getDOMSelectionForEditor,
   getDOMSelectionFromTarget,
   getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
@@ -230,7 +230,7 @@ function $shouldPreventDefaultAndInsertText(
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
   const editor = getActiveEditor();
-  const domSelection = getDOMSelection(getWindow(editor));
+  const domSelection = getDOMSelectionForEditor(editor);
   const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
   const anchorKey = anchor.key;
   const backingAnchorElement = editor.getElementByKey(anchorKey);
@@ -502,7 +502,7 @@ function $updateSelectionFormatStyleFromElementNode(
 function onClick(event: PointerEvent, editor: LexicalEditor): void {
   updateEditorSync(editor, () => {
     const selection = $getSelection();
-    const domSelection = getDOMSelection(getWindow(editor));
+    const domSelection = getDOMSelectionForEditor(editor);
     const lastSelection = $getPreviousSelection();
 
     if (domSelection) {
@@ -1113,7 +1113,7 @@ function $handleInput(event: InputEvent): boolean {
     }
     const anchor = selection.anchor;
     const anchorNode = anchor.getNode();
-    const domSelection = getDOMSelection(getWindow(editor));
+    const domSelection = getDOMSelectionForEditor(editor);
     if (domSelection === null) {
       return true;
     }
@@ -1250,7 +1250,7 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
         textNode.nodeValue !== null &&
         $isTextNode(node)
       ) {
-        const domSelection = getDOMSelection(getWindow(editor));
+        const domSelection = getDOMSelectionForEditor(editor);
         let anchorOffset = null;
         let focusOffset = null;
 

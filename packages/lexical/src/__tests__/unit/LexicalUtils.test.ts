@@ -34,6 +34,7 @@ import {
   emptyFunction,
   generateRandomKey,
   getCachedTypeToNodeMap,
+  getDOMSelectionForEditor,
   getTextDirection,
   isArray,
   isExactShortcutMatch,
@@ -152,6 +153,76 @@ describe('LexicalUtils tests', () => {
           ),
         ).toBe(true);
       });
+    });
+
+    test('getDOMSelectionForEditor() uses ShadowRoot selection when available', () => {
+      const editor = createEditor({
+        namespace: 'test',
+        onError: vi.fn(),
+      });
+      const host = document.createElement('div');
+      const rootElement = document.createElement('div');
+      const shadowRoot = host.attachShadow({mode: 'open'});
+      const shadowSelection = window.getSelection()!;
+      const shadowGetSelection = vi.fn(() => shadowSelection);
+      const windowGetSelection = vi.spyOn(window, 'getSelection');
+
+      Object.defineProperty(shadowRoot, 'getSelection', {
+        configurable: true,
+        value: shadowGetSelection,
+      });
+
+      document.body.appendChild(host);
+      shadowRoot.appendChild(rootElement);
+      editor.setRootElement(rootElement);
+      shadowGetSelection.mockClear();
+      windowGetSelection.mockClear();
+
+      try {
+        expect(getDOMSelectionForEditor(editor)).toBe(shadowSelection);
+        expect(shadowGetSelection).toHaveBeenCalledTimes(1);
+        expect(windowGetSelection).not.toHaveBeenCalled();
+      } finally {
+        editor.setRootElement(null);
+        document.body.removeChild(host);
+        windowGetSelection.mockRestore();
+      }
+    });
+
+    test('getDOMSelectionForEditor() falls back when ShadowRoot selection is null', () => {
+      const editor = createEditor({
+        namespace: 'test',
+        onError: vi.fn(),
+      });
+      const host = document.createElement('div');
+      const rootElement = document.createElement('div');
+      const shadowRoot = host.attachShadow({mode: 'open'});
+      const windowSelection = window.getSelection()!;
+      const shadowGetSelection = vi.fn(() => null);
+      const windowGetSelection = vi
+        .spyOn(window, 'getSelection')
+        .mockReturnValue(windowSelection);
+
+      Object.defineProperty(shadowRoot, 'getSelection', {
+        configurable: true,
+        value: shadowGetSelection,
+      });
+
+      document.body.appendChild(host);
+      shadowRoot.appendChild(rootElement);
+      editor.setRootElement(rootElement);
+      shadowGetSelection.mockClear();
+      windowGetSelection.mockClear();
+
+      try {
+        expect(getDOMSelectionForEditor(editor)).toBe(windowSelection);
+        expect(shadowGetSelection).toHaveBeenCalledTimes(1);
+        expect(windowGetSelection).toHaveBeenCalledTimes(1);
+      } finally {
+        editor.setRootElement(null);
+        document.body.removeChild(host);
+        windowGetSelection.mockRestore();
+      }
     });
 
     test('getTextDirection()', () => {

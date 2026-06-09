@@ -84,10 +84,9 @@ import {
   $isTokenOrTab,
   $setCompositionKey,
   doesContainSurrogatePair,
-  getDOMSelection,
+  getDOMSelectionForEditor,
   getElementByKeyOrThrow,
   getNodeKeyFromDOMNode,
-  getWindow,
   INTERNAL_$isBlock,
   isDOMCapturingSelection,
   isHTMLElement,
@@ -1588,7 +1587,7 @@ export class RangeSelection implements BaseSelection {
     const collapse = alter === 'move';
 
     const editor = getActiveEditor();
-    const domSelection = getDOMSelection(getWindow(editor));
+    const domSelection = getDOMSelectionForEditor(editor);
 
     if (!domSelection) {
       return;
@@ -2673,7 +2672,7 @@ export function $internalCreateSelection(
 ): null | BaseSelection {
   const currentEditorState = editor.getEditorState();
   const lastSelection = currentEditorState._selection;
-  const domSelection = getDOMSelection(getWindow(editor));
+  const domSelection = getDOMSelectionForEditor(editor);
 
   if ($isRangeSelection(lastSelection) || lastSelection == null) {
     return $internalCreateRangeSelection(

@@ -746,7 +746,7 @@ export function $updateSelectedTextFromDOM(
   data?: string,
 ): void {
   // Update the text content with the latest composition text
-  const domSelection = getDOMSelection(getWindow(editor));
+  const domSelection = getDOMSelectionForEditor(editor);
   if (domSelection === null) {
     return;
   }
@@ -1833,6 +1833,35 @@ export function $updateDOMBlockCursorElement(
  */
 export function getDOMSelection(targetWindow: null | Window): null | Selection {
   return !CAN_USE_DOM ? null : (targetWindow || window).getSelection();
+}
+
+/**
+ * Returns the selection for the editor root. When an editor is mounted inside a
+ * ShadowRoot, browsers may project window.getSelection() outside of that shadow
+ * tree, so prefer the root's native selection when available.
+ */
+export function getDOMSelectionForEditor(
+  editor: LexicalEditor,
+): null | Selection {
+  const rootElement = editor._rootElement;
+  if (CAN_USE_DOM && rootElement !== null) {
+    const rootNode = rootElement.getRootNode();
+    if (rootNode !== rootElement.ownerDocument) {
+      const getSelection = (
+        rootNode as {
+          getSelection?: () => null | Selection;
+        }
+      ).getSelection;
+
+      if (typeof getSelection === 'function') {
+        const selection = getSelection.call(rootNode);
+        if (selection !== null) {
+          return selection;
+        }
+      }
+    }
+  }
+  return getDOMSelection(getWindow(editor));
 }
 
 /**

@@ -47,8 +47,8 @@ describe('LexicalEditorState tests', () => {
 
       editor.getEditorState().read(() => {
         root = $getRoot();
-        paragraph = root.getFirstChild()!;
-        text = paragraph.getFirstChild()!;
+        paragraph = root.getFirstChild() as ParagraphNode;
+        text = paragraph.getFirstChild() as TextNode;
       });
 
       expect(root).toEqual({

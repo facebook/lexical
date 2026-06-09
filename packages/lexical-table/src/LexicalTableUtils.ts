@@ -186,7 +186,7 @@ export function $insertTableRow(
 
   if ($isTableRowNode(targetRowNode)) {
     for (let r = 0; r < rowCount; r++) {
-      const tableRowCells = targetRowNode.getChildren<TableCellNode>();
+      const tableRowCells = targetRowNode.getChildren();
       const tableColumnCount = tableRowCells.length;
       const newTableRowNode = $createTableRowNode();
 
@@ -631,9 +631,10 @@ export function $deleteTableRowAtSelection(): void {
   }
   const columnCount = gridMap[0].length;
   const nextRow = gridMap[focusEndRow + 1];
-  const nextRowNode: null | TableRowNode = grid.getChildAtIndex(
+  // The children of a TableNode are TableRowNodes by construction
+  const nextRowNode = grid.getChildAtIndex(
     focusEndRow + 1,
-  );
+  ) as null | TableRowNode;
   for (let row = focusEndRow; row >= anchorStartRow; row--) {
     for (let column = columnCount - 1; column >= 0; column--) {
       const {
@@ -1336,7 +1337,8 @@ export function $getTableCellNodeRect(tableCellNode: TableCellNode): {
   colSpan: number;
 } | null {
   const [cellNode, , gridNode] = $getNodeTriplet(tableCellNode);
-  const rows = gridNode.getChildren<TableRowNode>();
+  // The children of a TableNode are TableRowNodes by construction
+  const rows = gridNode.getChildren() as Array<TableRowNode>;
   const rowCount = rows.length;
   const columnCount = rows[0].getChildren().length;
 
@@ -1348,7 +1350,7 @@ export function $getTableCellNodeRect(tableCellNode: TableCellNode): {
 
   for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
     const row = rows[rowIndex];
-    const cells = row.getChildren<TableCellNode>();
+    const cells = row.getChildren() as Array<TableCellNode>;
     let columnIndex = 0;
 
     for (let cellIndex = 0; cellIndex < cells.length; cellIndex++) {

@@ -140,7 +140,7 @@ export function $trimTextContentFromAnchor(
   while (remaining > 0 && currentNode !== null) {
     if ($isElementNode(currentNode)) {
       const lastDescendant: null | LexicalNode =
-        currentNode.getLastDescendant<LexicalNode>();
+        currentNode.getLastDescendant();
       if (lastDescendant !== null) {
         currentNode = lastDescendant;
       }

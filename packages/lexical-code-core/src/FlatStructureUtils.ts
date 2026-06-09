@@ -122,16 +122,18 @@ export function $getStartOfCodeInLine(
 
   while (true) {
     if (nodeOffset === 0) {
-      node = node.getPreviousSibling();
-      if (node === null) {
+      const prevSibling: LexicalNode | null = node.getPreviousSibling();
+      if (prevSibling === null) {
+        node = null;
         break;
       }
       invariant(
-        $isCodeHighlightNode(node) ||
-          $isTabNode(node) ||
-          $isLineBreakNode(node),
+        $isCodeHighlightNode(prevSibling) ||
+          $isTabNode(prevSibling) ||
+          $isLineBreakNode(prevSibling),
         'Expected a valid Code Node: CodeHighlightNode, TabNode, LineBreakNode',
       );
+      node = prevSibling;
       if ($isLineBreakNode(node)) {
         last = {
           node,

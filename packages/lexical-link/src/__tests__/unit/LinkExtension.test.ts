@@ -51,12 +51,12 @@ describe('Link', () => {
     using editor = buildEditorFromExtensions(extension);
     editor.update(
       () => {
-        const textNode: TextNode = $getRoot().getLastDescendant()!;
+        const textNode = $getRoot().getLastDescendant() as TextNode;
         textNode.select(0);
         expect($isLinkNode(textNode.getParent())).toBe(false);
         $toggleLink('https://lexical.dev/');
         expect($isLinkNode(textNode.getParent())).toBe(true);
-        let linkNode: LinkNode = textNode.getParent()!;
+        let linkNode = textNode.getParent() as LinkNode;
         expect(linkNode.getURL()).toBe('https://lexical.dev/');
         expect(linkNode.getTarget()).toBe(null);
         expect($getRoot().getTextContent()).toBe('Hello');
@@ -69,7 +69,7 @@ describe('Link', () => {
           title: 'title',
           url: 'https://lexical.dev/',
         });
-        linkNode = textNode.getParent()!;
+        linkNode = textNode.getParent() as LinkNode;
         expect(linkNode.getURL()).toBe('https://lexical.dev/');
         expect(linkNode.getTarget()).toBe('_blank');
         expect(linkNode.getRel()).toBe('noopener');

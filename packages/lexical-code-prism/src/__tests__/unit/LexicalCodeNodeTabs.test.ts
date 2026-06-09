@@ -6,8 +6,8 @@
  *
  */
 
-import type {CodeHighlightNode, CodeNode} from '@lexical/code';
-import type {LexicalCommand, LineBreakNode, TabNode} from 'lexical';
+import type {CodeNode} from '@lexical/code';
+import type {LexicalCommand, LexicalNode} from 'lexical';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code';
 import {CodeIndentExtension} from '@lexical/code-core';
@@ -151,11 +151,7 @@ describe('LexicalCodeNode tests', () => {
                   selLast -= 1;
                 }
 
-                let matching:
-                  | null
-                  | LineBreakNode
-                  | TabNode
-                  | CodeHighlightNode = codeNode.getFirstChild();
+                let matching: null | LexicalNode = codeNode.getFirstChild();
                 let parentIndex = 0;
                 let offset = 0;
                 while (

@@ -947,19 +947,35 @@ export class LexicalNode {
   /**
    * Returns the parent of this node, or null if none is found.
    */
-  getParent<T extends ElementNode>(): T | null {
+  getParent(): ElementNode | null;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getParent() as T | null`, and will be removed
+   * in a future release. Call this method without a type argument and
+   * narrow the result with a type guard instead.
+   */
+  getParent<T extends ElementNode>(): T | null;
+  getParent(): ElementNode | null {
     const parent = this.getLatest().__parent;
     if (parent === null) {
       return null;
     }
-    return $getNodeByKey<T>(parent);
+    return $getNodeByKey<ElementNode>(parent);
   }
 
   /**
    * Returns the parent of this node, or throws if none is found.
    */
-  getParentOrThrow<T extends ElementNode>(): T {
-    const parent = this.getParent<T>();
+  getParentOrThrow(): ElementNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getParentOrThrow() as T`, and will be removed
+   * in a future release. Call this method without a type argument and
+   * narrow the result with a type guard instead.
+   */
+  getParentOrThrow<T extends ElementNode>(): T;
+  getParentOrThrow(): ElementNode {
+    const parent = this.getParent();
     if (parent === null) {
       invariant(false, 'Expected node %s to have a parent.', this.__key);
     }
@@ -1039,10 +1055,18 @@ export class LexicalNode {
    * before this one in the same parent.
    *
    */
-  getPreviousSibling<T extends LexicalNode>(): T | null {
+  getPreviousSibling(): LexicalNode | null;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getPreviousSibling() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getPreviousSibling<T extends LexicalNode>(): T | null;
+  getPreviousSibling(): LexicalNode | null {
     const self = this.getLatest();
     const prevKey = self.__prev;
-    return prevKey === null ? null : $getNodeByKey<T>(prevKey);
+    return prevKey === null ? null : $getNodeByKey(prevKey);
   }
 
   /**
@@ -1050,13 +1074,21 @@ export class LexicalNode {
    * this one and the first child of it's parent, inclusive.
    *
    */
-  getPreviousSiblings<T extends LexicalNode>(): Array<T> {
-    const siblings: Array<T> = [];
+  getPreviousSiblings(): Array<LexicalNode>;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getPreviousSiblings() as Array<T>`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the results with a type guard instead.
+   */
+  getPreviousSiblings<T extends LexicalNode>(): Array<T>;
+  getPreviousSiblings(): Array<LexicalNode> {
+    const siblings: Array<LexicalNode> = [];
     const parent = this.getParent();
     if (parent === null) {
       return siblings;
     }
-    let node: null | T = parent.getFirstChild();
+    let node: null | LexicalNode = parent.getFirstChild();
     while (node !== null) {
       if (node.is(this)) {
         break;
@@ -1072,10 +1104,18 @@ export class LexicalNode {
    * after this one in the same parent
    *
    */
-  getNextSibling<T extends LexicalNode>(): T | null {
+  getNextSibling(): LexicalNode | null;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getNextSibling() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getNextSibling<T extends LexicalNode>(): T | null;
+  getNextSibling(): LexicalNode | null {
     const self = this.getLatest();
     const nextKey = self.__next;
-    return nextKey === null ? null : $getNodeByKey<T>(nextKey);
+    return nextKey === null ? null : $getNodeByKey(nextKey);
   }
 
   /**
@@ -1083,9 +1123,17 @@ export class LexicalNode {
    * one and the last child of it's parent, inclusive.
    *
    */
-  getNextSiblings<T extends LexicalNode>(): Array<T> {
-    const siblings: Array<T> = [];
-    let node: null | T = this.getNextSibling();
+  getNextSiblings(): Array<LexicalNode>;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getNextSiblings() as Array<T>`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the results with a type guard instead.
+   */
+  getNextSiblings<T extends LexicalNode>(): Array<T>;
+  getNextSiblings(): Array<LexicalNode> {
+    const siblings: Array<LexicalNode> = [];
+    let node: null | LexicalNode = this.getNextSibling();
     while (node !== null) {
       siblings.push(node);
       node = node.getNextSibling();

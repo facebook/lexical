@@ -370,10 +370,8 @@ export function $handleIndent(listItemNode: ListItemNode): void {
   const parent = listItemNode.getParent();
 
   // We can cast both of the below `isNestedListNode` only returns a boolean type instead of a user-defined type guards
-  const nextSibling =
-    listItemNode.getNextSibling<ListItemNode>() as ListItemNode;
-  const previousSibling =
-    listItemNode.getPreviousSibling<ListItemNode>() as ListItemNode;
+  const nextSibling = listItemNode.getNextSibling() as ListItemNode;
+  const previousSibling = listItemNode.getPreviousSibling() as ListItemNode;
   // if there are nested lists on either side, merge them all together.
 
   if (isNestedListNode(nextSibling) && isNestedListNode(previousSibling)) {

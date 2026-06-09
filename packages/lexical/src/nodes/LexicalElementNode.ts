@@ -148,9 +148,20 @@ export class ElementNode extends LexicalNode {
     const self = this.getLatest();
     return self.__indent;
   }
-  getChildren<T extends LexicalNode>(): Array<T> {
-    const children: Array<T> = [];
-    let child: T | null = this.getFirstChild();
+  /**
+   * Returns the children of this node, in document order.
+   */
+  getChildren(): Array<LexicalNode>;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getChildren() as Array<T>`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the results with a type guard instead.
+   */
+  getChildren<T extends LexicalNode>(): Array<T>;
+  getChildren(): Array<LexicalNode> {
+    const children: Array<LexicalNode> = [];
+    let child: LexicalNode | null = this.getFirstChild();
     while (child !== null) {
       children.push(child);
       child = child.getNextSibling();
@@ -198,10 +209,22 @@ export class ElementNode extends LexicalNode {
     }
     return textNodes;
   }
-  getFirstDescendant<T extends LexicalNode>(): null | T {
-    let node = this.getFirstChild<T>();
+  /**
+   * Returns the deepest first descendant of this node,
+   * or null if it has no children.
+   */
+  getFirstDescendant(): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getFirstDescendant() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getFirstDescendant<T extends LexicalNode>(): null | T;
+  getFirstDescendant(): null | LexicalNode {
+    let node: null | LexicalNode = this.getFirstChild();
     while ($isElementNode(node)) {
-      const child = node.getFirstChild<T>();
+      const child = node.getFirstChild();
       if (child === null) {
         break;
       }
@@ -209,10 +232,22 @@ export class ElementNode extends LexicalNode {
     }
     return node;
   }
-  getLastDescendant<T extends LexicalNode>(): null | T {
-    let node = this.getLastChild<T>();
+  /**
+   * Returns the deepest last descendant of this node,
+   * or null if it has no children.
+   */
+  getLastDescendant(): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getLastDescendant() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getLastDescendant<T extends LexicalNode>(): null | T;
+  getLastDescendant(): null | LexicalNode {
+    let node: null | LexicalNode = this.getLastChild();
     while ($isElementNode(node)) {
-      const child = node.getLastChild<T>();
+      const child = node.getLastChild();
       if (child === null) {
         break;
       }
@@ -220,8 +255,20 @@ export class ElementNode extends LexicalNode {
     }
     return node;
   }
-  getDescendantByIndex<T extends LexicalNode>(index: number): null | T {
-    const children = this.getChildren<T>();
+  /**
+   * Returns the deepest descendant corresponding to the child at the given
+   * index, or null if this node has no children.
+   */
+  getDescendantByIndex(index: number): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getDescendantByIndex(index) as T | null`, and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
+  getDescendantByIndex<T extends LexicalNode>(index: number): null | T;
+  getDescendantByIndex(index: number): null | LexicalNode {
+    const children = this.getChildren();
     const childrenLength = children.length;
     // For non-empty element nodes, we resolve its descendant
     // (either a leaf node or the bottom-most element)
@@ -240,36 +287,92 @@ export class ElementNode extends LexicalNode {
       null
     );
   }
-  getFirstChild<T extends LexicalNode>(): null | T {
+  /**
+   * Returns the first child of this node, or null if it has no children.
+   */
+  getFirstChild(): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getFirstChild() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getFirstChild<T extends LexicalNode>(): null | T;
+  getFirstChild(): null | LexicalNode {
     const self = this.getLatest();
     const firstKey = self.__first;
-    return firstKey === null ? null : $getNodeByKey<T>(firstKey);
+    return firstKey === null ? null : $getNodeByKey(firstKey);
   }
-  getFirstChildOrThrow<T extends LexicalNode>(): T {
-    const firstChild = this.getFirstChild<T>();
+  /**
+   * Returns the first child of this node, or throws if it has no children.
+   */
+  getFirstChildOrThrow(): LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getFirstChildOrThrow() as T`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getFirstChildOrThrow<T extends LexicalNode>(): T;
+  getFirstChildOrThrow(): LexicalNode {
+    const firstChild = this.getFirstChild();
     if (firstChild === null) {
       invariant(false, 'Expected node %s to have a first child.', this.__key);
     }
     return firstChild;
   }
-  getLastChild<T extends LexicalNode>(): null | T {
+  /**
+   * Returns the last child of this node, or null if it has no children.
+   */
+  getLastChild(): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getLastChild() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getLastChild<T extends LexicalNode>(): null | T;
+  getLastChild(): null | LexicalNode {
     const self = this.getLatest();
     const lastKey = self.__last;
-    return lastKey === null ? null : $getNodeByKey<T>(lastKey);
+    return lastKey === null ? null : $getNodeByKey(lastKey);
   }
-  getLastChildOrThrow<T extends LexicalNode>(): T {
-    const lastChild = this.getLastChild<T>();
+  /**
+   * Returns the last child of this node, or throws if it has no children.
+   */
+  getLastChildOrThrow(): LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getLastChildOrThrow() as T`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getLastChildOrThrow<T extends LexicalNode>(): T;
+  getLastChildOrThrow(): LexicalNode {
+    const lastChild = this.getLastChild();
     if (lastChild === null) {
       invariant(false, 'Expected node %s to have a last child.', this.__key);
     }
     return lastChild;
   }
-  getChildAtIndex<T extends LexicalNode>(index: number): null | T {
+  /**
+   * Returns the child of this node at the given index, or null if
+   * the index is out of range.
+   */
+  getChildAtIndex(index: number): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getChildAtIndex(index) as T | null`, and will
+   * be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
+  getChildAtIndex<T extends LexicalNode>(index: number): null | T;
+  getChildAtIndex(index: number): null | LexicalNode {
     const size = this.getChildrenSize();
-    let node: null | T;
+    let node: null | LexicalNode;
     let i;
     if (index < size / 2) {
-      node = this.getFirstChild<T>();
+      node = this.getFirstChild();
       i = 0;
       while (node !== null && i <= index) {
         if (i === index) {
@@ -280,7 +383,7 @@ export class ElementNode extends LexicalNode {
       }
       return null;
     }
-    node = this.getLastChild<T>();
+    node = this.getLastChild();
     i = size - 1;
     while (node !== null && i >= index) {
       if (i === index) {

@@ -2179,4 +2179,68 @@ describe('LexicalNode.$config() without registration', () => {
       {discrete: true},
     );
   });
+
+  test('traversal methods return base node types unless explicitly cast', () => {
+    // The type parameters on the traversal methods are deprecated unchecked
+    // casts. Calls without a type argument must resolve to the base node
+    // types rather than inferring the type parameter from context.
+    const $checkTraversalTypes = (node: LexicalNode, element: ElementNode) => {
+      expectTypeOf(node.getParent()).toEqualTypeOf<ElementNode | null>();
+      expectTypeOf(node.getParentOrThrow()).toEqualTypeOf<ElementNode>();
+      expectTypeOf(
+        node.getPreviousSibling(),
+      ).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(node.getNextSibling()).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(node.getPreviousSiblings()).toEqualTypeOf<
+        Array<LexicalNode>
+      >();
+      expectTypeOf(node.getNextSiblings()).toEqualTypeOf<Array<LexicalNode>>();
+      expectTypeOf(element.getChildren()).toEqualTypeOf<Array<LexicalNode>>();
+      expectTypeOf(
+        element.getChildAtIndex(0),
+      ).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(element.getFirstChild()).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(element.getFirstChildOrThrow()).toEqualTypeOf<LexicalNode>();
+      expectTypeOf(element.getLastChild()).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(element.getLastChildOrThrow()).toEqualTypeOf<LexicalNode>();
+      expectTypeOf(
+        element.getFirstDescendant(),
+      ).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(
+        element.getLastDescendant(),
+      ).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(
+        element.getDescendantByIndex(0),
+      ).toEqualTypeOf<LexicalNode | null>();
+      // The deprecated generic overloads remain callable so that existing
+      // code continues to compile during migration.
+      expectTypeOf(
+        node.getParent<ParagraphNode>(),
+      ).toEqualTypeOf<ParagraphNode | null>();
+      expectTypeOf(
+        element.getFirstChild<TextNode>(),
+      ).toEqualTypeOf<TextNode | null>();
+      // The type parameter is no longer inferred from the contextual type,
+      // so this implicit unchecked cast is a compile error.
+      // @ts-expect-error - getFirstChild() returns LexicalNode | null
+      const child: TextNode | null = element.getFirstChild();
+      return child;
+    };
+
+    const editor = createEditor({
+      onError(err) {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('x');
+        paragraph.append(text);
+        $getRoot().append(paragraph);
+        expect($checkTraversalTypes(text, paragraph)).toBe(text);
+      },
+      {discrete: true},
+    );
+  });
 });

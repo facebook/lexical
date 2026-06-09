@@ -345,7 +345,7 @@ describe('LexicalElementNode tests', () => {
 
     beforeEach(async () => {
       await update(() => {
-        block = $getRoot().getFirstChildOrThrow();
+        block = $getRoot().getFirstChildOrThrow() as ElementNode;
       });
     });
 

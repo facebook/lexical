@@ -150,7 +150,7 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
 
   while (node !== null && !$isRootOrShadowRoot(node)) {
     const latest = node.getLatest();
-    const parentNode: ElementNode | null = node.getParent<ElementNode>();
+    const parentNode: ElementNode | null = node.getParent();
 
     if (latest.getChildrenSize() === 0) {
       node.remove(true);
@@ -283,7 +283,10 @@ export function $wrapNodesImpl(
 
   let targetIsPrevSibling = false;
   while (target !== null) {
-    const prevSibling = target.getPreviousSibling<ElementNode>();
+    // The previous sibling is not necessarily an ElementNode, but this
+    // pre-existing cast preserves the historical behavior of treating it
+    // as the wrap target regardless of its actual type.
+    const prevSibling = target.getPreviousSibling() as ElementNode | null;
 
     if (prevSibling !== null) {
       target = prevSibling;

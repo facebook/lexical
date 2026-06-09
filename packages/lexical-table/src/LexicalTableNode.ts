@@ -601,7 +601,7 @@ export class TableNode extends ElementNode {
   }
 
   getColumnCount(): number {
-    const firstRow = this.getFirstChild<TableRowNode>();
+    const firstRow = this.getFirstChild() as TableRowNode | null;
     if (!firstRow) {
       return 0;
     }

@@ -14,6 +14,7 @@ import {
   $isTextNode,
   $setSelection,
   BaseSelection,
+  ElementNode,
   LexicalNode,
 } from 'lexical';
 import {afterEach, beforeEach, describe, expect, it} from 'vitest';
@@ -52,12 +53,12 @@ const $createSelectionByPath = ({
   const selection = $createRangeSelection();
   const root = $getRoot();
 
-  const anchorNode = anchorPath.reduce(
-    (node, index) => node.getChildAtIndex(index)!,
+  const anchorNode = anchorPath.reduce<LexicalNode>(
+    (node, index) => (node as ElementNode).getChildAtIndex(index)!,
     root,
   );
-  const focusNode = focusPath.reduce(
-    (node, index) => node.getChildAtIndex(index)!,
+  const focusNode = focusPath.reduce<LexicalNode>(
+    (node, index) => (node as ElementNode).getChildAtIndex(index)!,
     root,
   );
 

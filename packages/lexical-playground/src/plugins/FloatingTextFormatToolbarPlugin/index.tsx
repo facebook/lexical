@@ -94,7 +94,13 @@ function TextFormatFloatingToolbar({
       if (popupCharStylesEditorRef.current.style.pointerEvents !== 'none') {
         const x = e.clientX;
         const y = e.clientY;
-        const elementUnderMouse = document.elementFromPoint(x, y);
+        // Resolve through the popup's root (Document or ShadowRoot);
+        // document.elementFromPoint is retargeted to the shadow host when the
+        // popup is inside a shadow root.
+        const popupRoot = popupCharStylesEditorRef.current.getRootNode();
+        const elementUnderMouse = (
+          popupRoot as Document | ShadowRoot
+        ).elementFromPoint(x, y);
 
         if (!popupCharStylesEditorRef.current.contains(elementUnderMouse)) {
           // Mouse is not over the target element => not a normal click, but probably a drag

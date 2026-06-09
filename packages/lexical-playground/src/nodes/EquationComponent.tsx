@@ -23,6 +23,7 @@ import {
   CLICK_COMMAND,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
+  getActiveElement,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
   NodeKey,
@@ -234,8 +235,12 @@ export default function EquationComponent({
         editor.registerCommand(
           SELECTION_CHANGE_COMMAND,
           payload => {
-            const activeElement = document.activeElement;
             const inputElem = inputRef.current;
+            // getActiveElement rather than document.activeElement, which
+            // reports the shadow host when the editor is in a shadow root.
+            const activeElement = inputElem
+              ? getActiveElement(inputElem)
+              : null;
             if (inputElem !== activeElement) {
               onHide();
             }
@@ -246,8 +251,10 @@ export default function EquationComponent({
         editor.registerCommand(
           KEY_ESCAPE_COMMAND,
           payload => {
-            const activeElement = document.activeElement;
             const inputElem = inputRef.current;
+            const activeElement = inputElem
+              ? getActiveElement(inputElem)
+              : null;
             if (inputElem === activeElement) {
               onHide(true);
               return true;

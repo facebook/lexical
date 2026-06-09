@@ -640,8 +640,18 @@ export function $commitPendingUpdates(
     editor._dirtyLeaves = new Set();
     editor._dirtyElements = new Map();
     editor._normalizedNodes = new Set();
-    editor._updateTags = new Set();
   }
+  // Always reset the accumulated update tags, even when this commit produced no
+  // dirty nodes (needsUpdate === false). Tags are added from the `tag` update
+  // option independently of whether any node is dirtied, and the 'update'
+  // listener below fires for every commit (including no-op ones) with these
+  // tags. If we only cleared them when needsUpdate is true, the tags of a no-op
+  // update would leak into the *next* update. For collaboration this is a
+  // correctness bug: a local edit that immediately follows a remote sync which
+  // happened to be a no-op (e.g. a concurrently-deleted node, so nothing
+  // reconciles) would inherit the COLLABORATION tag and be skipped by
+  // syncLexicalUpdateToYjs, desyncing the peers.
+  editor._updateTags = new Set();
   $garbageCollectDetachedDecorators(editor, pendingEditorState);
 
   // ======
@@ -879,14 +889,26 @@ function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
     editor._updates = [];
     editor._cascadeCount = 0;
     // The cascade has already been broken above by clearing the update queue,
-    // so this is a recoverable internal guard rather than a fatal error. Use
-    // devInvariant so it throws loudly in development but only warns in
-    // production, instead of routing a recovered condition through _onError
-    // (typically console.error) and reporting it as an uncaught error.
-    devInvariant(
-      false,
-      'One or more update listeners are endlessly enqueueing more updates. May have encountered infinite recursion caused by update listeners that trigger additional updates without a stop condition. Editor namespace: %s',
-      editor._config.namespace,
+    // so this is a recoverable internal guard rather than a fatal error. Route
+    // it directly through the editor's warn-level hook (`_onWarn`, default:
+    // throw in dev / `console.warn` in prod) so embedders can capture how often
+    // the guard trips as warn-severity telemetry.
+    //
+    // This must be a direct `editor._onWarn(...)` call rather than an
+    // `invariant`/`$devInvariant` helper: `transform-error-messages` rewrites
+    // those call sites to a bare `formatProd*Message(code, ...)` in the
+    // compiled bundle, dropping the editor reference, so the warning would
+    // never actually reach `_onWarn` in a built artifact (only when the
+    // untransformed `source` is consumed). Calling the hook directly keeps the
+    // routing intact in every build, at the cost of shipping this message
+    // string in the bundle.
+    editor._onWarn(
+      new Error(
+        'One or more update listeners are endlessly enqueueing more updates. ' +
+          'May have encountered infinite recursion caused by update listeners ' +
+          'that trigger additional updates without a stop condition. ' +
+          `Editor namespace: ${editor._config.namespace}`,
+      ),
     );
     return;
   }

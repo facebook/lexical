@@ -138,6 +138,7 @@ export function setLocalStateFocus(
   awareness.setLocalState(localState);
 }
 export {
+  $getAnchorAndFocusForUserState,
   getAnchorAndFocusCollabNodesForUserState,
   removeCursorHighlightRule,
   syncCursorPositions,

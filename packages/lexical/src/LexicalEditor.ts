@@ -343,6 +343,15 @@ export interface CreateEditorArgs {
   namespace?: string;
   nodes?: ReadonlyArray<LexicalNodeConfig>;
   onError?: ErrorHandler;
+  /**
+   * Optional handler for recoverable, warn-level conditions (e.g. the
+   * update-recursion guard tripping). Mirrors {@link onError} but is reserved
+   * for conditions the editor has already recovered from, so embedders can
+   * route them to telemetry at warn severity without raising an error alarm.
+   * Defaults to a handler that throws in development (so the condition is
+   * impossible to miss) and only `console.warn`s in production.
+   */
+  onWarn?: ErrorHandler;
   parentEditor?: LexicalEditor;
   editable?: boolean;
   theme?: EditorThemeClasses;
@@ -367,6 +376,21 @@ export type RegisteredNode = {
 export type Transform<T extends LexicalNode> = (node: T) => void;
 
 export type ErrorHandler = (error: Error) => void;
+
+/**
+ * Default {@link CreateEditorArgs.onWarn} handler. Used for recoverable,
+ * warn-level conditions (e.g. the update-recursion guard tripping) that the
+ * editor has already recovered from. Throws in development so the condition is
+ * impossible to miss, and only `console.warn`s in production so it is not
+ * reported as a fatal error. Embedders can override this via `onWarn` to route
+ * the condition to their own telemetry at warn severity.
+ */
+function defaultOnWarn(error: Error): void {
+  if (__DEV__) {
+    throw error;
+  }
+  console.warn(error);
+}
 
 export type MutationListeners = Map<MutationListener, Set<Klass<LexicalNode>>>;
 
@@ -808,7 +832,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     ArtificialNode__DO_NOT_USE,
     ...(config.nodes || []),
   ];
-  const {onError, html} = config;
+  const {onError, onWarn, html} = config;
   const isEditable = config.editable !== undefined ? config.editable : true;
   let registeredNodes: RegisteredNodes;
 
@@ -896,6 +920,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       theme,
     },
     onError ? onError : console.error,
+    onWarn ? onWarn : defaultOnWarn,
     initializeConversionCache(registeredNodes, html ? html.import : undefined),
     isEditable,
     editorConfig,
@@ -1000,6 +1025,8 @@ export class LexicalEditor {
   /** @internal */
   _onError: ErrorHandler;
   /** @internal */
+  _onWarn: ErrorHandler;
+  /** @internal */
   _htmlConversions: DOMConversionCache;
   /** @internal */
   _window: null | Window;
@@ -1017,6 +1044,7 @@ export class LexicalEditor {
     nodes: RegisteredNodes,
     config: EditorConfig,
     onError: ErrorHandler,
+    onWarn: ErrorHandler,
     htmlConversions: DOMConversionCache,
     editable: boolean,
     createEditorArgs?: CreateEditorArgs,
@@ -1068,6 +1096,7 @@ export class LexicalEditor {
     this._key = createUID();
 
     this._onError = onError;
+    this._onWarn = onWarn;
     this._htmlConversions = htmlConversions;
     this._editable = editable;
     this._headless = parentEditor !== null && parentEditor._headless;
@@ -1555,13 +1584,17 @@ export class LexicalEditor {
 
     flushRootMutations(this);
     const pendingEditorState = this._pendingEditorState;
-    const tags = this._updateTags;
     const tag = options !== undefined ? options.tag : null;
 
     if (pendingEditorState !== null && !pendingEditorState.isEmpty()) {
       if (tag != null) {
-        tags.add(tag);
+        this._updateTags.add(tag);
       }
+      // This may commit a no-op update (e.g. when called via dispatchCommand
+      // mid-update), which resets this._updateTags to a fresh Set. Always read
+      // this._updateTags fresh below rather than caching the reference, so the
+      // tag for the editor state we are about to apply is added to the live Set
+      // that the subsequent commit will observe.
       $commitPendingUpdates(this);
     }
 
@@ -1571,7 +1604,7 @@ export class LexicalEditor {
     this._compositionKey = null;
 
     if (tag != null) {
-      tags.add(tag);
+      this._updateTags.add(tag);
     }
 
     // Only commit pending updates if not already in an editor.update

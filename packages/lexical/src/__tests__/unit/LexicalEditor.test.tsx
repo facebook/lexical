@@ -83,16 +83,7 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
-import {
-  afterEach,
-  assert,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  Mock,
-  vi,
-} from 'vitest';
+import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';
 import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
@@ -180,33 +171,6 @@ function computeUpdateListenerPayload(
   });
 }
 
-async function setDevInvariantWarnOnce(): Promise<
-  Mock<(message: string) => void>
-> {
-  const actual = (
-    await vi.importActual<typeof import('@lexical/internal/devInvariant')>(
-      '@lexical/internal/devInvariant',
-    )
-  ).default;
-  const fn = (await import('@lexical/internal/devInvariant')).default;
-  assert(vi.isMockFunction(fn), 'Expecting devInvariant to be mocked');
-  const callback = vi.fn();
-  fn.mockImplementationOnce((...args) => {
-    try {
-      return actual(...args);
-    } catch (e) {
-      callback((e as Error).message);
-    }
-  });
-  return callback;
-}
-
-vi.mock('@lexical/internal/devInvariant', async importOriginal => {
-  const mod =
-    await importOriginal<typeof import('@lexical/internal/devInvariant')>();
-  return {default: vi.fn(mod.default)};
-});
-
 describe('LexicalEditor tests', () => {
   let container: HTMLElement;
   let reactRoot: Root;
@@ -229,12 +193,14 @@ describe('LexicalEditor tests', () => {
     rootElementRef: React.RefObject<null | HTMLDivElement>,
     onError?: (error: Error) => void,
     nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
+    onWarn?: (error: Error) => void,
   ) {
     const editor = useMemo(
       () =>
         createTestEditor({
           nodes: nodes ?? [],
           onError: onError || vi.fn(),
+          onWarn,
           theme: {
             tableAlignment: {
               center: 'editor-table-alignment-center',
@@ -247,7 +213,7 @@ describe('LexicalEditor tests', () => {
             },
           },
         }),
-      [onError, nodes],
+      [onError, nodes, onWarn],
     );
 
     useEffect(() => {
@@ -264,11 +230,12 @@ describe('LexicalEditor tests', () => {
   function init(
     onError?: (error: Error) => void,
     nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
+    onWarn?: (error: Error) => void,
   ) {
     const ref = createRef<HTMLDivElement>();
 
     function TestBase() {
-      editor = useLexicalEditor(ref, onError, nodes);
+      editor = useLexicalEditor(ref, onError, nodes, onWarn);
 
       return <div ref={ref} contentEditable={true} />;
     }
@@ -1227,19 +1194,19 @@ describe('LexicalEditor tests', () => {
     boldListener();
   });
 
-  // The recursion guard in $triggerEnqueuedUpdates calls devInvariant after it
-  // has already broken the cascade (cleared the update queue). devInvariant
-  // throws in development/tests and only warns in production, so the two
-  // branches behave differently. We mock the module (see setDevInvariantWarnOnce
-  // above) so a single test file can exercise BOTH: the dev branch that
-  // throws (surfacing via the scheduled microtask, NOT editor._onError) and
-  // the prod branch that only warns (no throw, nothing routed to _onError).
-  function runCascade(): {
+  // The recursion guard in $triggerEnqueuedUpdates breaks the cascade (clears
+  // the update queue) and then routes the recovered condition through the
+  // editor's warn-level hook, editor._onWarn, rather than reporting a recovered
+  // condition as an uncaught error via editor._onError. The default _onWarn
+  // throws in development (so the recursion is impossible to miss) and only
+  // console.warns in production; embedders can supply their own onWarn to
+  // capture guard trips as warn-severity telemetry without an error alarm.
+  function runCascade(onWarn?: (error: Error) => void): {
     errorListener: ReturnType<typeof vi.fn>;
     unregister: () => void;
   } {
     const errorListener = vi.fn();
-    init(errorListener);
+    init(errorListener, undefined, onWarn);
 
     const unregister = editor.registerUpdateListener(() => {
       editor.update(() => {
@@ -1251,12 +1218,12 @@ describe('LexicalEditor tests', () => {
     return {errorListener, unregister};
   }
 
-  it('Detects infinite recursivity on update listeners (dev: devInvariant throws)', async () => {
-    // Development behavior: devInvariant throws once the cascade limit is
-    // exceeded. The cascade is broken (update queue cleared) before the guard
-    // signals, so the throw surfaces from the scheduled microtask rather than
-    // synchronously from editor.update(), and is NOT routed through
-    // editor._onError.
+  it('Detects infinite recursivity on update listeners (dev: default onWarn throws)', async () => {
+    // Development behavior: with the default onWarn, the guard throws once the
+    // cascade limit is exceeded. The cascade is broken (update queue cleared)
+    // before the guard signals, so the throw surfaces from the scheduled
+    // microtask rather than synchronously from editor.update(), and is NOT
+    // routed through editor._onError.
     const {errorListener, unregister} = runCascade();
 
     const caught: Error[] = [];
@@ -1302,20 +1269,19 @@ describe('LexicalEditor tests', () => {
     for (let i = 0; i < 10; i++) {
       await Promise.resolve();
     }
-    // The guard no longer routes through editor._onError — it surfaces via
-    // devInvariant (throw in dev / warn in prod) instead.
+    // The guard never routes through editor._onError — recovered conditions go
+    // through editor._onWarn instead.
     expect(errorListener).toHaveBeenCalledTimes(0);
   });
 
-  it('Detects infinite recursivity on update listeners (prod: devInvariant warns)', async () => {
-    // Production behavior: devInvariant does NOT throw, it only warns via
-    // console. The cascade must still be broken and the editor must remain
-    // usable, and crucially the recovered condition must NOT be reported as an
-    // uncaught error (neither via editor._onError nor as an unhandled
-    // rejection/exception) — that was the whole point of switching to
-    // devInvariant.
-    const warnSpy = await setDevInvariantWarnOnce();
-    const {errorListener, unregister} = runCascade();
+  it('routes the recursion guard through a custom onWarn for embedder telemetry', async () => {
+    // Embedder behavior: a custom onWarn fully replaces the default and does
+    // not throw, so the recovered condition is captured for telemetry without
+    // surfacing as an uncaught error (neither via editor._onError nor as an
+    // unhandled rejection/exception). The cascade must still be broken and the
+    // editor must remain usable.
+    const warnListener = vi.fn();
+    const {errorListener, unregister} = runCascade(warnListener);
 
     const caught: Error[] = [];
     const onUnhandled = (reason: unknown) => {
@@ -1329,8 +1295,8 @@ describe('LexicalEditor tests', () => {
         $getRoot().markDirty();
       });
 
-      // drain the microtask chain produced by the cascade; in the warn path
-      // nothing is thrown, so just give the queue a chance to settle.
+      // drain the microtask chain produced by the cascade; the custom onWarn
+      // does not throw, so just give the queue a chance to settle.
       for (let i = 0; i < 200; i++) {
         await Promise.resolve();
       }
@@ -1339,12 +1305,13 @@ describe('LexicalEditor tests', () => {
       process.off('uncaughtException', onUnhandled);
     }
 
-    // The guard warned exactly once, with the namespace-tagged message...
-    const matchingWarns = warnSpy.mock.calls.filter(([msg]) =>
-      typeof msg === 'string' ? /endlessly enqueueing/.test(msg) : false,
-    );
-    expect(matchingWarns).toHaveLength(1);
-    expect(String(matchingWarns[0][0])).toContain(
+    // onWarn received the namespace-tagged Error exactly once, so the guard
+    // trip is observable as warn-level telemetry...
+    expect(warnListener).toHaveBeenCalledTimes(1);
+    const warnArg = warnListener.mock.calls[0][0];
+    expect(warnArg).toBeInstanceOf(Error);
+    expect(warnArg.message).toMatch(/endlessly enqueueing/);
+    expect(warnArg.message).toContain(
       `Editor namespace: ${editor._config.namespace}`,
     );
     // ...and nothing surfaced as an uncaught error or via editor._onError.
@@ -2616,6 +2583,87 @@ describe('LexicalEditor tests', () => {
 
     await Promise.resolve();
     expect(editor._updateTags).toEqual(new Set([]));
+  });
+
+  it('does not leak a no-op update tag into the next update', () => {
+    init();
+    const observedTags: Array<Array<string>> = [];
+    const unregister = editor.registerUpdateListener(({tags}) => {
+      observedTags.push([...tags]);
+    });
+
+    // A tagged update that dirties nothing still commits because it carries a
+    // deferred onUpdate callback -- this mirrors a remote collaboration sync
+    // that turns out to be a no-op (the targeted node was concurrently removed).
+    // Its tag must not survive into a later, unrelated update, otherwise a
+    // listener such as @lexical/yjs's syncLexicalUpdateToYjs would wrongly skip
+    // the next local edit.
+    editor.update(emptyFunction, {
+      discrete: true,
+      onUpdate: emptyFunction,
+      tag: 'collaboration',
+    });
+    expect(editor._updateTags).toEqual(new Set());
+
+    // A subsequent untagged local edit must not observe the leaked tag.
+    editor.update(
+      () => {
+        $getRoot().append($createParagraphNode());
+      },
+      {discrete: true},
+    );
+    unregister();
+
+    const lastObservedTags = observedTags[observedTags.length - 1];
+    expect(lastObservedTags).not.toContain('collaboration');
+  });
+
+  it('setEditorState keeps its tag when committed from inside an update', () => {
+    init();
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('historic'));
+        $getRoot().append(paragraph);
+      },
+      {discrete: true},
+    );
+    const historicState = editor.getEditorState();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('current'));
+        root.append(paragraph);
+      },
+      {discrete: true},
+    );
+
+    const observed: Array<{content: string; tags: Array<string>}> = [];
+    const unregister = editor.registerUpdateListener(({editorState, tags}) => {
+      observed.push({
+        content: editorState.read(() => $getRoot().getTextContent()),
+        tags: [...tags],
+      });
+    });
+    // Applying an editor state with a tag from *inside* an update -- the way
+    // history's undo does via dispatchCommand -- force-commits the wrapping
+    // no-op update, which resets _updateTags. The tag must still reach the
+    // update listener for the commit that actually applies the historic state;
+    // otherwise (e.g. @lexical/history) that transition is misclassified as a
+    // fresh edit rather than an undo.
+    editor.update(
+      () => {
+        editor.setEditorState(historicState, {tag: 'historic-tag'});
+      },
+      {discrete: true},
+    );
+    unregister();
+
+    const historicCommit = observed.find(o => o.content === 'historic');
+    expect(historicCommit).toBeDefined();
+    expect(historicCommit!.tags).toContain('historic-tag');
   });
 
   it('mutation listeners does not trigger when other node types are mutated', async () => {

@@ -166,7 +166,9 @@ export function syncYjsChangesToLexical(
     {
       onUpdate: () => {
         syncCursorPositionsFn(binding, provider);
-        editor.update(() => $ensureEditorNotEmpty());
+        if (binding.root.isEmpty()) {
+          editor.update(() => $ensureEditorNotEmpty());
+        }
       },
       skipTransforms: true,
       tag: isFromUndoManger ? HISTORIC_TAG : COLLABORATION_TAG,
@@ -395,7 +397,9 @@ export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
       discrete: true,
       onUpdate: () => {
         syncCursorPositions(binding, provider);
-        editor.update(() => $ensureEditorNotEmpty());
+        if (binding.root.length === 0) {
+          editor.update(() => $ensureEditorNotEmpty());
+        }
       },
       skipTransforms: true,
       tag: isFromUndoManger ? HISTORIC_TAG : COLLABORATION_TAG,
@@ -421,7 +425,9 @@ export function syncYjsStateToLexicalV2__EXPERIMENTAL(
       discrete: true,
       onUpdate: () => {
         syncCursorPositions(binding, provider);
-        editor.update(() => $ensureEditorNotEmpty());
+        if (binding.root.length === 0) {
+          editor.update(() => $ensureEditorNotEmpty());
+        }
       },
       skipTransforms: true,
       tag: COLLABORATION_TAG,

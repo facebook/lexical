@@ -51,27 +51,13 @@ function getErrorMap(filepath) {
 const invariantExpressions = [
   {
     dev: 'formatDevErrorMessage',
-    messageIndex: 1,
     name: 'invariant',
     prod: 'formatProdErrorMessage',
     prodNoCode: 'formatDevErrorMessage',
   },
   {
     dev: 'formatDevErrorMessage',
-    messageIndex: 1,
     name: 'devInvariant',
-    prod: 'formatProdWarningMessage',
-    prodNoCode: 'formatDevWarningMessage',
-  },
-  // `$devInvariant(editor, cond, message, ...args)` carries the editor as the
-  // first argument (used by the untransformed source build to route warn-level
-  // telemetry through the editor), so the condition and message are shifted one
-  // slot to the right relative to `invariant`/`devInvariant`.
-  {
-    conditionIndex: 1,
-    dev: 'formatDevErrorMessage',
-    messageIndex: 2,
-    name: '$devInvariant',
     prod: 'formatProdWarningMessage',
     prodNoCode: 'formatDevWarningMessage',
   },
@@ -93,14 +79,7 @@ export default function transformErrorMessages(babel, opts) {
         const node = path.node;
         const {extractCodes, noMinify} =
           /** @type Partial<TransformErrorMessagesOptions> */ (file.opts);
-        for (const {
-          name,
-          dev,
-          prod,
-          prodNoCode,
-          conditionIndex = 0,
-          messageIndex = 1,
-        } of invariantExpressions) {
+        for (const {name, dev, prod, prodNoCode} of invariantExpressions) {
           if (path.get('callee').isIdentifier({name})) {
             // Turns this code:
             //
@@ -119,11 +98,9 @@ export default function transformErrorMessages(babel, opts) {
             // where ERR_CODE is an error code: a unique identifier (a number
             // string) that references a verbose error message. The mapping is
             // stored in `scripts/error-codes/codes.json`.
-            const condition = node.arguments[conditionIndex];
-            const errorMsgLiteral = evalToString(node.arguments[messageIndex]);
-            const errorMsgExpressions = Array.from(
-              node.arguments.slice(messageIndex + 1),
-            );
+            const condition = node.arguments[0];
+            const errorMsgLiteral = evalToString(node.arguments[1]);
+            const errorMsgExpressions = Array.from(node.arguments.slice(2));
             const errorMsgQuasis = errorMsgLiteral
               .split('%s')
               .map(raw => t.templateElement({cooked: String.raw({raw}), raw}));

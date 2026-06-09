@@ -11,7 +11,6 @@ import type {CollabElementNode} from './CollabElementNode';
 import type {NodeKey, NodeMap, TextNode} from 'lexical';
 import type {Map as YMap} from 'yjs';
 
-import invariant from '@lexical/internal/invariant';
 import {
   $getNodeByKey,
   $getSelection,
@@ -145,10 +144,10 @@ export class CollabTextNode {
     keysChanged: null | Set<string>,
   ): void {
     const lexicalNode = this.getNode();
-    invariant(
-      lexicalNode !== null,
-      'syncPropertiesAndTextFromYjs: could not find decorator node',
-    );
+    if (lexicalNode === null) {
+      // Concurrently removed from Lexical; nothing to sync.
+      return;
+    }
 
     $syncPropertiesFromYjs(binding, this._map, lexicalNode, keysChanged);
 

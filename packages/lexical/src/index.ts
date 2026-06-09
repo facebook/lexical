@@ -263,6 +263,7 @@ export {
   $getSlot,
   $getSlotHost,
   $getSlotNames,
+  $getSlotNameWithinHost,
   $isSlotChild,
   $isSlotHost,
   $removeSlot,

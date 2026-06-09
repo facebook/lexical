@@ -1190,6 +1190,9 @@ declare export function $isSlotChild(
 declare export function $getSlotHost(
   node: LexicalNode,
 ): ElementNode | DecoratorNode<unknown> | null;
+declare export function $getSlotNameWithinHost(
+  slotChild: LexicalNode,
+): string | null;
 declare export function $getSlotNames(node: LexicalNode): string[];
 declare export function $getSlot<T extends LexicalNode>(
   node: LexicalNode,

@@ -22,6 +22,7 @@ import {
   $getSlotContainer,
   $getSlotHost,
   $getSlotNames,
+  $getSlotNameWithinHost,
   $isRangeSelection,
   $removeSlot,
   $setSelection,
@@ -1867,5 +1868,120 @@ describe('named-slots: cross-host slot move DOM reuse', () => {
     // Without the DOM-detached case in the reuse guard, the slot subtree
     // would be remounted.
     expect(domAfter).toBe(domBefore);
+  });
+});
+
+describe('$getSlotNameWithinHost', () => {
+  test('returns the slot name for a node sitting in a named slot', () => {
+    using editor = createSlotEditor();
+    let titleKey = '';
+
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const title = $slotContainer();
+        $getRoot().append(host);
+        $setSlot(host, 'title', title);
+        titleKey = title.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const title = $getNodeByKey<TestShadowRootNode>(titleKey)!;
+      expect($getSlotNameWithinHost(title)).toBe('title');
+    });
+  });
+
+  test('disambiguates between multiple slots on the same host', () => {
+    using editor = createSlotEditor();
+    let titleKey = '';
+    let bodyKey = '';
+
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const title = $slotContainer();
+        const body = $slotContainer();
+        $getRoot().append(host);
+        $setSlot(host, 'title', title);
+        $setSlot(host, 'body', body);
+        titleKey = title.getKey();
+        bodyKey = body.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const title = $getNodeByKey<TestShadowRootNode>(titleKey)!;
+      const body = $getNodeByKey<TestShadowRootNode>(bodyKey)!;
+      expect($getSlotNameWithinHost(title)).toBe('title');
+      expect($getSlotNameWithinHost(body)).toBe('body');
+    });
+  });
+
+  test('returns null for a regular child (not a slot value)', () => {
+    using editor = createSlotEditor();
+    let childKey = '';
+
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const child = $createTextNode('plain');
+        host.append(child);
+        $getRoot().append(host);
+        childKey = child.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const child = $getNodeByKey<TextNode>(childKey)!;
+      expect($getSlotNameWithinHost(child)).toBe(null);
+    });
+  });
+
+  test('returns null for the host itself', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        $setSlot(host, 'title', $slotContainer());
+        $getRoot().append(host);
+        hostKey = host.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const host = $getNodeByKey<ParagraphNode>(hostKey)!;
+      expect($getSlotNameWithinHost(host)).toBe(null);
+    });
+  });
+
+  test('returns the immediate slot name when slots are nested', () => {
+    using editor = createSlotEditor();
+    let innerSlotKey = '';
+
+    editor.update(
+      () => {
+        const outerHost = $createParagraphNode();
+        const innerHost = $slotContainer();
+        const innerSlot = $slotContainer();
+        $getRoot().append(outerHost);
+        $setSlot(outerHost, 'outer', innerHost);
+        $setSlot(innerHost, 'inner', innerSlot);
+        innerSlotKey = innerSlot.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const innerSlot = $getNodeByKey<TestShadowRootNode>(innerSlotKey)!;
+      // The lookup uses the immediate host's slot map, not the outer host's.
+      expect($getSlotNameWithinHost(innerSlot)).toBe('inner');
+    });
   });
 });

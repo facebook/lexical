@@ -90,6 +90,27 @@ export function $getSlotHost(
 }
 
 /**
+ * Returns the slot name this node occupies on its host, or null when the node
+ * is not a slot value. Mirrors {@link LexicalNode#getIndexWithinParent} for
+ * slot children — answers "which named slot does this node sit in?".
+ *
+ * @experimental
+ */
+export function $getSlotNameWithinHost(slotChild: LexicalNode): string | null {
+  const host = $getSlotHost(slotChild);
+  if (host === null) {
+    return null;
+  }
+  const childKey = slotChild.getLatest().__key;
+  for (const [name, key] of $getSlotMap(host)) {
+    if (key === childKey) {
+      return name;
+    }
+  }
+  return null;
+}
+
+/**
  * Returns the latest slot map (name -> child key, insertion order). Exposes raw
  * keys, so it stays internal to the package; public callers use
  * {@link $getSlotNames} / {@link $getSlot}.

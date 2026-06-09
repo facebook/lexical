@@ -68,6 +68,15 @@ export type InitialConfigType = Readonly<{
   namespace: string;
   nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
   onError: (error: Error, editor: LexicalEditor) => void;
+  /**
+   * Optional handler for recoverable, warn-level conditions (e.g. the
+   * update-recursion guard tripping) that the editor has already recovered
+   * from. Mirrors {@link InitialConfigType.onError} but at warn severity, so
+   * embedders can route the condition to telemetry without raising an error
+   * alarm. Defaults (in core `createEditor`) to a handler that throws in
+   * development and only `console.warn`s in production.
+   */
+  onWarn?: (error: Error, editor: LexicalEditor) => void;
   editable?: boolean;
   theme?: EditorThemeClasses;
   /**
@@ -96,6 +105,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         namespace,
         nodes,
         onError,
+        onWarn,
         editorState: initialEditorState,
         html,
       } = initialConfig;
@@ -111,6 +121,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         namespace,
         nodes,
         onError: error => onError(error, editor),
+        ...(onWarn ? {onWarn: error => onWarn(error, editor)} : {}),
         theme,
       });
       initializeEditor(editor, initialEditorState);

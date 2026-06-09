@@ -29,6 +29,7 @@ export type InitialConfigType = Readonly<{
   theme?: EditorThemeClasses,
   editorState?: InitialEditorStateType,
   onError: (error: Error, editor: LexicalEditor) => void,
+  onWarn?: (error: Error, editor: LexicalEditor) => void,
   html?: HTMLConfig,
 }>;
 

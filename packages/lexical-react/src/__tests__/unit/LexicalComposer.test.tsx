@@ -66,6 +66,45 @@ describe('LexicalComposer tests', () => {
     });
   });
 
+  it('forwards initialConfig.onWarn to the editor as a (error, editor) handler', async () => {
+    const onWarn = vi.fn();
+    let capturedEditor: LexicalEditor | null = null;
+
+    function CaptureEditor() {
+      capturedEditor = useLexicalComposerContext()[0];
+      return null;
+    }
+
+    function App() {
+      return (
+        <LexicalComposer
+          initialConfig={{
+            namespace: '',
+            nodes: [],
+            onError: err => {
+              throw err;
+            },
+            onWarn,
+          }}>
+          <CaptureEditor />
+        </LexicalComposer>
+      );
+    }
+
+    await act(async () => {
+      reactRoot.render(<App />);
+    });
+
+    expect(capturedEditor).not.toBeNull();
+    // The composer must forward onWarn into the core editor; without the
+    // passthrough, `_onWarn` falls back to the default and the embedder's
+    // handler never fires.
+    const error = new Error('test warning');
+    capturedEditor!._onWarn(error);
+    expect(onWarn).toHaveBeenCalledTimes(1);
+    expect(onWarn).toHaveBeenCalledWith(error, capturedEditor);
+  });
+
   describe('LexicalComposerContext editor identity', () => {
     (
       [

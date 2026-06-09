@@ -160,7 +160,14 @@ export const scheduleMicroTask: (fn: () => void) => void =
       };
 
 export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
-  const activeElement = document.activeElement;
+  // Resolve the focused element through any shadow trees; document.activeElement
+  // reports the outermost shadow host, hiding an input focused inside an open
+  // shadow root (e.g. when the editor or a decorator lives in a web component).
+  const root = anchorDOM.getRootNode();
+  const activeElement =
+    isDOMDocumentNode(root) || isDOMShadowRoot(root)
+      ? getActiveElementDeep(root)
+      : null;
 
   if (!isHTMLElement(activeElement)) {
     return false;
@@ -1773,7 +1780,9 @@ export function $updateDOMBlockCursorElement(
     $isRangeSelection(nextSelection) &&
     nextSelection.isCollapsed() &&
     nextSelection.anchor.type === 'element' &&
-    rootElement.contains(document.activeElement)
+    // getActiveElement rather than document.activeElement, which reports the
+    // shadow host (outside rootElement) when the editor is in a shadow root
+    rootElement.contains(getActiveElement(rootElement))
   ) {
     const anchor = nextSelection.anchor;
     const elementNode = anchor.getNode();
@@ -1926,10 +1935,54 @@ export function getComposedStaticRange(
   try {
     return domSelection.getComposedRanges({shadowRoots})[0] || null;
   } catch (_error) {
-    // Browsers that predate the dictionary form of getComposedRanges may
-    // throw; fall back to the plain (retargeted) reads.
+    // Fall through to the legacy call below.
+  }
+  try {
+    // Safari 17 through 18.1 implement the earlier draft of the spec where
+    // the shadow roots are passed variadically instead of in a dictionary.
+    return (
+      (
+        domSelection.getComposedRanges as unknown as (
+          ...legacyShadowRoots: ShadowRoot[]
+        ) => StaticRange[]
+      )(...shadowRoots)[0] || null
+    );
+  } catch (_error) {
     return null;
   }
+}
+
+/**
+ * Returns a live DOM Range for the Selection, resolved through any DOM
+ * ShadowRoots enclosing `rootElement`. Inside a shadow tree
+ * `Selection.getRangeAt(0)` is retargeted to the shadow host, so this builds a
+ * Range from the composed boundary points instead (see
+ * {@link getComposedStaticRange}); in the light DOM it returns
+ * `getRangeAt(0)` unchanged. Use this instead of `getRangeAt(0)` when the
+ * Range is needed for layout (e.g. `getBoundingClientRect`), which a
+ * StaticRange cannot provide.
+ *
+ * @returns a live Range, or null when the selection has no ranges
+ */
+export function getDOMSelectionRange(
+  domSelection: Selection,
+  rootElement: HTMLElement | null,
+): Range | null {
+  const staticRange = getComposedStaticRange(domSelection, rootElement);
+  if (staticRange !== null) {
+    const doc = staticRange.startContainer.ownerDocument;
+    if (doc !== null) {
+      const range = doc.createRange();
+      try {
+        range.setStart(staticRange.startContainer, staticRange.startOffset);
+        range.setEnd(staticRange.endContainer, staticRange.endOffset);
+        return range;
+      } catch (_error) {
+        // Fall through to the retargeted range.
+      }
+    }
+  }
+  return domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null;
 }
 
 /**

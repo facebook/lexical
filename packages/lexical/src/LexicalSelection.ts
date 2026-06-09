@@ -88,6 +88,7 @@ import {
   getComposedSelectionPoints,
   getComposedStaticRange,
   getDOMSelection,
+  getDOMSelectionRange,
   getElementByKeyOrThrow,
   getNodeKeyFromDOMNode,
   getWindow,
@@ -3091,27 +3092,6 @@ function setDOMSelectionBaseAndExtent(
   }
 }
 
-/**
- * Builds a collapsed DOM Range at the given node/offset, used for
- * scroll-into-view when the live Selection's range is unavailable or
- * retargeted (e.g. inside a DOM shadow root). Returns null if the node is
- * detached or the offset is invalid.
- */
-function createCollapsedDOMRange(node: Node, offset: number): Range | null {
-  const ownerDocument = node.ownerDocument;
-  if (ownerDocument === null) {
-    return null;
-  }
-  const range = ownerDocument.createRange();
-  try {
-    range.setStart(node, offset);
-    range.collapse(true);
-  } catch (_error) {
-    return null;
-  }
-  return range;
-}
-
 function $getElementAndOffsetForPoint(
   editor: LexicalEditor,
   node: LexicalNode,
@@ -3135,11 +3115,6 @@ export function $updateDOMSelection(
   rootElement: HTMLElement,
 ): void {
   const activeElement = getActiveElement(rootElement);
-  // Resolve the live DOM selection's boundary points through any enclosing
-  // DOM shadow roots; Selection.anchorNode/focusNode are retargeted to the
-  // shadow host, so we read composed points for the comparisons below.
-  const currentPoints =
-    getComposedSelectionPoints(domSelection, rootElement) || domSelection;
 
   // TODO: make this not hard-coded, and add another config option
   // that makes this configurable.
@@ -3150,6 +3125,15 @@ export function $updateDOMSelection(
   ) {
     return;
   }
+
+  // Resolve the live DOM selection's boundary points through any enclosing
+  // DOM shadow roots; Selection.anchorNode/focusNode are retargeted to the
+  // shadow host, so the comparisons below read composed points instead. In
+  // the light DOM this is null (without reading the Selection) and
+  // currentPoints aliases domSelection, preserving the deferred reads
+  // described below.
+  const currentPoints =
+    getComposedSelectionPoints(domSelection, rootElement) || domSelection;
 
   if (!$isRangeSelection(nextSelection)) {
     // We don't remove selection if the prevSelection is null because
@@ -3304,13 +3288,7 @@ export function $updateDOMSelection(
       nextSelection.anchor.type === 'element'
         ? (nextAnchorNode.childNodes[nextAnchorOffset] as HTMLElement | Text) ||
           null
-        : currentPoints !== domSelection
-          ? // Inside a shadow root domSelection.getRangeAt(0) is retargeted to
-            // the host; build the range from the resolved (composed) nodes.
-            createCollapsedDOMRange(nextAnchorNode, nextAnchorOffset)
-          : domSelection.rangeCount > 0
-            ? domSelection.getRangeAt(0)
-            : null;
+        : getDOMSelectionRange(domSelection, rootElement);
     if (selectionTarget !== null) {
       let selectionRect: DOMRect;
       if (selectionTarget instanceof Text) {

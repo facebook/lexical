@@ -22,6 +22,7 @@ import {
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
   createCommand,
+  getComposedSelectionPoints,
   getDOMSelection,
   LexicalCommand,
   LexicalEditor,
@@ -53,14 +54,19 @@ function tryToPositionRange(
   leadOffset: number,
   range: Range,
   editorWindow: Window,
+  rootElement: HTMLElement | null,
 ): boolean {
   const domSelection = getDOMSelection(editorWindow);
   if (domSelection === null || !domSelection.isCollapsed) {
     return false;
   }
-  const anchorNode = domSelection.anchorNode;
+  // Resolve through any enclosing DOM shadow roots; the raw anchorNode is
+  // retargeted to the shadow host when the editor is in a shadow tree.
+  const points =
+    getComposedSelectionPoints(domSelection, rootElement) || domSelection;
+  const anchorNode = points.anchorNode;
   const startOffset = leadOffset;
-  const endOffset = domSelection.anchorOffset;
+  const endOffset = points.anchorOffset;
 
   if (anchorNode == null || endOffset == null) {
     return false;
@@ -304,6 +310,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
             match.leadOffset,
             range,
             editorWindow,
+            editor.getRootElement(),
           );
           if (isRangePositioned !== null) {
             startTransition(() =>

@@ -6,6 +6,7 @@
  *
  */
 
+import {registerRichText} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createRangeSelection,
@@ -25,6 +26,7 @@ import {
   type LexicalEditor,
 } from 'lexical';
 import {beforeEach, describe, expect, onTestFinished, test} from 'vitest';
+import {userEvent} from 'vitest/browser';
 
 // These tests exercise the DOM shadow root support that relies on platform
 // selection APIs (Selection.getComposedRanges / Selection.direction /
@@ -302,5 +304,67 @@ describe('DOM shadow root selection (browser)', () => {
         expect(selection.isCollapsed()).toBe(false);
       }
     });
+  });
+
+  // Regression test for #2119 and #8125: an editor hosted in a web
+  // component's shadow root must accept real keyboard input (key events,
+  // beforeinput, mutation handling) — previously characters never appeared
+  // because the retargeted DOM selection could not be resolved.
+  test('real keyboard input works in a web component shadow root', async () => {
+    if (!SUPPORTS_COMPOSED_RANGES) {
+      return;
+    }
+    if (customElements.get('test-lexical-host') === undefined) {
+      customElements.define(
+        'test-lexical-host',
+        class extends HTMLElement {
+          connectedCallback() {
+            const shadow = this.shadowRoot ?? this.attachShadow({mode: 'open'});
+            const contentEditable = document.createElement('div');
+            contentEditable.contentEditable = 'true';
+            shadow.appendChild(contentEditable);
+          }
+        },
+      );
+    }
+    const host = document.createElement('test-lexical-host');
+    document.body.appendChild(host);
+    const contentEditable = host.shadowRoot!.firstElementChild as HTMLElement;
+    const editor = createEditor({
+      namespace: 'web-component',
+      nodes: [],
+      onError: error => {
+        throw error;
+      },
+    });
+    // Command handlers for backspace/delete/etc.; insertion of plain typed
+    // text is otherwise handled by the mutation observer path.
+    const removeRichText = registerRichText(editor);
+    editor.setRootElement(contentEditable);
+    editor.update(() => $prepopulate('Hi'), {discrete: true});
+    onTestFinished(() => {
+      removeRichText();
+      editor.setRootElement(null);
+      document.body.removeChild(host);
+    });
+
+    // Place the caret at the end of "Hi" with the native selection, and sync
+    // it into the editor the same way the selectionchange handler would.
+    contentEditable.focus();
+    const textNode = getInnerTextNode(contentEditable);
+    getDOMSelection(window)!.setBaseAndExtent(textNode, 2, textNode, 2);
+    editor.update(() => {}, {
+      discrete: true,
+      event: new Event('selectionchange'),
+    });
+
+    await userEvent.keyboard('abc');
+
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('Hiabc');
+
+    // Backspace exercises the deletion path through the same selection
+    // resolution machinery.
+    await userEvent.keyboard('{Backspace}');
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('Hiab');
   });
 });

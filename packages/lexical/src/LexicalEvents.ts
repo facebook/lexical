@@ -131,6 +131,7 @@ import {
   isDeleteWordForward,
   isDOMCapturingSelection,
   isDOMNode,
+  isDOMShadowRoot,
   isDOMTextNode,
   isEscape,
   isFirefoxClipboardEvents,
@@ -1487,11 +1488,16 @@ function onDocumentSelectionChange(event: Event): void {
     // Inside a DOM shadow root the document Selection's anchorNode is
     // retargeted to the shadow host (outside the editor). Resolve the real
     // focused element by descending through the open shadow roots instead.
+    // Only applies when focus is actually inside a shadow tree, so light
+    // DOM behavior is unchanged.
     const ownerDocument = getDOMOwnerDocument(event.target);
-    if (ownerDocument !== null) {
-      nextActiveEditor = getNearestEditorFromDOMNode(
-        getActiveElementDeep(ownerDocument),
-      );
+    const activeElement =
+      ownerDocument !== null ? getActiveElementDeep(ownerDocument) : null;
+    if (
+      activeElement !== null &&
+      isDOMShadowRoot(activeElement.getRootNode())
+    ) {
+      nextActiveEditor = getNearestEditorFromDOMNode(activeElement);
     }
   }
   if (nextActiveEditor === null) {

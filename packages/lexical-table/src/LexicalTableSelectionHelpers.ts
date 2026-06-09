@@ -74,7 +74,9 @@ import {
   FOCUS_COMMAND,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  getComposedSelectionPoints,
   getDOMSelection,
+  getDOMSelectionRange,
   INSERT_PARAGRAPH_COMMAND,
   IS_FIREFOX,
   isDOMNode,
@@ -1079,11 +1081,17 @@ function $fixTableSelectionForSelectedTable(
   const tableNode = $getNodeByKeyOrThrow<TableNode>(selection.tableKey);
   // if selection goes outside of the table we need to change it to Range selection
   const domSelection = getDOMSelection(editorWindow);
-  if (domSelection && domSelection.anchorNode && domSelection.focusNode) {
-    const focusNode = $getNearestNodeFromDOMNode(domSelection.focusNode);
+  // Resolve through any enclosing DOM shadow roots; the raw boundary nodes
+  // are retargeted to the shadow host when the editor is in a shadow tree.
+  const points =
+    domSelection &&
+    (getComposedSelectionPoints(domSelection, editor.getRootElement()) ||
+      domSelection);
+  if (domSelection && points && points.anchorNode && points.focusNode) {
+    const focusNode = $getNearestNodeFromDOMNode(points.focusNode);
     const isFocusOutside = focusNode && !tableNode.isParentOf(focusNode);
 
-    const anchorNode = $getNearestNodeFromDOMNode(domSelection.anchorNode);
+    const anchorNode = $getNearestNodeFromDOMNode(points.anchorNode);
     const isAnchorInside = anchorNode && tableNode.isParentOf(anchorNode);
 
     if (isFocusOutside && isAnchorInside && domSelection.rangeCount > 0) {
@@ -2155,7 +2163,15 @@ function $handleArrowKey(
           return false;
         }
 
-        const range = domSelection.getRangeAt(0);
+        // getDOMSelectionRange rather than getRangeAt(0), which is retargeted
+        // to the shadow host when the editor is in a shadow tree
+        const range = getDOMSelectionRange(
+          domSelection,
+          editor.getRootElement(),
+        );
+        if (range === null) {
+          return false;
+        }
         edgeSelectionRect = range.getBoundingClientRect();
       }
 
@@ -2325,7 +2341,12 @@ function $getTableEdgeCursorPosition(
   if (!domSelection) {
     return undefined;
   }
-  const domAnchorNode = domSelection.anchorNode;
+  // Resolve through any enclosing DOM shadow roots; the raw anchorNode is
+  // retargeted to the shadow host when the editor is in a shadow tree.
+  const domAnchorNode = (
+    getComposedSelectionPoints(domSelection, editor.getRootElement()) ||
+    domSelection
+  ).anchorNode;
   const tableNodeParentDOM = editor.getElementByKey(tableNodeParent.getKey());
   const tableElement = getTableElement(
     tableNode,

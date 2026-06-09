@@ -423,6 +423,41 @@ importers:
         specifier: 4.61.0
         version: 4.61.0
 
+  dev-examples/shadow-dom-web-component:
+    dependencies:
+      '@lexical/extension':
+        specifier: workspace:*
+        version: link:../../packages/lexical-extension
+      '@lexical/history':
+        specifier: workspace:*
+        version: link:../../packages/lexical-history
+      '@lexical/rich-text':
+        specifier: workspace:*
+        version: link:../../packages/lexical-rich-text
+      lexical:
+        specifier: workspace:*
+        version: link:../../packages/lexical
+    devDependencies:
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vite:
+        specifier: ^8.0.16
+        version: 8.0.16(@types/node@25.9.1)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.0)
+    optionalDependencies:
+      '@rollup/rollup-darwin-arm64':
+        specifier: 4.61.0
+        version: 4.61.0
+      '@rollup/rollup-linux-x64-gnu':
+        specifier: 4.61.0
+        version: 4.61.0
+      '@rollup/rollup-win32-x64-msvc':
+        specifier: 4.61.0
+        version: 4.61.0
+      '@rollup/wasm-node':
+        specifier: 4.61.0
+        version: 4.61.0
+
   packages/lexical:
     dependencies:
       '@lexical/internal':

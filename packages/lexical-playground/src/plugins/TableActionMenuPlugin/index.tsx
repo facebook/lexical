@@ -41,6 +41,7 @@ import {
   $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
+  getComposedSelectionPoints,
   getDOMSelection,
   isDOMNode,
   SELECTION_CHANGE_COMMAND,
@@ -755,7 +756,14 @@ function TableCellActionMenuContainer({
       $isRangeSelection(selection) &&
       rootElement !== null &&
       nativeSelection !== null &&
-      rootElement.contains(nativeSelection.anchorNode)
+      // Resolve through any enclosing DOM shadow roots; the raw anchorNode is
+      // retargeted to the shadow host when the editor is in a shadow tree.
+      rootElement.contains(
+        (
+          getComposedSelectionPoints(nativeSelection, rootElement) ||
+          nativeSelection
+        ).anchorNode,
+      )
     ) {
       const tableCellNodeFromSelection = $getTableCellNodeFromLexicalNode(
         selection.anchor.getNode(),

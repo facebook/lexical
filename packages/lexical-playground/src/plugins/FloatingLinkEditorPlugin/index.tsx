@@ -37,7 +37,9 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
+  getComposedSelectionPoints,
   getDOMSelection,
+  getDOMSelectionRange,
   KEY_ESCAPE_COMMAND,
   LexicalEditor,
   RangeSelection,
@@ -176,7 +178,14 @@ function FloatingLinkEditor({
         $isRangeSelection(selection) &&
         nativeSelection !== null &&
         nativeSelection.rangeCount > 0 &&
-        rootElement.contains(nativeSelection.anchorNode)
+        // Resolve through any enclosing DOM shadow roots; the raw anchorNode
+        // is retargeted to the shadow host when the editor is in a shadow tree.
+        rootElement.contains(
+          (
+            getComposedSelectionPoints(nativeSelection, rootElement) ||
+            nativeSelection
+          ).anchorNode,
+        )
       ) {
         const linkNode = $getSelectedLinkNode(selection);
         if (linkNode) {
@@ -203,9 +212,20 @@ function FloatingLinkEditor({
       } else if (
         nativeSelection !== null &&
         nativeSelection.rangeCount > 0 &&
-        rootElement.contains(nativeSelection.anchorNode)
+        rootElement.contains(
+          (
+            getComposedSelectionPoints(nativeSelection, rootElement) ||
+            nativeSelection
+          ).anchorNode,
+        )
       ) {
-        refs.setPositionReference(nativeSelection.getRangeAt(0));
+        const selectionRange = getDOMSelectionRange(
+          nativeSelection,
+          rootElement,
+        );
+        if (selectionRange !== null) {
+          refs.setPositionReference(selectionRange);
+        }
       }
       setLastSelection(selection);
     } else if (!activeElement || activeElement.className !== 'link-input') {

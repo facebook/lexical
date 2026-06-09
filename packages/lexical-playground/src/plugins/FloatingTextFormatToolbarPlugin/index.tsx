@@ -22,6 +22,7 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   FORMAT_TEXT_COMMAND,
+  getComposedSelectionPoints,
   getDOMSelection,
   LexicalEditor,
   SELECTION_CHANGE_COMMAND,
@@ -138,7 +139,14 @@ function TextFormatFloatingToolbar({
       nativeSelection !== null &&
       !nativeSelection.isCollapsed &&
       rootElement !== null &&
-      rootElement.contains(nativeSelection.anchorNode)
+      // Resolve through any enclosing DOM shadow roots; the raw anchorNode is
+      // retargeted to the shadow host when the editor is in a shadow tree.
+      rootElement.contains(
+        (
+          getComposedSelectionPoints(nativeSelection, rootElement) ||
+          nativeSelection
+        ).anchorNode,
+      )
     ) {
       const rangeRect = getDOMRangeRect(nativeSelection, rootElement);
 
@@ -353,7 +361,12 @@ function useFloatingTextFormatToolbar(
         nativeSelection !== null &&
         (!$isRangeSelection(selection) ||
           rootElement === null ||
-          !rootElement.contains(nativeSelection.anchorNode))
+          !rootElement.contains(
+            (
+              getComposedSelectionPoints(nativeSelection, rootElement) ||
+              nativeSelection
+            ).anchorNode,
+          ))
       ) {
         setIsText(false);
         return;

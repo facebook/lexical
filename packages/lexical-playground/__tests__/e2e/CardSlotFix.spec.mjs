@@ -79,12 +79,32 @@ async function slotCount(page, name) {
   );
 }
 
+// The Card body is regular ElementNode children, not a named slot, so its
+// paragraphs sit directly under `.lexical-card-node` rather than inside a
+// `[data-lexical-slot]` wrapper.
+async function bodyText(page) {
+  return evaluate(page, () => {
+    const card = document.querySelector('.lexical-card-node');
+    if (!card) {
+      return null;
+    }
+    return Array.from(
+      card.querySelectorAll(':scope > p.PlaygroundEditorTheme__paragraph'),
+    )
+      .map(p =>
+        Array.from(p.querySelectorAll('span[data-lexical-text="true"]'))
+          .map(s => s.textContent)
+          .join(''),
+      )
+      .join('⏎');
+  });
+}
+
 async function assertCardIntact(page, {title, body}) {
   expect(await cardCount(page)).toBe(1);
   expect(await slotCount(page, 'title')).toBe(1);
-  expect(await slotCount(page, 'body')).toBe(1);
   expect(await slotText(page, 'title')).toBe(title);
-  expect(await slotText(page, 'body')).toBe(body);
+  expect(await bodyText(page)).toBe(body);
 }
 
 test.describe('Card slot deletion boundaries', () => {
@@ -125,36 +145,10 @@ test.describe('Card slot deletion boundaries', () => {
     await assertCardIntact(page, {body: 'Body', title: 'Title'});
   });
 
-  test('backspace at body-slot start is a no-op, title intact', async ({
-    page,
-  }) => {
-    await focusEditor(page);
-    await insertCard(page);
-    await click(page, '[data-lexical-slot="body"]');
-    await sleep(100);
-    await moveToLineBeginning(page);
-    await page.keyboard.press('Backspace');
-    await sleep(120);
-    await assertCardIntact(page, {body: 'Body', title: 'Title'});
-  });
-
   test('forward-delete at title-slot end is a no-op', async ({page}) => {
     await focusEditor(page);
     await insertCard(page);
     await click(page, '[data-lexical-slot="title"]');
-    await sleep(100);
-    await moveToLineEnd(page);
-    await page.keyboard.press('Delete');
-    await sleep(120);
-    await assertCardIntact(page, {body: 'Body', title: 'Title'});
-  });
-
-  test('forward-delete at body-slot end (last slot) is a no-op', async ({
-    page,
-  }) => {
-    await focusEditor(page);
-    await insertCard(page);
-    await click(page, '[data-lexical-slot="body"]');
     await sleep(100);
     await moveToLineEnd(page);
     await page.keyboard.press('Delete');
@@ -175,10 +169,12 @@ test.describe('Card slot deletion boundaries', () => {
     await assertCardIntact(page, {body: 'Body', title: 'Titl'});
   });
 
-  test('forward-delete one char within body slot', async ({page}) => {
+  test('forward-delete one char within body', async ({page}) => {
     await focusEditor(page);
     await insertCard(page);
-    await click(page, '[data-lexical-slot="body"]');
+    // Body is regular ElementNode children, so its paragraph sits directly
+    // under the card rather than inside a `[data-lexical-slot]` wrapper.
+    await click(page, '.lexical-card-node > p');
     await sleep(100);
     await moveToLineBeginning(page);
     await page.keyboard.press('Delete');
@@ -245,10 +241,12 @@ test.describe('Card HTML serialization round-trip', () => {
     await sleep(100);
 
     const clipboard = await copyToClipboard(page);
-    // Export side: each slot rides in its own named wrapper, the explicit
-    // serialization from CardNode.exportDOM.
+    // Export side: title rides in its named wrapper (the explicit
+    // serialization from CardNode.exportDOM); body is regular children, so
+    // its paragraph serializes through the normal child path with no slot
+    // wrapper.
     expect(clipboard['text/html']).toContain('data-lexical-slot="title"');
-    expect(clipboard['text/html']).toContain('data-lexical-slot="body"');
+    expect(clipboard['text/html']).not.toContain('data-lexical-slot="body"');
 
     // Drop the whole card, then paste HTML-only. The clipboard also carries
     // lexical JSON, which paste would prefer; passing text/html alone forces

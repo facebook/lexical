@@ -37,6 +37,27 @@ async function insertFigure(page) {
   await sleep(300);
 }
 
+// The Card body is regular ElementNode children, not a named slot, so its
+// paragraphs sit directly under `.lexical-card-node` rather than inside a
+// `[data-lexical-slot]` wrapper.
+function cardBodyText(frame) {
+  return frame.evaluate(() => {
+    const card = document.querySelector('.lexical-card-node');
+    if (!card) {
+      return null;
+    }
+    return Array.from(
+      card.querySelectorAll(':scope > p.PlaygroundEditorTheme__paragraph'),
+    )
+      .map(p =>
+        Array.from(p.querySelectorAll('span[data-lexical-text="true"]'))
+          .map(s => s.textContent)
+          .join(''),
+      )
+      .join('⏎');
+  });
+}
+
 function slotText(frame, name) {
   return frame.evaluate(n => {
     const slot = document.querySelector(`[data-lexical-slot="${n}"]`);
@@ -100,9 +121,8 @@ test.describe('Named slot collaborative convergence', () => {
     const right = otherFrame(page);
     await expect.poll(() => cardCount(right)).toBe(1);
     await expect.poll(() => slotCount(right, 'title')).toBe(1);
-    await expect.poll(() => slotCount(right, 'body')).toBe(1);
     await expect.poll(() => slotText(right, 'title')).toBe('Title');
-    await expect.poll(() => slotText(right, 'body')).toBe('Body');
+    await expect.poll(() => cardBodyText(right)).toBe('Body');
   });
 
   test('editing slot text on one client converges to the other', async ({
@@ -120,8 +140,8 @@ test.describe('Named slot collaborative convergence', () => {
     await sleep(120);
 
     await expect.poll(() => slotText(right, 'title')).toBe('TitleX');
-    // The body slot must not have been disturbed by the title edit.
-    await expect.poll(() => slotText(right, 'body')).toBe('Body');
+    // The body children must not have been disturbed by the title slot edit.
+    await expect.poll(() => cardBodyText(right)).toBe('Body');
   });
 
   test('a DecoratorNode slot host converges with its media slot intact', async ({

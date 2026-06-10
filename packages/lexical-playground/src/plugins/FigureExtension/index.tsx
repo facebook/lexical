@@ -48,10 +48,15 @@ export const INSERT_FIGURE_COMMAND: LexicalCommand<void> = createCommand(
 // native caret move and stops the lower-priority lexical-rich-text arrow
 // handler — which preventDefaults and steps the host's NodeSelection out,
 // trapping the caret — from running. Mirrors the guard in
-// $resolveFigureChromeTarget.
+// $resolveFigureChromeTarget but scoped to the equation chrome, so an
+// unrelated textarea / input that some other extension drops into the editor
+// doesn't quietly swallow arrow keys here.
 function isWithinSlotEditor(event: KeyboardEvent | null): boolean {
   const target = event?.target;
-  return isHTMLElement(target) && target.closest('textarea, input') !== null;
+  return (
+    isHTMLElement(target) &&
+    target.closest('.editor-equation textarea, .editor-equation input') !== null
+  );
 }
 
 // Promote a RangeSelection adjacent to a FigureNode boundary into a
@@ -89,7 +94,9 @@ function $resolveFigureChromeTarget(
   editor: LexicalEditor,
   target: HTMLElement,
 ): FigureNode | null {
-  if (target.closest('textarea, input') !== null) {
+  if (
+    target.closest('.editor-equation textarea, .editor-equation input') !== null
+  ) {
     return null;
   }
   const node = $getNearestNodeFromDOMNode(target);

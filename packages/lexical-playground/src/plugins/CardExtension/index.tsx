@@ -95,12 +95,10 @@ function $findCardSlotContext(
   let cursor: LexicalNode | null = start;
   while (cursor !== null) {
     const slotName = $getSlotNameWithinHost(cursor);
-    if (slotName !== null) {
+    if (slotName === 'title') {
       const host = $getSlotHost(cursor);
       if ($isCardNode(host)) {
-        return slotName === 'title'
-          ? {card: host, in: 'title', slotValue: cursor}
-          : null;
+        return {card: host, in: 'title', slotValue: cursor};
       }
     }
     const parent: LexicalNode | null = cursor.getParent();
@@ -212,6 +210,14 @@ function $resolveCardChromeTarget(
   editor: LexicalEditor,
   target: HTMLElement,
 ): CardNode | null {
+  // The reconciler wraps each slot in a keyless `<div data-lexical-slot=...>`
+  // scaffold; a click on the wrapper's padding / border / ::before label
+  // ($getNearestNodeFromDOMNode walks past keyless ancestors) would otherwise
+  // resolve to the Card and promote — turning a click on the visible "TITLE"
+  // hint into a whole-Card selection instead of entering the slot.
+  if (target.closest('[data-lexical-slot]') !== null) {
+    return null;
+  }
   const node = $getNearestNodeFromDOMNode(target);
   if (!$isCardNode(node)) {
     return null;
@@ -373,11 +379,6 @@ export const CardExtension = defineExtension({
             const dom = editor.getElementByKey(activeCardKey);
             if (dom !== null) {
               dom.setAttribute('data-current-slot', activeSlot);
-            }
-          } else if (prevCardKey !== null && prevCardKey === activeCardKey) {
-            const dom = editor.getElementByKey(prevCardKey);
-            if (dom !== null) {
-              dom.removeAttribute('data-current-slot');
             }
           }
           prevCardKey = activeCardKey;

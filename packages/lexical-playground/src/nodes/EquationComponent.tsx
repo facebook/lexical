@@ -221,9 +221,10 @@ export default function EquationComponent({
           if (restoreSelection) {
             const host = $getSlotHost(node);
             if (host !== null) {
-              // Slotted: selectNext would throw (the slot value has no
-              // parent). Restore the selection onto the host instead,
-              // matching the host-selection behavior of clicks/arrows.
+              // Slotted: `selectNext` would step past the host into the
+              // following block. Place the selection on the host instead so
+              // a hide returns the caret to the same atomic Figure the
+              // chrome click / arrow selection would land on.
               const nodeSelection = $createNodeSelection();
               nodeSelection.add(host.getKey());
               $setSelection(nodeSelection);

@@ -23,9 +23,11 @@ import {
   $getSlot,
   $getSlotNames,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $selectAll,
   $setSelection,
+  CLICK_COMMAND,
   defineExtension,
   KEY_TAB_COMMAND,
 } from 'lexical';
@@ -421,5 +423,47 @@ describe('CardNode named slots', () => {
       // Caret landed inside the title slot.
       expect(titleSlot.isParentOf(selection.anchor.getNode())).toBe(true);
     });
+  });
+
+  // The reconciler mounts each slot inside a `<div data-lexical-slot="...">`
+  // scaffold wrapper that carries no `__lexicalKey_*`. The playground CSS gives
+  // that wrapper a padding / border / ::before "TITLE" label, so any click on
+  // the visible label or the surrounding padding lands on the keyless wrapper.
+  // `$getNearestNodeFromDOMNode` then walks past it to the CardNode, and the
+  // CLICK_COMMAND promoted the click to a whole-Card NodeSelection — exactly
+  // the case `$resolveCardChromeTarget` was supposed to skip.
+  it('clicking the title slot wrapper does not promote to a whole-Card NodeSelection', () => {
+    using editor = buildEditorFromExtensions(CardTestExtension);
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    editor.setRootElement(container);
+
+    editor.update(
+      () => {
+        $getRoot().clear().append($createCardNode());
+      },
+      {discrete: true},
+    );
+
+    const wrapper = container.querySelector('[data-lexical-slot="title"]');
+    assert(
+      wrapper instanceof HTMLElement,
+      'Reconciler must have mounted the title slot scaffold wrapper',
+    );
+
+    const event = new MouseEvent('click', {bubbles: true, cancelable: true});
+    Object.defineProperty(event, 'target', {value: wrapper});
+    editor.dispatchCommand(CLICK_COMMAND, event);
+
+    editor.read(() => {
+      const selection = $getSelection();
+      // Without the slot-wrapper guard, this is a NodeSelection containing
+      // the Card key. With the guard, the click falls through and the
+      // selection stays whatever the caller set (here, null since the
+      // Card was just inserted without a starting selection).
+      expect($isNodeSelection(selection)).toBe(false);
+    });
+
+    container.remove();
   });
 });

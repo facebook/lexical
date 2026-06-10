@@ -53,10 +53,11 @@ function $selectStartOfFirstTextNode() {
 }
 
 // The Dragon NaturallySpeaking web extension sends makeChanges messages with
-// args [elementStart, elementLength, text, selStart, selLength]. A text of -1
-// (a number, not a string) means "change the selection without touching the
-// text", which is how Select-and-Say corrections and cursor moves by voice
-// arrive.
+// args [elementStart, elementLength, text, selStart, selLength, formatCommand].
+// A text of -1 (a number, not a string) means "change the selection without
+// touching the text", which is how Select-and-Say corrections and cursor moves
+// by voice arrive. The optional sixth argument carries an execCommand name
+// (bold, italic, underline, ...) for voice commands such as "bold that".
 function dispatchMakeChanges(args: unknown): void {
   window.dispatchEvent(
     new MessageEvent('message', {
@@ -150,6 +151,54 @@ describe('DragonExtension', () => {
 
     editor.read(() => {
       expect($getRoot().getTextContent()).toBe('Hello world');
+    });
+  });
+
+  test('formats the final selection when formatCommand is present', () => {
+    using editor = setUpEditor();
+    editor.update($selectStartOfFirstTextNode, {discrete: true});
+
+    dispatchMakeChanges([0, 5, -1, 0, 5, 'bold']);
+
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('Hello world');
+      const paragraph = $getRoot().getFirstChild();
+      assert($isParagraphNode(paragraph));
+      const textNode = paragraph.getFirstChild();
+      assert($isTextNode(textNode));
+      expect(textNode.getTextContent()).toBe('Hello');
+      expect(textNode.hasFormat('bold')).toBe(true);
+    });
+  });
+
+  test('does not toggle format when the final selection is collapsed', () => {
+    using editor = setUpEditor();
+    editor.update($selectStartOfFirstTextNode, {discrete: true});
+
+    dispatchMakeChanges([0, 5, -1, 20, 5, 'bold']);
+
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('Hello world');
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      expect(selection.format).toBe(0);
+    });
+  });
+
+  test('ignores unknown formatCommand values', () => {
+    using editor = setUpEditor();
+    editor.update($selectStartOfFirstTextNode, {discrete: true});
+
+    dispatchMakeChanges([0, 5, -1, 0, 5, 'fontName']);
+    dispatchMakeChanges([0, 5, -1, 0, 5, 'toString']);
+
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('Hello world');
+      const paragraph = $getRoot().getFirstChild();
+      assert($isParagraphNode(paragraph));
+      const textNode = paragraph.getFirstChild();
+      assert($isTextNode(textNode));
+      expect(textNode.getFormat()).toBe(0);
     });
   });
 });

@@ -14,7 +14,17 @@ import {
   defineExtension,
   LexicalEditor,
   safeCast,
+  TextFormatType,
 } from 'lexical';
+
+const TEXT_FORMAT_BY_EXEC_COMMAND = new Map<string, TextFormatType>([
+  ['bold', 'bold'],
+  ['italic', 'italic'],
+  ['strikeThrough', 'strikethrough'],
+  ['subscript', 'subscript'],
+  ['superscript', 'superscript'],
+  ['underline', 'underline'],
+]);
 
 export function registerDragonSupport(editor: LexicalEditor): () => void {
   const origin = window.location.origin;
@@ -56,10 +66,8 @@ export function registerDragonSupport(editor: LexicalEditor): () => void {
               text,
               selStart,
               selLength,
-              _formatCommand,
+              formatCommand,
             ] = args;
-            // TODO: we should probably handle formatCommand somehow?
-            // formatCommand;
             if (
               ![elementStart, elementLength, selStart, selLength].every(
                 Number.isFinite,
@@ -123,6 +131,20 @@ export function registerDragonSupport(editor: LexicalEditor): () => void {
                     anchorNode,
                     setSelEnd,
                   );
+                }
+
+                // format the selection, e.g. for the "bold that" voice
+                // command. Dragon's extension applies this through
+                // document.execCommand, so the values are execCommand names.
+                if (
+                  typeof formatCommand === 'string' &&
+                  selLength > 0 &&
+                  !selection.isCollapsed()
+                ) {
+                  const format = TEXT_FORMAT_BY_EXEC_COMMAND.get(formatCommand);
+                  if (format !== undefined) {
+                    selection.formatText(format);
+                  }
                 }
 
                 // block the chrome extension from handling this event

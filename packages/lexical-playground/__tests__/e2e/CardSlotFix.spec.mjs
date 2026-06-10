@@ -9,6 +9,7 @@
 import {
   moveToLineBeginning,
   moveToLineEnd,
+  selectAll,
 } from '../keyboardShortcuts/index.mjs';
 import {
   click,
@@ -282,5 +283,104 @@ test.describe('Card host data-selected mirroring', () => {
     await click(page, '.lexical-card-node', {position: {x: 6, y: 6}});
     await sleep(120);
     expect(await selectedCardCount(page)).toBe(1);
+  });
+});
+
+// Counterpart to the data-selected mirroring above: a click on the title
+// slot wrapper (the data-lexical-slot region with the "Title" ::before
+// label or its surrounding padding / border) must drop the caret into the
+// slot and NOT promote to a whole-Card NodeSelection. The reconciler
+// scaffold wrapper is keyless, so without the explicit guard
+// $getNearestNodeFromDOMNode would walk past it to the Card and the
+// CLICK_COMMAND would promote — turning a click on the visible "Title"
+// hint into a whole-card selection.
+test.describe('Card slot wrapper click does not promote', () => {
+  test.beforeEach(async ({isCollab, isPlainText, page}) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+  });
+
+  test('clicking the title slot ::before label keeps the click in the slot', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertCard(page);
+    expect(await selectedCardCount(page)).toBe(0);
+    // The ::before "Title" label is the top ~17px of the wrapper (11px font
+    // + 6px margin-bottom); a click at (4, 4) lands on the label or the
+    // padding above the editable paragraph, where the wrapper itself is
+    // the click target.
+    await click(page, '[data-lexical-slot="title"]', {position: {x: 4, y: 4}});
+    await sleep(120);
+    expect(await selectedCardCount(page)).toBe(0);
+  });
+});
+
+// Tab from the title's editable paragraph hops the caret into the first
+// body paragraph; Shift+Tab from the body returns it to the title. The
+// CardExtension's slot-aware key handler is the first real consumer of
+// $getSlotNameWithinHost, so a future refactor could regress the caret
+// bridge in either direction without affecting any other surface.
+test.describe('Card Tab / Shift+Tab slot caret navigation', () => {
+  test.beforeEach(async ({isCollab, isPlainText, page}) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+  });
+
+  test('Tab from the title slot moves the caret into the body', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertCard(page);
+    await click(page, '[data-lexical-slot="title"] p');
+    await sleep(100);
+    await moveToLineEnd(page);
+    await page.keyboard.press('Tab');
+    await sleep(120);
+    await page.keyboard.type('!');
+    await sleep(120);
+    // The exclamation point lands at the body's caret position; Tab moved
+    // the caret out of the title and into the body's first paragraph.
+    await assertCardIntact(page, {body: '!Body', title: 'Title'});
+  });
+
+  test('Shift+Tab from the body moves the caret into the title slot', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertCard(page);
+    await click(page, '.lexical-card-node > p');
+    await sleep(100);
+    await moveToLineBeginning(page);
+    await page.keyboard.press('Shift+Tab');
+    await sleep(120);
+    await page.keyboard.type('!');
+    await sleep(120);
+    await assertCardIntact(page, {body: 'Body', title: '!Title'});
+  });
+});
+
+// SELECT_ALL inside a slot stays scoped to that slot rather than escaping
+// to the editor root — a maintainer-named requirement (D5 in the slot
+// implementation decisions). Typing a single character after Cmd+A in the
+// title slot must replace only the title text, leaving the body intact.
+test.describe('Card SELECT_ALL stays slot-scoped', () => {
+  test.beforeEach(async ({isCollab, isPlainText, page}) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+  });
+
+  test('Cmd+A inside the title slot replaces only the title text', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertCard(page);
+    await click(page, '[data-lexical-slot="title"] p');
+    await sleep(100);
+    await selectAll(page);
+    await sleep(120);
+    await page.keyboard.type('X');
+    await sleep(120);
+    await assertCardIntact(page, {body: 'Body', title: 'X'});
   });
 });

@@ -39,9 +39,9 @@ export interface PreventSelectAllConfig {
  * This extension prevents the keydown event propagating from input/textarea elements,
  * which are typically part of a decorator node, in order to stop dispatching the SELECT_ALL_COMMAND
  */
-export const PreventSelectAllExtension = defineExtension({
+export const PreventSelectAllExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config, state) => namedSignals(config),
-  config: safeCast<PreventSelectAllConfig>({
+  config: /* @__PURE__ */ safeCast<PreventSelectAllConfig>({
     disabled: false,
   }),
   name: '@lexical/PreventSelectAll',

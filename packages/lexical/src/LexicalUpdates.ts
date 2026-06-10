@@ -108,8 +108,16 @@ let activeEditorState: null | EditorState = null;
 let activeEditor: null | LexicalEditor = null;
 let isReadOnlyMode = false;
 let isAttemptingToRecoverFromReconcilerError = false;
+// True for the duration of $commitPendingUpdates (including its listener
+// phases and the enqueued update pump at its tail). Commands dispatched while
+// this is set — the internal SELECTION_CHANGE_COMMAND dispatch, or user code
+// dispatching from a mutation listener, both of which run with
+// editor._updating === false — are part of the in-flight update machinery
+// rather than a fresh external action, so they must not reset the
+// infinite-update-loop budget in triggerCommandListeners.
+let isCommittingPendingUpdates = false;
 // Tracks editors that have a pending macrotask scheduled to reset their cascade
-// budget. See `$scheduleCascadeReset`.
+// budget. See `scheduleCascadeReset`.
 const editorsWithPendingCascadeReset = new Set<LexicalEditor>();
 let infiniteTransformCount = 0;
 
@@ -575,6 +583,22 @@ export function $commitPendingUpdates(
   editor: LexicalEditor,
   recoveryEditorState?: EditorState,
 ): void {
+  // Save and restore rather than set and clear because the reconciler error
+  // recovery path re-enters $commitPendingUpdates, and the enqueued update
+  // pump at the tail of a commit can commit discrete updates synchronously.
+  const previouslyCommitting = isCommittingPendingUpdates;
+  isCommittingPendingUpdates = true;
+  try {
+    $commitPendingUpdatesImpl(editor, recoveryEditorState);
+  } finally {
+    isCommittingPendingUpdates = previouslyCommitting;
+  }
+}
+
+function $commitPendingUpdatesImpl(
+  editor: LexicalEditor,
+  recoveryEditorState?: EditorState,
+): void {
   const pendingEditorState = editor._pendingEditorState;
   const rootElement = editor._rootElement;
   const shouldSkipDOM = editor._headless || rootElement === null;
@@ -870,12 +894,25 @@ export function triggerCommandListeners<
   // infinite-update-loop detector measures recursion depth *within a single
   // action* rather than accumulating across many independent actions. This
   // makes the guard robust to fast/synchronous input bursts (rapid typing, key
-  // repeat) that don't yield to the event loop between keystrokes. Genuine
-  // non-terminating recursion re-enqueues updates directly from a listener
-  // without dispatching new commands, so it never resets here and still trips.
-  for (let e = 0; e < editors.length; e++) {
-    if (!editors[e]._updating) {
-      editors[e]._cascadeCount = 0;
+  // repeat) that don't yield to the event loop between keystrokes.
+  //
+  // Two guards keep cascade-internal dispatches from resetting the budget,
+  // which would otherwise let a runaway loop that dispatches a command each
+  // cycle defeat the detector entirely:
+  // - editor._updating is true while update/textcontent/decorator listeners
+  //   and deferred callbacks run (see triggerListeners), covering commands
+  //   dispatched from those contexts.
+  // - isCommittingPendingUpdates is true for the whole of
+  //   $commitPendingUpdates, covering the internal SELECTION_CHANGE_COMMAND
+  //   dispatch and commands dispatched from mutation listeners, both of which
+  //   run with editor._updating === false.
+  // Genuine external input can never arrive in the middle of a commit because
+  // the commit is synchronous, so neither guard weakens the per-action reset.
+  if (!isCommittingPendingUpdates) {
+    for (let e = 0; e < editors.length; e++) {
+      if (!editors[e]._updating) {
+        editors[e]._cascadeCount = 0;
+      }
     }
   }
 
@@ -923,7 +960,7 @@ export function triggerCommandListeners<
   return false;
 }
 
-function $scheduleCascadeReset(editor: LexicalEditor): void {
+function scheduleCascadeReset(editor: LexicalEditor): void {
   // The cascade budget (`_cascadeCount`) is meant to catch *non-terminating*
   // recursion — an update listener that synchronously re-enqueues more work
   // without a stop condition. Such a runaway is a microtask storm: it never
@@ -957,17 +994,18 @@ function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
   // event loop. Genuine non-terminating recursion is a synchronous microtask
   // storm that starves this macrotask and still trips below; bounded activity
   // spread across user input events lets it run and prevents false positives.
-  $scheduleCascadeReset(editor);
+  scheduleCascadeReset(editor);
   if (editor._cascadeCount++ > 99) {
-    // Non-destructive remediation: drop only the update at the head of the
-    // queue (the one driving the runaway cascade) instead of clearing the
-    // entire `_updates` queue with `editor._updates = []`. Clearing the whole
-    // queue also discards the user's legitimate in-flight work — e.g. a pending
-    // keystroke or selection update that has not been processed yet — which
-    // produces a visible cursor hang on the next interaction. Cutting a single
-    // link breaks the cascade while preserving unrelated pending updates so the
-    // editor keeps working.
-    editor._updates.shift();
+    // The budget resets (the macrotask reset above and the command-dispatch
+    // reset in triggerCommandListeners) rule out bounded bursts of legitimate
+    // activity, so exhausting the budget means update listeners are
+    // re-enqueueing work in a loop that never yields to the event loop. Clear
+    // the whole queue: by now it is dominated by cascade-generated updates,
+    // and dropping only the head would strand the remainder with no scheduled
+    // drain — re-igniting the loop on the next external update, and growing
+    // the queue without bound when a cycle enqueues more than one update per
+    // commit.
+    editor._updates = [];
     editor._cascadeCount = 0;
     // The cascade has already been broken above by clearing the update queue,
     // so this is a recoverable internal guard rather than a fatal error.

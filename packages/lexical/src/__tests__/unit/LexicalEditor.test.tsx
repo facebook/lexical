@@ -1333,6 +1333,147 @@ describe('LexicalEditor tests', () => {
     expect(errorListener).toHaveBeenCalledTimes(0);
   });
 
+  it('does not trip the recursion guard on bounded re-enqueueing across separate actions', async () => {
+    // Regression test for over-firing (#8635): a listener that re-enqueues a
+    // bounded amount of work per commit must not accumulate cascade budget
+    // across many independent user actions. The enqueued no-op never produces
+    // a commit, so the queue is never observed empty by
+    // $triggerEnqueuedUpdates and, before the fix, _cascadeCount leaked +1 per
+    // action and falsely tripped after ~100 ordinary keystrokes.
+    const errorListener = vi.fn();
+    const warnListener = vi.fn();
+    init(errorListener, undefined, warnListener);
+
+    const unregister = editor.registerUpdateListener(() => {
+      editor.update(() => {
+        // bounded: a single no-op update per commit
+      });
+    });
+
+    for (let i = 0; i < 150; i++) {
+      editor.update(() => {
+        $getRoot().markDirty();
+      });
+      // Each action yields to the event loop, like real typing, which lets
+      // the macrotask budget reset run between actions.
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+    unregister();
+
+    expect(warnListener).toHaveBeenCalledTimes(0);
+    expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('does not trip the recursion guard on a fast input burst driven by commands', async () => {
+    // Rapid input (key repeat, synthetic events) can deliver many commands
+    // without the event loop running the macrotask budget reset in between.
+    // Each dispatched command is a fresh external action, so it resets the
+    // cascade budget directly (see triggerCommandListeners).
+    const errorListener = vi.fn();
+    const warnListener = vi.fn();
+    init(errorListener, undefined, warnListener);
+
+    const BURST_COMMAND = createCommand<void>('BURST_COMMAND');
+    const unregisterCommand = editor.registerCommand(
+      BURST_COMMAND,
+      () => {
+        editor.update(() => {
+          $getRoot().markDirty();
+        });
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    );
+    const unregisterUpdate = editor.registerUpdateListener(() => {
+      editor.update(() => {
+        // bounded: a single no-op update per commit
+      });
+    });
+
+    for (let i = 0; i < 150; i++) {
+      editor.dispatchCommand(BURST_COMMAND, undefined);
+      // Yield only microtasks: commits flush, but the macrotask budget reset
+      // never gets a chance to run within the burst.
+      for (let j = 0; j < 4; j++) {
+        await Promise.resolve();
+      }
+    }
+    unregisterUpdate();
+    unregisterCommand();
+
+    expect(warnListener).toHaveBeenCalledTimes(0);
+    expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('still detects a runaway cascade that dispatches commands from a mutation listener', async () => {
+    // Mutation listeners run during $commitPendingUpdates with
+    // editor._updating === false. A runaway loop whose every cycle also
+    // dispatches a command from one must not reset its own cascade budget and
+    // escape detection: commands dispatched mid-commit are update machinery,
+    // not fresh external actions (see isCommittingPendingUpdates).
+    const errorListener = vi.fn();
+    const warnListener = vi.fn();
+    init(errorListener, undefined, warnListener);
+
+    const NOOP_COMMAND = createCommand<void>('NOOP_COMMAND');
+    let textKey = '';
+    editor.update(
+      () => {
+        const text = $createTextNode('a');
+        $getRoot().clear().append($createParagraphNode().append(text));
+        textKey = text.getKey();
+      },
+      {discrete: true},
+    );
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    const unregisterMutation = editor.registerMutationListener(TextNode, () => {
+      editor.dispatchCommand(NOOP_COMMAND, undefined);
+    });
+    // Unbounded: flips the text content again on every commit, forever.
+    const unregisterUpdate = editor.registerUpdateListener(() => {
+      editor.update(() => {
+        const text = $getNodeByKey<TextNode>(textKey);
+        if (text !== null) {
+          text.setTextContent(text.getTextContent() === 'a' ? 'b' : 'a');
+        }
+      });
+    });
+
+    editor.update(() => {
+      const text = $getNodeByKey<TextNode>(textKey);
+      if (text !== null) {
+        text.setTextContent('b');
+      }
+    });
+    // Drain only microtasks: the runaway never yields to the event loop, so
+    // the macrotask budget reset cannot save it either.
+    for (let i = 0; i < 800 && warnListener.mock.calls.length === 0; i++) {
+      await Promise.resolve();
+    }
+    unregisterUpdate();
+    unregisterMutation();
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(warnListener).toHaveBeenCalledTimes(1);
+    expect(warnListener.mock.calls[0][0].message).toMatch(
+      /endlessly enqueueing/,
+    );
+    expect(errorListener).toHaveBeenCalledTimes(0);
+
+    // editor should still be usable after the cascade is cut
+    editor.update(
+      () => {
+        $getRoot().markDirty();
+      },
+      {discrete: true},
+    );
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+    expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
   it('Should be able to update an editor state without a root element', () => {
     const ref = createRef<HTMLDivElement>();
 

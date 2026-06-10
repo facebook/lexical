@@ -30,9 +30,8 @@ import {
   PullQuoteNode,
 } from '../../nodes/PullQuoteNode';
 
-export const INSERT_PULLQUOTE_COMMAND: LexicalCommand<void> = createCommand(
-  'INSERT_PULLQUOTE_COMMAND',
-);
+export const INSERT_PULLQUOTE_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('INSERT_PULLQUOTE_COMMAND');
 
 // Resolve a click / mousedown target to the PullQuoteNode a chrome
 // interaction should select, or null when the target is inside one of the
@@ -59,11 +58,11 @@ function $resolveChromeTarget(
   return node;
 }
 
-export const PullQuoteExtension = defineExtension({
+export const PullQuoteExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     // Mirror NodeSelection state onto a `data-selected` attribute on the
     // host DOM so CSS can render the selected outline.
-    configExtension(NodeSelectionDataSelectedExtension, {
+    /* @__PURE__ */ configExtension(NodeSelectionDataSelectedExtension, {
       nodes: [PullQuoteNode],
     }),
   ],

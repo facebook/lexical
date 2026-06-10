@@ -47,9 +47,8 @@ import {
 
 import {$createCardNode, $isCardNode, CardNode} from '../../nodes/CardNode';
 
-export const INSERT_CARD_COMMAND: LexicalCommand<void> = createCommand(
-  'INSERT_CARD_COMMAND',
-);
+export const INSERT_CARD_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('INSERT_CARD_COMMAND');
 
 // Promote a RangeSelection adjacent to a CardNode boundary into a
 // NodeSelection on the Card. Once the NodeSelection is set, the
@@ -229,13 +228,13 @@ function $resolveCardChromeTarget(
   return node;
 }
 
-export const CardExtension = defineExtension({
+export const CardExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     // The default `$shouldInsertAfter` predicate only picks up block
     // decorators that opt in; this override adds the Card so that clicking
     // the empty area below a trailing Card inserts a fresh paragraph after
     // it instead of leaving the caret in an awkward place.
-    configExtension(ClickAfterLastBlockExtension, {
+    /* @__PURE__ */ configExtension(ClickAfterLastBlockExtension, {
       $shouldInsertAfter: node =>
         $defaultShouldInsertAfter(node) || $isCardNode(node),
     }),
@@ -244,7 +243,9 @@ export const CardExtension = defineExtension({
     // chrome is rendered through `decorate()`, but selecting the whole Card is
     // driven from the extension's CLICK_COMMAND below, so the attribute is set
     // here rather than via `useLexicalNodeSelection` inside the component.
-    configExtension(NodeSelectionDataSelectedExtension, {nodes: [CardNode]}),
+    /* @__PURE__ */ configExtension(NodeSelectionDataSelectedExtension, {
+      nodes: [CardNode],
+    }),
   ],
   name: '@lexical/playground/Card',
   register: editor => {

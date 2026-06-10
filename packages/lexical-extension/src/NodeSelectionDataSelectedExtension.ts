@@ -51,72 +51,73 @@ export interface NodeSelectionDataSelectedConfig {
  * The matched host needs a corresponding CSS rule, e.g.
  * `.lexical-card-node[data-selected='true'] { outline: ... }`.
  */
-export const NodeSelectionDataSelectedExtension = defineExtension({
-  config: safeCast<NodeSelectionDataSelectedConfig>({
-    attribute: 'data-selected',
-    nodes: [],
-  }),
-  // Expand the configured classes to the types of every registered subclass,
-  // so a subclass instance still matches without a runtime `instanceof`. This
-  // needs the editor's node list, which is only available before creation.
-  init(editorConfig, config) {
-    const wantedTypes = new Set(config.nodes.map(klass => klass.getType()));
-    const matchTypes = new Set(wantedTypes);
-    const subtypeMap = getRegisteredSubtypeMap(
-      getKnownTypesAndNodes(editorConfig).nodes,
-    );
-    for (const wanted of wantedTypes) {
-      const subtypes = subtypeMap.get(wanted);
-      if (subtypes) {
-        for (const subtype of subtypes) {
-          matchTypes.add(subtype);
+export const NodeSelectionDataSelectedExtension =
+  /* @__PURE__ */ defineExtension({
+    config: /* @__PURE__ */ safeCast<NodeSelectionDataSelectedConfig>({
+      attribute: 'data-selected',
+      nodes: [],
+    }),
+    // Expand the configured classes to the types of every registered subclass,
+    // so a subclass instance still matches without a runtime `instanceof`. This
+    // needs the editor's node list, which is only available before creation.
+    init(editorConfig, config) {
+      const wantedTypes = new Set(config.nodes.map(klass => klass.getType()));
+      const matchTypes = new Set(wantedTypes);
+      const subtypeMap = getRegisteredSubtypeMap(
+        getKnownTypesAndNodes(editorConfig).nodes,
+      );
+      for (const wanted of wantedTypes) {
+        const subtypes = subtypeMap.get(wanted);
+        if (subtypes) {
+          for (const subtype of subtypes) {
+            matchTypes.add(subtype);
+          }
         }
       }
-    }
-    return {matchTypes};
-  },
-  // Each consuming extension contributes its own node type through a separate
-  // `configExtension` call, but they all resolve to this single named
-  // extension. The default shallow merge would let the last `nodes` array win
-  // and silently drop every earlier type, so concatenate them instead.
-  mergeConfig(config, partial) {
-    return shallowMergeConfig(config, {
-      ...partial,
-      ...(partial.nodes && {nodes: [...config.nodes, ...partial.nodes]}),
-    });
-  },
-  name: '@lexical/extension/NodeSelectionDataSelected',
-  register(editor, config, state) {
-    const {attribute} = config;
-    const {matchTypes} = state.getInitResult();
-    let selectedKeys = new Set<NodeKey>();
-    return editor.registerUpdateListener(({editorState}) => {
-      const nextKeys = new Set<NodeKey>();
-      editorState.read(() => {
-        const selection = $getSelection();
-        if ($isNodeSelection(selection)) {
-          for (const node of selection.getNodes()) {
-            if (matchTypes.has(node.getType())) {
-              nextKeys.add(node.getKey());
+      return {matchTypes};
+    },
+    // Each consuming extension contributes its own node type through a separate
+    // `configExtension` call, but they all resolve to this single named
+    // extension. The default shallow merge would let the last `nodes` array win
+    // and silently drop every earlier type, so concatenate them instead.
+    mergeConfig(config, partial) {
+      return shallowMergeConfig(config, {
+        ...partial,
+        ...(partial.nodes && {nodes: [...config.nodes, ...partial.nodes]}),
+      });
+    },
+    name: '@lexical/extension/NodeSelectionDataSelected',
+    register(editor, config, state) {
+      const {attribute} = config;
+      const {matchTypes} = state.getInitResult();
+      let selectedKeys = new Set<NodeKey>();
+      return editor.registerUpdateListener(({editorState}) => {
+        const nextKeys = new Set<NodeKey>();
+        editorState.read(() => {
+          const selection = $getSelection();
+          if ($isNodeSelection(selection)) {
+            for (const node of selection.getNodes()) {
+              if (matchTypes.has(node.getType())) {
+                nextKeys.add(node.getKey());
+              }
+            }
+          }
+        });
+        for (const key of selectedKeys) {
+          if (!nextKeys.has(key)) {
+            const dom = editor.getElementByKey(key);
+            if (dom !== null) {
+              dom.removeAttribute(attribute);
             }
           }
         }
-      });
-      for (const key of selectedKeys) {
-        if (!nextKeys.has(key)) {
+        for (const key of nextKeys) {
           const dom = editor.getElementByKey(key);
           if (dom !== null) {
-            dom.removeAttribute(attribute);
+            dom.setAttribute(attribute, 'true');
           }
         }
-      }
-      for (const key of nextKeys) {
-        const dom = editor.getElementByKey(key);
-        if (dom !== null) {
-          dom.setAttribute(attribute, 'true');
-        }
-      }
-      selectedKeys = nextKeys;
-    });
-  },
-});
+        selectedKeys = nextKeys;
+      });
+    },
+  });

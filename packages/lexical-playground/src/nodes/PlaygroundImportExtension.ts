@@ -10,13 +10,18 @@ import type {DOMPreprocessFn} from '@lexical/html';
 import type {LexicalNode} from 'lexical';
 
 import {ClipboardDOMImportExtension} from '@lexical/clipboard';
+import {CodeImportExtension} from '@lexical/code-core';
 import {
   CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
+  HorizontalRuleImportExtension,
   sel,
 } from '@lexical/html';
 import {LinkExtension} from '@lexical/link';
+import {ListImportExtension} from '@lexical/list';
+import {RichTextImportExtension} from '@lexical/rich-text';
+import {TableImportExtension} from '@lexical/table';
 import {
   $isElementNode,
   $isTextNode,
@@ -110,7 +115,7 @@ const PlaygroundInlineStyleRule = /* @__PURE__ */ defineImportRule({
  * a regular Card child. Slots are intentionally NOT auto-imported (mirroring
  * the export side and NodeState) — a host opts in with a rule.
  */
-const CardImportRule = defineImportRule({
+const CardImportRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const card = $createCardNode();
     // Clear the seeded default body paragraph so imported children replace it.
@@ -234,7 +239,7 @@ export const PlaygroundImportRules = [PlaygroundInlineStyleRule];
  * missing one of the slots can't silently inherit the default text. Mirrors
  * the explicit "clear seeded children" step CardImportRule does above.
  */
-const PullQuoteImportRule = defineImportRule({
+const PullQuoteImportRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const pullquote = $createPullQuoteNode();
     $removeSlot(pullquote, 'quote');
@@ -304,17 +309,18 @@ export const PlaygroundImportExtension = /* @__PURE__ */ defineExtension({
  * {@link PlaygroundImportExtension}) so plain-text editors never pull in
  * `RichText`/`List`/`Table`/`Code`/`HorizontalRule`.
  */
-export const PlaygroundRichTextImportExtension = defineExtension({
-  dependencies: [
-    RichTextImportExtension,
-    ListImportExtension,
-    TableImportExtension,
-    CodeImportExtension,
-    HorizontalRuleImportExtension,
-    configExtension(DOMImportExtension, {
-      preprocess: [$rewrapOrphanedSlotWrappers],
-      rules: PlaygroundRichTextImportRules,
-    }),
-  ],
-  name: '@lexical/playground/RichTextImport',
-});
+export const PlaygroundRichTextImportExtension =
+  /* @__PURE__ */ defineExtension({
+    dependencies: [
+      RichTextImportExtension,
+      ListImportExtension,
+      TableImportExtension,
+      CodeImportExtension,
+      HorizontalRuleImportExtension,
+      /* @__PURE__ */ configExtension(DOMImportExtension, {
+        preprocess: [$rewrapOrphanedSlotWrappers],
+        rules: PlaygroundRichTextImportRules,
+      }),
+    ],
+    name: '@lexical/playground/RichTextImport',
+  });

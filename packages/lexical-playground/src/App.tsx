@@ -71,7 +71,6 @@ import {EmojisExtension} from './plugins/EmojisExtension';
 import {EquationsExtension} from './plugins/EquationsExtension';
 import {ExcalidrawExtension} from './plugins/ExcalidrawExtension';
 import {FigmaExtension} from './plugins/FigmaExtension';
-import {FigureExtension} from './plugins/FigureExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
 import {LayoutExtension} from './plugins/LayoutExtension/LayoutExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
@@ -81,6 +80,7 @@ import {PageBreakExtension} from './plugins/PageBreakExtension';
 import {PagesReactExtension} from './plugins/PagesReactExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {PollExtension} from './plugins/PollExtension';
+import {PullQuoteExtension} from './plugins/PullQuoteExtension';
 import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import {TabFocusExtension} from './plugins/TabFocusExtension';
 import {TerseExportExtension} from './plugins/TerseExportExtension';
@@ -211,7 +211,7 @@ const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
     LayoutExtension,
     ExcalidrawExtension,
     CardExtension,
-    FigureExtension,
+    PullQuoteExtension,
   ],
   name: '@lexical/playground/RichText',
 });

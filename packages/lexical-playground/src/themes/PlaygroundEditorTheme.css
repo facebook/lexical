@@ -826,15 +826,35 @@
   border-color: #2563eb;
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
 }
-.lexical-figure-node {
-  border: 2px solid #cbd5e1;
-  border-radius: 8px;
-  margin: 8px 0;
-  padding: 12px;
+.lexical-pullquote-node {
+  border-left: 4px solid #2563eb;
+  background: #f8fafc;
+  border-radius: 4px;
+  margin: 12px 0;
+  padding: 16px 20px;
 }
-.lexical-figure-node[data-selected='true'] {
-  border-color: #2563eb;
+.lexical-pullquote-node[data-selected='true'] {
+  border-color: #1d4ed8;
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+.lexical-pullquote-body {
+  outline: none;
+  font-style: italic;
+  font-size: 18px;
+  color: #1f2937;
+  line-height: 1.5;
+}
+.lexical-pullquote-attribution {
+  outline: none;
+  margin-top: 8px;
+  color: #4b5563;
+  font-size: 14px;
+  text-align: right;
+}
+.lexical-pullquote-attribution::before {
+  content: '— ';
+  user-select: none;
+  -webkit-user-select: none;
 }
 /* Title slot — a header section with a small-caps label above the editable
    paragraph and a thin separator below. The title's editable paragraph

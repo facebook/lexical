@@ -27,7 +27,6 @@ import {EmojiNode} from './EmojiNode';
 import {EquationNode} from './EquationNode';
 import {ExcalidrawNode} from './ExcalidrawNode';
 import {FigmaNode} from './FigmaNode';
-import {FigureNode} from './FigureNode';
 import {ImageNode} from './ImageNode';
 import {KeywordNode} from './KeywordNode';
 import {LayoutContainerNode} from './LayoutContainerNode';
@@ -35,6 +34,7 @@ import {LayoutItemNode} from './LayoutItemNode';
 import {MentionNode} from './MentionNode';
 import {PageBreakNode} from './PageBreakNode';
 import {PollNode} from './PollNode';
+import {PullQuoteNode} from './PullQuoteNode';
 import {SlotContainerNode} from './SlotContainerNode';
 import {SpecialTextNode} from './SpecialTextNode';
 import {StickyNode} from './StickyNode';
@@ -78,7 +78,7 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   DateTimeNode,
   CardNode,
   SlotContainerNode,
-  FigureNode,
+  PullQuoteNode,
 ];
 
 export default PlaygroundNodes;

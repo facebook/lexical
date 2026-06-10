@@ -30,8 +30,8 @@ async function insertCard(page) {
   await sleep(300);
 }
 
-async function insertFigure(page) {
-  await page.keyboard.type('/figure');
+async function insertPullQuote(page) {
+  await page.keyboard.type('/pull');
   await sleep(300);
   await page.keyboard.press('Enter');
   await sleep(300);
@@ -89,18 +89,9 @@ function slotCount(frame, name) {
   );
 }
 
-function figureCount(frame) {
+function pullquoteCount(frame) {
   return frame.evaluate(
-    () => document.querySelectorAll('.lexical-figure-node').length,
-  );
-}
-
-function equationCount(frame) {
-  return frame.evaluate(
-    () =>
-      document.querySelectorAll(
-        '.lexical-figure-node [data-lexical-slot="media"] .editor-equation',
-      ).length,
+    () => document.querySelectorAll('.lexical-pullquote-node').length,
   );
 }
 
@@ -144,14 +135,23 @@ test.describe('Named slot collaborative convergence', () => {
     await expect.poll(() => cardBodyText(right)).toBe('Body');
   });
 
-  test('a DecoratorNode slot host converges with its media slot intact', async ({
+  test('a DecoratorNode slot host converges with both editable slots intact', async ({
     page,
   }) => {
     await focusEditor(page);
-    await insertFigure(page);
+    await insertPullQuote(page);
 
     const right = otherFrame(page);
-    await expect.poll(() => figureCount(right)).toBe(1);
-    await expect.poll(() => equationCount(right)).toBe(1);
+    await expect.poll(() => pullquoteCount(right)).toBe(1);
+    await expect.poll(() => slotCount(right, 'quote')).toBe(1);
+    await expect.poll(() => slotCount(right, 'attribution')).toBe(1);
+    // Both slot values are SlotContainerNodes with seeded text — the seed
+    // must arrive on the other client.
+    await expect
+      .poll(() => slotText(right, 'quote'))
+      .toContain('discover the limits');
+    await expect
+      .poll(() => slotText(right, 'attribution'))
+      .toBe('Arthur C. Clarke');
   });
 });

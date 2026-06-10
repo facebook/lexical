@@ -18,9 +18,9 @@ import {
 } from '@lexical/html';
 import {LinkExtension} from '@lexical/link';
 import {
-  $isDecoratorNode,
   $isElementNode,
   $isTextNode,
+  $removeSlot,
   $setSlot,
   configExtension,
   defineExtension,
@@ -31,7 +31,7 @@ import {
 import {parseAllowedFontSize} from '../plugins/ToolbarPlugin/fontSize';
 import {parseAllowedColor} from '../ui/ColorPicker';
 import {$createCardNode} from './CardNode';
-import {$createFigureNode} from './FigureNode';
+import {$createPullQuoteNode} from './PullQuoteNode';
 import {$createSlotContainerNode} from './SlotContainerNode';
 
 function getPlaygroundExtraStyles(element: HTMLElement): string {
@@ -139,12 +139,12 @@ const CardImportRule = defineImportRule({
 
 /**
  * A browser's contenteditable Cmd+A → Cmd+C strips the outer
- * `<div class="lexical-card-node">` / `<div class="lexical-figure-node">`
+ * `<div class="lexical-card-node">` / `<div class="lexical-pullquote-node">`
  * wrapper that the host's exportDOM emits, leaving the
  * `<div data-lexical-slot="...">` children as fragment-root siblings.
  * Re-assemble them under a synthetic host div before the import walk so
- * CardImportRule / FigureImportRule pick them up and the slot HTML round-trip
- * closes through external paste targets too.
+ * CardImportRule / PullQuoteImportRule pick them up and the slot HTML
+ * round-trip closes through external paste targets too.
  *
  * Two host shapes are handled in one pass over the fragment-root children:
  * - A Card group is opened by a `data-lexical-slot="title"` wrapper and
@@ -152,36 +152,52 @@ const CardImportRule = defineImportRule({
  *   slot wrapper closes the group. Two title wrappers in a row become two
  *   distinct Card groups (a single group would make CardImportRule's second
  *   `$setSlot(card, 'title', ...)` silently detach the first title).
- * - A Figure group is just the single `data-lexical-slot="media"` wrapper.
- *   Figure is a DecoratorNode-as-host with no children channel, so absorbing
- *   following siblings would pull unrelated paste content into it.
+ * - A PullQuote group is opened by a `data-lexical-slot="quote"` wrapper
+ *   and absorbs the immediately following `data-lexical-slot="attribution"`
+ *   if present. PullQuote is a DecoratorNode-as-host with no children
+ *   channel, so other siblings would pull unrelated paste content into it.
  */
 const $rewrapOrphanedSlotWrappers: DOMPreprocessFn = (dom, _ctx, $next) => {
   const doc = isDOMDocumentNode(dom) ? dom : dom.ownerDocument;
   if (doc !== null) {
     const root: ParentNode = isDOMDocumentNode(dom) ? dom.body : dom;
     type Group = {
-      kind: 'card' | 'figure';
+      kind: 'card' | 'pullquote';
       members: Element[];
       anchor: Element;
     };
     const groups: Group[] = [];
     let openCard: Group | null = null;
+    let openPullQuote: Group | null = null;
     for (const child of Array.from(root.children)) {
       if (!isHTMLElement(child)) {
-        // A non-element root sibling closes the current Card run — we can't
+        // A non-element root sibling closes the current runs — we can't
         // safely fold it (it's not part of the host's exported shape) and
-        // letting the run cross it would absorb unrelated content.
+        // letting a run cross it would absorb unrelated content.
         openCard = null;
+        openPullQuote = null;
         continue;
       }
       const slotName = child.getAttribute('data-lexical-slot');
       if (slotName === 'title') {
         openCard = {anchor: child, kind: 'card', members: [child]};
+        openPullQuote = null;
         groups.push(openCard);
-      } else if (slotName === 'media') {
+      } else if (slotName === 'quote') {
+        openPullQuote = {
+          anchor: child,
+          kind: 'pullquote',
+          members: [child],
+        };
         openCard = null;
-        groups.push({anchor: child, kind: 'figure', members: [child]});
+        groups.push(openPullQuote);
+      } else if (slotName === 'attribution') {
+        // Only absorb attribution when a PullQuote is open; an orphan
+        // attribution wrapper with no preceding `quote` is dropped (it
+        // shouldn't leak into an unrelated Card body below).
+        if (openPullQuote !== null) {
+          openPullQuote.members.push(child);
+        }
       } else if (openCard !== null) {
         openCard.members.push(child);
       }
@@ -189,7 +205,7 @@ const $rewrapOrphanedSlotWrappers: DOMPreprocessFn = (dom, _ctx, $next) => {
     for (const group of groups) {
       const hostDiv = doc.createElement('div');
       hostDiv.className =
-        group.kind === 'card' ? 'lexical-card-node' : 'lexical-figure-node';
+        group.kind === 'card' ? 'lexical-card-node' : 'lexical-pullquote-node';
       group.anchor.parentNode?.insertBefore(hostDiv, group.anchor);
       for (const member of group.members) {
         hostDiv.appendChild(member);
@@ -207,45 +223,50 @@ const $rewrapOrphanedSlotWrappers: DOMPreprocessFn = (dom, _ctx, $next) => {
 export const PlaygroundImportRules = [PlaygroundInlineStyleRule];
 
 /**
- * Reconstruct a {@link FigureNode} from its exported HTML. Mirrors
- * `FigureNode.exportDOM`: a `<div class="lexical-figure-node">` wrapping a
- * single `<div data-lexical-slot="media">` whose child is the imported
- * EquationNode (via EquationNode.importDOM). The default Equation seeded by
- * `$createFigureNode` is replaced via `$setSlot` once the imported slot value
- * arrives. Slots are intentionally NOT auto-imported (mirroring the export
- * side and NodeState) — a host opts in with a rule.
+ * Reconstruct a {@link PullQuoteNode} from its exported HTML. Mirrors
+ * `PullQuoteNode.exportDOM`: a `<div class="lexical-pullquote-node">`
+ * wrapping `<div data-lexical-slot="quote">` and
+ * `<div data-lexical-slot="attribution">`, both of which become
+ * SlotContainerNodes seeded with the imported children.
+ *
+ * `$createPullQuoteNode` seeds both slots with default text — we drop both
+ * seeds before walking the imported wrappers so an HTML fragment that's
+ * missing one of the slots can't silently inherit the default text. Mirrors
+ * the explicit "clear seeded children" step CardImportRule does above.
  */
-const FigureImportRule = defineImportRule({
+const PullQuoteImportRule = defineImportRule({
   $import: (ctx, el) => {
-    const figure = $createFigureNode();
+    const pullquote = $createPullQuoteNode();
+    $removeSlot(pullquote, 'quote');
+    $removeSlot(pullquote, 'attribution');
     for (const wrapper of Array.from(
       el.querySelectorAll(':scope > [data-lexical-slot]'),
     )) {
-      if (wrapper.getAttribute('data-lexical-slot') !== 'media') {
-        continue;
-      }
-      // setSlot requires a non-inline DecoratorNode for the `media` slot
-      // value; pick the first imported child that satisfies the same guard.
-      const slotValue = ctx
-        .$importChildren(wrapper)
-        .find(node => $isDecoratorNode(node) && !node.isInline());
-      if (slotValue !== undefined) {
-        $setSlot(figure, 'media', slotValue);
+      const slotName = wrapper.getAttribute('data-lexical-slot');
+      if (slotName === 'quote' || slotName === 'attribution') {
+        $setSlot(
+          pullquote,
+          slotName,
+          $createSlotContainerNode().append(...ctx.$importChildren(wrapper)),
+        );
       }
     }
-    return [figure];
+    return [pullquote];
   },
-  match: sel.tag('div').classAll('lexical-figure-node'),
-  name: '@lexical/playground/figure-host',
+  match: sel.tag('div').classAll('lexical-pullquote-node'),
+  name: '@lexical/playground/pullquote-host',
 });
 
 /**
  * Rich-text-only playground import rules. Lives with
  * {@link PlaygroundRichTextImportExtension} so plain-text editors — which never
- * register `CardNode`/`FigureNode` — don't carry a rule that would build an
+ * register `CardNode`/`PullQuoteNode` — don't carry a rule that would build an
  * unregistered node.
  */
-export const PlaygroundRichTextImportRules = [CardImportRule, FigureImportRule];
+export const PlaygroundRichTextImportRules = [
+  CardImportRule,
+  PullQuoteImportRule,
+];
 
 /**
  * Plain-text-safe DOM-import baseline, added in `AppExtension` so it applies in

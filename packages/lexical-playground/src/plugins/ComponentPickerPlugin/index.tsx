@@ -43,11 +43,11 @@ import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsibleExtension';
 import {INSERT_DATETIME_COMMAND} from '../DateTimeExtension';
 import {InsertEquationDialog} from '../EquationsExtension';
 import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawExtension';
-import {INSERT_FIGURE_COMMAND} from '../FigureExtension';
 import {INSERT_IMAGE_COMMAND, InsertImageDialog} from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutExtension/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
 import {InsertPollDialog} from '../PollExtension';
+import {INSERT_PULLQUOTE_COMMAND} from '../PullQuoteExtension';
 import {InsertTableDialog} from '../TablePlugin';
 
 export class ComponentPickerOption extends MenuOption {
@@ -339,10 +339,11 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
       keywords: ['card', 'slot', 'named slots'],
       onSelect: () => editor.dispatchCommand(INSERT_CARD_COMMAND, undefined),
     }),
-    new ComponentPickerOption('Figure', {
+    new ComponentPickerOption('Pull Quote', {
       icon: <i className="icon caret-right" />,
-      keywords: ['figure', 'equation', 'media', 'slot', 'decorator slot'],
-      onSelect: () => editor.dispatchCommand(INSERT_FIGURE_COMMAND, undefined),
+      keywords: ['pull quote', 'quote', 'attribution', 'cite', 'slot'],
+      onSelect: () =>
+        editor.dispatchCommand(INSERT_PULLQUOTE_COMMAND, undefined),
     }),
     new ComponentPickerOption('Columns Layout', {
       icon: <i className="icon columns" />,

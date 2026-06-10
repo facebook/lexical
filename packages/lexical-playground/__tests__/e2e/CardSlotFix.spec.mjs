@@ -268,12 +268,12 @@ test.describe('Card host data-selected mirroring', () => {
     await initialize({isCollab, page});
   });
 
-  // CardNode and FigureNode both register the shared
+  // CardNode and PullQuoteNode both register the shared
   // NodeSelectionDataSelectedExtension under one name, each contributing its
   // own node type. The two `nodes` arrays must concatenate during config
   // merge; a plain shallow merge would let the last contributor win and the
   // Card host would never mirror its selection. This guards the Card side
-  // (FigureSlot guards the Figure side, so the pair covers the merge).
+  // (PullQuoteSlot guards the PullQuote side, so the pair covers the merge).
   test('selecting a card sets data-selected on its host', async ({page}) => {
     await focusEditor(page);
     await insertCard(page);

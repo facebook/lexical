@@ -160,7 +160,7 @@ export function $getMarkIDs(
 /**
  * Configures {@link MarkNode}
  */
-export const MarkExtension = defineExtension({
+export const MarkExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/mark',
   nodes: () => [MarkNode],
 });

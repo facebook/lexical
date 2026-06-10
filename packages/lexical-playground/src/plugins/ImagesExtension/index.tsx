@@ -79,7 +79,7 @@ function isGoogleDocCheckboxImg(img: HTMLImageElement): boolean {
   );
 }
 
-const ImgRule = defineImportRule({
+const ImgRule = /* @__PURE__ */ defineImportRule({
   $import: (_ctx, el, $next) => {
     const src = el.getAttribute('src');
     if (!src || src.startsWith('file:///') || isGoogleDocCheckboxImg(el)) {
@@ -103,13 +103,13 @@ const ImgRule = defineImportRule({
  * content is imported into the ImageNode's nested caption editor), so a
  * top-level handler drops it entirely.
  */
-const FigcaptionRule = defineImportRule({
+const FigcaptionRule = /* @__PURE__ */ defineImportRule({
   $import: () => [],
   match: sel.tag('figcaption'),
   name: '@lexical/playground/figcaption',
 });
 
-const FigureRule = defineImportRule({
+const FigureRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const imported = ctx.$importChildren(el);
     const figcaption = el.querySelector('figcaption');
@@ -141,7 +141,7 @@ const FigureRule = defineImportRule({
 export type InsertImagePayload = Readonly<ImagePayload>;
 
 export const INSERT_IMAGE_COMMAND: LexicalCommand<InsertImagePayload> =
-  createCommand('INSERT_IMAGE_COMMAND');
+  /* @__PURE__ */ createCommand('INSERT_IMAGE_COMMAND');
 
 export function InsertImageUriDialogBody({
   onClick,
@@ -297,9 +297,9 @@ export function InsertImageDialog({
   );
 }
 
-export const ImagesExtension = defineExtension({
+export const ImagesExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    configExtension(DOMImportExtension, {
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
       rules: [FigcaptionRule, FigureRule, ImgRule],
     }),
   ],

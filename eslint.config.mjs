@@ -403,6 +403,19 @@ export default [
     },
   },
 
+  // Override: Package sources - require /* @__PURE__ */ annotations on
+  // module-scope calls to the side-effect-free lexical factories
+  // (defineExtension, createCommand, defineImportRule, ...) so bundlers
+  // can tree-shake unused definitions. The pre-commit `eslint --fix`
+  // inserts them automatically. Not applied to tests (never bundled).
+  {
+    files: ['packages/**/src/**'],
+    ignores: ['packages/**/src/__tests__/**'],
+    rules: {
+      '@lexical/internal/require-pure-annotation': ERROR,
+    },
+  },
+
   // Override: Tests - allow imports from self
   {
     files: ['packages/**/__tests__/**'],

@@ -38,6 +38,7 @@ import {
   $createQuoteNode,
   RichTextExtension,
 } from '@lexical/rich-text';
+import {TableExtension} from '@lexical/table';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -55,10 +56,7 @@ import Editor from './Editor';
 import {registerSettingsSynchronization} from './hooks/useSynchronizeSettings';
 import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
-import {
-  PlaygroundImportExtension,
-  PlaygroundRichTextImportExtension,
-} from './nodes/PlaygroundImportExtension';
+import {PlaygroundImportExtension} from './nodes/PlaygroundImportExtension';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
 import {PlaygroundDOMRenderExtension} from './PlaygroundDOMRenderExtension';
 import {AutocompleteExtension} from './plugins/AutocompleteExtension';
@@ -178,17 +176,18 @@ function $prepopulatedRichText() {
 }
 
 // These are only enabled for rich-text mode
-const PlaygroundRichTextExtension = defineExtension({
+const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    configExtension(RichTextExtension, {
+    /* @__PURE__ */ configExtension(RichTextExtension, {
       escapeFormatTriggers: {
         code: {arrow: true, click: true, enter: true, onlyAtBoundary: true},
       },
     }),
-    // Rich-text-only DOM importers (rich-text/list/table/code/hr); kept out of
+    // Each node extension below registers its own DOM-import rules, so the
+    // rich-text importer set tracks this node set automatically (kept out of
     // the always-on PlaygroundImportExtension so plain-text mode doesn't pull
-    // in RichTextExtension (which conflicts with PlainTextExtension).
-    PlaygroundRichTextImportExtension,
+    // in RichTextExtension, which conflicts with PlainTextExtension).
+    TableExtension,
     ImagesExtension,
     HorizontalRuleExtension,
     PageBreakExtension,
@@ -198,7 +197,9 @@ const PlaygroundRichTextExtension = defineExtension({
     TabFocusExtension,
     CollapsibleExtension,
     CodeHighlightExtension,
-    configExtension(ListExtension, {shouldPreserveNumbering: false}),
+    /* @__PURE__ */ configExtension(ListExtension, {
+      shouldPreserveNumbering: false,
+    }),
     CheckListExtension,
     PlaygroundMarkdownShortcutsExtension,
     PageBreakExtension,
@@ -211,7 +212,7 @@ const PlaygroundRichTextExtension = defineExtension({
   name: '@lexical/playground/RichText',
 });
 
-const AppExtension = defineExtension({
+const AppExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     AutoFocusExtension,
     ClearEditorExtension,
@@ -228,22 +229,23 @@ const AppExtension = defineExtension({
     DragDropPasteExtension,
     EmojisExtension,
     MentionsExtension,
-    configExtension(LinkExtension, {validateUrl}),
+    /* @__PURE__ */ configExtension(LinkExtension, {validateUrl}),
     PlaygroundAutoLinkExtension,
     ClickableLinkExtension,
     SelectionAlwaysOnDisplayExtension,
     TerseExportExtension,
-    configExtension(ClickAfterLastBlockExtension, {
+    /* @__PURE__ */ configExtension(ClickAfterLastBlockExtension, {
       $shouldInsertAfter: node =>
         $defaultShouldInsertAfter(node) || $isCodeNode(node),
     }),
-    configExtension(AutocompleteExtension, {disabled: true}),
-    configExtension(VisibleNonPrintingExtension, {disabled: true}),
+    /* @__PURE__ */ configExtension(AutocompleteExtension, {disabled: true}),
+    /* @__PURE__ */ configExtension(VisibleNonPrintingExtension, {
+      disabled: true,
+    }),
     // DOMImportExtension pipeline — `PlaygroundImportExtension` bundles
-    // the shared `CoreImportExtension` baseline, every per-package
-    // import extension (rich-text, list, link, table, code, hr), the
-    // playground-specific inline-style overlay and the
-    // `ClipboardDOMImportExtension` paste handler.
+    // the shared `CoreImportExtension` baseline, the playground-specific
+    // inline-style overlay and the `ClipboardDOMImportExtension` paste
+    // handler. Per-node import rules ride along with each node extension.
     PlaygroundImportExtension,
     // Replaces the legacy `buildHTMLConfig().export` overrides.
     PlaygroundDOMRenderExtension,
@@ -287,7 +289,7 @@ function buildExtensionFromSettings(settings: DynamicSettings) {
         : $prepopulatedRichText,
     dependencies: [
       AppExtension,
-      configExtension(HistoryExtension, {disabled: isCollab}),
+      /* @__PURE__ */ configExtension(HistoryExtension, {disabled: isCollab}),
       isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
     ],
     name: '@lexical/playground/dynamic-config',

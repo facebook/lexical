@@ -85,10 +85,10 @@ function parseOptions(json: unknown): Options {
   return options;
 }
 
-const questionState = createState('question', {
+const questionState = /* @__PURE__ */ createState('question', {
   parse: v => (typeof v === 'string' ? v : ''),
 });
-const optionsState = createState('options', {
+const optionsState = /* @__PURE__ */ createState('options', {
   isEqual: (a, b) =>
     a.length === b.length && JSON.stringify(a) === JSON.stringify(b),
   parse: parseOptions,

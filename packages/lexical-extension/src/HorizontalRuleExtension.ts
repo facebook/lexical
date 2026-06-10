@@ -46,7 +46,7 @@ import {batch, effect, ReadonlySignal, Signal, signal} from './signals';
 export type SerializedHorizontalRuleNode = SerializedLexicalNode;
 
 export const INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void> =
-  createCommand('INSERT_HORIZONTAL_RULE_COMMAND');
+  /* @__PURE__ */ createCommand('INSERT_HORIZONTAL_RULE_COMMAND');
 
 export class HorizontalRuleNode extends DecoratorNode<unknown> {
   static getType(): string {
@@ -134,7 +134,7 @@ function $toggleNodeSelection(
  * An extension for HorizontalRuleNode that provides an implementation that
  * works without any React dependency.
  */
-export const HorizontalRuleExtension = defineExtension({
+export const HorizontalRuleExtension = /* @__PURE__ */ defineExtension({
   dependencies: [EditorStateExtension, NodeSelectionExtension],
   name: '@lexical/extension/HorizontalRule',
   nodes: () => [HorizontalRuleNode],

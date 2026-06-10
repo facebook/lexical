@@ -18,7 +18,11 @@ export type {
   InsertTableCommandPayloadHeaders,
 } from './LexicalTableCommands';
 export {INSERT_TABLE_COMMAND} from './LexicalTableCommands';
-export {type TableConfig, TableExtension} from './LexicalTableExtension';
+export {
+  type TableConfig,
+  TableExtension,
+  TableImportExtension,
+} from './LexicalTableExtension';
 export type {SerializedTableNode} from './LexicalTableNode';
 export {
   $createTableNode,
@@ -90,7 +94,6 @@ export {
   $unmergeCell,
 } from './LexicalTableUtils';
 export {
-  TableImportExtension,
   TableImportRules,
   TableRowSchema,
   TableSchema,

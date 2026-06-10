@@ -32,11 +32,10 @@ import {
 } from '../../nodes/ExcalidrawNode';
 import ExcalidrawModal from '../../ui/ExcalidrawModal';
 
-export const INSERT_EXCALIDRAW_COMMAND: LexicalCommand<void> = createCommand(
-  'INSERT_EXCALIDRAW_COMMAND',
-);
+export const INSERT_EXCALIDRAW_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('INSERT_EXCALIDRAW_COMMAND');
 
-const ExcalidrawImportRule = defineImportRule({
+const ExcalidrawImportRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const data = el.getAttribute('data-lexical-excalidraw-json')!;
     const styles = window.getComputedStyle(el);
@@ -54,9 +53,11 @@ const ExcalidrawImportRule = defineImportRule({
   name: '@lexical/playground/excalidraw',
 });
 
-export const ExcalidrawExtension = defineExtension({
+export const ExcalidrawExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    configExtension(DOMImportExtension, {rules: [ExcalidrawImportRule]}),
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: [ExcalidrawImportRule],
+    }),
   ],
   name: '@lexical/playground/Excalidraw',
   nodes: [ExcalidrawNode],

@@ -12,15 +12,22 @@ import {DOMImportExtension} from './DOMImportExtension';
 
 /**
  * Bundles {@link CoreImportRules} into a {@link DOMImportExtension}-aware
- * extension. Depend on this from your editor (directly or via richer
- * extensions like `RichTextImportExtension`) to get the equivalent of the
- * legacy core `importDOM` behavior for `<p>`, `<span>`, `<b>`,
- * `<strong>`, `<em>`, `<i>`, `<code>`, `<mark>`, `<s>`, `<sub>`, `<sup>`,
- * `<u>`, `<br>`, and `#text`.
+ * extension. Node-providing extensions that contribute import rules
+ * (`RichTextExtension`, `ListExtension`, `LinkExtension`,
+ * `TableExtension`, `CodeExtension`, …) depend on this themselves, so
+ * most editors get it implicitly; depend on it directly to get the
+ * equivalent of the legacy core `importDOM` behavior for `<p>`,
+ * `<span>`, `<b>`, `<strong>`, `<em>`, `<i>`, `<code>`, `<mark>`,
+ * `<s>`, `<sub>`, `<sup>`, `<u>`, `<br>`, and `#text` (plus `<hr>`
+ * when `HorizontalRuleNode` is registered).
  *
  * @experimental
  */
-export const CoreImportExtension = defineExtension({
-  dependencies: [configExtension(DOMImportExtension, {rules: CoreImportRules})],
+export const CoreImportExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: CoreImportRules,
+    }),
+  ],
   name: '@lexical/html/CoreImport',
 });

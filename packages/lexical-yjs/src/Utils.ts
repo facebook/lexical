@@ -20,6 +20,8 @@ import {
   $isLineBreakNode,
   $isRootNode,
   $isTextNode,
+  $removeSlot,
+  $setSlot,
   createEditor,
   DecoratorNode,
   EditorState,
@@ -44,6 +46,9 @@ import {
   CollabLineBreakNode,
 } from './CollabLineBreakNode';
 import {$createCollabTextNode, CollabTextNode} from './CollabTextNode';
+
+// Mirrors the file-local alias used in CollabElementNode / CollabDecoratorNode.
+type IntentionallyMarkedAsDirtyElement = boolean;
 
 const baseExcludedProperties = new Set<string>([
   '__key',
@@ -804,5 +809,175 @@ export function $moveSelectionToPreviousNode(
   } else {
     // If the found node is also deleted, select the next one
     $moveSelectionToPreviousNode(prevNode.__key, currentEditorState);
+  }
+}
+
+// Slot reconcile shared by CollabElementNode + CollabDecoratorNode. The two
+// paths differ only in where the slot map rides — the element host keeps it
+// on `_xmlText`, the decorator host on `_xmlElem` — and in the lexical
+// host's type. The reconcile logic itself (drop slots missing from yjs, set
+// slots present in yjs) is identical, so keeping it in one place avoids the
+// risk of one path drifting from the other.
+//
+// `slotsParent` is the yjs node carrying the `slots` Y.Map attribute (the
+// host's `_xmlText` for element hosts, `_xmlElem` for decorator hosts).
+// `ownerCollab` is the collab host that owns the slot map; it's passed to
+// `$getOrInitCollabNodeFromSharedType` so a newly materialized slot collab
+// node is parented correctly.
+export function $syncSlotsFromYjsShared(
+  binding: Binding,
+  slotsParent: XmlText | XmlElement,
+  lexicalNode: ElementNode | DecoratorNode<unknown>,
+  ownerCollab: CollabElementNode | CollabDecoratorNode,
+): void {
+  const slotsY = slotsParent.getAttribute(SLOTS_ATTR_KEY) as unknown;
+  const yNames =
+    slotsY instanceof YMap ? new Set(slotsY.keys()) : new Set<string>();
+
+  for (const name of $getSlotNames(lexicalNode)) {
+    if (!yNames.has(name)) {
+      // Mirror children removal (splice -> destroy): drop the departing slot's
+      // collab node so its entry doesn't dangle in binding.collabNodeMap. The
+      // slot's shared type is already gone from the Y.Map here, so reach the
+      // collab node through the lexical key instead of the shared type.
+      const slotNode = $getSlot(lexicalNode, name);
+      if (slotNode !== null) {
+        const slotCollab = binding.collabNodeMap.get(slotNode.__key);
+        if (slotCollab !== undefined) {
+          slotCollab.destroy(binding);
+        }
+      }
+      $removeSlot(lexicalNode, name);
+    }
+  }
+
+  if (!(slotsY instanceof YMap)) {
+    return;
+  }
+  for (const [name, slotSharedType] of slotsY.entries()) {
+    const existingSlot = $getSlot(lexicalNode, name);
+    if (existingSlot !== null) {
+      const existingCollab = binding.collabNodeMap.get(existingSlot.__key);
+      if (
+        existingCollab !== undefined &&
+        existingCollab.getSharedType() === slotSharedType
+      ) {
+        // Same shared type still occupies this name; its own observer syncs
+        // the slot's content, so leave the slot in place.
+        continue;
+      }
+      // A different shared type means the slot was replaced remotely. Destroy
+      // the departing collab node so it doesn't dangle in binding.collabNodeMap
+      // ($setSlot below detaches the stale lexical occupant).
+      if (existingCollab !== undefined) {
+        existingCollab.destroy(binding);
+      }
+    }
+    const slotCollab = $getOrInitCollabNodeFromSharedType(
+      binding,
+      slotSharedType as XmlText | YMap<unknown> | XmlElement,
+      ownerCollab,
+    );
+    const slotLexicalNode = createLexicalNodeFromCollabNode(
+      binding,
+      slotCollab,
+      null,
+    );
+    $setSlot(lexicalNode, name, slotLexicalNode);
+  }
+}
+
+// Lexical -> Yjs slot diff shared by CollabElementNode + CollabDecoratorNode.
+// Same factoring as `$syncSlotsFromYjsShared`: identical logic, parent only
+// differs.
+export function $syncSlotsFromLexicalShared(
+  binding: Binding,
+  slotsParent: XmlText | XmlElement,
+  nextLexicalNode: ElementNode | DecoratorNode<unknown>,
+  prevNodeMap: null | NodeMap,
+  dirtyElements: null | Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
+  dirtyLeaves: null | Set<NodeKey>,
+  ownerCollab: CollabElementNode | CollabDecoratorNode,
+): void {
+  const slotNames = $getSlotNames(nextLexicalNode);
+  const existing = slotsParent.getAttribute(SLOTS_ATTR_KEY) as unknown;
+
+  if (slotNames.length === 0 && !(existing instanceof YMap)) {
+    return;
+  }
+
+  let slotsY: YMap<unknown>;
+  if (existing instanceof YMap) {
+    slotsY = existing;
+  } else {
+    slotsY = new YMap();
+    setSlotsAttr(slotsParent, slotsY);
+  }
+
+  const nextNames = new Set(slotNames);
+  for (const name of Array.from(slotsY.keys())) {
+    if (!nextNames.has(name)) {
+      // Mirror children removal (splice -> destroy): destroy the slot's collab
+      // node before dropping it so its binding.collabNodeMap entry is cleared.
+      const removed = slotsY.get(name) as XmlText | XmlElement | undefined;
+      if (removed !== undefined) {
+        removed._collabNode.destroy(binding);
+      }
+      slotsY.delete(name);
+    }
+  }
+
+  const collabNodeMap = binding.collabNodeMap;
+  for (const name of slotNames) {
+    const slotNode = $getSlot<LexicalNode>(nextLexicalNode, name);
+    if (slotNode === null) {
+      continue;
+    }
+    const slotCollab = collabNodeMap.get(slotNode.__key);
+    if (
+      slotCollab !== undefined &&
+      slotsY.get(name) === slotCollab.getSharedType()
+    ) {
+      $syncSlotContentFromLexical(
+        binding,
+        slotCollab,
+        slotNode,
+        prevNodeMap,
+        dirtyElements,
+        dirtyLeaves,
+      );
+    } else {
+      // A same-name replace keeps the name in nextNames, so the removal loop
+      // above never destroys the departing value. Mirror children removal
+      // here too: destroy the previous slot's collab node before overwriting
+      // its Y.Map entry so its binding.collabNodeMap entry doesn't dangle.
+      const prev = slotsY.get(name) as XmlText | XmlElement | undefined;
+      if (prev !== undefined) {
+        prev._collabNode.destroy(binding);
+      }
+      const created = $createCollabNodeFromLexicalNode(
+        binding,
+        slotNode,
+        ownerCollab,
+      );
+      collabNodeMap.set(slotNode.__key, created);
+      slotsY.set(name, created.getSharedType());
+    }
+  }
+}
+
+// Slot cleanup shared by host destroy paths.
+export function $destroySlotsShared(
+  binding: Binding,
+  slotsParent: XmlText | XmlElement,
+): void {
+  const slotsY = slotsParent.getAttribute(SLOTS_ATTR_KEY) as unknown;
+  if (slotsY instanceof YMap) {
+    for (const name of slotsY.keys()) {
+      const slot = slotsY.get(name) as XmlText | XmlElement | undefined;
+      if (slot !== undefined) {
+        slot._collabNode.destroy(binding);
+      }
+    }
   }
 }

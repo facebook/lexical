@@ -1220,4 +1220,52 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     // dirtyElements). If V2 sync handles this correctly, it's 'after'.
     expect(coverYBefore.getAttribute('__caption')).toBe('after');
   });
+
+  // R3 audit reproduce: V2 slot removal only deletes the top-level slot
+  // shared type from binding.mapping; the slot's nested children
+  // (inner XmlElements / XmlTexts) stay registered. Over time
+  // binding.mapping accumulates entries from removed subtrees — memory
+  // leak. The hypothesis: capture the inner children types before
+  // removal, remove the slot, and assert they are no longer in
+  // binding.mapping.
+  test('V2: removing a slot also cleans up its nested mapping entries', () => {
+    const {binding, editor, hostY} = setupLocalSlotTree();
+    const slotsY = hostY.getAttribute('slots') as unknown as YMap<XmlElement>;
+    const slotType = slotsY.get('title');
+    assert(slotType != null);
+
+    // Capture inner descendants of the slot's XmlElement before removal.
+    const innerTypes: Array<XmlElement | XmlText> = [];
+    const collect = (xe: XmlElement) => {
+      for (const child of xe.toArray()) {
+        if (
+          child instanceof XmlElement ||
+          (child as object) instanceof XmlText
+        ) {
+          innerTypes.push(child as XmlElement | XmlText);
+          if (child instanceof XmlElement) {
+            collect(child);
+          }
+        }
+      }
+    };
+    collect(slotType);
+    expect(innerTypes.length).toBeGreaterThan(0);
+    for (const inner of innerTypes) {
+      expect(binding.mapping.has(inner)).toBe(true);
+    }
+
+    applyLocalUpdate(binding, editor, () => {
+      const host = $getRoot().getFirstChild();
+      assert($isElementNode(host));
+      $removeSlot(host, 'title');
+    });
+
+    // Top-level removed (the existing test pins this).
+    expect(binding.mapping.has(slotType)).toBe(false);
+    // Hypothesis: the inner descendants are also gone.
+    for (const inner of innerTypes) {
+      expect(binding.mapping.has(inner)).toBe(false);
+    }
+  });
 });

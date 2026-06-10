@@ -385,9 +385,17 @@ function $syncEventV2(
     } else {
       invariant(false, 'Expected XmlElement parent for XmlText');
     }
-  } else if (target instanceof YMap && event instanceof YMapEvent) {
+  } else if (
+    target instanceof YMap &&
+    event instanceof YMapEvent &&
+    target._item != null &&
+    target._item.parentSub === SLOTS_ATTR_KEY
+  ) {
     // A slot add/remove arrives as a YMapEvent on the host's `slots` Y.Map.
-    // Re-route to the host element so its slots channel gets reconciled.
+    // Re-route to the host element so its slots channel gets reconciled. The
+    // parentSub guard narrows this branch to the slot Y.Map specifically —
+    // other YMap attributes (e.g. `__state` nested maps) reach this dispatch
+    // too and must fall through to the default handler.
     const parent = target.parent;
     if (parent instanceof XmlElement) {
       $createOrUpdateNodeFromYElement(

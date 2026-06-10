@@ -431,6 +431,37 @@ const $createSlotsYType = (
   return slotsY;
 };
 
+// Recursive cleanup of binding.mapping entries for a yjs subtree. When a slot
+// is dropped or replaced, only its top-level shared type was deleted from
+// binding.mapping; the slot's nested children (text spans, descendant
+// elements, nested slots) stayed registered and leaked because the slot's
+// Y.Doc parent was already gone, so the yjs delete event never re-fired
+// observers down the subtree.
+const $deleteMappingForSubtree = (
+  type: XmlElement | XmlText | XmlHook,
+  binding: BindingV2,
+): void => {
+  // XmlHook is never registered in binding.mapping (SharedType =
+  // XmlElement | XmlText), so only delete for those two.
+  if (type instanceof XmlElement || type instanceof XmlText) {
+    binding.mapping.delete(type);
+  }
+  if (type instanceof XmlElement) {
+    const slotsY = type.getAttribute(SLOTS_ATTR_KEY) as unknown;
+    if (slotsY instanceof YMap) {
+      for (const slot of (slotsY as YMap<XmlElement>).values()) {
+        $deleteMappingForSubtree(slot, binding);
+      }
+    }
+    for (const child of type.toArray()) {
+      $deleteMappingForSubtree(
+        child as XmlElement | XmlText | XmlHook,
+        binding,
+      );
+    }
+  }
+};
+
 // Per-slot diff of the host's `__slots` against its `slots` Y.Map, applied in
 // place during a host update (the lexical->yjs counterpart of the yjs->lexical
 // slot reconcile in $createOrUpdateNodeFromYElement). Names gone from lexical
@@ -452,7 +483,7 @@ const $updateSlotsYType = (
   if (names.length === 0) {
     if (existing instanceof YMap) {
       for (const removed of (existing as YMap<XmlElement>).values()) {
-        binding.mapping.delete(removed);
+        $deleteMappingForSubtree(removed, binding);
       }
     }
     if (existing !== undefined) {
@@ -476,7 +507,7 @@ const $updateSlotsYType = (
     if (!nextNames.has(name)) {
       const removed = slotsY.get(name);
       if (removed !== undefined) {
-        binding.mapping.delete(removed);
+        $deleteMappingForSubtree(removed, binding);
       }
       slotsY.delete(name);
     }
@@ -498,7 +529,7 @@ const $updateSlotsYType = (
       }
     } else {
       if (slotY instanceof XmlElement) {
-        binding.mapping.delete(slotY);
+        $deleteMappingForSubtree(slotY, binding);
       }
       slotsY.set(name, $createSlotValueType(slotNode, binding));
     }

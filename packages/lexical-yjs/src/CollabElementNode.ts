@@ -7,7 +7,7 @@
  */
 
 import type {Binding} from '.';
-import type {ElementNode, LexicalNode, NodeKey, NodeMap} from 'lexical';
+import type {ElementNode, NodeKey, NodeMap} from 'lexical';
 import type {AbstractType, XmlElement, XmlText} from 'yjs';
 
 import invariant from '@lexical/internal/invariant';
@@ -15,14 +15,10 @@ import {
   $createChildrenArray,
   $getNodeByKey,
   $getNodeByKeyOrThrow,
-  $getSlot,
-  $getSlotNames,
   $isDecoratorNode,
   $isElementNode,
   $isTextNode,
   $removeFromParent,
-  $removeSlot,
-  $setSlot,
 } from 'lexical';
 import {Map as YMap} from 'yjs';
 
@@ -31,14 +27,14 @@ import {CollabLineBreakNode} from './CollabLineBreakNode';
 import {CollabTextNode} from './CollabTextNode';
 import {
   $createCollabNodeFromLexicalNode,
+  $destroySlotsShared,
   $getOrInitCollabNodeFromSharedType,
   $syncPropertiesFromYjs,
-  $syncSlotContentFromLexical,
+  $syncSlotsFromLexicalShared,
+  $syncSlotsFromYjsShared,
   createLexicalNodeFromCollabNode,
   getNodeTypeFromSharedType,
   getPositionFromElementAndOffset,
-  setSlotsAttr,
-  SLOTS_ATTR_KEY,
   spliceString,
   syncPropertiesFromLexical,
 } from './Utils';
@@ -429,61 +425,7 @@ export class CollabElementNode {
   // removed, and a name present on both is left untouched (its own
   // text/children edits flow through the slot's CollabElementNode YTextEvent).
   syncSlotsFromYjs(binding: Binding, lexicalNode: ElementNode): void {
-    const slotsY = this._xmlText.getAttribute(SLOTS_ATTR_KEY) as unknown;
-    const yNames =
-      slotsY instanceof YMap ? new Set(slotsY.keys()) : new Set<string>();
-
-    for (const name of $getSlotNames(lexicalNode)) {
-      if (!yNames.has(name)) {
-        // Mirror children removal (splice -> destroy): drop the departing slot's
-        // collab node so its entry doesn't dangle in binding.collabNodeMap. The
-        // slot's shared type is already gone from the Y.Map here, so reach the
-        // collab node through the lexical key instead of the shared type.
-        const slotNode = $getSlot(lexicalNode, name);
-        if (slotNode !== null) {
-          const slotCollab = binding.collabNodeMap.get(slotNode.__key);
-          if (slotCollab !== undefined) {
-            slotCollab.destroy(binding);
-          }
-        }
-        $removeSlot(lexicalNode, name);
-      }
-    }
-
-    if (!(slotsY instanceof YMap)) {
-      return;
-    }
-    for (const [name, slotSharedType] of slotsY.entries()) {
-      const existingSlot = $getSlot(lexicalNode, name);
-      if (existingSlot !== null) {
-        const existingCollab = binding.collabNodeMap.get(existingSlot.__key);
-        if (
-          existingCollab !== undefined &&
-          existingCollab.getSharedType() === slotSharedType
-        ) {
-          // Same shared type still occupies this name; its own observer syncs
-          // the slot's content, so leave the slot in place.
-          continue;
-        }
-        // A different shared type means the slot was replaced remotely. Destroy
-        // the departing collab node so it doesn't dangle in binding.collabNodeMap
-        // ($setSlot below detaches the stale lexical occupant).
-        if (existingCollab !== undefined) {
-          existingCollab.destroy(binding);
-        }
-      }
-      const slotCollab = $getOrInitCollabNodeFromSharedType(
-        binding,
-        slotSharedType as XmlText | YMap<unknown> | XmlElement,
-        this,
-      );
-      const slotLexicalNode = createLexicalNodeFromCollabNode(
-        binding,
-        slotCollab,
-        null,
-      );
-      $setSlot(lexicalNode, name, slotLexicalNode);
-    }
+    $syncSlotsFromYjsShared(binding, this._xmlText, lexicalNode, this);
   }
 
   syncPropertiesFromLexical(
@@ -579,71 +521,15 @@ export class CollabElementNode {
     dirtyElements: null | Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
     dirtyLeaves: null | Set<NodeKey>,
   ): void {
-    const slotNames = $getSlotNames(nextLexicalNode);
-    const existing = this._xmlText.getAttribute(SLOTS_ATTR_KEY) as unknown;
-
-    if (slotNames.length === 0 && !(existing instanceof YMap)) {
-      return;
-    }
-
-    let slotsY: YMap<unknown>;
-    if (existing instanceof YMap) {
-      slotsY = existing;
-    } else {
-      slotsY = new YMap();
-      setSlotsAttr(this._xmlText, slotsY);
-    }
-
-    const nextNames = new Set(slotNames);
-    for (const name of Array.from(slotsY.keys())) {
-      if (!nextNames.has(name)) {
-        // Mirror children removal (splice -> destroy): destroy the slot's collab
-        // node before dropping it so its binding.collabNodeMap entry is cleared.
-        const removed = slotsY.get(name) as XmlText | XmlElement | undefined;
-        if (removed !== undefined) {
-          removed._collabNode.destroy(binding);
-        }
-        slotsY.delete(name);
-      }
-    }
-
-    const collabNodeMap = binding.collabNodeMap;
-    for (const name of slotNames) {
-      const slotNode = $getSlot<LexicalNode>(nextLexicalNode, name);
-      if (slotNode === null) {
-        continue;
-      }
-      const slotCollab = collabNodeMap.get(slotNode.__key);
-      if (
-        slotCollab !== undefined &&
-        slotsY.get(name) === slotCollab.getSharedType()
-      ) {
-        $syncSlotContentFromLexical(
-          binding,
-          slotCollab,
-          slotNode,
-          prevNodeMap,
-          dirtyElements,
-          dirtyLeaves,
-        );
-      } else {
-        // A same-name replace keeps the name in nextNames, so the removal loop
-        // above never destroys the departing value. Mirror children removal
-        // here too: destroy the previous slot's collab node before overwriting
-        // its Y.Map entry so its binding.collabNodeMap entry doesn't dangle.
-        const prev = slotsY.get(name) as XmlText | XmlElement | undefined;
-        if (prev !== undefined) {
-          prev._collabNode.destroy(binding);
-        }
-        const created = $createCollabNodeFromLexicalNode(
-          binding,
-          slotNode,
-          this,
-        );
-        collabNodeMap.set(slotNode.__key, created);
-        slotsY.set(name, created.getSharedType());
-      }
-    }
+    $syncSlotsFromLexicalShared(
+      binding,
+      this._xmlText,
+      nextLexicalNode,
+      prevNodeMap,
+      dirtyElements,
+      dirtyLeaves,
+      this,
+    );
   }
 
   syncChildrenFromLexical(
@@ -876,15 +762,7 @@ export class CollabElementNode {
     // otherwise it dangles in binding.collabNodeMap after the host is removed.
     // The host's `_xmlText` must still be attached here for `slots` to read
     // back (its caller — splice — destroys before detaching the embed).
-    const slotsY = this._xmlText.getAttribute(SLOTS_ATTR_KEY) as unknown;
-    if (slotsY instanceof YMap) {
-      for (const name of slotsY.keys()) {
-        const slot = slotsY.get(name) as XmlText | XmlElement | undefined;
-        if (slot !== undefined) {
-          slot._collabNode.destroy(binding);
-        }
-      }
-    }
+    $destroySlotsShared(binding, this._xmlText);
 
     if (collabNodeMap.get(this._key) === this) {
       collabNodeMap.delete(this._key);

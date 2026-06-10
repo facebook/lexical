@@ -365,4 +365,60 @@ describe('DOM shadow root selection (browser)', () => {
     await userEvent.keyboard('{Backspace}');
     expect(editor.read(() => $getRoot().getTextContent())).toBe('Hiab');
   });
+
+  // An editor whose root element lives in a (same-origin) iframe document is a
+  // separate, but related, case: its selection is not retargeted (so no
+  // composed ranges are needed), but the focus helpers must resolve through the
+  // iframe's document rather than the top-level one. getActiveElement uses
+  // Node.getRootNode for exactly this reason.
+  test('resolves focus and selection for an editor inside an iframe', () => {
+    const iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+    const iframeDoc = iframe.contentDocument!;
+    const contentEditable = iframeDoc.createElement('div');
+    contentEditable.contentEditable = 'true';
+    iframeDoc.body.appendChild(contentEditable);
+    const editor = createEditor({
+      namespace: 'iframe',
+      nodes: [],
+      onError: error => {
+        throw error;
+      },
+    });
+    editor.setRootElement(contentEditable);
+    editor.update(() => $prepopulate('Hello world'), {discrete: true});
+    onTestFinished(() => {
+      editor.setRootElement(null);
+      document.body.removeChild(iframe);
+    });
+
+    // An iframe document is not a shadow root, so no composed ranges are used.
+    expect(getDOMShadowRoots(contentEditable)).toEqual([]);
+
+    contentEditable.focus();
+    // The top-level document only sees the <iframe> element as focused...
+    expect(document.activeElement).toBe(iframe);
+    // ...but getActiveElement resolves through the iframe's own document.
+    expect(getActiveElement(contentEditable)).toBe(contentEditable);
+
+    // Selection is read from the editor's window (the iframe's) and is not
+    // retargeted, so the boundary points resolve into the model directly.
+    const textNode = contentEditable.querySelector(
+      '[data-lexical-text="true"]',
+    )!.firstChild as Text;
+    iframe
+      .contentWindow!.getSelection()!
+      .setBaseAndExtent(textNode, 0, textNode, 5);
+    editor.update(() => {}, {
+      discrete: true,
+      event: new Event('selectionchange'),
+    });
+    editor.read(() => {
+      const selection = $getSelection();
+      expect($isRangeSelection(selection)).toBe(true);
+      if ($isRangeSelection(selection)) {
+        expect(selection.getTextContent()).toBe('Hello');
+      }
+    });
+  });
 });

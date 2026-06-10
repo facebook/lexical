@@ -49,7 +49,7 @@ export function registerDragonSupport(editor: LexicalEditor): () => void {
         if (payload && payload.functionId === 'makeChanges') {
           const args = payload.args;
 
-          if (args) {
+          if (Array.isArray(args)) {
             const [
               elementStart,
               elementLength,
@@ -60,6 +60,14 @@ export function registerDragonSupport(editor: LexicalEditor): () => void {
             ] = args;
             // TODO: we should probably handle formatCommand somehow?
             // formatCommand;
+            if (
+              ![elementStart, elementLength, selStart, selLength].every(
+                Number.isFinite,
+              ) ||
+              (typeof text !== 'string' && text !== -1)
+            ) {
+              return;
+            }
             editor.update(() => {
               const selection = $getSelection();
 
@@ -84,25 +92,31 @@ export function registerDragonSupport(editor: LexicalEditor): () => void {
                   }
                 }
 
-                if (setSelStart !== setSelEnd || text !== '') {
+                // Dragon sends -1 (a number, not a string) as text for
+                // selection-only changes, such as Select-and-Say
+                // corrections and cursor moves by voice
+                if (
+                  typeof text === 'string' &&
+                  (setSelStart !== setSelEnd || text !== '')
+                ) {
                   selection.insertRawText(text);
                   anchorNode = anchor.getNode();
                 }
 
                 if ($isTextNode(anchorNode)) {
                   // set final selection
-                  setSelStart = selStart;
-                  setSelEnd = selStart + selLength;
                   const anchorNodeTextLength = anchorNode.getTextContentSize();
-                  // If the offset is more than the end, make it the end
-                  setSelStart =
-                    setSelStart > anchorNodeTextLength
-                      ? anchorNodeTextLength
-                      : setSelStart;
+                  // Clamp to the text size. Negative offsets have no meaning
+                  // in the protocol, so they collapse the selection instead
+                  // of leaving a range the next input would replace
+                  setSelStart = Math.min(
+                    Math.max(selStart, 0),
+                    anchorNodeTextLength,
+                  );
                   setSelEnd =
-                    setSelEnd > anchorNodeTextLength
-                      ? anchorNodeTextLength
-                      : setSelEnd;
+                    selStart < 0 || selLength < 0
+                      ? setSelStart
+                      : Math.min(selStart + selLength, anchorNodeTextLength);
                   selection.setTextNodeRange(
                     anchorNode,
                     setSelStart,

@@ -15,6 +15,7 @@ import {
   $applyNodeReplacement,
   $createTextNode,
   $getRoot,
+  $isElementNode,
   ElementNode,
   LexicalEditor,
   TextNode,
@@ -22,7 +23,11 @@ import {
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 import {ElementDOMSlot} from '../../LexicalDOMSlot';
-import {$createTestDecoratorNode, TestDecoratorNode} from '../utils';
+import {
+  $assertNodeType,
+  $createTestDecoratorNode,
+  TestDecoratorNode,
+} from '../utils';
 
 describe('ElementDOMSlot class', () => {
   function makeElement(): HTMLElement {
@@ -751,7 +756,10 @@ describe('ElementDOMSlot block cursor handling', () => {
     // selection — the scenario from the issue.
     editor.update(
       () => {
-        const wrap = $getRoot().getFirstChildOrThrow<ElementNode>();
+        const wrap = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        );
         wrap.getFirstChildOrThrow().insertBefore($createTextNode('inserted'));
       },
       {discrete: true},

@@ -24,12 +24,14 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
-  ElementNode,
+  $isElementNode,
+  $isTextNode,
   ParagraphNode,
   RangeSelection,
   TextNode,
 } from 'lexical';
 import {
+  $assertNodeType,
   $createTestElementNode,
   initializeUnitTest,
   invariant,
@@ -200,7 +202,10 @@ describe('LexicalHeadingNode tests', () => {
       );
       await editor.update(
         () => {
-          const heading = $getRoot().getFirstChildOrThrow<HeadingNode>();
+          const heading = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isHeadingNode,
+          );
           expect(heading.getTag()).toBe('h1');
           heading.setTag('h2');
           expect(heading.getTag()).toBe('h2');
@@ -405,7 +410,7 @@ describe('Backspace at start of heading (#4359)', () => {
           );
           $getRoot().clear().append(heading);
           originalKey = heading.getKey();
-          heading.getFirstChildOrThrow<TextNode>().select(0, 0);
+          $assertNodeType(heading.getFirstChild(), $isTextNode).select(0, 0);
           heading.collapseAtStart();
         },
         {discrete: true},
@@ -438,7 +443,10 @@ describe('Backspace at start of heading (#4359)', () => {
         {discrete: true},
       );
       editor.read(() => {
-        const wrap = $getRoot().getFirstChildOrThrow<ElementNode>();
+        const wrap = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        );
         expect(wrap.getType()).toBe('test_block');
         const inner = wrap.getFirstChild();
         invariant($isHeadingNode(inner));

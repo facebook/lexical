@@ -88,6 +88,7 @@ import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
 import {emptyFunction} from '../../LexicalUtils';
 import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {
+  $assertNodeType,
   $createTestDecoratorNode,
   $createTestElementNode,
   $createTestInlineElementNode,
@@ -1392,11 +1393,13 @@ describe('LexicalEditor tests', () => {
 
     editor.update(() => {
       const root = $getRoot();
-      root
-        .getFirstChild<ElementNode>()!
-        .getFirstChild<ElementNode>()!
-        .getFirstChild<TextNode>()!
-        .setTextContent('Foo');
+      $assertNodeType(
+        $assertNodeType(
+          $assertNodeType(root.getFirstChild(), $isElementNode).getFirstChild(),
+          $isElementNode,
+        ).getFirstChild(),
+        $isTextNode,
+      ).setTextContent('Foo');
     });
 
     expect(errorListener).toHaveBeenCalledTimes(1);
@@ -1730,7 +1733,12 @@ describe('LexicalEditor tests', () => {
       );
       parsedEditorStateFromObject.read(() => {
         const root = $getRoot();
-        expect(root.getFirstChild<ParagraphNode>()!.getDirection()).toBe('rtl');
+        expect(
+          $assertNodeType(
+            root.getFirstChild(),
+            $isParagraphNode,
+          ).getDirection(),
+        ).toBe('rtl');
         expect(root.getTextContent()).toMatch(/Hello world/);
       });
     });

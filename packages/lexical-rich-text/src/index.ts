@@ -1245,6 +1245,9 @@ export function registerRichText(
         if (isFileTransfer && !$isRangeSelection(selection)) {
           return false;
         }
+        // contenteditable is not a native drop target; preventDefault() is
+        // required on dragover to allow the drop event to fire in Firefox.
+        event.preventDefault();
         const x = event.clientX;
         const y = event.clientY;
         const eventRange = caretFromPoint(x, y);

@@ -14,6 +14,7 @@ import {
 import {
   assertHTML,
   evaluate,
+  expect,
   focusEditor,
   html,
   initialize,
@@ -151,6 +152,30 @@ test.describe('Text drag and drop', () => {
         </p>
       `,
     );
+  });
+
+  test('dragover calls event.preventDefault() for text drags', async ({
+    page,
+    isCollab,
+  }) => {
+    test.skip(isCollab);
+    await focusEditor(page);
+    await page.keyboard.type('hello world');
+
+    const defaultPrevented = await evaluate(page, () => {
+      const editable = document.querySelector('[contenteditable="true"]');
+      const dataTransfer = new DataTransfer();
+      dataTransfer.setData('text/plain', 'hello');
+      const event = new DragEvent('dragover', {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer,
+      });
+      editable.dispatchEvent(event);
+      return event.defaultPrevented;
+    });
+
+    expect(defaultPrevented).toBe(true);
   });
 
   test('moves a selected word forward within the same block (plain text)', async ({

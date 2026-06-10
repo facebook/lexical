@@ -108,16 +108,24 @@ function $syncEvent(binding: Binding, event: any): void {
       binding,
       target.parent,
     );
+    // The two branches are textually identical but stay separate because
+    // CollabElementNode and CollabDecoratorNode each typed `syncSlotsFromYjs`
+    // against its own lexical-node side (ElementNode vs DecoratorNode); a
+    // union narrow at the call site intersects to `never`.
     if (hostCollab instanceof CollabElementNode) {
       const hostNode = hostCollab.getNode();
-      if (hostNode) {
-        hostCollab.syncSlotsFromYjs(binding, hostNode);
-      }
+      invariant(
+        hostNode !== null,
+        'syncEvent: expected lexical element host for slot reconcile, got null',
+      );
+      hostCollab.syncSlotsFromYjs(binding, hostNode);
     } else if (hostCollab instanceof CollabDecoratorNode) {
       const hostNode = hostCollab.getNode();
-      if (hostNode) {
-        hostCollab.syncSlotsFromYjs(binding, hostNode);
-      }
+      invariant(
+        hostNode !== null,
+        'syncEvent: expected lexical decorator host for slot reconcile, got null',
+      );
+      hostCollab.syncSlotsFromYjs(binding, hostNode);
     }
     return;
   }

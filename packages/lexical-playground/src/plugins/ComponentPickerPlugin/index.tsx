@@ -340,7 +340,7 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
       onSelect: () => editor.dispatchCommand(INSERT_CARD_COMMAND, undefined),
     }),
     new ComponentPickerOption('Pull Quote', {
-      icon: <i className="icon caret-right" />,
+      icon: <i className="icon quote" />,
       keywords: ['pull quote', 'quote', 'attribution', 'cite', 'slot'],
       onSelect: () =>
         editor.dispatchCommand(INSERT_PULLQUOTE_COMMAND, undefined),

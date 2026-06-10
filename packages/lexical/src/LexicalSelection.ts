@@ -2030,14 +2030,21 @@ export class RangeSelection implements BaseSelection {
    * @param isBackward whether or not the selection is backwards.
    */
   deleteLine(isBackward: boolean): void {
-    // A slot is shadow-root isolated and its DOM is relocated out of document
-    // order, so a deletion that starts inside one cannot be expressed by the
-    // native range the browser hands us: forward delete at a slot edge extends
-    // backward over the whole line, and the lineboundary extend below resolves
-    // in the wrong direction too. The anchor is still the user's caret, so
-    // collapse to it and defer to deleteCharacter, which clamps at the slot
-    // boundary while still handling in-slot character and paragraph deletion.
-    if ($getPointSlotFrame(this.anchor) !== null) {
+    // A decorator-host slot's DOM is relocated out of document order (the
+    // host's React decorate() mounts the slot container wherever it wants),
+    // so a deletion that starts inside one cannot be expressed by the
+    // native range the browser hands us: forward delete at a slot edge
+    // extends backward over the whole line, and the lineboundary extend
+    // below resolves in the wrong direction too. Element-host slots
+    // (e.g. a Card title) keep document order so the native path is
+    // fine there. Narrow to the decorator-host case and defer to
+    // deleteCharacter, which clamps at the slot boundary while still
+    // handling in-slot character and paragraph deletion.
+    const anchorSlotFrame = $getPointSlotFrame(this.anchor);
+    if (
+      anchorSlotFrame !== null &&
+      $isDecoratorNode($getSlotHost(anchorSlotFrame))
+    ) {
       if (!this.isCollapsed()) {
         this.focus.set(this.anchor.key, this.anchor.offset, this.anchor.type);
       }

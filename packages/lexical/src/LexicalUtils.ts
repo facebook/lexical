@@ -1304,12 +1304,23 @@ export function $selectAll(selection?: RangeSelection | null): RangeSelection {
     // its __parent is null (its up-link is __slotHost), so getParentOrThrow
     // would throw. Scope SELECT_ALL to the slot value's contents instead —
     // anchor at its first child, focus at its last — which matches the
-    // shadow-root semantics the slot boundary advertises.
+    // shadow-root semantics the slot boundary advertises. The
+    // `$isElementNode` narrow guards `getChildrenSize` (a non-inline
+    // DecoratorNode is also a valid slot-value shape but has no children
+    // channel).
     const parent = topParent.getParent();
     if (parent === null) {
-      anchor.set(topParent.getKey(), 0, 'element');
-      focus.set(topParent.getKey(), topParent.getChildrenSize(), 'element');
-      $normalizeSelection(selection);
+      // ElementNode-shaped slot value: scope selection to its contents.
+      // A non-inline DecoratorNode is also a valid slot value but carries no
+      // children channel; the explicit narrow surfaces a future protocol
+      // drift instead of throwing at `getChildrenSize`. The Decorator
+      // branch is currently unreachable from any RangeSelection anchor
+      // because a non-inline decorator slot value has no editable text.
+      if ($isElementNode(topParent)) {
+        anchor.set(topParent.getKey(), 0, 'element');
+        focus.set(topParent.getKey(), topParent.getChildrenSize(), 'element');
+        $normalizeSelection(selection);
+      }
       return selection;
     }
     const rootNode = parent;

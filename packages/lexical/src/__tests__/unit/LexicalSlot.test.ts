@@ -25,6 +25,7 @@ import {
   $getSlotNameWithinHost,
   $isParagraphNode,
   $isRangeSelection,
+  $isSlotHost,
   $removeSlot,
   $selectAll,
   $setSelection,
@@ -2059,5 +2060,35 @@ describe('R2 audit reproduce', () => {
     // it just received contains a slot host. If true, the selection
     // clamps silently skip on editorB.
     expect(editorB._slotsUsed).toBe(true);
+  });
+
+  // `_slotsUsed` is intentionally a one-way latch — once any editor pass
+  // touches a slot, the per-frame clamp keeps walking for the rest of the
+  // editor's lifetime. A future refactor that adds a "reset when slots
+  // empty" would silently turn off the clamp; pin the latch shape with a
+  // direct assertion so that drift surfaces as a failing test.
+  test('_slotsUsed stays true after the last slot is removed', () => {
+    using editor = createSlotEditor();
+
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        $setSlot(host, 'title', $slotContainer('Hello'));
+        $getRoot().append(host);
+      },
+      {discrete: true},
+    );
+    expect(editor._slotsUsed).toBe(true);
+
+    editor.update(
+      () => {
+        const host = $getRoot().getFirstChild();
+        if (host !== null && $isSlotHost(host)) {
+          $removeSlot(host, 'title');
+        }
+      },
+      {discrete: true},
+    );
+    expect(editor._slotsUsed).toBe(true);
   });
 });

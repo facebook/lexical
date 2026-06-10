@@ -93,6 +93,12 @@ export type SerializedLexicalNode = {
    * configured for flat storage
    */
   [NODE_STATE_KEY]?: Record<string, unknown>;
+  /**
+   * Named slot subtrees keyed by slot name. Present on host nodes (an
+   * ElementNode or DecoratorNode that registered slots via `$setSlot`).
+   * @experimental named-slots
+   */
+  slots?: Record<string, SerializedLexicalNode>;
 };
 
 /**

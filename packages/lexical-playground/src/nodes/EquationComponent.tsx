@@ -13,11 +13,9 @@ import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
 import {
-  $createNodeSelection,
   $createParagraphNode,
   $getNodeByKey,
   $getSelection,
-  $getSlotHost,
   $isElementNode,
   $isNodeSelection,
   $isTextNode,
@@ -160,13 +158,6 @@ export default function EquationComponent({
       if (!$isEquationNode(node)) {
         return;
       }
-      // Slotted into a host: the slot value is part of the host structure
-      // and not independently deletable (deletion is host-unit only), so a
-      // Backspace inside the empty editor is a no-op rather than a remove/
-      // replace that would throw on a parentless slot value.
-      if ($getSlotHost(node) !== null) {
-        return;
-      }
       if (node.isInline()) {
         // Clear lexical's selection first (avoid stale NodeSelection
         // node refs surviving the remove) and preserve the wrapper
@@ -219,18 +210,7 @@ export default function EquationComponent({
         if ($isEquationNode(node)) {
           node.setEquation(equationValue);
           if (restoreSelection) {
-            const host = $getSlotHost(node);
-            if (host !== null) {
-              // Slotted: `selectNext` would step past the host into the
-              // following block. Place the selection on the host instead so
-              // a hide returns the caret to the same atomic Figure the
-              // chrome click / arrow selection would land on.
-              const nodeSelection = $createNodeSelection();
-              nodeSelection.add(host.getKey());
-              $setSelection(nodeSelection);
-            } else {
-              node.selectNext(0, 0);
-            }
+            node.selectNext(0, 0);
           }
         }
       });

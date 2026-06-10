@@ -88,6 +88,7 @@ import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
 import {emptyFunction} from '../../LexicalUtils';
 import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {
+  $assertNodeType,
   $createTestDecoratorNode,
   $createTestElementNode,
   $createTestInlineElementNode,
@@ -1533,11 +1534,13 @@ describe('LexicalEditor tests', () => {
 
     editor.update(() => {
       const root = $getRoot();
-      root
-        .getFirstChild<ElementNode>()!
-        .getFirstChild<ElementNode>()!
-        .getFirstChild<TextNode>()!
-        .setTextContent('Foo');
+      $assertNodeType(
+        $assertNodeType(
+          $assertNodeType(root.getFirstChild(), $isElementNode).getFirstChild(),
+          $isElementNode,
+        ).getFirstChild(),
+        $isTextNode,
+      ).setTextContent('Foo');
     });
 
     expect(errorListener).toHaveBeenCalledTimes(1);
@@ -1871,7 +1874,12 @@ describe('LexicalEditor tests', () => {
       );
       parsedEditorStateFromObject.read(() => {
         const root = $getRoot();
-        expect(root.getFirstChild<ParagraphNode>()!.getDirection()).toBe('rtl');
+        expect(
+          $assertNodeType(
+            root.getFirstChild(),
+            $isParagraphNode,
+          ).getDirection(),
+        ).toBe('rtl');
         expect(root.getTextContent()).toMatch(/Hello world/);
       });
     });
@@ -2724,6 +2732,87 @@ describe('LexicalEditor tests', () => {
 
     await Promise.resolve();
     expect(editor._updateTags).toEqual(new Set([]));
+  });
+
+  it('does not leak a no-op update tag into the next update', () => {
+    init();
+    const observedTags: Array<Array<string>> = [];
+    const unregister = editor.registerUpdateListener(({tags}) => {
+      observedTags.push([...tags]);
+    });
+
+    // A tagged update that dirties nothing still commits because it carries a
+    // deferred onUpdate callback -- this mirrors a remote collaboration sync
+    // that turns out to be a no-op (the targeted node was concurrently removed).
+    // Its tag must not survive into a later, unrelated update, otherwise a
+    // listener such as @lexical/yjs's syncLexicalUpdateToYjs would wrongly skip
+    // the next local edit.
+    editor.update(emptyFunction, {
+      discrete: true,
+      onUpdate: emptyFunction,
+      tag: 'collaboration',
+    });
+    expect(editor._updateTags).toEqual(new Set());
+
+    // A subsequent untagged local edit must not observe the leaked tag.
+    editor.update(
+      () => {
+        $getRoot().append($createParagraphNode());
+      },
+      {discrete: true},
+    );
+    unregister();
+
+    const lastObservedTags = observedTags[observedTags.length - 1];
+    expect(lastObservedTags).not.toContain('collaboration');
+  });
+
+  it('setEditorState keeps its tag when committed from inside an update', () => {
+    init();
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('historic'));
+        $getRoot().append(paragraph);
+      },
+      {discrete: true},
+    );
+    const historicState = editor.getEditorState();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('current'));
+        root.append(paragraph);
+      },
+      {discrete: true},
+    );
+
+    const observed: Array<{content: string; tags: Array<string>}> = [];
+    const unregister = editor.registerUpdateListener(({editorState, tags}) => {
+      observed.push({
+        content: editorState.read(() => $getRoot().getTextContent()),
+        tags: [...tags],
+      });
+    });
+    // Applying an editor state with a tag from *inside* an update -- the way
+    // history's undo does via dispatchCommand -- force-commits the wrapping
+    // no-op update, which resets _updateTags. The tag must still reach the
+    // update listener for the commit that actually applies the historic state;
+    // otherwise (e.g. @lexical/history) that transition is misclassified as a
+    // fresh edit rather than an undo.
+    editor.update(
+      () => {
+        editor.setEditorState(historicState, {tag: 'historic-tag'});
+      },
+      {discrete: true},
+    );
+    unregister();
+
+    const historicCommit = observed.find(o => o.content === 'historic');
+    expect(historicCommit).toBeDefined();
+    expect(historicCommit!.tags).toContain('historic-tag');
   });
 
   it('mutation listeners does not trigger when other node types are mutated', async () => {

@@ -93,7 +93,7 @@ export interface VisibleNonPrintingConfig {
 /**
  * Editor render context state mirroring the extension's `disabled` signal.
  */
-export const VisibleNonPrintingDisabled = createRenderState(
+export const VisibleNonPrintingDisabled = /* @__PURE__ */ createRenderState(
   'visibleNonPrintingDisabled',
   () => false,
 );
@@ -117,13 +117,13 @@ const disabledForEditor = {
   disabledForEditor: ctx => ctx.get(VisibleNonPrintingDisabled),
 } satisfies DOMOverrideOptions;
 
-export const VisibleNonPrintingExtension = defineExtension({
+export const VisibleNonPrintingExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config) => namedSignals(config),
-  config: safeCast<VisibleNonPrintingConfig>({disabled: false}),
+  config: /* @__PURE__ */ safeCast<VisibleNonPrintingConfig>({disabled: false}),
   dependencies: [
-    configExtension(DOMRenderExtension, {
+    /* @__PURE__ */ configExtension(DOMRenderExtension, {
       overrides: [
-        domOverride(
+        /* @__PURE__ */ domOverride(
           [LineBreakNode],
           {
             $createDOM: (node, $next) => {
@@ -150,7 +150,7 @@ export const VisibleNonPrintingExtension = defineExtension({
           },
           disabledForEditor,
         ),
-        domOverride<ElementNode>(
+        /* @__PURE__ */ domOverride<ElementNode>(
           [ParagraphNode, HeadingNode, ListItemNode, QuoteNode],
           {
             $decorateDOM: (node, _prevNode, dom) => {
@@ -166,7 +166,7 @@ export const VisibleNonPrintingExtension = defineExtension({
           },
           disabledForEditor,
         ),
-        domOverride(
+        /* @__PURE__ */ domOverride(
           [TextNode, TabNode],
           {
             $decorateDOM: (node, _prev, dom) => {

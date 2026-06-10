@@ -10,14 +10,14 @@ import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
-import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
-import {$isLinkNode, LinkImportExtension, LinkNode} from '@lexical/link';
+import {DOMImportExtension} from '@lexical/html';
 import {
-  $isHeadingNode,
-  HeadingNode,
-  QuoteNode,
-  RichTextImportExtension,
-} from '@lexical/rich-text';
+  $isLinkNode,
+  LinkExtension,
+  LinkImportExtension,
+  LinkNode,
+} from '@lexical/link';
+import {$isHeadingNode, RichTextExtension} from '@lexical/rich-text';
 import {JSDOM} from 'jsdom';
 import {
   $getEditor,
@@ -32,11 +32,11 @@ import {assert, describe, expect, test} from 'vitest';
 function buildEditor() {
   return buildEditorFromExtensions(
     defineExtension({
-      // Leaf importer extensions no longer pull `CoreImportExtension`
-      // in by themselves — the application is expected to add it once.
-      dependencies: [CoreImportExtension, LinkImportExtension],
+      // LinkExtension registers its own import rules (and the shared
+      // CoreImportExtension baseline) — no dedicated import extension
+      // required.
+      dependencies: [LinkExtension],
       name: 'link-host',
-      nodes: [LinkNode],
     }),
   );
 }
@@ -103,19 +103,27 @@ describe('LinkImportExtension', () => {
       expect(para.getTextContent()).toBe('beforeafter');
     });
   });
+
+  test('deprecated LinkImportExtension alias still imports <a>', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [LinkImportExtension],
+        name: 'link-alias-host',
+      }),
+    );
+    importInto(editor, '<p><a href="https://example.com">click</a></p>');
+    editor.read(() => {
+      expect($firstLink().getURL()).toBe('https://example.com');
+    });
+  });
 });
 
 describe('LinkImportExtension — block children lifted out of inline parent', () => {
   function buildRichEditor() {
     return buildEditorFromExtensions(
       defineExtension({
-        dependencies: [
-          CoreImportExtension,
-          LinkImportExtension,
-          RichTextImportExtension,
-        ],
+        dependencies: [LinkExtension, RichTextExtension],
         name: 'rich-link-host',
-        nodes: [LinkNode, HeadingNode, QuoteNode],
       }),
     );
   }

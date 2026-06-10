@@ -33,12 +33,9 @@ export {
   CheckListExtension,
   type ListConfig,
   ListExtension,
-} from './LexicalListExtension';
-export {
   ListImportExtension,
-  ListImportRules,
-  ListSchema,
-} from './ListImportExtension';
+} from './LexicalListExtension';
+export {ListImportRules, ListSchema} from './ListImportExtension';
 export {
   INSERT_ORDERED_LIST_COMMAND,
   INSERT_UNORDERED_LIST_COMMAND,

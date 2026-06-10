@@ -40,6 +40,20 @@ For E2E testing workflow:
 - `pnpm run tsc` - Run TypeScript compiler
 - `pnpm run ci-check` - Run all checks (TypeScript, Flow, Prettier, ESLint)
 
+### Tree-shaking annotations
+
+Module-scope calls to the side-effect-free factories (`defineExtension`,
+`configExtension`, `safeCast`, `createCommand`, `createState`,
+`defineImportRule`, etc.) must be annotated with `/* @__PURE__ */` so
+bundlers can drop unused definitions from application bundles. This is
+enforced (with an autofixer) by the
+`@lexical/internal/require-pure-annotation` ESLint rule — run
+`pnpm run lint:fix` (also run by the pre-commit hook) to insert the
+annotations automatically. When adding a new factory of this kind,
+annotate its definition with `@__NO_SIDE_EFFECTS__` and add its name to
+the rule's default list in
+`packages/lexical-eslint-plugin-internal/src/rules/require-pure-annotation.js`.
+
 ## High-Level Architecture
 
 ### Core Concepts

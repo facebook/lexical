@@ -11,13 +11,13 @@ import {
   $createTextNode,
   $getRoot,
   $getState,
+  $isParagraphNode,
   $isTextNode,
   $setState,
   createState,
-  ParagraphNode,
-  TextNode,
   UNDO_COMMAND,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {act} from 'react';
 import {afterEach, assert, beforeEach, describe, expect, it} from 'vitest';
 import * as Y from 'yjs';
@@ -78,11 +78,14 @@ describe('Collaboration', () => {
           client1.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>();
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
 
             const text = $createTextNode('Hello world');
 
-            paragraph!.append(text);
+            paragraph.append(text);
           });
         });
 
@@ -97,8 +100,14 @@ describe('Collaboration', () => {
           client2.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>()!;
-            const text = paragraph.getFirstChild<TextNode>()!;
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
+            const text = $assertNodeType(
+              paragraph.getFirstChild(),
+              $isTextNode,
+            );
 
             text.spliceText(6, 5, 'metaverse');
           });
@@ -132,7 +141,10 @@ describe('Collaboration', () => {
           client1.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>()!;
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
             const text = $createTextNode('Hello world');
 
             paragraph.append(text);
@@ -148,7 +160,10 @@ describe('Collaboration', () => {
           client2.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>()!;
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
             const text = $createTextNode('Hello world');
 
             paragraph.append(text);
@@ -177,8 +192,14 @@ describe('Collaboration', () => {
           client1.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>()!;
-            const text = paragraph.getFirstChild<TextNode>()!;
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
+            const text = $assertNodeType(
+              paragraph.getFirstChild(),
+              $isTextNode,
+            );
 
             text.spliceText(11, 11, '');
           });
@@ -195,8 +216,14 @@ describe('Collaboration', () => {
           client2.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>()!;
-            const text = paragraph.getFirstChild<TextNode>()!;
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
+            const text = $assertNodeType(
+              paragraph.getFirstChild(),
+              $isTextNode,
+            );
 
             text.spliceText(11, 11, '!');
           });
@@ -230,7 +257,10 @@ describe('Collaboration', () => {
           client1.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>()!;
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
             const text = $createTextNode('Hello world');
             paragraph.append(text);
           });
@@ -249,7 +279,10 @@ describe('Collaboration', () => {
           client1.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>()!;
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
             paragraph.getFirstChild()!.remove();
           });
         });
@@ -264,11 +297,16 @@ describe('Collaboration', () => {
           client2.update(() => {
             const root = $getRoot();
 
-            const paragraph = root.getFirstChild<ParagraphNode>()!;
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isParagraphNode,
+            );
 
-            paragraph
-              .getFirstChild<TextNode>()!
-              .spliceText(11, 0, 'Hello world');
+            $assertNodeType(paragraph.getFirstChild(), $isTextNode).spliceText(
+              11,
+              0,
+              'Hello world',
+            );
           });
         });
 
@@ -327,7 +365,10 @@ describe('Collaboration', () => {
         // Override direction
         await waitForReact(() => {
           client1.update(() => {
-            const paragraph = $getRoot().getFirstChild<ParagraphNode>()!;
+            const paragraph = $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isParagraphNode,
+            );
             paragraph.setDirection('rtl');
           });
         });
@@ -456,6 +497,89 @@ describe('Collaboration', () => {
         client2.stop();
       });
 
+      /**
+       * When a local editor directly clears all nodes while no other peer is live,
+       * syncLexicalUpdateToYjs syncs the empty state to Yjs. The observeDeep callback
+       * skips events originating from the local binding, so $ensureEditorNotEmpty never
+       * runs via the existing Yjs→Lexical guard. The fix adds the same recovery to the
+       * Lexical→Yjs direction so the paragraph is in the Yjs doc before any peer connects.
+       *
+       * Isolation: client2 is registered in the connector before the clear so all of
+       * client1's updates (including the recovery paragraph) queue to client2 while it is
+       * not yet started. When client2 cold-starts it applies those queued updates.
+       * Without the fix the last queued update leaves the root empty and client2 loads
+       * an empty document. With the fix the recovery paragraph is present and client2
+       * loads correctly — the assertion on client2's HTML is the regression guard.
+       */
+      it('Should sync recovered paragraph to a later-joining client after direct clear-all (#8086)', async () => {
+        const connector = createTestConnection(useCollabV2);
+        const client1 = connector.createClient('1');
+        // Register client2 now so updates queue to it while client1 operates alone
+        const client2 = connector.createClient('2');
+
+        // Only client1 is active — no live peer to trigger the existing
+        // Yjs→Lexical recovery guard and mask the missing Lexical→Yjs guard
+        client1.start(container!);
+        await Promise.resolve().then();
+        expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+
+        await waitForReact(() => {
+          client1.update(() => {
+            const paragraph = $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isParagraphNode,
+            );
+            paragraph.append($createTextNode('Hello'));
+          });
+        });
+
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><span data-lexical-text="true">Hello</span></p>',
+        );
+
+        // Clear with no live peer — only syncLexicalUpdateToYjs (our fix) can
+        // schedule the recovery; syncYjsChangesToLexical's existing guard cannot
+        // fire because the observeDeep event is skipped for locally-originated changes
+        await waitForReact(() => {
+          client1.update(() => {
+            $getRoot().clear();
+          });
+        });
+
+        // client1's own Lexical view should recover (the fix schedules
+        // $ensureEditorNotEmpty in a tag-free update that also syncs back to Yjs)
+        expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+
+        // client2 cold-starts and applies all queued Yjs updates from client1.
+        // Regression assertion: without the fix, client2 receives only the clear
+        // and loads an empty document (getHTML() === ''). With the fix the recovery
+        // paragraph is in the queue and client2 loads '<p dir="auto"><br></p>'.
+        client2.start(container!);
+        await Promise.resolve().then();
+
+        expect(client2.getHTML()).toEqual('<p dir="auto"><br></p>');
+        expect(client1.getHTML()).toEqual(client2.getHTML());
+        expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
+
+        // Subsequent edits must sync in both directions — the main desync symptom
+        await waitForReact(() => {
+          client1.update(() => {
+            const paragraph = $createParagraphNode();
+            paragraph.append($createTextNode('World'));
+            $getRoot().append(paragraph);
+          });
+        });
+
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><br></p><p dir="auto"><span data-lexical-text="true">World</span></p>',
+        );
+        expect(client1.getHTML()).toEqual(client2.getHTML());
+        expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
+
+        client1.stop();
+        client2.stop();
+      });
+
       it('Should not grow a selection when a remote peer types at its right edge (#8608)', async () => {
         const connector = createTestConnection(useCollabV2);
         const client1 = connector.createClient('1');
@@ -564,7 +688,10 @@ describe('Collaboration', () => {
       client1.getEditor().update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>()!;
+        const paragraph = $assertNodeType(
+          root.getFirstChild(),
+          $isParagraphNode,
+        );
         paragraph.append($createTextNode('1'));
       });
     });
@@ -640,7 +767,10 @@ describe('Collaboration', () => {
 
       editor.update(
         () => {
-          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isParagraphNode,
+          );
           $setState(paragraph, state, 'bar');
           // Include another update otherwise equalYTypePNode would return true
           paragraph.append($createTextNode('!'));
@@ -669,20 +799,29 @@ describe('Collaboration', () => {
       });
 
       let editor2State = client2.getEditorState().read(() => {
-        const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         return $getState(paragraph, state);
       });
       expect(editor2State).toEqual('bar');
 
       await waitForReact(() => {
         client1.update(() => {
-          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isParagraphNode,
+          );
           $setState(paragraph, state, undefined);
         });
       });
 
       editor2State = client2.getEditorState().read(() => {
-        const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         return $getState(paragraph, state);
       });
       expect(editor2State).toBeUndefined();

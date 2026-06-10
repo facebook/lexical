@@ -135,9 +135,11 @@ export interface DragonConfig {
  * Add Dragon speech to text input support to the editor, via the
  * \@lexical/dragon module.
  */
-export const DragonExtension = defineExtension({
+export const DragonExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config, state) => namedSignals(config),
-  config: safeCast<DragonConfig>({disabled: typeof window === 'undefined'}),
+  config: /* @__PURE__ */ safeCast<DragonConfig>({
+    disabled: typeof window === 'undefined',
+  }),
   name: '@lexical/dragon',
   register: (editor, config, state) =>
     effect(() =>

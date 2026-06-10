@@ -100,8 +100,21 @@ export type Cursor = {
   selection: null | CursorSelection,
 };
 
-export type Binding = {
+export type BaseBinding = {
   clientID: number,
+  cursorHighlightSheet: CSSStyleSheet | null,
+  cursors: Map<ClientID, Cursor>,
+  cursorsContainer: null | HTMLElement,
+  doc: Doc,
+  docMap: Map<string, Doc>,
+  editor: LexicalEditor,
+  excludedProperties: ExcludedProperties,
+  id: string,
+  nodeProperties: Map<string, {[property: string]: unknown}>,
+};
+
+export type Binding = {
+  ...BaseBinding,
   collabNodeMap: Map<
     NodeKey,
     | CollabElementNode
@@ -109,15 +122,23 @@ export type Binding = {
     | CollabDecoratorNode
     | CollabLineBreakNode,
   >,
-  cursors: Map<ClientID, Cursor>,
-  cursorsContainer: null | HTMLElement,
-  doc: Doc,
-  docMap: Map<string, Doc>,
-  editor: LexicalEditor,
-  id: string,
-  nodeProperties: Map<string, {[property: string]: unknown}>,
   root: CollabElementNode,
 };
+
+// CollabV2Mapping is an internal class with no public TypeScript export; model
+// it as an opaque nominal type (like Highlight above) so the v2 binding's
+// `mapping` field is distinct rather than `any`/`Object`.
+declare class CollabV2Mapping {}
+
+export type BindingV2 = {
+  ...BaseBinding,
+  mapping: CollabV2Mapping,
+  root: XmlElement,
+};
+
+// AnyBinding is not part of the public TypeScript export surface; it is kept
+// local so it can type the binding parameter below.
+type AnyBinding = Binding | BindingV2;
 
 export type ExcludedProperties = Map<Class<LexicalNode>, Set<string>>;
 
@@ -370,6 +391,16 @@ declare export function syncCursorPositions(
 ): void;
 
 declare export function removeCursorHighlightRule(highlightName: string): void;
+
+declare export function $getAnchorAndFocusForUserState(
+  binding: AnyBinding,
+  userState: UserState,
+): {
+  anchorKey: NodeKey | null,
+  anchorOffset: number,
+  focusKey: NodeKey | null,
+  focusOffset: number,
+};
 
 declare export function syncLexicalUpdateToYjs(
   binding: Binding,

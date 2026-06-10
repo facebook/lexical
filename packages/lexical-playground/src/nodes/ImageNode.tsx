@@ -53,7 +53,7 @@ import {KeywordsExtension} from './KeywordNode';
 
 const ImageComponent = React.lazy(() => import('./ImageComponent'));
 
-const CaptionEditorExtension = defineExtension({
+const CaptionEditorExtension = /* @__PURE__ */ defineExtension({
   // Skip the default empty-paragraph initializer. In collab mode
   // CollaborationPlugin's bootstrap only runs `initializeEditor` when
   // the Lexical root is empty, so a pre-seeded paragraph would prevent
@@ -72,7 +72,7 @@ const CaptionEditorExtension = defineExtension({
     LinkExtension,
     KeywordsExtension,
     EmojisExtension,
-    configExtension(ReactExtension, {
+    /* @__PURE__ */ configExtension(ReactExtension, {
       contentEditable: (
         <ContentEditable
           placeholder="Enter a caption..."

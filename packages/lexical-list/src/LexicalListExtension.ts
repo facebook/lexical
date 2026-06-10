@@ -7,12 +7,14 @@
  */
 
 import {effect, namedSignals} from '@lexical/extension';
+import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
 import {mergeRegister} from '@lexical/utils';
-import {defineExtension, safeCast} from 'lexical';
+import {configExtension, defineExtension, safeCast} from 'lexical';
 
 import {registerCheckList} from './checkList';
 import {ListItemNode} from './LexicalListItemNode';
 import {ListNode} from './LexicalListNode';
+import {ListImportRules} from './ListImportExtension';
 import {registerList, registerListStrictIndentTransform} from './registerList';
 
 export interface ListConfig {
@@ -28,14 +30,23 @@ export interface ListConfig {
  * Configures {@link ListNode}, {@link ListItemNode} and registers
  * the strict indent transform if `hasStrictIndent` is true (default false).
  */
-export const ListExtension = defineExtension({
+export const ListExtension = /* @__PURE__ */ defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
-  config: safeCast<ListConfig>({
+  config: /* @__PURE__ */ safeCast<ListConfig>({
     hasStrictIndent: false,
     shouldPreserveNumbering: false,
   }),
+  dependencies: [
+    // DOMImportExtension support for the nodes registered here. Inert
+    // unless the editor routes HTML through the pipeline (e.g. via
+    // ClipboardDOMImportExtension or $generateNodesFromDOMViaExtension).
+    CoreImportExtension,
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: ListImportRules,
+    }),
+  ],
   name: '@lexical/list/List',
   nodes: () => [ListNode, ListItemNode],
   register(editor, config, state) {
@@ -64,13 +75,27 @@ export interface CheckListConfig {
  * {@link ListItemNode} with a `INSERT_CHECK_LIST_COMMAND` listener and
  * the expected keyboard and mouse interactions for checkboxes.
  */
-export const CheckListExtension = defineExtension({
+export const CheckListExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config) => namedSignals(config),
-  config: safeCast<CheckListConfig>({
+  config: /* @__PURE__ */ safeCast<CheckListConfig>({
     disableTakeFocusOnClick: false,
   }),
   dependencies: [ListExtension],
   name: '@lexical/list/CheckList',
   register: (editor, config, state) =>
     registerCheckList(editor, state.getOutput()),
+});
+
+/**
+ * Bundles {@link ListImportRules} together with the runtime
+ * {@link ListExtension}.
+ *
+ * @experimental
+ * @deprecated {@link ListExtension} now registers
+ * {@link ListImportRules} (and `CoreImportExtension`) itself — depend on
+ * it directly instead.
+ */
+export const ListImportExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [ListExtension],
+  name: '@lexical/list/Import',
 });

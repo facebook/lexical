@@ -16,12 +16,18 @@ import {
   $createTextNode,
   $getNodeByKeyOrThrow,
   $getRoot,
+  $isParagraphNode,
+  $isTextNode,
   LexicalEditor,
   MutationListener,
   ParagraphNode,
   TextNode,
 } from 'lexical';
-import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
+import {
+  $assertNodeType,
+  expectHtmlToBeEqual,
+  html,
+} from 'lexical/src/__tests__/utils';
 import {afterEach, beforeEach, describe, it} from 'vitest';
 import * as Y from 'yjs';
 
@@ -56,7 +62,7 @@ describe('CollaborationSnapshot', () => {
             continue;
           }
           element.classList.remove('removed', 'added');
-          const node = $getNodeByKeyOrThrow<TextNode>(nodeKey);
+          const node = $getNodeByKeyOrThrow(nodeKey);
           const ychange = $getYChangeState<void>(node);
           if (!ychange) {
             continue;
@@ -111,7 +117,10 @@ describe('CollaborationSnapshot', () => {
       await waitForReact(() =>
         editor1.update(
           () => {
-            $getRoot().getChildAtIndex<ParagraphNode>(2)!.remove();
+            $assertNodeType(
+              $getRoot().getChildAtIndex(2),
+              $isParagraphNode,
+            ).remove();
           },
           {discrete: true},
         ),
@@ -122,9 +131,18 @@ describe('CollaborationSnapshot', () => {
       await waitForReact(() =>
         editor1.update(
           () => {
-            const paragraph = $getRoot().getChildAtIndex<ParagraphNode>(0)!;
-            paragraph.getChildAtIndex<TextNode>(0)!.spliceText(2, 1, '123');
-            $getRoot().getChildAtIndex<ParagraphNode>(1)!.remove();
+            const paragraph = $assertNodeType(
+              $getRoot().getChildAtIndex(0),
+              $isParagraphNode,
+            );
+            $assertNodeType(
+              paragraph.getChildAtIndex(0),
+              $isTextNode,
+            ).spliceText(2, 1, '123');
+            $assertNodeType(
+              $getRoot().getChildAtIndex(1),
+              $isParagraphNode,
+            ).remove();
           },
           {discrete: true},
         ),
@@ -135,7 +153,10 @@ describe('CollaborationSnapshot', () => {
       await waitForReact(() =>
         editor1.update(
           () => {
-            const paragraph = $getRoot().getChildAtIndex<ParagraphNode>(0)!;
+            const paragraph = $assertNodeType(
+              $getRoot().getChildAtIndex(0),
+              $isParagraphNode,
+            );
             paragraph.append($createTextNode('!'));
           },
           {discrete: true},
@@ -179,7 +200,10 @@ describe('CollaborationSnapshot', () => {
       await waitForReact(() =>
         editor1.update(
           () => {
-            const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+            const paragraph = $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isParagraphNode,
+            );
             paragraph.append($createTextNode('Hello'));
           },
           {discrete: true},
@@ -191,7 +215,10 @@ describe('CollaborationSnapshot', () => {
       await waitForReact(() =>
         editor1.update(
           () => {
-            const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+            const paragraph = $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isParagraphNode,
+            );
             paragraph.append($createTextNode(' world'));
           },
           {discrete: true},
@@ -227,7 +254,10 @@ describe('CollaborationSnapshot', () => {
       await waitForReact(() =>
         editor1.update(
           () => {
-            const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+            const paragraph = $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isParagraphNode,
+            );
             paragraph.append($createTextNode('Hello'));
           },
           {discrete: true},
@@ -238,7 +268,10 @@ describe('CollaborationSnapshot', () => {
       await waitForReact(() =>
         editor1.update(
           () => {
-            const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+            const paragraph = $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isParagraphNode,
+            );
             paragraph.append($createTextNode(' world'));
           },
           {discrete: true},
@@ -275,9 +308,10 @@ describe('CollaborationSnapshot', () => {
       await waitForReact(() =>
         editor1.update(
           () => {
-            $getRoot()
-              .getFirstChildOrThrow<ParagraphNode>()
-              .append($createTextNode('First paragraph'));
+            $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isParagraphNode,
+            ).append($createTextNode('First paragraph'));
           },
           {discrete: true},
         ),
@@ -328,7 +362,10 @@ describe('CollaborationSnapshot', () => {
     it('should ignore changes from other clients while in diff mode', async () => {
       await waitForReact(() => {
         editor1.update(() => {
-          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isParagraphNode,
+          );
           paragraph.append($createTextNode('ABC'));
         });
       });
@@ -343,7 +380,10 @@ describe('CollaborationSnapshot', () => {
 
       await waitForReact(() => {
         editor2.update(() => {
-          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isParagraphNode,
+          );
           paragraph.append($createTextNode('XYZ'));
         });
       });
@@ -370,7 +410,10 @@ describe('CollaborationSnapshot', () => {
     it('should not sync changes to yjs while in diff mode', async () => {
       await waitForReact(() => {
         editor1.update(() => {
-          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isParagraphNode,
+          );
           paragraph.append($createTextNode('ABC'));
         });
       });
@@ -385,7 +428,10 @@ describe('CollaborationSnapshot', () => {
 
       await waitForReact(() => {
         editor1.update(() => {
-          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isParagraphNode,
+          );
           paragraph.append($createTextNode('!'));
         });
       });
@@ -415,7 +461,10 @@ describe('CollaborationSnapshot', () => {
     it('recover editor state after clear diff versions command', async () => {
       await waitForReact(() => {
         editor1.update(() => {
-          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isParagraphNode,
+          );
           paragraph.append($createTextNode('ABC'));
         });
       });
@@ -430,7 +479,10 @@ describe('CollaborationSnapshot', () => {
 
       await waitForReact(() => {
         editor2.update(() => {
-          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isParagraphNode,
+          );
           paragraph.append($createTextNode('XYZ'));
         });
       });
@@ -457,14 +509,20 @@ describe('CollaborationSnapshot', () => {
       // Ensure that updates after synced again.
       await waitForReact(() => {
         editor1.update(() => {
-          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isParagraphNode,
+          );
           paragraph.append($createTextNode('!'));
         });
       });
 
       await waitForReact(() => {
         editor2.update(() => {
-          const paragraph = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isParagraphNode,
+          );
           paragraph.append($createTextNode('?'));
         });
       });

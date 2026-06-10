@@ -524,6 +524,23 @@ export function $assertRangeSelection(selection: unknown): RangeSelection {
   return selection;
 }
 
+/**
+ * Assert that a node matches the given type guard, returning it narrowed to
+ * the guard's type. Useful for safely narrowing the result of traversal
+ * methods such as getFirstChild() or getChildAtIndex() without an unchecked
+ * type cast.
+ */
+export function $assertNodeType<T extends LexicalNode>(
+  node: LexicalNode | null | undefined,
+  guard: (value: LexicalNode | null) => value is T,
+): T {
+  const resolved = node ?? null;
+  if (!guard(resolved)) {
+    throw new Error(`Expected node to match type guard, got ${node}`);
+  }
+  return resolved;
+}
+
 export function invariant(cond?: boolean, message?: string): asserts cond {
   if (cond) {
     return;

@@ -40,7 +40,7 @@ const config: TreeViewConfig = {
  * Provides a configured TreeView debugging tool (React dependent)
  * as an output component with configurable class names.
  */
-export const TreeViewExtension = defineExtension({
+export const TreeViewExtension = /* @__PURE__ */ defineExtension({
   build: () => ({Component: TreeViewExtensionComponent}),
   config,
   dependencies: [ReactExtension],

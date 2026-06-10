@@ -6,10 +6,15 @@
  *
  */
 
-import {$insertDataTransferForRichText} from '@lexical/clipboard';
+import {
+  $getClipboardDataFromSelection,
+  $insertDataTransferForRichText,
+  setLexicalClipboardDataTransfer,
+} from '@lexical/clipboard';
 import {$patchStyleText} from '@lexical/selection';
 import {
   $createParagraphNode,
+  $createTextNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
@@ -141,6 +146,43 @@ describe('HTMLCopyAndPaste tests', () => {
           });
           expect(testEnv.innerHTML).toBe(testCase.expectedHTML);
         });
+      });
+
+      test('preserves paragraph alignment when pasting into an unformatted paragraph', async () => {
+        const {editor} = testEnv;
+        const dataTransfer = new DataTransfer();
+
+        await editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const text = $createTextNode('Centered');
+          const source = $createParagraphNode()
+            .setFormat('center')
+            .append(text);
+          const target = $createParagraphNode().append(
+            $createTextNode('Target'),
+          );
+          root.append(source, target);
+          text.select(0, text.getTextContentSize());
+
+          setLexicalClipboardDataTransfer(
+            dataTransfer,
+            $getClipboardDataFromSelection(),
+          );
+
+          target.select(0, target.getChildrenSize());
+
+          const selection = $getSelection();
+          invariant(
+            $isRangeSelection(selection),
+            'isRangeSelection(selection)',
+          );
+          $insertDataTransferForRichText(dataTransfer, selection, editor);
+        });
+
+        expect(testEnv.innerHTML).toBe(
+          '<p dir="auto" style="text-align: center;"><span data-lexical-text="true">Centered</span></p><p dir="auto" style="text-align: center;"><span data-lexical-text="true">Centered</span></p>',
+        );
       });
 
       test('iOS fix: Word predictions should be handled as plain text to maintain selection formatting', async () => {

@@ -544,7 +544,7 @@ export function $commitPendingUpdates(
     // may have been added by a prior update (e.g. via $onUpdate inside
     // editor.focus()). This can happen when another commit consumed
     // the pending editor state before this scheduled commit ran.
-    if (editor._deferred.length > 0) {
+    if (!editor._updating && editor._deferred.length > 0) {
       triggerDeferredUpdateCallbacks(editor, editor._deferred);
     }
     return;
@@ -632,7 +632,6 @@ export function $commitPendingUpdates(
   const dirtyElements = editor._dirtyElements;
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
-  const deferred = editor._deferred;
 
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
@@ -750,7 +749,13 @@ export function $commitPendingUpdates(
     prevEditorState: recoveryEditorState || currentEditorState,
     tags,
   });
-  triggerDeferredUpdateCallbacks(editor, deferred);
+  // A commit can be forced while an outer update is still running (for
+  // example, setEditorState() inside editor.update()). Keep $onUpdate
+  // callbacks queued so the outer update drains them after updateFn returns.
+  if (!previouslyUpdating) {
+    const deferred = editor._deferred;
+    triggerDeferredUpdateCallbacks(editor, deferred);
+  }
   $triggerEnqueuedUpdates(editor);
 }
 

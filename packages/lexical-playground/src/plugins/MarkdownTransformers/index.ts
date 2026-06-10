@@ -19,6 +19,7 @@ import {
   ElementTransformer,
   isTableRowDivider,
   MULTILINE_ELEMENT_TRANSFORMERS,
+  MultilineElementTransformer,
   TEXT_FORMAT_TRANSFORMERS,
   TEXT_MATCH_TRANSFORMERS,
   TextMatchTransformer,
@@ -119,6 +120,9 @@ export const EQUATION: TextMatchTransformer = {
     if (!$isEquationNode(node)) {
       return null;
     }
+    if (!node.isInline()) {
+      return null;
+    }
 
     return `$${node.getEquation()}$`;
   },
@@ -131,6 +135,33 @@ export const EQUATION: TextMatchTransformer = {
   },
   trigger: '$',
   type: 'text-match',
+};
+
+export const BLOCK_EQUATION: MultilineElementTransformer = {
+  dependencies: [EquationNode],
+  export: (node: LexicalNode) => {
+    if (!$isEquationNode(node) || node.isInline()) {
+      return null;
+    }
+    return `$$\n${node.getEquation()}\n$$`;
+  },
+  regExpEnd: /^[ \t]*\$\$[ \t]*$/,
+  regExpStart: /^[ \t]*\$\$[ \t]*/,
+  replace: (rootNode, _children, _startMatch, _endMatch, linesInBetween) => {
+    if (linesInBetween == null) {
+      return false;
+    }
+    const lines = [...linesInBetween];
+    if (lines.length > 0 && lines[0] === '') {
+      lines.shift();
+    }
+    if (lines.length > 0 && lines[lines.length - 1] === '') {
+      lines.pop();
+    }
+    rootNode.append($createEquationNode(lines.join('\n'), false));
+    return;
+  },
+  type: 'multiline-element',
 };
 
 export const TWEET: ElementTransformer = {
@@ -317,6 +348,7 @@ export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [
   EQUATION,
   TWEET,
   CHECK_LIST,
+  BLOCK_EQUATION,
   ...ELEMENT_TRANSFORMERS,
   ...MULTILINE_ELEMENT_TRANSFORMERS,
   ...TEXT_FORMAT_TRANSFORMERS,

@@ -7,6 +7,90 @@
  *
  */
 
+.EquationEditor_root {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(720px, 100%);
+  padding: 8px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #f8f9fb;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.EquationEditor_rootInline {
+  min-width: 360px;
+}
+
+.EquationEditor_rootBlock {
+  display: flex;
+  width: 100%;
+}
+
+.EquationEditor_toolbar,
+.EquationEditor_symbolButtons,
+.EquationEditor_symbolGroup,
+.EquationEditor_symbolPalette {
+  display: flex;
+}
+
+.EquationEditor_toolbar {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.EquationEditor_templateButton,
+.EquationEditor_symbolButton {
+  border: 1px solid #c9d1d9;
+  border-radius: 4px;
+  background: #fff;
+  color: #24292f;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.EquationEditor_templateButton {
+  min-width: 68px;
+  padding: 4px 8px;
+}
+
+.EquationEditor_symbolButton {
+  min-width: 30px;
+  height: 28px;
+  padding: 0 6px;
+}
+
+.EquationEditor_templateButton:hover,
+.EquationEditor_symbolButton:hover {
+  background: #eef4ff;
+  border-color: #9ab4e8;
+}
+
+.EquationEditor_symbolPalette {
+  flex-direction: column;
+  gap: 6px;
+}
+
+.EquationEditor_symbolGroup {
+  align-items: center;
+  gap: 8px;
+}
+
+.EquationEditor_symbolGroupLabel {
+  flex: 0 0 66px;
+  color: #57606a;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.EquationEditor_symbolButtons {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
 .EquationEditor_inlineEditor {
   padding: 0;
   margin: 0;
@@ -29,10 +113,23 @@
 }
 
 .EquationEditor_inputBackground {
+  display: block;
   background-color: #eee;
+  padding: 4px 6px;
 }
 
 .EquationEditor_dollarSign {
+  white-space: pre-wrap;
   text-align: left;
   color: #b0b0b0;
+}
+
+.EquationEditor_preview {
+  display: block;
+  min-height: 34px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid #d8dee4;
+  border-radius: 4px;
+  background: #fff;
 }

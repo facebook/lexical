@@ -9,6 +9,7 @@
 import {
   assertHTML,
   click,
+  expect,
   focus,
   focusEditor,
   html,
@@ -103,5 +104,34 @@ test.describe('EquationNode', () => {
         </p>
       `,
     );
+  });
+  test('equation dialog inserts templates and symbols', async ({page}) => {
+    await focusEditor(page);
+    await selectFromInsertDropdown(page, '.equation');
+
+    await click(page, 'button[data-test-id="equation-template-fraction"]');
+    await expect(page.locator('[data-test-id="equation-input"]')).toHaveValue(
+      '\\frac{a}{b}',
+    );
+
+    await click(page, 'button[data-test-id="equation-symbol-alpha"]');
+    await expect(page.locator('[data-test-id="equation-input"]')).toHaveValue(
+      '\\frac{\\alpha}{b}',
+    );
+
+    await click(page, 'button[data-test-id="equation-submit-btn"]');
+    await waitForSelector(page, '.editor-equation');
+  });
+  test('block EquationNode exports to fenced markdown', async ({page}) => {
+    await focusEditor(page);
+    await insertBlockEquation(page, '\\frac{a}{b}');
+    await waitForSelector(page, '.editor-equation');
+
+    await click(page, '.action-button .markdown');
+
+    const markdown = await page
+      .locator('code[data-language="markdown"]')
+      .innerText();
+    expect(markdown).toContain('$$\n\\frac{a}{b}\n$$');
   });
 });

@@ -27,15 +27,9 @@
 
 .KatexEquationAlterer_centerRow {
   display: flex;
-  flex-direction: 'row';
+  flex-direction: row;
   margin-top: 10px;
   margin-bottom: 10px;
   justify-content: center;
   overflow: hidden;
-}
-
-.KatexEquationAlterer_textArea {
-  width: 100%;
-  resize: none;
-  padding: 7px;
 }

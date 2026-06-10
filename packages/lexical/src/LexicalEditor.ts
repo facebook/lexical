@@ -41,6 +41,7 @@ import {GenMap} from './LexicalGenMap';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
+import {$isSlotHost} from './LexicalSlot';
 import {
   $commitPendingUpdates,
   internalGetActiveEditor,
@@ -1677,6 +1678,24 @@ export class LexicalEditor {
     this._dirtyType = FULL_RECONCILE;
     this._dirtyElements.set('root', false);
     this._compositionKey = null;
+
+    // `_slotsUsed` is normally latched by `$setSlot`, but `setEditorState`
+    // swaps in a parsed state without walking it. If the incoming state
+    // already contains slot nodes (e.g. SSR + hydration, cross-editor state
+    // transfer), latch on so the selection clamps still kick in on this
+    // editor.
+    if (!this._slotsUsed) {
+      for (const node of writableEditorState._nodeMap.values()) {
+        if (
+          $isSlotHost(node) &&
+          node.__slots !== null &&
+          node.__slots.size > 0
+        ) {
+          this._slotsUsed = true;
+          break;
+        }
+      }
+    }
 
     if (tag != null) {
       this._updateTags.add(tag);

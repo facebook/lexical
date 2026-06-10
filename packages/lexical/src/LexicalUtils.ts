@@ -1300,7 +1300,19 @@ export function $selectAll(selection?: RangeSelection | null): RangeSelection {
     const focus = selection.focus;
     const anchorNode = anchor.getNode();
     const topParent = anchorNode.getTopLevelElementOrThrow();
-    const rootNode = topParent.getParentOrThrow();
+    // A slot value's getTopLevelElement stops at itself (slot boundary) and
+    // its __parent is null (its up-link is __slotHost), so getParentOrThrow
+    // would throw. Scope SELECT_ALL to the slot value's contents instead —
+    // anchor at its first child, focus at its last — which matches the
+    // shadow-root semantics the slot boundary advertises.
+    const parent = topParent.getParent();
+    if (parent === null) {
+      anchor.set(topParent.getKey(), 0, 'element');
+      focus.set(topParent.getKey(), topParent.getChildrenSize(), 'element');
+      $normalizeSelection(selection);
+      return selection;
+    }
+    const rootNode = parent;
     anchor.set(rootNode.getKey(), 0, 'element');
     focus.set(rootNode.getKey(), rootNode.getChildrenSize(), 'element');
     $normalizeSelection(selection);

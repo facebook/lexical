@@ -26,6 +26,7 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $removeSlot,
+  $selectAll,
   $setSelection,
   $setSlot,
   createEditor,
@@ -1987,5 +1988,76 @@ describe('$getSlotNameWithinHost', () => {
       // The lookup uses the immediate host's slot map, not the outer host's.
       expect($getSlotNameWithinHost(innerSlot)).toBe('inner');
     });
+  });
+});
+
+// Round 2 audit follow-ups (unverified hypotheses from the agent pass).
+describe('R2 audit reproduce', () => {
+  // L-1: $selectAll on a selection whose anchor sits on a slot value's own
+  // element point. The slot value's getTopLevelElement stops at itself
+  // (slot boundary), and its __parent is null (it's reached through
+  // __slotHost), so getParentOrThrow would throw if $selectAll didn't
+  // handle the slot-value case.
+  test('$selectAll does not throw when anchor is the slot value root', () => {
+    using editor = createSlotEditor();
+    let slotKey = '';
+
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const slot = $slotContainer('Title');
+        $getRoot().append(host);
+        $setSlot(host, 'title', slot);
+        slotKey = slot.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        // Place an element-type point directly on the slot container.
+        const selection = $createRangeSelection();
+        selection.anchor.set(slotKey, 0, 'element');
+        selection.focus.set(slotKey, 0, 'element');
+        $setSelection(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        // If $selectAll throws here, the hypothesis is confirmed.
+        expect(() => $selectAll(selection)).not.toThrow();
+      },
+      {discrete: true},
+    );
+  });
+
+  // L-2: setEditorState does not latch `_slotsUsed`. An editor that
+  // receives a parsed state containing slots from another editor keeps
+  // _slotsUsed = false, so the selection clamps silently skip.
+  test('setEditorState latches _slotsUsed when the state contains slots', () => {
+    using editorA = createSlotEditor();
+    using editorB = createSlotEditor();
+
+    editorA.update(
+      () => {
+        const host = $createParagraphNode();
+        $setSlot(host, 'title', $slotContainer('Hello'));
+        $getRoot().append(host);
+      },
+      {discrete: true},
+    );
+    expect(editorA._slotsUsed).toBe(true);
+
+    const stateA = editorA.getEditorState();
+    editorB.setEditorState(stateA);
+
+    // Hypothesis: editorB._slotsUsed stays false even though the state
+    // it just received contains a slot host. If true, the selection
+    // clamps silently skip on editorB.
+    expect(editorB._slotsUsed).toBe(true);
   });
 });

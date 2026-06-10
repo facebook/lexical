@@ -362,9 +362,6 @@ function $destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
         container.remove();
       }
     }
-  }
-
-  if (node !== undefined) {
     setMutatedNode(
       mutatedNodes,
       activeEditorNodes,

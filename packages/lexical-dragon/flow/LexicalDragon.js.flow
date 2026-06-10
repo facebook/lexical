@@ -9,6 +9,7 @@
 import type {LexicalEditor, LexicalExtension} from 'lexical';
 import type {NamedSignalsOutput} from '@lexical/extension';
 import {$getSelection, $isRangeSelection, $isTextNode} from 'lexical';
+declare export function installDragonSupport(): () => void;
 declare export function registerDragonSupport(
   editor: LexicalEditor,
 ): () => void;

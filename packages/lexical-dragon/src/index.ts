@@ -26,105 +26,194 @@ const TEXT_FORMAT_BY_EXEC_COMMAND = new Map<string, TextFormatType>([
   ['underline', 'underline'],
 ]);
 
+interface WindowState {
+  editors: Set<LexicalEditor>;
+  installCount: number;
+  removeListener: (() => void) | null;
+}
+
+const windowStates = new Map<Window, WindowState>();
+
+function getOrCreateWindowState(targetWindow: Window): WindowState {
+  let state = windowStates.get(targetWindow);
+  if (state === undefined) {
+    state = {editors: new Set(), installCount: 0, removeListener: null};
+    windowStates.set(targetWindow, state);
+  }
+  return state;
+}
+
+function defaultWindow(): Window | undefined {
+  return typeof window !== 'undefined' ? window : undefined;
+}
+
+/**
+ * Install the shared window listener that handles Dragon NaturallySpeaking's
+ * web extension messages for every registered editor in the given window.
+ *
+ * Browsers invoke a window's message listeners in registration order, and
+ * the extension's content script registers its own listener at document_end
+ * of the initial page load. {@link registerDragonSupport} installs this
+ * listener lazily, when an editor's root element is mounted, which loses
+ * that race whenever editors mount after the initial load (a navigation in
+ * a single page app, a dialog, any lazily rendered field). The extension
+ * then edits the DOM directly before Lexical can stopImmediatePropagation,
+ * and the edit is applied twice.
+ *
+ * Call this synchronously from every entrypoint that may render an editor
+ * lazily, before document_end, so the listener is ahead of the extension's
+ * and editors win the race no matter when they mount.
+ *
+ * Pass `targetWindow` to install the listener on a window other than the
+ * global one (for example, an editor mounted inside an iframe). When
+ * omitted, defaults to the current `window` when available. Returns a
+ * teardown function; the listener for a window is removed once every
+ * teardown for it (including the ones returned by
+ * {@link registerDragonSupport}) has been called.
+ */
+export function installDragonSupport(targetWindow?: Window): () => void {
+  const win = targetWindow ?? defaultWindow();
+  if (win === undefined) {
+    return () => {};
+  }
+  const state = getOrCreateWindowState(win);
+  state.installCount++;
+  if (state.removeListener === null) {
+    const handler = (event: MessageEvent) => handleMessage(event, win);
+    win.addEventListener('message', handler, true);
+    state.removeListener = () =>
+      win.removeEventListener('message', handler, true);
+  }
+  let removed = false;
+  return () => {
+    if (removed) {
+      return;
+    }
+    removed = true;
+    state.installCount--;
+    if (state.installCount === 0 && state.removeListener !== null) {
+      state.removeListener();
+      state.removeListener = null;
+      windowStates.delete(win);
+    }
+  };
+}
+
 export function registerDragonSupport(editor: LexicalEditor): () => void {
-  const origin = window.location.origin;
-  const handler = (event: MessageEvent) => {
-    if (event.origin !== origin) {
-      return;
-    }
-    const rootElement = editor.getRootElement();
+  let registeredWindow: Window | null = null;
+  let uninstall: (() => void) | null = null;
 
-    if (document.activeElement !== rootElement) {
-      return;
-    }
-
-    const data = event.data;
-
-    if (typeof data === 'string') {
-      let parsedData;
-
-      try {
-        parsedData = JSON.parse(data);
-      } catch (_e) {
-        return;
+  const detach = () => {
+    if (registeredWindow !== null) {
+      const state = windowStates.get(registeredWindow);
+      if (state !== undefined) {
+        state.editors.delete(editor);
       }
+      registeredWindow = null;
+    }
+    if (uninstall !== null) {
+      uninstall();
+      uninstall = null;
+    }
+  };
 
-      if (
-        parsedData &&
-        parsedData.protocol === 'nuanria_messaging' &&
-        parsedData.type === 'request'
-      ) {
-        const payload = parsedData.payload;
+  const unregisterRoot = editor.registerRootListener(rootElement => {
+    detach();
+    if (rootElement === null) {
+      return;
+    }
+    const targetWindow = rootElement.ownerDocument.defaultView;
+    if (targetWindow === null) {
+      return;
+    }
+    registeredWindow = targetWindow;
+    getOrCreateWindowState(targetWindow).editors.add(editor);
+    uninstall = installDragonSupport(targetWindow);
+  });
 
-        if (payload && payload.functionId === 'makeChanges') {
-          const args = payload.args;
+  return () => {
+    detach();
+    unregisterRoot();
+  };
+}
 
-          if (Array.isArray(args)) {
-            const [
-              elementStart,
-              elementLength,
-              text,
-              selStart,
-              selLength,
-              formatCommand,
-            ] = args;
-            if (
-              ![elementStart, elementLength, selStart, selLength].every(
-                Number.isFinite,
-              ) ||
-              (typeof text !== 'string' && text !== -1)
-            ) {
-              return;
-            }
-            editor.update(() => {
-              const selection = $getSelection();
+function getFocusedEditor(targetWindow: Window): LexicalEditor | null {
+  const state = windowStates.get(targetWindow);
+  if (state === undefined) {
+    return null;
+  }
+  const activeElement = targetWindow.document.activeElement;
+  for (const editor of state.editors) {
+    if (editor.getRootElement() === activeElement) {
+      return editor;
+    }
+  }
+  return null;
+}
 
-              if ($isRangeSelection(selection)) {
-                const anchor = selection.anchor;
-                let anchorNode = anchor.getNode();
-                let setSelStart = 0;
-                let setSelEnd = 0;
+function handleMessage(event: MessageEvent, targetWindow: Window): void {
+  if (event.origin !== targetWindow.location.origin) {
+    return;
+  }
+  const editor = getFocusedEditor(targetWindow);
 
-                if ($isTextNode(anchorNode)) {
-                  // set initial selection
-                  if (elementStart >= 0 && elementLength >= 0) {
-                    setSelStart = elementStart;
-                    setSelEnd = elementStart + elementLength;
-                    // If the offset is more than the end, make it the end
-                    selection.setTextNodeRange(
-                      anchorNode,
-                      setSelStart,
-                      anchorNode,
-                      setSelEnd,
-                    );
-                  }
-                }
+  if (editor === null) {
+    return;
+  }
 
-                // Dragon sends -1 (a number, not a string) as text for
-                // selection-only changes, such as Select-and-Say
-                // corrections and cursor moves by voice
-                if (
-                  typeof text === 'string' &&
-                  (setSelStart !== setSelEnd || text !== '')
-                ) {
-                  selection.insertRawText(text);
-                  anchorNode = anchor.getNode();
-                }
+  const data = event.data;
 
-                if ($isTextNode(anchorNode)) {
-                  // set final selection
-                  const anchorNodeTextLength = anchorNode.getTextContentSize();
-                  // Clamp to the text size. Negative offsets have no meaning
-                  // in the protocol, so they collapse the selection instead
-                  // of leaving a range the next input would replace
-                  setSelStart = Math.min(
-                    Math.max(selStart, 0),
-                    anchorNodeTextLength,
-                  );
-                  setSelEnd =
-                    selStart < 0 || selLength < 0
-                      ? setSelStart
-                      : Math.min(selStart + selLength, anchorNodeTextLength);
+  if (typeof data === 'string') {
+    let parsedData;
+
+    try {
+      parsedData = JSON.parse(data);
+    } catch (_e) {
+      return;
+    }
+
+    if (
+      parsedData &&
+      parsedData.protocol === 'nuanria_messaging' &&
+      parsedData.type === 'request'
+    ) {
+      const payload = parsedData.payload;
+
+      if (payload && payload.functionId === 'makeChanges') {
+        const args = payload.args;
+
+        if (Array.isArray(args)) {
+          const [
+            elementStart,
+            elementLength,
+            text,
+            selStart,
+            selLength,
+            formatCommand,
+          ] = args;
+          if (
+            ![elementStart, elementLength, selStart, selLength].every(
+              Number.isFinite,
+            ) ||
+            (typeof text !== 'string' && text !== -1)
+          ) {
+            return;
+          }
+          editor.update(() => {
+            const selection = $getSelection();
+
+            if ($isRangeSelection(selection)) {
+              const anchor = selection.anchor;
+              let anchorNode = anchor.getNode();
+              let setSelStart = 0;
+              let setSelEnd = 0;
+
+              if ($isTextNode(anchorNode)) {
+                // set initial selection
+                if (elementStart >= 0 && elementLength >= 0) {
+                  setSelStart = elementStart;
+                  setSelEnd = elementStart + elementLength;
+                  // If the offset is more than the end, make it the end
                   selection.setTextNodeRange(
                     anchorNode,
                     setSelStart,
@@ -132,35 +221,63 @@ export function registerDragonSupport(editor: LexicalEditor): () => void {
                     setSelEnd,
                   );
                 }
-
-                // format the selection, e.g. for the "bold that" voice
-                // command. Dragon's extension applies this through
-                // document.execCommand, so the values are execCommand names.
-                if (
-                  typeof formatCommand === 'string' &&
-                  selLength > 0 &&
-                  !selection.isCollapsed()
-                ) {
-                  const format = TEXT_FORMAT_BY_EXEC_COMMAND.get(formatCommand);
-                  if (format !== undefined) {
-                    selection.formatText(format);
-                  }
-                }
-
-                // block the chrome extension from handling this event
-                event.stopImmediatePropagation();
               }
-            });
-          }
+
+              // Dragon sends -1 (a number, not a string) as text for
+              // selection-only changes, such as Select-and-Say
+              // corrections and cursor moves by voice
+              if (
+                typeof text === 'string' &&
+                (setSelStart !== setSelEnd || text !== '')
+              ) {
+                selection.insertRawText(text);
+                anchorNode = anchor.getNode();
+              }
+
+              if ($isTextNode(anchorNode)) {
+                // set final selection
+                const anchorNodeTextLength = anchorNode.getTextContentSize();
+                // Clamp to the text size. Negative offsets have no meaning
+                // in the protocol, so they collapse the selection instead
+                // of leaving a range the next input would replace
+                setSelStart = Math.min(
+                  Math.max(selStart, 0),
+                  anchorNodeTextLength,
+                );
+                setSelEnd =
+                  selStart < 0 || selLength < 0
+                    ? setSelStart
+                    : Math.min(selStart + selLength, anchorNodeTextLength);
+                selection.setTextNodeRange(
+                  anchorNode,
+                  setSelStart,
+                  anchorNode,
+                  setSelEnd,
+                );
+              }
+
+              // format the selection, e.g. for the "bold that" voice
+              // command. Dragon's extension applies this through
+              // document.execCommand, so the values are execCommand names.
+              if (
+                typeof formatCommand === 'string' &&
+                selLength > 0 &&
+                !selection.isCollapsed()
+              ) {
+                const format = TEXT_FORMAT_BY_EXEC_COMMAND.get(formatCommand);
+                if (format !== undefined) {
+                  selection.formatText(format);
+                }
+              }
+
+              // block the chrome extension from handling this event
+              event.stopImmediatePropagation();
+            }
+          });
         }
       }
     }
-  };
-
-  window.addEventListener('message', handler, true);
-  return () => {
-    window.removeEventListener('message', handler, true);
-  };
+  }
 }
 
 export interface DragonConfig {

@@ -19,7 +19,7 @@ import {
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
 
-import {DragonExtension} from '../../index';
+import {DragonExtension, installDragonSupport} from '../../index';
 
 function setUpEditor() {
   return buildEditorFromExtensions(
@@ -72,6 +72,61 @@ function dispatchMakeChanges(args: unknown): void {
 }
 
 describe('DragonExtension', () => {
+  test('installDragonSupport at the entrypoint wins the registration race', () => {
+    const uninstall = installDragonSupport();
+    const extensionEdits: Array<unknown> = [];
+    const extensionListener = (event: MessageEvent) => {
+      extensionEdits.push(event.data);
+    };
+    window.addEventListener('message', extensionListener);
+    try {
+      using editor = setUpEditor();
+      editor.update($selectStartOfFirstTextNode, {discrete: true});
+
+      dispatchMakeChanges([0, 5, 'Howdy', 5, 0]);
+
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('Howdy world');
+      });
+      // stopImmediatePropagation kept the message from the extension's
+      // listener even though the editor mounted after it
+      expect(extensionEdits).toEqual([]);
+    } finally {
+      window.removeEventListener('message', extensionListener);
+      uninstall();
+    }
+  });
+
+  test('dispatches to the focused editor', () => {
+    using first = setUpEditor();
+    using second = setUpEditor();
+    second.update($selectStartOfFirstTextNode, {discrete: true});
+
+    dispatchMakeChanges([0, 5, 'Howdy', 5, 0]);
+
+    first.read(() => {
+      expect($getRoot().getTextContent()).toBe('Hello world');
+    });
+    second.read(() => {
+      expect($getRoot().getTextContent()).toBe('Howdy world');
+    });
+  });
+
+  test('keeps working for editors created after others are disposed', () => {
+    {
+      using disposed = setUpEditor();
+      void disposed;
+    }
+    using editor = setUpEditor();
+    editor.update($selectStartOfFirstTextNode, {discrete: true});
+
+    dispatchMakeChanges([0, 5, 'Howdy', 5, 0]);
+
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('Howdy world');
+    });
+  });
+
   test('replaces the addressed range on makeChanges', () => {
     using editor = setUpEditor();
     editor.update($selectStartOfFirstTextNode, {discrete: true});
@@ -200,5 +255,72 @@ describe('DragonExtension', () => {
       assert($isTextNode(textNode));
       expect(textNode.getFormat()).toBe(0);
     });
+  });
+
+  test('handles editors mounted inside an iframe', () => {
+    const iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+    const iframeWindow = iframe.contentWindow;
+    assert(iframeWindow !== null);
+    const iframeDocument = iframeWindow.document;
+    iframeDocument.open();
+    iframeDocument.write('<!doctype html><html><body></body></html>');
+    iframeDocument.close();
+
+    const uninstall = installDragonSupport(iframeWindow);
+    const topEdits: Array<unknown> = [];
+    const topListener = (event: MessageEvent) => topEdits.push(event.data);
+    window.addEventListener('message', topListener);
+    try {
+      const editor = buildEditorFromExtensions(
+        defineExtension({
+          $initialEditorState: () => {
+            $getRoot().append(
+              $createParagraphNode().append($createTextNode('Hello world')),
+            );
+          },
+          dependencies: [DragonExtension],
+          name: 'dragon-iframe-test',
+          register: theEditor => {
+            const rootElement = iframeDocument.createElement('div');
+            rootElement.setAttribute('contenteditable', 'true');
+            rootElement.tabIndex = 0;
+            iframeDocument.body.appendChild(rootElement);
+            theEditor.setRootElement(rootElement);
+            rootElement.focus();
+            return () => rootElement.remove();
+          },
+        }),
+      );
+      try {
+        editor.update($selectStartOfFirstTextNode, {discrete: true});
+
+        iframeWindow.dispatchEvent(
+          new MessageEvent('message', {
+            data: JSON.stringify({
+              payload: {
+                args: [0, 5, 'Howdy', 5, 0],
+                functionId: 'makeChanges',
+              },
+              protocol: 'nuanria_messaging',
+              type: 'request',
+            }),
+            origin: iframeWindow.location.origin,
+          }),
+        );
+
+        editor.read(() => {
+          expect($getRoot().getTextContent()).toBe('Howdy world');
+        });
+        // The top window's listener never saw the iframe's message
+        expect(topEdits).toEqual([]);
+      } finally {
+        editor.dispose();
+      }
+    } finally {
+      window.removeEventListener('message', topListener);
+      uninstall();
+      iframe.remove();
+    }
   });
 });

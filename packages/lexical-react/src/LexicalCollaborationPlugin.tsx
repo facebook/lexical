@@ -49,6 +49,10 @@ type CollaborationPluginProps = {
   // `awarenessData` parameter allows arbitrary data to be added to the awareness.
   awarenessData?: object;
   syncCursorPositionsFn?: SyncCursorPositionsFn;
+  /** Opt in to the new CSS Highlights-based selection rendering (if supported by the browser).
+   * Fallback to legacy method if not enabled or not supported.
+   */
+  selectionHighlight?: boolean;
 };
 
 export function CollaborationPlugin({
@@ -62,6 +66,7 @@ export function CollaborationPlugin({
   excludedProperties,
   awarenessData,
   syncCursorPositionsFn,
+  selectionHighlight,
 }: CollaborationPluginProps): JSX.Element {
   const isBindingInitialized = useRef(false);
   const isProviderInitialized = useRef(false);
@@ -84,7 +89,6 @@ export function CollaborationPlugin({
     isProviderInitialized.current = true;
 
     const newProvider = providerFactory(id, yjsDocMap);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setProvider(newProvider);
     setDoc(yjsDocMap.get(id));
 
@@ -114,7 +118,6 @@ export function CollaborationPlugin({
       yjsDocMap,
       excludedProperties,
     );
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setBinding(newBinding);
 
     return () => {
@@ -142,6 +145,7 @@ export function CollaborationPlugin({
       shouldBootstrap={shouldBootstrap}
       yjsDocMap={yjsDocMap}
       syncCursorPositionsFn={syncCursorPositionsFn}
+      selectionHighlight={selectionHighlight}
     />
   );
 }
@@ -161,6 +165,7 @@ function YjsCollaborationCursors({
   binding,
   setDoc,
   syncCursorPositionsFn,
+  selectionHighlight,
 }: {
   editor: LexicalEditor;
   id: string;
@@ -176,6 +181,10 @@ function YjsCollaborationCursors({
   awarenessData?: object;
   collabContext: CollaborationContextType;
   syncCursorPositionsFn?: SyncCursorPositionsFn;
+  /** Opt in to the new CSS Highlights-based selection rendering (if supported by the browser).
+   * Fallback to legacy method if not enabled or not supported.
+   */
+  selectionHighlight?: boolean;
 }) {
   const cursors = useYjsCollaboration(
     editor,
@@ -191,6 +200,7 @@ function YjsCollaborationCursors({
     initialEditorState,
     awarenessData,
     syncCursorPositionsFn,
+    selectionHighlight,
   );
 
   useYjsHistory(editor, binding);
@@ -210,6 +220,10 @@ type CollaborationPluginV2Props = {
   excludedProperties?: ExcludedProperties;
   // `awarenessData` parameter allows arbitrary data to be added to the awareness.
   awarenessData?: object;
+  /** Opt in to the new CSS Highlights-based selection rendering (if supported by the browser).
+   * Fallback to legacy method if not enabled or not supported.
+   */
+  selectionHighlight?: boolean;
 };
 
 export function CollaborationPluginV2__EXPERIMENTAL({
@@ -222,6 +236,7 @@ export function CollaborationPluginV2__EXPERIMENTAL({
   cursorsContainerRef,
   excludedProperties,
   awarenessData,
+  selectionHighlight,
 }: CollaborationPluginV2Props): JSX.Element {
   const collabContext = useCollaborationContext(username, cursorColor);
   const {yjsDocMap, name, color} = collabContext;
@@ -241,6 +256,7 @@ export function CollaborationPluginV2__EXPERIMENTAL({
       __shouldBootstrapUnsafe,
       awarenessData,
       excludedProperties,
+      selectionHighlight,
     },
   );
 

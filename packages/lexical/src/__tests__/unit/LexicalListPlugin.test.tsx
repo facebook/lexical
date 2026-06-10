@@ -30,8 +30,8 @@ import {
   html,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
+import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, test, vi} from 'vitest';
 
 import {
@@ -83,11 +83,11 @@ describe('@lexical/list tests', () => {
   }
 
   test('Toggle an empty list on/off', async () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<Test key="MegaSeeds, Morty!" />);
     });
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.focus();
         editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
@@ -112,7 +112,7 @@ describe('@lexical/list tests', () => {
       `,
     );
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.focus();
         editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
@@ -138,11 +138,11 @@ describe('@lexical/list tests', () => {
   });
 
   test('Can create a list and indent/outdent it', async () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<Test key="MegaSeeds, Morty!" />);
     });
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.focus();
         editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
@@ -167,7 +167,7 @@ describe('@lexical/list tests', () => {
       `,
     );
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.focus();
         editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
@@ -194,7 +194,7 @@ describe('@lexical/list tests', () => {
       `,
     );
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.focus();
         editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
@@ -221,11 +221,11 @@ describe('@lexical/list tests', () => {
   });
 
   test('$setBlocksType does not cause invalid ListItemNode children - regression #7036', async () => {
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<Test key="MegaSeeds, Morty!" />);
     });
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.focus();
         editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
@@ -258,11 +258,15 @@ describe('@lexical/list tests', () => {
               </ul>
             </li>
           </ul>
-          <p dir="auto" style="padding-inline-start: calc(40px)"><br /></p>
+          <p
+            dir="auto"
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+            <br />
+          </p>
         </div>
       `,
     );
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         $insertNodes([$createTextNode('more text')]);
         editor.dispatchCommand(KEY_ENTER_COMMAND, null);
@@ -290,7 +294,9 @@ describe('@lexical/list tests', () => {
               </ul>
             </li>
           </ul>
-          <p dir="auto" style="padding-inline-start: calc(40px)">
+          <p
+            dir="auto"
+            style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
             <span data-lexical-text="true">more text</span>
           </p>
           <p dir="auto"><span data-lexical-text="true">even more text</span></p>

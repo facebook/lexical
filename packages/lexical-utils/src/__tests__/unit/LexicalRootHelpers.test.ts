@@ -16,7 +16,7 @@ import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
 
 describe('LexicalRootHelpers tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     it('textContent', async () => {
       const editor = testEnv.editor;
 

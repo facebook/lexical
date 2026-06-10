@@ -13,9 +13,14 @@ import type {
   TextMatchTransformer,
   Transformer,
 } from './MarkdownTransformers';
-import type {ElementNode} from 'lexical';
+import type {BaseSelection, ElementNode} from 'lexical';
 
-import {createMarkdownExport} from './MarkdownExport';
+import {$isRangeSelection} from 'lexical';
+
+import {
+  createMarkdownExport,
+  createSelectionMarkdownExport,
+} from './MarkdownExport';
 import {createMarkdownImport} from './MarkdownImport';
 import {registerMarkdownShortcuts} from './MarkdownShortcuts';
 import {
@@ -31,6 +36,7 @@ import {
   HEADING,
   HIGHLIGHT,
   INLINE_CODE,
+  isTableRowDivider,
   ITALIC_STAR,
   ITALIC_UNDERSCORE,
   LINK,
@@ -83,8 +89,27 @@ function $convertToMarkdownString(
   return exportMarkdown(node);
 }
 
+/**
+ * Converts the selected content to a markdown string.
+ */
+function $convertSelectionToMarkdownString(
+  transformers: Transformer[] = TRANSFORMERS,
+  selection: BaseSelection | null,
+  shouldPreserveNewLines: boolean = false,
+): string {
+  if (!selection || ($isRangeSelection(selection) && selection.isCollapsed())) {
+    return '';
+  }
+  const exportMarkdown = createSelectionMarkdownExport(
+    transformers,
+    shouldPreserveNewLines,
+  );
+  return exportMarkdown(selection);
+}
+
 export {
   $convertFromMarkdownString,
+  $convertSelectionToMarkdownString,
   $convertToMarkdownString,
   $createHeadingTransformer,
   $createQuoteTransformer,
@@ -99,6 +124,7 @@ export {
   HEADING,
   HIGHLIGHT,
   INLINE_CODE,
+  isTableRowDivider,
   ITALIC_STAR,
   ITALIC_UNDERSCORE,
   LINK,

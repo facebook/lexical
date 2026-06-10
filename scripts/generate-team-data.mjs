@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-/* eslint-disable no-console */
+
 // @ts-check
 
 /**
@@ -19,6 +19,53 @@ import {fileURLToPath} from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+/**
+ * A contributor entry as returned by the GitHub contributors API.
+ * @typedef {Object} Contributor
+ * @property {string} login the GitHub username
+ * @property {number} contributions the number of contributions
+ * @property {string} avatar_url the URL to the avatar image
+ * @property {string} html_url the URL to the GitHub profile
+ */
+
+/**
+ * A user profile as returned by `gh api users/<login>`.
+ * @typedef {Object} UserProfile
+ * @property {string | null} name the display name
+ * @property {string | null} [bio] the user bio
+ * @property {string | null} [company] the company string (may contain org handles)
+ * @property {string | null} [blog] the blog URL
+ * @property {string | null} [location] the location string
+ */
+
+/**
+ * The category a contributor is sorted into.
+ * @typedef {'core' | 'distinguished' | 'emeriti' | 'other'} Category
+ */
+
+/**
+ * A team member object as written to team.json.
+ * @typedef {Object} TeamMember
+ * @property {string} avatar the avatar image URL
+ * @property {{github: string}} links external links for the member
+ * @property {string} name the display name
+ * @property {string} username the GitHub username
+ * @property {string} [location] the location string
+ * @property {string} [org] the organization display name
+ * @property {string} [orgLink] the organization GitHub URL
+ * @property {string} [sponsor] the GitHub sponsors URL
+ * @property {string} [title] the member's title
+ */
+
+/**
+ * The generated team data structure.
+ * @typedef {Object} TeamData
+ * @property {Array<TeamMember>} core
+ * @property {Array<TeamMember>} distinguished
+ * @property {Array<TeamMember>} emeriti
+ * @property {string} generated an ISO timestamp of when the data was generated
+ */
 
 /**
  * Configuration for team members and roles
@@ -50,19 +97,22 @@ const TEAM_CONFIG = {
 
 /**
  * Executes a shell command and returns the output
+ * @param {string} command the shell command to execute
+ * @returns {string | null} the trimmed stdout, or null if the command failed
  */
 function exec(command) {
   try {
     return execSync(command, {encoding: 'utf8'}).trim();
   } catch (error) {
     console.error(`Error executing command: ${command}`);
-    console.error(error.message);
+    console.error(/** @type {Error} */ (error).message);
     return null;
   }
 }
 
 /**
  * Fetches contributor data from GitHub API
+ * @returns {Array<Contributor>} the parsed contributor entries
  */
 function fetchContributors() {
   console.log('Fetching contributors from GitHub...');
@@ -72,12 +122,15 @@ function fetchContributors() {
   if (!result) {
     throw new Error('Failed to fetch contributors');
   }
-  const lines = result.split('\n').filter((line) => line.trim());
-  return lines.map((line) => JSON.parse(line));
+  const lines = result.split('\n').filter(line => line.trim());
+  // Each line is a JSON object from the GitHub contributors API.
+  return lines.map(line => /** @type {Contributor} */ (JSON.parse(line)));
 }
 
 /**
  * Fetches recent commits for a user (last 12 months)
+ * @param {string} username the GitHub username
+ * @returns {number} the number of commits in the last 12 months
  */
 function fetchRecentCommits(username) {
   const oneYearAgo = new Date();
@@ -93,17 +146,22 @@ function fetchRecentCommits(username) {
 
 /**
  * Fetches user profile information from GitHub
+ * @param {string} username the GitHub username
+ * @returns {UserProfile | null} the parsed profile, or null if unavailable
  */
 function fetchUserProfile(username) {
   console.log(`  Fetching profile for ${username}...`);
   const result = exec(
     `gh api users/${username} --jq '{name, bio, company, blog, location}'`,
   );
-  return result ? JSON.parse(result) : null;
+  // The response is a JSON object selected from the GitHub users API.
+  return result ? /** @type {UserProfile} */ (JSON.parse(result)) : null;
 }
 
 /**
  * Fetches sponsorship information from GitHub GraphQL API
+ * @param {string} username the GitHub username
+ * @returns {boolean} whether the user has a sponsors listing
  */
 function fetchSponsorInfo(username) {
   const query = `{
@@ -128,6 +186,9 @@ function fetchSponsorInfo(username) {
 
 /**
  * Determines which category a contributor belongs to
+ * @param {Contributor} contributor the contributor entry
+ * @param {number} recentCommits the number of recent commits
+ * @returns {Category} the category the contributor belongs to
  */
 function categorizeContributor(contributor, recentCommits) {
   const {login} = contributor;
@@ -161,6 +222,11 @@ function categorizeContributor(contributor, recentCommits) {
 
 /**
  * Builds team member object with all required information
+ * @param {Contributor} contributor the contributor entry
+ * @param {UserProfile | null} profile the fetched profile, or null
+ * @param {boolean} hasSponsors whether the member has a sponsors listing
+ * @param {Category} category the category the member belongs to
+ * @returns {TeamMember} the built team member object
  */
 function buildTeamMember(contributor, profile, hasSponsors, category) {
   const {login, avatar_url, html_url} = contributor;
@@ -168,6 +234,7 @@ function buildTeamMember(contributor, profile, hasSponsors, category) {
   // Use GitHub display name or username as fallback
   const displayName = (profile && profile.name) || login;
 
+  /** @type {TeamMember} */
   const member = {
     avatar: avatar_url,
     links: {
@@ -248,6 +315,7 @@ async function generateTeamData() {
   const contributors = fetchContributors();
   console.log(`Found ${contributors.length} total contributors\n`);
 
+  /** @type {TeamData} */
   const teamData = {
     core: [],
     distinguished: [],
@@ -336,7 +404,7 @@ async function generateTeamData() {
 }
 
 // Run the script
-generateTeamData().catch((error) => {
+generateTeamData().catch(error => {
   console.error('Error generating team data:', error);
   process.exit(1);
 });

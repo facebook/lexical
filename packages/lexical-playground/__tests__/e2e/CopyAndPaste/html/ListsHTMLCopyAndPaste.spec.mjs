@@ -90,6 +90,49 @@ test.describe('HTML Lists CopyAndPaste', () => {
     );
   });
 
+  test('Copy + paste a list element with right alignment', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+
+    await focusEditor(page);
+
+    const clipboard = {
+      'text/html':
+        '<ul><li style="text-align: right;">Hello</li><li style="text-align: right;">world!</li></ul>',
+    };
+
+    await pasteFromClipboard(page, clipboard);
+
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul" dir="auto">
+          <li
+            class="PlaygroundEditorTheme__listItem"
+            style="text-align: right;"
+            value="1">
+            <span data-lexical-text="true">Hello</span>
+          </li>
+          <li
+            class="PlaygroundEditorTheme__listItem"
+            style="text-align: right;"
+            value="2">
+            <span data-lexical-text="true">world!</span>
+          </li>
+        </ul>
+      `,
+    );
+
+    await assertSelection(page, {
+      anchorOffset: 6,
+      anchorPath: [0, 1, 0, 0],
+      focusOffset: 6,
+      focusPath: [0, 1, 0, 0],
+    });
+  });
+
   test('Copy + paste a Lexical nested list', async ({page, isPlainText}) => {
     test.skip(isPlainText);
 

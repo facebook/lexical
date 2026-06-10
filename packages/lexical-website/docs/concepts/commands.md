@@ -13,9 +13,7 @@ When registering a `command` you supply a `priority` and can return `true` to ma
 You can view all of the existing commands in [`LexicalCommands.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical/src/LexicalCommands.ts), but if you need a custom command for your own use case check out the typed `createCommand(...)` function.
 
 ```js
-const HELLO_WORLD_COMMAND: LexicalCommand<string> = createCommand();
-
-editor.dispatchCommand(HELLO_WORLD_COMMAND, 'Hello World!');
+const HELLO_WORLD_COMMAND: LexicalCommand<string> = createCommand('HELLO_WORLD');
 
 editor.registerCommand(
   HELLO_WORLD_COMMAND,
@@ -23,8 +21,10 @@ editor.registerCommand(
     console.log(payload); // Hello World!
     return false;
   },
-  COMMAND_PRIORITY_LOW,
+  COMMAND_PRIORITY_EDITOR,
 );
+
+editor.dispatchCommand(HELLO_WORLD_COMMAND, 'Hello World!');
 ```
 
 ## `editor.dispatchCommand(...)`
@@ -121,3 +121,44 @@ editor.registerCommand(
 ```
 
 Note that the same `KEY_TAB_COMMAND` command is registered by [`LexicalTableSelectionHelpers.ts`](https://github.com/facebook/lexical/blob/main/packages/lexical-table/src/LexicalTableSelectionHelpers.ts), which handles moving focus to the next or previous cell within a `TableNode`, but the priority is high (`COMMAND_PRIORITY_HIGH`) because this behavior is very important.
+
+### Priorities and ordering
+
+Command listeners are called in the following order until a listener returns `true`:
+
+- From priority highest to lowest (critical, high, normal, low, editor)
+- All `COMMAND_PRIORITY_BEFORE_${priority}` listeners, most recently registered first
+- All `COMMAND_PRIORITY_${priority}` listeners, in registration order
+
+:::note
+
+As of v0.44.0 there are new `COMMAND_PRIORITY_BEFORE_*` priorities available
+which make it much easier to override default behavior without escalating the priority.
+
+:::
+
+It is best practice to use the lowest priority possible, so most commands will
+be registered with `COMMAND_PRIORITY_EDITOR` for the default behavior, then
+commands to override that behavior can be registered with
+`COMMAND_PRIORITY_BEFORE_EDITOR`. The higher priorities mostly serve purposes
+such as being able to observe-but-not-handle events and to support legacy code
+that predates the availability of `COMMAND_PRIORITY_BEFORE_*`.
+
+A modern lexical app will typically only need the
+`COMMAND_PRIORITY_BEFORE_EDITOR` priority since the
+last-registered-called-first ordering is suitable for almost all use cases. The
+older priorities without BEFORE can be considered legacy and are primarily
+offered for compatibility.
+
+Here is the full ordering of priorities, from lowest to highest:
+
+- `COMMAND_PRIORITY_EDITOR`
+- `COMMAND_PRIORITY_BEFORE_EDITOR`
+- `COMMAND_PRIORITY_LOW`
+- `COMMAND_PRIORITY_BEFORE_LOW`
+- `COMMAND_PRIORITY_NORMAL`
+- `COMMAND_PRIORITY_BEFORE_NORMAL`
+- `COMMAND_PRIORITY_HIGH`
+- `COMMAND_PRIORITY_BEFORE_HIGH`
+- `COMMAND_PRIORITY_CRITICAL`
+- `COMMAND_PRIORITY_BEFORE_CRITICAL`

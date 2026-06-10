@@ -220,7 +220,7 @@ ${steps.map(formatStep).join(`\n`)}
   // coalesce some actions like insertText/moveNativeSelection
   const pushStep = useCallback(
     (name: string, value: Step['value']) => {
-      setSteps((currentSteps) => {
+      setSteps(currentSteps => {
         // trying to group steps
         const currentIndex = steps.length - 1;
         const lastStep = steps[currentIndex];
@@ -277,7 +277,7 @@ ${steps.map(formatStep).join(`\n`)}
       }
     };
 
-    return editor.registerRootListener((rootElement) => {
+    return editor.registerRootListener(rootElement => {
       if (rootElement) {
         rootElement.addEventListener('keydown', onKeyDown);
         rootElement.addEventListener('keyup', onKeyUp);
@@ -371,7 +371,7 @@ ${steps.map(formatStep).join(`\n`)}
         });
         setSteps([]);
       }
-      setIsRecording((currentIsRecording) => !currentIsRecording);
+      setIsRecording(currentIsRecording => !currentIsRecording);
     },
     [isRecording],
   );

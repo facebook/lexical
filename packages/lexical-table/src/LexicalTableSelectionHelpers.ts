@@ -26,6 +26,7 @@ import type {
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
   PointCaret,
   RangeSelection,
   SiblingCaret,
@@ -35,6 +36,7 @@ import {
   $getClipboardDataFromSelection,
   copyToClipboard,
 } from '@lexical/clipboard';
+import invariant from '@lexical/internal/invariant';
 import {
   $findMatchingParent,
   addClassNamesToElement,
@@ -75,6 +77,7 @@ import {
   FORMAT_TEXT_COMMAND,
   getDOMSelection,
   INSERT_PARAGRAPH_COMMAND,
+  IS_FIREFOX,
   isDOMNode,
   isHTMLElement,
   KEY_ARROW_DOWN_COMMAND,
@@ -87,8 +90,6 @@ import {
   KEY_TAB_COMMAND,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
-import {IS_FIREFOX} from 'shared/environment';
-import invariant from 'shared/invariant';
 
 import {$isTableCellNode} from './LexicalTableCellNode';
 import {
@@ -110,6 +111,12 @@ import {
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
 
+function $getTableNodeByKeyOrThrow(key: NodeKey): TableNode {
+  const tableNode = $getNodeByKeyOrThrow(key);
+  invariant($isTableNode(tableNode), 'Expected TableNode for key %s', key);
+  return tableNode;
+}
+
 const isPointerDownOnEvent = (event: PointerEvent) => {
   return (event.buttons & 1) === 1;
 };
@@ -125,12 +132,14 @@ export function getTableElement<T extends HTMLElement | null>(
   if (!dom) {
     return dom as T & null;
   }
-  const element = (
-    isHTMLTableElement(dom) ? dom : tableNode.getDOMSlot(dom).element
-  ) as HTMLTableElementWithWithTableSelectionState;
+  const element: null | HTMLTableElementWithWithTableSelectionState =
+    isHTMLTableElement(dom) ? dom : dom.querySelector('table');
   invariant(
-    element.nodeName === 'TABLE',
-    'getTableElement: Expecting table in as DOM node for TableNode, not %s',
+    isHTMLTableElement(element),
+    'getTableElement: Expecting table in DOM node for %s of type %s with key %s, not %s',
+    tableNode.constructor.name,
+    tableNode.getType(),
+    tableNode.getKey(),
     dom.nodeName,
   );
   return element;
@@ -178,52 +187,60 @@ export function registerTableWindowHandlers(
   editor: LexicalEditor,
   tableObservers: TableObservers,
 ) {
-  const rootElement = editor.getRootElement();
-  const editorWindow = editor._window;
-  if (!rootElement || !editorWindow) {
-    return () => {};
-  }
-
-  const pointerDownCallback = (event: PointerEvent) => {
-    const target = event.target;
-    if (
-      event.button !== 0 ||
-      !isDOMNode(target) ||
-      !rootElement.contains(target)
-    ) {
+  // Use registerRootListener so the pointerdown handler is (re)attached
+  // whenever the root element is set. This is required for the Extension API,
+  // where register() runs before the ContentEditable mounts and getRootElement()
+  // is still null.
+  return editor.registerRootListener(rootElement => {
+    if (rootElement === null) {
       return;
     }
-    const selectionInfo = getTableObserverFromCellNode(target);
+    const editorWindow = editor._window;
+    if (editorWindow === null) {
+      return;
+    }
 
-    editor.update(() => {
-      // Clear highlights from all tables (even one we're actively clicking on)
-      const selection = $getSelection();
-      if ($isTableSelection(selection)) {
-        for (const [observer] of tableObservers.observers.values()) {
-          observer.$clearHighlight(false);
-        }
-        $setSelection(null);
-        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
-      }
-      if (!selectionInfo) {
+    const pointerDownCallback = (event: PointerEvent) => {
+      const target = event.target;
+      if (
+        event.button !== 0 ||
+        !isDOMNode(target) ||
+        !rootElement.contains(target)
+      ) {
         return;
       }
-      const {tableObserver, tableElement, cellElement} = selectionInfo;
-      $handleTableClick(
-        editor,
-        event,
-        cellElement,
-        tableElement,
-        tableObserver,
-        tableObservers,
-      );
-    });
-  };
+      const selectionInfo = getTableObserverFromCellNode(target);
 
-  editorWindow.addEventListener('pointerdown', pointerDownCallback);
-  return () => {
-    editorWindow.removeEventListener('pointerdown', pointerDownCallback);
-  };
+      editor.update(() => {
+        // Clear highlights from all tables (even one we're actively clicking on)
+        const selection = $getSelection();
+        if ($isTableSelection(selection)) {
+          for (const [observer] of tableObservers.observers.values()) {
+            observer.$clearHighlight(false);
+          }
+          $setSelection(null);
+          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+        }
+        if (!selectionInfo) {
+          return;
+        }
+        const {tableObserver, tableElement, cellElement} = selectionInfo;
+        $handleTableClick(
+          editor,
+          event,
+          cellElement,
+          tableElement,
+          tableObserver,
+          tableObservers,
+        );
+      });
+    };
+
+    editorWindow.addEventListener('pointerdown', pointerDownCallback);
+    return () => {
+      editorWindow.removeEventListener('pointerdown', pointerDownCallback);
+    };
+  });
 }
 
 function $handleTableClick(
@@ -318,7 +335,7 @@ function $handleTableClick(
   };
 
   tableObserver.pointerType = event.pointerType;
-  const tableNode = $getNodeByKeyOrThrow<TableNode>(tableObserver.tableNodeKey);
+  const tableNode = $getTableNodeByKeyOrThrow(tableObserver.tableNodeKey);
   const prevSelection = $getPreviousSelection();
   // We can't trust Firefox to do the right thing with the selection and
   // we don't have a proper state machine to do this "correctly" but
@@ -406,7 +423,7 @@ export function applyTableHandlers(
     tableObserver.listenersToRemove.add(
       editor.registerCommand(
         command,
-        (event) =>
+        event =>
           $handleArrowKey(
             editor,
             event,
@@ -423,7 +440,7 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       KEY_ESCAPE_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if ($isTableSelection(selection)) {
           const focusCellNode = $findParentTableCellNodeInTable(
@@ -480,14 +497,14 @@ export function applyTableHandlers(
 
       const nearestElementNode = $findMatchingParent(
         selection.anchor.getNode(),
-        (n) => $isElementNode(n),
+        n => $isElementNode(n),
       );
 
       const topLevelCellElementNode =
         nearestElementNode &&
         $findMatchingParent(
           nearestElementNode,
-          (n) => $isElementNode(n) && $isTableCellNode(n.getParent()),
+          n => $isElementNode(n) && $isTableCellNode(n.getParent()),
         );
 
       if (
@@ -580,7 +597,7 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       CUT_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if (selection) {
           if (!($isTableSelection(selection) || $isRangeSelection(selection))) {
@@ -609,7 +626,7 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       FORMAT_TEXT_COMMAND,
-      (payload) => {
+      payload => {
         const selection = $getSelection();
 
         if (!$isSelectionInTable(selection, tableNode)) {
@@ -623,7 +640,7 @@ export function applyTableHandlers(
         } else if ($isRangeSelection(selection)) {
           const tableCellNode = $findMatchingParent(
             selection.anchor.getNode(),
-            (n) => $isTableCellNode(n),
+            n => $isTableCellNode(n),
           );
 
           if (!$isTableCellNode(tableCellNode)) {
@@ -640,7 +657,7 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       FORMAT_ELEMENT_COMMAND,
-      (formatType) => {
+      formatType => {
         const selection = $getSelection();
         if (
           !$isTableSelection(selection) ||
@@ -707,7 +724,7 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       CONTROLLED_TEXT_INSERTION_COMMAND,
-      (payload) => {
+      payload => {
         const selection = $getSelection();
 
         if (!$isSelectionInTable(selection, tableNode)) {
@@ -721,7 +738,7 @@ export function applyTableHandlers(
         } else if ($isRangeSelection(selection)) {
           const tableCellNode = $findMatchingParent(
             selection.anchor.getNode(),
-            (n) => $isTableCellNode(n),
+            n => $isTableCellNode(n),
           );
 
           if (!$isTableCellNode(tableCellNode)) {
@@ -753,7 +770,7 @@ export function applyTableHandlers(
     tableObserver.listenersToRemove.add(
       editor.registerCommand(
         KEY_TAB_COMMAND,
-        (event) => {
+        event => {
           const selection = $getSelection();
           if (
             !$isRangeSelection(selection) ||
@@ -787,7 +804,7 @@ export function applyTableHandlers(
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       FOCUS_COMMAND,
-      (payload) => {
+      payload => {
         return tableNode.isSelected();
       },
       COMMAND_PRIORITY_HIGH,
@@ -883,9 +900,7 @@ export function $handleTableSelectionChangeCommand(
     $isRangeSelection(selection) &&
     selection.isCollapsed()
   ) {
-    const tableNode = $getNodeByKeyOrThrow<TableNode>(
-      shouldCheckSelectionForTable,
-    );
+    const tableNode = $getTableNodeByKeyOrThrow(shouldCheckSelectionForTable);
     const anchor = selection.anchor.getNode();
     const firstRow = tableNode.getFirstChild();
     const anchorCell = $findCellNode(anchor);
@@ -896,7 +911,7 @@ export function $handleTableSelectionChangeCommand(
         tableNode.is(
           $findMatchingParent(
             anchorCell,
-            (node) => node.is(tableNode) || node.is(firstCell),
+            node => node.is(tableNode) || node.is(firstCell),
           ),
         )
       ) {
@@ -918,13 +933,12 @@ export function $handleTableSelectionChangeCommand(
   // Generic selection logic that runs across every table observer when the selection changes.
   // Note: the selection might have changed in the code above, which re-dispatches the selection change command
   // and gets handled here on the second pass. This should be refactored.
-  const tableNodesAndObservers = tableObservers.observers
-    .entries()
-    .map(([tableKey, [tableObserver]]) => ({
-      tableNode: $getNodeByKeyOrThrow<TableNode>(tableKey),
-      tableObserver,
-    }))
-    .toArray();
+  const tableNodesAndObservers = Array.from(
+    tableObservers.observers.entries(),
+  ).map(([tableKey, [tableObserver]]) => ({
+    tableNode: $getTableNodeByKeyOrThrow(tableKey),
+    tableObserver,
+  }));
   for (const {tableNode, tableObserver} of tableNodesAndObservers) {
     $syncTableSelectionState(editor, tableNode, tableObserver);
   }
@@ -1067,7 +1081,7 @@ function $fixTableSelectionForSelectedTable(
   if (!selection.is(prevSelection)) {
     return;
   }
-  const tableNode = $getNodeByKeyOrThrow<TableNode>(selection.tableKey);
+  const tableNode = $getTableNodeByKeyOrThrow(selection.tableKey);
   // if selection goes outside of the table we need to change it to Range selection
   const domSelection = getDOMSelection(editorWindow);
   if (domSelection && domSelection.anchorNode && domSelection.focusNode) {
@@ -1390,7 +1404,7 @@ export function $addHighlightStyleToTable(
   tableSelection: TableObserver,
 ) {
   tableSelection.$disableHighlightStyle();
-  $forEachTableCell(tableSelection.table, (cell) => {
+  $forEachTableCell(tableSelection.table, cell => {
     cell.highlighted = true;
     $addHighlightToDOM(editor, cell);
   });
@@ -1401,7 +1415,7 @@ export function $removeHighlightStyleToTable(
   tableObserver: TableObserver,
 ) {
   tableObserver.$enableHighlightStyle();
-  $forEachTableCell(tableObserver.table, (cell) => {
+  $forEachTableCell(tableObserver.table, cell => {
     const elem = cell.elem;
     cell.highlighted = false;
     $removeHighlightFromDOM(editor, cell);
@@ -1902,6 +1916,7 @@ function $handleArrowKey(
 
   const selection = $getSelection();
 
+  // Handle arrow key into a table (including from a table into a nested table)
   if (!$isSelectionInTable(selection, tableNode)) {
     if ($isRangeSelection(selection)) {
       if (direction === 'backward') {
@@ -1939,7 +1954,7 @@ function $handleArrowKey(
           ((direction === 'up' && !selection.isBackward()) ||
             (direction === 'down' && selection.isBackward()));
         if (isTableUnselect) {
-          let focusParentNode = $findMatchingParent(focusNode, (n) =>
+          let focusParentNode = $findMatchingParent(focusNode, n =>
             $isTableNode(n),
           );
           if ($isTableCellNode(focusParentNode)) {
@@ -2032,7 +2047,7 @@ function $handleArrowKey(
         } else {
           let focusParentNode = $findMatchingParent(
             focusNode,
-            (n) => $isElementNode(n) && !n.isInline(),
+            n => $isElementNode(n) && !n.isInline(),
           );
           if ($isTableCellNode(focusParentNode)) {
             focusParentNode = $findMatchingParent(
@@ -2200,7 +2215,10 @@ function $handleArrowKey(
       }
     }
   } else if ($isTableSelection(selection)) {
-    const {anchor, focus} = selection;
+    const {anchor, focus, tableKey} = selection;
+    if (tableKey !== tableNode.getKey()) {
+      return false;
+    }
     const anchorCellNode = $findMatchingParent(
       anchor.getNode(),
       $isTableCellNode,
@@ -2333,16 +2351,14 @@ function $getTableEdgeCursorPosition(
     return undefined;
   }
 
-  const anchorCellNode = $findMatchingParent(selection.anchor.getNode(), (n) =>
+  const anchorCellNode = $findMatchingParent(selection.anchor.getNode(), n =>
     $isTableCellNode(n),
   ) as TableCellNode | null;
   if (!anchorCellNode) {
     return undefined;
   }
 
-  const parentTable = $findMatchingParent(anchorCellNode, (n) =>
-    $isTableNode(n),
-  );
+  const parentTable = $findMatchingParent(anchorCellNode, n => $isTableNode(n));
   if (!$isTableNode(parentTable) || !parentTable.is(tableNode)) {
     return undefined;
   }

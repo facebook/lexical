@@ -15,7 +15,6 @@ import {
   initialize,
   insertUploadImage,
   IS_COLLAB_V2,
-  sleep,
   test,
   waitForSelector,
 } from '../utils/index.mjs';
@@ -96,12 +95,14 @@ test.describe('File', () => {
       `,
     );
 
-    page.on('filechooser', (fileChooser) => {
+    page.on('filechooser', fileChooser => {
       fileChooser.setFiles([filePath]);
     });
     await click(page, '.action-button.import');
-    await sleep(200);
 
+    // The import reads and parses the file asynchronously; assertHTML retries
+    // until the imported document replaces the empty editor, so no fixed wait
+    // is needed.
     await assertHTML(page, expectedHtml);
   });
 });

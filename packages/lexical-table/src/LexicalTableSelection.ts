@@ -6,6 +6,7 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createPoint,
@@ -24,7 +25,6 @@ import {
   TextFormatType,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {$isTableNode, TableNode} from './LexicalTableNode';
@@ -35,6 +35,8 @@ import {
   $computeTableMap,
   $getTableCellNodeRect,
 } from './LexicalTableUtils';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 export type TableSelectionShape = {
   fromX: number;
@@ -351,7 +353,7 @@ export class TableSelection implements BaseSelection {
           lastRow = currentRow;
         }
         if (!nodeMap.has(cell.getKey())) {
-          $visitRecursively(cell, (childNode) => {
+          $visitRecursively(cell, childNode => {
             nodeMap.set(childNode.getKey(), childNode);
           });
         }
@@ -366,7 +368,7 @@ export class TableSelection implements BaseSelection {
   }
 
   getTextContent(): string {
-    const nodes = this.getNodes().filter((node) => $isTableCellNode(node));
+    const nodes = this.getNodes().filter(node => $isTableCellNode(node));
     let textContent = '';
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];

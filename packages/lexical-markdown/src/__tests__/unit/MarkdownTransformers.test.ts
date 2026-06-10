@@ -8,6 +8,7 @@
 import {CodeExtension} from '@lexical/code-core';
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {createHeadlessEditor} from '@lexical/headless';
+import {HistoryExtension} from '@lexical/history';
 import {$createLinkNode, $isLinkNode, LinkExtension} from '@lexical/link';
 import {ListExtension} from '@lexical/list';
 import {
@@ -37,20 +38,23 @@ import {
   $getSelection,
   $isParagraphNode,
   $isRangeSelection,
+  $isTextNode,
   defineExtension,
   LexicalEditor,
+  UNDO_COMMAND,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
 
 const MarkdownShortcutTestExtension = defineExtension({
   dependencies: [
+    HistoryExtension,
     LinkExtension,
     RichTextExtension,
     ListExtension,
     CodeExtension,
   ],
   name: 'MarkdownShortcutTest',
-  register: (editor_) => registerMarkdownShortcuts(editor_),
+  register: editor_ => registerMarkdownShortcuts(editor_),
 });
 
 function typeMarkdown(editor: LexicalEditor, text: string) {
@@ -76,7 +80,7 @@ describe('LINK', () => {
       const paragraph = $getRoot().getFirstChildOrThrow();
       assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
       const children = paragraph.getChildren();
-      expect(children.map((node) => node.getTextContent())).toEqual([
+      expect(children.map(node => node.getTextContent())).toEqual([
         'Start ',
         'test',
       ]);
@@ -93,7 +97,7 @@ describe('LINK', () => {
       assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
       const children = paragraph.getChildren();
 
-      expect(children.map((node) => node.getTextContent())).toEqual([
+      expect(children.map(node => node.getTextContent())).toEqual([
         'Bold',
         ' ',
         'Link',
@@ -127,7 +131,7 @@ describe('LINK', () => {
       assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
       const children = paragraph.getChildren();
 
-      expect(children.map((node) => node.getTextContent())).toEqual([
+      expect(children.map(node => node.getTextContent())).toEqual([
         '[a](https://a.example.com) ',
         'b',
       ]);
@@ -183,7 +187,7 @@ describe('BLOCK QUOTE + HEADING', () => {
   const quoteWithNesting = $createQuoteTransformer({
     handleNestedHeadings: true,
   });
-  const nestableTransformers = TRANSFORMERS.map((t) =>
+  const nestableTransformers = TRANSFORMERS.map(t =>
     t === HEADING ? headingWithNesting : t === QUOTE ? quoteWithNesting : t,
   );
 
@@ -195,7 +199,7 @@ describe('BLOCK QUOTE + HEADING', () => {
       CodeExtension,
     ],
     name: 'NestableHeadingTest',
-    register: (editor_) =>
+    register: editor_ =>
       registerMarkdownShortcuts(editor_, nestableTransformers),
   });
 
@@ -350,5 +354,108 @@ describe('BLOCK QUOTE + HEADING', () => {
       .read(() => $convertToMarkdownString(nestableTransformers));
 
     expect(markdown).toBe('> HEADING\n> some text');
+  });
+});
+
+describe('CODE_SPAN_PRECEDENCE', () => {
+  test('__bold__ inside backticks is not formatted as bold', () => {
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '`__bold__`');
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const children = paragraph.getChildren();
+      expect(children).toHaveLength(1);
+      const textNode = children[0];
+      assert($isTextNode(textNode), 'Child must be a TextNode');
+      expect(textNode.getTextContent()).toBe('__bold__');
+      expect(textNode.hasFormat('code')).toBe(true);
+      expect(textNode.hasFormat('bold')).toBe(false);
+    });
+  });
+
+  test('**bold** inside backticks is not formatted as bold', () => {
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '`**bold**`');
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const children = paragraph.getChildren();
+      expect(children).toHaveLength(1);
+      const textNode = children[0];
+      assert($isTextNode(textNode), 'Child must be a TextNode');
+      expect(textNode.getTextContent()).toBe('**bold**');
+      expect(textNode.hasFormat('code')).toBe(true);
+      expect(textNode.hasFormat('bold')).toBe(false);
+    });
+  });
+
+  test('*italic* inside backticks is not formatted as italic', () => {
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '`*italic*`');
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const children = paragraph.getChildren();
+      expect(children).toHaveLength(1);
+      const textNode = children[0];
+      assert($isTextNode(textNode), 'Child must be a TextNode');
+      expect(textNode.getTextContent()).toBe('*italic*');
+      expect(textNode.hasFormat('code')).toBe(true);
+      expect(textNode.hasFormat('italic')).toBe(false);
+    });
+  });
+
+  test('__bold__ without backticks still formats as bold', () => {
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '__bold__');
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const children = paragraph.getChildren();
+      expect(children).toHaveLength(1);
+      const textNode = children[0];
+      assert($isTextNode(textNode), 'Child must be a TextNode');
+      expect(textNode.getTextContent()).toBe('bold');
+      expect(textNode.hasFormat('bold')).toBe(true);
+    });
+  });
+
+  test('__bold__ after a completed code span still formats as bold', () => {
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, '`code` __bold__');
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const textNodes = paragraph
+        .getChildren()
+        .filter(node => $isTextNode(node));
+      const boldNode = textNodes.find(
+        node => $isTextNode(node) && node.hasFormat('bold'),
+      );
+      expect(boldNode).toBeDefined();
+      assert($isTextNode(boldNode!), 'Bold node must be a TextNode');
+      expect(boldNode!.getTextContent()).toBe('bold');
+    });
+  });
+});
+
+describe('HISTORY', () => {
+  test('undo after markdown format transform preserves typed markdown text', () => {
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    typeMarkdown(editor, 'lorem *ipsum*');
+
+    editor.update(
+      () => {
+        editor.dispatchCommand(UNDO_COMMAND, undefined);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      expect(paragraph.getTextContent()).toBe('lorem *ipsum*');
+    });
   });
 });

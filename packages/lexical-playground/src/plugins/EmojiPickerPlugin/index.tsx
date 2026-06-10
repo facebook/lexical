@@ -58,7 +58,7 @@ export default function EmojiPickerPlugin() {
   const [emojis, setEmojis] = useState<Array<Emoji>>([]);
 
   useEffect(() => {
-    import('../../utils/emoji-list').then((file) => setEmojis(file.default));
+    import('../../utils/emoji-list').then(file => setEmojis(file.default));
   }, []);
 
   const emojiOptions = useMemo(
@@ -75,7 +75,9 @@ export default function EmojiPickerPlugin() {
   );
 
   const checkForTriggerMatch = useBasicTypeaheadTriggerMatch(':', {
-    minLength: 0,
+    // Bare ":" must not open the menu: typeahead Enter runs before rich-text and
+    // would steal paragraph breaks (flaky under collab).
+    minLength: 1,
     punctuation: '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\[\\]\\\\/!%\'"~=<>:;', // allow _ and -
   });
 

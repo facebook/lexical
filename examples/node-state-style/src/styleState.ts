@@ -8,12 +8,17 @@
 
 import type {PropertiesHyphenFallback} from 'csstype';
 
+import {
+  CoreImportExtension,
+  defineImportRule,
+  DOMImportExtension,
+  domOverride,
+  DOMRenderExtension,
+  sel,
+} from '@lexical/html';
 import {$forEachSelectedTextNode} from '@lexical/selection';
-import {mergeRegister} from '@lexical/utils';
-import InlineStyleParser from 'inline-style-parser';
 import {
   $caretRangeFromSelection,
-  $getNodeByKey,
   $getPreviousSelection,
   $getSelection,
   $getState,
@@ -22,15 +27,14 @@ import {
   $setSelection,
   $setState,
   COMMAND_PRIORITY_EDITOR,
+  configExtension,
   createCommand,
   createState,
-  DOMConversionMap,
-  DOMExportOutput,
-  isDocumentFragment,
+  defineExtension,
+  getStyleObjectFromCSS,
   isHTMLElement,
-  LexicalEditor,
   LexicalNode,
-  RootNode,
+  setDOMStyleObject,
   TextNode,
   ValueOrUpdater,
 } from 'lexical';
@@ -41,14 +45,11 @@ import {
  * @returns The styleObject containing all the styles and their values.
  */
 export function getStyleObjectFromRawCSS(css: string): StyleObject {
-  let styleObject: undefined | Record<string, string>;
-  for (const token of InlineStyleParser(css, {silent: true})) {
-    if (token.type === 'declaration' && token.value) {
-      styleObject = styleObject || {};
-      styleObject[token.property] = token.value;
-    }
+  const styleObject = getStyleObjectFromCSS(css);
+  for (const _ in styleObject) {
+    return styleObject as StyleObject;
   }
-  return styleObject || NO_STYLE;
+  return NO_STYLE;
 }
 
 export type Prettify<T> = {[K in keyof T]: T[K]} & {};
@@ -146,7 +147,7 @@ export function $removeStyleProperty<
   T extends LexicalNode,
   Prop extends keyof StyleObject,
 >(node: T, prop: Prop): T {
-  return $setStyleObject(node, (prevStyle) => {
+  return $setStyleObject(node, prevStyle => {
     if (prop in prevStyle) {
       const {[prop]: _ignore, ...nextStyle} = prevStyle;
       return nextStyle;
@@ -159,7 +160,7 @@ export function $setStyleProperty<
   T extends LexicalNode,
   Prop extends keyof StyleObject,
 >(node: T, prop: Prop, value: ValueOrUpdater<StyleObject[Prop]>): T {
-  return $setStyleObject(node, (prevStyle) => {
+  return $setStyleObject(node, prevStyle => {
     const prevValue = prevStyle[prop];
     const nextValue = typeof value === 'function' ? value(prevValue) : value;
     return prevValue === nextValue
@@ -168,21 +169,14 @@ export function $setStyleProperty<
   });
 }
 
-export function applyStyle(
-  element: HTMLElement,
-  styleObject: StyleObject,
-): void {
-  for (const k_ in styleObject) {
-    const k = k_ as keyof StyleObject;
-    element.style.setProperty(k, styleObject[k] ?? null);
-  }
-}
-
 export function diffStyleObjects(
   prevStyles: StyleObject,
   nextStyles: StyleObject,
 ): StyleObject {
   let styleDiff: undefined | Record<string, string | undefined>;
+  if (prevStyles === NO_STYLE) {
+    return nextStyles;
+  }
   if (prevStyles !== nextStyles) {
     for (const k_ in nextStyles) {
       const k = k_ as keyof StyleObject;
@@ -273,7 +267,7 @@ export function $patchSelectedTextStyle(
       $setStyleObject(node, styleCallback);
     }
   } else {
-    $forEachSelectedTextNode((node) => $setStyleObject(node, styleCallback));
+    $forEachSelectedTextNode(node => $setStyleObject(node, styleCallback));
   }
   return true;
 }
@@ -313,81 +307,6 @@ function getPreviousStyleObject(
     : NO_STYLE;
 }
 
-// This applies the style to the DOM of any node
-function makeStyleUpdateListener(editor: LexicalEditor): () => void {
-  return mergeRegister(
-    editor.registerMutationListener(RootNode, () => {
-      // UpdateListener will only get the mutatedNodes payload when
-      // at least one MutationListener is registered
-    }),
-    editor.registerUpdateListener((payload) => {
-      const {prevEditorState, mutatedNodes} = payload;
-      editor.getEditorState().read(
-        () => {
-          if (mutatedNodes) {
-            for (const nodes of mutatedNodes.values()) {
-              for (const [nodeKey, nodeMutation] of nodes) {
-                if (nodeMutation === 'destroyed') {
-                  continue;
-                }
-                const node = $getNodeByKey(nodeKey);
-                const dom: null | HTMLElementWithManagedStyle =
-                  editor.getElementByKey(nodeKey);
-                if (!dom || !node) {
-                  return;
-                }
-                const prevNode = $getNodeByKey(nodeKey, prevEditorState);
-                const prevStyleObject = getPreviousStyleObject(
-                  node,
-                  prevNode,
-                  dom,
-                );
-                const nextStyleObject = $getStyleObject(node);
-                dom[PREV_STYLE_STATE] = nextStyleObject;
-                applyStyle(
-                  dom,
-                  diffStyleObjects(prevStyleObject, nextStyleObject),
-                );
-              }
-            }
-          }
-        },
-        {editor},
-      );
-    }),
-  );
-}
-
-// TODO https://github.com/facebook/lexical/issues/7259
-// there should be a better way to do this, this does not compose with other exportDOM overrides
-export function $exportNodeStyle(
-  editor: LexicalEditor,
-  target: LexicalNode,
-): DOMExportOutput {
-  const output = target.exportDOM(editor);
-  const style = $getStyleObject(target);
-  if (style === NO_STYLE) {
-    return output;
-  }
-  return {
-    ...output,
-    after: (generatedElement) => {
-      const el = output.after
-        ? output.after(generatedElement)
-        : generatedElement;
-      if (isHTMLElement(el)) {
-        applyStyle(el, style);
-      } else if (isDocumentFragment(el)) {
-        // Work around a bug in the type
-        return el as unknown as ReturnType<
-          NonNullable<DOMExportOutput['after']>
-        >;
-      }
-      return el;
-    },
-  };
-}
-
 const IGNORE_STYLES: Set<keyof StyleObject> = new Set([
   'font-weight',
   'text-decoration',
@@ -397,71 +316,152 @@ const IGNORE_STYLES: Set<keyof StyleObject> = new Set([
 
 export type StyleMapping = (input: StyleObject) => StyleObject;
 
-// TODO there's no reasonable way to hook into importDOM/exportDOM from a plug-in https://github.com/facebook/lexical/issues/7259
-export function constructStyleImportMap(
-  styleMapping: StyleMapping = (input) => input,
-): DOMConversionMap {
-  const importMap: DOMConversionMap = {};
-
-  // Wrap all TextNode importers with a function that also imports
-  // styles that are not otherwise imported
-  for (const [tag, fn] of Object.entries(TextNode.importDOM() || {})) {
-    importMap[tag] = (importNode) => {
-      const importer = fn(importNode);
-      if (!importer) {
-        return null;
-      }
-      return {
-        ...importer,
-        conversion: (element) => {
-          const output = importer.conversion(element);
-          if (
-            output === null ||
-            output.forChild === undefined ||
-            output.after !== undefined ||
-            output.node !== null ||
-            !element.hasAttribute('style')
-          ) {
-            return output;
-          }
-          let extraStyles: undefined | Record<string, string>;
-          for (const k of element.style) {
-            if (IGNORE_STYLES.has(k as keyof StyleObject)) {
-              continue;
-            }
-            extraStyles = extraStyles || {};
-            extraStyles[k] = element.style.getPropertyValue(k);
-          }
-          if (extraStyles) {
-            const {forChild} = output;
-            return {
-              ...output,
-              forChild: (child, parent) => {
-                const node = forChild(child, parent);
-                return $isTextNode(node)
-                  ? $setStyleObject(
-                      node,
-                      styleMapping(extraStyles as StyleObject),
-                    )
-                  : node;
-              },
-            };
-          }
-          return output;
-        },
-      };
-    };
+/**
+ * Extract the styles to import — i.e. every CSS property other than the
+ * ones already handled by the core inline-format rule
+ * ({@link IGNORE_STYLES}).
+ */
+function extractExtraStyles(el: HTMLElement): StyleObject | null {
+  let extra: undefined | Record<string, string>;
+  for (const k of el.style) {
+    if (IGNORE_STYLES.has(k as keyof StyleObject)) {
+      continue;
+    }
+    extra = extra || {};
+    extra[k] = el.style.getPropertyValue(k);
   }
-  return importMap;
+  return extra ? (extra as StyleObject) : null;
 }
 
-export function registerStyleState(editor: LexicalEditor): () => void {
-  return mergeRegister(
+/**
+ * Build a wildcard import rule that decorates every TextNode produced by
+ * a styled element with the element's "extra" styles (those not already
+ * handled by the core inline-format rule).
+ *
+ * This is the {@link DOMImportExtension}-native replacement for the
+ * legacy `constructStyleImportMap` workaround that wrapped every TextNode
+ * importer in turn.
+ */
+export function createStyleImportRule(
+  styleMapping: StyleMapping = input => input,
+) {
+  return defineImportRule({
+    $import: (_ctx, el, $next) => {
+      const extra = el.hasAttribute('style') ? extractExtraStyles(el) : null;
+      const out = $next();
+      if (extra) {
+        const mapped = styleMapping(extra);
+        for (const child of out) {
+          if ($isTextNode(child)) {
+            $setStyleObject(child, prev => mergeStyleObjects(prev, mapped));
+          }
+        }
+      }
+      return out;
+    },
+    // Match every styled element — the per-element refinement happens in
+    // the body (only TextNodes produced by `$next()` get styled, and we
+    // skip ignored properties). The wildcard sits at the lowest priority
+    // (registered last in the rules array below) so per-tag rules from
+    // CoreImportExtension still drive node creation.
+    match: sel.any().attr('style', /\S/),
+    name: '@lexical/examples/node-state-style/style',
+  });
+}
+
+export const StyleStateExtension = defineExtension({
+  dependencies: [
+    // New-pipeline import: register the style-capturing wildcard rule via
+    // DOMImportExtension. Replaces the legacy `html: {import: ...}` field
+    // that used `constructStyleImportMap`.
+    CoreImportExtension,
+    configExtension(DOMImportExtension, {
+      rules: [createStyleImportRule()],
+    }),
+    configExtension(DOMRenderExtension, {
+      overrides: [
+        // Remove pre-wrap from TextNode export when not needed, and
+        // strip any resulting empty `style=""` attributes (which can be
+        // left behind by `el.style.removeProperty(...)` in some browsers
+        // / JSDOM, or added incidentally by an upstream `el.style.foo = …`
+        // followed by another override that clears that property).
+        domOverride([TextNode], {
+          $exportDOM(_node, $next) {
+            const result = $next();
+            if (isHTMLElement(result.element)) {
+              const textContent = result.element.textContent || '';
+              // We know there aren't tabs or newlines, but if there are
+              // leading, trailing, or adjacent spaces we need pre-wrap to
+              // preserve them.
+              const needsPreWrap = /^\s|\s$|\s\s/.test(textContent);
+              for (const el of [
+                result.element,
+                ...result.element.querySelectorAll('*'),
+              ]) {
+                if (!isHTMLElement(el)) {
+                  continue;
+                }
+                if (!needsPreWrap && el.style.whiteSpace === 'pre-wrap') {
+                  el.style.removeProperty('white-space');
+                }
+                // Strip an empty `style` attribute regardless of how it
+                // got there — `removeProperty` above can leave the
+                // attribute as `style=""`, and so can any earlier
+                // override that cleared its only set property.
+                const styleAttr = el.getAttribute('style');
+                if (styleAttr !== null && styleAttr.trim() === '') {
+                  el.removeAttribute('style');
+                }
+              }
+            }
+            return result;
+          },
+        }),
+        domOverride('*', {
+          $decorateDOM(nextNode, prevNode, dom) {
+            const managedDOM: HTMLElementWithManagedStyle = dom;
+            const nextStyleObject = $getStyleObject(nextNode);
+            const diffStyleObject = diffStyleObjects(
+              getPreviousStyleObject(nextNode, prevNode, dom),
+              nextStyleObject,
+            );
+            managedDOM[PREV_STYLE_STATE] = nextStyleObject;
+            if (diffStyleObject !== NO_STYLE) {
+              setDOMStyleObject(dom.style, diffStyleObject);
+            }
+          },
+          $exportDOM(node, $next) {
+            const output = $next();
+            const style = $getStyleObject(node);
+            if (output.element && style !== NO_STYLE) {
+              if (output.after) {
+                return {
+                  ...output,
+                  after: generatedElement => {
+                    const el = output.after
+                      ? output.after(generatedElement)
+                      : generatedElement;
+                    if (isHTMLElement(el)) {
+                      setDOMStyleObject(el.style, style);
+                    }
+                    return el;
+                  },
+                };
+              } else if (isHTMLElement(output.element)) {
+                setDOMStyleObject(output.element.style, style);
+              }
+            }
+            return output;
+          },
+        }),
+      ],
+    }),
+  ],
+  name: '@lexical/examples/node-state-style/StyleState',
+  register: editor =>
     editor.registerCommand(
       PATCH_TEXT_STYLE_COMMAND,
       $patchSelectedTextStyle,
       COMMAND_PRIORITY_EDITOR,
     ),
-    makeStyleUpdateListener(editor),
-  );
-}
+});

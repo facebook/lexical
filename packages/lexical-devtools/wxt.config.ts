@@ -13,12 +13,13 @@ import fs from 'fs';
 import * as path from 'path';
 import {defineConfig, UserManifest} from 'wxt';
 
-import moduleResolution from '../shared/viteModuleResolution';
+import transformErrorMessages from '../../scripts/error-codes/transform-error-messages.mjs';
+import moduleResolution from '../../scripts/vite/viteModuleResolution';
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   debug: !!process.env.DEBUG_WXT,
-  manifest: (configEnv) => {
+  manifest: configEnv => {
     const browserName =
       configEnv.browser.charAt(0).toUpperCase() + configEnv.browser.slice(1);
 
@@ -79,7 +80,7 @@ export default defineConfig({
     return manifestConf;
   },
   srcDir: './src',
-  vite: (configEnv) => {
+  vite: configEnv => {
     const isProd = configEnv.mode !== 'development';
     const {version} = JSON.parse(
       fs.readFileSync(path.resolve(__dirname, 'package.json'), {
@@ -104,8 +105,7 @@ export default defineConfig({
           plugins: [
             '@babel/plugin-transform-flow-strip-types',
             [
-              // eslint-disable-next-line @typescript-eslint/no-require-imports
-              require('../../scripts/error-codes/transform-error-messages'),
+              transformErrorMessages,
               {
                 noMinify: true,
               },

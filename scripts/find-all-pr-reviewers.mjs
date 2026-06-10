@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-/* eslint-disable no-console */
+
 // @ts-check
 
 /**
@@ -18,13 +18,15 @@ import {execSync} from 'child_process';
 
 /**
  * Executes a shell command and returns the output
+ * @param {string} command the shell command to execute
+ * @returns {string | null} the trimmed stdout, or null if the command failed
  */
 function exec(command) {
   try {
     return execSync(command, {encoding: 'utf8'}).trim();
   } catch (error) {
     console.error(`Error executing command: ${command}`);
-    console.error(error.message);
+    console.error(/** @type {Error} */ (error).message);
     return null;
   }
 }
@@ -102,10 +104,13 @@ async function findAllPRReviewers() {
 
       // Add a small delay to avoid rate limiting
       if (hasNextPage) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
     } catch (error) {
-      console.error('Error parsing response:', error.message);
+      console.error(
+        'Error parsing response:',
+        /** @type {Error} */ (error).message,
+      );
       break;
     }
   }
@@ -120,7 +125,7 @@ async function findAllPRReviewers() {
   );
 
   console.log('=== All PR Reviewers (Alphabetical) ===\n');
-  reviewerList.forEach((reviewer) => {
+  reviewerList.forEach(reviewer => {
     console.log(reviewer);
   });
 
@@ -131,7 +136,7 @@ async function findAllPRReviewers() {
 }
 
 // Run the script
-findAllPRReviewers().catch((error) => {
+findAllPRReviewers().catch(error => {
   console.error('Error finding PR reviewers:', error);
   process.exit(1);
 });

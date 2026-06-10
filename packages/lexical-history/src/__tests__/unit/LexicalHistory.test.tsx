@@ -16,6 +16,7 @@ import {
 import {
   createEmptyHistoryState,
   HistoryExtension,
+  type HistoryState,
   registerHistory,
   SharedHistoryExtension,
 } from '@lexical/history';
@@ -69,8 +70,8 @@ import {
   html,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
+import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {
   afterEach,
   assert,
@@ -179,7 +180,7 @@ class ChildEditorNode extends DecoratorNode<null> {
 const ChildEditorExtension = defineExtension({
   name: '@lexical/test/ChildEditor',
   nodes: [ChildEditorNode],
-  register: (editor) =>
+  register: editor =>
     editor.registerMutationListener(
       ChildEditorNode,
       (nodes, {prevEditorState}) => {
@@ -249,13 +250,13 @@ describe('LexicalHistory tests', () => {
     let canRedo = true;
     let canUndo = true;
 
-    ReactTestUtils.act(() => {
+    await act(() => {
       reactRoot.render(<Test key="smth" />);
     });
 
     editor.registerCommand<boolean>(
       CAN_REDO_COMMAND,
-      (payload) => {
+      payload => {
         canRedo = payload;
         return false;
       },
@@ -264,16 +265,14 @@ describe('LexicalHistory tests', () => {
 
     editor.registerCommand<boolean>(
       CAN_UNDO_COMMAND,
-      (payload) => {
+      payload => {
         canUndo = payload;
         return false;
       },
       COMMAND_PRIORITY_CRITICAL,
     );
 
-    await Promise.resolve().then();
-
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
     });
 
@@ -282,14 +281,11 @@ describe('LexicalHistory tests', () => {
   });
 
   test('LexicalHistory.Redo after Quote Node', async () => {
-    ReactTestUtils.act(() => {
+    await act(() => {
       reactRoot.render(<Test key="smth" />);
     });
 
-    // Wait for update to complete
-    await Promise.resolve().then();
-
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         const root = $getRoot();
         const paragraph1 = $createParagraphNodeWithText('AAA');
@@ -304,7 +300,7 @@ describe('LexicalHistory tests', () => {
 
     const initialJSONState = editor.getEditorState().toJSON();
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         const root = $getRoot();
         const selection = $createRangeSelection();
@@ -338,7 +334,7 @@ describe('LexicalHistory tests', () => {
       ).text,
     ).toBe('AAA');
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.dispatchCommand(UNDO_COMMAND, undefined);
       });
@@ -353,13 +349,13 @@ describe('LexicalHistory tests', () => {
     let canRedo = false;
     let canUndo = false;
 
-    ReactTestUtils.act(() => {
+    await act(() => {
       reactRoot.render(<Test key="smth" />);
     });
 
     editor.registerCommand<boolean>(
       CAN_REDO_COMMAND,
-      (payload) => {
+      payload => {
         canRedo = payload;
         return false;
       },
@@ -368,7 +364,7 @@ describe('LexicalHistory tests', () => {
 
     editor.registerCommand<boolean>(
       CAN_UNDO_COMMAND,
-      (payload) => {
+      payload => {
         canUndo = payload;
         return false;
       },
@@ -376,7 +372,7 @@ describe('LexicalHistory tests', () => {
     );
 
     // focus (needs the focus to initialize)
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor.focus();
     });
 
@@ -384,7 +380,7 @@ describe('LexicalHistory tests', () => {
     expect(canUndo).toBe(false);
 
     // change
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         const root = $getRoot();
         const paragraph = $createParagraphNodeWithText('foo');
@@ -395,7 +391,7 @@ describe('LexicalHistory tests', () => {
     expect(canUndo).toBe(true);
 
     // undo
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.dispatchCommand(UNDO_COMMAND, undefined);
       });
@@ -404,7 +400,7 @@ describe('LexicalHistory tests', () => {
     expect(canUndo).toBe(false);
 
     // redo
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.dispatchCommand(REDO_COMMAND, undefined);
       });
@@ -413,7 +409,7 @@ describe('LexicalHistory tests', () => {
     expect(canUndo).toBe(true);
 
     // undo
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.dispatchCommand(UNDO_COMMAND, undefined);
       });
@@ -422,7 +418,7 @@ describe('LexicalHistory tests', () => {
     expect(canUndo).toBe(false);
 
     // change
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         const root = $getRoot();
         const paragraph = $createParagraphNodeWithText('foo');
@@ -538,6 +534,197 @@ describe('LexicalHistory tests', () => {
   });
 });
 
+describe('HistoryExtension canUndo/canRedo signals', () => {
+  function buildEditor() {
+    return buildEditorFromExtensions({
+      dependencies: [configExtension(HistoryExtension, {delay: 0})],
+      name: 'test',
+    });
+  }
+
+  function buildEditorWithHistory(historyState: HistoryState) {
+    return buildEditorFromExtensions({
+      dependencies: [
+        configExtension(HistoryExtension, {
+          createInitialHistoryState: () => historyState,
+          delay: 0,
+        }),
+      ],
+      name: 'test',
+    });
+  }
+
+  function $appendParagraph(text: string) {
+    $getRoot().append($createParagraphNode().append($createTextNode(text)));
+  }
+
+  // Two updates are required to populate the undoStack: the first update sets
+  // `historyState.current`, the second pushes the previous `current` onto the
+  // stack and dispatches CAN_UNDO_COMMAND.
+  function makeEditorWithOneUndoEntry() {
+    const editor = buildEditor();
+    editor.update(() => $appendParagraph('first'), {discrete: true});
+    editor.update(() => $appendParagraph('second'), {discrete: true});
+    return editor;
+  }
+
+  test('signals start as false', () => {
+    using editor = buildEditor();
+    const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
+    expect(output.canUndo.peek()).toBe(false);
+    expect(output.canRedo.peek()).toBe(false);
+  });
+
+  test('canUndo becomes true after a push, canRedo stays false', () => {
+    using editor = makeEditorWithOneUndoEntry();
+    const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
+    expect(output.canUndo.peek()).toBe(true);
+    expect(output.canRedo.peek()).toBe(false);
+  });
+
+  test('canRedo becomes true after undo, canUndo goes false', () => {
+    using editor = makeEditorWithOneUndoEntry();
+    const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
+    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    expect(output.canUndo.peek()).toBe(false);
+    expect(output.canRedo.peek()).toBe(true);
+  });
+
+  test('canRedo clears after redo, canUndo returns true', () => {
+    using editor = makeEditorWithOneUndoEntry();
+    const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
+    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(REDO_COMMAND, undefined);
+    expect(output.canUndo.peek()).toBe(true);
+    expect(output.canRedo.peek()).toBe(false);
+  });
+
+  test('signals reset to false after CLEAR_HISTORY_COMMAND', () => {
+    using editor = makeEditorWithOneUndoEntry();
+    const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
+    expect(output.canUndo.peek()).toBe(true);
+    editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+    expect(output.canUndo.peek()).toBe(false);
+    expect(output.canRedo.peek()).toBe(false);
+  });
+
+  test('canRedo clears when a new edit is made after undo', () => {
+    using editor = makeEditorWithOneUndoEntry();
+    const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
+    // Wrap UNDO dispatch in editor.update so that the HISTORIC_TAG from
+    // undo's setEditorState does not leak into the subsequent edit.
+    editor.update(() => editor.dispatchCommand(UNDO_COMMAND, undefined), {
+      discrete: true,
+    });
+    expect(output.canRedo.peek()).toBe(true);
+    editor.update(() => $appendParagraph('third'), {discrete: true});
+    expect(output.canRedo.peek()).toBe(false);
+    expect(output.canUndo.peek()).toBe(true);
+  });
+
+  test('canUndo is true immediately when initialized with a non-empty undoStack', () => {
+    using donor = makeEditorWithOneUndoEntry();
+    const donorHistory = getExtensionDependencyFromEditor(
+      donor,
+      HistoryExtension,
+    ).output.historyState.peek();
+    expect(donorHistory.undoStack.length).toBeGreaterThan(0);
+
+    using editor = buildEditorWithHistory(donorHistory);
+    const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
+    expect(output.canUndo.peek()).toBe(true);
+    expect(output.canRedo.peek()).toBe(false);
+  });
+
+  test('canRedo is true immediately when initialized with a non-empty redoStack', () => {
+    using donor = makeEditorWithOneUndoEntry();
+    donor.dispatchCommand(UNDO_COMMAND, undefined);
+    const donorHistory = getExtensionDependencyFromEditor(
+      donor,
+      HistoryExtension,
+    ).output.historyState.peek();
+    expect(donorHistory.redoStack.length).toBeGreaterThan(0);
+
+    using editor = buildEditorWithHistory(donorHistory);
+    const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
+    expect(output.canUndo.peek()).toBe(false);
+    expect(output.canRedo.peek()).toBe(true);
+  });
+
+  test('signals update when historyState signal is reassigned to a populated state', () => {
+    // Simulates what SharedHistoryExtension does when it inherits parent state.
+    using editor = buildEditor();
+    const dep = getExtensionDependencyFromEditor(editor, HistoryExtension);
+    expect(dep.output.canUndo.peek()).toBe(false);
+
+    const populated = createEmptyHistoryState();
+    populated.undoStack.push({
+      editor,
+      editorState: editor.getEditorState(),
+    });
+
+    dep.output.historyState.value = populated;
+    expect(dep.output.canUndo.peek()).toBe(true);
+    expect(dep.output.canRedo.peek()).toBe(false);
+  });
+});
+
+describe('HistoryExtension maxDepth', () => {
+  function buildEditorWithMaxDepth(maxDepth: number | null) {
+    return buildEditorFromExtensions({
+      dependencies: [configExtension(HistoryExtension, {delay: 0, maxDepth})],
+      name: 'test',
+    });
+  }
+
+  function $appendParagraph(text: string) {
+    $getRoot().append($createParagraphNode().append($createTextNode(text)));
+  }
+
+  function pushNHistoryEvents(editor: LexicalEditor, n: number) {
+    // Each editor.update with discrete: true is a separate history event when
+    // delay is 0 — the merge window is closed.  The first update populates
+    // historyState.current; the second pushes it onto undoStack; from then
+    // on every additional update adds one entry.  So `n` updates produce
+    // `n - 1` undoStack entries.
+    for (let i = 0; i < n; i++) {
+      editor.update(() => $appendParagraph(`p${i}`), {discrete: true});
+    }
+  }
+
+  test('defaults to null (unbounded) and matches the historical behavior', () => {
+    using editor = buildEditorWithMaxDepth(null);
+    pushNHistoryEvents(editor, 25);
+    const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
+    expect(output.maxDepth.peek()).toBe(null);
+    expect(output.historyState.peek().undoStack.length).toBe(24);
+  });
+
+  test('caps the undoStack to maxDepth via FIFO eviction', () => {
+    using editor = buildEditorWithMaxDepth(5);
+    pushNHistoryEvents(editor, 20);
+    const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
+    expect(output.historyState.peek().undoStack.length).toBe(5);
+    // canUndo stays true once any entry exists.
+    expect(output.canUndo.peek()).toBe(true);
+  });
+
+  test('reactively respects a maxDepth signal update for future events', () => {
+    using editor = buildEditorWithMaxDepth(null);
+    pushNHistoryEvents(editor, 8); // 7 entries
+    const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
+    expect(output.historyState.peek().undoStack.length).toBe(7);
+
+    // Lowering maxDepth does not retroactively trim — only future pushes
+    // observe the new cap, at which point the stack settles to that length.
+    output.maxDepth.value = 3;
+    expect(output.historyState.peek().undoStack.length).toBe(7);
+
+    pushNHistoryEvents(editor, 5); // 5 more events trigger trimming
+    expect(output.historyState.peek().undoStack.length).toBe(3);
+  });
+});
+
 describe('SharedHistoryExtension', () => {
   test('can create a parent editor', async () => {
     const clock = Date.now();
@@ -588,6 +775,7 @@ describe('SharedHistoryExtension', () => {
       html`
         <p dir="auto"><span data-lexical-text="true">parent editor</span></p>
         <div
+          contenteditable="false"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           data-lexical-decorator="true"
           data-lexical-editor="true">
@@ -610,6 +798,7 @@ describe('SharedHistoryExtension', () => {
       html`
         <p dir="auto"><span data-lexical-text="true">parent editor</span></p>
         <div
+          contenteditable="false"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           data-lexical-decorator="true"
           data-lexical-editor="true">
@@ -644,6 +833,7 @@ describe('SharedHistoryExtension', () => {
       html`
         <p dir="auto"><span data-lexical-text="true">parent editor</span></p>
         <div
+          contenteditable="false"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           data-lexical-decorator="true"
           data-lexical-editor="true">

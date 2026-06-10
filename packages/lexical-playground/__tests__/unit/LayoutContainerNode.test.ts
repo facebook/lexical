@@ -6,171 +6,166 @@
  *
  */
 
-import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {$getRoot, $insertNodes} from 'lexical';
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {
-  expectHtmlToBeEqual,
-  html,
-  initializeUnitTest,
-} from 'lexical/src/__tests__/utils';
-import {describe, expect, it} from 'vitest';
+  $generateHtmlFromNodes,
+  $generateNodesFromDOMViaExtension,
+} from '@lexical/html';
+import {$getRoot, $insertNodes, defineExtension} from 'lexical';
+import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
+import {assert, describe, expect, it} from 'vitest';
 
 import {
   $createLayoutContainerNode,
-  LayoutContainerNode,
+  $isLayoutContainerNode,
 } from '../../src/nodes/LayoutContainerNode';
-import {LayoutItemNode} from '../../src/nodes/LayoutItemNode';
+import {LayoutExtension} from '../../src/plugins/LayoutExtension/LayoutExtension';
+
+const LayoutTestExtension = defineExtension({
+  $initialEditorState: null,
+  dependencies: [LayoutExtension],
+  name: '[test-layout]',
+});
+
+function $importHtml(source: string): void {
+  const parser = new DOMParser();
+  const dom = parser.parseFromString(source, 'text/html');
+  $insertNodes($generateNodesFromDOMViaExtension(dom));
+}
 
 describe('LayoutContainerNode HTML serialization', () => {
-  initializeUnitTest(
-    (testEnv) => {
-      describe('exportDOM', () => {
-        it('exports with inline grid-template-columns style', async () => {
-          const {editor} = testEnv;
-          editor.update(
-            () => {
-              const container = $createLayoutContainerNode('1fr 1fr');
-              $getRoot().append(container);
-            },
-            {discrete: true},
+  describe('exportDOM', () => {
+    it('exports with inline grid-template-columns style', () => {
+      using editor = buildEditorFromExtensions(LayoutTestExtension);
+      editor.update(
+        () => {
+          const container = $createLayoutContainerNode('1fr 1fr');
+          $getRoot().append(container);
+        },
+        {discrete: true},
+      );
+      const htmlOutput = editor.read(() =>
+        $generateHtmlFromNodes(editor, null),
+      );
+      expectHtmlToBeEqual(
+        htmlOutput,
+        html`
+          <div
+            style="grid-template-columns: 1fr 1fr"
+            data-lexical-layout-container="true"></div>
+        `,
+      );
+    });
+  });
+
+  describe('importDOM', () => {
+    it('imports layout container from inline style', () => {
+      using editor = buildEditorFromExtensions(LayoutTestExtension);
+      editor.update(
+        () => {
+          $getRoot().clear().select();
+          $importHtml(
+            '<div data-lexical-layout-container="true" style="grid-template-columns: 1fr 1fr;"></div>',
           );
-          const htmlOutput = editor.read(() =>
-            $generateHtmlFromNodes(editor, null),
-          );
-          expectHtmlToBeEqual(
-            htmlOutput,
-            html`
-              <div
-                style="grid-template-columns: 1fr 1fr"
-                data-lexical-layout-container="true"></div>
-            `,
-          );
-        });
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const container = $getRoot().getFirstChild();
+        assert(
+          $isLayoutContainerNode(container),
+          'first child must be a LayoutContainerNode',
+        );
+        expect(container.getTemplateColumns()).toBe('1fr 1fr');
       });
+    });
 
-      describe('importDOM', () => {
-        it('imports layout container from inline style', async () => {
-          const {editor} = testEnv;
-          const parser = new DOMParser();
-          const htmlString =
-            '<div data-lexical-layout-container="true" style="grid-template-columns: 1fr 1fr;"></div>';
-          const dom = parser.parseFromString(htmlString, 'text/html');
-          await editor.update(() => {
-            const nodes = $generateNodesFromDOM(editor, dom);
-            $getRoot().select();
-            $insertNodes(nodes);
-          });
-          editor.read(() => {
-            const root = $getRoot();
-            const container = root.getFirstChild();
-            expect(container).toBeInstanceOf(LayoutContainerNode);
-            expect(
-              (container as LayoutContainerNode).getTemplateColumns(),
-            ).toBe('1fr 1fr');
-          });
-        });
-
-        it('returns null for div without data-lexical-layout-container', async () => {
-          const {editor} = testEnv;
-          const parser = new DOMParser();
-          const htmlString =
-            '<div style="grid-template-columns: 1fr 1fr;"></div>';
-          const dom = parser.parseFromString(htmlString, 'text/html');
-          await editor.update(() => {
-            const nodes = $generateNodesFromDOM(editor, dom);
-            $getRoot().select();
-            $insertNodes(nodes);
-          });
-          editor.read(() => {
-            const root = $getRoot();
-            const children = root.getChildren();
-            const hasLayoutContainer = children.some(
-              (child) => child instanceof LayoutContainerNode,
-            );
-            expect(hasLayoutContainer).toBe(false);
-          });
-        });
+    it('does not import a div without data-lexical-layout-container', () => {
+      using editor = buildEditorFromExtensions(LayoutTestExtension);
+      editor.update(
+        () => {
+          $getRoot().clear().select();
+          $importHtml('<div style="grid-template-columns: 1fr 1fr;"></div>');
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const hasLayoutContainer = $getRoot()
+          .getChildren()
+          .some($isLayoutContainerNode);
+        expect(hasLayoutContainer).toBe(false);
       });
+    });
+  });
 
-      describe('export/import round-trip', () => {
-        it('preserves templateColumns through HTML round-trip', async () => {
-          const {editor} = testEnv;
-          const templateColumns = '1fr 1fr';
+  describe('export/import round-trip', () => {
+    it('preserves templateColumns through HTML round-trip', () => {
+      using editor = buildEditorFromExtensions(LayoutTestExtension);
+      const templateColumns = '1fr 1fr';
 
-          // Step 1: Create a layout container and export to HTML
-          editor.update(
-            () => {
-              const container = $createLayoutContainerNode(templateColumns);
-              $getRoot().append(container);
-            },
-            {discrete: true},
-          );
-          const exportedHtml = editor.read(() =>
-            $generateHtmlFromNodes(editor, null),
-          );
+      // Step 1: Create a layout container and export to HTML
+      editor.update(
+        () => {
+          const container = $createLayoutContainerNode(templateColumns);
+          $getRoot().append(container);
+        },
+        {discrete: true},
+      );
+      const exportedHtml = editor.read(() =>
+        $generateHtmlFromNodes(editor, null),
+      );
 
-          // Step 2: Clear the editor and re-import the exported HTML
-          const parser = new DOMParser();
-          const dom = parser.parseFromString(exportedHtml, 'text/html');
-          editor.update(
-            () => {
-              $getRoot().clear();
-              const nodes = $generateNodesFromDOM(editor, dom);
-              $getRoot().select();
-              $insertNodes(nodes);
-            },
-            {discrete: true},
-          );
+      // Step 2: Clear the editor and re-import the exported HTML
+      editor.update(
+        () => {
+          $getRoot().clear().select();
+          $importHtml(exportedHtml);
+        },
+        {discrete: true},
+      );
 
-          // Step 3: Verify the imported node has the correct templateColumns
-          editor.read(() => {
-            const root = $getRoot();
-            const container = root.getFirstChild();
-            expect(container).toBeInstanceOf(LayoutContainerNode);
-            expect(
-              (container as LayoutContainerNode).getTemplateColumns(),
-            ).toBe(templateColumns);
-          });
-        });
-
-        it('preserves 3-column layout through HTML round-trip', async () => {
-          const {editor} = testEnv;
-          const templateColumns = '1fr 1fr 1fr';
-
-          editor.update(
-            () => {
-              const container = $createLayoutContainerNode(templateColumns);
-              $getRoot().append(container);
-            },
-            {discrete: true},
-          );
-          const exportedHtml = editor.read(() =>
-            $generateHtmlFromNodes(editor, null),
-          );
-
-          const parser = new DOMParser();
-          const dom = parser.parseFromString(exportedHtml, 'text/html');
-          editor.update(
-            () => {
-              $getRoot().clear();
-              const nodes = $generateNodesFromDOM(editor, dom);
-              $getRoot().select();
-              $insertNodes(nodes);
-            },
-            {discrete: true},
-          );
-
-          editor.read(() => {
-            const root = $getRoot();
-            const container = root.getFirstChild();
-            expect(container).toBeInstanceOf(LayoutContainerNode);
-            expect(
-              (container as LayoutContainerNode).getTemplateColumns(),
-            ).toBe(templateColumns);
-          });
-        });
+      // Step 3: Verify the imported node has the correct templateColumns
+      editor.read(() => {
+        const container = $getRoot().getFirstChild();
+        assert(
+          $isLayoutContainerNode(container),
+          'first child must be a LayoutContainerNode',
+        );
+        expect(container.getTemplateColumns()).toBe(templateColumns);
       });
-    },
-    {nodes: [LayoutContainerNode, LayoutItemNode]},
-  );
+    });
+
+    it('preserves 3-column layout through HTML round-trip', () => {
+      using editor = buildEditorFromExtensions(LayoutTestExtension);
+      const templateColumns = '1fr 1fr 1fr';
+
+      editor.update(
+        () => {
+          const container = $createLayoutContainerNode(templateColumns);
+          $getRoot().append(container);
+        },
+        {discrete: true},
+      );
+      const exportedHtml = editor.read(() =>
+        $generateHtmlFromNodes(editor, null),
+      );
+
+      editor.update(
+        () => {
+          $getRoot().clear().select();
+          $importHtml(exportedHtml);
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const container = $getRoot().getFirstChild();
+        assert(
+          $isLayoutContainerNode(container),
+          'first child must be a LayoutContainerNode',
+        );
+        expect(container.getTemplateColumns()).toBe(templateColumns);
+      });
+    });
+  });
 });

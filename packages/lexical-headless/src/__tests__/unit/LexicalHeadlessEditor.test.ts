@@ -49,14 +49,14 @@ describe('LexicalHeadlessEditor', () => {
   ) {
     const nodesFromState = Array.from(editorState._nodeMap.values());
     expect(nodesFromState).toEqual(
-      nodes.map((node) => expect.objectContaining(node)),
+      nodes.map(node => expect.objectContaining(node)),
     );
   }
 
   beforeEach(() => {
     editor = createHeadlessEditor({
       namespace: '',
-      onError: (error) => {
+      onError: error => {
         throw error;
       },
     });
@@ -204,7 +204,7 @@ describe('LexicalHeadlessEditor', () => {
 
     const html = editor
       .getEditorState()
-      .read(() => $generateHtmlFromNodes(editor, null));
+      .read(() => $generateHtmlFromNodes(editor, null), {editor});
 
     cleanup();
 
@@ -231,7 +231,7 @@ describe('LexicalHeadlessEditor', () => {
       const html = withDOM(() =>
         editor
           .getEditorState()
-          .read(() => $generateHtmlFromNodes(editor, null)),
+          .read(() => $generateHtmlFromNodes(editor, null), {editor}),
       );
 
       expect(html).toBe(

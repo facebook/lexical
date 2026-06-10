@@ -7,7 +7,7 @@
  */
 import type {StoreApi} from 'zustand';
 
-import {IS_FIREFOX, IS_SAFARI} from 'shared/environment';
+import {IS_FIREFOX, IS_SAFARI} from 'lexical';
 
 import {ExtensionState} from '../../store';
 
@@ -26,7 +26,7 @@ export default class ActionIconWatchdog {
       tabs.map(this.checkAndHandleRestrictedPageIfSo.bind(this)),
     );
 
-    browser.tabs.onCreated.addListener((tab) => {
+    browser.tabs.onCreated.addListener(tab => {
       this.checkAndHandleRestrictedPageIfSo(tab);
     });
 

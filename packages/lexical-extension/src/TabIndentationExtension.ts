@@ -41,7 +41,7 @@ function $indentOverTab(selection: RangeSelection): boolean {
   // const handled = new Set();
   const nodes = selection.getNodes();
   const canIndentBlockNodes = nodes.filter(
-    (node) => $isBlockElementNode(node) && node.canIndent(),
+    node => $isBlockElementNode(node) && node.canIndent(),
   );
   // 1. If selection spans across canIndent block nodes: indent
   if (canIndentBlockNodes.length > 0) {
@@ -70,7 +70,7 @@ function $indentOverTab(selection: RangeSelection): boolean {
 export type CanIndentPredicate = (node: ElementNode) => boolean;
 
 function $defaultCanIndent(node: ElementNode) {
-  return node.canBeEmpty();
+  return node.canIndent();
 }
 
 export function registerTabIndentation(
@@ -83,7 +83,7 @@ export function registerTabIndentation(
   return mergeRegister(
     editor.registerCommand<KeyboardEvent>(
       KEY_TAB_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
@@ -117,7 +117,7 @@ export function registerTabIndentation(
         const $currentCanIndent =
           typeof $canIndent === 'function' ? $canIndent : $canIndent.peek();
 
-        return $handleIndentAndOutdent((block) => {
+        return $handleIndentAndOutdent(block => {
           if ($currentCanIndent(block)) {
             const newIndent = block.getIndent() + 1;
             if (!currentMaxIndent || newIndent < currentMaxIndent) {

@@ -9,7 +9,8 @@
 import type {SerializedEditorState} from './LexicalEditorState';
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
-import invariant from 'shared/invariant';
+import devInvariant from '@lexical/internal/devInvariant';
+import invariant from '@lexical/internal/invariant';
 
 import {
   $isElementNode,
@@ -46,11 +47,12 @@ import {
   $internalCreateSelection,
   $isNodeSelection,
   $isRangeSelection,
+  $updateDOMSelection,
   applySelectionTransforms,
-  updateDOMSelection,
 } from './LexicalSelection';
 import {
   $getCompositionKey,
+  $updateDOMBlockCursorElement,
   getDOMSelection,
   getEditorPropertyFromDOMNode,
   getEditorStateTextContent,
@@ -61,8 +63,9 @@ import {
   removeDOMBlockCursorElement,
   scheduleMicroTask,
   setPendingNodeToClone,
-  updateDOMBlockCursorElement,
 } from './LexicalUtils';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 let activeEditorState: null | EditorState = null;
 let activeEditor: null | LexicalEditor = null;
@@ -113,6 +116,18 @@ export function getActiveEditorState(): EditorState {
   return activeEditorState;
 }
 
+/** @internal */
+export function $assumeActiveEditor(editor: LexicalEditor): void {
+  // Throw if called outside of an update
+  if (getActiveEditorState() !== null && activeEditor === null) {
+    activeEditor = editor;
+  }
+  devInvariant(
+    activeEditor === editor,
+    'The given editor argument does not match $getEditor() in this context. Use editor.getEditorState().read(..., {editor}) if this cross-editor call is intentional.',
+  );
+}
+
 export function getActiveEditor(): LexicalEditor {
   if (activeEditor === null) {
     invariant(
@@ -120,11 +135,25 @@ export function getActiveEditor(): LexicalEditor {
       'Unable to find an active editor. ' +
         'This method can only be used ' +
         'synchronously during the callback of ' +
-        'editor.update() or editor.read().%s',
+        'editor.update(), editor.read(), or ' +
+        'editor.getEditorState().read(..., {editor}).%s',
       collectBuildInformation(),
     );
   }
   return activeEditor;
+}
+
+/**
+ * Schedule a full reconcile of the active editor, so that every node is
+ * re-rendered through the current {@link EditorDOMRenderConfig} on the next
+ * commit. Unlike {@link LexicalNode.markDirty}, this does not clone or
+ * otherwise mutate the node map, so no mutation/collaboration listeners
+ * observe a change. Must be called within an `editor.update`.
+ *
+ * @internal
+ */
+export function $fullReconcile(): void {
+  getActiveEditor()._dirtyType = FULL_RECONCILE;
 }
 
 function collectBuildInformation(): string {
@@ -419,7 +448,7 @@ export function parseEditorState(
   editor._dirtyElements = new Map();
   editor._dirtyLeaves = new Set();
   editor._cloneNotNeeded = new Set();
-  editor._dirtyType = 0;
+  editor._dirtyType = NO_DIRTY_NODES;
   activeEditorState = editorState;
   isReadOnlyMode = false;
   activeEditor = editor;
@@ -511,6 +540,13 @@ export function $commitPendingUpdates(
   const shouldSkipDOM = editor._headless || rootElement === null;
 
   if (pendingEditorState === null) {
+    // Even without a pending state, flush any deferred callbacks that
+    // may have been added by a prior update (e.g. via $onUpdate inside
+    // editor.focus()). This can happen when another commit consumed
+    // the pending editor state before this scheduled commit ran.
+    if (editor._deferred.length > 0) {
+      triggerDeferredUpdateCallbacks(editor, editor._deferred);
+    }
     return;
   }
 
@@ -597,7 +633,6 @@ export function $commitPendingUpdates(
   const normalizedNodes = editor._normalizedNodes;
   const tags = editor._updateTags;
   const deferred = editor._deferred;
-  const nodeCount = pendingEditorState._nodeMap.size;
 
   if (needsUpdate) {
     editor._dirtyType = NO_DIRTY_NODES;
@@ -605,8 +640,18 @@ export function $commitPendingUpdates(
     editor._dirtyLeaves = new Set();
     editor._dirtyElements = new Map();
     editor._normalizedNodes = new Set();
-    editor._updateTags = new Set();
   }
+  // Always reset the accumulated update tags, even when this commit produced no
+  // dirty nodes (needsUpdate === false). Tags are added from the `tag` update
+  // option independently of whether any node is dirtied, and the 'update'
+  // listener below fires for every commit (including no-op ones) with these
+  // tags. If we only cleared them when needsUpdate is true, the tags of a no-op
+  // update would leak into the *next* update. For collaboration this is a
+  // correctness bug: a local edit that immediately follows a remote sync which
+  // happened to be a no-op (e.g. a concurrently-deleted node, so nothing
+  // reconciles) would inherit the COLLABORATION tag and be skipped by
+  // syncLexicalUpdateToYjs, desyncing the peers.
+  editor._updateTags = new Set();
   $garbageCollectDetachedDecorators(editor, pendingEditorState);
 
   // ======
@@ -641,17 +686,16 @@ export function $commitPendingUpdates(
         if (blockCursorElement !== null) {
           removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
         }
-        updateDOMSelection(
+        $updateDOMSelection(
           currentSelection,
           pendingSelection,
           editor,
           domSelection,
           tags,
           rootElement,
-          nodeCount,
         );
       }
-      updateDOMBlockCursorElement(editor, rootElement, pendingSelection);
+      $updateDOMBlockCursorElement(editor, rootElement, pendingSelection);
     } finally {
       if (observer !== null) {
         observer.observe(rootElement, observerOptions);
@@ -805,15 +849,11 @@ export function triggerCommandListeners<
 
       if (listenerInPriorityOrder !== undefined) {
         const listenersSet = listenerInPriorityOrder[i];
-
-        if (listenersSet !== undefined) {
-          const listeners = Array.from(listenersSet);
-          const listenersLength = listeners.length;
-
+        if (listenersSet.size > 0) {
           let returnVal = false;
           updateEditorSync(currentEditor, () => {
-            for (let j = 0; j < listenersLength; j++) {
-              if (listeners[j](payload, fromEditor)) {
+            for (const listener of listenersSet) {
+              if (listener(payload, fromEditor)) {
                 returnVal = true;
                 return;
               }
@@ -841,12 +881,41 @@ export function triggerCommandListeners<
 function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
   const queuedUpdates = editor._updates;
 
-  if (queuedUpdates.length !== 0) {
-    const queuedUpdate = queuedUpdates.shift();
-    if (queuedUpdate) {
-      const [updateFn, options] = queuedUpdate;
-      $beginUpdate(editor, updateFn, options);
-    }
+  if (queuedUpdates.length === 0) {
+    editor._cascadeCount = 0;
+    return;
+  }
+  if (editor._cascadeCount++ > 99) {
+    editor._updates = [];
+    editor._cascadeCount = 0;
+    // The cascade has already been broken above by clearing the update queue,
+    // so this is a recoverable internal guard rather than a fatal error. Route
+    // it directly through the editor's warn-level hook (`_onWarn`, default:
+    // throw in dev / `console.warn` in prod) so embedders can capture how often
+    // the guard trips as warn-severity telemetry.
+    //
+    // This must be a direct `editor._onWarn(...)` call rather than an
+    // `invariant`/`$devInvariant` helper: `transform-error-messages` rewrites
+    // those call sites to a bare `formatProd*Message(code, ...)` in the
+    // compiled bundle, dropping the editor reference, so the warning would
+    // never actually reach `_onWarn` in a built artifact (only when the
+    // untransformed `source` is consumed). Calling the hook directly keeps the
+    // routing intact in every build, at the cost of shipping this message
+    // string in the bundle.
+    editor._onWarn(
+      new Error(
+        'One or more update listeners are endlessly enqueueing more updates. ' +
+          'May have encountered infinite recursion caused by update listeners ' +
+          'that trigger additional updates without a stop condition. ' +
+          `Editor namespace: ${editor._config.namespace}`,
+      ),
+    );
+    return;
+  }
+  const queuedUpdate = queuedUpdates.shift();
+  if (queuedUpdate) {
+    const [updateFn, options] = queuedUpdate;
+    $beginUpdate(editor, updateFn, options);
   }
 }
 

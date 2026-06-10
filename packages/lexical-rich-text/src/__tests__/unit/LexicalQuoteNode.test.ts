@@ -19,7 +19,7 @@ const editorConfig = Object.freeze({
 });
 
 describe('LexicalQuoteNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('QuoteNode.constructor', async () => {
       const {editor} = testEnv;
       await editor.update(() => {

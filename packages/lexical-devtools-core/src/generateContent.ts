@@ -302,7 +302,7 @@ function printNode(
 }
 
 function printTextFormatProperties(nodeOrSelection: ParagraphNode) {
-  let str = FORMAT_PREDICATES_PARAGRAPH.map((predicate) =>
+  let str = FORMAT_PREDICATES_PARAGRAPH.map(predicate =>
     predicate(nodeOrSelection),
   )
     .filter(Boolean)
@@ -339,7 +339,7 @@ function printAllLinkNodeProperties(node: LinkNode) {
 }
 
 function printDetailProperties(nodeOrSelection: TextNode) {
-  let str = DETAIL_PREDICATES.map((predicate) => predicate(nodeOrSelection))
+  let str = DETAIL_PREDICATES.map(predicate => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
     .toLocaleLowerCase();
@@ -352,7 +352,7 @@ function printDetailProperties(nodeOrSelection: TextNode) {
 }
 
 function printModeProperties(nodeOrSelection: TextNode) {
-  let str = MODE_PREDICATES.map((predicate) => predicate(nodeOrSelection))
+  let str = MODE_PREDICATES.map(predicate => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
     .toLocaleLowerCase();
@@ -365,7 +365,7 @@ function printModeProperties(nodeOrSelection: TextNode) {
 }
 
 function printFormatProperties(nodeOrSelection: TextNode | RangeSelection) {
-  let str = FORMAT_PREDICATES.map((predicate) => predicate(nodeOrSelection))
+  let str = FORMAT_PREDICATES.map(predicate => predicate(nodeOrSelection))
     .filter(Boolean)
     .join(', ')
     .toLocaleLowerCase();

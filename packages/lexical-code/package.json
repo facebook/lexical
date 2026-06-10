@@ -8,12 +8,13 @@
     "code"
   ],
   "license": "MIT",
-  "version": "0.43.0",
-  "main": "LexicalCode.js",
-  "types": "index.d.ts",
+  "version": "0.45.0",
+  "main": "./dist/LexicalCode.js",
+  "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/code-core": "workspace:*",
     "@lexical/code-prism": "workspace:*",
+    "@lexical/extension": "workspace:*",
     "lexical": "workspace:*"
   },
   "repository": {
@@ -21,23 +22,54 @@
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-code"
   },
-  "module": "LexicalCode.mjs",
+  "module": "./dist/LexicalCode.mjs",
   "sideEffects": true,
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalCode.dev.mjs",
-        "production": "./LexicalCode.prod.mjs",
-        "node": "./LexicalCode.node.mjs",
-        "default": "./LexicalCode.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalCode.dev.mjs",
+        "production": "./dist/LexicalCode.prod.mjs",
+        "node": "./dist/LexicalCode.node.mjs",
+        "default": "./dist/LexicalCode.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalCode.dev.js",
-        "production": "./LexicalCode.prod.js",
-        "default": "./LexicalCode.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalCode.dev.js",
+        "production": "./dist/LexicalCode.prod.js",
+        "default": "./dist/LexicalCode.js"
       }
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ],
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/typescript-too-old.d.ts"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "typescript": ">=5.2"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
     }
   }
 }

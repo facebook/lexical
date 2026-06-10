@@ -20,8 +20,8 @@ import type {
   LexicalExtensionOutput,
 } from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {shallowMergeConfig} from 'lexical';
-import invariant from 'shared/invariant';
 
 export const ExtensionRepStateIds = {
   /* eslint-disable sort-keys-fix/sort-keys-fix */

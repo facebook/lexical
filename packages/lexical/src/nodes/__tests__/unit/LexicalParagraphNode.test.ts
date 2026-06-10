@@ -25,7 +25,7 @@ const editorConfig = Object.freeze({
 });
 
 describe('LexicalParagraphNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('ParagraphNode.constructor', async () => {
       const {editor} = testEnv;
 

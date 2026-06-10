@@ -8,8 +8,6 @@
 
 import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
-  DOMConversionMap,
-  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   ElementNode,
@@ -22,15 +20,6 @@ import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {domOnBeforeMatch, setDomHiddenUntilFound} from './CollapsibleUtils';
 
 type SerializedCollapsibleContentNode = SerializedElementNode;
-
-export function $convertCollapsibleContentElement(
-  domNode: HTMLElement,
-): DOMConversionOutput | null {
-  const node = $createCollapsibleContentNode();
-  return {
-    node,
-  };
-}
 
 export class CollapsibleContentNode extends ElementNode {
   static getType(): string {
@@ -75,20 +64,6 @@ export class CollapsibleContentNode extends ElementNode {
 
   updateDOM(prevNode: this, dom: HTMLElement): boolean {
     return false;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      div: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-collapsible-content')) {
-          return null;
-        }
-        return {
-          conversion: $convertCollapsibleContentElement,
-          priority: 2,
-        };
-      },
-    };
   }
 
   exportDOM(): DOMExportOutput {

@@ -8,6 +8,10 @@
 
 @import 'https://fonts.googleapis.com/css?family=Reenie+Beanie';
 
+:root {
+  --playground-font-size: 16px;
+}
+
 body {
   margin: 0;
   font-family:
@@ -15,6 +19,9 @@ body {
     -apple-system,
     BlinkMacSystemFont,
     '.SFNSText-Regular',
+    sans-serif;
+  --font-family:
+    system-ui, -apple-system, BlinkMacSystemFont, '.SFNSText-Regular',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -352,8 +359,6 @@ pre::-webkit-scrollbar-thumb {
   padding: 8px;
   color: #050505;
   cursor: pointer;
-  line-height: 16px;
-  font-size: 15px;
   display: flex;
   align-content: center;
   flex-direction: row;
@@ -578,6 +583,10 @@ i.markdown {
   background-image: url(images/icons/markdown.svg);
 }
 
+i.html {
+  background-image: url(images/icons/filetype-html.svg);
+}
+
 i.outdent {
   background-image: url(images/icons/outdent.svg);
 }
@@ -673,7 +682,7 @@ i.page-setup,
   padding: 8px 12px;
   border-radius: 15px;
   background-color: #eee;
-  font-size: 15px;
+  font-size: var(--playground-font-size);
   color: rgb(5, 5, 5);
   border: 0;
   outline: 0;
@@ -687,7 +696,7 @@ i.page-setup,
   margin: 8px 12px;
   padding: 8px 12px;
   border-radius: 15px;
-  font-size: 15px;
+  font-size: var(--playground-font-size);
   color: rgb(5, 5, 5);
   border: 0;
   outline: 0;
@@ -823,7 +832,7 @@ i.page-setup,
   color: #050505;
   cursor: pointer;
   line-height: 16px;
-  font-size: 15px;
+  font-size: var(--playground-font-size);
   display: flex;
   align-content: center;
   flex-direction: row;
@@ -984,11 +993,25 @@ i.page-setup,
 }
 
 .switches {
-  z-index: 6;
+  z-index: 20;
   position: fixed;
   left: 10px;
   bottom: 70px;
+  max-height: calc(100svh - 70px);
+  overflow-y: auto;
+  scrollbar-width: thin;
   animation: slide-in 0.4s ease;
+}
+
+.switches::after {
+  content: '';
+  position: sticky;
+  bottom: 0;
+  display: block;
+  height: 60px;
+  margin-top: -60px;
+  background: linear-gradient(to bottom, transparent, #eee);
+  pointer-events: none;
 }
 
 @keyframes slide-in {
@@ -1386,6 +1409,14 @@ i.chevron-down {
   cursor: pointer;
 }
 
+.action-button[data-active='true'] {
+  filter: invert(90%);
+}
+
+.action-button[data-active='true']:hover {
+  filter: invert(100%);
+}
+
 .action-button:hover {
   background-color: #ddd;
   color: #000;
@@ -1468,20 +1499,6 @@ button.action-button:disabled {
 
 .debug-treetype-button:hover {
   text-decoration: underline;
-}
-
-.connecting {
-  font-size: 15px;
-  color: #999;
-  overflow: hidden;
-  position: absolute;
-  text-overflow: ellipsis;
-  top: 10px;
-  left: 10px;
-  user-select: none;
-  white-space: nowrap;
-  display: inline-block;
-  pointer-events: none;
 }
 
 .toolbar {
@@ -1783,22 +1800,6 @@ button.item.dropdown-item-active {
 
 button.item.dropdown-item-active i {
   opacity: 1;
-}
-
-.TableNode__contentEditable {
-  min-height: 20px;
-  border: 0px;
-  resize: none;
-  cursor: text;
-  display: block;
-  position: relative;
-  outline: 0px;
-  padding: 0;
-  user-select: text;
-  font-size: 15px;
-  white-space: pre-wrap;
-  word-break: break-word;
-  z-index: 3;
 }
 
 .dialog-dropdown {

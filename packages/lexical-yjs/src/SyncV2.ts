@@ -24,6 +24,7 @@
  * prefix. (NB: '$' couldn't be used as the prefix because it breaks XmlElement.toDOM().)
  */
 
+import invariant from '@lexical/internal/invariant';
 import {
   $getSelection,
   $getWritableNodeState,
@@ -35,8 +36,6 @@ import {
   RootNode,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
-import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
 import {
   ContentFormat,
   ContentString,
@@ -53,6 +52,7 @@ import {
 } from 'yjs';
 
 import {BindingV2} from './Bindings';
+import simpleDiffWithCursor from './simpleDiffWithCursor';
 import {$syncPropertiesFromYjs, getDefaultNodeProperties} from './Utils';
 
 type ComputeYChange = (
@@ -126,7 +126,7 @@ export const $createOrUpdateNodeFromYElement = (
           computeYChange,
         );
         if (ns !== null) {
-          ns.forEach((textchild) => {
+          ns.forEach(textchild => {
             if (textchild !== null) {
               children.push(textchild);
             }
@@ -142,7 +142,7 @@ export const $createOrUpdateNodeFromYElement = (
     } else {
       typeListToArraySnapshot(el, new Snapshot(prevSnapshot.ds, snapshot.sv))
         .filter(
-          (childType) =>
+          childType =>
             !childType._item.deleted ||
             isItemVisible(childType._item, snapshot) ||
             isItemVisible(childType._item, prevSnapshot),
@@ -172,8 +172,11 @@ export const $createOrUpdateNodeFromYElement = (
   const state: Record<string, unknown> = {};
   for (const k in attrs) {
     if (k.startsWith(STATE_KEY_PREFIX)) {
+      // State keys route through NodeState.updateFromJSON, which guards
+      // against prototype-polluting keys.
       state[attrKeyToStateKey(k)] = attrs[k];
-    } else {
+    } else if (k !== '__proto__' && k !== 'constructor' && k !== 'prototype') {
+      // Skip prototype-polluting property keys from untrusted remote attrs.
       properties[k] = attrs[k];
     }
   }
@@ -181,14 +184,12 @@ export const $createOrUpdateNodeFromYElement = (
   $syncPropertiesFromYjs(binding, properties, node, keysChanged);
   if (!keysChanged) {
     $getWritableNodeState(node).updateFromJSON(state);
-  } else {
-    const stateKeysChanged = Object.keys(state).filter((k) =>
-      keysChanged.has(stateKeyToAttrKey(k)),
-    );
-    if (stateKeysChanged.length > 0) {
-      const writableState = $getWritableNodeState(node);
-      for (const k of stateKeysChanged) {
-        writableState.updateFromUnknown(k, state[k]);
+  } else if (keysChanged.size > 0) {
+    const writableState = $getWritableNodeState(node);
+    for (const changedKey of keysChanged) {
+      if (changedKey.startsWith(STATE_KEY_PREFIX)) {
+        const stateKey = attrKeyToStateKey(changedKey);
+        writableState.updateFromUnknown(stateKey, state[stateKey]);
       }
     }
   }
@@ -200,12 +201,8 @@ export const $createOrUpdateNodeFromYElement = (
 
 const $spliceChildren = (node: ElementNode, nextChildren: LexicalNode[]) => {
   const prevChildren = node.getChildren();
-  const prevChildrenKeySet = new Set(
-    prevChildren.map((child) => child.getKey()),
-  );
-  const nextChildrenKeySet = new Set(
-    nextChildren.map((child) => child.getKey()),
-  );
+  const prevChildrenKeySet = new Set(prevChildren.map(child => child.getKey()));
+  const nextChildrenKeySet = new Set(nextChildren.map(child => child.getKey()));
 
   const prevEndIndex = prevChildren.length - 1;
   const nextEndIndex = nextChildren.length - 1;
@@ -285,14 +282,14 @@ const $createOrUpdateTextNodesFromYText = (
   let nodes: TextNode[] = binding.mapping.get(text) ?? [];
 
   const nodeTypes: string[] = deltas.map(
-    (delta) => delta.attributes.t ?? TextNode.getType(),
+    delta => delta.attributes.t ?? TextNode.getType(),
   );
   const canReuseNodes =
     nodes.length === nodeTypes.length &&
     nodes.every((node, i) => node.getType() === nodeTypes[i]);
   if (!canReuseNodes) {
     const registeredNodes = binding.editor._nodes;
-    nodes = nodeTypes.map((type) => {
+    nodes = nodeTypes.map(type => {
       const nodeInfo = registeredNodes.get(type);
       if (nodeInfo === undefined) {
         throw new Error(
@@ -330,7 +327,7 @@ const $createOrUpdateTextNodesFromYText = (
     $getWritableNodeState(node).updateFromJSON(state);
   }
 
-  const latestNodes = nodes.map((node) => node.getLatest());
+  const latestNodes = nodes.map(node => node.getLatest());
   binding.mapping.set(text, latestNodes);
   return latestNodes;
 };
@@ -366,7 +363,7 @@ const createTypeFromElementNode = (
   }
   type.insert(
     0,
-    normalizeNodeContent(node).map((n) =>
+    normalizeNodeContent(node).map(n =>
       $createTypeFromTextOrElementNode(n, binding),
     ),
   );
@@ -391,13 +388,13 @@ const equalAttrs = (
   pattrs: Record<string | number | symbol, unknown>,
   yattrs: Record<string | number | symbol, unknown> | null,
 ) => {
-  const keys = Object.keys(pattrs).filter((key) => pattrs[key] !== null);
+  const keys = Object.keys(pattrs).filter(key => pattrs[key] !== null);
   if (yattrs == null) {
     return keys.length === 0;
   }
   let eq =
     keys.length ===
-    Object.keys(yattrs).filter((key) => yattrs[key] !== null).length;
+    Object.keys(yattrs).filter(key => yattrs[key] !== null).length;
   for (let i = 0; i < keys.length && eq; i++) {
     const key = keys[i];
     const l = pattrs[key];
@@ -599,7 +596,7 @@ const $updateYText = (
     };
   });
 
-  const nextText = content.map((c) => c.insert).join('');
+  const nextText = content.map(c => c.insert).join('');
   const selection = $getSelection();
   let cursorOffset: number;
   if ($isRangeSelection(selection) && selection.isCollapsed()) {
@@ -623,7 +620,7 @@ const $updateYText = (
   ytext.delete(index, remove);
   ytext.insert(index, insert);
   ytext.applyDelta(
-    content.map((c) => ({attributes: c.attributes, retain: c.insert.length})),
+    content.map(c => ({attributes: c.attributes, retain: c.insert.length})),
   );
 };
 
@@ -861,7 +858,7 @@ export const $updateYFragment = (
   } else if (yDelLen > 0) {
     yDomFragment
       .slice(left, left + yDelLen)
-      .forEach((type) => binding.mapping.delete(type));
+      .forEach(type => binding.mapping.delete(type));
     yDomFragment.delete(left, yDelLen);
   }
   if (left + right < lChildCnt) {

@@ -279,15 +279,17 @@ function CommentInputBox({
               container.appendChild(elem);
             }
             const color = '255, 212, 0';
-            const style = `position:absolute;top:${
+            elem.style.position = 'absolute';
+            elem.style.top = `${
               selectionRect.top +
               (window.pageYOffset || document.documentElement.scrollTop)
-            }px;left:${selectionRect.left}px;height:${
-              selectionRect.height
-            }px;width:${
-              selectionRect.width
-            }px;background-color:rgba(${color}, 0.3);pointer-events:none;z-index:5;`;
-            elem.style.cssText = style;
+            }px`;
+            elem.style.left = `${selectionRect.left}px`;
+            elem.style.height = `${selectionRect.height}px`;
+            elem.style.width = `${selectionRect.width}px`;
+            elem.style.backgroundColor = `rgba(${color}, 0.3)`;
+            elem.style.pointerEvents = 'none';
+            elem.style.zIndex = '5';
           }
           for (let i = elementsLength - 1; i >= selectionRectsLength; i--) {
             const elem = elements[i];
@@ -503,7 +505,7 @@ function CommentsPanelListComment({
         <>
           <Button
             onClick={() => {
-              showModal('Delete Comment', (onClose) => (
+              showModal('Delete Comment', onClose => (
                 <ShowDeleteCommentOrThreadDialog
                   commentOrThread={comment}
                   deleteCommentOrThread={deleteComment}
@@ -570,7 +572,7 @@ function CommentsPanelList({
 
   return (
     <ul className="CommentPlugin_CommentsPanel_List" ref={listRef}>
-      {comments.map((commentOrThread) => {
+      {comments.map(commentOrThread => {
         const id = commentOrThread.id;
         if (commentOrThread.type === 'thread') {
           const handleClickThread = () => {
@@ -585,7 +587,7 @@ function CommentsPanelList({
               editor.update(
                 () => {
                   const markNodeKey = Array.from(markNodeKeys)[0];
-                  const markNode = $getNodeByKey<MarkNode>(markNodeKey);
+                  const markNode = $getNodeByKey(markNodeKey);
                   if ($isMarkNode(markNode)) {
                     markNode.selectStart();
                   }
@@ -618,7 +620,7 @@ function CommentsPanelList({
                 {/* INTRODUCE DELETE THREAD HERE*/}
                 <Button
                   onClick={() => {
-                    showModal('Delete Thread', (onClose) => (
+                    showModal('Delete Thread', onClose => (
                       <ShowDeleteCommentOrThreadDialog
                         commentOrThread={commentOrThread}
                         deleteCommentOrThread={deleteCommentOrThread}
@@ -632,7 +634,7 @@ function CommentsPanelList({
                 {modal}
               </div>
               <ul className="CommentPlugin_CommentsPanel_List_Thread_Comments">
-                {commentOrThread.comments.map((comment) => (
+                {commentOrThread.comments.map(comment => (
                   <CommentsPanelListComment
                     key={comment.id}
                     comment={comment}
@@ -771,7 +773,7 @@ export default function CommentPlugin({
           setTimeout(() => {
             editor.update(() => {
               for (const key of markNodeKeys) {
-                const node: null | MarkNode = $getNodeByKey(key);
+                const node = $getNodeByKey(key);
                 if ($isMarkNode(node)) {
                   node.deleteID(id);
                   if (node.getIDs().length === 0) {
@@ -849,17 +851,17 @@ export default function CommentPlugin({
         (from: MarkNode, to: MarkNode) => {
           // Merge the IDs
           const ids = from.getIDs();
-          ids.forEach((id) => {
+          ids.forEach(id => {
             to.addID(id);
           });
         },
       ),
       editor.registerMutationListener(
         MarkNode,
-        (mutations) => {
+        mutations => {
           editor.getEditorState().read(() => {
             for (const [key, mutation] of mutations) {
-              const node: null | MarkNode = $getNodeByKey(key);
+              const node = $getNodeByKey(key);
               let ids: NodeKey[] = [];
 
               if (mutation === 'destroyed') {
@@ -920,7 +922,7 @@ export default function CommentPlugin({
             }
           }
           if (!hasActiveIds) {
-            setActiveIDs((_activeIds) =>
+            setActiveIDs(_activeIds =>
               _activeIds.length === 0 ? _activeIds : [],
             );
           }

@@ -8,8 +8,7 @@
 
 import {describe, expect, it} from 'vitest';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const {exec, spawn} = require('../../shared/childProcess');
+import {exec, spawn} from '../../shared/childProcess.mjs';
 
 describe('childProcess', () => {
   describe('exec', () => {

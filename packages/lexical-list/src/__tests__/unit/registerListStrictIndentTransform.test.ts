@@ -17,7 +17,7 @@ import {beforeEach, describe, test} from 'vitest';
 import {registerListStrictIndentTransform} from '../../index';
 
 describe('Lexical List StrictIndentTransform tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     beforeEach(() => {
       const {editor} = testEnv;
       registerListStrictIndentTransform(editor);
@@ -31,18 +31,12 @@ describe('Lexical List StrictIndentTransform tests', () => {
         <ul>
           <li value="1">
             <span style="white-space: pre-wrap;">0</span>
-          </li>
-          <li value="2">
             <ul>
               <li value="1">
                 <span style="white-space: pre-wrap;">1</span>
-              </li>
-              <li value="2">
                 <ul>
                   <li value="1">
                     <span style="white-space: pre-wrap;">2</span>
-                  </li>
-                  <li value="2">
                     <ul>
                       <li value="1">
                         <span style="white-space: pre-wrap;">3</span>

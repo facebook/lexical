@@ -11,12 +11,13 @@ import {
   $createRangeSelection,
   $createTextNode,
   $getRoot,
+  $isElementNode,
   $isTextNode,
   $setSelection,
   BaseSelection,
   LexicalNode,
 } from 'lexical';
-import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {afterEach, assert, beforeEach, describe, expect, it} from 'vitest';
 
 import {
   connectClients,
@@ -31,7 +32,7 @@ import {
 const $insertParagraph = (...children: Array<string | LexicalNode>) => {
   const root = $getRoot();
   const paragraph = $createParagraphNode();
-  const nodes = children.map((child) => {
+  const nodes = children.map(child => {
     return typeof child === 'string' ? $createTextNode(child) : child;
   });
   paragraph.append(...nodes);
@@ -52,14 +53,14 @@ const $createSelectionByPath = ({
   const selection = $createRangeSelection();
   const root = $getRoot();
 
-  const anchorNode = anchorPath.reduce(
-    (node, index) => node.getChildAtIndex(index)!,
-    root,
-  );
-  const focusNode = focusPath.reduce(
-    (node, index) => node.getChildAtIndex(index)!,
-    root,
-  );
+  const $reduceChildAtIndex = (node: LexicalNode, index: number) => {
+    assert($isElementNode(node), 'Expected an ElementNode in the path');
+    const child = node.getChildAtIndex(index);
+    assert(child !== null, 'Expected a child at the path index');
+    return child;
+  };
+  const anchorNode = anchorPath.reduce<LexicalNode>($reduceChildAtIndex, root);
+  const focusNode = focusPath.reduce<LexicalNode>($reduceChildAtIndex, root);
 
   selection.anchor.set(
     anchorNode.getKey(),
@@ -198,7 +199,7 @@ describe('CollaborationWithCollisions', () => {
   describe.each([[false], [true]])(
     'useCollabV2: %s',
     (useCollabV2: boolean) => {
-      SIMPLE_TEXT_COLLISION_TESTS.forEach((testCase) => {
+      SIMPLE_TEXT_COLLISION_TESTS.forEach(testCase => {
         it(testCase.name, async () => {
           const connection = createTestConnection(useCollabV2);
           const clients = createAndStartClients(

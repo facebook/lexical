@@ -11,8 +11,6 @@ import {
   $getSiblingCaret,
   $isElementNode,
   $rewindSiblingCaret,
-  DOMConversionMap,
-  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   ElementNode,
@@ -33,16 +31,6 @@ type SerializedCollapsibleContainerNode = Spread<
   },
   SerializedElementNode
 >;
-
-export function $convertDetailsElement(
-  domNode: HTMLDetailsElement,
-): DOMConversionOutput | null {
-  const isOpen = domNode.open !== undefined ? domNode.open : true;
-  const node = $createCollapsibleContainerNode(isOpen);
-  return {
-    node,
-  };
-}
 
 export class CollapsibleContainerNode extends ElementNode {
   __open: boolean;
@@ -111,7 +99,13 @@ export class CollapsibleContainerNode extends ElementNode {
     if (prevNode.__open !== currentOpen) {
       // details is not well supported in Chrome #5582 and Firefox #8348
       if (IS_CHROME || IS_FIREFOX) {
-        const contentDom = dom.children[1];
+        // Look up the content element by class rather than positional index.
+        // The shape `Title + Content` is invariant per the structure-enforcing
+        // transformer; if a slot-aware extension prepends a leading
+        // decoration (via `slot.after`) the content child would no longer sit
+        // at `children[1]`. Scoped `:scope >` avoids matching content of a
+        // nested CollapsibleContainer.
+        const contentDom = dom.querySelector(':scope > .Collapsible__content');
         if (!isHTMLElement(contentDom)) {
           throw new Error('Expected contentDom to be an HTMLElement');
         }
@@ -128,17 +122,6 @@ export class CollapsibleContainerNode extends ElementNode {
     }
 
     return false;
-  }
-
-  static importDOM(): DOMConversionMap<HTMLDetailsElement> | null {
-    return {
-      details: (domNode: HTMLDetailsElement) => {
-        return {
-          conversion: $convertDetailsElement,
-          priority: 1,
-        };
-      },
-    };
   }
 
   static importJSON(

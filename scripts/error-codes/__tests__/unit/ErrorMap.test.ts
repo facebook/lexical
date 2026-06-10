@@ -11,7 +11,7 @@ import {describe, expect, test, vi} from 'vitest';
 import ErrorMap from '../../ErrorMap';
 
 function waitTick(): Promise<void> {
-  return new Promise((resolve) => queueMicrotask(resolve));
+  return new Promise(resolve => queueMicrotask(resolve));
 }
 
 describe('ErrorMap', () => {

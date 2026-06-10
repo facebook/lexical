@@ -22,10 +22,6 @@ export class AICaretNode extends DecoratorNode<unknown> {
     return {element: null};
   }
 
-  excludeFromCopy(): boolean {
-    return true;
-  }
-
   updateDOM(
     _prevNode: unknown,
     _dom: HTMLElement,

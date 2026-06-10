@@ -86,7 +86,7 @@ export function registerClickableLink(
     }
 
     // Allow user to select link text without following url
-    const selection = editor.getEditorState().read($getSelection);
+    const selection = editor.getEditorState().read($getSelection, {editor});
     if ($isRangeSelection(selection) && !selection.isCollapsed()) {
       event.preventDefault();
       return;
@@ -112,7 +112,7 @@ export function registerClickableLink(
     }
   };
 
-  return editor.registerRootListener((rootElement) => {
+  return editor.registerRootListener(rootElement => {
     if (rootElement) {
       rootElement.addEventListener('click', onClick, eventOptions);
       rootElement.addEventListener('mouseup', onMouseUp, eventOptions);

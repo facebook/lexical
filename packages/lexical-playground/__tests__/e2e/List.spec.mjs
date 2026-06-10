@@ -166,60 +166,57 @@ test.describe('Checklist focus option', () => {
   });
 });
 
-test.describe.parallel('Nested List', () => {
+test.describe('Nested List', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
-  test(
-    `Can create a list and partially copy some content out of it`,
-    {
-      tag: '@flaky',
-    },
-    async ({page, isCollab}) => {
-      await focusEditor(page);
-      await page.keyboard.type(
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam venenatis risus ac cursus efficitur. Cras efficitur magna odio, lacinia posuere mauris placerat in. Etiam eu congue nisl. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Nulla vulputate justo id eros convallis, vel pellentesque orci hendrerit. Pellentesque accumsan molestie eros, vitae tempor nisl semper sit amet. Sed vulputate leo dolor, et bibendum quam feugiat eget. Praesent vestibulum libero sed enim ornare, in consequat dui posuere. Maecenas ornare vestibulum felis, non elementum urna imperdiet sit amet.',
-      );
-      await toggleBulletList(page);
-      await moveToEditorBeginning(page);
-      await moveRight(page, 6);
-      await selectCharacters(page, 'right', 11);
+  test(`Can create a list and partially copy some content out of it`, async ({
+    page,
+    isCollab,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type(
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam venenatis risus ac cursus efficitur. Cras efficitur magna odio, lacinia posuere mauris placerat in. Etiam eu congue nisl. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Nulla vulputate justo id eros convallis, vel pellentesque orci hendrerit. Pellentesque accumsan molestie eros, vitae tempor nisl semper sit amet. Sed vulputate leo dolor, et bibendum quam feugiat eget. Praesent vestibulum libero sed enim ornare, in consequat dui posuere. Maecenas ornare vestibulum felis, non elementum urna imperdiet sit amet.',
+    );
+    await toggleBulletList(page);
+    await moveToEditorBeginning(page);
+    await moveRight(page, 6);
+    await selectCharacters(page, 'right', 11);
 
-      await withExclusiveClipboardAccess(async () => {
-        const clipboard = await copyToClipboard(page);
+    await withExclusiveClipboardAccess(async () => {
+      const clipboard = await copyToClipboard(page);
 
-        await moveToEditorEnd(page);
-        await page.keyboard.press('Enter');
-        await page.keyboard.press('Enter');
+      await moveToEditorEnd(page);
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Enter');
 
-        await pasteFromClipboard(page, clipboard);
-      });
+      await pasteFromClipboard(page, clipboard);
+    });
 
-      await assertHTML(
-        page,
-        html`
-          <ul class="PlaygroundEditorTheme__ul" dir="auto">
-            <li class="PlaygroundEditorTheme__listItem" value="1">
-              <span data-lexical-text="true">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam
-                venenatis risus ac cursus efficitur. Cras efficitur magna odio,
-                lacinia posuere mauris placerat in. Etiam eu congue nisl.
-                Vestibulum ante ipsum primis in faucibus orci luctus et ultrices
-                posuere cubilia curae; Nulla vulputate justo id eros convallis,
-                vel pellentesque orci hendrerit. Pellentesque accumsan molestie
-                eros, vitae tempor nisl semper sit amet. Sed vulputate leo
-                dolor, et bibendum quam feugiat eget. Praesent vestibulum libero
-                sed enim ornare, in consequat dui posuere. Maecenas ornare
-                vestibulum felis, non elementum urna imperdiet sit amet.
-              </span>
-            </li>
-          </ul>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">ipsum dolor</span>
-          </p>
-        `,
-      );
-    },
-  );
+    await assertHTML(
+      page,
+      html`
+        <ul class="PlaygroundEditorTheme__ul" dir="auto">
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <span data-lexical-text="true">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam
+              venenatis risus ac cursus efficitur. Cras efficitur magna odio,
+              lacinia posuere mauris placerat in. Etiam eu congue nisl.
+              Vestibulum ante ipsum primis in faucibus orci luctus et ultrices
+              posuere cubilia curae; Nulla vulputate justo id eros convallis,
+              vel pellentesque orci hendrerit. Pellentesque accumsan molestie
+              eros, vitae tempor nisl semper sit amet. Sed vulputate leo dolor,
+              et bibendum quam feugiat eget. Praesent vestibulum libero sed enim
+              ornare, in consequat dui posuere. Maecenas ornare vestibulum
+              felis, non elementum urna imperdiet sit amet.
+            </span>
+          </li>
+        </ul>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">ipsum dolor</span>
+        </p>
+      `,
+    );
+  });
 
   test('Should outdent if indented when the backspace key is pressed', async ({
     page,
@@ -889,31 +886,31 @@ test.describe.parallel('Nested List', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(120px)">
+          style="padding-inline-start: calc(3 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">Hello</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(120px)">
+          style="padding-inline-start: calc(3 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">from</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(120px)">
+          style="padding-inline-start: calc(3 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">the</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(120px)">
+          style="padding-inline-start: calc(3 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">other</span>
         </p>
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(120px)">
+          style="padding-inline-start: calc(3 * var(--lexical-indent-base-value, 40px))">
           <span data-lexical-text="true">side</span>
         </p>
       `,
@@ -2614,71 +2611,68 @@ test.describe.parallel('Nested List', () => {
     );
   });
 
-  test(
-    'can navigate and check/uncheck with keyboard',
-    {
-      tag: '@flaky',
-    },
-    async ({page, isCollab}) => {
-      await focusEditor(page);
-      await toggleCheckList(page);
-      //
-      // [ ] a
-      // [ ] b
-      //     [ ] c
-      //         [ ] d
-      //         [ ] e
-      // [ ] f
-      await page.keyboard.type('a');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('b');
-      await page.keyboard.press('Enter');
-      await click(page, '.toolbar-item.alignment');
-      await click(page, 'button:has-text("Indent")');
-      await page.keyboard.type('c');
-      await page.keyboard.press('Enter');
-      await click(page, '.toolbar-item.alignment');
-      await click(page, 'button:has-text("Indent")');
-      await page.keyboard.type('d');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('e');
-      await page.keyboard.press('Enter');
-      await page.keyboard.press('Backspace');
-      await page.keyboard.press('Backspace');
-      await page.keyboard.type('f');
+  test('can navigate and check/uncheck with keyboard', async ({
+    page,
+    isCollab,
+  }) => {
+    await focusEditor(page);
+    await toggleCheckList(page);
+    //
+    // [ ] a
+    // [ ] b
+    //     [ ] c
+    //         [ ] d
+    //         [ ] e
+    // [ ] f
+    await page.keyboard.type('a');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('b');
+    await page.keyboard.press('Enter');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
+    await page.keyboard.type('c');
+    await page.keyboard.press('Enter');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
+    await page.keyboard.type('d');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('e');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Backspace');
+    await page.keyboard.press('Backspace');
+    await page.keyboard.type('f');
 
-      const assertCheckCount = async (checkCount, uncheckCount) => {
-        const pageOrFrame = await (isCollab ? page.frame('left') : page);
-        await expect(
-          pageOrFrame.locator('li[role="checkbox"][aria-checked="true"]'),
-        ).toHaveCount(checkCount);
-        await expect(
-          pageOrFrame.locator('li[role="checkbox"][aria-checked="false"]'),
-        ).toHaveCount(uncheckCount);
-      };
+    const assertCheckCount = async (checkCount, uncheckCount) => {
+      const pageOrFrame = await (isCollab ? page.frame('left') : page);
+      await expect(
+        pageOrFrame.locator('li[role="checkbox"][aria-checked="true"]'),
+      ).toHaveCount(checkCount);
+      await expect(
+        pageOrFrame.locator('li[role="checkbox"][aria-checked="false"]'),
+      ).toHaveCount(uncheckCount);
+    };
 
-      await assertCheckCount(0, 6);
+    await assertCheckCount(0, 6);
 
-      // Go back to select checkbox
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.press('ArrowLeft');
+    // Go back to select checkbox
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('Space');
+
+    await repeat(5, async () => {
+      await page.keyboard.press('ArrowUp', {delay: 50});
       await page.keyboard.press('Space');
+    });
 
-      await repeat(5, async () => {
-        await page.keyboard.press('ArrowUp', {delay: 50});
-        await page.keyboard.press('Space');
-      });
+    await assertCheckCount(6, 0);
 
-      await assertCheckCount(6, 0);
+    await repeat(3, async () => {
+      await page.keyboard.press('ArrowDown', {delay: 50});
+      await page.keyboard.press('Space');
+    });
 
-      await repeat(3, async () => {
-        await page.keyboard.press('ArrowDown', {delay: 50});
-        await page.keyboard.press('Space');
-      });
-
-      await assertCheckCount(3, 3);
-    },
-  );
+    await assertCheckCount(3, 3);
+  });
 
   test('replaces existing element node', async ({page}) => {
     // Create two quote blocks, select it and format to a list
@@ -2723,7 +2717,7 @@ test.describe.parallel('Nested List', () => {
         <p
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
-          style="padding-inline-start: calc(40px)">
+          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
           <br />
         </p>
       `,
@@ -2736,56 +2730,52 @@ test.describe.parallel('Nested List', () => {
     });
   });
 
-  test(
-    'remove list breaks when selection in empty nested list item 2',
-    {
-      tag: '@flaky',
-    },
-    async ({page}) => {
-      await focusEditor(page);
-      await page.keyboard.type('Hello World');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('a');
-      await toggleBulletList(page);
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('b');
-      await page.keyboard.press('ArrowUp');
-      await page.keyboard.press('Enter');
-      await click(page, '.toolbar-item.alignment');
-      await click(page, 'button:has-text("Indent")');
-      await toggleBulletList(page);
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">Hello World</span>
-          </p>
-          <ul class="PlaygroundEditorTheme__ul" dir="auto">
-            <li class="PlaygroundEditorTheme__listItem" value="1">
-              <span data-lexical-text="true">a</span>
-            </li>
-          </ul>
-          <p
-            class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
-            dir="auto"
-            style="padding-inline-start: calc(40px)">
-            <br />
-          </p>
-          <ul class="PlaygroundEditorTheme__ul" dir="auto">
-            <li class="PlaygroundEditorTheme__listItem" value="1">
-              <span data-lexical-text="true">b</span>
-            </li>
-          </ul>
-        `,
-      );
-      await assertSelection(page, {
-        anchorOffset: 0,
-        anchorPath: [2],
-        focusOffset: 0,
-        focusPath: [2],
-      });
-    },
-  );
+  test('remove list breaks when selection in empty nested list item 2', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('Hello World');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('a');
+    await toggleBulletList(page);
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('b');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('Enter');
+    await click(page, '.toolbar-item.alignment');
+    await click(page, 'button:has-text("Indent")');
+    await toggleBulletList(page);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Hello World</span>
+        </p>
+        <ul class="PlaygroundEditorTheme__ul" dir="auto">
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <span data-lexical-text="true">a</span>
+          </li>
+        </ul>
+        <p
+          class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
+          dir="auto"
+          style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
+          <br />
+        </p>
+        <ul class="PlaygroundEditorTheme__ul" dir="auto">
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <span data-lexical-text="true">b</span>
+          </li>
+        </ul>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [2],
+      focusOffset: 0,
+      focusPath: [2],
+    });
+  });
   test('new list item should preserve format from previous list item even after new list item is indented', async ({
     page,
   }) => {

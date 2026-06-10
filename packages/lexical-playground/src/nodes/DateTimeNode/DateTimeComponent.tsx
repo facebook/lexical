@@ -147,7 +147,7 @@ export default function DateTimeComponent({
   };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    withDateTimeNode((node) => {
+    withDateTimeNode(node => {
       if (e.target.checked) {
         setIncludeTime(true);
       } else {
@@ -162,7 +162,7 @@ export default function DateTimeComponent({
   };
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    withDateTimeNode((node) => {
+    withDateTimeNode(node => {
       const time = e.target.value;
       if (!selected) {
         setTimeValue(time);
@@ -179,14 +179,14 @@ export default function DateTimeComponent({
   };
 
   const handleDaySelect = (date: Date | undefined) => {
-    withDateTimeNode((node) => {
+    withDateTimeNode(node => {
       if (!timeValue || !date) {
         setSelected(date);
         return;
       }
       const [hours, minutes] = timeValue
         .split(':')
-        .map((str) => parseInt(str, 10));
+        .map(str => parseInt(str, 10));
       const newDate = new Date(
         date.getFullYear(),
         date.getMonth(),

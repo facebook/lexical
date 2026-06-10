@@ -22,7 +22,7 @@ import {
 } from '../utils';
 
 describe('LexicalNormalization tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     describe('$normalizeSelection', () => {
       for (const reversed of [false, true]) {
         const getAnchor = (x: RangeSelection) =>

@@ -9,6 +9,7 @@
 import type {EditorState, NodeKey} from 'lexical';
 import type {ContentType, Transaction as YTransaction} from 'yjs';
 
+import invariant from '@lexical/internal/invariant';
 import {
   $addUpdateTag,
   $createParagraphNode,
@@ -22,7 +23,6 @@ import {
   HISTORIC_TAG,
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
-import invariant from 'shared/invariant';
 import {
   Item,
   iterateDeletedStructs,
@@ -146,7 +146,7 @@ export function syncYjsChangesToLexical(
   // safely computed during the event call. If it is accessed after event
   // call it might result in unexpected behavior.
   // https://github.com/yjs/yjs/blob/00ef472d68545cb260abd35c2de4b3b78719c9e4/src/utils/YEvent.js#L132
-  events.forEach((event) => event.delta);
+  events.forEach(event => event.delta);
 
   editor.update(
     () => {
@@ -166,7 +166,9 @@ export function syncYjsChangesToLexical(
     {
       onUpdate: () => {
         syncCursorPositionsFn(binding, provider);
-        editor.update(() => $ensureEditorNotEmpty());
+        if (binding.root.isEmpty()) {
+          editor.update(() => $ensureEditorNotEmpty());
+        }
       },
       skipTransforms: true,
       tag: isFromUndoManger ? HISTORIC_TAG : COLLABORATION_TAG,
@@ -311,6 +313,18 @@ export function syncLexicalUpdateToYjs(
           dirtyElements,
           dirtyLeaves,
         );
+        // If a local edit emptied the root, schedule recovery outside the
+        // collaboration/historic tag so the paragraph syncs back to Yjs.
+        // Mirrors the $ensureEditorNotEmpty call in syncYjsChangesToLexical's onUpdate.
+        // Only trigger when the previous state had content (prevNodeMap.size > 1 means
+        // there were nodes beyond root), so we don't fire on initial empty-editor updates
+        // (e.g. a focus update before the editor has been bootstrapped).
+        if (
+          nextLexicalRoot.getChildrenSize() === 0 &&
+          prevEditorState._nodeMap.size > 1
+        ) {
+          binding.editor.update(() => $ensureEditorNotEmpty());
+        }
       }
 
       const selection = $getSelection();
@@ -357,7 +371,7 @@ export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
   const editorState = editor._editorState;
 
   // Remove deleted nodes from the mapping
-  iterateDeletedStructs(transaction, transaction.deleteSet, (struct) => {
+  iterateDeletedStructs(transaction, transaction.deleteSet, struct => {
     if (struct.constructor === Item) {
       const content = struct.content as ContentType;
       const type = content.type;
@@ -372,7 +386,7 @@ export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
   // safely computed during the event call. If it is accessed after event
   // call it might result in unexpected behavior.
   // https://github.com/yjs/yjs/blob/00ef472d68545cb260abd35c2de4b3b78719c9e4/src/utils/YEvent.js#L132
-  events.forEach((event) => event.delta);
+  events.forEach(event => event.delta);
 
   editor.update(
     () => {
@@ -395,7 +409,9 @@ export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
       discrete: true,
       onUpdate: () => {
         syncCursorPositions(binding, provider);
-        editor.update(() => $ensureEditorNotEmpty());
+        if (binding.root.length === 0) {
+          editor.update(() => $ensureEditorNotEmpty());
+        }
       },
       skipTransforms: true,
       tag: isFromUndoManger ? HISTORIC_TAG : COLLABORATION_TAG,
@@ -421,7 +437,9 @@ export function syncYjsStateToLexicalV2__EXPERIMENTAL(
       discrete: true,
       onUpdate: () => {
         syncCursorPositions(binding, provider);
-        editor.update(() => $ensureEditorNotEmpty());
+        if (binding.root.length === 0) {
+          editor.update(() => $ensureEditorNotEmpty());
+        }
       },
       skipTransforms: true,
       tag: COLLABORATION_TAG,
@@ -445,20 +463,33 @@ export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
 
   // Nodes are normalized synchronously (`discrete: true` above), so the mapping may now be
   // incorrect for these nodes, as they point to `getLatest` which is mutable within an update.
-  normalizedNodes.forEach((nodeKey) => {
+  normalizedNodes.forEach(nodeKey => {
     binding.mapping.deleteNode(nodeKey);
   });
 
   syncWithTransaction(binding, () => {
     currEditorState.read(() => {
       if (dirtyElements.has('root')) {
+        const nextLexicalRoot = $getRoot();
         $updateYFragment(
           binding.doc,
           binding.root,
-          $getRoot(),
+          nextLexicalRoot,
           binding,
           new Set(dirtyElements.keys()),
         );
+        // If a local edit emptied the root, schedule recovery outside the
+        // collaboration/historic tag so the paragraph syncs back to Yjs.
+        // Mirrors the $ensureEditorNotEmpty call in syncYjsChangesToLexicalV2's onUpdate.
+        // Only trigger when the previous state had content (prevNodeMap.size > 1 means
+        // there were nodes beyond root), so we don't fire on initial empty-editor updates.
+        if (
+          !isFromYjs &&
+          nextLexicalRoot.getChildrenSize() === 0 &&
+          prevEditorState._nodeMap.size > 1
+        ) {
+          binding.editor.update(() => $ensureEditorNotEmpty());
+        }
       }
 
       const selection = $getSelection();

@@ -6,18 +6,12 @@
  *
  */
 
-import type {LexicalNode, Spread} from 'lexical';
+import type {ElementNode, LexicalNode, Spread} from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {$findMatchingParent} from '@lexical/utils';
-import invariant from 'shared/invariant';
 
-import {
-  $createListItemNode,
-  $isListItemNode,
-  $isListNode,
-  ListItemNode,
-  ListNode,
-} from './';
+import {$isListItemNode, $isListNode, ListItemNode, ListNode} from './';
 
 /**
  * Checks the depth of listNode from the root node.
@@ -52,13 +46,14 @@ export function $getListDepth(listNode: ListNode): number {
  * @returns The ListNode found.
  */
 export function $getTopListNode(listItem: LexicalNode): ListNode {
-  let list = listItem.getParent<ListNode>();
+  const parentList = listItem.getParent();
 
-  if (!$isListNode(list)) {
+  if (!$isListNode(parentList)) {
     invariant(false, 'A ListItemNode must have a ListNode for a parent.');
   }
 
-  let parent: ListNode | null = list;
+  let list: ListNode = parentList;
+  let parent: ElementNode | null = parentList;
 
   while (parent !== null) {
     parent = parent.getParent();
@@ -83,7 +78,7 @@ export function $isLastItemInList(listItem: ListItemNode): boolean {
   if ($isListNode(firstChild)) {
     return false;
   }
-  let parent: ListItemNode | null = listItem;
+  let parent: ElementNode | null = listItem;
 
   while (parent !== null) {
     if ($isListItemNode(parent)) {
@@ -151,7 +146,7 @@ export function isNestedListNode(
 export function $findNearestListItemNode(
   node: LexicalNode,
 ): ListItemNode | null {
-  const matchingParent = $findMatchingParent(node, (parent) =>
+  const matchingParent = $findMatchingParent(node, parent =>
     $isListItemNode(parent),
   );
   return matchingParent as ListItemNode | null;
@@ -189,16 +184,6 @@ export function $removeHighestEmptyListParent(
   }
 
   emptyListPtr.remove();
-}
-
-/**
- * Wraps a node into a ListItemNode.
- * @param node - The node to be wrapped into a ListItemNode
- * @returns The ListItemNode which the passed node is wrapped in.
- */
-export function $wrapInListItem(node: LexicalNode): ListItemNode {
-  const listItemWrapper = $createListItemNode();
-  return listItemWrapper.append(node);
 }
 
 /**

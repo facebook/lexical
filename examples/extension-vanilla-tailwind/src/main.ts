@@ -48,7 +48,7 @@ const LazyExtension = defineExtension({
   name: '@lexical/extension-vanilla-tailwind-example/Lazy',
   register(editor, _config, state) {
     let dispose: undefined | (() => void);
-    import('./lazyLoaded').then((mod) => {
+    import('./lazyLoaded').then(mod => {
       if (!state.getSignal().aborted) {
         dispose = mod.registerLazyLoaded(editor);
       }

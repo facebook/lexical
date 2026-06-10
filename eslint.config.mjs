@@ -10,6 +10,7 @@ import {fixupPluginRules} from '@eslint/compat';
 import js from '@eslint/js';
 import lexicalInternalPlugin from '@lexical/eslint-plugin-internal';
 import prettierConfig from 'eslint-config-prettier';
+import compat from 'eslint-plugin-compat';
 import _headerPlugin from 'eslint-plugin-header';
 import importXPlugin from 'eslint-plugin-import-x';
 import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
@@ -311,23 +312,15 @@ export default [
 
   // Override: Scripts (no header required, allow console)
   {
-    files: ['scripts/**/*.js'],
+    files: ['scripts/**/*.js', 'scripts/**/*.mjs'],
     rules: {
       'header/header': OFF,
       'no-console': OFF,
     },
   },
 
-  // Override: Scripts .mjs (no header required)
-  {
-    files: ['scripts/**/*.mjs'],
-    rules: {
-      'header/header': OFF,
-    },
-  },
-
   // Override: TypeScript files
-  ...tseslint.configs.recommended.map((config) => ({
+  ...tseslint.configs.recommended.map(config => ({
     ...config,
     files: ['**/*.ts', '**/*.tsx', '**/*.mts'],
   })),
@@ -429,6 +422,33 @@ export default [
     },
   },
 
+  // Override: Playwright e2e tests - flag unawaited promise-returning
+  // Playwright calls. An un-awaited `page.setViewportSize(...)` (or any
+  // method with `pause: true` metainfo) under `--debug` leaves
+  // `Debugger._pausedCall` set indefinitely, causing every subsequent
+  // `page.pause()` to bail at the "already paused" early-return.
+  {
+    files: ['packages/lexical-playground/__tests__/**/*.?(m)js'],
+    rules: {
+      'no-restricted-syntax': [
+        ERROR,
+        'WithStatement',
+        {
+          message:
+            'Promise-returning Playwright call must be awaited (or returned). Unawaited calls poison Debugger._pausedCall under --debug and break page.pause().',
+          selector:
+            'ExpressionStatement > CallExpression > MemberExpression[object.name=/^(page|frame|leftFrame|rightFrame|context)$/][property.name=/^(addInitScript|addScriptTag|addStyleTag|bringToFront|check|click|close|dblclick|dispatchEvent|emulateMedia|evaluate|evaluateHandle|exposeBinding|exposeFunction|fill|focus|goBack|goForward|goto|hover|pause|press|reload|screenshot|selectOption|setChecked|setContent|setExtraHTTPHeaders|setInputFiles|setViewportSize|tap|type|uncheck|waitForEvent|waitForFunction|waitForLoadState|waitForNavigation|waitForRequest|waitForResponse|waitForSelector|waitForTimeout|waitForURL)$/]',
+        },
+        {
+          message:
+            'Promise-returning Playwright call must be awaited (or returned). Unawaited calls poison Debugger._pausedCall under --debug and break page.pause().',
+          selector:
+            "ExpressionStatement > CallExpression > MemberExpression[object.type='MemberExpression'][object.object.name=/^(page|frame|leftFrame|rightFrame)$/][object.property.name=/^(keyboard|mouse|touchscreen)$/]",
+        },
+      ],
+    },
+  },
+
   // Override: Index exports - restrict default exports
   {
     files: [
@@ -455,4 +475,7 @@ export default [
 
   // Prettier must be last to override formatting rules
   prettierConfig,
+
+  // Compatibility with browserslist
+  compat.configs['flat/recommended'],
 ];

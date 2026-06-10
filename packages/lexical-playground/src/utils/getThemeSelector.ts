@@ -20,6 +20,6 @@ export function getThemeSelector(
   }
   return className
     .split(/\s+/g)
-    .map((cls) => `.${cls}`)
+    .map(cls => `.${cls}`)
     .join();
 }

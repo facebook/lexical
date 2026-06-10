@@ -9,6 +9,7 @@
 import type {JSX} from 'react';
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import invariant from '@lexical/internal/invariant';
 import {
   $createListItemNode,
   $createListNode,
@@ -27,6 +28,7 @@ import {
   TableRowNode,
 } from '@lexical/table';
 import {JSDOM} from 'jsdom';
+import * as lexical from 'lexical';
 import {
   $createLineBreakNode,
   $createNodeSelection,
@@ -41,12 +43,17 @@ import {
   $getRoot,
   $isElementNode,
   $isParagraphNode,
+  $isRootNode,
   $isTextNode,
   $parseSerializedNode,
   $setCompositionKey,
   $setSelection,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
+  COMMAND_PRIORITY_BEFORE_LOW,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
+  CommandListenerPriority,
+  CommandListenerPriorityBefore,
   createCommand,
   createEditor,
   EditorState,
@@ -57,6 +64,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
   type LexicalNodeReplacement,
+  mergeRegister,
   ParagraphNode,
   RootNode,
   SKIP_DOM_SELECTION_TAG,
@@ -65,6 +73,7 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {
+  act,
   createRef,
   ReactNode,
   useCallback,
@@ -74,9 +83,7 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
-import invariant from 'shared/invariant';
-import * as ReactTestUtils from 'shared/react-test-utils';
-import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';
 import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
@@ -186,12 +193,14 @@ describe('LexicalEditor tests', () => {
     rootElementRef: React.RefObject<null | HTMLDivElement>,
     onError?: (error: Error) => void,
     nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
+    onWarn?: (error: Error) => void,
   ) {
     const editor = useMemo(
       () =>
         createTestEditor({
           nodes: nodes ?? [],
           onError: onError || vi.fn(),
+          onWarn,
           theme: {
             tableAlignment: {
               center: 'editor-table-alignment-center',
@@ -204,7 +213,7 @@ describe('LexicalEditor tests', () => {
             },
           },
         }),
-      [onError, nodes],
+      [onError, nodes, onWarn],
     );
 
     useEffect(() => {
@@ -221,16 +230,17 @@ describe('LexicalEditor tests', () => {
   function init(
     onError?: (error: Error) => void,
     nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
+    onWarn?: (error: Error) => void,
   ) {
     const ref = createRef<HTMLDivElement>();
 
     function TestBase() {
-      editor = useLexicalEditor(ref, onError, nodes);
+      editor = useLexicalEditor(ref, onError, nodes, onWarn);
 
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase />);
     });
   }
@@ -252,7 +262,7 @@ describe('LexicalEditor tests', () => {
       editor.registerNodeTransform(RootNode, $transform);
       editor.registerNodeTransform(ParagraphNode, $transform);
       editor.registerNodeTransform(TextNode, $transform);
-      editor.registerNodeTransform(ParagraphNode, (node) => {
+      editor.registerNodeTransform(ParagraphNode, node => {
         const lastChild = node.getLastChild();
         if (
           $isTextNode(lastChild) &&
@@ -288,7 +298,7 @@ describe('LexicalEditor tests', () => {
       ]);
       events.length = 0;
       // Add a transform that mutates the text
-      await editor.registerNodeTransform(TextNode, (node) => {
+      await editor.registerNodeTransform(TextNode, node => {
         const textContent = node.getTextContent();
         if (textContent.startsWith('[')) {
           return;
@@ -310,14 +320,14 @@ describe('LexicalEditor tests', () => {
         editor.read(() =>
           $getRoot()
             .getAllTextNodes()
-            .map((node) => node.getTextContent()),
+            .map(node => node.getTextContent()),
         ),
       ).toEqual(['[first]', '[second]']);
       events.length = 0;
       await editor.update(() => {
         $getRoot()
           .getAllTextNodes()
-          .forEach((node) =>
+          .forEach(node =>
             node.setTextContent(`:${node.getTextContent().slice(1, -1)}:`),
           );
         paragraphNode.append($createTextNode('third').setMode('token'));
@@ -349,7 +359,7 @@ describe('LexicalEditor tests', () => {
         editor.read(() =>
           $getRoot()
             .getAllTextNodes()
-            .map((node) => node.getTextContent()),
+            .map(node => node.getTextContent()),
         ),
       ).toEqual(['[:first:]', '[:second:]', '[third]', '[fourth]']);
     });
@@ -384,8 +394,9 @@ describe('LexicalEditor tests', () => {
       editor.read(() => {
         const rootElement = editor.getRootElement();
         expect(rootElement).toBeDefined();
-        // The root never works for this call
-        expect($getNearestNodeFromDOMNode(rootElement!)).toBe(null);
+        // The root element now carries __lexicalKey_* = 'root' so
+        // $getNearestNodeFromDOMNode resolves it to the RootNode.
+        assert($isRootNode($getNearestNodeFromDOMNode(rootElement!)));
         const paragraphDom = rootElement!.querySelector('p');
         expect(paragraphDom).toBeDefined();
         expect(
@@ -412,7 +423,7 @@ describe('LexicalEditor tests', () => {
       });
       expect(editor.read(() => $getRoot().getTextContent())).toEqual('');
       expect(editor.read(() => $getEditor())).toBe(editor);
-      editor.registerNodeTransform(TextNode, (node) => {
+      editor.registerNodeTransform(TextNode, node => {
         if (node.getTextContent() === 'This works!') {
           node.replace($createTextNode('Transforms work!'));
         }
@@ -729,7 +740,7 @@ describe('LexicalEditor tests', () => {
     init();
 
     // 2. Add italics
-    const italicsListener = editor.registerNodeTransform(TextNode, (node) => {
+    const italicsListener = editor.registerNodeTransform(TextNode, node => {
       if (
         node.getTextContent() === 'foo' &&
         node.hasFormat('bold') &&
@@ -740,14 +751,14 @@ describe('LexicalEditor tests', () => {
     });
 
     // 1. Add bold
-    const boldListener = editor.registerNodeTransform(TextNode, (node) => {
+    const boldListener = editor.registerNodeTransform(TextNode, node => {
       if (node.getTextContent() === 'foo' && !node.hasFormat('bold')) {
         node.toggleFormat('bold');
       }
     });
 
     // 2. Add underline
-    const underlineListener = editor.registerNodeTransform(TextNode, (node) => {
+    const underlineListener = editor.registerNodeTransform(TextNode, node => {
       if (
         node.getTextContent() === 'foo' &&
         node.hasFormat('bold') &&
@@ -781,7 +792,7 @@ describe('LexicalEditor tests', () => {
     // 2. (Block transform) Add text
     const testParagraphListener = editor.registerNodeTransform(
       ParagraphNode,
-      (paragraph) => {
+      paragraph => {
         if (skipFirst[0]) {
           skipFirst[0] = false;
 
@@ -795,7 +806,7 @@ describe('LexicalEditor tests', () => {
     );
 
     // 2. (Text transform) Add bold to text
-    const boldListener = editor.registerNodeTransform(TextNode, (node) => {
+    const boldListener = editor.registerNodeTransform(TextNode, node => {
       if (node.getTextContent() === 'foo' && !node.hasFormat('bold')) {
         node.toggleFormat('bold');
       }
@@ -804,7 +815,7 @@ describe('LexicalEditor tests', () => {
     // 3. (Block transform) Add italics to bold text
     const italicsListener = editor.registerNodeTransform(
       ParagraphNode,
-      (paragraph) => {
+      paragraph => {
         const child = paragraph.getLastDescendant();
 
         if (
@@ -843,7 +854,7 @@ describe('LexicalEditor tests', () => {
     init();
 
     // 1. [Foo] into [<empty>,Fo,o,<empty>,!,<empty>]
-    const fooListener = editor.registerNodeTransform(TextNode, (node) => {
+    const fooListener = editor.registerNodeTransform(TextNode, node => {
       if (node.getTextContent() === 'Foo' && !hasRun[0]) {
         const [before, after] = node.splitText(2);
 
@@ -859,7 +870,7 @@ describe('LexicalEditor tests', () => {
     // 2. [Foo!] into [<empty>,Fo,o!,<empty>,!,<empty>]
     const megaFooListener = editor.registerNodeTransform(
       ParagraphNode,
-      (paragraph) => {
+      paragraph => {
         const child = paragraph.getFirstChild();
 
         if (
@@ -880,7 +891,7 @@ describe('LexicalEditor tests', () => {
     );
 
     // 3. [Foo!!] into formatted bold [<empty>,Fo,o!!,<empty>]
-    const boldFooListener = editor.registerNodeTransform(TextNode, (node) => {
+    const boldFooListener = editor.registerNodeTransform(TextNode, node => {
       if (node.getTextContent() === 'Foo!!' && !hasRun[2]) {
         node.toggleFormat('bold');
 
@@ -914,7 +925,7 @@ describe('LexicalEditor tests', () => {
 
     const executeTransform = vi.fn();
     let hasBeenRemoved = false;
-    const removeListener = editor.registerNodeTransform(TextNode, (node) => {
+    const removeListener = editor.registerNodeTransform(TextNode, node => {
       if (hasBeenRemoved) {
         executeTransform();
       }
@@ -953,13 +964,13 @@ describe('LexicalEditor tests', () => {
 
     const removeParagraphTransform = editor.registerNodeTransform(
       ParagraphNode,
-      (node) => {
+      node => {
         executeParagraphNodeTransform();
       },
     );
     const removeTextNodeTransform = editor.registerNodeTransform(
       TextNode,
-      (node) => {
+      node => {
         executeTextNodeTransform();
       },
     );
@@ -1045,7 +1056,7 @@ describe('LexicalEditor tests', () => {
         $getRoot()
           .getChildren()
           .filter($isParagraphNode)
-          .forEach((node) => node.remove());
+          .forEach(node => node.remove());
       },
       {discrete: true},
     );
@@ -1098,7 +1109,7 @@ describe('LexicalEditor tests', () => {
         paragraph1.append(...textNodes.slice(3));
       });
 
-      removeTransform = editor.registerNodeTransform(TextNode, (node) => {
+      removeTransform = editor.registerNodeTransform(TextNode, node => {
         textTransformCount[Number(node.__text)]++;
       });
     });
@@ -1166,7 +1177,7 @@ describe('LexicalEditor tests', () => {
     const errorListener = vi.fn();
     init(errorListener);
 
-    const boldListener = editor.registerNodeTransform(TextNode, (node) => {
+    const boldListener = editor.registerNodeTransform(TextNode, node => {
       node.toggleFormat('bold');
     });
 
@@ -1183,6 +1194,145 @@ describe('LexicalEditor tests', () => {
     boldListener();
   });
 
+  // The recursion guard in $triggerEnqueuedUpdates breaks the cascade (clears
+  // the update queue) and then routes the recovered condition through the
+  // editor's warn-level hook, editor._onWarn, rather than reporting a recovered
+  // condition as an uncaught error via editor._onError. The default _onWarn
+  // throws in development (so the recursion is impossible to miss) and only
+  // console.warns in production; embedders can supply their own onWarn to
+  // capture guard trips as warn-severity telemetry without an error alarm.
+  function runCascade(onWarn?: (error: Error) => void): {
+    errorListener: ReturnType<typeof vi.fn>;
+    unregister: () => void;
+  } {
+    const errorListener = vi.fn();
+    init(errorListener, undefined, onWarn);
+
+    const unregister = editor.registerUpdateListener(() => {
+      editor.update(() => {
+        $getRoot().markDirty();
+      });
+    });
+
+    expect(errorListener).toHaveBeenCalledTimes(0);
+    return {errorListener, unregister};
+  }
+
+  it('Detects infinite recursivity on update listeners (dev: default onWarn throws)', async () => {
+    // Development behavior: with the default onWarn, the guard throws once the
+    // cascade limit is exceeded. The cascade is broken (update queue cleared)
+    // before the guard signals, so the throw surfaces from the scheduled
+    // microtask rather than synchronously from editor.update(), and is NOT
+    // routed through editor._onError.
+    const {errorListener, unregister} = runCascade();
+
+    const caught: Error[] = [];
+    const onUnhandled = (reason: unknown) => {
+      caught.push(reason instanceof Error ? reason : new Error(String(reason)));
+    };
+    process.on('unhandledRejection', onUnhandled);
+    process.on('uncaughtException', onUnhandled);
+
+    try {
+      editor.update(() => {
+        $getRoot().markDirty();
+      });
+
+      // drain the microtask chain produced by the cascade
+      for (let i = 0; i < 200 && caught.length === 0; i++) {
+        await Promise.resolve();
+      }
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+      process.off('uncaughtException', onUnhandled);
+    }
+
+    expect(caught).toHaveLength(1);
+    expect(caught[0].message).toMatch(/endlessly enqueueing/);
+    // The error message should include the editor's namespace so the loop can
+    // be attributed to a specific product/editor in error aggregation, even
+    // when the production stack is minified to core frames.
+    expect(caught[0].message).toContain(
+      `Editor namespace: ${editor._config.namespace}`,
+    );
+
+    unregister();
+
+    // editor should be usable again after the cascade is cut
+    editor.update(
+      () => {
+        $getRoot().markDirty();
+      },
+      {discrete: true},
+    );
+    // drain any lingering microtask chain to confirm no further cascade
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+    // The guard never routes through editor._onError — recovered conditions go
+    // through editor._onWarn instead.
+    expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('routes the recursion guard through a custom onWarn for embedder telemetry', async () => {
+    // Embedder behavior: a custom onWarn fully replaces the default and does
+    // not throw, so the recovered condition is captured for telemetry without
+    // surfacing as an uncaught error (neither via editor._onError nor as an
+    // unhandled rejection/exception). The cascade must still be broken and the
+    // editor must remain usable.
+    const warnListener = vi.fn();
+    const {errorListener, unregister} = runCascade(warnListener);
+
+    const caught: Error[] = [];
+    const onUnhandled = (reason: unknown) => {
+      caught.push(reason instanceof Error ? reason : new Error(String(reason)));
+    };
+    process.on('unhandledRejection', onUnhandled);
+    process.on('uncaughtException', onUnhandled);
+
+    try {
+      editor.update(() => {
+        $getRoot().markDirty();
+      });
+
+      // drain the microtask chain produced by the cascade; the custom onWarn
+      // does not throw, so just give the queue a chance to settle.
+      for (let i = 0; i < 200; i++) {
+        await Promise.resolve();
+      }
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+      process.off('uncaughtException', onUnhandled);
+    }
+
+    // onWarn received the namespace-tagged Error exactly once, so the guard
+    // trip is observable as warn-level telemetry...
+    expect(warnListener).toHaveBeenCalledTimes(1);
+    const warnArg = warnListener.mock.calls[0][0];
+    expect(warnArg).toBeInstanceOf(Error);
+    expect(warnArg.message).toMatch(/endlessly enqueueing/);
+    expect(warnArg.message).toContain(
+      `Editor namespace: ${editor._config.namespace}`,
+    );
+    // ...and nothing surfaced as an uncaught error or via editor._onError.
+    expect(caught).toHaveLength(0);
+    expect(errorListener).toHaveBeenCalledTimes(0);
+
+    unregister();
+
+    // editor should still be usable after the cascade is cut
+    editor.update(
+      () => {
+        $getRoot().markDirty();
+      },
+      {discrete: true},
+    );
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+    expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
   it('Should be able to update an editor state without a root element', () => {
     const ref = createRef<HTMLDivElement>();
 
@@ -1196,7 +1346,7 @@ describe('LexicalEditor tests', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase element={null} />);
     });
     editor.update(() => {
@@ -1209,7 +1359,7 @@ describe('LexicalEditor tests', () => {
 
     expect(container.innerHTML).toBe('<div contenteditable="true"></div>');
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase element={ref.current} />);
     });
 
@@ -1299,7 +1449,7 @@ describe('LexicalEditor tests', () => {
       );
     }
 
-    await ReactTestUtils.act(() => {
+    await act(() => {
       reactRoot.render(<TestBase changeElement={false} />);
     });
 
@@ -1307,7 +1457,7 @@ describe('LexicalEditor tests', () => {
       '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">Not changed</span></p></div>',
     );
 
-    await ReactTestUtils.act(() => {
+    await act(() => {
       reactRoot.render(<TestBase changeElement={true} />);
     });
 
@@ -1346,6 +1496,42 @@ describe('LexicalEditor tests', () => {
     });
   }
 
+  it('setRootElement preserves queued updates and tags across reset (#7360)', () => {
+    const rootElement = document.createElement('div');
+    rootElement.contentEditable = 'true';
+    document.body.appendChild(rootElement);
+
+    const newEditor = createTestEditor({onError: vi.fn()});
+
+    let queuedRan = false;
+    newEditor._updates.push([
+      () => {
+        queuedRan = true;
+      },
+      undefined,
+    ]);
+    newEditor._updateTags.add('custom_tag');
+
+    let listenerTags: Set<string> | null = null;
+    newEditor.registerUpdateListener(({tags}) => {
+      if (tags.has('custom_tag')) {
+        listenerTags = tags;
+      }
+    });
+
+    newEditor.setRootElement(rootElement);
+
+    // setRootElement calls $commitPendingUpdates which drains _updates via
+    // $triggerEnqueuedUpdates. Before the fix, resetEditor wiped _updates
+    // and _updateTags despite preserving _pendingEditorState, so the queued
+    // callback never ran and the tag never reached update listeners.
+    expect(queuedRan).toBe(true);
+    expect(listenerTags).not.toBeNull();
+    expect(listenerTags!.has('custom_tag')).toBe(true);
+
+    document.body.removeChild(rootElement);
+  });
+
   describe('With node decorators', () => {
     function useDecorators() {
       const [decorators, setDecorators] = useState(() =>
@@ -1354,14 +1540,14 @@ describe('LexicalEditor tests', () => {
 
       // Subscribe to changes
       useEffect(() => {
-        return editor.registerDecoratorListener<ReactNode>((nextDecorators) => {
+        return editor.registerDecoratorListener<ReactNode>(nextDecorators => {
           setDecorators(nextDecorators);
         });
       }, []);
 
       const decoratedPortals = useMemo(
         () =>
-          Object.keys(decorators).map((nodeKey) => {
+          Object.keys(decorators).map(nodeKey => {
             const reactDecorator = decorators[nodeKey];
             const element = editor.getElementByKey(nodeKey)!;
 
@@ -1375,7 +1561,7 @@ describe('LexicalEditor tests', () => {
 
     afterEach(async () => {
       // Clean up so we are not calling setState outside of act
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(null);
         await Promise.resolve().then();
       });
@@ -1405,11 +1591,11 @@ describe('LexicalEditor tests', () => {
         );
       }
 
-      ReactTestUtils.act(() => {
+      act(() => {
         reactRoot.render(<Test />);
       });
       // Update the editor with the decorator
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         await editor.update(() => {
           const paragraph = $createParagraphNode();
           const test = $createTestDecoratorNode();
@@ -1421,7 +1607,7 @@ describe('LexicalEditor tests', () => {
       expect(listener).toHaveBeenCalledTimes(1);
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto">' +
-          '<span data-lexical-decorator="true"><span>Hello world</span></span><br></p></div>',
+          '<span data-lexical-decorator="true" contenteditable="false"><span>Hello world</span></span><br></p></div>',
       );
     });
 
@@ -1455,7 +1641,7 @@ describe('LexicalEditor tests', () => {
         );
       }
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<Test divKey={0} />);
         // Wait for update to complete
         await Promise.resolve().then();
@@ -1466,7 +1652,7 @@ describe('LexicalEditor tests', () => {
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>',
       );
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(<Test divKey={1} />);
         // Wait for update to complete
         await Promise.resolve().then();
@@ -1936,22 +2122,22 @@ describe('LexicalEditor tests', () => {
     );
 
     expect(editor._commands.has(command)).toEqual(true);
-    expect(editor._commands.get(command)).toEqual([
-      new Set([commandListener, commandListenerTwo]),
-      new Set(),
-      new Set(),
-      new Set(),
-      new Set(),
+    expect(editor._commands.get(command)?.map(v => [...v])).toEqual([
+      [commandListener, commandListenerTwo],
+      [],
+      [],
+      [],
+      [],
     ]);
 
     removeCommandListener();
 
-    expect(editor._commands.get(command)).toEqual([
-      new Set([commandListenerTwo]),
-      new Set(),
-      new Set(),
-      new Set(),
-      new Set(),
+    expect(editor._commands.get(command)?.map(v => [...v])).toEqual([
+      [commandListenerTwo],
+      [],
+      [],
+      [],
+      [],
     ]);
 
     removeCommandListenerTwo();
@@ -1996,7 +2182,7 @@ describe('LexicalEditor tests', () => {
       root.append(paragraph);
       paragraph.append(textNode);
     });
-    editor.registerTextContentListener((text) => {
+    editor.registerTextContentListener(text => {
       fn(text);
     });
 
@@ -2239,7 +2425,7 @@ describe('LexicalEditor tests', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase />);
     });
 
@@ -2336,7 +2522,7 @@ describe('LexicalEditor tests', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(<TestBase />);
     });
 
@@ -2397,6 +2583,87 @@ describe('LexicalEditor tests', () => {
 
     await Promise.resolve();
     expect(editor._updateTags).toEqual(new Set([]));
+  });
+
+  it('does not leak a no-op update tag into the next update', () => {
+    init();
+    const observedTags: Array<Array<string>> = [];
+    const unregister = editor.registerUpdateListener(({tags}) => {
+      observedTags.push([...tags]);
+    });
+
+    // A tagged update that dirties nothing still commits because it carries a
+    // deferred onUpdate callback -- this mirrors a remote collaboration sync
+    // that turns out to be a no-op (the targeted node was concurrently removed).
+    // Its tag must not survive into a later, unrelated update, otherwise a
+    // listener such as @lexical/yjs's syncLexicalUpdateToYjs would wrongly skip
+    // the next local edit.
+    editor.update(emptyFunction, {
+      discrete: true,
+      onUpdate: emptyFunction,
+      tag: 'collaboration',
+    });
+    expect(editor._updateTags).toEqual(new Set());
+
+    // A subsequent untagged local edit must not observe the leaked tag.
+    editor.update(
+      () => {
+        $getRoot().append($createParagraphNode());
+      },
+      {discrete: true},
+    );
+    unregister();
+
+    const lastObservedTags = observedTags[observedTags.length - 1];
+    expect(lastObservedTags).not.toContain('collaboration');
+  });
+
+  it('setEditorState keeps its tag when committed from inside an update', () => {
+    init();
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('historic'));
+        $getRoot().append(paragraph);
+      },
+      {discrete: true},
+    );
+    const historicState = editor.getEditorState();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('current'));
+        root.append(paragraph);
+      },
+      {discrete: true},
+    );
+
+    const observed: Array<{content: string; tags: Array<string>}> = [];
+    const unregister = editor.registerUpdateListener(({editorState, tags}) => {
+      observed.push({
+        content: editorState.read(() => $getRoot().getTextContent()),
+        tags: [...tags],
+      });
+    });
+    // Applying an editor state with a tag from *inside* an update -- the way
+    // history's undo does via dispatchCommand -- force-commits the wrapping
+    // no-op update, which resets _updateTags. The tag must still reach the
+    // update listener for the commit that actually applies the historic state;
+    // otherwise (e.g. @lexical/history) that transition is misclassified as a
+    // fresh edit rather than an undo.
+    editor.update(
+      () => {
+        editor.setEditorState(historicState, {tag: 'historic-tag'});
+      },
+      {discrete: true},
+    );
+    unregister();
+
+    const historicCommit = observed.find(o => o.content === 'historic');
+    expect(historicCommit).toBeDefined();
+    expect(historicCommit!.tags).toContain('historic-tag');
   });
 
   it('mutation listeners does not trigger when other node types are mutated', async () => {
@@ -2621,7 +2888,7 @@ describe('LexicalEditor tests', () => {
 
     editor.registerMutationListener(
       TextNode,
-      (map) => {
+      map => {
         mutationListener();
         editor.registerMutationListener(
           TextNode,
@@ -2685,6 +2952,133 @@ describe('LexicalEditor tests', () => {
     expect(textContentListener).toHaveBeenCalledTimes(1);
     expect(nodeTransformListener).toHaveBeenCalledTimes(1);
     expect(mutationListener).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls command listeners in deque order', async () => {
+    const calls: string[] = [];
+    let regOrder = 0;
+    const names = {
+      [COMMAND_PRIORITY_BEFORE_EDITOR]: 'before:editor',
+      [COMMAND_PRIORITY_BEFORE_LOW]: 'before:low',
+      [COMMAND_PRIORITY_EDITOR]: 'after:editor',
+      [COMMAND_PRIORITY_LOW]: 'after:low',
+    } as const;
+    const listener = (priority: keyof typeof names) => {
+      const idx = regOrder++;
+      return editor.registerCommand(
+        TEST_COMMAND,
+        () => {
+          calls.push(`${names[priority]}:${idx}`);
+          return false;
+        },
+        priority,
+      );
+    };
+    const TEST_COMMAND = createCommand('TEST_COMMAND');
+    init();
+    const unreg = mergeRegister(
+      listener(COMMAND_PRIORITY_EDITOR),
+      listener(COMMAND_PRIORITY_LOW),
+      listener(COMMAND_PRIORITY_EDITOR),
+      listener(COMMAND_PRIORITY_LOW),
+      listener(COMMAND_PRIORITY_BEFORE_EDITOR),
+      listener(COMMAND_PRIORITY_BEFORE_LOW),
+      listener(COMMAND_PRIORITY_BEFORE_EDITOR),
+      listener(COMMAND_PRIORITY_BEFORE_LOW),
+    );
+    expect(calls).toHaveLength(0);
+    editor.dispatchCommand(TEST_COMMAND, undefined);
+    expect(calls).toEqual([
+      'before:low:7',
+      'before:low:5',
+      'after:low:1',
+      'after:low:3',
+      'before:editor:6',
+      'before:editor:4',
+      'after:editor:0',
+      'after:editor:2',
+    ]);
+    unreg();
+    calls.length = 0;
+    editor.dispatchCommand(TEST_COMMAND, undefined);
+    expect(calls).toEqual([]);
+  });
+  it('maps priorities correctly', () => {
+    // this brute forces to make sure all of the names match exactly what we expect
+    const beforePriorities: [string, number][] = [];
+    const afterPriorities: [string, number][] = [];
+    for (const [k, v] of Object.entries(lexical)) {
+      if (k.startsWith('COMMAND_PRIORITY_')) {
+        assert(
+          typeof v === 'number' && Math.floor(v) === v,
+          'priorities are integers',
+        );
+        if (k.startsWith('COMMAND_PRIORITY_BEFORE')) {
+          expect(v < 0).toBe(true);
+          beforePriorities.push([k, v]);
+        } else {
+          expect(v >= 0).toBe(true);
+          afterPriorities.push([k, v]);
+        }
+      }
+    }
+    beforePriorities.sort((a, b) => a[1] - b[1]);
+    afterPriorities.sort((a, b) => a[1] - b[1]);
+    expect(beforePriorities).toHaveLength(5);
+    expect(afterPriorities).toHaveLength(5);
+    expect(
+      beforePriorities.map(([k]) => k.replace(/^COMMAND_PRIORITY_BEFORE_/, '')),
+    ).toEqual(
+      afterPriorities.map(([k]) => k.replace(/^COMMAND_PRIORITY_/, '')),
+    );
+    init();
+    const command = createCommand('TEST_COMMAND');
+    const listeners: (() => void)[] = [];
+    const calls: string[] = [];
+    for (const count of [0, 1]) {
+      for (const arr of [afterPriorities, beforePriorities]) {
+        for (const [k, v] of arr) {
+          listeners.push(
+            editor.registerCommand(
+              command,
+              () => {
+                calls.push(`${k} ${count}`);
+                return false;
+              },
+              v as CommandListenerPriority | CommandListenerPriorityBefore,
+            ),
+          );
+        }
+      }
+    }
+    editor.dispatchCommand(command, undefined);
+    expect(calls).toEqual([
+      'COMMAND_PRIORITY_BEFORE_CRITICAL 1',
+      'COMMAND_PRIORITY_BEFORE_CRITICAL 0',
+      'COMMAND_PRIORITY_CRITICAL 0',
+      'COMMAND_PRIORITY_CRITICAL 1',
+      'COMMAND_PRIORITY_BEFORE_HIGH 1',
+      'COMMAND_PRIORITY_BEFORE_HIGH 0',
+      'COMMAND_PRIORITY_HIGH 0',
+      'COMMAND_PRIORITY_HIGH 1',
+      'COMMAND_PRIORITY_BEFORE_NORMAL 1',
+      'COMMAND_PRIORITY_BEFORE_NORMAL 0',
+      'COMMAND_PRIORITY_NORMAL 0',
+      'COMMAND_PRIORITY_NORMAL 1',
+      'COMMAND_PRIORITY_BEFORE_LOW 1',
+      'COMMAND_PRIORITY_BEFORE_LOW 0',
+      'COMMAND_PRIORITY_LOW 0',
+      'COMMAND_PRIORITY_LOW 1',
+      'COMMAND_PRIORITY_BEFORE_EDITOR 1',
+      'COMMAND_PRIORITY_BEFORE_EDITOR 0',
+      'COMMAND_PRIORITY_EDITOR 0',
+      'COMMAND_PRIORITY_EDITOR 1',
+    ]);
+    // ensure unregistration works
+    mergeRegister(...listeners)();
+    calls.length = 0;
+    editor.dispatchCommand(command, undefined);
+    expect(calls).toHaveLength(0);
   });
 
   it('allows using the same listener for multiple node types', async () => {
@@ -2772,7 +3166,7 @@ describe('LexicalEditor tests', () => {
     expect(mutationListenerA).toHaveBeenCalledTimes(2);
     expect(mutationListenerB).toHaveBeenCalledTimes(2);
     expect(mutationListenerC).toHaveBeenCalledTimes(1);
-    [mutationListenerA, mutationListenerB, mutationListenerC].forEach((fn) => {
+    [mutationListenerA, mutationListenerB, mutationListenerC].forEach(fn => {
       expect(fn).toHaveBeenLastCalledWith(
         expect.anything(),
         expect.objectContaining({

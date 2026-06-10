@@ -6,12 +6,27 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
+import {$isAtNodeEnd} from '@lexical/selection';
+import {
+  CAN_USE_BEFORE_INPUT,
+  CAN_USE_DOM,
+  IS_ANDROID,
+  IS_ANDROID_CHROME,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_CHROME,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+} from 'lexical';
 import {
   $caretFromPoint,
   $caretRangeFromSelection,
   $cloneWithProperties,
   $createParagraphNode,
   $findMatchingParent,
+  $fullReconcile,
   $getAdjacentChildCaret,
   $getAdjacentSiblingOrParentSiblingCaret,
   $getCaretInDirection,
@@ -52,21 +67,6 @@ import {
   StateConfig,
   ValueOrUpdater,
 } from 'lexical';
-// This underscore postfixing is used as a hotfix so we do not
-// export shared types from this module #5918
-import {CAN_USE_DOM as CAN_USE_DOM_} from 'shared/canUseDOM';
-import {
-  CAN_USE_BEFORE_INPUT as CAN_USE_BEFORE_INPUT_,
-  IS_ANDROID as IS_ANDROID_,
-  IS_ANDROID_CHROME as IS_ANDROID_CHROME_,
-  IS_APPLE as IS_APPLE_,
-  IS_APPLE_WEBKIT as IS_APPLE_WEBKIT_,
-  IS_CHROME as IS_CHROME_,
-  IS_FIREFOX as IS_FIREFOX_,
-  IS_IOS as IS_IOS_,
-  IS_SAFARI as IS_SAFARI_,
-} from 'shared/environment';
-import invariant from 'shared/invariant';
 
 export {default as markSelection} from './markSelection';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
@@ -83,17 +83,20 @@ export {
   mergeRegister,
   removeClassNamesFromElement,
 } from 'lexical';
-// Hotfix to export these with inlined types #5918
-export const CAN_USE_BEFORE_INPUT: boolean = CAN_USE_BEFORE_INPUT_;
-export const CAN_USE_DOM: boolean = CAN_USE_DOM_;
-export const IS_ANDROID: boolean = IS_ANDROID_;
-export const IS_ANDROID_CHROME: boolean = IS_ANDROID_CHROME_;
-export const IS_APPLE: boolean = IS_APPLE_;
-export const IS_APPLE_WEBKIT: boolean = IS_APPLE_WEBKIT_;
-export const IS_CHROME: boolean = IS_CHROME_;
-export const IS_FIREFOX: boolean = IS_FIREFOX_;
-export const IS_IOS: boolean = IS_IOS_;
-export const IS_SAFARI: boolean = IS_SAFARI_;
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
+export {
+  CAN_USE_BEFORE_INPUT,
+  CAN_USE_DOM,
+  IS_ANDROID,
+  IS_ANDROID_CHROME,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_CHROME,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+};
 
 /**
  * Returns true if the file type matches the types passed within the acceptableMimeTypes array, false otherwise.
@@ -251,7 +254,7 @@ function $dfsCaretIterator<D extends CaretDirection>(
   return makeStepwiseIterator({
     hasNext: (state): state is NodeCaret<'next'> => state !== null,
     initial: startCaret,
-    map: (state) => ({depth, node: state.origin}),
+    map: state => ({depth, node: state.origin}),
     step: (state: NodeCaret<'next'>) => {
       if (state.isSameNodeCaret(endCaret)) {
         return null;
@@ -363,7 +366,7 @@ export function $getNearestBlockElementAncestorOrThrow(
 ): ElementNode {
   const blockNode = $findMatchingParent(
     startNode,
-    (node) => $isElementNode(node) && !node.isInline(),
+    node => $isElementNode(node) && !node.isInline(),
   );
   if (!$isElementNode(blockNode)) {
     invariant(
@@ -414,8 +417,8 @@ export function registerNestedElementResolver<N extends ElementNode>(
       }
     }
 
-    let parentNode: N | null = node;
-    let childNode = node;
+    let parentNode: ElementNode | null = node;
+    let childNode: ElementNode = node;
 
     while (parentNode !== null) {
       childNode = parentNode;
@@ -476,7 +479,6 @@ export function $restoreEditorState(
   editor: LexicalEditor,
   editorState: EditorState,
 ): void {
-  const FULL_RECONCILE = 2;
   const nodeMap = new Map();
   const activeEditorState = editor._pendingEditorState;
 
@@ -488,7 +490,7 @@ export function $restoreEditorState(
     activeEditorState._nodeMap = nodeMap;
   }
 
-  editor._dirtyType = FULL_RECONCILE;
+  $fullReconcile();
   const selection = editorState._selection;
   $setSelection(selection === null ? null : selection.clone());
 }
@@ -546,6 +548,34 @@ export function $insertNodeToNearestRootAtCaret<
   options?: SplitAtPointCaretNextOptions,
 ): NodeCaret<D> {
   let insertCaret: PointCaret<'next'> = $getCaretInDirection(caret, 'next');
+  // Normalize boundary cases for TextPointCaret
+  if ($isTextPointCaret(insertCaret)) {
+    if (insertCaret.offset === 0) {
+      insertCaret = $getSiblingCaret(
+        insertCaret.origin,
+        'previous',
+      ).getFlipped();
+    } else if (insertCaret.offset === insertCaret.origin.getTextContentSize()) {
+      insertCaret = $getSiblingCaret(insertCaret.origin, 'next');
+    }
+  }
+  // Make sure we have a distinct node as the origin
+  if (insertCaret.origin.is(node)) {
+    invariant(
+      $isSiblingCaret(insertCaret),
+      '$insertNodeToNearestRootAtCaret node %s of type %s can not be inserted into itself',
+      node.getKey(),
+      node.getType(),
+    );
+    insertCaret = $rewindSiblingCaret(insertCaret);
+  }
+  // Handle split boundary conditions where node is being inserted adjacent to itself
+  if (
+    node.is(insertCaret.getNodeAtCaret()) ||
+    node.is(insertCaret.getFlipped().getNodeAtCaret())
+  ) {
+    node.remove(true);
+  }
   for (
     let nextCaret: null | PointCaret<'next'> = insertCaret;
     nextCaret;
@@ -707,8 +737,10 @@ function needsManualZoom(): boolean {
     // https://chromestatus.com/feature/5198254868529152
     // https://github.com/facebook/lexical/issues/6863
     const div = document.createElement('div');
-    div.style.cssText =
-      'position: absolute; opacity: 0; width: 100px; left: -1000px;';
+    div.style.position = 'absolute';
+    div.style.opacity = '0';
+    div.style.width = '100px';
+    div.style.left = '-1000px';
     document.body.appendChild(div);
     const noZoom = div.getBoundingClientRect();
     div.style.setProperty('zoom', '2');
@@ -782,7 +814,7 @@ function $unwrapAndFilterDescendantsImpl(
       $unwrapAndFilterDescendantsImpl(
         node,
         $predicate,
-        $onSuccess || ((child) => node.insertAfter(child)),
+        $onSuccess || (child => node.insertAfter(child)),
       );
     }
     node.remove();
@@ -860,7 +892,7 @@ function $childIterator<D extends CaretDirection>(
   return makeStepwiseIterator({
     hasNext: $isSiblingCaret,
     initial: startCaret.getAdjacentCaret(),
-    map: (caret) => {
+    map: caret => {
       const origin = caret.origin.getLatest();
       if (__DEV__ && seen !== null) {
         const key = origin.getKey();
@@ -952,7 +984,7 @@ export interface StateConfigWrapper<K extends string, V> {
 export function makeStateWrapper<K extends string, V>(
   stateConfig: StateConfig<K, V>,
 ): StateConfigWrapper<K, V> {
-  const $get: StateConfigWrapper<K, V>['$get'] = (node) =>
+  const $get: StateConfigWrapper<K, V>['$get'] = node =>
     $getState(node, stateConfig);
   const $set: StateConfigWrapper<K, V>['$set'] = (node, valueOrUpdater) =>
     $setState(node, stateConfig, valueOrUpdater);
@@ -970,4 +1002,100 @@ export function makeStateWrapper<K extends string, V>(
       },
     stateConfig,
   };
+}
+
+/**
+ * Inserts a new paragraph before a container node when the cursor moves outside the container element
+ *
+ * Intended for use ArrowLeft/ArrowUp keyboard handlers to allow the user to break out
+ * of a container node by creating a new paragraph before it.
+ *
+ * A paragraph is inserted if that the cursor is positioned at the beginning inside the container,
+ * and the container itself is the first element in the document and has no preceding sibling
+ *
+ * @param $isContainerNode - Type guard identifying the container node type to escape from.
+ * @returns `true` if a paragraph was inserted, `false` otherwise.
+ */
+export function $onEscapeUp(
+  $isContainerNode: (node?: LexicalNode | null) => node is ElementNode,
+) {
+  const selection = $getSelection();
+  if (
+    $isRangeSelection(selection) &&
+    selection.isCollapsed() &&
+    selection.anchor.offset === 0
+  ) {
+    const containerNode = $findMatchingParent(
+      selection.anchor.getNode(),
+      $isContainerNode,
+    );
+
+    if (containerNode) {
+      const parent = containerNode.getParent();
+      if (parent !== null && parent.getFirstChild() === containerNode) {
+        const firstDescendant =
+          containerNode.getFirstDescendant() ?? containerNode;
+        const anchorNode = selection.anchor.getNode();
+        if (
+          firstDescendant !== null &&
+          // the selection can be at the edge of the text
+          (anchorNode === firstDescendant ||
+            // or at the edge of the parent element
+            ($isElementNode(anchorNode) &&
+              anchorNode.getFirstDescendant() === firstDescendant))
+        ) {
+          containerNode.insertBefore($createParagraphNode()).selectEnd();
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Inserts a new paragraph after a container node when the cursor moves outside the container element
+ *
+ * Intended for use ArrowRight/ArrowDown keyboard handlers to allow the user to break out
+ * of a container node by creating a new paragraph after it.
+ *
+ * A paragraph is inserted if that the cursor is positioned at the ending inside the container,
+ * and the container itself is the last element in the document and has no next sibling
+ *
+ * @param $isContainerNode - Type guard identifying the container node type to escape from.
+ * @returns `true` if a paragraph was inserted, `false` otherwise.
+ */
+export function $onEscapeDown(
+  $isContainerNode: (node?: LexicalNode | null) => node is ElementNode,
+) {
+  const selection = $getSelection();
+  if ($isRangeSelection(selection) && selection.isCollapsed()) {
+    const containerNode = $findMatchingParent(
+      selection.anchor.getNode(),
+      $isContainerNode,
+    );
+
+    if (containerNode) {
+      const parent = containerNode.getParent();
+      if (parent !== null && parent.getLastChild() === containerNode) {
+        const lastDescendant =
+          containerNode.getLastDescendant() ?? containerNode;
+        const anchorNode = selection.anchor.getNode();
+        if (
+          lastDescendant !== null &&
+          $isAtNodeEnd(selection.anchor) &&
+          // the selection can be at the edge of the text
+          (anchorNode === lastDescendant ||
+            // or at the edge of the parent element
+            ($isElementNode(anchorNode) &&
+              anchorNode.getLastDescendant() === lastDescendant))
+        ) {
+          containerNode.insertAfter($createParagraphNode()).selectEnd();
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }

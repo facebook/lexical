@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-/* eslint-disable no-console */
 
 /**
  * This script was used to seed the initial data for
@@ -16,6 +15,21 @@
 import fs from 'fs';
 import {dirname, join} from 'path';
 import {fileURLToPath} from 'url';
+
+/**
+ * A single team member as stored in team.json
+ * @typedef {Object} TeamMember
+ * @property {string} username the GitHub username
+ * @property {string} name the GitHub display name
+ */
+
+/**
+ * The shape of team.json
+ * @typedef {Object} TeamData
+ * @property {Array<TeamMember>} core
+ * @property {Array<TeamMember>} emeriti
+ * @property {Array<TeamMember>} distinguished
+ */
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -64,11 +78,13 @@ const teamDataPath = join(
   __dirname,
   '../packages/lexical-website/src/data/team.json',
 );
-const teamData = JSON.parse(fs.readFileSync(teamDataPath, 'utf8'));
+const teamData = /** @type {TeamData} */ (
+  JSON.parse(fs.readFileSync(teamDataPath, 'utf8'))
+);
 
-const coreUsernames = teamData.core.map((m) => m.username);
-const emeritiUsernames = teamData.emeriti.map((m) => m.username);
-const distinguishedUsernames = teamData.distinguished.map((m) => m.username);
+const coreUsernames = teamData.core.map(m => m.username);
+const emeritiUsernames = teamData.emeriti.map(m => m.username);
+const distinguishedUsernames = teamData.distinguished.map(m => m.username);
 
 // Create a map of username -> display name
 // Priority: team.json data, then hardcoded historical data
@@ -81,12 +97,16 @@ allHistoricalReviewers.forEach(({name, username}) => {
 
 // Then override with team.json data (which is more authoritative)
 [...teamData.core, ...teamData.emeriti, ...teamData.distinguished].forEach(
-  (member) => {
+  member => {
     usernameToName.set(member.username, member.name);
   },
 );
 
-// Helper function to format a reviewer with name and username
+/**
+ * Helper function to format a reviewer with name and username
+ * @param {string} username the GitHub username
+ * @returns {string} the formatted "Display Name (@username)" string
+ */
 function formatReviewer(username) {
   const displayName = usernameToName.get(username);
   return `${displayName} (@${username})`;
@@ -94,23 +114,23 @@ function formatReviewer(username) {
 
 // Categorize all historical reviewers
 const core = allHistoricalReviewers
-  .filter((r) => coreUsernames.includes(r.username))
+  .filter(r => coreUsernames.includes(r.username))
   .sort((a, b) =>
     a.username.toLowerCase().localeCompare(b.username.toLowerCase()),
   );
 const emeriti = allHistoricalReviewers
-  .filter((r) => emeritiUsernames.includes(r.username))
+  .filter(r => emeritiUsernames.includes(r.username))
   .sort((a, b) =>
     a.username.toLowerCase().localeCompare(b.username.toLowerCase()),
   );
 const distinguished = allHistoricalReviewers
-  .filter((r) => distinguishedUsernames.includes(r.username))
+  .filter(r => distinguishedUsernames.includes(r.username))
   .sort((a, b) =>
     a.username.toLowerCase().localeCompare(b.username.toLowerCase()),
   );
 const notInTeamData = allHistoricalReviewers
   .filter(
-    (r) =>
+    r =>
       !coreUsernames.includes(r.username) &&
       !emeritiUsernames.includes(r.username) &&
       !distinguishedUsernames.includes(r.username),

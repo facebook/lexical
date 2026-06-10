@@ -14,6 +14,7 @@ import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer'
 import {LexicalExtensionEditorComposer} from '@lexical/react/LexicalExtensionEditorComposer';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {ReactExtension} from '@lexical/react/ReactExtension';
+import {ReactPluginHostExtension} from '@lexical/react/ReactPluginHostExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 import {toHaveNoViolations} from 'jest-axe';
 import {
@@ -25,10 +26,13 @@ import {
   $getState,
   $getStateChange,
   $setState,
+  COMMAND_PRIORITY_EDITOR,
+  createCommand,
   createState,
   DecoratorNode,
   defineExtension,
   EditorConfig,
+  LexicalCommand,
   LexicalEditor,
   LexicalEditorWithDispose,
   StateConfigValue,
@@ -40,8 +44,8 @@ import {
   invariant,
 } from 'lexical/src/__tests__/utils';
 import * as React from 'react';
+import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 expect.extend(toHaveNoViolations);
@@ -52,7 +56,7 @@ const DecorateState = createState('decorate', {
     (node: ReactDecoratorNode): React.ReactNode =>
       null,
 });
-const InlineState = createState('inline', {parse: (v) => !!v});
+const InlineState = createState('inline', {parse: v => !!v});
 
 class ReactDecoratorNode extends DecoratorNode<React.ReactNode> {
   $config() {
@@ -143,7 +147,7 @@ describe('LexicalExtensionEditorComposer', () => {
     function App() {
       return <LexicalExtensionComposer extension={ParentExtension} />;
     }
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<App />);
     });
     invariant(editor !== undefined, 'editor defined');
@@ -164,7 +168,7 @@ describe('LexicalExtensionEditorComposer', () => {
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
           data-lexical-editor="true">
           <p dir="auto"><span data-lexical-text="true">parent</span></p>
-          <div data-lexical-decorator="true">
+          <div contenteditable="false" data-lexical-decorator="true">
             <div
               contenteditable="true"
               role="textbox"
@@ -180,16 +184,105 @@ describe('LexicalExtensionEditorComposer', () => {
     // By default editors are editable
     expect(editor.isEditable()).toBe(true);
     expect(nestedEditor.isEditable()).toBe(true);
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor!.setEditable(false);
     });
     // By default editable is not inherited
     expect(editor.isEditable()).toBe(false);
     expect(nestedEditor.isEditable()).toBe(true);
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(null);
       await Promise.resolve();
     });
+  });
+
+  test('does not dispose the editor on unmount', async () => {
+    using editor = buildEditorFromExtensions({
+      dependencies: [ReactPluginHostExtension, RichTextPlugin],
+      name: '[root]',
+    });
+    const TestCommand: LexicalCommand<number> = createCommand('TestCommand');
+    const handled: number[] = [];
+    editor.registerCommand(
+      TestCommand,
+      payload => {
+        handled.push(payload);
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    );
+
+    await act(async () => {
+      reactRoot.render(
+        <LexicalExtensionEditorComposer initialEditor={editor} />,
+      );
+    });
+    expect(editor.getRootElement()).not.toBe(null);
+    expect(editor.dispatchCommand(TestCommand, 1)).toBe(true);
+    expect(handled).toEqual([1]);
+
+    await act(async () => {
+      reactRoot.render(null);
+      await Promise.resolve();
+    });
+
+    // The command registration must survive the composer unmount —
+    // LexicalExtensionEditorComposer no longer calls editor.dispose().
+    expect(editor.dispatchCommand(TestCommand, 2)).toBe(true);
+    expect(handled).toEqual([1, 2]);
+  });
+
+  test('can remount with the same editor after unmount', async () => {
+    using editor = buildEditorFromExtensions({
+      dependencies: [ReactPluginHostExtension, RichTextPlugin],
+      name: '[root]',
+    });
+    editor.update(
+      () =>
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('nested'))),
+      {discrete: true},
+    );
+
+    // First mount
+    await act(async () => {
+      reactRoot.render(
+        <LexicalExtensionEditorComposer initialEditor={editor} />,
+      );
+    });
+    expect(container?.textContent).toBe('nested');
+    const firstRoot = editor.getRootElement();
+    expect(firstRoot).not.toBe(null);
+
+    // Unmount
+    await act(async () => {
+      reactRoot.render(null);
+      await Promise.resolve();
+    });
+
+    // Remount with the same editor instance — this mirrors the image-caption
+    // open/close/open cycle that previously broke because the editor was
+    // disposed on first unmount.
+    await act(async () => {
+      reactRoot.render(
+        <LexicalExtensionEditorComposer initialEditor={editor} />,
+      );
+    });
+    expect(container?.textContent).toBe('nested');
+    expect(editor.getRootElement()).not.toBe(null);
+
+    // Editor still functions for updates after the remount.
+    await act(async () => {
+      editor.update(
+        () =>
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append($createTextNode('updated'))),
+        {discrete: true},
+      );
+    });
+    expect(container?.textContent).toBe('updated');
   });
 });

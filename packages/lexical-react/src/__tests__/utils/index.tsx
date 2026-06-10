@@ -22,8 +22,8 @@ import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {Provider, UserState} from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
 import * as React from 'react';
+import {act} from 'react';
 import {type Container, createRoot, type Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {expect} from 'vitest';
 import * as Y from 'yjs';
 
@@ -137,7 +137,7 @@ export class Client implements Provider {
   }
 
   _broadcastUpdate(update: Uint8Array) {
-    this._connection._clients.forEach((client) => {
+    this._connection._clients.forEach(client => {
       if (client !== this) {
         if (client._connected) {
           Y.applyUpdate(client._doc, update, this._connection);
@@ -188,21 +188,21 @@ export class Client implements Provider {
 
     rootContainer.appendChild(container);
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(
         <LexicalCollaboration>
           <LexicalComposer
             initialConfig={{
               editorState: null,
               namespace: '',
-              onError: (e) => {
+              onError: e => {
                 throw e;
               },
             }}>
             <Editor
               provider={this}
               doc={this._doc}
-              setEditor={(editor) => (this._editor = editor)}
+              setEditor={editor => (this._editor = editor)}
               awarenessData={awarenessData}
               shouldBootstrapEditor={options.shouldBootstrapEditor}
               useCollabV2={this._connection._useCollabV2}
@@ -214,7 +214,7 @@ export class Client implements Provider {
   }
 
   stop() {
-    ReactTestUtils.act(() => {
+    act(() => {
       this._reactRoot!.render(null);
     });
 
@@ -249,7 +249,7 @@ export class Client implements Provider {
     const listenerSet = this._listeners.get(type);
 
     if (listenerSet !== undefined) {
-      listenerSet.forEach((callback) => callback(data));
+      listenerSet.forEach(callback => callback(data));
     }
   }
 
@@ -307,7 +307,7 @@ export function createTestConnection(useCollabV2: boolean) {
 }
 
 export async function waitForReact(cb: () => void) {
-  await ReactTestUtils.act(async () => {
+  await act(async () => {
     cb();
     await Promise.resolve().then();
   });

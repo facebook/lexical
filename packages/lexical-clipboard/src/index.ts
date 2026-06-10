@@ -6,16 +6,36 @@
  *
  */
 
+export {caretFromPoint} from './caretFromPoint';
 export {
+  $exportMimeTypeFromSelection,
   $generateJSONFromSelectedNodes,
   $generateNodesFromSerializedNodes,
   $getClipboardDataFromSelection,
   $getHtmlContent,
   $getLexicalContent,
+  $handlePlainTextDrop,
+  $handleRichTextDrop,
   $insertDataTransferForPlainText,
   $insertDataTransferForRichText,
   $insertGeneratedNodes,
+  $writeDragSourceToDataTransfer,
   copyToClipboard,
+  type ExportMimeTypeConfig,
+  type ExportMimeTypeFunction,
+  type GetClipboardDataConfig,
+  GetClipboardDataExtension,
   type LexicalClipboardData,
   setLexicalClipboardDataTransfer,
 } from './clipboard';
+export {
+  ClipboardDOMImportExtension,
+  type ClipboardImportConfig,
+  ClipboardImportExtension,
+  type ClipboardImportOutput,
+  DEFAULT_IMPORT_MIME_TYPE,
+  DEFAULT_IMPORT_MIME_TYPE_PRIORITY,
+  type ImportMimeTypeConfig,
+  type ImportMimeTypeFunction,
+  type ImportMimeTypePriority,
+} from './ClipboardImportExtension';

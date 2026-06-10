@@ -6,6 +6,7 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {
   $descendantsMatching,
   addClassNamesToElement,
@@ -29,21 +30,24 @@ import {
   LexicalUpdateJSON,
   NodeKey,
   SerializedElementNode,
+  setDOMStyleFromCSS,
   setDOMUnmanaged,
   Spread,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
 import {$isTableCellNode, type TableCellNode} from './LexicalTableCellNode';
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
-import {$isTableRowNode, type TableRowNode} from './LexicalTableRowNode';
+import {$isTableRowNode} from './LexicalTableRowNode';
 import {
   $getNearestTableCellInTableFromDOMNode,
   getTable,
+  getTableElement,
   isHTMLTableElement,
 } from './LexicalTableSelectionHelpers';
 import {$computeTableMapSkipCellCheck} from './LexicalTableUtils';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 function isHTMLDivElement(element: unknown): element is HTMLDivElement {
   return isHTMLElement(element) && element.nodeName === 'DIV';
@@ -273,7 +277,7 @@ export class TableNode extends ElementNode {
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
     const tableElement = document.createElement('table');
     if (this.__style) {
-      tableElement.style.cssText = this.__style;
+      setDOMStyleFromCSS(tableElement.style, this.__style);
     }
     const colGroup = document.createElement('colgroup');
     tableElement.appendChild(colGroup);
@@ -286,7 +290,7 @@ export class TableNode extends ElementNode {
       if (classes) {
         addClassNamesToElement(wrapperElement, classes);
       } else {
-        wrapperElement.style.cssText = 'overflow-x: auto;';
+        wrapperElement.style.overflowX = 'auto';
       }
       wrapperElement.appendChild(tableElement);
       this.updateTableWrapper(null, wrapperElement, tableElement, config);
@@ -322,7 +326,11 @@ export class TableNode extends ElementNode {
     config: EditorConfig,
   ): void {
     if (this.__style !== (prevNode ? prevNode.__style : '')) {
-      tableElement.style.cssText = this.__style;
+      setDOMStyleFromCSS(
+        tableElement.style,
+        this.__style,
+        prevNode ? prevNode.__style : '',
+      );
     }
     if (this.__rowStriping !== (prevNode ? prevNode.__rowStriping : false)) {
       setRowStriping(tableElement, config, this.__rowStriping);
@@ -339,8 +347,7 @@ export class TableNode extends ElementNode {
   }
 
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
-    const slot = this.getDOMSlot(dom);
-    const tableElement = slot.element;
+    const tableElement = getTableElement(this, dom);
     if ((dom === tableElement) === $isScrollableTablesActive()) {
       return true;
     }
@@ -356,12 +363,11 @@ export class TableNode extends ElementNode {
     if (!colWidths) {
       return;
     }
-    const slot = this.getDOMSlot(dom);
-    const tableElement = slot.element;
+    const tableElement = getTableElement(this, dom);
     updateColgroup(
       tableElement,
       this.getColumnCount(),
-      colWidths.map((width) => width * scale),
+      colWidths.map(width => width * scale),
     );
   }
 
@@ -369,7 +375,7 @@ export class TableNode extends ElementNode {
     const superExport = super.exportDOM(editor);
     const {element} = superExport;
     return {
-      after: (tableElement) => {
+      after: tableElement => {
         if (superExport.after) {
           tableElement = superExport.after(tableElement);
         }
@@ -595,13 +601,13 @@ export class TableNode extends ElementNode {
   }
 
   getColumnCount(): number {
-    const firstRow = this.getFirstChild<TableRowNode>();
-    if (!firstRow) {
+    const firstRow = this.getFirstChild();
+    if (!$isTableRowNode(firstRow)) {
       return 0;
     }
 
     let columnCount = 0;
-    firstRow.getChildren().forEach((cell) => {
+    firstRow.getChildren().forEach(cell => {
       if ($isTableCellNode(cell)) {
         columnCount += cell.getColSpan();
       }
@@ -656,7 +662,7 @@ export function $convertTableElement(
     }
   }
   return {
-    after: (children) => $descendantsMatching(children, $isTableRowNode),
+    after: children => $descendantsMatching(children, $isTableRowNode),
     node: tableNode,
   };
 }

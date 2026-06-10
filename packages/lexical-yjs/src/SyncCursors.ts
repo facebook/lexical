@@ -14,6 +14,7 @@ import type {
   Point,
 } from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {
   $getNodeByKey,
@@ -22,8 +23,8 @@ import {
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
+  setDOMStyleObject,
 } from 'lexical';
-import invariant from 'shared/invariant';
 import {
   AbsolutePosition,
   compareRelativePositions,
@@ -60,9 +61,83 @@ export type CursorSelection = {
     key: NodeKey;
     offset: number;
   };
+  /** Modern path: one CSS Custom Highlight per remote cursor. */
+  highlight: Highlight | null;
+  highlightName: string;
   name: HTMLSpanElement;
+  /** Legacy fallback only: absolutely-positioned rect spans, one per visual rect. */
   selections: Array<HTMLElement>;
 };
+
+const SUPPORTS_CSS_HIGHLIGHTS =
+  typeof Highlight !== 'undefined' &&
+  typeof CSS !== 'undefined' &&
+  'highlights' in CSS;
+
+/**
+ * Resolve the per-binding stylesheet that hosts `::highlight(...)` rules.
+ */
+function getCursorHighlightSheet(binding: BaseBinding): CSSStyleSheet {
+  if (binding.cursorHighlightSheet === null) {
+    const rootElement = binding.editor.getRootElement();
+    const ownerDocument =
+      rootElement !== null ? rootElement.ownerDocument : document;
+    const view = ownerDocument.defaultView || window;
+    const sheet = new view.CSSStyleSheet();
+    ownerDocument.adoptedStyleSheets = [
+      ...ownerDocument.adoptedStyleSheets,
+      sheet,
+    ];
+    binding.cursorHighlightSheet = sheet;
+  }
+  return binding.cursorHighlightSheet;
+}
+
+function addCursorHighlightRule(
+  binding: BaseBinding,
+  highlightName: string,
+  color: string,
+): void {
+  // `color` flows in from peer-controlled awareness state. Reject anything
+  // the browser doesn't recognize as a valid <color> so a malicious user can't
+  // inject extra declarations through string interpolation below.
+  if (!CSS.supports('color', color)) {
+    return;
+  }
+  const sheet = getCursorHighlightSheet(binding);
+  const idx = sheet.insertRule(
+    `::highlight(${highlightName}) { }`,
+    sheet.cssRules.length,
+  );
+  const rule = sheet.cssRules[idx] as CSSStyleRule;
+  // color-mix because the Highlight API doesn't honor opacity on highlights.
+  rule.style.setProperty(
+    'background-color',
+    `color-mix(in srgb, ${color} 30%, transparent)`,
+  );
+  rule.style.setProperty('color', 'inherit');
+}
+
+export function removeCursorHighlightRule(
+  binding: BaseBinding,
+  highlightName: string,
+): void {
+  const sheet = binding.cursorHighlightSheet;
+  if (sheet === null) {
+    return;
+  }
+  const selector = `::highlight(${highlightName})`;
+  for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
+    const rule = sheet.cssRules[i] as CSSStyleRule;
+    // Structural check rather than `instanceof CSSStyleRule`: editors in
+    // different frames have their own `CSSStyleRule` constructor.
+    if (rule != null && rule.selectorText === selector) {
+      sheet.deleteRule(i);
+      return;
+    }
+  }
+}
+
 export type Cursor = {
   color: string;
   name: string;
@@ -72,6 +147,7 @@ export type Cursor = {
 function createRelativePosition(
   point: Point,
   binding: Binding,
+  assoc: number = 0,
 ): null | RelativePosition {
   const collabNodeMap = binding.collabNodeMap;
   const collabNode = collabNodeMap.get(point.key);
@@ -112,12 +188,13 @@ function createRelativePosition(
     offset = accumulatedOffset;
   }
 
-  return createRelativePositionFromTypeIndex(sharedType, offset);
+  return createRelativePositionFromTypeIndex(sharedType, offset, assoc);
 }
 
 function createRelativePositionV2(
   point: Point,
   binding: BindingV2,
+  assoc: number = 0,
 ): null | RelativePosition {
   const {mapping} = binding;
   const {offset} = point;
@@ -134,7 +211,7 @@ function createRelativePositionV2(
       adjustedOffset += prevSibling.getTextContentSize();
       prevSibling = prevSibling.getPreviousSibling();
     }
-    return createRelativePositionFromTypeIndex(yType, adjustedOffset);
+    return createRelativePositionFromTypeIndex(yType, adjustedOffset, assoc);
   } else if (point.type === 'element') {
     invariant($isElementNode(node), 'Element point must be an element node');
     let i = 0;
@@ -149,7 +226,7 @@ function createRelativePositionV2(
       i++;
       child = child.getNextSibling();
     }
-    return createRelativePositionFromTypeIndex(yType, i);
+    return createRelativePositionFromTypeIndex(yType, i, assoc);
   }
   return null;
 }
@@ -188,13 +265,20 @@ function createCursor(name: string, color: string): Cursor {
 }
 
 function destroySelection(binding: BaseBinding, selection: CursorSelection) {
+  if (selection.highlight !== null) {
+    CSS.highlights.delete(selection.highlightName);
+    removeCursorHighlightRule(binding, selection.highlightName);
+  }
   const cursorsContainer = binding.cursorsContainer;
-
-  if (cursorsContainer !== null) {
-    const selections = selection.selections;
-    const selectionsLength = selections.length;
-
-    for (let i = 0; i < selectionsLength; i++) {
+  if (cursorsContainer === null) {
+    return;
+  }
+  if (selection.caret.parentNode === cursorsContainer) {
+    cursorsContainer.removeChild(selection.caret);
+  }
+  const selections = selection.selections;
+  for (let i = 0; i < selections.length; i++) {
+    if (selections[i].parentNode === cursorsContainer) {
       cursorsContainer.removeChild(selections[i]);
     }
   }
@@ -210,29 +294,74 @@ function destroyCursor(binding: BaseBinding, cursor: Cursor) {
 
 function createCursorSelection(
   cursor: Cursor,
+  binding: BaseBinding,
+  clientID: number,
   anchorKey: NodeKey,
   anchorOffset: number,
   focusKey: NodeKey,
   focusOffset: number,
-  theme: {cursor?: string; cursorName?: string} = {},
+  selectionHighlight: boolean,
+  theme: {
+    cursor?: string;
+    cursorName?: string;
+  } = {},
 ): CursorSelection {
   const color = cursor.color;
   const caret = document.createElement('span');
   if (theme.cursor) {
     caret.className = theme.cursor;
-    caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;`;
-    caret.style.setProperty('--lexical-cursor-color', color);
+    setDOMStyleObject(caret.style, {
+      '--lexical-cursor-color': color,
+      bottom: '0',
+      position: 'absolute',
+      right: '-1px',
+      top: '0',
+    });
   } else {
-    caret.style.cssText = `position:absolute;top:0;bottom:0;right:-1px;width:1px;background-color:${color};z-index:10;`;
+    setDOMStyleObject(caret.style, {
+      'background-color': color,
+      bottom: '0',
+      position: 'absolute',
+      right: '-1px',
+      top: '0',
+      width: '1px',
+      'z-index': '10',
+    });
   }
   const name = document.createElement('span');
   name.textContent = cursor.name;
   if (theme.cursorName) {
     name.className = theme.cursorName;
   } else {
-    name.style.cssText = `position:absolute;left:-2px;top:-16px;background-color:${color};color:#fff;line-height:12px;font-size:12px;padding:2px;font-family:Arial;font-weight:bold;white-space:nowrap;`;
+    setDOMStyleObject(name.style, {
+      'background-color': color,
+      color: '#fff',
+      'font-family': 'Arial',
+      'font-size': '12px',
+      'font-weight': 'bold',
+      left: '-2px',
+      'line-height': '12px',
+      padding: '2px',
+      position: 'absolute',
+      top: '-16px',
+      'white-space': 'nowrap',
+    });
   }
   caret.appendChild(name);
+
+  // CSS.highlights is a document-wide registry, but multiple editors can be
+  // mounted in same page.
+  const highlightName = `lexical-cursor-${binding.id}-${clientID}`;
+  let highlight: Highlight | null = null;
+  // Opt-in via the plugin's `selectionHighlight` prop. Without it, fall
+  // through to the legacy rect-overlay path so existing setups that style
+  // `theme.collaboration.selection` keep working.
+  if (selectionHighlight && SUPPORTS_CSS_HIGHLIGHTS) {
+    highlight = new Highlight();
+    CSS.highlights.set(highlightName, highlight);
+    addCursorHighlightRule(binding, highlightName, color);
+  }
+
   return {
     anchor: {
       key: anchorKey,
@@ -244,6 +373,8 @@ function createCursorSelection(
       key: focusKey,
       offset: focusOffset,
     },
+    highlight,
+    highlightName,
     name,
     selections: [],
   };
@@ -254,7 +385,11 @@ function updateCursor(
   cursor: Cursor,
   nextSelection: null | CursorSelection,
   nodeMap: NodeMap,
-  theme: {selection?: string; selectionBg?: string} = {},
+  theme: {
+    cursor?: string;
+    selection?: string;
+    selectionBg?: string;
+  } = {},
 ): void {
   const editor = binding.editor;
   const rootElement = editor.getRootElement();
@@ -286,7 +421,7 @@ function updateCursor(
 
   const caret = nextSelection.caret;
   const color = nextSelection.color;
-  const selections = nextSelection.selections;
+  const highlight = nextSelection.highlight;
   const anchor = nextSelection.anchor;
   const focus = nextSelection.focus;
   const anchorKey = anchor.key;
@@ -297,6 +432,60 @@ function updateCursor(
   if (anchorNode == null || focusNode == null) {
     return;
   }
+
+  if (highlight !== null) {
+    // modern path: CSS Custom Highlight API
+    const range = createDOMRange(
+      editor,
+      anchorNode,
+      anchor.offset,
+      focusNode,
+      focus.offset,
+    );
+    if (range === null) {
+      return;
+    }
+
+    // The browser handles line wrapping, RTL, and font metrics — no rect math.
+    highlight.clear();
+    if (!range.collapsed) {
+      highlight.add(range);
+    }
+
+    // Caret stays as a positioned element; anchor it to the focus end.
+    const caretRange = range.cloneRange();
+    caretRange.collapse(false);
+    let caretRect: DOMRect = caretRange.getBoundingClientRect();
+    if (caretRect.height === 0 && $isLineBreakNode(focusNode)) {
+      // Bare <br>: collapsed range reports zero size. Fall back to the
+      // line break's own box so the caret still renders.
+      const focusEl = editor.getElementByKey(focusKey) as HTMLElement | null;
+      if (focusEl !== null) {
+        caretRect = focusEl.getBoundingClientRect();
+      }
+    }
+
+    setDOMStyleObject(caret.style, {
+      'background-color': theme.cursor ? '' : color,
+      bottom: '',
+      height: `${caretRect.height || 16}px`,
+      left: `${caretRect.left - containerRect.left}px`,
+      'pointer-events': 'none',
+      position: 'absolute',
+      right: '',
+      top: `${caretRect.top - containerRect.top}px`,
+      width: '1px',
+      'z-index': '10',
+    });
+
+    if (caret.parentNode !== cursorsContainer) {
+      cursorsContainer.appendChild(caret);
+    }
+    return;
+  }
+
+  // legacy fallback path: per-rect absolutely-positioned span
+  const selections = nextSelection.selections;
   let selectionRects: Array<DOMRect>;
 
   // In the case of a collapsed selection on a linebreak, we need
@@ -344,18 +533,38 @@ function updateCursor(
 
     const top = selectionRect.top - containerRect.top;
     const left = selectionRect.left - containerRect.left;
-    const posStyle = `position:absolute;top:${top}px;left:${left}px;height:${selectionRect.height}px;width:${selectionRect.width}px;pointer-events:none;`;
+    const positionStyle = {
+      height: `${selectionRect.height}px`,
+      left: `${left}px`,
+      'pointer-events': 'none',
+      position: 'absolute',
+      top: `${top}px`,
+      width: `${selectionRect.width}px`,
+    };
 
     if (theme.selection) {
       selection.className = theme.selection;
-      selection.style.cssText = posStyle;
-      selection.style.setProperty('--lexical-cursor-color', color);
-      (selection.firstChild as HTMLSpanElement).style.cssText =
-        `position:absolute;left:0;top:0;width:100%;height:100%;`;
+      setDOMStyleObject(selection.style, {
+        ...positionStyle,
+        '--lexical-cursor-color': color,
+      });
+      setDOMStyleObject((selection.firstChild as HTMLSpanElement).style, {
+        height: '100%',
+        left: '0',
+        position: 'absolute',
+        top: '0',
+        width: '100%',
+      });
     } else {
-      selection.style.cssText = posStyle;
-      (selection.firstChild as HTMLSpanElement).style.cssText =
-        `${posStyle}left:0;top:0;background-color:${color};opacity:0.3;z-index:5;`;
+      setDOMStyleObject(selection.style, positionStyle);
+      setDOMStyleObject((selection.firstChild as HTMLSpanElement).style, {
+        ...positionStyle,
+        'background-color': color,
+        left: '0',
+        opacity: '0.3',
+        top: '0',
+        'z-index': '5',
+      });
     }
 
     if (i === selectionRectsLength - 1) {
@@ -560,7 +769,7 @@ function getCollabNodeAndOffset(
     );
 
     if (node === null) {
-      return [collabNode, 0];
+      return [collabNode, collabNode._children.length];
     } else {
       return [node, collabNodeOffset];
     }
@@ -630,6 +839,9 @@ export type SyncCursorPositionsOptions = {
     binding: BaseBinding,
     provider: Provider,
   ) => Map<number, UserState>;
+  // Opt in to the CSS Custom Highlight API rendering for remote selections.
+  // Plumbed in from the React collaboration plugin's `selectionHighlight` prop.
+  selectionHighlight?: boolean;
 };
 
 function getAwarenessStatesDefault(
@@ -644,7 +856,10 @@ export function syncCursorPositions(
   provider: Provider,
   options?: SyncCursorPositionsOptions,
 ): void {
-  const {getAwarenessStates = getAwarenessStatesDefault} = options ?? {};
+  const {
+    getAwarenessStates = getAwarenessStatesDefault,
+    selectionHighlight = false,
+  } = options ?? {};
   const awarenessStates = Array.from(getAwarenessStates(binding, provider));
   const localClientID = binding.clientID;
   const cursors = binding.cursors;
@@ -680,10 +895,13 @@ export function syncCursorPositions(
           if (selection === null) {
             selection = createCursorSelection(
               cursor,
+              binding,
+              clientID,
               anchorKey,
               anchorOffset,
               focusKey,
               focusOffset,
+              selectionHighlight,
               collabTheme,
             );
           } else {
@@ -751,12 +969,40 @@ export function syncLexicalSelectionToYjs(
   }
 
   if ($isRangeSelection(nextSelection)) {
+    // For a non-collapsed range, give each endpoint an assoc that sticks it to
+    // the character it should track rather than the gap between characters:
+    //   left endpoint  (assoc >= 0): anchors to the first selected character,
+    //                                so inserts before the selection stay outside.
+    //   right endpoint (assoc  < 0): anchors to the last selected character,
+    //                                so inserts after the selection stay outside.
+    // Collapsed carets keep assoc = 0 on both sides (the default) so the caret
+    // naturally follows typing, matching the pre-existing behaviour.
+    const isCollapsed = nextSelection.isCollapsed();
+    const isBackward = !isCollapsed && nextSelection.isBackward();
+    const anchorAssoc = isBackward ? -1 : 0;
+    const focusAssoc = !isCollapsed && !isBackward ? -1 : 0;
     if (isBindingV1(binding)) {
-      anchorPos = createRelativePosition(nextSelection.anchor, binding);
-      focusPos = createRelativePosition(nextSelection.focus, binding);
+      anchorPos = createRelativePosition(
+        nextSelection.anchor,
+        binding,
+        anchorAssoc,
+      );
+      focusPos = createRelativePosition(
+        nextSelection.focus,
+        binding,
+        focusAssoc,
+      );
     } else {
-      anchorPos = createRelativePositionV2(nextSelection.anchor, binding);
-      focusPos = createRelativePositionV2(nextSelection.focus, binding);
+      anchorPos = createRelativePositionV2(
+        nextSelection.anchor,
+        binding,
+        anchorAssoc,
+      );
+      focusPos = createRelativePositionV2(
+        nextSelection.focus,
+        binding,
+        focusAssoc,
+      );
     }
   }
 

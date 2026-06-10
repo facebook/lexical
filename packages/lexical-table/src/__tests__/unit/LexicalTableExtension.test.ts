@@ -78,7 +78,7 @@ describe('TableExtension', () => {
     );
     editor.read(() => {
       const children = $getRoot().getChildren();
-      expect(children.map((node) => node.getType())).toEqual([
+      expect(children.map(node => node.getType())).toEqual([
         'paragraph',
         'table',
         'paragraph',
@@ -87,7 +87,7 @@ describe('TableExtension', () => {
       expect($isTableNode(table)).toBe(true);
       const rows = table.getChildren();
       expect(rows.length).toBe(2);
-      rows.forEach((row) => {
+      rows.forEach(row => {
         expect($isTableRowNode(row)).toBe(true);
         if ($isTableRowNode(row)) {
           const cells = row.getChildren();
@@ -96,6 +96,43 @@ describe('TableExtension', () => {
         }
       });
     });
+  });
+
+  it('repaints existing tables when hasHorizontalScroll toggles', async () => {
+    const div = document.createElement('div');
+    editor.setRootElement(div);
+    editor.update(
+      () => {
+        $getRoot().selectEnd();
+        editor.dispatchCommand(INSERT_TABLE_COMMAND, {columns: '2', rows: '2'});
+      },
+      {discrete: true},
+    );
+
+    const {hasHorizontalScroll} = getExtensionDependencyFromEditor(
+      editor,
+      TableExtension,
+    ).output;
+
+    // Default config enables horizontal scroll: the table is wrapped in the
+    // scrollable <div>.
+    expect(div.querySelector('.table-scrollable-wrapper > table')).not.toBe(
+      null,
+    );
+
+    // Toggling the signal re-renders existing tables via a (deferred) full
+    // reconcile, removing the wrapper.
+    hasHorizontalScroll.value = false;
+    await Promise.resolve();
+    expect(div.querySelector('.table-scrollable-wrapper')).toBe(null);
+    expect(div.querySelector('table')).not.toBe(null);
+
+    // And restored when re-enabled.
+    hasHorizontalScroll.value = true;
+    await Promise.resolve();
+    expect(div.querySelector('.table-scrollable-wrapper > table')).not.toBe(
+      null,
+    );
   });
 
   it('Prevents nested tables by default', async () => {
@@ -505,7 +542,7 @@ describe('TableExtension', () => {
         const selectedNodes = selection.getNodes().filter($isTableCellNode);
         const totalCells = tableMap.reduce((acc, row) => {
           const uniqueCells = new Set();
-          row.forEach((cellMap) => {
+          row.forEach(cellMap => {
             if (cellMap && cellMap.cell) {
               uniqueCells.add(cellMap.cell.getKey());
             }
@@ -601,11 +638,11 @@ describe('TableExtension', () => {
         // Verify all unique cells are in the selection (merged cells should appear once)
         const selectedNodes = selection.getNodes().filter($isTableCellNode);
         const uniqueCellKeys = new Set(
-          selectedNodes.map((node) => node.getKey()),
+          selectedNodes.map(node => node.getKey()),
         );
         const totalUniqueCells = new Set<NodeKey>();
-        tableMap.forEach((row) => {
-          row.forEach((cellMap) => {
+        tableMap.forEach(row => {
+          row.forEach(cellMap => {
             if (cellMap && cellMap.cell) {
               totalUniqueCells.add(cellMap.cell.getKey());
             }
@@ -694,6 +731,106 @@ describe('TableExtension', () => {
         );
         expect($isTableSelection(selection)).toBe(false);
       });
+    });
+  });
+
+  describe('drag selection', () => {
+    // Polyfill PointerEvent for jsdom
+    interface PointerEventInit extends EventInit {
+      button?: number;
+      buttons?: number;
+      pointerType?: string;
+      clientX?: number;
+      clientY?: number;
+    }
+    if (
+      typeof (globalThis as {PointerEvent?: unknown}).PointerEvent ===
+      'undefined'
+    ) {
+      (globalThis as unknown as {PointerEvent: unknown}).PointerEvent =
+        class PointerEvent extends Event {
+          button: number;
+          buttons: number;
+          pointerType: string;
+          clientX: number;
+          clientY: number;
+          constructor(type: string, options: PointerEventInit = {}) {
+            super(type, options);
+            this.button = options.button || 0;
+            this.buttons = options.buttons ?? 1;
+            this.pointerType = options.pointerType || 'mouse';
+            this.clientX = options.clientX ?? 0;
+            this.clientY = options.clientY ?? 0;
+          }
+        };
+    }
+
+    it('attaches the window pointerdown handler when setRootElement is called after register', () => {
+      // The TableExtension registers handlers during buildEditor, before any
+      // root element is mounted. Regression test for the bug where the
+      // pointerdown listener on editorWindow was never attached because
+      // editor.getRootElement() was null at register() time, breaking drag
+      // selection. See https://github.com/facebook/lexical/issues/8491
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+      try {
+        editor.setRootElement(container);
+        editor.update(
+          () => {
+            const root = $getRoot().clear();
+            const table = $createTableNodeWithDimensions(2, 2, false);
+            root.append(table);
+            const firstRow = table.getFirstChild();
+            assert($isTableRowNode(firstRow), 'Expected first row');
+            const firstCell = firstRow.getFirstChild();
+            assert($isTableCellNode(firstCell), 'Expected first cell');
+            const paragraph = firstCell.getFirstChild();
+            assert($isParagraphNode(paragraph), 'Expected paragraph in cell');
+            paragraph.selectStart();
+          },
+          {discrete: true},
+        );
+
+        const firstCellElement = container.querySelector('td');
+        assert(firstCellElement !== null, 'Expected first cell element');
+        const tableElement = container.querySelector('table');
+        assert(tableElement !== null, 'Expected table element');
+
+        // Before the pointerdown, no anchor cell is set on the TableObserver.
+        const observerKey = '__lexicalTableSelection';
+        const observerBefore = (
+          tableElement as unknown as Record<string, {anchorCell: unknown}>
+        )[observerKey];
+        assert(observerBefore !== undefined, 'Expected TableObserver to exist');
+        expect(observerBefore.anchorCell).toBeNull();
+
+        const pointerEvent = new (
+          globalThis as unknown as {
+            PointerEvent: new (
+              type: string,
+              options?: PointerEventInit,
+            ) => Event;
+          }
+        ).PointerEvent('pointerdown', {
+          bubbles: true,
+          button: 0,
+          buttons: 1,
+          cancelable: true,
+          pointerType: 'mouse',
+        });
+        firstCellElement.dispatchEvent(pointerEvent);
+
+        // After the pointerdown, the window-level pointerdown handler should
+        // have run and set the anchor cell on the observer. If the handler
+        // was never attached, the anchor remains null.
+        const observerAfter = (
+          tableElement as unknown as Record<string, {anchorCell: unknown}>
+        )[observerKey];
+        expect(observerAfter.anchorCell).not.toBeNull();
+      } finally {
+        editor.setRootElement(null);
+        document.body.removeChild(container);
+      }
     });
   });
 });

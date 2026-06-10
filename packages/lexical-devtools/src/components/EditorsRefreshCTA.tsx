@@ -31,7 +31,7 @@ function EditorsRefreshCTA({tabID, setErrorMessage}: Props) {
 
     injectedPegasusService
       .refreshLexicalEditors()
-      .catch((err) => {
+      .catch(err => {
         setErrorMessage(err.message);
         console.error(err);
       })
@@ -40,9 +40,9 @@ function EditorsRefreshCTA({tabID, setErrorMessage}: Props) {
 
   return (
     <Button
-      colorScheme="gray"
+      colorPalette="gray"
       size="xs"
-      isLoading={isRefreshing}
+      loading={isRefreshing}
       onClick={handleRefreshClick}
       disabled={isRefreshing}>
       Refresh

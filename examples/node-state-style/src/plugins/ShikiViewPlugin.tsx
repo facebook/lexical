@@ -50,7 +50,7 @@ export function ShikiViewPlugin({lang}: ShikiViewPluginProps) {
   const [editorState, setEditorState] = useState(() => editor.getEditorState());
   useEffect(
     () =>
-      editor.registerUpdateListener((payload) =>
+      editor.registerUpdateListener(payload =>
         setEditorState(payload.editorState),
       ),
     [editor],
@@ -64,9 +64,7 @@ export function ShikiViewPlugin({lang}: ShikiViewPluginProps) {
       (async () => {
         const prettified = await prettier.format(rawCode, {
           parser: lang,
-          plugins: (await Promise.all(prettierPlugins)).map(
-            (mod) => mod.default,
-          ),
+          plugins: (await Promise.all(prettierPlugins)).map(mod => mod.default),
         });
         return (await shikiPromise).codeToHtml(prettified, {
           lang,
@@ -78,7 +76,7 @@ export function ShikiViewPlugin({lang}: ShikiViewPluginProps) {
   const [html, setHtml] = useState('');
   useEffect(() => {
     let canceled = false;
-    htmlPromise.then((formatted) => canceled || setHtml(formatted));
+    htmlPromise.then(formatted => canceled || setHtml(formatted));
     return () => {
       canceled = true;
     };

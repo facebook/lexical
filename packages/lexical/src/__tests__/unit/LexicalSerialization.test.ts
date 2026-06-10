@@ -102,7 +102,7 @@ function $createEditorContent() {
 }
 
 describe('LexicalSerialization tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('serializes and deserializes from JSON', async () => {
       const {editor} = testEnv;
 

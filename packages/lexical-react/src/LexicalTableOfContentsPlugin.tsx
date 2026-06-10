@@ -191,7 +191,7 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
           // If a node is changes, all child heading positions need to be updated
           $getRoot()
             .getChildren()
-            .forEach((node) => {
+            .forEach(node => {
               if ($isElementNode(node) && dirtyElements.get(node.__key)) {
                 updateChildHeadings(node);
               }
@@ -207,8 +207,8 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
         editor.getEditorState().read(() => {
           for (const [nodeKey, mutation] of mutatedNodes) {
             if (mutation === 'created') {
-              const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
-              if (newHeading !== null) {
+              const newHeading = $getNodeByKey(nodeKey);
+              if ($isHeadingNode(newHeading)) {
                 const prevHeading = $getPreviousHeading(newHeading);
                 currentTableOfContents = $insertHeadingIntoTableOfContents(
                   prevHeading,
@@ -222,8 +222,8 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
                 currentTableOfContents,
               );
             } else if (mutation === 'updated') {
-              const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
-              if (newHeading !== null) {
+              const newHeading = $getNodeByKey(nodeKey);
+              if ($isHeadingNode(newHeading)) {
                 const prevHeading = $getPreviousHeading(newHeading);
                 currentTableOfContents = $updateHeadingPosition(
                   prevHeading,

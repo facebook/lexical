@@ -9,6 +9,12 @@
 import type {JSX} from 'react';
 
 import {
+  $generateNodesFromDOM,
+  defineImportRule,
+  DOMImportExtension,
+  sel,
+} from '@lexical/html';
+import {
   $isAutoLinkNode,
   $isLinkNode,
   LinkNode,
@@ -26,10 +32,12 @@ import {
   $insertNodes,
   $isNodeSelection,
   $isRootOrShadowRoot,
+  $selectAll,
   $setSelection,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
+  configExtension,
   createCommand,
   defineExtension,
   DRAGOVER_COMMAND,
@@ -39,6 +47,7 @@ import {
   isHTMLElement,
   LexicalCommand,
   LexicalEditor,
+  SKIP_DOM_SELECTION_TAG,
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 
@@ -54,6 +63,80 @@ import Button from '../../ui/Button';
 import {DialogActions, DialogButtonsList} from '../../ui/Dialog';
 import FileInput from '../../ui/FileInput';
 import TextInput from '../../ui/TextInput';
+
+/**
+ * Google Docs serializes its bullet/check list markers as a leading
+ * `<img>` carrying `aria-roledescription="checkbox"`. We never want to
+ * import those as ImageNodes — that yields a stray bullet image in the
+ * editor where the list marker should be.
+ */
+function isGoogleDocCheckboxImg(img: HTMLImageElement): boolean {
+  return (
+    img.parentElement != null &&
+    img.parentElement.tagName === 'LI' &&
+    img.previousSibling === null &&
+    img.getAttribute('aria-roledescription') === 'checkbox'
+  );
+}
+
+const ImgRule = defineImportRule({
+  $import: (_ctx, el, $next) => {
+    const src = el.getAttribute('src');
+    if (!src || src.startsWith('file:///') || isGoogleDocCheckboxImg(el)) {
+      return $next();
+    }
+    return [
+      $createImageNode({
+        altText: el.alt,
+        height: el.height,
+        src,
+        width: el.width,
+      }),
+    ];
+  },
+  match: sel.tag('img'),
+  name: '@lexical/playground/img',
+});
+
+/**
+ * `<figcaption>` is consumed by the surrounding `<figure>` rule (its
+ * content is imported into the ImageNode's nested caption editor), so a
+ * top-level handler drops it entirely.
+ */
+const FigcaptionRule = defineImportRule({
+  $import: () => [],
+  match: sel.tag('figcaption'),
+  name: '@lexical/playground/figcaption',
+});
+
+const FigureRule = defineImportRule({
+  $import: (ctx, el) => {
+    const imported = ctx.$importChildren(el);
+    const figcaption = el.querySelector('figcaption');
+    if (figcaption) {
+      for (const imgNode of imported) {
+        if (!$isImageNode(imgNode)) {
+          continue;
+        }
+        imgNode.setShowCaption(true);
+        // The caption editor is a nested editor with its own (legacy)
+        // import pipeline; route the <figcaption> children through it.
+        imgNode.__caption.update(
+          () => {
+            $selectAll().insertNodes(
+              $generateNodesFromDOM(imgNode.__caption, figcaption),
+            );
+            $setSelection(null);
+          },
+          {tag: SKIP_DOM_SELECTION_TAG},
+        );
+      }
+    }
+    return imported;
+  },
+  match: sel.tag('figure'),
+  name: '@lexical/playground/figure',
+});
 
 export type InsertImagePayload = Readonly<ImagePayload>;
 
@@ -215,13 +298,18 @@ export function InsertImageDialog({
 }
 
 export const ImagesExtension = defineExtension({
+  dependencies: [
+    configExtension(DOMImportExtension, {
+      rules: [FigcaptionRule, FigureRule, ImgRule],
+    }),
+  ],
   name: '@lexical/playground/Images',
   nodes: [ImageNode],
-  register: (editor) =>
+  register: editor =>
     mergeRegister(
       editor.registerCommand<InsertImagePayload>(
         INSERT_IMAGE_COMMAND,
-        (payload) => {
+        payload => {
           const imageNode = $createImageNode(payload);
           $insertNodes([imageNode]);
           if ($isRootOrShadowRoot(imageNode.getParentOrThrow())) {
@@ -234,17 +322,17 @@ export const ImagesExtension = defineExtension({
       ),
       editor.registerCommand<DragEvent>(
         DRAGSTART_COMMAND,
-        (event) => $onDragStart(event),
+        event => $onDragStart(event),
         COMMAND_PRIORITY_HIGH,
       ),
       editor.registerCommand<DragEvent>(
         DRAGOVER_COMMAND,
-        (event) => $onDragover(event),
+        event => $onDragover(event),
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand<DragEvent>(
         DROP_COMMAND,
-        (event) => $onDrop(event, editor),
+        event => $onDrop(event, editor),
         COMMAND_PRIORITY_HIGH,
       ),
     ),

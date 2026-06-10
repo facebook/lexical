@@ -35,46 +35,14 @@ import {
   ParagraphNode,
 } from 'lexical';
 import {
-  DataTransferMock,
   expectHtmlToBeEqual,
   html,
   initializeUnitTest,
   invariant,
   polyfillContentEditable,
 } from 'lexical/src/__tests__/utils';
-import {useState} from 'react';
-import {act} from 'shared/react-test-utils';
-import {beforeEach, describe, expect, type Mock, test, vi} from 'vitest';
-
-export class ClipboardDataMock {
-  getData: Mock<(type: string) => [string]>;
-  setData: Mock<() => [string, string]>;
-
-  constructor() {
-    this.getData = vi.fn();
-    this.setData = vi.fn();
-  }
-}
-
-export class ClipboardEventMock extends Event {
-  clipboardData: ClipboardDataMock;
-
-  constructor(type: string, options?: EventInit) {
-    super(type, options);
-    this.clipboardData = new ClipboardDataMock();
-  }
-}
-
-global.document.execCommand = function execCommandMock(
-  commandId: string,
-  showUI?: boolean,
-  value?: string,
-): boolean {
-  return true;
-};
-Object.defineProperty(window, 'ClipboardEvent', {
-  value: new ClipboardEventMock('cut'),
-});
+import {act, useState} from 'react';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -103,7 +71,7 @@ function wrapTableHtml(expected: string): string {
 polyfillContentEditable();
 
 describe('LexicalTableNode tests', () => {
-  [false, true].forEach((hasHorizontalScroll) => {
+  [false, true].forEach(hasHorizontalScroll => {
     describe(`hasHorizontalScroll={${hasHorizontalScroll}}`, () => {
       function expectTableHtmlToBeEqual(
         actual: string,
@@ -126,7 +94,7 @@ describe('LexicalTableNode tests', () => {
       }
 
       initializeUnitTest(
-        (testEnv) => {
+        testEnv => {
           beforeEach(async () => {
             const {editor} = testEnv;
             await editor.update(() => {
@@ -199,9 +167,9 @@ describe('LexicalTableNode tests', () => {
                 html`
                   <table class="${editorConfig.theme.table}">
                     <colgroup><col /></colgroup>
-                    <tr>
-                      <td>
-                        <p><br /></p>
+                    <tr dir="auto">
+                      <td dir="auto">
+                        <p dir="auto"><br /></p>
                       </td>
                     </tr>
                   </table>
@@ -214,9 +182,9 @@ describe('LexicalTableNode tests', () => {
                     class="${editorConfig.theme.table}"
                     style="background-color: blue">
                     <colgroup><col /></colgroup>
-                    <tr>
-                      <td>
-                        <p><br /></p>
+                    <tr dir="auto">
+                      <td dir="auto">
+                        <p dir="auto"><br /></p>
                       </td>
                     </tr>
                   </table>
@@ -249,9 +217,9 @@ describe('LexicalTableNode tests', () => {
                     class="${editorConfig.theme.table}"
                     style="--table-index: 0">
                     <colgroup><col /></colgroup>
-                    <tr>
-                      <td>
-                        <p><br /></p>
+                    <tr dir="auto">
+                      <td dir="auto">
+                        <p dir="auto"><br /></p>
                       </td>
                     </tr>
                   </table>
@@ -264,9 +232,9 @@ describe('LexicalTableNode tests', () => {
                     class="${editorConfig.theme.table}"
                     style="--table-index: 1">
                     <colgroup><col /></colgroup>
-                    <tr>
-                      <td>
-                        <p><br /></p>
+                    <tr dir="auto">
+                      <td dir="auto">
+                        <p dir="auto"><br /></p>
                       </td>
                     </tr>
                   </table>
@@ -405,7 +373,7 @@ describe('LexicalTableNode tests', () => {
           test('Copy table from an external source', async () => {
             const {editor} = testEnv;
 
-            const dataTransfer = new DataTransferMock();
+            const dataTransfer = new DataTransfer();
             dataTransfer.setData(
               'text/html',
               '<html><body><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-16a69100-7fff-6cb9-b829-cb1def16a58d"><div dir="ltr" style="margin-left:0pt;" align="left"><table style="border:none;border-collapse:collapse;table-layout:fixed"><colgroup><col style="width:100px"/><col style="width:200px"/></colgroup><tbody><tr style="height:22.015pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Hello there</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">General Kenobi!</span></p></td></tr><tr style="height:22.015pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Lexical is nice</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><br /></td></tr></tbody></table></div></b><!--EndFragment--></body></html>',
@@ -419,7 +387,7 @@ describe('LexicalTableNode tests', () => {
               $insertDataTransferForRichText(dataTransfer, selection, editor);
             });
             // Make sure paragraph is inserted inside empty cells
-            const emptyCell = '<td><p><br></p></td>';
+            const emptyCell = '<td dir="auto"><p dir="auto"><br></p></td>';
             expectReconciledTableHtmlToBeEqual(
               testEnv.innerHTML,
               html`
@@ -428,21 +396,21 @@ describe('LexicalTableNode tests', () => {
                     <col style="width: 100px;" />
                     <col style="width: 200px;" />
                   </colgroup>
-                  <tr>
-                    <td>
-                      <p>
+                  <tr dir="auto">
+                    <td dir="auto">
+                      <p dir="ltr">
                         <span data-lexical-text="true">Hello there</span>
                       </p>
                     </td>
-                    <td>
-                      <p>
+                    <td dir="auto">
+                      <p dir="ltr">
                         <span data-lexical-text="true">General Kenobi!</span>
                       </p>
                     </td>
                   </tr>
-                  <tr>
-                    <td>
-                      <p>
+                  <tr dir="auto">
+                    <td dir="auto">
+                      <p dir="ltr">
                         <span data-lexical-text="true">Lexical is nice</span>
                       </p>
                     </td>
@@ -456,7 +424,7 @@ describe('LexicalTableNode tests', () => {
           test('Copy table with caption/tbody/thead/tfoot from an external source', async () => {
             const {editor} = testEnv;
 
-            const dataTransfer = new DataTransferMock();
+            const dataTransfer = new DataTransfer();
             dataTransfer.setData(
               'text/html',
               // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/thead
@@ -542,50 +510,50 @@ describe('LexicalTableNode tests', () => {
                     <col />
                     <col />
                   </colgroup>
-                  <tr style="text-align: start">
-                    <th>
-                      <p>
+                  <tr dir="auto" style="text-align: start">
+                    <th dir="auto">
+                      <p dir="auto">
                         <span data-lexical-text="true">Items</span>
                       </p>
                     </th>
-                    <th>
-                      <p>
+                    <th dir="auto">
+                      <p dir="auto">
                         <span data-lexical-text="true">Expenditure</span>
                       </p>
                     </th>
                   </tr>
-                  <tr style="text-align: start">
-                    <th>
-                      <p>
+                  <tr dir="auto" style="text-align: start">
+                    <th dir="auto">
+                      <p dir="auto">
                         <span data-lexical-text="true">Donuts</span>
                       </p>
                     </th>
-                    <td>
-                      <p style="text-align: center;">
+                    <td dir="auto">
+                      <p dir="auto" style="text-align: center;">
                         <span data-lexical-text="true">3,000</span>
                       </p>
                     </td>
                   </tr>
-                  <tr style="text-align: start">
-                    <th>
-                      <p>
+                  <tr dir="auto" style="text-align: start">
+                    <th dir="auto">
+                      <p dir="auto">
                         <span data-lexical-text="true">Stationery</span>
                       </p>
                     </th>
-                    <td>
-                      <p style="text-align: center;">
+                    <td dir="auto">
+                      <p dir="auto" style="text-align: center;">
                         <span data-lexical-text="true">18,000</span>
                       </p>
                     </td>
                   </tr>
-                  <tr style="text-align: start">
-                    <th>
-                      <p>
+                  <tr dir="auto" style="text-align: start">
+                    <th dir="auto">
+                      <p dir="auto">
                         <span data-lexical-text="true">Totals</span>
                       </p>
                     </th>
-                    <td>
-                      <p style="text-align: center;">
+                    <td dir="auto">
+                      <p dir="auto" style="text-align: center;">
                         <span data-lexical-text="true">21,000</span>
                       </p>
                     </td>
@@ -600,7 +568,7 @@ describe('LexicalTableNode tests', () => {
           test('Copy table with caption from an external source', async () => {
             const {editor} = testEnv;
 
-            const dataTransfer = new DataTransferMock();
+            const dataTransfer = new DataTransfer();
             dataTransfer.setData(
               'text/html',
               // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/caption
@@ -696,68 +664,68 @@ describe('LexicalTableNode tests', () => {
                     <col />
                     <col />
                   </colgroup>
-                  <tr style="text-align: start">
-                    <td style="background-color: rgb(240, 240, 240)">
-                      <p style="text-align: center"><br /></p>
+                  <tr dir="auto" style="text-align: start">
+                    <td dir="auto" style="background-color: rgb(240, 240, 240)">
+                      <p dir="auto" style="text-align: center"><br /></p>
                     </td>
-                    <th style="background-color: rgb(230, 230, 230)">
-                      <p>
+                    <th dir="auto" style="background-color: rgb(230, 230, 230)">
+                      <p dir="auto">
                         <span data-lexical-text="true">He-Man</span>
                       </p>
                     </th>
-                    <th style="background-color: rgb(230, 230, 230)">
-                      <p>
+                    <th dir="auto" style="background-color: rgb(230, 230, 230)">
+                      <p dir="auto">
                         <span data-lexical-text="true">Skeletor</span>
                       </p>
                     </th>
                   </tr>
-                  <tr style="text-align: start">
-                    <th style="background-color: rgb(230, 230, 230)">
-                      <p>
+                  <tr dir="auto" style="text-align: start">
+                    <th dir="auto" style="background-color: rgb(230, 230, 230)">
+                      <p dir="auto">
                         <span data-lexical-text="true">Role</span>
                       </p>
                     </th>
-                    <td style="background-color: rgb(250, 250, 250)">
-                      <p style="text-align: center">
+                    <td dir="auto" style="background-color: rgb(250, 250, 250)">
+                      <p dir="auto" style="text-align: center">
                         <span data-lexical-text="true">Hero</span>
                       </p>
                     </td>
-                    <td style="background-color: rgb(250, 250, 250)">
-                      <p style="text-align: center">
+                    <td dir="auto" style="background-color: rgb(250, 250, 250)">
+                      <p dir="auto" style="text-align: center">
                         <span data-lexical-text="true">Villain</span>
                       </p>
                     </td>
                   </tr>
-                  <tr style="text-align: start">
-                    <th style="background-color: rgb(230, 230, 230)">
-                      <p>
+                  <tr dir="auto" style="text-align: start">
+                    <th dir="auto" style="background-color: rgb(230, 230, 230)">
+                      <p dir="auto">
                         <span data-lexical-text="true">Weapon</span>
                       </p>
                     </th>
-                    <td style="background-color: rgb(240, 240, 240)">
-                      <p style="text-align: center">
+                    <td dir="auto" style="background-color: rgb(240, 240, 240)">
+                      <p dir="auto" style="text-align: center">
                         <span data-lexical-text="true">Power Sword</span>
                       </p>
                     </td>
-                    <td style="background-color: rgb(240, 240, 240)">
-                      <p style="text-align: center">
+                    <td dir="auto" style="background-color: rgb(240, 240, 240)">
+                      <p dir="auto" style="text-align: center">
                         <span data-lexical-text="true">Havoc Staff</span>
                       </p>
                     </td>
                   </tr>
-                  <tr style="text-align: start">
-                    <th style="background-color: rgb(230, 230, 230)">
-                      <p>
+                  <tr dir="auto" style="text-align: start">
+                    <th dir="auto" style="background-color: rgb(230, 230, 230)">
+                      <p dir="auto">
                         <span data-lexical-text="true">Dark secret</span>
                       </p>
                     </th>
-                    <td style="background-color: rgb(250, 250, 250)">
-                      <p style="text-align: center">
+                    <td dir="auto" style="background-color: rgb(250, 250, 250)">
+                      <p dir="auto" style="text-align: center">
                         <span data-lexical-text="true">Expert florist</span>
                       </p>
                     </td>
-                    <td style="background-color: rgb(250, 250, 250)">
-                      <p style="text-align: center">
+                    <td dir="auto" style="background-color: rgb(250, 250, 250)">
+                      <p dir="auto" style="text-align: center">
                         <span data-lexical-text="true">Cries at romcoms</span>
                       </p>
                     </td>
@@ -770,7 +738,7 @@ describe('LexicalTableNode tests', () => {
           test('Copy table from an external source like gdoc with formatting', async () => {
             const {editor} = testEnv;
 
-            const dataTransfer = new DataTransferMock();
+            const dataTransfer = new DataTransfer();
             dataTransfer.setData(
               'text/html',
               '<google-sheets-html-origin><style type="text/css"><!--td {border: 1px solid #cccccc;}br {mso-data-placement:same-cell;}--></style><table xmlns="http://www.w3.org/1999/xhtml" cellspacing="0" cellpadding="0" dir="ltr" border="1" style="table-layout:fixed;font-size:10pt;font-family:Arial;width:0px;border-collapse:collapse;border:none" data-sheets-root="1"><colgroup><col width="100"/><col width="189"/><col width="171"/></colgroup><tbody><tr style="height:21px;"><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;font-weight:bold;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;Surface&quot;}">Surface</td><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;font-style:italic;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;MWP_WORK_LS_COMPOSER&quot;}">MWP_WORK_LS_COMPOSER</td><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;text-decoration:underline;text-align:right;" data-sheets-value="{&quot;1&quot;:3,&quot;3&quot;:77349}">77349</td></tr><tr style="height:21px;"><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;Lexical&quot;}">Lexical</td><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;text-decoration:line-through;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;XDS_RICH_TEXT_AREA&quot;}">XDS_RICH_TEXT_AREA</td><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;sdvd sdfvsfs&quot;}" data-sheets-textstyleruns="{&quot;1&quot;:0}{&quot;1&quot;:5,&quot;2&quot;:{&quot;5&quot;:1}}"><span style="font-size:10pt;font-family:Arial;font-style:normal;">sdvd </span><span style="font-size:10pt;font-family:Arial;font-weight:bold;font-style:normal;">sdfvsfs</span></td></tr></tbody></table>',
@@ -792,36 +760,36 @@ describe('LexicalTableNode tests', () => {
                     <col style="width: 189px" />
                     <col style="width: 171px" />
                   </colgroup>
-                  <tr style="height: 21px;">
-                    <td style="vertical-align: bottom">
-                      <p>
+                  <tr dir="auto" style="height: 21px;">
+                    <td dir="auto" style="vertical-align: bottom">
+                      <p dir="auto">
                         <strong data-lexical-text="true">Surface</strong>
                       </p>
                     </td>
-                    <td style="vertical-align: bottom">
-                      <p>
+                    <td dir="auto" style="vertical-align: bottom">
+                      <p dir="auto">
                         <em data-lexical-text="true">MWP_WORK_LS_COMPOSER</em>
                       </p>
                     </td>
-                    <td style="vertical-align: bottom">
-                      <p style="text-align: right;">
+                    <td dir="auto" style="vertical-align: bottom">
+                      <p dir="auto" style="text-align: right;">
                         <span data-lexical-text="true">77349</span>
                       </p>
                     </td>
                   </tr>
-                  <tr style="height: 21px;">
-                    <td style="vertical-align: bottom">
-                      <p>
+                  <tr dir="auto" style="height: 21px;">
+                    <td dir="auto" style="vertical-align: bottom">
+                      <p dir="auto">
                         <span data-lexical-text="true">Lexical</span>
                       </p>
                     </td>
-                    <td style="vertical-align: bottom">
-                      <p>
+                    <td dir="auto" style="vertical-align: bottom">
+                      <p dir="auto">
                         <span data-lexical-text="true">XDS_RICH_TEXT_AREA</span>
                       </p>
                     </td>
-                    <td style="vertical-align: bottom">
-                      <p>
+                    <td dir="auto" style="vertical-align: bottom">
+                      <p dir="auto">
                         <span data-lexical-text="true">sdvd</span>
                         <strong data-lexical-text="true">sdfvsfs</strong>
                       </p>
@@ -851,7 +819,7 @@ describe('LexicalTableNode tests', () => {
               $selectAll();
             });
             await editor.update(() => {
-              editor.dispatchCommand(CUT_COMMAND, {} as ClipboardEvent);
+              editor.dispatchCommand(CUT_COMMAND, new ClipboardEvent('cut'));
             });
 
             expectHtmlToBeEqual(
@@ -879,7 +847,7 @@ describe('LexicalTableNode tests', () => {
               $selectAll();
             });
             await editor.update(() => {
-              editor.dispatchCommand(CUT_COMMAND, {} as ClipboardEvent);
+              editor.dispatchCommand(CUT_COMMAND, new ClipboardEvent('cut'));
             });
 
             expectHtmlToBeEqual(
@@ -907,7 +875,7 @@ describe('LexicalTableNode tests', () => {
               $selectAll();
             });
             await editor.update(() => {
-              editor.dispatchCommand(CUT_COMMAND, {} as ClipboardEvent);
+              editor.dispatchCommand(CUT_COMMAND, new ClipboardEvent('cut'));
             });
 
             expectHtmlToBeEqual(
@@ -943,10 +911,10 @@ describe('LexicalTableNode tests', () => {
                     table?.getCellNodeFromCords(3, 3, DOMTable)?.__key || '',
                   );
                   $setSelection(selection);
-                  editor.dispatchCommand(CUT_COMMAND, {
-                    preventDefault: () => {},
-                    stopPropagation: () => {},
-                  } as ClipboardEvent);
+                  editor.dispatchCommand(
+                    CUT_COMMAND,
+                    new ClipboardEvent('cut'),
+                  );
                 }
               }
             });
@@ -984,10 +952,10 @@ describe('LexicalTableNode tests', () => {
                     table?.getCellNodeFromCords(2, 2, DOMTable)?.__key || '',
                   );
                   $setSelection(selection);
-                  editor.dispatchCommand(CUT_COMMAND, {
-                    preventDefault: () => {},
-                    stopPropagation: () => {},
-                  } as ClipboardEvent);
+                  editor.dispatchCommand(
+                    CUT_COMMAND,
+                    new ClipboardEvent('cut'),
+                  );
                 }
               }
             });
@@ -1003,60 +971,60 @@ describe('LexicalTableNode tests', () => {
                     <col />
                     <col />
                   </colgroup>
-                  <tr>
-                    <th>
-                      <p><br /></p>
+                  <tr dir="auto">
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
-                    <th>
-                      <p><br /></p>
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
-                    <th>
-                      <p><br /></p>
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
-                    <th>
-                      <p><br /></p>
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
                   </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
+                  <tr dir="auto">
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
                   </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
+                  <tr dir="auto">
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
                   </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
+                  <tr dir="auto">
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
                   </tr>
                 </table>
@@ -1848,7 +1816,7 @@ describe('LexicalTableNode tests', () => {
       return <TablePlugin hasHorizontalScroll={hasHorizontalScroll} />;
     }
     initializeUnitTest(
-      (testEnv) => {
+      testEnv => {
         beforeEach(async () => {
           const {editor} = testEnv;
           await editor.update(() => {
@@ -1866,20 +1834,20 @@ describe('LexicalTableNode tests', () => {
                   <col />
                   <col />
                 </colgroup>
-                <tr>
-                  <th>
-                    <p><br /></p>
+                <tr dir="auto">
+                  <th dir="auto">
+                    <p dir="auto"><br /></p>
                   </th>
-                  <th>
-                    <p><br /></p>
+                  <th dir="auto">
+                    <p dir="auto"><br /></p>
                   </th>
                 </tr>
-                <tr>
-                  <th>
-                    <p><br /></p>
+                <tr dir="auto">
+                  <th dir="auto">
+                    <p dir="auto"><br /></p>
                   </th>
-                  <td>
-                    <p><br /></p>
+                  <td dir="auto">
+                    <p dir="auto"><br /></p>
                   </td>
                 </tr>
               </table>
@@ -1900,20 +1868,20 @@ describe('LexicalTableNode tests', () => {
                     <col />
                     <col />
                   </colgroup>
-                  <tr>
-                    <th>
-                      <p><br /></p>
+                  <tr dir="auto">
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
-                    <th>
-                      <p><br /></p>
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
                   </tr>
-                  <tr>
-                    <th>
-                      <p><br /></p>
+                  <tr dir="auto">
+                    <th dir="auto">
+                      <p dir="auto"><br /></p>
                     </th>
-                    <td>
-                      <p><br /></p>
+                    <td dir="auto">
+                      <p dir="auto"><br /></p>
                     </td>
                   </tr>
                 </table>
@@ -1934,20 +1902,20 @@ describe('LexicalTableNode tests', () => {
                   <col />
                   <col />
                 </colgroup>
-                <tr>
-                  <th>
-                    <p><br /></p>
+                <tr dir="auto">
+                  <th dir="auto">
+                    <p dir="auto"><br /></p>
                   </th>
-                  <th>
-                    <p><br /></p>
+                  <th dir="auto">
+                    <p dir="auto"><br /></p>
                   </th>
                 </tr>
-                <tr>
-                  <th>
-                    <p><br /></p>
+                <tr dir="auto">
+                  <th dir="auto">
+                    <p dir="auto"><br /></p>
                   </th>
-                  <td>
-                    <p><br /></p>
+                  <td dir="auto">
+                    <p dir="auto"><br /></p>
                   </td>
                 </tr>
               </table>

@@ -8,6 +8,7 @@
 
 import type {
   BaseSelection,
+  DecoratorNode,
   ElementNode,
   LexicalNode,
   NodeKey,
@@ -16,14 +17,12 @@ import type {
   TextNode,
 } from 'lexical';
 
-import {TableSelection} from '@lexical/table';
+import invariant from '@lexical/internal/invariant';
 import {
   $caretFromPoint,
-  $createRangeSelection,
   $extendCaretToRange,
   $findMatchingParent,
   $getPreviousSelection,
-  $getSelection,
   $hasAncestor,
   $isChildCaret,
   $isDecoratorNode,
@@ -34,15 +33,11 @@ import {
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
+  getStyleObjectFromCSS,
   INTERNAL_$isBlock,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
-import {
-  $getComputedStyleForElement,
-  $getComputedStyleForParent,
-  getStyleObjectFromCSS,
-} from './utils';
+import {$getComputedStyleForElement, $getComputedStyleForParent} from './utils';
 
 export function $copyBlockFormatIndent(
   srcNode: ElementNode,
@@ -56,6 +51,30 @@ export function $copyBlockFormatIndent(
   if (indent !== destNode.getIndent()) {
     destNode.setIndent(indent);
   }
+}
+
+function $isPointAtBlockStart(point: Point, block: ElementNode): boolean {
+  if (point.offset !== 0) {
+    return false;
+  }
+  let node: LexicalNode = point.getNode();
+  // When an ElementNode is empty it's not possible to distinguish if
+  // the selection's intent is the entire block or the edge so we consider
+  // it to be the entire block
+  if ($isElementNode(node) && node.isEmpty()) {
+    return false;
+  }
+  while (!node.is(block)) {
+    if (node.getPreviousSibling() !== null) {
+      return false;
+    }
+    const parent = node.getParent();
+    if (parent === null) {
+      return false;
+    }
+    node = parent;
+  }
+  return true;
 }
 
 /**
@@ -72,64 +91,53 @@ export function $setBlocksType<T extends ElementNode>(
     newNodeDest: T,
   ) => void = $copyBlockFormatIndent,
 ): void {
-  if (selection === null) {
+  if (!selection) {
     return;
   }
   // Selections tend to not include their containing blocks so we effectively
   // expand it here
   const anchorAndFocus = selection.getStartEndPoints();
+  let skipFocusAtBlockStart = false;
+  let focusBlock: ElementNode | DecoratorNode<unknown> | null = null;
   const blockMap = new Map<NodeKey, ElementNode>();
-  let newSelection: RangeSelection | null = null;
   if (anchorAndFocus) {
     const [anchor, focus] = anchorAndFocus;
-    newSelection = $createRangeSelection();
-    newSelection.anchor.set(anchor.key, anchor.offset, anchor.type);
-    newSelection.focus.set(focus.key, focus.offset, focus.type);
     const anchorBlock = $findMatchingParent(
       anchor.getNode(),
       INTERNAL_$isBlock,
     );
-    const focusBlock = $findMatchingParent(focus.getNode(), INTERNAL_$isBlock);
+    focusBlock = $findMatchingParent(focus.getNode(), INTERNAL_$isBlock);
+    skipFocusAtBlockStart =
+      $isElementNode(focusBlock) &&
+      !focusBlock.is(anchorBlock) &&
+      $isPointAtBlockStart(focus, focusBlock);
     if ($isElementNode(anchorBlock)) {
       blockMap.set(anchorBlock.getKey(), anchorBlock);
     }
-    if ($isElementNode(focusBlock)) {
+    if ($isElementNode(focusBlock) && !skipFocusAtBlockStart) {
       blockMap.set(focusBlock.getKey(), focusBlock);
     }
   }
   for (const node of selection.getNodes()) {
     if ($isElementNode(node) && INTERNAL_$isBlock(node)) {
+      if (skipFocusAtBlockStart && node.is(focusBlock)) {
+        continue;
+      }
       blockMap.set(node.getKey(), node);
-    } else if (anchorAndFocus === null) {
+    } else if (!anchorAndFocus) {
       const ancestorBlock = $findMatchingParent(node, INTERNAL_$isBlock);
       if ($isElementNode(ancestorBlock)) {
         blockMap.set(ancestorBlock.getKey(), ancestorBlock);
       }
     }
   }
-  for (const [key, prevNode] of blockMap) {
+  // Selection remapping is delegated to LexicalNode.replace (and the
+  // ListItemNode.replace override): both remap an element-anchored point
+  // on the replaced block to {key: replacement, offset: prevSize + offset}.
+  for (const prevNode of blockMap.values()) {
     const element = $createElement();
     $afterCreateElement(prevNode, element);
     prevNode.replace(element, true);
-    if (newSelection) {
-      if (key === newSelection.anchor.key) {
-        newSelection.anchor.set(
-          element.getKey(),
-          newSelection.anchor.offset,
-          newSelection.anchor.type,
-        );
-      }
-      if (key === newSelection.focus.key) {
-        newSelection.focus.set(
-          element.getKey(),
-          newSelection.focus.offset,
-          newSelection.focus.type,
-        );
-      }
-    }
-  }
-  if (newSelection && selection.is($getSelection())) {
-    $setSelection(newSelection);
   }
 }
 
@@ -142,7 +150,9 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
 
   while (node !== null && !$isRootOrShadowRoot(node)) {
     const latest = node.getLatest();
-    const parentNode: ElementNode | null = node.getParent<ElementNode>();
+    // Annotation breaks a circular inference through the loop (TS7022),
+    // remove when the deprecated generic signatures from #8661 are removed
+    const parentNode: ElementNode | null = node.getParent();
 
     if (latest.getChildrenSize() === 0) {
       node.remove(true);
@@ -184,7 +194,7 @@ export function $wrapNodes(
     let element = createElement();
     element.setFormat(target.getFormatType());
     element.setIndent(target.getIndent());
-    children.forEach((child) => element.append(child));
+    children.forEach(child => element.append(child));
 
     if (wrappingElement) {
       element = wrappingElement.append(element);
@@ -265,17 +275,18 @@ export function $wrapNodesImpl(
   // either insertAfter/insertBefore/append the corresponding
   // elements to. This is made more complicated due to nested
   // structures.
-  let target = $isElementNode(firstNode)
+  const firstNodeBlock = $isElementNode(firstNode)
     ? firstNode
     : firstNode.getParentOrThrow();
-
-  if (target.isInline()) {
-    target = target.getParentOrThrow();
-  }
+  let target: LexicalNode = firstNodeBlock.isInline()
+    ? firstNodeBlock.getParentOrThrow()
+    : firstNodeBlock;
 
   let targetIsPrevSibling = false;
   while (target !== null) {
-    const prevSibling = target.getPreviousSibling<ElementNode>();
+    // Annotation breaks a circular inference through the loop (TS7022),
+    // remove when the deprecated generic signatures from #8661 are removed
+    const prevSibling: LexicalNode | null = target.getPreviousSibling();
 
     if (prevSibling !== null) {
       target = prevSibling;
@@ -329,14 +340,17 @@ export function $wrapNodesImpl(
         elementMapping.set(parentKey, targetElement);
         // Move node and its siblings to the new
         // element.
-        parent.getChildren().forEach((child) => {
-          targetElement.append(child);
+        const children = parent.getChildren();
+        targetElement.splice(targetElement.getChildrenSize(), 0, children);
+        for (const child of children) {
           movedNodes.add(child.getKey());
           if ($isElementNode(child)) {
             // Skip nested leaf nodes if the parent has already been moved
-            child.getChildrenKeys().forEach((key) => movedNodes.add(key));
+            for (const key of child.getChildrenKeys()) {
+              movedNodes.add(key);
+            }
           }
-        });
+        }
         $removeParentEmptyElements(parent);
       }
     } else if (emptyElements.has(node.getKey())) {
@@ -373,7 +387,10 @@ export function $wrapNodesImpl(
         }
       }
     } else {
-      const firstChild = target.getFirstChild();
+      // Capture the narrowed type, the reassignment of target below would
+      // otherwise widen it back to LexicalNode
+      const rootTarget = target;
+      const firstChild = rootTarget.getFirstChild();
 
       if ($isElementNode(firstChild)) {
         target = firstChild;
@@ -381,11 +398,11 @@ export function $wrapNodesImpl(
 
       if (firstChild === null) {
         if (wrappingElement) {
-          target.append(wrappingElement);
+          rootTarget.append(wrappingElement);
         } else {
           for (let i = 0; i < elements.length; i++) {
             const element = elements[i];
-            target.append(element);
+            rootTarget.append(element);
             lastElement = element;
           }
         }
@@ -590,50 +607,51 @@ function $getNodeStyleValueForProperty(
  * @returns The value of the property for the selected TextNodes.
  */
 export function $getSelectionStyleValueForProperty(
-  selection: RangeSelection | TableSelection,
+  selection: BaseSelection,
   styleProperty: string,
   defaultValue = '',
 ): string {
   let styleValue: string | null = null;
   const nodes = selection.getNodes();
-  const anchor = selection.anchor;
-  const focus = selection.focus;
-  const isBackward = selection.isBackward();
-  const startNode = isBackward ? focus.getNode() : anchor.getNode();
-  const endNode = isBackward ? anchor.getNode() : focus.getNode();
-  const startOffset = isBackward ? focus.offset : anchor.offset;
-  const endOffset = isBackward ? anchor.offset : focus.offset;
 
-  if (
-    $isRangeSelection(selection) &&
-    selection.isCollapsed() &&
-    selection.style !== ''
-  ) {
-    const css = selection.style;
-    const styleObject = getStyleObjectFromCSS(css);
+  // The anchor/focus boundary handling below is specific to RangeSelection;
+  // other selection types (e.g. table) style every node they contain.
+  let startNode: LexicalNode | undefined;
+  let endNode: LexicalNode | undefined;
+  if ($isRangeSelection(selection)) {
+    if (selection.isCollapsed() && selection.style !== '') {
+      const styleObject = getStyleObjectFromCSS(selection.style);
 
-    if (styleObject !== null && styleProperty in styleObject) {
-      return styleObject[styleProperty];
+      if (styleObject !== null && styleProperty in styleObject) {
+        return styleObject[styleProperty];
+      }
+    }
+    const {anchor, focus} = selection;
+    const isBackward = selection.isBackward();
+    const firstNode = isBackward ? focus.getNode() : anchor.getNode();
+    const lastNode = isBackward ? anchor.getNode() : focus.getNode();
+    const startOffset = isBackward ? focus.offset : anchor.offset;
+    const endOffset = isBackward ? anchor.offset : focus.offset;
+    // A boundary node contributes no styled text when the selection merely
+    // touches its edge: the first node when the start offset is at its very
+    // end, and the last node when the end offset is at its very beginning.
+    if (
+      $isTextNode(firstNode) &&
+      startOffset === firstNode.getTextContentSize()
+    ) {
+      startNode = firstNode;
+    }
+    if (endOffset === 0) {
+      endNode = lastNode;
     }
   }
 
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
-    if (
-      i === 0 &&
-      node.is(startNode) &&
-      $isTextNode(node) &&
-      startOffset === node.getTextContentSize()
-    ) {
-      continue;
-    }
-
-    if (i !== 0 && node.is(endNode) && endOffset === 0) {
-      continue;
-    }
-
-    if ($isTextNode(node)) {
+    // Skip the excluded boundary node for this position (startNode at the
+    // head, endNode elsewhere); both are undefined when nothing is excluded.
+    if ($isTextNode(node) && !node.is(i === 0 ? startNode : endNode)) {
       const nodeStyleValue = $getNodeStyleValueForProperty(
         node,
         styleProperty,

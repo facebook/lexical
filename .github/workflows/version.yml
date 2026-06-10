@@ -11,10 +11,18 @@ on:
           - prerelease
           - patch
           - minor
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   release:
-    uses: ./.github/workflows/call-increment-version.yml
+    uses: ./.github/workflows/call-release.yml
     with:
+      increment-version: true
       increment: ${{ inputs.increment }}
-      dry-run: false
       channel: ${{ inputs.increment == 'prerelease' && 'next' || 'latest' }}

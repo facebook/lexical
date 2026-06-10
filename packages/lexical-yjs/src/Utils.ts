@@ -8,6 +8,7 @@
 
 import type {BaseBinding, Binding, YjsNode} from '.';
 
+import invariant from '@lexical/internal/invariant';
 import {
   $getNodeByKey,
   $getRoot,
@@ -21,12 +22,12 @@ import {
   DecoratorNode,
   EditorState,
   ElementNode,
+  isLexicalEditor,
   LexicalNode,
   NodeKey,
   RangeSelection,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 import {Doc, Map as YMap, XmlElement, XmlText} from 'yjs';
 
 import {isBindingV1} from './Bindings';
@@ -89,7 +90,7 @@ function isExcludedProperty(
 export function initializeNodeProperties(binding: BaseBinding): void {
   const {editor, nodeProperties} = binding;
   editor.update(() => {
-    editor._nodes.forEach((nodeInfo) => {
+    editor._nodes.forEach(nodeInfo => {
       const node = new nodeInfo.klass();
       const defaultProperties: {[property: string]: unknown} = {};
       for (const [property, value] of Object.entries(node)) {
@@ -330,20 +331,30 @@ export function $syncPropertiesFromYjs(
           yjsDocMap.delete(prevValue.guid);
         }
 
-        const nestedEditor = createEditor();
         const key = nextValue.guid;
-        nestedEditor._key = key;
         yjsDocMap.set(key, nextValue);
 
-        nextValue = nestedEditor;
+        // If the node already constructed a nested editor (e.g. via
+        // buildEditorFromExtensions in its constructor), reuse it so its
+        // extensions and LexicalBuilder registration survive the sync.
+        // Otherwise, fall back to a bare editor.
+        if (isLexicalEditor(prevValue)) {
+          prevValue._key = key;
+          nextValue = prevValue;
+        } else {
+          const nestedEditor = createEditor();
+          nestedEditor._key = key;
+          nextValue = nestedEditor;
+        }
       }
 
       if (writableNode === undefined) {
         writableNode = lexicalNode.getWritable();
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      writableNode[property as keyof typeof writableNode] = nextValue as any;
+      writableNode[property as string & keyof typeof writableNode] =
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        nextValue as any;
     }
   }
 }
@@ -613,7 +624,7 @@ export function $moveSelectionToPreviousNode(
   }
   // Get previous node
   const prevNodeKey = anchorNode.__prev;
-  let prevNode: ElementNode | null = null;
+  let prevNode: LexicalNode | null = null;
   if (prevNodeKey) {
     prevNode = $getNodeByKey(prevNodeKey);
   }

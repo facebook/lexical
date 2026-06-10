@@ -132,13 +132,18 @@ export {
   NODE_STATE_KEY,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
+export type {DOMSlot} from './LexicalDOMSlot';
+export type {ElementDOMSlot} from './LexicalDOMSlot';
 export type {
   CommandListener,
   CommandListenerPriority,
+  CommandListenerPriorityBefore,
   CommandPayloadType,
   CreateEditorArgs,
+  DOMSlotForNode,
   EditableListener,
   EditorConfig,
+  EditorDOMRenderConfig,
   EditorSetOptions,
   EditorThemeClasses,
   EditorThemeClassName,
@@ -160,12 +165,18 @@ export type {
   UpdateListenerPayload,
 } from './LexicalEditor';
 export {
+  COMMAND_PRIORITY_BEFORE_CRITICAL,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
+  COMMAND_PRIORITY_BEFORE_HIGH,
+  COMMAND_PRIORITY_BEFORE_LOW,
+  COMMAND_PRIORITY_BEFORE_NORMAL,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   COMMAND_PRIORITY_NORMAL,
   createEditor,
+  DEFAULT_EDITOR_DOM_CONFIG,
   getTransformSetFromKlass,
 } from './LexicalEditor';
 export type {
@@ -175,7 +186,9 @@ export type {
 } from './LexicalEditorState';
 export {$isEditorState} from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
+export {stopLexicalPropagation} from './LexicalEvents';
 export type {
+  AbstractStaticNodeConfigRecord,
   BaseStaticNodeConfig,
   DOMChildConversion,
   DOMConversion,
@@ -194,10 +207,12 @@ export type {
   NodeMap,
   SerializedLexicalNode,
   StaticNodeConfig,
+  StaticNodeConfigAccessor,
   StaticNodeConfigRecord,
   StaticNodeConfigValue,
+  StaticNodeTypeAccessor,
 } from './LexicalNode';
-export {buildImportMap} from './LexicalNode';
+export {$isLexicalNode, buildImportMap} from './LexicalNode';
 export {
   $getState,
   $getStateChange,
@@ -229,6 +244,7 @@ export {
   $createPoint,
   $createRangeSelection,
   $createRangeSelectionFromDom,
+  $generateNodesFromRawText,
   $getCharacterOffsets,
   $getPreviousSelection,
   $getSelection,
@@ -237,8 +253,16 @@ export {
   $isBlockElementNode,
   $isNodeSelection,
   $isRangeSelection,
+  $updateDOMSelection,
+  type RawTextVisitor,
+  tokenizeRawText,
 } from './LexicalSelection';
-export {$parseSerializedNode, isCurrentlyReadOnlyMode} from './LexicalUpdates';
+export {
+  $assumeActiveEditor,
+  $fullReconcile,
+  $parseSerializedNode,
+  isCurrentlyReadOnlyMode,
+} from './LexicalUpdates';
 export {
   $addUpdateTag,
   $applyNodeReplacement,
@@ -249,7 +273,10 @@ export {
   $createChildrenArray,
   $findMatchingParent,
   $getAdjacentNode,
+  $getDOMSlot,
+  $getDOMTextNode,
   $getEditor,
+  $getEditorDOMRenderConfig,
   $getNearestNodeFromDOMNode,
   $getNearestRootOrShadowRoot,
   $getNodeByKey,
@@ -258,6 +285,7 @@ export {
   $getRoot,
   $hasAncestor,
   $hasUpdateTag,
+  $isElementDOMSlot,
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,
@@ -267,6 +295,8 @@ export {
   $onUpdate,
   $selectAll,
   $setCompositionKey,
+  $setDirectionFromDOM,
+  $setFormatFromDOM,
   $setSelection,
   $splitNode,
   getDOMOwnerDocument,
@@ -282,6 +312,7 @@ export {
   INTERNAL_$isBlock,
   isBlockDomNode,
   isDocumentFragment,
+  isDOMCapturingSelection,
   isDOMDocumentNode,
   isDOMNode,
   isDOMTextNode,
@@ -289,6 +320,8 @@ export {
   isExactShortcutMatch,
   isHTMLAnchorElement,
   isHTMLElement,
+  isHTMLTableCellElement,
+  isHTMLTableRowElement,
   isInlineDomNode,
   isLexicalEditor,
   isModifierMatch,
@@ -297,13 +330,13 @@ export {
   removeFromParent,
   resetRandomKey,
   setDOMUnmanaged,
+  type SetDOMUnmanagedOptions,
   setNodeIndentFromDOM,
   toggleTextFormatType,
 } from './LexicalUtils';
 export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
 export type {
-  ElementDOMSlot,
   ElementFormatType,
   SerializedElementNode,
 } from './nodes/LexicalElementNode';
@@ -312,6 +345,8 @@ export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';
 export {
   $createLineBreakNode,
   $isLineBreakNode,
+  isLastChildInBlockNode,
+  isOnlyChildInBlockNode,
   LineBreakNode,
 } from './nodes/LexicalLineBreakNode';
 export type {SerializedParagraphNode} from './nodes/LexicalParagraphNode';
@@ -336,6 +371,7 @@ export {
   COLLABORATION_TAG,
   COMPOSITION_END_TAG,
   COMPOSITION_START_TAG,
+  CUT_TAG,
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,
@@ -348,6 +384,18 @@ export {
 } from './LexicalUpdateTags';
 
 // LexicalExtension
+export {
+  CAN_USE_BEFORE_INPUT,
+  CAN_USE_DOM,
+  IS_ANDROID,
+  IS_ANDROID_CHROME,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_CHROME,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+} from './environment';
 export {
   type AnyLexicalExtension,
   type AnyLexicalExtensionArgument,
@@ -386,3 +434,8 @@ export {
   removeClassNamesFromElement,
 } from './utils/classNames';
 export {mergeRegister} from './utils/mergeRegister';
+export {
+  getStyleObjectFromCSS,
+  setDOMStyleFromCSS,
+  setDOMStyleObject,
+} from './utils/setDOMStyle';

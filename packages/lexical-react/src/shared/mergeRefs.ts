@@ -8,7 +8,7 @@
 import type {Ref} from 'react';
 
 export function mergeRefs<T>(...refs: Ref<T>[]): (value: null | T) => void {
-  return (value) => {
+  return value => {
     for (const ref of refs) {
       if (typeof ref === 'function') {
         ref(value);

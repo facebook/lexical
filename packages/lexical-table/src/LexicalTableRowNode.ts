@@ -138,7 +138,7 @@ export function $convertTableRowElement(domNode: Node): DOMConversionOutput {
   }
 
   return {
-    after: (children) => $descendantsMatching(children, $isTableCellNode),
+    after: children => $descendantsMatching(children, $isTableCellNode),
     node: $createTableRowNode(height),
   };
 }

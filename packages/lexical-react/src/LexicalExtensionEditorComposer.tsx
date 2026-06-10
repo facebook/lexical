@@ -8,11 +8,16 @@
 import {getExtensionDependencyFromEditor} from '@lexical/extension';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {LexicalEditorWithDispose} from 'lexical';
-import {useEffect} from 'react';
 
 export interface LexicalExtensionEditorComposerProps {
   /**
-   * Your root extension, typically defined with {@link defineExtension}
+   * Your root extension, typically defined with {@link defineExtension}.
+   * The lifecycle of this editor is not owned by this component,
+   * you are responsible for calling `initialEditor.dispose()` if needed.
+   * Note also that any LexicalEditor can only be rendered to one root
+   * element, so if you try and use it from multiple components
+   * simultaneously then it will only be managed correctly by the last one
+   * to render.
    */
   initialEditor: LexicalEditorWithDispose;
   /**
@@ -33,18 +38,6 @@ export function LexicalExtensionEditorComposer({
   initialEditor: editor,
   children,
 }: LexicalExtensionEditorComposerProps) {
-  useEffect(() => {
-    // Strict mode workaround
-    let didMount = false;
-    queueMicrotask(() => {
-      didMount = true;
-    });
-    return () => {
-      if (didMount) {
-        editor.dispose();
-      }
-    };
-  }, [editor]);
   const {Component} = getExtensionDependencyFromEditor(
     editor,
     ReactExtension,

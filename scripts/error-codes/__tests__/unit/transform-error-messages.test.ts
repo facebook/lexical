@@ -11,12 +11,12 @@ import * as fs from 'fs-extra';
 import * as path from 'node:path';
 import {describe, expect, it} from 'vitest';
 
-import transformErrorMessages from '../../transform-error-messages';
+import transformErrorMessages from '../../transform-error-messages.mjs';
 
 const prettierConfig = prettier.resolveConfig(__filename) || {};
 
 function waitTick(): Promise<void> {
-  return new Promise((resolve) => queueMicrotask(resolve));
+  return new Promise(resolve => queueMicrotask(resolve));
 }
 
 async function withCodes(
@@ -85,7 +85,7 @@ async function expectTransform(opts: ExpectTransformOptions) {
   return await withCodes(
     opts.messageMapBefore,
     opts.messageMapExpect,
-    async (errorCodesPath) => {
+    async errorCodesPath => {
       const {code} = babel.transformSync(fmt`${opts.codeBefore}`, {
         configFile: false,
         plugins: [[transformErrorMessages, {errorCodesPath, ...opts.opts}]],

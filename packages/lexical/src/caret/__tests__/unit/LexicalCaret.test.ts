@@ -86,7 +86,7 @@ function insideNode(size: number) {
 }
 
 describe('LexicalCaret', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     describe('$getChildCaret', () => {
       for (const direction of DIRECTIONS) {
         test(`direction ${direction}`, async () => {
@@ -183,7 +183,7 @@ describe('LexicalCaret', () => {
               );
 
               expect(
-                Array.from(caret, (nextCaret) => nextCaret.origin.getKey()),
+                Array.from(caret, nextCaret => nextCaret.origin.getKey()),
               ).toEqual(
                 direction === 'next'
                   ? root.getChildrenKeys()
@@ -201,7 +201,7 @@ describe('LexicalCaret', () => {
           await testEnv.editor.update(
             () => {
               const paragraph = $createParagraphNode();
-              const tokens = ['-2', '-1', '0', '1', '2'].map((text) =>
+              const tokens = ['-2', '-1', '0', '1', '2'].map(text =>
                 $createTextNode(text).setMode('token'),
               );
               const root = $getRoot();
@@ -226,7 +226,7 @@ describe('LexicalCaret', () => {
               expect(
                 Array.from(
                   caret,
-                  (nextCaret) =>
+                  nextCaret =>
                     (direction === 'next' ? 1 : -1) *
                     +nextCaret.origin.getTextContent(),
                 ),
@@ -289,7 +289,7 @@ describe('LexicalCaret', () => {
               expect(
                 Array.from(
                   caret,
-                  (nextCaret) =>
+                  nextCaret =>
                     (direction === 'next' ? 1 : -1) *
                     +nextCaret.origin.getTextContent(),
                 ),
@@ -298,33 +298,33 @@ describe('LexicalCaret', () => {
                 paragraph
                   .getLatest()
                   .getChildren()
-                  .map((node) => node.getTextContent()),
+                  .map(node => node.getTextContent()),
               ).toEqual(
                 tokens
-                  .map((n) => n.getTextContent())
-                  .filter((t) => t !== String(offset)),
+                  .map(n => n.getTextContent())
+                  .filter(t => t !== String(offset)),
               );
               caret.insert(tokens[ZERO_INDEX + offset]);
               expect(
                 paragraph
                   .getLatest()
                   .getChildren()
-                  .map((node) => node.getTextContent()),
-              ).toEqual(tokens.map((n) => n.getTextContent()));
+                  .map(node => node.getTextContent()),
+              ).toEqual(tokens.map(n => n.getTextContent()));
               caret.replaceOrInsert(tokens[ZERO_INDEX + offset]);
               expect(
                 paragraph
                   .getLatest()
                   .getChildren()
-                  .map((node) => node.getTextContent()),
-              ).toEqual(tokens.map((n) => n.getTextContent()));
+                  .map(node => node.getTextContent()),
+              ).toEqual(tokens.map(n => n.getTextContent()));
 
               caret.replaceOrInsert($createTextNode('replaced!'));
               expect(
                 paragraph
                   .getLatest()
                   .getChildren()
-                  .map((node) => node.getTextContent()),
+                  .map(node => node.getTextContent()),
               ).toEqual(
                 tokens.map((n, i) =>
                   i === ZERO_INDEX + offset ? 'replaced!' : n.getTextContent(),
@@ -332,13 +332,13 @@ describe('LexicalCaret', () => {
               );
               caret.replaceOrInsert(tokens[ZERO_INDEX + offset]);
 
-              const abNodes = ['a', 'b'].map((t) => $createTextNode(t));
+              const abNodes = ['a', 'b'].map(t => $createTextNode(t));
               caret.splice(0, abNodes);
               expect(
                 paragraph
                   .getLatest()
                   .getChildren()
-                  .map((node) => node.getTextContent()),
+                  .map(node => node.getTextContent()),
               ).toEqual(
                 tokens.flatMap((n, i) => {
                   if (i !== ZERO_INDEX) {
@@ -350,14 +350,14 @@ describe('LexicalCaret', () => {
                   }
                 }),
               );
-              abNodes.forEach((n) => n.remove());
+              abNodes.forEach(n => n.remove());
 
               caret.splice(0, abNodes, 'previous');
               expect(
                 paragraph
                   .getLatest()
                   .getChildren()
-                  .map((node) => node.getTextContent()),
+                  .map(node => node.getTextContent()),
               ).toEqual(
                 tokens.flatMap((n, i) => {
                   if (i !== ZERO_INDEX) {
@@ -369,14 +369,14 @@ describe('LexicalCaret', () => {
                   }
                 }),
               );
-              abNodes.forEach((n) => n.remove());
+              abNodes.forEach(n => n.remove());
 
               caret.splice(1, abNodes);
               expect(
                 paragraph
                   .getLatest()
                   .getChildren()
-                  .map((node) => node.getTextContent()),
+                  .map(node => node.getTextContent()),
               ).toEqual(
                 tokens.flatMap((n, i) => {
                   if (i === ZERO_INDEX + offset) {
@@ -397,7 +397,7 @@ describe('LexicalCaret', () => {
                 paragraph
                   .getLatest()
                   .getChildren()
-                  .map((node) => node.getTextContent()),
+                  .map(node => node.getTextContent()),
               ).toEqual(
                 tokens.map((n, i) =>
                   i === ZERO_INDEX + offset ? 'a' : n.getTextContent(),
@@ -410,7 +410,7 @@ describe('LexicalCaret', () => {
                 paragraph
                   .getLatest()
                   .getChildren()
-                  .map((node) => node.getTextContent()),
+                  .map(node => node.getTextContent()),
               ).toEqual(
                 direction === 'next'
                   ? ['-2', '-1', '0', 'a']
@@ -423,7 +423,7 @@ describe('LexicalCaret', () => {
                 paragraph
                   .getLatest()
                   .getChildren()
-                  .map((node) => node.getTextContent()),
+                  .map(node => node.getTextContent()),
               ).toEqual(
                 direction === 'next'
                   ? ['-2', '-1', '0', 'a', 'b']
@@ -439,7 +439,7 @@ describe('LexicalCaret', () => {
     describe('$caretRangeFromSelection', () => {
       test('collapsed text point selection', async () => {
         await testEnv.editor.update(() => {
-          const textNodes = ['first', 'second', 'third'].map((text) =>
+          const textNodes = ['first', 'second', 'third'].map(text =>
             $createTextNode(text).setMode('token'),
           );
           $getRoot()
@@ -498,7 +498,7 @@ describe('LexicalCaret', () => {
       for (const direction of DIRECTIONS) {
         test(`full text node selection (${direction})`, async () => {
           await testEnv.editor.update(() => {
-            const textNodes = ['first', 'second', 'third'].map((text) =>
+            const textNodes = ['first', 'second', 'third'].map(text =>
               $createTextNode(text).setMode('token'),
             );
             $getRoot()
@@ -548,7 +548,7 @@ describe('LexicalCaret', () => {
       }
       test('single text node non-empty selection', async () => {
         await testEnv.editor.update(() => {
-          const textNodes = ['first', 'second', 'third'].map((text) =>
+          const textNodes = ['first', 'second', 'third'].map(text =>
             $createTextNode(text).setMode('token'),
           );
           $getRoot()
@@ -597,7 +597,7 @@ describe('LexicalCaret', () => {
       for (const direction of DIRECTIONS) {
         test(`multiple text node non-empty selection (${direction})`, async () => {
           await testEnv.editor.update(() => {
-            const textNodes = ['first', 'second', 'third'].map((text) =>
+            const textNodes = ['first', 'second', 'third'].map(text =>
               $createTextNode(text).setMode('token'),
             );
             $getRoot()
@@ -677,7 +677,7 @@ describe('LexicalCaret', () => {
                     expect([...range.iterNodeCarets('root')]).toMatchObject(
                       textNodes
                         .slice(indexNodeStart + 1, indexNodeEnd)
-                        .map((origin) => ({
+                        .map(origin => ({
                           direction,
                           origin,
                           type: 'sibling',
@@ -706,7 +706,7 @@ describe('LexicalCaret', () => {
               expect(
                 $getRoot()
                   .getAllTextNodes()
-                  .map((n) => n.getTextContent()),
+                  .map(n => n.getTextContent()),
               ).toEqual(['[before]', '[after]']);
               invariant($isHeadingNode(newHeadingNode), 'paragraph inserted');
               expect($getRoot().getChildren()).toEqual([
@@ -832,9 +832,10 @@ describe('LexicalCaret', () => {
               expect(trailingSegmentedText.isAttached()).toBe(false);
               const allTextNodes = $getRoot().getAllTextNodes();
               // These should get merged in reconciliation
-              expect(allTextNodes.map((node) => node.getTextContent())).toEqual(
-                ['lead', 'text'],
-              );
+              expect(allTextNodes.map(node => node.getTextContent())).toEqual([
+                'lead',
+                'text',
+              ]);
               const selection = $assertRangeSelection($getSelection());
               expect(selection.isCollapsed()).toBe(true);
               expect(selection.anchor.key).toBe(leadingText.getKey());
@@ -846,7 +847,7 @@ describe('LexicalCaret', () => {
           testEnv.editor.getEditorState().read(() => {
             const allTextNodes = $getRoot().getAllTextNodes();
             // These should get merged in reconciliation
-            expect(allTextNodes.map((node) => node.getTextContent())).toEqual([
+            expect(allTextNodes.map(node => node.getTextContent())).toEqual([
               'leadtext',
             ]);
             expect(leadingText.isAttached()).toBe(true);
@@ -858,7 +859,7 @@ describe('LexicalCaret', () => {
         beforeEach(() => {
           testEnv.editor.update(() => {
             // Ensure that the separate texts don't get merged
-            const textNodes = texts.map((text) =>
+            const textNodes = texts.map(text =>
               $createTextNode(text).setStyle(`color: --color-${text}`),
             );
             $getRoot()
@@ -1068,9 +1069,9 @@ describe('LexicalCaret', () => {
                   $setSelection(null);
                   const remainingNodes = $getRoot().getAllTextNodes();
                   expect(remainingNodes).toEqual(
-                    originalNodes.map((n) => n.getLatest()),
+                    originalNodes.map(n => n.getLatest()),
                   );
-                  expect(remainingNodes.map((n) => n.getTextContent())).toEqual(
+                  expect(remainingNodes.map(n => n.getTextContent())).toEqual(
                     texts.filter((_v, j) => j !== i),
                   );
                   expect(resultRange.isCollapsed()).toBe(true);
@@ -1201,7 +1202,7 @@ describe('LexicalCaret', () => {
                   expect(
                     range
                       .getTextSlices()
-                      .filter((slice) => slice && slice.distance !== 0),
+                      .filter(slice => slice && slice.distance !== 0),
                   ).toMatchObject(
                     anchorBias === 'outside' && focusBias === 'outside'
                       ? []
@@ -1212,11 +1213,11 @@ describe('LexicalCaret', () => {
                   const resultRange = $removeTextFromCaretRange(range);
                   $setSelection(null);
                   const remainingNodes = $getRoot().getAllTextNodes();
-                  expect(remainingNodes.map((n) => n.getTextContent())).toEqual(
+                  expect(remainingNodes.map(n => n.getTextContent())).toEqual(
                     texts.filter((_v, j) => j !== i),
                   );
                   expect(remainingNodes).toEqual(
-                    originalNodes.map((n) => n.getLatest()),
+                    originalNodes.map(n => n.getLatest()),
                   );
                   expect(resultRange.isCollapsed()).toBe(true);
                   // bias towards the start
@@ -1285,7 +1286,7 @@ describe('LexicalCaret', () => {
                 const slices = range
                   .getTextSlices()
                   .filter($isTextPointCaretSlice)
-                  .filter((slice) => slice.distance !== 0);
+                  .filter(slice => slice.distance !== 0);
                 expect([...range.iterNodeCarets('root')]).toEqual([]);
                 expect(slices.length).toBe(1);
                 const [slice] = slices;
@@ -1306,7 +1307,7 @@ describe('LexicalCaret', () => {
                 });
                 const remainingNodes = $getRoot().getAllTextNodes();
                 expect(remainingNodes).toHaveLength(texts.length);
-                expect(remainingNodes.map((n) => n.getTextContent())).toEqual(
+                expect(remainingNodes.map(n => n.getTextContent())).toEqual(
                   texts.map((v, j) =>
                     i === j ? v.slice(0, offsetStart) + v.slice(offsetEnd) : v,
                   ),
@@ -1361,7 +1362,7 @@ describe('LexicalCaret', () => {
                   .getTextSlices()
                   .filter($isTextPointCaretSlice);
                 expect(slices).toHaveLength(2);
-                expect(slices.map((slice) => slice.getTextContent())).toEqual(
+                expect(slices.map(slice => slice.getTextContent())).toEqual(
                   direction === 'next'
                     ? [
                         startCaret.origin
@@ -1482,13 +1483,13 @@ describe('LexicalCaret', () => {
         beforeEach(async () => {
           await testEnv.editor.update(() => {
             // Ensure that the separate texts don't get merged
-            const textNodes = texts.map((text) =>
+            const textNodes = texts.map(text =>
               $createTextNode(text).setStyle(`color: --color-${text}`),
             );
             $getRoot()
               .clear()
               .append(
-                ...textNodes.map((node) => $createParagraphNode().append(node)),
+                ...textNodes.map(node => $createParagraphNode().append(node)),
               );
           });
         });
@@ -1535,7 +1536,7 @@ describe('LexicalCaret', () => {
                   .getTextSlices()
                   .filter($isTextPointCaretSlice);
                 expect(slices).toHaveLength(2);
-                expect(slices.map((slice) => slice.getTextContent())).toEqual(
+                expect(slices.map(slice => slice.getTextContent())).toEqual(
                   direction === 'next'
                     ? [
                         startCaret.origin
@@ -1675,7 +1676,7 @@ describe('LexicalCaret', () => {
               expect(
                 $getRoot()
                   .getAllTextNodes()
-                  .map((node) => node.getTextContent()),
+                  .map(node => node.getTextContent()),
               ).toEqual(['list', 'nested']);
               expect(listNode.getLatest().getChildren().length).toEqual(1);
             },
@@ -1684,7 +1685,7 @@ describe('LexicalCaret', () => {
           testEnv.editor.getEditorState().read(() => {
             const allTextNodes = $getRoot().getAllTextNodes();
             // These should get merged in reconciliation
-            expect(allTextNodes.map((node) => node.getTextContent())).toEqual([
+            expect(allTextNodes.map(node => node.getTextContent())).toEqual([
               'listnested',
             ]);
           });
@@ -1896,8 +1897,8 @@ describe('LexicalCaret', () => {
           test(title, () => {
             testEnv.editor.update(
               () => {
-                const nodes = $getTestNodes().map((n) => n.getLatest());
-                const ancestors = $getTestAncestors().map((n) => n.getLatest());
+                const nodes = $getTestNodes().map(n => n.getLatest());
+                const ancestors = $getTestAncestors().map(n => n.getLatest());
                 const commonAncestor = $getTestCommonAncestor().getLatest();
                 expect($getCommonAncestor(nodes[0], nodes[1])).toEqual({
                   a: ancestors[0],
@@ -1952,7 +1953,7 @@ describe('LexicalCaret', () => {
 });
 
 describe('LexicalSelectionHelpers', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     describe('with a fully-selected text node preceded by an inline element', () => {
       test('a single text node', async () => {
         await testEnv.editor.update(() => {
@@ -1992,7 +1993,7 @@ describe('LexicalSelectionHelpers', () => {
 });
 
 describe('$splitAtPointCaretNext', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('Does not split a TextNode at the beginning', () => {
       testEnv.editor.update(
         () => {

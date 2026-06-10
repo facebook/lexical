@@ -13,7 +13,7 @@ import {$createListItemNode, $createListNode} from '../..';
 import {$getListDepth, $getTopListNode, $isLastItemInList} from '../../utils';
 
 describe('Lexical List Utils tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('getListDepth should return the 1-based depth of a list with one levels', async () => {
       const editor = testEnv.editor;
 

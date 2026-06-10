@@ -8,7 +8,7 @@
 
 import {effect, namedSignals} from '@lexical/extension';
 import {mergeRegister} from '@lexical/utils';
-import {defineExtension, safeCast} from 'lexical';
+import {$fullReconcile, defineExtension, safeCast} from 'lexical';
 
 import {TableCellNode} from './LexicalTableCellNode';
 import {
@@ -74,9 +74,11 @@ export const TableExtension = defineExtension({
         const hadHorizontalScroll = $isScrollableTablesActive(editor);
         if (hadHorizontalScroll !== hasHorizontalScroll) {
           setScrollableTablesActive(editor, hasHorizontalScroll);
-          // Registering the transform has the side-effect of marking all existing
-          // TableNodes as dirty. The handler is immediately unregistered.
-          editor.registerNodeTransform(TableNode, () => {})();
+          // Re-render existing tables through the new scroll-wrapper config
+          // without cloning every TableNode the way marking them dirty would. A
+          // full reconcile marks no nodes dirty, so it's deferred (no
+          // synchronous render from this effect) and produces no history entry.
+          editor.update($fullReconcile);
         }
       }),
       registerTablePlugin(editor, stores),
@@ -91,7 +93,7 @@ export const TableExtension = defineExtension({
       effect(() =>
         stores.hasCellBackgroundColor.value
           ? undefined
-          : editor.registerNodeTransform(TableCellNode, (node) => {
+          : editor.registerNodeTransform(TableCellNode, node => {
               if (node.getBackgroundColor() !== null) {
                 node.setBackgroundColor(null);
               }

@@ -8,14 +8,15 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.43.0",
+  "version": "0.45.0",
   "dependencies": {
-    "@floating-ui/react": "^0.27.16",
+    "@floating-ui/react": "^0.27.19",
     "@lexical/devtools-core": "workspace:*",
     "@lexical/dragon": "workspace:*",
     "@lexical/extension": "workspace:*",
     "@lexical/hashtag": "workspace:*",
     "@lexical/history": "workspace:*",
+    "@lexical/internal": "workspace:*",
     "@lexical/link": "workspace:*",
     "@lexical/list": "workspace:*",
     "@lexical/mark": "workspace:*",
@@ -28,11 +29,21 @@
     "@lexical/utils": "workspace:*",
     "@lexical/yjs": "workspace:*",
     "lexical": "workspace:*",
-    "react-error-boundary": "^6.0.0"
+    "react-error-boundary": "^6.1.1"
   },
   "peerDependencies": {
     "react": ">=17.x",
-    "react-dom": ">=17.x"
+    "react-dom": ">=17.x",
+    "typescript": ">=5.2",
+    "yjs": ">=13.5.22"
+  },
+  "peerDependenciesMeta": {
+    "yjs": {
+      "optional": true
+    },
+    "typescript": {
+      "optional": true
+    }
   },
   "repository": {
     "type": "git",
@@ -41,1533 +52,1839 @@
   },
   "exports": {
     "./ExtensionComponent": {
+      "source": "./src/ExtensionComponent.tsx",
       "import": {
-        "types": "./ExtensionComponent.d.ts",
-        "development": "./LexicalExtensionComponent.dev.mjs",
-        "production": "./LexicalExtensionComponent.prod.mjs",
-        "node": "./LexicalExtensionComponent.node.mjs",
-        "default": "./LexicalExtensionComponent.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/ExtensionComponent.d.ts",
+        "development": "./dist/LexicalExtensionComponent.dev.mjs",
+        "production": "./dist/LexicalExtensionComponent.prod.mjs",
+        "node": "./dist/LexicalExtensionComponent.node.mjs",
+        "default": "./dist/LexicalExtensionComponent.mjs"
       },
       "require": {
-        "types": "./ExtensionComponent.d.ts",
-        "development": "./LexicalExtensionComponent.dev.js",
-        "production": "./LexicalExtensionComponent.prod.js",
-        "default": "./LexicalExtensionComponent.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/ExtensionComponent.d.ts",
+        "development": "./dist/LexicalExtensionComponent.dev.js",
+        "production": "./dist/LexicalExtensionComponent.prod.js",
+        "default": "./dist/LexicalExtensionComponent.js"
       }
     },
     "./ExtensionComponent.js": {
+      "source": "./src/ExtensionComponent.tsx",
       "import": {
-        "types": "./ExtensionComponent.d.ts",
-        "development": "./LexicalExtensionComponent.dev.mjs",
-        "production": "./LexicalExtensionComponent.prod.mjs",
-        "node": "./LexicalExtensionComponent.node.mjs",
-        "default": "./LexicalExtensionComponent.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/ExtensionComponent.d.ts",
+        "development": "./dist/LexicalExtensionComponent.dev.mjs",
+        "production": "./dist/LexicalExtensionComponent.prod.mjs",
+        "node": "./dist/LexicalExtensionComponent.node.mjs",
+        "default": "./dist/LexicalExtensionComponent.mjs"
       },
       "require": {
-        "types": "./ExtensionComponent.d.ts",
-        "development": "./LexicalExtensionComponent.dev.js",
-        "production": "./LexicalExtensionComponent.prod.js",
-        "default": "./LexicalExtensionComponent.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/ExtensionComponent.d.ts",
+        "development": "./dist/LexicalExtensionComponent.dev.js",
+        "production": "./dist/LexicalExtensionComponent.prod.js",
+        "default": "./dist/LexicalExtensionComponent.js"
       }
     },
     "./LexicalAutoEmbedPlugin": {
+      "source": "./src/LexicalAutoEmbedPlugin.tsx",
       "import": {
-        "types": "./LexicalAutoEmbedPlugin.d.ts",
-        "development": "./LexicalAutoEmbedPlugin.dev.mjs",
-        "production": "./LexicalAutoEmbedPlugin.prod.mjs",
-        "node": "./LexicalAutoEmbedPlugin.node.mjs",
-        "default": "./LexicalAutoEmbedPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalAutoEmbedPlugin.d.ts",
+        "development": "./dist/LexicalAutoEmbedPlugin.dev.mjs",
+        "production": "./dist/LexicalAutoEmbedPlugin.prod.mjs",
+        "node": "./dist/LexicalAutoEmbedPlugin.node.mjs",
+        "default": "./dist/LexicalAutoEmbedPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalAutoEmbedPlugin.d.ts",
-        "development": "./LexicalAutoEmbedPlugin.dev.js",
-        "production": "./LexicalAutoEmbedPlugin.prod.js",
-        "default": "./LexicalAutoEmbedPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalAutoEmbedPlugin.d.ts",
+        "development": "./dist/LexicalAutoEmbedPlugin.dev.js",
+        "production": "./dist/LexicalAutoEmbedPlugin.prod.js",
+        "default": "./dist/LexicalAutoEmbedPlugin.js"
       }
     },
     "./LexicalAutoEmbedPlugin.js": {
+      "source": "./src/LexicalAutoEmbedPlugin.tsx",
       "import": {
-        "types": "./LexicalAutoEmbedPlugin.d.ts",
-        "development": "./LexicalAutoEmbedPlugin.dev.mjs",
-        "production": "./LexicalAutoEmbedPlugin.prod.mjs",
-        "node": "./LexicalAutoEmbedPlugin.node.mjs",
-        "default": "./LexicalAutoEmbedPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalAutoEmbedPlugin.d.ts",
+        "development": "./dist/LexicalAutoEmbedPlugin.dev.mjs",
+        "production": "./dist/LexicalAutoEmbedPlugin.prod.mjs",
+        "node": "./dist/LexicalAutoEmbedPlugin.node.mjs",
+        "default": "./dist/LexicalAutoEmbedPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalAutoEmbedPlugin.d.ts",
-        "development": "./LexicalAutoEmbedPlugin.dev.js",
-        "production": "./LexicalAutoEmbedPlugin.prod.js",
-        "default": "./LexicalAutoEmbedPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalAutoEmbedPlugin.d.ts",
+        "development": "./dist/LexicalAutoEmbedPlugin.dev.js",
+        "production": "./dist/LexicalAutoEmbedPlugin.prod.js",
+        "default": "./dist/LexicalAutoEmbedPlugin.js"
       }
     },
     "./LexicalAutoFocusPlugin": {
+      "source": "./src/LexicalAutoFocusPlugin.ts",
       "import": {
-        "types": "./LexicalAutoFocusPlugin.d.ts",
-        "development": "./LexicalAutoFocusPlugin.dev.mjs",
-        "production": "./LexicalAutoFocusPlugin.prod.mjs",
-        "node": "./LexicalAutoFocusPlugin.node.mjs",
-        "default": "./LexicalAutoFocusPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalAutoFocusPlugin.d.ts",
+        "development": "./dist/LexicalAutoFocusPlugin.dev.mjs",
+        "production": "./dist/LexicalAutoFocusPlugin.prod.mjs",
+        "node": "./dist/LexicalAutoFocusPlugin.node.mjs",
+        "default": "./dist/LexicalAutoFocusPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalAutoFocusPlugin.d.ts",
-        "development": "./LexicalAutoFocusPlugin.dev.js",
-        "production": "./LexicalAutoFocusPlugin.prod.js",
-        "default": "./LexicalAutoFocusPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalAutoFocusPlugin.d.ts",
+        "development": "./dist/LexicalAutoFocusPlugin.dev.js",
+        "production": "./dist/LexicalAutoFocusPlugin.prod.js",
+        "default": "./dist/LexicalAutoFocusPlugin.js"
       }
     },
     "./LexicalAutoFocusPlugin.js": {
+      "source": "./src/LexicalAutoFocusPlugin.ts",
       "import": {
-        "types": "./LexicalAutoFocusPlugin.d.ts",
-        "development": "./LexicalAutoFocusPlugin.dev.mjs",
-        "production": "./LexicalAutoFocusPlugin.prod.mjs",
-        "node": "./LexicalAutoFocusPlugin.node.mjs",
-        "default": "./LexicalAutoFocusPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalAutoFocusPlugin.d.ts",
+        "development": "./dist/LexicalAutoFocusPlugin.dev.mjs",
+        "production": "./dist/LexicalAutoFocusPlugin.prod.mjs",
+        "node": "./dist/LexicalAutoFocusPlugin.node.mjs",
+        "default": "./dist/LexicalAutoFocusPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalAutoFocusPlugin.d.ts",
-        "development": "./LexicalAutoFocusPlugin.dev.js",
-        "production": "./LexicalAutoFocusPlugin.prod.js",
-        "default": "./LexicalAutoFocusPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalAutoFocusPlugin.d.ts",
+        "development": "./dist/LexicalAutoFocusPlugin.dev.js",
+        "production": "./dist/LexicalAutoFocusPlugin.prod.js",
+        "default": "./dist/LexicalAutoFocusPlugin.js"
       }
     },
     "./LexicalAutoLinkPlugin": {
+      "source": "./src/LexicalAutoLinkPlugin.ts",
       "import": {
-        "types": "./LexicalAutoLinkPlugin.d.ts",
-        "development": "./LexicalAutoLinkPlugin.dev.mjs",
-        "production": "./LexicalAutoLinkPlugin.prod.mjs",
-        "node": "./LexicalAutoLinkPlugin.node.mjs",
-        "default": "./LexicalAutoLinkPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalAutoLinkPlugin.d.ts",
+        "development": "./dist/LexicalAutoLinkPlugin.dev.mjs",
+        "production": "./dist/LexicalAutoLinkPlugin.prod.mjs",
+        "node": "./dist/LexicalAutoLinkPlugin.node.mjs",
+        "default": "./dist/LexicalAutoLinkPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalAutoLinkPlugin.d.ts",
-        "development": "./LexicalAutoLinkPlugin.dev.js",
-        "production": "./LexicalAutoLinkPlugin.prod.js",
-        "default": "./LexicalAutoLinkPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalAutoLinkPlugin.d.ts",
+        "development": "./dist/LexicalAutoLinkPlugin.dev.js",
+        "production": "./dist/LexicalAutoLinkPlugin.prod.js",
+        "default": "./dist/LexicalAutoLinkPlugin.js"
       }
     },
     "./LexicalAutoLinkPlugin.js": {
+      "source": "./src/LexicalAutoLinkPlugin.ts",
       "import": {
-        "types": "./LexicalAutoLinkPlugin.d.ts",
-        "development": "./LexicalAutoLinkPlugin.dev.mjs",
-        "production": "./LexicalAutoLinkPlugin.prod.mjs",
-        "node": "./LexicalAutoLinkPlugin.node.mjs",
-        "default": "./LexicalAutoLinkPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalAutoLinkPlugin.d.ts",
+        "development": "./dist/LexicalAutoLinkPlugin.dev.mjs",
+        "production": "./dist/LexicalAutoLinkPlugin.prod.mjs",
+        "node": "./dist/LexicalAutoLinkPlugin.node.mjs",
+        "default": "./dist/LexicalAutoLinkPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalAutoLinkPlugin.d.ts",
-        "development": "./LexicalAutoLinkPlugin.dev.js",
-        "production": "./LexicalAutoLinkPlugin.prod.js",
-        "default": "./LexicalAutoLinkPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalAutoLinkPlugin.d.ts",
+        "development": "./dist/LexicalAutoLinkPlugin.dev.js",
+        "production": "./dist/LexicalAutoLinkPlugin.prod.js",
+        "default": "./dist/LexicalAutoLinkPlugin.js"
       }
     },
     "./LexicalBlockWithAlignableContents": {
+      "source": "./src/LexicalBlockWithAlignableContents.tsx",
       "import": {
-        "types": "./LexicalBlockWithAlignableContents.d.ts",
-        "development": "./LexicalBlockWithAlignableContents.dev.mjs",
-        "production": "./LexicalBlockWithAlignableContents.prod.mjs",
-        "node": "./LexicalBlockWithAlignableContents.node.mjs",
-        "default": "./LexicalBlockWithAlignableContents.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalBlockWithAlignableContents.d.ts",
+        "development": "./dist/LexicalBlockWithAlignableContents.dev.mjs",
+        "production": "./dist/LexicalBlockWithAlignableContents.prod.mjs",
+        "node": "./dist/LexicalBlockWithAlignableContents.node.mjs",
+        "default": "./dist/LexicalBlockWithAlignableContents.mjs"
       },
       "require": {
-        "types": "./LexicalBlockWithAlignableContents.d.ts",
-        "development": "./LexicalBlockWithAlignableContents.dev.js",
-        "production": "./LexicalBlockWithAlignableContents.prod.js",
-        "default": "./LexicalBlockWithAlignableContents.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalBlockWithAlignableContents.d.ts",
+        "development": "./dist/LexicalBlockWithAlignableContents.dev.js",
+        "production": "./dist/LexicalBlockWithAlignableContents.prod.js",
+        "default": "./dist/LexicalBlockWithAlignableContents.js"
       }
     },
     "./LexicalBlockWithAlignableContents.js": {
+      "source": "./src/LexicalBlockWithAlignableContents.tsx",
       "import": {
-        "types": "./LexicalBlockWithAlignableContents.d.ts",
-        "development": "./LexicalBlockWithAlignableContents.dev.mjs",
-        "production": "./LexicalBlockWithAlignableContents.prod.mjs",
-        "node": "./LexicalBlockWithAlignableContents.node.mjs",
-        "default": "./LexicalBlockWithAlignableContents.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalBlockWithAlignableContents.d.ts",
+        "development": "./dist/LexicalBlockWithAlignableContents.dev.mjs",
+        "production": "./dist/LexicalBlockWithAlignableContents.prod.mjs",
+        "node": "./dist/LexicalBlockWithAlignableContents.node.mjs",
+        "default": "./dist/LexicalBlockWithAlignableContents.mjs"
       },
       "require": {
-        "types": "./LexicalBlockWithAlignableContents.d.ts",
-        "development": "./LexicalBlockWithAlignableContents.dev.js",
-        "production": "./LexicalBlockWithAlignableContents.prod.js",
-        "default": "./LexicalBlockWithAlignableContents.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalBlockWithAlignableContents.d.ts",
+        "development": "./dist/LexicalBlockWithAlignableContents.dev.js",
+        "production": "./dist/LexicalBlockWithAlignableContents.prod.js",
+        "default": "./dist/LexicalBlockWithAlignableContents.js"
       }
     },
     "./LexicalCharacterLimitPlugin": {
+      "source": "./src/LexicalCharacterLimitPlugin.tsx",
       "import": {
-        "types": "./LexicalCharacterLimitPlugin.d.ts",
-        "development": "./LexicalCharacterLimitPlugin.dev.mjs",
-        "production": "./LexicalCharacterLimitPlugin.prod.mjs",
-        "node": "./LexicalCharacterLimitPlugin.node.mjs",
-        "default": "./LexicalCharacterLimitPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalCharacterLimitPlugin.d.ts",
+        "development": "./dist/LexicalCharacterLimitPlugin.dev.mjs",
+        "production": "./dist/LexicalCharacterLimitPlugin.prod.mjs",
+        "node": "./dist/LexicalCharacterLimitPlugin.node.mjs",
+        "default": "./dist/LexicalCharacterLimitPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalCharacterLimitPlugin.d.ts",
-        "development": "./LexicalCharacterLimitPlugin.dev.js",
-        "production": "./LexicalCharacterLimitPlugin.prod.js",
-        "default": "./LexicalCharacterLimitPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalCharacterLimitPlugin.d.ts",
+        "development": "./dist/LexicalCharacterLimitPlugin.dev.js",
+        "production": "./dist/LexicalCharacterLimitPlugin.prod.js",
+        "default": "./dist/LexicalCharacterLimitPlugin.js"
       }
     },
     "./LexicalCharacterLimitPlugin.js": {
+      "source": "./src/LexicalCharacterLimitPlugin.tsx",
       "import": {
-        "types": "./LexicalCharacterLimitPlugin.d.ts",
-        "development": "./LexicalCharacterLimitPlugin.dev.mjs",
-        "production": "./LexicalCharacterLimitPlugin.prod.mjs",
-        "node": "./LexicalCharacterLimitPlugin.node.mjs",
-        "default": "./LexicalCharacterLimitPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalCharacterLimitPlugin.d.ts",
+        "development": "./dist/LexicalCharacterLimitPlugin.dev.mjs",
+        "production": "./dist/LexicalCharacterLimitPlugin.prod.mjs",
+        "node": "./dist/LexicalCharacterLimitPlugin.node.mjs",
+        "default": "./dist/LexicalCharacterLimitPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalCharacterLimitPlugin.d.ts",
-        "development": "./LexicalCharacterLimitPlugin.dev.js",
-        "production": "./LexicalCharacterLimitPlugin.prod.js",
-        "default": "./LexicalCharacterLimitPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalCharacterLimitPlugin.d.ts",
+        "development": "./dist/LexicalCharacterLimitPlugin.dev.js",
+        "production": "./dist/LexicalCharacterLimitPlugin.prod.js",
+        "default": "./dist/LexicalCharacterLimitPlugin.js"
       }
     },
     "./LexicalCheckListPlugin": {
+      "source": "./src/LexicalCheckListPlugin.tsx",
       "import": {
-        "types": "./LexicalCheckListPlugin.d.ts",
-        "development": "./LexicalCheckListPlugin.dev.mjs",
-        "production": "./LexicalCheckListPlugin.prod.mjs",
-        "node": "./LexicalCheckListPlugin.node.mjs",
-        "default": "./LexicalCheckListPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalCheckListPlugin.d.ts",
+        "development": "./dist/LexicalCheckListPlugin.dev.mjs",
+        "production": "./dist/LexicalCheckListPlugin.prod.mjs",
+        "node": "./dist/LexicalCheckListPlugin.node.mjs",
+        "default": "./dist/LexicalCheckListPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalCheckListPlugin.d.ts",
-        "development": "./LexicalCheckListPlugin.dev.js",
-        "production": "./LexicalCheckListPlugin.prod.js",
-        "default": "./LexicalCheckListPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalCheckListPlugin.d.ts",
+        "development": "./dist/LexicalCheckListPlugin.dev.js",
+        "production": "./dist/LexicalCheckListPlugin.prod.js",
+        "default": "./dist/LexicalCheckListPlugin.js"
       }
     },
     "./LexicalCheckListPlugin.js": {
+      "source": "./src/LexicalCheckListPlugin.tsx",
       "import": {
-        "types": "./LexicalCheckListPlugin.d.ts",
-        "development": "./LexicalCheckListPlugin.dev.mjs",
-        "production": "./LexicalCheckListPlugin.prod.mjs",
-        "node": "./LexicalCheckListPlugin.node.mjs",
-        "default": "./LexicalCheckListPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalCheckListPlugin.d.ts",
+        "development": "./dist/LexicalCheckListPlugin.dev.mjs",
+        "production": "./dist/LexicalCheckListPlugin.prod.mjs",
+        "node": "./dist/LexicalCheckListPlugin.node.mjs",
+        "default": "./dist/LexicalCheckListPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalCheckListPlugin.d.ts",
-        "development": "./LexicalCheckListPlugin.dev.js",
-        "production": "./LexicalCheckListPlugin.prod.js",
-        "default": "./LexicalCheckListPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalCheckListPlugin.d.ts",
+        "development": "./dist/LexicalCheckListPlugin.dev.js",
+        "production": "./dist/LexicalCheckListPlugin.prod.js",
+        "default": "./dist/LexicalCheckListPlugin.js"
       }
     },
     "./LexicalClearEditorPlugin": {
+      "source": "./src/LexicalClearEditorPlugin.ts",
       "import": {
-        "types": "./LexicalClearEditorPlugin.d.ts",
-        "development": "./LexicalClearEditorPlugin.dev.mjs",
-        "production": "./LexicalClearEditorPlugin.prod.mjs",
-        "node": "./LexicalClearEditorPlugin.node.mjs",
-        "default": "./LexicalClearEditorPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalClearEditorPlugin.d.ts",
+        "development": "./dist/LexicalClearEditorPlugin.dev.mjs",
+        "production": "./dist/LexicalClearEditorPlugin.prod.mjs",
+        "node": "./dist/LexicalClearEditorPlugin.node.mjs",
+        "default": "./dist/LexicalClearEditorPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalClearEditorPlugin.d.ts",
-        "development": "./LexicalClearEditorPlugin.dev.js",
-        "production": "./LexicalClearEditorPlugin.prod.js",
-        "default": "./LexicalClearEditorPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalClearEditorPlugin.d.ts",
+        "development": "./dist/LexicalClearEditorPlugin.dev.js",
+        "production": "./dist/LexicalClearEditorPlugin.prod.js",
+        "default": "./dist/LexicalClearEditorPlugin.js"
       }
     },
     "./LexicalClearEditorPlugin.js": {
+      "source": "./src/LexicalClearEditorPlugin.ts",
       "import": {
-        "types": "./LexicalClearEditorPlugin.d.ts",
-        "development": "./LexicalClearEditorPlugin.dev.mjs",
-        "production": "./LexicalClearEditorPlugin.prod.mjs",
-        "node": "./LexicalClearEditorPlugin.node.mjs",
-        "default": "./LexicalClearEditorPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalClearEditorPlugin.d.ts",
+        "development": "./dist/LexicalClearEditorPlugin.dev.mjs",
+        "production": "./dist/LexicalClearEditorPlugin.prod.mjs",
+        "node": "./dist/LexicalClearEditorPlugin.node.mjs",
+        "default": "./dist/LexicalClearEditorPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalClearEditorPlugin.d.ts",
-        "development": "./LexicalClearEditorPlugin.dev.js",
-        "production": "./LexicalClearEditorPlugin.prod.js",
-        "default": "./LexicalClearEditorPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalClearEditorPlugin.d.ts",
+        "development": "./dist/LexicalClearEditorPlugin.dev.js",
+        "production": "./dist/LexicalClearEditorPlugin.prod.js",
+        "default": "./dist/LexicalClearEditorPlugin.js"
       }
     },
     "./LexicalClickableLinkPlugin": {
+      "source": "./src/LexicalClickableLinkPlugin.tsx",
       "import": {
-        "types": "./LexicalClickableLinkPlugin.d.ts",
-        "development": "./LexicalClickableLinkPlugin.dev.mjs",
-        "production": "./LexicalClickableLinkPlugin.prod.mjs",
-        "node": "./LexicalClickableLinkPlugin.node.mjs",
-        "default": "./LexicalClickableLinkPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalClickableLinkPlugin.d.ts",
+        "development": "./dist/LexicalClickableLinkPlugin.dev.mjs",
+        "production": "./dist/LexicalClickableLinkPlugin.prod.mjs",
+        "node": "./dist/LexicalClickableLinkPlugin.node.mjs",
+        "default": "./dist/LexicalClickableLinkPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalClickableLinkPlugin.d.ts",
-        "development": "./LexicalClickableLinkPlugin.dev.js",
-        "production": "./LexicalClickableLinkPlugin.prod.js",
-        "default": "./LexicalClickableLinkPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalClickableLinkPlugin.d.ts",
+        "development": "./dist/LexicalClickableLinkPlugin.dev.js",
+        "production": "./dist/LexicalClickableLinkPlugin.prod.js",
+        "default": "./dist/LexicalClickableLinkPlugin.js"
       }
     },
     "./LexicalClickableLinkPlugin.js": {
+      "source": "./src/LexicalClickableLinkPlugin.tsx",
       "import": {
-        "types": "./LexicalClickableLinkPlugin.d.ts",
-        "development": "./LexicalClickableLinkPlugin.dev.mjs",
-        "production": "./LexicalClickableLinkPlugin.prod.mjs",
-        "node": "./LexicalClickableLinkPlugin.node.mjs",
-        "default": "./LexicalClickableLinkPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalClickableLinkPlugin.d.ts",
+        "development": "./dist/LexicalClickableLinkPlugin.dev.mjs",
+        "production": "./dist/LexicalClickableLinkPlugin.prod.mjs",
+        "node": "./dist/LexicalClickableLinkPlugin.node.mjs",
+        "default": "./dist/LexicalClickableLinkPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalClickableLinkPlugin.d.ts",
-        "development": "./LexicalClickableLinkPlugin.dev.js",
-        "production": "./LexicalClickableLinkPlugin.prod.js",
-        "default": "./LexicalClickableLinkPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalClickableLinkPlugin.d.ts",
+        "development": "./dist/LexicalClickableLinkPlugin.dev.js",
+        "production": "./dist/LexicalClickableLinkPlugin.prod.js",
+        "default": "./dist/LexicalClickableLinkPlugin.js"
       }
     },
     "./LexicalCollaborationContext": {
+      "source": "./src/LexicalCollaborationContext.tsx",
       "import": {
-        "types": "./LexicalCollaborationContext.d.ts",
-        "development": "./LexicalCollaborationContext.dev.mjs",
-        "production": "./LexicalCollaborationContext.prod.mjs",
-        "node": "./LexicalCollaborationContext.node.mjs",
-        "default": "./LexicalCollaborationContext.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalCollaborationContext.d.ts",
+        "development": "./dist/LexicalCollaborationContext.dev.mjs",
+        "production": "./dist/LexicalCollaborationContext.prod.mjs",
+        "node": "./dist/LexicalCollaborationContext.node.mjs",
+        "default": "./dist/LexicalCollaborationContext.mjs"
       },
       "require": {
-        "types": "./LexicalCollaborationContext.d.ts",
-        "development": "./LexicalCollaborationContext.dev.js",
-        "production": "./LexicalCollaborationContext.prod.js",
-        "default": "./LexicalCollaborationContext.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalCollaborationContext.d.ts",
+        "development": "./dist/LexicalCollaborationContext.dev.js",
+        "production": "./dist/LexicalCollaborationContext.prod.js",
+        "default": "./dist/LexicalCollaborationContext.js"
       }
     },
     "./LexicalCollaborationContext.js": {
+      "source": "./src/LexicalCollaborationContext.tsx",
       "import": {
-        "types": "./LexicalCollaborationContext.d.ts",
-        "development": "./LexicalCollaborationContext.dev.mjs",
-        "production": "./LexicalCollaborationContext.prod.mjs",
-        "node": "./LexicalCollaborationContext.node.mjs",
-        "default": "./LexicalCollaborationContext.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalCollaborationContext.d.ts",
+        "development": "./dist/LexicalCollaborationContext.dev.mjs",
+        "production": "./dist/LexicalCollaborationContext.prod.mjs",
+        "node": "./dist/LexicalCollaborationContext.node.mjs",
+        "default": "./dist/LexicalCollaborationContext.mjs"
       },
       "require": {
-        "types": "./LexicalCollaborationContext.d.ts",
-        "development": "./LexicalCollaborationContext.dev.js",
-        "production": "./LexicalCollaborationContext.prod.js",
-        "default": "./LexicalCollaborationContext.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalCollaborationContext.d.ts",
+        "development": "./dist/LexicalCollaborationContext.dev.js",
+        "production": "./dist/LexicalCollaborationContext.prod.js",
+        "default": "./dist/LexicalCollaborationContext.js"
       }
     },
     "./LexicalCollaborationPlugin": {
+      "source": "./src/LexicalCollaborationPlugin.tsx",
       "import": {
-        "types": "./LexicalCollaborationPlugin.d.ts",
-        "development": "./LexicalCollaborationPlugin.dev.mjs",
-        "production": "./LexicalCollaborationPlugin.prod.mjs",
-        "node": "./LexicalCollaborationPlugin.node.mjs",
-        "default": "./LexicalCollaborationPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalCollaborationPlugin.d.ts",
+        "development": "./dist/LexicalCollaborationPlugin.dev.mjs",
+        "production": "./dist/LexicalCollaborationPlugin.prod.mjs",
+        "node": "./dist/LexicalCollaborationPlugin.node.mjs",
+        "default": "./dist/LexicalCollaborationPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalCollaborationPlugin.d.ts",
-        "development": "./LexicalCollaborationPlugin.dev.js",
-        "production": "./LexicalCollaborationPlugin.prod.js",
-        "default": "./LexicalCollaborationPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalCollaborationPlugin.d.ts",
+        "development": "./dist/LexicalCollaborationPlugin.dev.js",
+        "production": "./dist/LexicalCollaborationPlugin.prod.js",
+        "default": "./dist/LexicalCollaborationPlugin.js"
       }
     },
     "./LexicalCollaborationPlugin.js": {
+      "source": "./src/LexicalCollaborationPlugin.tsx",
       "import": {
-        "types": "./LexicalCollaborationPlugin.d.ts",
-        "development": "./LexicalCollaborationPlugin.dev.mjs",
-        "production": "./LexicalCollaborationPlugin.prod.mjs",
-        "node": "./LexicalCollaborationPlugin.node.mjs",
-        "default": "./LexicalCollaborationPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalCollaborationPlugin.d.ts",
+        "development": "./dist/LexicalCollaborationPlugin.dev.mjs",
+        "production": "./dist/LexicalCollaborationPlugin.prod.mjs",
+        "node": "./dist/LexicalCollaborationPlugin.node.mjs",
+        "default": "./dist/LexicalCollaborationPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalCollaborationPlugin.d.ts",
-        "development": "./LexicalCollaborationPlugin.dev.js",
-        "production": "./LexicalCollaborationPlugin.prod.js",
-        "default": "./LexicalCollaborationPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalCollaborationPlugin.d.ts",
+        "development": "./dist/LexicalCollaborationPlugin.dev.js",
+        "production": "./dist/LexicalCollaborationPlugin.prod.js",
+        "default": "./dist/LexicalCollaborationPlugin.js"
       }
     },
     "./LexicalComposer": {
+      "source": "./src/LexicalComposer.tsx",
       "import": {
-        "types": "./LexicalComposer.d.ts",
-        "development": "./LexicalComposer.dev.mjs",
-        "production": "./LexicalComposer.prod.mjs",
-        "node": "./LexicalComposer.node.mjs",
-        "default": "./LexicalComposer.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalComposer.d.ts",
+        "development": "./dist/LexicalComposer.dev.mjs",
+        "production": "./dist/LexicalComposer.prod.mjs",
+        "node": "./dist/LexicalComposer.node.mjs",
+        "default": "./dist/LexicalComposer.mjs"
       },
       "require": {
-        "types": "./LexicalComposer.d.ts",
-        "development": "./LexicalComposer.dev.js",
-        "production": "./LexicalComposer.prod.js",
-        "default": "./LexicalComposer.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalComposer.d.ts",
+        "development": "./dist/LexicalComposer.dev.js",
+        "production": "./dist/LexicalComposer.prod.js",
+        "default": "./dist/LexicalComposer.js"
       }
     },
     "./LexicalComposer.js": {
+      "source": "./src/LexicalComposer.tsx",
       "import": {
-        "types": "./LexicalComposer.d.ts",
-        "development": "./LexicalComposer.dev.mjs",
-        "production": "./LexicalComposer.prod.mjs",
-        "node": "./LexicalComposer.node.mjs",
-        "default": "./LexicalComposer.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalComposer.d.ts",
+        "development": "./dist/LexicalComposer.dev.mjs",
+        "production": "./dist/LexicalComposer.prod.mjs",
+        "node": "./dist/LexicalComposer.node.mjs",
+        "default": "./dist/LexicalComposer.mjs"
       },
       "require": {
-        "types": "./LexicalComposer.d.ts",
-        "development": "./LexicalComposer.dev.js",
-        "production": "./LexicalComposer.prod.js",
-        "default": "./LexicalComposer.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalComposer.d.ts",
+        "development": "./dist/LexicalComposer.dev.js",
+        "production": "./dist/LexicalComposer.prod.js",
+        "default": "./dist/LexicalComposer.js"
       }
     },
     "./LexicalComposerContext": {
+      "source": "./src/LexicalComposerContext.ts",
       "import": {
-        "types": "./LexicalComposerContext.d.ts",
-        "development": "./LexicalComposerContext.dev.mjs",
-        "production": "./LexicalComposerContext.prod.mjs",
-        "node": "./LexicalComposerContext.node.mjs",
-        "default": "./LexicalComposerContext.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalComposerContext.d.ts",
+        "development": "./dist/LexicalComposerContext.dev.mjs",
+        "production": "./dist/LexicalComposerContext.prod.mjs",
+        "node": "./dist/LexicalComposerContext.node.mjs",
+        "default": "./dist/LexicalComposerContext.mjs"
       },
       "require": {
-        "types": "./LexicalComposerContext.d.ts",
-        "development": "./LexicalComposerContext.dev.js",
-        "production": "./LexicalComposerContext.prod.js",
-        "default": "./LexicalComposerContext.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalComposerContext.d.ts",
+        "development": "./dist/LexicalComposerContext.dev.js",
+        "production": "./dist/LexicalComposerContext.prod.js",
+        "default": "./dist/LexicalComposerContext.js"
       }
     },
     "./LexicalComposerContext.js": {
+      "source": "./src/LexicalComposerContext.ts",
       "import": {
-        "types": "./LexicalComposerContext.d.ts",
-        "development": "./LexicalComposerContext.dev.mjs",
-        "production": "./LexicalComposerContext.prod.mjs",
-        "node": "./LexicalComposerContext.node.mjs",
-        "default": "./LexicalComposerContext.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalComposerContext.d.ts",
+        "development": "./dist/LexicalComposerContext.dev.mjs",
+        "production": "./dist/LexicalComposerContext.prod.mjs",
+        "node": "./dist/LexicalComposerContext.node.mjs",
+        "default": "./dist/LexicalComposerContext.mjs"
       },
       "require": {
-        "types": "./LexicalComposerContext.d.ts",
-        "development": "./LexicalComposerContext.dev.js",
-        "production": "./LexicalComposerContext.prod.js",
-        "default": "./LexicalComposerContext.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalComposerContext.d.ts",
+        "development": "./dist/LexicalComposerContext.dev.js",
+        "production": "./dist/LexicalComposerContext.prod.js",
+        "default": "./dist/LexicalComposerContext.js"
       }
     },
     "./LexicalContentEditable": {
+      "source": "./src/LexicalContentEditable.tsx",
       "import": {
-        "types": "./LexicalContentEditable.d.ts",
-        "development": "./LexicalContentEditable.dev.mjs",
-        "production": "./LexicalContentEditable.prod.mjs",
-        "node": "./LexicalContentEditable.node.mjs",
-        "default": "./LexicalContentEditable.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalContentEditable.d.ts",
+        "development": "./dist/LexicalContentEditable.dev.mjs",
+        "production": "./dist/LexicalContentEditable.prod.mjs",
+        "node": "./dist/LexicalContentEditable.node.mjs",
+        "default": "./dist/LexicalContentEditable.mjs"
       },
       "require": {
-        "types": "./LexicalContentEditable.d.ts",
-        "development": "./LexicalContentEditable.dev.js",
-        "production": "./LexicalContentEditable.prod.js",
-        "default": "./LexicalContentEditable.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalContentEditable.d.ts",
+        "development": "./dist/LexicalContentEditable.dev.js",
+        "production": "./dist/LexicalContentEditable.prod.js",
+        "default": "./dist/LexicalContentEditable.js"
       }
     },
     "./LexicalContentEditable.js": {
+      "source": "./src/LexicalContentEditable.tsx",
       "import": {
-        "types": "./LexicalContentEditable.d.ts",
-        "development": "./LexicalContentEditable.dev.mjs",
-        "production": "./LexicalContentEditable.prod.mjs",
-        "node": "./LexicalContentEditable.node.mjs",
-        "default": "./LexicalContentEditable.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalContentEditable.d.ts",
+        "development": "./dist/LexicalContentEditable.dev.mjs",
+        "production": "./dist/LexicalContentEditable.prod.mjs",
+        "node": "./dist/LexicalContentEditable.node.mjs",
+        "default": "./dist/LexicalContentEditable.mjs"
       },
       "require": {
-        "types": "./LexicalContentEditable.d.ts",
-        "development": "./LexicalContentEditable.dev.js",
-        "production": "./LexicalContentEditable.prod.js",
-        "default": "./LexicalContentEditable.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalContentEditable.d.ts",
+        "development": "./dist/LexicalContentEditable.dev.js",
+        "production": "./dist/LexicalContentEditable.prod.js",
+        "default": "./dist/LexicalContentEditable.js"
       }
     },
     "./LexicalDecoratorBlockNode": {
+      "source": "./src/LexicalDecoratorBlockNode.ts",
       "import": {
-        "types": "./LexicalDecoratorBlockNode.d.ts",
-        "development": "./LexicalDecoratorBlockNode.dev.mjs",
-        "production": "./LexicalDecoratorBlockNode.prod.mjs",
-        "node": "./LexicalDecoratorBlockNode.node.mjs",
-        "default": "./LexicalDecoratorBlockNode.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalDecoratorBlockNode.d.ts",
+        "development": "./dist/LexicalDecoratorBlockNode.dev.mjs",
+        "production": "./dist/LexicalDecoratorBlockNode.prod.mjs",
+        "node": "./dist/LexicalDecoratorBlockNode.node.mjs",
+        "default": "./dist/LexicalDecoratorBlockNode.mjs"
       },
       "require": {
-        "types": "./LexicalDecoratorBlockNode.d.ts",
-        "development": "./LexicalDecoratorBlockNode.dev.js",
-        "production": "./LexicalDecoratorBlockNode.prod.js",
-        "default": "./LexicalDecoratorBlockNode.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalDecoratorBlockNode.d.ts",
+        "development": "./dist/LexicalDecoratorBlockNode.dev.js",
+        "production": "./dist/LexicalDecoratorBlockNode.prod.js",
+        "default": "./dist/LexicalDecoratorBlockNode.js"
       }
     },
     "./LexicalDecoratorBlockNode.js": {
+      "source": "./src/LexicalDecoratorBlockNode.ts",
       "import": {
-        "types": "./LexicalDecoratorBlockNode.d.ts",
-        "development": "./LexicalDecoratorBlockNode.dev.mjs",
-        "production": "./LexicalDecoratorBlockNode.prod.mjs",
-        "node": "./LexicalDecoratorBlockNode.node.mjs",
-        "default": "./LexicalDecoratorBlockNode.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalDecoratorBlockNode.d.ts",
+        "development": "./dist/LexicalDecoratorBlockNode.dev.mjs",
+        "production": "./dist/LexicalDecoratorBlockNode.prod.mjs",
+        "node": "./dist/LexicalDecoratorBlockNode.node.mjs",
+        "default": "./dist/LexicalDecoratorBlockNode.mjs"
       },
       "require": {
-        "types": "./LexicalDecoratorBlockNode.d.ts",
-        "development": "./LexicalDecoratorBlockNode.dev.js",
-        "production": "./LexicalDecoratorBlockNode.prod.js",
-        "default": "./LexicalDecoratorBlockNode.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalDecoratorBlockNode.d.ts",
+        "development": "./dist/LexicalDecoratorBlockNode.dev.js",
+        "production": "./dist/LexicalDecoratorBlockNode.prod.js",
+        "default": "./dist/LexicalDecoratorBlockNode.js"
       }
     },
     "./LexicalDraggableBlockPlugin": {
+      "source": "./src/LexicalDraggableBlockPlugin.tsx",
       "import": {
-        "types": "./LexicalDraggableBlockPlugin.d.ts",
-        "development": "./LexicalDraggableBlockPlugin.dev.mjs",
-        "production": "./LexicalDraggableBlockPlugin.prod.mjs",
-        "node": "./LexicalDraggableBlockPlugin.node.mjs",
-        "default": "./LexicalDraggableBlockPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalDraggableBlockPlugin.d.ts",
+        "development": "./dist/LexicalDraggableBlockPlugin.dev.mjs",
+        "production": "./dist/LexicalDraggableBlockPlugin.prod.mjs",
+        "node": "./dist/LexicalDraggableBlockPlugin.node.mjs",
+        "default": "./dist/LexicalDraggableBlockPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalDraggableBlockPlugin.d.ts",
-        "development": "./LexicalDraggableBlockPlugin.dev.js",
-        "production": "./LexicalDraggableBlockPlugin.prod.js",
-        "default": "./LexicalDraggableBlockPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalDraggableBlockPlugin.d.ts",
+        "development": "./dist/LexicalDraggableBlockPlugin.dev.js",
+        "production": "./dist/LexicalDraggableBlockPlugin.prod.js",
+        "default": "./dist/LexicalDraggableBlockPlugin.js"
       }
     },
     "./LexicalDraggableBlockPlugin.js": {
+      "source": "./src/LexicalDraggableBlockPlugin.tsx",
       "import": {
-        "types": "./LexicalDraggableBlockPlugin.d.ts",
-        "development": "./LexicalDraggableBlockPlugin.dev.mjs",
-        "production": "./LexicalDraggableBlockPlugin.prod.mjs",
-        "node": "./LexicalDraggableBlockPlugin.node.mjs",
-        "default": "./LexicalDraggableBlockPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalDraggableBlockPlugin.d.ts",
+        "development": "./dist/LexicalDraggableBlockPlugin.dev.mjs",
+        "production": "./dist/LexicalDraggableBlockPlugin.prod.mjs",
+        "node": "./dist/LexicalDraggableBlockPlugin.node.mjs",
+        "default": "./dist/LexicalDraggableBlockPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalDraggableBlockPlugin.d.ts",
-        "development": "./LexicalDraggableBlockPlugin.dev.js",
-        "production": "./LexicalDraggableBlockPlugin.prod.js",
-        "default": "./LexicalDraggableBlockPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalDraggableBlockPlugin.d.ts",
+        "development": "./dist/LexicalDraggableBlockPlugin.dev.js",
+        "production": "./dist/LexicalDraggableBlockPlugin.prod.js",
+        "default": "./dist/LexicalDraggableBlockPlugin.js"
       }
     },
     "./LexicalEditorRefPlugin": {
+      "source": "./src/LexicalEditorRefPlugin.tsx",
       "import": {
-        "types": "./LexicalEditorRefPlugin.d.ts",
-        "development": "./LexicalEditorRefPlugin.dev.mjs",
-        "production": "./LexicalEditorRefPlugin.prod.mjs",
-        "node": "./LexicalEditorRefPlugin.node.mjs",
-        "default": "./LexicalEditorRefPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalEditorRefPlugin.d.ts",
+        "development": "./dist/LexicalEditorRefPlugin.dev.mjs",
+        "production": "./dist/LexicalEditorRefPlugin.prod.mjs",
+        "node": "./dist/LexicalEditorRefPlugin.node.mjs",
+        "default": "./dist/LexicalEditorRefPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalEditorRefPlugin.d.ts",
-        "development": "./LexicalEditorRefPlugin.dev.js",
-        "production": "./LexicalEditorRefPlugin.prod.js",
-        "default": "./LexicalEditorRefPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalEditorRefPlugin.d.ts",
+        "development": "./dist/LexicalEditorRefPlugin.dev.js",
+        "production": "./dist/LexicalEditorRefPlugin.prod.js",
+        "default": "./dist/LexicalEditorRefPlugin.js"
       }
     },
     "./LexicalEditorRefPlugin.js": {
+      "source": "./src/LexicalEditorRefPlugin.tsx",
       "import": {
-        "types": "./LexicalEditorRefPlugin.d.ts",
-        "development": "./LexicalEditorRefPlugin.dev.mjs",
-        "production": "./LexicalEditorRefPlugin.prod.mjs",
-        "node": "./LexicalEditorRefPlugin.node.mjs",
-        "default": "./LexicalEditorRefPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalEditorRefPlugin.d.ts",
+        "development": "./dist/LexicalEditorRefPlugin.dev.mjs",
+        "production": "./dist/LexicalEditorRefPlugin.prod.mjs",
+        "node": "./dist/LexicalEditorRefPlugin.node.mjs",
+        "default": "./dist/LexicalEditorRefPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalEditorRefPlugin.d.ts",
-        "development": "./LexicalEditorRefPlugin.dev.js",
-        "production": "./LexicalEditorRefPlugin.prod.js",
-        "default": "./LexicalEditorRefPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalEditorRefPlugin.d.ts",
+        "development": "./dist/LexicalEditorRefPlugin.dev.js",
+        "production": "./dist/LexicalEditorRefPlugin.prod.js",
+        "default": "./dist/LexicalEditorRefPlugin.js"
       }
     },
     "./LexicalErrorBoundary": {
+      "source": "./src/LexicalErrorBoundary.tsx",
       "import": {
-        "types": "./LexicalErrorBoundary.d.ts",
-        "development": "./LexicalErrorBoundary.dev.mjs",
-        "production": "./LexicalErrorBoundary.prod.mjs",
-        "node": "./LexicalErrorBoundary.node.mjs",
-        "default": "./LexicalErrorBoundary.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalErrorBoundary.d.ts",
+        "development": "./dist/LexicalErrorBoundary.dev.mjs",
+        "production": "./dist/LexicalErrorBoundary.prod.mjs",
+        "node": "./dist/LexicalErrorBoundary.node.mjs",
+        "default": "./dist/LexicalErrorBoundary.mjs"
       },
       "require": {
-        "types": "./LexicalErrorBoundary.d.ts",
-        "development": "./LexicalErrorBoundary.dev.js",
-        "production": "./LexicalErrorBoundary.prod.js",
-        "default": "./LexicalErrorBoundary.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalErrorBoundary.d.ts",
+        "development": "./dist/LexicalErrorBoundary.dev.js",
+        "production": "./dist/LexicalErrorBoundary.prod.js",
+        "default": "./dist/LexicalErrorBoundary.js"
       }
     },
     "./LexicalErrorBoundary.js": {
+      "source": "./src/LexicalErrorBoundary.tsx",
       "import": {
-        "types": "./LexicalErrorBoundary.d.ts",
-        "development": "./LexicalErrorBoundary.dev.mjs",
-        "production": "./LexicalErrorBoundary.prod.mjs",
-        "node": "./LexicalErrorBoundary.node.mjs",
-        "default": "./LexicalErrorBoundary.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalErrorBoundary.d.ts",
+        "development": "./dist/LexicalErrorBoundary.dev.mjs",
+        "production": "./dist/LexicalErrorBoundary.prod.mjs",
+        "node": "./dist/LexicalErrorBoundary.node.mjs",
+        "default": "./dist/LexicalErrorBoundary.mjs"
       },
       "require": {
-        "types": "./LexicalErrorBoundary.d.ts",
-        "development": "./LexicalErrorBoundary.dev.js",
-        "production": "./LexicalErrorBoundary.prod.js",
-        "default": "./LexicalErrorBoundary.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalErrorBoundary.d.ts",
+        "development": "./dist/LexicalErrorBoundary.dev.js",
+        "production": "./dist/LexicalErrorBoundary.prod.js",
+        "default": "./dist/LexicalErrorBoundary.js"
       }
     },
     "./LexicalExtensionComposer": {
+      "source": "./src/LexicalExtensionComposer.tsx",
       "import": {
-        "types": "./LexicalExtensionComposer.d.ts",
-        "development": "./LexicalExtensionComposer.dev.mjs",
-        "production": "./LexicalExtensionComposer.prod.mjs",
-        "node": "./LexicalExtensionComposer.node.mjs",
-        "default": "./LexicalExtensionComposer.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalExtensionComposer.d.ts",
+        "development": "./dist/LexicalExtensionComposer.dev.mjs",
+        "production": "./dist/LexicalExtensionComposer.prod.mjs",
+        "node": "./dist/LexicalExtensionComposer.node.mjs",
+        "default": "./dist/LexicalExtensionComposer.mjs"
       },
       "require": {
-        "types": "./LexicalExtensionComposer.d.ts",
-        "development": "./LexicalExtensionComposer.dev.js",
-        "production": "./LexicalExtensionComposer.prod.js",
-        "default": "./LexicalExtensionComposer.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalExtensionComposer.d.ts",
+        "development": "./dist/LexicalExtensionComposer.dev.js",
+        "production": "./dist/LexicalExtensionComposer.prod.js",
+        "default": "./dist/LexicalExtensionComposer.js"
       }
     },
     "./LexicalExtensionComposer.js": {
+      "source": "./src/LexicalExtensionComposer.tsx",
       "import": {
-        "types": "./LexicalExtensionComposer.d.ts",
-        "development": "./LexicalExtensionComposer.dev.mjs",
-        "production": "./LexicalExtensionComposer.prod.mjs",
-        "node": "./LexicalExtensionComposer.node.mjs",
-        "default": "./LexicalExtensionComposer.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalExtensionComposer.d.ts",
+        "development": "./dist/LexicalExtensionComposer.dev.mjs",
+        "production": "./dist/LexicalExtensionComposer.prod.mjs",
+        "node": "./dist/LexicalExtensionComposer.node.mjs",
+        "default": "./dist/LexicalExtensionComposer.mjs"
       },
       "require": {
-        "types": "./LexicalExtensionComposer.d.ts",
-        "development": "./LexicalExtensionComposer.dev.js",
-        "production": "./LexicalExtensionComposer.prod.js",
-        "default": "./LexicalExtensionComposer.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalExtensionComposer.d.ts",
+        "development": "./dist/LexicalExtensionComposer.dev.js",
+        "production": "./dist/LexicalExtensionComposer.prod.js",
+        "default": "./dist/LexicalExtensionComposer.js"
       }
     },
     "./LexicalExtensionEditorComposer": {
+      "source": "./src/LexicalExtensionEditorComposer.tsx",
       "import": {
-        "types": "./LexicalExtensionEditorComposer.d.ts",
-        "development": "./LexicalExtensionEditorComposer.dev.mjs",
-        "production": "./LexicalExtensionEditorComposer.prod.mjs",
-        "node": "./LexicalExtensionEditorComposer.node.mjs",
-        "default": "./LexicalExtensionEditorComposer.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalExtensionEditorComposer.d.ts",
+        "development": "./dist/LexicalExtensionEditorComposer.dev.mjs",
+        "production": "./dist/LexicalExtensionEditorComposer.prod.mjs",
+        "node": "./dist/LexicalExtensionEditorComposer.node.mjs",
+        "default": "./dist/LexicalExtensionEditorComposer.mjs"
       },
       "require": {
-        "types": "./LexicalExtensionEditorComposer.d.ts",
-        "development": "./LexicalExtensionEditorComposer.dev.js",
-        "production": "./LexicalExtensionEditorComposer.prod.js",
-        "default": "./LexicalExtensionEditorComposer.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalExtensionEditorComposer.d.ts",
+        "development": "./dist/LexicalExtensionEditorComposer.dev.js",
+        "production": "./dist/LexicalExtensionEditorComposer.prod.js",
+        "default": "./dist/LexicalExtensionEditorComposer.js"
       }
     },
     "./LexicalExtensionEditorComposer.js": {
+      "source": "./src/LexicalExtensionEditorComposer.tsx",
       "import": {
-        "types": "./LexicalExtensionEditorComposer.d.ts",
-        "development": "./LexicalExtensionEditorComposer.dev.mjs",
-        "production": "./LexicalExtensionEditorComposer.prod.mjs",
-        "node": "./LexicalExtensionEditorComposer.node.mjs",
-        "default": "./LexicalExtensionEditorComposer.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalExtensionEditorComposer.d.ts",
+        "development": "./dist/LexicalExtensionEditorComposer.dev.mjs",
+        "production": "./dist/LexicalExtensionEditorComposer.prod.mjs",
+        "node": "./dist/LexicalExtensionEditorComposer.node.mjs",
+        "default": "./dist/LexicalExtensionEditorComposer.mjs"
       },
       "require": {
-        "types": "./LexicalExtensionEditorComposer.d.ts",
-        "development": "./LexicalExtensionEditorComposer.dev.js",
-        "production": "./LexicalExtensionEditorComposer.prod.js",
-        "default": "./LexicalExtensionEditorComposer.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalExtensionEditorComposer.d.ts",
+        "development": "./dist/LexicalExtensionEditorComposer.dev.js",
+        "production": "./dist/LexicalExtensionEditorComposer.prod.js",
+        "default": "./dist/LexicalExtensionEditorComposer.js"
       }
     },
     "./LexicalHashtagPlugin": {
+      "source": "./src/LexicalHashtagPlugin.ts",
       "import": {
-        "types": "./LexicalHashtagPlugin.d.ts",
-        "development": "./LexicalHashtagPlugin.dev.mjs",
-        "production": "./LexicalHashtagPlugin.prod.mjs",
-        "node": "./LexicalHashtagPlugin.node.mjs",
-        "default": "./LexicalHashtagPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalHashtagPlugin.d.ts",
+        "development": "./dist/LexicalHashtagPlugin.dev.mjs",
+        "production": "./dist/LexicalHashtagPlugin.prod.mjs",
+        "node": "./dist/LexicalHashtagPlugin.node.mjs",
+        "default": "./dist/LexicalHashtagPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalHashtagPlugin.d.ts",
-        "development": "./LexicalHashtagPlugin.dev.js",
-        "production": "./LexicalHashtagPlugin.prod.js",
-        "default": "./LexicalHashtagPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalHashtagPlugin.d.ts",
+        "development": "./dist/LexicalHashtagPlugin.dev.js",
+        "production": "./dist/LexicalHashtagPlugin.prod.js",
+        "default": "./dist/LexicalHashtagPlugin.js"
       }
     },
     "./LexicalHashtagPlugin.js": {
+      "source": "./src/LexicalHashtagPlugin.ts",
       "import": {
-        "types": "./LexicalHashtagPlugin.d.ts",
-        "development": "./LexicalHashtagPlugin.dev.mjs",
-        "production": "./LexicalHashtagPlugin.prod.mjs",
-        "node": "./LexicalHashtagPlugin.node.mjs",
-        "default": "./LexicalHashtagPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalHashtagPlugin.d.ts",
+        "development": "./dist/LexicalHashtagPlugin.dev.mjs",
+        "production": "./dist/LexicalHashtagPlugin.prod.mjs",
+        "node": "./dist/LexicalHashtagPlugin.node.mjs",
+        "default": "./dist/LexicalHashtagPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalHashtagPlugin.d.ts",
-        "development": "./LexicalHashtagPlugin.dev.js",
-        "production": "./LexicalHashtagPlugin.prod.js",
-        "default": "./LexicalHashtagPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalHashtagPlugin.d.ts",
+        "development": "./dist/LexicalHashtagPlugin.dev.js",
+        "production": "./dist/LexicalHashtagPlugin.prod.js",
+        "default": "./dist/LexicalHashtagPlugin.js"
       }
     },
     "./LexicalHistoryPlugin": {
+      "source": "./src/LexicalHistoryPlugin.ts",
       "import": {
-        "types": "./LexicalHistoryPlugin.d.ts",
-        "development": "./LexicalHistoryPlugin.dev.mjs",
-        "production": "./LexicalHistoryPlugin.prod.mjs",
-        "node": "./LexicalHistoryPlugin.node.mjs",
-        "default": "./LexicalHistoryPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalHistoryPlugin.d.ts",
+        "development": "./dist/LexicalHistoryPlugin.dev.mjs",
+        "production": "./dist/LexicalHistoryPlugin.prod.mjs",
+        "node": "./dist/LexicalHistoryPlugin.node.mjs",
+        "default": "./dist/LexicalHistoryPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalHistoryPlugin.d.ts",
-        "development": "./LexicalHistoryPlugin.dev.js",
-        "production": "./LexicalHistoryPlugin.prod.js",
-        "default": "./LexicalHistoryPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalHistoryPlugin.d.ts",
+        "development": "./dist/LexicalHistoryPlugin.dev.js",
+        "production": "./dist/LexicalHistoryPlugin.prod.js",
+        "default": "./dist/LexicalHistoryPlugin.js"
       }
     },
     "./LexicalHistoryPlugin.js": {
+      "source": "./src/LexicalHistoryPlugin.ts",
       "import": {
-        "types": "./LexicalHistoryPlugin.d.ts",
-        "development": "./LexicalHistoryPlugin.dev.mjs",
-        "production": "./LexicalHistoryPlugin.prod.mjs",
-        "node": "./LexicalHistoryPlugin.node.mjs",
-        "default": "./LexicalHistoryPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalHistoryPlugin.d.ts",
+        "development": "./dist/LexicalHistoryPlugin.dev.mjs",
+        "production": "./dist/LexicalHistoryPlugin.prod.mjs",
+        "node": "./dist/LexicalHistoryPlugin.node.mjs",
+        "default": "./dist/LexicalHistoryPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalHistoryPlugin.d.ts",
-        "development": "./LexicalHistoryPlugin.dev.js",
-        "production": "./LexicalHistoryPlugin.prod.js",
-        "default": "./LexicalHistoryPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalHistoryPlugin.d.ts",
+        "development": "./dist/LexicalHistoryPlugin.dev.js",
+        "production": "./dist/LexicalHistoryPlugin.prod.js",
+        "default": "./dist/LexicalHistoryPlugin.js"
       }
     },
     "./LexicalHorizontalRuleNode": {
+      "source": "./src/LexicalHorizontalRuleNode.tsx",
       "import": {
-        "types": "./LexicalHorizontalRuleNode.d.ts",
-        "development": "./LexicalHorizontalRuleNode.dev.mjs",
-        "production": "./LexicalHorizontalRuleNode.prod.mjs",
-        "node": "./LexicalHorizontalRuleNode.node.mjs",
-        "default": "./LexicalHorizontalRuleNode.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalHorizontalRuleNode.d.ts",
+        "development": "./dist/LexicalHorizontalRuleNode.dev.mjs",
+        "production": "./dist/LexicalHorizontalRuleNode.prod.mjs",
+        "node": "./dist/LexicalHorizontalRuleNode.node.mjs",
+        "default": "./dist/LexicalHorizontalRuleNode.mjs"
       },
       "require": {
-        "types": "./LexicalHorizontalRuleNode.d.ts",
-        "development": "./LexicalHorizontalRuleNode.dev.js",
-        "production": "./LexicalHorizontalRuleNode.prod.js",
-        "default": "./LexicalHorizontalRuleNode.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalHorizontalRuleNode.d.ts",
+        "development": "./dist/LexicalHorizontalRuleNode.dev.js",
+        "production": "./dist/LexicalHorizontalRuleNode.prod.js",
+        "default": "./dist/LexicalHorizontalRuleNode.js"
       }
     },
     "./LexicalHorizontalRuleNode.js": {
+      "source": "./src/LexicalHorizontalRuleNode.tsx",
       "import": {
-        "types": "./LexicalHorizontalRuleNode.d.ts",
-        "development": "./LexicalHorizontalRuleNode.dev.mjs",
-        "production": "./LexicalHorizontalRuleNode.prod.mjs",
-        "node": "./LexicalHorizontalRuleNode.node.mjs",
-        "default": "./LexicalHorizontalRuleNode.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalHorizontalRuleNode.d.ts",
+        "development": "./dist/LexicalHorizontalRuleNode.dev.mjs",
+        "production": "./dist/LexicalHorizontalRuleNode.prod.mjs",
+        "node": "./dist/LexicalHorizontalRuleNode.node.mjs",
+        "default": "./dist/LexicalHorizontalRuleNode.mjs"
       },
       "require": {
-        "types": "./LexicalHorizontalRuleNode.d.ts",
-        "development": "./LexicalHorizontalRuleNode.dev.js",
-        "production": "./LexicalHorizontalRuleNode.prod.js",
-        "default": "./LexicalHorizontalRuleNode.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalHorizontalRuleNode.d.ts",
+        "development": "./dist/LexicalHorizontalRuleNode.dev.js",
+        "production": "./dist/LexicalHorizontalRuleNode.prod.js",
+        "default": "./dist/LexicalHorizontalRuleNode.js"
       }
     },
     "./LexicalHorizontalRulePlugin": {
+      "source": "./src/LexicalHorizontalRulePlugin.ts",
       "import": {
-        "types": "./LexicalHorizontalRulePlugin.d.ts",
-        "development": "./LexicalHorizontalRulePlugin.dev.mjs",
-        "production": "./LexicalHorizontalRulePlugin.prod.mjs",
-        "node": "./LexicalHorizontalRulePlugin.node.mjs",
-        "default": "./LexicalHorizontalRulePlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalHorizontalRulePlugin.d.ts",
+        "development": "./dist/LexicalHorizontalRulePlugin.dev.mjs",
+        "production": "./dist/LexicalHorizontalRulePlugin.prod.mjs",
+        "node": "./dist/LexicalHorizontalRulePlugin.node.mjs",
+        "default": "./dist/LexicalHorizontalRulePlugin.mjs"
       },
       "require": {
-        "types": "./LexicalHorizontalRulePlugin.d.ts",
-        "development": "./LexicalHorizontalRulePlugin.dev.js",
-        "production": "./LexicalHorizontalRulePlugin.prod.js",
-        "default": "./LexicalHorizontalRulePlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalHorizontalRulePlugin.d.ts",
+        "development": "./dist/LexicalHorizontalRulePlugin.dev.js",
+        "production": "./dist/LexicalHorizontalRulePlugin.prod.js",
+        "default": "./dist/LexicalHorizontalRulePlugin.js"
       }
     },
     "./LexicalHorizontalRulePlugin.js": {
+      "source": "./src/LexicalHorizontalRulePlugin.ts",
       "import": {
-        "types": "./LexicalHorizontalRulePlugin.d.ts",
-        "development": "./LexicalHorizontalRulePlugin.dev.mjs",
-        "production": "./LexicalHorizontalRulePlugin.prod.mjs",
-        "node": "./LexicalHorizontalRulePlugin.node.mjs",
-        "default": "./LexicalHorizontalRulePlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalHorizontalRulePlugin.d.ts",
+        "development": "./dist/LexicalHorizontalRulePlugin.dev.mjs",
+        "production": "./dist/LexicalHorizontalRulePlugin.prod.mjs",
+        "node": "./dist/LexicalHorizontalRulePlugin.node.mjs",
+        "default": "./dist/LexicalHorizontalRulePlugin.mjs"
       },
       "require": {
-        "types": "./LexicalHorizontalRulePlugin.d.ts",
-        "development": "./LexicalHorizontalRulePlugin.dev.js",
-        "production": "./LexicalHorizontalRulePlugin.prod.js",
-        "default": "./LexicalHorizontalRulePlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalHorizontalRulePlugin.d.ts",
+        "development": "./dist/LexicalHorizontalRulePlugin.dev.js",
+        "production": "./dist/LexicalHorizontalRulePlugin.prod.js",
+        "default": "./dist/LexicalHorizontalRulePlugin.js"
       }
     },
     "./LexicalLinkPlugin": {
+      "source": "./src/LexicalLinkPlugin.ts",
       "import": {
-        "types": "./LexicalLinkPlugin.d.ts",
-        "development": "./LexicalLinkPlugin.dev.mjs",
-        "production": "./LexicalLinkPlugin.prod.mjs",
-        "node": "./LexicalLinkPlugin.node.mjs",
-        "default": "./LexicalLinkPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalLinkPlugin.d.ts",
+        "development": "./dist/LexicalLinkPlugin.dev.mjs",
+        "production": "./dist/LexicalLinkPlugin.prod.mjs",
+        "node": "./dist/LexicalLinkPlugin.node.mjs",
+        "default": "./dist/LexicalLinkPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalLinkPlugin.d.ts",
-        "development": "./LexicalLinkPlugin.dev.js",
-        "production": "./LexicalLinkPlugin.prod.js",
-        "default": "./LexicalLinkPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalLinkPlugin.d.ts",
+        "development": "./dist/LexicalLinkPlugin.dev.js",
+        "production": "./dist/LexicalLinkPlugin.prod.js",
+        "default": "./dist/LexicalLinkPlugin.js"
       }
     },
     "./LexicalLinkPlugin.js": {
+      "source": "./src/LexicalLinkPlugin.ts",
       "import": {
-        "types": "./LexicalLinkPlugin.d.ts",
-        "development": "./LexicalLinkPlugin.dev.mjs",
-        "production": "./LexicalLinkPlugin.prod.mjs",
-        "node": "./LexicalLinkPlugin.node.mjs",
-        "default": "./LexicalLinkPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalLinkPlugin.d.ts",
+        "development": "./dist/LexicalLinkPlugin.dev.mjs",
+        "production": "./dist/LexicalLinkPlugin.prod.mjs",
+        "node": "./dist/LexicalLinkPlugin.node.mjs",
+        "default": "./dist/LexicalLinkPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalLinkPlugin.d.ts",
-        "development": "./LexicalLinkPlugin.dev.js",
-        "production": "./LexicalLinkPlugin.prod.js",
-        "default": "./LexicalLinkPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalLinkPlugin.d.ts",
+        "development": "./dist/LexicalLinkPlugin.dev.js",
+        "production": "./dist/LexicalLinkPlugin.prod.js",
+        "default": "./dist/LexicalLinkPlugin.js"
       }
     },
     "./LexicalListPlugin": {
+      "source": "./src/LexicalListPlugin.ts",
       "import": {
-        "types": "./LexicalListPlugin.d.ts",
-        "development": "./LexicalListPlugin.dev.mjs",
-        "production": "./LexicalListPlugin.prod.mjs",
-        "node": "./LexicalListPlugin.node.mjs",
-        "default": "./LexicalListPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalListPlugin.d.ts",
+        "development": "./dist/LexicalListPlugin.dev.mjs",
+        "production": "./dist/LexicalListPlugin.prod.mjs",
+        "node": "./dist/LexicalListPlugin.node.mjs",
+        "default": "./dist/LexicalListPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalListPlugin.d.ts",
-        "development": "./LexicalListPlugin.dev.js",
-        "production": "./LexicalListPlugin.prod.js",
-        "default": "./LexicalListPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalListPlugin.d.ts",
+        "development": "./dist/LexicalListPlugin.dev.js",
+        "production": "./dist/LexicalListPlugin.prod.js",
+        "default": "./dist/LexicalListPlugin.js"
       }
     },
     "./LexicalListPlugin.js": {
+      "source": "./src/LexicalListPlugin.ts",
       "import": {
-        "types": "./LexicalListPlugin.d.ts",
-        "development": "./LexicalListPlugin.dev.mjs",
-        "production": "./LexicalListPlugin.prod.mjs",
-        "node": "./LexicalListPlugin.node.mjs",
-        "default": "./LexicalListPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalListPlugin.d.ts",
+        "development": "./dist/LexicalListPlugin.dev.mjs",
+        "production": "./dist/LexicalListPlugin.prod.mjs",
+        "node": "./dist/LexicalListPlugin.node.mjs",
+        "default": "./dist/LexicalListPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalListPlugin.d.ts",
-        "development": "./LexicalListPlugin.dev.js",
-        "production": "./LexicalListPlugin.prod.js",
-        "default": "./LexicalListPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalListPlugin.d.ts",
+        "development": "./dist/LexicalListPlugin.dev.js",
+        "production": "./dist/LexicalListPlugin.prod.js",
+        "default": "./dist/LexicalListPlugin.js"
       }
     },
     "./LexicalMarkdownShortcutPlugin": {
+      "source": "./src/LexicalMarkdownShortcutPlugin.tsx",
       "import": {
-        "types": "./LexicalMarkdownShortcutPlugin.d.ts",
-        "development": "./LexicalMarkdownShortcutPlugin.dev.mjs",
-        "production": "./LexicalMarkdownShortcutPlugin.prod.mjs",
-        "node": "./LexicalMarkdownShortcutPlugin.node.mjs",
-        "default": "./LexicalMarkdownShortcutPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalMarkdownShortcutPlugin.d.ts",
+        "development": "./dist/LexicalMarkdownShortcutPlugin.dev.mjs",
+        "production": "./dist/LexicalMarkdownShortcutPlugin.prod.mjs",
+        "node": "./dist/LexicalMarkdownShortcutPlugin.node.mjs",
+        "default": "./dist/LexicalMarkdownShortcutPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalMarkdownShortcutPlugin.d.ts",
-        "development": "./LexicalMarkdownShortcutPlugin.dev.js",
-        "production": "./LexicalMarkdownShortcutPlugin.prod.js",
-        "default": "./LexicalMarkdownShortcutPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalMarkdownShortcutPlugin.d.ts",
+        "development": "./dist/LexicalMarkdownShortcutPlugin.dev.js",
+        "production": "./dist/LexicalMarkdownShortcutPlugin.prod.js",
+        "default": "./dist/LexicalMarkdownShortcutPlugin.js"
       }
     },
     "./LexicalMarkdownShortcutPlugin.js": {
+      "source": "./src/LexicalMarkdownShortcutPlugin.tsx",
       "import": {
-        "types": "./LexicalMarkdownShortcutPlugin.d.ts",
-        "development": "./LexicalMarkdownShortcutPlugin.dev.mjs",
-        "production": "./LexicalMarkdownShortcutPlugin.prod.mjs",
-        "node": "./LexicalMarkdownShortcutPlugin.node.mjs",
-        "default": "./LexicalMarkdownShortcutPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalMarkdownShortcutPlugin.d.ts",
+        "development": "./dist/LexicalMarkdownShortcutPlugin.dev.mjs",
+        "production": "./dist/LexicalMarkdownShortcutPlugin.prod.mjs",
+        "node": "./dist/LexicalMarkdownShortcutPlugin.node.mjs",
+        "default": "./dist/LexicalMarkdownShortcutPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalMarkdownShortcutPlugin.d.ts",
-        "development": "./LexicalMarkdownShortcutPlugin.dev.js",
-        "production": "./LexicalMarkdownShortcutPlugin.prod.js",
-        "default": "./LexicalMarkdownShortcutPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalMarkdownShortcutPlugin.d.ts",
+        "development": "./dist/LexicalMarkdownShortcutPlugin.dev.js",
+        "production": "./dist/LexicalMarkdownShortcutPlugin.prod.js",
+        "default": "./dist/LexicalMarkdownShortcutPlugin.js"
       }
     },
     "./LexicalNestedComposer": {
+      "source": "./src/LexicalNestedComposer.tsx",
       "import": {
-        "types": "./LexicalNestedComposer.d.ts",
-        "development": "./LexicalNestedComposer.dev.mjs",
-        "production": "./LexicalNestedComposer.prod.mjs",
-        "node": "./LexicalNestedComposer.node.mjs",
-        "default": "./LexicalNestedComposer.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalNestedComposer.d.ts",
+        "development": "./dist/LexicalNestedComposer.dev.mjs",
+        "production": "./dist/LexicalNestedComposer.prod.mjs",
+        "node": "./dist/LexicalNestedComposer.node.mjs",
+        "default": "./dist/LexicalNestedComposer.mjs"
       },
       "require": {
-        "types": "./LexicalNestedComposer.d.ts",
-        "development": "./LexicalNestedComposer.dev.js",
-        "production": "./LexicalNestedComposer.prod.js",
-        "default": "./LexicalNestedComposer.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalNestedComposer.d.ts",
+        "development": "./dist/LexicalNestedComposer.dev.js",
+        "production": "./dist/LexicalNestedComposer.prod.js",
+        "default": "./dist/LexicalNestedComposer.js"
       }
     },
     "./LexicalNestedComposer.js": {
+      "source": "./src/LexicalNestedComposer.tsx",
       "import": {
-        "types": "./LexicalNestedComposer.d.ts",
-        "development": "./LexicalNestedComposer.dev.mjs",
-        "production": "./LexicalNestedComposer.prod.mjs",
-        "node": "./LexicalNestedComposer.node.mjs",
-        "default": "./LexicalNestedComposer.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalNestedComposer.d.ts",
+        "development": "./dist/LexicalNestedComposer.dev.mjs",
+        "production": "./dist/LexicalNestedComposer.prod.mjs",
+        "node": "./dist/LexicalNestedComposer.node.mjs",
+        "default": "./dist/LexicalNestedComposer.mjs"
       },
       "require": {
-        "types": "./LexicalNestedComposer.d.ts",
-        "development": "./LexicalNestedComposer.dev.js",
-        "production": "./LexicalNestedComposer.prod.js",
-        "default": "./LexicalNestedComposer.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalNestedComposer.d.ts",
+        "development": "./dist/LexicalNestedComposer.dev.js",
+        "production": "./dist/LexicalNestedComposer.prod.js",
+        "default": "./dist/LexicalNestedComposer.js"
       }
     },
     "./LexicalNodeContextMenuPlugin": {
+      "source": "./src/LexicalNodeContextMenuPlugin.tsx",
       "import": {
-        "types": "./LexicalNodeContextMenuPlugin.d.ts",
-        "development": "./LexicalNodeContextMenuPlugin.dev.mjs",
-        "production": "./LexicalNodeContextMenuPlugin.prod.mjs",
-        "node": "./LexicalNodeContextMenuPlugin.node.mjs",
-        "default": "./LexicalNodeContextMenuPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalNodeContextMenuPlugin.d.ts",
+        "development": "./dist/LexicalNodeContextMenuPlugin.dev.mjs",
+        "production": "./dist/LexicalNodeContextMenuPlugin.prod.mjs",
+        "node": "./dist/LexicalNodeContextMenuPlugin.node.mjs",
+        "default": "./dist/LexicalNodeContextMenuPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalNodeContextMenuPlugin.d.ts",
-        "development": "./LexicalNodeContextMenuPlugin.dev.js",
-        "production": "./LexicalNodeContextMenuPlugin.prod.js",
-        "default": "./LexicalNodeContextMenuPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalNodeContextMenuPlugin.d.ts",
+        "development": "./dist/LexicalNodeContextMenuPlugin.dev.js",
+        "production": "./dist/LexicalNodeContextMenuPlugin.prod.js",
+        "default": "./dist/LexicalNodeContextMenuPlugin.js"
       }
     },
     "./LexicalNodeContextMenuPlugin.js": {
+      "source": "./src/LexicalNodeContextMenuPlugin.tsx",
       "import": {
-        "types": "./LexicalNodeContextMenuPlugin.d.ts",
-        "development": "./LexicalNodeContextMenuPlugin.dev.mjs",
-        "production": "./LexicalNodeContextMenuPlugin.prod.mjs",
-        "node": "./LexicalNodeContextMenuPlugin.node.mjs",
-        "default": "./LexicalNodeContextMenuPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalNodeContextMenuPlugin.d.ts",
+        "development": "./dist/LexicalNodeContextMenuPlugin.dev.mjs",
+        "production": "./dist/LexicalNodeContextMenuPlugin.prod.mjs",
+        "node": "./dist/LexicalNodeContextMenuPlugin.node.mjs",
+        "default": "./dist/LexicalNodeContextMenuPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalNodeContextMenuPlugin.d.ts",
-        "development": "./LexicalNodeContextMenuPlugin.dev.js",
-        "production": "./LexicalNodeContextMenuPlugin.prod.js",
-        "default": "./LexicalNodeContextMenuPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalNodeContextMenuPlugin.d.ts",
+        "development": "./dist/LexicalNodeContextMenuPlugin.dev.js",
+        "production": "./dist/LexicalNodeContextMenuPlugin.prod.js",
+        "default": "./dist/LexicalNodeContextMenuPlugin.js"
       }
     },
     "./LexicalNodeEventPlugin": {
+      "source": "./src/LexicalNodeEventPlugin.ts",
       "import": {
-        "types": "./LexicalNodeEventPlugin.d.ts",
-        "development": "./LexicalNodeEventPlugin.dev.mjs",
-        "production": "./LexicalNodeEventPlugin.prod.mjs",
-        "node": "./LexicalNodeEventPlugin.node.mjs",
-        "default": "./LexicalNodeEventPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalNodeEventPlugin.d.ts",
+        "development": "./dist/LexicalNodeEventPlugin.dev.mjs",
+        "production": "./dist/LexicalNodeEventPlugin.prod.mjs",
+        "node": "./dist/LexicalNodeEventPlugin.node.mjs",
+        "default": "./dist/LexicalNodeEventPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalNodeEventPlugin.d.ts",
-        "development": "./LexicalNodeEventPlugin.dev.js",
-        "production": "./LexicalNodeEventPlugin.prod.js",
-        "default": "./LexicalNodeEventPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalNodeEventPlugin.d.ts",
+        "development": "./dist/LexicalNodeEventPlugin.dev.js",
+        "production": "./dist/LexicalNodeEventPlugin.prod.js",
+        "default": "./dist/LexicalNodeEventPlugin.js"
       }
     },
     "./LexicalNodeEventPlugin.js": {
+      "source": "./src/LexicalNodeEventPlugin.ts",
       "import": {
-        "types": "./LexicalNodeEventPlugin.d.ts",
-        "development": "./LexicalNodeEventPlugin.dev.mjs",
-        "production": "./LexicalNodeEventPlugin.prod.mjs",
-        "node": "./LexicalNodeEventPlugin.node.mjs",
-        "default": "./LexicalNodeEventPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalNodeEventPlugin.d.ts",
+        "development": "./dist/LexicalNodeEventPlugin.dev.mjs",
+        "production": "./dist/LexicalNodeEventPlugin.prod.mjs",
+        "node": "./dist/LexicalNodeEventPlugin.node.mjs",
+        "default": "./dist/LexicalNodeEventPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalNodeEventPlugin.d.ts",
-        "development": "./LexicalNodeEventPlugin.dev.js",
-        "production": "./LexicalNodeEventPlugin.prod.js",
-        "default": "./LexicalNodeEventPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalNodeEventPlugin.d.ts",
+        "development": "./dist/LexicalNodeEventPlugin.dev.js",
+        "production": "./dist/LexicalNodeEventPlugin.prod.js",
+        "default": "./dist/LexicalNodeEventPlugin.js"
       }
     },
     "./LexicalNodeMenuPlugin": {
+      "source": "./src/LexicalNodeMenuPlugin.tsx",
       "import": {
-        "types": "./LexicalNodeMenuPlugin.d.ts",
-        "development": "./LexicalNodeMenuPlugin.dev.mjs",
-        "production": "./LexicalNodeMenuPlugin.prod.mjs",
-        "node": "./LexicalNodeMenuPlugin.node.mjs",
-        "default": "./LexicalNodeMenuPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalNodeMenuPlugin.d.ts",
+        "development": "./dist/LexicalNodeMenuPlugin.dev.mjs",
+        "production": "./dist/LexicalNodeMenuPlugin.prod.mjs",
+        "node": "./dist/LexicalNodeMenuPlugin.node.mjs",
+        "default": "./dist/LexicalNodeMenuPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalNodeMenuPlugin.d.ts",
-        "development": "./LexicalNodeMenuPlugin.dev.js",
-        "production": "./LexicalNodeMenuPlugin.prod.js",
-        "default": "./LexicalNodeMenuPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalNodeMenuPlugin.d.ts",
+        "development": "./dist/LexicalNodeMenuPlugin.dev.js",
+        "production": "./dist/LexicalNodeMenuPlugin.prod.js",
+        "default": "./dist/LexicalNodeMenuPlugin.js"
       }
     },
     "./LexicalNodeMenuPlugin.js": {
+      "source": "./src/LexicalNodeMenuPlugin.tsx",
       "import": {
-        "types": "./LexicalNodeMenuPlugin.d.ts",
-        "development": "./LexicalNodeMenuPlugin.dev.mjs",
-        "production": "./LexicalNodeMenuPlugin.prod.mjs",
-        "node": "./LexicalNodeMenuPlugin.node.mjs",
-        "default": "./LexicalNodeMenuPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalNodeMenuPlugin.d.ts",
+        "development": "./dist/LexicalNodeMenuPlugin.dev.mjs",
+        "production": "./dist/LexicalNodeMenuPlugin.prod.mjs",
+        "node": "./dist/LexicalNodeMenuPlugin.node.mjs",
+        "default": "./dist/LexicalNodeMenuPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalNodeMenuPlugin.d.ts",
-        "development": "./LexicalNodeMenuPlugin.dev.js",
-        "production": "./LexicalNodeMenuPlugin.prod.js",
-        "default": "./LexicalNodeMenuPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalNodeMenuPlugin.d.ts",
+        "development": "./dist/LexicalNodeMenuPlugin.dev.js",
+        "production": "./dist/LexicalNodeMenuPlugin.prod.js",
+        "default": "./dist/LexicalNodeMenuPlugin.js"
       }
     },
     "./LexicalOnChangePlugin": {
+      "source": "./src/LexicalOnChangePlugin.ts",
       "import": {
-        "types": "./LexicalOnChangePlugin.d.ts",
-        "development": "./LexicalOnChangePlugin.dev.mjs",
-        "production": "./LexicalOnChangePlugin.prod.mjs",
-        "node": "./LexicalOnChangePlugin.node.mjs",
-        "default": "./LexicalOnChangePlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalOnChangePlugin.d.ts",
+        "development": "./dist/LexicalOnChangePlugin.dev.mjs",
+        "production": "./dist/LexicalOnChangePlugin.prod.mjs",
+        "node": "./dist/LexicalOnChangePlugin.node.mjs",
+        "default": "./dist/LexicalOnChangePlugin.mjs"
       },
       "require": {
-        "types": "./LexicalOnChangePlugin.d.ts",
-        "development": "./LexicalOnChangePlugin.dev.js",
-        "production": "./LexicalOnChangePlugin.prod.js",
-        "default": "./LexicalOnChangePlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalOnChangePlugin.d.ts",
+        "development": "./dist/LexicalOnChangePlugin.dev.js",
+        "production": "./dist/LexicalOnChangePlugin.prod.js",
+        "default": "./dist/LexicalOnChangePlugin.js"
       }
     },
     "./LexicalOnChangePlugin.js": {
+      "source": "./src/LexicalOnChangePlugin.ts",
       "import": {
-        "types": "./LexicalOnChangePlugin.d.ts",
-        "development": "./LexicalOnChangePlugin.dev.mjs",
-        "production": "./LexicalOnChangePlugin.prod.mjs",
-        "node": "./LexicalOnChangePlugin.node.mjs",
-        "default": "./LexicalOnChangePlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalOnChangePlugin.d.ts",
+        "development": "./dist/LexicalOnChangePlugin.dev.mjs",
+        "production": "./dist/LexicalOnChangePlugin.prod.mjs",
+        "node": "./dist/LexicalOnChangePlugin.node.mjs",
+        "default": "./dist/LexicalOnChangePlugin.mjs"
       },
       "require": {
-        "types": "./LexicalOnChangePlugin.d.ts",
-        "development": "./LexicalOnChangePlugin.dev.js",
-        "production": "./LexicalOnChangePlugin.prod.js",
-        "default": "./LexicalOnChangePlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalOnChangePlugin.d.ts",
+        "development": "./dist/LexicalOnChangePlugin.dev.js",
+        "production": "./dist/LexicalOnChangePlugin.prod.js",
+        "default": "./dist/LexicalOnChangePlugin.js"
       }
     },
     "./LexicalPlainTextPlugin": {
+      "source": "./src/LexicalPlainTextPlugin.tsx",
       "import": {
-        "types": "./LexicalPlainTextPlugin.d.ts",
-        "development": "./LexicalPlainTextPlugin.dev.mjs",
-        "production": "./LexicalPlainTextPlugin.prod.mjs",
-        "node": "./LexicalPlainTextPlugin.node.mjs",
-        "default": "./LexicalPlainTextPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalPlainTextPlugin.d.ts",
+        "development": "./dist/LexicalPlainTextPlugin.dev.mjs",
+        "production": "./dist/LexicalPlainTextPlugin.prod.mjs",
+        "node": "./dist/LexicalPlainTextPlugin.node.mjs",
+        "default": "./dist/LexicalPlainTextPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalPlainTextPlugin.d.ts",
-        "development": "./LexicalPlainTextPlugin.dev.js",
-        "production": "./LexicalPlainTextPlugin.prod.js",
-        "default": "./LexicalPlainTextPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalPlainTextPlugin.d.ts",
+        "development": "./dist/LexicalPlainTextPlugin.dev.js",
+        "production": "./dist/LexicalPlainTextPlugin.prod.js",
+        "default": "./dist/LexicalPlainTextPlugin.js"
       }
     },
     "./LexicalPlainTextPlugin.js": {
+      "source": "./src/LexicalPlainTextPlugin.tsx",
       "import": {
-        "types": "./LexicalPlainTextPlugin.d.ts",
-        "development": "./LexicalPlainTextPlugin.dev.mjs",
-        "production": "./LexicalPlainTextPlugin.prod.mjs",
-        "node": "./LexicalPlainTextPlugin.node.mjs",
-        "default": "./LexicalPlainTextPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalPlainTextPlugin.d.ts",
+        "development": "./dist/LexicalPlainTextPlugin.dev.mjs",
+        "production": "./dist/LexicalPlainTextPlugin.prod.mjs",
+        "node": "./dist/LexicalPlainTextPlugin.node.mjs",
+        "default": "./dist/LexicalPlainTextPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalPlainTextPlugin.d.ts",
-        "development": "./LexicalPlainTextPlugin.dev.js",
-        "production": "./LexicalPlainTextPlugin.prod.js",
-        "default": "./LexicalPlainTextPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalPlainTextPlugin.d.ts",
+        "development": "./dist/LexicalPlainTextPlugin.dev.js",
+        "production": "./dist/LexicalPlainTextPlugin.prod.js",
+        "default": "./dist/LexicalPlainTextPlugin.js"
       }
     },
     "./LexicalRichTextPlugin": {
+      "source": "./src/LexicalRichTextPlugin.tsx",
       "import": {
-        "types": "./LexicalRichTextPlugin.d.ts",
-        "development": "./LexicalRichTextPlugin.dev.mjs",
-        "production": "./LexicalRichTextPlugin.prod.mjs",
-        "node": "./LexicalRichTextPlugin.node.mjs",
-        "default": "./LexicalRichTextPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalRichTextPlugin.d.ts",
+        "development": "./dist/LexicalRichTextPlugin.dev.mjs",
+        "production": "./dist/LexicalRichTextPlugin.prod.mjs",
+        "node": "./dist/LexicalRichTextPlugin.node.mjs",
+        "default": "./dist/LexicalRichTextPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalRichTextPlugin.d.ts",
-        "development": "./LexicalRichTextPlugin.dev.js",
-        "production": "./LexicalRichTextPlugin.prod.js",
-        "default": "./LexicalRichTextPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalRichTextPlugin.d.ts",
+        "development": "./dist/LexicalRichTextPlugin.dev.js",
+        "production": "./dist/LexicalRichTextPlugin.prod.js",
+        "default": "./dist/LexicalRichTextPlugin.js"
       }
     },
     "./LexicalRichTextPlugin.js": {
+      "source": "./src/LexicalRichTextPlugin.tsx",
       "import": {
-        "types": "./LexicalRichTextPlugin.d.ts",
-        "development": "./LexicalRichTextPlugin.dev.mjs",
-        "production": "./LexicalRichTextPlugin.prod.mjs",
-        "node": "./LexicalRichTextPlugin.node.mjs",
-        "default": "./LexicalRichTextPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalRichTextPlugin.d.ts",
+        "development": "./dist/LexicalRichTextPlugin.dev.mjs",
+        "production": "./dist/LexicalRichTextPlugin.prod.mjs",
+        "node": "./dist/LexicalRichTextPlugin.node.mjs",
+        "default": "./dist/LexicalRichTextPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalRichTextPlugin.d.ts",
-        "development": "./LexicalRichTextPlugin.dev.js",
-        "production": "./LexicalRichTextPlugin.prod.js",
-        "default": "./LexicalRichTextPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalRichTextPlugin.d.ts",
+        "development": "./dist/LexicalRichTextPlugin.dev.js",
+        "production": "./dist/LexicalRichTextPlugin.prod.js",
+        "default": "./dist/LexicalRichTextPlugin.js"
       }
     },
     "./LexicalSelectionAlwaysOnDisplay": {
+      "source": "./src/LexicalSelectionAlwaysOnDisplay.tsx",
       "import": {
-        "types": "./LexicalSelectionAlwaysOnDisplay.d.ts",
-        "development": "./LexicalSelectionAlwaysOnDisplay.dev.mjs",
-        "production": "./LexicalSelectionAlwaysOnDisplay.prod.mjs",
-        "node": "./LexicalSelectionAlwaysOnDisplay.node.mjs",
-        "default": "./LexicalSelectionAlwaysOnDisplay.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalSelectionAlwaysOnDisplay.d.ts",
+        "development": "./dist/LexicalSelectionAlwaysOnDisplay.dev.mjs",
+        "production": "./dist/LexicalSelectionAlwaysOnDisplay.prod.mjs",
+        "node": "./dist/LexicalSelectionAlwaysOnDisplay.node.mjs",
+        "default": "./dist/LexicalSelectionAlwaysOnDisplay.mjs"
       },
       "require": {
-        "types": "./LexicalSelectionAlwaysOnDisplay.d.ts",
-        "development": "./LexicalSelectionAlwaysOnDisplay.dev.js",
-        "production": "./LexicalSelectionAlwaysOnDisplay.prod.js",
-        "default": "./LexicalSelectionAlwaysOnDisplay.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalSelectionAlwaysOnDisplay.d.ts",
+        "development": "./dist/LexicalSelectionAlwaysOnDisplay.dev.js",
+        "production": "./dist/LexicalSelectionAlwaysOnDisplay.prod.js",
+        "default": "./dist/LexicalSelectionAlwaysOnDisplay.js"
       }
     },
     "./LexicalSelectionAlwaysOnDisplay.js": {
+      "source": "./src/LexicalSelectionAlwaysOnDisplay.tsx",
       "import": {
-        "types": "./LexicalSelectionAlwaysOnDisplay.d.ts",
-        "development": "./LexicalSelectionAlwaysOnDisplay.dev.mjs",
-        "production": "./LexicalSelectionAlwaysOnDisplay.prod.mjs",
-        "node": "./LexicalSelectionAlwaysOnDisplay.node.mjs",
-        "default": "./LexicalSelectionAlwaysOnDisplay.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalSelectionAlwaysOnDisplay.d.ts",
+        "development": "./dist/LexicalSelectionAlwaysOnDisplay.dev.mjs",
+        "production": "./dist/LexicalSelectionAlwaysOnDisplay.prod.mjs",
+        "node": "./dist/LexicalSelectionAlwaysOnDisplay.node.mjs",
+        "default": "./dist/LexicalSelectionAlwaysOnDisplay.mjs"
       },
       "require": {
-        "types": "./LexicalSelectionAlwaysOnDisplay.d.ts",
-        "development": "./LexicalSelectionAlwaysOnDisplay.dev.js",
-        "production": "./LexicalSelectionAlwaysOnDisplay.prod.js",
-        "default": "./LexicalSelectionAlwaysOnDisplay.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalSelectionAlwaysOnDisplay.d.ts",
+        "development": "./dist/LexicalSelectionAlwaysOnDisplay.dev.js",
+        "production": "./dist/LexicalSelectionAlwaysOnDisplay.prod.js",
+        "default": "./dist/LexicalSelectionAlwaysOnDisplay.js"
       }
     },
     "./LexicalTabIndentationPlugin": {
+      "source": "./src/LexicalTabIndentationPlugin.tsx",
       "import": {
-        "types": "./LexicalTabIndentationPlugin.d.ts",
-        "development": "./LexicalTabIndentationPlugin.dev.mjs",
-        "production": "./LexicalTabIndentationPlugin.prod.mjs",
-        "node": "./LexicalTabIndentationPlugin.node.mjs",
-        "default": "./LexicalTabIndentationPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTabIndentationPlugin.d.ts",
+        "development": "./dist/LexicalTabIndentationPlugin.dev.mjs",
+        "production": "./dist/LexicalTabIndentationPlugin.prod.mjs",
+        "node": "./dist/LexicalTabIndentationPlugin.node.mjs",
+        "default": "./dist/LexicalTabIndentationPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalTabIndentationPlugin.d.ts",
-        "development": "./LexicalTabIndentationPlugin.dev.js",
-        "production": "./LexicalTabIndentationPlugin.prod.js",
-        "default": "./LexicalTabIndentationPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTabIndentationPlugin.d.ts",
+        "development": "./dist/LexicalTabIndentationPlugin.dev.js",
+        "production": "./dist/LexicalTabIndentationPlugin.prod.js",
+        "default": "./dist/LexicalTabIndentationPlugin.js"
       }
     },
     "./LexicalTabIndentationPlugin.js": {
+      "source": "./src/LexicalTabIndentationPlugin.tsx",
       "import": {
-        "types": "./LexicalTabIndentationPlugin.d.ts",
-        "development": "./LexicalTabIndentationPlugin.dev.mjs",
-        "production": "./LexicalTabIndentationPlugin.prod.mjs",
-        "node": "./LexicalTabIndentationPlugin.node.mjs",
-        "default": "./LexicalTabIndentationPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTabIndentationPlugin.d.ts",
+        "development": "./dist/LexicalTabIndentationPlugin.dev.mjs",
+        "production": "./dist/LexicalTabIndentationPlugin.prod.mjs",
+        "node": "./dist/LexicalTabIndentationPlugin.node.mjs",
+        "default": "./dist/LexicalTabIndentationPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalTabIndentationPlugin.d.ts",
-        "development": "./LexicalTabIndentationPlugin.dev.js",
-        "production": "./LexicalTabIndentationPlugin.prod.js",
-        "default": "./LexicalTabIndentationPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTabIndentationPlugin.d.ts",
+        "development": "./dist/LexicalTabIndentationPlugin.dev.js",
+        "production": "./dist/LexicalTabIndentationPlugin.prod.js",
+        "default": "./dist/LexicalTabIndentationPlugin.js"
       }
     },
     "./LexicalTableOfContentsPlugin": {
+      "source": "./src/LexicalTableOfContentsPlugin.tsx",
       "import": {
-        "types": "./LexicalTableOfContentsPlugin.d.ts",
-        "development": "./LexicalTableOfContentsPlugin.dev.mjs",
-        "production": "./LexicalTableOfContentsPlugin.prod.mjs",
-        "node": "./LexicalTableOfContentsPlugin.node.mjs",
-        "default": "./LexicalTableOfContentsPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTableOfContentsPlugin.d.ts",
+        "development": "./dist/LexicalTableOfContentsPlugin.dev.mjs",
+        "production": "./dist/LexicalTableOfContentsPlugin.prod.mjs",
+        "node": "./dist/LexicalTableOfContentsPlugin.node.mjs",
+        "default": "./dist/LexicalTableOfContentsPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalTableOfContentsPlugin.d.ts",
-        "development": "./LexicalTableOfContentsPlugin.dev.js",
-        "production": "./LexicalTableOfContentsPlugin.prod.js",
-        "default": "./LexicalTableOfContentsPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTableOfContentsPlugin.d.ts",
+        "development": "./dist/LexicalTableOfContentsPlugin.dev.js",
+        "production": "./dist/LexicalTableOfContentsPlugin.prod.js",
+        "default": "./dist/LexicalTableOfContentsPlugin.js"
       }
     },
     "./LexicalTableOfContentsPlugin.js": {
+      "source": "./src/LexicalTableOfContentsPlugin.tsx",
       "import": {
-        "types": "./LexicalTableOfContentsPlugin.d.ts",
-        "development": "./LexicalTableOfContentsPlugin.dev.mjs",
-        "production": "./LexicalTableOfContentsPlugin.prod.mjs",
-        "node": "./LexicalTableOfContentsPlugin.node.mjs",
-        "default": "./LexicalTableOfContentsPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTableOfContentsPlugin.d.ts",
+        "development": "./dist/LexicalTableOfContentsPlugin.dev.mjs",
+        "production": "./dist/LexicalTableOfContentsPlugin.prod.mjs",
+        "node": "./dist/LexicalTableOfContentsPlugin.node.mjs",
+        "default": "./dist/LexicalTableOfContentsPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalTableOfContentsPlugin.d.ts",
-        "development": "./LexicalTableOfContentsPlugin.dev.js",
-        "production": "./LexicalTableOfContentsPlugin.prod.js",
-        "default": "./LexicalTableOfContentsPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTableOfContentsPlugin.d.ts",
+        "development": "./dist/LexicalTableOfContentsPlugin.dev.js",
+        "production": "./dist/LexicalTableOfContentsPlugin.prod.js",
+        "default": "./dist/LexicalTableOfContentsPlugin.js"
       }
     },
     "./LexicalTablePlugin": {
+      "source": "./src/LexicalTablePlugin.ts",
       "import": {
-        "types": "./LexicalTablePlugin.d.ts",
-        "development": "./LexicalTablePlugin.dev.mjs",
-        "production": "./LexicalTablePlugin.prod.mjs",
-        "node": "./LexicalTablePlugin.node.mjs",
-        "default": "./LexicalTablePlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTablePlugin.d.ts",
+        "development": "./dist/LexicalTablePlugin.dev.mjs",
+        "production": "./dist/LexicalTablePlugin.prod.mjs",
+        "node": "./dist/LexicalTablePlugin.node.mjs",
+        "default": "./dist/LexicalTablePlugin.mjs"
       },
       "require": {
-        "types": "./LexicalTablePlugin.d.ts",
-        "development": "./LexicalTablePlugin.dev.js",
-        "production": "./LexicalTablePlugin.prod.js",
-        "default": "./LexicalTablePlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTablePlugin.d.ts",
+        "development": "./dist/LexicalTablePlugin.dev.js",
+        "production": "./dist/LexicalTablePlugin.prod.js",
+        "default": "./dist/LexicalTablePlugin.js"
       }
     },
     "./LexicalTablePlugin.js": {
+      "source": "./src/LexicalTablePlugin.ts",
       "import": {
-        "types": "./LexicalTablePlugin.d.ts",
-        "development": "./LexicalTablePlugin.dev.mjs",
-        "production": "./LexicalTablePlugin.prod.mjs",
-        "node": "./LexicalTablePlugin.node.mjs",
-        "default": "./LexicalTablePlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTablePlugin.d.ts",
+        "development": "./dist/LexicalTablePlugin.dev.mjs",
+        "production": "./dist/LexicalTablePlugin.prod.mjs",
+        "node": "./dist/LexicalTablePlugin.node.mjs",
+        "default": "./dist/LexicalTablePlugin.mjs"
       },
       "require": {
-        "types": "./LexicalTablePlugin.d.ts",
-        "development": "./LexicalTablePlugin.dev.js",
-        "production": "./LexicalTablePlugin.prod.js",
-        "default": "./LexicalTablePlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTablePlugin.d.ts",
+        "development": "./dist/LexicalTablePlugin.dev.js",
+        "production": "./dist/LexicalTablePlugin.prod.js",
+        "default": "./dist/LexicalTablePlugin.js"
       }
     },
     "./LexicalTreeView": {
+      "source": "./src/LexicalTreeView.tsx",
       "import": {
-        "types": "./LexicalTreeView.d.ts",
-        "development": "./LexicalTreeView.dev.mjs",
-        "production": "./LexicalTreeView.prod.mjs",
-        "node": "./LexicalTreeView.node.mjs",
-        "default": "./LexicalTreeView.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTreeView.d.ts",
+        "development": "./dist/LexicalTreeView.dev.mjs",
+        "production": "./dist/LexicalTreeView.prod.mjs",
+        "node": "./dist/LexicalTreeView.node.mjs",
+        "default": "./dist/LexicalTreeView.mjs"
       },
       "require": {
-        "types": "./LexicalTreeView.d.ts",
-        "development": "./LexicalTreeView.dev.js",
-        "production": "./LexicalTreeView.prod.js",
-        "default": "./LexicalTreeView.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTreeView.d.ts",
+        "development": "./dist/LexicalTreeView.dev.js",
+        "production": "./dist/LexicalTreeView.prod.js",
+        "default": "./dist/LexicalTreeView.js"
       }
     },
     "./LexicalTreeView.js": {
+      "source": "./src/LexicalTreeView.tsx",
       "import": {
-        "types": "./LexicalTreeView.d.ts",
-        "development": "./LexicalTreeView.dev.mjs",
-        "production": "./LexicalTreeView.prod.mjs",
-        "node": "./LexicalTreeView.node.mjs",
-        "default": "./LexicalTreeView.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTreeView.d.ts",
+        "development": "./dist/LexicalTreeView.dev.mjs",
+        "production": "./dist/LexicalTreeView.prod.mjs",
+        "node": "./dist/LexicalTreeView.node.mjs",
+        "default": "./dist/LexicalTreeView.mjs"
       },
       "require": {
-        "types": "./LexicalTreeView.d.ts",
-        "development": "./LexicalTreeView.dev.js",
-        "production": "./LexicalTreeView.prod.js",
-        "default": "./LexicalTreeView.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTreeView.d.ts",
+        "development": "./dist/LexicalTreeView.dev.js",
+        "production": "./dist/LexicalTreeView.prod.js",
+        "default": "./dist/LexicalTreeView.js"
       }
     },
     "./LexicalTypeaheadMenuPlugin": {
+      "source": "./src/LexicalTypeaheadMenuPlugin.tsx",
       "import": {
-        "types": "./LexicalTypeaheadMenuPlugin.d.ts",
-        "development": "./LexicalTypeaheadMenuPlugin.dev.mjs",
-        "production": "./LexicalTypeaheadMenuPlugin.prod.mjs",
-        "node": "./LexicalTypeaheadMenuPlugin.node.mjs",
-        "default": "./LexicalTypeaheadMenuPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTypeaheadMenuPlugin.d.ts",
+        "development": "./dist/LexicalTypeaheadMenuPlugin.dev.mjs",
+        "production": "./dist/LexicalTypeaheadMenuPlugin.prod.mjs",
+        "node": "./dist/LexicalTypeaheadMenuPlugin.node.mjs",
+        "default": "./dist/LexicalTypeaheadMenuPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalTypeaheadMenuPlugin.d.ts",
-        "development": "./LexicalTypeaheadMenuPlugin.dev.js",
-        "production": "./LexicalTypeaheadMenuPlugin.prod.js",
-        "default": "./LexicalTypeaheadMenuPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTypeaheadMenuPlugin.d.ts",
+        "development": "./dist/LexicalTypeaheadMenuPlugin.dev.js",
+        "production": "./dist/LexicalTypeaheadMenuPlugin.prod.js",
+        "default": "./dist/LexicalTypeaheadMenuPlugin.js"
       }
     },
     "./LexicalTypeaheadMenuPlugin.js": {
+      "source": "./src/LexicalTypeaheadMenuPlugin.tsx",
       "import": {
-        "types": "./LexicalTypeaheadMenuPlugin.d.ts",
-        "development": "./LexicalTypeaheadMenuPlugin.dev.mjs",
-        "production": "./LexicalTypeaheadMenuPlugin.prod.mjs",
-        "node": "./LexicalTypeaheadMenuPlugin.node.mjs",
-        "default": "./LexicalTypeaheadMenuPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTypeaheadMenuPlugin.d.ts",
+        "development": "./dist/LexicalTypeaheadMenuPlugin.dev.mjs",
+        "production": "./dist/LexicalTypeaheadMenuPlugin.prod.mjs",
+        "node": "./dist/LexicalTypeaheadMenuPlugin.node.mjs",
+        "default": "./dist/LexicalTypeaheadMenuPlugin.mjs"
       },
       "require": {
-        "types": "./LexicalTypeaheadMenuPlugin.d.ts",
-        "development": "./LexicalTypeaheadMenuPlugin.dev.js",
-        "production": "./LexicalTypeaheadMenuPlugin.prod.js",
-        "default": "./LexicalTypeaheadMenuPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/LexicalTypeaheadMenuPlugin.d.ts",
+        "development": "./dist/LexicalTypeaheadMenuPlugin.dev.js",
+        "production": "./dist/LexicalTypeaheadMenuPlugin.prod.js",
+        "default": "./dist/LexicalTypeaheadMenuPlugin.js"
       }
     },
     "./ReactExtension": {
+      "source": "./src/ReactExtension.tsx",
       "import": {
-        "types": "./ReactExtension.d.ts",
-        "development": "./LexicalReactExtension.dev.mjs",
-        "production": "./LexicalReactExtension.prod.mjs",
-        "node": "./LexicalReactExtension.node.mjs",
-        "default": "./LexicalReactExtension.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/ReactExtension.d.ts",
+        "development": "./dist/LexicalReactExtension.dev.mjs",
+        "production": "./dist/LexicalReactExtension.prod.mjs",
+        "node": "./dist/LexicalReactExtension.node.mjs",
+        "default": "./dist/LexicalReactExtension.mjs"
       },
       "require": {
-        "types": "./ReactExtension.d.ts",
-        "development": "./LexicalReactExtension.dev.js",
-        "production": "./LexicalReactExtension.prod.js",
-        "default": "./LexicalReactExtension.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/ReactExtension.d.ts",
+        "development": "./dist/LexicalReactExtension.dev.js",
+        "production": "./dist/LexicalReactExtension.prod.js",
+        "default": "./dist/LexicalReactExtension.js"
       }
     },
     "./ReactExtension.js": {
+      "source": "./src/ReactExtension.tsx",
       "import": {
-        "types": "./ReactExtension.d.ts",
-        "development": "./LexicalReactExtension.dev.mjs",
-        "production": "./LexicalReactExtension.prod.mjs",
-        "node": "./LexicalReactExtension.node.mjs",
-        "default": "./LexicalReactExtension.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/ReactExtension.d.ts",
+        "development": "./dist/LexicalReactExtension.dev.mjs",
+        "production": "./dist/LexicalReactExtension.prod.mjs",
+        "node": "./dist/LexicalReactExtension.node.mjs",
+        "default": "./dist/LexicalReactExtension.mjs"
       },
       "require": {
-        "types": "./ReactExtension.d.ts",
-        "development": "./LexicalReactExtension.dev.js",
-        "production": "./LexicalReactExtension.prod.js",
-        "default": "./LexicalReactExtension.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/ReactExtension.d.ts",
+        "development": "./dist/LexicalReactExtension.dev.js",
+        "production": "./dist/LexicalReactExtension.prod.js",
+        "default": "./dist/LexicalReactExtension.js"
       }
     },
     "./ReactPluginHostExtension": {
+      "source": "./src/ReactPluginHostExtension.tsx",
       "import": {
-        "types": "./ReactPluginHostExtension.d.ts",
-        "development": "./LexicalReactPluginHostExtension.dev.mjs",
-        "production": "./LexicalReactPluginHostExtension.prod.mjs",
-        "node": "./LexicalReactPluginHostExtension.node.mjs",
-        "default": "./LexicalReactPluginHostExtension.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/ReactPluginHostExtension.d.ts",
+        "development": "./dist/LexicalReactPluginHostExtension.dev.mjs",
+        "production": "./dist/LexicalReactPluginHostExtension.prod.mjs",
+        "node": "./dist/LexicalReactPluginHostExtension.node.mjs",
+        "default": "./dist/LexicalReactPluginHostExtension.mjs"
       },
       "require": {
-        "types": "./ReactPluginHostExtension.d.ts",
-        "development": "./LexicalReactPluginHostExtension.dev.js",
-        "production": "./LexicalReactPluginHostExtension.prod.js",
-        "default": "./LexicalReactPluginHostExtension.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/ReactPluginHostExtension.d.ts",
+        "development": "./dist/LexicalReactPluginHostExtension.dev.js",
+        "production": "./dist/LexicalReactPluginHostExtension.prod.js",
+        "default": "./dist/LexicalReactPluginHostExtension.js"
       }
     },
     "./ReactPluginHostExtension.js": {
+      "source": "./src/ReactPluginHostExtension.tsx",
       "import": {
-        "types": "./ReactPluginHostExtension.d.ts",
-        "development": "./LexicalReactPluginHostExtension.dev.mjs",
-        "production": "./LexicalReactPluginHostExtension.prod.mjs",
-        "node": "./LexicalReactPluginHostExtension.node.mjs",
-        "default": "./LexicalReactPluginHostExtension.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/ReactPluginHostExtension.d.ts",
+        "development": "./dist/LexicalReactPluginHostExtension.dev.mjs",
+        "production": "./dist/LexicalReactPluginHostExtension.prod.mjs",
+        "node": "./dist/LexicalReactPluginHostExtension.node.mjs",
+        "default": "./dist/LexicalReactPluginHostExtension.mjs"
       },
       "require": {
-        "types": "./ReactPluginHostExtension.d.ts",
-        "development": "./LexicalReactPluginHostExtension.dev.js",
-        "production": "./LexicalReactPluginHostExtension.prod.js",
-        "default": "./LexicalReactPluginHostExtension.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/ReactPluginHostExtension.d.ts",
+        "development": "./dist/LexicalReactPluginHostExtension.dev.js",
+        "production": "./dist/LexicalReactPluginHostExtension.prod.js",
+        "default": "./dist/LexicalReactPluginHostExtension.js"
       }
     },
     "./ReactProviderExtension": {
+      "source": "./src/ReactProviderExtension.tsx",
       "import": {
-        "types": "./ReactProviderExtension.d.ts",
-        "development": "./LexicalReactProviderExtension.dev.mjs",
-        "production": "./LexicalReactProviderExtension.prod.mjs",
-        "node": "./LexicalReactProviderExtension.node.mjs",
-        "default": "./LexicalReactProviderExtension.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/ReactProviderExtension.d.ts",
+        "development": "./dist/LexicalReactProviderExtension.dev.mjs",
+        "production": "./dist/LexicalReactProviderExtension.prod.mjs",
+        "node": "./dist/LexicalReactProviderExtension.node.mjs",
+        "default": "./dist/LexicalReactProviderExtension.mjs"
       },
       "require": {
-        "types": "./ReactProviderExtension.d.ts",
-        "development": "./LexicalReactProviderExtension.dev.js",
-        "production": "./LexicalReactProviderExtension.prod.js",
-        "default": "./LexicalReactProviderExtension.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/ReactProviderExtension.d.ts",
+        "development": "./dist/LexicalReactProviderExtension.dev.js",
+        "production": "./dist/LexicalReactProviderExtension.prod.js",
+        "default": "./dist/LexicalReactProviderExtension.js"
       }
     },
     "./ReactProviderExtension.js": {
+      "source": "./src/ReactProviderExtension.tsx",
       "import": {
-        "types": "./ReactProviderExtension.d.ts",
-        "development": "./LexicalReactProviderExtension.dev.mjs",
-        "production": "./LexicalReactProviderExtension.prod.mjs",
-        "node": "./LexicalReactProviderExtension.node.mjs",
-        "default": "./LexicalReactProviderExtension.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/ReactProviderExtension.d.ts",
+        "development": "./dist/LexicalReactProviderExtension.dev.mjs",
+        "production": "./dist/LexicalReactProviderExtension.prod.mjs",
+        "node": "./dist/LexicalReactProviderExtension.node.mjs",
+        "default": "./dist/LexicalReactProviderExtension.mjs"
       },
       "require": {
-        "types": "./ReactProviderExtension.d.ts",
-        "development": "./LexicalReactProviderExtension.dev.js",
-        "production": "./LexicalReactProviderExtension.prod.js",
-        "default": "./LexicalReactProviderExtension.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/ReactProviderExtension.d.ts",
+        "development": "./dist/LexicalReactProviderExtension.dev.js",
+        "production": "./dist/LexicalReactProviderExtension.prod.js",
+        "default": "./dist/LexicalReactProviderExtension.js"
       }
     },
     "./TreeViewExtension": {
+      "source": "./src/TreeViewExtension.tsx",
       "import": {
-        "types": "./TreeViewExtension.d.ts",
-        "development": "./LexicalTreeViewExtension.dev.mjs",
-        "production": "./LexicalTreeViewExtension.prod.mjs",
-        "node": "./LexicalTreeViewExtension.node.mjs",
-        "default": "./LexicalTreeViewExtension.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/TreeViewExtension.d.ts",
+        "development": "./dist/LexicalTreeViewExtension.dev.mjs",
+        "production": "./dist/LexicalTreeViewExtension.prod.mjs",
+        "node": "./dist/LexicalTreeViewExtension.node.mjs",
+        "default": "./dist/LexicalTreeViewExtension.mjs"
       },
       "require": {
-        "types": "./TreeViewExtension.d.ts",
-        "development": "./LexicalTreeViewExtension.dev.js",
-        "production": "./LexicalTreeViewExtension.prod.js",
-        "default": "./LexicalTreeViewExtension.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/TreeViewExtension.d.ts",
+        "development": "./dist/LexicalTreeViewExtension.dev.js",
+        "production": "./dist/LexicalTreeViewExtension.prod.js",
+        "default": "./dist/LexicalTreeViewExtension.js"
       }
     },
     "./TreeViewExtension.js": {
+      "source": "./src/TreeViewExtension.tsx",
       "import": {
-        "types": "./TreeViewExtension.d.ts",
-        "development": "./LexicalTreeViewExtension.dev.mjs",
-        "production": "./LexicalTreeViewExtension.prod.mjs",
-        "node": "./LexicalTreeViewExtension.node.mjs",
-        "default": "./LexicalTreeViewExtension.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/TreeViewExtension.d.ts",
+        "development": "./dist/LexicalTreeViewExtension.dev.mjs",
+        "production": "./dist/LexicalTreeViewExtension.prod.mjs",
+        "node": "./dist/LexicalTreeViewExtension.node.mjs",
+        "default": "./dist/LexicalTreeViewExtension.mjs"
       },
       "require": {
-        "types": "./TreeViewExtension.d.ts",
-        "development": "./LexicalTreeViewExtension.dev.js",
-        "production": "./LexicalTreeViewExtension.prod.js",
-        "default": "./LexicalTreeViewExtension.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/TreeViewExtension.d.ts",
+        "development": "./dist/LexicalTreeViewExtension.dev.js",
+        "production": "./dist/LexicalTreeViewExtension.prod.js",
+        "default": "./dist/LexicalTreeViewExtension.js"
       }
     },
     "./useExtensionComponent": {
+      "source": "./src/useExtensionComponent.tsx",
       "import": {
-        "types": "./useExtensionComponent.d.ts",
-        "development": "./useLexicalExtensionComponent.dev.mjs",
-        "production": "./useLexicalExtensionComponent.prod.mjs",
-        "node": "./useLexicalExtensionComponent.node.mjs",
-        "default": "./useLexicalExtensionComponent.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useExtensionComponent.d.ts",
+        "development": "./dist/useLexicalExtensionComponent.dev.mjs",
+        "production": "./dist/useLexicalExtensionComponent.prod.mjs",
+        "node": "./dist/useLexicalExtensionComponent.node.mjs",
+        "default": "./dist/useLexicalExtensionComponent.mjs"
       },
       "require": {
-        "types": "./useExtensionComponent.d.ts",
-        "development": "./useLexicalExtensionComponent.dev.js",
-        "production": "./useLexicalExtensionComponent.prod.js",
-        "default": "./useLexicalExtensionComponent.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useExtensionComponent.d.ts",
+        "development": "./dist/useLexicalExtensionComponent.dev.js",
+        "production": "./dist/useLexicalExtensionComponent.prod.js",
+        "default": "./dist/useLexicalExtensionComponent.js"
       }
     },
     "./useExtensionComponent.js": {
+      "source": "./src/useExtensionComponent.tsx",
       "import": {
-        "types": "./useExtensionComponent.d.ts",
-        "development": "./useLexicalExtensionComponent.dev.mjs",
-        "production": "./useLexicalExtensionComponent.prod.mjs",
-        "node": "./useLexicalExtensionComponent.node.mjs",
-        "default": "./useLexicalExtensionComponent.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useExtensionComponent.d.ts",
+        "development": "./dist/useLexicalExtensionComponent.dev.mjs",
+        "production": "./dist/useLexicalExtensionComponent.prod.mjs",
+        "node": "./dist/useLexicalExtensionComponent.node.mjs",
+        "default": "./dist/useLexicalExtensionComponent.mjs"
       },
       "require": {
-        "types": "./useExtensionComponent.d.ts",
-        "development": "./useLexicalExtensionComponent.dev.js",
-        "production": "./useLexicalExtensionComponent.prod.js",
-        "default": "./useLexicalExtensionComponent.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useExtensionComponent.d.ts",
+        "development": "./dist/useLexicalExtensionComponent.dev.js",
+        "production": "./dist/useLexicalExtensionComponent.prod.js",
+        "default": "./dist/useLexicalExtensionComponent.js"
       }
     },
     "./useExtensionSignalValue": {
+      "source": "./src/useExtensionSignalValue.ts",
       "import": {
-        "types": "./useExtensionSignalValue.d.ts",
-        "development": "./useLexicalExtensionSignalValue.dev.mjs",
-        "production": "./useLexicalExtensionSignalValue.prod.mjs",
-        "node": "./useLexicalExtensionSignalValue.node.mjs",
-        "default": "./useLexicalExtensionSignalValue.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useExtensionSignalValue.d.ts",
+        "development": "./dist/useLexicalExtensionSignalValue.dev.mjs",
+        "production": "./dist/useLexicalExtensionSignalValue.prod.mjs",
+        "node": "./dist/useLexicalExtensionSignalValue.node.mjs",
+        "default": "./dist/useLexicalExtensionSignalValue.mjs"
       },
       "require": {
-        "types": "./useExtensionSignalValue.d.ts",
-        "development": "./useLexicalExtensionSignalValue.dev.js",
-        "production": "./useLexicalExtensionSignalValue.prod.js",
-        "default": "./useLexicalExtensionSignalValue.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useExtensionSignalValue.d.ts",
+        "development": "./dist/useLexicalExtensionSignalValue.dev.js",
+        "production": "./dist/useLexicalExtensionSignalValue.prod.js",
+        "default": "./dist/useLexicalExtensionSignalValue.js"
       }
     },
     "./useExtensionSignalValue.js": {
+      "source": "./src/useExtensionSignalValue.ts",
       "import": {
-        "types": "./useExtensionSignalValue.d.ts",
-        "development": "./useLexicalExtensionSignalValue.dev.mjs",
-        "production": "./useLexicalExtensionSignalValue.prod.mjs",
-        "node": "./useLexicalExtensionSignalValue.node.mjs",
-        "default": "./useLexicalExtensionSignalValue.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useExtensionSignalValue.d.ts",
+        "development": "./dist/useLexicalExtensionSignalValue.dev.mjs",
+        "production": "./dist/useLexicalExtensionSignalValue.prod.mjs",
+        "node": "./dist/useLexicalExtensionSignalValue.node.mjs",
+        "default": "./dist/useLexicalExtensionSignalValue.mjs"
       },
       "require": {
-        "types": "./useExtensionSignalValue.d.ts",
-        "development": "./useLexicalExtensionSignalValue.dev.js",
-        "production": "./useLexicalExtensionSignalValue.prod.js",
-        "default": "./useLexicalExtensionSignalValue.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useExtensionSignalValue.d.ts",
+        "development": "./dist/useLexicalExtensionSignalValue.dev.js",
+        "production": "./dist/useLexicalExtensionSignalValue.prod.js",
+        "default": "./dist/useLexicalExtensionSignalValue.js"
       }
     },
     "./useLexicalEditable": {
+      "source": "./src/useLexicalEditable.ts",
       "import": {
-        "types": "./useLexicalEditable.d.ts",
-        "development": "./useLexicalEditable.dev.mjs",
-        "production": "./useLexicalEditable.prod.mjs",
-        "node": "./useLexicalEditable.node.mjs",
-        "default": "./useLexicalEditable.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalEditable.d.ts",
+        "development": "./dist/useLexicalEditable.dev.mjs",
+        "production": "./dist/useLexicalEditable.prod.mjs",
+        "node": "./dist/useLexicalEditable.node.mjs",
+        "default": "./dist/useLexicalEditable.mjs"
       },
       "require": {
-        "types": "./useLexicalEditable.d.ts",
-        "development": "./useLexicalEditable.dev.js",
-        "production": "./useLexicalEditable.prod.js",
-        "default": "./useLexicalEditable.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalEditable.d.ts",
+        "development": "./dist/useLexicalEditable.dev.js",
+        "production": "./dist/useLexicalEditable.prod.js",
+        "default": "./dist/useLexicalEditable.js"
       }
     },
     "./useLexicalEditable.js": {
+      "source": "./src/useLexicalEditable.ts",
       "import": {
-        "types": "./useLexicalEditable.d.ts",
-        "development": "./useLexicalEditable.dev.mjs",
-        "production": "./useLexicalEditable.prod.mjs",
-        "node": "./useLexicalEditable.node.mjs",
-        "default": "./useLexicalEditable.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalEditable.d.ts",
+        "development": "./dist/useLexicalEditable.dev.mjs",
+        "production": "./dist/useLexicalEditable.prod.mjs",
+        "node": "./dist/useLexicalEditable.node.mjs",
+        "default": "./dist/useLexicalEditable.mjs"
       },
       "require": {
-        "types": "./useLexicalEditable.d.ts",
-        "development": "./useLexicalEditable.dev.js",
-        "production": "./useLexicalEditable.prod.js",
-        "default": "./useLexicalEditable.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalEditable.d.ts",
+        "development": "./dist/useLexicalEditable.dev.js",
+        "production": "./dist/useLexicalEditable.prod.js",
+        "default": "./dist/useLexicalEditable.js"
       }
     },
     "./useLexicalIsTextContentEmpty": {
+      "source": "./src/useLexicalIsTextContentEmpty.ts",
       "import": {
-        "types": "./useLexicalIsTextContentEmpty.d.ts",
-        "development": "./useLexicalIsTextContentEmpty.dev.mjs",
-        "production": "./useLexicalIsTextContentEmpty.prod.mjs",
-        "node": "./useLexicalIsTextContentEmpty.node.mjs",
-        "default": "./useLexicalIsTextContentEmpty.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalIsTextContentEmpty.d.ts",
+        "development": "./dist/useLexicalIsTextContentEmpty.dev.mjs",
+        "production": "./dist/useLexicalIsTextContentEmpty.prod.mjs",
+        "node": "./dist/useLexicalIsTextContentEmpty.node.mjs",
+        "default": "./dist/useLexicalIsTextContentEmpty.mjs"
       },
       "require": {
-        "types": "./useLexicalIsTextContentEmpty.d.ts",
-        "development": "./useLexicalIsTextContentEmpty.dev.js",
-        "production": "./useLexicalIsTextContentEmpty.prod.js",
-        "default": "./useLexicalIsTextContentEmpty.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalIsTextContentEmpty.d.ts",
+        "development": "./dist/useLexicalIsTextContentEmpty.dev.js",
+        "production": "./dist/useLexicalIsTextContentEmpty.prod.js",
+        "default": "./dist/useLexicalIsTextContentEmpty.js"
       }
     },
     "./useLexicalIsTextContentEmpty.js": {
+      "source": "./src/useLexicalIsTextContentEmpty.ts",
       "import": {
-        "types": "./useLexicalIsTextContentEmpty.d.ts",
-        "development": "./useLexicalIsTextContentEmpty.dev.mjs",
-        "production": "./useLexicalIsTextContentEmpty.prod.mjs",
-        "node": "./useLexicalIsTextContentEmpty.node.mjs",
-        "default": "./useLexicalIsTextContentEmpty.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalIsTextContentEmpty.d.ts",
+        "development": "./dist/useLexicalIsTextContentEmpty.dev.mjs",
+        "production": "./dist/useLexicalIsTextContentEmpty.prod.mjs",
+        "node": "./dist/useLexicalIsTextContentEmpty.node.mjs",
+        "default": "./dist/useLexicalIsTextContentEmpty.mjs"
       },
       "require": {
-        "types": "./useLexicalIsTextContentEmpty.d.ts",
-        "development": "./useLexicalIsTextContentEmpty.dev.js",
-        "production": "./useLexicalIsTextContentEmpty.prod.js",
-        "default": "./useLexicalIsTextContentEmpty.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalIsTextContentEmpty.d.ts",
+        "development": "./dist/useLexicalIsTextContentEmpty.dev.js",
+        "production": "./dist/useLexicalIsTextContentEmpty.prod.js",
+        "default": "./dist/useLexicalIsTextContentEmpty.js"
       }
     },
     "./useLexicalNodeSelection": {
+      "source": "./src/useLexicalNodeSelection.ts",
       "import": {
-        "types": "./useLexicalNodeSelection.d.ts",
-        "development": "./useLexicalNodeSelection.dev.mjs",
-        "production": "./useLexicalNodeSelection.prod.mjs",
-        "node": "./useLexicalNodeSelection.node.mjs",
-        "default": "./useLexicalNodeSelection.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalNodeSelection.d.ts",
+        "development": "./dist/useLexicalNodeSelection.dev.mjs",
+        "production": "./dist/useLexicalNodeSelection.prod.mjs",
+        "node": "./dist/useLexicalNodeSelection.node.mjs",
+        "default": "./dist/useLexicalNodeSelection.mjs"
       },
       "require": {
-        "types": "./useLexicalNodeSelection.d.ts",
-        "development": "./useLexicalNodeSelection.dev.js",
-        "production": "./useLexicalNodeSelection.prod.js",
-        "default": "./useLexicalNodeSelection.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalNodeSelection.d.ts",
+        "development": "./dist/useLexicalNodeSelection.dev.js",
+        "production": "./dist/useLexicalNodeSelection.prod.js",
+        "default": "./dist/useLexicalNodeSelection.js"
       }
     },
     "./useLexicalNodeSelection.js": {
+      "source": "./src/useLexicalNodeSelection.ts",
       "import": {
-        "types": "./useLexicalNodeSelection.d.ts",
-        "development": "./useLexicalNodeSelection.dev.mjs",
-        "production": "./useLexicalNodeSelection.prod.mjs",
-        "node": "./useLexicalNodeSelection.node.mjs",
-        "default": "./useLexicalNodeSelection.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalNodeSelection.d.ts",
+        "development": "./dist/useLexicalNodeSelection.dev.mjs",
+        "production": "./dist/useLexicalNodeSelection.prod.mjs",
+        "node": "./dist/useLexicalNodeSelection.node.mjs",
+        "default": "./dist/useLexicalNodeSelection.mjs"
       },
       "require": {
-        "types": "./useLexicalNodeSelection.d.ts",
-        "development": "./useLexicalNodeSelection.dev.js",
-        "production": "./useLexicalNodeSelection.prod.js",
-        "default": "./useLexicalNodeSelection.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalNodeSelection.d.ts",
+        "development": "./dist/useLexicalNodeSelection.dev.js",
+        "production": "./dist/useLexicalNodeSelection.prod.js",
+        "default": "./dist/useLexicalNodeSelection.js"
       }
     },
     "./useLexicalSubscription": {
+      "source": "./src/useLexicalSubscription.tsx",
       "import": {
-        "types": "./useLexicalSubscription.d.ts",
-        "development": "./useLexicalSubscription.dev.mjs",
-        "production": "./useLexicalSubscription.prod.mjs",
-        "node": "./useLexicalSubscription.node.mjs",
-        "default": "./useLexicalSubscription.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalSubscription.d.ts",
+        "development": "./dist/useLexicalSubscription.dev.mjs",
+        "production": "./dist/useLexicalSubscription.prod.mjs",
+        "node": "./dist/useLexicalSubscription.node.mjs",
+        "default": "./dist/useLexicalSubscription.mjs"
       },
       "require": {
-        "types": "./useLexicalSubscription.d.ts",
-        "development": "./useLexicalSubscription.dev.js",
-        "production": "./useLexicalSubscription.prod.js",
-        "default": "./useLexicalSubscription.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalSubscription.d.ts",
+        "development": "./dist/useLexicalSubscription.dev.js",
+        "production": "./dist/useLexicalSubscription.prod.js",
+        "default": "./dist/useLexicalSubscription.js"
       }
     },
     "./useLexicalSubscription.js": {
+      "source": "./src/useLexicalSubscription.tsx",
       "import": {
-        "types": "./useLexicalSubscription.d.ts",
-        "development": "./useLexicalSubscription.dev.mjs",
-        "production": "./useLexicalSubscription.prod.mjs",
-        "node": "./useLexicalSubscription.node.mjs",
-        "default": "./useLexicalSubscription.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalSubscription.d.ts",
+        "development": "./dist/useLexicalSubscription.dev.mjs",
+        "production": "./dist/useLexicalSubscription.prod.mjs",
+        "node": "./dist/useLexicalSubscription.node.mjs",
+        "default": "./dist/useLexicalSubscription.mjs"
       },
       "require": {
-        "types": "./useLexicalSubscription.d.ts",
-        "development": "./useLexicalSubscription.dev.js",
-        "production": "./useLexicalSubscription.prod.js",
-        "default": "./useLexicalSubscription.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalSubscription.d.ts",
+        "development": "./dist/useLexicalSubscription.dev.js",
+        "production": "./dist/useLexicalSubscription.prod.js",
+        "default": "./dist/useLexicalSubscription.js"
       }
     },
     "./useLexicalTextEntity": {
+      "source": "./src/useLexicalTextEntity.ts",
       "import": {
-        "types": "./useLexicalTextEntity.d.ts",
-        "development": "./useLexicalTextEntity.dev.mjs",
-        "production": "./useLexicalTextEntity.prod.mjs",
-        "node": "./useLexicalTextEntity.node.mjs",
-        "default": "./useLexicalTextEntity.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalTextEntity.d.ts",
+        "development": "./dist/useLexicalTextEntity.dev.mjs",
+        "production": "./dist/useLexicalTextEntity.prod.mjs",
+        "node": "./dist/useLexicalTextEntity.node.mjs",
+        "default": "./dist/useLexicalTextEntity.mjs"
       },
       "require": {
-        "types": "./useLexicalTextEntity.d.ts",
-        "development": "./useLexicalTextEntity.dev.js",
-        "production": "./useLexicalTextEntity.prod.js",
-        "default": "./useLexicalTextEntity.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalTextEntity.d.ts",
+        "development": "./dist/useLexicalTextEntity.dev.js",
+        "production": "./dist/useLexicalTextEntity.prod.js",
+        "default": "./dist/useLexicalTextEntity.js"
       }
     },
     "./useLexicalTextEntity.js": {
+      "source": "./src/useLexicalTextEntity.ts",
       "import": {
-        "types": "./useLexicalTextEntity.d.ts",
-        "development": "./useLexicalTextEntity.dev.mjs",
-        "production": "./useLexicalTextEntity.prod.mjs",
-        "node": "./useLexicalTextEntity.node.mjs",
-        "default": "./useLexicalTextEntity.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalTextEntity.d.ts",
+        "development": "./dist/useLexicalTextEntity.dev.mjs",
+        "production": "./dist/useLexicalTextEntity.prod.mjs",
+        "node": "./dist/useLexicalTextEntity.node.mjs",
+        "default": "./dist/useLexicalTextEntity.mjs"
       },
       "require": {
-        "types": "./useLexicalTextEntity.d.ts",
-        "development": "./useLexicalTextEntity.dev.js",
-        "production": "./useLexicalTextEntity.prod.js",
-        "default": "./useLexicalTextEntity.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalTextEntity.d.ts",
+        "development": "./dist/useLexicalTextEntity.dev.js",
+        "production": "./dist/useLexicalTextEntity.prod.js",
+        "default": "./dist/useLexicalTextEntity.js"
       }
     }
   },
@@ -1575,5 +1892,26 @@
   "devDependencies": {
     "@types/jest-axe": "^3.5.9",
     "jest-axe": "^10.0.0"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ],
+  "types": "./dist/typescript-too-old.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/typescript-too-old.d.ts"
+      ]
+    }
   }
 }

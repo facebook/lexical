@@ -102,7 +102,7 @@ export function ToolbarPlugin() {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       const anchorNode = selection.anchor.getNode();
-      let topLevelElement = $findMatchingParent(anchorNode, (e) => {
+      let topLevelElement = $findMatchingParent(anchorNode, e => {
         const parent = e.getParent();
         return parent !== null && $isRootOrShadowRoot(parent);
       });
@@ -133,7 +133,7 @@ export function ToolbarPlugin() {
       }),
       editor.registerCommand(
         CAN_UNDO_COMMAND,
-        (payload) => {
+        payload => {
           setCanUndo(payload);
           return false;
         },
@@ -141,7 +141,7 @@ export function ToolbarPlugin() {
       ),
       editor.registerCommand(
         CAN_REDO_COMMAND,
-        (payload) => {
+        payload => {
           setCanRedo(payload);
           return false;
         },
@@ -166,7 +166,7 @@ export function ToolbarPlugin() {
       <select
         className="cursor-pointer appearance-none rounded-md border border-solid border-transparent bg-transparent px-2 py-1 text-sm font-medium text-zinc-700 transition-colors duration-150 hover:bg-zinc-200 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-zinc-200 dark:hover:bg-zinc-700"
         value={blockType}
-        onChange={(e) => applyBlockType(editor, e.target.value)}
+        onChange={e => applyBlockType(editor, e.target.value)}
         aria-label="Block type">
         {BLOCK_TYPES.map(({label, value}) => (
           <option key={value} value={value}>

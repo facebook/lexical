@@ -52,7 +52,7 @@ const editorConfig = Object.freeze({
 });
 
 describe('LexicalListNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('ListNode.constructor', async () => {
       const {editor} = testEnv;
 
@@ -478,7 +478,7 @@ describe('LexicalListNode subclassing tests ($config)', () => {
   function $getListItemValues() {
     return $getRoot()
       .getAllTextNodes()
-      .map((node) => {
+      .map(node => {
         const parent = node.getParent();
         return parent && $isListItemNode(parent) ? parent.getValue() : null;
       });
@@ -493,7 +493,7 @@ describe('LexicalListNode subclassing tests ($config)', () => {
   }
   describe('ListNode as-is', () =>
     initializeUnitTest(
-      (testEnv) => {
+      testEnv => {
         test('applies transform', () => {
           const {editor} = testEnv;
           editor.update(
@@ -512,7 +512,7 @@ describe('LexicalListNode subclassing tests ($config)', () => {
     ));
   describe('ListNodeConfig (no replacement)', () =>
     initializeUnitTest(
-      (testEnv) => {
+      testEnv => {
         test('applies transform', () => {
           const {editor} = testEnv;
           editor.update(
@@ -531,7 +531,7 @@ describe('LexicalListNode subclassing tests ($config)', () => {
     ));
   describe('ListNodeSubclass (no replacement)', () =>
     initializeUnitTest(
-      (testEnv) => {
+      testEnv => {
         test('applies transform', () => {
           const {editor} = testEnv;
           editor.update(

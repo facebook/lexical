@@ -27,7 +27,7 @@ test.describe('HTML CopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold"
             style="font-size: 11pt"
@@ -35,7 +35,7 @@ test.describe('HTML CopyAndPaste', () => {
             Bold
           </strong>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
           <em
             class="PlaygroundEditorTheme__textItalic"
             style="font-size: 11pt"
@@ -43,7 +43,7 @@ test.describe('HTML CopyAndPaste', () => {
             Italic
           </em>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
           <span
             class="PlaygroundEditorTheme__textUnderline"
             style="font-size: 11pt"
@@ -51,7 +51,7 @@ test.describe('HTML CopyAndPaste', () => {
             underline
           </span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <p class="PlaygroundEditorTheme__paragraph" dir="ltr">
           <strong
             class="PlaygroundEditorTheme__textBold PlaygroundEditorTheme__textItalic
            PlaygroundEditorTheme__textUnderline"

@@ -11,10 +11,8 @@ import type {JSX} from 'react';
 import {
   $getState,
   $setState,
-  buildImportMap,
   createState,
   DecoratorNode,
-  DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
   SerializedLexicalNode,
@@ -69,18 +67,6 @@ export type SerializedPollNode = Spread<
   SerializedLexicalNode
 >;
 
-function $convertPollElement(
-  domNode: HTMLSpanElement,
-): DOMConversionOutput | null {
-  const question = domNode.getAttribute('data-lexical-poll-question');
-  const options = domNode.getAttribute('data-lexical-poll-options');
-  if (question !== null && options !== null) {
-    const node = $createPollNode(question, JSON.parse(options));
-    return {node};
-  }
-  return null;
-}
-
 function parseOptions(json: unknown): Options {
   const options = [];
   if (Array.isArray(json)) {
@@ -100,7 +86,7 @@ function parseOptions(json: unknown): Options {
 }
 
 const questionState = createState('question', {
-  parse: (v) => (typeof v === 'string' ? v : ''),
+  parse: v => (typeof v === 'string' ? v : ''),
 });
 const optionsState = createState('options', {
   isEqual: (a, b) =>
@@ -112,15 +98,6 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   $config() {
     return this.config('poll', {
       extends: DecoratorNode,
-      importDOM: buildImportMap({
-        span: (domNode) =>
-          domNode.getAttribute('data-lexical-poll-question') !== null
-            ? {
-                conversion: $convertPollElement,
-                priority: 2,
-              }
-            : null,
-      }),
       stateConfigs: [
         {flat: true, stateConfig: questionState},
         {flat: true, stateConfig: optionsState},
@@ -142,11 +119,11 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 
   addOption(option: Option): this {
-    return this.setOptions((options) => [...options, option]);
+    return this.setOptions(options => [...options, option]);
   }
 
   deleteOption(option: Option): this {
-    return this.setOptions((prevOptions) => {
+    return this.setOptions(prevOptions => {
       const index = prevOptions.indexOf(option);
       if (index === -1) {
         return prevOptions;
@@ -158,7 +135,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 
   setOptionText(option: Option, text: string): this {
-    return this.setOptions((prevOptions) => {
+    return this.setOptions(prevOptions => {
       const clonedOption = cloneOption(option, text);
       const options = Array.from(prevOptions);
       const index = options.indexOf(option);
@@ -168,7 +145,7 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   }
 
   toggleVote(option: Option, username: string): this {
-    return this.setOptions((prevOptions) => {
+    return this.setOptions(prevOptions => {
       const index = prevOptions.indexOf(option);
       if (index === -1) {
         return prevOptions;

@@ -18,6 +18,7 @@ import 'prismjs/components/prism-markup';
 import 'prismjs/components/prism-markdown';
 import 'prismjs/components/prism-c';
 import 'prismjs/components/prism-css';
+import 'prismjs/components/prism-go';
 import 'prismjs/components/prism-objectivec';
 import 'prismjs/components/prism-sql';
 import 'prismjs/components/prism-powershell';
@@ -29,7 +30,7 @@ import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-cpp';
 
 import {$createCodeHighlightNode} from '@lexical/code-core';
-import {$createLineBreakNode, $createTabNode} from 'lexical';
+import {$createLineBreakNode, $createTabNode, tokenizeRawText} from 'lexical';
 
 declare global {
   interface Window {
@@ -45,6 +46,7 @@ export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
   clike: 'C-like',
   cpp: 'C++',
   css: 'CSS',
+  go: 'Go',
   html: 'HTML',
   java: 'Java',
   js: 'JavaScript',
@@ -62,6 +64,7 @@ export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
 
 export const CODE_LANGUAGE_MAP: Record<string, string> = {
   cpp: 'cpp',
+  golang: 'go',
   java: 'java',
   javascript: 'js',
   md: 'markdown',
@@ -85,7 +88,7 @@ export const getCodeLanguages = (): Array<string> =>
     .filter(
       // Prism has several language helpers mixed into languages object
       // so filtering them out here to get langs list
-      (language) => typeof Prism.languages[language] !== 'function',
+      language => typeof Prism.languages[language] !== 'function',
     )
     .sort();
 
@@ -177,7 +180,7 @@ export function tokenizeDiffHighlight(
     };
 
     const withoutPrefixes = token.content.filter(
-      (t) => typeof t === 'string' || t.type !== 'prefix',
+      t => typeof t === 'string' || t.type !== 'prefix',
     );
     const prefixCount = token.content.length - withoutPrefixes.length;
     const diffTokens = Prism.tokenize(
@@ -272,18 +275,11 @@ function $mapTokensToLexicalStructure(
 
   for (const token of tokens) {
     if (typeof token === 'string') {
-      const partials = token.split(/(\n|\t)/);
-      const partialsLength = partials.length;
-      for (let i = 0; i < partialsLength; i++) {
-        const part = partials[i];
-        if (part === '\n' || part === '\r\n') {
-          nodes.push($createLineBreakNode());
-        } else if (part === '\t') {
-          nodes.push($createTabNode());
-        } else if (part.length > 0) {
-          nodes.push($createCodeHighlightNode(part, type));
-        }
-      }
+      tokenizeRawText(token, {
+        linebreak: () => nodes.push($createLineBreakNode()),
+        tab: () => nodes.push($createTabNode()),
+        text: part => nodes.push($createCodeHighlightNode(part, type)),
+      });
     } else {
       const {content, alias} = token;
       if (typeof content === 'string') {

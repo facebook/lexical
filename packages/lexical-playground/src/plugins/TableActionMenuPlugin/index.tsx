@@ -137,7 +137,7 @@ function TableActionMenu({
   useEffect(() => {
     return editor.registerMutationListener(
       TableCellNode,
-      (nodeMutations) => {
+      nodeMutations => {
         const nodeUpdated =
           nodeMutations.get(tableCellNode.getKey()) === 'updated';
 
@@ -504,7 +504,7 @@ function TableActionMenu({
     <div
       className="dropdown"
       ref={dropDownRef}
-      onClick={(e) => {
+      onClick={e => {
         e.stopPropagation();
       }}>
       {mergeCellButton}
@@ -853,7 +853,7 @@ function TableCellActionMenuContainer({
     let timeoutId: ReturnType<typeof setTimeout> | undefined = undefined;
     const callback = () => {
       timeoutId = undefined;
-      editor.getEditorState().read($moveMenu);
+      editor.getEditorState().read($moveMenu, {editor});
     };
     const delayedCallback = () => {
       if (timeoutId === undefined) {
@@ -884,7 +884,6 @@ function TableCellActionMenuContainer({
 
   useEffect(() => {
     if (prevTableCellDOM.current !== tableCellNode) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsMenuOpen(false);
     }
 
@@ -898,7 +897,7 @@ function TableCellActionMenuContainer({
           <button
             type="button"
             className="table-cell-action-button chevron-down"
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation();
               setIsMenuOpen(!isMenuOpen);
             }}

@@ -51,6 +51,22 @@ declare export function $insertDataTransferForPlainText(
   selection: RangeSelection,
 ): void;
 
+declare export function $handleRichTextDrop(
+  event: DragEvent,
+  editor: LexicalEditor,
+): boolean;
+
+declare export function $handlePlainTextDrop(
+  event: DragEvent,
+  editor: LexicalEditor,
+): boolean;
+
+declare export function $writeDragSourceToDataTransfer(
+  dataTransfer: DataTransfer,
+  editor: LexicalEditor,
+  selection: RangeSelection,
+): void;
+
 interface BaseSerializedNode {
   children?: Array<BaseSerializedNode>;
   type: string;
@@ -75,3 +91,7 @@ declare export function copyToClipboard(
   editor: LexicalEditor,
   event: null | ClipboardEvent,
 ): Promise<boolean>;
+declare export function caretFromPoint(
+  x: number,
+  y: number,
+): null | {offset: number, node: Node};

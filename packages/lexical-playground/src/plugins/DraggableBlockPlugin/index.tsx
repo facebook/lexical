@@ -76,9 +76,9 @@ export default function DraggableBlockPlugin({
     return [
       ...getDynamicOptions(editor, queryString),
       ...baseOptions.filter(
-        (option) =>
+        option =>
           regex.test(option.title) ||
-          option.keywords.some((keyword) => regex.test(keyword)),
+          option.keywords.some(keyword => regex.test(keyword)),
       ),
     ];
   }, [editor, queryString, showModal]);
@@ -94,7 +94,7 @@ export default function DraggableBlockPlugin({
       return;
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setHighlightedIndex((current) =>
+    setHighlightedIndex(current =>
       Math.min(current, Math.max(options.length - 1, 0)),
     );
   }, [isPickerOpen, options.length]);
@@ -168,12 +168,12 @@ export default function DraggableBlockPlugin({
       }
       if (event.key === 'ArrowDown') {
         event.preventDefault();
-        setHighlightedIndex((index) =>
+        setHighlightedIndex(index =>
           index + 1 >= options.length ? 0 : index + 1,
         );
       } else if (event.key === 'ArrowUp') {
         event.preventDefault();
-        setHighlightedIndex((index) =>
+        setHighlightedIndex(index =>
           index - 1 < 0 ? options.length - 1 : index - 1,
         );
       } else if (event.key === 'Enter') {
@@ -246,7 +246,7 @@ export default function DraggableBlockPlugin({
                 placeholder="Filter blocks..."
                 value={queryString}
                 ref={searchInputRef}
-                onChange={(event) => setQueryString(event.target.value)}
+                onChange={event => setQueryString(event.target.value)}
               />
               <ul>
                 {options.map((option, i: number) => (

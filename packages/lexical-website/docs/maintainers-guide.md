@@ -24,11 +24,20 @@ Some packages in the monorepo do not get published to npm, for example:
   [playground.lexical.dev](https://playground.lexical.dev/) demo site
 * `packages/lexical-website` - the [lexical.dev](https://lexical.dev/)
   docusaurus website that you may even be reading right now
-* `packages/shared` - internal code that is used by more than one repository
-  but should not be a public API
+* `packages/lexical-test-utils` - `@lexical/test-utils`, private React
+  testing helpers shared across package unit tests
 
-It is required that these packages, and any other package that should not be
-published to npm, have a `"private": true` property in their `package.json`.
+Internal runtime code shared by more than one package lives in
+`packages/lexical-internal` (`@lexical/internal`). Unlike the others above
+it **is** published, but only so its source resolves through normal package
+resolution (the `source` export condition used by linked-checkout
+consumers); the compiled packages inline it, so it is never executed as a
+separate runtime dependency. It is not a public API and has no semver
+guarantees — see [Developing against a local Lexical
+checkout](./maintainers-guide-link.md).
+
+It is required that private packages, and any other package that should not
+be published to npm, have a `"private": true` property in their `package.json`.
 If you have an in-progress package that will eventually be public, but is
 not ready for consumption, it should probably still be set to
 `"private": true` otherwise the tooling will find it and publish it.
@@ -190,13 +199,25 @@ of these scripts you might as well run them all.
 
 ### pnpm run prepare-release
 
-This runs all of the pre-release steps and will let you inspect the artifacts
-that would be uploaded to npm. Each public package will have a npm directory, e.g.
-`packages/lexical/npm` that contains those artifacts.
+This runs `build-release` to produce all of the artifacts each public
+package needs (the `dev`/`prod`/`node` ESM and CJS variants plus their
+fork modules, `.d.ts` declarations, and `.flow` stubs under
+`packages/<name>/dist/`), then runs the publish-time guard in
+`scripts/npm/prepare-release.mjs` to confirm every path the package's
+`exports`/`main`/`module`/`types` fields reference actually exists on
+disk. The guard fails the build if e.g. you ran `pnpm run build` (dev
+only) and then tried to publish — the `.prod.{js,mjs}` files would be
+missing.
 
-This will also update scripts/error-codes/codes.json, the mapping of
-production error codes to error messages. It's imperative to commit the result
-of this before tagging a release.
+Each package is its own publish root: `packages/<name>/` IS the
+publishable npm package after `build-release`. `pnpm publish` is run
+directly from that directory by `scripts/npm/release.mjs` so pnpm's
+automatic `workspace:*` rewriting and the `files` whitelist do the
+right thing without an intermediate `npm/` copy step.
+
+This will also update `scripts/error-codes/codes.json`, the mapping of
+production error codes to error messages. It's imperative to commit the
+result of this before tagging a release.
 
 ### pnpm run ci-check
 
@@ -269,6 +290,122 @@ plus creating a tag in git, and likely other steps.
 
 Runs prepare-release to do a full build and then uploads to npm.
 
+### pnpm run setup-trusted-publishing
+
+One-time (idempotent) helper to register every public package with
+[npm trusted publishing](https://docs.npmjs.com/trusted-publishers).
+Re-run it whenever a new public package is added.
+
+#### Prerequisites
+
+- Node.js — whatever the repo's root `package.json#engines.node` says (currently `>=20.19.0`). Running with Node 24+ is recommended because that's what CI uses for publishes.
+- pnpm — pinned by `package.json#packageManager` (currently `pnpm@10.34.1`). Activate with [corepack](https://nodejs.org/api/corepack.html) or install directly.
+- npm CLI — **`npm ≥ 11.10`** (`npm i -g npm@latest`). The `npm trust` subcommand was added in npm 11; older versions will fail the preflight check.
+- An authenticated npm session (`npm login --registry https://registry.npmjs.org`) on a publisher account that has **account-level 2FA enabled** and write access to every `@lexical/*` package.
+
+#### Usage
+
+Run in check-only mode first:
+
+```bash
+pnpm run setup-trusted-publishing
+```
+
+For each public package in the monorepo, it queries
+`https://registry.npmjs.org` and reports whether the name is already
+claimed. Packages that *don't* exist on the registry are listed; you
+can re-run with `--bootstrap` to publish a deprecated
+`0.0.0-bootstrap.0` placeholder under the `bootstrap` dist-tag so the
+name can be claimed:
+
+```bash
+npm login --registry https://registry.npmjs.org
+pnpm run setup-trusted-publishing --bootstrap
+```
+
+Once a package exists on the registry, you can configure trusted
+publishing for it programmatically by adding `--setup-trust`. This
+runs `npm trust github` under the hood (requires `npm` ≥ 11.10 and an
+authenticated session with account-level 2FA on the publishing
+account), and is idempotent — the script reads the existing trust
+configuration for each package via a read-only registry call (no OTP)
+and skips packages whose config already matches:
+
+```bash
+npm login --registry https://registry.npmjs.org
+pnpm run setup-trusted-publishing --setup-trust
+```
+
+`npm trust github` is a write operation, so each package that *does*
+need configuring will trigger a one-time-password / web-auth prompt.
+On the first prompt npm prints a URL; open it in a browser, sign in,
+and tick **"Skip two-factor authentication for the next 5 minutes"**.
+Subsequent packages in the same run will then go through without
+re-prompting. The script also inserts a small (~2 s) pause between
+calls to stay under the registry's `E429` rate limit.
+
+For full first-time setup of a brand-new monorepo (or when adding a
+new package to an existing one), combine both flags:
+
+```bash
+pnpm run setup-trusted-publishing --bootstrap --setup-trust
+```
+
+Useful flags:
+
+- `--dry-run` — print what would happen without touching the registry (works with both `--bootstrap` and `--setup-trust`)
+- `--workflow <filename>` — override the workflow filename (default `call-release.yml`)
+- `--repo <owner/name>` — override the GitHub repo (default `facebook/lexical`)
+- `--stub-version <semver>` — override the placeholder version (default `0.0.0-bootstrap.0`)
+- `--registry <url>` — override the npm registry
+
+In the default (check-only) mode the script also prints the npmjs.com
+`/access` URL for each existing package and the exact values to enter
+manually, as a fallback for when `npm trust github` isn't an option.
+
+### Testing trusted publishing from a PR branch
+
+The "Publish to NPM" workflow (`pre-release.yml`) exposes `ref`,
+`channel`, and `increment-version` inputs so it doubles as a test
+harness. Picking a branch in the "Run workflow" dropdown selects
+which version of the workflow files run, and the inputs determine
+what actually gets published. The workflow has no NPM_TOKEN secret to
+fall back on — publishes always go through OIDC trusted publishing —
+so a misconfigured trust setup fails loudly rather than silently
+falling through to token auth.
+
+A safe end-to-end test looks like:
+
+| Input | Value |
+| -- | -- |
+| Branch (dropdown) | your PR branch |
+| `ref` | your PR branch (same value) |
+| `channel` | `dev` |
+| `increment-version` | checked |
+| `ignore-previously-published` | unchecked |
+
+With `increment-version` on, the run bumps `package.json` to a fresh
+prerelease (e.g. `0.46.0-dev.0`), commits + tags it on a `dev__release`
+branch on origin, and publishes the monorepo under the `dev` dist-tag
+via OIDC. The `latest` tag is untouched, so default `npm install`
+users are unaffected. After it succeeds:
+
+```bash
+npm view lexical@dev version     # → the just-published prerelease
+npm view lexical@latest version  # → unchanged
+```
+
+Cleanup (the prerelease itself can't be reused, but the git refs
+should go):
+
+```bash
+git push --delete origin v0.46.0-dev.0 dev__release 0.46.0-dev.0__release
+```
+
+The `increment-version=true + channel=latest` combination is refused
+by the workflow's guard job — real `latest` releases must go through
+`version.yml` first.
+
 ## Release Procedure
 
 This is the current release procedure for public releases, at least as of
@@ -285,7 +422,6 @@ from main in step 4).
 4. After PR is merged to main, publish to NPM with the Github Actions "Publish to NPM" workflow (`pre-release.yml`)
 5. Create a GitHub release from the tag created in step 1, manually editing the release notes
 6. Announce the release in #announcements on Discord
-7. Raise a PR against the post-release-* version branch (created by `call-post-release.yml` via `pre-release.yml`) to update the examples
 
 ## Release Protocol
 

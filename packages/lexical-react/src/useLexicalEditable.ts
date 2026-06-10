@@ -14,7 +14,7 @@ import {useLexicalSubscription} from './useLexicalSubscription';
 function subscription(editor: LexicalEditor): LexicalSubscription<boolean> {
   return {
     initialValueFn: () => editor.isEditable(),
-    subscribe: (callback) => {
+    subscribe: callback => {
       return editor.registerEditableListener(callback);
     },
   };

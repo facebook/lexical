@@ -25,6 +25,7 @@ import {
   createUndoManager,
   DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
   initLocalState,
+  removeCursorHighlightRule,
   renderSnapshot__EXPERIMENTAL,
   setLocalStateFocus,
   syncCursorPositions,
@@ -58,6 +59,16 @@ import {InitialEditorStateType} from '../LexicalComposer';
 
 export type CursorsContainerRef = React.RefObject<HTMLElement | null>;
 
+/**
+ * Well-known key under which the active Yjs {@link UndoManager} is published on
+ * the editor instance (mirroring how `@lexical/extension` attaches its builder
+ * via a `Symbol.for` key). Collab disables `@lexical/history`, so this is the
+ * handle tooling and e2e tests use to force a deterministic undo boundary via
+ * `editor[COLLAB_UNDO_MANAGER]?.stopCapturing()` instead of waiting out the
+ * UndoManager capture timeout.
+ */
+const COLLAB_UNDO_MANAGER = Symbol.for('@lexical/yjs/UndoManager');
+
 type OnYjsTreeChanges = (
   // The below `any` type is taken directly from the vendor types for YJS.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -79,6 +90,7 @@ export function useYjsCollaboration(
   initialEditorState?: InitialEditorStateType,
   awarenessData?: object,
   syncCursorPositionsFn: SyncCursorPositionsFn = syncCursorPositions,
+  selectionHighlight: boolean = false,
 ): JSX.Element {
   const isReloadingDoc = useRef(false);
 
@@ -170,7 +182,7 @@ export function useYjsCollaboration(
     onBootstrap,
   );
 
-  useAwareness(binding, provider);
+  useAwareness(binding, provider, selectionHighlight);
 
   return useYjsCursors(binding, cursorsContainerRef);
 }
@@ -187,6 +199,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     awarenessData?: object;
     excludedProperties?: ExcludedProperties;
     rootName?: string;
+    selectionHighlight?: boolean;
     __shouldBootstrapUnsafe?: boolean;
   } = {},
 ): BindingV2 {
@@ -194,6 +207,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     awarenessData,
     excludedProperties,
     rootName,
+    selectionHighlight = false,
     __shouldBootstrapUnsafe: shouldBootstrap,
   } = options;
 
@@ -317,7 +331,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
     onBootstrap,
   );
 
-  useAwareness(binding, provider);
+  useAwareness(binding, provider, selectionHighlight);
 
   return binding;
 }
@@ -400,7 +414,7 @@ function useProvider(
   useEffect(() => {
     return editor.registerCommand(
       TOGGLE_CONNECT_COMMAND,
-      (payload) => {
+      payload => {
         const shouldConnect = payload;
 
         if (shouldConnect) {
@@ -447,18 +461,22 @@ function useProvider(
   }, [provider]);
 }
 
-function useAwareness(binding: Binding | BindingV2, provider: Provider) {
+function useAwareness(
+  binding: Binding | BindingV2,
+  provider: Provider,
+  selectionHighlight: boolean,
+) {
   useEffect(() => {
     const {awareness} = provider;
     const onAwarenessUpdate = () => {
-      syncCursorPositions(binding, provider);
+      syncCursorPositions(binding, provider, {selectionHighlight});
     };
     awareness.on('update', onAwarenessUpdate);
 
     return () => {
       awareness.off('update', onAwarenessUpdate);
     };
-  }, [binding, provider]);
+  }, [binding, provider, selectionHighlight]);
 }
 
 export function useYjsCursors(
@@ -560,6 +578,20 @@ function useYjsUndoManager(editor: LexicalEditor, undoManager: UndoManager) {
       ),
     );
   });
+  // Publish the UndoManager on the editor (see COLLAB_UNDO_MANAGER) so tooling
+  // and e2e tests can reach it; remove it again when it changes or unmounts.
+  useEffect(() => {
+    const withManager = editor as LexicalEditor &
+      Record<symbol, UndoManager | undefined>;
+    // eslint-disable-next-line react-hooks/immutability
+    withManager[COLLAB_UNDO_MANAGER] = undoManager;
+    return () => {
+      if (withManager[COLLAB_UNDO_MANAGER] === undoManager) {
+        delete withManager[COLLAB_UNDO_MANAGER];
+      }
+    };
+  }, [editor, undoManager]);
+
   const clearHistory = useCallback(() => {
     undoManager.clear();
   }, [undoManager]);
@@ -676,19 +708,23 @@ function clearEditorSkipCollab(editor: LexicalEditor, binding: BaseBinding) {
     return;
   }
 
-  // reset cursors in dom
-  const cursorsArr = Array.from(cursors.values());
-
-  for (let i = 0; i < cursorsArr.length; i++) {
-    const cursor = cursorsArr[i];
+  for (const cursor of cursors.values()) {
     const selection = cursor.selection;
-
-    if (selection && selection.selections != null) {
-      const selections = selection.selections;
-
-      for (let j = 0; j < selections.length; j++) {
-        cursorsContainer.removeChild(selections[i]);
+    if (selection === null) {
+      continue;
+    }
+    if (selection.highlight !== null) {
+      CSS.highlights.delete(selection.highlightName);
+      removeCursorHighlightRule(binding, selection.highlightName);
+    }
+    if (selection.caret.parentNode === cursorsContainer) {
+      cursorsContainer.removeChild(selection.caret);
+    }
+    for (const span of selection.selections) {
+      if (span.parentNode === cursorsContainer) {
+        cursorsContainer.removeChild(span);
       }
     }
+    cursor.selection = null;
   }
 }

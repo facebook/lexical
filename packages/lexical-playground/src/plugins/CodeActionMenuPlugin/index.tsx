@@ -11,6 +11,7 @@ import type {JSX} from 'react';
 import './index.css';
 
 import {$isCodeNode, CodeNode} from '@lexical/code';
+import {DEFAULT_CODE_LANGUAGE} from '@lexical/code-core';
 import {
   getLanguageFriendlyName,
   normalizeCodeLanguage,
@@ -22,7 +23,8 @@ import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import {CopyButton} from './components/CopyButton';
-import {canBePrettier, PrettierButton} from './components/PrettierButton';
+import {PrettierButton} from './components/PrettierButton';
+import {canBePrettier} from './formatCodeWithPrettier';
 import {useDebounce} from './utils';
 
 const CODE_PADDING = 8;
@@ -113,7 +115,7 @@ function CodeActionMenuContainer({
   useEffect(() => {
     return editor.registerMutationListener(
       CodeNode,
-      (mutations) => {
+      mutations => {
         editor.getEditorState().read(() => {
           for (const [key, type] of mutations) {
             switch (type) {
@@ -136,8 +138,15 @@ function CodeActionMenuContainer({
     );
   }, [editor]);
 
-  const normalizedLang = normalizeCodeLanguage(lang);
-  const codeFriendlyName = getLanguageFriendlyName(lang);
+  // Code blocks created without an explicit language (markdown ``` with
+  // no info string, the `/code` slash menu) leave `__language` as
+  // `undefined`, which surfaces here as an empty `lang`. Show the same
+  // `(No language)` label the main toolbar uses, but still hand prettier
+  // the highlight default so users can format these blocks.
+  const normalizedLang = normalizeCodeLanguage(lang || DEFAULT_CODE_LANGUAGE);
+  const codeFriendlyName = lang
+    ? getLanguageFriendlyName(lang)
+    : '(No language)';
 
   return (
     <>

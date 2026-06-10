@@ -17,6 +17,7 @@ import {
   CHECK_LIST,
   ELEMENT_TRANSFORMERS,
   ElementTransformer,
+  isTableRowDivider,
   MULTILINE_ELEMENT_TRANSFORMERS,
   TEXT_FORMAT_TRANSFORMERS,
   TEXT_MATCH_TRANSFORMERS,
@@ -69,12 +70,13 @@ export const HR: ElementTransformer = {
 
     line.selectNext();
   },
+  triggerOnEnter: true,
   type: 'element',
 };
 
 export const IMAGE: TextMatchTransformer = {
   dependencies: [ImageNode],
-  export: (node) => {
+  export: node => {
     if (!$isImageNode(node)) {
       return null;
     }
@@ -102,7 +104,7 @@ export const EMOJI: TextMatchTransformer = {
   importRegExp: /:([a-z0-9_]+):/,
   regExp: /:([a-z0-9_]+):$/,
   replace: (textNode, [, name]) => {
-    const emoji = emojiList.find((e) => e.aliases.includes(name))?.emoji;
+    const emoji = emojiList.find(e => e.aliases.includes(name))?.emoji;
     if (emoji) {
       textNode.replace($createTextNode(emoji));
     }
@@ -113,7 +115,7 @@ export const EMOJI: TextMatchTransformer = {
 
 export const EQUATION: TextMatchTransformer = {
   dependencies: [EquationNode],
-  export: (node) => {
+  export: node => {
     if (!$isEquationNode(node)) {
       return null;
     }
@@ -133,7 +135,7 @@ export const EQUATION: TextMatchTransformer = {
 
 export const TWEET: ElementTransformer = {
   dependencies: [TweetNode],
-  export: (node) => {
+  export: node => {
     if (!$isTweetNode(node)) {
       return null;
     }
@@ -146,12 +148,12 @@ export const TWEET: ElementTransformer = {
     const tweetNode = $createTweetNode(id);
     textNode.replace(tweetNode);
   },
+  triggerOnEnter: true,
   type: 'element',
 };
 
 // Very primitive table setup
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
-const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
 
 export const TABLE: ElementTransformer = {
   dependencies: [TableNode, TableRowNode, TableCellNode],
@@ -185,7 +187,7 @@ export const TABLE: ElementTransformer = {
 
       output.push(`| ${rowOutput.join(' | ')} |`);
       if (isHeaderRow) {
-        output.push(`| ${rowOutput.map((_) => '---').join(' | ')} |`);
+        output.push(`| ${rowOutput.map(_ => '---').join(' | ')} |`);
       }
     }
 
@@ -194,7 +196,7 @@ export const TABLE: ElementTransformer = {
   regExp: TABLE_ROW_REG_EXP,
   replace: (parentNode, _1, match) => {
     // Header row
-    if (TABLE_ROW_DIVIDER_REG_EXP.test(match[0])) {
+    if (isTableRowDivider(match[0])) {
       const table = parentNode.getPreviousSibling();
       if (!table || !$isTableNode(table)) {
         return;
@@ -207,7 +209,7 @@ export const TABLE: ElementTransformer = {
       }
 
       // Add header state to row cells
-      lastRow.getChildren().forEach((cell) => {
+      lastRow.getChildren().forEach(cell => {
         if (!$isTableCellNode(cell)) {
           return;
         }
@@ -304,7 +306,7 @@ const mapToTableCells = (textContent: string): Array<TableCellNode> | null => {
   if (!match || !match[1]) {
     return null;
   }
-  return match[1].split('|').map((text) => $createTableCell(text));
+  return match[1].split('|').map(text => $createTableCell(text));
 };
 
 export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [

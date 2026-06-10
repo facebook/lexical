@@ -8,8 +8,6 @@
 
 import {
   $applyNodeReplacement,
-  type DOMConversionMap,
-  type DOMConversionOutput,
   type DOMExportOutput,
   type EditorConfig,
   type LexicalNode,
@@ -26,26 +24,7 @@ export type SerializedMentionNode = Spread<
   SerializedTextNode
 >;
 
-function $convertMentionElement(
-  domNode: HTMLElement,
-): DOMConversionOutput | null {
-  const textContent = domNode.textContent;
-  const mentionName = domNode.getAttribute('data-lexical-mention-name');
-
-  if (textContent !== null) {
-    const node = $createMentionNode(
-      typeof mentionName === 'string' ? mentionName : textContent,
-      textContent,
-    );
-    return {
-      node,
-    };
-  }
-
-  return null;
-}
-
-const mentionStyle = 'background-color: rgba(24, 119, 232, 0.2)';
+const mentionBackgroundColor = 'rgba(24, 119, 232, 0.2)';
 export class MentionNode extends TextNode {
   __mention: string;
 
@@ -76,7 +55,7 @@ export class MentionNode extends TextNode {
 
   createDOM(config: EditorConfig): HTMLElement {
     const dom = super.createDOM(config);
-    dom.style.cssText = mentionStyle;
+    dom.style.backgroundColor = mentionBackgroundColor;
     dom.className = 'mention';
     dom.spellcheck = false;
 
@@ -91,20 +70,6 @@ export class MentionNode extends TextNode {
     }
     element.textContent = this.__text;
     return {element};
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      span: (domNode: HTMLElement) => {
-        if (!domNode.hasAttribute('data-lexical-mention')) {
-          return null;
-        }
-        return {
-          conversion: $convertMentionElement,
-          priority: 1,
-        };
-      },
-    };
   }
 
   isTextEntity(): true {

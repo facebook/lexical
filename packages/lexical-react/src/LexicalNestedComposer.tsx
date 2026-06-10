@@ -10,6 +10,8 @@ import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerCon
 import type {EditableListener} from 'lexical';
 import type {JSX} from 'react';
 
+import invariant from '@lexical/internal/invariant';
+import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
 import {CollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {
   createLexicalComposerContext,
@@ -27,8 +29,6 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
-import invariant from 'shared/invariant';
-import warnOnlyOnce from 'shared/warnOnlyOnce';
 
 export interface LexicalNestedComposerProps {
   /**
@@ -112,20 +112,24 @@ export function LexicalNestedComposer({
       );
 
       if (composerTheme !== undefined) {
+        // eslint-disable-next-line react-hooks/immutability
         initialEditor._config.theme = composerTheme;
       }
 
+      // eslint-disable-next-line react-hooks/immutability
       initialEditor._parentEditor = initialEditor._parentEditor || parentEditor;
       const createEditorArgs = initialEditor._createEditorArgs;
       const explicitNamespace = createEditorArgs && createEditorArgs.namespace;
 
       if (!initialNodes) {
         if (!(createEditorArgs && createEditorArgs.nodes)) {
+          // eslint-disable-next-line react-hooks/immutability
           const parentNodes = (initialEditor._nodes = new Map(
             parentEditor._nodes,
           ));
           if (!explicitNamespace) {
             // This is the only safe situation to inherit the parent's namespace
+            // eslint-disable-next-line react-hooks/immutability
             initialEditor._config.namespace = parentEditor._config.namespace;
           }
           for (const [type, entry] of parentNodes) {
@@ -140,12 +144,14 @@ export function LexicalNestedComposer({
           }
         } else if (!explicitNamespace) {
           explicitNamespaceWarning();
+          // eslint-disable-next-line react-hooks/immutability
           initialEditor._config.namespace = parentEditor._config.namespace;
         }
       } else {
         initialNodesWarning();
         if (!explicitNamespace) {
           explicitNamespaceWarning();
+          // eslint-disable-next-line react-hooks/immutability
           initialEditor._config.namespace = parentEditor._config.namespace;
         }
         for (let klass of initialNodes) {
@@ -200,7 +206,7 @@ export function LexicalNestedComposer({
   // Update `isEditable` state of nested editor in response to the same change on parent editor.
   useEffect(() => {
     if (!skipEditableListener) {
-      const editableListener: EditableListener = (editable) =>
+      const editableListener: EditableListener = editable =>
         initialEditor.setEditable(editable);
       editableListener(parentEditor.isEditable());
       return parentEditor.registerEditableListener(editableListener);

@@ -8,38 +8,56 @@
 
 /// <reference types="trusted-types" />
 
-import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
-import {$addNodeStyle, $sliceSelectedTextNodeContent} from '@lexical/selection';
+import {getPeerDependencyFromEditor} from '@lexical/extension';
+import {$generateHtmlFromNodes} from '@lexical/html';
+import invariant from '@lexical/internal/invariant';
+import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
   $caretFromPoint,
-  $createTabNode,
+  $caretRangeFromSelection,
+  $comparePointCaretNext,
   $getCaretRange,
+  $getCaretRangeInDirection,
   $getChildCaret,
+  $getChildCaretAtIndex,
+  $getCollapsedCaretRange,
   $getEditor,
+  $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
+  $getTextPointCaret,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
   $isTextPointCaret,
   $parseSerializedNode,
+  $setSelectionFromCaretRange,
+  $splitAtPointCaretNext,
   BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
+  defineExtension,
   getDOMSelection,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
+  PointCaret,
+  RangeSelection,
+  safeCast,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
   SerializedElementNode,
+  shallowMergeConfig,
 } from 'lexical';
-import invariant from 'shared/invariant';
+
+import {caretFromPoint} from './caretFromPoint';
+import {$getImportOutput} from './ClipboardImportExtension';
 
 export interface LexicalClipboardData {
   'text/html'?: string | undefined;
   'application/x-lexical-editor'?: string | undefined;
   'text/plain': string;
+  [mimeType: string & {}]: string | undefined;
 }
 
 /**
@@ -121,93 +139,247 @@ export function $insertDataTransferForPlainText(
 }
 
 /**
- * Attempts to insert content of the mime-types application/x-lexical-editor, text/html,
- * text/plain, or text/uri-list (in descending order of priority) from the provided DataTransfer
- * object into the editor at the provided selection.
+ * Insert the contents of `dataTransfer` at `selection` using the rich-text
+ * import pipeline (`application/x-lexical-editor` → `text/html` → `text/plain`
+ * → `text/uri-list`, in descending order of priority).
  *
  * @param dataTransfer an object conforming to the [DataTransfer interface] (https://html.spec.whatwg.org/multipage/dnd.html#the-datatransfer-interface)
  * @param selection the selection to use as the insertion point for the content in the DataTransfer object
- * @param editor the LexicalEditor the content is being inserted into.
+ * @param _editor unused; retained for backwards compatibility. Safe to
+ *   omit on new call sites.
  */
 export function $insertDataTransferForRichText(
   dataTransfer: DataTransfer,
   selection: BaseSelection,
-  editor: LexicalEditor,
+  _editor?: LexicalEditor,
 ): void {
-  const lexicalString = dataTransfer.getData('application/x-lexical-editor');
-
-  if (lexicalString) {
-    try {
-      const payload = JSON.parse(lexicalString);
-      if (
-        payload.namespace === editor._config.namespace &&
-        Array.isArray(payload.nodes)
-      ) {
-        const nodes = $generateNodesFromSerializedNodes(payload.nodes);
-        return $insertGeneratedNodes(editor, nodes, selection);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  const htmlString = dataTransfer.getData('text/html');
-  const plainString = dataTransfer.getData('text/plain');
-
-  // Skip HTML handling if it matches the plain text representation.
-  // This avoids unnecessary processing for plain text strings created by
-  // iOS Safari autocorrect, which incorrectly includes a `text/html` type.
-  if (htmlString && plainString !== htmlString) {
-    try {
-      const parser = new DOMParser();
-      const dom = parser.parseFromString(
-        trustHTML(htmlString) as string,
-        'text/html',
-      );
-      const nodes = $generateNodesFromDOM(editor, dom);
-      return $insertGeneratedNodes(editor, nodes, selection);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  // Multi-line plain text in rich text mode pasted as separate paragraphs
-  // instead of single paragraph with linebreaks.
-  // Webkit-specific: Supports read 'text/uri-list' in clipboard.
-  const text = plainString || dataTransfer.getData('text/uri-list');
-  if (text != null) {
-    if ($isRangeSelection(selection)) {
-      const parts = text.split(/(\r?\n|\t)/);
-      if (parts[parts.length - 1] === '') {
-        parts.pop();
-      }
-      for (let i = 0; i < parts.length; i++) {
-        const currentSelection = $getSelection();
-        if ($isRangeSelection(currentSelection)) {
-          const part = parts[i];
-          if (part === '\n' || part === '\r\n') {
-            currentSelection.insertParagraph();
-          } else if (part === '\t') {
-            currentSelection.insertNodes([$createTabNode()]);
-          } else {
-            currentSelection.insertText(part);
-          }
-        }
-      }
-    } else {
-      selection.insertRawText(text);
-    }
-  }
+  $getImportOutput().$insertDataTransfer(dataTransfer, selection);
 }
 
-function trustHTML(html: string): string | TrustedHTML {
-  if (window.trustedTypes && window.trustedTypes.createPolicy) {
-    const policy = window.trustedTypes.createPolicy('lexical', {
-      createHTML: (input) => input,
-    });
-    return policy.createHTML(html);
+const LEXICAL_DRAG_MIME_TYPE = 'application/x-lexical-drag';
+
+interface LexicalDragMarker {
+  editorKey: string;
+}
+
+/**
+ * Populate `dataTransfer` with a marker identifying the current editor as a
+ * drag source. Pair this with {@link $handleRichTextDrop} or
+ * {@link $handlePlainTextDrop} on the drop side to get cut-and-paste semantics
+ * for drags that end in a different editor.
+ *
+ * Only the source editor's key needs to round-trip — the source's
+ * RangeSelection itself is preserved on the source editor between drag start
+ * and drop (Lexical suppresses selectionchange during drag), so the drop
+ * handler reads it directly via `$getSelection()` on the resolved source
+ * editor.
+ *
+ * Callers typically invoke this from a DRAGSTART_COMMAND handler alongside
+ * {@link setLexicalClipboardDataTransfer} (so that the dragged content itself
+ * round-trips with full node fidelity).
+ */
+export function $writeDragSourceToDataTransfer(
+  dataTransfer: DataTransfer,
+  editor: LexicalEditor,
+): void {
+  const marker: LexicalDragMarker = {editorKey: editor.getKey()};
+  dataTransfer.setData(LEXICAL_DRAG_MIME_TYPE, JSON.stringify(marker));
+}
+
+function isLexicalDragMarker(value: unknown): value is LexicalDragMarker {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'editorKey' in value &&
+    typeof (value as {editorKey: unknown}).editorKey === 'string'
+  );
+}
+
+function readDragMarker(dataTransfer: DataTransfer): LexicalDragMarker | null {
+  const raw = dataTransfer.getData(LEXICAL_DRAG_MIME_TYPE);
+  if (!raw) {
+    return null;
   }
-  return html;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  return isLexicalDragMarker(parsed) ? parsed : null;
+}
+
+function findEditorRootByKey(key: string, doc: Document): HTMLElement | null {
+  const elements = doc.querySelectorAll('[data-lexical-editor="true"]');
+  for (const el of Array.from(elements)) {
+    const editor = (el as unknown as {__lexicalEditor?: {getKey: () => string}})
+      .__lexicalEditor;
+    if (editor && editor.getKey() === key) {
+      return el as HTMLElement;
+    }
+  }
+  return null;
+}
+
+function $resolveDropPointCaret(event: DragEvent): null | PointCaret<'next'> {
+  const hit = caretFromPoint(event.clientX, event.clientY);
+  if (hit === null) {
+    return null;
+  }
+  const node = $getNearestNodeFromDOMNode(hit.node);
+  if (node === null) {
+    return null;
+  }
+  if ($isTextNode(node)) {
+    return $getTextPointCaret(node, 'next', hit.offset);
+  }
+  if ($isElementNode(node)) {
+    return $getChildCaretAtIndex(node, hit.offset, 'next');
+  }
+  const parent = node.getParent();
+  if (parent === null) {
+    return null;
+  }
+  return $getChildCaretAtIndex(parent, node.getIndexWithinParent() + 1, 'next');
+}
+
+function $isDropCaretInsideSelection(
+  dropCaret: PointCaret<'next'>,
+  selection: RangeSelection,
+): boolean {
+  const {anchor: start, focus: end} = $getCaretRangeInDirection(
+    $caretRangeFromSelection(selection),
+    'next',
+  );
+  return (
+    $comparePointCaretNext(start, dropCaret) < 0 &&
+    $comparePointCaretNext(dropCaret, end) < 0
+  );
+}
+
+function $doDrop(
+  event: DragEvent,
+  editor: LexicalEditor,
+  $insertDataTransfer: (
+    dataTransfer: DataTransfer,
+    selection: BaseSelection,
+    targetEditor: LexicalEditor,
+  ) => void,
+): boolean {
+  const dataTransfer = event.dataTransfer;
+  if (dataTransfer === null) {
+    return false;
+  }
+
+  // Drags that didn't originate in a Lexical editor (no marker) fall through
+  // to the browser's native drag-and-drop flow; its beforeinput
+  // insertFromDrop is already handled correctly by Lexical's existing
+  // beforeinput logic.
+  const marker = readDragMarker(dataTransfer);
+  if (marker === null) {
+    return false;
+  }
+
+  const dropCaret = $resolveDropPointCaret(event);
+  if (dropCaret === null) {
+    return false;
+  }
+
+  // Split at the drop caret so we have a stable NodeCaret boundary that
+  // survives text-content mutations in its siblings.
+  const stableDropCaret = $splitAtPointCaretNext(dropCaret);
+  if (stableDropCaret === null) {
+    return false;
+  }
+
+  const isSameEditorDrag = marker.editorKey === editor.getKey();
+  const currentSelection = $getSelection();
+
+  if (isSameEditorDrag) {
+    // Same-editor drag: the destination's $getSelection() is the still-
+    // selected dragged range, so Lexical's beforeinput handler would skip
+    // applyDOMRange and route the insert to the source's location instead
+    // of the drop point. Remove the dragged range ourselves, then insert
+    // at the stable drop caret.
+    if (
+      !$isRangeSelection(currentSelection) ||
+      currentSelection.isCollapsed()
+    ) {
+      return false;
+    }
+    if ($isDropCaretInsideSelection(dropCaret, currentSelection)) {
+      event.preventDefault();
+      return true;
+    }
+    currentSelection.removeText();
+  }
+
+  // If the drop caret's origin was swept away by the source removal, abort —
+  // this can happen on a same-editor drag whose range covered the entire
+  // text node we tried to split at.
+  if (!stableDropCaret.origin.isAttached()) {
+    event.preventDefault();
+    return true;
+  }
+
+  const dropSelection = $setSelectionFromCaretRange(
+    $getCollapsedCaretRange(stableDropCaret),
+  );
+  $insertDataTransfer(dataTransfer, dropSelection, editor);
+
+  if (!isSameEditorDrag) {
+    // Cross-editor drag. The native drag-out deletion that the browser
+    // would normally fire (beforeinput deleteByDrag on the source) isn't
+    // reliable when the source is a nested contenteditable of the
+    // destination (e.g. an image caption inside the main editor), so we
+    // dispatch it ourselves at the source editor's root. The source
+    // editor's own beforeinput handler runs the deletion through its own
+    // REMOVE_TEXT_COMMAND and SKIP_SELECTION_FOCUS_TAG path.
+    const rootElement = editor.getRootElement();
+    const doc = rootElement ? rootElement.ownerDocument : null;
+    const sourceRoot = doc ? findEditorRootByKey(marker.editorKey, doc) : null;
+    if (sourceRoot !== null) {
+      sourceRoot.dispatchEvent(
+        new InputEvent('beforeinput', {
+          bubbles: true,
+          cancelable: true,
+          inputType: 'deleteByDrag',
+        }),
+      );
+    }
+  }
+
+  event.preventDefault();
+  return true;
+}
+
+/**
+ * Drop handler for rich-text editors. Inserts the DataTransfer payload via
+ * {@link $insertDataTransferForRichText} at the drop caret and, when the drag
+ * originated from a Lexical editor (marked via
+ * {@link $writeDragSourceToDataTransfer} on DRAGSTART), removes the source
+ * range — producing cut-and-paste semantics whether the drop is in the same
+ * editor or a different one on the same page.
+ */
+export function $handleRichTextDrop(
+  event: DragEvent,
+  editor: LexicalEditor,
+): boolean {
+  return $doDrop(event, editor, $insertDataTransferForRichText);
+}
+
+/**
+ * Drop handler for plain-text editors. Same semantics as
+ * {@link $handleRichTextDrop} but inserts via
+ * {@link $insertDataTransferForPlainText}.
+ */
+export function $handlePlainTextDrop(
+  event: DragEvent,
+  editor: LexicalEditor,
+): boolean {
+  return $doDrop(event, editor, (dataTransfer, selection) =>
+    $insertDataTransferForPlainText(dataTransfer, selection),
+  );
 }
 
 /**
@@ -406,13 +578,8 @@ export function $generateNodesFromSerializedNodes(
   serializedNodes: Array<BaseSerializedNode>,
 ): Array<LexicalNode> {
   const nodes = [];
-  for (let i = 0; i < serializedNodes.length; i++) {
-    const serializedNode = serializedNodes[i];
-    const node = $parseSerializedNode(serializedNode);
-    if ($isTextNode(node)) {
-      $addNodeStyle(node);
-    }
-    nodes.push(node);
+  for (const serializedNode of serializedNodes) {
+    nodes.push($parseSerializedNode(serializedNode));
   }
   return nodes;
 }
@@ -457,7 +624,8 @@ export async function copyToClipboard(
     return false;
   }
   const element = windowDocument.createElement('span');
-  element.style.cssText = 'position: fixed; top: -1000px;';
+  element.style.position = 'fixed';
+  element.style.top = '-1000px';
   element.append(windowDocument.createTextNode('#'));
   rootElement.append(element);
   const range = new Range();
@@ -468,7 +636,7 @@ export async function copyToClipboard(
   return new Promise((resolve, reject) => {
     const removeListener = editor.registerCommand(
       COPY_COMMAND,
-      (secondEvent) => {
+      secondEvent => {
         if (objectKlassEquals(secondEvent, ClipboardEvent)) {
           removeListener();
           if (clipboardEventTimeout !== null) {
@@ -548,19 +716,10 @@ const clipboardDataFunctions = [
 export function $getClipboardDataFromSelection(
   selection: BaseSelection | null = $getSelection(),
 ): LexicalClipboardData {
-  const clipboardData: LexicalClipboardData = {
-    'text/plain': selection ? selection.getTextContent() : '',
-  };
-  if (selection) {
-    const editor = $getEditor();
-    for (const [mimeType, $editorFn] of clipboardDataFunctions) {
-      const v = $editorFn(editor, selection);
-      if (v !== null) {
-        clipboardData[mimeType] = v;
-      }
-    }
-  }
-  return clipboardData;
+  return $getClipboardDataWithConfigFromSelection(
+    $getExportConfig(),
+    selection,
+  );
 }
 
 /**
@@ -586,3 +745,204 @@ export function setLexicalClipboardDataTransfer(
     }
   }
 }
+
+/**
+ * A function that produces the serialized representation of a selection for
+ * a single MIME type. Functions are arranged in a stack per MIME type (see
+ * {@link ExportMimeTypeConfig}); the function at the top of the stack is
+ * invoked first and may call `next()` to delegate to the previous function
+ * in the stack (typically the default Lexical serializer).
+ *
+ * Returning `null` from the top-most function omits that MIME type from the
+ * resulting {@link LexicalClipboardData}.
+ *
+ * @param selection - The selection to serialize, or `null` if there is none.
+ * @param next - Calls the previous handler in the stack and returns its
+ *   result, or `null` if there is no previous handler.
+ * @returns The serialized string for this MIME type, or `null` to omit it.
+ */
+export type ExportMimeTypeFunction = (
+  selection: null | BaseSelection,
+  next: () => null | string,
+) => null | string;
+
+/**
+ * Configuration for {@link GetClipboardDataExtension}.
+ */
+export interface GetClipboardDataConfig {
+  /**
+   * The per-MIME-type serializer stacks used when copying or dragging the
+   * current selection out of the editor. See {@link ExportMimeTypeConfig}.
+   *
+   * Merged with [...prev, ...override]
+   */
+  $exportMimeType: ExportMimeTypeConfig;
+}
+
+/**
+ * A mapping from MIME type to a stack of {@link ExportMimeTypeFunction}.
+ *
+ * Each entry is an ordered array; the function at the highest index runs
+ * first and may call `next()` to fall through to the function below it.
+ * The default config provides a single fallback handler for
+ * `'application/x-lexical-editor'`, `'text/html'`, and `'text/plain'`.
+ *
+ * When {@link GetClipboardDataExtension} merges a partial config, new
+ * functions are appended to the existing array for each MIME type, so
+ * later-registered handlers run before earlier ones (including the
+ * defaults) and may delegate to them via `next()`. To register a brand new
+ * MIME type, supply a key not present in the default config; arbitrary
+ * string keys are accepted in addition to the keys of
+ * {@link LexicalClipboardData}.
+ */
+export type ExportMimeTypeConfig = {
+  [K in keyof LexicalClipboardData]?: ExportMimeTypeFunction[];
+};
+
+function $getExportConfig(editor = $getEditor()) {
+  const dep = getPeerDependencyFromEditor<typeof GetClipboardDataExtension>(
+    editor,
+    GetClipboardDataExtension.name,
+  );
+  return dep ? dep.output : DEFAULT_EXPORT_MIME_TYPE;
+}
+
+const DEFAULT_EXPORT_MIME_TYPE: ExportMimeTypeConfig = {
+  'application/x-lexical-editor': [
+    (sel, next) => (sel ? $getLexicalContent($getEditor(), sel) : next()),
+  ],
+  'text/html': [
+    (sel, next) => (sel ? $getHtmlContent($getEditor(), sel) : next()),
+  ],
+  'text/plain': [(sel, next) => (sel ? sel.getTextContent() : next())],
+};
+
+function $getClipboardDataWithConfigFromSelection(
+  $exportMimeType: ExportMimeTypeConfig,
+  selection: null | BaseSelection,
+): LexicalClipboardData {
+  const clipboardData: LexicalClipboardData = {'text/plain': ''};
+  for (const [k, fns] of Object.entries($exportMimeType)) {
+    if (fns) {
+      const v = callExportMimeTypeFunctionStack(fns, selection);
+      if (v !== null) {
+        clipboardData[k] = v;
+      }
+    }
+  }
+  return clipboardData;
+}
+
+function callExportMimeTypeFunctionStack(
+  fns: ExportMimeTypeFunction[],
+  selection: null | BaseSelection,
+) {
+  const callAt = (i: number): string | null =>
+    fns[i] ? fns[i](selection, callAt.bind(null, i - 1)) : null;
+  return callAt(fns.length - 1);
+}
+
+/**
+ * Serialize the given selection for a single MIME type using the active
+ * editor's configured {@link ExportMimeTypeConfig}. The configured stack is
+ * read from {@link GetClipboardDataExtension} via the editor's peer
+ * dependency lookup; if the extension was not built into the editor, the
+ * default stack is used.
+ *
+ * Useful when only one MIME representation is needed rather than the full
+ * {@link LexicalClipboardData} produced by
+ * {@link $getClipboardDataFromSelection}.
+ *
+ * Must be called from within an editor update or read.
+ *
+ * @param mimeType - The MIME type to serialize, e.g. `'text/html'`,
+ *   `'application/x-lexical-editor'`, `'text/plain'`, or any custom key
+ *   registered in the {@link ExportMimeTypeConfig}.
+ * @param selection - The selection to serialize (defaults to
+ *   `$getSelection()`).
+ * @returns The serialized string for the requested MIME type, or `null` if
+ *   no handler is registered for it or every handler returned `null`.
+ */
+export function $exportMimeTypeFromSelection(
+  mimeType: keyof ExportMimeTypeConfig,
+  selection: null | BaseSelection = $getSelection(),
+): string | null {
+  return callExportMimeTypeFunctionStack(
+    $getExportConfig()[mimeType] || [],
+    selection,
+  );
+}
+
+/**
+ * Lexical extension that controls how the current selection is serialized
+ * into clipboard MIME types when copying or dragging out of the editor.
+ *
+ * The extension's config holds an {@link ExportMimeTypeConfig} — a stack of
+ * {@link ExportMimeTypeFunction} per MIME type. Out of the box it provides
+ * fallback serializers for `'application/x-lexical-editor'`, `'text/html'`,
+ * and `'text/plain'` that defer to {@link $getLexicalContent},
+ * {@link $getHtmlContent}, and `selection.getTextContent()` respectively.
+ *
+ * Apps can layer additional handlers on top to customize an existing
+ * payload (delegating to the default via `next()`) or to register an
+ * entirely new MIME type. Functions provided through `mergeConfig` are
+ * appended to the existing stack for each MIME type, so a newly registered
+ * handler runs first and may fall through to the previously registered
+ * handlers via its `next` argument.
+ *
+ * The extension's `output` is the resolved {@link ExportMimeTypeConfig},
+ * which {@link $getClipboardDataFromSelection} and
+ * {@link $exportMimeTypeFromSelection} read via the editor's peer
+ * dependency lookup.
+ *
+ * @example
+ * ```ts
+ * import {configExtension, defineExtension} from '@lexical/extension';
+ * import {GetClipboardDataExtension} from '@lexical/clipboard';
+ *
+ * const MyClipboardExtension = defineExtension({
+ *   name: 'my-app/clipboard',
+ *   dependencies: [
+ *     configExtension(GetClipboardDataExtension, {
+ *       $exportMimeType: {
+ *         // Wrap the default HTML output with an app-specific marker.
+ *         'text/html': [
+ *           (selection, next) => {
+ *             const html = next();
+ *             return html ? wrapWithMyAppMarker(html) : html;
+ *           },
+ *         ],
+ *         // Add a brand-new MIME type.
+ *         'application/vnd.myapp+json': [
+ *           (selection) =>
+ *             selection ? exportMyAppFormat(selection) : null,
+ *         ],
+ *       },
+ *     }),
+ *   ],
+ * });
+ * ```
+ */
+export const GetClipboardDataExtension = defineExtension({
+  build(editor, config, state) {
+    return config.$exportMimeType;
+  },
+  config: safeCast<GetClipboardDataConfig>({
+    $exportMimeType: DEFAULT_EXPORT_MIME_TYPE,
+  }),
+  mergeConfig(config, partial) {
+    const merged = shallowMergeConfig(config, partial);
+    if (partial.$exportMimeType) {
+      const $exportMimeType = {...config.$exportMimeType};
+      for (const [k, v] of Object.entries(partial.$exportMimeType)) {
+        if (v) {
+          const prev = $exportMimeType[k];
+          $exportMimeType[k] = prev ? [...prev, ...v] : v;
+        }
+      }
+      merged.$exportMimeType = $exportMimeType;
+    }
+    return merged;
+  },
+  name: '@lexical/clipboard/GetClipboardData',
+});

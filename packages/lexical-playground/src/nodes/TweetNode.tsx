@@ -7,8 +7,6 @@
  */
 
 import type {
-  DOMConversionMap,
-  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   ElementFormatType,
@@ -41,17 +39,6 @@ type TweetComponentProps = Readonly<{
   onLoad?: () => void;
   tweetID: string;
 }>;
-
-function $convertTweetElement(
-  domNode: HTMLDivElement,
-): DOMConversionOutput | null {
-  const id = domNode.getAttribute('data-lexical-tweet-id');
-  if (id) {
-    const node = $createTweetNode(id);
-    return {node};
-  }
-  return null;
-}
 
 let isTwitterScriptLoading = true;
 
@@ -89,7 +76,6 @@ function TweetComponent({
 
   useEffect(() => {
     if (tweetID !== previousTweetIDRef.current) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsTweetLoading(true);
 
       if (isTwitterScriptLoading) {
@@ -102,7 +88,8 @@ function TweetComponent({
           script.onerror = onError as OnErrorEventHandler;
         }
       } else {
-        createTweet();
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        createTweet().catch(console.error);
       }
 
       if (previousTweetIDRef) {
@@ -151,20 +138,6 @@ export class TweetNode extends DecoratorBlockNode {
     return {
       ...super.exportJSON(),
       id: this.getId(),
-    };
-  }
-
-  static importDOM(): DOMConversionMap<HTMLDivElement> | null {
-    return {
-      div: (domNode: HTMLDivElement) => {
-        if (!domNode.hasAttribute('data-lexical-tweet-id')) {
-          return null;
-        }
-        return {
-          conversion: $convertTweetElement,
-          priority: 2,
-        };
-      },
     };
   }
 

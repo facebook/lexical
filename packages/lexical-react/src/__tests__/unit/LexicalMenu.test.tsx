@@ -6,12 +6,12 @@
  *
  */
 
-import {LexicalEditor} from 'lexical';
+import {KEY_ENTER_COMMAND, LexicalEditor} from 'lexical';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
+import {act} from 'react';
 import ReactDOM from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {
@@ -160,7 +160,7 @@ describe('LexicalMenu', () => {
         new TestOption('Option C'),
       ];
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}
@@ -182,7 +182,7 @@ describe('LexicalMenu', () => {
 
       // Verify text content
       const texts = Array.from(items).map(
-        (item) => item.querySelector('.text')?.textContent,
+        item => item.querySelector('.text')?.textContent,
       );
       expect(texts).toEqual(['Option A', 'Option B', 'Option C']);
     });
@@ -190,7 +190,7 @@ describe('LexicalMenu', () => {
     it('should apply selected class to preselected first item', async () => {
       const options = [new TestOption('First'), new TestOption('Second')];
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}
@@ -210,7 +210,7 @@ describe('LexicalMenu', () => {
     });
 
     it('should render nothing when options array is empty', async () => {
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}
@@ -227,11 +227,74 @@ describe('LexicalMenu', () => {
       expect(portal).toBeNull();
     });
 
+    it('should not select an option when Enter is pressed with Shift (line break / fall-through)', async () => {
+      const onSelectOption = vi.fn();
+      const options = [new TestOption('Option A'), new TestOption('Option B')];
+
+      await act(async () => {
+        reactRoot.render(
+          <LexicalMenu<TestOption>
+            close={vi.fn()}
+            editor={editor}
+            anchorElementRef={{current: anchorElement}}
+            resolution={createTestResolution('test')}
+            options={options}
+            onSelectOption={onSelectOption}
+            preselectFirstItem={true}
+          />,
+        );
+      });
+
+      const shiftEnter = {
+        preventDefault: vi.fn(),
+        shiftKey: true,
+        stopImmediatePropagation: vi.fn(),
+      } as unknown as KeyboardEvent;
+
+      await act(async () => {
+        editor.dispatchCommand(KEY_ENTER_COMMAND, shiftEnter);
+      });
+
+      expect(onSelectOption).not.toHaveBeenCalled();
+    });
+
+    it('should select an option when Enter is pressed without Shift', async () => {
+      const onSelectOption = vi.fn();
+      const options = [new TestOption('Option A'), new TestOption('Option B')];
+
+      await act(async () => {
+        reactRoot.render(
+          <LexicalMenu<TestOption>
+            close={vi.fn()}
+            editor={editor}
+            anchorElementRef={{current: anchorElement}}
+            resolution={createTestResolution('test')}
+            options={options}
+            onSelectOption={onSelectOption}
+            preselectFirstItem={true}
+          />,
+        );
+      });
+
+      const enter = {
+        preventDefault: vi.fn(),
+        shiftKey: false,
+        stopImmediatePropagation: vi.fn(),
+      } as unknown as KeyboardEvent;
+
+      await act(async () => {
+        editor.dispatchCommand(KEY_ENTER_COMMAND, enter);
+      });
+
+      expect(onSelectOption).toHaveBeenCalledTimes(1);
+      expect(onSelectOption.mock.calls[0][0]).toBe(options[0]);
+    });
+
     it('should render icon and title in default MenuItem', async () => {
       const option = new TestOption('With Icon');
       option.icon = <i className="custom-icon" />;
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}
@@ -281,7 +344,7 @@ describe('LexicalMenu', () => {
           : null;
       };
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}
@@ -324,7 +387,7 @@ describe('LexicalMenu', () => {
         return null;
       };
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}
@@ -359,7 +422,7 @@ describe('LexicalMenu', () => {
         return null;
       };
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}
@@ -374,7 +437,7 @@ describe('LexicalMenu', () => {
       });
 
       expect(capturedOptions).toHaveLength(3);
-      expect(capturedOptions.map((o) => o.title)).toEqual(['X', 'Y', 'Z']);
+      expect(capturedOptions.map(o => o.title)).toEqual(['X', 'Y', 'Z']);
     });
 
     it('should pass empty string as matchingString when no match', async () => {
@@ -389,7 +452,7 @@ describe('LexicalMenu', () => {
         return null;
       };
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         reactRoot.render(
           <LexicalMenu<TestOption>
             close={vi.fn()}

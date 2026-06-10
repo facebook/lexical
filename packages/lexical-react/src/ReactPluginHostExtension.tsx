@@ -14,6 +14,7 @@ import {
   signal,
   untracked,
 } from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 import {mergeRegister} from '@lexical/utils';
@@ -31,7 +32,6 @@ import * as React from 'react';
 import {Suspense, useEffect, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {type Container, createRoot, type Root} from 'react-dom/client';
-import invariant from 'shared/invariant';
 
 export type {DecoratorComponentProps};
 
@@ -53,10 +53,10 @@ export function mountReactExtensionComponent<
     extension: Extension;
     props: [LexicalExtensionOutput<Extension>] extends [
       {
-        Component: infer OutputComponentType extends React.ComponentType;
+        Component: React.ComponentType<infer OutputComponentProps>;
       },
     ]
-      ? /** The Props from the Extension output Component */ React.ComponentProps<OutputComponentType> | null
+      ? /** The Props from the Extension output Component */ OutputComponentProps | null
       : never;
   } & Omit<MountPluginCommandArg, 'element'>,
 ): void {
@@ -199,7 +199,7 @@ export const ReactPluginHostExtension = defineExtension({
       },
       editor.registerCommand(
         REACT_PLUGIN_HOST_MOUNT_PLUGIN_COMMAND,
-        (arg) => {
+        arg => {
           // This runs before the PluginHost version
           untracked(() => {
             const {plugins} = mountedPluginsStore.value;
@@ -212,7 +212,7 @@ export const ReactPluginHostExtension = defineExtension({
       ),
       editor.registerCommand(
         REACT_PLUGIN_HOST_MOUNT_ROOT_COMMAND,
-        (arg) => {
+        arg => {
           invariant(
             root === undefined,
             'ReactPluginHostExtension: Root is already mounted',

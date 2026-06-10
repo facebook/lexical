@@ -25,9 +25,8 @@ import {
   TextNode,
 } from 'lexical';
 import * as React from 'react';
-import {createRef, useEffect, useMemo} from 'react';
+import {act, createRef, useEffect, useMemo} from 'react';
 import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 import {
@@ -116,7 +115,7 @@ describe('LexicalTextNode tests', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       createRoot(container).render(<TestBase />);
     });
 
@@ -347,12 +346,12 @@ describe('LexicalTextNode tests', () => {
       $getRoot().append(paragraphNode);
 
       // Set each format and ensure that the other formats are cleared
-      capitalizationFormats.forEach((formatToSet) => {
+      capitalizationFormats.forEach(formatToSet => {
         textNode.toggleFormat(formatToSet);
 
         capitalizationFormats
-          .filter((format) => format !== formatToSet)
-          .forEach((format) => expect(textNode.hasFormat(format)).toBe(false));
+          .filter(format => format !== formatToSet)
+          .forEach(format => expect(textNode.hasFormat(format)).toBe(false));
 
         expect(textNode.hasFormat(formatToSet)).toBe(true);
       });
@@ -489,7 +488,7 @@ describe('LexicalTextNode tests', () => {
           const splitNodes = textNode.splitText(...splitOffsets);
 
           expect(paragraphNode.getChildren()).toHaveLength(splitStrings.length);
-          expect(splitNodes.map((node) => node.getTextContent())).toEqual(
+          expect(splitNodes.map(node => node.getTextContent())).toEqual(
             splitStrings,
           );
         });
@@ -628,7 +627,7 @@ describe('LexicalTextNode tests', () => {
       await update(() => {
         const textNode = $createTextNode('foo');
         const splits = textNode.splitText(1, 2);
-        expect(splits.map((split) => split.getTextContent())).toEqual([
+        expect(splits.map(split => split.getTextContent())).toEqual([
           'f',
           'o',
           'o',
@@ -640,15 +639,13 @@ describe('LexicalTextNode tests', () => {
       await update(() => {
         const textNode = $createTextNode('hello world');
         const state = createState('state', {
-          parse: (v) => v,
-          unparse: (v) => v,
+          parse: v => v,
+          unparse: v => v,
         });
         $setState(textNode, state, 'foo');
         const splits = textNode.splitText(3, 5);
         expect(
-          splits
-            .map((split) => $getState(split, state))
-            .every((v) => v === 'foo'),
+          splits.map(split => $getState(split, state)).every(v => v === 'foo'),
         ).toEqual(true);
 
         // Check that the state value is not aliased to the original node.
@@ -663,15 +660,13 @@ describe('LexicalTextNode tests', () => {
       await update(() => {
         const textNode = $createTestSegmentedNode('hello world');
         const state = createState('state', {
-          parse: (v) => v,
-          unparse: (v) => v,
+          parse: v => v,
+          unparse: v => v,
         });
         $setState(textNode, state, 'foo');
         const splits = textNode.splitText(3, 5);
         expect(
-          splits
-            .map((split) => $getState(split, state))
-            .every((v) => v === 'foo'),
+          splits.map(split => $getState(split, state)).every(v => v === 'foo'),
         ).toEqual(true);
       });
     });
@@ -786,6 +781,24 @@ describe('LexicalTextNode tests', () => {
         const element = textNode.createDOM(editorConfig);
 
         expect(element.outerHTML).toBe(expectedHTML);
+      });
+    });
+
+    test('applies styles with direct DOM property updates', async () => {
+      await update(() => {
+        const textNode = $createTextNode('My text node');
+        textNode.setStyle(
+          'color: red; background-color: blue !important; --custom: value;',
+        );
+
+        const element = textNode.createDOM(editorConfig);
+
+        expect(element.style.color).toBe('red');
+        expect(element.style.backgroundColor).toBe('blue');
+        expect(element.style.getPropertyPriority('background-color')).toBe(
+          'important',
+        );
+        expect(element.style.getPropertyValue('--custom')).toBe('value');
       });
     });
 
@@ -909,6 +922,25 @@ describe('LexicalTextNode tests', () => {
         });
       },
     );
+
+    test('updates and removes styles with direct DOM property updates', async () => {
+      await update(() => {
+        const prevTextNode = $createTextNode('My text node');
+        prevTextNode.setStyle('color: red; --custom: value;');
+
+        const element = prevTextNode.createDOM(editorConfig);
+
+        const nextTextNode = $createTextNode('My text node');
+        nextTextNode.setStyle('padding: 1px;');
+
+        expect(
+          nextTextNode.updateDOM(prevTextNode, element, editorConfig),
+        ).toBe(false);
+        expect(element.style.color).toBe('');
+        expect(element.style.getPropertyValue('--custom')).toBe('');
+        expect(element.style.padding).toBe('1px');
+      });
+    });
   });
 
   describe('exportDOM()', () => {

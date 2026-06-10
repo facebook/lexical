@@ -134,7 +134,7 @@ i.add-comment {
   border: 1px solid #ccc;
   background-color: #fff;
   border-radius: 5px;
-  font-size: 15px;
+  font-size: var(--playground-font-size);
   caret-color: rgb(5, 5, 5);
   display: block;
   padding: 9px 10px 10px 9px;
@@ -220,7 +220,7 @@ i.comments {
   border: 1px solid #ccc;
   background-color: #fff;
   border-radius: 5px;
-  font-size: 15px;
+  font-size: var(--playground-font-size);
   caret-color: rgb(5, 5, 5);
   display: block;
   padding: 9px 10px 10px 9px;
@@ -273,7 +273,6 @@ i.send {
 
 .CommentPlugin_CommentsPanel_Empty {
   color: #777;
-  font-size: 15px;
   text-align: center;
   position: absolute;
   top: calc(50% - 15px);

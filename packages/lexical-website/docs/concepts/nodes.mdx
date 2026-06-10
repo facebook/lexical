@@ -512,7 +512,7 @@ const DEFAULT_COLOR = 'inherit';
 // highlight-start
 // This defines how the color property is parsed along with a default value
 const colorState = createState('color', {
-  parse: (value) => (typeof value === 'string' ? value : DEFAULT_COLOR),
+  parse: value => (typeof value === 'string' ? value : DEFAULT_COLOR),
 });
 // highlight-end
 
@@ -815,3 +815,93 @@ export function $isVideoNode(
 Using `useDecorators`, `PlainTextPlugin` and `RichTextPlugin` executes `React.createPortal(reactDecorator, element)` for each `DecoratorNode`,
 where the `reactDecorator` is what is returned by `DecoratorNode.prototype.decorate`,
 and the `element` is an `HTMLElement` returned by `DecoratorNode.prototype.createDOM`.
+
+### Sharing `$config` across an abstract base class
+
+A concrete node records its string `type` in `$config`. An abstract base class
+has no concrete `type` of its own, but it can still declare configuration that
+is shared with all of its concrete subclasses — for example a `$transform`, or
+required [NodeState](/docs/concepts/node-state) — by keying its `$config` with a
+well-known symbol instead of a string. By convention this is
+`Symbol.for(<ClassName>)`:
+
+```ts
+import {ElementNode} from 'lexical';
+
+// Abstract base — it has no concrete node `type` of its own.
+export class BaseBoxNode extends ElementNode {
+  $config() {
+    return this.config(Symbol.for('BaseBoxNode'), {
+      extends: ElementNode,
+      // Registered for this class and every subclass.
+      $transform: (node: BaseBoxNode): void => {
+        // ...
+      },
+    });
+  }
+}
+
+// Concrete subclass — inherits the shared $transform.
+export class RedBoxNode extends BaseBoxNode {
+  $config() {
+    return this.config('red-box', {extends: BaseBoxNode});
+  }
+
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+
+  updateDOM(): false {
+    return false;
+  }
+}
+```
+
+The descriptive, globally-registered symbol keeps the configuration easy to find
+in a debugger and can never collide with a real node `type`.
+
+### Nominal typing for structurally-identical nodes
+
+TypeScript's type system is _structural_: two classes with the same members are
+mutually assignable even when one is declared as a subclass of the other. So a
+node subclass that adds no type-distinguishable members over its base — for
+example a node that only overrides methods with identical signatures — is
+structurally identical to its base, despite being a distinct class. The built-in
+`TabNode` (which extends `TextNode`) is one such node. Because the two are
+structurally identical, TypeScript considers `TextNode` assignable to `TabNode`,
+so without a nominal distinction the negative branch of an `instanceof`-style
+type guard like `$isTabNode()` would collapse to `never`:
+
+```ts
+import {$isTabNode, type TextNode} from 'lexical';
+
+function $example(node: TextNode) {
+  if ($isTabNode(node)) {
+    return;
+  }
+  // `node` is correctly narrowed to `TextNode` here.
+  node.getFormat();
+}
+```
+
+You get this distinction automatically by declaring the superclass with
+`extends` in `$config` — which is exactly what `TabNode` does:
+
+```ts
+import {TextNode} from 'lexical';
+
+export class TabNode extends TextNode {
+  $config() {
+    // highlight-next-line
+    return this.config('tab', {extends: TextNode});
+  }
+}
+```
+
+Lexical records each node's own `type` in the `$config` return type along the
+`extends` chain. That makes the classes nominally distinct: the base is no
+longer assignable to the subclass (so the guard narrows correctly) while the
+subclass remains assignable to the base. It works at every level of the
+hierarchy — a subclass of `TabNode` is likewise distinct from `TabNode` — it is
+type-only with no runtime cost, and there is nothing to declare on the class
+beyond the `extends` you already provide.

@@ -37,11 +37,15 @@ import {
   $createTextNode,
   $findMatchingParent,
   $getState,
+  $isLineBreakNode,
+  $isTextNode,
   $setState,
+  BaseSelection,
   createState,
   ElementNode,
   Klass,
   LexicalNode,
+  LineBreakNode,
   TextFormatType,
   TextNode,
 } from 'lexical';
@@ -59,12 +63,14 @@ export type ElementTransformer = {
   /**
    * `export` is called when the `$convertToMarkdownString` is called to convert the editor state into markdown.
    *
+   * @param selection - Optional selection to filter exported content. When provided, only selected content should be included.
    * @return return null to cancel the export, even though the regex matched. Lexical will then search for the next transformer.
    */
   export: (
     node: LexicalNode,
     // eslint-disable-next-line no-shadow
     traverseChildren: (node: ElementNode) => string,
+    selection?: BaseSelection | null,
   ) => string | null;
   regExp: RegExp;
   /**
@@ -82,6 +88,12 @@ export type ElementTransformer = {
     isImport: boolean,
   ) => boolean | void;
   type: 'element';
+  /**
+   * When set, `registerMarkdownShortcuts` may run this transformer from `KEY_ENTER_COMMAND`
+   * at end-of-line without requiring a trailing space (the update listener still uses the
+   * space after the markdown token). Omit or false to disable Enter-triggered shortcuts.
+   */
+  triggerOnEnter?: boolean;
 };
 
 export type MultilineElementTransformer = {
@@ -102,12 +114,14 @@ export type MultilineElementTransformer = {
   /**
    * `export` is called when the `$convertToMarkdownString` is called to convert the editor state into markdown.
    *
+   * @param selection - Optional selection to filter exported content. When provided, only selected content should be included.
    * @return return null to cancel the export, even though the regex matched. Lexical will then search for the next transformer.
    */
   export?: (
     node: LexicalNode,
     // eslint-disable-next-line no-shadow
     traverseChildren: (node: ElementNode) => string,
+    selection?: BaseSelection | null,
   ) => string | null;
   /**
    * This regex determines when to start matching
@@ -214,19 +228,67 @@ const CODE_END_REGEX = /^[ \t]*`{3,}$/;
 const CODE_SINGLE_LINE_REGEX =
   /^[ \t]*```[^`]+(?:(?:`{1,2}|`{4,})[^`]+)*```(?:[^`]|$)/;
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
-const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
+
+/**
+ * Whether `line` is a Markdown table delimiter row such as `| --- | :--: |`.
+ *
+ * This is the linear-time equivalent of `/^(\| ?:?-*:? ?)+\|\s?$/`. That
+ * pattern nests `-*` inside a `(...)+` group, a shape that backtracking regexp
+ * engines (e.g. Safari/JavaScriptCore) may run in super-linear time. A manual
+ * scan is guaranteed O(n).
+ */
+export function isTableRowDivider(line: string): boolean {
+  // Must start with a leading pipe.
+  if (line[0] !== '|') {
+    return false;
+  }
+  const {length} = line;
+  let i = 1;
+  let cells = 0;
+  // Each iteration consumes one ` ?:?-*:? ?\|` cell-and-pipe unit. Cell
+  // characters (space, colon, dash) are disjoint from the `|` delimiter, so a
+  // greedy scan never needs to backtrack.
+  while (i < length) {
+    let j = i;
+    if (line[j] === ' ') {
+      j++;
+    }
+    if (line[j] === ':') {
+      j++;
+    }
+    while (line[j] === '-') {
+      j++;
+    }
+    if (line[j] === ':') {
+      j++;
+    }
+    if (line[j] === ' ') {
+      j++;
+    }
+    if (line[j] !== '|') {
+      break;
+    }
+    cells++;
+    i = j + 1;
+  }
+  // Require at least one cell, then an optional single trailing whitespace
+  // character (`\s?`) before the end of the line (`$`).
+  return (
+    cells > 0 && (i === length || (i === length - 1 && /\s/.test(line[i])))
+  );
+}
 const TAG_START_REGEX = /^<[a-z_][\w-]*(?:\s[^<>]*)?\/?>/i;
 const TAG_END_REGEX = /^<\/[a-z_][\w-]*\s*>/i;
 const ENDS_WITH = (regex: RegExp) =>
   new RegExp(`(?:${regex.source})$`, regex.flags);
 
 export const listMarkerState = createState('mdListMarker', {
-  parse: (v) => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : '-'),
+  parse: v => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : '-'),
   resetOnCopyNode: true,
 });
 
 export const codeFenceState = createState('mdCodeFence', {
-  parse: (val) => {
+  parse: val => {
     if (typeof val === 'string' && /^`{3,}$/.test(val)) {
       return val;
     }
@@ -234,6 +296,88 @@ export const codeFenceState = createState('mdCodeFence', {
   },
   resetOnCopyNode: true,
 });
+
+export type MarkdownHardLineBreak = string;
+
+export const hardLineBreakState = createState('mdHardLineBreak', {
+  parse: (val): MarkdownHardLineBreak => {
+    if (typeof val === 'string' && /^(\\| {2,})$/.test(val)) {
+      return val;
+    }
+    return '';
+  },
+  resetOnCopyNode: true,
+});
+
+export function parseMarkdownHardLineBreak(
+  line: string,
+): [string, MarkdownHardLineBreak] | null {
+  if (line.endsWith('\\')) {
+    return [line.slice(0, -1), '\\'];
+  }
+
+  const spaces = line.match(/^(.*?\S)( {2,})$/);
+  return spaces ? [spaces[1], spaces[2]] : null;
+}
+
+function hasNonWhitespaceContentOnLine(
+  children: Array<LexicalNode>,
+  endIndex: number,
+): boolean {
+  for (let i = endIndex - 1; i >= 0; i--) {
+    if ($isLineBreakNode(children[i])) {
+      return false;
+    }
+    if (/\S/.test(children[i].getTextContent())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function $extractMarkdownHardLineBreakMarker(
+  previousNode: ElementNode,
+): MarkdownHardLineBreak | null {
+  const children = previousNode.getChildren();
+  const lastChildIndex = children.length - 1;
+  const lastChild = children[lastChildIndex];
+
+  if (!$isTextNode(lastChild)) {
+    return null;
+  }
+
+  const lastText = lastChild.getTextContent();
+  const hardLineBreak = parseMarkdownHardLineBreak(lastText);
+
+  if (hardLineBreak !== null) {
+    const [text, marker] = hardLineBreak;
+    lastChild.setTextContent(text);
+    return marker;
+  }
+
+  if (
+    /^ {2,}$/.test(lastText) &&
+    hasNonWhitespaceContentOnLine(children, lastChildIndex)
+  ) {
+    lastChild.setTextContent('');
+    return lastText;
+  }
+
+  return null;
+}
+
+export function $createMarkdownLineBreakNode(
+  previousNode: ElementNode,
+): LineBreakNode {
+  const lineBreakNode = $createLineBreakNode();
+  const hardLineBreak = $extractMarkdownHardLineBreakMarker(previousNode);
+
+  if (hardLineBreak !== null) {
+    $setState(lineBreakNode, hardLineBreakState, hardLineBreak);
+  }
+
+  return lineBreakNode;
+}
 
 const createBlockNode = (
   createNode: (match: Array<string>) => ElementNode,
@@ -329,6 +473,7 @@ const $listExport = (
   listNode: ListNode,
   exportChildren: (node: ElementNode) => string,
   depth: number,
+  selection?: BaseSelection | null,
 ): string => {
   const output = [];
   const children = listNode.getChildren();
@@ -338,9 +483,24 @@ const $listExport = (
       if (listItemNode.getChildrenSize() === 1) {
         const firstChild = listItemNode.getFirstChild();
         if ($isListNode(firstChild)) {
-          output.push($listExport(firstChild, exportChildren, depth + 1));
+          const nestedResult = $listExport(
+            firstChild,
+            exportChildren,
+            depth + 1,
+            selection,
+          );
+          if (nestedResult) {
+            output.push(nestedResult);
+          }
           continue;
         }
+      }
+      // Skip unselected list items when selection is provided
+      if (
+        selection &&
+        !listItemNode.getChildren().some(child => child.isSelected(selection))
+      ) {
+        continue;
       }
       const indent = ' '.repeat(depth * LIST_INDENT_SIZE);
       const listType = listNode.getListType();
@@ -351,7 +511,11 @@ const $listExport = (
           : listType === 'check'
             ? `${listMarker} [${listItemNode.getChecked() ? 'x' : ' '}] `
             : listMarker + ' ';
-      output.push(indent + prefix + exportChildren(listItemNode));
+      let childrenText = exportChildren(listItemNode);
+      if (listType !== 'number') {
+        childrenText = childrenText.replace(/^(\s{0,3}\d+)(\.\s)/, '$1\\$2');
+      }
+      output.push(indent + prefix + childrenText);
       index++;
     }
   }
@@ -389,6 +553,7 @@ export function $createHeadingTransformer(options?: {
         headingNode.select(0, 0);
       }
     },
+    triggerOnEnter: true,
     type: 'element',
   };
 }
@@ -435,7 +600,7 @@ export function $createQuoteTransformer(options?: {
           const previousNode = parentNode.getPreviousSibling();
           if ($isQuoteNode(previousNode)) {
             previousNode.splice(previousNode.getChildrenSize(), 0, [
-              $createLineBreakNode(),
+              $createMarkdownLineBreakNode(previousNode),
               headingNode,
             ]);
             parentNode.remove();
@@ -456,7 +621,7 @@ export function $createQuoteTransformer(options?: {
         const previousNode = parentNode.getPreviousSibling();
         if ($isQuoteNode(previousNode)) {
           previousNode.splice(previousNode.getChildrenSize(), 0, [
-            $createLineBreakNode(),
+            $createMarkdownLineBreakNode(previousNode),
             ...children,
           ]);
           parentNode.remove();
@@ -471,6 +636,7 @@ export function $createQuoteTransformer(options?: {
         node.select(0, 0);
       }
     },
+    triggerOnEnter: true,
     type: 'element',
   };
 }
@@ -479,7 +645,6 @@ export const QUOTE: ElementTransformer = $createQuoteTransformer();
 
 export const CODE: MultilineElementTransformer = {
   dependencies: [CodeNode],
-
   export: (node: LexicalNode) => {
     if (!$isCodeNode(node)) {
       return null;
@@ -490,7 +655,7 @@ export const CODE: MultilineElementTransformer = {
     if (textContent.indexOf(fence) > -1) {
       const backticks = textContent.match(/`{3,}/g);
       if (backticks) {
-        const maxLength = Math.max(...backticks.map((b) => b.length));
+        const maxLength = Math.max(...backticks.map(b => b.length));
         fence = '`'.repeat(maxLength + 1);
       }
     }
@@ -569,11 +734,11 @@ export const CODE: MultilineElementTransformer = {
     CODE.replace(rootNode, null, startMatch, null, linesInBetween, true);
     return [true, lines.length - 1];
   },
+
   regExpEnd: {
     optional: true,
     regExp: CODE_END_REGEX,
   },
-
   regExpStart: CODE_START_REGEX,
 
   replace: (
@@ -628,41 +793,51 @@ export const CODE: MultilineElementTransformer = {
       codeBlockNode.append(textNode);
       rootNode.append(codeBlockNode);
     } else if (children) {
-      createBlockNode((match) => {
+      createBlockNode(match => {
         return $createCodeNode(match ? match[2] : undefined);
       })(rootNode, children, startMatch, isImport);
     }
   },
+
   type: 'multiline-element',
 };
 
 export const UNORDERED_LIST: ElementTransformer = {
   dependencies: [ListNode, ListItemNode],
-  export: (node, exportChildren) => {
-    return $isListNode(node) ? $listExport(node, exportChildren, 0) : null;
+  export: (node, exportChildren, selection) => {
+    return $isListNode(node)
+      ? $listExport(node, exportChildren, 0, selection)
+      : null;
   },
   regExp: UNORDERED_LIST_REGEX,
   replace: listReplace('bullet'),
+  triggerOnEnter: true,
   type: 'element',
 };
 
 export const CHECK_LIST: ElementTransformer = {
   dependencies: [ListNode, ListItemNode],
-  export: (node, exportChildren) => {
-    return $isListNode(node) ? $listExport(node, exportChildren, 0) : null;
+  export: (node, exportChildren, selection) => {
+    return $isListNode(node)
+      ? $listExport(node, exportChildren, 0, selection)
+      : null;
   },
   regExp: CHECK_LIST_REGEX,
   replace: listReplace('check'),
+  triggerOnEnter: true,
   type: 'element',
 };
 
 export const ORDERED_LIST: ElementTransformer = {
   dependencies: [ListNode, ListItemNode],
-  export: (node, exportChildren) => {
-    return $isListNode(node) ? $listExport(node, exportChildren, 0) : null;
+  export: (node, exportChildren, selection) => {
+    return $isListNode(node)
+      ? $listExport(node, exportChildren, 0, selection)
+      : null;
   },
   regExp: ORDERED_LIST_REGEX,
   replace: listReplace('number'),
+  triggerOnEnter: true,
   type: 'element',
 };
 
@@ -833,6 +1008,10 @@ export function normalizeMarkdown(
     const rawLine = lines[i];
     const line = rawLine.trimEnd();
     const lastLine = sanitizedLines[sanitizedLines.length - 1];
+    const hardLineBreak =
+      i < lines.length - 1 ? parseMarkdownHardLineBreak(rawLine) : null;
+    const lastLineHasHardLineBreak =
+      lastLine !== undefined && parseMarkdownHardLineBreak(lastLine) !== null;
 
     // Code blocks of ```single line``` don't toggle the inCodeBlock flag
     if (CODE_SINGLE_LINE_REGEX.test(line)) {
@@ -866,7 +1045,8 @@ export function normalizeMarkdown(
       UNORDERED_LIST_REGEX.test(line) ||
       CHECK_LIST_REGEX.test(line) ||
       TABLE_ROW_REG_EXP.test(line) ||
-      TABLE_ROW_DIVIDER_REG_EXP.test(line) ||
+      isTableRowDivider(line) ||
+      lastLineHasHardLineBreak ||
       !shouldMergeAdjacentLines ||
       TAG_START_REGEX.test(line) ||
       TAG_END_REGEX.test(line) ||
@@ -879,11 +1059,13 @@ export function normalizeMarkdown(
       // collapse to '' because trimEnd() already reduced them, so they
       // continue to act as paragraph separators.
       sanitizedLines.push(
-        !shouldMergeAdjacentLines && line !== '' ? rawLine : line,
+        (!shouldMergeAdjacentLines && line !== '') || hardLineBreak !== null
+          ? rawLine
+          : line,
       );
     } else {
       sanitizedLines[sanitizedLines.length - 1] =
-        lastLine + ' ' + line.trimStart();
+        lastLine + ' ' + (hardLineBreak === null ? line : rawLine).trimStart();
     }
   }
 

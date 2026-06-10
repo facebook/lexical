@@ -19,7 +19,11 @@ npm
 e2e-screenshots
 test-results
 playwright-report
+# Failure screenshots and attachments written by the vitest browser-mode tests
+__screenshots__
+.vitest-attachments
 /SOURCE_CODE_REVIEW.md
+/playwright.local.config.mjs
 
 npm-debug.log*
 
@@ -47,3 +51,4 @@ npm-debug.log*
 # locally as part of its build step — they don't need to be committed.
 examples/*/pnpm-lock.yaml
 scripts/__tests__/integration/fixtures/*/pnpm-lock.yaml
+*.tsbuildinfo

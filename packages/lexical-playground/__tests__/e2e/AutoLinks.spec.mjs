@@ -26,7 +26,7 @@ import {
   test,
 } from '../utils/index.mjs';
 
-test.describe.parallel('Auto Links', () => {
+test.describe('Auto Links', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
   test('Can convert url-like text into links', async ({page, isPlainText}) => {
@@ -454,7 +454,7 @@ test.describe.parallel('Auto Links', () => {
       page,
       html`
         <p dir="auto">
-          <span style="font-size: 19px;" data-lexical-text="true">
+          <span style="font-size: 20px;" data-lexical-text="true">
             Hellohttp://example.com and more
           </span>
         </p>
@@ -472,13 +472,13 @@ test.describe.parallel('Auto Links', () => {
       page,
       html`
         <p dir="auto">
-          <span style="font-size: 19px;" data-lexical-text="true">Hello</span>
+          <span style="font-size: 20px;" data-lexical-text="true">Hello</span>
           <a href="http://example.com">
-            <span style="font-size: 19px;" data-lexical-text="true">
+            <span style="font-size: 20px;" data-lexical-text="true">
               http://example.com
             </span>
           </a>
-          <span style="font-size: 19px;" data-lexical-text="true">
+          <span style="font-size: 20px;" data-lexical-text="true">
             and more
           </span>
         </p>
@@ -538,7 +538,7 @@ test.describe.parallel('Auto Links', () => {
       // Edge Cases
       'http://foo.bar', // Minimal URL with uncommon TLD
       'https://foo.bar', // HTTPS minimal URL with uncommon TLD
-    ].forEach((testUrl) =>
+    ].forEach(testUrl =>
       test(testUrl, async ({page, isPlainText}) => {
         test.skip(isPlainText);
         await focusEditor(page);
@@ -579,7 +579,7 @@ test.describe.parallel('Auto Links', () => {
       'email@domain.name',
       'email@domain.co.uk',
       'firstname-lastname@domain.com',
-    ].forEach((testUrl) =>
+    ].forEach(testUrl =>
       test(testUrl, async ({page, isPlainText}) => {
         test.skip(isPlainText);
         await focusEditor(page);

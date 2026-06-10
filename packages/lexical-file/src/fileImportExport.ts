@@ -67,7 +67,7 @@ export function editorStateFromSerializedDocument(
  * @param editor - The lexical editor.
  */
 export function importFile(editor: LexicalEditor) {
-  readTextFileFromSystem((text) => {
+  readTextFileFromSystem(text => {
     editor.setEditorState(editorStateFromSerializedDocument(editor, text));
     editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
   });
@@ -85,7 +85,7 @@ function readTextFileFromSystem(callback: (text: string) => void) {
       const reader = new FileReader();
       reader.readAsText(file, 'UTF-8');
 
-      reader.onload = (readerEvent) => {
+      reader.onload = readerEvent => {
         if (readerEvent.target) {
           const content = readerEvent.target.result;
           callback(content as string);

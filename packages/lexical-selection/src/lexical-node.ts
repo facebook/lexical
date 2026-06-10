@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import invariant from '@lexical/internal/invariant';
+import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
 import {
   $caretRangeFromSelection,
   $cloneWithPropertiesEphemeral,
@@ -20,6 +22,7 @@ import {
   $isTokenOrSegmented,
   BaseSelection,
   ElementNode,
+  getStyleObjectFromCSS,
   LexicalEditor,
   LexicalNode,
   NodeKey,
@@ -27,14 +30,8 @@ import {
   RangeSelection,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
-import {CSS_TO_STYLES} from './constants';
-import {
-  getCSSFromStyleObject,
-  getStyleObjectFromCSS,
-  getStyleObjectFromRawCSS,
-} from './utils';
+import {getCSSFromStyleObject} from './utils';
 
 /**
  * Generally used to append text content to HTML and JSON. Grabs the text content and "slices"
@@ -142,16 +139,22 @@ export function $trimTextContentFromAnchor(
 
   while (remaining > 0 && currentNode !== null) {
     if ($isElementNode(currentNode)) {
+      // Annotation breaks a circular inference through the loop (TS7022),
+      // remove when the deprecated generic signatures from #8661 are removed
       const lastDescendant: null | LexicalNode =
-        currentNode.getLastDescendant<LexicalNode>();
+        currentNode.getLastDescendant();
       if (lastDescendant !== null) {
         currentNode = lastDescendant;
       }
     }
+    // Annotation breaks a circular inference through the loop (TS7022),
+    // remove when the deprecated generic signatures from #8661 are removed
     let nextNode: LexicalNode | null = currentNode.getPreviousSibling();
     let additionalElementWhitespace = 0;
     if (nextNode === null) {
       let parent: LexicalNode | null = currentNode.getParentOrThrow();
+      // Annotation breaks a circular inference through the loop (TS7022),
+      // remove when the deprecated generic signatures from #8661 are removed
       let parentSibling: LexicalNode | null = parent.getPreviousSibling();
 
       while (parentSibling === null) {
@@ -244,14 +247,11 @@ export function $trimTextContentFromAnchor(
 }
 
 /**
- * Gets the TextNode's style object and adds the styles to the CSS.
- * @param node - The TextNode to add styles to.
+ * @deprecated node styles are parsed on demand and not cached eternally
  */
-export function $addNodeStyle(node: TextNode): void {
-  const CSSText = node.getStyle();
-  const styles = getStyleObjectFromRawCSS(CSSText);
-  CSS_TO_STYLES.set(CSSText, styles);
-}
+export const $addNodeStyle: (_node: TextNode) => void = warnOnlyOnce(
+  '$addNodeStyle is a deprecated no-op and calls should be removed',
+);
 
 /**
  * Applies the provided styles to the given TextNode, ElementNode, or
@@ -301,7 +301,6 @@ export function $patchStyle(
   } else {
     target.setTextStyle(newCSSText);
   }
-  CSS_TO_STYLES.set(newCSSText, newStyles);
 }
 
 /**
@@ -330,7 +329,7 @@ export function $patchStyleText(
       $patchStyle(emptyNode, patch);
     }
   }
-  $forEachSelectedTextNode((textNode) => {
+  $forEachSelectedTextNode(textNode => {
     $patchStyle(textNode, patch);
   });
 

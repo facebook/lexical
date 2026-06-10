@@ -364,6 +364,10 @@ export interface InitialEditorConfig {
    */
   disableEvents?: CreateEditorArgs['disableEvents'];
   /**
+   * @internal @experimental
+   */
+  dom?: CreateEditorArgs['dom'];
+  /**
    * Used when this editor is nested inside of another editor
    */
   parentEditor?: CreateEditorArgs['parentEditor'];
@@ -406,6 +410,17 @@ export interface InitialEditorConfig {
    * @param editor - The editor that this error came from
    */
   onError?: (error: Error, editor: LexicalEditor) => void;
+  /**
+   * Optional handler for recoverable, warn-level conditions (e.g. the
+   * update-recursion guard tripping) that the editor has already recovered
+   * from. Mirrors {@link onError} but at warn severity, so embedders can route
+   * the condition to telemetry without raising an error alarm. Defaults to a
+   * handler that throws in development and only `console.warn`s in production.
+   *
+   * @param error - The Error object describing the recovered condition
+   * @param editor - The editor that this warning came from
+   */
+  onWarn?: (error: Error, editor: LexicalEditor) => void;
   /**
    * The initial EditorState as a JSON string, an EditorState, or a function
    * to update the editor (once).

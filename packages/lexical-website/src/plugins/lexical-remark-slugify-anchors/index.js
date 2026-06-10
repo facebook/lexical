@@ -16,7 +16,7 @@ const {visit} = require('unist-util-visit');
  */
 module.exports = function lexicalRemarkSlugifyAnchors() {
   return (/** @type import('mdast').Root */ tree) => {
-    visit(tree, (node) => {
+    visit(tree, node => {
       if (node.type === 'link') {
         // Fix url anchors with a preceding $, e.g. #$getroot to #getroot
         node.url = node.url.replace(/#\$/, '#');

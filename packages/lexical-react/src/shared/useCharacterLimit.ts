@@ -8,6 +8,7 @@
 
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
+import invariant from '@lexical/internal/invariant';
 import {
   $createOverflowNode,
   $isOverflowNode,
@@ -32,7 +33,6 @@ import {
   HISTORY_MERGE_TAG,
 } from 'lexical';
 import {useEffect} from 'react';
-import invariant from 'shared/invariant';
 
 type OptionalProps = {
   remainingCharacters?: (characters: number) => void;
@@ -45,7 +45,7 @@ export function useCharacterLimit(
   optional: OptionalProps = Object.freeze({}),
 ): void {
   const {
-    strlen = (input) => input.length,
+    strlen = input => input.length,
     // UTF-16
     remainingCharacters = () => {
       return;
@@ -62,7 +62,7 @@ export function useCharacterLimit(
   }, [editor]);
 
   useEffect(() => {
-    let text = editor.getEditorState().read($rootTextContent);
+    let text = editor.getEditorState().read($rootTextContent, {editor});
     let lastComputedTextLength = 0;
 
     return mergeRegister(
@@ -103,7 +103,7 @@ export function useCharacterLimit(
       }),
       editor.registerCommand(
         DELETE_CHARACTER_COMMAND,
-        (isBackward) => {
+        isBackward => {
           const selection = $getSelection();
           if (!$isRangeSelection(selection)) {
             return false;
@@ -133,12 +133,11 @@ function findOffset(
   maxCharacters: number,
   strlen: (input: string) => number,
 ): number {
-  const Segmenter = Intl.Segmenter;
   let offsetUtf16 = 0;
   let offset = 0;
 
-  if (typeof Segmenter === 'function') {
-    const segmenter = new Segmenter();
+  if (typeof Intl.Segmenter === 'function') {
+    const segmenter = new Intl.Segmenter();
     const graphemes = segmenter.segment(text);
 
     for (const {segment: grapheme} of graphemes) {

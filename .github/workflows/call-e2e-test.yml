@@ -9,63 +9,47 @@ on:
       browser: {required: true, type: string}
       editor-mode: {required: true, type: string}
       prod: {required: false, type: boolean}
-      flaky: {required: false, type: boolean} # Defaults to false: dont run flaky
-      override-react-version: {required: false, type: string}
+      fail-on-cache-miss: {required: false, type: boolean, default: true}
 
 permissions: {}
 
 jobs:
   e2e-test:
     runs-on: ${{ inputs.os }}
-    continue-on-error: ${{ inputs.flaky }}
     if: (inputs.browser != 'webkit' || inputs.os == 'macos-latest')
     env:
       CI: true
       E2E_EDITOR_MODE: ${{ inputs.editor-mode }}
-      OVERRIDE_REACT_VERSION: ${{ inputs.override-react-version }}
-      cache_playwright_path: ${{ inputs.os == 'macos-latest' && '~/Library/Caches/ms-playwright' || inputs.os == 'windows-latest' && 'C:\Users\runneradmin\AppData\Local\ms-playwright' || '~/.cache/ms-playwright' }}
+      E2E_PORT: 4000
       test_results_path: 'test-results/'
-      test_script: test-e2e-${{ inputs.editor-mode == 'rich-text-with-collab' && 'collab-' || '' }}${{ inputs.prod && 'prod-' || '' }}ci-${{ inputs.browser }}
     steps:
       - uses: actions/checkout@v6
-      - name: Use Node.js ${{ inputs.node-version }}
-        uses: actions/setup-node@v6
+      - uses: ./.github/actions/setup-pnpm
         with:
           node-version: ${{ inputs.node-version }}
-      - uses: pnpm/action-setup@v6
-      - name: Install required ubuntu-latest packages
-        if: inputs.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install xvfb
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Install React ${{ inputs.override-react-version }}
-        if: inputs.override-react-version != ''
-        # This should be safe since we are caching pnpm store and not node_modules
-        run: |
-          node ./scripts/override-react.js --version=${{ inputs.override-react-version }}
-          grep version node_modules/{react,react-dom}/package.json
-      - name: Restore playwright from cache
-        uses: actions/cache/restore@v5
-        id: playwright-cache
+      - uses: ./.github/actions/setup-playground
         with:
-          path: ${{ env.cache_playwright_path }}
-          key: playwright-${{ inputs.node-version }}-${{ runner.os }}-${{ runner.arch }}-v${{ secrets.CACHE_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
-      - name: Install playwright
-        run: pnpm exec playwright install
-      - name: Save playwright to cache
-        uses: actions/cache/save@v5
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
+          node-version: ${{ inputs.node-version }}
+          prod: ${{ inputs.prod }}
+          fail-on-cache-miss: ${{ inputs.fail-on-cache-miss }}
+      - uses: ./.github/actions/setup-playwright
         with:
-          path: ${{ env.cache_playwright_path }}
-          key: ${{ steps.playwright-cache.outputs.cache-primary-key }}
+          node-version: ${{ inputs.node-version }}
+          fail-on-cache-miss: ${{ inputs.fail-on-cache-miss }}
       - name: Run tests
-        run: pnpm run ${{ env.test_script }}
+        if: ${{ !startsWith(inputs.editor-mode, 'rich-text-with-collab') }}
+        run: pnpm run test-e2e-${{ inputs.prod && 'prod-' || '' }}${{ inputs.browser }}
+      - name: Run collab tests
+        if: ${{ startsWith(inputs.editor-mode, 'rich-text-with-collab') }}
+        shell: bash
+        run: |
+          pnpm exec concurrently -k -s first \
+            "pnpm run collab" \
+            "pnpm run test-e2e-collab-${{ inputs.editor-mode == 'rich-text-with-collab-v2' && 'v2-' || '' }}${{ inputs.prod && 'prod-' || '' }}${{ inputs.browser }}"
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: Test Results ${{ inputs.os }}-${{ inputs.browser }}-${{ inputs.editor-mode }}-${{ inputs.prod && 'prod' || 'dev' }}-${{ inputs.node-version }}-${{ inputs.override-react-version }}-${{ inputs.flaky && 'flaky' || ''}}
+          name: Test Results ${{ inputs.os }}-${{ inputs.browser }}-${{ inputs.editor-mode }}-${{ inputs.prod && 'prod' || 'dev' }}-${{ inputs.node-version }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ env.test_results_path }}
           retention-days: 7

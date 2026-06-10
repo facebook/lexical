@@ -132,8 +132,23 @@ type Listeners = {
   update: Map<UpdateListener, void | (() => void)>,
 };
 export type CommandListener<P> = (payload: P, editor: LexicalEditor) => boolean;
+declare class DequeSet<T> {
+  size: number;
+  addBack(v: T): this;
+  addFront(v: T): this;
+  delete(v: T): boolean;
+  toArray(): T[];
+  toReadonlyArray(): ReadonlyArray<T>;
+  @@iterator(): Iterator<T>;
+}
+type Tuple5<T> = Readonly<[T, T, T, T, T]>;
 // $FlowFixMe[unclear-type]
-type Commands = Map<LexicalCommand<any>, Array<Set<CommandListener<any>>>>;
+type Commands = Map<
+  // $FlowFixMe[unclear-type]
+  LexicalCommand<any>,
+  // $FlowFixMe[unclear-type]
+  Tuple5<DequeSet<CommandListener<any>>>,
+>;
 type RegisteredNodes = Map<string, RegisteredNode>;
 type RegisteredNode = {
   klass: Class<LexicalNode>,
@@ -146,12 +161,65 @@ type DOMConversionCache = Map<
   Array<(node: Node) => DOMConversion | null>,
 >;
 
+export type DOMSlotForNode<N extends LexicalNode> = N extends ElementNode
+  ? ElementDOMSlot<HTMLElement>
+  : DOMSlot<HTMLElement>;
+
+export type EditorDOMRenderConfig = {
+  /** @internal @experimental */
+  $createDOM: <T extends LexicalNode>(
+    node: T,
+    editor: LexicalEditor,
+  ) => HTMLElement;
+  /** @internal @experimental */
+  $getDOMSlot: <N extends LexicalNode>(
+    node: N,
+    dom: HTMLElement,
+    editor: LexicalEditor,
+  ) => DOMSlotForNode<N>;
+  /** @internal @experimental */
+  $exportDOM: <T extends LexicalNode>(
+    node: T,
+    editor: LexicalEditor,
+  ) => DOMExportOutput;
+  /** @internal @experimental */
+  $extractWithChild: <T extends LexicalNode>(
+    node: T,
+    childNode: LexicalNode,
+    selection: null | BaseSelection,
+    destination: 'clone' | 'html',
+    editor: LexicalEditor,
+  ) => boolean;
+  /** @internal @experimental */
+  $updateDOM: <T extends LexicalNode>(
+    nextNode: T,
+    prevNode: T,
+    dom: HTMLElement,
+    editor: LexicalEditor,
+  ) => boolean;
+  /** @internal @experimental */
+  $shouldInclude: <T extends LexicalNode>(
+    node: T,
+    selection: null | BaseSelection,
+    editor: LexicalEditor,
+  ) => boolean;
+  /** @internal @experimental */
+  $shouldExclude: <T extends LexicalNode>(
+    node: T,
+    selection: null | BaseSelection,
+    editor: LexicalEditor,
+  ) => boolean;
+}
+
 export type CreateEditorArgs = {
+  /** @internal @experimental */
+  dom?: Partial<EditorDOMRenderConfig>;
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
   nodes?: ReadonlyArray<Class<LexicalNode> | LexicalNodeReplacement>;
   onError?: ErrorHandler;
+  onWarn?: ErrorHandler;
   parentEditor?: LexicalEditor;
   editable?: boolean;
   theme?: EditorThemeClasses;
@@ -173,6 +241,7 @@ declare export class LexicalEditor {
   _commands: Commands;
   _nodes: RegisteredNodes;
   _onError: ErrorHandler;
+  _onWarn: ErrorHandler;
   _decorators: {
     [NodeKey]: unknown,
   };
@@ -199,7 +268,7 @@ declare export class LexicalEditor {
   registerCommand<P>(
     command: LexicalCommand<P>,
     listener: CommandListener<P>,
-    priority: CommandListenerPriority,
+    priority: CommandListenerPriority | CommandListenerPriorityBefore,
   ): () => void;
   registerEditableListener(listener: EditableListener): () => void;
   registerMutationListener(
@@ -313,16 +382,23 @@ export type EditorThemeClasses = {
   [string]: EditorThemeClassName | {[string]: EditorThemeClassName},
 };
 export type EditorConfig = {
+  dom?: EditorDOMRenderConfig,
   theme: EditorThemeClasses,
   namespace: string,
   disableEvents?: boolean,
 };
 export type CommandListenerPriority = 0 | 1 | 2 | 3 | 4;
+export type CommandListenerPriorityBefore = -8 | -7 | -6 | -5 | -4;
 export const COMMAND_PRIORITY_EDITOR = 0;
 export const COMMAND_PRIORITY_LOW = 1;
 export const COMMAND_PRIORITY_NORMAL = 2;
 export const COMMAND_PRIORITY_HIGH = 3;
 export const COMMAND_PRIORITY_CRITICAL = 4;
+export const COMMAND_PRIORITY_BEFORE_EDITOR = -8;
+export const COMMAND_PRIORITY_BEFORE_LOW = -7;
+export const COMMAND_PRIORITY_BEFORE_NORMAL = -6;
+export const COMMAND_PRIORITY_BEFORE_HIGH = -5;
+export const COMMAND_PRIORITY_BEFORE_CRITICAL = -4;
 
 export type LexicalNodeReplacement = {
   replace: Class<LexicalNode>,
@@ -414,15 +490,57 @@ declare export class LexicalNode {
   isSelected(): boolean;
   getKey(): NodeKey;
   getIndexWithinParent(): number;
+  getParent(): ElementNode | null;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getParent<T extends ElementNode>(): T | null;
+  getParentOrThrow(): ElementNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getParentOrThrow<T extends ElementNode>(): T;
   getTopLevelElement(): DecoratorNode<unknown> | ElementNode | null;
   getTopLevelElementOrThrow(): DecoratorNode<unknown> | ElementNode;
+  getParents(): Array<ElementNode>;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getParents<T extends ElementNode>(): Array<T>;
   getParentKeys(): Array<NodeKey>;
+  getPreviousSibling(): LexicalNode | null;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getPreviousSibling<T extends LexicalNode>(): T | null;
+  getPreviousSiblings(): Array<LexicalNode>;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getPreviousSiblings<T extends LexicalNode>(): Array<T>;
+  getNextSibling(): LexicalNode | null;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getNextSibling<T extends LexicalNode>(): T | null;
+  getNextSiblings(): Array<LexicalNode>;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getNextSiblings<T extends LexicalNode>(): Array<T>;
   getCommonAncestor<T extends ElementNode>(node: LexicalNode): T | null;
   is(object: ?LexicalNode): boolean;
@@ -443,6 +561,7 @@ declare export class LexicalNode {
     dom: HTMLElement,
     config: EditorConfig,
   ): boolean;
+  getDOMSlot(element: HTMLElement): DOMSlot<HTMLElement>;
   remove(preserveEmptyParent?: boolean): void;
   replace<N extends LexicalNode>(replaceWith: N): N;
   insertAfter(
@@ -560,7 +679,7 @@ declare export class RangeSelection implements BaseSelection {
   getCachedNodes(): null | Array<LexicalNode>;
   setCachedNodes(nodes: null | Array<LexicalNode>): void;
   forwardDeletion(anchor: PointType, anchorNode: ElementNode | TextNode, isBackward: boolean): boolean;
-  getStartEndPoints(): null | [PointType, PointType];
+  getStartEndPoints(): [PointType, PointType];
 }
 export type TextPoint = TextPointType;
 type TextPointType = {
@@ -775,20 +894,79 @@ declare export class ElementNode extends LexicalNode {
   getFormat(): number;
   getFormatType(): ElementFormatType;
   getIndent(): number;
+  getChildren(): Array<LexicalNode>;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getChildren<T extends LexicalNode>(): Array<T>;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getChildren<T extends Array<LexicalNode>>(): T;
   getChildrenKeys(): Array<NodeKey>;
   getChildrenSize(): number;
   isEmpty(): boolean;
   isDirty(): boolean;
   getAllTextNodes(): Array<TextNode>;
+  getFirstDescendant(): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getFirstDescendant<T extends LexicalNode>(): null | T;
+  getLastDescendant(): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getLastDescendant<T extends LexicalNode>(): null | T;
+  getDescendantByIndex(index: number): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getDescendantByIndex<T extends LexicalNode>(index: number): null | T;
+  getFirstChild(): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getFirstChild<T extends LexicalNode>(): null | T;
+  getFirstChildOrThrow(): LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getFirstChildOrThrow<T extends LexicalNode>(): T;
+  getLastChild(): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getLastChild<T extends LexicalNode>(): null | T;
+  getLastChildOrThrow(): LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getLastChildOrThrow<T extends LexicalNode>(): T;
+  getChildAtIndex(index: number): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
   getChildAtIndex<T extends LexicalNode>(index: number): null | T;
   getTextContent(): string;
   getDirection(): 'ltr' | 'rtl' | null;
@@ -827,27 +1005,37 @@ declare export class ElementNode extends LexicalNode {
     nodesToInsert: Array<LexicalNode>,
   ): this;
   exportJSON(): SerializedElementNode;
-  getDOMSlot(dom: HTMLElement): ElementDOMSlot<HTMLElement>;
+  getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement>;
 }
 declare export function $isElementNode(
   node: ?LexicalNode,
 ): node is ElementNode;
 
 /**
- * ElementDOMSlot
+ * DOMSlot
  */
-declare export class ElementDOMSlot<+T extends HTMLElement> {
-  +element: HTMLElement;
-  +before: Node | null;
-  +after: Node | null;
-  constructor(element: HTMLElement, before?: Node | null | void, after?: Node | null | void): void;
-  withBefore(before: Node | null | void): ElementDOMSlot<T>;
-  withAfter(after: Node | null | void): ElementDOMSlot<T>;
-  withElement<ElementType extends HTMLElement>(element: ElementType): ElementDOMSlot<ElementType>;
+declare export class DOMSlot<out T extends HTMLElement> {
+  readonly element: T;
+  readonly before: Node | null;
+  readonly after: Node | null;
+  constructor(element: T, before?: Node | null | void, after?: Node | null | void): void;
+  withBefore(before: Node | null | void): DOMSlot<T>;
+  withAfter(after: Node | null | void): DOMSlot<T>;
+  withElement<ElementType extends HTMLElement>(element: ElementType): DOMSlot<ElementType>;
   insertChild(dom: Node): this;
   removeChild(dom: Node): this;
   replaceChild(dom: Node, prevDom: Node): this;
   getFirstChild(): Node | null;
+  resolveLeafPosition(leafDOM: HTMLElement, initialDOM: Node, initialOffset: number): 'before' | 'after';
+}
+
+/**
+ * ElementDOMSlot
+ */
+declare export class ElementDOMSlot<out T extends HTMLElement> extends DOMSlot<T> {
+  withBefore(before: Node | null | void): ElementDOMSlot<T>;
+  withAfter(after: Node | null | void): ElementDOMSlot<T>;
+  withElement<ElementType extends HTMLElement>(element: ElementType): ElementDOMSlot<ElementType>;
   //
   getManagedLineBreak(): HTMLElement | null;
   removeManagedLineBreak(): void;
@@ -856,8 +1044,16 @@ declare export class ElementDOMSlot<+T extends HTMLElement> {
   resolveChildIndex(element: ElementNode, elementDOM: HTMLElement, initialDOM: Node, initialOffset: number): [node: ElementNode, idx: number];
 }
 
-declare export function setDOMUnmanaged(elementDOM: HTMLElement): void;
+export type SetDOMUnmanagedOptions = {captureSelection?: boolean};
+declare export function setDOMUnmanaged(
+  elementDOM: HTMLElement,
+  options?: SetDOMUnmanagedOptions,
+): void;
 declare export function isDOMUnmanaged(elementDOM: HTMLElement): boolean;
+declare export function isDOMCapturingSelection(
+  elementDOM: Node,
+  editor: LexicalEditor,
+): boolean;
 
 /**
  * LexicalDecoratorNode
@@ -877,6 +1073,9 @@ declare export class DecoratorNode<X> extends LexicalNode {
 declare export function $isDecoratorNode<T = unknown>(
   node: ?LexicalNode,
 ): node is DecoratorNode<T>;
+declare export function $isLexicalNode(
+  node: ?LexicalNode,
+): node is LexicalNode;
 
 /**
  * LexicalParagraphNode
@@ -905,6 +1104,7 @@ declare export function $isParagraphNode(
  * LexicalUtils
  */
 export type EventHandler = (event: Event, editor: LexicalEditor) => void;
+declare export function stopLexicalPropagation(event: Event): void;
 declare export function $hasUpdateTag(tag: UpdateTag): boolean;
 declare export function $addUpdateTag(tag: UpdateTag): void;
 declare export function $onUpdate(updateFn: () => void): void;
@@ -914,7 +1114,22 @@ declare export function getNearestEditorFromDOMNode(
 declare export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
 ): LexicalNode | null;
+declare export function $getNodeByKey(
+  key: NodeKey,
+  _editorState?: EditorState,
+): LexicalNode | null;
+/**
+ * @deprecated The type parameter is an unchecked and unsafe cast and
+ * will be removed in a future release. Call this function without a type
+ * argument and narrow the result with a type guard instead.
+ */
 declare export function $getNodeByKey<N extends LexicalNode>(key: NodeKey): N | null;
+declare export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode;
+/**
+ * @deprecated The type parameter is an unchecked and unsafe cast and
+ * will be removed in a future release. Call this function without a type
+ * argument and narrow the result with a type guard instead.
+ */
 declare export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N;
 declare export function $getRoot(): RootNode;
 declare export function $isLeafNode<T = unknown>(
@@ -947,6 +1162,23 @@ declare export function $hasAncestor(
 declare export function $cloneWithProperties<T extends LexicalNode>(node: T): T;
 declare export function $copyNode<T extends LexicalNode>(node: T, skipReset?: boolean): T;
 declare export function $getEditor(): LexicalEditor;
+declare export function $getEditorDOMRenderConfig(
+  editor?: LexicalEditor,
+): EditorDOMRenderConfig;
+declare export function $getDOMSlot<N extends LexicalNode>(
+  node: N,
+  dom: HTMLElement,
+  editor?: LexicalEditor,
+): DOMSlotForNode<N>;
+declare export function $getDOMTextNode(
+  node: TextNode,
+  dom: HTMLElement,
+  editor?: LexicalEditor,
+): Text | null;
+declare export function $isElementDOMSlot(
+  slot: DOMSlot<HTMLElement>,
+): slot is ElementDOMSlot<HTMLElement>;
+declare export var DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig;
 
 /**
  * LexicalNormalization
@@ -1037,9 +1269,9 @@ export type SerializedEditor = {
  * LexicalCaret
  */
 export interface BaseCaret<T extends LexicalNode, D extends CaretDirection, Type> extends Iterable<SiblingCaret<LexicalNode, D>> {
-  +origin: T;
-  +type: Type;
-  +direction: D;
+  readonly origin: T;
+  readonly type: Type;
+  readonly direction: D;
   getParentAtCaret(): null | ElementNode;
   getNodeAtCaret(): null | LexicalNode;
   getAdjacentCaret(): null | SiblingCaret<LexicalNode, D>;
@@ -1052,8 +1284,8 @@ export interface BaseCaret<T extends LexicalNode, D extends CaretDirection, Type
 export type CaretDirection = 'next' | 'previous';
 type FLIP_DIRECTION = {'next' : 'previous', 'previous': 'next'};
 export interface CaretRange<D extends CaretDirection = CaretDirection> extends Iterable<NodeCaret<D>> {
-  +type: 'node-caret-range';
-  +direction: D;
+  readonly type: 'node-caret-range';
+  readonly direction: D;
   anchor: PointCaret<D>;
   focus: PointCaret<D>;
   isCollapsed(): boolean;
@@ -1093,13 +1325,13 @@ export interface SiblingCaret<T extends LexicalNode = LexicalNode, D extends Car
   splice(deleteCount: number, nodes: Iterable<LexicalNode>, nodesDirection?: CaretDirection): SiblingCaret<T, D>;
 }
 export interface StepwiseIteratorConfig<State, Stop, Value> {
-  +initial: State | Stop;
-  +hasNext: (value: State | Stop) => implies value is State;
-  +step: (value: State) => State | Stop;
-  +map: (value: State) => Value;
+  readonly initial: State | Stop;
+  readonly hasNext: (value: State | Stop) => implies value is State;
+  readonly step: (value: State) => State | Stop;
+  readonly map: (value: State) => Value;
 }
 export interface TextPointCaret<T extends TextNode = TextNode, D extends CaretDirection = CaretDirection> extends BaseCaret<T, D, 'text'> {
-  +offset: number;
+  readonly offset: number;
   getLatest(): TextPointCaret<T, D>;
   getChildCaret(): null;
   getParentCaret(): null | SiblingCaret<ElementNode, D>;
@@ -1108,18 +1340,18 @@ export interface TextPointCaret<T extends TextNode = TextNode, D extends CaretDi
   getFlipped(): TextPointCaret<T, FlipDirection<D>>;
 }
 export interface TextPointCaretSlice<T extends TextNode = TextNode, D extends CaretDirection = CaretDirection> {
-  +type: 'slice';
-  +caret: TextPointCaret<T, D>;
-  +distance: number;
+  readonly type: 'slice';
+  readonly caret: TextPointCaret<T, D>;
+  readonly distance: number;
   getSliceIndices(): [startIndex: number, endIndex: number];
   getTextContent(): string;
   getTextContentSize(): number;
   removeTextSlice(): TextPointCaret<T, D>;
 }
-export type TextPointCaretSliceTuple<D extends CaretDirection> = [
-  +anchorSlice: null | TextPointCaretSlice<TextNode, D>,
-  +focusSlice: null | TextPointCaretSlice<TextNode, D>,
-];
+export type TextPointCaretSliceTuple<D extends CaretDirection> = Readonly<[
+  anchorSlice: null | TextPointCaretSlice<TextNode, D>,
+  focusSlice: null | TextPointCaretSlice<TextNode, D>,
+]>;
 declare export function $getAdjacentChildCaret<D extends CaretDirection>(caret: null | NodeCaret<D>): null | NodeCaret<D>;
 declare export function $getCaretRange<D extends CaretDirection>(anchor: PointCaret<D>, focus: PointCaret<D>): CaretRange<D>;
 declare export function $getChildCaret<T extends null | ElementNode, D extends CaretDirection>(origin: T, direction: D): ChildCaret<Exclude<null, T>, D> | Extract<null, T>;
@@ -1210,22 +1442,22 @@ export interface CommonAncestorResultBranch<
   A extends LexicalNode,
   B extends LexicalNode,
 > {
-  +type: 'branch';
-  +commonAncestor: ElementNode;
-  +a: A | ElementNode;
-  +b: B | ElementNode;
+  readonly type: 'branch';
+  readonly commonAncestor: ElementNode;
+  readonly a: A | ElementNode;
+  readonly b: B | ElementNode;
 }
 export interface CommonAncestorResultAncestor<A extends ElementNode> {
-  +type: 'ancestor';
-  +commonAncestor: A;
+  readonly type: 'ancestor';
+  readonly commonAncestor: A;
 }
 export interface CommonAncestorResultDescendant<B extends ElementNode> {
-  +type: 'descendant';
-  +commonAncestor: B;
+  readonly type: 'descendant';
+  readonly commonAncestor: B;
 }
 export interface CommonAncestorResultSame<A extends LexicalNode> {
-  +type: 'same';
-  +commonAncestor: A;
+  readonly type: 'same';
+  readonly commonAncestor: A;
 }
 declare export function $comparePointCaretNext(
   a: PointCaret<'next'>,
@@ -1266,6 +1498,7 @@ declare export function $splitAtPointCaretNext(
  * LexicalUpdateTags
  */
 declare export var COLLABORATION_TAG: 'collaboration';
+declare export var CUT_TAG: 'cut';
 declare export var HISTORIC_TAG: 'historic';
 declare export var HISTORY_MERGE_TAG: 'history-merge';
 declare export var HISTORY_PUSH_TAG: 'history-push';
@@ -1275,6 +1508,7 @@ declare export var SKIP_DOM_SELECTION_TAG: 'skip-dom-selection';
 declare export var SKIP_SCROLL_INTO_VIEW_TAG: 'skip-scroll-into-view';
 export type UpdateTag =
   typeof COLLABORATION_TAG
+  | typeof CUT_TAG
   | typeof HISTORIC_TAG
   | typeof HISTORY_MERGE_TAG
   | typeof HISTORY_PUSH_TAG
@@ -1336,12 +1570,12 @@ export type NodeStateJSON<T extends LexicalNode> = Partial<{
   }> & CollectStateJSON<GetNodeStateConfig<T>, true>;
 
 declare export class StateConfig<K extends string, V> {
-  +key: K;
-  +parse: (value?: unknown) => V;
-  +unparse: (value: V) => unknown;
-  +isEqual: (a: V, b: V) => boolean;
-  +defaultValue: V;
-  +resetOnCopyNode: boolean;
+  readonly key: K;
+  readonly parse: (value?: unknown) => V;
+  readonly unparse: (value: V) => unknown;
+  readonly isEqual: (a: V, b: V) => boolean;
+  readonly defaultValue: V;
+  readonly resetOnCopyNode: boolean;
   constructor(key: K, stateValueConfig: StateValueConfig<V>): this;
 }
 
@@ -1373,12 +1607,12 @@ export interface StaticNodeConfigValue<
   T extends LexicalNode,
   Type extends string,
 > {
-  +type?: Type;
-  +$transform?: (node: T) => void;
-  +$importJSON?: (serializedNode: SerializedLexicalNode) => T;
-  +importDOM?: DOMConversionMap;
-  +stateConfigs?: ReadonlyArray<RequiredNodeStateConfig>;
-  +extends?: Class<LexicalNode>;
+  readonly type?: Type;
+  readonly $transform?: (node: T) => void;
+  readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T;
+  readonly importDOM?: DOMConversionMap;
+  readonly stateConfigs?: ReadonlyArray<RequiredNodeStateConfig>;
+  readonly extends?: Class<LexicalNode>;
 }
 
 /**
@@ -1386,7 +1620,7 @@ export interface StaticNodeConfigValue<
  * overridden by subclasses.
  */
 export type BaseStaticNodeConfig = {
-  +[K in string]?: StaticNodeConfigValue<LexicalNode, string>;
+  readonly [K in string]?: StaticNodeConfigValue<LexicalNode, string>;
 };
 
 /**
@@ -1396,7 +1630,7 @@ export type StaticNodeConfig<
   T extends LexicalNode,
   Type extends string,
 > = BaseStaticNodeConfig & {
-  +[K in Type]?: StaticNodeConfigValue<T, Type>;
+  readonly [K in Type]?: StaticNodeConfigValue<T, Type>;
 };
 
 // $FlowFixMe[unclear-type]
@@ -1406,14 +1640,14 @@ export type StaticNodeConfigRecord<
   Type extends string,
   Config extends AnyStaticNodeConfigValue,
 > = BaseStaticNodeConfig & {
-  +[K in Type]?: Config;
+  readonly [K in Type]?: Config;
 };
 
 type GetStaticNodeConfig<T extends LexicalNode> = ReturnType<
   T[typeof PROTOTYPE_CONFIG_METHOD]
 > extends infer Record
   ? Record extends StaticNodeConfigRecord<infer Type, infer Config>
-    ? Config & {+type: Type}
+    ? Config & {readonly type: Type}
     : empty
   : empty;
 type GetStaticNodeConfigs<T extends LexicalNode> =
@@ -1465,10 +1699,10 @@ export type SharedNodeState = {
   flatKeys: Set<string>;
 };
 declare export class NodeState<T extends LexicalNode> {
-  +node: LexicalNode;
-  +knownState: KnownStateMap;
+  readonly node: LexicalNode;
+  readonly knownState: KnownStateMap;
   unknownState: void | UnknownStateRecord;
-  +sharedNodeState: SharedNodeState;
+  readonly sharedNodeState: SharedNodeState;
   size: number;
   constructor(
     node: T,
@@ -1479,7 +1713,7 @@ declare export class NodeState<T extends LexicalNode> {
   ): this;
   getValue<K extends string, V>(stateConfig: StateConfig<K, V>): V;
   getInternalState(): [
-    {+[k in string]: unknown} | void,
+    {readonly [k in string]: unknown} | void,
     ReadonlyMap<AnyStateConfig, unknown>,
   ];
   toJSON(): NodeStateJSON<T>;
@@ -1571,6 +1805,7 @@ export interface ExtensionRegisterState<Init, Output>
   getOutput: () => Output;
 }
 export interface InitialEditorConfig {
+  dom?: CreateEditorArgs['dom'];
   disableEvents?: CreateEditorArgs['disableEvents'];
   parentEditor?: CreateEditorArgs['parentEditor'];
   namespace?: CreateEditorArgs['namespace'];
@@ -1579,6 +1814,7 @@ export interface InitialEditorConfig {
   html?: CreateEditorArgs['html'];
   editable?: CreateEditorArgs['editable'];
   onError?: (error: Error, editor: LexicalEditor) => void;
+  onWarn?: (error: Error, editor: LexicalEditor) => void;
   $initialEditorState?: InitialEditorStateType;
 }
 export type InitialEditorStateType =
@@ -1601,7 +1837,7 @@ export interface LexicalExtension<
   Init,
 > extends InitialEditorConfig,
     LexicalExtensionInternal<Config, Output, Init> {
-  +name: Name;
+  readonly name: Name;
   conflictsWith?: string[];
   dependencies?: AnyLexicalExtensionArgument[];
   peerDependencies?: NormalizedPeerDependency<AnyLexicalExtension>[];
@@ -1636,13 +1872,13 @@ export type LexicalExtensionArgument<
 > =
   | LexicalExtension<Config, Name, Output, Init>
   | NormalizedLexicalExtensionArgument<Config, Name, Output, Init>;
-export type LexicalExtensionConfig<+Extension extends AnyLexicalExtension> =
+export type LexicalExtensionConfig<out Extension extends AnyLexicalExtension> =
   NonNullable<Extension[typeof configTypeSymbol]>;
 export interface LexicalExtensionDependency<
-  +Dependency extends AnyLexicalExtension,
+  out Dependency extends AnyLexicalExtension,
 > {
-  +config: LexicalExtensionConfig<Dependency>;
-  +output: LexicalExtensionOutput<Dependency>;
+  readonly config: LexicalExtensionConfig<Dependency>;
+  readonly output: LexicalExtensionOutput<Dependency>;
 }
 export type LexicalExtensionInit<Extension extends AnyLexicalExtension> =
   NonNullable<Extension[typeof initTypeSymbol]>;
@@ -1659,7 +1895,7 @@ interface LexicalExtensionInternalOutput<Output> {
 export type LexicalExtensionName<Extension extends AnyLexicalExtension> =
   Extension['name'];
 
-export type LexicalExtensionOutput<+Extension extends AnyLexicalExtension> =
+export type LexicalExtensionOutput<out Extension extends AnyLexicalExtension> =
   NonNullable<Extension[typeof outputTypeSymbol]>;
 declare export const peerDependencySymbol: symbol;
 export type NormalizedLexicalExtensionArgument<
@@ -1671,7 +1907,7 @@ export type NormalizedLexicalExtensionArgument<
 export type NormalizedPeerDependency<Extension extends AnyLexicalExtension> = [
   Extension['name'],
   Partial<LexicalExtensionConfig<Extension>> | void,
-] & {+[typeof peerDependencySymbol]: Extension};
+] & {readonly [typeof peerDependencySymbol]: Extension};
 export type OutputComponentExtension<ComponentType> =
   // $FlowFixMe[unclear-type]
   LexicalExtension<any, any, {Component: ComponentType}, any>;
@@ -1695,3 +1931,25 @@ declare export function removeClassNamesFromElement(
 ): void;
 declare export function mergeRegister(...func: Array<() => void>): () => void;
 declare export function normalizeClassNames(...classNames: Array<typeof undefined | boolean | null | string>): Array<string>;
+declare export function getStyleObjectFromCSS(css: string): {
+  [string]: string,
+};
+declare export function setDOMStyleObject(
+  domStyle: CSSStyleDeclaration,
+  styleObject: {[string]: string | null | void},
+): void;
+declare export function setDOMStyleFromCSS(
+  domStyle: CSSStyleDeclaration,
+  cssText: string,
+  prevCSSText?: string,
+): void;
+declare export var CAN_USE_BEFORE_INPUT: boolean;
+declare export var CAN_USE_DOM: boolean;
+declare export var IS_ANDROID: boolean;
+declare export var IS_ANDROID_CHROME: boolean;
+declare export var IS_APPLE: boolean;
+declare export var IS_APPLE_WEBKIT: boolean;
+declare export var IS_CHROME: boolean;
+declare export var IS_FIREFOX: boolean;
+declare export var IS_IOS: boolean;
+declare export var IS_SAFARI: boolean;

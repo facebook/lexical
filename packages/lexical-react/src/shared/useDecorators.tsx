@@ -12,7 +12,8 @@ import type {JSX} from 'react';
 import * as React from 'react';
 import {Suspense, useEffect, useMemo, useState} from 'react';
 import {createPortal, flushSync} from 'react-dom';
-import useLayoutEffect from 'shared/useLayoutEffect';
+
+import useLayoutEffect from './useLayoutEffect';
 
 type ErrorBoundaryProps = {
   children: JSX.Element;
@@ -33,7 +34,7 @@ export function useDecorators(
 
   // Subscribe to changes
   useLayoutEffect(() => {
-    return editor.registerDecoratorListener<JSX.Element>((nextDecorators) => {
+    return editor.registerDecoratorListener<JSX.Element>(nextDecorators => {
       flushSync(() => {
         setDecorators(nextDecorators);
       });
@@ -44,6 +45,7 @@ export function useDecorators(
     // If the content editable mounts before the subscription is added, then
     // nothing will be rendered on initial pass. We can get around that by
     // ensuring that we set the value.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDecorators(editor.getDecorators());
   }, [editor]);
 
@@ -55,7 +57,7 @@ export function useDecorators(
     for (let i = 0; i < decoratorKeys.length; i++) {
       const nodeKey = decoratorKeys[i];
       const reactDecorator = (
-        <ErrorBoundary onError={(e) => editor._onError(e)}>
+        <ErrorBoundary onError={e => editor._onError(e)}>
           <Suspense fallback={null}>{decorators[nodeKey]}</Suspense>
         </ErrorBoundary>
       );

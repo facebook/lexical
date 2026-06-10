@@ -6,23 +6,29 @@
  *
  */
 
-import type {CodeHighlightNode, CodeNode} from '@lexical/code';
-import type {LexicalCommand, LineBreakNode, TabNode} from 'lexical';
+import type {CodeNode} from '@lexical/code';
+import type {LexicalCommand} from 'lexical';
 
 import {
   $createCodeNode,
   $isCodeHighlightNode,
   $isCodeNode,
 } from '@lexical/code';
+import {CodeIndentExtension} from '@lexical/code-core';
 import {
+  CodeShikiExtension,
   isCodeLanguageLoaded,
   loadCodeLanguage,
   loadCodeTheme,
   registerCodeHighlighting,
   ShikiTokenizer,
 } from '@lexical/code-shiki';
+import {
+  buildEditorFromExtensions,
+  TabIndentationExtension,
+} from '@lexical/extension';
 import {registerTabIndentation} from '@lexical/react/LexicalTabIndentationPlugin';
-import {registerRichText} from '@lexical/rich-text';
+import {registerRichText, RichTextExtension} from '@lexical/rich-text';
 import {
   $caretRangeFromSelection,
   $createRangeSelection,
@@ -32,6 +38,7 @@ import {
   $isLineBreakNode,
   $isTabNode,
   $setSelectionFromCaretRange,
+  configExtension,
   INDENT_CONTENT_COMMAND,
   KEY_TAB_COMMAND,
   OUTDENT_CONTENT_COMMAND,
@@ -40,12 +47,16 @@ import {
   initializeUnitTest,
   tabKeyboardEvent,
 } from 'lexical/src/__tests__/utils';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
+import {
+  $runOutdentScenario,
+  OUTDENT_SCENARIOS,
+} from '../../../../lexical-code-core/src/__tests__/outdentTestUtils';
 import {isCodeThemeLoaded} from '../../FacadeShiki';
 
 describe('LexicalCodeNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     describe('Tabs', () => {
       // Tests are described using the following convention
       // > is the beginning of a line
@@ -91,8 +102,8 @@ describe('LexicalCodeNode tests', () => {
         ['>-li|ne1>>-li|ne2', '>li|ne1>>li|ne2', 'outdent'],
         ['>|-line1>->-line2|', '>|--line1>-->--line2|', 'tab'],
       ];
-      suite.forEach((scenario) => {
-        ['forwards', 'backwards'].forEach((direction) => {
+      suite.forEach(scenario => {
+        ['forwards', 'backwards'].forEach(direction => {
           test(`testing ${scenario[2]}: ${scenario[0]} => ${scenario[1]} (${direction})`, async () => {
             const {editor} = testEnv;
 
@@ -118,10 +129,10 @@ describe('LexicalCodeNode tests', () => {
               return getRawTextWithSelection(input).replaceAll('|', '');
             };
 
-            await loadCodeLanguage(ShikiTokenizer.defaultLanguage);
-            expect(isCodeLanguageLoaded(ShikiTokenizer.defaultLanguage)).toBe(
-              true,
-            );
+            const tokenizerDefault = ShikiTokenizer.defaultLanguage;
+            assert(tokenizerDefault !== null, 'expected default language');
+            await loadCodeLanguage(tokenizerDefault);
+            expect(isCodeLanguageLoaded(tokenizerDefault)).toBe(true);
             await loadCodeTheme(ShikiTokenizer.defaultTheme);
             expect(isCodeThemeLoaded(ShikiTokenizer.defaultTheme)).toBe(true);
             registerRichText(editor);
@@ -148,7 +159,7 @@ describe('LexicalCodeNode tests', () => {
                 codeNodes[0]
                   .getChildren()
                   .filter(
-                    (node) =>
+                    node =>
                       !(
                         $isCodeHighlightNode(node) ||
                         $isLineBreakNode(node) ||
@@ -176,11 +187,7 @@ describe('LexicalCodeNode tests', () => {
                   selLast -= 1;
                 }
 
-                let matching:
-                  | null
-                  | LineBreakNode
-                  | TabNode
-                  | CodeHighlightNode = codeNode.getFirstChild();
+                let matching = codeNode.getFirstChild();
                 let parentIndex = 0;
                 let offset = 0;
                 while (
@@ -279,5 +286,40 @@ describe('LexicalCodeNode tests', () => {
         });
       });
     });
+  });
+  describe('tabSize (#8410): outdent space-indented lines', async () => {
+    const tokenizerDefault = ShikiTokenizer.defaultLanguage;
+    assert(tokenizerDefault !== null, 'expected default language');
+    await loadCodeLanguage(tokenizerDefault);
+    await loadCodeTheme(ShikiTokenizer.defaultTheme);
+    test.for(OUTDENT_SCENARIOS)(
+      '$name',
+      async ({
+        rawText,
+        cursorOffset,
+        tabSize,
+        expectedText,
+        expectedCursor,
+      }) => {
+        using editor = buildEditorFromExtensions({
+          dependencies: [
+            RichTextExtension,
+            TabIndentationExtension,
+            CodeShikiExtension,
+            configExtension(CodeIndentExtension, {tabSize}),
+          ],
+          name: 'shiki-outdent',
+        });
+        const {text, cursor} = $runOutdentScenario(
+          editor,
+          rawText,
+          cursorOffset,
+        );
+        expect(text).toBe(expectedText);
+        if (expectedCursor !== undefined) {
+          expect(cursor).toBe(expectedCursor);
+        }
+      },
+    );
   });
 });

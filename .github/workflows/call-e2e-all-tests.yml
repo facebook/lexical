@@ -6,7 +6,74 @@ on:
 permissions: {}
 
 jobs:
+  # Build the dev playground once and cache the output for all test jobs
+  build-ubuntu:
+    env:
+      node-version: 24.x
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playwright
+        with:
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playground
+        with:
+          node-version: ${{ env.node-version }}
+
+  build-ubuntu-prod:
+    env:
+      node-version: 24.x
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playwright
+        with:
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playground
+        with:
+          node-version: ${{ env.node-version }}
+          prod: true
+
+  build-macos:
+    env:
+      node-version: 24.x
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playwright
+        with:
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playground
+        with:
+          node-version: ${{ env.node-version }}
+
+  build-windows:
+    env:
+      node-version: 24.x
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playwright
+        with:
+          node-version: ${{ env.node-version }}
+      - uses: ./.github/actions/setup-playground
+        with:
+          node-version: ${{ env.node-version }}
+
   mac-rich:
+    needs: [build-macos]
     strategy:
       matrix:
         node-version: [24.x]
@@ -20,6 +87,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   mac-plain:
+    needs: [build-macos]
     strategy:
       matrix:
         node-version: [24.x]
@@ -33,6 +101,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   linux:
+    needs: [build-ubuntu]
     strategy:
       matrix:
         node-version: [24.x]
@@ -46,6 +115,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   windows:
+    needs: [build-windows]
     strategy:
       matrix:
         node-version: [24.x]
@@ -53,12 +123,13 @@ jobs:
         editor-mode: ['rich-text', 'plain-text']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
-      os: 'windows-latest'
+      os: 'windows-2022'
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}
 
   collab-mac:
+    needs: [build-macos]
     strategy:
       matrix:
         node-version: [24.x]
@@ -71,6 +142,7 @@ jobs:
       editor-mode: 'rich-text-with-collab'
 
   collab-linux:
+    needs: [build-ubuntu]
     strategy:
       matrix:
         node-version: [24.x]
@@ -82,19 +154,34 @@ jobs:
       browser: ${{ matrix.browser }}
       editor-mode: 'rich-text-with-collab'
 
-  collab-windows:
+  collab-v2-linux:
+    needs: [build-ubuntu]
     strategy:
       matrix:
         node-version: [24.x]
         browser: ['chromium', 'firefox']
     uses: ./.github/workflows/call-e2e-test.yml
     with:
-      os: 'windows-latest'
+      os: 'ubuntu-latest'
+      node-version: ${{ matrix.node-version }}
+      browser: ${{ matrix.browser }}
+      editor-mode: 'rich-text-with-collab-v2'
+
+  collab-windows:
+    needs: [build-windows]
+    strategy:
+      matrix:
+        node-version: [24.x]
+        browser: ['chromium', 'firefox']
+    uses: ./.github/workflows/call-e2e-test.yml
+    with:
+      os: 'windows-2022'
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: 'rich-text-with-collab'
 
   prod:
+    needs: [build-ubuntu-prod]
     strategy:
       matrix:
         os: ['ubuntu-latest']
@@ -110,6 +197,7 @@ jobs:
       editor-mode: ${{ matrix.editor-mode }}
 
   collab-prod:
+    needs: [build-ubuntu-prod]
     strategy:
       matrix:
         os: ['ubuntu-latest']
@@ -120,37 +208,6 @@ jobs:
     with:
       prod: true
       os: ${{ matrix.os }}
-      node-version: ${{ matrix.node-version }}
-      browser: ${{ matrix.browser }}
-      editor-mode: ${{ matrix.editor-mode }}
-
-  # This has been stalling in GitHub CI for unknown reasons, disable for now
-  # react-beta:
-  #   strategy:
-  #     matrix:
-  #       # Currently using a single combination for every-patch e2e tests of
-  #       # react beta to reduce cost impact
-  #       editor-mode: ['rich-text']
-  #       prod: [false]
-  #   uses: ./.github/workflows/call-e2e-test.yml
-  #   with:
-  #     os: 'ubuntu-latest'
-  #     browser: 'chromium'
-  #     node-version: 24.x
-  #     editor-mode: ${{ matrix.editor-mode }}
-  #     prod: ${{ matrix.prod }}
-  #     override-react-version: beta
-
-  flaky:
-    strategy:
-      matrix:
-        node-version: [24.x]
-        browser: ['chromium', 'firefox']
-        editor-mode: ['rich-text', 'plain-text', 'rich-text-with-collab']
-    uses: ./.github/workflows/call-e2e-test.yml
-    with:
-      os: 'ubuntu-latest'
-      flaky: true
       node-version: ${{ matrix.node-version }}
       browser: ${{ matrix.browser }}
       editor-mode: ${{ matrix.editor-mode }}

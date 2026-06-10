@@ -6,9 +6,9 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {createRectsFromDOMRange} from '@lexical/selection';
 import {isHTMLElement, type LexicalEditor} from 'lexical';
-import invariant from 'shared/invariant';
 
 import px from './px';
 
@@ -127,7 +127,7 @@ export default function mlcPositionNodeOnRange(
     stop();
     rootDOMNode = currentRootDOMNode;
     parentDOMNode = currentParentDOMNode;
-    observer = new MutationObserver((mutations) => {
+    observer = new MutationObserver(mutations => {
       const nextRootDOMNode = editor.getRootElement();
       const nextParentDOMNode =
         nextRootDOMNode && nextRootDOMNode.parentElement;

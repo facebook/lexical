@@ -13,6 +13,7 @@
 import type {
   LexicalNode,
   NodeKey,
+  TextNode,
   ExtensionConfigBase,
   EditorState,
   AnyLexicalExtension,
@@ -79,7 +80,7 @@ declare export class Signal<T = unknown> {
   value: T;
 }
 export interface ReadonlySignal<T = unknown> {
-  +value: T;
+  readonly value: T;
   peek(): T;
   subscribe(fn: (value: T) => void): () => void;
   valueOf(): T;
@@ -153,6 +154,11 @@ declare export function $isHorizontalRuleNode(
 declare export var INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void>;
 declare export var HorizontalRuleExtension: LexicalExtension<ExtensionConfigBase, "@lexical/extension/HorizontalRule", void, void>;
 
+declare export var IMEExtension: LexicalExtension<ExtensionConfigBase, "@lexical/extension/IME", {
+  compositionKey: Signal<null | NodeKey>;
+  composingTextNode: Signal<null | TextNode>;
+}, void>;
+
 export type InitialStateConfig = {
   updateOptions: EditorUpdateOptions;
   setOptions: EditorSetOptions;
@@ -191,7 +197,7 @@ export type SerializedDecoratorTextNode = {
   format: number,
   ...
 };
-declare export class DecoratorTextNode extends DecoratorNode<mixed> {
+declare export class DecoratorTextNode extends DecoratorNode<unknown> {
   createDOM(): HTMLElement;
   getFormat(): number;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;

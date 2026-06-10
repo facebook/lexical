@@ -584,11 +584,6 @@ test.describe('Images', () => {
     test.fixme(isCollab);
     test.skip(isPlainText);
 
-    await page.setViewportSize({
-      height: 1000,
-      width: 2000,
-    });
-
     await focusEditor(page);
 
     await page.keyboard.type('HelloWorld');
@@ -605,7 +600,7 @@ test.describe('Images', () => {
       positionStart: 'start',
     });
 
-    const lexicalSelection = await evaluate(page, (editor) => {
+    const lexicalSelection = await evaluate(page, editor => {
       return window.lexicalEditor._editorState._selection;
     });
     expect(lexicalSelection.anchor).toBeTruthy();

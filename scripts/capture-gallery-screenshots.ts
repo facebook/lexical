@@ -10,7 +10,13 @@
  * Captures screenshots of each example for the gallery page.
  *
  * Usage:
- *   pnpm run capture-gallery-screenshots
+ *   pnpm run capture-gallery-screenshots                # all examples
+ *   pnpm run capture-gallery-screenshots markdown-editor # one or more
+ *   pnpm run capture-gallery-screenshots website-toolbar website-rich-input
+ *
+ * Each positional argument is matched against the example's `dir`
+ * (the folder name under examples/). Unknown names exit non-zero so
+ * typos don't silently no-op.
  *
  * Prerequisites:
  *   - Playwright browsers installed (npx playwright install chromium)
@@ -39,16 +45,44 @@ const GALLERY_DIR = resolve(
 );
 
 // Only screenshot examples that have a waitForSelector configured
-const EXAMPLES = galleryExamples.filter(
+const SCREENSHOTABLE = galleryExamples.filter(
   (ex): ex is GalleryExample & {waitForSelector: string} =>
     ex.waitForSelector != null,
 );
+
+// Optional positional args: example dir names to refresh. If none
+// are provided, all screenshotable examples are captured.
+const requestedDirs = process.argv.slice(2);
+const unknown = requestedDirs.filter(
+  dir => !galleryExamples.some(ex => ex.dir === dir),
+);
+if (unknown.length > 0) {
+  const known = galleryExamples
+    .map(ex => `  ${ex.dir}`)
+    .sort()
+    .join('\n');
+  console.error(
+    `Unknown example name(s): ${unknown.join(', ')}\n` +
+      `Available examples:\n${known}`,
+  );
+  process.exit(1);
+}
+const EXAMPLES =
+  requestedDirs.length === 0
+    ? SCREENSHOTABLE
+    : SCREENSHOTABLE.filter(ex => requestedDirs.includes(ex.dir));
+if (EXAMPLES.length === 0) {
+  console.error(
+    'None of the requested examples have a waitForSelector configured.',
+  );
+  process.exit(1);
+}
 
 const PORT = 5180;
 const IS_WINDOWS = process.platform === 'win32';
 
 function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
+  return new Promise(r => setTimeout(r, ms));
 }
 
 function waitForServer(port: number, timeoutMs = 60000): Promise<void> {
@@ -81,17 +115,19 @@ function waitForServer(port: number, timeoutMs = 60000): Promise<void> {
 function installDeps(exampleDir: string): void {
   // --ignore-workspace so pnpm installs this example's own deps
   // rather than running the monorepo workspace install.
-  // shell: true isolates the child from the tsx loader.
+  // shell: true isolates the child from the tsx loader. @types/node narrows
+  // `ExecSyncOptions.shell` to `string`, but Node forwards a boolean to the
+  // underlying spawnSync at runtime, so the value is cast to satisfy the types.
   execSync('pnpm install --ignore-workspace', {
     cwd: exampleDir,
-    shell: true,
+    shell: true as unknown as string,
     stdio: 'pipe',
   });
   // Run the prepare script if it exists (e.g. svelte-kit sync)
   try {
     execSync('pnpm run --if-present prepare', {
       cwd: exampleDir,
-      shell: true,
+      shell: true as unknown as string,
       stdio: 'pipe',
     });
   } catch {
@@ -226,7 +262,7 @@ async function main(): Promise<void> {
   console.warn('\nDone!');
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error('Fatal error:', err);
   process.exit(1);
 });

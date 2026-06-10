@@ -48,7 +48,7 @@ describe('LexicalBuilder', () => {
     );
     const reps = builder.sortedExtensionReps();
     expect(reps.length).toBe(3);
-    const rep = reps.find((r) => r.extension === ConfigExtension);
+    const rep = reps.find(r => r.extension === ConfigExtension);
     assert(rep, 'ConfigExtension not found');
     expect(rep.extension).toBe(ConfigExtension);
     expect(rep.getState().config).toEqual({a: 1, b: null});
@@ -67,7 +67,7 @@ describe('LexicalBuilder', () => {
     );
     const reps = builder.sortedExtensionReps();
     expect(reps.length).toBe(4);
-    const rep = reps.find((r) => r.extension === ConfigExtension);
+    const rep = reps.find(r => r.extension === ConfigExtension);
     assert(rep, 'ConfigExtension not found');
     expect(rep.extension).toBe(ConfigExtension);
     expect(rep.getState().config).toEqual({a: 1, b: null});
@@ -86,7 +86,7 @@ describe('LexicalBuilder', () => {
     );
     const reps = builder.sortedExtensionReps();
     expect(reps.length).toBe(4);
-    const rep = reps.find((r) => r.extension === ConfigExtension);
+    const rep = reps.find(r => r.extension === ConfigExtension);
     assert(rep, 'ConfigExtension not found');
     expect(rep.extension).toBe(ConfigExtension);
     expect(rep.getState().config).toEqual({a: 1, b: null});
@@ -136,7 +136,7 @@ describe('LexicalBuilder', () => {
         expect(
           $getRoot()
             .getAllTextNodes()
-            .map((node) => ({[node.getType()]: node.getTextContent()})),
+            .map(node => ({[node.getType()]: node.getTextContent()})),
         ).toEqual([{'node-a': 'defer'}, {'node-b': 'direct'}]);
       });
     });
@@ -153,7 +153,7 @@ describe('LexicalBuilder', () => {
         buildEditorFromExtensions(ExtensionA, ConfigExtension),
       );
       const reps = builder.sortedExtensionReps();
-      expect(reps.map((rep) => rep.extension.name)).toEqual([
+      expect(reps.map(rep => rep.extension.name)).toEqual([
         InitialStateExtensionName,
         'Config',
         'A',
@@ -168,7 +168,7 @@ describe('LexicalBuilder', () => {
         buildEditorFromExtensions(ExtensionA, ConfigExtension),
       );
       const reps = builder.sortedExtensionReps();
-      expect(reps.map((rep) => rep.extension.name)).toEqual([
+      expect(reps.map(rep => rep.extension.name)).toEqual([
         InitialStateExtensionName,
         'Config',
         'A',

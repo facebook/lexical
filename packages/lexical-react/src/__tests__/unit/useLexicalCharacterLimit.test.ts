@@ -30,7 +30,7 @@ import {$mergePrevious} from '../../shared/useCharacterLimit';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest(
-    (testEnv) => {
+    testEnv => {
       describe('merge', () => {
         function $initializeEditorWithLeftRightOverflowNodes(): [
           NodeKey,

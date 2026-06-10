@@ -122,7 +122,7 @@ function TeamSection({title, description, members}: TeamSectionProps) {
         </p>
       </div>
       <div className="flex flex-1 flex-col gap-3">
-        {members.map((member) => (
+        {members.map(member => (
           <TeamMemberCard key={member.username} member={member} />
         ))}
       </div>

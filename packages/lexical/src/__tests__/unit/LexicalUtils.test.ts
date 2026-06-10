@@ -20,6 +20,7 @@ import {
   $setState,
   createEditor,
   createState,
+  IS_APPLE,
   isSelectionWithinEditor,
   ParagraphNode,
   resetRandomKey,
@@ -36,13 +37,15 @@ import {
   getTextDirection,
   isArray,
   isExactShortcutMatch,
+  isMoveToEnd,
+  isMoveToStart,
   scheduleMicroTask,
   scrollIntoViewIfNeeded,
 } from '../../LexicalUtils';
 import {initializeUnitTest} from '../utils';
 
 describe('LexicalUtils tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('scheduleMicroTask(): native', async () => {
       vi.resetModules();
 
@@ -320,6 +323,46 @@ describe('LexicalUtils tests', () => {
       );
     });
 
+    test('isMoveToEnd() / isMoveToStart() accept Shift modifier', () => {
+      const modifier = IS_APPLE ? {metaKey: true} : {ctrlKey: true};
+
+      const rightWithoutShift = new KeyboardEvent('keydown', {
+        ...modifier,
+        key: 'ArrowRight',
+      });
+      const rightWithShift = new KeyboardEvent('keydown', {
+        ...modifier,
+        key: 'ArrowRight',
+        shiftKey: true,
+      });
+      const leftWithoutShift = new KeyboardEvent('keydown', {
+        ...modifier,
+        key: 'ArrowLeft',
+      });
+      const leftWithShift = new KeyboardEvent('keydown', {
+        ...modifier,
+        key: 'ArrowLeft',
+        shiftKey: true,
+      });
+
+      expect(isMoveToEnd(rightWithoutShift)).toBe(true);
+      expect(isMoveToEnd(rightWithShift)).toBe(true);
+      expect(isMoveToStart(leftWithoutShift)).toBe(true);
+      expect(isMoveToStart(leftWithShift)).toBe(true);
+
+      // Wrong direction rejected
+      expect(isMoveToEnd(leftWithoutShift)).toBe(false);
+      expect(isMoveToStart(rightWithoutShift)).toBe(false);
+
+      // Extra Alt modifier rejected
+      const rightWithAlt = new KeyboardEvent('keydown', {
+        ...modifier,
+        altKey: true,
+        key: 'ArrowRight',
+      });
+      expect(isMoveToEnd(rightWithAlt)).toBe(false);
+    });
+
     test('isTokenOrSegmented()', async () => {
       const {editor} = testEnv;
 
@@ -363,7 +406,7 @@ describe('LexicalUtils tests', () => {
       const paragraphKeys: string[] = [];
 
       const $paragraphKeys = () =>
-        $nodesOfType(ParagraphNode).map((node) => node.getKey());
+        $nodesOfType(ParagraphNode).map(node => node.getKey());
 
       await editor.update(() => {
         const root = $getRoot();
@@ -503,7 +546,7 @@ describe('LexicalUtils tests', () => {
       const textMap = typeToNodeMap.get('text')!;
       expect(textMap.size).toEqual(2);
       expect(
-        [...textMap.values()].map((node) => (node as TextNode).__text),
+        [...textMap.values()].map(node => (node as TextNode).__text),
       ).toEqual(expect.arrayContaining(['a', 'b']));
     });
 
@@ -591,7 +634,7 @@ describe('$applyNodeReplacement', () => {
       nodes: [
         {
           replace: TextNode,
-          with: (node) => $createExtendedTextNode().initWithTextNode(node),
+          with: node => $createExtendedTextNode().initWithTextNode(node),
           withKlass: ExtendedExtendedTextNode,
         },
       ],
@@ -617,7 +660,7 @@ describe('$applyNodeReplacement', () => {
       nodes: [
         {
           replace: TextNode,
-          with: (node) => node,
+          with: node => node,
           withKlass: ExtendedTextNode,
         },
       ],
@@ -702,7 +745,7 @@ describe('$applyNodeReplacement', () => {
       nodes: [
         {
           replace: TextNode,
-          with: (node) => $createExtendedTextNode().initWithTextNode(node),
+          with: node => $createExtendedTextNode().initWithTextNode(node),
           withKlass: ExtendedTextNode,
         },
       ],
@@ -729,7 +772,7 @@ describe('$applyNodeReplacement', () => {
         ExtendedTextNode,
         {
           replace: ExtendedTextNode,
-          with: (node) =>
+          with: node =>
             $createExtendedExtendedTextNode().initWithExtendedTextNode(node),
           withKlass: ExtendedExtendedTextNode,
         },
@@ -759,12 +802,12 @@ describe('$applyNodeReplacement', () => {
         ExtendedTextNode,
         {
           replace: TextNode,
-          with: (node) => $createExtendedTextNode().initWithTextNode(node),
+          with: node => $createExtendedTextNode().initWithTextNode(node),
           withKlass: ExtendedTextNode,
         },
         {
           replace: ExtendedTextNode,
-          with: (node) =>
+          with: node =>
             $createExtendedExtendedTextNode().initWithExtendedTextNode(node),
           withKlass: ExtendedExtendedTextNode,
         },
@@ -793,12 +836,12 @@ describe('$applyNodeReplacement', () => {
         ExtendedExtendedTextNode,
         {
           replace: TextNode,
-          with: (node) => $createExtendedTextNode().initWithTextNode(node),
+          with: node => $createExtendedTextNode().initWithTextNode(node),
           withKlass: ExtendedTextNode,
         },
         {
           replace: ExtendedTextNode,
-          with: (node) =>
+          with: node =>
             $createExtendedExtendedTextNode().initWithExtendedTextNode(node),
           withKlass: ExtendedExtendedTextNode,
         },
@@ -825,7 +868,7 @@ describe('$applyNodeReplacement', () => {
 });
 describe('$copyNode', () => {
   const STRING_STATE = createState('string-state', {
-    parse: (v) => (typeof v === 'string' ? v : ''),
+    parse: v => (typeof v === 'string' ? v : ''),
   });
   class ExtendedParagraphNode extends ParagraphNode {
     __string: string = 'default';

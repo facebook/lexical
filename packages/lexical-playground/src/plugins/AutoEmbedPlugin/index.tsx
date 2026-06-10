@@ -179,11 +179,9 @@ export function AutoEmbedDialog({
       debounce((inputText: string) => {
         const urlMatch = URL_MATCHER.exec(inputText);
         if (embedConfig != null && inputText != null && urlMatch != null) {
-          Promise.resolve(embedConfig.parseUrl(inputText)).then(
-            (parseResult) => {
-              setEmbedResult(parseResult);
-            },
-          );
+          Promise.resolve(embedConfig.parseUrl(inputText)).then(parseResult => {
+            setEmbedResult(parseResult);
+          });
         } else if (embedResult != null) {
           setEmbedResult(null);
         }
@@ -207,7 +205,7 @@ export function AutoEmbedDialog({
           placeholder={embedConfig.exampleUrl}
           value={text}
           data-test-id={`${embedConfig.type}-embed-modal-url`}
-          onChange={(e) => {
+          onChange={e => {
             const {value} = e.target;
             setText(value);
             validateText(value);
@@ -230,7 +228,7 @@ export default function AutoEmbedPlugin(): JSX.Element {
   const [modal, showModal] = useModal();
 
   const openEmbedModal = (embedConfig: PlaygroundEmbedConfig) => {
-    showModal(`Embed ${embedConfig.contentName}`, (onClose) => (
+    showModal(`Embed ${embedConfig.contentName}`, onClose => (
       <AutoEmbedDialog embedConfig={embedConfig} onClose={onClose} />
     ));
   };

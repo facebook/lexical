@@ -31,7 +31,7 @@ test.describe('Regression test #5251', () => {
     test.skip(isPlainText);
     await focusEditor(page);
 
-    page.on('console', (msg) => {
+    page.on('console', msg => {
       if (msg.type() === 'error') {
         if (
           msg.text().includes('error #68') ||

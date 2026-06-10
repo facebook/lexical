@@ -12,25 +12,33 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   createEditor,
-  ElementDOMSlot,
   ElementNode,
   LexicalEditor,
   LexicalNode,
   TextNode,
 } from 'lexical';
 import * as React from 'react';
-import {createRef, useEffect} from 'react';
+import {act, createRef, useEffect} from 'react';
 import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
-import {afterEach, beforeEach, describe, expect, it, test} from 'vitest';
+import {
+  afterEach,
+  assert,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  test,
+} from 'vitest';
 
 import {
   $createTestElementNode,
   createTestEditor,
 } from '../../../__tests__/utils';
-import {indexPath, SerializedElementNode} from '../../LexicalElementNode';
+import {ElementDOMSlot, indexPath} from '../../../LexicalDOMSlot';
+import {SerializedElementNode} from '../../LexicalElementNode';
 
 describe('LexicalElementNode tests', () => {
   let container: HTMLElement;
@@ -77,7 +85,7 @@ describe('LexicalElementNode tests', () => {
       return <div ref={ref} contentEditable={true} />;
     }
 
-    ReactTestUtils.act(() => {
+    act(() => {
       createRoot(container).render(<TestBase />);
     });
 
@@ -346,7 +354,9 @@ describe('LexicalElementNode tests', () => {
 
     beforeEach(async () => {
       await update(() => {
-        block = $getRoot().getFirstChildOrThrow();
+        const firstChild = $getRoot().getFirstChildOrThrow();
+        assert($isElementNode(firstChild), 'Expected an ElementNode');
+        block = firstChild;
       });
     });
 
@@ -447,7 +457,7 @@ describe('LexicalElementNode tests', () => {
       },
     ];
 
-    BASE_INSERTIONS.forEach((testCase) => {
+    BASE_INSERTIONS.forEach(testCase => {
       it(`Plain text: ${testCase.name}`, async () => {
         await update(() => {
           block.splice(
@@ -590,7 +600,7 @@ describe('LexicalElementNode tests', () => {
       },
     ];
 
-    NESTED_ELEMENTS_TESTS.forEach((testCase) => {
+    NESTED_ELEMENTS_TESTS.forEach(testCase => {
       it(`Nested elements: ${testCase.name}`, async () => {
         await update(() => {
           const text1 = $createTextNode('Foo');
@@ -658,7 +668,7 @@ describe('LexicalElementNode tests', () => {
       const transforms = new Set();
       const expectedTransforms: string[] = [];
 
-      const removeTransform = editor.registerNodeTransform(TextNode, (node) => {
+      const removeTransform = editor.registerNodeTransform(TextNode, node => {
         transforms.add(node.__key);
       });
 
@@ -693,7 +703,7 @@ describe('LexicalElementNode tests', () => {
 
       await update(() => {
         expect(block.getTextContent()).toEqual('Foo2BarBaz');
-        expectedTransforms.forEach((key) => {
+        expectedTransforms.forEach(key => {
           expect(transforms).toContain(key);
         });
       });
@@ -710,7 +720,7 @@ describe('getDOMSlot tests', () => {
     document.body.appendChild(container);
     editor = createEditor({
       nodes: [WrapperElementNode],
-      onError: (error) => {
+      onError: error => {
         throw error;
       },
     });

@@ -9,9 +9,9 @@
 import fs from 'fs-extra';
 import path from 'node:path';
 
-import {exec} from '../../shared/childProcess.js';
-import {packagesManager} from '../../shared/packagesManager.js';
-import readMonorepoPackageJson from '../../shared/readMonorepoPackageJson.js';
+import {exec} from '../../shared/childProcess.mjs';
+import {packagesManager} from '../../shared/packagesManager.mjs';
+import readMonorepoPackageJson from '../../shared/readMonorepoPackageJson.mjs';
 
 const {version} = readMonorepoPackageJson();
 
@@ -22,13 +22,12 @@ export default async function () {
   const needsBuild = packagesManager
     .getPublicPackages()
     .some(
-      (pkg) =>
+      pkg =>
         !fs.existsSync(
           path.resolve(`./npm/${pkg.getDirectoryName()}-${version}.tgz`),
         ),
     );
   if (!needsBuild) {
-    // eslint-disable-next-line no-console
     console.log(
       '\nWARNING: Running integration tests with cached build artifacts from a previous `pnpm run prepare-release`.',
     );
@@ -40,7 +39,9 @@ export default async function () {
   for (const pkg of packagesManager.getPublicPackages()) {
     const cwd = process.cwd();
     try {
-      process.chdir(pkg.resolve('npm'));
+      // Packs from the package root now that build artifacts and metadata
+      // live there directly (no separate `npm/` subdirectory).
+      process.chdir(pkg.resolve('.'));
       await exec(`pnpm pack --pack-destination ${packDest}`);
     } finally {
       process.chdir(cwd);

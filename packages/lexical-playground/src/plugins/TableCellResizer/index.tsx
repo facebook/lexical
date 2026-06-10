@@ -81,7 +81,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   useEffect(() => {
     const tableKeys = new Set<NodeKey>();
     return mergeRegister(
-      editor.registerMutationListener(TableNode, (nodeMutations) => {
+      editor.registerMutationListener(TableNode, nodeMutations => {
         for (const [nodeKey, mutation] of nodeMutations) {
           if (mutation === 'destroyed') {
             tableKeys.delete(nodeKey);
@@ -91,7 +91,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
         }
         setHasTable(tableKeys.size > 0);
       }),
-      editor.registerNodeTransform(TableNode, (tableNode) => {
+      editor.registerNodeTransform(TableNode, tableNode => {
         if (tableNode.getColWidths()) {
           return tableNode;
         }
@@ -176,7 +176,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
       capture: true,
     });
 
-    const removeRootListener = editor.registerRootListener((rootElement) => {
+    const removeRootListener = editor.registerRootListener(rootElement => {
       if (rootElement) {
         rootElement.addEventListener('pointermove', onPointerMove);
         rootElement.addEventListener('pointerdown', onPointerDown);
@@ -239,11 +239,11 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
 
           let height = tableRow.getHeight();
           if (height === undefined) {
-            const rowCells = tableRow.getChildren<TableCellNode>();
+            const rowCells = tableRow.getChildren().filter($isTableCellNode);
             height = Math.min(
               ...rowCells.map(
                 // eslint-disable-next-line react-hooks/immutability
-                (cell) => getCellNodeHeight(cell, editor) ?? Infinity,
+                cell => getCellNodeHeight(cell, editor) ?? Infinity,
               ),
             );
           }
@@ -359,7 +359,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
     (
       direction: PointerDraggingDirection,
     ): PointerEventHandler<HTMLDivElement> =>
-      (event) => {
+      event => {
         event.preventDefault();
         event.stopPropagation();
 

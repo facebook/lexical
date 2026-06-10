@@ -7,24 +7,25 @@
  */
 
 // @ts-check
-/* eslint-disable no-console */
+
 import {sync as globSync} from 'glob';
 import minimist from 'minimist';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {gt as semverGt} from 'semver';
 
-import {spawn} from './shared/childProcess.js';
-import {PackageMetadata} from './shared/PackageMetadata.js';
+import {spawn} from './shared/childProcess.mjs';
+import {PackageMetadata} from './shared/PackageMetadata.mjs';
 
 async function main() {
   const argv = minimist(process.argv.slice(2));
   const {version} = new PackageMetadata('package.json').packageJson;
+  /** @type {string[]} */
   const paths =
     argv._.length > 0
       ? argv._
       : ['examples/*', 'scripts/__tests__/integration/fixtures/*'];
-  for (const fn of paths.flatMap((dir) =>
+  for (const fn of paths.flatMap(dir =>
     globSync(path.join(dir, 'package.json'), {windowsPathsNoEscape: true}),
   )) {
     const pkg = new PackageMetadata(fn);
@@ -48,6 +49,10 @@ async function main() {
         lexicalUnreleasedDependencies,
       )
       .writeSync();
+    /**
+     * @param {...string} args arguments to pass to the pnpm command
+     * @returns {Promise<void>}
+     */
     const pnpm = async (...args) => {
       console.log(['>', 'pnpm', ...args].join(' '));
       try {
@@ -58,8 +63,10 @@ async function main() {
         });
       } catch (err) {
         console.error(`\nFailed to update example ${path.dirname(fn)}`);
+        // `spawn` rejects with an Error that carries an optional numeric `code`
+        const error = /** @type {{code?: unknown}} */ (err);
         process.exit(
-          'code' in err && typeof err.code === 'number' ? err.code : 1,
+          'code' in error && typeof error.code === 'number' ? error.code : 1,
         );
       }
     };
@@ -70,7 +77,7 @@ async function main() {
       );
       for (const dir of [
         pkg.resolve('node_modules', '{lexical,@lexical}'),
-      ].flatMap((v) => globSync(v))) {
+      ].flatMap(v => globSync(v))) {
         console.log(`> rm -rf ${dir}`);
         fs.rmSync(dir, {force: true, recursive: true});
       }

@@ -23,10 +23,10 @@ export const INSERT_FIGMA_COMMAND: LexicalCommand<string> = createCommand(
 export const FigmaExtension = defineExtension({
   name: '@lexical/playground/Figma',
   nodes: [FigmaNode],
-  register: (editor) =>
+  register: editor =>
     editor.registerCommand<string>(
       INSERT_FIGMA_COMMAND,
-      (payload) => {
+      payload => {
         const figmaNode = $createFigmaNode(payload);
         $insertNodeToNearestRoot(figmaNode);
         return true;

@@ -154,7 +154,7 @@ export const HorizontalRuleExtension = defineExtension({
     return mergeRegister(
       editor.registerCommand(
         INSERT_HORIZONTAL_RULE_COMMAND,
-        (type) => {
+        type => {
           const selection = $getSelection();
 
           if (!$isRangeSelection(selection)) {

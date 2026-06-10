@@ -35,14 +35,10 @@ import {
 } from 'lexical';
 import {beforeEach, describe, expect, test} from 'vitest';
 
-import {
-  DataTransferMock,
-  initializeUnitTest,
-  invariant,
-} from '../../../__tests__/utils';
+import {initializeUnitTest, invariant} from '../../../__tests__/utils';
 
 describe('LexicalTabNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     beforeEach(async () => {
       const {editor} = testEnv;
       await editor.update(() => {
@@ -55,7 +51,7 @@ describe('LexicalTabNode tests', () => {
 
     test('can paste plain text with tabs and newlines in plain text', async () => {
       const {editor} = testEnv;
-      const dataTransfer = new DataTransferMock();
+      const dataTransfer = new DataTransfer();
       dataTransfer.setData('text/plain', 'hello\tworld\nhello\tworld');
       await editor.update(() => {
         const selection = $getSelection();
@@ -69,7 +65,7 @@ describe('LexicalTabNode tests', () => {
 
     test('can paste plain text with tabs and newlines in rich text', async () => {
       const {editor} = testEnv;
-      const dataTransfer = new DataTransferMock();
+      const dataTransfer = new DataTransfer();
       dataTransfer.setData('text/plain', 'hello\tworld\nhello\tworld');
       await editor.update(() => {
         const selection = $getSelection();
@@ -84,7 +80,7 @@ describe('LexicalTabNode tests', () => {
     // TODO fixme
     // test('can paste HTML with tabs and new lines #4429', async () => {
     //       const {editor} = testEnv;
-    //       const dataTransfer = new DataTransferMock();
+    //       const dataTransfer = new DataTransfer();
     //       // https://codepen.io/zurfyx/pen/bGmrzMR
     //       dataTransfer.setData(
     //         'text/html',
@@ -103,7 +99,7 @@ describe('LexicalTabNode tests', () => {
 
     test('can paste HTML with tabs and new lines (2)', async () => {
       const {editor} = testEnv;
-      const dataTransfer = new DataTransferMock();
+      const dataTransfer = new DataTransfer();
       // GDoc 2-liner hello\tworld (like previous test)
       dataTransfer.setData(
         'text/html',
@@ -115,7 +111,7 @@ describe('LexicalTabNode tests', () => {
         $insertDataTransferForRichText(dataTransfer, selection, editor);
       });
       expect(testEnv.innerHTML).toBe(
-        '<p dir="auto"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p><p dir="auto"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
+        '<p dir="ltr"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p><p dir="auto"><span data-lexical-text="true">Hello</span><span data-lexical-text="true">\t</span><span data-lexical-text="true">world</span></p>',
       );
     });
 
@@ -133,7 +129,7 @@ describe('LexicalTabNode tests', () => {
         new KeyboardEvent('keydown'),
       );
       expect(testEnv.innerHTML).toBe(
-        '<p dir="auto" style="padding-inline-start: calc(40px);"><span data-lexical-text="true">foo</span></p>',
+        '<p dir="auto" style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px));"><span data-lexical-text="true">foo</span></p>',
       );
     });
 
@@ -166,8 +162,8 @@ describe('LexicalTabNode tests', () => {
         new KeyboardEvent('keydown'),
       );
       expect(testEnv.innerHTML).toBe(
-        '<p dir="auto" style="padding-inline-start: calc(40px);"><span data-lexical-text="true">foo</span></p>' +
-          '<h1 dir="auto" style="padding-inline-start: calc(40px);"><span data-lexical-text="true">bar</span></h1>' +
+        '<p dir="auto" style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px));"><span data-lexical-text="true">foo</span></p>' +
+          '<h1 dir="auto" style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px));"><span data-lexical-text="true">bar</span></h1>' +
           '<ol dir="auto"><li value="1"><ol><li value="1"><span data-lexical-text="true">xyz</span></li></ol></li></ol>',
       );
     });
@@ -290,7 +286,7 @@ describe('LexicalTabNode tests', () => {
 
     describe('TabNode at selection boundaries with normal TextNode sibling (#7602)', () => {
       const input = 'x\tx';
-      (['next', 'previous'] as const).forEach((direction) => {
+      (['next', 'previous'] as const).forEach(direction => {
         [
           {output: 'yx', start: 0},
           {output: 'xy', start: 1},
@@ -318,7 +314,7 @@ describe('LexicalTabNode tests', () => {
             // Using read here because we want to see the post-normalization merged state
             editor.read(() => {
               const expectNodes = $getRoot().getAllTextNodes();
-              expect(expectNodes.map((node) => node.getTextContent())).toEqual([
+              expect(expectNodes.map(node => node.getTextContent())).toEqual([
                 output,
               ]);
               expect(expectNodes.map($isTabNode)).toEqual([false]);
@@ -326,6 +322,30 @@ describe('LexicalTabNode tests', () => {
           });
         });
       });
+    });
+
+    test('setTextContent normalizes back to \\t without throwing (#8596)', () => {
+      // Safari's MutationObserver can deliver mid-IME-composition text writes
+      // straight onto the TabNode's `\t` text node (verified with Korean), and
+      // `flushMutations` then calls `TabNode.setTextContent` with the
+      // in-flight composition payload (e.g. `'\tㅁ'`). The call must not throw
+      // — a throw cascades through `onError` and freezes the editor.
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const paragraph = $getRoot().getFirstChild();
+          invariant($isElementNode(paragraph));
+          const tabNode = $createTabNode();
+          paragraph.append(tabNode);
+          expect(() => tabNode.setTextContent('\tㅁ')).not.toThrow();
+          expect(tabNode.getTextContent()).toBe('\t');
+          expect(() => tabNode.setTextContent('arbitrary')).not.toThrow();
+          expect(tabNode.getTextContent()).toBe('\t');
+          expect(() => tabNode.setTextContent('')).not.toThrow();
+          expect(tabNode.getTextContent()).toBe('\t');
+        },
+        {discrete: true},
+      );
     });
   });
 });

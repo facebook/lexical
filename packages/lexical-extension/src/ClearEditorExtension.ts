@@ -46,7 +46,7 @@ export function registerClearEditor(
 ): () => void {
   return editor.registerCommand(
     CLEAR_EDITOR_COMMAND,
-    (payload) => {
+    payload => {
       editor.update($onClear);
       return true;
     },

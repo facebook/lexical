@@ -61,7 +61,7 @@ const editorConfig = Object.freeze({
 });
 
 describe('LexicalLinkNode tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     test('LinkNode.constructor', async () => {
       const {editor} = testEnv;
 
@@ -613,7 +613,7 @@ describe('LexicalLinkNode tests', () => {
           expect(linkNode.getURL()).toBe('https://example.com/foo');
           expect(linkNode.getRel()).toBe('noreferrer');
           expect(
-            linkNode.getChildren().map((node) => node.getTextContent()),
+            linkNode.getChildren().map(node => node.getTextContent()),
           ).toEqual(['text', '\n']);
           expect($getSelection()).toMatchObject({
             anchor: {
@@ -635,7 +635,7 @@ describe('LexicalLinkNode tests', () => {
       editor.read(() => {
         const paragraph = $getRoot().getFirstChild() as ParagraphNode;
         const children = paragraph.getChildren();
-        expect(children.map((node) => node.getTextContent())).toEqual([
+        expect(children.map(node => node.getTextContent())).toEqual([
           'some text',
           '\n',
         ]);
@@ -850,7 +850,7 @@ describe('LexicalLinkNode tests', () => {
 
         const children = p.getChildren();
         expect(children.length).toBe(3);
-        children.forEach((child) => expect($isTextNode(child)).toBe(true));
+        children.forEach(child => expect($isTextNode(child)).toBe(true));
       });
     });
   });
@@ -1264,27 +1264,6 @@ describe('LinkNode transform (Regression #8083)', () => {
       expect(selection.anchor.type).toBe('text');
       expect(selection.anchor.key).toBe(headingTextKey);
       expect(selection.anchor.offset).toBe(7);
-    });
-  });
-
-  test('an empty link is not deleted if the transformation did not occur', () => {
-    using editor = buildEditorFromExtensions(transformExtension);
-    let linkKey: string;
-    editor.update(
-      () => {
-        const root = $getRoot();
-        const link = $createLinkNode('https://lexical.dev');
-        linkKey = link.getKey();
-        const paragraph = $createParagraphNode();
-        paragraph.append(link);
-        root.clear().append(paragraph);
-        link.select();
-      },
-      {discrete: true},
-    );
-    editor.read(() => {
-      const linkNode = $getNodeByKey(linkKey);
-      expect(linkNode).not.toBe(null);
     });
   });
 

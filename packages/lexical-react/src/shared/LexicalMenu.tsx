@@ -13,6 +13,7 @@ import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
+  CAN_USE_DOM,
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
   createCommand,
@@ -35,8 +36,8 @@ import {
   useState,
 } from 'react';
 import ReactDOM from 'react-dom';
-import {CAN_USE_DOM} from 'shared/canUseDOM';
-import useLayoutEffect from 'shared/useLayoutEffect';
+
+import useLayoutEffect from './useLayoutEffect';
 
 export type MenuTextMatch = {
   leadOffset: number;
@@ -334,6 +335,7 @@ export function LexicalMenu<TOption extends MenuOption>({
 
   useEffect(() => {
     if (preselectFirstItem) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHighlightedIndex(0);
     }
   }, [matchingString, preselectFirstItem]);
@@ -442,7 +444,7 @@ export function LexicalMenu<TOption extends MenuOption>({
     return mergeRegister(
       editor.registerCommand<KeyboardEvent>(
         KEY_ARROW_DOWN_COMMAND,
-        (payload) => {
+        payload => {
           const event = payload;
           if (options !== null && options.length) {
             const newSelectedIndex =
@@ -480,7 +482,7 @@ export function LexicalMenu<TOption extends MenuOption>({
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_ARROW_UP_COMMAND,
-        (payload) => {
+        payload => {
           const event = payload;
           if (options !== null && options.length) {
             const newSelectedIndex =
@@ -512,7 +514,7 @@ export function LexicalMenu<TOption extends MenuOption>({
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_ESCAPE_COMMAND,
-        (payload) => {
+        payload => {
           const event = payload;
           event.preventDefault();
           event.stopImmediatePropagation();
@@ -523,7 +525,7 @@ export function LexicalMenu<TOption extends MenuOption>({
       ),
       editor.registerCommand<KeyboardEvent>(
         KEY_TAB_COMMAND,
-        (payload) => {
+        payload => {
           const event = payload;
           if (
             options === null ||
@@ -545,7 +547,9 @@ export function LexicalMenu<TOption extends MenuOption>({
           if (
             options === null ||
             selectedIndex === null ||
-            options[selectedIndex] == null
+            options[selectedIndex] == null ||
+            // Shift+Enter must reach rich-text line-break handling
+            (event && event.shiftKey)
           ) {
             return false;
           }

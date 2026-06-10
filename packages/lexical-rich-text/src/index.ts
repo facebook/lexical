@@ -18,6 +18,7 @@ import type {
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
+  NodeSelection,
   ParagraphNode,
   PasteCommandType,
   RangeSelection,
@@ -27,10 +28,15 @@ import type {
 } from 'lexical';
 
 import {
+  $getClipboardDataFromSelection,
+  $handleRichTextDrop,
   $insertDataTransferForRichText,
+  $writeDragSourceToDataTransfer,
+  caretFromPoint,
   copyToClipboard,
+  setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
-import {DragonExtension} from '@lexical/dragon';
+import {ReadonlySignal, signal} from '@lexical/extension';
 import {
   $isParentRTL,
   $moveCharacter,
@@ -47,6 +53,7 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $comparePointCaretNext,
   $createParagraphNode,
   $createRangeSelection,
   $createTabNode,
@@ -54,6 +61,7 @@ import {
   $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
+  $getSiblingCaret,
   $insertNodes,
   $isDecoratorNode,
   $isElementNode,
@@ -63,14 +71,17 @@ import {
   $isTextNode,
   $normalizeSelection__EXPERIMENTAL,
   $selectAll,
+  $setDirectionFromDOM,
+  $setFormatFromDOM,
   $setSelection,
+  CAN_USE_BEFORE_INPUT,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   createCommand,
   CUT_COMMAND,
-  defineExtension,
+  CUT_TAG,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
@@ -84,6 +95,9 @@ import {
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
   INSERT_TAB_COMMAND,
+  IS_APPLE_WEBKIT,
+  IS_IOS,
+  IS_SAFARI,
   isDOMNode,
   isSelectionCapturedInDecoratorInput,
   KEY_ARROW_DOWN_COMMAND,
@@ -96,6 +110,8 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
+  MOVE_TO_END,
+  MOVE_TO_START,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
   PASTE_TAG,
@@ -103,13 +119,6 @@ import {
   SELECT_ALL_COMMAND,
   setNodeIndentFromDOM,
 } from 'lexical';
-import caretFromPoint from 'shared/caretFromPoint';
-import {
-  CAN_USE_BEFORE_INPUT,
-  IS_APPLE_WEBKIT,
-  IS_IOS,
-  IS_SAFARI,
-} from 'shared/environment';
 
 export type SerializedHeadingNode = Spread<
   {
@@ -195,7 +204,7 @@ export class QuoteNode extends ElementNode {
   collapseAtStart(): true {
     const paragraph = $createParagraphNode();
     const children = this.getChildren();
-    children.forEach((child) => paragraph.append(child));
+    children.forEach(child => paragraph.append(child));
     this.replace(paragraph);
     return true;
   }
@@ -393,12 +402,12 @@ export class HeadingNode extends ElementNode {
   }
 
   collapseAtStart(): true {
-    const newElement = !this.isEmpty()
-      ? $createHeadingNode(this.getTag())
-      : $createParagraphNode();
-    const children = this.getChildren();
-    children.forEach((child) => newElement.append(child));
-    this.replace(newElement);
+    if (this.isEmpty()) {
+      const paragraph = $createParagraphNode();
+      const children = this.getChildren();
+      children.forEach(child => paragraph.append(child));
+      this.replace(paragraph);
+    }
     return true;
   }
 
@@ -426,20 +435,18 @@ function $convertHeadingElement(element: HTMLElement): DOMConversionOutput {
     nodeName === 'h6'
   ) {
     node = $createHeadingNode(nodeName);
-    if (element.style !== null) {
-      setNodeIndentFromDOM(element, node);
-      node.setFormat(element.style.textAlign as ElementFormatType);
-    }
+    setNodeIndentFromDOM(element, node);
+    $setFormatFromDOM(node, element);
+    $setDirectionFromDOM(node, element);
   }
   return {node};
 }
 
 function $convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
   const node = $createQuoteNode();
-  if (element.style !== null) {
-    node.setFormat(element.style.textAlign as ElementFormatType);
-    setNodeIndentFromDOM(element, node);
-  }
+  $setFormatFromDOM(node, element);
+  setNodeIndentFromDOM(element, node);
+  $setDirectionFromDOM(node, element);
   return {node};
 }
 
@@ -473,6 +480,9 @@ function onPasteForRichText(
       }
     },
     {
+      // PASTE_TAG gives the paste its own undo entry: @lexical/history treats
+      // the tag as a history boundary so undoing a paste does not also undo any
+      // typing that preceded it (see #8609).
       tag: PASTE_TAG,
     },
   );
@@ -486,14 +496,22 @@ async function onCutForRichText(
     editor,
     objectKlassEquals(event, ClipboardEvent) ? event : null,
   );
-  editor.update(() => {
-    const selection = $getSelection();
-    if ($isRangeSelection(selection)) {
-      selection.removeText();
-    } else if ($isNodeSelection(selection)) {
-      selection.getNodes().forEach((node) => node.remove());
-    }
-  });
+  editor.update(
+    () => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        selection.removeText();
+      } else if ($isNodeSelection(selection)) {
+        selection.getNodes().forEach(node => node.remove());
+      }
+    },
+    {
+      // CUT_TAG gives the cut its own undo entry: @lexical/history treats the
+      // tag as a history boundary so undoing a cut does not also undo any typing
+      // that preceded it (see #8609).
+      tag: CUT_TAG,
+    },
+  );
 }
 
 // Clipboard may contain files that we aren't allowed to read. While the event is arguably useless,
@@ -552,27 +570,181 @@ function $isSelectionCollapsedAtFrontOfIndentedBlock(
 }
 
 /**
- * Resets the capitalization of the selection to default.
- * Called when the user presses space, tab, or enter key.
- * @param selection The selection to reset the capitalization of.
+ * Trigger types that cause format escape at text node boundaries.
+ * - `enter`: Escape on Enter key press
+ * - `click`: Escape on mouse click
+ * - `arrow`: Escape on arrow key navigation (left/right)
+ * - `space`: Escape on Space key press
+ * - `tab`: Escape on Tab key press
  */
-function $resetCapitalization(selection: RangeSelection): void {
-  for (const format of ['lowercase', 'uppercase', 'capitalize'] as const) {
+export type EscapeFormatTrigger = 'enter' | 'click' | 'arrow' | 'space' | 'tab';
+
+/**
+ * Trigger flags for a single format type. Set a trigger key to `true` to
+ * escape that format when the corresponding user interaction occurs.
+ *
+ * When `onlyAtBoundary` is `true`, the format is only escaped when the cursor
+ * is at the start or end of a formatted text node with no adjacent sibling in
+ * that direction. When `onlyAtBoundary` is `false` or omitted the format is
+ * always escaped regardless of cursor position (matching the legacy
+ * `$resetCapitalization` behavior).
+ */
+export type TriggerConfig = {
+  [K in EscapeFormatTrigger]?: boolean;
+} & {
+  onlyAtBoundary?: boolean;
+};
+
+/**
+ * Per-format trigger configuration. Each {@link TextFormatType} maps to its
+ * own set of triggers, or `null` to explicitly disable escape for that format
+ * (useful when overriding defaults via `configExtension`).
+ */
+export type EscapeFormatTriggerConfig = {
+  [K in TextFormatType]?: TriggerConfig | null;
+};
+
+function $escapeFormatsForTrigger(
+  selection: RangeSelection,
+  trigger: EscapeFormatTrigger,
+  direction: 'start' | 'end' | 'both',
+  config: EscapeFormatTriggerConfig,
+): void {
+  let isBoundary = false;
+  let anchorNode: LexicalNode | null = null;
+
+  if (selection.isCollapsed() && selection.anchor.type === 'text') {
+    const node = selection.anchor.getNode();
+    if ($isTextNode(node)) {
+      anchorNode = node;
+      const offset = selection.anchor.offset;
+      const atEnd =
+        offset === node.getTextContentSize() && node.getNextSibling() === null;
+      const atStart = offset === 0 && node.getPreviousSibling() === null;
+      isBoundary =
+        (direction === 'end' && atEnd) ||
+        (direction === 'start' && atStart) ||
+        (direction === 'both' && (atEnd || atStart));
+    }
+  }
+
+  let didEscapeBoundary = false;
+  for (const [formatKey, triggers] of Object.entries(config)) {
+    if (triggers == null || !triggers[trigger]) {
+      continue;
+    }
+    const format = formatKey as TextFormatType;
+
+    if (triggers.onlyAtBoundary) {
+      if (
+        !isBoundary ||
+        !anchorNode ||
+        !$isTextNode(anchorNode) ||
+        !anchorNode.hasFormat(format)
+      ) {
+        continue;
+      }
+      didEscapeBoundary = true;
+    }
+
     if (selection.hasFormat(format)) {
       selection.toggleFormat(format);
     }
   }
+
+  if (didEscapeBoundary) {
+    selection.setStyle('');
+  }
 }
 
-export function registerRichText(editor: LexicalEditor): () => void {
+const DEFAULT_ESCAPE_FORMAT_TRIGGERS: EscapeFormatTriggerConfig = {
+  capitalize: {enter: true, space: true, tab: true},
+  lowercase: {enter: true, space: true, tab: true},
+  uppercase: {enter: true, space: true, tab: true},
+};
+
+/**
+ * Collapse a NodeSelection to a caret at the surrounding block's edge for
+ * MOVE_TO_START / MOVE_TO_END. Picks the document-order first node for
+ * MOVE_TO_START (`isBackward = true`) or last for MOVE_TO_END, walks up
+ * to the picked node's nearest non-inline ancestor, and lands the caret
+ * at that block's offset `0` or `childrenSize`.
+ *
+ * Document order is resolved via `$comparePointCaretNext` over each
+ * selected node's `'next'` sibling caret — `NodeSelection.getNodes()`
+ * iterates `_nodes: Set<NodeKey>` in click-insertion order, so a Set-
+ * index pick would land on the most-recently-clicked node, not the
+ * document-order first / last.
+ *
+ * A decorator nested inside an element-decorator host (e.g. inside a
+ * card title paragraph) promotes to the surrounding paragraph rather
+ * than the host's edge — the `n !== targetNode` guard excludes the
+ * node itself, so a whole-element NodeSelection (the host) snaps to
+ * its parent block, not its own interior. Falls back to the root when
+ * no non-inline ancestor below the root matches, which lands the
+ * caret at the document edge.
+ *
+ * Distinct from `KEY_ARROW_LEFT_COMMAND` / `KEY_ARROW_RIGHT_COMMAND`,
+ * which step to the immediate sibling via `selectPrevious` /
+ * `selectNext`. Cmd+Arrow is a line-end command rather than a one-step
+ * caret move, so the block edge is the intended target. `event.shiftKey`
+ * is not honored — NodeSelection has no natural "extend toward block
+ * edge" semantic.
+ *
+ * Always calls `preventDefault` and `stopPropagation` so Chrome's
+ * native Cmd+Arrow page-navigate cannot fall through.
+ *
+ * @internal
+ */
+function $promoteNodeSelectionToBlockEdge(
+  selection: NodeSelection,
+  isBackward: boolean,
+  event: KeyboardEvent,
+): boolean {
+  event.preventDefault();
+  event.stopPropagation();
+  const nodes = selection.getNodes();
+  if (nodes.length === 0) {
+    return true;
+  }
+  const sorted = nodes
+    .map(node => $getSiblingCaret(node, 'next'))
+    .sort($comparePointCaretNext);
+  const targetNode = (isBackward ? sorted[0] : sorted[sorted.length - 1])
+    .origin;
+  const block: ElementNode =
+    $findMatchingParent(
+      targetNode,
+      (n): n is ElementNode =>
+        n !== targetNode && $isElementNode(n) && !n.isInline(),
+    ) ?? $getRoot();
+  const offset = isBackward ? 0 : block.getChildrenSize();
+  block.select(offset, offset);
+  return true;
+}
+
+export function registerRichText(
+  editor: LexicalEditor,
+  escapeFormatTriggers: ReadonlySignal<EscapeFormatTriggerConfig> = signal(
+    DEFAULT_ESCAPE_FORMAT_TRIGGERS,
+  ),
+): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
       CLICK_COMMAND,
-      (payload) => {
+      () => {
         const selection = $getSelection();
         if ($isNodeSelection(selection)) {
           selection.clear();
           return true;
+        }
+        if ($isRangeSelection(selection)) {
+          $escapeFormatsForTrigger(
+            selection,
+            'click',
+            'both',
+            escapeFormatTriggers.peek(),
+          );
         }
         return false;
       },
@@ -580,7 +752,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<boolean>(
       DELETE_CHARACTER_COMMAND,
-      (isBackward) => {
+      isBackward => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
           selection.deleteCharacter(isBackward);
@@ -595,7 +767,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<boolean>(
       DELETE_WORD_COMMAND,
-      (isBackward) => {
+      isBackward => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
@@ -607,7 +779,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<boolean>(
       DELETE_LINE_COMMAND,
-      (isBackward) => {
+      isBackward => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
@@ -619,7 +791,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       CONTROLLED_TEXT_INSERTION_COMMAND,
-      (eventOrText) => {
+      eventOrText => {
         const selection = $getSelection();
 
         if (typeof eventOrText === 'string') {
@@ -660,7 +832,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<TextFormatType>(
       FORMAT_TEXT_COMMAND,
-      (format) => {
+      format => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
@@ -672,7 +844,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<ElementFormatType>(
       FORMAT_ELEMENT_COMMAND,
-      (format) => {
+      format => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection) && !$isNodeSelection(selection)) {
           return false;
@@ -694,7 +866,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<boolean>(
       INSERT_LINE_BREAK_COMMAND,
-      (selectStart) => {
+      selectStart => {
         const selection = $getSelection();
         if (!$isRangeSelection(selection)) {
           return false;
@@ -733,7 +905,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       INDENT_CONTENT_COMMAND,
       () => {
-        return $handleIndentAndOutdent((block) => {
+        return $handleIndentAndOutdent(block => {
           const indent = block.getIndent();
           block.setIndent(indent + 1);
         });
@@ -743,7 +915,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       OUTDENT_CONTENT_COMMAND,
       () => {
-        return $handleIndentAndOutdent((block) => {
+        return $handleIndentAndOutdent(block => {
           const indent = block.getIndent();
           if (indent > 0) {
             block.setIndent(Math.max(0, indent - 1));
@@ -754,7 +926,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_UP_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
@@ -784,7 +956,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_DOWN_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
@@ -818,7 +990,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_LEFT_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
@@ -836,6 +1008,14 @@ export function registerRichText(editor: LexicalEditor): () => void {
         }
         if (!$isRangeSelection(selection)) {
           return false;
+        }
+        if (!event.shiftKey) {
+          $escapeFormatsForTrigger(
+            selection,
+            'arrow',
+            'start',
+            escapeFormatTriggers.peek(),
+          );
         }
         if ($shouldOverrideDefaultCharacterSelection(selection, true)) {
           const isHoldingShift = event.shiftKey;
@@ -849,7 +1029,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_RIGHT_COMMAND,
-      (event) => {
+      event => {
         const selection = $getSelection();
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
@@ -868,8 +1048,16 @@ export function registerRichText(editor: LexicalEditor): () => void {
         if (!$isRangeSelection(selection)) {
           return false;
         }
-        const isHoldingShift = event.shiftKey;
+        if (!event.shiftKey) {
+          $escapeFormatsForTrigger(
+            selection,
+            'arrow',
+            'end',
+            escapeFormatTriggers.peek(),
+          );
+        }
         if ($shouldOverrideDefaultCharacterSelection(selection, false)) {
+          const isHoldingShift = event.shiftKey;
           event.preventDefault();
           $moveCharacter(selection, isHoldingShift, false);
           return true;
@@ -880,7 +1068,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_BACKSPACE_COMMAND,
-      (event) => {
+      event => {
         if ($isTargetWithinDecorator(event.target as HTMLElement)) {
           return false;
         }
@@ -906,7 +1094,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent>(
       KEY_DELETE_COMMAND,
-      (event) => {
+      event => {
         if ($isTargetWithinDecorator(event.target as HTMLElement)) {
           return false;
         }
@@ -921,13 +1109,35 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<KeyboardEvent | null>(
       KEY_ENTER_COMMAND,
-      (event) => {
-        const selection = $getSelection();
+      event => {
+        let selection = $getSelection();
+        // When a block-level DecoratorNode is selected as a NodeSelection
+        // (e.g. it is the only root child after the user removed all
+        // surrounding paragraphs), Enter has no RangeSelection to act on
+        // and the default handler bails out, leaving the editor stuck.
+        // Convert to a RangeSelection past the decorator so the default
+        // RangeSelection handler below inserts a paragraph and places
+        // the caret.
+        if ($isNodeSelection(selection)) {
+          const nodes = selection.getNodes();
+          if (
+            nodes.length === 1 &&
+            $isDecoratorNode(nodes[0]) &&
+            !nodes[0].isInline()
+          ) {
+            selection = nodes[0].selectNext();
+          }
+        }
         if (!$isRangeSelection(selection)) {
           return false;
         }
 
-        $resetCapitalization(selection);
+        $escapeFormatsForTrigger(
+          selection,
+          'enter',
+          'both',
+          escapeFormatTriggers.peek(),
+        );
 
         if (event !== null) {
           // If we have beforeinput, then we can avoid blocking
@@ -966,7 +1176,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<DragEvent>(
       DROP_COMMAND,
-      (event) => {
+      event => {
         const [, files] = eventFiles(event);
         if (files.length > 0) {
           const x = event.clientX;
@@ -996,22 +1206,33 @@ export function registerRichText(editor: LexicalEditor): () => void {
           return true;
         }
 
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          return true;
-        }
-
-        return false;
+        return $handleRichTextDrop(event, editor);
       },
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand<DragEvent>(
       DRAGSTART_COMMAND,
-      (event) => {
+      event => {
         const [isFileTransfer] = eventFiles(event);
         const selection = $getSelection();
         if (isFileTransfer && !$isRangeSelection(selection)) {
           return false;
+        }
+        if (
+          $isRangeSelection(selection) &&
+          !selection.isCollapsed() &&
+          event.dataTransfer !== null
+        ) {
+          // Populate Lexical's own serialization so custom nodes (images,
+          // decorators) survive a drop back into a Lexical editor rather than
+          // being downgraded to text/html.
+          setLexicalClipboardDataTransfer(
+            event.dataTransfer,
+            $getClipboardDataFromSelection(selection),
+          );
+          // Mark the drag source so a drop in a different editor can remove
+          // the source range to produce cut-and-paste semantics.
+          $writeDragSourceToDataTransfer(event.dataTransfer, editor);
         }
         return true;
       },
@@ -1019,7 +1240,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand<DragEvent>(
       DRAGOVER_COMMAND,
-      (event) => {
+      event => {
         const [isFileTransfer] = eventFiles(event);
         const selection = $getSelection();
         if (isFileTransfer && !$isRangeSelection(selection)) {
@@ -1051,7 +1272,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       COPY_COMMAND,
-      (event) => {
+      event => {
         copyToClipboard(
           editor,
           objectKlassEquals(event, ClipboardEvent) ? event : null,
@@ -1062,7 +1283,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       CUT_COMMAND,
-      (event) => {
+      event => {
         onCutForRichText(event, editor);
         return true;
       },
@@ -1070,7 +1291,7 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       PASTE_COMMAND,
-      (event) => {
+      event => {
         const [, files, hasTextContent] = eventFiles(event);
         if (files.length > 0 && !hasTextContent) {
           editor.dispatchCommand(DRAG_DROP_PASTE, files);
@@ -1097,11 +1318,16 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       KEY_SPACE_COMMAND,
-      (_) => {
+      () => {
         const selection = $getSelection();
 
         if ($isRangeSelection(selection)) {
-          $resetCapitalization(selection);
+          $escapeFormatsForTrigger(
+            selection,
+            'space',
+            'both',
+            escapeFormatTriggers.peek(),
+          );
         }
 
         return false;
@@ -1110,14 +1336,115 @@ export function registerRichText(editor: LexicalEditor): () => void {
     ),
     editor.registerCommand(
       KEY_TAB_COMMAND,
-      (_) => {
+      () => {
         const selection = $getSelection();
 
         if ($isRangeSelection(selection)) {
-          $resetCapitalization(selection);
+          $escapeFormatsForTrigger(
+            selection,
+            'tab',
+            'both',
+            escapeFormatTriggers.peek(),
+          );
         }
 
         return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<KeyboardEvent>(
+      MOVE_TO_END,
+      event => {
+        const selection = $getSelection();
+        if ($isNodeSelection(selection)) {
+          return $promoteNodeSelectionToBlockEdge(selection, false, event);
+        }
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const {anchor} = selection;
+        if (anchor.type !== 'element' || anchor.offset !== 0) {
+          return false;
+        }
+        const element = anchor.getNode();
+        if (!$isElementNode(element)) {
+          return false;
+        }
+        const firstChild = element.getFirstChild();
+        if (!$isDecoratorNode(firstChild) || !firstChild.isInline()) {
+          return false;
+        }
+        // Native browser cursor traversal stops at the inline decorator's
+        // contenteditable=false boundary when the caret starts at element
+        // offset 0, so MOVE_TO_END leaves the caret stuck. Move it
+        // ourselves. `element.selectEnd()` already handles every
+        // last-descendant case correctly — text descendant produces a
+        // text-type selection at the end of the run, decorator descendant
+        // and the empty-element fallback both produce an element-type
+        // selection at offset childrenSize.
+        const elementKey = element.getKey();
+        const ending = element.selectEnd();
+        if (event.shiftKey) {
+          ending.anchor.set(elementKey, 0, 'element');
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<KeyboardEvent>(
+      MOVE_TO_START,
+      event => {
+        const selection = $getSelection();
+        if ($isNodeSelection(selection)) {
+          return $promoteNodeSelectionToBlockEdge(selection, true, event);
+        }
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const {anchor, focus} = selection;
+        const focusBlock = $findMatchingParent(
+          focus.getNode(),
+          (node): node is ElementNode =>
+            $isElementNode(node) && !node.isInline(),
+        );
+        if (focusBlock === null) {
+          return false;
+        }
+        const firstChild = focusBlock.getFirstChild();
+        if (!$isDecoratorNode(firstChild) || !firstChild.isInline()) {
+          return false;
+        }
+        // Cross-block selections fall through to native handling. The
+        // Chromium boundary bug only matters when both endpoints sit
+        // inside the block whose first child is the inline decorator.
+        const anchorBlock = $findMatchingParent(
+          anchor.getNode(),
+          (node): node is ElementNode =>
+            $isElementNode(node) && !node.isInline(),
+        );
+        if (anchorBlock !== focusBlock) {
+          return false;
+        }
+        const blockKey = focusBlock.getKey();
+        if (
+          focus.type === 'element' &&
+          focus.key === blockKey &&
+          focus.offset === 0
+        ) {
+          return false;
+        }
+        // Symmetric to the MOVE_TO_END case: Chromium stops the native
+        // caret at the inline decorator's contenteditable=false boundary
+        // when moving backwards, so element offset 0 is unreachable.
+        selection.focus.set(blockKey, 0, 'element');
+        if (!event.shiftKey) {
+          selection.anchor.set(blockKey, 0, 'element');
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
       },
       COMMAND_PRIORITY_EDITOR,
     ),
@@ -1125,14 +1452,11 @@ export function registerRichText(editor: LexicalEditor): () => void {
   return removeListener;
 }
 
-/**
- * An extension to register \@lexical/rich-text behavior and nodes
- * ({@link HeadingNode}, {@link QuoteNode})
- */
-export const RichTextExtension = defineExtension({
-  conflictsWith: ['@lexical/plain-text'],
-  dependencies: [DragonExtension],
-  name: '@lexical/rich-text',
-  nodes: () => [HeadingNode, QuoteNode],
-  register: registerRichText,
-});
+export {
+  type RichTextConfig,
+  RichTextExtension,
+} from './LexicalRichTextExtension';
+export {
+  RichTextImportExtension,
+  RichTextImportRules,
+} from './RichTextImportExtension';

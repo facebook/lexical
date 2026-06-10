@@ -18,7 +18,7 @@ class MyEvent2 extends Event {}
 const MyEventShadow = (() => class MyEvent extends Event {})();
 
 describe('LexicalUtilsKlassEqual tests', () => {
-  initializeUnitTest((testEnv) => {
+  initializeUnitTest(testEnv => {
     it('objectKlassEquals', async () => {
       const eventInstance = new MyEvent('');
       expect(eventInstance instanceof MyEvent).toBeTruthy();

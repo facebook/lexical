@@ -31,7 +31,7 @@ export function EditorInspectorButton({tabID, setErrorMessage}: Props) {
     injectedPegasusService
       .refreshLexicalEditors()
       .then(() => injectedPegasusService.toggleEditorPicker())
-      .catch((err) => {
+      .catch(err => {
         setErrorMessage(err.message);
         console.error(err);
       });
@@ -40,13 +40,12 @@ export function EditorInspectorButton({tabID, setErrorMessage}: Props) {
   return (
     <IconButton
       aria-label="dsds"
-      colorScheme="gray"
+      colorPalette="gray"
       variant="ghost"
       size="xs"
       onClick={handleClick}
-      icon={<Image w={5} src="/inspect.svg" />}
-      isActive={isActive}
-      _active={{bg: 'blue.100'}}
-    />
+      bg={isActive ? 'blue.100' : undefined}>
+      <Image w={5} src="/inspect.svg" />
+    </IconButton>
   );
 }

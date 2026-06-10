@@ -14,7 +14,7 @@ import type {
 } from './LexicalEditor';
 import type {BaseSelection, RangeSelection} from './LexicalSelection';
 
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {
   $createParagraphNode,
@@ -29,6 +29,7 @@ import {
   NODE_STATE_KEY,
 } from '.';
 import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
+import {DOMSlot} from './LexicalDOMSlot';
 import {
   $updateStateFromJSON,
   type NodeState,
@@ -36,6 +37,7 @@ import {
   type Prettify,
   type RequiredNodeStateConfig,
 } from './LexicalNodeState';
+import {CACHED_TEXT_SIZE_KEY} from './LexicalReconciler';
 import {
   $getSelection,
   $isNodeSelection,
@@ -64,6 +66,8 @@ import {
   internalMarkNodeAsDirty,
   removeFromParent,
 } from './LexicalUtils';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 export type NodeMap = Map<NodeKey, LexicalNode>;
 
@@ -97,11 +101,16 @@ export type SerializedLexicalNode = {
  */
 export interface StaticNodeConfigValue<
   T extends LexicalNode,
-  Type extends string,
+  Type extends string | symbol,
 > {
   /**
    * The exact type of T.getType(), e.g. 'text' - the method itself must
    * have a more generic 'string' type to be compatible wtih subclassing.
+   *
+   * For a concrete node this is its string `type`. An abstract base class is
+   * keyed in {@link BaseStaticNodeConfig} by a symbol (it has no concrete node
+   * `type`), so `Type` is widened to `string | symbol`; the `type` field is
+   * never populated for a symbol-keyed config.
    */
   readonly type?: Type;
   /**
@@ -166,9 +175,20 @@ export interface StaticNodeConfigValue<
 /**
  * This is the type of LexicalNode.$config() that can be
  * overridden by subclasses.
+ *
+ * Concrete nodes are keyed by their string `type`. An abstract base class
+ * (such as ElementNode or DecoratorNode) has no concrete node `type`, so when
+ * it needs to declare configuration that is shared with its concrete
+ * subclasses (for example required {@link RequiredNodeStateConfig} state or a
+ * `$transform`) it is keyed instead by a well-known symbol, by convention
+ * `Symbol.for(<NodeClassName>)` (e.g. `Symbol.for('ElementNode')`). The
+ * descriptive, globally-registered symbol keeps the config easy to find in a
+ * debugger and can never collide with a real node `type`.
  */
 export type BaseStaticNodeConfig = {
-  readonly [K in string]?: StaticNodeConfigValue<LexicalNode, string>;
+  readonly [K in string | symbol]?:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, K>;
 };
 
 /**
@@ -190,15 +210,132 @@ export type AnyStaticNodeConfigValue = StaticNodeConfigValue<any, any>;
 /**
  * @internal
  *
+ * Type-only key under which a {@link StaticNodeConfigRecord} carries the node's
+ * own (most-derived) `type` as a nullary accessor `() => Type`.
+ *
+ * TypeScript's type system is structural, so a node subclass that adds no
+ * type-distinguishable members over its base (e.g. {@link TabNode} over
+ * {@link TextNode}, which only overrides methods with identical signatures) is
+ * structurally identical to that base despite being a distinct class — the
+ * negative branch of an `instanceof`-style guard like `$isTabNode()` would
+ * otherwise collapse to `never` because TypeScript concludes the base is also
+ * assignable to the subclass.
+ *
+ * Encoding the type as a *function* (rather than a bare `Type`) lets the
+ * accessor accumulate down the `extends` chain by intersection: a subclass'
+ * record is `ParentRecord & {[STATIC_NODE_TYPE]: () => OwnType}`, so the key
+ * holds `(() => ParentType) & (() => OwnType)`. TypeScript resolves an
+ * intersection of call signatures as an overload set, which has two effects:
+ *
+ * - {@link GetStaticNodeType} reads `ReturnType<...>`, which selects the *last*
+ *   overload — the most-derived own `type` — rather than a union of the chain.
+ * - A node stays assignable to each of its ancestors (the intersection
+ *   satisfies every `() => AncestorType`) while an ancestor is not assignable
+ *   to it (it lacks the `() => OwnType` signature), so guards narrow correctly
+ *   at every level of the hierarchy — not just one.
+ *
+ * This keeps the node classes themselves nominally distinguishable along their
+ * real hierarchy; it is not a cross-cutting trait marker. The accessor is never
+ * read at runtime — `config()` does not set this key — so it is `declare`-only
+ * and carries no runtime cost. It is `@internal` (surfaced via the
+ * {@link StaticNodeTypeAccessor} interface so that inferred `$config()` return
+ * types remain nameable in generated declaration files) and a node never
+ * references it. Distinction is automatic for any node that declares its
+ * `extends`; a subclass adds nothing by hand.
+ */
+export declare const STATIC_NODE_TYPE: unique symbol;
+
+/**
+ * @internal
+ *
+ * Carries a node's own `type` under the {@link STATIC_NODE_TYPE} accessor. This
+ * is an `interface` (rather than an inline object type) on purpose: it is never
+ * inlined in generated declaration files, so a subclass' `$config()` return type
+ * references it by name (`StaticNodeTypeAccessor<'tab'>`) and the symbol key
+ * stays encapsulated here rather than leaking — unnamed — into every node's
+ * `.d.ts`.
+ */
+export interface StaticNodeTypeAccessor<Type extends string> {
+  readonly [STATIC_NODE_TYPE]: () => Type;
+}
+
+/**
+ * @internal
+ *
+ * Type-only key under which a {@link StaticNodeConfigRecord} carries the node's
+ * own configuration (the value passed to {@link LexicalNode.config}) as a
+ * nullary accessor `() => Config`.
+ *
+ * This mirrors {@link STATIC_NODE_TYPE}: encoding the config as a *function*
+ * lets it accumulate down the `extends` chain by call-signature intersection so
+ * that `ReturnType<...>` resolves the most-derived own config. It exists so that
+ * an abstract base class keyed by a symbol — which has no string `type` to index
+ * the record by — can still expose its own config to the state-config
+ * collectors, and so that such a base's symbol-keyed `$config()` return remains
+ * a valid override of an accessor-bearing superclass `$config()` (it inherits
+ * the superclass record, hence that record's {@link STATIC_NODE_TYPE} accessor).
+ * Never read at runtime — `config()` does not set this key — so it is
+ * `declare`-only and carries no runtime cost.
+ */
+export declare const STATIC_NODE_CONFIG: unique symbol;
+
+/**
+ * @internal
+ *
+ * Carries a node's own config under the {@link STATIC_NODE_CONFIG} accessor.
+ * Like {@link StaticNodeTypeAccessor} this is a named `interface` so the symbol
+ * key stays encapsulated and inferred `$config()` return types remain nameable
+ * in generated declaration files.
+ */
+export interface StaticNodeConfigAccessor<
+  Config extends AnyStaticNodeConfigValue,
+> {
+  readonly [STATIC_NODE_CONFIG]: () => Config;
+}
+
+/**
+ * @internal
+ *
  * This is the more specific type than BaseStaticNodeConfig that a subclass
- * should return from $config()
+ * should return from $config().
+ *
+ * A node that declares its `extends` accumulates the configuration of its
+ * superclass and records its own `type` under {@link STATIC_NODE_TYPE} and its
+ * own config under {@link STATIC_NODE_CONFIG}, so that it is nominally distinct
+ * from — yet still assignable to — that superclass, and so the state-config
+ * collectors can read its own config without indexing by `type`.
  */
 export type StaticNodeConfigRecord<
   Type extends string,
   Config extends AnyStaticNodeConfigValue,
-> = BaseStaticNodeConfig & {
-  readonly [K in Type]?: Config;
-};
+> = Config extends {
+  extends: abstract new (...args: never) => infer Inst extends LexicalNode;
+}
+  ? ReturnType<Inst[typeof PROTOTYPE_CONFIG_METHOD]> & {
+      readonly [K in Type]?: Config;
+    } & StaticNodeTypeAccessor<Type> &
+      StaticNodeConfigAccessor<Config>
+  : BaseStaticNodeConfig & {readonly [K in Type]?: Config};
+
+/**
+ * @internal
+ *
+ * The record returned by {@link LexicalNode.config} for an abstract base class
+ * keyed by a symbol. Unlike {@link StaticNodeConfigRecord} it records no string
+ * `type` and adds no {@link STATIC_NODE_TYPE} accessor (an abstract base has no
+ * concrete node type), but it does inherit its superclass record and expose its
+ * own config under {@link STATIC_NODE_CONFIG}. Inheriting the superclass record
+ * is what keeps the override valid when the superclass is a concrete node whose
+ * `$config()` return already carries a {@link STATIC_NODE_TYPE} accessor.
+ */
+export type AbstractStaticNodeConfigRecord<
+  Config extends AnyStaticNodeConfigValue,
+> = Config extends {
+  extends: abstract new (...args: never) => infer Inst extends LexicalNode;
+}
+  ? ReturnType<Inst[typeof PROTOTYPE_CONFIG_METHOD]> &
+      StaticNodeConfigAccessor<Config>
+  : BaseStaticNodeConfig & StaticNodeConfigAccessor<Config>;
 
 /**
  * Extract the type from a node based on its $config
@@ -210,12 +347,34 @@ export type StaticNodeConfigRecord<
  * ```
  */
 export type GetStaticNodeType<T extends LexicalNode> =
-  ReturnType<T[typeof PROTOTYPE_CONFIG_METHOD]> extends StaticNodeConfig<
-    T,
-    infer Type
-  >
-    ? Type
-    : string;
+  ReturnType<T[typeof PROTOTYPE_CONFIG_METHOD]> extends {
+    readonly [STATIC_NODE_TYPE]: infer Accessor extends () => string;
+  }
+    ? ReturnType<Accessor>
+    : ReturnType<T[typeof PROTOTYPE_CONFIG_METHOD]> extends StaticNodeConfig<
+          T,
+          infer Type
+        >
+      ? Type
+      : string;
+
+/**
+ * @internal
+ *
+ * A node's own config (the value it passed to {@link LexicalNode.config}), read
+ * from the {@link STATIC_NODE_CONFIG} accessor, or `never` for a node whose
+ * `$config()` does not set that accessor (a legacy node, or one whose record
+ * uses the {@link BaseStaticNodeConfig} fallback). Unlike indexing the record by
+ * a resolved string `type`, this also resolves the own config of an abstract
+ * base class keyed by a symbol.
+ */
+export type GetStaticNodeOwnConfig<T extends LexicalNode> =
+  ReturnType<T[typeof PROTOTYPE_CONFIG_METHOD]> extends {
+    readonly [STATIC_NODE_CONFIG]: infer Accessor extends
+      () => AnyStaticNodeConfigValue;
+  }
+    ? ReturnType<Accessor>
+    : never;
 
 /**
  * The most precise type we can infer for the JSON that will
@@ -241,9 +400,41 @@ export type LexicalUpdateJSON<T extends SerializedLexicalNode> = Omit<
 /** @internal */
 export interface LexicalPrivateDOM {
   __lexicalTextContent?: string | undefined | null;
+  /**
+   * NodeKey of the deep first text descendant (DFS order) of this
+   * element, or `null` if the subtree carries no text descendants.
+   * Maintained alongside `__lexicalTextContent` and used by the
+   * suffix-incremental fast path in `$reconcileChildren` to decide in
+   * O(1) (via the cycle's dirty-children set) whether the prefix still
+   * carries the canonical first text descendant.
+   */
+  __lexicalFirstTextKey?: NodeKey | null | undefined;
   __lexicalLineBreak?: HTMLBRElement | HTMLImageElement | undefined | null;
+  /**
+   * Kind of last child recorded for this element during the previous
+   * reconcile, used by `$reconcileElementTerminatingLineBreak` to decide
+   * whether the trailing-`<br>` shape needs to change without calling
+   * `isInline()` on the prev-state node reference (which would resolve
+   * to a detached node once the last child has been removed in this
+   * commit). Set alongside `setManagedLineBreak` / cleared alongside
+   * `removeManagedLineBreak`.
+   */
+  __lexicalLastChildKind?:
+    | 'line-break'
+    | 'decorator'
+    | 'empty'
+    | null
+    | undefined;
   __lexicalDir?: 'ltr' | 'rtl' | null | undefined;
   __lexicalUnmanaged?: boolean | undefined;
+  /**
+   * When true, the DOM subtree owns its own window selection — analogous to
+   * a DecoratorNode subtree. Resolution logic that would otherwise force the
+   * Lexical selection back onto a managed position treats the caret as
+   * intentional and leaves it alone. Set via the `captureSelection` option
+   * on {@link setDOMUnmanaged}.
+   */
+  __lexicalCapturedSelection?: boolean | undefined;
 }
 
 export function $removeNode(
@@ -371,12 +562,38 @@ export type DOMExportOutputMap = Map<
   (editor: LexicalEditor, target: LexicalNode) => DOMExportOutput
 >;
 
-export type DOMExportOutput = {
+export interface DOMExportOutput {
+  /**
+   * Called after the node and all of its children are constructed, can be used
+   * to perform any in-place updates to the node or return something else
+   * entirely.
+   *
+   * @param generatedElement `element` after children are appended
+   * @returns The final representation of this node in the exported DOM
+   */
   after?: (
     generatedElement: HTMLElement | DocumentFragment | Text | null | undefined,
   ) => HTMLElement | DocumentFragment | Text | null | undefined;
+  /**
+   * A DOM node for this lexical node, or null to skip it
+   */
   element: HTMLElement | DocumentFragment | Text | null;
-};
+  /**
+   * An optional override to change how and where DOM nodes for this
+   * ElementNode's children are appended, particularly useful if
+   * this node's children are not direct ancestors.
+   *
+   * @param element The DOM of a child node to append
+   */
+  append?: (element: HTMLElement | DocumentFragment | Text) => void;
+  /**
+   * If defined, will be used instead of `node.getChildren()` to determine
+   * which children to render for this LexicalNode.
+   *
+   * @returns The children to export
+   */
+  $getChildNodes?: () => Iterable<LexicalNode>;
+}
 
 export type NodeKey = string;
 
@@ -404,6 +621,14 @@ export function $markEphemeral<T extends LexicalNode>(
   return node;
 }
 
+/** @internal */
+const NON_ENUMERABLE_PROP_DESC: PropertyDescriptor = {
+  configurable: true,
+  enumerable: false,
+  value: undefined,
+  writable: true,
+};
+
 export class LexicalNode {
   /** @internal Allow us to look up the type including static props */
   declare ['constructor']: KlassConstructor<typeof LexicalNode>;
@@ -420,6 +645,8 @@ export class LexicalNode {
   __next: null | NodeKey;
   /** @internal */
   __state?: NodeState<this>;
+  /** @internal */
+  [CACHED_TEXT_SIZE_KEY]?: number;
 
   // Flow doesn't support abstract classes unfortunately, so we can't _force_
   // subclasses of Node to implement statics. All subclasses of Node should have
@@ -479,15 +706,33 @@ export class LexicalNode {
    * This is a convenience method for $config that
    * aids in type inference. See {@link LexicalNode.$config}
    * for example usage.
+   *
+   * An abstract base class that has no concrete node `type` may pass a
+   * well-known symbol (by convention `Symbol.for(<NodeClassName>)`) instead of
+   * a string `type` to declare configuration shared with its subclasses.
    */
+  config<Config extends StaticNodeConfigValue<this, string>>(
+    type: symbol,
+    config: Config,
+  ): AbstractStaticNodeConfigRecord<Config>;
   config<Type extends string, Config extends StaticNodeConfigValue<this, Type>>(
     type: Type,
     config: Config,
-  ): StaticNodeConfigRecord<Type, Config> {
+  ): StaticNodeConfigRecord<Type, Config>;
+  config(
+    type: string | symbol,
+    config: AnyStaticNodeConfigValue,
+  ): BaseStaticNodeConfig {
     const parentKlass =
       config.extends || Object.getPrototypeOf(this.constructor);
-    Object.assign(config, {extends: parentKlass, type});
-    return {[type]: config} as StaticNodeConfigRecord<Type, Config>;
+    Object.assign(config, {extends: parentKlass});
+    // A concrete node records its string `type`; an abstract base class is
+    // keyed by a well-known symbol (e.g. Symbol.for('ElementNode')) and has no
+    // concrete node `type`.
+    if (typeof type === 'string') {
+      Object.assign(config, {type});
+    }
+    return {[type]: config} as BaseStaticNodeConfig;
   }
 
   /**
@@ -570,12 +815,11 @@ export class LexicalNode {
     this.__parent = null;
     this.__prev = null;
     this.__next = null;
-    Object.defineProperty(this, '__state', {
-      configurable: true,
-      enumerable: false,
-      value: undefined,
-      writable: true,
-    });
+    Object.defineProperty(this, '__state', NON_ENUMERABLE_PROP_DESC);
+    // Pre-initialize the reconciler's cached-text-size slot so subsequent
+    // assignments on the V8 hot path slot into a stable hidden class
+    // instead of triggering per-instance shape transitions.
+    Object.defineProperty(this, CACHED_TEXT_SIZE_KEY, NON_ENUMERABLE_PROP_DESC);
     $setNodeKey(this, key);
 
     if (__DEV__) {
@@ -613,6 +857,8 @@ export class LexicalNode {
         return true;
       }
 
+      // Annotation breaks a circular inference through the loop (TS7022),
+      // remove when the deprecated generic signatures from #8661 are removed
       const node: LexicalNode | null = $getNodeByKey(nodeKey);
 
       if (node === null) {
@@ -638,7 +884,7 @@ export class LexicalNode {
 
     const isSelected = targetSelection
       .getNodes()
-      .some((n) => n.__key === this.__key);
+      .some(n => n.__key === this.__key);
 
     if ($isTextNode(this)) {
       return isSelected;
@@ -703,19 +949,36 @@ export class LexicalNode {
   /**
    * Returns the parent of this node, or null if none is found.
    */
-  getParent<T extends ElementNode>(): T | null {
+  getParent(): ElementNode | null;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getParent() as T | null`, and will be removed
+   * in a future release. Call this method without a type argument and
+   * narrow the result with a type guard instead.
+   */
+  getParent<T extends ElementNode>(): T | null;
+  getParent(): ElementNode | null {
     const parent = this.getLatest().__parent;
     if (parent === null) {
       return null;
     }
-    return $getNodeByKey<T>(parent);
+    // Cast: a parent key always refers to an ElementNode
+    return $getNodeByKey(parent) as ElementNode | null;
   }
 
   /**
    * Returns the parent of this node, or throws if none is found.
    */
-  getParentOrThrow<T extends ElementNode>(): T {
-    const parent = this.getParent<T>();
+  getParentOrThrow(): ElementNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getParentOrThrow() as T`, and will be removed
+   * in a future release. Call this method without a type argument and
+   * narrow the result with a type guard instead.
+   */
+  getParentOrThrow<T extends ElementNode>(): T;
+  getParentOrThrow(): ElementNode {
+    const parent = this.getParent();
     if (parent === null) {
       invariant(false, 'Expected node %s to have a parent.', this.__key);
     }
@@ -730,6 +993,8 @@ export class LexicalNode {
   getTopLevelElement(): ElementNode | DecoratorNode<unknown> | null {
     let node: ElementNode | this | null = this;
     while (node !== null) {
+      // Annotation breaks a circular inference through the loop (TS7022),
+      // remove when the deprecated generic signatures from #8661 are removed
       const parent: ElementNode | null = node.getParent();
       if ($isRootOrShadowRoot(parent)) {
         invariant(
@@ -791,28 +1056,42 @@ export class LexicalNode {
   }
 
   /**
-   * Returns the "previous" siblings - that is, the node that comes
-   * before this one in the same parent.
-   *
+   * Returns the node before this one in the same parent, or null
+   * if there is no such node.
    */
-  getPreviousSibling<T extends LexicalNode>(): T | null {
+  getPreviousSibling(): LexicalNode | null;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getPreviousSibling() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getPreviousSibling<T extends LexicalNode>(): T | null;
+  getPreviousSibling(): LexicalNode | null {
     const self = this.getLatest();
     const prevKey = self.__prev;
-    return prevKey === null ? null : $getNodeByKey<T>(prevKey);
+    return prevKey === null ? null : $getNodeByKey(prevKey);
   }
 
   /**
-   * Returns the "previous" siblings - that is, the nodes that come between
-   * this one and the first child of it's parent, inclusive.
-   *
+   * Returns all nodes before this one in the same parent,
+   * in document order.
    */
-  getPreviousSiblings<T extends LexicalNode>(): Array<T> {
-    const siblings: Array<T> = [];
+  getPreviousSiblings(): Array<LexicalNode>;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getPreviousSiblings() as Array<T>`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the results with a type guard instead.
+   */
+  getPreviousSiblings<T extends LexicalNode>(): Array<T>;
+  getPreviousSiblings(): Array<LexicalNode> {
+    const siblings: Array<LexicalNode> = [];
     const parent = this.getParent();
     if (parent === null) {
       return siblings;
     }
-    let node: null | T = parent.getFirstChild();
+    let node = parent.getFirstChild();
     while (node !== null) {
       if (node.is(this)) {
         break;
@@ -824,24 +1103,38 @@ export class LexicalNode {
   }
 
   /**
-   * Returns the "next" siblings - that is, the node that comes
-   * after this one in the same parent
-   *
+   * Returns the node after this one in the same parent, or null
+   * if there is no such node.
    */
-  getNextSibling<T extends LexicalNode>(): T | null {
+  getNextSibling(): LexicalNode | null;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getNextSibling() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getNextSibling<T extends LexicalNode>(): T | null;
+  getNextSibling(): LexicalNode | null {
     const self = this.getLatest();
     const nextKey = self.__next;
-    return nextKey === null ? null : $getNodeByKey<T>(nextKey);
+    return nextKey === null ? null : $getNodeByKey(nextKey);
   }
 
   /**
-   * Returns all "next" siblings - that is, the nodes that come between this
-   * one and the last child of it's parent, inclusive.
-   *
+   * Returns all nodes after this one in the same parent,
+   * in document order.
    */
-  getNextSiblings<T extends LexicalNode>(): Array<T> {
-    const siblings: Array<T> = [];
-    let node: null | T = this.getNextSibling();
+  getNextSiblings(): Array<LexicalNode>;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getNextSiblings() as Array<T>`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the results with a type guard instead.
+   */
+  getNextSiblings<T extends LexicalNode>(): Array<T>;
+  getNextSiblings(): Array<LexicalNode> {
+    const siblings: Array<LexicalNode> = [];
+    let node = this.getNextSibling();
     while (node !== null) {
       siblings.push(node);
       node = node.getNextSibling();
@@ -1012,7 +1305,8 @@ export class LexicalNode {
     if ($isEphemeral(this)) {
       return this;
     }
-    const latest = $getNodeByKey<this>(this.__key);
+    // Cast: the nodeMap entry for this key is always the same node class
+    const latest = $getNodeByKey(this.__key) as this | null;
     if (latest === null) {
       invariant(
         false,
@@ -1113,6 +1407,24 @@ export class LexicalNode {
   }
 
   /**
+   * Returns a {@link DOMSlot} pointing at the content-bearing element of this
+   * node's DOM. The default returns a slot wrapping the keyed DOM as-is.
+   *
+   * Override this when {@link createDOM} returns a wrapper around the
+   * content-bearing element (e.g. `<span><br/></span>` for a styled line
+   * break), so selection / reconciliation logic can target the inner element.
+   *
+   * {@link ElementNode} overrides this to return an {@link ElementDOMSlot}
+   * with children-management semantics (used by the reconciler to place
+   * managed children).
+   *
+   * @experimental
+   */
+  getDOMSlot(element: HTMLElement): DOMSlot<HTMLElement> {
+    return new DOMSlot(element);
+  }
+
+  /**
    * Controls how the this node is serialized to HTML. This is important for
    * copy and paste between Lexical and non-Lexical editors, or Lexical editors with different namespaces,
    * in which case the primary transfer format is HTML. It's also important if you're serializing
@@ -1148,7 +1460,9 @@ export class LexicalNode {
    * See [Serialization & Deserialization](https://lexical.dev/docs/concepts/serialization#lexical---html).
    *
    * */
-  static importJSON(_serializedNode: SerializedLexicalNode): LexicalNode {
+  static importJSON(
+    _serializedNode: SerializedLexicalNode & Record<string, unknown>,
+  ): LexicalNode {
     invariant(
       false,
       'LexicalNode: Node %s does not implement .importJSON().',
@@ -1237,7 +1551,23 @@ export class LexicalNode {
     const writableReplaceWith = replaceWith.getWritable();
     const writableParent = this.getParentOrThrow().getWritable();
     const size = writableParent.__size;
+    // Capture replaceWith's old parent / index before removeFromParent so the
+    // cloned selection's element offsets in that old parent can be adjusted
+    // afterwards. See #6031.
+    const replaceWithOldParent = writableReplaceWith.getParent();
+    const replaceWithOldIndex =
+      replaceWithOldParent !== null
+        ? writableReplaceWith.getIndexWithinParent()
+        : -1;
     removeFromParent(writableReplaceWith);
+    if (replaceWithOldParent !== null && $isRangeSelection(selection)) {
+      $updateElementSelectionOnCreateDeleteNode(
+        selection,
+        replaceWithOldParent,
+        replaceWithOldIndex,
+        -1,
+      );
+    }
     const prevSibling = self.getPreviousSibling();
     const nextSibling = self.getNextSibling();
     const prevKey = self.__prev;
@@ -1261,24 +1591,54 @@ export class LexicalNode {
     writableReplaceWith.__next = nextKey;
     writableReplaceWith.__parent = parentKey;
     writableParent.__size = size;
+    // Snapshot replaceWith's children count before children transfer so
+    // element-anchored selections on `this` can map to the equivalent offset
+    // in writableReplaceWith.
+    let prevSizeBeforeChildrenTransfer = 0;
     if (includeChildren) {
       invariant(
         $isElementNode(this) && $isElementNode(writableReplaceWith),
         'includeChildren should only be true for ElementNodes',
       );
-      this.getChildren().forEach((child: LexicalNode) => {
-        writableReplaceWith.append(child);
-      });
+      prevSizeBeforeChildrenTransfer = writableReplaceWith.getChildrenSize();
+      writableReplaceWith.splice(
+        prevSizeBeforeChildrenTransfer,
+        0,
+        this.getChildren(),
+      );
     }
     if ($isRangeSelection(selection)) {
       $setSelection(selection);
       const anchor = selection.anchor;
       const focus = selection.focus;
+      // For an element-anchored point on `this` with includeChildren, the
+      // transferred children land at offsets [prevSize ... prevSize + N) in
+      // writableReplaceWith, so the equivalent point is at
+      // `prevSize + originalOffset`. Without this remap the caller (e.g.
+      // `$setBlocksType`) has to re-anchor afterwards from a stale clone.
+      // For non-element points or !includeChildren the children are gone, so
+      // fall back to the previous "move to end" behavior.
       if (anchor.key === toReplaceKey) {
-        $moveSelectionPointToEnd(anchor, writableReplaceWith);
+        if (includeChildren && anchor.type === 'element') {
+          anchor.set(
+            writableReplaceWith.__key,
+            prevSizeBeforeChildrenTransfer + anchor.offset,
+            'element',
+          );
+        } else {
+          $moveSelectionPointToEnd(anchor, writableReplaceWith);
+        }
       }
       if (focus.key === toReplaceKey) {
-        $moveSelectionPointToEnd(focus, writableReplaceWith);
+        if (includeChildren && focus.type === 'element') {
+          focus.set(
+            writableReplaceWith.__key,
+            prevSizeBeforeChildrenTransfer + focus.offset,
+            'element',
+          );
+        } else {
+          $moveSelectionPointToEnd(focus, writableReplaceWith);
+        }
       }
     }
     if ($getCompositionKey() === toReplaceKey) {
@@ -1306,7 +1666,6 @@ export class LexicalNode {
     if (oldParent !== null) {
       // TODO: this is O(n), can we improve?
       const oldIndex = nodeToInsert.getIndexWithinParent();
-      removeFromParent(writableNodeToInsert);
       if ($isRangeSelection(selection)) {
         const oldParentKey = oldParent.__key;
         const anchor = selection.anchor;
@@ -1319,6 +1678,21 @@ export class LexicalNode {
           focus.type === 'element' &&
           focus.key === oldParentKey &&
           focus.offset === oldIndex + 1;
+      }
+      removeFromParent(writableNodeToInsert);
+      // Adjust element-anchored offsets in oldParent to track its reduced
+      // child count. The boolean flags captured above
+      // (elementAnchorSelectionOnNode / elementFocusSelectionOnNode) recorded
+      // whether anchor/focus sat at oldIndex+1 before this removal; the
+      // post-insertion block below uses them to re-anchor onto the moved
+      // node in its new parent. See #6031.
+      if (restoreSelection && $isRangeSelection(selection)) {
+        $updateElementSelectionOnCreateDeleteNode(
+          selection,
+          oldParent,
+          oldIndex,
+          -1,
+        );
       }
     }
     const nextSibling = this.getNextSibling();
@@ -1370,7 +1744,28 @@ export class LexicalNode {
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
     const insertKey = writableNodeToInsert.__key;
+    const selection = $getSelection();
+    // Capture nodeToInsert's old parent / index before detaching so the
+    // selection's element offsets in that old parent can be adjusted
+    // afterwards. See #6031.
+    const insertOldParent = writableNodeToInsert.getParent();
+    const insertOldIndex =
+      insertOldParent !== null
+        ? writableNodeToInsert.getIndexWithinParent()
+        : -1;
     removeFromParent(writableNodeToInsert);
+    if (
+      insertOldParent !== null &&
+      restoreSelection &&
+      $isRangeSelection(selection)
+    ) {
+      $updateElementSelectionOnCreateDeleteNode(
+        selection,
+        insertOldParent,
+        insertOldIndex,
+        -1,
+      );
+    }
     const prevSibling = this.getPreviousSibling();
     const writableParent = this.getParentOrThrow().getWritable();
     const prevKey = writableSelf.__prev;
@@ -1387,7 +1782,6 @@ export class LexicalNode {
     writableNodeToInsert.__prev = prevKey;
     writableNodeToInsert.__next = writableSelf.__key;
     writableNodeToInsert.__parent = writableSelf.__parent;
-    const selection = $getSelection();
     if (restoreSelection && $isRangeSelection(selection)) {
       const parent = this.getParentOrThrow();
       $updateElementSelectionOnCreateDeleteNode(selection, parent, index);
@@ -1541,4 +1935,13 @@ export function insertRangeAfter(
   for (const nodeToInsert of nodesToInsert) {
     currentNode = currentNode.insertAfter(nodeToInsert);
   }
+}
+
+/**
+ * Returns true if the given value is a {@link LexicalNode} instance.
+ */
+export function $isLexicalNode(
+  node: null | undefined | LexicalNode,
+): node is LexicalNode {
+  return node instanceof LexicalNode;
 }

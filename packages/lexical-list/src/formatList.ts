@@ -6,6 +6,7 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {$getNearestNodeOfType} from '@lexical/utils';
 import {
   $copyNode,
@@ -24,7 +25,6 @@ import {
   NodeKey,
   ParagraphNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {
   $createListItemNode,
@@ -71,12 +71,7 @@ export function $insertList(listType: ListType): void {
   if (selection !== null) {
     let nodes = selection.getNodes();
     if ($isRangeSelection(selection)) {
-      const anchorAndFocus = selection.getStartEndPoints();
-      invariant(
-        anchorAndFocus !== null,
-        'insertList: anchor should be defined',
-      );
-      const [anchor] = anchorAndFocus;
+      const [anchor] = selection.getStartEndPoints();
       const anchorNode = anchor.getNode();
       const anchorNodeParent = anchorNode.getParent();
 
@@ -374,11 +369,8 @@ export function $handleIndent(listItemNode: ListItemNode): void {
 
   const parent = listItemNode.getParent();
 
-  // We can cast both of the below `isNestedListNode` only returns a boolean type instead of a user-defined type guards
-  const nextSibling =
-    listItemNode.getNextSibling<ListItemNode>() as ListItemNode;
-  const previousSibling =
-    listItemNode.getPreviousSibling<ListItemNode>() as ListItemNode;
+  const nextSibling = listItemNode.getNextSibling();
+  const previousSibling = listItemNode.getPreviousSibling();
   // if there are nested lists on either side, merge them all together.
 
   if (isNestedListNode(nextSibling) && isNestedListNode(previousSibling)) {
@@ -482,7 +474,7 @@ export function $handleOutdent(listItemNode: ListItemNode): void {
       previousSiblingsListItem.append(previousSiblingsList);
       listItemNode
         .getPreviousSiblings()
-        .forEach((sibling) => previousSiblingsList.append(sibling));
+        .forEach(sibling => previousSiblingsList.append(sibling));
       const nextSiblingsListItem = $copyNode(listItemNode);
       const nextSiblingsList = $copyNode(parentList);
       nextSiblingsListItem.append(nextSiblingsList);
@@ -528,9 +520,7 @@ export function $handleListInsertParagraph(
       $isListItemNode(parentListItem) &&
       parentListItem
         .getChildren()
-        .every(
-          (node) => $isTextNode(node) && node.getTextContent().trim() === '',
-        )
+        .every(node => $isTextNode(node) && node.getTextContent().trim() === '')
     ) {
       listItem = parentListItem;
     }

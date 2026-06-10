@@ -903,6 +903,10 @@ export class ElementNode
    * descendant is selected (the "child carries parent" direction); this opt-in
    * runs in the opposite direction ("parent carries descendants").
    *
+   * Implementers should ensure their children serialize correctly when read
+   * outside the original selection scope — the clipboard caller recurses into
+   * them with a null outer selection so the whole subtree is captured.
+   *
    * @experimental
    */
   includeChildrenWhenSelected(): boolean {

@@ -23,6 +23,7 @@ import {
   $getSlotHost,
   $getSlotNames,
   $getSlotNameWithinHost,
+  $isParagraphNode,
   $isRangeSelection,
   $removeSlot,
   $setSelection,
@@ -1361,7 +1362,8 @@ describe('named-slots: core foundation', () => {
     expect(caught).toBe(null);
     let survived = false;
     editor.read(() => {
-      const host = $getRoot().getFirstChild() as ParagraphNode;
+      const host = $getRoot().getFirstChild();
+      assert($isParagraphNode(host));
       const slot = $getSlot<TestShadowRootNode>(host, 'title');
       survived = slot !== null && slot.getTextContent() === 'SLOTTEXT';
     });
@@ -1398,7 +1400,8 @@ describe('named-slots: core foundation', () => {
     expect(caught).toBe(null);
     let survived = false;
     editor.read(() => {
-      const host = $getRoot().getFirstChild() as ParagraphNode;
+      const host = $getRoot().getFirstChild();
+      assert($isParagraphNode(host));
       const slot = $getSlot<TestShadowRootNode>(host, 'title');
       survived = slot !== null && slot.getTextContent() === 'SLOTTEXT';
     });
@@ -1442,7 +1445,8 @@ describe('named-slots: core foundation', () => {
     expect(caught).toBe(null);
     let remaining = '';
     editor.read(() => {
-      const host = $getRoot().getFirstChild() as ParagraphNode;
+      const host = $getRoot().getFirstChild();
+      assert($isParagraphNode(host));
       remaining = $getSlot<TestShadowRootNode>(host, 'title')!.getTextContent();
     });
     expect(remaining).toBe('TEXT');

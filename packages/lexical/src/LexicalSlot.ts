@@ -29,9 +29,12 @@ import {$removeFromParent} from './LexicalUtils';
 export const EMPTY_SLOTS: ReadonlyMap<string, NodeKey> = new Map();
 
 /**
- * True when `node` can host named slots — i.e. it is an {@link ElementNode} or
- * a {@link DecoratorNode}. Narrows to {@link SlotHostNode} so the mutation
- * helpers' compile-time host requirement is satisfied.
+ * Shape predicate: true when `node` carries the host's `__slots` field — i.e.
+ * it is an {@link ElementNode} or a {@link DecoratorNode}. Narrows to
+ * {@link SlotHostNode} so the mutation helpers' compile-time host requirement
+ * is satisfied. This is a type guard only; the value-level invariant on what
+ * may actually be slotted is enforced by {@link $setSlot} (shadow-root
+ * ElementNode or non-inline DecoratorNode).
  *
  * @experimental
  */
@@ -42,8 +45,10 @@ export function $isSlotHost(
 }
 
 /**
- * True when `node` can occupy a named slot — i.e. it is an {@link ElementNode}
- * or a {@link DecoratorNode}. Narrows to {@link SlotChildNode}.
+ * Shape predicate: true when `node` carries the child's `__slotHost` field —
+ * i.e. it is an {@link ElementNode} or a {@link DecoratorNode}. Narrows to
+ * {@link SlotChildNode}. This is a type guard only; {@link $setSlot} rejects
+ * inline ElementNodes / inline DecoratorNodes at runtime.
  *
  * @experimental
  */

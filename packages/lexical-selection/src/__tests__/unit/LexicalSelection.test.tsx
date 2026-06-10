@@ -57,6 +57,7 @@ import {
   TextNode,
 } from 'lexical';
 import {
+  $assertNodeType,
   $assertRangeSelection,
   $createTestDecoratorNode,
   $createTestElementNode,
@@ -1316,7 +1317,10 @@ describe('LexicalSelection tests', () => {
       await editor!.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>()!;
+        const paragraph = $assertNodeType(
+          root.getFirstChild(),
+          $isParagraphNode,
+        );
 
         const elementNode = $createTestElementNode();
         const text = $createTextNode('foo');
@@ -1340,7 +1344,10 @@ describe('LexicalSelection tests', () => {
       await editor!.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>()!;
+        const paragraph = $assertNodeType(
+          root.getFirstChild(),
+          $isParagraphNode,
+        );
 
         const elementNode = $createTestElementNode();
         const text = $createTextNode();
@@ -1914,7 +1921,10 @@ describe('LexicalSelection tests', () => {
               await editor!.update(() => {
                 const root = $getRoot();
 
-                const paragraph = root.getFirstChild<ParagraphNode>()!;
+                const paragraph = $assertNodeType(
+                  root.getFirstChild(),
+                  $isParagraphNode,
+                );
                 const textNode = $createTextNode('foo');
                 // Note: line break can't be selected by the DOM
                 const linebreak = $createLineBreakNode();
@@ -2082,7 +2092,10 @@ describe('LexicalSelection tests', () => {
       await editor!.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>()!;
+        const paragraph = $assertNodeType(
+          root.getFirstChild(),
+          $isParagraphNode,
+        );
         const paragraphKey = paragraph.getKey();
         const textNode = $createTextNode('foo');
         const textNodeKey = textNode.getKey();
@@ -2207,7 +2220,10 @@ describe('LexicalSelection tests', () => {
             await editor!.update(() => {
               const root = $getRoot();
 
-              const paragraph = root.getFirstChild<ParagraphNode>()!;
+              const paragraph = $assertNodeType(
+                root.getFirstChild(),
+                $isParagraphNode,
+              );
               const textNode1 = $createTextNode('1');
               const textNode2 = $createTextNode('2');
               const decorator = $createTestDecoratorNode();

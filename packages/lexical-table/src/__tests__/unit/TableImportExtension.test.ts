@@ -10,12 +10,13 @@ import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
-import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
+import {DOMImportExtension} from '@lexical/html';
 import {
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
   TableCellNode,
+  TableExtension,
   TableImportExtension,
   TableNode,
   TableRowNode,
@@ -33,11 +34,11 @@ import {assert, describe, expect, test} from 'vitest';
 function buildEditor() {
   return buildEditorFromExtensions(
     defineExtension({
-      // Leaf importer extensions no longer pull `CoreImportExtension`
-      // in by themselves — the application is expected to add it once.
-      dependencies: [CoreImportExtension, TableImportExtension],
+      // TableExtension registers its own import rules (and the shared
+      // CoreImportExtension baseline) — no dedicated import extension
+      // required.
+      dependencies: [TableExtension],
       name: 'table-host',
-      nodes: [TableNode, TableRowNode, TableCellNode],
     }),
   );
 }
@@ -118,6 +119,20 @@ describe('TableImportExtension', () => {
 
   test('row picks up cells via $descendantsMatching', () => {
     using editor = buildEditor();
+    importInto(editor, '<table><tr><td>a</td></tr></table>');
+    editor.read(() => {
+      const cell = $cells($rows($rootTable())[0])[0];
+      expect(cell.getTextContent()).toBe('a');
+    });
+  });
+
+  test('deprecated TableImportExtension alias still imports tables', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [TableImportExtension],
+        name: 'table-alias-host',
+      }),
+    );
     importInto(editor, '<table><tr><td>a</td></tr></table>');
     editor.read(() => {
       const cell = $cells($rows($rootTable())[0])[0];

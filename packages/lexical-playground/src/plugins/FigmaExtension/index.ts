@@ -16,11 +16,10 @@ import {
 
 import {$createFigmaNode, FigmaNode} from '../../nodes/FigmaNode';
 
-export const INSERT_FIGMA_COMMAND: LexicalCommand<string> = createCommand(
-  'INSERT_FIGMA_COMMAND',
-);
+export const INSERT_FIGMA_COMMAND: LexicalCommand<string> =
+  /* @__PURE__ */ createCommand('INSERT_FIGMA_COMMAND');
 
-export const FigmaExtension = defineExtension({
+export const FigmaExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/Figma',
   nodes: [FigmaNode],
   register: editor =>

@@ -20,7 +20,6 @@ import {
   $isScrollableTablesActive,
   $isTableCellNode,
   $isTableNode,
-  TableNode,
 } from '@lexical/table';
 import {$dfs} from '@lexical/utils';
 import {
@@ -28,13 +27,14 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isParagraphNode,
   $isRangeSelection,
   $selectAll,
   $setSelection,
   CUT_COMMAND,
-  ParagraphNode,
 } from 'lexical';
 import {
+  $assertNodeType,
   expectHtmlToBeEqual,
   html,
   initializeUnitTest,
@@ -805,14 +805,17 @@ describe('LexicalTableNode tests', () => {
 
             await editor.update(() => {
               const root = $getRoot();
-              const paragraph = root.getFirstChild<ParagraphNode>();
+              const paragraph = $assertNodeType(
+                root.getFirstChild(),
+                $isParagraphNode,
+              );
               const beforeText = $createTextNode('text before the table');
               const table = $createTableNodeWithDimensions(4, 4, true);
               const afterText = $createTextNode('text after the table');
 
-              paragraph?.append(beforeText);
-              paragraph?.append(table);
-              paragraph?.append(afterText);
+              paragraph.append(beforeText);
+              paragraph.append(table);
+              paragraph.append(afterText);
             });
             await editor.update(() => {
               editor.focus();
@@ -835,12 +838,15 @@ describe('LexicalTableNode tests', () => {
 
             await editor.update(() => {
               const root = $getRoot();
-              const paragraph = root.getFirstChild<ParagraphNode>();
+              const paragraph = $assertNodeType(
+                root.getFirstChild(),
+                $isParagraphNode,
+              );
               const beforeText = $createTextNode('text before the table');
               const table = $createTableNodeWithDimensions(4, 4, true);
 
-              paragraph?.append(beforeText);
-              paragraph?.append(table);
+              paragraph.append(beforeText);
+              paragraph.append(table);
             });
             await editor.update(() => {
               editor.focus();
@@ -863,12 +869,15 @@ describe('LexicalTableNode tests', () => {
 
             await editor.update(() => {
               const root = $getRoot();
-              const paragraph = root.getFirstChild<ParagraphNode>();
+              const paragraph = $assertNodeType(
+                root.getFirstChild(),
+                $isParagraphNode,
+              );
               const table = $createTableNodeWithDimensions(4, 4, true);
               const afterText = $createTextNode('text after the table');
 
-              paragraph?.append(table);
-              paragraph?.append(afterText);
+              paragraph.append(table);
+              paragraph.append(afterText);
             });
             await editor.update(() => {
               editor.focus();
@@ -896,19 +905,19 @@ describe('LexicalTableNode tests', () => {
             });
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              if (table) {
+              const table = root.getLastChild();
+              if ($isTableNode(table)) {
                 const DOMTable = $getElementForTableNode(editor, table);
                 if (DOMTable) {
-                  table
-                    ?.getCellNodeFromCords(0, 0, DOMTable)
-                    ?.getLastChild<ParagraphNode>()
-                    ?.append($createTextNode('some text'));
+                  $assertNodeType(
+                    table.getCellNodeFromCords(0, 0, DOMTable)?.getLastChild(),
+                    $isParagraphNode,
+                  ).append($createTextNode('some text'));
                   const selection = $createTableSelection();
                   selection.set(
                     table.__key,
-                    table?.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-                    table?.getCellNodeFromCords(3, 3, DOMTable)?.__key || '',
+                    table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
+                    table.getCellNodeFromCords(3, 3, DOMTable)?.__key || '',
                   );
                   $setSelection(selection);
                   editor.dispatchCommand(
@@ -937,19 +946,19 @@ describe('LexicalTableNode tests', () => {
             });
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              if (table) {
+              const table = root.getLastChild();
+              if ($isTableNode(table)) {
                 const DOMTable = $getElementForTableNode(editor, table);
                 if (DOMTable) {
-                  table
-                    ?.getCellNodeFromCords(0, 0, DOMTable)
-                    ?.getLastChild<ParagraphNode>()
-                    ?.append($createTextNode('some text'));
+                  $assertNodeType(
+                    table.getCellNodeFromCords(0, 0, DOMTable)?.getLastChild(),
+                    $isParagraphNode,
+                  ).append($createTextNode('some text'));
                   const selection = $createTableSelection();
                   selection.set(
                     table.__key,
-                    table?.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-                    table?.getCellNodeFromCords(2, 2, DOMTable)?.__key || '',
+                    table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
+                    table.getCellNodeFromCords(2, 2, DOMTable)?.__key || '',
                   );
                   $setSelection(selection);
                   editor.dispatchCommand(
@@ -1042,42 +1051,40 @@ describe('LexicalTableNode tests', () => {
             });
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              if (table) {
-                const DOMTable = $getElementForTableNode(editor, table);
-                if (DOMTable) {
-                  table
-                    ?.getCellNodeFromCords(0, 0, DOMTable)
-                    ?.getLastChild<ParagraphNode>()
-                    ?.append($createTextNode('1'));
-                  table
-                    ?.getCellNodeFromCords(1, 0, DOMTable)
-                    ?.getLastChild<ParagraphNode>()
-                    ?.append($createTextNode(''));
-                  table
-                    ?.getCellNodeFromCords(2, 0, DOMTable)
-                    ?.getLastChild<ParagraphNode>()
-                    ?.append($createTextNode('2'));
-                  table
-                    ?.getCellNodeFromCords(0, 1, DOMTable)
-                    ?.getLastChild<ParagraphNode>()
-                    ?.append($createTextNode('3'));
-                  table
-                    ?.getCellNodeFromCords(1, 1, DOMTable)
-                    ?.getLastChild<ParagraphNode>()
-                    ?.append($createTextNode('4'));
-                  table
-                    ?.getCellNodeFromCords(2, 1, DOMTable)
-                    ?.getLastChild<ParagraphNode>()
-                    ?.append($createTextNode(''));
-                  const selection = $createTableSelection();
-                  selection.set(
-                    table.__key,
-                    table?.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-                    table?.getCellNodeFromCords(2, 1, DOMTable)?.__key || '',
-                  );
-                  expect(selection.getTextContent()).toBe(`1\t\t2\n3\t4\t\n`);
-                }
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
+              const DOMTable = $getElementForTableNode(editor, table);
+              if (DOMTable) {
+                $assertNodeType(
+                  table.getCellNodeFromCords(0, 0, DOMTable)?.getLastChild(),
+                  $isParagraphNode,
+                ).append($createTextNode('1'));
+                $assertNodeType(
+                  table.getCellNodeFromCords(1, 0, DOMTable)?.getLastChild(),
+                  $isParagraphNode,
+                ).append($createTextNode(''));
+                $assertNodeType(
+                  table.getCellNodeFromCords(2, 0, DOMTable)?.getLastChild(),
+                  $isParagraphNode,
+                ).append($createTextNode('2'));
+                $assertNodeType(
+                  table.getCellNodeFromCords(0, 1, DOMTable)?.getLastChild(),
+                  $isParagraphNode,
+                ).append($createTextNode('3'));
+                $assertNodeType(
+                  table.getCellNodeFromCords(1, 1, DOMTable)?.getLastChild(),
+                  $isParagraphNode,
+                ).append($createTextNode('4'));
+                $assertNodeType(
+                  table.getCellNodeFromCords(2, 1, DOMTable)?.getLastChild(),
+                  $isParagraphNode,
+                ).append($createTextNode(''));
+                const selection = $createTableSelection();
+                selection.set(
+                  table.__key,
+                  table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
+                  table.getCellNodeFromCords(2, 1, DOMTable)?.__key || '',
+                );
+                expect(selection.getTextContent()).toBe(`1\t\t2\n3\t4\t\n`);
               }
             });
           });
@@ -1092,17 +1099,15 @@ describe('LexicalTableNode tests', () => {
             });
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              if (table) {
-                table.setRowStriping(true);
-              }
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
+              table.setRowStriping(true);
             });
 
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
               expectTableHtmlToBeEqual(
-                table!.createDOM(editorConfig).outerHTML,
+                table.createDOM(editorConfig).outerHTML,
                 html`
                   <table
                     class="${editorConfig.theme.table} ${editorConfig.theme
@@ -1121,17 +1126,15 @@ describe('LexicalTableNode tests', () => {
 
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              if (table) {
-                table.setRowStriping(false);
-              }
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
+              table.setRowStriping(false);
             });
 
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
               expectTableHtmlToBeEqual(
-                table!.createDOM(editorConfig).outerHTML,
+                table.createDOM(editorConfig).outerHTML,
                 html`
                   <table class="${editorConfig.theme.table}">
                     <colgroup>
@@ -1157,17 +1160,21 @@ describe('LexicalTableNode tests', () => {
               });
               await editor.update(() => {
                 const root = $getRoot();
-                const table = root.getLastChild<TableNode>();
-                if (table) {
-                  table.setFrozenColumns(1);
-                }
+                const table = $assertNodeType(
+                  root.getLastChild(),
+                  $isTableNode,
+                );
+                table.setFrozenColumns(1);
               });
 
               await editor.update(() => {
                 const root = $getRoot();
-                const table = root.getLastChild<TableNode>();
+                const table = $assertNodeType(
+                  root.getLastChild(),
+                  $isTableNode,
+                );
                 expectHtmlToBeEqual(
-                  table!.createDOM(editorConfig).outerHTML,
+                  table.createDOM(editorConfig).outerHTML,
                   html`
                     <div
                       class="${editorConfig.theme
@@ -1633,17 +1640,21 @@ describe('LexicalTableNode tests', () => {
 
               await editor.update(() => {
                 const root = $getRoot();
-                const table = root.getLastChild<TableNode>();
-                if (table) {
-                  table.setFrozenColumns(0);
-                }
+                const table = $assertNodeType(
+                  root.getLastChild(),
+                  $isTableNode,
+                );
+                table.setFrozenColumns(0);
               });
 
               await editor.update(() => {
                 const root = $getRoot();
-                const table = root.getLastChild<TableNode>();
+                const table = $assertNodeType(
+                  root.getLastChild(),
+                  $isTableNode,
+                );
                 expectHtmlToBeEqual(
-                  table!.createDOM(editorConfig).outerHTML,
+                  table.createDOM(editorConfig).outerHTML,
                   html`
                     <div class="${editorConfig.theme.tableScrollableWrapper}">
                       <table class="${editorConfig.theme.table}">
@@ -1671,17 +1682,15 @@ describe('LexicalTableNode tests', () => {
             });
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              if (table) {
-                table.setFormat('center');
-              }
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
+              table.setFormat('center');
             });
 
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
               expectTableHtmlToBeEqual(
-                table!.createDOM(editorConfig).outerHTML,
+                table.createDOM(editorConfig).outerHTML,
                 html`
                   <table
                     class="${editorConfig.theme.table} ${editorConfig.theme
@@ -1699,17 +1708,15 @@ describe('LexicalTableNode tests', () => {
 
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              if (table) {
-                table.setFormat('left');
-              }
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
+              table.setFormat('left');
             });
 
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
               expectTableHtmlToBeEqual(
-                table!.createDOM(editorConfig).outerHTML,
+                table.createDOM(editorConfig).outerHTML,
                 html`
                   <table class="${editorConfig.theme.table}">
                     <colgroup>
@@ -1736,15 +1743,15 @@ describe('LexicalTableNode tests', () => {
             // Set widths
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              table!.setColWidths([50, 50]);
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
+              table.setColWidths([50, 50]);
             });
 
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
               expectTableHtmlToBeEqual(
-                table!.createDOM(editorConfig).outerHTML,
+                table.createDOM(editorConfig).outerHTML,
                 html`
                   <table class="${editorConfig.theme.table}">
                     <colgroup>
@@ -1754,37 +1761,37 @@ describe('LexicalTableNode tests', () => {
                   </table>
                 `,
               );
-              const colWidths = table!.getColWidths();
+              const colWidths = table.getColWidths();
 
               // colwidths should be immutable in DEV
               expect(() => {
                 (colWidths as number[]).push(100);
               }).toThrow();
-              expect(table!.getColWidths()).toStrictEqual([50, 50]);
-              expect(table!.getColumnCount()).toBe(2);
+              expect(table.getColWidths()).toStrictEqual([50, 50]);
+              expect(table.getColumnCount()).toBe(2);
             });
 
             // Add a column
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              const DOMTable = $getElementForTableNode(editor, table!);
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
+              const DOMTable = $getElementForTableNode(editor, table);
               const selection = $createTableSelection();
               selection.set(
-                table!.__key,
-                table!.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-                table!.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
+                table.__key,
+                table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
+                table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
               );
               $setSelection(selection);
               $insertTableColumnAtSelection();
-              table!.setColWidths([50, 50, 100]);
+              table.setColWidths([50, 50, 100]);
             });
 
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
               expectTableHtmlToBeEqual(
-                table!.createDOM(editorConfig).outerHTML,
+                table.createDOM(editorConfig).outerHTML,
                 html`
                   <table class="${editorConfig.theme.table}">
                     <colgroup>
@@ -1795,8 +1802,8 @@ describe('LexicalTableNode tests', () => {
                   </table>
                 `,
               );
-              expect(table!.getColWidths()).toStrictEqual([50, 50, 100]);
-              expect(table!.getColumnCount()).toBe(3);
+              expect(table.getColWidths()).toStrictEqual([50, 50, 100]);
+              expect(table.getColumnCount()).toBe(3);
             });
           });
         },

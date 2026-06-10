@@ -21,14 +21,17 @@ const URL_REGEX =
 const EMAIL_REGEX =
   /(([^<>()[\]\\.,;:\s@"]{1,64}(\.[^<>()[\]\\.,;:\s@"]{1,64}){0,63})|(".{1,255}"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]{1,63}\.){1,127}[a-zA-Z]{2,63}))/;
 
-export const PlaygroundAutoLinkExtension = configExtension(AutoLinkExtension, {
-  excludeParents: [$isCodeNode],
-  matchers: [
-    createLinkMatcherWithRegExp(URL_REGEX, text => {
-      return text.startsWith('http') ? text : `https://${text}`;
-    }),
-    createLinkMatcherWithRegExp(EMAIL_REGEX, text => {
-      return `mailto:${text}`;
-    }),
-  ],
-});
+export const PlaygroundAutoLinkExtension = /* @__PURE__ */ configExtension(
+  AutoLinkExtension,
+  {
+    excludeParents: [$isCodeNode],
+    matchers: [
+      createLinkMatcherWithRegExp(URL_REGEX, text => {
+        return text.startsWith('http') ? text : `https://${text}`;
+      }),
+      createLinkMatcherWithRegExp(EMAIL_REGEX, text => {
+        return `mailto:${text}`;
+      }),
+    ],
+  },
+);

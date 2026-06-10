@@ -23,7 +23,6 @@ import {
   $mergeCells,
   INSERT_TABLE_COMMAND,
   TableExtension,
-  type TableNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,
@@ -38,6 +37,7 @@ import {
   NodeKey,
   SELECT_ALL_COMMAND,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {
   afterEach,
   assert,
@@ -83,7 +83,7 @@ describe('TableExtension', () => {
         'table',
         'paragraph',
       ]);
-      const table = children[1] as TableNode;
+      const table = $assertNodeType(children[1], $isTableNode);
       expect($isTableNode(table)).toBe(true);
       const rows = table.getChildren();
       expect(rows.length).toBe(2);
@@ -409,7 +409,7 @@ describe('TableExtension', () => {
             columns: '2',
             rows: '2',
           });
-          const table = root.getFirstChildOrThrow<TableNode>();
+          const table = $assertNodeType(root.getFirstChild(), $isTableNode);
           table.setColWidths([]);
         },
         {discrete: true},
@@ -417,7 +417,7 @@ describe('TableExtension', () => {
 
       editor.getEditorState().read(() => {
         const root = $getRoot();
-        const table = root.getFirstChildOrThrow<TableNode>();
+        const table = $assertNodeType(root.getFirstChild(), $isTableNode);
         expect(table.getColWidths()).toBe(undefined);
       });
     });
@@ -431,7 +431,7 @@ describe('TableExtension', () => {
             columns: '3',
             rows: '2',
           });
-          const table = root.getFirstChildOrThrow<TableNode>();
+          const table = $assertNodeType(root.getFirstChild(), $isTableNode);
           table.setColWidths([10, 20]);
         },
         {discrete: true},
@@ -439,7 +439,7 @@ describe('TableExtension', () => {
 
       editor.getEditorState().read(() => {
         const root = $getRoot();
-        const table = root.getFirstChildOrThrow<TableNode>();
+        const table = $assertNodeType(root.getFirstChild(), $isTableNode);
         expect(table.getColWidths()).toEqual([10, 20, 20]);
       });
     });
@@ -453,7 +453,7 @@ describe('TableExtension', () => {
             columns: '2',
             rows: '2',
           });
-          const table = root.getFirstChildOrThrow<TableNode>();
+          const table = $assertNodeType(root.getFirstChild(), $isTableNode);
           table.setColWidths([10, 20, 30]);
         },
         {discrete: true},
@@ -461,7 +461,7 @@ describe('TableExtension', () => {
 
       editor.getEditorState().read(() => {
         const root = $getRoot();
-        const table = root.getFirstChildOrThrow<TableNode>();
+        const table = $assertNodeType(root.getFirstChild(), $isTableNode);
         expect(table.getColWidths()).toEqual([10, 20]);
       });
     });

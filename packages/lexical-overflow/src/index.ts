@@ -70,7 +70,7 @@ export function $isOverflowNode(
 /**
  * Configures {@link OverflowNode}
  */
-export const OverflowExtension = defineExtension({
+export const OverflowExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/overflow',
   nodes: () => [OverflowNode],
 });

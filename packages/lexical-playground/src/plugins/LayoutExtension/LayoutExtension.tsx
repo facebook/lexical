@@ -41,18 +41,18 @@ import {
 } from '../../nodes/LayoutItemNode';
 
 export const INSERT_LAYOUT_COMMAND: LexicalCommand<string> =
-  createCommand<string>();
+  /* @__PURE__ */ createCommand<string>();
 
 export const UPDATE_LAYOUT_COMMAND: LexicalCommand<{
   template: string;
   nodeKey: NodeKey;
-}> = createCommand<{template: string; nodeKey: NodeKey}>();
+}> = /* @__PURE__ */ createCommand<{template: string; nodeKey: NodeKey}>();
 
 function getItemsCountFromTemplate(template: string): number {
   return template.trim().split(/\s+/).length;
 }
 
-const LayoutContainerImportRule = defineImportRule({
+const LayoutContainerImportRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => [
     $createLayoutContainerNode(el.style.gridTemplateColumns).splice(
       0,
@@ -64,7 +64,7 @@ const LayoutContainerImportRule = defineImportRule({
   name: '@lexical/playground/layout-container',
 });
 
-const LayoutItemImportRule = defineImportRule({
+const LayoutItemImportRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => [
     $createLayoutItemNode().splice(0, 0, ctx.$importChildren(el)),
   ],
@@ -91,9 +91,9 @@ const $removeIsolatedLayoutItem = (node: LayoutItemNode): boolean => {
   return false;
 };
 
-export const LayoutExtension = defineExtension({
+export const LayoutExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    configExtension(DOMImportExtension, {
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
       rules: [LayoutContainerImportRule, LayoutItemImportRule],
     }),
   ],

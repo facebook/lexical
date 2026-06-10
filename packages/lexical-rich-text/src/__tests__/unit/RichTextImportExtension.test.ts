@@ -10,12 +10,11 @@ import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
-import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
+import {DOMImportExtension} from '@lexical/html';
 import {
   $isHeadingNode,
   $isQuoteNode,
-  HeadingNode,
-  QuoteNode,
+  RichTextExtension,
   RichTextImportExtension,
 } from '@lexical/rich-text';
 import {JSDOM} from 'jsdom';
@@ -31,11 +30,11 @@ import {assert, describe, expect, test} from 'vitest';
 function buildEditor() {
   return buildEditorFromExtensions(
     defineExtension({
-      // Leaf importer extensions no longer pull `CoreImportExtension`
-      // in by themselves — the application is expected to add it once.
-      dependencies: [CoreImportExtension, RichTextImportExtension],
+      // RichTextExtension registers its own import rules (and the
+      // shared CoreImportExtension baseline) — no dedicated import
+      // extension required.
+      dependencies: [RichTextExtension],
       name: 'rich-text-host',
-      nodes: [HeadingNode, QuoteNode],
     }),
   );
 }
@@ -95,6 +94,21 @@ describe('RichTextImportExtension', () => {
       assert($isHeadingNode(node), 'expected HeadingNode');
       expect(node.getTag()).toBe('h1');
       expect(node.getTextContent()).toBe('Title');
+    });
+  });
+
+  test('deprecated RichTextImportExtension alias still imports headings', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [RichTextImportExtension],
+        name: 'rich-text-alias-host',
+      }),
+    );
+    importInto(editor, '<h2>x</h2>');
+    editor.read(() => {
+      const node = $getRoot().getFirstChild();
+      assert($isHeadingNode(node), 'expected HeadingNode');
+      expect(node.getTag()).toBe('h2');
     });
   });
 });

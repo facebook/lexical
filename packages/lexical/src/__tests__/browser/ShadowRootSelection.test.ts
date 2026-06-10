@@ -396,10 +396,14 @@ describe('DOM shadow root selection (browser)', () => {
     expect(getDOMShadowRoots(contentEditable)).toEqual([]);
 
     contentEditable.focus();
-    // The top-level document only sees the <iframe> element as focused...
-    expect(document.activeElement).toBe(iframe);
-    // ...but getActiveElement resolves through the iframe's own document.
-    expect(getActiveElement(contentEditable)).toBe(contentEditable);
+    // getActiveElement resolves through Node.getRootNode to the iframe's own
+    // document, so it reads the iframe document's activeElement rather than the
+    // top-level document.activeElement (which is the <iframe> element or
+    // <body>, never the inner editor). We compare against iframeDoc rather than
+    // asserting focus actually landed, since cross-frame focus does not
+    // propagate in a headless browser.
+    expect(getActiveElement(contentEditable)).toBe(iframeDoc.activeElement);
+    expect(getActiveElement(contentEditable)).not.toBe(document.activeElement);
 
     // Selection is read from the editor's window (the iframe's) and is not
     // retargeted, so the boundary points resolve into the model directly.

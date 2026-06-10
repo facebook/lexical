@@ -65,7 +65,7 @@ test.describe('History', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
             <span data-lexical-text="true">hello world, again and again</span>
           </p>
         `,
@@ -104,7 +104,7 @@ test.describe('History', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
             <span data-lexical-text="true">hello world again</span>
           </p>
         `,
@@ -127,7 +127,7 @@ test.describe('History', () => {
             <span data-lexical-text="true">hello world</span>
           </p>
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -144,7 +144,7 @@ test.describe('History', () => {
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
             <br />
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -195,7 +195,9 @@ test.describe('History', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
     await assertSelection(page, {
@@ -248,7 +250,9 @@ test.describe('History', () => {
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
           </p>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         `,
       );
       await assertSelection(page, {
@@ -264,7 +268,7 @@ test.describe('History', () => {
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
             <br />
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -302,7 +306,7 @@ test.describe('History', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
             <span data-lexical-text="true">hello world again</span>
           </p>
         `,
@@ -341,7 +345,7 @@ test.describe('History', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
             <span data-lexical-text="true">hello world, again and again</span>
           </p>
         `,
@@ -380,7 +384,7 @@ test.describe('History', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
             <span data-lexical-text="true">hello world, again again</span>
           </p>
         `,
@@ -419,7 +423,7 @@ test.describe('History', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
             <span data-lexical-text="true">hello world, again and again</span>
           </p>
         `,
@@ -483,7 +487,9 @@ test.describe('History', () => {
       </p>
     `;
     const step4HTML = html`
-      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <br data-lexical-managed-linebreak="true" />
+      </p>
     `;
 
     await assertHTML(page, step1HTML);
@@ -675,7 +681,9 @@ test.describe('History - IME', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         `,
       );
     }
@@ -771,7 +779,9 @@ test.describe('History - IME', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -817,7 +827,9 @@ test.describe('History - IME', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 

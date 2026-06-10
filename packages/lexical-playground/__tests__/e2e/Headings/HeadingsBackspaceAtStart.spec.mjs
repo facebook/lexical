@@ -74,7 +74,9 @@ test('Headings - removes only the empty previous paragraph and preserves heading
   await assertHTML(
     page,
     html`
-      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <br data-lexical-managed-linebreak="true" />
+      </p>
       <h1 class="PlaygroundEditorTheme__h1" dir="auto">
         <span data-lexical-text="true">Welcome to the playground</span>
       </h1>

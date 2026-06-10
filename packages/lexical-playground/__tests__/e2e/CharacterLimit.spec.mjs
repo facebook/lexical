@@ -193,7 +193,7 @@ function testSuite(charset) {
             <span data-lexical-text="true">12345</span>
             <span class="PlaygroundEditorTheme__characterLimit">
               <span data-lexical-text="true">6</span>
-              <br />
+              <br data-lexical-managed-linebreak="true" />
               <span data-lexical-text="true">7</span>
             </span>
           </p>
@@ -247,7 +247,7 @@ function testSuite(charset) {
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">23456</span>
             <span class="PlaygroundEditorTheme__characterLimit">
-              <br />
+              <br data-lexical-managed-linebreak="true" />
               <span data-lexical-text="true">7</span>
             </span>
           </p>
@@ -274,7 +274,7 @@ function testSuite(charset) {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">3456</span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
             <span class="PlaygroundEditorTheme__characterLimit">
               <span data-lexical-text="true">7</span>
             </span>

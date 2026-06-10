@@ -798,7 +798,7 @@ describe('getDOMSlot tests', () => {
       {discrete: true},
     );
     expect(container.innerHTML).toBe(
-      `<main dir="auto"><section><br></section></main>`,
+      `<main dir="auto"><section><br data-lexical-managed-linebreak="true"></section></main>`,
     );
   });
 

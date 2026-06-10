@@ -214,7 +214,7 @@ test.describe('HTML Image CopyAndPaste', () => {
                 style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -223,7 +223,9 @@ test.describe('HTML Image CopyAndPaste', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });

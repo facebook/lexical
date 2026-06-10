@@ -70,7 +70,7 @@ test.describe('Regression #7635', () => {
               <div class="image-resizer image-resizer-nw"></div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -106,7 +106,7 @@ test.describe('Regression #7635', () => {
               </div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -159,7 +159,7 @@ test.describe('Regression #7635', () => {
               </div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -204,7 +204,7 @@ test.describe('Regression #7635', () => {
               </div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Below the image</span>

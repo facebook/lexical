@@ -393,7 +393,9 @@ test.describe('Links', () => {
       page,
       html`
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
-          <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
           <li class="PlaygroundEditorTheme__listItem" value="2">
             <a
               class="PlaygroundEditorTheme__link"
@@ -1926,7 +1928,7 @@ test.describe('Links', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         <p dir="auto">
           <a href="https://" rel="noreferrer">
             <span data-lexical-text="true">Hello awesome</span>
@@ -2116,7 +2118,7 @@ test.describe('Links', () => {
               <div class="image-resizer image-resizer-nw"></div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
       undefined,
@@ -2344,7 +2346,7 @@ test.describe('Links', () => {
               <div class="image-resizer image-resizer-nw"></div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span
@@ -2371,7 +2373,7 @@ test.describe('Links', () => {
               <div class="image-resizer image-resizer-nw"></div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
       undefined,

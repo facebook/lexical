@@ -279,7 +279,7 @@ export async function clickSelectors(page, selectors) {
 function removeSafariLinebreakImgHack(actualHtml) {
   return E2E_BROWSER === 'webkit'
     ? actualHtml.replaceAll(
-        /<img (?:[^>]+ )?data-lexical-linebreak="true"(?: [^>]+)?>/g,
+        /<img (?:[^>]+ )?data-lexical-managed-linebreak="true"(?: [^>]+)?>/g,
         '',
       )
     : actualHtml;
@@ -495,7 +495,7 @@ async function assertSelectionOnPageOrFrame(page, expected) {
         if (
           child &&
           child.nodeType === Node.ELEMENT_NODE &&
-          child.getAttribute('data-lexical-linebreak') === 'true'
+          child.getAttribute('data-lexical-managed-linebreak') === 'true'
         ) {
           return offset - 1;
         }

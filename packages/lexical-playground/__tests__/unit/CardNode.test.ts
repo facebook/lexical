@@ -15,7 +15,6 @@ import {
   $generateHtmlFromNodes,
   $generateNodesFromDOMViaExtension,
   CoreImportExtension,
-  DOMImportExtension,
 } from '@lexical/html';
 import {
   $createNodeSelection,
@@ -27,14 +26,13 @@ import {
   $isRangeSelection,
   $selectAll,
   $setSelection,
-  configExtension,
   defineExtension,
   KEY_TAB_COMMAND,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
 import {$createCardNode, $isCardNode, CardNode} from '../../src/nodes/CardNode';
-import {PlaygroundRichTextImportRules} from '../../src/nodes/PlaygroundImportExtension';
+import {PlaygroundRichTextImportExtension} from '../../src/nodes/PlaygroundImportExtension';
 import {
   $isSlotContainerNode,
   SlotContainerNode,
@@ -48,15 +46,15 @@ const CardTestExtension = defineExtension({
   nodes: [CardNode, SlotContainerNode],
 });
 
-// Adds the DOM import pipeline: CoreImportExtension imports the paragraphs
-// inside each slot wrapper; the card rule (PlaygroundRichTextImportRules)
-// rebuilds the host and re-attaches slots via setSlot.
+// Adds the DOM import pipeline: PlaygroundRichTextImportExtension supplies
+// the Card / Figure rules AND the `$rewrapOrphanedSlotWrappers` preprocess
+// that re-assembles slot wrappers stripped from external paste.
 const CardImportTestExtension = defineExtension({
   $initialEditorState: null,
   dependencies: [
     CardExtension,
     CoreImportExtension,
-    configExtension(DOMImportExtension, {rules: PlaygroundRichTextImportRules}),
+    PlaygroundRichTextImportExtension,
   ],
   name: '[test-card-import]',
   nodes: [CardNode, SlotContainerNode],
@@ -131,6 +129,109 @@ describe('CardNode named slots', () => {
       expect($getSlotNames(card)).toEqual(['title']);
       expect($getSlot(card, 'title')?.getTextContent()).toBe('Title');
       expect(card.getChildren()[0]?.getTextContent()).toBe('Body');
+      // CardNode.exportDOM manually appends body children; if the outer
+      // $appendNodesToHTML loop also recurses through `target.getChildren()`
+      // (the default when no `$getChildNodes` is supplied), every body
+      // paragraph is emitted twice and re-import doubles `Body`.
+      expect(card.getChildrenSize()).toBe(1);
+    });
+  });
+
+  // CardNode.includeChildrenWhenSelected() opts in so the body rides along
+  // when the whole card is promoted to a NodeSelection. The clipboard JSON
+  // path already honors the opt-in; HTML export must too — both formats are
+  // written to the clipboard, and external paste targets pick text/html.
+  it('keeps the body in HTML export when the Card is in a NodeSelection', () => {
+    using editor = buildEditorFromExtensions(CardImportTestExtension);
+
+    let html = '';
+    editor.update(
+      () => {
+        const card = $createCardNode();
+        $getRoot().clear().append(card);
+        const selection = $createNodeSelection();
+        selection.add(card.getKey());
+        $setSelection(selection);
+        html = $generateHtmlFromNodes(editor, selection);
+      },
+      {discrete: true},
+    );
+
+    expect(html).toContain('Title');
+    // Body lives outside the selection (only the Card key was added). Without
+    // honoring includeChildrenWhenSelected(), the recursion forwards the
+    // NodeSelection into each body child, none are selected, and the body
+    // text never reaches the HTML.
+    expect(html).toContain('Body');
+  });
+
+  // External paste path: a browser's contenteditable Cmd+A → Cmd+C strips
+  // the outer `<div class="lexical-card-node">` wrapper that the Card's
+  // exportDOM emits, leaving the title slot wrapper and the body paragraphs
+  // as fragment-root siblings. `$rewrapOrphanedSlotWrappers` rebuilds the
+  // host before the import walk so the body content stays attached to the
+  // Card instead of promoting to root-level paragraphs.
+  it('rewraps an orphaned Card slot wrapper without losing the body siblings', () => {
+    using editor = buildEditorFromExtensions(CardImportTestExtension);
+
+    const orphanedHtml =
+      '<div data-lexical-slot="title"><p>Title</p></div>' + '<p>Body</p>';
+
+    editor.update(
+      () => {
+        $getRoot().clear().select();
+        const dom = new DOMParser().parseFromString(orphanedHtml, 'text/html');
+        $getRoot().append(...$generateNodesFromDOMViaExtension(dom));
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      // Without the rewrap, the body promotes to a root paragraph and the
+      // Card lands bodiless; with it, the Card keeps both slot and body.
+      expect($getRoot().getChildrenSize()).toBe(1);
+      const card = $getRoot().getFirstChild();
+      assert($isCardNode(card), 'Top-level node must be a CardNode');
+      expect($getSlot(card, 'title')?.getTextContent()).toBe('Title');
+      expect(card.getChildrenSize()).toBe(1);
+      expect(card.getChildren()[0]?.getTextContent()).toBe('Body');
+    });
+  });
+
+  // Two-Card external paste: rewrap must split adjacent same-name orphan
+  // wrappers into per-host runs. Folding both title wrappers into a single
+  // synthetic Card div makes CardImportRule call `$setSlot(card, 'title')`
+  // twice — the second call detaches the first title silently, so the
+  // first Card's content is lost without warning.
+  it('rewraps two orphaned Card runs into two distinct CardNodes', () => {
+    using editor = buildEditorFromExtensions(CardImportTestExtension);
+
+    const orphanedHtml =
+      '<div data-lexical-slot="title"><p>First Title</p></div>' +
+      '<p>First Body</p>' +
+      '<div data-lexical-slot="title"><p>Second Title</p></div>' +
+      '<p>Second Body</p>';
+
+    editor.update(
+      () => {
+        $getRoot().clear().select();
+        const dom = new DOMParser().parseFromString(orphanedHtml, 'text/html');
+        $getRoot().append(...$generateNodesFromDOMViaExtension(dom));
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const cards = $getRoot()
+        .getChildren()
+        .filter(child => $isCardNode(child));
+      expect(cards).toHaveLength(2);
+      expect($getSlot(cards[0], 'title')?.getTextContent()).toBe('First Title');
+      expect(cards[0].getChildren()[0]?.getTextContent()).toBe('First Body');
+      expect($getSlot(cards[1], 'title')?.getTextContent()).toBe(
+        'Second Title',
+      );
+      expect(cards[1].getChildren()[0]?.getTextContent()).toBe('Second Body');
     });
   });
 

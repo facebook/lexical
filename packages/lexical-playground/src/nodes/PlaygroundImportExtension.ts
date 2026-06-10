@@ -25,6 +25,7 @@ import {
   configExtension,
   defineExtension,
   isDOMDocumentNode,
+  isHTMLElement,
 } from 'lexical';
 
 import {parseAllowedFontSize} from '../plugins/ToolbarPlugin/fontSize';
@@ -144,40 +145,54 @@ const CardImportRule = defineImportRule({
  * Re-assemble them under a synthetic host div before the import walk so
  * CardImportRule / FigureImportRule pick them up and the slot HTML round-trip
  * closes through external paste targets too.
+ *
+ * Two host shapes are handled in one pass over the fragment-root children:
+ * - A Card group is opened by a `data-lexical-slot="title"` wrapper and
+ *   absorbs every following non-slot sibling as Card body until the next
+ *   slot wrapper closes the group. Two title wrappers in a row become two
+ *   distinct Card groups (a single group would make CardImportRule's second
+ *   `$setSlot(card, 'title', ...)` silently detach the first title).
+ * - A Figure group is just the single `data-lexical-slot="media"` wrapper.
+ *   Figure is a DecoratorNode-as-host with no children channel, so absorbing
+ *   following siblings would pull unrelated paste content into it.
  */
 const $rewrapOrphanedSlotWrappers: DOMPreprocessFn = (dom, _ctx, $next) => {
   const doc = isDOMDocumentNode(dom) ? dom : dom.ownerDocument;
   if (doc !== null) {
     const root: ParentNode = isDOMDocumentNode(dom) ? dom.body : dom;
-    const cardOrphans: HTMLElement[] = [];
-    const figureOrphans: HTMLElement[] = [];
+    type Group = {
+      kind: 'card' | 'figure';
+      members: Element[];
+      anchor: Element;
+    };
+    const groups: Group[] = [];
+    let openCard: Group | null = null;
     for (const child of Array.from(root.children)) {
-      if (!(child instanceof HTMLElement)) {
+      if (!isHTMLElement(child)) {
+        // A non-element root sibling closes the current Card run — we can't
+        // safely fold it (it's not part of the host's exported shape) and
+        // letting the run cross it would absorb unrelated content.
+        openCard = null;
         continue;
       }
       const slotName = child.getAttribute('data-lexical-slot');
       if (slotName === 'title') {
-        cardOrphans.push(child);
+        openCard = {anchor: child, kind: 'card', members: [child]};
+        groups.push(openCard);
       } else if (slotName === 'media') {
-        figureOrphans.push(child);
+        openCard = null;
+        groups.push({anchor: child, kind: 'figure', members: [child]});
+      } else if (openCard !== null) {
+        openCard.members.push(child);
       }
     }
-    if (cardOrphans.length > 0) {
-      const cardDiv = doc.createElement('div');
-      cardDiv.className = 'lexical-card-node';
-      const firstSlot = cardOrphans[0];
-      firstSlot.parentNode?.insertBefore(cardDiv, firstSlot);
-      for (const wrapper of cardOrphans) {
-        cardDiv.appendChild(wrapper);
-      }
-    }
-    if (figureOrphans.length > 0) {
-      const figureDiv = doc.createElement('div');
-      figureDiv.className = 'lexical-figure-node';
-      const firstSlot = figureOrphans[0];
-      firstSlot.parentNode?.insertBefore(figureDiv, firstSlot);
-      for (const wrapper of figureOrphans) {
-        figureDiv.appendChild(wrapper);
+    for (const group of groups) {
+      const hostDiv = doc.createElement('div');
+      hostDiv.className =
+        group.kind === 'card' ? 'lexical-card-node' : 'lexical-figure-node';
+      group.anchor.parentNode?.insertBefore(hostDiv, group.anchor);
+      for (const member of group.members) {
+        hostDiv.appendChild(member);
       }
     }
   }

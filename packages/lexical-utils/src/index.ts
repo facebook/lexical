@@ -250,7 +250,7 @@ export function $dfsIterator(
 export function $dfsWithSlots(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
-): Array<DFSNode> {
+): DFSNode[] {
   return Array.from($dfsWithSlotsIterator(startNode, endNode));
 }
 
@@ -424,7 +424,7 @@ export function $reverseDfsIterator(
 export function $reverseDfsWithSlots(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
-): Array<DFSNode> {
+): DFSNode[] {
   return Array.from($reverseDfsWithSlotsIterator(startNode, endNode));
 }
 

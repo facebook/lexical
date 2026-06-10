@@ -293,13 +293,24 @@ function $appendNodesToHTML(
       ? target.getChildren()
       : [];
 
+  // Mirrors the clipboard JSON path: an atomic host that opts in via
+  // `includeChildrenWhenSelected` (e.g. a Card promoted to a whole-host
+  // NodeSelection) recurses into its children with a null selection so the
+  // whole subtree serializes even when none of the children are in the outer
+  // selection themselves.
+  const childSelection =
+    shouldInclude &&
+    $isElementNode(currentNode) &&
+    currentNode.includeChildrenWhenSelected()
+      ? null
+      : selection;
   const fragmentAppend = fragment.append.bind(fragment);
   for (const childNode of children) {
     const shouldIncludeChild = $appendNodesToHTML(
       editor,
       childNode,
       fragmentAppend,
-      selection,
+      childSelection,
       domConfig,
     );
 

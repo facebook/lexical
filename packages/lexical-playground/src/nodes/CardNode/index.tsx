@@ -66,8 +66,9 @@ export class CardNode extends ElementNode {
   // them on its own — like NodeState, slot serialization is opt-in. Emit the
   // named title slot into a `data-lexical-slot` wrapper that the
   // PlaygroundImportExtension's CardImportRule maps back to setSlot(); the
-  // body is regular children, so it serializes through the normal child path
-  // alongside any other ElementNode.
+  // body is regular children and serializes through the normal child path
+  // (the outer $appendNodesToHTML loop recurses into `target.getChildren()`
+  // when no `$getChildNodes` override is supplied).
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const element = document.createElement('div');
     element.className = 'lexical-card-node';
@@ -82,9 +83,6 @@ export class CardNode extends ElementNode {
         $appendNodeToHTML(editor, child, wrapper);
       }
       element.append(wrapper);
-    }
-    for (const child of this.getChildren()) {
-      $appendNodeToHTML(editor, child, element);
     }
     return {element};
   }

@@ -27,15 +27,21 @@ import {
 } from '@lexical/utils';
 import {
   $addUpdateTag,
+  $caretRangeFromSelection,
+  $comparePointCaretNext,
   $createParagraphNode,
   $createRangeSelection,
+  $getCaretInDirection,
+  $getChildCaret,
   $getSelection,
   $isBlockElementNode,
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
+  $normalizeCaret,
   $setSelection,
   $splitNode,
+  CaretRange,
   ElementNode,
   LexicalEditor,
   LexicalNode,
@@ -335,6 +341,37 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
   }
 };
 
+function $clearBlockFormat(block: ElementNode): void {
+  if (block.getFormat() !== 0) {
+    block.setFormat('');
+  }
+  if (block.getIndent() !== 0) {
+    block.setIndent(0);
+  }
+}
+
+function $isBlockFullySelected(block: ElementNode, range: CaretRange): boolean {
+  const [startCaret, endCaret] =
+    range.direction === 'next'
+      ? [
+          $getCaretInDirection(range.anchor, 'next'),
+          $getCaretInDirection(range.focus, 'next'),
+        ]
+      : [
+          $getCaretInDirection(range.focus, 'next'),
+          $getCaretInDirection(range.anchor, 'next'),
+        ];
+  const blockStart = $normalizeCaret($getChildCaret(block, 'next'));
+  const blockEnd = $getCaretInDirection(
+    $normalizeCaret($getChildCaret(block, 'previous')),
+    'next',
+  );
+  return (
+    $comparePointCaretNext(startCaret, blockStart) <= 0 &&
+    $comparePointCaretNext(endCaret, blockEnd) >= 0
+  );
+}
+
 export const clearFormatting = (
   editor: LexicalEditor,
   skipRefocus: boolean = false,
@@ -350,8 +387,16 @@ export const clearFormatting = (
       const extractedNodes = selection.extract();
 
       if (anchor.key === focus.key && anchor.offset === focus.offset) {
+        $clearBlockFormat(
+          $getNearestBlockElementAncestorOrThrow(anchor.getNode()),
+        );
         return;
       }
+
+      const postExtractSelection = $getSelection();
+      const caretRange = $isRangeSelection(postExtractSelection)
+        ? $caretRangeFromSelection(postExtractSelection)
+        : null;
 
       extractedNodes.forEach(node => {
         if ($isTextNode(node)) {
@@ -363,11 +408,11 @@ export const clearFormatting = (
           }
           const nearestBlockElement =
             $getNearestBlockElementAncestorOrThrow(node);
-          if (nearestBlockElement.getFormat() !== 0) {
-            nearestBlockElement.setFormat('');
-          }
-          if (nearestBlockElement.getIndent() !== 0) {
-            nearestBlockElement.setIndent(0);
+          if (
+            caretRange === null ||
+            $isBlockFullySelected(nearestBlockElement, caretRange)
+          ) {
+            $clearBlockFormat(nearestBlockElement);
           }
         } else if ($isHeadingNode(node) || $isQuoteNode(node)) {
           node.replace($createParagraphNode(), true);

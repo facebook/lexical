@@ -42,8 +42,8 @@ import {
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
   getActiveElementDeep,
-  getComposedSelectionPoints,
   getDOMSelection,
+  getDOMSelectionPoints,
   isDOMNode,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -766,10 +766,7 @@ function TableCellActionMenuContainer({
       // Resolve through any enclosing DOM shadow roots; the raw anchorNode is
       // retargeted to the shadow host when the editor is in a shadow tree.
       rootElement.contains(
-        (
-          getComposedSelectionPoints(nativeSelection, rootElement) ||
-          nativeSelection
-        ).anchorNode,
+        getDOMSelectionPoints(nativeSelection, rootElement).anchorNode,
       )
     ) {
       const tableCellNodeFromSelection = $getTableCellNodeFromLexicalNode(

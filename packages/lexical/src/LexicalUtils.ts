@@ -775,9 +775,7 @@ export function $updateSelectedTextFromDOM(
   if (domSelection === null) {
     return;
   }
-  const points =
-    getComposedSelectionPoints(domSelection, editor._rootElement) ||
-    domSelection;
+  const points = getDOMSelectionPoints(domSelection, editor._rootElement);
   const anchorNode = points.anchorNode;
   let {anchorOffset, focusOffset} = points;
   if (anchorNode !== null) {
@@ -2018,23 +2016,24 @@ export function getDOMSelectionRange(
 
 /**
  * Resolves a DOM Selection's anchor/focus boundary points through any DOM
- * ShadowRoots enclosing `rootElement`. Combines {@link getComposedStaticRange}
- * with the standard
- * {@link https://developer.mozilla.org/docs/Web/API/Selection/direction | Selection.direction}
- * to map the (tree-ordered) StaticRange back onto anchor/focus.
+ * ShadowRoots enclosing `rootElement`. Inside a shadow tree the boundary
+ * points come from {@link getComposedStaticRange} mapped back onto
+ * anchor/focus with the standard
+ * {@link https://developer.mozilla.org/docs/Web/API/Selection/direction | Selection.direction};
+ * in the light DOM (or when `getComposedRanges` is unavailable) the Selection's
+ * own anchorNode/focusNode are already correct, so the Selection is returned
+ * as-is (it satisfies {@link DOMSelectionPoints}).
  *
- * @returns the composed points, or `null` when `rootElement` is in the light
- *   DOM or the platform does not implement `getComposedRanges` — callers
- *   should then fall back to the Selection's own anchorNode/focusNode, which
- *   are already correct in the light DOM.
+ * Use this instead of reading `Selection.anchorNode`/`focusNode` directly,
+ * which are retargeted to the shadow host inside a shadow tree.
  */
-export function getComposedSelectionPoints(
+export function getDOMSelectionPoints(
   domSelection: Selection,
   rootElement: HTMLElement | null,
-): DOMSelectionPoints | null {
+): DOMSelectionPoints {
   const staticRange = getComposedStaticRange(domSelection, rootElement);
   if (staticRange === null) {
-    return null;
+    return domSelection;
   }
   const {startContainer, startOffset, endContainer, endOffset} = staticRange;
   return domSelection.direction === 'backward'

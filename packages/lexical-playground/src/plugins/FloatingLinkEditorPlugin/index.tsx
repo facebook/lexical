@@ -38,8 +38,8 @@ import {
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   getActiveElementDeep,
-  getComposedSelectionPoints,
   getDOMSelection,
+  getDOMSelectionPoints,
   getDOMSelectionRange,
   KEY_ESCAPE_COMMAND,
   LexicalEditor,
@@ -186,10 +186,7 @@ function FloatingLinkEditor({
         // Resolve through any enclosing DOM shadow roots; the raw anchorNode
         // is retargeted to the shadow host when the editor is in a shadow tree.
         rootElement.contains(
-          (
-            getComposedSelectionPoints(nativeSelection, rootElement) ||
-            nativeSelection
-          ).anchorNode,
+          getDOMSelectionPoints(nativeSelection, rootElement).anchorNode,
         )
       ) {
         const linkNode = $getSelectedLinkNode(selection);
@@ -218,10 +215,7 @@ function FloatingLinkEditor({
         nativeSelection !== null &&
         nativeSelection.rangeCount > 0 &&
         rootElement.contains(
-          (
-            getComposedSelectionPoints(nativeSelection, rootElement) ||
-            nativeSelection
-          ).anchorNode,
+          getDOMSelectionPoints(nativeSelection, rootElement).anchorNode,
         )
       ) {
         const selectionRange = getDOMSelectionRange(

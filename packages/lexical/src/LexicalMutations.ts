@@ -25,8 +25,8 @@ import {
   $getNodeByKey,
   $getNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
-  getComposedSelectionPoints,
   getDOMSelection,
+  getDOMSelectionPoints,
   getNodeKeyFromDOMNode,
   getParentElement,
   getWindow,
@@ -84,9 +84,7 @@ function $handleTextMutation(
 ): void {
   const domSelection = getDOMSelection(getWindow(editor));
   const domSelectionPoints =
-    domSelection &&
-    (getComposedSelectionPoints(domSelection, editor._rootElement) ||
-      domSelection);
+    domSelection && getDOMSelectionPoints(domSelection, editor._rootElement);
   let anchorOffset = null;
   let focusOffset = null;
 

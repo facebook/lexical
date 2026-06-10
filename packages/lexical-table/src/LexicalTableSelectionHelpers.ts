@@ -75,8 +75,8 @@ import {
   FOCUS_COMMAND,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
-  getComposedSelectionPoints,
   getDOMSelection,
+  getDOMSelectionPoints,
   getDOMSelectionRange,
   INSERT_PARAGRAPH_COMMAND,
   IS_FIREFOX,
@@ -1090,8 +1090,7 @@ function $fixTableSelectionForSelectedTable(
   // are retargeted to the shadow host when the editor is in a shadow tree.
   const points =
     domSelection &&
-    (getComposedSelectionPoints(domSelection, editor.getRootElement()) ||
-      domSelection);
+    getDOMSelectionPoints(domSelection, editor.getRootElement());
   if (domSelection && points && points.anchorNode && points.focusNode) {
     const focusNode = $getNearestNodeFromDOMNode(points.focusNode);
     const isFocusOutside = focusNode && !tableNode.isParentOf(focusNode);
@@ -2348,9 +2347,9 @@ function $getTableEdgeCursorPosition(
   }
   // Resolve through any enclosing DOM shadow roots; the raw anchorNode is
   // retargeted to the shadow host when the editor is in a shadow tree.
-  const domAnchorNode = (
-    getComposedSelectionPoints(domSelection, editor.getRootElement()) ||
-    domSelection
+  const domAnchorNode = getDOMSelectionPoints(
+    domSelection,
+    editor.getRootElement(),
   ).anchorNode;
   const tableNodeParentDOM = editor.getElementByKey(tableNodeParent.getKey());
   const tableElement = getTableElement(

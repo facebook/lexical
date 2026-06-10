@@ -6,7 +6,7 @@
  *
  */
 
-import {getComposedSelectionPoints, getDOMSelectionRange} from 'lexical';
+import {getDOMSelectionPoints, getDOMSelectionRange} from 'lexical';
 
 export function getDOMRangeRect(
   nativeSelection: Selection,
@@ -16,8 +16,7 @@ export function getDOMRangeRect(
   // anchorNode are retargeted to the shadow host when the editor is in a
   // shadow tree.
   const domRange = getDOMSelectionRange(nativeSelection, rootElement);
-  const {anchorNode} =
-    getComposedSelectionPoints(nativeSelection, rootElement) || nativeSelection;
+  const {anchorNode} = getDOMSelectionPoints(nativeSelection, rootElement);
 
   let rect;
 

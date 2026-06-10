@@ -110,10 +110,10 @@ import {
   doesContainSurrogatePair,
   getActiveElementDeep,
   getAnchorTextFromDOM,
-  getComposedSelectionPoints,
   getDOMOwnerDocument,
   getDOMSelection,
   getDOMSelectionFromTarget,
+  getDOMSelectionPoints,
   getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
@@ -237,8 +237,7 @@ function $shouldPreventDefaultAndInsertText(
   const domSelection = getDOMSelection(getWindow(editor));
   const domSelectionPoints =
     domSelection !== null
-      ? getComposedSelectionPoints(domSelection, editor._rootElement) ||
-        domSelection
+      ? getDOMSelectionPoints(domSelection, editor._rootElement)
       : null;
   const domAnchorNode =
     domSelectionPoints !== null ? domSelectionPoints.anchorNode : null;
@@ -317,8 +316,7 @@ function onSelectionChange(
     anchorOffset,
     focusNode: focusDOM,
     focusOffset,
-  } = getComposedSelectionPoints(domSelection, editor._rootElement) ||
-  domSelection;
+  } = getDOMSelectionPoints(domSelection, editor._rootElement);
   if (isSelectionChangeFromDOMUpdate) {
     isSelectionChangeFromDOMUpdate = false;
 
@@ -1128,9 +1126,10 @@ function $handleInput(event: InputEvent): boolean {
     if (domSelection === null) {
       return true;
     }
-    const domSelectionPoints =
-      getComposedSelectionPoints(domSelection, editor._rootElement) ||
-      domSelection;
+    const domSelectionPoints = getDOMSelectionPoints(
+      domSelection,
+      editor._rootElement,
+    );
     const isBackward = selection.isBackward();
     const startOffset = isBackward
       ? selection.anchor.offset
@@ -1267,8 +1266,7 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
         const domSelection = getDOMSelection(getWindow(editor));
         const domSelectionPoints =
           domSelection &&
-          (getComposedSelectionPoints(domSelection, editor._rootElement) ||
-            domSelection);
+          getDOMSelectionPoints(domSelection, editor._rootElement);
         let anchorOffset = null;
         let focusOffset = null;
 

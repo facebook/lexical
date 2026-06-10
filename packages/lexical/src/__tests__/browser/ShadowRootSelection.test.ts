@@ -18,9 +18,9 @@ import {
   createEditor,
   getActiveElement,
   getActiveElementDeep,
-  getComposedSelectionPoints,
   getComposedStaticRange,
   getDOMSelection,
+  getDOMSelectionPoints,
   getDOMShadowRoots,
   isDOMShadowRoot,
   type LexicalEditor,
@@ -125,19 +125,18 @@ describe('DOM shadow root selection (browser)', () => {
     expect(getDOMShadowRoots(leaf)).toEqual([innerShadow, shadow]);
   });
 
-  test('getComposedSelectionPoints resolves a retargeted shadow selection', () => {
+  test('getDOMSelectionPoints resolves a retargeted shadow selection', () => {
     const {contentEditable, host} = setUpShadowEditor();
     if (!SUPPORTS_COMPOSED_RANGES) {
       return;
     }
     const {domSelection, textNode} = selectInnerText(contentEditable, 1, 4);
 
-    const points = getComposedSelectionPoints(domSelection, contentEditable);
-    expect(points).not.toBeNull();
-    expect(points!.anchorNode).toBe(textNode);
-    expect(points!.anchorOffset).toBe(1);
-    expect(points!.focusNode).toBe(textNode);
-    expect(points!.focusOffset).toBe(4);
+    const points = getDOMSelectionPoints(domSelection, contentEditable);
+    expect(points.anchorNode).toBe(textNode);
+    expect(points.anchorOffset).toBe(1);
+    expect(points.focusNode).toBe(textNode);
+    expect(points.focusOffset).toBe(4);
 
     // The composed StaticRange is in tree order.
     const staticRange = getComposedStaticRange(domSelection, contentEditable);
@@ -149,7 +148,7 @@ describe('DOM shadow root selection (browser)', () => {
     expect(host.shadowRoot!.contains(textNode)).toBe(true);
   });
 
-  test('getComposedSelectionPoints honors backward selections', () => {
+  test('getDOMSelectionPoints honors backward selections', () => {
     const {contentEditable} = setUpShadowEditor();
     if (!SUPPORTS_COMPOSED_RANGES) {
       return;
@@ -160,13 +159,13 @@ describe('DOM shadow root selection (browser)', () => {
     // setBaseAndExtent with base after extent makes a backward selection.
     domSelection.setBaseAndExtent(textNode, 5, textNode, 2);
 
-    const points = getComposedSelectionPoints(domSelection, contentEditable)!;
+    const points = getDOMSelectionPoints(domSelection, contentEditable);
     // anchor is the base (5), focus is the extent (2).
     expect(points.anchorOffset).toBe(5);
     expect(points.focusOffset).toBe(2);
   });
 
-  test('returns null in the light DOM so callers use the plain reads', () => {
+  test('falls back to the Selection itself in the light DOM', () => {
     const light = document.createElement('div');
     light.contentEditable = 'true';
     document.body.appendChild(light);
@@ -186,7 +185,8 @@ describe('DOM shadow root selection (browser)', () => {
 
     const {domSelection} = selectInnerText(light, 0, 5);
     expect(getComposedStaticRange(domSelection, light)).toBeNull();
-    expect(getComposedSelectionPoints(domSelection, light)).toBeNull();
+    // No shadow root to resolve through, so the Selection is returned as-is.
+    expect(getDOMSelectionPoints(domSelection, light)).toBe(domSelection);
   });
 
   test('getActiveElement / getActiveElementDeep see through the shadow host', () => {
@@ -219,7 +219,7 @@ describe('DOM shadow root selection (browser)', () => {
 
     const textNode = getInnerTextNode(contentEditable);
     const domSelection = getDOMSelection(window)!;
-    const points = getComposedSelectionPoints(domSelection, contentEditable)!;
+    const points = getDOMSelectionPoints(domSelection, contentEditable);
     expect(points.anchorNode).toBe(textNode);
     expect(points.anchorOffset).toBe(0);
     expect(points.focusNode).toBe(textNode);

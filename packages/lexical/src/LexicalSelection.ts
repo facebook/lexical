@@ -85,9 +85,9 @@ import {
   $setCompositionKey,
   doesContainSurrogatePair,
   getActiveElement,
-  getComposedSelectionPoints,
   getComposedStaticRange,
   getDOMSelection,
+  getDOMSelectionPoints,
   getDOMSelectionRange,
   getElementByKeyOrThrow,
   getNodeKeyFromDOMNode,
@@ -2761,9 +2761,7 @@ export function $internalCreateRangeSelection(
     }
     // Resolve the boundary points through any enclosing DOM shadow roots. In
     // the light DOM this returns null and we read the Selection directly.
-    const points =
-      getComposedSelectionPoints(domSelection, editor._rootElement) ||
-      domSelection;
+    const points = getDOMSelectionPoints(domSelection, editor._rootElement);
     anchorDOM = points.anchorNode;
     focusDOM = points.focusNode;
     anchorOffset = points.anchorOffset;
@@ -3141,8 +3139,7 @@ export function $updateDOMSelection(
   // the light DOM this is null (without reading the Selection) and
   // currentPoints aliases domSelection, preserving the deferred reads
   // described below.
-  const currentPoints =
-    getComposedSelectionPoints(domSelection, rootElement) || domSelection;
+  const currentPoints = getDOMSelectionPoints(domSelection, rootElement);
 
   if (!$isRangeSelection(nextSelection)) {
     // We don't remove selection if the prevSelection is null because

@@ -22,8 +22,8 @@ import {
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
   createCommand,
-  getComposedSelectionPoints,
   getDOMSelection,
+  getDOMSelectionPoints,
   LexicalCommand,
   LexicalEditor,
   RangeSelection,
@@ -62,8 +62,7 @@ function tryToPositionRange(
   }
   // Resolve through any enclosing DOM shadow roots; the raw anchorNode is
   // retargeted to the shadow host when the editor is in a shadow tree.
-  const points =
-    getComposedSelectionPoints(domSelection, rootElement) || domSelection;
+  const points = getDOMSelectionPoints(domSelection, rootElement);
   const anchorNode = points.anchorNode;
   const startOffset = leadOffset;
   const endOffset = points.anchorOffset;

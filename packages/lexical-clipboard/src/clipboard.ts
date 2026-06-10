@@ -38,8 +38,8 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
   defineExtension,
-  getComposedSelectionPoints,
   getDOMSelection,
+  getDOMSelectionPoints,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
@@ -689,9 +689,7 @@ function $copyToClipboardEvent(
     }
     // Resolve through any enclosing DOM shadow roots; Selection.anchorNode is
     // retargeted to the shadow host when the editor lives in a shadow tree.
-    const points =
-      getComposedSelectionPoints(domSelection, editor.getRootElement()) ||
-      domSelection;
+    const points = getDOMSelectionPoints(domSelection, editor.getRootElement());
     const anchorDOM = points.anchorNode;
     const focusDOM = points.focusNode;
     if (

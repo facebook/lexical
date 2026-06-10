@@ -102,7 +102,7 @@ function $runPreprocessStack(
  *
  * @experimental
  */
-export const DefaultHoistRule = defineImportRule({
+export const DefaultHoistRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => ctx.$importChildren(el),
   match: selBase.any(),
   name: '@lexical/html/default-hoist',
@@ -120,7 +120,7 @@ export const DefaultHoistRule = defineImportRule({
  * The legacy `$generateNodesFromDOM` continues to work in parallel; the
  * intent is to migrate node packages over to this extension incrementally.
  */
-export const DOMImportExtension = defineExtension<
+export const DOMImportExtension = /* @__PURE__ */ defineExtension<
   DOMImportConfig,
   typeof DOMImportExtensionName,
   DOMImportExtensionOutput,

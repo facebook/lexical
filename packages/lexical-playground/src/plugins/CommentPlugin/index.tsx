@@ -79,9 +79,8 @@ import CommentEditorTheme from '../../themes/CommentEditorTheme';
 import Button from '../../ui/Button';
 import ContentEditable from '../../ui/ContentEditable';
 
-export const INSERT_INLINE_COMMAND: LexicalCommand<void> = createCommand(
-  'INSERT_INLINE_COMMAND',
-);
+export const INSERT_INLINE_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('INSERT_INLINE_COMMAND');
 
 function AddCommentBox({
   anchorKey,

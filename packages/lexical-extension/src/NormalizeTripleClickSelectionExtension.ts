@@ -150,61 +150,62 @@ function $fixFocusOverselection() {
  * be called from other places and it can be replaced or wrapped with
  * different functionality.
  */
-export const NormalizeTripleClickSelectionExtension = defineExtension({
-  build: (editor, config, state): NormalizeTripleClickSelectionOutput =>
-    namedSignals(config),
-  config: safeCast<NormalizeTripleClickSelectionConfig>({
-    $fixFocusOverselection,
-    dateNow: Date.now,
-    disabled: false,
-    thresholdMsec: 100,
-  }),
-  name: '@lexical/NormalizeTripleClickSelection',
-  register: (editor, config, state) =>
-    effect(() => {
-      const stores = state.getOutput();
-      if (stores.disabled.value) {
-        return;
-      }
-      return editor.registerRootListener(rootElement => {
-        if (!rootElement) {
+export const NormalizeTripleClickSelectionExtension =
+  /* @__PURE__ */ defineExtension({
+    build: (editor, config, state): NormalizeTripleClickSelectionOutput =>
+      namedSignals(config),
+    config: /* @__PURE__ */ safeCast<NormalizeTripleClickSelectionConfig>({
+      $fixFocusOverselection,
+      dateNow: Date.now,
+      disabled: false,
+      thresholdMsec: 100,
+    }),
+    name: '@lexical/NormalizeTripleClickSelection',
+    register: (editor, config, state) =>
+      effect(() => {
+        const stores = state.getOutput();
+        if (stores.disabled.value) {
           return;
         }
-        let lastTripleClick = 0;
-        const refreshTripleClick = (event: null | MouseEvent) => {
-          if (event ? event.detail === 3 : lastTripleClick > 0) {
-            const now = stores.dateNow.peek()();
-            lastTripleClick =
-              (event && event.type === 'mousedown') ||
-              now - lastTripleClick <= stores.thresholdMsec.peek()
-                ? now
-                : 0;
+        return editor.registerRootListener(rootElement => {
+          if (!rootElement) {
+            return;
           }
-          return lastTripleClick;
-        };
-        return mergeRegister(
-          editor.registerCommand(
-            SELECTION_CHANGE_COMMAND,
-            () => {
-              if (refreshTripleClick(null)) {
-                lastTripleClick = 0;
-                stores.$fixFocusOverselection.peek()();
-              }
-              return false;
-            },
-            COMMAND_PRIORITY_BEFORE_CRITICAL,
-          ),
-          (() => {
-            const events = ['mouseup', 'mousedown'] as const;
-            events.forEach(v =>
-              rootElement.addEventListener(v, refreshTripleClick, true),
-            );
-            return () =>
+          let lastTripleClick = 0;
+          const refreshTripleClick = (event: null | MouseEvent) => {
+            if (event ? event.detail === 3 : lastTripleClick > 0) {
+              const now = stores.dateNow.peek()();
+              lastTripleClick =
+                (event && event.type === 'mousedown') ||
+                now - lastTripleClick <= stores.thresholdMsec.peek()
+                  ? now
+                  : 0;
+            }
+            return lastTripleClick;
+          };
+          return mergeRegister(
+            editor.registerCommand(
+              SELECTION_CHANGE_COMMAND,
+              () => {
+                if (refreshTripleClick(null)) {
+                  lastTripleClick = 0;
+                  stores.$fixFocusOverselection.peek()();
+                }
+                return false;
+              },
+              COMMAND_PRIORITY_BEFORE_CRITICAL,
+            ),
+            (() => {
+              const events = ['mouseup', 'mousedown'] as const;
               events.forEach(v =>
-                rootElement.removeEventListener(v, refreshTripleClick, true),
+                rootElement.addEventListener(v, refreshTripleClick, true),
               );
-          })(),
-        );
-      });
-    }),
-});
+              return () =>
+                events.forEach(v =>
+                  rootElement.removeEventListener(v, refreshTripleClick, true),
+                );
+            })(),
+          );
+        });
+      }),
+  });

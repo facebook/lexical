@@ -434,7 +434,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
 /**
  * An extension to register \@lexical/plain-text behavior
  */
-export const PlainTextExtension = defineExtension({
+export const PlainTextExtension = /* @__PURE__ */ defineExtension({
   conflictsWith: ['@lexical/rich-text'],
   dependencies: [
     DragonExtension,

@@ -94,9 +94,9 @@ export interface SelectBlockConfig {
  * If you press Ctrl + A, the nearest block element, for example paragraph, is selected first.
  * Pressing Ctrl + A again selects all content in the document
  */
-export const SelectBlockExtension = defineExtension({
+export const SelectBlockExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config, state) => namedSignals(config),
-  config: safeCast<SelectBlockConfig>({
+  config: /* @__PURE__ */ safeCast<SelectBlockConfig>({
     cascadeSelection: false,
     disabled: false,
   }),

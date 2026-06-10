@@ -1992,9 +1992,9 @@ describe('$getSlotNameWithinHost', () => {
   });
 });
 
-// Round 2 audit follow-ups (unverified hypotheses from the agent pass).
-describe('R2 audit reproduce', () => {
-  // L-1: $selectAll on a selection whose anchor sits on a slot value's own
+// Regression tests for the slot-aware $selectAll path.
+describe('$selectAll boundary cases', () => {
+  // $selectAll on a selection whose anchor sits on a slot value's own
   // element point. The slot value's getTopLevelElement stops at itself
   // (slot boundary), and its __parent is null (it's reached through
   // __slotHost), so getParentOrThrow would throw if $selectAll didn't
@@ -2029,14 +2029,29 @@ describe('R2 audit reproduce', () => {
       () => {
         const selection = $getSelection();
         assert($isRangeSelection(selection));
-        // If $selectAll throws here, the hypothesis is confirmed.
         expect(() => $selectAll(selection)).not.toThrow();
       },
       {discrete: true},
     );
   });
 
-  // L-2: setEditorState does not latch `_slotsUsed`. An editor that
+  // Manual-test surfaced: deleting the last top-level node leaves the caret
+  // at the root's element-level, and the next $selectAll threw because
+  // `RootNode.getTopLevelElementOrThrow` always throws by design. The
+  // `$isRootNode` guard skips the slot-aware branch and falls through to a
+  // regular "select all root children" path.
+  test('$selectAll does not throw when anchor is the root element', () => {
+    using editor = createSlotEditor();
+    editor.update(
+      () => {
+        const selection = $getRoot().select(0, 0);
+        expect(() => $selectAll(selection)).not.toThrow();
+      },
+      {discrete: true},
+    );
+  });
+
+  // setEditorState does not latch `_slotsUsed`. An editor that
   // receives a parsed state containing slots from another editor keeps
   // _slotsUsed = false, so the selection clamps silently skip.
   test('setEditorState latches _slotsUsed when the state contains slots', () => {

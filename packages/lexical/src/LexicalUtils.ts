@@ -1299,6 +1299,16 @@ export function $selectAll(selection?: RangeSelection | null): RangeSelection {
     const anchor = selection.anchor;
     const focus = selection.focus;
     const anchorNode = anchor.getNode();
+    // `RootNode.getTopLevelElementOrThrow` always throws by design, so when
+    // the caret is at the root's element-level (typically after deleting
+    // every top-level child) fall through to the regular "select all root
+    // children" path before the throw fires.
+    if ($isRootNode(anchorNode)) {
+      anchor.set(anchorNode.getKey(), 0, 'element');
+      focus.set(anchorNode.getKey(), anchorNode.getChildrenSize(), 'element');
+      $normalizeSelection(selection);
+      return selection;
+    }
     const topParent = anchorNode.getTopLevelElementOrThrow();
     // A slot value's getTopLevelElement stops at itself (slot boundary) and
     // its __parent is null (its up-link is __slotHost), so getParentOrThrow

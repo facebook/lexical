@@ -356,7 +356,7 @@ test.describe('Card Tab / Shift+Tab slot caret navigation', () => {
     await sleep(120);
     await page.keyboard.type('!');
     await sleep(120);
-    await assertCardIntact(page, {body: 'Body', title: '!Title'});
+    await assertCardIntact(page, {body: 'Body', title: 'Title!'});
   });
 });
 

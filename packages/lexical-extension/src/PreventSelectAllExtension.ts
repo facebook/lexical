@@ -37,14 +37,17 @@ export interface PreventSelectAllConfig {
 /**
  * By default, lexical intercepts most events and dispatches the appropriate commands.
  * This extension prevents the keydown event propagating from input/textarea elements,
- * which are typically part of a decorator node, in order to stop dispatching the SELECT_ALL_COMMAND
+ * which are typically part of a decorator node, in order to stop dispatching the SELECT_ALL_COMMAND.
+ *
+ * When used as a dependency of SelectBlockExtension, its disabled state is
+ * kept in sync with that extension.
  */
 export const PreventSelectAllExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config, state) => namedSignals(config),
   config: /* @__PURE__ */ safeCast<PreventSelectAllConfig>({
     disabled: false,
   }),
-  name: '@lexical/PreventSelectAll',
+  name: '@lexical/extension/PreventSelectAll',
   register: (editor, config, state) => {
     const stores = state.getOutput();
     return effect(() => {

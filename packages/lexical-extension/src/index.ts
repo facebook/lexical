@@ -73,7 +73,6 @@ export {
   PreventSelectAllExtension,
 } from './PreventSelectAllExtension';
 export {
-  $isBlockFullySelected,
   type SelectBlockConfig,
   SelectBlockExtension,
 } from './SelectBlockExtension';

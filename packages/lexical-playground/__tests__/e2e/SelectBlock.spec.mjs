@@ -367,6 +367,30 @@ test.describe('SelectBlock', () => {
     });
   });
 
+  test('Selection spanning multiple blocks selects all content', async ({
+    page,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    await focusEditor(page);
+    await page.keyboard.type('first');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('second');
+    // Extend the selection backwards across the block boundary, several
+    // characters into 'first'. The exact intermediate offsets at the block
+    // boundary vary by browser engine and are not asserted here.
+    await selectCharacters(page, 'left', 'second'.length + 3);
+
+    // the selection already spans multiple blocks, select all content
+    await selectAll(page);
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0, 0, 0],
+      focusOffset: 6,
+      focusPath: [1, 0, 0],
+    });
+  });
+
   test('Select paragraph with focus on decorator', async ({
     page,
     isPlainText,

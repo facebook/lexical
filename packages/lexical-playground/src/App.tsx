@@ -234,7 +234,7 @@ const AppExtension = /* @__PURE__ */ defineExtension({
     PlaygroundAutoLinkExtension,
     ClickableLinkExtension,
     SelectionAlwaysOnDisplayExtension,
-    configExtension(SelectBlockExtension, {cascadeSelection: true}),
+    /* @__PURE__ */ configExtension(SelectBlockExtension, {cascadeSelection: true}),
     TerseExportExtension,
     /* @__PURE__ */ configExtension(ClickAfterLastBlockExtension, {
       $shouldInsertAfter: node =>

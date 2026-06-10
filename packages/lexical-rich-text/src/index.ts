@@ -1248,17 +1248,6 @@ export function registerRichText(
         // contenteditable is not a native drop target; preventDefault() is
         // required on dragover to allow the drop event to fire in Firefox.
         event.preventDefault();
-        const x = event.clientX;
-        const y = event.clientY;
-        const eventRange = caretFromPoint(x, y);
-        if (eventRange !== null) {
-          const node = $getNearestNodeFromDOMNode(eventRange.node);
-          if ($isDecoratorNode(node)) {
-            // Show browser caret as the user is dragging the media across the screen. Won't work
-            // for DecoratorNode nor it's relevant.
-            event.preventDefault();
-          }
-        }
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

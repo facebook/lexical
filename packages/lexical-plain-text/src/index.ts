@@ -415,6 +415,8 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     editor.registerCommand<DragEvent>(
       DRAGOVER_COMMAND,
       event => {
+        // Files check is inlined (rather than using eventFiles() from
+        // @lexical/rich-text) because plain-text cannot import from rich-text.
         const dataTransfer = event.dataTransfer;
         if (dataTransfer !== null && dataTransfer.types.includes('Files')) {
           return false;

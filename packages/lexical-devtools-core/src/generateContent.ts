@@ -130,7 +130,7 @@ export function generateContent(
 
       $visitTree(
         $getRoot(),
-        (node: LexicalNode, indent: Array<string>, slotName?: string) => {
+        (node: LexicalNode, indent: string[], slotName?: string) => {
           const nodeKey = node.getKey();
           const nodeKeyDisplay = `(${nodeKey})`;
           const typeDisplay = node.getType() || '';
@@ -250,19 +250,21 @@ function $resolveSlotContext(
 // slot values like a Card's title) get `[shadow-root]`; non-inline
 // DecoratorNodes that sit in a slot (atomic decorator slot values like a
 // Figure's media) get `[atomic decorator]`. Regular children fall
-// through with no suffix.
+// through with no suffix. Both branches gate on `slotName !== undefined`
+// — other shadow-root ElementNodes (table cells, layout items, page
+// content, collapsibles) aren't slot values and shouldn't pick up the
+// marker outside this feature's scope.
 function $slotValueMetaSuffix(
   node: LexicalNode,
   slotName: string | undefined,
 ): string {
+  if (slotName === undefined) {
+    return '';
+  }
   if ($isElementNode(node) && node.isShadowRoot()) {
     return ' [shadow-root]';
   }
-  if (
-    slotName !== undefined &&
-    $isDecoratorNode(node) &&
-    !(node as DecoratorNode<unknown>).isInline()
-  ) {
+  if ($isDecoratorNode(node) && !(node as DecoratorNode<unknown>).isInline()) {
     return ' [atomic decorator]';
   }
   return '';
@@ -281,17 +283,13 @@ function printTableSelection(selection: TableSelection): string {
 
 function $visitTree(
   currentNode: ElementNode | DecoratorNode<unknown>,
-  visitor: (
-    node: LexicalNode,
-    indentArr: Array<string>,
-    slotName?: string,
-  ) => void,
-  indent: Array<string> = [],
+  visitor: (node: LexicalNode, indentArr: string[], slotName?: string) => void,
+  indent: string[] = [],
 ) {
   // Slot children walk first (slots-first, mirroring the reconciler /
   // host DOM order), then the regular children list. `visitor` gets the
   // slot name for slot values so the devtools can annotate them.
-  const slotEntries: Array<[string, LexicalNode]> = [];
+  const slotEntries: [string, LexicalNode][] = [];
   for (const slotName of $getSlotNames(currentNode)) {
     const slotNode = $getSlot(currentNode, slotName);
     if (slotNode !== null) {
@@ -305,10 +303,6 @@ function $visitTree(
   let i = 0;
 
   for (const [slotName, slotNode] of slotEntries) {
-    if (slotNode === null) {
-      i++;
-      continue;
-    }
     const isLast = i === totalCount - 1;
     visitor(
       slotNode,

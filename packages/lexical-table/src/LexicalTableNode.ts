@@ -38,7 +38,7 @@ import {
 import {PIXEL_VALUE_REG_EXP} from './constants';
 import {$isTableCellNode, type TableCellNode} from './LexicalTableCellNode';
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
-import {$isTableRowNode, type TableRowNode} from './LexicalTableRowNode';
+import {$isTableRowNode} from './LexicalTableRowNode';
 import {
   $getNearestTableCellInTableFromDOMNode,
   getTable,
@@ -601,8 +601,8 @@ export class TableNode extends ElementNode {
   }
 
   getColumnCount(): number {
-    const firstRow = this.getFirstChild<TableRowNode>();
-    if (!firstRow) {
+    const firstRow = this.getFirstChild();
+    if (!$isTableRowNode(firstRow)) {
       return 0;
     }
 

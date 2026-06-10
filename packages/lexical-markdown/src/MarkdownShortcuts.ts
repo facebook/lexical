@@ -13,7 +13,7 @@ import type {
   TextMatchTransformer,
   Transformer,
 } from './MarkdownTransformers';
-import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
+import type {ElementNode, LexicalEditor, LexicalNode, TextNode} from 'lexical';
 
 import {$isCodeNode} from '@lexical/code-core';
 import invariant from '@lexical/internal/invariant';
@@ -263,12 +263,9 @@ function $runTextFormatTransformers(
 
     // Go through text node siblings and search for opening tag
     // if haven't found it within the same text node as closing tag
-    let sibling: TextNode | null = openNode;
+    let sibling: LexicalNode | null = openNode;
 
-    while (
-      openTagStartIndex < 0 &&
-      (sibling = sibling.getPreviousSibling<TextNode>())
-    ) {
+    while (openTagStartIndex < 0 && (sibling = sibling.getPreviousSibling())) {
       if ($isLineBreakNode(sibling)) {
         break;
       }

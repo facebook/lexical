@@ -53,13 +53,13 @@ export type SerializedStickyNode = Spread<
   SerializedLexicalNode
 >;
 
-const StickyEditorExtension = defineExtension({
+const StickyEditorExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     SharedHistoryExtension,
     PlainTextExtension,
     ReactProviderExtension,
     NestedEditorExtension,
-    configExtension(ReactExtension, {
+    /* @__PURE__ */ configExtension(ReactExtension, {
       contentEditable: (
         <ContentEditable
           placeholder="What's up?"

@@ -37,7 +37,7 @@ type CommandPayload = {
 };
 
 export const INSERT_EQUATION_COMMAND: LexicalCommand<CommandPayload> =
-  createCommand('INSERT_EQUATION_COMMAND');
+  /* @__PURE__ */ createCommand('INSERT_EQUATION_COMMAND');
 
 function $convertEquationElement(el: HTMLElement) {
   const encoded = el.getAttribute('data-lexical-equation');
@@ -52,7 +52,7 @@ function $convertEquationElement(el: HTMLElement) {
   return $createEquationNode(equation, inline);
 }
 
-const EquationImportRule = defineImportRule({
+const EquationImportRule = /* @__PURE__ */ defineImportRule({
   $import: (_ctx, el, $next) => {
     const node = $convertEquationElement(el);
     return node ? [node] : $next();
@@ -61,9 +61,11 @@ const EquationImportRule = defineImportRule({
   name: '@lexical/playground/equation',
 });
 
-export const EquationsExtension = defineExtension({
+export const EquationsExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    configExtension(DOMImportExtension, {rules: [EquationImportRule]}),
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: [EquationImportRule],
+    }),
   ],
   name: '@lexical/playground/Equations',
   nodes: [EquationNode],

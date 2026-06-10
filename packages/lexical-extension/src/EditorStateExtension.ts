@@ -12,7 +12,7 @@ import {watchedSignal} from './watchedSignal';
 /**
  * An extension to provide the current EditorState as a signal
  */
-export const EditorStateExtension = defineExtension({
+export const EditorStateExtension = /* @__PURE__ */ defineExtension({
   build(editor) {
     return watchedSignal(
       () => editor.getEditorState(),

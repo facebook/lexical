@@ -30,7 +30,7 @@ import {
 import {beforeEach, describe, expect, expectTypeOf, test} from 'vitest';
 
 import {nodeStatesAreEquivalent} from '../../LexicalNodeState';
-import {initializeUnitTest, invariant} from '../utils';
+import {$assertNodeType, initializeUnitTest, invariant} from '../utils';
 import {TestNode} from './LexicalNode.test';
 
 // https://www.totaltypescript.com/how-to-test-your-types
@@ -499,8 +499,10 @@ describe('LexicalNode state', () => {
           // Revert to default value for number state.
           editor.update(
             () => {
-              const paragraph =
-                $getRoot().getFirstChildOrThrow<ParagraphNode>();
+              const paragraph = $assertNodeType(
+                $getRoot().getFirstChild(),
+                $isParagraphNode,
+              );
               const [firstTextNode] = paragraph.getChildren();
               $setState(firstTextNode, numberState, 0);
             },

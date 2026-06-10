@@ -115,10 +115,11 @@ describe('LexicalUtils#splitNode', () => {
 
         let nodeToSplit: ElementNode = $getRoot();
         for (const index of testCase.splitPath) {
-          nodeToSplit = nodeToSplit.getChildAtIndex(index)!;
-          if (!$isElementNode(nodeToSplit)) {
+          const child = nodeToSplit.getChildAtIndex(index)!;
+          if (!$isElementNode(child)) {
             throw new Error('Expected node to be element');
           }
+          nodeToSplit = child;
         }
 
         $splitNode(nodeToSplit, testCase.splitOffset);

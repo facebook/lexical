@@ -7,7 +7,7 @@
  */
 
 import type {ListItemNode} from './LexicalListItemNode';
-import type {LexicalCommand, LexicalEditor} from 'lexical';
+import type {ElementNode, LexicalCommand, LexicalEditor} from 'lexical';
 
 import {Signal} from '@lexical/extension';
 import {
@@ -38,9 +38,8 @@ import {$insertList} from './formatList';
 import {$isListItemNode} from './LexicalListItemNode';
 import {$isListNode} from './LexicalListNode';
 
-export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> = createCommand(
-  'INSERT_CHECK_LIST_COMMAND',
-);
+export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('INSERT_CHECK_LIST_COMMAND');
 
 /**
  * Registers the checklist plugin with the editor.
@@ -404,7 +403,7 @@ function findCheckListItemSibling(
   backward: boolean,
 ): ListItemNode | null {
   let sibling = backward ? node.getPreviousSibling() : node.getNextSibling();
-  let parent: ListItemNode | null = node;
+  let parent: ElementNode | null = node;
 
   // Going up in a tree to get non-null sibling
   while (sibling == null && $isListItemNode(parent)) {

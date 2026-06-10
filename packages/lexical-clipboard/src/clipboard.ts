@@ -923,11 +923,11 @@ export function $exportMimeTypeFromSelection(
  * });
  * ```
  */
-export const GetClipboardDataExtension = defineExtension({
+export const GetClipboardDataExtension = /* @__PURE__ */ defineExtension({
   build(editor, config, state) {
     return config.$exportMimeType;
   },
-  config: safeCast<GetClipboardDataConfig>({
+  config: /* @__PURE__ */ safeCast<GetClipboardDataConfig>({
     $exportMimeType: DEFAULT_EXPORT_MIME_TYPE,
   }),
   mergeConfig(config, partial) {

@@ -29,10 +29,14 @@ designed for performance, ergonomics, and composability across
 extensions.
 
 The new pipeline ships side-by-side with the legacy one in
-`@lexical/html`; the default `$generateNodesFromDOM` is unchanged. To
-opt in, depend on `DOMImportExtension` (or a higher-level bundle like
-`CoreImportExtension` / `RichTextImportExtension` / etc.) and read the
-imported nodes from the extension's `$generateNodesFromDOM` output.
+`@lexical/html`; the default `$generateNodesFromDOM` is unchanged. The
+node-providing extensions (`RichTextExtension`, `ListExtension`,
+`LinkExtension`, `TableExtension`, `CodeExtension`, …) register their
+own import rules (plus the shared `CoreImportExtension` baseline), so
+an editor built from them already has a fully configured
+`DOMImportExtension` — to opt in, just read the imported nodes from
+the extension's `$generateNodesFromDOM` output (or add
+`ClipboardDOMImportExtension` to route pastes through it).
 
 ## Quick start
 
@@ -71,22 +75,33 @@ editor.update(() => {
 inline format tags (`<b>`, `<strong>`, `<em>`, `<i>`, `<code>`,
 `<mark>`, `<s>`, `<sub>`, `<sup>`, `<u>`), `<br>`, and `#text` —
 everything the core lexical package's legacy `importDOM` machinery
-handled. Higher-level bundles you can drop in alongside:
+handled — plus `<hr>`, gated on `HorizontalRuleNode` being registered
+(the node lives in `@lexical/extension`, which is upstream of
+`@lexical/html` and so cannot register import rules itself).
+
+The per-tag rules ship with the extensions that provide the nodes, so
+listing the node extensions you want is the entire import
+configuration:
 
 | Extension | Provides |
 | --- | --- |
-| `CoreImportExtension` (`@lexical/html`) | `<p>`, `<span>`, inline format tags, `<br>`, `#text` |
-| `HorizontalRuleImportExtension` (`@lexical/html`) | `<hr>` |
-| `RichTextImportExtension` (`@lexical/rich-text`) | `<h1>`–`<h6>`, `<blockquote>`, Google Docs 26pt-title heuristic |
-| `ListImportExtension` (`@lexical/list`) | `<ol>`, `<ul>` (incl. checklist detection), `<li>`, GitHub task list, Joplin checkbox |
-| `LinkImportExtension` (`@lexical/link`) | `<a>` |
-| `TableImportExtension` (`@lexical/table`) | `<table>`, `<tr>`, `<td>`, `<th>` |
-| `CodeImportExtension` (`@lexical/code-core`) | `<pre>`, multi-line `<code>`, monospace `<div>`, GitHub raw-file-view tables |
+| `CoreImportExtension` (`@lexical/html`) | `<p>`, `<span>`, inline format tags, `<br>`, `#text`, `<hr>` (when `HorizontalRuleNode` is registered) |
+| `RichTextExtension` (`@lexical/rich-text`) | `<h1>`–`<h6>`, `<blockquote>`, Google Docs 26pt-title heuristic |
+| `ListExtension` (`@lexical/list`) | `<ol>`, `<ul>` (incl. checklist detection), `<li>`, GitHub task list, Joplin checkbox |
+| `LinkExtension` (`@lexical/link`) | `<a>` |
+| `TableExtension` (`@lexical/table`) | `<table>`, `<tr>`, `<td>`, `<th>` |
+| `CodeExtension` (`@lexical/code-core`) | `<pre>`, multi-line `<code>`, monospace `<div>`, GitHub raw-file-view tables |
 
-Each bundle depends on `CoreImportExtension` (the inline-format rules
-are nearly always wanted) and on the corresponding node-providing
-extension where possible, so you only have to list the import
-extension in your editor's dependency tree.
+Each of these depends on `CoreImportExtension` itself, so the shared
+baseline comes along automatically. The rules are inert unless the
+editor actually routes HTML through the pipeline (the legacy paste
+path is unchanged), and an extension's rules merge above its
+dependencies' rules, so app-registered rules still win dispatch.
+
+The standalone `RichTextImportExtension` / `ListImportExtension` /
+`LinkImportExtension` / `TableImportExtension` / `CodeImportExtension`
+/ `HorizontalRuleImportExtension` bundles from earlier versions still
+exist as deprecated aliases for the corresponding runtime extensions.
 
 :::tip
 
@@ -874,19 +889,20 @@ configExtension(ClipboardImportExtension, {
 The easy on-switch is `ClipboardDOMImportExtension` from
 `@lexical/clipboard` — add it to your dependencies and `text/html`
 pastes and drops route through the new pipeline (forwarding
-`ImportSource='paste'` and `ImportSourceDataTransfer` automatically):
+`ImportSource='paste'` and `ImportSourceDataTransfer` automatically).
+The node extensions already registered their rules, so nothing else
+needs to be configured:
 
 ```ts
 import {defineExtension} from 'lexical';
 import {ClipboardDOMImportExtension} from '@lexical/clipboard';
-import {CoreImportExtension, RichTextImportExtension} from '@lexical/html';
+import {RichTextExtension} from '@lexical/rich-text';
 
 defineExtension({
   name: 'app',
   dependencies: [
-    CoreImportExtension,
-    RichTextImportExtension,
-    // …other per-package import extensions you want active…
+    RichTextExtension,
+    // …other node extensions (list, link, table, code, …)…
     ClipboardDOMImportExtension,
   ],
 });

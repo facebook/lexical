@@ -19,6 +19,7 @@ import {
   NodeKey,
 } from 'lexical';
 import {
+  $assertNodeType,
   $createTestElementNode,
   initializeUnitTest,
   invariant,
@@ -202,7 +203,10 @@ describe('LexicalNodeHelpers tests', () => {
                 ),
               );
 
-            const paragraph = root.getFirstChildOrThrow<ElementNode>();
+            const paragraph = $assertNodeType(
+              root.getFirstChild(),
+              $isElementNode,
+            );
             const children = paragraph.getChildren();
             expect($dfs(children[1])).toEqual([{depth: 2, node: children[1]}]);
           },

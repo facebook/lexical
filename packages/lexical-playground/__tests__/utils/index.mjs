@@ -497,6 +497,7 @@ async function assertSelectionOnPageOrFrame(page, expected) {
         if (
           child &&
           child.nodeType === Node.ELEMENT_NODE &&
+          child.nodeName === 'IMG' &&
           child.getAttribute('data-lexical-managed-linebreak') === 'true'
         ) {
           return offset - 1;

@@ -24,6 +24,7 @@ import {
   $caretFromPoint,
   $caretRangeFromSelection,
   $cloneWithProperties,
+  $comparePointCaretNext,
   $createParagraphNode,
   $findMatchingParent,
   $fullReconcile,
@@ -53,6 +54,7 @@ import {
   $setState,
   $splitAtPointCaretNext,
   type CaretDirection,
+  type CaretRange,
   type EditorState,
   ElementNode,
   type Klass,
@@ -62,6 +64,7 @@ import {
   type NodeCaret,
   type NodeKey,
   PointCaret,
+  type RangeSelection,
   type SiblingCaret,
   SplitAtPointCaretNextOptions,
   StateConfig,
@@ -373,6 +376,39 @@ export function $getNearestBlockElementAncestorOrThrow(
     );
   }
   return blockNode;
+}
+
+/**
+ * Checks whether the selection covers the entire block: the selection's
+ * start point is at or before the first position inside blockNode and its
+ * end point is at or after the last position inside blockNode. A selection
+ * that extends beyond the block's boundaries still fully selects the block,
+ * and an empty block is fully selected by any selection that touches or
+ * surrounds it.
+ *
+ * @param blockNode - The ElementNode to check, typically a top-level block or the RootNode
+ * @param selectionOrRange - The RangeSelection or CaretRange to check
+ * @returns true if the selection covers the entire blockNode
+ */
+export function $isBlockFullySelected(
+  blockNode: ElementNode,
+  selectionOrRange: RangeSelection | CaretRange,
+): boolean {
+  const range = $getCaretRangeInDirection(
+    $isRangeSelection(selectionOrRange)
+      ? $caretRangeFromSelection(selectionOrRange)
+      : selectionOrRange,
+    'next',
+  );
+  const blockStart = $normalizeCaret($getChildCaret(blockNode, 'next'));
+  const blockEnd = $getCaretInDirection(
+    $normalizeCaret($getChildCaret(blockNode, 'previous')),
+    'next',
+  );
+  return (
+    $comparePointCaretNext(range.anchor, blockStart) <= 0 &&
+    $comparePointCaretNext(range.focus, blockEnd) >= 0
+  );
 }
 
 export type DOMNodeToLexicalConversion = (element: Node) => LexicalNode;

@@ -1,5 +1,11 @@
 # Included Extensions
 
+[@lexical/clipboard](/docs/api/modules/lexical_clipboard)
+
+- [ClipboardDOMImportExtension](/docs/api/modules/lexical_clipboard#clipboarddomimportextension) - Routes `text/html` pastes and drops through the `DOMImportExtension` pipeline (experimental)
+- [ClipboardImportExtension](/docs/api/modules/lexical_clipboard#clipboardimportextension) - Configurable per-MIME-type clipboard import for paste and drop (experimental)
+- [GetClipboardDataExtension](/docs/api/modules/lexical_clipboard#getclipboarddataextension) - Configurable serialization of the selection into clipboard MIME types for copy and drag
+
 [@lexical/code](/docs/api/modules/lexical_code)
 
 - [CodeExtension](/docs/api/modules/lexical_code#codeextension) - CodeNode (code blocks)
@@ -21,13 +27,21 @@
 
 - [AutoFocusExtension](/docs/api/modules/lexical_extension#autofocusextension) - Focus the editor when it is created (e.g. on page load)
 - [ClearEditorExtension](/docs/api/modules/lexical_extension#cleareditorextension) - Implementation for the `CLEAR_EDITOR_COMMAND`
+- [ClickAfterLastBlockExtension](/docs/api/modules/lexical_extension#clickafterlastblockextension) - Inserts a paragraph when clicking below a last block that can not accommodate the click (e.g. a DecoratorNode or TableNode)
+- [DecoratorTextExtension](/docs/api/modules/lexical_extension#decoratortextextension) - DecoratorTextNode support, sets the format and CSS classes for the DOM container
 - [EditorStateExtension](/docs/api/modules/lexical_extension#editorstateextension) - Provide EditorState as a signal (alternative to `registerUpdateListener`)
 - [HorizontalRuleExtension](/docs/api/modules/lexical_extension#horizontalruleextension) - HorizontalRuleNode (`<hr>` tag)
+- [IMEExtension](/docs/api/modules/lexical_extension#imeextension) - Centralizes IME composition state as signals
 - [InitialStateExtension](/docs/api/modules/lexical_extension#initialstateextension) - Sets the initial state of the editor (always included)
+- [NestedEditorExtension](/docs/api/modules/lexical_extension#nestededitorextension) - Configures an editor as a nested editor of a parent editor (theme inheritance, optionally editable state)
 - [NodeSelectionExtension](/docs/api/modules/lexical_extension#nodeselectionextension) - Tracks selection, typically for DecoratorNodes
 - [NormalizeInlineElementsExtension](/docs/api/modules/lexical_extension#normalizeinlineelementsextension) - Removes empty inline elements, included by default with `RichTextExtension` and `PlainTextExtension`
 - [NormalizeTripleClickSelectionExtension](/docs/api/modules/lexical_extension#normalizetripleclickselectionextension) - Corrects over-selection after triple click events, included by default with `RichTextExtension` and `PlainTextExtension`
+- [PreventSelectAllExtension](/docs/api/modules/lexical_extension#preventselectallextension) - Prevents select all (Ctrl/Cmd+A) inside input/textarea elements from selecting the editor content, included by default with `SelectBlockExtension`
+- [SelectBlockExtension](/docs/api/modules/lexical_extension#selectblockextension) - Select all (Ctrl/Cmd+A) selects the nearest block element first, pressing it again selects the whole document
+- [SelectionAlwaysOnDisplayExtension](/docs/api/modules/lexical_extension#selectionalwaysondisplayextension) - Highlights selected content even when the editor is not focused
 - [TabIndentationExtension](/docs/api/modules/lexical_extension#tabindentationextension) - Changes Tab key to insert tabs and indent instead of natively focusing the next field
+- [WatchEditableExtension](/docs/api/modules/lexical_extension#watcheditableextension) - Exposes the editor's editable state as a reactive `Signal<boolean>`
 
 [@lexical/hashtag](/docs/api/modules/lexical_hashtag)
 
@@ -37,6 +51,12 @@
 
 - [HistoryExtension](/docs/api/modules/lexical_history#historyextension) - History support (undo/redo)
 - [SharedHistoryExtension](/docs/api/modules/lexical_history#sharedhistoryextension) - History sharing between a parent editor and its nested editors
+
+[@lexical/html](/docs/api/modules/lexical_html)
+
+- [CoreImportExtension](/docs/api/modules/lexical_html#coreimportextension) - DOM import rules for the core nodes, included implicitly by node-providing extensions (experimental)
+- [DOMImportExtension](/docs/api/modules/lexical_html#domimportextension) - Extension-based replacement for `importDOM`/`DOMConversion`, rules are compiled into a dispatcher at editor build time (experimental)
+- [DOMRenderExtension](/docs/api/modules/lexical_html#domrenderextension) - Overrides the DOM render and export behavior for an editor (experimental)
 
 [@lexical/link](/docs/api/modules/lexical_link)
 

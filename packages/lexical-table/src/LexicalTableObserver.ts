@@ -156,6 +156,62 @@ export class TableObservers {
     }
     return null;
   }
+
+  /**
+   * @internal
+   * Remove the observer for tableKey from the registry and unregister all
+   * of its listeners, e.g. because the table was removed from the document
+   * or its DOM was recreated.
+   *
+   * @returns true if an observer was registered for tableKey
+   */
+  removeObserver(tableKey: NodeKey): boolean {
+    const observerAndElement = this.observers.get(tableKey);
+    if (observerAndElement === undefined) {
+      return false;
+    }
+    observerAndElement[0].removeListeners();
+    this.observers.delete(tableKey);
+    return true;
+  }
+
+  /**
+   * @internal
+   * Remove all observers from the registry and unregister their listeners,
+   * e.g. because the table selection observer is being unregistered.
+   */
+  removeAllObservers(): void {
+    for (const tableKey of Array.from(this.observers.keys())) {
+      this.removeObserver(tableKey);
+    }
+  }
+
+  /**
+   * @internal
+   * Get a snapshot of the registry as [TableNode, TableObserver] pairs for
+   * the current editor state. A table's destroyed mutation can be missed
+   * entirely (e.g. when it is removed during an update while the editor's
+   * root element is detached), so any entry whose table no longer exists
+   * is removed from the registry instead of being returned, otherwise such
+   * an entry would poison the registry and break every subsequent
+   * selection change.
+   *
+   * Must be called within an editor read or update.
+   */
+  $getTableNodesAndObservers(): [TableNode, TableObserver][] {
+    const tableNodesAndObservers: [TableNode, TableObserver][] = [];
+    for (const [tableKey, [tableObserver]] of Array.from(
+      this.observers.entries(),
+    )) {
+      const tableNode = $getNodeByKey(tableKey);
+      if ($isTableNode(tableNode)) {
+        tableNodesAndObservers.push([tableNode, tableObserver]);
+      } else {
+        this.removeObserver(tableKey);
+      }
+    }
+    return tableNodesAndObservers;
+  }
 }
 
 export class TableObserver {

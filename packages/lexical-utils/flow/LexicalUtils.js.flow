@@ -13,6 +13,8 @@ import type {
   ElementNode,
   NodeCaret,
   CaretDirection,
+  CaretRange,
+  RangeSelection,
   SiblingCaret,
   RootMode,
   SplitAtPointCaretNextOptions,
@@ -20,6 +22,10 @@ import type {
   StateConfig,
   ValueOrUpdater
 } from 'lexical';
+declare export function $isBlockFullySelected(
+  blockNode: ElementNode,
+  selectionOrRange: RangeSelection | CaretRange<CaretDirection>,
+): boolean;
 declare export function addClassNamesToElement(
   element: HTMLElement,
   ...classNames: (typeof undefined | boolean | null | string)[]

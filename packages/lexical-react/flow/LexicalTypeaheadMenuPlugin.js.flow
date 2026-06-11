@@ -53,7 +53,7 @@ declare export function getScrollParent(
   includeHidden: boolean,
 ): HTMLElement | HTMLBodyElement;
 
-declare export function useBasicTypeaheadTriggerMatch(
+declare export hook useBasicTypeaheadTriggerMatch(
   trigger: string,
   options: {minLength?: number, maxLength?: number},
 ): TriggerFn;

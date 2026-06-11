@@ -440,6 +440,11 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
         // should never happen, but let's handle gracefully, just in case.
         nextNode.append(listItem);
       }
+      // The new list item lands at index 0, so the typed number becomes the
+      // list's starting value. #8677.
+      if (listType === 'number') {
+        nextNode.setStart(Number(match[2]));
+      }
       parentNode.remove();
     } else if (
       $isListNode(previousNode) &&
@@ -448,6 +453,8 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       if (listMarker) {
         $setState(previousNode, listMarkerState, listMarker);
       }
+      // The new item is appended at the end and inherits the existing
+      // sequence, so the typed number is intentionally ignored here.
       previousNode.append(listItem);
       parentNode.remove();
     } else {

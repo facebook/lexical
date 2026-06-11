@@ -502,7 +502,7 @@ function $createOffsetChild(
     offset: number;
     prevIsBlock: boolean;
   },
-  children: Array<NodeKey>,
+  children: NodeKey[],
   parent: null | OffsetElementNode,
   nodeMap: NodeMap,
   offsetMap: OffsetMap,

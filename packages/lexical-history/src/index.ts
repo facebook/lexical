@@ -59,8 +59,8 @@ export type HistoryStateEntry = {
 };
 export type HistoryState = {
   current: null | HistoryStateEntry;
-  redoStack: Array<HistoryStateEntry>;
-  undoStack: Array<HistoryStateEntry>;
+  redoStack: HistoryStateEntry[];
+  undoStack: HistoryStateEntry[];
 };
 
 type IntentionallyMarkedAsDirtyElement = boolean;
@@ -69,7 +69,7 @@ function getDirtyNodes(
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
-): Array<LexicalNode> {
+): LexicalNode[] {
   const nodeMap = editorState._nodeMap;
   const nodes = [];
 

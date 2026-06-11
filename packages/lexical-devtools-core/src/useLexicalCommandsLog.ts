@@ -15,7 +15,7 @@ export type LexicalCommandEntry = {index: number} & LexicalCommand<unknown> & {
     payload: unknown;
   };
 
-export type LexicalCommandLog = ReadonlyArray<LexicalCommandEntry>;
+export type LexicalCommandLog = readonly LexicalCommandEntry[];
 
 export function registerLexicalCommandLogger(
   editor: LexicalEditor,

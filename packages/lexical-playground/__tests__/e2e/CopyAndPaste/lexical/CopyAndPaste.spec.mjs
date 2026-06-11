@@ -98,21 +98,12 @@ test.describe('CopyAndPaste', () => {
           </p>
         `,
       );
-      if (browserName === 'firefox' && IS_LINUX) {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [],
-          focusOffset: 3,
-          focusPath: [],
-        });
-      } else {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [0, 0, 0],
-          focusOffset: 12,
-          focusPath: [2, 0, 0],
-        });
-      }
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0, 0, 0],
+        focusOffset: 12,
+        focusPath: [2, 0, 0],
+      });
     } else {
       await assertHTML(
         page,
@@ -125,21 +116,13 @@ test.describe('CopyAndPaste', () => {
           </p>
         `,
       );
-      if (browserName === 'firefox' && IS_LINUX) {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [],
-          focusOffset: 1,
-          focusPath: [],
-        });
-      } else {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [0, 0, 0],
-          focusOffset: 12,
-          focusPath: [0, 3, 0],
-        });
-      }
+
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0, 0, 0],
+        focusOffset: 12,
+        focusPath: [0, 3, 0],
+      });
     }
 
     // Copy all the text
@@ -406,37 +389,19 @@ test.describe('CopyAndPaste', () => {
     await selectAll(page);
 
     if (isRichText) {
-      if (browserName === 'firefox' && IS_LINUX) {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [],
-          focusOffset: 2,
-          focusPath: [],
-        });
-      } else {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [0, 0, 0],
-          focusOffset: 4,
-          focusPath: [1, 5, 0],
-        });
-      }
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0, 0, 0],
+        focusOffset: 4,
+        focusPath: [1, 5, 0],
+      });
     } else {
-      if (browserName === 'firefox' && IS_LINUX) {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [],
-          focusOffset: 1,
-          focusPath: [],
-        });
-      } else {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [0, 0, 0],
-          focusOffset: 4,
-          focusPath: [0, 12, 0],
-        });
-      }
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0, 0, 0],
+        focusOffset: 4,
+        focusPath: [0, 12, 0],
+      });
     }
 
     await withExclusiveClipboardAccess(async () => {
@@ -692,46 +657,19 @@ test.describe('CopyAndPaste', () => {
       await selectAll(page);
 
       if (isRichText) {
-        if (browserName === 'firefox' && IS_LINUX) {
-          await assertSelection(page, {
-            anchorOffset: 0,
-            anchorPath: [],
-            focusOffset: 2,
-            focusPath: [],
-          });
-        } else {
-          if (browserName === 'firefox' && IS_LINUX) {
-            await assertSelection(page, {
-              anchorOffset: 0,
-              anchorPath: [0, 0, 0],
-              focusOffset: 3,
-              focusPath: [1, 5, 0],
-            });
-          } else {
-            await assertSelection(page, {
-              anchorOffset: 0,
-              anchorPath: [0, 0, 0],
-              focusOffset: 4,
-              focusPath: [1, 5, 0],
-            });
-          }
-        }
+        await assertSelection(page, {
+          anchorOffset: 0,
+          anchorPath: [0, 0, 0],
+          focusOffset: 4,
+          focusPath: [1, 5, 0],
+        });
       } else {
-        if (browserName === 'firefox' && IS_LINUX) {
-          await assertSelection(page, {
-            anchorOffset: 0,
-            anchorPath: [],
-            focusOffset: 1,
-            focusPath: [],
-          });
-        } else {
-          await assertSelection(page, {
-            anchorOffset: 0,
-            anchorPath: [0, 0, 0],
-            focusOffset: 4,
-            focusPath: [0, 12, 0],
-          });
-        }
+        await assertSelection(page, {
+          anchorOffset: 0,
+          anchorPath: [0, 0, 0],
+          focusOffset: 4,
+          focusPath: [0, 12, 0],
+        });
       }
 
       await page.keyboard.press('Delete');

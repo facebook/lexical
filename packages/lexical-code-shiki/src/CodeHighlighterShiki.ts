@@ -289,11 +289,11 @@ function $updateAndRetainSelection(
 // Finds minimal diff range between two nodes lists. It returns from/to range boundaries of prevNodes
 // that needs to be replaced with `nodes` (subset of nextNodes) to make prevNodes equal to nextNodes.
 function getDiffRange(
-  prevNodes: Array<LexicalNode>,
-  nextNodes: Array<LexicalNode>,
+  prevNodes: LexicalNode[],
+  nextNodes: LexicalNode[],
 ): {
   from: number;
-  nodesForReplacement: Array<LexicalNode>;
+  nodesForReplacement: LexicalNode[];
   to: number;
 } {
   let leadingMatch = 0;

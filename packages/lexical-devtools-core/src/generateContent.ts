@@ -122,7 +122,7 @@ export function generateContent(
     () => {
       const selection = $getSelection();
 
-      visitTree($getRoot(), (node: LexicalNode, indent: Array<string>) => {
+      visitTree($getRoot(), (node: LexicalNode, indent: string[]) => {
         const nodeKey = node.getKey();
         const nodeKeyDisplay = `(${nodeKey})`;
         const typeDisplay = node.getType() || '';
@@ -218,8 +218,8 @@ function printTableSelection(selection: TableSelection): string {
 
 function visitTree(
   currentNode: ElementNode,
-  visitor: (node: LexicalNode, indentArr: Array<string>) => void,
-  indent: Array<string> = [],
+  visitor: (node: LexicalNode, indentArr: string[]) => void,
+  indent: string[] = [],
 ) {
   const childNodes = currentNode.getChildren();
   const childNodesLength = childNodes.length;
@@ -431,7 +431,7 @@ function $printSelectedCharsLine({
   selection,
   typeDisplay,
 }: {
-  indent: Array<string>;
+  indent: string[];
   isSelected: boolean;
   node: LexicalNode;
   nodeKeyDisplay: string;

@@ -66,7 +66,7 @@ export type CursorSelection = {
   highlightName: string;
   name: HTMLSpanElement;
   /** Legacy fallback only: absolutely-positioned rect spans, one per visual rect. */
-  selections: Array<HTMLElement>;
+  selections: HTMLElement[];
 };
 
 const SUPPORTS_CSS_HIGHLIGHTS =
@@ -486,7 +486,7 @@ function updateCursor(
 
   // legacy fallback path: per-rect absolutely-positioned span
   const selections = nextSelection.selections;
-  let selectionRects: Array<DOMRect>;
+  let selectionRects: DOMRect[];
 
   // In the case of a collapsed selection on a linebreak, we need
   // to improvise as the browser will return nothing here as <br>

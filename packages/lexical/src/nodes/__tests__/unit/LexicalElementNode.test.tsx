@@ -363,13 +363,13 @@ describe('LexicalElementNode tests', () => {
       });
     });
 
-    const BASE_INSERTIONS: Array<{
+    const BASE_INSERTIONS: {
       deleteCount: number;
       deleteOnly: boolean | null | undefined;
       expectedText: string;
       name: string;
       start: number;
-    }> = [
+    }[] = [
       // Do nothing
       {
         deleteCount: 0,
@@ -478,7 +478,7 @@ describe('LexicalElementNode tests', () => {
 
     let nodes: Record<string, LexicalNode> = {};
 
-    const NESTED_ELEMENTS_TESTS: Array<{
+    const NESTED_ELEMENTS_TESTS: {
       deleteCount: number;
       deleteOnly?: boolean;
       expectedSelection: () => {
@@ -496,7 +496,7 @@ describe('LexicalElementNode tests', () => {
       expectedText: string;
       name: string;
       start: number;
-    }> = [
+    }[] = [
       {
         deleteCount: 0,
         deleteOnly: true,

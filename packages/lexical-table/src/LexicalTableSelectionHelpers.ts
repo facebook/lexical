@@ -52,6 +52,7 @@ import {
   $getAdjacentChildCaret,
   $getChildCaret,
   $getNearestNodeFromDOMNode,
+  $getNodeByKey,
   $getNodeByKeyOrThrow,
   $getPreviousSelection,
   $getSelection,
@@ -900,24 +901,28 @@ export function $handleTableSelectionChangeCommand(
     $isRangeSelection(selection) &&
     selection.isCollapsed()
   ) {
-    const tableNode = $getTableNodeByKeyOrThrow(shouldCheckSelectionForTable);
-    const anchor = selection.anchor.getNode();
-    const firstRow = tableNode.getFirstChild();
-    const anchorCell = $findCellNode(anchor);
-    if (anchorCell !== null && $isTableRowNode(firstRow)) {
-      const firstCell = firstRow.getFirstChild();
-      if (
-        $isTableCellNode(firstCell) &&
-        tableNode.is(
-          $findMatchingParent(
-            anchorCell,
-            node => node.is(tableNode) || node.is(firstCell),
-          ),
-        )
-      ) {
-        // The selection moved to the table, but not in the first cell
-        firstCell.selectStart();
-        return true;
+    // The table may have been removed before this selection change
+    // was dispatched, in which case there is nothing to check
+    const tableNode = $getNodeByKey(shouldCheckSelectionForTable);
+    if ($isTableNode(tableNode)) {
+      const anchor = selection.anchor.getNode();
+      const firstRow = tableNode.getFirstChild();
+      const anchorCell = $findCellNode(anchor);
+      if (anchorCell !== null && $isTableRowNode(firstRow)) {
+        const firstCell = firstRow.getFirstChild();
+        if (
+          $isTableCellNode(firstCell) &&
+          tableNode.is(
+            $findMatchingParent(
+              anchorCell,
+              node => node.is(tableNode) || node.is(firstCell),
+            ),
+          )
+        ) {
+          // The selection moved to the table, but not in the first cell
+          firstCell.selectStart();
+          return true;
+        }
       }
     }
   }
@@ -933,13 +938,10 @@ export function $handleTableSelectionChangeCommand(
   // Generic selection logic that runs across every table observer when the selection changes.
   // Note: the selection might have changed in the code above, which re-dispatches the selection change command
   // and gets handled here on the second pass. This should be refactored.
-  const tableNodesAndObservers = Array.from(
-    tableObservers.observers.entries(),
-  ).map(([tableKey, [tableObserver]]) => ({
-    tableNode: $getTableNodeByKeyOrThrow(tableKey),
+  for (const [
+    tableNode,
     tableObserver,
-  }));
-  for (const {tableNode, tableObserver} of tableNodesAndObservers) {
+  ] of tableObservers.$getTableNodesAndObservers()) {
     $syncTableSelectionState(editor, tableNode, tableObserver);
   }
 

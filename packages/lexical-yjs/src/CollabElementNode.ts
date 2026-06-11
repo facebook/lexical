@@ -39,12 +39,12 @@ type IntentionallyMarkedAsDirtyElement = boolean;
 
 export class CollabElementNode {
   _key: NodeKey;
-  _children: Array<
+  _children: (
     | CollabElementNode
     | CollabTextNode
     | CollabDecoratorNode
     | CollabLineBreakNode
-  >;
+  )[];
   _xmlText: XmlText;
   _type: string;
   _parent: null | CollabElementNode;
@@ -119,14 +119,14 @@ export class CollabElementNode {
 
   applyChildrenYjsDelta(
     binding: Binding,
-    deltas: Array<{
+    deltas: {
       insert?: string | object | AbstractType<unknown>;
       delete?: number;
       retain?: number;
       attributes?: {
         [x: string]: unknown;
       };
-    }>,
+    }[],
   ): void {
     const children = this._children;
     let currIndex = 0;
@@ -277,7 +277,7 @@ export class CollabElementNode {
 
     const key = lexicalNode.__key;
     const prevLexicalChildrenKeys = $createChildrenArray(lexicalNode, null);
-    const nextLexicalChildrenKeys: Array<NodeKey> = [];
+    const nextLexicalChildrenKeys: NodeKey[] = [];
     const lexicalChildrenKeysLength = prevLexicalChildrenKeys.length;
     const collabChildren = this._children;
     const collabChildrenLength = collabChildren.length;

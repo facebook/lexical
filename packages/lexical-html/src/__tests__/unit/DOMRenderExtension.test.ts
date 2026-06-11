@@ -346,7 +346,7 @@ describe('DOMRenderExtension', () => {
     );
   });
   test('$decorateDOM runs after children are reconciled', () => {
-    const childCounts: Array<{type: string; count: number}> = [];
+    const childCounts: {type: string; count: number}[] = [];
     using editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: () => {

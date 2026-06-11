@@ -82,6 +82,7 @@ export function wrapTableHtml(
 export async function initialize({
   page,
   isCollab,
+  selectBlock,
   isAutocomplete,
   isCharLimit,
   isCharLimitUtf8,
@@ -132,6 +133,7 @@ export async function initialize({
     !!shouldAllowHighlightingWithBrackets;
 
   appSettings.selectionAlwaysOnDisplay = !!selectionAlwaysOnDisplay;
+  appSettings.selectBlock = !!selectBlock;
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${

@@ -29,7 +29,16 @@ import {
   TestShadowRootNode,
 } from 'lexical/src/__tests__/utils';
 import {afterEach, assert, describe, expect, test} from 'vitest';
-import {Doc, Map as YMap, XmlElement, XmlText} from 'yjs';
+import {
+  applyUpdate,
+  Doc,
+  emptySnapshot,
+  encodeStateAsUpdate,
+  Map as YMap,
+  snapshot as createSnapshot,
+  XmlElement,
+  XmlText,
+} from 'yjs';
 
 import {createBindingV2__EXPERIMENTAL} from '../../Bindings';
 import {syncLexicalUpdateToYjsV2__EXPERIMENTAL} from '../../SyncEditorStates';
@@ -1267,5 +1276,175 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     for (const inner of innerTypes) {
       expect(binding.mapping.has(inner)).toBe(false);
     }
+  });
+
+  // local (h): a FIRST slot set on an already-synced host. The host is a new
+  // version object after $setSlot, so the mapped-identity fast path fails and
+  // the equality fallback must report the slots channel unequal — otherwise
+  // the dirty scan repoints the mapping without recursing and
+  // $updateSlotsYType never writes the slot to yjs.
+  test('local: a first slot set on an already-synced host is written to yjs and reaches a peer', () => {
+    const {binding, doc, editor} = buildBinding([TestShadowRootNode]);
+
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const body = $createParagraphNode();
+        body.append($createTextNode('Body'));
+        $getRoot().clear().append(host);
+        host.append(body);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const hostY = binding.root.toArray()[0];
+    assert(hostY instanceof XmlElement);
+    expect(hostY.getAttribute('slots')).toBeUndefined();
+
+    applyLocalUpdate(binding, editor, () => {
+      const host = $getRoot().getFirstChild();
+      assert($isElementNode(host));
+      const title = $createTestShadowRootNode();
+      title.append($createParagraphNode().append($createTextNode('Title')));
+      $setSlot(host, 'title', title);
+    });
+
+    // written to yjs in the same flush as the local update
+    const slotsY = hostY.getAttribute('slots') as unknown;
+    assert(slotsY instanceof YMap);
+    expect(Array.from(slotsY.keys())).toEqual(['title']);
+
+    // a peer doc seeded from the originator's update restores the slot
+    const doc2 = new Doc();
+    applyUpdate(doc2, encodeStateAsUpdate(doc));
+    const {binding: binding2, editor: editor2} = buildRestoreBinding(doc2, [
+      TestShadowRootNode,
+    ]);
+    editor2.update(
+      () => {
+        $getRoot().clear();
+        $createOrUpdateNodeFromYElement(binding2.root, binding2, null, true);
+      },
+      {discrete: true},
+    );
+
+    editor2.read(() => {
+      const hostR = $getRoot().getFirstChild();
+      assert($isElementNode(hostR));
+      expect(hostR.getTextContent()).toContain('Body');
+      const titleR = $getSlot(hostR, 'title');
+      assert(titleR != null);
+      assert($isElementNode(titleR));
+      expect(titleR.getTextContent()).toBe('Title');
+      expect(titleR.getParent()).toBe(null);
+    });
+  });
+
+  // local (i): removing the last slot keeps the (empty) Y.Map attribute
+  // (mirrors V1), so a subsequent add reuses it instead of re-running the
+  // first-set creation race — and that add still syncs.
+  test('local: removing the last slot keeps the empty slots attribute and a later add syncs', () => {
+    const {binding, editor, hostY} = setupLocalSlotTree();
+    const slotsYBefore = hostY.getAttribute('slots') as unknown;
+    assert(slotsYBefore instanceof YMap);
+
+    applyLocalUpdate(binding, editor, () => {
+      const host = $getRoot().getFirstChild();
+      assert($isElementNode(host));
+      $removeSlot(host, 'title');
+    });
+
+    // the (now empty) Y.Map attribute survives the removal of the last slot
+    const slotsYAfter = hostY.getAttribute('slots') as unknown;
+    assert(slotsYAfter instanceof YMap);
+    expect(slotsYAfter).toBe(slotsYBefore);
+    expect(Array.from(slotsYAfter.keys())).toEqual([]);
+
+    applyLocalUpdate(binding, editor, () => {
+      const host = $getRoot().getFirstChild();
+      assert($isElementNode(host));
+      const subtitle = $createTestShadowRootNode();
+      subtitle.append($createParagraphNode().append($createTextNode('Sub')));
+      $setSlot(host, 'subtitle', subtitle);
+    });
+
+    expect(Array.from(slotsYAfter.keys())).toEqual(['subtitle']);
+    const subY = slotsYAfter.get('subtitle');
+    assert(subY instanceof XmlElement);
+    const subParaY = subY.toArray()[0];
+    assert(subParaY instanceof XmlElement);
+    const subText = subParaY.toArray()[0];
+    assert(subText instanceof XmlText);
+    expect(subText.toString()).toBe('Sub');
+  });
+
+  // snapshot: slot membership is read through the snapshot like the sibling
+  // children logic (the Y.Map's entries live in its own item chain, so the
+  // live entries() iterator would render current membership into a historical
+  // view). A slot added after the snapshot must not appear.
+  test('snapshot: slot membership reflects the snapshot, not the live doc', () => {
+    const {binding, doc, editor} = buildBinding([TestShadowRootNode]);
+    // historical snapshot reads require GC to be off (see renderSnapshot)
+    doc.gc = false;
+
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const title = $createTestShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Title')));
+        const body = $createParagraphNode();
+        body.append($createTextNode('Body'));
+        $getRoot().clear().append(host);
+        host.append(body);
+        $setSlot(host, 'title', title);
+      },
+      {discrete: true},
+    );
+    serialize(editor, binding);
+
+    const snap = createSnapshot(doc);
+
+    applyLocalUpdate(binding, editor, () => {
+      const host = $getRoot().getFirstChild();
+      assert($isElementNode(host));
+      const subtitle = $createTestShadowRootNode();
+      subtitle.append($createParagraphNode().append($createTextNode('Sub')));
+      $setSlot(host, 'subtitle', subtitle);
+    });
+
+    // the live doc carries both slots
+    const hostY = binding.root.toArray()[0];
+    assert(hostY instanceof XmlElement);
+    const slotsY = hostY.getAttribute('slots') as unknown;
+    assert(slotsY instanceof YMap);
+    expect(Array.from(slotsY.keys()).sort()).toEqual(['subtitle', 'title']);
+
+    // a historical render against the older snapshot sees only 'title'
+    const {binding: binding2, editor: editor2} = buildRestoreBinding(doc, [
+      TestShadowRootNode,
+    ]);
+    editor2.update(
+      () => {
+        $getRoot().clear();
+        $createOrUpdateNodeFromYElement(
+          binding2.root,
+          binding2,
+          null,
+          true,
+          snap,
+          emptySnapshot,
+        );
+      },
+      {discrete: true},
+    );
+
+    editor2.read(() => {
+      const hostR = $getRoot().getFirstChild();
+      assert($isElementNode(hostR));
+      expect($getSlotNames(hostR)).toEqual(['title']);
+      expect($getSlot(hostR, 'title')?.getTextContent()).toBe('Title');
+    });
   });
 });

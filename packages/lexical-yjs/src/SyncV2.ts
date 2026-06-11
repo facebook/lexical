@@ -52,6 +52,7 @@ import {
   Snapshot,
   Text as YText,
   typeListToArraySnapshot,
+  typeMapGetAllSnapshot,
   XmlElement,
   XmlHook,
   XmlText,
@@ -60,8 +61,10 @@ import {
 import {BindingV2} from './Bindings';
 import simpleDiffWithCursor from './simpleDiffWithCursor';
 import {
+  $isSlotValueNode,
   $syncPropertiesFromYjs,
   getDefaultNodeProperties,
+  isReservedSlotName,
   SLOTS_ATTR_KEY,
 } from './Utils';
 
@@ -216,13 +219,27 @@ export const $createOrUpdateNodeFromYElement = (
   // host is an ElementNode or a non-inline DecoratorNode; both store slots as a
   // `slots` Y.Map attribute, and the reconcile only uses base-node slot methods.
   if (node instanceof ElementNode || $isDecoratorNode(node)) {
-    // `slots` is stored as a Y.Map attribute; widen to unknown so instanceof
-    // can narrow it (getAttribute is typed as returning a string).
-    const slotsY = el.getAttribute(SLOTS_ATTR_KEY) as unknown;
+    // `slots` is stored as a Y.Map attribute; `attrs` widens it to unknown so
+    // instanceof can narrow it back, and is already snapshot-aware, so a
+    // historical render sees the membership the snapshot had.
+    const slotsY = attrs[SLOTS_ATTR_KEY];
     const yNames = new Set<string>();
     if (slotsY instanceof YMap) {
-      for (const [name, slotType] of slotsY.entries()) {
+      // The Y.Map's entries live in its own item chain, not the host's, so
+      // the snapshot read needs typeMapGetAllSnapshot (entries() is live).
+      const slotEntries: Array<[string, unknown]> =
+        snapshot === undefined
+          ? Array.from(slotsY.entries())
+          : Object.entries(typeMapGetAllSnapshot(slotsY, snapshot));
+      for (const [name, slotType] of slotEntries) {
         yNames.add(name);
+        // Names and values are peer-controlled. An entry that would trip
+        // $setSlot's invariants is skipped as a silent no-op (the local doc
+        // simply doesn't reflect it) instead of crashing the observer
+        // editor.update.
+        if (isReservedSlotName(name)) {
+          continue;
+        }
         let slotNode: LexicalNode | null = null;
         if (slotType instanceof XmlElement) {
           slotNode = $createOrUpdateNodeFromYElement(
@@ -244,11 +261,27 @@ export const $createOrUpdateNodeFromYElement = (
         // setSlot detaches the previous occupant (LexicalElementNode setSlot).
         const existingSlot = $getSlot(node, name);
         if (
-          existingSlot === null ||
-          existingSlot.getKey() !== slotNode.getKey()
+          existingSlot !== null &&
+          existingSlot.getKey() === slotNode.getKey()
         ) {
-          $setSlot(node, name, slotNode);
+          continue;
         }
+        if (!$isSlotValueNode(slotNode)) {
+          // A node materialized only for this rejected entry is dropped from
+          // the mapping (it stays unattached and lexical GCs it, so a stale
+          // entry would later dereference a dead node); an attached node
+          // legitimately mapped elsewhere keeps its mapping.
+          if (!slotNode.isAttached()) {
+            $deleteMappingForSubtree(slotType as XmlElement, binding);
+          }
+          continue;
+        }
+        if (slotNode.getLatest().__slotHost !== null) {
+          // Already slotted: the same shared type under two names. First name
+          // wins; later aliases are skipped.
+          continue;
+        }
+        $setSlot(node, name, slotNode);
       }
     }
     // Drop slots that no longer exist in yjs. getSlotNames returns a snapshot
@@ -480,15 +513,11 @@ const $updateSlotsYType = (
   const names = $getSlotNames(node);
   const existing = yDomFragment.getAttribute(SLOTS_ATTR_KEY) as unknown;
 
-  if (names.length === 0) {
-    if (existing instanceof YMap) {
-      for (const removed of (existing as YMap<XmlElement>).values()) {
-        $deleteMappingForSubtree(removed, binding);
-      }
-    }
-    if (existing !== undefined) {
-      yDomFragment.removeAttribute(SLOTS_ATTR_KEY);
-    }
+  // Removing the last slot empties the Y.Map but keeps the attribute
+  // (mirrors V1): removing it would re-open the first-set creation race for
+  // the next add and destroy concurrent adds. $equalSlots treats an empty map
+  // and an absent attribute alike.
+  if (names.length === 0 && !(existing instanceof YMap)) {
     return;
   }
 
@@ -693,7 +722,42 @@ const equalYTextLText = (
   );
 };
 
-const equalYTypePNode = (
+// Slots half of $equalYTypePNode: the `slots` attribute is excluded from the
+// plain attribute comparison (it is a dedicated channel, not a node property),
+// so the equality scan would otherwise repoint the mapping without recursing
+// and a slot diff would never be written to yjs. An absent attribute and an
+// empty Y.Map are both equal to an empty lexical slot map ($updateSlotsYType
+// keeps the map once created). A name whose yjs shared type doesn't map to the
+// lexical slot node is reported unequal — a false negative costs a recursion,
+// not correctness.
+const $equalSlots = (
+  ytype: XmlElement,
+  lnode: LexicalNode,
+  binding: BindingV2,
+): boolean => {
+  const names = $getSlotNames(lnode);
+  const slotsY = ytype.getAttribute(SLOTS_ATTR_KEY) as unknown;
+  if (!(slotsY instanceof YMap)) {
+    return names.length === 0;
+  }
+  if (slotsY.size !== names.length) {
+    return false;
+  }
+  for (const name of names) {
+    const slotNode = $getSlot(lnode, name);
+    const slotY = slotsY.get(name) as unknown;
+    if (
+      slotNode === null ||
+      !(slotY instanceof XmlElement) ||
+      binding.mapping.get(slotY) !== slotNode
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const $equalYTypePNode = (
   ytype: XmlElement | XmlText | XmlHook,
   lnode: LexicalNode | TextNode[],
   binding: BindingV2,
@@ -704,16 +768,21 @@ const equalYTypePNode = (
     matchNodeName(ytype, lnode)
   ) {
     const normalizedContent = normalizeNodeContent(lnode);
+    // `slots` is a dedicated channel compared by $equalSlots, never a node
+    // property; leaving it in would make every slotted host compare unequal.
+    const yattrs = ytype.getAttributes() as Record<string, unknown>;
+    delete yattrs[SLOTS_ATTR_KEY];
     return (
       ytype._length === normalizedContent.length &&
-      equalAttrs(ytype.getAttributes(), {
+      equalAttrs(yattrs, {
         ...propertiesToAttributes(lnode, binding),
         ...stateToAttributes(lnode),
       }) &&
+      $equalSlots(ytype, lnode, binding) &&
       ytype
         .toArray()
         .every((ychild, i) =>
-          equalYTypePNode(ychild, normalizedContent[i], binding),
+          $equalYTypePNode(ychild, normalizedContent[i], binding),
         )
     );
   }
@@ -739,7 +808,7 @@ type EqualityFactor = {
   equalityFactor: number;
 };
 
-const computeChildEqualityFactor = (
+const $computeChildEqualityFactor = (
   ytype: XmlElement,
   lnode: LexicalNode,
   binding: BindingV2,
@@ -759,7 +828,7 @@ const computeChildEqualityFactor = (
       break;
     } else if (mappedIdentity(binding.mapping.get(leftY), leftP)) {
       foundMappedChild = true; // definite (good) match!
-    } else if (!equalYTypePNode(leftY, leftP, binding)) {
+    } else if (!$equalYTypePNode(leftY, leftP, binding)) {
       break;
     }
   }
@@ -770,7 +839,7 @@ const computeChildEqualityFactor = (
       break;
     } else if (mappedIdentity(binding.mapping.get(rightY), rightP)) {
       foundMappedChild = true;
-    } else if (!equalYTypePNode(rightY, rightP, binding)) {
+    } else if (!$equalYTypePNode(rightY, rightP, binding)) {
       break;
     }
   }
@@ -996,7 +1065,7 @@ export const $updateYFragment = (
           dirtyElements,
         );
       }
-    } else if (equalYTypePNode(leftY, leftL, binding)) {
+    } else if ($equalYTypePNode(leftY, leftL, binding)) {
       // update mapping
       binding.mapping.set(leftY, leftL);
     } else {
@@ -1023,7 +1092,7 @@ export const $updateYFragment = (
           dirtyElements,
         );
       }
-    } else if (equalYTypePNode(rightY, rightL, binding)) {
+    } else if ($equalYTypePNode(rightY, rightL, binding)) {
       // update mapping
       binding.mapping.set(rightY, rightL);
     } else {
@@ -1048,12 +1117,12 @@ export const $updateYFragment = (
         rightY instanceof XmlElement && matchNodeName(rightY, rightL);
       if (updateLeft && updateRight) {
         // decide which which element to update
-        const equalityLeft = computeChildEqualityFactor(
+        const equalityLeft = $computeChildEqualityFactor(
           leftY as XmlElement,
           leftL as LexicalNode,
           binding,
         );
-        const equalityRight = computeChildEqualityFactor(
+        const equalityRight = $computeChildEqualityFactor(
           rightY as XmlElement,
           rightL as LexicalNode,
           binding,

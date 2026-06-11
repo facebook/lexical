@@ -279,6 +279,12 @@ export function $createTestShadowRootNode(): TestShadowRootNode {
   return new TestShadowRootNode();
 }
 
+export function $isTestShadowRootNode(
+  node: LexicalNode | null | undefined,
+): node is TestShadowRootNode {
+  return node instanceof TestShadowRootNode;
+}
+
 export type SerializedTestUpdateDOMTrueHostNode = SerializedElementNode;
 
 // Slot host that always reports updateDOM=true, so every host edit triggers
@@ -288,20 +294,13 @@ export type SerializedTestUpdateDOMTrueHostNode = SerializedElementNode;
 export class TestUpdateDOMTrueHostNode extends ElementNode {
   __toggle: number = 0;
 
-  static getType(): string {
-    return 'test_update_dom_true_host';
+  $config() {
+    return this.config('test_update_dom_true_host', {extends: ElementNode});
   }
 
-  static clone(node: TestUpdateDOMTrueHostNode): TestUpdateDOMTrueHostNode {
-    const next = new TestUpdateDOMTrueHostNode(node.__key);
-    next.__toggle = node.__toggle;
-    return next;
-  }
-
-  static importJSON(
-    serializedNode: SerializedTestUpdateDOMTrueHostNode,
-  ): TestUpdateDOMTrueHostNode {
-    return $createTestUpdateDOMTrueHostNode().updateFromJSON(serializedNode);
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__toggle = prevNode.__toggle;
   }
 
   createDOM(): HTMLElement {
@@ -323,6 +322,12 @@ export class TestUpdateDOMTrueHostNode extends ElementNode {
 
 export function $createTestUpdateDOMTrueHostNode(): TestUpdateDOMTrueHostNode {
   return new TestUpdateDOMTrueHostNode();
+}
+
+export function $isTestUpdateDOMTrueHostNode(
+  node: LexicalNode | null | undefined,
+): node is TestUpdateDOMTrueHostNode {
+  return node instanceof TestUpdateDOMTrueHostNode;
 }
 
 export type SerializedTestSegmentedNode = SerializedTextNode;

@@ -6,10 +6,12 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {
   $getSelection,
   $isNodeSelection,
   defineExtension,
+  type EditorState,
   getRegisteredSubtypeMap,
   type Klass,
   type LexicalNode,
@@ -61,17 +63,22 @@ export const NodeSelectionDataSelectedExtension =
     // so a subclass instance still matches without a runtime `instanceof`. This
     // needs the editor's node list, which is only available before creation.
     init(editorConfig, config) {
-      const wantedTypes = new Set(config.nodes.map(klass => klass.getType()));
-      const matchTypes = new Set(wantedTypes);
+      const matchTypes = new Set<string>();
       const subtypeMap = getRegisteredSubtypeMap(
         getKnownTypesAndNodes(editorConfig).nodes,
       );
-      for (const wanted of wantedTypes) {
-        const subtypes = subtypeMap.get(wanted);
-        if (subtypes) {
-          for (const subtype of subtypes) {
-            matchTypes.add(subtype);
-          }
+      for (const klass of config.nodes) {
+        const type = klass.getType();
+        const subtypes = subtypeMap.get(type);
+        invariant(
+          subtypes !== undefined,
+          'Node class %s with type %s not registered in editor',
+          klass.name,
+          type,
+        );
+        matchTypes.add(type);
+        for (const subtype of subtypes) {
+          matchTypes.add(subtype);
         }
       }
       return {matchTypes};
@@ -90,8 +97,10 @@ export const NodeSelectionDataSelectedExtension =
     register(editor, config, state) {
       const {attribute} = config;
       const {matchTypes} = state.getInitResult();
-      let selectedKeys = new Set<NodeKey>();
-      return editor.registerUpdateListener(({editorState}) => {
+      // key -> host DOM the attribute was set on, so the disposer can clear
+      // still-mounted DOM even after the editor's key->DOM map is reset.
+      const marked = new Map<NodeKey, HTMLElement>();
+      const syncFromEditorState = (editorState: EditorState) => {
         const nextKeys = new Set<NodeKey>();
         editorState.read(() => {
           const selection = $getSelection();
@@ -103,21 +112,33 @@ export const NodeSelectionDataSelectedExtension =
             }
           }
         });
-        for (const key of selectedKeys) {
+        for (const [key, dom] of marked) {
           if (!nextKeys.has(key)) {
-            const dom = editor.getElementByKey(key);
-            if (dom !== null) {
-              dom.removeAttribute(attribute);
-            }
+            dom.removeAttribute(attribute);
+            marked.delete(key);
           }
         }
         for (const key of nextKeys) {
           const dom = editor.getElementByKey(key);
           if (dom !== null) {
             dom.setAttribute(attribute, 'true');
+            marked.set(key, dom);
           }
         }
-        selectedKeys = nextKeys;
-      });
+      };
+      // A NodeSelection already committed when this registers (e.g. the
+      // extension is added to a live editor) must be mirrored immediately,
+      // not only on the next update.
+      syncFromEditorState(editor.getEditorState());
+      const removeUpdateListener = editor.registerUpdateListener(
+        ({editorState}) => syncFromEditorState(editorState),
+      );
+      return () => {
+        removeUpdateListener();
+        for (const dom of marked.values()) {
+          dom.removeAttribute(attribute);
+        }
+        marked.clear();
+      };
     },
   });

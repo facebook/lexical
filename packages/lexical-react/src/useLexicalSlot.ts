@@ -31,6 +31,7 @@ export function useLexicalSlot<T extends HTMLElement = HTMLElement>(
   slotName: string,
 ): RefObject<T | null> {
   const targetRef = useRef<T | null>(null);
+  const appendedContainerRef = useRef<HTMLElement | null>(null);
   useLayoutEffect(() => {
     const target = targetRef.current;
     if (target === null) {
@@ -40,9 +41,21 @@ export function useLexicalSlot<T extends HTMLElement = HTMLElement>(
       const host = $getNodeByKey(nodeKey);
       return host !== null ? $getSlotContainer(host, slotName) : null;
     });
+    // A nodeKey/slotName change resolves a different container; detach the
+    // one this hook appended previously (when it is still ours) so the stale
+    // slot DOM doesn't linger in the chrome next to the new one.
+    const previous = appendedContainerRef.current;
+    if (
+      previous !== null &&
+      previous !== container &&
+      previous.parentElement === target
+    ) {
+      target.removeChild(previous);
+    }
     if (container !== null && container.parentElement !== target) {
       target.appendChild(container);
     }
+    appendedContainerRef.current = container;
   });
   return targetRef;
 }

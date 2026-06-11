@@ -21,13 +21,13 @@ import {
   pasteFromClipboard,
   sleep,
   test,
+  waitForSelector,
 } from '../utils/index.mjs';
 
 async function insertCard(page) {
   await page.keyboard.type('/card');
-  await sleep(300);
+  await waitForSelector(page, '.typeahead-popover');
   await page.keyboard.press('Enter');
-  await sleep(300);
 }
 
 // Paragraphs within a slot are joined with a marker so multi-paragraph

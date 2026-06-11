@@ -260,6 +260,71 @@ describe('PullQuoteNode atomic decorator host', () => {
     });
   });
 
+  // The host is a DecoratorNode with no children channel, so direct children
+  // that aren't slot wrappers cannot ride along as body content — they land
+  // in the quote slot (created on demand) instead of being dropped into a
+  // dead zero-slot block.
+  it('imports non-slot children into the quote slot instead of dropping them', () => {
+    using editor = buildEditorFromExtensions(PullQuoteImportTestExtension);
+
+    const bareChildHtml =
+      '<div class="lexical-pullquote-node"><p>hello</p></div>';
+
+    editor.update(
+      () => {
+        $getRoot().clear().select();
+        const dom = new DOMParser().parseFromString(bareChildHtml, 'text/html');
+        $getRoot().append(...$generateNodesFromDOMViaExtension(dom));
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const pullquote = $getRoot().getFirstChild();
+      assert($isPullQuoteNode(pullquote), 'host imported');
+      const quote = $getSlot(pullquote, 'quote');
+      assert(
+        quote instanceof SlotContainerNode,
+        'quote slot created on demand',
+      );
+      expect(quote.getTextContent()).toBe('hello');
+      // No attribution in the HTML, so none is fabricated.
+      expect($getSlot(pullquote, 'attribution')).toBe(null);
+    });
+  });
+
+  // Non-slot children that follow a quote wrapper append into the same quote
+  // slot after the wrapper's own content.
+  it('appends trailing non-slot children after the imported quote content', () => {
+    using editor = buildEditorFromExtensions(PullQuoteImportTestExtension);
+
+    const mixedHtml =
+      '<div class="lexical-pullquote-node">' +
+      '<div data-lexical-slot="quote"><p>Quoted</p></div>' +
+      '<p>loose</p>' +
+      '</div>';
+
+    editor.update(
+      () => {
+        $getRoot().clear().select();
+        const dom = new DOMParser().parseFromString(mixedHtml, 'text/html');
+        $getRoot().append(...$generateNodesFromDOMViaExtension(dom));
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const pullquote = $getRoot().getFirstChild();
+      assert($isPullQuoteNode(pullquote), 'host imported');
+      const quote = $getSlot(pullquote, 'quote');
+      assert(quote instanceof SlotContainerNode, 'quote slot rebuilt');
+      expect(quote.getChildren().map(child => child.getTextContent())).toEqual([
+        'Quoted',
+        'loose',
+      ]);
+    });
+  });
+
   // External paste: a browser's contenteditable Cmd+A → Cmd+C strips the
   // outer `<div class="lexical-pullquote-node">` wrapper, leaving the
   // quote / attribution slot wrappers as fragment-root siblings.

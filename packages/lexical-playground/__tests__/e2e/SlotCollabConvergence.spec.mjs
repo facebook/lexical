@@ -14,6 +14,7 @@ import {
   initialize,
   sleep,
   test,
+  waitForSelector,
 } from '../utils/index.mjs';
 
 // The other client. `focusEditor` and all the keyboard/click helpers act on the
@@ -25,16 +26,14 @@ function otherFrame(page) {
 
 async function insertCard(page) {
   await page.keyboard.type('/card');
-  await sleep(300);
+  await waitForSelector(page, '.typeahead-popover');
   await page.keyboard.press('Enter');
-  await sleep(300);
 }
 
 async function insertPullQuote(page) {
   await page.keyboard.type('/pull');
-  await sleep(300);
+  await waitForSelector(page, '.typeahead-popover');
   await page.keyboard.press('Enter');
-  await sleep(300);
 }
 
 // The Card body is regular ElementNode children, not a named slot, so its

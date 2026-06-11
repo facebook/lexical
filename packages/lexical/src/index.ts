@@ -261,6 +261,7 @@ export {
 } from './LexicalSelection';
 export {
   $getSlot,
+  $getSlotFrame,
   $getSlotHost,
   $getSlotNames,
   $getSlotNameWithinHost,

@@ -43,7 +43,7 @@ import {
   $isRangeSelection,
   moveSelectionPointToSibling,
 } from '../LexicalSelection';
-import {$getSlot, $getSlotNames} from '../LexicalSlot';
+import {$errorOnSlotCycleChild, $getSlot, $getSlotNames} from '../LexicalSlot';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
   $getDOMSlot,
@@ -621,6 +621,11 @@ export class ElementNode
       String(deleteCount),
       String(oldSize),
     );
+    // Before any mutation: a child insertion must not close a cycle through a
+    // slot up-link (the reverse direction of $setSlot's cycle invariant).
+    for (const nodeToInsert of nodesToInsert) {
+      $errorOnSlotCycleChild(writableSelf, nodeToInsert);
+    }
     const writableSelfKey = writableSelf.__key;
     const nodesToInsertKeys = [];
     const nodesToRemoveKeys = [];

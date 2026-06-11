@@ -171,7 +171,7 @@ function findOffset(
   return offsetUtf16;
 }
 
-function $wrapOverflowedNodes(offset: number): void {
+export function $wrapOverflowedNodes(offset: number): void {
   // $dfsWithSlots (not $dfs) so slot-bearing hosts contribute their slot
   // subtree text to the character count and overflow wrapping. Without this
   // a slot-host (e.g. Card with title/body) would report 0 characters and
@@ -185,12 +185,15 @@ function $wrapOverflowedNodes(offset: number): void {
 
     // Slot value roots (a non-inline DecoratorNode slotted into a host) are
     // leaf nodes with __parent === null; wrapping them in OverflowNode would
-    // call node.replace() and throw. Their content is also not user-typed
-    // text, so excluding them from both the counter and the wrap loop matches
-    // the character-limit's intent.
+    // call node.replace() and throw, so they stay out of the wrap loop. Their
+    // text still funds `offset` (root text content folds slotted decorator
+    // text in via getSlotsTextContent), so the budget is advanced for them
+    // below. Element slot values need no special case: their interior is
+    // counted leaf-by-leaf like any other subtree.
+    const isSlotValueLeaf = $isLeafNode(node) && $getSlotHost(node) !== null;
     const needsOverflowParent =
       $isLeafNode(node) &&
-      $getSlotHost(node) === null &&
+      !isSlotValueLeaf &&
       !$findMatchingParent(node, $isOverflowNode);
 
     if ($isOverflowNode(node)) {
@@ -234,6 +237,10 @@ function $wrapOverflowedNodes(offset: number): void {
           $unwrapNode(node);
         }
       }
+    } else if (isSlotValueLeaf) {
+      // Skipped by the wrap loop, but its text is part of the offset budget;
+      // without this the wrap boundary lands late by the decorator's size.
+      accumulatedLength += node.getTextContentSize();
     } else if (needsOverflowParent) {
       const previousAccumulatedLength = accumulatedLength;
       accumulatedLength += node.getTextContentSize();

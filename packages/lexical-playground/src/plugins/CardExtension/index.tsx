@@ -14,14 +14,11 @@ import type {
   PointType,
 } from 'lexical';
 
-import {
-  $defaultShouldInsertAfter,
-  ClickAfterLastBlockExtension,
-  NodeSelectionDataSelectedExtension,
-} from '@lexical/extension';
+import {NodeSelectionDataSelectedExtension} from '@lexical/extension';
 import {$insertNodeToNearestRoot, mergeRegister} from '@lexical/utils';
 import {
   $createNodeSelection,
+  $createParagraphNode,
   $getAdjacentNode,
   $getNearestNodeFromDOMNode,
   $getSelection,
@@ -178,6 +175,18 @@ function $handleCardTab(
       bodyFirst.selectStart();
       return true;
     }
+    // No element body to receive the caret: seed an empty paragraph and move
+    // into it. Falling through here would hand Tab to the rich-text indent
+    // default, which indents the title paragraph instead of bridging.
+    event?.preventDefault();
+    const bodyParagraph = $createParagraphNode();
+    if (bodyFirst === null) {
+      context.card.append(bodyParagraph);
+    } else {
+      bodyFirst.insertBefore(bodyParagraph);
+    }
+    bodyParagraph.select();
+    return true;
   } else if (isBackward && context.in === 'body') {
     const bodyFirst = context.card.getFirstChild();
     if (bodyFirst === null || !$isAtBlockStart(selection.anchor, bodyFirst)) {
@@ -209,14 +218,6 @@ function $resolveCardChromeTarget(
   editor: LexicalEditor,
   target: HTMLElement,
 ): CardNode | null {
-  // The reconciler wraps each slot in a keyless `<div data-lexical-slot=...>`
-  // scaffold; a click on the wrapper's padding / border / ::before label
-  // ($getNearestNodeFromDOMNode walks past keyless ancestors) would otherwise
-  // resolve to the Card and promote — turning a click on the visible "TITLE"
-  // hint into a whole-Card selection instead of entering the slot.
-  if (target.closest('[data-lexical-slot]') !== null) {
-    return null;
-  }
   const node = $getNearestNodeFromDOMNode(target);
   if (!$isCardNode(node)) {
     return null;
@@ -225,19 +226,28 @@ function $resolveCardChromeTarget(
   if (hostElement === null || !hostElement.contains(target)) {
     return null;
   }
+  // The reconciler wraps each slot in a keyless `<div data-lexical-slot=...>`
+  // scaffold; a click on the wrapper's padding / border / ::before label
+  // ($getNearestNodeFromDOMNode walks past keyless ancestors) would otherwise
+  // resolve to the Card and promote — turning a click on the visible "TITLE"
+  // hint into a whole-Card selection instead of entering the slot. Only a
+  // wrapper inside this Card's own DOM counts: when the Card is itself nested
+  // in another host's slot, the OUTER wrapper contains the whole Card and
+  // must not turn its chrome into a dead zone.
+  const slotWrapper = target.closest('[data-lexical-slot]');
+  if (slotWrapper !== null && hostElement.contains(slotWrapper)) {
+    return null;
+  }
   return node;
 }
 
 export const CardExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    // The default `$shouldInsertAfter` predicate only picks up block
-    // decorators that opt in; this override adds the Card so that clicking
-    // the empty area below a trailing Card inserts a fresh paragraph after
-    // it instead of leaving the caret in an awkward place.
-    /* @__PURE__ */ configExtension(ClickAfterLastBlockExtension, {
-      $shouldInsertAfter: node =>
-        $defaultShouldInsertAfter(node) || $isCardNode(node),
-    }),
+    // No ClickAfterLastBlockExtension override: CardNode.isShadowRoot() is
+    // true, so `$defaultShouldInsertAfter` already matches a trailing Card
+    // (see the CardNode unit test pinning this). An override here would also
+    // clobber the app-level predicate — the extension's last-wins shallow
+    // config merge drops every other contributor's terms.
     // Mirror the NodeSelection state onto a `data-selected` attribute on each
     // Card's host DOM so CSS can render the selected outline. The Card's
     // chrome is rendered through `decorate()`, but selecting the whole Card is
@@ -250,6 +260,11 @@ export const CardExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/Card',
   register: editor => {
     const onChromeMouseDown = (event: MouseEvent) => {
+      // Read-only mode: leave the reader's native selection alone — the
+      // preventDefault / focus / removeAllRanges below would destroy it.
+      if (!editor.isEditable()) {
+        return;
+      }
       const target = event.target;
       if (!isHTMLElement(target)) {
         return;
@@ -314,6 +329,10 @@ export const CardExtension = /* @__PURE__ */ defineExtension({
       editor.registerCommand<MouseEvent>(
         CLICK_COMMAND,
         event => {
+          // Read-only mode never promotes — mirrors the mousedown gate.
+          if (!editor.isEditable()) {
+            return false;
+          }
           const target = event.target;
           if (!isHTMLElement(target)) {
             return false;

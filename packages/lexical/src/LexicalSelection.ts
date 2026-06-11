@@ -65,6 +65,7 @@ import {insertRangeAfter, LexicalNode} from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
   $getSlot,
+  $getSlotFrame,
   $getSlotHost,
   $getSlotHostKey,
   $getSlotMap,
@@ -1411,7 +1412,14 @@ export class RangeSelection implements BaseSelection {
       $isElementNode(anchorNode) &&
       $getSlotHostKey(anchorNode) !== null
     ) {
-      const firstChild = anchorNode.getFirstChild();
+      // An empty slot value has no child to redirect into (its caret target
+      // is the reconciler's terminating <br>), and the block-finding walk
+      // below would throw on the parentless slot root. Seed a paragraph so
+      // both the empty and non-empty cases redirect the same way; insertNodes
+      // removes the seed again when block content replaces it.
+      const firstChild =
+        anchorNode.getFirstChild() ??
+        anchorNode.append($createParagraphNode()).getFirstChild();
       if (firstChild !== null) {
         firstChild.selectStart();
         const redirected = $getSelection();
@@ -2685,14 +2693,8 @@ function $normalizeSelectionPointsForBoundaries(
 // slot root because a slotted node's __parent is null. Non-slot trees have
 // __slotHost === null everywhere, so this always returns null there.
 function $getPointSlotFrame(point: PointType): LexicalNode | null {
-  let node: LexicalNode | null = $getNodeByKey(point.key);
-  while (node !== null) {
-    if ($getSlotHostKey(node) !== null) {
-      return node;
-    }
-    node = node.getParent();
-  }
-  return null;
+  const node = $getNodeByKey(point.key);
+  return node === null ? null : $getSlotFrame(node);
 }
 
 // @experimental named-slots. Content order (slots-first) of a slot-straddling

@@ -6,8 +6,6 @@
  *
  */
 
-import type {Provider} from '../../index';
-
 import {
   $createParagraphNode,
   $createTextNode,
@@ -28,13 +26,15 @@ import {
   TestDecoratorNode,
   TestShadowRootNode,
 } from 'lexical/src/__tests__/utils';
-import {afterEach, assert, describe, expect, test} from 'vitest';
+import {afterEach, assert, describe, expect, test, vi} from 'vitest';
 import {
   applyUpdate,
   Doc,
   encodeStateAsUpdate,
   Map as YMap,
   type Text as YText,
+  type Transaction as YTransaction,
+  UndoManager,
   XmlText,
   type YEvent,
 } from 'yjs';
@@ -42,6 +42,7 @@ import {
 import {createBinding} from '../../Bindings';
 import {CollabDecoratorNode} from '../../CollabDecoratorNode';
 import {CollabElementNode} from '../../CollabElementNode';
+import {createUndoManager, type Provider} from '../../index';
 import {
   syncLexicalUpdateToYjs,
   syncYjsChangesToLexical,
@@ -753,6 +754,139 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     const coverYAfter = slotsY.get('cover');
     expect(coverYAfter).toBe(coverYBefore);
   });
+
+  // observer (g): slot names and values are peer-controlled, so entries that
+  // would trip $setSlot / shared-type invariants (reserved name, primitive
+  // value, missing `__type`, a value that can only materialize a text node,
+  // the same shared type aliased under two names) must be skipped as silent
+  // no-ops instead of crashing the observer update — while a valid entry in
+  // the same transaction still lands.
+  test('observer: hostile remote slot entries are skipped without corrupting valid slots', async () => {
+    const {binding2, doc2, editor2, slotsY} = setupRestoredSlotTree();
+
+    // yjs logs (and swallows) the re-integration error for the aliased shared
+    // type; keep the test output clean.
+    const errorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+    const textVal = new YMap();
+    try {
+      applyRemoteChange(binding2, () => {
+        doc2.transact(() => {
+          // reserved name carrying an otherwise valid value
+          const reserved = new XmlText();
+          reserved.setAttribute('__type', 'test_shadow_root');
+          slotsY.set('__proto__', reserved);
+          // primitive value
+          slotsY.set('answer', 42);
+          // shared type missing the `__type` attribute
+          slotsY.set('untyped', new XmlText());
+          // a Y.Map value can only materialize a text node, never a slot value
+          textVal.set('__type', 'text');
+          slotsY.set('textval', textVal);
+          // the same shared type aliased under a second name
+          slotsY.set('alias', slotsY.get('title'));
+          // a valid entry alongside the hostile ones still lands
+          const extra = new XmlText();
+          extra.setAttribute('__type', 'test_shadow_root');
+          slotsY.set('extra', extra);
+        });
+      });
+      await flush();
+    } finally {
+      errorSpy.mockRestore();
+    }
+
+    editor2.read(() => {
+      const hostR = $getRoot().getFirstChild();
+      assert($isElementNode(hostR));
+      // first name wins for the alias; every other hostile entry is dropped
+      expect($getSlotNames(hostR).sort()).toEqual(['extra', 'title']);
+      expect($getSlot(hostR, 'title')?.getTextContent()).toBe('Title');
+      // the linked-list child is untouched
+      expect(hostR.getTextContent()).toContain('Body');
+    });
+    // the rejected text value's collab node does not linger in the map
+    for (const collab of binding2.collabNodeMap.values()) {
+      expect(collab.getSharedType()).not.toBe(textVal);
+    }
+  });
+
+  // local (h): the root is an element host too, so $setSlot($getRoot(), ...)
+  // must flow through the root branch of syncLexicalUpdateToYjs (which has no
+  // matched-child recursion to reach syncSlotsFromLexical for it) and restore
+  // on a peer through the ordinary root children/slots reconcile.
+  test('local: a slot set on the root syncs to yjs and restores on a peer', () => {
+    const {binding, doc, editor} = buildBinding();
+
+    editor.update(
+      () => {
+        const para = $createParagraphNode();
+        para.append($createTextNode('Body'));
+        $getRoot().clear().append(para);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    applyLocalUpdate(binding, editor, () => {
+      const banner = $createTestShadowRootNode();
+      banner.append($createParagraphNode().append($createTextNode('Banner')));
+      $setSlot($getRoot(), 'banner', banner);
+    });
+
+    // the slot lands on the shared root's own `slots` attribute channel
+    const slotsY = binding.root._xmlText.getAttribute('slots') as unknown;
+    assert(slotsY instanceof YMap);
+    expect(Array.from(slotsY.keys())).toEqual(['banner']);
+
+    const doc2 = new Doc();
+    applyUpdate(doc2, encodeStateAsUpdate(doc));
+    const {binding: binding2, editor: editor2} = buildRestoreBinding(doc2);
+    restore(editor2, binding2);
+
+    editor2.read(() => {
+      const bannerR = $getSlot($getRoot(), 'banner');
+      assert(bannerR != null);
+      assert($isElementNode(bannerR));
+      expect(bannerR.getTextContent()).toBe('Banner');
+      expect(bannerR.getParent()).toBe(null);
+    });
+  });
+
+  // observer (h): a remote host deletion transitively deletes the slots Y.Map
+  // and the slot value's shared type, so the destroy path can no longer read
+  // the `slots` attribute to find the slot's collab node — the
+  // transaction-level deleted-structs sweep must drop it from
+  // binding.collabNodeMap instead of leaking it forever.
+  test('observer: a remote host deletion clears the slot value from the collab node map', async () => {
+    const {binding2, doc2, editor2} = setupRestoredSlotTree();
+
+    let hostKey = '';
+    let slotKey = '';
+    editor2.read(() => {
+      const hostR = $getRoot().getFirstChild();
+      assert($isElementNode(hostR));
+      hostKey = hostR.__key;
+      const title = $getSlot(hostR, 'title');
+      assert(title != null);
+      slotKey = title.__key;
+    });
+    expect(binding2.collabNodeMap.has(hostKey)).toBe(true);
+    expect(binding2.collabNodeMap.has(slotKey)).toBe(true);
+
+    applyRemoteChange(binding2, () => {
+      doc2.transact(() => {
+        // delete the host's embed from the shared root
+        binding2.root._xmlText.delete(0, 1);
+      });
+    });
+    await flush();
+
+    expect(binding2.collabNodeMap.has(hostKey)).toBe(false);
+    expect(binding2.collabNodeMap.has(slotKey)).toBe(false);
+  });
 });
 
 // V1 with a DECORATOR host. A non-inline decorator can host named slots even
@@ -1180,5 +1314,335 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
 
     expect(binding.collabNodeMap.has(hostKey)).toBe(false);
     expect(binding.collabNodeMap.has(slotKey)).toBe(false);
+  });
+});
+
+// Two real clients over two Docs, relayed through doc update messages
+// (doc1 -> doc2), each wired through the same entry points
+// useYjsCollaboration registers: the update listener feeds
+// syncLexicalUpdateToYjs, observeDeep feeds syncYjsChangesToLexical with the
+// origin filter (own-binding transactions skipped, UndoManager origin marks an
+// undo replay). This exercises the event shapes only a genuine remote
+// transaction produces — in particular a host's FIRST slot set, which
+// integrates the slots Y.Map in the same transaction that assigns the `slots`
+// attribute, so the peer sees no YMapEvent at all, only a changed `slots` key
+// on the host's own event.
+describe('named-slots collab-v1: two-client relay', () => {
+  const editors: LexicalEditor[] = [];
+  afterEach(() => {
+    editors.length = 0;
+  });
+
+  // syncLexicalUpdateToYjs ends with a selection sync that reads
+  // provider.awareness; a local state of null short-circuits it.
+  const provider = {
+    awareness: {getLocalState: () => null},
+  } as unknown as Provider;
+
+  function buildClient(doc: Doc) {
+    const editor = createEditor({
+      namespace: 'slot-sync-v1',
+      nodes: [TestShadowRootNode, TestDecoratorNode],
+      onError: e => {
+        throw e;
+      },
+    });
+    editors.push(editor);
+    const docMap = new Map<string, Doc>([['slot-sync-v1', doc]]);
+    const binding = createBinding(
+      editor,
+      provider,
+      'slot-sync-v1',
+      doc,
+      docMap,
+    );
+    return {binding, doc, editor};
+  }
+
+  function serialize(
+    editor: LexicalEditor,
+    binding: ReturnType<typeof createBinding>,
+  ) {
+    editor.read(() => {
+      binding.doc.transact(() => {
+        binding.root.syncChildrenFromLexical(
+          binding,
+          $getRoot(),
+          null,
+          null,
+          null,
+        );
+      });
+    });
+  }
+
+  function restore(
+    editor: LexicalEditor,
+    binding: ReturnType<typeof createBinding>,
+  ) {
+    editor.update(
+      () => {
+        $getRoot().clear();
+        binding.root.applyChildrenYjsDelta(
+          binding,
+          binding.root._xmlText.toDelta(),
+        );
+        binding.root.syncChildrenFromYjs(binding);
+      },
+      {discrete: true},
+    );
+  }
+
+  // Mirrors useYjsCollaboration's observer registration: transactions this
+  // binding originated are skipped, and an UndoManager origin marks the sync
+  // as an undo/redo replay.
+  function connectObserver(binding: ReturnType<typeof createBinding>) {
+    const sharedRoot = binding.root.getSharedType();
+    const handler = (
+      events: YEvent<YText>[],
+      transaction: YTransaction,
+    ): void => {
+      const origin = transaction.origin;
+      if (origin !== binding) {
+        syncYjsChangesToLexical(
+          binding,
+          provider,
+          events,
+          origin instanceof UndoManager,
+          () => undefined,
+        );
+      }
+    };
+    sharedRoot.observeDeep(handler);
+    return () => sharedRoot.unobserveDeep(handler);
+  }
+
+  function applyLocalUpdate(
+    binding: ReturnType<typeof createBinding>,
+    editor: LexicalEditor,
+    mutate: () => void,
+  ) {
+    const removeListener = editor.registerUpdateListener(
+      ({
+        prevEditorState,
+        editorState,
+        dirtyElements,
+        dirtyLeaves,
+        normalizedNodes,
+        tags,
+      }) => {
+        syncLexicalUpdateToYjs(
+          binding,
+          provider,
+          prevEditorState,
+          editorState,
+          dirtyElements,
+          dirtyLeaves,
+          normalizedNodes,
+          tags,
+        );
+      },
+    );
+    try {
+      editor.update(mutate, {discrete: true});
+    } finally {
+      removeListener();
+    }
+  }
+
+  // syncYjsChangesToLexical commits its editor.update non-discretely, so the
+  // new committed state lands on a microtask. Drain before reading.
+  async function flush() {
+    await Promise.resolve();
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+
+  // Client 1 owns a slotless host already known to client 2; wires the relay;
+  // returns both clients plus an observer disconnect for client 2.
+  function setupTwoClients(buildTree: () => void) {
+    const {
+      binding: binding1,
+      doc: doc1,
+      editor: editor1,
+    } = buildClient(new Doc());
+
+    editor1.update(buildTree, {discrete: true});
+    serialize(editor1, binding1);
+
+    const doc2 = new Doc();
+    applyUpdate(doc2, encodeStateAsUpdate(doc1));
+    const {binding: binding2, editor: editor2} = buildClient(doc2);
+    restore(editor2, binding2);
+
+    doc1.on('update', (update: Uint8Array) => applyUpdate(doc2, update));
+    const disconnect2 = connectObserver(binding2);
+
+    return {binding1, binding2, disconnect2, doc1, doc2, editor1, editor2};
+  }
+
+  test('a first slot set on a synced element host reaches the peer', async () => {
+    const {binding2, disconnect2, binding1, editor1, editor2} = setupTwoClients(
+      () => {
+        const host = $createParagraphNode();
+        const body = $createParagraphNode();
+        body.append($createTextNode('Body'));
+        $getRoot().clear().append(host);
+        host.append(body);
+      },
+    );
+
+    try {
+      applyLocalUpdate(binding1, editor1, () => {
+        const host = $getRoot().getFirstChild();
+        assert($isElementNode(host));
+        const title = $createTestShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Title')));
+        $setSlot(host, 'title', title);
+      });
+      await flush();
+
+      editor2.read(() => {
+        const hostR = $getRoot().getFirstChild();
+        assert($isElementNode(hostR));
+        expect($getSlotNames(hostR)).toEqual(['title']);
+        const titleR = $getSlot(hostR, 'title');
+        assert(titleR != null);
+        assert($isElementNode(titleR));
+        expect(titleR.getTextContent()).toBe('Title');
+        expect(titleR.getParent()).toBe(null);
+        // `slots` is a reserved channel key: the raw Y.Map must not be
+        // restored as a junk node property on the host.
+        expect(
+          (hostR as unknown as Record<string, unknown>).slots,
+        ).toBeUndefined();
+      });
+
+      // A follow-up peer-local edit re-diffs the host without tripping the
+      // slots channel.
+      applyLocalUpdate(binding2, editor2, () => {
+        const host = $getRoot().getFirstChild();
+        assert($isElementNode(host));
+        const body = host.getFirstChild();
+        assert($isElementNode(body));
+        const text = body.getFirstChild();
+        assert($isTextNode(text));
+        text.setTextContent('Body changed');
+      });
+
+      const hostCollab2 = binding2.root._children[0];
+      assert(hostCollab2 instanceof CollabElementNode);
+      const slotsY2 = hostCollab2._xmlText.getAttribute('slots') as unknown;
+      assert(slotsY2 instanceof YMap);
+      expect(Array.from(slotsY2.keys())).toEqual(['title']);
+    } finally {
+      disconnect2();
+    }
+  });
+
+  test('a first slot set on a synced decorator host reaches the peer', async () => {
+    const {binding2, disconnect2, binding1, editor1, editor2} = setupTwoClients(
+      () => {
+        const host = $createTestDecoratorNode().setIsInline(false);
+        $getRoot().clear().append(host);
+      },
+    );
+
+    try {
+      applyLocalUpdate(binding1, editor1, () => {
+        const host = $getRoot().getFirstChild();
+        assert($isDecoratorNode(host));
+        const title = $createTestShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Title')));
+        $setSlot(host, 'title', title);
+      });
+      await flush();
+
+      editor2.read(() => {
+        const hostR = $getRoot().getFirstChild();
+        assert($isDecoratorNode(hostR));
+        expect($getSlotNames(hostR)).toEqual(['title']);
+        expect($getSlot(hostR, 'title')?.getTextContent()).toBe('Title');
+        expect(
+          (hostR as unknown as Record<string, unknown>).slots,
+        ).toBeUndefined();
+      });
+
+      // A follow-up peer-local edit beside the host syncs without throwing.
+      applyLocalUpdate(binding2, editor2, () => {
+        const para = $createParagraphNode();
+        para.append($createTextNode('After'));
+        $getRoot().append(para);
+      });
+
+      const hostCollab2 = binding2.root._children[0];
+      assert(hostCollab2 instanceof CollabDecoratorNode);
+      const slotsY2 = hostCollab2._xmlElem.getAttribute('slots') as unknown;
+      assert(slotsY2 instanceof YMap);
+      expect(Array.from(slotsY2.keys())).toEqual(['title']);
+    } finally {
+      disconnect2();
+    }
+  });
+
+  // Undoing a first set removes the `slots` attribute in the same shape the
+  // set arrived in (a changed `slots` key, no YMapEvent), so both clients and
+  // both docs must converge back to the slotless host.
+  test('undo of a first slot set converges on both clients', async () => {
+    const {binding1, binding2, disconnect2, editor1, editor2} = setupTwoClients(
+      () => {
+        const host = $createParagraphNode();
+        const body = $createParagraphNode();
+        body.append($createTextNode('Body'));
+        $getRoot().clear().append(host);
+        host.append(body);
+      },
+    );
+
+    // Client 1 observes its own doc too, so the UndoManager-origin
+    // transaction replays into its editor.
+    const disconnect1 = connectObserver(binding1);
+    const undoManager = createUndoManager(
+      binding1,
+      binding1.root.getSharedType(),
+    );
+    try {
+      applyLocalUpdate(binding1, editor1, () => {
+        const host = $getRoot().getFirstChild();
+        assert($isElementNode(host));
+        const title = $createTestShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Title')));
+        $setSlot(host, 'title', title);
+      });
+      await flush();
+
+      // sanity: the slot reached the peer before the undo
+      editor2.read(() => {
+        const hostR = $getRoot().getFirstChild();
+        assert($isElementNode(hostR));
+        expect($getSlotNames(hostR)).toEqual(['title']);
+      });
+
+      undoManager.undo();
+      await flush();
+
+      for (const editor of [editor1, editor2]) {
+        editor.read(() => {
+          const hostR = $getRoot().getFirstChild();
+          assert($isElementNode(hostR));
+          expect($getSlotNames(hostR)).toEqual([]);
+          expect($getSlot(hostR, 'title')).toBe(null);
+          expect(hostR.getTextContent()).toContain('Body');
+        });
+      }
+      // yjs agrees on both docs: the attribute item itself was undone
+      for (const binding of [binding1, binding2]) {
+        const hostCollab = binding.root._children[0];
+        assert(hostCollab instanceof CollabElementNode);
+        expect(hostCollab._xmlText.getAttribute('slots')).toBeUndefined();
+      }
+    } finally {
+      disconnect1();
+      disconnect2();
+    }
   });
 });

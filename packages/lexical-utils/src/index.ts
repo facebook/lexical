@@ -243,8 +243,13 @@ export function $dfsIterator(
  * Like {@link $dfs}, but also descends into named slots. Slots are not on the
  * linked-list spine, so each host's slot subtrees are emitted slots-first,
  * right after the host node and before its linked-list children.
+ * @experimental
  * @param startNode - The node to start the search (inclusive), defaults to the root node.
  * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.
+ * Like {@link $dfs}, reaching endNode stops the traversal before visiting any of its
+ * children — including its slot subtrees. An endNode strictly inside a slot subtree
+ * is never reached (slot subtrees are spliced in whole), so it does not truncate
+ * the traversal.
  * @returns An array of DFSNodes. It will always return at least 1 node (the start node).
  */
 export function $dfsWithSlots(
@@ -258,8 +263,13 @@ export function $dfsWithSlots(
  * Slot-aware {@link $dfsIterator}: a host's slot subtrees are emitted
  * slots-first, right after the host node and before its linked-list children.
  * The caret iterator drives the linked-list spine untouched.
+ * @experimental
  * @param startNode - The node to start the search (inclusive), defaults to the root node.
  * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.
+ * Like {@link $dfs}, reaching endNode stops the traversal before visiting any of its
+ * children — including its slot subtrees. An endNode strictly inside a slot subtree
+ * is never reached (slot subtrees are spliced in whole), so it does not truncate
+ * the traversal.
  * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
  */
 export function* $dfsWithSlotsIterator(
@@ -269,7 +279,9 @@ export function* $dfsWithSlotsIterator(
   for (const dfsNode of $dfsCaretIterator('next', startNode, endNode)) {
     yield dfsNode;
     const {node, depth} = dfsNode;
-    if ($isSlotHost(node)) {
+    // endNode is an inclusive stop: none of its children are visited, so its
+    // slot subtrees must not be either.
+    if ($isSlotHost(node) && !node.is(endNode)) {
       for (const name of $getSlotNames(node)) {
         const slot = $getSlot(node, name);
         if (slot !== null) {
@@ -417,8 +429,13 @@ export function $reverseDfsIterator(
 /**
  * Like {@link $reverseDfs}, but also descends into named slots. Mirror of
  * {@link $dfsWithSlots}.
+ * @experimental
  * @param startNode - The node to start the search (inclusive), defaults to the root node.
  * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.
+ * Mirroring {@link $dfsWithSlots}, reaching endNode stops the traversal without
+ * emitting its slot subtrees. An endNode strictly inside a slot subtree is never
+ * reached (slot subtrees are spliced in whole), so it does not truncate the
+ * traversal.
  * @returns An array of DFSNodes. It will always return at least 1 node (the start node).
  */
 export function $reverseDfsWithSlots(
@@ -435,8 +452,13 @@ export function $reverseDfsWithSlots(
  * traversed. Because the caret spine streams nodes, "left the host subtree" is
  * detected when a node at the host's depth or shallower arrives, flushing the
  * host's pending slots. The caret iterator drives the spine untouched.
+ * @experimental
  * @param startNode - The node to start the search (inclusive), defaults to the root node.
  * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.
+ * Mirroring {@link $dfsWithSlotsIterator}, reaching endNode stops the traversal
+ * without emitting its slot subtrees. An endNode strictly inside a slot subtree is
+ * never reached (slot subtrees are spliced in whole), so it does not truncate the
+ * traversal.
  * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
  */
 export function* $reverseDfsWithSlotsIterator(
@@ -454,7 +476,13 @@ export function* $reverseDfsWithSlotsIterator(
     }
     yield dfsNode;
     const {node, depth} = dfsNode;
-    if ($isSlotHost(node) && $getSlotNames(node).length > 0) {
+    // endNode is an inclusive stop: mirror the forward iterator and leave its
+    // slot subtrees unvisited rather than flushing them after the stop.
+    if (
+      $isSlotHost(node) &&
+      $getSlotNames(node).length > 0 &&
+      !node.is(endNode)
+    ) {
       pending.push({depth, node});
     }
   }

@@ -44,15 +44,20 @@ function $resolveChromeTarget(
   editor: LexicalEditor,
   target: HTMLElement,
 ): PullQuoteNode | null {
-  if (target.closest('[data-lexical-slot]') !== null) {
-    return null;
-  }
   const node = $getNearestNodeFromDOMNode(target);
   if (!$isPullQuoteNode(node)) {
     return null;
   }
   const hostElement = editor.getElementByKey(node.getKey());
   if (hostElement === null || !hostElement.contains(target)) {
+    return null;
+  }
+  // Only a slot wrapper inside this PullQuote's own DOM bails: when the
+  // PullQuote is itself nested in another host's slot, the OUTER wrapper
+  // contains the whole PullQuote and must not turn its chrome into a dead
+  // zone. Same shape as the Card resolver.
+  const slotWrapper = target.closest('[data-lexical-slot]');
+  if (slotWrapper !== null && hostElement.contains(slotWrapper)) {
     return null;
   }
   return node;
@@ -69,6 +74,11 @@ export const PullQuoteExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/PullQuote',
   register: editor => {
     const onChromeMouseDown = (event: MouseEvent) => {
+      // Read-only mode: leave the reader's native selection alone — the
+      // preventDefault / focus / removeAllRanges below would destroy it.
+      if (!editor.isEditable()) {
+        return;
+      }
       const target = event.target;
       if (!isHTMLElement(target)) {
         return;
@@ -107,6 +117,10 @@ export const PullQuoteExtension = /* @__PURE__ */ defineExtension({
       editor.registerCommand<MouseEvent>(
         CLICK_COMMAND,
         event => {
+          // Read-only mode never promotes — mirrors the mousedown gate.
+          if (!editor.isEditable()) {
+            return false;
+          }
           const target = event.target;
           if (!isHTMLElement(target)) {
             return false;

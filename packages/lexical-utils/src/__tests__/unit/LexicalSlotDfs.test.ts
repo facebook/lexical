@@ -17,7 +17,6 @@ import {
   $setSlot,
   LexicalNode,
   NodeKey,
-  ParagraphNode,
 } from 'lexical';
 import {
   $createTestDecoratorNode,
@@ -105,7 +104,7 @@ describe('named-slots: $dfs traversal', () => {
     using editor = buildEditorFromExtensions(slotTreeExtension);
 
     editor.read(() => {
-      const host = $getRoot().getFirstChild<ParagraphNode>()!;
+      const host = $getRoot().getFirstChild()!;
       const visited = $dfsWithSlots(host).map(({depth, node}) => ({
         depth,
         key: node.getKey(),
@@ -127,7 +126,7 @@ describe('named-slots: $dfs traversal', () => {
     using editor = buildEditorFromExtensions(slotTreeExtension);
 
     editor.read(() => {
-      const host = $getRoot().getFirstChild<ParagraphNode>()!;
+      const host = $getRoot().getFirstChild()!;
       const fromDfs = $dfsWithSlots(host).map(({depth, node}) => ({
         depth,
         key: node.getKey(),
@@ -142,7 +141,7 @@ describe('named-slots: $dfs traversal', () => {
     using editor = buildEditorFromExtensions(slotTreeExtension);
 
     editor.read(() => {
-      const host = $getRoot().getFirstChild<ParagraphNode>()!;
+      const host = $getRoot().getFirstChild()!;
       const visited = $reverseDfsWithSlots(host).map(({depth, node}) => ({
         depth,
         key: node.getKey(),
@@ -162,12 +161,40 @@ describe('named-slots: $dfs traversal', () => {
     });
   });
 
+  // endNode is an inclusive stop: $dfs never visits the endNode's children,
+  // so the slot-aware variants must not splice in its slot subtrees either —
+  // in either direction (#7112 mirror invariant under truncation).
+  test('endNode slot subtrees are not emitted past the inclusive stop', () => {
+    using editor = buildEditorFromExtensions(slotTreeExtension);
+
+    editor.read(() => {
+      const root = $getRoot();
+      const host = root.getFirstChild()!;
+      const truncated = [
+        {depth: 0, key: root.getKey()},
+        {depth: 1, key: keys.host},
+      ];
+      expect(
+        $dfsWithSlots(root, host).map(({depth, node}) => ({
+          depth,
+          key: node.getKey(),
+        })),
+      ).toEqual(truncated);
+      expect(
+        $reverseDfsWithSlots(root, host).map(({depth, node}) => ({
+          depth,
+          key: node.getKey(),
+        })),
+      ).toEqual(truncated);
+    });
+  });
+
   test('reconciler text cache includes slot text (RootNode.__cachedText)', () => {
     using editor = buildEditorFromExtensions(slotTreeExtension);
 
     editor.read(() => {
       const root = $getRoot();
-      const host = root.getFirstChild<ParagraphNode>()!;
+      const host = root.getFirstChild()!;
       // the uncached element walk is slot-aware (slots-first)
       expect(host.getTextContent()).toBe('TitleBody');
       // RootNode.getTextContent() returns the reconciler-built cache,
@@ -208,7 +235,7 @@ describe('named-slots: $dfs traversal into a decorator host', () => {
     using editor = buildEditorFromExtensions(decoratorSlotExtension);
 
     editor.read(() => {
-      const host = $getRoot().getFirstChild<TestDecoratorNode>()!;
+      const host = $getRoot().getFirstChild()!;
       const visited = $dfsWithSlots(host).map(({depth, node}) => ({
         depth,
         key: node.getKey(),
@@ -227,7 +254,7 @@ describe('named-slots: $dfs traversal into a decorator host', () => {
     using editor = buildEditorFromExtensions(decoratorSlotExtension);
 
     editor.read(() => {
-      const host = $getRoot().getFirstChild<TestDecoratorNode>()!;
+      const host = $getRoot().getFirstChild()!;
       const visited = $reverseDfsWithSlots(host).map(({depth, node}) => ({
         depth,
         key: node.getKey(),

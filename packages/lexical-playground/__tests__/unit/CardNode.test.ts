@@ -10,7 +10,10 @@ import {
   $generateJSONFromSelectedNodes,
   $generateNodesFromSerializedNodes,
 } from '@lexical/clipboard';
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  $defaultShouldInsertAfter,
+  buildEditorFromExtensions,
+} from '@lexical/extension';
 import {
   $generateHtmlFromNodes,
   $generateNodesFromDOMViaExtension,
@@ -49,7 +52,7 @@ const CardTestExtension = defineExtension({
 });
 
 // Adds the DOM import pipeline: PlaygroundRichTextImportExtension supplies
-// the Card / Figure rules AND the `$rewrapOrphanedSlotWrappers` preprocess
+// the Card / PullQuote rules AND the `$rewrapOrphanedSlotWrappers` preprocess
 // that re-assembles slot wrappers stripped from external paste.
 const CardImportTestExtension = defineExtension({
   $initialEditorState: null,
@@ -197,6 +200,66 @@ describe('CardNode named slots', () => {
       expect($getSlot(card, 'title')?.getTextContent()).toBe('Title');
       expect(card.getChildrenSize()).toBe(1);
       expect(card.getChildren()[0]?.getTextContent()).toBe('Body');
+    });
+  });
+
+  // A Card div with no title wrapper must not resurrect the seeded "Title"
+  // text: the title slot arrives with an empty paragraph, never content the
+  // source HTML did not carry.
+  it('does not fabricate the seeded title when importing a Card without a title wrapper', () => {
+    using editor = buildEditorFromExtensions(CardImportTestExtension);
+
+    const noTitleHtml = '<div class="lexical-card-node"><p>Body only</p></div>';
+
+    editor.update(
+      () => {
+        $getRoot().clear().select();
+        const dom = new DOMParser().parseFromString(noTitleHtml, 'text/html');
+        $getRoot().append(...$generateNodesFromDOMViaExtension(dom));
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const card = $getRoot().getFirstChild();
+      assert($isCardNode(card), 'Top-level node must be a CardNode');
+      expect(card.getChildren()[0]?.getTextContent()).toBe('Body only');
+      expect($getSlot(card, 'title')?.getTextContent()).toBe('');
+    });
+  });
+
+  // An orphan `attribution` wrapper (no preceding `quote`) is dropped by the
+  // rewrap preprocess, and it must also close the open Card run: otherwise
+  // unrelated later siblings reorder into the synthetic Card across the
+  // dropped wrapper.
+  it('an orphan attribution wrapper closes the open Card run', () => {
+    using editor = buildEditorFromExtensions(CardImportTestExtension);
+
+    const orphanedHtml =
+      '<div data-lexical-slot="title"><p>Title</p></div>' +
+      '<p>Body</p>' +
+      '<div data-lexical-slot="attribution"><p>Stray</p></div>' +
+      '<p>After</p>';
+
+    editor.update(
+      () => {
+        $getRoot().clear().select();
+        const dom = new DOMParser().parseFromString(orphanedHtml, 'text/html');
+        $getRoot().append(...$generateNodesFromDOMViaExtension(dom));
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const card = $getRoot().getFirstChild();
+      assert($isCardNode(card), 'Top-level node must be a CardNode');
+      expect($getSlot(card, 'title')?.getTextContent()).toBe('Title');
+      // Only the pre-wrapper sibling is absorbed as body; "After" stays a
+      // root-level paragraph instead of reordering into the Card.
+      expect(card.getChildrenSize()).toBe(1);
+      expect(card.getChildren()[0]?.getTextContent()).toBe('Body');
+      const last = $getRoot().getLastChild();
+      expect(last?.getTextContent()).toBe('After');
     });
   });
 
@@ -422,6 +485,79 @@ describe('CardNode named slots', () => {
       assert($isRangeSelection(selection), 'Shift+Tab must leave a selection');
       // Caret landed inside the title slot.
       expect(titleSlot.isParentOf(selection.anchor.getNode())).toBe(true);
+    });
+  });
+
+  // Tab at the end of the title with no element body child must seed an
+  // empty body paragraph and move the caret into it — falling through would
+  // hand Tab to the rich-text indent default, which indents the title
+  // paragraph instead of bridging.
+  it('Tab from the title seeds an empty body paragraph when none exists', () => {
+    using editor = buildEditorFromExtensions(CardTestExtension);
+
+    editor.update(
+      () => {
+        const card = $createCardNode();
+        $getRoot().clear().append(card);
+        // Strip the seeded body so the Card has no element child.
+        for (const child of card.getChildren()) {
+          child.remove();
+        }
+        const titleSlot = $getSlot(card, 'title');
+        assert($isElementNode(titleSlot), 'title slot must be an element');
+        const titlePara = titleSlot.getFirstChild();
+        assert($isElementNode(titlePara), 'title slot must hold a paragraph');
+        titlePara.selectEnd();
+      },
+      {discrete: true},
+    );
+
+    editor.dispatchCommand(
+      KEY_TAB_COMMAND,
+      new KeyboardEvent('keydown', {key: 'Tab'}),
+    );
+
+    editor.read(() => {
+      const card = $getRoot().getFirstChild();
+      assert($isCardNode(card), 'CardNode must survive Tab');
+      const bodyFirst = card.getChildren()[0];
+      assert($isElementNode(bodyFirst), 'Tab must seed a body paragraph');
+      expect(bodyFirst.getTextContent()).toBe('');
+      const selection = $getSelection();
+      assert($isRangeSelection(selection), 'Tab must leave a RangeSelection');
+      // The caret moved into the seeded paragraph — Tab was not swallowed.
+      const anchorNode = selection.anchor.getNode();
+      expect(bodyFirst.is(anchorNode) || bodyFirst.isParentOf(anchorNode)).toBe(
+        true,
+      );
+      // The title was not indented.
+      const titleSlot = $getSlot(card, 'title');
+      assert($isElementNode(titleSlot), 'title slot must be an element');
+      const titlePara = titleSlot.getFirstChild();
+      assert($isElementNode(titlePara), 'title slot must hold a paragraph');
+      expect(titlePara.getIndent()).toBe(0);
+    });
+  });
+
+  // CardExtension deliberately ships no ClickAfterLastBlockExtension
+  // override: CardNode.isShadowRoot() is true, so the default predicate
+  // already inserts a paragraph below a trailing Card. An override would
+  // also clobber the other contributors' predicate terms, because that
+  // extension merges config last-wins.
+  it('$defaultShouldInsertAfter matches a CardNode without an override', () => {
+    using editor = buildEditorFromExtensions(CardTestExtension);
+
+    editor.update(
+      () => {
+        $getRoot().clear().append($createCardNode());
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const card = $getRoot().getFirstChild();
+      assert($isCardNode(card), 'Top-level node must be a CardNode');
+      expect($defaultShouldInsertAfter(card)).toBe(true);
     });
   });
 

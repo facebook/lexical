@@ -47,6 +47,7 @@ import {
   moveSelectionPointToSibling,
 } from './LexicalSelection';
 import {
+  $errorOnSlotCycleChild,
   $getSlot,
   $getSlotHost,
   $getSlotHostKey,
@@ -1650,6 +1651,9 @@ export class LexicalNode {
     const key = replaceWith.__key;
     const writableReplaceWith = replaceWith.getWritable();
     const writableParent = this.getParentOrThrow().getWritable();
+    // Before any mutation: becoming a child of this node's parent must not
+    // close a cycle through a slot up-link (reverse of $setSlot's guard).
+    $errorOnSlotCycleChild(writableParent, writableReplaceWith);
     const size = writableParent.__size;
     // Capture replaceWith's old parent / index before removeFromParent so the
     // cloned selection's element offsets in that old parent can be adjusted
@@ -1783,6 +1787,9 @@ export class LexicalNode {
     errorOnInsertTextNodeOnRoot(this, nodeToInsert);
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
+    // Before any mutation: becoming a sibling of this node must not close a
+    // cycle through a slot up-link (reverse of $setSlot's guard).
+    $errorOnSlotCycleChild(this.getParentOrThrow(), writableNodeToInsert);
     const oldParent = writableNodeToInsert.getParent();
     const selection = $getSelection();
     let elementAnchorSelectionOnNode = false;
@@ -1869,6 +1876,9 @@ export class LexicalNode {
     errorOnInsertTextNodeOnRoot(this, nodeToInsert);
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
+    // Before any mutation: becoming a sibling of this node must not close a
+    // cycle through a slot up-link (reverse of $setSlot's guard).
+    $errorOnSlotCycleChild(this.getParentOrThrow(), writableNodeToInsert);
     const insertKey = writableNodeToInsert.__key;
     const selection = $getSelection();
     // Capture nodeToInsert's old parent / index before detaching so the

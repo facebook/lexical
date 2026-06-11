@@ -12,8 +12,10 @@ import {
   $insertGeneratedNodes,
 } from '@lexical/clipboard';
 import {createHeadlessEditor} from '@lexical/headless';
+import {$generateHtmlFromNodes} from '@lexical/html';
 import {
   $createParagraphNode,
+  $createRangeSelection,
   $createTextNode,
   $getNodeByKey,
   $getRoot,
@@ -21,28 +23,21 @@ import {
   $getSlot,
   $getSlotHost,
   $getSlotNames,
+  $isTextNode,
+  $setSelection,
   $setSlot,
   ElementNode,
   type SerializedElementNode,
-  type TextNode,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 // A plain shadow-root ElementNode used as a slot value for the positive
 // round-trip test. Mirrors the production playground's slot-value shape
 // (shadow-root container holding regular block content) without the
 // excludeFromCopy override that ExcludedShadowRootNode adds.
 class PlainShadowRootNode extends ElementNode {
-  static getType(): string {
-    return 'plain_shadow_root';
-  }
-  static clone(node: PlainShadowRootNode): PlainShadowRootNode {
-    return new PlainShadowRootNode(node.__key);
-  }
-  static importJSON(
-    serializedNode: SerializedElementNode,
-  ): PlainShadowRootNode {
-    return $createPlainShadowRootNode().updateFromJSON(serializedNode);
+  $config() {
+    return this.config('plain_shadow_root', {extends: ElementNode});
   }
   createDOM(): HTMLElement {
     return document.createElement('div');
@@ -63,16 +58,8 @@ function $createPlainShadowRootNode(): PlainShadowRootNode {
 // unsupported combination the export guard must reject loudly instead of
 // emitting a dangling slot entry that breaks on paste.
 class ExcludedShadowRootNode extends ElementNode {
-  static getType(): string {
-    return 'excluded_shadow_root';
-  }
-  static clone(node: ExcludedShadowRootNode): ExcludedShadowRootNode {
-    return new ExcludedShadowRootNode(node.__key);
-  }
-  static importJSON(
-    serializedNode: SerializedElementNode,
-  ): ExcludedShadowRootNode {
-    return $createExcludedShadowRootNode().updateFromJSON(serializedNode);
+  $config() {
+    return this.config('excluded_shadow_root', {extends: ElementNode});
   }
   createDOM(): HTMLElement {
     return document.createElement('div');
@@ -92,6 +79,31 @@ function $createExcludedShadowRootNode(): ExcludedShadowRootNode {
   return new ExcludedShadowRootNode();
 }
 
+// A Card-shaped host: shadow root that opts in to whole-host child export
+// when selected via NodeSelection. Used to pin that the opt-in does NOT
+// promote partial RangeSelections.
+class CardLikeNode extends ElementNode {
+  $config() {
+    return this.config('card_like', {extends: ElementNode});
+  }
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+  updateDOM(): boolean {
+    return false;
+  }
+  isShadowRoot(): boolean {
+    return true;
+  }
+  includeChildrenWhenSelected(): boolean {
+    return true;
+  }
+}
+
+function $createCardLikeNode(): CardLikeNode {
+  return new CardLikeNode();
+}
+
 describe('slot clipboard export', () => {
   test('throws when a slot value is excluded from copy', () => {
     const editor = createHeadlessEditor({
@@ -108,7 +120,7 @@ describe('slot clipboard export', () => {
     );
     editor.read(() => {
       expect(() => $generateJSONFromSelectedNodes(editor, null)).toThrow(
-        /did not serialize to a single node/,
+        /did not serialize to exactly the slot value node/,
       );
     });
   });
@@ -133,7 +145,9 @@ describe('slot clipboard export', () => {
     );
     editor.update(
       () => {
-        $getNodeByKey<TextNode>(beforeKey)!.select(0, 6);
+        const before = $getNodeByKey(beforeKey);
+        assert(before !== null && $isTextNode(before));
+        before.select(0, 6);
       },
       {discrete: true},
     );
@@ -208,6 +222,128 @@ describe('slot clipboard export', () => {
       // The slot up-link must point back to the inserted host (not the
       // original copy-side host whose key may not exist in this editor).
       expect($getSlotHost(slot!)!.is(inserted!)).toBe(true);
+    });
+  });
+
+  // A RangeSelection wholly inside a slot never contains the host, so the
+  // exporters must walk the selection's slot frame instead of only the root —
+  // otherwise copy returns an empty payload and cut is silent data loss.
+  test('a selection inside a slot exports its content on both channels', () => {
+    const editor = createHeadlessEditor({
+      namespace: 'slot-inner-copy',
+      nodes: [PlainShadowRootNode],
+    });
+    let slotTextKey = '';
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        host.append($createTextNode('HostChild'));
+        const slot = $createPlainShadowRootNode();
+        const slotText = $createTextNode('SlotText');
+        slot.append($createParagraphNode().append(slotText));
+        $getRoot().append(host);
+        $setSlot(host, 'media', slot);
+        slotTextKey = slotText.getKey();
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        const slotText = $getNodeByKey(slotTextKey);
+        assert(slotText !== null && $isTextNode(slotText));
+        slotText.select(0, 'SlotText'.length);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const selection = $getSelection();
+      const json = $generateJSONFromSelectedNodes(editor, selection);
+      expect(JSON.stringify(json.nodes)).toContain('SlotText');
+      // The host (and its unselected child) stays out of an in-slot copy.
+      expect(JSON.stringify(json.nodes)).not.toContain('HostChild');
+      const html = $generateHtmlFromNodes(editor, selection);
+      expect(html).toContain('SlotText');
+      expect(html).not.toContain('HostChild');
+    });
+  });
+
+  // includeChildrenWhenSelected is a whole-host (NodeSelection) opt-in; a
+  // partial RangeSelection that happens to contain the host must keep
+  // slicing per child or a drag into the host over-exports content the user
+  // never selected.
+  test('a partial range over an includeChildrenWhenSelected host does not over-export', () => {
+    const editor = createHeadlessEditor({
+      namespace: 'slot-partial-range',
+      nodes: [CardLikeNode, PlainShadowRootNode],
+    });
+    let introTextKey = '';
+    let bodyTextKey = '';
+    editor.update(
+      () => {
+        const intro = $createTextNode('Intro');
+        $getRoot().append($createParagraphNode().append(intro));
+        const card = $createCardLikeNode();
+        const bodyText = $createTextNode('Body');
+        card.append($createParagraphNode().append(bodyText));
+        card.append(
+          $createParagraphNode().append($createTextNode('UNSELECTED')),
+        );
+        const title = $createPlainShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Title')));
+        $getRoot().append(card);
+        $setSlot(card, 'title', title);
+        introTextKey = intro.getKey();
+        bodyTextKey = bodyText.getKey();
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        const selection = $createRangeSelection();
+        selection.anchor.set(introTextKey, 0, 'text');
+        selection.focus.set(bodyTextKey, 2, 'text');
+        $setSelection(selection);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const selection = $getSelection();
+      const json = JSON.stringify(
+        $generateJSONFromSelectedNodes(editor, selection).nodes,
+      );
+      expect(json).toContain('Intro');
+      expect(json).toContain('"Bo"');
+      expect(json).not.toContain('"Body"');
+      expect(json).not.toContain('UNSELECTED');
+      const html = $generateHtmlFromNodes(editor, selection);
+      expect(html).toContain('Bo');
+      expect(html).not.toContain('Body');
+      expect(html).not.toContain('UNSELECTED');
+    });
+  });
+
+  // The 0-children excluded case is covered above; with exactly one child the
+  // child used to be spliced up and exported AS the slot value, silently
+  // corrupting the payload. The guard must compare the exported type too.
+  test('throws when a 1-child excluded slot value would export its child instead', () => {
+    const editor = createHeadlessEditor({
+      namespace: 'slot-exclude-one-child',
+      nodes: [ExcludedShadowRootNode],
+    });
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        $getRoot().append(host);
+        const slot = $createExcludedShadowRootNode();
+        slot.append($createParagraphNode().append($createTextNode('inner')));
+        $setSlot(host, 'title', slot);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect(() => $generateJSONFromSelectedNodes(editor, null)).toThrow(
+        /did not serialize to exactly the slot value node/,
+      );
     });
   });
 });

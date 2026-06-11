@@ -1192,14 +1192,17 @@ declare export function $isSlotChild(
 declare export function $getSlotHost(
   node: LexicalNode,
 ): ElementNode | DecoratorNode<unknown> | null;
+declare export function $getSlotFrame(
+  node: LexicalNode,
+): LexicalNode | null;
 declare export function $getSlotNameWithinHost(
   slotChild: LexicalNode,
 ): string | null;
 declare export function $getSlotNames(node: LexicalNode): string[];
-declare export function $getSlot<T extends LexicalNode>(
+declare export function $getSlot(
   node: LexicalNode,
   name: string,
-): T | null;
+): LexicalNode | null;
 declare export function $setSlot<T extends LexicalNode & SlotHostNode>(
   host: T,
   name: string,

@@ -50,6 +50,12 @@ import {$createCollabTextNode, CollabTextNode} from './CollabTextNode';
 // Mirrors the file-local alias used in CollabElementNode / CollabDecoratorNode.
 type IntentionallyMarkedAsDirtyElement = boolean;
 
+// @experimental named-slots. Slots are a structural channel separate from the
+// linked-list children (excluded from the auto property->attribute path via the
+// sets below) and live under this reserved attribute key. '$' can't prefix the
+// key — it breaks XmlElement.toDOM — so a plain key is used.
+export const SLOTS_ATTR_KEY = 'slots';
+
 const baseExcludedProperties = new Set<string>([
   '__key',
   '__parent',
@@ -62,6 +68,10 @@ const baseExcludedProperties = new Set<string>([
   // just elements — otherwise a decorator host's `__slots` Map leaks into the
   // property->attribute sync.
   '__slots',
+  // The bare attribute key is reserved for the slots channel in both sync
+  // versions: a node property with this name must never be written over the
+  // channel, and the channel's Y.Map must never be restored as a node property.
+  SLOTS_ATTR_KEY,
 ]);
 const elementExcludedProperties = new Set<string>([
   '__first',
@@ -70,12 +80,6 @@ const elementExcludedProperties = new Set<string>([
 ]);
 const rootExcludedProperties = new Set<string>(['__cachedText']);
 const textExcludedProperties = new Set<string>(['__text']);
-
-// @experimental named-slots. Slots are a structural channel separate from the
-// linked-list children (excluded from the auto property->attribute path via the
-// sets above) and live under this reserved attribute key. '$' can't prefix the
-// key — it breaks XmlElement.toDOM — so a plain key is used.
-export const SLOTS_ATTR_KEY = 'slots';
 
 // @experimental named-slots. Writes the slots Y.Map onto a host shared type.
 // yjs types an XmlElement attribute value as string (its default KV), so a
@@ -86,6 +90,28 @@ export function setSlotsAttr(
 ): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sharedType.setAttribute(SLOTS_ATTR_KEY, slotsY as any);
+}
+
+// @experimental named-slots. Mirrors the reserved-name invariant in core's
+// $setSlot. Slot names arrive peer-controlled through the slots Y.Map, so a
+// reserved name must be skipped during reconcile rather than allowed to reach
+// $setSlot, whose invariant would throw inside the observer editor.update.
+export function isReservedSlotName(name: string): boolean {
+  return name === '__proto__' || name === 'constructor' || name === 'prototype';
+}
+
+// @experimental named-slots. Mirrors the value invariant in core's $setSlot (a
+// slot value is a shadow-root ElementNode or a non-inline DecoratorNode), so a
+// peer-controlled value can be validated during reconcile rather than allowed
+// to reach $setSlot, whose invariant would throw inside the observer
+// editor.update.
+export function $isSlotValueNode(
+  node: LexicalNode,
+): node is ElementNode | DecoratorNode<unknown> {
+  return (
+    ($isElementNode(node) && node.isShadowRoot()) ||
+    ($isDecoratorNode(node) && !node.isInline())
+  );
 }
 
 function isExcludedProperty(
@@ -855,27 +881,71 @@ export function $syncSlotsFromYjsShared(
     return;
   }
   for (const [name, slotSharedType] of slotsY.entries()) {
+    // Names and values are peer-controlled. An entry that would trip the
+    // invariants of $setSlot or $getOrInitCollabNodeFromSharedType is skipped
+    // as a silent no-op (the local doc simply doesn't reflect it) instead of
+    // crashing the observer editor.update.
+    if (isReservedSlotName(name)) {
+      continue;
+    }
+    if (
+      !(
+        slotSharedType instanceof XmlText ||
+        slotSharedType instanceof XmlElement ||
+        slotSharedType instanceof YMap
+      )
+    ) {
+      continue;
+    }
     const existingSlot = $getSlot(lexicalNode, name);
-    if (existingSlot !== null) {
-      const existingCollab = binding.collabNodeMap.get(existingSlot.__key);
+    const existingCollab =
+      existingSlot === null
+        ? undefined
+        : binding.collabNodeMap.get(existingSlot.__key);
+    if (
+      existingCollab !== undefined &&
+      existingCollab.getSharedType() === slotSharedType
+    ) {
+      // Same shared type still occupies this name; its own observer syncs
+      // the slot's content, so leave the slot in place.
+      continue;
+    }
+    // An uninitialized shared type can only be materialized with a string
+    // `__type` ($getOrInitCollabNodeFromSharedType's invariant).
+    if (
+      slotSharedType._collabNode === undefined &&
+      typeof sharedTypeGet(slotSharedType, '__type') !== 'string'
+    ) {
+      continue;
+    }
+    // A YMap value can only materialize a text/linebreak node — never a valid
+    // slot value — and under a decorator host it would trip the element-parent
+    // invariant before the value check below can reject it.
+    if (
+      slotSharedType instanceof YMap &&
+      ownerCollab instanceof CollabDecoratorNode
+    ) {
+      continue;
+    }
+    // A cached collab node whose lexical node is live means the shared type
+    // already backs a slot (set under an earlier name in this very Y.Map) or
+    // an attached node elsewhere; re-materializing it would repoint the collab
+    // node away from that node. First name wins; later aliases are skipped.
+    const cachedCollab = slotSharedType._collabNode;
+    if (cachedCollab !== undefined) {
+      const cachedNode = $getNodeByKey(cachedCollab._key);
       if (
-        existingCollab !== undefined &&
-        existingCollab.getSharedType() === slotSharedType
+        cachedNode !== null &&
+        (cachedNode.isAttached() ||
+          (($isElementNode(cachedNode) || $isDecoratorNode(cachedNode)) &&
+            cachedNode.getLatest().__slotHost !== null))
       ) {
-        // Same shared type still occupies this name; its own observer syncs
-        // the slot's content, so leave the slot in place.
         continue;
-      }
-      // A different shared type means the slot was replaced remotely. Destroy
-      // the departing collab node so it doesn't dangle in binding.collabNodeMap
-      // ($setSlot below detaches the stale lexical occupant).
-      if (existingCollab !== undefined) {
-        existingCollab.destroy(binding);
       }
     }
     const slotCollab = $getOrInitCollabNodeFromSharedType(
       binding,
-      slotSharedType as XmlText | YMap<unknown> | XmlElement,
+      slotSharedType,
       ownerCollab,
     );
     const slotLexicalNode = createLexicalNodeFromCollabNode(
@@ -883,6 +953,21 @@ export function $syncSlotsFromYjsShared(
       slotCollab,
       null,
     );
+    if (!$isSlotValueNode(slotLexicalNode)) {
+      // The materialized node can't legally occupy a slot; undo the
+      // collabNodeMap registration so the rejected node doesn't dangle (the
+      // node itself stays unattached and lexical GCs it).
+      if (binding.collabNodeMap.get(slotLexicalNode.__key) === slotCollab) {
+        binding.collabNodeMap.delete(slotLexicalNode.__key);
+      }
+      continue;
+    }
+    // A different shared type means the slot was replaced remotely. Destroy
+    // the departing collab node so it doesn't dangle in binding.collabNodeMap
+    // ($setSlot below detaches the stale lexical occupant).
+    if (existingCollab !== undefined) {
+      existingCollab.destroy(binding);
+    }
     $setSlot(lexicalNode, name, slotLexicalNode);
   }
 }
@@ -919,9 +1004,12 @@ export function $syncSlotsFromLexicalShared(
     if (!nextNames.has(name)) {
       // Mirror children removal (splice -> destroy): destroy the slot's collab
       // node before dropping it so its binding.collabNodeMap entry is cleared.
+      // A value that was never materialized locally (e.g. skipped as invalid
+      // remote data) has no `_collabNode` and nothing to destroy.
       const removed = slotsY.get(name) as XmlText | XmlElement | undefined;
-      if (removed !== undefined) {
-        removed._collabNode.destroy(binding);
+      const removedCollab = removed == null ? undefined : removed._collabNode;
+      if (removedCollab !== undefined) {
+        removedCollab.destroy(binding);
       }
       slotsY.delete(name);
     }
@@ -929,7 +1017,7 @@ export function $syncSlotsFromLexicalShared(
 
   const collabNodeMap = binding.collabNodeMap;
   for (const name of slotNames) {
-    const slotNode = $getSlot<LexicalNode>(nextLexicalNode, name);
+    const slotNode = $getSlot(nextLexicalNode, name);
     if (slotNode === null) {
       continue;
     }
@@ -950,10 +1038,12 @@ export function $syncSlotsFromLexicalShared(
       // A same-name replace keeps the name in nextNames, so the removal loop
       // above never destroys the departing value. Mirror children removal
       // here too: destroy the previous slot's collab node before overwriting
-      // its Y.Map entry so its binding.collabNodeMap entry doesn't dangle.
+      // its Y.Map entry so its binding.collabNodeMap entry doesn't dangle. A
+      // value never materialized locally has no `_collabNode` to destroy.
       const prev = slotsY.get(name) as XmlText | XmlElement | undefined;
-      if (prev !== undefined) {
-        prev._collabNode.destroy(binding);
+      const prevCollab = prev == null ? undefined : prev._collabNode;
+      if (prevCollab !== undefined) {
+        prevCollab.destroy(binding);
       }
       const created = $createCollabNodeFromLexicalNode(
         binding,
@@ -974,9 +1064,12 @@ export function $destroySlotsShared(
   const slotsY = slotsParent.getAttribute(SLOTS_ATTR_KEY) as unknown;
   if (slotsY instanceof YMap) {
     for (const name of slotsY.keys()) {
+      // A value never materialized locally (e.g. skipped as invalid remote
+      // data) has no `_collabNode` and nothing to destroy.
       const slot = slotsY.get(name) as XmlText | XmlElement | undefined;
-      if (slot !== undefined) {
-        slot._collabNode.destroy(binding);
+      const slotCollab = slot == null ? undefined : slot._collabNode;
+      if (slotCollab !== undefined) {
+        slotCollab.destroy(binding);
       }
     }
   }

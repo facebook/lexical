@@ -116,6 +116,30 @@ export function $getSlotNameWithinHost(slotChild: LexicalNode): string | null {
 }
 
 /**
+ * Returns the slot value (the "slot frame") whose isolated subtree contains
+ * `node`, or `node` itself when it is a slot value, or null when the node is
+ * not inside any slot. The walk follows `getParent()` and naturally stops at a
+ * slot value because a slotted node's `__parent` is null. Non-slot trees have
+ * `__slotHost === null` everywhere, so this always returns null there.
+ *
+ * Selection-driven exporters use this to find the isolated subtree a
+ * RangeSelection lives in (a selection inside a slot never contains the host,
+ * so a root-children walk alone would miss it).
+ *
+ * @experimental
+ */
+export function $getSlotFrame(node: LexicalNode): LexicalNode | null {
+  let current: LexicalNode | null = node.getLatest();
+  while (current !== null) {
+    if ($getSlotHostKey(current) !== null) {
+      return current;
+    }
+    current = current.getParent();
+  }
+  return null;
+}
+
+/**
  * Returns the latest slot map (name -> child key, insertion order). Exposes raw
  * keys, so it stays internal to the package; public callers use
  * {@link $getSlotNames} / {@link $getSlot}.
@@ -146,12 +170,9 @@ export function $getSlotNames(node: LexicalNode): string[] {
  *
  * @experimental
  */
-export function $getSlot<T extends LexicalNode>(
-  node: LexicalNode,
-  name: string,
-): T | null {
+export function $getSlot(node: LexicalNode, name: string): LexicalNode | null {
   const key = $getSlotMap(node).get(name);
-  return key === undefined ? null : $getNodeByKey<T>(key);
+  return key === undefined ? null : $getNodeByKey(key);
 }
 
 /**
@@ -175,6 +196,16 @@ export function $setSlot<T extends LexicalNode & SlotHostNode>(
     'setSlot: "%s" is a reserved slot name; __proto__, constructor, and prototype break the plain-object serialization of slots',
     name,
   );
+  // Re-setting the value a name already holds is a no-op rather than a trip
+  // over the "already slotted" invariant below, so idempotent callers (sync
+  // layers, import rules) don't have to special-case it.
+  const latestHost = host.getLatest();
+  if (
+    latestHost.__slots !== null &&
+    latestHost.__slots.get(name) === node.getLatest().__key
+  ) {
+    return latestHost;
+  }
   invariant(
     ($isElementNode(node) && node.isShadowRoot()) ||
       ($isDecoratorNode(node) && !node.isInline()),
@@ -255,6 +286,32 @@ function $isSlotAncestorOrSelf(node: LexicalNode, host: LexicalNode): boolean {
       current.__parent !== null ? current.__parent : $getSlotHostKey(current);
   }
   return false;
+}
+
+/**
+ * @internal
+ *
+ * Reverse guard of {@link $setSlot}'s cycle invariant for the children
+ * channel: inserting `child` under `parent` must not close a cycle through a
+ * slot up-link (e.g. `slotValue.append(host)` would make `host.__parent`
+ * reach `slotValue` while `slotValue.__slotHost` reaches `host`, looping
+ * isAttached/GC — and hanging the commit itself). Called from the child
+ * attachment points (ElementNode.splice, insertBefore/insertAfter/replace).
+ * Gated on the editor slot latch so non-slot editors skip the up-walk.
+ */
+export function $errorOnSlotCycleChild(
+  parent: LexicalNode,
+  child: LexicalNode,
+): void {
+  if (!$getEditor()._slotsUsed) {
+    return;
+  }
+  invariant(
+    !$isSlotAncestorOrSelf(child, parent),
+    'insert: node %s cannot become a child of %s; the parent is reachable from the node through slot up-links, so the insertion would form a cycle that loops isAttached/GC.',
+    child.__key,
+    parent.__key,
+  );
 }
 
 // @experimental named-slots. Detaches the node currently slotted under a key,

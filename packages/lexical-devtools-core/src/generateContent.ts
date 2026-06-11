@@ -327,7 +327,10 @@ function $visitTree(
       childNode,
       indent.concat(isLast ? SYMBOLS.isLastChild : SYMBOLS.hasNextSibling),
     );
-    if ($isElementNode(childNode)) {
+    // DecoratorNodes can host slots too, so recurse into them like the
+    // slot-entry loop above; a decorator's slot subtree would otherwise be
+    // invisible whenever the host is reached through the children channel.
+    if ($isElementNode(childNode) || $isDecoratorNode(childNode)) {
       $visitTree(
         childNode,
         visitor,

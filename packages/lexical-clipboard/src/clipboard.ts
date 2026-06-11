@@ -27,9 +27,11 @@ import {
   $getRoot,
   $getSelection,
   $getSlot,
+  $getSlotFrame,
   $getSlotNames,
   $getTextPointCaret,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isTextNode,
   $isTextPointCaret,
@@ -451,6 +453,12 @@ function $updateSelectionOnInsert(selection: BaseSelection): void {
 
 export interface BaseSerializedNode {
   children?: BaseSerializedNode[];
+  /**
+   * Named slot subtrees keyed by slot name; present on serialized hosts.
+   * Mirrors {@link SerializedLexicalNode.slots}.
+   * @experimental named-slots
+   */
+  slots?: Record<string, BaseSerializedNode>;
   type: string;
   version: number;
 }
@@ -511,8 +519,12 @@ function $appendNodesToJSON(
   // promoted to a whole-host NodeSelection by a chrome click) recurses into
   // its children with a null selection so the whole subtree serializes even
   // when none of the children are in the outer selection themselves.
+  // Only a whole-host NodeSelection promotes: a partial RangeSelection that
+  // happens to contain the host must keep slicing/excluding per child, or a
+  // drag into the host's interior would over-export unselected content.
   const childSelection =
     shouldInclude &&
+    $isNodeSelection(selection) &&
     $isElementNode(currentNode) &&
     currentNode.includeChildrenWhenSelected()
       ? null
@@ -563,11 +575,12 @@ function $appendNodesToJSON(
         // $appendNodesToJSON splice up its children (or emit nothing), leaving
         // a dangling/undefined slot entry that breaks on paste.
         invariant(
-          slotArray.length === 1,
-          'LexicalNode: slot "%s" on %s did not serialize to a single node (got %s); a slot value must not be excluded from copy.',
+          slotArray.length === 1 && slotArray[0].type === slotNode.getType(),
+          'LexicalNode: slot "%s" on %s did not serialize to exactly the slot value node (got %s of type %s); a slot value must not be excluded from copy.',
           name,
           target.constructor.name,
           String(slotArray.length),
+          String(slotArray.length > 0 ? slotArray[0].type : 'none'),
         );
         serializedSlots[name] = slotArray[0];
       }
@@ -610,7 +623,16 @@ export function $generateJSONFromSelectedNodes<
 } {
   const nodes: SerializedNode[] = [];
   const root = $getRoot();
-  const topLevelChildren = root.getChildren();
+  // A RangeSelection wholly inside a slot subtree never includes its host
+  // (slots are shadow-root isolated), so a root-children walk would miss the
+  // selected nodes entirely and export an empty payload (cut = data loss).
+  // Walk the selection's slot frame instead; outside slots this is the root.
+  const slotFrame = $isRangeSelection(selection)
+    ? $getSlotFrame(selection.anchor.getNode())
+    : null;
+  const topLevelChildren = (
+    $isElementNode(slotFrame) ? slotFrame : root
+  ).getChildren();
   for (let i = 0; i < topLevelChildren.length; i++) {
     const topLevelNode = topLevelChildren[i];
     $appendNodesToJSON(editor, selection, topLevelNode, nodes);

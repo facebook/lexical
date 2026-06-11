@@ -19,18 +19,19 @@ import {
   $getSelection,
   $getSlotHost,
   $isRangeSelection,
+  $isTextNode,
   $selectAll,
   $setSelection,
   $setSlot,
   defineExtension,
   getDOMSelection,
   LexicalNode,
-  type TextNode,
 } from 'lexical';
 import {afterEach, assert, describe, expect, test} from 'vitest';
 
 import {$internalCreateRangeSelection} from '../../LexicalSelection';
 import {
+  $assertNodeType,
   $createTestDecoratorNode,
   $createTestShadowRootNode,
   TestDecoratorNode,
@@ -268,7 +269,7 @@ describe('named-slots: selection containment (slot isolation)', () => {
 
     editor.update(
       () => {
-        $getNodeByKey<TextNode>(keys.bodyText)!.select(1, 3);
+        $assertNodeType($getNodeByKey(keys.bodyText), $isTextNode).select(1, 3);
 
         const active = $getSelection();
         assert($isRangeSelection(active));
@@ -287,7 +288,7 @@ describe('named-slots: selection containment (slot isolation)', () => {
     // commit a body-only selection first so there is an active RangeSelection
     editor.update(
       () => {
-        $getNodeByKey<TextNode>(keys.bodyText)!.select(1, 2);
+        $assertNodeType($getNodeByKey(keys.bodyText), $isTextNode).select(1, 2);
       },
       {discrete: true},
     );
@@ -319,7 +320,10 @@ describe('named-slots: selection containment (slot isolation)', () => {
     editor.update(
       () => {
         // caret inside the title slot's text
-        const selection = $getNodeByKey<TextNode>(keys.titleText)!.select(1, 1);
+        const selection = $assertNodeType(
+          $getNodeByKey(keys.titleText),
+          $isTextNode,
+        ).select(1, 1);
 
         const out = $selectAll(selection);
         // scope is the slot's shadow root: both points stay inside the title
@@ -337,7 +341,10 @@ describe('named-slots: selection containment (slot isolation)', () => {
     editor.update(
       () => {
         // caret in the body (outside any slot)
-        const selection = $getNodeByKey<TextNode>(keys.bodyText)!.select(1, 1);
+        const selection = $assertNodeType(
+          $getNodeByKey(keys.bodyText),
+          $isTextNode,
+        ).select(1, 1);
 
         const out = $selectAll(selection);
         // scope is the document, not a slot: the slot fix must not shrink

@@ -15,13 +15,13 @@ import {
   initialize,
   sleep,
   test,
+  waitForSelector,
 } from '../utils/index.mjs';
 
 async function insertPullQuote(page) {
   await page.keyboard.type('/pull');
-  await sleep(300);
+  await waitForSelector(page, '.typeahead-popover');
   await page.keyboard.press('Enter');
-  await sleep(300);
 }
 
 async function slotText(page, name) {

@@ -23,6 +23,8 @@ import {ListImportExtension} from '@lexical/list';
 import {RichTextImportExtension} from '@lexical/rich-text';
 import {TableImportExtension} from '@lexical/table';
 import {
+  $createParagraphNode,
+  $getSlot,
   $isElementNode,
   $isTextNode,
   $removeSlot,
@@ -122,9 +124,11 @@ const CardImportRule = /* @__PURE__ */ defineImportRule({
     for (const child of card.getChildren()) {
       child.remove();
     }
+    let importedTitle = false;
     for (const domChild of Array.from(el.children)) {
       const slotName = domChild.getAttribute('data-lexical-slot');
       if (slotName === 'title') {
+        importedTitle = true;
         $setSlot(
           card,
           'title',
@@ -134,6 +138,15 @@ const CardImportRule = /* @__PURE__ */ defineImportRule({
       }
       for (const node of ctx.$importOne(domChild)) {
         card.append(node);
+      }
+    }
+    if (!importedTitle) {
+      // No title wrapper in the source HTML: drop the seeded "Title" text
+      // (keeping an empty paragraph) so the import never fabricates content —
+      // mirrors PullQuoteImportRule's explicit seed-clearing.
+      const title = $getSlot(card, 'title');
+      if ($isElementNode(title)) {
+        title.clear().append($createParagraphNode());
       }
     }
     return [card];
@@ -199,10 +212,19 @@ const $rewrapOrphanedSlotWrappers: DOMPreprocessFn = (dom, _ctx, $next) => {
       } else if (slotName === 'attribution') {
         // Only absorb attribution when a PullQuote is open; an orphan
         // attribution wrapper with no preceding `quote` is dropped (it
-        // shouldn't leak into an unrelated Card body below).
+        // shouldn't leak into an unrelated Card body below) and closes any
+        // open Card run — later siblings must not reorder into it across
+        // the dropped wrapper.
         if (openPullQuote !== null) {
           openPullQuote.members.push(child);
+        } else {
+          openCard = null;
         }
+      } else if (slotName !== null) {
+        // Any other orphan slot wrapper closes the open runs for the same
+        // reason; it is not part of either host's exported shape.
+        openCard = null;
+        openPullQuote = null;
       } else if (openCard !== null) {
         openCard.members.push(child);
       }
@@ -221,9 +243,9 @@ const $rewrapOrphanedSlotWrappers: DOMPreprocessFn = (dom, _ctx, $next) => {
 };
 
 /**
- * Aggregate of every playground-specific DOM import rule, ordered so the
- * more-specific selectors win dispatch over the generic ones (rule at
- * index 0 has the highest priority).
+ * Mode-independent playground DOM import rules — currently just the
+ * inline extra-styles overlay. The Card / PullQuote host rules are
+ * rich-text-only and live in {@link PlaygroundRichTextImportRules}.
  */
 export const PlaygroundImportRules = [PlaygroundInlineStyleRule];
 
@@ -238,23 +260,38 @@ export const PlaygroundImportRules = [PlaygroundInlineStyleRule];
  * seeds before walking the imported wrappers so an HTML fragment that's
  * missing one of the slots can't silently inherit the default text. Mirrors
  * the explicit "clear seeded children" step CardImportRule does above.
+ *
+ * The host is a DecoratorNode with no children channel, so direct children
+ * that aren't slot wrappers land in the quote slot (created on demand)
+ * rather than being dropped.
  */
 const PullQuoteImportRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const pullquote = $createPullQuoteNode();
     $removeSlot(pullquote, 'quote');
     $removeSlot(pullquote, 'attribution');
-    for (const wrapper of Array.from(
-      el.querySelectorAll(':scope > [data-lexical-slot]'),
-    )) {
-      const slotName = wrapper.getAttribute('data-lexical-slot');
+    const orphans: LexicalNode[] = [];
+    for (const domChild of Array.from(el.children)) {
+      const slotName = domChild.getAttribute('data-lexical-slot');
       if (slotName === 'quote' || slotName === 'attribution') {
         $setSlot(
           pullquote,
           slotName,
-          $createSlotContainerNode().append(...ctx.$importChildren(wrapper)),
+          $createSlotContainerNode().append(...ctx.$importChildren(domChild)),
         );
+      } else {
+        orphans.push(...ctx.$importOne(domChild));
       }
+    }
+    if (orphans.length > 0) {
+      const existing = $getSlot(pullquote, 'quote');
+      const quote = $isElementNode(existing)
+        ? existing
+        : $createSlotContainerNode();
+      if (quote !== existing) {
+        $setSlot(pullquote, 'quote', quote);
+      }
+      quote.append(...orphans);
     }
     return [pullquote];
   },
@@ -263,10 +300,12 @@ const PullQuoteImportRule = /* @__PURE__ */ defineImportRule({
 });
 
 /**
- * Rich-text-only playground import rules. Lives with
- * {@link PlaygroundRichTextImportExtension} so plain-text editors — which never
- * register `CardNode`/`PullQuoteNode` — don't carry a rule that would build an
- * unregistered node.
+ * Rich-text-only playground import rules. `PlaygroundNodes` registers
+ * `CardNode`/`PullQuoteNode` in every mode, so this is not about unregistered
+ * nodes: the rules live with {@link PlaygroundRichTextImportExtension} so they
+ * ride the same mode gate as the other block-level import rules — plain-text
+ * paste never reconstructs block hosts, so carrying these rules there would
+ * be dead weight.
  */
 export const PlaygroundRichTextImportRules = [
   CardImportRule,

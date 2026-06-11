@@ -111,21 +111,18 @@ function $syncEvent(binding: Binding, event: any): void {
     // The two branches are textually identical but stay separate because
     // CollabElementNode and CollabDecoratorNode each typed `syncSlotsFromYjs`
     // against its own lexical-node side (ElementNode vs DecoratorNode); a
-    // union narrow at the call site intersects to `never`.
+    // union narrow at the call site intersects to `never`. A null host node
+    // means it was concurrently removed from Lexical; nothing to sync.
     if (hostCollab instanceof CollabElementNode) {
       const hostNode = hostCollab.getNode();
-      invariant(
-        hostNode !== null,
-        'syncEvent: expected lexical element host for slot reconcile, got null',
-      );
-      hostCollab.syncSlotsFromYjs(binding, hostNode);
+      if (hostNode !== null) {
+        hostCollab.syncSlotsFromYjs(binding, hostNode);
+      }
     } else if (hostCollab instanceof CollabDecoratorNode) {
       const hostNode = hostCollab.getNode();
-      invariant(
-        hostNode !== null,
-        'syncEvent: expected lexical decorator host for slot reconcile, got null',
-      );
-      hostCollab.syncSlotsFromYjs(binding, hostNode);
+      if (hostNode !== null) {
+        hostCollab.syncSlotsFromYjs(binding, hostNode);
+      }
     }
     return;
   }
@@ -135,9 +132,22 @@ function $syncEvent(binding: Binding, event: any): void {
     // @ts-expect-error We need to access the private childListChanged property of the class
     const {keysChanged, childListChanged, delta} = event;
 
-    // Update
+    // Update. `slots` is a reserved key excluded from property sync; a change
+    // to it is handled by the slot reconcile below.
     if (keysChanged.size > 0) {
       collabNode.syncPropertiesFromYjs(binding, keysChanged);
+    }
+
+    // A host's first slot set integrates the slots Y.Map in the same
+    // transaction that assigns the attribute, so no YMapEvent fires for the
+    // (brand-new) map — the change surfaces only as a changed `slots` key
+    // here. The undo of a first set (attribute removed) has the same shape. A
+    // null host node means it was concurrently removed; nothing to sync.
+    if (keysChanged.has(SLOTS_ATTR_KEY)) {
+      const node = collabNode.getNode();
+      if (node !== null) {
+        collabNode.syncSlotsFromYjs(binding, node);
+      }
     }
 
     if (childListChanged) {
@@ -160,9 +170,20 @@ function $syncEvent(binding: Binding, event: any): void {
   ) {
     const {attributesChanged} = event;
 
-    // Update
+    // Update. `slots` is a reserved key excluded from property sync; a change
+    // to it is handled by the slot reconcile below.
     if (attributesChanged.size > 0) {
       collabNode.syncPropertiesFromYjs(binding, attributesChanged);
+    }
+
+    // Same shape as the element-host case above: a first slot set (or its
+    // undo) surfaces only as a changed `slots` attribute on the host's
+    // XmlElement, never as a YMapEvent.
+    if (attributesChanged.has(SLOTS_ATTR_KEY)) {
+      const node = collabNode.getNode();
+      if (node !== null) {
+        collabNode.syncSlotsFromYjs(binding, node);
+      }
     }
   } else {
     invariant(false, 'Expected text, element, or decorator event');
@@ -212,6 +233,31 @@ export function syncYjsChangesToLexical(
       tag: isFromUndoManger ? HISTORIC_TAG : COLLABORATION_TAG,
     },
   );
+
+  // Remove deleted nodes from the collab node map (mirrors the
+  // binding.mapping sweep in syncYjsChangesToLexicalV2__EXPERIMENTAL). The
+  // destroy paths above can't reach a deleted host's slot values: the host's
+  // `slots` attribute reads back undefined once its shared type is deleted, so
+  // without this sweep their entries leak. Double deletes are idempotent.
+  if (events.length > 0) {
+    const transaction = events[0].transaction;
+    iterateDeletedStructs(transaction, transaction.deleteSet, struct => {
+      if (struct.constructor === Item) {
+        const content = struct.content as ContentType;
+        const type = content.type;
+        if (type) {
+          const collabNode = (type as XmlText | XmlElement | YMap<unknown>)
+            ._collabNode;
+          if (
+            collabNode !== undefined &&
+            binding.collabNodeMap.get(collabNode._key) === collabNode
+          ) {
+            binding.collabNodeMap.delete(collabNode._key);
+          }
+        }
+      }
+    });
+  }
 }
 
 function $syncCursorFromYjs(
@@ -345,6 +391,16 @@ export function syncLexicalUpdateToYjs(
           prevNodeMap,
         );
         collabRoot.syncChildrenFromLexical(
+          binding,
+          nextLexicalRoot,
+          prevNodeMap,
+          dirtyElements,
+          dirtyLeaves,
+        );
+        // Slots live outside the linked-list children channel, so the root's
+        // own slot map needs its dedicated diff too (child hosts get theirs
+        // via _syncChildFromLexical).
+        collabRoot.syncSlotsFromLexical(
           binding,
           nextLexicalRoot,
           prevNodeMap,

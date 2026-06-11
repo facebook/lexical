@@ -31,7 +31,7 @@
  * @param func - An array of cleanup functions meant to be executed by the returned function.
  * @returns the function which executes all the passed cleanup functions.
  */
-export function mergeRegister(...func: Array<() => void>): () => void {
+export function mergeRegister(...func: (() => void)[]): () => void {
   return () => {
     for (let i = func.length - 1; i >= 0; i--) {
       func[i]();

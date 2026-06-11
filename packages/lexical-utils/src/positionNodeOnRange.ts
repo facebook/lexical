@@ -38,12 +38,12 @@ function prependDOMNode(parent: HTMLElement, node: HTMLElement) {
 export default function mlcPositionNodeOnRange(
   editor: LexicalEditor,
   range: Range,
-  onReposition: (node: Array<HTMLElement>) => void,
+  onReposition: (node: HTMLElement[]) => void,
 ): () => void {
   let rootDOMNode: null | HTMLElement = null;
   let parentDOMNode: null | HTMLElement = null;
   let observer: null | MutationObserver = null;
-  let lastNodes: Array<HTMLElement> = [];
+  let lastNodes: HTMLElement[] = [];
   const wrapperNode = document.createElement('div');
   wrapperNode.style.position = 'relative';
 

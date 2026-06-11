@@ -68,6 +68,14 @@ export {
   NormalizeTripleClickSelectionExtension,
   type NormalizeTripleClickSelectionOutput,
 } from './NormalizeTripleClickSelectionExtension';
+export {
+  type PreventSelectAllConfig,
+  PreventSelectAllExtension,
+} from './PreventSelectAllExtension';
+export {
+  type SelectBlockConfig,
+  SelectBlockExtension,
+} from './SelectBlockExtension';
 export {SelectionAlwaysOnDisplayExtension} from './SelectionAlwaysOnDisplayExtension';
 export {
   batch,

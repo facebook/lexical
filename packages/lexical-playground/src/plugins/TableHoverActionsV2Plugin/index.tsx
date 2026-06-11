@@ -203,7 +203,7 @@ function TableHoverActionsV2({
   const dragHandleRef = useRef<HTMLButtonElement | null>(null);
   const hoveredLeftCellRef = useRef<HTMLTableCellElement | null>(null);
   const hoveredTopCellRef = useRef<HTMLTableCellElement | null>(null);
-  const dropIndicatorCleanupRef = useRef<Array<() => void>>([]);
+  const dropIndicatorCleanupRef = useRef<(() => void)[]>([]);
   const [hoveredTable, setHoveredTable] = useState<HTMLTableElement | null>(
     null,
   );

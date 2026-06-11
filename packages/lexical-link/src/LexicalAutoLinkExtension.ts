@@ -68,7 +68,7 @@ export function createLinkMatcherWithRegExp(
 
 function findFirstMatch(
   text: string,
-  matchers: Array<LinkMatcher>,
+  matchers: LinkMatcher[],
 ): LinkMatcherResult | null {
   for (let i = 0; i < matchers.length; i++) {
     const match = matchers[i](text);
@@ -292,7 +292,7 @@ function $createAutoLinkNode_(
 
 function $handleLinkCreation(
   nodes: TextNode[],
-  matchers: Array<LinkMatcher>,
+  matchers: LinkMatcher[],
   onChange: ChangeHandler,
   separatorRegex: RegExp,
 ): void {
@@ -368,7 +368,7 @@ function $handleLinkCreation(
 
 function handleLinkEdit(
   linkNode: AutoLinkNode,
-  matchers: Array<LinkMatcher>,
+  matchers: LinkMatcher[],
   onChange: ChangeHandler,
   separatorRegex: RegExp,
 ): void {
@@ -428,7 +428,7 @@ function handleLinkEdit(
 // Given the creation preconditions, these can only be simple text nodes.
 function handleBadNeighbors(
   textNode: TextNode,
-  matchers: Array<LinkMatcher>,
+  matchers: LinkMatcher[],
   onChange: ChangeHandler,
   separatorRegex: RegExp,
 ): void {
@@ -492,7 +492,7 @@ function handleBadNeighbors(
   }
 }
 
-function replaceWithChildren(node: ElementNode): Array<LexicalNode> {
+function replaceWithChildren(node: ElementNode): LexicalNode[] {
   const children = node.getChildren();
   const childrenLength = children.length;
 

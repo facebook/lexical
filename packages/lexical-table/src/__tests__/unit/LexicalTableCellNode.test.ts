@@ -104,7 +104,7 @@ describe('LexicalTableCellNode tests', () => {
       const {editor} = testEnv;
       const parser = new DOMParser();
 
-      const cases: Array<[string, string]> = [
+      const cases: [string, string][] = [
         [
           html`
             <table>

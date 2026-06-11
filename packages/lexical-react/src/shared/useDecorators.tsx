@@ -27,7 +27,7 @@ export type ErrorBoundaryType =
 export function useDecorators(
   editor: LexicalEditor,
   ErrorBoundary: ErrorBoundaryType,
-): Array<JSX.Element> {
+): JSX.Element[] {
   const [decorators, setDecorators] = useState<Record<NodeKey, JSX.Element>>(
     () => editor.getDecorators<JSX.Element>(),
   );

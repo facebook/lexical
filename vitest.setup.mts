@@ -207,7 +207,7 @@ if (isJsdom) {
       get items(): DataTransferItemList {
         throw new Error('Getter not implemented.');
       }
-      get types(): ReadonlyArray<string> {
+      get types(): readonly string[] {
         return [...this._data.keys()];
       }
       clearData(dataType?: string): void {

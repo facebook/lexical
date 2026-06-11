@@ -47,7 +47,7 @@ function isHeadingBelowTheTopOfThePage(element: HTMLElement): boolean {
 function TableOfContentsList({
   tableOfContents,
 }: {
-  tableOfContents: Array<TableOfContentsEntry>;
+  tableOfContents: TableOfContentsEntry[];
 }): JSX.Element {
   const [selectedKey, setSelectedKey] = useState('');
   const selectedIndex = useRef(0);

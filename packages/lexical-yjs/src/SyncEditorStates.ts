@@ -134,7 +134,7 @@ function $syncEvent(binding: Binding, event: any): void {
 export function syncYjsChangesToLexical(
   binding: Binding,
   provider: Provider,
-  events: Array<YEvent<YText>>,
+  events: YEvent<YText>[],
   isFromUndoManger: boolean,
   syncCursorPositionsFn: SyncCursorPositionsFn = syncCursorPositions,
 ): void {
@@ -363,7 +363,7 @@ function $syncEventV2(
 export function syncYjsChangesToLexicalV2__EXPERIMENTAL(
   binding: BindingV2,
   provider: Provider,
-  events: Array<YEvent<XmlElement | XmlText>>,
+  events: YEvent<XmlElement | XmlText>[],
   transaction: YTransaction,
   isFromUndoManger: boolean,
 ): void {

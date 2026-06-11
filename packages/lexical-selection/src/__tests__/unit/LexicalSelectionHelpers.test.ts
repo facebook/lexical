@@ -2679,8 +2679,9 @@ describe('insertNodes', () => {
     });
     editor.getEditorState().read(() => {
       expect(element.innerHTML).toBe(
-        // one managed linebreak and the second node
-        '<h1 dir="auto"><span data-lexical-text="true">heading</span></h1><p dir="auto"><br><br data-lexical-managed-linebreak="true"></p>',
+        // the lone trailing LineBreakNode collapses to an empty paragraph,
+        // rendered with only the managed linebreak
+        '<h1 dir="auto"><span data-lexical-text="true">heading</span></h1><p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
       );
       const selectedNode = ($getSelection() as RangeSelection).anchor.getNode();
       expect($isParagraphNode(selectedNode)).toBeTruthy();

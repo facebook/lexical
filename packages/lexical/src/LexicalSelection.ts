@@ -3438,24 +3438,41 @@ function $splitNodeAtPoint(
   return [parent, node.getIndexWithinParent() + 1];
 }
 
+function $isInlineRunNode(node: LexicalNode): boolean {
+  return (
+    $isLineBreakNode(node) ||
+    $isInlineElementOrDecoratorNode(node) ||
+    $isTextNode(node) ||
+    node.isParentRequired()
+  );
+}
+
 function $wrapInlineNodes(nodes: LexicalNode[]) {
   // We temporarily insert the topLevelNodes into an arbitrary ElementNode,
   // since insertAfter does not work on nodes that have no parent (TO-DO: fix that).
   const virtualRoot = $createParagraphNode();
 
-  let currentBlock = null;
+  let currentBlock: ElementNode | null = null;
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
-    if (
-      $isLineBreakNode(node) ||
-      $isInlineElementOrDecoratorNode(node) ||
-      $isTextNode(node) ||
-      node.isParentRequired()
-    ) {
+    if ($isInlineRunNode(node)) {
       if (currentBlock === null) {
         currentBlock = node.createParentElementNode();
         virtualRoot.append(currentBlock);
+        // A LineBreakNode that is an entire run by itself collapses to an
+        // empty paragraph, since the block boundary already provides the
+        // visual newline (the form that clipboard pastes ending in a
+        // trailing <br> rely on, and the same policy as
+        // $paragraphPackageRun in @lexical/html). A linebreak followed by
+        // more inline content in the same run is preserved.
+        const nextNode: LexicalNode | undefined = nodes[i + 1];
+        if (
+          $isLineBreakNode(node) &&
+          (nextNode === undefined || !$isInlineRunNode(nextNode))
+        ) {
+          continue;
+        }
       }
       currentBlock.append(node);
     } else {

@@ -1782,5 +1782,93 @@ describe('$wrapInlineNodes regression', () => {
         {discrete: true},
       );
     });
+
+    test('Collapses a lone linebreak run into an empty paragraph at the end of a non-empty paragraph', () => {
+      testEnv.editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode().append(
+            $createTextNode('abc'),
+          );
+          root.append(paragraph);
+
+          paragraph
+            .selectEnd()
+            .insertNodes([
+              $createLineBreakNode(),
+              $createParagraphNode().append($createTextNode('x')),
+            ]);
+
+          const children = root.getChildren();
+          expect(children).toHaveLength(3);
+          assert($isParagraphNode(children[0]));
+          expect(children[0].getTextContent()).toBe('abc');
+          assert($isParagraphNode(children[1]));
+          expect(children[1].getChildrenSize()).toBe(0);
+          assert($isParagraphNode(children[2]));
+          expect(children[2].getTextContent()).toBe('x');
+        },
+        {discrete: true},
+      );
+    });
+
+    test('Preserves a linebreak followed by inline content when merging into a non-empty paragraph', () => {
+      testEnv.editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode().append(
+            $createTextNode('abc'),
+          );
+          root.append(paragraph);
+
+          paragraph
+            .selectEnd()
+            .insertNodes([
+              $createLineBreakNode(),
+              $createTextNode('tail'),
+              $createParagraphNode().append($createTextNode('x')),
+            ]);
+
+          const children = root.getChildren();
+          expect(children).toHaveLength(2);
+          assert($isParagraphNode(children[0]));
+          expect(
+            children[0].getChildren().map(child => child.getType()),
+          ).toEqual(['text', 'linebreak', 'text']);
+          expect(children[0].getTextContent()).toBe('abc\ntail');
+          assert($isParagraphNode(children[1]));
+          expect(children[1].getTextContent()).toBe('x');
+        },
+        {discrete: true},
+      );
+    });
+
+    test('Collapses a lone trailing linebreak after a block into an empty paragraph', () => {
+      testEnv.editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+
+          paragraph
+            .selectEnd()
+            .insertNodes([
+              $createParagraphNode().append($createTextNode('x')),
+              $createLineBreakNode(),
+            ]);
+
+          const children = root.getChildren();
+          expect(children).toHaveLength(2);
+          assert($isParagraphNode(children[0]));
+          expect(children[0].getTextContent()).toBe('x');
+          assert($isParagraphNode(children[1]));
+          expect(children[1].getChildrenSize()).toBe(0);
+        },
+        {discrete: true},
+      );
+    });
   });
 });

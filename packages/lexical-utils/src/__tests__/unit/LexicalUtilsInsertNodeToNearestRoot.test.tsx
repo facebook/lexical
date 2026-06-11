@@ -36,14 +36,14 @@ describe('LexicalUtils#insertNodeToNearestRoot', () => {
     editor._headless = true;
   });
 
-  const testCases: Array<{
+  const testCases: {
     _: string;
     expectedHtml: string;
     initialHtml: string;
-    selectionPath: Array<number>;
+    selectionPath: number[];
     selectionOffset: number;
     only?: boolean;
-  }> = [
+  }[] = [
     {
       _: 'insert into paragraph in between two text nodes',
       expectedHtml:

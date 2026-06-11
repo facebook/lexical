@@ -37,7 +37,7 @@ export default function TypingPerfPlugin(): JSX.Element | null {
     let start = 0;
     let timerId: ReturnType<typeof setTimeout> | null;
     let keyPressTimerId: ReturnType<typeof setTimeout> | null;
-    let log: Array<DOMHighResTimeStamp> = [];
+    let log: DOMHighResTimeStamp[] = [];
     let invalidatingEvent = false;
 
     const measureEventEnd = function logKeyPress() {

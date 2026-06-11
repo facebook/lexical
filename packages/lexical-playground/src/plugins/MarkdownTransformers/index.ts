@@ -301,7 +301,7 @@ const $createTableCell = (textContent: string): TableCellNode => {
   return cell;
 };
 
-const mapToTableCells = (textContent: string): Array<TableCellNode> | null => {
+const mapToTableCells = (textContent: string): TableCellNode[] | null => {
   const match = textContent.match(TABLE_ROW_REG_EXP);
   if (!match || !match[1]) {
     return null;
@@ -309,7 +309,7 @@ const mapToTableCells = (textContent: string): Array<TableCellNode> | null => {
   return match[1].split('|').map(text => $createTableCell(text));
 };
 
-export const PLAYGROUND_TRANSFORMERS: Array<Transformer> = [
+export const PLAYGROUND_TRANSFORMERS: Transformer[] = [
   TABLE,
   HR,
   IMAGE,

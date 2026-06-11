@@ -60,7 +60,7 @@ export interface LexicalNestedComposerProps {
    * editor = createEditor({nodes: [], parentEditor: $getEditor()});
    * ```
    */
-  initialNodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
+  initialNodes?: readonly (Klass<LexicalNode> | LexicalNodeReplacement)[];
   /**
    * If this is not explicitly set to true, and the collab plugin is active,
    * rendering the children of this component will not happen until collab is ready.

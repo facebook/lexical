@@ -52,7 +52,7 @@ function getTotalTableWidth(colWidths: readonly number[]): number {
 
 function $calculateResizeRootTables(
   tables: ReadonlySet<TableNode>,
-): ReadonlyArray<TableNode> {
+): readonly TableNode[] {
   const inputTables: ReadonlySet<LexicalNode> = tables;
   const roots: TableNode[] = [];
   for (const table of tables) {

@@ -1642,7 +1642,7 @@ describe('Element-anchored selection on old parent (#6031)', () => {
     act: Mover;
     actNoRestore: Mover | null;
   };
-  const methods: ReadonlyArray<MethodSpec> = [
+  const methods: readonly MethodSpec[] = [
     {
       act: (target, mover) => target.insertBefore(mover),
       actNoRestore: (target, mover) => target.insertBefore(mover, false),
@@ -2193,11 +2193,9 @@ describe('LexicalNode.$config() without registration', () => {
         node.getPreviousSibling(),
       ).toEqualTypeOf<LexicalNode | null>();
       expectTypeOf(node.getNextSibling()).toEqualTypeOf<LexicalNode | null>();
-      expectTypeOf(node.getPreviousSiblings()).toEqualTypeOf<
-        Array<LexicalNode>
-      >();
-      expectTypeOf(node.getNextSiblings()).toEqualTypeOf<Array<LexicalNode>>();
-      expectTypeOf(element.getChildren()).toEqualTypeOf<Array<LexicalNode>>();
+      expectTypeOf(node.getPreviousSiblings()).toEqualTypeOf<LexicalNode[]>();
+      expectTypeOf(node.getNextSiblings()).toEqualTypeOf<LexicalNode[]>();
+      expectTypeOf(element.getChildren()).toEqualTypeOf<LexicalNode[]>();
       expectTypeOf(
         element.getChildAtIndex(0),
       ).toEqualTypeOf<LexicalNode | null>();

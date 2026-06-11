@@ -33,6 +33,30 @@ describe('LexicalEditorState tests', () => {
       expect(editorState._selection).toBe(null);
     });
 
+    test('readPending()', () => {
+      const {editor} = testEnv;
+
+      // a regular update is processed synchronously but committed
+      // asynchronously
+      editor.update(() => {
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('foo')),
+        );
+      });
+      expect(
+        editor.getEditorState().read(() => $getRoot().getTextContent()),
+      ).toBe('');
+      // readPending() observes the pending state without flushing it
+      expect(editor.readPending(() => $getRoot().getTextContent())).toBe('foo');
+      expect(
+        editor.getEditorState().read(() => $getRoot().getTextContent()),
+      ).toBe('');
+      // read() flushes the pending state
+      expect(editor.read(() => $getRoot().getTextContent())).toBe('foo');
+      // without a pending state, readPending() reads the committed state
+      expect(editor.readPending(() => $getRoot().getTextContent())).toBe('foo');
+    });
+
     test('read()', async () => {
       const {editor} = testEnv;
 

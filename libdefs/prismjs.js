@@ -8,10 +8,10 @@
 
 'use strict';
 
-type TokenStream = Array<string | Token>;
+type TokenStream = (string | Token)[];
 
 type Token = {
-  alias: string | Array<string>,
+  alias: string | string[],
   content: string | TokenStream,
   type: string,
 };

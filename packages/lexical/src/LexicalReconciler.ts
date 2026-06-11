@@ -373,7 +373,7 @@ function $destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
 }
 
 function $destroyChildren(
-  children: Array<NodeKey>,
+  children: NodeKey[],
   _startIndex: number,
   endIndex: number,
   dom: null | HTMLElement,
@@ -847,7 +847,7 @@ function $createNode(key: NodeKey, slot: DOMSlot | null): HTMLElement {
 }
 
 function $createChildren(
-  children: Array<NodeKey>,
+  children: NodeKey[],
   element: ElementNode,
   _startIndex: number,
   endIndex: number,
@@ -1964,7 +1964,7 @@ function getNextSibling(element: HTMLElement): Node | null {
   return nextSibling;
 }
 
-function childrenSet(children: Array<NodeKey>, start: number): Set<NodeKey> {
+function childrenSet(children: NodeKey[], start: number): Set<NodeKey> {
   const s = new Set<NodeKey>();
   for (let i = start; i < children.length; i++) {
     s.add(children[i]);
@@ -1974,8 +1974,8 @@ function childrenSet(children: Array<NodeKey>, start: number): Set<NodeKey> {
 
 function $reconcileNodeChildren(
   nextElement: ElementNode,
-  prevChildren: Array<NodeKey>,
-  nextChildren: Array<NodeKey>,
+  prevChildren: NodeKey[],
+  nextChildren: NodeKey[],
   prevChildrenLength: number,
   nextChildrenLength: number,
   slot: ElementDOMSlot,

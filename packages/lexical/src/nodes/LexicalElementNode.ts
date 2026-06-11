@@ -58,7 +58,7 @@ export type SerializedElementNode<
   T extends SerializedLexicalNode = SerializedLexicalNode,
 > = Spread<
   {
-    children: Array<T>;
+    children: T[];
     direction: 'ltr' | 'rtl' | null;
     format: ElementFormatType;
     indent: number;
@@ -173,16 +173,16 @@ export class ElementNode
   /**
    * Returns the children of this node, in document order.
    */
-  getChildren(): Array<LexicalNode>;
+  getChildren(): LexicalNode[];
   /**
    * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `element.getChildren() as Array<T>`, and will be
+   * equivalent to `element.getChildren() as T[]`, and will be
    * removed in a future release. Call this method without a type argument
    * and narrow the results with a type guard instead.
    */
-  getChildren<T extends LexicalNode>(): Array<T>;
-  getChildren(): Array<LexicalNode> {
-    const children: Array<LexicalNode> = [];
+  getChildren<T extends LexicalNode>(): T[];
+  getChildren(): LexicalNode[] {
+    const children: LexicalNode[] = [];
     let child = this.getFirstChild();
     while (child !== null) {
       children.push(child);
@@ -190,8 +190,8 @@ export class ElementNode
     }
     return children;
   }
-  getChildrenKeys(): Array<NodeKey> {
-    const children: Array<NodeKey> = [];
+  getChildrenKeys(): NodeKey[] {
+    const children: NodeKey[] = [];
     let child = this.getFirstChild();
     while (child !== null) {
       children.push(child.__key);
@@ -219,7 +219,7 @@ export class ElementNode
     const parentLastChild = this.getParentOrThrow().getLastChild();
     return parentLastChild !== null && parentLastChild.is(self);
   }
-  getAllTextNodes(): Array<TextNode> {
+  getAllTextNodes(): TextNode[] {
     const textNodes: TextNode[] = [];
     // Slots are read slots-first, ahead of the linked-list children, to match
     // getTextContent. This is a content read; descendant navigation
@@ -604,7 +604,7 @@ export class ElementNode
   splice(
     start: number,
     deleteCount: number,
-    nodesToInsert: Array<LexicalNode>,
+    nodesToInsert: LexicalNode[],
   ): this {
     invariant(
       !$isEphemeral(this),

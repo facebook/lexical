@@ -24,9 +24,9 @@ function filterExamples({
   searchName,
   tags,
 }: {
-  examples: Array<Example>;
+  examples: Example[];
   searchName: string;
-  tags: Array<string>;
+  tags: string[];
 }) {
   if (searchName) {
     examples = examples.filter(example =>
@@ -41,7 +41,7 @@ function filterExamples({
   return examples;
 }
 
-export function useFilteredExamples(examples: Array<Example>) {
+export function useFilteredExamples(examples: Example[]) {
   const [searchName] = useSearchName();
   const [tags] = useTags();
   return useMemo(

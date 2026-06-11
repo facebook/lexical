@@ -532,7 +532,7 @@ export function createTestEditor(
     editorState?: EditorState;
     theme?: EditorThemeClasses;
     parentEditor?: LexicalEditor;
-    nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
+    nodes?: readonly (Klass<LexicalNode> | LexicalNodeReplacement)[];
     onError?: (error: Error) => void;
     onWarn?: (error: Error) => void;
     disableEvents?: boolean;

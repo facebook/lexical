@@ -8,6 +8,7 @@
 
 import {
   centerAlign,
+  clearFormatting,
   indent,
   moveToPrevWord,
   outdent,
@@ -267,6 +268,25 @@ test.describe('Clear All Formatting', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
           <span data-lexical-text="true">Hello World Test</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can clear alignment and indent with a collapsed selection`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+
+    await page.keyboard.type('Hello World');
+    await rightAlign(page);
+    await indent(page);
+    await clearFormatting(page);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
+          <span data-lexical-text="true">Hello World</span>
         </p>
       `,
     );

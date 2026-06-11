@@ -42,7 +42,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
   getMatch: (text: string) => null | EntityMatch,
   targetNode: Klass<T>,
   createNode: (textNode: TextNode) => T,
-): Array<() => void> {
+): (() => void)[] {
   const isTargetNode = (node: LexicalNode | null | undefined): node is T => {
     return node instanceof targetNode;
   };

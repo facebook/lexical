@@ -396,7 +396,7 @@ export function $handlePlainTextDrop(
  */
 export function $insertGeneratedNodes(
   editor: LexicalEditor,
-  nodes: Array<LexicalNode>,
+  nodes: LexicalNode[],
   selection: BaseSelection,
 ): void {
   if (
@@ -450,7 +450,7 @@ function $updateSelectionOnInsert(selection: BaseSelection): void {
 }
 
 export interface BaseSerializedNode {
-  children?: Array<BaseSerializedNode>;
+  children?: BaseSerializedNode[];
   type: string;
   version: number;
 }
@@ -486,7 +486,7 @@ function $appendNodesToJSON(
   editor: LexicalEditor,
   selection: BaseSelection | null,
   currentNode: LexicalNode,
-  targetArray: Array<BaseSerializedNode> = [],
+  targetArray: BaseSerializedNode[] = [],
 ): boolean {
   let shouldInclude =
     selection !== null ? currentNode.isSelected(selection) : true;
@@ -606,9 +606,9 @@ export function $generateJSONFromSelectedNodes<
   selection: BaseSelection | null,
 ): {
   namespace: string;
-  nodes: Array<SerializedNode>;
+  nodes: SerializedNode[];
 } {
-  const nodes: Array<SerializedNode> = [];
+  const nodes: SerializedNode[] = [];
   const root = $getRoot();
   const topLevelChildren = root.getChildren();
   for (let i = 0; i < topLevelChildren.length; i++) {
@@ -630,8 +630,8 @@ export function $generateJSONFromSelectedNodes<
  * @returns an Array of Lexical Node objects.
  */
 export function $generateNodesFromSerializedNodes(
-  serializedNodes: Array<BaseSerializedNode>,
-): Array<LexicalNode> {
+  serializedNodes: BaseSerializedNode[],
+): LexicalNode[] {
   const nodes = [];
   for (const serializedNode of serializedNodes) {
     nodes.push($parseSerializedNode(serializedNode));

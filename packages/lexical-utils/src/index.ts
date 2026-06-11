@@ -24,6 +24,7 @@ import {
   $caretFromPoint,
   $caretRangeFromSelection,
   $cloneWithProperties,
+  $comparePointCaretNext,
   $createParagraphNode,
   $findMatchingParent,
   $fullReconcile,
@@ -57,6 +58,7 @@ import {
   $setState,
   $splitAtPointCaretNext,
   type CaretDirection,
+  type CaretRange,
   type EditorState,
   ElementNode,
   type Klass,
@@ -66,6 +68,7 @@ import {
   type NodeCaret,
   type NodeKey,
   PointCaret,
+  type RangeSelection,
   type SiblingCaret,
   SplitAtPointCaretNextOptions,
   StateConfig,
@@ -110,10 +113,7 @@ export {
  * @param acceptableMimeTypes - An array of strings of types which the file is checked against.
  * @returns true if the file is an acceptable mime type, false otherwise.
  */
-export function isMimeType(
-  file: File,
-  acceptableMimeTypes: Array<string>,
-): boolean {
+export function isMimeType(file: File, acceptableMimeTypes: string[]): boolean {
   for (const acceptableType of acceptableMimeTypes) {
     if (file.type.startsWith(acceptableType)) {
       return true;
@@ -134,12 +134,12 @@ export function isMimeType(
  * \\}));
  */
 export function mediaFileReader(
-  files: Array<File>,
-  acceptableMimeTypes: Array<string>,
-): Promise<Array<{file: File; result: string}>> {
+  files: File[],
+  acceptableMimeTypes: string[],
+): Promise<{file: File; result: string}[]> {
   const filesIterator = files[Symbol.iterator]();
   return new Promise((resolve, reject) => {
-    const processed: Array<{file: File; result: string}> = [];
+    const processed: {file: File; result: string}[] = [];
     const handleNextFile = () => {
       const {done, value: file} = filesIterator.next();
       if (done) {
@@ -189,7 +189,7 @@ export interface DFSNode {
 export function $dfs(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
-): Array<DFSNode> {
+): DFSNode[] {
   return Array.from($dfsIterator(startNode, endNode));
 }
 
@@ -214,7 +214,7 @@ export function $getAdjacentCaret<D extends CaretDirection>(
 export function $reverseDfs(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
-): Array<DFSNode> {
+): DFSNode[] {
   return Array.from($reverseDfsIterator(startNode, endNode));
 }
 
@@ -545,6 +545,39 @@ export function $getNearestBlockElementAncestorOrThrow(
   return blockNode;
 }
 
+/**
+ * Checks whether the selection covers the entire block: the selection's
+ * start point is at or before the first position inside blockNode and its
+ * end point is at or after the last position inside blockNode. A selection
+ * that extends beyond the block's boundaries still fully selects the block,
+ * and an empty block is fully selected by any selection that touches or
+ * surrounds it.
+ *
+ * @param blockNode - The ElementNode to check, typically a top-level block or the RootNode
+ * @param selectionOrRange - The RangeSelection or CaretRange to check
+ * @returns true if the selection covers the entire blockNode
+ */
+export function $isBlockFullySelected(
+  blockNode: ElementNode,
+  selectionOrRange: RangeSelection | CaretRange,
+): boolean {
+  const range = $getCaretRangeInDirection(
+    $isRangeSelection(selectionOrRange)
+      ? $caretRangeFromSelection(selectionOrRange)
+      : selectionOrRange,
+    'next',
+  );
+  const blockStart = $normalizeCaret($getChildCaret(blockNode, 'next'));
+  const blockEnd = $getCaretInDirection(
+    $normalizeCaret($getChildCaret(blockNode, 'previous')),
+    'next',
+  );
+  return (
+    $comparePointCaretNext(range.anchor, blockStart) <= 0 &&
+    $comparePointCaretNext(range.focus, blockEnd) >= 0
+  );
+}
+
 export type DOMNodeToLexicalConversion = (element: Node) => LexicalNode;
 
 export type DOMNodeToLexicalConversionMap = Record<
@@ -835,9 +868,9 @@ export function objectKlassEquals<T>(
  */
 
 export function $filter<T>(
-  nodes: Array<LexicalNode>,
+  nodes: LexicalNode[],
   filterFn: (node: LexicalNode) => null | T,
-): Array<T> {
+): T[] {
   const result: T[] = [];
   for (let i = 0; i < nodes.length; i++) {
     const node = filterFn(nodes[i]);

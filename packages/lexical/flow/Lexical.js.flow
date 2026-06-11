@@ -62,7 +62,7 @@ declare export var SELECT_ALL_COMMAND: LexicalCommand<KeyboardEvent>;
 declare export var MOVE_TO_END: LexicalCommand<KeyboardEvent>;
 declare export var MOVE_TO_START: LexicalCommand<KeyboardEvent>;
 declare export var SELECTION_INSERT_CLIPBOARD_NODES_COMMAND: LexicalCommand<{
-  nodes: Array<LexicalNode>;
+  nodes: LexicalNode[];
   selection: BaseSelection;
 }>;
 
@@ -158,7 +158,7 @@ export type Transform<T> = (node: T) => void;
 
 type DOMConversionCache = Map<
   string,
-  Array<(node: Node) => DOMConversion | null>,
+  ((node: Node) => DOMConversion | null)[],
 >;
 
 export type DOMSlotForNode<N extends LexicalNode> = N extends ElementNode
@@ -233,8 +233,8 @@ declare export class LexicalEditor {
   _htmlConversions: DOMConversionCache;
   _pendingEditorState: null | EditorState;
   _compositionKey: null | NodeKey;
-  _deferred: Array<() => void>;
-  _updates: Array<[() => void, void | EditorUpdateOptions]>;
+  _deferred: (() => void)[];
+  _updates: [() => void, void | EditorUpdateOptions][];
   _updating: boolean;
   _keyToDOMMap: Map<NodeKey, HTMLElement>;
   _listeners: Listeners;
@@ -282,7 +282,7 @@ declare export class LexicalEditor {
   ): () => void;
   dispatchCommand<P>(command: LexicalCommand<P>, payload: P): boolean;
   hasNode(node: Class<LexicalNode>): boolean;
-  hasNodes(nodes: Array<Class<LexicalNode>>): boolean;
+  hasNodes(nodes: Class<LexicalNode>[]): boolean;
   getKey(): string;
   getDecorators<X>(): {
     [NodeKey]: X,
@@ -297,6 +297,7 @@ declare export class LexicalEditor {
     updateFn?: () => void,
   ): EditorState;
   read<V>(callbackFn: () => V, options?: EditorReadOptions): V;
+  readPending<V>(callbackFn: () => V): V;
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
   focus(callbackFn?: () => void, options?: EditorFocusOptions): void;
   blur(): void;
@@ -309,7 +310,7 @@ type EditorReadOptions = {
 };
 export type EditorUpdateOptions = {
   onUpdate?: () => void,
-  tag?: string | Array<string>,
+  tag?: string | string[],
   skipTransforms?: true,
   discrete?: true,
 };
@@ -343,9 +344,9 @@ export type EditorThemeClasses = {
   image?: EditorThemeClassName,
   list?: {
     ul?: EditorThemeClassName,
-    ulDepth?: Array<EditorThemeClassName>,
+    ulDepth?: EditorThemeClassName[],
     ol?: EditorThemeClassName,
-    olDepth?: Array<EditorThemeClassName>,
+    olDepth?: EditorThemeClassName[],
     checklist?: EditorThemeClassName,
     listitem?: EditorThemeClassName,
     listitemChecked?: EditorThemeClassName,
@@ -463,9 +464,9 @@ export type DOMConversionMap = {
 };
 type NodeName = string;
 export type DOMConversionOutput = {
-  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>,
+  after?: (childLexicalNodes: LexicalNode[]) => LexicalNode[],
   forChild?: DOMChildConversion,
-  node: null | LexicalNode | Array<LexicalNode>,
+  node: null | LexicalNode | LexicalNode[],
 };
 export type DOMExportOutput = {
   after?: (generatedElement: ?HTMLElement) => ?HTMLElement,
@@ -506,14 +507,14 @@ declare export class LexicalNode {
   getParentOrThrow<T extends ElementNode>(): T;
   getTopLevelElement(): DecoratorNode<unknown> | ElementNode | null;
   getTopLevelElementOrThrow(): DecoratorNode<unknown> | ElementNode;
-  getParents(): Array<ElementNode>;
+  getParents(): ElementNode[];
   /**
    * @deprecated The type parameter is an unchecked and unsafe cast and
    * will be removed in a future release. Call this method without a type
    * argument and narrow the result with a type guard instead.
    */
-  getParents<T extends ElementNode>(): Array<T>;
-  getParentKeys(): Array<NodeKey>;
+  getParents<T extends ElementNode>(): T[];
+  getParentKeys(): NodeKey[];
   getPreviousSibling(): LexicalNode | null;
   /**
    * @deprecated The type parameter is an unchecked and unsafe cast and
@@ -521,13 +522,13 @@ declare export class LexicalNode {
    * argument and narrow the result with a type guard instead.
    */
   getPreviousSibling<T extends LexicalNode>(): T | null;
-  getPreviousSiblings(): Array<LexicalNode>;
+  getPreviousSiblings(): LexicalNode[];
   /**
    * @deprecated The type parameter is an unchecked and unsafe cast and
    * will be removed in a future release. Call this method without a type
    * argument and narrow the result with a type guard instead.
    */
-  getPreviousSiblings<T extends LexicalNode>(): Array<T>;
+  getPreviousSiblings<T extends LexicalNode>(): T[];
   getNextSibling(): LexicalNode | null;
   /**
    * @deprecated The type parameter is an unchecked and unsafe cast and
@@ -535,18 +536,18 @@ declare export class LexicalNode {
    * argument and narrow the result with a type guard instead.
    */
   getNextSibling<T extends LexicalNode>(): T | null;
-  getNextSiblings(): Array<LexicalNode>;
+  getNextSiblings(): LexicalNode[];
   /**
    * @deprecated The type parameter is an unchecked and unsafe cast and
    * will be removed in a future release. Call this method without a type
    * argument and narrow the result with a type guard instead.
    */
-  getNextSiblings<T extends LexicalNode>(): Array<T>;
+  getNextSiblings<T extends LexicalNode>(): T[];
   getCommonAncestor<T extends ElementNode>(node: LexicalNode): T | null;
   is(object: ?LexicalNode): boolean;
   isBefore(targetNode: LexicalNode): boolean;
   isParentOf(targetNode: LexicalNode): boolean;
-  getNodesBetween(targetNode: LexicalNode): Array<LexicalNode>;
+  getNodesBetween(targetNode: LexicalNode): LexicalNode[];
   isDirty(): boolean;
   // $FlowFixMe[incompatible-type]
   getLatest<T extends LexicalNode>(this: T): T;
@@ -594,8 +595,8 @@ declare export function $isBlockElementNode(
 export interface BaseSelection {
   dirty: boolean;
   clone(): BaseSelection;
-  extract(): Array<LexicalNode>;
-  getNodes(): Array<LexicalNode>;
+  extract(): LexicalNode[];
+  getNodes(): LexicalNode[];
   getStartEndPoints(): null | [PointType, PointType];
   getTextContent(): string;
   insertRawText(text: string): void;
@@ -603,9 +604,9 @@ export interface BaseSelection {
   isBackward(): boolean;
   isCollapsed(): boolean;
   insertText(text: string): void;
-  insertNodes(nodes: Array<LexicalNode>): void;
-  getCachedNodes(): null | Array<LexicalNode>;
-  setCachedNodes(nodes: null | Array<LexicalNode>): void;
+  insertNodes(nodes: LexicalNode[]): void;
+  getCachedNodes(): null | LexicalNode[];
+  setCachedNodes(nodes: null | LexicalNode[]): void;
 }
 
 declare export class NodeSelection implements BaseSelection {
@@ -620,15 +621,15 @@ declare export class NodeSelection implements BaseSelection {
   clear(): void;
   has(key: NodeKey): boolean;
   clone(): NodeSelection;
-  extract(): Array<LexicalNode>;
+  extract(): LexicalNode[];
   insertRawText(): void;
   insertText(): void;
-  getNodes(): Array<LexicalNode>;
+  getNodes(): LexicalNode[];
   getStartEndPoints(): null;
   getTextContent(): string;
-  insertNodes(nodes: Array<LexicalNode>): void;
-  getCachedNodes(): null | Array<LexicalNode>;
-  setCachedNodes(nodes: null | Array<LexicalNode>): void;
+  insertNodes(nodes: LexicalNode[]): void;
+  getCachedNodes(): null | LexicalNode[];
+  setCachedNodes(nodes: null | LexicalNode[]): void;
 }
 
 declare export function $isNodeSelection(
@@ -645,7 +646,7 @@ declare export class RangeSelection implements BaseSelection {
   is(selection: null | BaseSelection): boolean;
   isBackward(): boolean;
   isCollapsed(): boolean;
-  getNodes(): Array<LexicalNode>;
+  getNodes(): LexicalNode[];
   setTextNodeRange(
     anchorNode: TextNode,
     anchorOffset: number,
@@ -663,10 +664,10 @@ declare export class RangeSelection implements BaseSelection {
   insertRawText(text: string): void;
   removeText(): void;
   formatText(formatType: TextFormatType): void;
-  insertNodes(nodes: Array<LexicalNode>): void;
+  insertNodes(nodes: LexicalNode[]): void;
   insertParagraph(): void;
   insertLineBreak(selectStart?: boolean): void;
-  extract(): Array<LexicalNode>;
+  extract(): LexicalNode[];
   modify(
     alter: 'move' | 'extend',
     isBackward: boolean,
@@ -675,9 +676,9 @@ declare export class RangeSelection implements BaseSelection {
   deleteCharacter(isBackward: boolean): void;
   deleteLine(isBackward: boolean): void;
   deleteWord(isBackward: boolean): void;
-  insertNodes(nodes: Array<LexicalNode>): void;
-  getCachedNodes(): null | Array<LexicalNode>;
-  setCachedNodes(nodes: null | Array<LexicalNode>): void;
+  insertNodes(nodes: LexicalNode[]): void;
+  getCachedNodes(): null | LexicalNode[];
+  setCachedNodes(nodes: null | LexicalNode[]): void;
   forwardDeletion(anchor: PointType, anchorNode: ElementNode | TextNode, isBackward: boolean): boolean;
   getStartEndPoints(): [PointType, PointType];
 }
@@ -722,7 +723,7 @@ declare export function $isRangeSelection(
 ): x is RangeSelection;
 declare export function $getSelection(): null | BaseSelection;
 declare export function $getPreviousSelection(): null | BaseSelection;
-declare export function $insertNodes(nodes: Array<LexicalNode>): void;
+declare export function $insertNodes(nodes: LexicalNode[]): void;
 declare export function $getCharacterOffsets(
   selection: BaseSelection,
 ): [number, number];
@@ -794,7 +795,7 @@ declare export class TextNode extends LexicalNode {
   ): TextNode;
   canInsertTextBefore(): boolean;
   canInsertTextAfter(): boolean;
-  splitText(...splitOffsets: Array<number>): Array<TextNode>;
+  splitText(...splitOffsets: number[]): TextNode[];
   mergeWithSibling(target: TextNode): TextNode;
   isTextEntity(): boolean;
   static importJSON(serializedTextNode: SerializedTextNode): TextNode;
@@ -863,7 +864,7 @@ declare export class RootNode extends ElementNode {
   replace<N extends LexicalNode>(node: N): N;
   insertBefore<T extends LexicalNode>(nodeToInsert: T): T;
   insertAfter<T extends LexicalNode>(nodeToInsert: T): T;
-  append(...nodesToAppend: Array<LexicalNode>): this;
+  append(...nodesToAppend: LexicalNode[]): this;
   canBeEmpty(): false;
 }
 declare export function $isRootNode(
@@ -894,24 +895,24 @@ declare export class ElementNode extends LexicalNode {
   getFormat(): number;
   getFormatType(): ElementFormatType;
   getIndent(): number;
-  getChildren(): Array<LexicalNode>;
+  getChildren(): LexicalNode[];
   /**
    * @deprecated The type parameter is an unchecked and unsafe cast and
    * will be removed in a future release. Call this method without a type
    * argument and narrow the result with a type guard instead.
    */
-  getChildren<T extends LexicalNode>(): Array<T>;
+  getChildren<T extends LexicalNode>(): T[];
   /**
    * @deprecated The type parameter is an unchecked and unsafe cast and
    * will be removed in a future release. Call this method without a type
    * argument and narrow the result with a type guard instead.
    */
-  getChildren<T extends Array<LexicalNode>>(): T;
-  getChildrenKeys(): Array<NodeKey>;
+  getChildren<T extends LexicalNode[]>(): T;
+  getChildrenKeys(): NodeKey[];
   getChildrenSize(): number;
   isEmpty(): boolean;
   isDirty(): boolean;
-  getAllTextNodes(): Array<TextNode>;
+  getAllTextNodes(): TextNode[];
   getFirstDescendant(): null | LexicalNode;
   /**
    * @deprecated The type parameter is an unchecked and unsafe cast and
@@ -975,7 +976,7 @@ declare export class ElementNode extends LexicalNode {
   selectStart(): RangeSelection;
   selectEnd(): RangeSelection;
   clear(): this;
-  append(...nodesToAppend: Array<LexicalNode>): this;
+  append(...nodesToAppend: LexicalNode[]): this;
   setDirection(direction: 'ltr' | 'rtl' | null): this;
   setFormat(type: ElementFormatType): this;
   setIndent(indentLevel: number): this;
@@ -1003,7 +1004,7 @@ declare export class ElementNode extends LexicalNode {
   splice(
     start: number,
     deleteCount: number,
-    nodesToInsert: Array<LexicalNode>,
+    nodesToInsert: LexicalNode[],
   ): this;
   exportJSON(): SerializedElementNode;
   getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement>;
@@ -1140,7 +1141,7 @@ declare export function $setCompositionKey(
   compositionKey: null | NodeKey,
 ): void;
 declare export function $setSelection(selection: null | BaseSelection): void;
-declare export function $nodesOfType<T extends LexicalNode>(klass: Class<T>): Array<T>;
+declare export function $nodesOfType<T extends LexicalNode>(klass: Class<T>): T[];
 declare export function $getAdjacentNode(
   focus: Point,
   isBackward: boolean,
@@ -1231,7 +1232,7 @@ declare export function $normalizeSelection__EXPERIMENTAL(
  * */
 
 type InternalSerializedNode = {
-  children?: Array<InternalSerializedNode>,
+  children?: InternalSerializedNode[],
   type: string,
   version: number,
 };
@@ -1262,7 +1263,7 @@ export type SerializedTextNode = {
 
 export type SerializedElementNode = {
   ...SerializedLexicalNode,
-  children: Array<SerializedLexicalNode>,
+  children: SerializedLexicalNode[],
   direction: 'ltr' | 'rtl' | null,
   format: ElementFormatType,
   indent: number,
@@ -1964,14 +1965,14 @@ declare export function getTransformSetFromKlass(
 
 declare export function addClassNamesToElement(
   element: HTMLElement,
-  ...classNames: Array<typeof undefined | boolean | null | string>
+  ...classNames: (typeof undefined | boolean | null | string)[]
 ): void;
 declare export function removeClassNamesFromElement(
   element: HTMLElement,
-  ...classNames: Array<typeof undefined | boolean | null | string>
+  ...classNames: (typeof undefined | boolean | null | string)[]
 ): void;
-declare export function mergeRegister(...func: Array<() => void>): () => void;
-declare export function normalizeClassNames(...classNames: Array<typeof undefined | boolean | null | string>): Array<string>;
+declare export function mergeRegister(...func: (() => void)[]): () => void;
+declare export function normalizeClassNames(...classNames: (typeof undefined | boolean | null | string)[]): string[];
 declare export function getStyleObjectFromCSS(css: string): {
   [string]: string,
 };

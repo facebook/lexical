@@ -43,7 +43,7 @@ function $garbageCollectDetachedDeepChildNodes(
   parentKey: NodeKey,
   prevNodeMap: NodeMap,
   nodeMap: NodeMap,
-  nodeMapDelete: Array<NodeKey>,
+  nodeMapDelete: NodeKey[],
   dirtyNodes: Map<NodeKey, IntentionallyMarkedAsDirtyElement> | Set<NodeKey>,
 ): void {
   if ($isElementNode(node)) {
@@ -122,7 +122,7 @@ export function $garbageCollectDetachedNodes(
   const nodeMap = editorState._nodeMap;
   // Store dirtyElements in a queue for later deletion; deleting dirty subtrees too early will
   // hinder accessing .__next on child nodes
-  const nodeMapDelete: Array<NodeKey> = [];
+  const nodeMapDelete: NodeKey[] = [];
 
   for (const [nodeKey] of dirtyElements) {
     const node = nodeMap.get(nodeKey);

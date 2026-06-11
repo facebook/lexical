@@ -25,7 +25,7 @@ declare class StaticRange {
 declare class InputEvent extends UIEvent {
   +data: string | null;
   +dataTransfer?: DataTransfer;
-  +getTargetRanges?: () => Array<StaticRange>;
+  +getTargetRanges?: () => StaticRange[];
   +inputType: string;
   +isComposing: boolean;
 }

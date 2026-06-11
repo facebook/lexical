@@ -782,9 +782,7 @@ export function doesContainSurrogatePair(str: string): boolean {
   return /[\uD800-\uDBFF][\uDC00-\uDFFF]/g.test(str);
 }
 
-export function getEditorsToPropagate(
-  editor: LexicalEditor,
-): Array<LexicalEditor> {
+export function getEditorsToPropagate(editor: LexicalEditor): LexicalEditor[] {
   const editorsToPropagate: LexicalEditor[] = [];
   for (
     let currentEditor: LexicalEditor | null = editor;
@@ -1349,7 +1347,7 @@ export function $selectAll(selection?: RangeSelection | null): RangeSelection {
 export function getCachedClassNameArray(
   classNamesTheme: EditorThemeClasses,
   classNameThemeType: string,
-): Array<string> {
+): string[] {
   if (classNamesTheme.__lexicalClassNameCache === undefined) {
     classNamesTheme.__lexicalClassNameCache = {};
   }
@@ -1407,7 +1405,7 @@ export function setMutatedNode(
 /**
  * @deprecated Use {@link LexicalEditor.registerMutationListener} with `skipInitialization: false` instead.
  */
-export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
+export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): T[] {
   const klassType = klass.getType();
   const editorState = getActiveEditorState();
   if (editorState._readOnly) {
@@ -1417,7 +1415,7 @@ export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
     return nodes ? Array.from(nodes.values()) : [];
   }
   const nodes = editorState._nodeMap;
-  const nodesOfType: Array<T> = [];
+  const nodesOfType: T[] = [];
   for (const [, node] of nodes) {
     if (
       node instanceof klass &&
@@ -2765,7 +2763,7 @@ export const $findMatchingParent: {
 export function $createChildrenArray(
   element: ElementNode,
   nodeMap: null | NodeMap,
-): Array<NodeKey> {
+): NodeKey[] {
   const children = [];
   let nodeKey = element.__first;
   while (nodeKey !== null) {

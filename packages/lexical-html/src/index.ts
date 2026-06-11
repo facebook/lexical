@@ -146,14 +146,14 @@ const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
 export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document | ParentNode,
-): Array<LexicalNode> {
+): LexicalNode[] {
   $inlineStylesFromStyleSheetsDOM(dom);
 
   const elements = isDOMDocumentNode(dom)
     ? dom.body.childNodes
     : dom.childNodes;
-  const lexicalNodes: Array<LexicalNode> = [];
-  const allArtificialNodes: Array<ArtificialNode__DO_NOT_USE> = [];
+  const lexicalNodes: LexicalNode[] = [];
+  const allArtificialNodes: ArtificialNode__DO_NOT_USE[] = [];
   for (const element of elements) {
     if (!IGNORE_TAGS.has(element.nodeName)) {
       const lexicalNode = $createNodesFromDOM(
@@ -411,12 +411,12 @@ function getConversionFunction(
 function $createNodesFromDOM(
   node: Node,
   editor: LexicalEditor,
-  allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
+  allArtificialNodes: ArtificialNode__DO_NOT_USE[],
   hasBlockAncestorLexicalNode: boolean,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
   parentLexicalNode?: LexicalNode | null | undefined,
-): Array<LexicalNode> {
-  const lexicalNodes: Array<LexicalNode> = [];
+): LexicalNode[] {
+  const lexicalNodes: LexicalNode[] = [];
 
   if (IGNORE_TAGS.has(node.nodeName)) {
     return lexicalNodes;
@@ -533,13 +533,13 @@ function $createNodesFromDOM(
 
 function wrapContinuousInlines(
   domNode: Node,
-  nodes: Array<LexicalNode>,
+  nodes: LexicalNode[],
   createWrapperFn: () => ElementNode,
-): Array<LexicalNode> {
+): LexicalNode[] {
   const textAlign = (domNode as HTMLElement).style
     .textAlign as ElementFormatType;
-  const out: Array<LexicalNode> = [];
-  let continuousInlines: Array<LexicalNode> = [];
+  const out: LexicalNode[] = [];
+  let continuousInlines: LexicalNode[] = [];
   // wrap contiguous inline child nodes in para
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
@@ -566,7 +566,7 @@ function wrapContinuousInlines(
 }
 
 function $unwrapArtificialNodes(
-  allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
+  allArtificialNodes: ArtificialNode__DO_NOT_USE[],
 ) {
   // Replace artificial node with its children, inserting a linebreak
   // between adjacent artificial nodes

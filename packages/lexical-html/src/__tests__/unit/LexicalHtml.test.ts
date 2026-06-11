@@ -38,11 +38,11 @@ import {
 import {assert, describe, expect, test} from 'vitest';
 
 describe('HTML', () => {
-  type Input = Array<{
+  type Input = {
     name: string;
     html: string;
     initializeEditorState: () => void;
-  }>;
+  }[];
 
   const HTML_SERIALIZE: Input = [
     {

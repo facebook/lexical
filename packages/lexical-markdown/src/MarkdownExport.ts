@@ -39,7 +39,7 @@ import {isEmptyParagraph, transformersByType} from './utils';
  * Renders string from markdown. The selection is moved to the start after the operation.
  */
 export function createMarkdownExport(
-  transformers: Array<Transformer>,
+  transformers: Transformer[],
   shouldPreserveNewLines: boolean = false,
 ): (node?: ElementNode) => string {
   const byType = transformersByType(transformers);
@@ -343,9 +343,9 @@ function $exportChildrenForSelection(
 
 function $exportTopLevelElements(
   node: LexicalNode,
-  elementTransformers: Array<ElementTransformer | MultilineElementTransformer>,
-  textTransformersIndex: Array<TextFormatTransformer>,
-  textMatchTransformers: Array<TextMatchTransformer>,
+  elementTransformers: (ElementTransformer | MultilineElementTransformer)[],
+  textTransformersIndex: TextFormatTransformer[],
+  textMatchTransformers: TextMatchTransformer[],
   shouldPreserveNewLines: boolean,
 ): string | null {
   for (const transformer of elementTransformers) {
@@ -386,10 +386,10 @@ function $exportTopLevelElements(
 
 function $exportChildren(
   node: ElementNode,
-  textTransformersIndex: Array<TextFormatTransformer>,
-  textMatchTransformers: Array<TextMatchTransformer>,
-  unclosedTags?: Array<{format: TextFormatType; tag: string}>,
-  unclosableTags?: Array<{format: TextFormatType; tag: string}>,
+  textTransformersIndex: TextFormatTransformer[],
+  textMatchTransformers: TextMatchTransformer[],
+  unclosedTags?: {format: TextFormatType; tag: string}[],
+  unclosableTags?: {format: TextFormatType; tag: string}[],
   shouldPreserveNewLines: boolean = false,
 ): string {
   const output = [];
@@ -481,10 +481,10 @@ function $exportLineBreak(node: LineBreakNode): string {
 function exportTextFormat(
   node: TextNode,
   textContent: string,
-  textTransformers: Array<TextFormatTransformer>,
+  textTransformers: TextFormatTransformer[],
   // unclosed tags include the markdown tags that haven't been closed yet, and their associated formats
-  unclosedTags: Array<{format: TextFormatType; tag: string}>,
-  unclosableTags?: Array<{format: TextFormatType; tag: string}>,
+  unclosedTags: {format: TextFormatType; tag: string}[],
+  unclosableTags?: {format: TextFormatType; tag: string}[],
   shouldPreserveNewLines: boolean = false,
 ): string {
   // This function handles the case of a string looking like this: "   foo   "

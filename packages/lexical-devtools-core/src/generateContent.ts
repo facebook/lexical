@@ -523,7 +523,7 @@ function $printSelectedCharsLine({
   selection,
   typeDisplay,
 }: {
-  indent: Array<string>;
+  indent: string[];
   isSelected: boolean;
   node: LexicalNode;
   nodeKeyDisplay: string;

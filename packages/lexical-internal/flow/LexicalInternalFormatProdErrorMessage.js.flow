@@ -9,5 +9,5 @@
 
 declare export default function formatProdErrorMessage(
   code: string,
-  ...args: Array<string>
+  ...args: string[]
 ): empty;

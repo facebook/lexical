@@ -30,7 +30,7 @@ export type NodeMenuPluginProps<TOption extends MenuOption> = {
     closeMenu: () => void,
     matchingString: string,
   ) => void;
-  options: Array<TOption>;
+  options: TOption[];
   nodeKey: NodeKey | null;
   menuRenderFn?: MenuRenderFn<TOption>;
   onClose?: () => void;

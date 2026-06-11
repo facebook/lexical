@@ -106,7 +106,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     editors.length = 0;
   });
 
-  function buildBinding(nodes: ReadonlyArray<Klass<LexicalNode>> = []) {
+  function buildBinding(nodes: readonly Klass<LexicalNode>[] = []) {
     const editor = createEditor({
       namespace: 'slot-sync-v2',
       nodes,
@@ -130,7 +130,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
   // to restore a serialized tree into a clean editor (yjs -> lexical).
   function buildRestoreBinding(
     doc: Doc,
-    nodes: ReadonlyArray<Klass<LexicalNode>> = [],
+    nodes: readonly Klass<LexicalNode>[] = [],
   ) {
     const editor = createEditor({
       namespace: 'slot-sync-v2',
@@ -1235,7 +1235,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     assert(slotType != null);
 
     // Capture inner descendants of the slot's XmlElement before removal.
-    const innerTypes: Array<XmlElement | XmlText> = [];
+    const innerTypes: (XmlElement | XmlText)[] = [];
     const collect = (xe: XmlElement) => {
       for (const child of xe.toArray()) {
         if (

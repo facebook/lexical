@@ -6,6 +6,7 @@
  *
  */
 
+import {DragonExtension, installDragonSupport} from '@lexical/dragon';
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $createParagraphNode,
@@ -18,8 +19,6 @@ import {
   defineExtension,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
-
-import {DragonExtension, installDragonSupport} from '../../index';
 
 function setUpEditor() {
   return buildEditorFromExtensions(

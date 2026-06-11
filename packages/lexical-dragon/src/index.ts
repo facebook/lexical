@@ -6,39 +6,48 @@
  *
  */
 
-import {effect, namedSignals} from '@lexical/extension';
+import {effect, namedSignals, watchedSignal} from '@lexical/extension';
 import {
   $getSelection,
   $isRangeSelection,
   $isTextNode,
   defineExtension,
+  getEditorPropertyFromDOMNode,
+  isLexicalEditor,
   LexicalEditor,
   safeCast,
   TextFormatType,
 } from 'lexical';
 
-const TEXT_FORMAT_BY_EXEC_COMMAND = new Map<string, TextFormatType>([
-  ['bold', 'bold'],
-  ['italic', 'italic'],
-  ['strikeThrough', 'strikethrough'],
-  ['subscript', 'subscript'],
-  ['superscript', 'superscript'],
-  ['underline', 'underline'],
-]);
-
-interface WindowState {
-  editors: Set<LexicalEditor>;
-  installCount: number;
-  removeListener: (() => void) | null;
+interface WithWindowState {
+  [WINDOW_STATE_KEY]?: WindowState | undefined;
 }
 
-const windowStates = new Map<Window, WindowState>();
+const TEXT_FORMAT_BY_EXEC_COMMAND: {readonly [K in string]?: TextFormatType} = {
+  bold: 'bold',
+  italic: 'italic',
+  strikeThrough: 'strikethrough',
+  subscript: 'subscript',
+  superscript: 'superscript',
+  underline: 'underline',
+};
 
-function getOrCreateWindowState(targetWindow: Window): WindowState {
-  let state = windowStates.get(targetWindow);
+const WINDOW_STATE_KEY = Symbol.for('@lexical/dragon/WindowState');
+type InstallKey = symbol;
+
+interface WindowState {
+  editors: Map<LexicalEditor, Set<InstallKey>>;
+  installs: Set<InstallKey>;
+  dispose: () => void;
+}
+
+function getOrCreateWindowState(
+  targetWindow: Window & WithWindowState,
+): WindowState {
+  let state = targetWindow[WINDOW_STATE_KEY];
   if (state === undefined) {
-    state = {editors: new Set(), installCount: 0, removeListener: null};
-    windowStates.set(targetWindow, state);
+    state = {dispose: () => {}, editors: new Map(), installs: new Set()};
+    targetWindow[WINDOW_STATE_KEY] = state;
   }
   return state;
 }
@@ -71,87 +80,99 @@ function defaultWindow(): Window | undefined {
  * teardown for it (including the ones returned by
  * {@link registerDragonSupport}) has been called.
  */
-export function installDragonSupport(targetWindow?: Window): () => void {
-  const win = targetWindow ?? defaultWindow();
-  if (win === undefined) {
-    return () => {};
+export function installDragonSupport(
+  targetWindow: undefined | Window = defaultWindow(),
+): () => void {
+  return targetWindow
+    ? addInstall(
+        targetWindow,
+        Symbol('@lexical/dragon/globalInstall'),
+        undefined,
+      )
+    : () => {};
+}
+
+function addInstall(
+  targetWindow: Window,
+  installKey: InstallKey,
+  editor: undefined | LexicalEditor,
+): () => void {
+  const state = getOrCreateWindowState(targetWindow);
+  if (state.installs.size === 0) {
+    const boundHandleMessage = handleMessage.bind(targetWindow);
+    targetWindow.addEventListener('message', boundHandleMessage, true);
+    state.dispose = () => {
+      targetWindow.removeEventListener('message', boundHandleMessage, true);
+    };
   }
-  const state = getOrCreateWindowState(win);
-  state.installCount++;
-  if (state.removeListener === null) {
-    const handler = (event: MessageEvent) => handleMessage(event, win);
-    win.addEventListener('message', handler, true);
-    state.removeListener = () =>
-      win.removeEventListener('message', handler, true);
+  state.installs.add(installKey);
+  if (editor) {
+    const installSet = state.editors.get(editor) || new Set();
+    installSet.add(installKey);
+    state.editors.set(editor, installSet);
   }
-  let removed = false;
-  return () => {
-    if (removed) {
-      return;
+  return removeInstall.bind(null, targetWindow, state, installKey, editor);
+}
+
+function removeInstall(
+  targetWindow: Window & WithWindowState,
+  state: WindowState,
+  installKey: InstallKey,
+  editor?: LexicalEditor,
+): void {
+  if (editor) {
+    const installSet = state.editors.get(editor);
+    if (installSet && installSet.delete(installKey) && installSet.size === 0) {
+      state.editors.delete(editor);
     }
-    removed = true;
-    state.installCount--;
-    if (state.installCount === 0 && state.removeListener !== null) {
-      state.removeListener();
-      state.removeListener = null;
-      windowStates.delete(win);
-    }
-  };
+  }
+  if (state.installs.delete(installKey) && state.installs.size === 0) {
+    state.dispose();
+    delete targetWindow[WINDOW_STATE_KEY];
+  }
+}
+
+function getDefaultView(el: HTMLElement | null): Window | null {
+  return el && el.ownerDocument.defaultView;
 }
 
 export function registerDragonSupport(editor: LexicalEditor): () => void {
-  let registeredWindow: Window | null = null;
-  let uninstall: (() => void) | null = null;
-
-  const detach = () => {
-    if (registeredWindow !== null) {
-      const state = windowStates.get(registeredWindow);
-      if (state !== undefined) {
-        state.editors.delete(editor);
-      }
-      registeredWindow = null;
+  const windowSignal = watchedSignal(
+    () => getDefaultView(editor.getRootElement()),
+    self =>
+      editor.registerRootListener(rootElement => {
+        self.value = getDefaultView(rootElement);
+      }),
+  );
+  return effect(() => {
+    const targetWindow = windowSignal.value;
+    if (targetWindow) {
+      return addInstall(
+        targetWindow,
+        Symbol('@lexical/dragon/editorInstall'),
+        editor,
+      );
     }
-    if (uninstall !== null) {
-      uninstall();
-      uninstall = null;
-    }
-  };
-
-  const unregisterRoot = editor.registerRootListener(rootElement => {
-    detach();
-    if (rootElement === null) {
-      return;
-    }
-    const targetWindow = rootElement.ownerDocument.defaultView;
-    if (targetWindow === null) {
-      return;
-    }
-    registeredWindow = targetWindow;
-    getOrCreateWindowState(targetWindow).editors.add(editor);
-    uninstall = installDragonSupport(targetWindow);
   });
-
-  return () => {
-    detach();
-    unregisterRoot();
-  };
 }
 
-function getFocusedEditor(targetWindow: Window): LexicalEditor | null {
-  const state = windowStates.get(targetWindow);
+function getFocusedEditor(
+  targetWindow: Window & WithWindowState,
+): LexicalEditor | null {
+  const state = targetWindow[WINDOW_STATE_KEY];
   if (state === undefined) {
     return null;
   }
-  const activeElement = targetWindow.document.activeElement;
-  for (const editor of state.editors) {
-    if (editor.getRootElement() === activeElement) {
-      return editor;
-    }
-  }
-  return null;
+  const activeEditor = getEditorPropertyFromDOMNode(
+    targetWindow.document.activeElement,
+  );
+  return isLexicalEditor(activeEditor) && state.editors.has(activeEditor)
+    ? activeEditor
+    : null;
 }
 
-function handleMessage(event: MessageEvent, targetWindow: Window): void {
+function handleMessage(this: Window, event: MessageEvent): void {
+  const targetWindow = this;
   if (event.origin !== targetWindow.location.origin) {
     return;
   }
@@ -264,7 +285,7 @@ function handleMessage(event: MessageEvent, targetWindow: Window): void {
                 selLength > 0 &&
                 !selection.isCollapsed()
               ) {
-                const format = TEXT_FORMAT_BY_EXEC_COMMAND.get(formatCommand);
+                const format = TEXT_FORMAT_BY_EXEC_COMMAND[formatCommand];
                 if (format !== undefined) {
                   selection.formatText(format);
                 }

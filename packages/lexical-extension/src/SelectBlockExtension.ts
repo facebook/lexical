@@ -79,15 +79,17 @@ export const SelectBlockExtension = /* @__PURE__ */ defineExtension({
                 if (!stores.cascadeSelection.peek()) {
                   return false;
                 }
-                const isAllSelected = triggerEditor
-                  .getEditorState()
-                  .read(() => {
-                    const nestedSelection = $getSelection();
-                    return (
-                      $isRangeSelection(nestedSelection) &&
-                      $isBlockFullySelected($getRoot(), nestedSelection)
-                    );
-                  });
+                // readPending() reflects an update in progress or queued
+                // in the nested editor (such as its initial state) without
+                // flushing it, which would not be safe if its update is
+                // still in progress
+                const isAllSelected = triggerEditor.readPending(() => {
+                  const nestedSelection = $getSelection();
+                  return (
+                    $isRangeSelection(nestedSelection) &&
+                    $isBlockFullySelected($getRoot(), nestedSelection)
+                  );
+                });
 
                 if (!isAllSelected) {
                   return false;
@@ -145,6 +147,12 @@ export const SelectBlockExtension = /* @__PURE__ */ defineExtension({
               }
               return true;
             },
+            // This must be in a higher priority bucket than
+            // COMMAND_PRIORITY_EDITOR (e.g. not COMMAND_PRIORITY_BEFORE_EDITOR)
+            // for cascadeSelection to work. Listeners run for all editors in
+            // priority bucket order (nested editor first within each bucket),
+            // so an EDITOR bucket listener here would run after the nested
+            // editor's own RichTextExtension SELECT_ALL_COMMAND handler.
             COMMAND_PRIORITY_LOW,
           );
         }

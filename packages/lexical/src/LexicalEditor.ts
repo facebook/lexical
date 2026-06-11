@@ -1648,6 +1648,21 @@ export class LexicalEditor {
   }
 
   /**
+   * Executes a read of the editor's pending state if it exists, otherwise
+   * the committed state, with the editor context available. Unlike
+   * {@link LexicalEditor.read}, pending updates are not flushed before the
+   * read, so this is safe to call when an update may already be in
+   * progress (such as from another editor's command listener) at the cost
+   * of possibly observing a state that has not been committed yet.
+   * @param callbackFn - A function that has access to read-only editor state.
+   */
+  readPending<T>(callbackFn: () => T): T {
+    return (this._pendingEditorState || this._editorState).read(callbackFn, {
+      editor: this,
+    });
+  }
+
+  /**
    * Executes an update to the editor state. The updateFn callback is the ONLY place
    * where Lexical editor state can be safely mutated.
    * @param updateFn - A function that has access to writable editor state.

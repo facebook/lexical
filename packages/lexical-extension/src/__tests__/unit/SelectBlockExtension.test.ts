@@ -9,7 +9,11 @@
 import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
+  NestedEditorExtension,
+  PreventSelectAllExtension,
+  SelectBlockExtension,
 } from '@lexical/extension';
+import {RichTextExtension} from '@lexical/rich-text';
 import {$isBlockFullySelected} from '@lexical/utils';
 import {
   $createNodeSelection,
@@ -18,12 +22,12 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isTextNode,
   $selectAll,
   $setSelection,
   configExtension,
-  createEditor,
   defineExtension,
   type ElementNode,
   type LexicalEditor,
@@ -34,9 +38,6 @@ import {
   TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, test} from 'vitest';
-
-import {PreventSelectAllExtension} from '../../PreventSelectAllExtension';
-import {SelectBlockExtension} from '../../SelectBlockExtension';
 
 function setUpEditor(
   options: {
@@ -90,23 +91,30 @@ function $expectFullySelected(blockNode: ElementNode): void {
   expect($isBlockFullySelected(blockNode, selection)).toBe(true);
 }
 
-function setUpNestedEditor(parentEditor: LexicalEditor): LexicalEditor {
-  const nestedEditor = createEditor({
-    namespace: 'nested',
-    onError: error => {
-      throw error;
-    },
-    parentEditor,
-  });
-  nestedEditor.update(
-    () => {
-      $getRoot().append(
-        $createParagraphNode().append($createTextNode('caption')),
-      );
-    },
-    {discrete: true},
+// The nested editor includes RichTextExtension, so that these tests
+// enforce that the parent editor's listener runs in a higher priority
+// bucket than the nested editor's own SELECT_ALL_COMMAND handler
+function setUpNestedEditor(
+  parentEditor: LexicalEditor,
+  $initialEditorState: () => void = () => {
+    $getRoot().append(
+      $createParagraphNode().append($createTextNode('caption')),
+    );
+  },
+) {
+  return buildEditorFromExtensions(
+    defineExtension({
+      $initialEditorState,
+      dependencies: [
+        RichTextExtension,
+        configExtension(NestedEditorExtension, {
+          $getParentEditor: () => parentEditor,
+        }),
+      ],
+      name: 'nested-editor-test',
+      namespace: 'nested',
+    }),
   );
-  return nestedEditor;
 }
 
 describe('SelectBlockExtension', () => {
@@ -399,7 +407,7 @@ describe('SelectBlockExtension', () => {
 describe('SelectBlockExtension with nested editors', () => {
   test('ignores commands bubbled from a nested editor when cascadeSelection is off', () => {
     using editor = setUpEditor();
-    const nestedEditor = setUpNestedEditor(editor);
+    using nestedEditor = setUpNestedEditor(editor);
     // A stale node selection in the parent editor must not hijack the
     // nested editor's select all
     editor.update(
@@ -414,20 +422,24 @@ describe('SelectBlockExtension with nested editors', () => {
       {discrete: true},
     );
 
+    // the nested editor's own handler takes care of the command
     expect(
       nestedEditor.dispatchCommand(
         SELECT_ALL_COMMAND,
         selectAllKeyboardEvent(),
       ),
-    ).toBe(false);
+    ).toBe(true);
+    nestedEditor.read(() => {
+      $expectFullySelected($getRoot());
+    });
     editor.read(() => {
-      expect($isRangeSelection($getSelection())).toBe(false);
+      expect($isNodeSelection($getSelection())).toBe(true);
     });
   });
 
   test('cascadeSelection ignores the command until the nested editor is fully selected', () => {
     using editor = setUpEditor({cascadeSelection: true});
-    const nestedEditor = setUpNestedEditor(editor);
+    using nestedEditor = setUpNestedEditor(editor);
     nestedEditor.update(
       () => {
         const text = $getRoot().getFirstDescendant();
@@ -437,19 +449,21 @@ describe('SelectBlockExtension with nested editors', () => {
       {discrete: true},
     );
 
+    // the nested editor's own handler selects all of its content first
     expect(
       nestedEditor.dispatchCommand(
         SELECT_ALL_COMMAND,
         selectAllKeyboardEvent(),
       ),
-    ).toBe(false);
+    ).toBe(true);
+    nestedEditor.read(() => {
+      $expectFullySelected($getRoot());
+    });
+    editor.read(() => {
+      expect($isRangeSelection($getSelection())).toBe(false);
+    });
 
-    nestedEditor.update(
-      () => {
-        $selectAll();
-      },
-      {discrete: true},
-    );
+    // the next press cascades to the parent editor
     expect(
       nestedEditor.dispatchCommand(
         SELECT_ALL_COMMAND,
@@ -461,21 +475,42 @@ describe('SelectBlockExtension with nested editors', () => {
     });
   });
 
-  test('cascadeSelection handles the command from an empty nested editor', () => {
+  test('cascadeSelection works when dispatched from inside a nested editor update', () => {
     using editor = setUpEditor({cascadeSelection: true});
-    const nestedEditor = createEditor({
-      namespace: 'nested-empty',
-      onError: error => {
-        throw error;
-      },
-      parentEditor: editor,
-    });
+    using nestedEditor = setUpNestedEditor(editor);
+    let handled = false;
     nestedEditor.update(
       () => {
-        $getRoot().append($createParagraphNode()).selectStart();
+        $selectAll();
+        // dispatch while this update is still in progress
+        handled = nestedEditor.dispatchCommand(
+          SELECT_ALL_COMMAND,
+          selectAllKeyboardEvent(),
+        );
+        // the update continues after the dispatch returns
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('after')),
+        );
       },
       {discrete: true},
     );
+
+    expect(handled).toBe(true);
+    nestedEditor.read(() => {
+      const textContent = $getRoot().getTextContent();
+      expect(textContent).toContain('caption');
+      expect(textContent).toContain('after');
+    });
+    editor.read(() => {
+      $expectFullySelected($getRoot());
+    });
+  });
+
+  test('cascadeSelection handles the command from an empty nested editor', () => {
+    using editor = setUpEditor({cascadeSelection: true});
+    using nestedEditor = setUpNestedEditor(editor, () => {
+      $getRoot().append($createParagraphNode()).selectStart();
+    });
 
     // An empty nested editor is fully selected by its caret
     expect(

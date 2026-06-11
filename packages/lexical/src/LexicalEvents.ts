@@ -1162,9 +1162,14 @@ function $handleInput(event: InputEvent): boolean {
     const characterData = data !== null ? data : undefined;
     $updateSelectedTextFromDOM(false, editor, characterData);
 
-    // onInput always fires after onCompositionEnd for FF.
+    // onInput always fires after onCompositionEnd for FF, so the composition
+    // end runs here. Mirror the COMPOSITION_END_TAG that $handleCompositionEnd
+    // adds on Chrome/Webkit so listeners gated on this tag (markdown shortcut
+    // trigger, history merge, autocomplete post-commit) see the same signal on
+    // Firefox.
     if (isFirefoxEndingComposition) {
       $onCompositionEndImpl(editor, data || undefined);
+      $addUpdateTag(COMPOSITION_END_TAG);
       isFirefoxEndingComposition = false;
     }
   }

@@ -38,7 +38,7 @@ import {StickyNode} from './StickyNode';
 import {TweetNode} from './TweetNode';
 import {YouTubeNode} from './YouTubeNode';
 
-const PlaygroundNodes: Array<Klass<LexicalNode>> = [
+const PlaygroundNodes: Klass<LexicalNode>[] = [
   HeadingNode,
   ListNode,
   ListItemNode,

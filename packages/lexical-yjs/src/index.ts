@@ -73,7 +73,7 @@ export type Operation = {
   };
   insert: string | Record<string, unknown>;
 };
-export type Delta = Array<Operation>;
+export type Delta = Operation[];
 export type YjsNode = Record<string, unknown>;
 export type YjsEvent = Record<string, unknown>;
 export type {Provider};

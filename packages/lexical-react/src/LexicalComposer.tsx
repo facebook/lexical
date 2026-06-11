@@ -66,7 +66,7 @@ export type InitialEditorStateType =
 
 export type InitialConfigType = Readonly<{
   namespace: string;
-  nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
+  nodes?: readonly (Klass<LexicalNode> | LexicalNodeReplacement)[];
   onError: (error: Error, editor: LexicalEditor) => void;
   /**
    * Optional handler for recoverable, warn-level conditions (e.g. the

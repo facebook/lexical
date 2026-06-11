@@ -193,7 +193,7 @@ describe('LexicalEditor tests', () => {
   function useLexicalEditor(
     rootElementRef: React.RefObject<null | HTMLDivElement>,
     onError?: (error: Error) => void,
-    nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
+    nodes?: readonly (Klass<LexicalNode> | LexicalNodeReplacement)[],
     onWarn?: (error: Error) => void,
   ) {
     const editor = useMemo(
@@ -230,7 +230,7 @@ describe('LexicalEditor tests', () => {
 
   function init(
     onError?: (error: Error) => void,
-    nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
+    nodes?: readonly (Klass<LexicalNode> | LexicalNodeReplacement)[],
     onWarn?: (error: Error) => void,
   ) {
     const ref = createRef<HTMLDivElement>();
@@ -539,7 +539,7 @@ describe('LexicalEditor tests', () => {
     init();
     const onUpdate = vi.fn();
 
-    let log: Array<string> = [];
+    let log: string[] = [];
 
     editor.registerUpdateListener(onUpdate);
     editor.update(() => {
@@ -1096,7 +1096,7 @@ describe('LexicalEditor tests', () => {
         const root = $getRoot();
         const paragraph0 = $createParagraphNode();
         const paragraph1 = $createParagraphNode();
-        const textNodes: Array<LexicalNode> = [];
+        const textNodes: LexicalNode[] = [];
 
         for (let i = 0; i < 6; i++) {
           const node = $createTextNode(String(i)).toggleUnmergeable();
@@ -2736,7 +2736,7 @@ describe('LexicalEditor tests', () => {
 
   it('does not leak a no-op update tag into the next update', () => {
     init();
-    const observedTags: Array<Array<string>> = [];
+    const observedTags: string[][] = [];
     const unregister = editor.registerUpdateListener(({tags}) => {
       observedTags.push([...tags]);
     });
@@ -2789,7 +2789,7 @@ describe('LexicalEditor tests', () => {
       {discrete: true},
     );
 
-    const observed: Array<{content: string; tags: Array<string>}> = [];
+    const observed: {content: string; tags: string[]}[] = [];
     const unregister = editor.registerUpdateListener(({editorState, tags}) => {
       observed.push({
         content: editorState.read(() => $getRoot().getTextContent()),

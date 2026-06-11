@@ -70,7 +70,7 @@ function seedTwoParas(editor: LexicalEditor): void {
   );
 }
 
-const OPS: Array<(rng: () => number) => void> = [
+const OPS: ((rng: () => number) => void)[] = [
   // move a child from one paragraph to the end of the other
   rng => {
     const paras = $getRoot().getChildren();

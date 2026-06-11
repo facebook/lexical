@@ -153,13 +153,11 @@ import {
   isUndo,
 } from './LexicalUtils';
 
-type RootElementRemoveHandles = Array<() => void>;
-type RootElementEvents = Array<
-  [
-    string,
-    Record<string, unknown> | ((event: Event, editor: LexicalEditor) => void),
-  ]
->;
+type RootElementRemoveHandles = (() => void)[];
+type RootElementEvents = [
+  string,
+  Record<string, unknown> | ((event: Event, editor: LexicalEditor) => void),
+][];
 const PASS_THROUGH_COMMAND = Object.freeze({});
 const ANDROID_COMPOSITION_LATENCY = 30;
 const rootElementEvents: RootElementEvents = [

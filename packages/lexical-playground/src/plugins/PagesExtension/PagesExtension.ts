@@ -354,7 +354,7 @@ export const PagesExtension = /* @__PURE__ */ defineExtension({
           () => {
             const root = $getRoot();
             const children = root.getChildren();
-            const pages = [] as Array<PageNode | PageBreakNode>;
+            const pages = [] as (PageNode | PageBreakNode)[];
             for (const child of children) {
               if ($isPageNode(child) || $isPageBreakNode(child)) {
                 if ($isPageNode(child)) {

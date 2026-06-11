@@ -552,9 +552,9 @@ export type DOMConversionMap<T extends HTMLElement = HTMLElement> = Record<
 type NodeName = string;
 
 export type DOMConversionOutput = {
-  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>;
+  after?: (childLexicalNodes: LexicalNode[]) => LexicalNode[];
   forChild?: DOMChildConversion;
-  node: null | LexicalNode | Array<LexicalNode>;
+  node: null | LexicalNode | LexicalNode[];
 };
 
 export type DOMExportOutputMap = Map<
@@ -1030,8 +1030,8 @@ export class LexicalNode {
    * all the way up to the RootNode.
    *
    */
-  getParents(): Array<ElementNode> {
-    const parents: Array<ElementNode> = [];
+  getParents(): ElementNode[] {
+    const parents: ElementNode[] = [];
     let node = this.getParent();
     while (node !== null) {
       parents.push(node);
@@ -1045,7 +1045,7 @@ export class LexicalNode {
    * all the way up to the RootNode.
    *
    */
-  getParentKeys(): Array<NodeKey> {
+  getParentKeys(): NodeKey[] {
     const parents = [];
     let node = this.getParent();
     while (node !== null) {
@@ -1077,16 +1077,16 @@ export class LexicalNode {
    * Returns all nodes before this one in the same parent,
    * in document order.
    */
-  getPreviousSiblings(): Array<LexicalNode>;
+  getPreviousSiblings(): LexicalNode[];
   /**
    * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `node.getPreviousSiblings() as Array<T>`, and will be
+   * equivalent to `node.getPreviousSiblings() as T[]`, and will be
    * removed in a future release. Call this method without a type argument
    * and narrow the results with a type guard instead.
    */
-  getPreviousSiblings<T extends LexicalNode>(): Array<T>;
-  getPreviousSiblings(): Array<LexicalNode> {
-    const siblings: Array<LexicalNode> = [];
+  getPreviousSiblings<T extends LexicalNode>(): T[];
+  getPreviousSiblings(): LexicalNode[] {
+    const siblings: LexicalNode[] = [];
     const parent = this.getParent();
     if (parent === null) {
       return siblings;
@@ -1124,16 +1124,16 @@ export class LexicalNode {
    * Returns all nodes after this one in the same parent,
    * in document order.
    */
-  getNextSiblings(): Array<LexicalNode>;
+  getNextSiblings(): LexicalNode[];
   /**
    * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `node.getNextSiblings() as Array<T>`, and will be
+   * equivalent to `node.getNextSiblings() as T[]`, and will be
    * removed in a future release. Call this method without a type argument
    * and narrow the results with a type guard instead.
    */
-  getNextSiblings<T extends LexicalNode>(): Array<T>;
-  getNextSiblings(): Array<LexicalNode> {
-    const siblings: Array<LexicalNode> = [];
+  getNextSiblings<T extends LexicalNode>(): T[];
+  getNextSiblings(): LexicalNode[] {
+    const siblings: LexicalNode[] = [];
     let node = this.getNextSibling();
     while (node !== null) {
       siblings.push(node);
@@ -1220,7 +1220,7 @@ export class LexicalNode {
    *
    * @param targetNode - the node that marks the other end of the range of nodes to be returned.
    */
-  getNodesBetween(targetNode: LexicalNode): Array<LexicalNode> {
+  getNodesBetween(targetNode: LexicalNode): LexicalNode[] {
     const isBefore = this.isBefore(targetNode);
     const nodes = [];
     const visited = new Set();

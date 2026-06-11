@@ -73,7 +73,7 @@ declare export function createDOMRange(
 declare export function createRectsFromDOMRange(
   editor: LexicalEditor,
   range: Range,
-): Array<ClientRect>;
+): ClientRect[];
 
 declare export function $trimTextContentFromAnchor(
   editor: LexicalEditor,

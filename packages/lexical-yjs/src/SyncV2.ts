@@ -274,7 +274,7 @@ const $createOrUpdateTextNodesFromYText = (
   snapshot?: Snapshot,
   prevSnapshot?: Snapshot,
   computeYChange?: ComputeYChange,
-): Array<TextNode> | null => {
+): TextNode[] | null => {
   const deltas = toDelta(text, snapshot, prevSnapshot, computeYChange);
 
   // Use existing text nodes if the count and types all align, otherwise throw out the existing
@@ -407,7 +407,7 @@ const equalAttrs = (
   return eq;
 };
 
-type NormalizedPNodeContent = Array<Array<TextNode> | LexicalNode>;
+type NormalizedPNodeContent = (TextNode[] | LexicalNode)[];
 
 const normalizeNodeContent = (node: LexicalNode): NormalizedPNodeContent => {
   if (!(node instanceof ElementNode)) {
@@ -629,7 +629,7 @@ const toDelta = (
   snapshot?: Snapshot,
   prevSnapshot?: Snapshot,
   computeYChange?: ComputeYChange,
-): Array<{insert: string; attributes: TextAttributes}> => {
+): {insert: string; attributes: TextAttributes}[] => {
   return ytext
     .toDelta(snapshot, prevSnapshot, computeYChange)
     .map((delta: {insert: string; attributes?: TextAttributes}) => {

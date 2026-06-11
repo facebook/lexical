@@ -211,7 +211,7 @@ export function internalGetActiveEditorState(): EditorState | null {
 export function $applyTransforms(
   editor: LexicalEditor,
   node: LexicalNode,
-  transformsCache: Map<string, Array<Transform<LexicalNode>>>,
+  transformsCache: Map<string, Transform<LexicalNode>[]>,
 ) {
   const type = node.__type;
   const registeredNode = getRegisteredNodeOrThrow(editor, type);
@@ -388,7 +388,7 @@ function $applyAllTransforms(
 }
 
 type InternalSerializedNode = {
-  children?: Array<InternalSerializedNode>;
+  children?: InternalSerializedNode[];
   type: string;
   version: number;
 };
@@ -1013,7 +1013,7 @@ function $triggerEnqueuedUpdates(editor: LexicalEditor): void {
 
 function triggerDeferredUpdateCallbacks(
   editor: LexicalEditor,
-  deferred: Array<() => void>,
+  deferred: (() => void)[],
 ): void {
   editor._deferred = [];
 

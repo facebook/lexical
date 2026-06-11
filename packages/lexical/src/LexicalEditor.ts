@@ -166,9 +166,9 @@ export interface EditorThemeClasses {
   link?: EditorThemeClassName;
   list?: {
     ul?: EditorThemeClassName;
-    ulDepth?: Array<EditorThemeClassName>;
+    ulDepth?: EditorThemeClassName[];
     ol?: EditorThemeClassName;
-    olDepth?: Array<EditorThemeClassName>;
+    olDepth?: EditorThemeClassName[];
     checklist?: EditorThemeClassName;
     listitem?: EditorThemeClassName;
     listitemChecked?: EditorThemeClassName;
@@ -341,7 +341,7 @@ export interface CreateEditorArgs {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
-  nodes?: ReadonlyArray<LexicalNodeConfig>;
+  nodes?: readonly LexicalNodeConfig[];
   onError?: ErrorHandler;
   /**
    * Optional handler for recoverable, warn-level conditions (e.g. the
@@ -626,10 +626,7 @@ export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
 type IntentionallyMarkedAsDirtyElement = boolean;
 
-type DOMConversionCache = Map<
-  string,
-  Array<(node: Node) => DOMConversion | null>
->;
+type DOMConversionCache = Map<string, ((node: Node) => DOMConversion | null)[]>;
 
 export type SerializedEditor = {
   editorState: SerializedEditorState;
@@ -985,11 +982,11 @@ export class LexicalEditor {
   /** @internal */
   _compositionKey: null | NodeKey;
   /** @internal */
-  _deferred: Array<() => void>;
+  _deferred: (() => void)[];
   /** @internal */
   _keyToDOMMap: Map<NodeKey, HTMLElement & LexicalPrivateDOM>;
   /** @internal */
-  _updates: Array<[() => void, EditorUpdateOptions | undefined]>;
+  _updates: [() => void, EditorUpdateOptions | undefined][];
   /** @internal */
   _updating: boolean;
   /** @internal */
@@ -1419,7 +1416,7 @@ export class LexicalEditor {
    * depend on have been registered.
    * @returns True if the editor has registered all of the provided node types, false otherwise.
    */
-  hasNodes<T extends Klass<LexicalNode>>(nodes: Array<T>): boolean {
+  hasNodes<T extends Klass<LexicalNode>>(nodes: T[]): boolean {
     return nodes.every(this.hasNode.bind(this));
   }
 

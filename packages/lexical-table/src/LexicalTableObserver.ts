@@ -54,7 +54,7 @@ export type TableDOMCell = {
   y: number;
 };
 
-export type TableDOMRows = Array<Array<TableDOMCell | undefined> | undefined>;
+export type TableDOMRows = ((TableDOMCell | undefined)[] | undefined)[];
 
 export type TableDOMTable = {
   domRows: TableDOMRows;

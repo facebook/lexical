@@ -326,7 +326,7 @@ describe('LexicalReconciler', () => {
         });
 
         const decorateSpy = vi.spyOn(TestDecoratorNode.prototype, 'decorate');
-        const events: Array<{klass: string; mutation: NodeMutation}> = [];
+        const events: {klass: string; mutation: NodeMutation}[] = [];
         const recordMutations =
           (klass: string) => (nodes: Map<string, NodeMutation>) => {
             for (const m of nodes.values()) {

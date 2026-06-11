@@ -21,10 +21,10 @@ function dropDownActiveClass(active: boolean): string {
   return active ? 'active dropdown-item-active' : '';
 }
 
-const MARGIN_PRESETS: ReadonlyArray<{
+const MARGIN_PRESETS: readonly {
   label: string;
   margins: PageSetup['margins'];
-}> = [
+}[] = [
   {
     label: 'Narrow (0.25")',
     margins: {bottom: 0.25, left: 0.25, right: 0.25, top: 0.25},

@@ -127,7 +127,7 @@ export type SerializedHeadingNode = Spread<
   SerializedElementNode
 >;
 
-export const DRAG_DROP_PASTE: LexicalCommand<Array<File>> =
+export const DRAG_DROP_PASTE: LexicalCommand<File[]> =
   /* @__PURE__ */ createCommand('DRAG_DROP_PASTE_FILE');
 
 export type SerializedQuoteNode = SerializedElementNode;
@@ -518,7 +518,7 @@ async function onCutForRichText(
 // control this with the first boolean flag.
 export function eventFiles(
   event: DragEvent | PasteCommandType,
-): [boolean, Array<File>, boolean] {
+): [boolean, File[], boolean] {
   let dataTransfer: null | DataTransfer = null;
   if (objectKlassEquals(event, DragEvent)) {
     dataTransfer = event.dataTransfer;

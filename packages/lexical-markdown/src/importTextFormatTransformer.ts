@@ -39,7 +39,7 @@ export function findOutermostTextFormatTransformer(
   const codeRegex = textFormatTransformersIndex.fullMatchRegExpByTag['`'];
   const codeTransformer = textFormatTransformersIndex.transformersByTag['`'];
 
-  const excludeRanges: Array<{start: number; end: number}> = [];
+  const excludeRanges: {start: number; end: number}[] = [];
   let codeMatch = null;
   if (codeRegex && codeTransformer) {
     const globalRegex = new RegExp(codeRegex.source, 'g');
@@ -125,7 +125,7 @@ export function findOutermostTextFormatTransformer(
 function scanDelimiters(
   text: string,
   transformersIndex: TextFormatTransformersIndex,
-  excludeRanges: Array<{start: number; end: number}> = [],
+  excludeRanges: {start: number; end: number}[] = [],
 ): Delimiter[] {
   const delimiters: Delimiter[] = [];
   const delimiterChars = new Set(

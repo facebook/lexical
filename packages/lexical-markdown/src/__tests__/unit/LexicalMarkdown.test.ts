@@ -272,7 +272,7 @@ export const CANCELED_HEADING_REPLACE_EXAMPLE: ElementTransformer = {
 };
 
 describe('Markdown', () => {
-  type Input = Array<{
+  type Input = {
     html: string;
     md: string;
     skipExport?: true;
@@ -281,7 +281,7 @@ describe('Markdown', () => {
     shouldMergeAdjacentLines?: true | false;
     customTransformers?: Transformer[];
     mdAfterExport?: string;
-  }>;
+  }[];
 
   const URL = 'https://lexical.dev';
 

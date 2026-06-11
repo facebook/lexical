@@ -41,7 +41,7 @@ export function canContainTransformableMarkdown(
 export function importTextTransformers(
   textNode: TextNode,
   textFormatTransformersIndex: TextFormatTransformersIndex,
-  textMatchTransformers: Array<TextMatchTransformer>,
+  textMatchTransformers: TextMatchTransformer[],
 ) {
   let foundTextFormat = findOutermostTextFormatTransformer(
     textNode,

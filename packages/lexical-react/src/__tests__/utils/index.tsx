@@ -317,7 +317,7 @@ export function createAndStartClients(
   connector: TestConnection,
   aContainer: HTMLDivElement,
   count: number,
-): Array<Client> {
+): Client[] {
   const result = [];
 
   for (let i = 0; i < count; ++i) {
@@ -330,25 +330,25 @@ export function createAndStartClients(
   return result;
 }
 
-export function disconnectClients(clients: Array<Client>) {
+export function disconnectClients(clients: Client[]) {
   for (let i = 0; i < clients.length; ++i) {
     clients[i].disconnect();
   }
 }
 
-export function connectClients(clients: Array<Client>) {
+export function connectClients(clients: Client[]) {
   for (let i = 0; i < clients.length; ++i) {
     clients[i].connect();
   }
 }
 
-export function stopClients(clients: Array<Client>) {
+export function stopClients(clients: Client[]) {
   for (let i = 0; i < clients.length; ++i) {
     clients[i].stop();
   }
 }
 
-export function testClientsForEquality(clients: Array<Client>) {
+export function testClientsForEquality(clients: Client[]) {
   for (let i = 1; i < clients.length; ++i) {
     expect(clients[0].getHTML()).toEqual(clients[i].getHTML());
     expect(clients[0].getDocJSON()).toEqual(clients[i].getDocJSON());

@@ -85,7 +85,7 @@ function TagList({
   );
 }
 
-function HeadingText({filteredPlugins}: {filteredPlugins: Array<Example>}) {
+function HeadingText({filteredPlugins}: {filteredPlugins: Example[]}) {
   return (
     <div className={styles.headingText}>
       <Heading as="h2">Filters</Heading>
@@ -98,7 +98,7 @@ function HeadingText({filteredPlugins}: {filteredPlugins: Array<Example>}) {
   );
 }
 
-function HeadingRow({filteredPlugins}: {filteredPlugins: Array<Example>}) {
+function HeadingRow({filteredPlugins}: {filteredPlugins: Example[]}) {
   return (
     <div className={clsx('margin-bottom--sm', styles.headingRow)}>
       <HeadingText filteredPlugins={filteredPlugins} />
@@ -111,8 +111,8 @@ export default function Filters({
   filteredPlugins,
   tagList,
 }: {
-  allPlugins: Array<Example>;
-  filteredPlugins: Array<Example>;
+  allPlugins: Example[];
+  filteredPlugins: Example[];
   tagList: {[type in string]: Tag};
 }): ReactNode {
   const tagCounts = useMemo(() => {

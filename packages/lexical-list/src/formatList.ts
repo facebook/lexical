@@ -45,7 +45,7 @@ import {
 
 function $isSelectingEmptyListItem(
   anchorNode: ListItemNode | LexicalNode,
-  nodes: Array<LexicalNode>,
+  nodes: LexicalNode[],
 ): boolean {
   return (
     $isListItemNode(anchorNode) &&
@@ -153,7 +153,7 @@ export function $insertList(listType: ListType): void {
   }
 }
 
-function append(node: ElementNode, nodesToAppend: Array<LexicalNode>) {
+function append(node: ElementNode, nodesToAppend: LexicalNode[]) {
   node.splice(node.getChildrenSize(), 0, nodesToAppend);
 }
 

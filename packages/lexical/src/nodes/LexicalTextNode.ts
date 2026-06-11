@@ -106,7 +106,7 @@ export type TextModeType = 'normal' | 'token' | 'segmented';
 
 export type TextMark = {end: null | number; id: string; start: null | number};
 
-export type TextMarks = Array<TextMark>;
+export type TextMarks = TextMark[];
 
 function getElementOuterTag(node: TextNode, format: number): string | null {
   if (format & IS_CODE) {
@@ -967,7 +967,7 @@ export class TextNode extends LexicalNode {
    *
    * @returns an Array containing the newly-created TextNodes.
    */
-  splitText(...splitOffsets: Array<number>): Array<TextNode> {
+  splitText(...splitOffsets: number[]): TextNode[] {
     errorOnReadOnly();
     const self = this.getLatest();
     const textContent = self.getTextContent();

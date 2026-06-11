@@ -25,7 +25,7 @@ import {$applyNodeReplacement, $isRangeSelection, ElementNode} from 'lexical';
 
 export type SerializedMarkNode = Spread<
   {
-    ids: Array<string>;
+    ids: string[];
   },
   SerializedElementNode
 >;
@@ -110,7 +110,7 @@ export class MarkNode extends ElementNode {
     return this.getIDs().includes(id);
   }
 
-  getIDs(): Array<string> {
+  getIDs(): string[] {
     return Array.from(this.getLatest().__ids);
   }
 

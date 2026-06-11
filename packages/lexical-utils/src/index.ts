@@ -106,10 +106,7 @@ export {
  * @param acceptableMimeTypes - An array of strings of types which the file is checked against.
  * @returns true if the file is an acceptable mime type, false otherwise.
  */
-export function isMimeType(
-  file: File,
-  acceptableMimeTypes: Array<string>,
-): boolean {
+export function isMimeType(file: File, acceptableMimeTypes: string[]): boolean {
   for (const acceptableType of acceptableMimeTypes) {
     if (file.type.startsWith(acceptableType)) {
       return true;
@@ -130,12 +127,12 @@ export function isMimeType(
  * \\}));
  */
 export function mediaFileReader(
-  files: Array<File>,
-  acceptableMimeTypes: Array<string>,
-): Promise<Array<{file: File; result: string}>> {
+  files: File[],
+  acceptableMimeTypes: string[],
+): Promise<{file: File; result: string}[]> {
   const filesIterator = files[Symbol.iterator]();
   return new Promise((resolve, reject) => {
-    const processed: Array<{file: File; result: string}> = [];
+    const processed: {file: File; result: string}[] = [];
     const handleNextFile = () => {
       const {done, value: file} = filesIterator.next();
       if (done) {
@@ -180,7 +177,7 @@ export interface DFSNode {
 export function $dfs(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
-): Array<DFSNode> {
+): DFSNode[] {
   return Array.from($dfsIterator(startNode, endNode));
 }
 
@@ -205,7 +202,7 @@ export function $getAdjacentCaret<D extends CaretDirection>(
 export function $reverseDfs(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
-): Array<DFSNode> {
+): DFSNode[] {
   return Array.from($reverseDfsIterator(startNode, endNode));
 }
 
@@ -668,9 +665,9 @@ export function objectKlassEquals<T>(
  */
 
 export function $filter<T>(
-  nodes: Array<LexicalNode>,
+  nodes: LexicalNode[],
   filterFn: (node: LexicalNode) => null | T,
-): Array<T> {
+): T[] {
   const result: T[] = [];
   for (let i = 0; i < nodes.length; i++) {
     const node = filterFn(nodes[i]);

@@ -73,7 +73,7 @@ function dispatchMakeChanges(args: unknown): void {
 describe('DragonExtension', () => {
   test('installDragonSupport at the entrypoint wins the registration race', () => {
     const uninstall = installDragonSupport();
-    const extensionEdits: Array<unknown> = [];
+    const extensionEdits: unknown[] = [];
     const extensionListener = (event: MessageEvent) => {
       extensionEdits.push(event.data);
     };
@@ -267,7 +267,7 @@ describe('DragonExtension', () => {
     iframeDocument.close();
 
     const uninstall = installDragonSupport(iframeWindow);
-    const topEdits: Array<unknown> = [];
+    const topEdits: unknown[] = [];
     const topListener = (event: MessageEvent) => topEdits.push(event.data);
     window.addEventListener('message', topListener);
     try {

@@ -24,27 +24,23 @@ import {$isTableSelection} from '@lexical/table';
 import {
   $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
+  $isBlockFullySelected,
 } from '@lexical/utils';
 import {
   $addUpdateTag,
-  $caretRangeFromSelection,
-  $comparePointCaretNext,
   $createParagraphNode,
   $createRangeSelection,
-  $getCaretInDirection,
-  $getChildCaret,
   $getSelection,
   $isBlockElementNode,
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
-  $normalizeCaret,
   $setSelection,
   $splitNode,
-  CaretRange,
   ElementNode,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
   RangeSelection,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SELECTION_FOCUS_TAG,
@@ -350,28 +346,6 @@ function $clearBlockFormat(block: ElementNode): void {
   }
 }
 
-function $isBlockFullySelected(block: ElementNode, range: CaretRange): boolean {
-  const [startCaret, endCaret] =
-    range.direction === 'next'
-      ? [
-          $getCaretInDirection(range.anchor, 'next'),
-          $getCaretInDirection(range.focus, 'next'),
-        ]
-      : [
-          $getCaretInDirection(range.focus, 'next'),
-          $getCaretInDirection(range.anchor, 'next'),
-        ];
-  const blockStart = $normalizeCaret($getChildCaret(block, 'next'));
-  const blockEnd = $getCaretInDirection(
-    $normalizeCaret($getChildCaret(block, 'previous')),
-    'next',
-  );
-  return (
-    $comparePointCaretNext(startCaret, blockStart) <= 0 &&
-    $comparePointCaretNext(endCaret, blockEnd) >= 0
-  );
-}
-
 export const clearFormatting = (
   editor: LexicalEditor,
   skipRefocus: boolean = false,
@@ -393,10 +367,26 @@ export const clearFormatting = (
         return;
       }
 
+      // Determine which blocks are fully selected before making any
+      // changes, since the mutations below (such as replacing a
+      // HeadingNode with a ParagraphNode) would detach nodes that the
+      // selection's carets may refer to
       const postExtractSelection = $getSelection();
-      const caretRange = $isRangeSelection(postExtractSelection)
-        ? $caretRangeFromSelection(postExtractSelection)
-        : null;
+      let fullySelectedBlocks: null | Set<NodeKey> = null;
+      if ($isRangeSelection(postExtractSelection)) {
+        fullySelectedBlocks = new Set();
+        for (const node of extractedNodes) {
+          if ($isTextNode(node)) {
+            const block = $getNearestBlockElementAncestorOrThrow(node);
+            if (
+              !fullySelectedBlocks.has(block.getKey()) &&
+              $isBlockFullySelected(block, postExtractSelection)
+            ) {
+              fullySelectedBlocks.add(block.getKey());
+            }
+          }
+        }
+      }
 
       extractedNodes.forEach(node => {
         if ($isTextNode(node)) {
@@ -409,8 +399,8 @@ export const clearFormatting = (
           const nearestBlockElement =
             $getNearestBlockElementAncestorOrThrow(node);
           if (
-            caretRange === null ||
-            $isBlockFullySelected(nearestBlockElement, caretRange)
+            fullySelectedBlocks === null ||
+            fullySelectedBlocks.has(nearestBlockElement.getKey())
           ) {
             $clearBlockFormat(nearestBlockElement);
           }

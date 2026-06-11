@@ -7,7 +7,7 @@
  */
 
 import {buildEditorFromExtensions} from '@lexical/extension';
-import {RichTextExtension} from '@lexical/rich-text';
+import {$createHeadingNode, RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -167,6 +167,61 @@ describe('clearFormatting (Toolbar)', () => {
       assert($isParagraphNode(firstParagraph), 'Expected a ParagraphNode');
       assert($isParagraphNode(secondParagraph), 'Expected a ParagraphNode');
       expect(firstParagraph.getFormatType()).toBe('');
+      expect(secondParagraph.getFormatType()).toBe('right');
+    });
+  });
+
+  test('clears block formatting only for fully selected blocks with a backward selection', () => {
+    using editor = createEditor();
+    editor.update(
+      () => {
+        const firstText = $createTextNode('first');
+        const secondText = $createTextNode('second');
+        const firstParagraph = $createParagraphNode().append(firstText);
+        firstParagraph.setFormat('center');
+        const secondParagraph = $createParagraphNode().append(secondText);
+        secondParagraph.setFormat('right');
+        $getRoot().clear().append(firstParagraph, secondParagraph);
+        firstText
+          .select(0, 0)
+          .setTextNodeRange(secondText, 'sec'.length, firstText, 0);
+      },
+      {discrete: true},
+    );
+
+    editor.update(() => clearFormatting(editor), {discrete: true});
+
+    editor.read(() => {
+      const [firstParagraph, secondParagraph] = $getRoot().getChildren();
+      assert($isParagraphNode(firstParagraph), 'Expected a ParagraphNode');
+      assert($isParagraphNode(secondParagraph), 'Expected a ParagraphNode');
+      expect(firstParagraph.getFormatType()).toBe('');
+      expect(secondParagraph.getFormatType()).toBe('right');
+    });
+  });
+
+  test('handles a selection that starts at an empty heading (#8666)', () => {
+    using editor = createEditor();
+    editor.update(
+      () => {
+        const heading = $createHeadingNode('h1');
+        const text = $createTextNode('second');
+        const paragraph = $createParagraphNode().append(text);
+        paragraph.setFormat('right');
+        $getRoot().clear().append(heading, paragraph);
+        // The anchor is an element point on the heading, which is
+        // replaced with a paragraph during clearFormatting
+        heading.select(0, 0).focus.set(text.getKey(), 'sec'.length, 'text');
+      },
+      {discrete: true},
+    );
+
+    editor.update(() => clearFormatting(editor), {discrete: true});
+
+    editor.read(() => {
+      const [firstParagraph, secondParagraph] = $getRoot().getChildren();
+      assert($isParagraphNode(firstParagraph), 'Expected a ParagraphNode');
+      assert($isParagraphNode(secondParagraph), 'Expected a ParagraphNode');
       expect(secondParagraph.getFormatType()).toBe('right');
     });
   });

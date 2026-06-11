@@ -34,10 +34,7 @@ function $hasCommonTopParent(
 }
 
 export interface SelectBlockConfig {
-  /**
-   * `true` to disable this extension. The {@link PreventSelectAllExtension}
-   * dependency is enabled and disabled together with this extension.
-   */
+  /** `true` to disable this extension */
   disabled: boolean;
   /** `true` to trigger selectAll if all content is selected in the nested editor */
   cascadeSelection: boolean;

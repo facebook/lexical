@@ -653,3 +653,129 @@ export const EditorModeAnnounceExtension = /* @__PURE__ */ defineExtension({
     );
   },
 });
+
+export interface FocusTrapExtensionConfig {
+  /**
+   * Container element to trap focus inside. `null` deactivates the
+   * trap; React adapters supply a signal-backed ref so modal open /
+   * close swaps the value at runtime and the `effect` re-registers.
+   */
+  container: HTMLElement | null;
+  /** {@link FocusTrapInitialFocus} for the activation-time landing. */
+  initialFocus: FocusTrapInitialFocus;
+}
+
+/**
+ * Platform-independent extension that traps Tab / Shift+Tab focus
+ * inside a container while it is non-null. Hosts using
+ * `@lexical/extension` swap the `container` config value (typically via
+ * `configExtension` or a signal-backed ref) to activate / deactivate
+ * the trap; the React adapter is `useLexicalFocusTrap` from
+ * `@lexical/react`.
+ */
+export const FocusTrapExtension = /* @__PURE__ */ defineExtension({
+  build: (_editor, config) => namedSignals(config),
+  config: /* @__PURE__ */ safeCast<FocusTrapExtensionConfig>({
+    container: null,
+    initialFocus: 'firstFocusable',
+  }),
+  name: '@lexical/a11y/FocusTrap',
+  register(_editor, _config, state) {
+    const {container, initialFocus} = state.getOutput();
+    return effect(() => {
+      const c = container.value;
+      if (c === null) {
+        return undefined;
+      }
+      return registerFocusTrap(c, {initialFocus: initialFocus.value});
+    });
+  },
+});
+
+export interface RovingTabIndexExtensionConfig {
+  /**
+   * Container element for the roving group. `null` keeps the extension
+   * inert; supply a signal-backed ref to activate when the toolbar
+   * mounts.
+   */
+  container: HTMLElement | null;
+  /** {@link RovingOrientation} for arrow-key navigation. */
+  orientation: RovingOrientation;
+  /**
+   * Custom CSS selector for items. `null` falls back to the helper's
+   * default (`:scope > button:not([disabled])`).
+   */
+  itemSelector: string | null;
+}
+
+/**
+ * Platform-independent extension that wires the WAI-ARIA roving-tabindex
+ * pattern on a container. Hosts using `@lexical/extension` supply the
+ * container via the config signal; the React adapter is
+ * `useLexicalRovingTabIndex` from `@lexical/react`.
+ */
+export const RovingTabIndexExtension = /* @__PURE__ */ defineExtension({
+  build: (_editor, config) => namedSignals(config),
+  config: /* @__PURE__ */ safeCast<RovingTabIndexExtensionConfig>({
+    container: null,
+    itemSelector: null,
+    orientation: 'horizontal',
+  }),
+  name: '@lexical/a11y/RovingTabIndex',
+  register(_editor, _config, state) {
+    const {container, itemSelector, orientation} = state.getOutput();
+    return effect(() => {
+      const c = container.value;
+      if (c === null) {
+        return undefined;
+      }
+      const selector = itemSelector.value;
+      return registerRovingTabIndex(c, {
+        itemSelector: selector ?? undefined,
+        orientation: orientation.value,
+      });
+    });
+  },
+});
+
+export interface FocusManagerExtensionConfig {
+  /**
+   * Toolbar element receiving the Alt+F10 jump from the editor and the
+   * Escape return back to the editor. `null` keeps the manager inert;
+   * supply a signal-backed ref to activate when the toolbar mounts.
+   */
+  toolbar: HTMLElement | null;
+  /**
+   * Custom CSS selector for the toolbar's first focusable item. `null`
+   * falls back to the helper's default.
+   */
+  toolbarItemSelector: string | null;
+}
+
+/**
+ * Platform-independent extension that wires the editor-to-toolbar focus
+ * jump (Alt+F10 / Escape return). Hosts using `@lexical/extension`
+ * supply the toolbar via the config signal; the React adapter is
+ * `useLexicalFocusManager` from `@lexical/react`.
+ */
+export const FocusManagerExtension = /* @__PURE__ */ defineExtension({
+  build: (_editor, config) => namedSignals(config),
+  config: /* @__PURE__ */ safeCast<FocusManagerExtensionConfig>({
+    toolbar: null,
+    toolbarItemSelector: null,
+  }),
+  name: '@lexical/a11y/FocusManager',
+  register(editor, _config, state) {
+    const {toolbar, toolbarItemSelector} = state.getOutput();
+    return effect(() => {
+      const t = toolbar.value;
+      if (t === null) {
+        return undefined;
+      }
+      const selector = toolbarItemSelector.value;
+      return registerFocusManager(editor, t, {
+        toolbarItemSelector: selector ?? undefined,
+      });
+    });
+  },
+});

@@ -22,6 +22,9 @@ export type {RovingOrientation, RovingTabIndexOptions} from '@lexical/a11y';
  * keys move focus inside the group; Home / End jump to the ends.
  *
  * See `registerRovingTabIndex` JSDoc for the lazy-item-query semantics.
+ *
+ * Hosts using `@lexical/extension` can wire the same behavior via
+ * `RovingTabIndexExtension` from `@lexical/a11y`.
  */
 export function useLexicalRovingTabIndex(
   containerRef: RefObject<HTMLElement | null>,

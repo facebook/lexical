@@ -18,6 +18,9 @@ export type {FocusManagerOptions} from '@lexical/a11y';
  * Alt+F10 inside the editor moves focus to the first focusable in
  * `toolbarRef`; Escape inside the toolbar returns focus to the editor.
  * The editor's last selection is preserved across the jump.
+ *
+ * Hosts using `@lexical/extension` can wire the same behavior via
+ * `FocusManagerExtension` from `@lexical/a11y`.
  */
 export function useLexicalFocusManager(
   editor: LexicalEditor,

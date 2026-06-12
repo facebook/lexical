@@ -22,6 +22,9 @@ export type {FocusTrapInitialFocus} from '@lexical/a11y';
  * `initialFocus` is expected to stay stable for the lifetime of the
  * trap. See `registerFocusTrap` JSDoc for the trap's caveats (portal
  * descendants, single-trap requirement).
+ *
+ * Hosts using `@lexical/extension` can wire the same behavior via
+ * `FocusTrapExtension` from `@lexical/a11y`.
  */
 export function useLexicalFocusTrap(
   containerRef: RefObject<HTMLElement | null>,

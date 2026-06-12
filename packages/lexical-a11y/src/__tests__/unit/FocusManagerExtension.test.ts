@@ -28,9 +28,7 @@ function createToolbar(): HTMLDivElement {
 }
 
 afterEach(() => {
-  for (const div of Array.from(document.body.querySelectorAll('div'))) {
-    div.remove();
-  }
+  document.body.replaceChildren();
 });
 
 describe('FocusManagerExtension', () => {

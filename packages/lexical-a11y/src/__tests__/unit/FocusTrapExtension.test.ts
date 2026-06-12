@@ -29,9 +29,7 @@ function createContainer(): HTMLDivElement {
 }
 
 afterEach(() => {
-  for (const div of Array.from(document.body.querySelectorAll('div'))) {
-    div.remove();
-  }
+  document.body.replaceChildren();
 });
 
 describe('FocusTrapExtension', () => {
@@ -42,7 +40,7 @@ describe('FocusTrapExtension', () => {
         name: '[root]',
       }),
     );
-    editor.getEditorState();
+    void editor;
     // No DOM listeners installed when container is null.
     const outside = document.createElement('button');
     document.body.appendChild(outside);

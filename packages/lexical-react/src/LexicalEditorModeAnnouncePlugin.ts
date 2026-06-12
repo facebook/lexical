@@ -28,7 +28,8 @@ export interface EditorModeAnnouncePluginProps {
  * Announces `editor.setEditable(true|false)` transitions into a polite
  * `aria-live` region (provided by `useLexicalAriaLiveRegion`).
  *
- * @deprecated A pure Lexical implementation is available in `@lexical/a11y` as EditorModeAnnounceExtension
+ * Hosts using `@lexical/extension` can wire the same behavior via
+ * `EditorModeAnnounceExtension` from `@lexical/a11y`.
  */
 export function EditorModeAnnouncePlugin({
   messages,

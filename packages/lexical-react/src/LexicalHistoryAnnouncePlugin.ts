@@ -29,7 +29,8 @@ export interface HistoryAnnouncePluginProps {
  * `useLexicalAriaLiveRegion`) so screen readers pick up history
  * navigation.
  *
- * @deprecated A pure Lexical implementation is available in `@lexical/a11y` as HistoryAnnounceExtension
+ * Hosts using `@lexical/extension` can wire the same behavior via
+ * `HistoryAnnounceExtension` from `@lexical/a11y`.
  */
 export function HistoryAnnouncePlugin({
   messages,

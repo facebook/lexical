@@ -30,9 +30,7 @@ function createToolbar(): HTMLDivElement {
 }
 
 afterEach(() => {
-  for (const div of Array.from(document.body.querySelectorAll('div'))) {
-    div.remove();
-  }
+  document.body.replaceChildren();
 });
 
 describe('RovingTabIndexExtension', () => {
@@ -43,7 +41,7 @@ describe('RovingTabIndexExtension', () => {
         name: '[root]',
       }),
     );
-    editor.getEditorState();
+    void editor;
     const toolbar = createToolbar();
     const buttons = Array.from(toolbar.querySelectorAll('button'));
     // No tabIndex attribute applied while config.container is null.

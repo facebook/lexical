@@ -17,6 +17,7 @@ import {
   $createRangeSelection,
   $getChildCaret,
   $getDOMSlot,
+  $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getRoot,
   $getSelection,
@@ -2821,6 +2822,34 @@ describe('named-slots: block slot values (virtual shadow root)', () => {
       // and the frame helper reports the value as its own frame
       expect($getSlotFrame(line)!.is(line)).toBe(true);
     });
+  });
+
+  test('$getNearestRootOrShadowRoot stops at the slot value', () => {
+    using editor = createSlotEditor();
+    editor.update(
+      () => {
+        const {line} = $createLineSlotHost();
+        const text = line.getFirstChild();
+        assert(text !== null);
+        // The slotted value is the scope root for its own subtree — and for
+        // itself — instead of the parentless walk throwing. A container
+        // (shadow-root) value resolves the same way for its interior.
+        expect($getNearestRootOrShadowRoot(text).is(line)).toBe(true);
+        expect($getNearestRootOrShadowRoot(line).is(line)).toBe(true);
+
+        const host2 = $createParagraphNode();
+        $getRoot().append(host2);
+        const container = $slotContainer('inside');
+        $setSlot(host2, 'media', container);
+        const innerParagraph = container.getFirstChild();
+        assert(innerParagraph !== null && $isParagraphNode(innerParagraph));
+        expect($getNearestRootOrShadowRoot(innerParagraph).is(container)).toBe(
+          true,
+        );
+        expect($getNearestRootOrShadowRoot(container).is(container)).toBe(true);
+      },
+      {discrete: true},
+    );
   });
 
   test('backspace at the start of the value stays inside the boundary', () => {

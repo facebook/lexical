@@ -1693,14 +1693,21 @@ export function $isInlineElementOrDecoratorNode<T>(node: LexicalNode): node is (
 export function $getNearestRootOrShadowRoot(
   node: LexicalNode,
 ): RootNode | ElementNode {
-  let parent = node.getParentOrThrow();
-  while (parent !== null) {
+  let current = node.getLatest();
+  while (current !== null) {
+    // The slot link is a virtual shadow root: a slotted node is the root of
+    // its own isolated scope (its parent is null), so it is the nearest
+    // scope root for everything inside it — including itself.
+    if ($getSlotHostKey(current) !== null && $isElementNode(current)) {
+      return current;
+    }
+    const parent = current.getParentOrThrow();
     if ($isRootOrShadowRoot(parent)) {
       return parent;
     }
-    parent = parent.getParentOrThrow();
+    current = parent;
   }
-  return parent;
+  return current;
 }
 
 const ShadowRootNodeBrand: unique symbol = Symbol.for(

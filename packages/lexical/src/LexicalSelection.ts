@@ -1412,14 +1412,17 @@ export class RangeSelection implements BaseSelection {
       $isElementNode(anchorNode) &&
       $getSlotHostKey(anchorNode) !== null
     ) {
-      // An empty slot value has no child to redirect into (its caret target
-      // is the reconciler's terminating <br>), and the block-finding walk
-      // below would throw on the parentless slot root. Seed a paragraph so
-      // both the empty and non-empty cases redirect the same way; insertNodes
-      // removes the seed again when block content replaces it.
-      const firstChild =
-        anchorNode.getFirstChild() ??
-        anchorNode.append($createParagraphNode()).getFirstChild();
+      // A container (shadow-root) value redirects into its first child; an
+      // empty one has no child to redirect into (its caret target is the
+      // reconciler's terminating <br>), so seed a paragraph first —
+      // insertNodes removes the seed again when block content replaces it. A
+      // block-shaped value (virtual shadow root around a single block) needs
+      // no seeding: it IS the block, so the block-finding walk below lands
+      // on it directly.
+      const firstChild = anchorNode.isShadowRoot()
+        ? (anchorNode.getFirstChild() ??
+          anchorNode.append($createParagraphNode()).getFirstChild())
+        : anchorNode.getFirstChild();
       if (firstChild !== null) {
         firstChild.selectStart();
         const redirected = $getSelection();
@@ -1463,6 +1466,25 @@ export class RangeSelection implements BaseSelection {
       const index = $removeTextAndSplitBlock(this);
       firstBlock.splice(index, 0, nodes);
       last.selectEnd();
+      return;
+    }
+
+    // CASE 3a: the target block IS a slot value. Its virtual shadow root
+    // holds exactly one block, so block-level content cannot become its
+    // sibling; mirror pasting into an <input> instead — block structure
+    // flattens to its inline content on the single line (line breaks are
+    // stripped like the input value sanitization strips newlines, and
+    // block-only decorators are dropped, having no single-line form).
+    if ($isElementNode(firstBlock) && $getSlotHostKey(firstBlock) !== null) {
+      const index = $removeTextAndSplitBlock(this);
+      const inlineNodes = $extractInlineFromBlocks(nodes);
+      firstBlock.splice(index, 0, inlineNodes);
+      const lastInserted = inlineNodes[inlineNodes.length - 1];
+      if (lastInserted !== undefined) {
+        lastInserted.selectEnd();
+      } else {
+        firstBlock.select(index, index);
+      }
       return;
     }
 
@@ -1542,6 +1564,13 @@ export class RangeSelection implements BaseSelection {
     }
     const index = $removeTextAndSplitBlock(this);
     const block = $findMatchingParent(this.anchor.getNode(), INTERNAL_$isBlock);
+    if (block !== null && $getSlotHostKey(block) !== null) {
+      // The block IS the slot value: its virtual shadow root holds exactly
+      // one block, so there is no position for a sibling paragraph. Mirrors
+      // Enter in a single-line input — a no-op (hosts may map it to focus
+      // movement).
+      return null;
+    }
     invariant(
       $isElementNode(block),
       'Expected ancestor to be a block ElementNode',
@@ -1959,14 +1988,17 @@ export class RangeSelection implements BaseSelection {
         }
         // No text lies in the deletion direction and nothing in scope was
         // found to delete, so the caret sits at a slot edge. A slot value is
-        // a shadow root nested within its host's DOM, so the boundary lives
-        // only in the model: the native modify('extend') below would cross it
-        // and select into the host. Stop instead when that edge is a slot.
+        // nested within its host's DOM, so the boundary lives only in the
+        // model: the native modify('extend') below would cross it and select
+        // into the host. Stop when that edge is a slot value — the slot link
+        // is a virtual shadow root, so this applies whether or not the value
+        // is itself a shadow root; an ordinary (non-slotted) shadow root
+        // keeps the native behavior.
         for (let node: LexicalNode | null = anchor.getNode(); node !== null; ) {
+          if ($getSlotHostKey(node) !== null) {
+            return;
+          }
           if ($isElementNode(node) && node.isShadowRoot()) {
-            if ($getSlotHostKey(node) !== null) {
-              return;
-            }
             break;
           }
           node = node.getParent();
@@ -3664,6 +3696,28 @@ export function $getTextContent(): string {
   return selection.getTextContent();
 }
 
+// @experimental named-slots. Inline projection of a pasted node list for a
+// block-shaped slot value (insertNodes CASE 3a): inline nodes pass through,
+// non-inline elements contribute their inline content recursively, line
+// breaks are stripped (the <input> value-sanitization analogy for newlines),
+// and non-inline decorators are dropped.
+function $extractInlineFromBlocks(nodes: LexicalNode[]): LexicalNode[] {
+  const inlineNodes: LexicalNode[] = [];
+  for (const node of nodes) {
+    if ($isLineBreakNode(node)) {
+      continue;
+    }
+    if (($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline()) {
+      if ($isElementNode(node)) {
+        inlineNodes.push(...$extractInlineFromBlocks(node.getChildren()));
+      }
+      continue;
+    }
+    inlineNodes.push(node);
+  }
+  return inlineNodes;
+}
+
 function $removeTextAndSplitBlock(selection: RangeSelection): number {
   let selection_ = selection;
   if (!selection.isCollapsed()) {
@@ -3685,7 +3739,12 @@ function $removeTextAndSplitBlock(selection: RangeSelection): number {
   let node = anchor.getNode();
   let offset = anchor.offset;
 
-  while (!INTERNAL_$isBlock(node)) {
+  // A slotted node is the virtual scope root (its parent is null), so the
+  // split walk must stop there even when it is not INTERNAL_$isBlock itself
+  // (e.g. a container-shaped slot value with element children) — otherwise
+  // $splitNodeAtPoint's parentless fallback would append a stray paragraph
+  // to the document root.
+  while (!INTERNAL_$isBlock(node) && $getSlotHostKey(node) === null) {
     const prevNode = node;
     [node, offset] = $splitNodeAtPoint(node, offset);
     if (prevNode.is(node)) {

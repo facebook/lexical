@@ -32,8 +32,9 @@ import {
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
 
-// A named-slot value must be a shadow-root ElementNode (see $setSlot). This
-// local node mirrors the $slotContainer pattern from
+// A multi-block slot value. Any non-inline block can be a slot value (see
+// $setSlot); this suite needs values holding several blocks, so it mirrors
+// the shadow-root $slotContainer pattern from
 // packages/lexical/src/__tests__/unit/LexicalSlot.test.ts using the $config
 // node API.
 class SlotContainerNode extends ElementNode {
@@ -55,7 +56,7 @@ class SlotContainerNode extends ElementNode {
 }
 
 // A shadow-root container holding a paragraph + text per entry, so the slot
-// holds whole blocks (a shadow root's children must be elements).
+// value holds whole blocks.
 function $slotContainer(...texts: string[]): SlotContainerNode {
   const container = $create(SlotContainerNode);
   for (const text of texts) {

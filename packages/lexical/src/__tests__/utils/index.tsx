@@ -27,6 +27,7 @@ import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import prettier from '@prettier/sync';
 import {
+  $create,
   $isRangeSelection,
   createEditor,
   DecoratorNode,
@@ -281,7 +282,7 @@ export class TestUpdateDOMTrueHostNode extends ElementNode {
 }
 
 export function $createTestUpdateDOMTrueHostNode(): TestUpdateDOMTrueHostNode {
-  return new TestUpdateDOMTrueHostNode();
+  return $create(TestUpdateDOMTrueHostNode);
 }
 
 export function $isTestUpdateDOMTrueHostNode(

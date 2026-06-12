@@ -215,8 +215,8 @@ export const $createOrUpdateNodeFromYElement = (
   }
 
   // Reconcile the dedicated `slots` channel against the host's `slots` Y.Map.
-  // Diff (not blind setSlot) so the observer path is safe: re-setSlot on an
-  // already-slotted node would trip setSlot's `__slotHost === null` invariant. A
+  // Diff (not blind $setSlot) so the observer path is safe: re-running $setSlot
+  // on an already-slotted node would trip $setSlot's `__slotHost === null` invariant. A
   // host is an ElementNode or a non-inline DecoratorNode; both store slots as a
   // `slots` Y.Map attribute, and the reconcile only uses base-node slot methods.
   if (node instanceof ElementNode || $isDecoratorNode(node)) {
@@ -257,9 +257,9 @@ export const $createOrUpdateNodeFromYElement = (
           continue;
         }
         // Same node already occupies this slot -> its content was updated in
-        // place by the calls above, so skip setSlot (which would re-fire its
+        // place by the calls above, so skip $setSlot (which would re-fire its
         // invariant). A different (or absent) key means a fresh/replaced node;
-        // setSlot detaches the previous occupant (LexicalElementNode setSlot).
+        // $setSlot detaches the previous occupant.
         const existingSlot = $getSlot(node, name);
         if (
           existingSlot !== null &&
@@ -286,7 +286,7 @@ export const $createOrUpdateNodeFromYElement = (
       }
     }
     // Drop slots that no longer exist in yjs. getSlotNames returns a snapshot
-    // array, so mutating __slots via removeSlot during iteration is safe.
+    // array, so mutating __slots via $removeSlot during iteration is safe.
     for (const name of $getSlotNames(node)) {
       if (!yNames.has(name)) {
         $removeSlot(node, name);
@@ -442,7 +442,7 @@ const $createTypeFromTextNodes = (
 };
 
 // Build a `Y.Map<name, XmlElement>` mirroring the host's `__slots`. Each slot
-// root is a non-inline ElementNode or DecoratorNode (enforced by setSlot), so
+// root is a non-inline ElementNode or DecoratorNode (enforced by $setSlot), so
 // it is serialized through `createTypeFromElementNode` and nested slots fold in
 // recursively. Returns undefined for a host with no slots so non-slot hosts
 // set no attribute — except that a class declaring its slots gets the (empty)

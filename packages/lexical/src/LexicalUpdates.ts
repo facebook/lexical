@@ -449,7 +449,7 @@ function $parseSerializedNodeImpl<
   if (slots) {
     invariant(
       $isSlotHost(node),
-      'parseSerializedNode: node %s has slots but is not a valid slot host; only ElementNodes and DecoratorNodes can host slots.',
+      '$parseSerializedNode: node %s has slots but is not a valid slot host; only ElementNodes and DecoratorNodes can host slots.',
       nodeClass.name,
     );
     for (const name in slots) {

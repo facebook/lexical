@@ -18,6 +18,7 @@ import {$appendNodeToHTML} from '@lexical/html';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalSlot} from '@lexical/react/useLexicalSlot';
 import {
+  $create,
   $createParagraphNode,
   $createTextNode,
   $getSlot,
@@ -120,7 +121,7 @@ export class PullQuoteNode extends DecoratorNode<JSX.Element> {
 }
 
 export function $createPullQuoteNode(): PullQuoteNode {
-  const node = new PullQuoteNode();
+  const node = $create(PullQuoteNode);
   $setSlot(
     node,
     'quote',

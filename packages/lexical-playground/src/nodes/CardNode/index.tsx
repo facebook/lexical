@@ -10,6 +10,7 @@ import type {DOMExportOutput, LexicalEditor, LexicalNode} from 'lexical';
 
 import {$appendNodeToHTML} from '@lexical/html';
 import {
+  $create,
   $createParagraphNode,
   $createTextNode,
   $getSlot,
@@ -68,7 +69,7 @@ export class CardNode extends ElementNode {
   // Slots ride in a separate Map, so the HTML exporter never descends into
   // them on its own — like NodeState, slot serialization is opt-in. Emit the
   // named title slot into a `data-lexical-slot` wrapper that the
-  // PlaygroundImportExtension's CardImportRule maps back to setSlot(); the
+  // PlaygroundImportExtension's CardImportRule maps back to $setSlot(); the
   // body is regular children and serializes through the normal child path
   // (the outer $appendNodesToHTML loop recurses into `target.getChildren()`
   // when no `$getChildNodes` override is supplied).
@@ -101,7 +102,7 @@ export class CardNode extends ElementNode {
 }
 
 export function $createCardNode(): CardNode {
-  const node = new CardNode();
+  const node = $create(CardNode);
   $setSlot(
     node,
     'title',

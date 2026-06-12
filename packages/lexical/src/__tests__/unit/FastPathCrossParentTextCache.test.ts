@@ -11,6 +11,7 @@ import invariant from '@lexical/internal/invariant';
 import {$createLinkNode, LinkExtension} from '@lexical/link';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $create,
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
@@ -178,7 +179,7 @@ describe('children fast path: cross-parent move and sibling text cache', () => {
       () => {
         const root = $getRoot().clear();
         const p = $createParagraphNode();
-        const e = new FlipInlineNode();
+        const e = $create(FlipInlineNode);
         e.append($createTextNode('e'));
         p.append(
           $createTextNode('a'),

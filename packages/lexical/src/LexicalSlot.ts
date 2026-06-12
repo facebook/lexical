@@ -353,7 +353,7 @@ export function $setSlot<T extends LexicalNode & SlotHostNode>(
 ): T {
   invariant(
     name !== '__proto__' && name !== 'constructor' && name !== 'prototype',
-    'setSlot: "%s" is a reserved slot name; __proto__, constructor, and prototype break the plain-object serialization of slots',
+    '$setSlot: "%s" is a reserved slot name; __proto__, constructor, and prototype break the plain-object serialization of slots',
     name,
   );
   // Re-setting the value a name already holds is a no-op rather than a trip
@@ -368,18 +368,18 @@ export function $setSlot<T extends LexicalNode & SlotHostNode>(
   }
   invariant(
     ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline(),
-    'setSlot: node %s is not a valid slot value; a slot value must be a non-inline ElementNode or DecoratorNode (the slot link itself is the shadow boundary).',
+    '$setSlot: node %s is not a valid slot value; a slot value must be a non-inline ElementNode or DecoratorNode (the slot link itself is the shadow boundary).',
     node.__key,
   );
   invariant(
     !$isSlotAncestorOrSelf(node, host),
-    'setSlot: node %s cannot be slotted into %s; a node may not host itself or an ancestor reached through children or slot up-links — the slot up-link would form a cycle that loops isAttached/GC.',
+    '$setSlot: node %s cannot be slotted into %s; a node may not host itself or an ancestor reached through children or slot up-links — the slot up-link would form a cycle that loops isAttached/GC.',
     node.__key,
     host.__key,
   );
   invariant(
     $getSlotHostKey(node) === null,
-    'setSlot: node %s is already slotted into host %s; remove it from its current slot first.',
+    '$setSlot: node %s is already slotted into host %s; remove it from its current slot first.',
     node.__key,
     String($getSlotHostKey(node)),
   );

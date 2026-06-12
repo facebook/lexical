@@ -60,10 +60,12 @@ import {
   TestUpdateDOMTrueHostNode,
 } from '../utils';
 
-// Under the strengthened setSlot guard a slot value must be a shadow-root
-// container. Text content lives in a paragraph inside it, since a shadow root's
-// children must be elements. $slotContainer wraps that two-layer shape so the
-// slot-mechanism assertions below stay focused on the slot, not the nesting.
+// A slot value may be any non-inline block — the slot link itself is the
+// virtual shadow root (see $setSlot). These suites use the multi-block value
+// shape: a shadow-root container holding one paragraph per text, wrapped by
+// $slotContainer so the slot-mechanism assertions stay focused on the slot,
+// not the nesting. The bare-block (single-line) value shape has its own
+// suite below ('block slot values').
 function $slotContainer(...texts: string[]): TestShadowRootNode {
   const container = $createTestShadowRootNode();
   for (const text of texts) {
@@ -396,7 +398,7 @@ describe('named-slots: core foundation', () => {
     );
   });
 
-  test('remove() on a slotted node throws (use removeSlot)', () => {
+  test('remove() on a slotted node throws (use $removeSlot)', () => {
     using editor = createSlotEditor();
 
     editor.update(

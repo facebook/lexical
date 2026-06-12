@@ -8,7 +8,7 @@
 
 import type {LexicalNode} from 'lexical';
 
-import {ElementNode} from 'lexical';
+import {$create, ElementNode} from 'lexical';
 
 // A generic editable slot value. It is a shadow root (like a table cell), so a
 // RangeSelection and SELECT_ALL stay scoped to its contents and Backspace at
@@ -38,7 +38,7 @@ export class SlotContainerNode extends ElementNode {
 }
 
 export function $createSlotContainerNode(): SlotContainerNode {
-  return new SlotContainerNode();
+  return $create(SlotContainerNode);
 }
 
 export function $isSlotContainerNode(

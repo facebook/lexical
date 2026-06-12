@@ -55,7 +55,7 @@ import {$createOrUpdateNodeFromYElement, $updateYFragment} from '../../SyncV2';
 // directly; driving it through the observer dispatch ($syncEventV2's YMap
 // reroute) is tracked separately.
 // A minimal non-inline decorator, used to exercise the decorator-as-slot path
-// (setSlot allows ElementNode or DecoratorNode, non-inline). isInline is
+// ($setSlot allows ElementNode or DecoratorNode, non-inline). isInline is
 // hard-coded false so the slot guard holds on restore without depending on a
 // property round-tripping.
 class BlockDecoratorNode extends DecoratorNode<null> {
@@ -350,7 +350,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
       const coverR = $getSlot(hostR, 'cover');
       assert(coverR instanceof BlockDecoratorNode);
-      // the decorator survives setSlot's guard on restore (non-inline) and is
+      // the decorator survives $setSlot's guard on restore (non-inline) and is
       // shadow-rooted: no parent in the children tree
       expect(coverR.isInline()).toBe(false);
       expect(coverR.getParent()).toBe(null);
@@ -362,7 +362,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
   // routes it to $createOrUpdateNodeFromYElement(slotXmlElement). This asserts
   // that re-running that function over an already-mapped slot node (which lives
   // outside the children tree, __parent === null) updates its text in place
-  // without re-running setSlot.
+  // without re-running $setSlot.
   test('observer: editing text inside a slot updates the slot node in place', () => {
     const {binding, doc, editor} = buildBinding([TestShadowRootNode]);
 
@@ -430,7 +430,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
   // observer (a): a remote slot add arrives (per the yjs event probe) as a
   // YMapEvent on the host's slots Y.Map, which option 1A re-routes to a host
   // re-reconcile. The diff loop keeps the existing 'title' slot (same key ->
-  // skip) and adds the new 'subtitle' slot, with no setSlot invariant trip.
+  // skip) and adds the new 'subtitle' slot, with no $setSlot invariant trip.
   test('observer: a remote slot add reconciles into the host', () => {
     const {binding, doc, editor} = buildBinding([TestShadowRootNode]);
 
@@ -463,8 +463,8 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     assert(hostY instanceof XmlElement);
     const slotsY = hostY.getAttribute('slots') as unknown;
     assert(slotsY instanceof YMap);
-    // the slot value is a shadow root wrapping a paragraph; a bare paragraph
-    // would trip setSlot's shadow-root guard on reconcile.
+    // the slot value is a shadow root wrapping a paragraph — the multi-block
+    // value shape this suite uses throughout.
     doc.transact(() => {
       const sub = new XmlElement('test_shadow_root');
       const subPara = new XmlElement('paragraph');
@@ -869,7 +869,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     expect(coverYAfter).toBe(coverYBefore);
   });
 
-  // local (e): setSlot enforces block-only slot values (a non-inline
+  // local (e): $setSlot enforces block-only slot values (a non-inline
   // ElementNode or DecoratorNode), so a bare TextNode is rejected. This is why
   // the slots channel only ever (de)serializes XmlElement — a raw-text slot can
   // never exist to need an XmlText carrier.
@@ -1482,7 +1482,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     editor.update(
       () => {
-        const host = new DeclaredV2HostNode();
+        const host = $create(DeclaredV2HostNode);
         $getRoot().clear().append(host);
       },
       {discrete: true},
@@ -1509,7 +1509,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     editor.update(
       () => {
-        const host = new DeclaredV2HostNode();
+        const host = $create(DeclaredV2HostNode);
         const caption = $createTestShadowRootNode();
         caption.append(
           $createParagraphNode().append($createTextNode('Caption')),

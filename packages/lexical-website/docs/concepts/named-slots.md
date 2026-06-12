@@ -82,7 +82,6 @@ attached with `$setSlot`:
 import {
   $create,
   $createParagraphNode,
-  $createTextNode,
   $setSlot,
   ElementNode,
 } from 'lexical';
@@ -101,8 +100,10 @@ class CardNode extends ElementNode {
 
 function $createCardNode(): CardNode {
   const card = $create(CardNode);
-  // Single-line title: the bare paragraph IS the slot value.
-  $setSlot(card, 'title', $createParagraphNode().append($createTextNode()));
+  // Single-line title: the bare paragraph IS the slot value. An empty
+  // paragraph is an empty field; to seed default text, append a non-empty
+  // TextNode (empty TextNodes are eliminated during reconciliation).
+  $setSlot(card, 'title', $createParagraphNode());
   // Ordinary body child, edited like any other block.
   return card.append($createParagraphNode());
 }

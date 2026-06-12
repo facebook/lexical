@@ -270,7 +270,6 @@ export {
   $removeSlot,
   $setSlot,
   getDeclaredSlots,
-  includeChildrenWhenSelected,
 } from './LexicalSlot';
 export {
   $assumeActiveEditor,

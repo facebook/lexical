@@ -246,33 +246,6 @@ export function getDeclaredSlots(klass: Klass<LexicalNode>): readonly string[] {
 }
 
 /**
- * Whether a NodeSelection that includes a node of this class force-includes
- * its children in clipboard / export output, declared via
- * {@link StaticNodeConfigValue.includeChildrenWhenSelected} in `$config()`.
- * Resolved from the nearest declaration in the class hierarchy; defaults to
- * false.
- *
- * @experimental
- */
-export function includeChildrenWhenSelected(
-  klass: Klass<LexicalNode>,
-): boolean {
-  // Same import-free hierarchy walk as getDeclaredSlots (see above).
-  for (
-    let current: Klass<LexicalNode> = klass;
-    current != null && current.prototype != null;
-    current = Object.getPrototypeOf(current)
-  ) {
-    const {ownNodeConfig} = getStaticNodeConfig(current);
-    const value = ownNodeConfig && ownNodeConfig.includeChildrenWhenSelected;
-    if (value !== undefined) {
-      return value;
-    }
-  }
-  return false;
-}
-
-/**
  * @internal
  *
  * Concatenated text of a node's named slots, read slots-first (in slot Map

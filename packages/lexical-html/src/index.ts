@@ -13,7 +13,6 @@ import type {
   DOMConversionFn,
   EditorDOMRenderConfig,
   ElementFormatType,
-  Klass,
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
@@ -36,7 +35,6 @@ import {
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
   ElementNode,
-  includeChildrenWhenSelected,
   isBlockDomNode,
   isDocumentFragment,
   isDOMDocumentNode,
@@ -308,19 +306,16 @@ function $appendNodesToHTML(
       ? target.getChildren()
       : [];
 
-  // Mirrors the clipboard JSON path: an atomic host that opts in via
-  // `includeChildrenWhenSelected` (e.g. a Card promoted to a whole-host
-  // NodeSelection) recurses into its children with a null selection so the
-  // whole subtree serializes even when none of the children are in the outer
-  // selection themselves.
-  // Only a whole-host NodeSelection promotes: a partial RangeSelection that
-  // happens to contain the host must keep slicing/excluding per child, or a
-  // drag into the host's interior would over-export unselected content.
+  // Mirrors the clipboard JSON path: an element host in a NodeSelection
+  // (e.g. a Card promoted whole-host from a chrome click) recurses into its
+  // children with a null selection so the whole subtree serializes even when
+  // none of the children are in the outer selection themselves — the old
+  // shell-only output made cut silently lossy. Only a whole-host
+  // NodeSelection promotes: a partial RangeSelection that happens to contain
+  // the host must keep slicing/excluding per child, or a drag into the
+  // host's interior would over-export unselected content.
   const childSelection =
-    shouldInclude &&
-    $isNodeSelection(selection) &&
-    $isElementNode(currentNode) &&
-    includeChildrenWhenSelected(currentNode.constructor as Klass<LexicalNode>)
+    shouldInclude && $isNodeSelection(selection) && $isElementNode(currentNode)
       ? null
       : selection;
   const fragmentAppend = fragment.append.bind(fragment);

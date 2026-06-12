@@ -181,21 +181,6 @@ export interface StaticNodeConfigValue<
    */
   readonly stateConfigs?: readonly RequiredNodeStateConfig[];
   /**
-   * When a node of this class is itself included in a selection (e.g. a
-   * NodeSelection promoting the whole node from a chrome click), force its
-   * children into clipboard / export output even when they aren't in the
-   * selection themselves. Defaults to false — only nodes that present as a
-   * single atomic unit from the user's perspective should opt in.
-   * Complements {@link ElementNode.extractWithChild}, which pulls the parent
-   * in when a descendant is selected; this opt-in runs in the opposite
-   * direction. Children must serialize correctly when read outside the
-   * original selection scope — the clipboard caller recurses into them with
-   * a null outer selection so the whole subtree is captured.
-   *
-   * @experimental
-   */
-  readonly includeChildrenWhenSelected?: boolean;
-  /**
    * @experimental named-slots
    *
    * Canonical order for this host's named slots. Declared names render,

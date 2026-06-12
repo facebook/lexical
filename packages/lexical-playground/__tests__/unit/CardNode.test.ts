@@ -146,10 +146,11 @@ describe('CardNode named slots', () => {
     });
   });
 
-  // CardNode's includeChildrenWhenSelected $config opts in so the body rides along
-  // when the whole card is promoted to a NodeSelection. The clipboard JSON
-  // path already honors the opt-in; HTML export must too — both formats are
-  // written to the clipboard, and external paste targets pick text/html.
+  // A whole-host NodeSelection of an element carries its children by
+  // default, so the body rides along when the whole card is promoted. The
+  // clipboard JSON path already does this; HTML export must too — both
+  // formats are written to the clipboard, and external paste targets pick
+  // text/html.
   it('keeps the body in HTML export when the Card is in a NodeSelection', () => {
     using editor = buildEditorFromExtensions(CardImportTestExtension);
 
@@ -168,9 +169,9 @@ describe('CardNode named slots', () => {
 
     expect(html).toContain('Title');
     // Body lives outside the selection (only the Card key was added). Without
-    // honoring includeChildrenWhenSelected, the recursion forwards the
-    // NodeSelection into each body child, none are selected, and the body
-    // text never reaches the HTML.
+    // whole-host child inclusion, the recursion forwards the NodeSelection
+    // into each body child, none are selected, and the body text never
+    // reaches the HTML.
     expect(html).toContain('Body');
   });
 

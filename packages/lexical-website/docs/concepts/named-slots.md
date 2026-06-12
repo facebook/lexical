@@ -250,8 +250,8 @@ there, and reveals it; the container renders as a normal block):
    target goes away while the host remains.
 
 3. **From React chrome**: the
-   [`useLexicalSlot`](/docs/api/modules/lexical_react_useLexicalSlot#uselexicalslot)
-   hook from `@lexical/react/useLexicalSlot` wraps the imperative pair and returns a
+   [`useLexicalSlotRef`](/docs/api/modules/lexical_react_useLexicalSlotRef#uselexicalslot)
+   hook from `@lexical/react/useLexicalSlotRef` wraps the imperative pair and returns a
    ref that mounts a slot's container into your component — the usual choice
    for a DecoratorNode host's `decorate()` chrome (whose containers are
    opted back into `contentEditable` automatically, since the decorator DOM
@@ -259,12 +259,12 @@ there, and reveals it; the container renders as a normal block):
 
 ```tsx
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useLexicalSlot} from '@lexical/react/useLexicalSlot';
+import {useLexicalSlotRef} from '@lexical/react/useLexicalSlotRef';
 
 function PullQuoteComponent({nodeKey}: {nodeKey: NodeKey}) {
   const [editor] = useLexicalComposerContext();
-  const quoteRef = useLexicalSlot<HTMLDivElement>(editor, nodeKey, 'quote');
-  const attributionRef = useLexicalSlot<HTMLDivElement>(
+  const quoteRef = useLexicalSlotRef<HTMLDivElement>(editor, nodeKey, 'quote');
+  const attributionRef = useLexicalSlotRef<HTMLDivElement>(
     editor,
     nodeKey,
     'attribution',
@@ -281,7 +281,7 @@ function PullQuoteComponent({nodeKey}: {nodeKey: NodeKey}) {
 A `contentEditable=false` ElementNode shell can host React chrome the same
 way (slot containers opt into editing whenever the host DOM is
 non-editable): the playground's Panel demo portals chrome into the host DOM,
-attaches the title slot with `useLexicalSlot`, and applies the identical
+attaches the title slot with `useLexicalSlotRef`, and applies the identical
 hidden-then-attach technique to its `getDOMSlot` children element. Such a shell should call
 [`setDOMUnmanaged(dom)`](/docs/api/modules/lexical#setdomunmanaged) in
 `createDOM` — the portal and the
@@ -305,11 +305,11 @@ DecoratorNode's DOM has.
   presses) is provided by the opt-in
   [`SelectBlockExtension`](/docs/api/modules/lexical_extension#selectblockextension)
   from `@lexical/extension`.
-- **Whole-host UX is opt-in.** An ElementNode host can declare
-  `includeChildrenWhenSelected: true` in `$config()` to make a NodeSelection
-  of the host carry its body children through copy and export, matching
-  chrome interactions that read as "select the whole Card". The promotion
-  applies only to NodeSelection; a partial RangeSelection over the host
+- **A NodeSelection of an element carries its children.** Copy and export
+  of a whole-host NodeSelection (e.g. a chrome click that selects "the whole
+  Card") include the host's body children even though they aren't in the
+  selection themselves — the old shell-only output made cut silently lossy.
+  This applies only to NodeSelection; a partial RangeSelection over the host
   keeps per-child slicing.
 
 ### Traversal is intentionally asymmetric

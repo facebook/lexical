@@ -32,13 +32,7 @@ import {$isSlotContainerNode} from '../SlotContainerNode';
 // and multi-block paste flattens to inline content like an <input>.
 export class CardNode extends ElementNode {
   $config() {
-    return this.config('card', {
-      extends: ElementNode,
-      // Clicking the chrome selects "the whole Card", so whole-host copy
-      // carries the body children even though they aren't in the selection.
-      includeChildrenWhenSelected: true,
-      slots: ['title'],
-    });
+    return this.config('card', {extends: ElementNode, slots: ['title']});
   }
 
   createDOM(): HTMLElement {

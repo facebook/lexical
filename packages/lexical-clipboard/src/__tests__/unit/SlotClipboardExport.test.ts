@@ -86,10 +86,7 @@ function $createExcludedShadowRootNode(): ExcludedShadowRootNode {
 // promote partial RangeSelections.
 class CardLikeNode extends ElementNode {
   $config() {
-    return this.config('card_like', {
-      extends: ElementNode,
-      includeChildrenWhenSelected: true,
-    });
+    return this.config('card_like', {extends: ElementNode});
   }
   createDOM(): HTMLElement {
     return document.createElement('div');
@@ -284,11 +281,11 @@ describe('slot clipboard export', () => {
     });
   });
 
-  // includeChildrenWhenSelected is a whole-host (NodeSelection) opt-in; a
+  // Whole-host child inclusion applies only to NodeSelection; a
   // partial RangeSelection that happens to contain the host must keep
   // slicing per child or a drag into the host over-exports content the user
   // never selected.
-  test('a partial range over an includeChildrenWhenSelected host does not over-export', () => {
+  test('a partial range over an element host does not over-export', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: null,

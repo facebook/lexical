@@ -1211,9 +1211,6 @@ declare export function $getSlotHost(
 declare export function $getSlotFrame(
   node: LexicalNode,
 ): LexicalNode | null;
-declare export function includeChildrenWhenSelected(
-  klass: Class<LexicalNode>,
-): boolean;
 declare export function getDeclaredSlots(
   klass: Class<LexicalNode>,
 ): ReadonlyArray<string>;
@@ -1676,7 +1673,6 @@ export interface StaticNodeConfigValue<
   readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T;
   readonly importDOM?: DOMConversionMap;
   readonly stateConfigs?: ReadonlyArray<RequiredNodeStateConfig>;
-  readonly includeChildrenWhenSelected?: boolean;
   readonly slots?: ReadonlyArray<string>;
   readonly extends?: Class<LexicalNode>;
 }

@@ -43,9 +43,7 @@ import {
   COPY_COMMAND,
   defineExtension,
   getDOMSelection,
-  includeChildrenWhenSelected,
   isSelectionWithinEditor,
-  Klass,
   LexicalEditor,
   LexicalNode,
   PointCaret,
@@ -517,18 +515,15 @@ function $appendNodesToJSON(
     shouldInclude = false;
   }
 
-  // An atomic host that opts in via `includeChildrenWhenSelected` (e.g. a Card
-  // promoted to a whole-host NodeSelection by a chrome click) recurses into
-  // its children with a null selection so the whole subtree serializes even
-  // when none of the children are in the outer selection themselves.
+  // An element host in a NodeSelection (e.g. a Card promoted whole-host by a
+  // chrome click) recurses into its children with a null selection so the
+  // whole subtree serializes even when none of the children are in the outer
+  // selection themselves — the old shell-only output made cut silently lossy.
   // Only a whole-host NodeSelection promotes: a partial RangeSelection that
   // happens to contain the host must keep slicing/excluding per child, or a
   // drag into the host's interior would over-export unselected content.
   const childSelection =
-    shouldInclude &&
-    $isNodeSelection(selection) &&
-    $isElementNode(currentNode) &&
-    includeChildrenWhenSelected(currentNode.constructor as Klass<LexicalNode>)
+    shouldInclude && $isNodeSelection(selection) && $isElementNode(currentNode)
       ? null
       : selection;
 

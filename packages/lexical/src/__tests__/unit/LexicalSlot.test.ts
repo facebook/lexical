@@ -33,6 +33,7 @@ import {
   $setSlot,
   createEditor,
   defineExtension,
+  ElementNode,
   getDOMSelection,
   TextNode,
 } from 'lexical';
@@ -66,6 +67,67 @@ function $slotContainer(...texts: string[]): TestShadowRootNode {
   return container;
 }
 
+// Host with a canonical slot declaration: 'title' renders ahead of 'body'
+// even though code-unit order would flip them.
+class DeclaredHostNode extends ElementNode {
+  $config() {
+    return this.config('declared_slot_host', {
+      extends: ElementNode,
+      slots: ['title', 'body'],
+    });
+  }
+  createDOM() {
+    return document.createElement('div');
+  }
+  updateDOM() {
+    return false;
+  }
+}
+
+// Subclass redeclaration: the nearest declaration in the prototype chain wins,
+// so this host flips the inherited ['title', 'body'] order.
+class ReorderedHostNode extends DeclaredHostNode {
+  $config() {
+    return this.config('reordered_slot_host', {
+      extends: DeclaredHostNode,
+      slots: ['body', 'title'],
+    });
+  }
+}
+
+// Invalid declarations. The rank is computed lazily — only when a $setSlot
+// leaves the host's map with 2+ entries does the canonical order become
+// observable — so registering these classes (and a first set) must not throw.
+class DupDeclaredHostNode extends ElementNode {
+  $config() {
+    return this.config('dup_declared_slot_host', {
+      extends: ElementNode,
+      slots: ['x', 'x'],
+    });
+  }
+  createDOM() {
+    return document.createElement('div');
+  }
+  updateDOM() {
+    return false;
+  }
+}
+
+class ReservedDeclaredHostNode extends ElementNode {
+  $config() {
+    return this.config('reserved_declared_slot_host', {
+      extends: ElementNode,
+      slots: ['__proto__'],
+    });
+  }
+  createDOM() {
+    return document.createElement('div');
+  }
+  updateDOM() {
+    return false;
+  }
+}
+
 const mountedRoots: HTMLElement[] = [];
 afterEach(() => {
   while (mountedRoots.length > 0) {
@@ -85,7 +147,15 @@ function createSlotEditor(): LexicalEditorWithDispose {
         $getRoot().clear();
       },
       name: '[slot-core]',
-      nodes: [TestShadowRootNode, TestDecoratorNode, TestInlineElementNode],
+      nodes: [
+        TestShadowRootNode,
+        TestDecoratorNode,
+        TestInlineElementNode,
+        DeclaredHostNode,
+        ReorderedHostNode,
+        DupDeclaredHostNode,
+        ReservedDeclaredHostNode,
+      ],
     }),
   );
   const root = document.createElement('div');
@@ -1028,7 +1098,7 @@ describe('named-slots: core foundation', () => {
     });
   });
 
-  test('removing then re-adding a slot name reorders its container to match the Map', () => {
+  test('a late-added slot renders in canonical position, not insertion order', () => {
     using editor = createSlotEditor();
     let hostKey = '';
 
@@ -1036,7 +1106,6 @@ describe('named-slots: core foundation', () => {
       () => {
         const host = $createParagraphNode();
         $getRoot().append(host);
-        $setSlot(host, 'a', $slotContainer('A'));
         $setSlot(host, 'b', $slotContainer('B'));
         hostKey = host.getKey();
       },
@@ -1046,9 +1115,10 @@ describe('named-slots: core foundation', () => {
     editor.update(
       () => {
         const host = $assertNodeType($getNodeByKey(hostKey), $isParagraphNode);
-        // Drop 'a' and re-add it: in the Map it now trails 'b'.
-        $removeSlot(host, 'a');
-        $setSlot(host, 'a', $slotContainer('A2'));
+        // 'a' arrives after 'b' was already mounted: canonical (code-unit)
+        // order puts it first, so the reconciler must place its container
+        // ahead of the existing one.
+        $setSlot(host, 'a', $slotContainer('A'));
       },
       {discrete: true},
     );
@@ -1059,15 +1129,34 @@ describe('named-slots: core foundation', () => {
         $assertNodeType($getNodeByKey(hostKey), $isParagraphNode),
       );
     });
-    expect(modelOrder).toEqual(['b', 'a']);
+    expect(modelOrder).toEqual(['a', 'b']);
 
     const hostDom = editor.getElementByKey(hostKey)!;
     const domOrder = Array.from(hostDom.children)
       .filter(child => child.hasAttribute('data-lexical-slot'))
       .map(child => child.getAttribute('data-lexical-slot'));
-    // The reconciler moves the reused container so the DOM matches the Map
-    // order rather than the original insertion order.
     expect(domOrder).toEqual(modelOrder);
+
+    // Remove + re-add returns to the same canonical position (order is
+    // derived, never insertion history), in the model and in the DOM.
+    editor.update(
+      () => {
+        const host = $assertNodeType($getNodeByKey(hostKey), $isParagraphNode);
+        $removeSlot(host, 'a');
+        $setSlot(host, 'a', $slotContainer('A2'));
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      modelOrder = $getSlotNames(
+        $assertNodeType($getNodeByKey(hostKey), $isParagraphNode),
+      );
+    });
+    expect(modelOrder).toEqual(['a', 'b']);
+    const domOrderAfter = Array.from(editor.getElementByKey(hostKey)!.children)
+      .filter(child => child.hasAttribute('data-lexical-slot'))
+      .map(child => child.getAttribute('data-lexical-slot'));
+    expect(domOrderAfter).toEqual(['a', 'b']);
   });
 
   test('suffix fast path keeps slot text when a slot and a suffix child are edited together', () => {
@@ -2261,6 +2350,206 @@ describe('named-slots: audit hardening (insertNodes, cycles, idempotent setSlot)
         expect($getSlot(host, 'title')!.is(title)).toBe(true);
         expect($getSlotNames(host)).toEqual(['title']);
         expect($getSlotNameWithinHost(title)).toBe('title');
+      },
+      {discrete: true},
+    );
+  });
+});
+
+// Canonical slot order: a class's $config `slots` declaration is the ordering
+// vocabulary. The order is derived at every $setSlot (never stored): declared
+// names first in declaration order, undeclared names after in code-unit order.
+describe('named-slots: canonical slot order', () => {
+  test('declared slots set in reverse call order come back in declared order', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+
+    editor.update(
+      () => {
+        const host = new DeclaredHostNode();
+        $getRoot().append(host);
+        // reverse of the declaration: body first, then title
+        $setSlot(host, 'body', $slotContainer('Body'));
+        $setSlot(host, 'title', $slotContainer('Title'));
+        hostKey = host.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const host = $getNodeByKey(hostKey);
+      assert(host instanceof DeclaredHostNode);
+      // declaration order, not call order and not code-unit order
+      // ('body' < 'title')
+      expect($getSlotNames(host)).toEqual(['title', 'body']);
+    });
+  });
+
+  test('mixed declared and undeclared names sort declared-first, then code-unit', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+
+    editor.update(
+      () => {
+        const host = new DeclaredHostNode();
+        $getRoot().append(host);
+        $setSlot(host, 'zeta', $slotContainer('Z'));
+        $setSlot(host, 'body', $slotContainer('B'));
+        $setSlot(host, 'alpha', $slotContainer('A'));
+        $setSlot(host, 'title', $slotContainer('T'));
+        hostKey = host.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const host = $getNodeByKey(hostKey);
+      assert(host instanceof DeclaredHostNode);
+      // declared names lead in declaration order; the undeclared rest trail
+      // in code-unit order
+      expect($getSlotNames(host)).toEqual(['title', 'body', 'alpha', 'zeta']);
+    });
+  });
+
+  test('an undeclared host orders slot names in code-unit order', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        $getRoot().append(host);
+        $setSlot(host, 'b', $slotContainer('1'));
+        $setSlot(host, 'A', $slotContainer('2'));
+        $setSlot(host, 'a', $slotContainer('3'));
+        hostKey = host.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const host = $assertNodeType($getNodeByKey(hostKey), $isParagraphNode);
+      // code-unit comparison ('A' (0x41) < 'a' (0x61) < 'b' (0x62)), not
+      // locale-aware collation and not insertion order
+      expect($getSlotNames(host)).toEqual(['A', 'a', 'b']);
+    });
+  });
+
+  test('a subclass redeclaration overrides the inherited order', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+
+    editor.update(
+      () => {
+        const host = new ReorderedHostNode();
+        $getRoot().append(host);
+        // set in the parent's declared order; the subclass declaration wins
+        $setSlot(host, 'title', $slotContainer('Title'));
+        $setSlot(host, 'body', $slotContainer('Body'));
+        hostKey = host.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const host = $getNodeByKey(hostKey);
+      assert(host instanceof ReorderedHostNode);
+      expect($getSlotNames(host)).toEqual(['body', 'title']);
+    });
+  });
+
+  test('a late-added declared slot renders in its declared position in the DOM', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+
+    editor.update(
+      () => {
+        const host = new DeclaredHostNode();
+        $getRoot().append(host);
+        $setSlot(host, 'body', $slotContainer('Body'));
+        hostKey = host.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const host = $getNodeByKey(hostKey);
+        assert(host instanceof DeclaredHostNode);
+        // 'title' arrives after 'body' was already mounted: the declaration
+        // puts it first, so the reconciler must place its container ahead of
+        // the existing one.
+        $setSlot(host, 'title', $slotContainer('Title'));
+      },
+      {discrete: true},
+    );
+
+    let modelOrder: string[] = [];
+    editor.read(() => {
+      const host = $getNodeByKey(hostKey);
+      assert(host instanceof DeclaredHostNode);
+      modelOrder = $getSlotNames(host);
+    });
+    expect(modelOrder).toEqual(['title', 'body']);
+
+    const hostDom = editor.getElementByKey(hostKey)!;
+    const domOrder = Array.from(hostDom.children)
+      .filter(child => child.hasAttribute('data-lexical-slot'))
+      .map(child => child.getAttribute('data-lexical-slot'));
+    expect(domOrder).toEqual(modelOrder);
+  });
+
+  test('exportJSON emits slots keys in canonical order', () => {
+    using editor = createSlotEditor();
+
+    editor.update(
+      () => {
+        const host = new DeclaredHostNode();
+        $getRoot().append(host);
+        // scrambled call order, including an undeclared name
+        $setSlot(host, 'body', $slotContainer('Body'));
+        $setSlot(host, 'alpha', $slotContainer('Alpha'));
+        $setSlot(host, 'title', $slotContainer('Title'));
+      },
+      {discrete: true},
+    );
+
+    const hostJSON = editor.getEditorState().toJSON().root.children[0];
+    expect(hostJSON.slots).toBeDefined();
+    expect(Object.keys(hostJSON.slots!)).toEqual(['title', 'body', 'alpha']);
+  });
+
+  test('a duplicate name in a declaration throws when the rank is first computed', () => {
+    using editor = createSlotEditor();
+
+    editor.update(
+      () => {
+        const host = new DupDeclaredHostNode();
+        $getRoot().append(host);
+        // The rank is computed lazily: a single-entry map needs no ordering,
+        // so the first set does not validate the declaration.
+        expect(() => $setSlot(host, 'a', $slotContainer('A'))).not.toThrow();
+        // The second set leaves the map with 2+ entries, computing the rank,
+        // which rejects the ambiguous duplicate declaration.
+        expect(() => $setSlot(host, 'b', $slotContainer('B'))).toThrow(
+          /more than once/,
+        );
+      },
+      {discrete: true},
+    );
+  });
+
+  test('a reserved name in a declaration throws when the rank is first computed', () => {
+    using editor = createSlotEditor();
+
+    editor.update(
+      () => {
+        const host = new ReservedDeclaredHostNode();
+        $getRoot().append(host);
+        expect(() => $setSlot(host, 'a', $slotContainer('A'))).not.toThrow();
+        expect(() => $setSlot(host, 'b', $slotContainer('B'))).toThrow(
+          /reserved slot name/,
+        );
       },
       {discrete: true},
     );

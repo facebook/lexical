@@ -1195,6 +1195,9 @@ declare export function $getSlotHost(
 declare export function $getSlotFrame(
   node: LexicalNode,
 ): LexicalNode | null;
+declare export function getDeclaredSlots(
+  klass: Class<LexicalNode>,
+): ReadonlyArray<string>;
 declare export function $getSlotNameWithinHost(
   slotChild: LexicalNode,
 ): string | null;
@@ -1654,6 +1657,7 @@ export interface StaticNodeConfigValue<
   readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T;
   readonly importDOM?: DOMConversionMap;
   readonly stateConfigs?: ReadonlyArray<RequiredNodeStateConfig>;
+  readonly slots?: ReadonlyArray<string>;
   readonly extends?: Class<LexicalNode>;
 }
 

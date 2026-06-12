@@ -56,7 +56,11 @@ function PullQuoteComponent({nodeKey}: {nodeKey: NodeKey}): JSX.Element {
 
 export class PullQuoteNode extends DecoratorNode<JSX.Element> {
   $config() {
-    return this.config('pullquote', {extends: DecoratorNode});
+    return this.config('pullquote', {
+      extends: DecoratorNode,
+      // Canonical order: code-unit order would put attribution before quote.
+      slots: ['quote', 'attribution'],
+    });
   }
 
   createDOM(): HTMLElement {

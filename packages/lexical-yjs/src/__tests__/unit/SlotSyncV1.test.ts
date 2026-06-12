@@ -18,6 +18,7 @@ import {
   $removeSlot,
   $setSlot,
   createEditor,
+  ElementNode,
   type LexicalEditor,
 } from 'lexical';
 import {
@@ -31,6 +32,7 @@ import {
   applyUpdate,
   Doc,
   encodeStateAsUpdate,
+  encodeStateVector,
   Map as YMap,
   type Text as YText,
   type Transaction as YTransaction,
@@ -1317,6 +1319,26 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
   });
 });
 
+// Host with a canonical slot declaration ('title' ahead of 'caption' even
+// though code-unit order would flip them). Declaring slots also opts the host
+// into eager slots Y.Map creation ($seedHostSlots), so each name's first set is
+// an entry-level Y.Map op that merges per-key under concurrency instead of
+// racing on attribute-level LWW.
+class DeclaredCollabHostNode extends ElementNode {
+  $config() {
+    return this.config('declared_collab_host', {
+      extends: ElementNode,
+      slots: ['title', 'caption'],
+    });
+  }
+  createDOM() {
+    return document.createElement('div');
+  }
+  updateDOM() {
+    return false;
+  }
+}
+
 // Two real clients over two Docs, relayed through doc update messages
 // (doc1 -> doc2), each wired through the same entry points
 // useYjsCollaboration registers: the update listener feeds
@@ -1342,7 +1364,7 @@ describe('named-slots collab-v1: two-client relay', () => {
   function buildClient(doc: Doc) {
     const editor = createEditor({
       namespace: 'slot-sync-v1',
-      nodes: [TestShadowRootNode, TestDecoratorNode],
+      nodes: [TestShadowRootNode, TestDecoratorNode, DeclaredCollabHostNode],
       onError: e => {
         throw e;
       },
@@ -1643,6 +1665,169 @@ describe('named-slots collab-v1: two-client relay', () => {
     } finally {
       disconnect1();
       disconnect2();
+    }
+  });
+
+  // A class that declares its slots gets the slots Y.Map attached eagerly at
+  // host creation ($seedHostSlots), even with zero occupied slots, so each
+  // name's later first set is an entry-level op on a map both docs already
+  // share.
+  test('a declared host syncs its slots map eagerly', () => {
+    const {binding, editor} = buildClient(new Doc());
+
+    let hostKey = '';
+    editor.update(
+      () => {
+        const host = new DeclaredCollabHostNode();
+        $getRoot().clear().append(host);
+        hostKey = host.getKey();
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const hostCollab = binding.collabNodeMap.get(hostKey);
+    assert(hostCollab instanceof CollabElementNode);
+    const slotsY = hostCollab.getSharedType().getAttribute('slots') as unknown;
+    assert(slotsY instanceof YMap);
+    expect(slotsY.size).toBe(0);
+  });
+
+  // OFFLINE two-client variant: like setupTwoClients but with no live
+  // doc1 -> doc2 relay, so both clients edit divergent docs and the deltas
+  // are exchanged manually afterwards (both ways). Observers are connected on
+  // BOTH bindings so each side replays the other's delta into its editor.
+  function setupOfflineTwoClients(buildTree: () => void) {
+    const {
+      binding: binding1,
+      doc: doc1,
+      editor: editor1,
+    } = buildClient(new Doc());
+
+    editor1.update(buildTree, {discrete: true});
+    serialize(editor1, binding1);
+
+    const doc2 = new Doc();
+    applyUpdate(doc2, encodeStateAsUpdate(doc1));
+    const {binding: binding2, editor: editor2} = buildClient(doc2);
+    restore(editor2, binding2);
+
+    const disconnect1 = connectObserver(binding1);
+    const disconnect2 = connectObserver(binding2);
+    const disconnect = () => {
+      disconnect1();
+      disconnect2();
+    };
+
+    return {binding1, binding2, disconnect, doc1, doc2, editor1, editor2};
+  }
+
+  // Exchange the missing deltas both ways (state-vector diffs computed before
+  // either side applies anything, as a real provider reconnect would).
+  function exchangeUpdates(doc1: Doc, doc2: Doc) {
+    const update1to2 = encodeStateAsUpdate(doc1, encodeStateVector(doc2));
+    const update2to1 = encodeStateAsUpdate(doc2, encodeStateVector(doc1));
+    applyUpdate(doc2, update1to2);
+    applyUpdate(doc1, update2to1);
+  }
+
+  // Both first sets are entry-level ops on the eagerly-created (empty) slots
+  // Y.Map from setup, so the offline merge keeps both entries instead of
+  // racing on attribute LWW — and the canonical order makes both clients
+  // agree on declaration order no matter who set what first.
+  test('concurrent first slot sets on a declared host both survive and converge in canonical order', async () => {
+    const {binding1, binding2, disconnect, doc1, doc2, editor1, editor2} =
+      setupOfflineTwoClients(() => {
+        const host = new DeclaredCollabHostNode();
+        const body = $createParagraphNode();
+        body.append($createTextNode('Body'));
+        $getRoot().clear().append(host);
+        host.append(body);
+      });
+
+    try {
+      applyLocalUpdate(binding1, editor1, () => {
+        const host = $getRoot().getFirstChild();
+        assert(host instanceof DeclaredCollabHostNode);
+        const caption = $createTestShadowRootNode();
+        caption.append(
+          $createParagraphNode().append($createTextNode('Caption')),
+        );
+        $setSlot(host, 'caption', caption);
+      });
+      applyLocalUpdate(binding2, editor2, () => {
+        const host = $getRoot().getFirstChild();
+        assert(host instanceof DeclaredCollabHostNode);
+        const title = $createTestShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Title')));
+        $setSlot(host, 'title', title);
+      });
+
+      exchangeUpdates(doc1, doc2);
+      await flush();
+
+      for (const editor of [editor1, editor2]) {
+        editor.read(() => {
+          const host = $getRoot().getFirstChild();
+          assert(host instanceof DeclaredCollabHostNode);
+          // canonical (declared) order on both clients, regardless of which
+          // client set which slot first
+          expect($getSlotNames(host)).toEqual(['title', 'caption']);
+          // both concurrent first sets survived the merge, content intact
+          expect($getSlot(host, 'title')?.getTextContent()).toBe('Title');
+          expect($getSlot(host, 'caption')?.getTextContent()).toBe('Caption');
+        });
+      }
+    } finally {
+      disconnect();
+    }
+  });
+
+  test('concurrent declared and undeclared adds converge in canonical order', async () => {
+    const {binding1, binding2, disconnect, doc1, doc2, editor1, editor2} =
+      setupOfflineTwoClients(() => {
+        const host = new DeclaredCollabHostNode();
+        const title = $createTestShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Title')));
+        $getRoot().clear().append(host);
+        $setSlot(host, 'title', title);
+      });
+
+    try {
+      applyLocalUpdate(binding1, editor1, () => {
+        const host = $getRoot().getFirstChild();
+        assert(host instanceof DeclaredCollabHostNode);
+        const caption = $createTestShadowRootNode();
+        caption.append(
+          $createParagraphNode().append($createTextNode('Caption')),
+        );
+        $setSlot(host, 'caption', caption);
+      });
+      applyLocalUpdate(binding2, editor2, () => {
+        const host = $getRoot().getFirstChild();
+        assert(host instanceof DeclaredCollabHostNode);
+        const zzz = $createTestShadowRootNode();
+        zzz.append($createParagraphNode().append($createTextNode('Zzz')));
+        $setSlot(host, 'zzz', zzz);
+      });
+
+      exchangeUpdates(doc1, doc2);
+      await flush();
+
+      for (const editor of [editor1, editor2]) {
+        editor.read(() => {
+          const host = $getRoot().getFirstChild();
+          assert(host instanceof DeclaredCollabHostNode);
+          // declared names in declaration order, then the undeclared add
+          expect($getSlotNames(host)).toEqual(['title', 'caption', 'zzz']);
+          expect($getSlot(host, 'title')?.getTextContent()).toBe('Title');
+          expect($getSlot(host, 'caption')?.getTextContent()).toBe('Caption');
+          expect($getSlot(host, 'zzz')?.getTextContent()).toBe('Zzz');
+        });
+      }
+    } finally {
+      disconnect();
     }
   });
 });

@@ -25,6 +25,7 @@ import {
   $getSlotHost,
   $getSlotNames,
   $setSelection,
+  $setSlot,
   defineExtension,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
@@ -35,7 +36,10 @@ import {
   $isPullQuoteNode,
   PullQuoteNode,
 } from '../../src/nodes/PullQuoteNode';
-import {SlotContainerNode} from '../../src/nodes/SlotContainerNode';
+import {
+  $createSlotContainerNode,
+  SlotContainerNode,
+} from '../../src/nodes/SlotContainerNode';
 import {PullQuoteExtension} from '../../src/plugins/PullQuoteExtension';
 
 const PullQuoteTestExtension = defineExtension({
@@ -90,6 +94,45 @@ describe('PullQuoteNode atomic decorator host', () => {
         'attribution slot must be a SlotContainerNode',
       );
       expect(attribution.isShadowRoot()).toBe(true);
+    });
+  });
+
+  it('canonicalizes slots set in reverse to the declared order', () => {
+    using editor = buildEditorFromExtensions(PullQuoteTestExtension);
+
+    editor.update(
+      () => {
+        const pullquote = new PullQuoteNode();
+        $getRoot().clear().append(pullquote);
+        // Reverse of the declaration: attribution first, then quote.
+        $setSlot(
+          pullquote,
+          'attribution',
+          $createSlotContainerNode().append(
+            $createParagraphNode().append($createTextNode('Author')),
+          ),
+        );
+        $setSlot(
+          pullquote,
+          'quote',
+          $createSlotContainerNode().append(
+            $createParagraphNode().append($createTextNode('Quote')),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const pullquote = $getRoot().getFirstChild();
+      assert($isPullQuoteNode(pullquote), 'host must be a PullQuoteNode');
+      // The declaration (quote, attribution) wins over both the call order
+      // and code-unit order ('attribution' < 'quote').
+      expect($getSlotNames(pullquote)).toEqual(['quote', 'attribution']);
+      expect($getSlot(pullquote, 'quote')?.getTextContent()).toBe('Quote');
+      expect($getSlot(pullquote, 'attribution')?.getTextContent()).toBe(
+        'Author',
+      );
     });
   });
 

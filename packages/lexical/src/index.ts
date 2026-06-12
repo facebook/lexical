@@ -269,6 +269,7 @@ export {
   $isSlotHost,
   $removeSlot,
   $setSlot,
+  getDeclaredSlots,
 } from './LexicalSlot';
 export {
   $assumeActiveEditor,

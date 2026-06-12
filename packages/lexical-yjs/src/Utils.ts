@@ -26,6 +26,7 @@ import {
   DecoratorNode,
   EditorState,
   ElementNode,
+  getDeclaredSlots,
   isLexicalEditor,
   LexicalNode,
   NodeKey,
@@ -264,7 +265,13 @@ function $seedHostSlots(
   sharedType: XmlText | XmlElement,
 ): void {
   const slotNames = $getSlotNames(lexicalNode);
-  if (slotNames.length === 0) {
+  // A class that declares its slots opts into eager map creation: attaching
+  // the (possibly empty) Y.Map while the host itself is being created makes
+  // every later set — including each name's first — an entry-level Y.Map
+  // operation that merges per-key, instead of racing on attribute-level LWW
+  // when two clients create the map concurrently.
+  const declaresSlots = getDeclaredSlots(lexicalNode.constructor).length > 0;
+  if (slotNames.length === 0 && !declaresSlots) {
     return;
   }
   const slotsY = new YMap();
@@ -283,7 +290,7 @@ function $seedHostSlots(
     slotsY.set(name, slotCollab.getSharedType());
     hasSlot = true;
   }
-  if (hasSlot) {
+  if (hasSlot || declaresSlots) {
     setSlotsAttr(sharedType, slotsY);
   }
 }

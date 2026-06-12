@@ -9,6 +9,7 @@
 import invariant from '@lexical/internal/invariant';
 import {$isAtNodeEnd} from '@lexical/selection';
 import {
+  $getSlotFrame,
   CAN_USE_BEFORE_INPUT,
   CAN_USE_DOM,
   IS_ANDROID,
@@ -595,6 +596,18 @@ export function $isBlockFullySelected(
       : selectionOrRange,
     'next',
   );
+  // A named-slot subtree is isolated from its host through a parentless
+  // up-link, so a range inside a slot can never cover a block outside that
+  // slot frame (and vice versa) — and the caret comparison below has no
+  // common ancestor to walk across the boundary. Different frames are
+  // never fully selected; the same frame compares safely within it.
+  const anchorFrame = $getSlotFrame(range.anchor.origin);
+  const blockFrame = $getSlotFrame(blockNode.getLatest());
+  if (
+    anchorFrame === null ? blockFrame !== null : !anchorFrame.is(blockFrame)
+  ) {
+    return false;
+  }
   const blockStart = $normalizeCaret($getChildCaret(blockNode, 'next'));
   const blockEnd = $getCaretInDirection(
     $normalizeCaret($getChildCaret(blockNode, 'previous')),

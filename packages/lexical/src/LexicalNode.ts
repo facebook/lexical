@@ -177,6 +177,23 @@ export interface StaticNodeConfigValue<
    */
   readonly stateConfigs?: readonly RequiredNodeStateConfig[];
   /**
+   * @experimental named-slots
+   *
+   * Canonical order for this host's named slots. Declared names render,
+   * fold, serialize, and traverse in this order; occupied names that are
+   * not declared follow in code-unit order. Order is derived from this
+   * declaration at every {@link $setSlot} (never stored), so documents
+   * re-canonicalize on load and concurrent collaborative slot additions
+   * converge to the same order on every client. The declaration is not a
+   * schema: undeclared names are still accepted and retained, so adding,
+   * reordering, or dropping entries over time is non-destructive.
+   *
+   * Declaring slots also opts the host into eager slots-map creation in
+   * \@lexical/yjs, which makes each name's first set merge per-entry under
+   * concurrency instead of racing on attribute creation.
+   */
+  readonly slots?: readonly string[];
+  /**
    * If specified, this must be the exact superclass of the node. It is not
    * checked at compile time and it is provided automatically at runtime.
    *

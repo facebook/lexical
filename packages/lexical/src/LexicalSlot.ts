@@ -6,6 +6,7 @@
  *
  */
 
+import type {Klass} from './LexicalEditor';
 import type {
   LexicalNode,
   NodeKey,
@@ -18,7 +19,7 @@ import type {ElementNode} from './nodes/LexicalElementNode';
 import invariant from '@lexical/internal/invariant';
 
 import {$getEditor, $getNodeByKey, $isDecoratorNode, $isElementNode} from '.';
-import {$removeFromParent} from './LexicalUtils';
+import {$removeFromParent, getStaticNodeConfig} from './LexicalUtils';
 
 /**
  * Shared empty slot map. Reads coalesce here when a host's `__slots` is null
@@ -175,6 +176,127 @@ export function $getSlot(node: LexicalNode, name: string): LexicalNode | null {
   return key === undefined ? null : $getNodeByKey(key);
 }
 
+const RESERVED_SLOT_NAMES = ['__proto__', 'constructor', 'prototype'];
+
+const slotRankCache = new WeakMap<
+  Klass<LexicalNode>,
+  ReadonlyMap<string, number>
+>();
+const EMPTY_DECLARED_SLOTS: readonly string[] = [];
+
+/**
+ * Returns the canonical slot declaration for a node class: the `slots` array
+ * from the nearest {@link StaticNodeConfigValue} in its prototype chain (a
+ * subclass redeclaration overrides its ancestors'), or an empty array when
+ * nothing is declared. The declaration is an ordering vocabulary, not a
+ * schema — occupied names outside it are still valid and sort after the
+ * declared names in code-unit order.
+ *
+ * @experimental named-slots
+ */
+export function getDeclaredSlots(klass: Klass<LexicalNode>): readonly string[] {
+  // Walk the class hierarchy without a runtime LexicalNode import (a
+  // module-initialization cycle): past the base class the chain reaches
+  // Function.prototype, whose own `prototype` is undefined, ending the loop.
+  for (
+    let current: Klass<LexicalNode> = klass;
+    current != null && current.prototype != null;
+    current = Object.getPrototypeOf(current)
+  ) {
+    const {ownNodeConfig} = getStaticNodeConfig(current);
+    const declared = ownNodeConfig && ownNodeConfig.slots;
+    if (declared) {
+      return declared;
+    }
+  }
+  return EMPTY_DECLARED_SLOTS;
+}
+
+// @experimental named-slots. Declared name -> declaration index, cached per
+// class. Validates the declaration once: duplicates would make the order
+// ambiguous and reserved names can never be set.
+function getDeclaredSlotRank(
+  klass: Klass<LexicalNode>,
+): ReadonlyMap<string, number> {
+  let rank = slotRankCache.get(klass);
+  if (rank === undefined) {
+    const declared = getDeclaredSlots(klass);
+    const built = new Map<string, number>();
+    for (const name of declared) {
+      invariant(
+        !RESERVED_SLOT_NAMES.includes(name),
+        'getDeclaredSlotRank: %s declares reserved slot name "%s"; __proto__, constructor, and prototype break the plain-object serialization of slots',
+        klass.name,
+        name,
+      );
+      invariant(
+        !built.has(name),
+        'getDeclaredSlotRank: %s declares slot name "%s" more than once; the canonical order would be ambiguous',
+        klass.name,
+        name,
+      );
+      built.set(name, built.size);
+    }
+    rank = built;
+    slotRankCache.set(klass, rank);
+  }
+  return rank;
+}
+
+// @experimental named-slots. Canonical comparison: declared names first (in
+// declaration order), then undeclared names in code-unit order — a pure
+// function of (class, name) so every client orders identically.
+function compareSlotNames(
+  a: string,
+  b: string,
+  rank: ReadonlyMap<string, number>,
+): number {
+  const rankA = rank.get(a);
+  const rankB = rank.get(b);
+  if (rankA !== undefined) {
+    return rankB !== undefined ? rankA - rankB : -1;
+  }
+  if (rankB !== undefined) {
+    return 1;
+  }
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+// @experimental named-slots. Restores canonical order on a writable host's
+// slot map after an insertion. Order is derived, never stored: every
+// ingestion path (local $setSlot, JSON import, clipboard, collab sync)
+// funnels through $setSlot, so documents re-canonicalize on load and
+// concurrent collaborative additions converge without any order metadata in
+// the document. The already-sorted check keeps the common case allocation
+// free; slot maps are tiny, so the rebuild is O(n log n) over a handful of
+// names.
+function $canonicalizeSlotOrder(host: LexicalNode & SlotHostNode): void {
+  const slots = host.__slots;
+  if (slots === null || slots.size < 2) {
+    return;
+  }
+  const rank = getDeclaredSlotRank(host.constructor as Klass<LexicalNode>);
+  let previous: string | null = null;
+  let sorted = true;
+  for (const name of slots.keys()) {
+    if (previous !== null && compareSlotNames(previous, name, rank) > 0) {
+      sorted = false;
+      break;
+    }
+    previous = name;
+  }
+  if (sorted) {
+    return;
+  }
+  const entries = Array.from(slots).sort(([a], [b]) =>
+    compareSlotNames(a, b, rank),
+  );
+  slots.clear();
+  for (const [name, key] of entries) {
+    slots.set(name, key);
+  }
+}
+
 /**
  * Places `node` into the named slot of `host`, replacing any existing value
  * under that name. A slot value must be a shadow-root {@link ElementNode} or a
@@ -240,6 +362,7 @@ export function $setSlot<T extends LexicalNode & SlotHostNode>(
   $removeFromParent(writableNode);
   writableNode.__slotHost = writableSelf.__key;
   writableSelf.__slots.set(name, writableNode.__key);
+  $canonicalizeSlotOrder(writableSelf);
   $getEditor()._slotsUsed = true;
   return writableSelf;
 }

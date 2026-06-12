@@ -28,7 +28,7 @@ import {$createSlotContainerNode} from '../SlotContainerNode';
 // blocks, no React chrome required.
 export class CardNode extends ElementNode {
   $config() {
-    return this.config('card', {extends: ElementNode});
+    return this.config('card', {extends: ElementNode, slots: ['title']});
   }
 
   createDOM(): HTMLElement {

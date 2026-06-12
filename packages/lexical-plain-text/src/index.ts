@@ -26,6 +26,7 @@ import {
 import {mergeRegister, objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
+  $getSlotFrame,
   $isRangeSelection,
   $selectAll,
   CAN_USE_BEFORE_INPUT,
@@ -358,11 +359,19 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       SELECT_ALL_COMMAND,
       () => {
-        // Pass the current RangeSelection so $selectAll honors shadow-root
-        // scope (e.g. a named-slot container, TableCell) — without it the
-        // else branch runs root.select() and overruns the shadow boundary.
+        // Scope SELECT_ALL only when the caret is inside a named-slot frame:
+        // slots are shadow-root isolated, so a whole-document select-all
+        // would escape the slot and let a single keystroke replace the host.
+        // Every other context (including TableCell shadow roots) keeps the
+        // legacy whole-document behavior; block/document scoping elsewhere
+        // is provided by the opt-in SelectBlockExtension.
         const selection = $getSelection();
-        $selectAll($isRangeSelection(selection) ? selection : null);
+        $selectAll(
+          $isRangeSelection(selection) &&
+            $getSlotFrame(selection.anchor.getNode()) !== null
+            ? selection
+            : null,
+        );
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

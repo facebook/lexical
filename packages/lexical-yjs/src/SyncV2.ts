@@ -36,6 +36,7 @@ import {
   $removeSlot,
   $setSlot,
   ElementNode,
+  getDeclaredSlots,
   LexicalNode,
   NodeKey,
   RootNode,
@@ -227,7 +228,7 @@ export const $createOrUpdateNodeFromYElement = (
     if (slotsY instanceof YMap) {
       // The Y.Map's entries live in its own item chain, not the host's, so
       // the snapshot read needs typeMapGetAllSnapshot (entries() is live).
-      const slotEntries: Array<[string, unknown]> =
+      const slotEntries: [string, unknown][] =
         snapshot === undefined
           ? Array.from(slotsY.entries())
           : Object.entries(typeMapGetAllSnapshot(slotsY, snapshot));
@@ -443,14 +444,18 @@ const $createTypeFromTextNodes = (
 // Build a `Y.Map<name, XmlElement>` mirroring the host's `__slots`. Each slot
 // root is a non-inline ElementNode or DecoratorNode (enforced by setSlot), so
 // it is serialized through `createTypeFromElementNode` and nested slots fold in
-// recursively. Returns undefined for a host with no slots so non-slot hosts set
-// no attribute.
+// recursively. Returns undefined for a host with no slots so non-slot hosts
+// set no attribute — except that a class declaring its slots gets the (empty)
+// Y.Map eagerly at creation, mirroring V1's $seedHostSlots: the map then
+// merges with host creation itself, so each name's FIRST set is an
+// entry-level Y.Map operation instead of an attribute-level LWW race between
+// clients that both create the map.
 const $createSlotsYType = (
   node: LexicalNode,
   binding: BindingV2,
 ): YMap<XmlElement> | undefined => {
   const names = $getSlotNames(node);
-  if (names.length === 0) {
+  if (names.length === 0 && getDeclaredSlots(node.constructor).length === 0) {
     return undefined;
   }
   const slotsY = new YMap<XmlElement>();
@@ -516,8 +521,14 @@ const $updateSlotsYType = (
   // Removing the last slot empties the Y.Map but keeps the attribute
   // (mirrors V1): removing it would re-open the first-set creation race for
   // the next add and destroy concurrent adds. $equalSlots treats an empty map
-  // and an absent attribute alike.
-  if (names.length === 0 && !(existing instanceof YMap)) {
+  // and an absent attribute alike. A class that declares its slots opts into
+  // eager creation — the map is attached even before the first set, so each
+  // name's first set merges per-entry instead of racing on attribute LWW.
+  if (
+    names.length === 0 &&
+    !(existing instanceof YMap) &&
+    getDeclaredSlots(node.constructor).length === 0
+  ) {
     return;
   }
 

@@ -20,6 +20,7 @@ import {
   $setSlot,
   createEditor,
   DecoratorNode,
+  ElementNode,
   type Klass,
   type LexicalEditor,
   type LexicalNode,
@@ -106,6 +107,25 @@ class BlockDecoratorAttrNode extends DecoratorNode<null> {
   }
   getCaption(): string {
     return this.getLatest().__caption;
+  }
+}
+
+// Host with a canonical slot declaration ('title' ahead of 'caption' even
+// though code-unit order would flip them). Declaring slots opts the host into
+// eager slots Y.Map creation in V2 ($updateSlotsYType) so each name's first
+// set merges per-entry instead of racing on attribute-level LWW.
+class DeclaredV2HostNode extends ElementNode {
+  $config() {
+    return this.config('declared_v2_host', {
+      extends: ElementNode,
+      slots: ['title', 'caption'],
+    });
+  }
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+  updateDOM(): boolean {
+    return false;
   }
 }
 
@@ -1445,6 +1465,99 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
       assert($isElementNode(hostR));
       expect($getSlotNames(hostR)).toEqual(['title']);
       expect($getSlot(hostR, 'title')?.getTextContent()).toBe('Title');
+    });
+  });
+
+  // A class that declares its slots opts into eager slots Y.Map creation:
+  // even with zero occupied slots the host carries an (empty) `slots` Y.Map
+  // after sync, so each name's later first set is an entry-level op that
+  // merges per-key under concurrency instead of racing on attribute LWW.
+  // Covers the CREATION path ($createTypeFromElementNode -> $createSlotsYType)
+  // specifically — the update path ($updateSlotsYType) has its own gate, and
+  // missing either one re-opens the first-set race for hosts that sync before
+  // their first slot is set.
+  test('a declared host serializes an eager empty slots map', () => {
+    const {binding, editor} = buildBinding([DeclaredV2HostNode]);
+
+    editor.update(
+      () => {
+        const host = new DeclaredV2HostNode();
+        $getRoot().clear().append(host);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const hostY = binding.root.toArray()[0];
+    assert(hostY instanceof XmlElement);
+    const slotsY = hostY.getAttribute('slots') as unknown;
+    assert(slotsY instanceof YMap);
+    expect(slotsY.size).toBe(0);
+  });
+
+  // Order is derived, never stored: the slots Y.Map carries no order
+  // metadata, and the restore path funnels every entry through $setSlot,
+  // which re-canonicalizes — so a map whose entries were inserted in reverse
+  // declared order still restores to the declared order.
+  test('restore applies canonical order regardless of Y.Map insertion order', () => {
+    const {binding, doc, editor} = buildBinding([
+      DeclaredV2HostNode,
+      TestShadowRootNode,
+    ]);
+
+    editor.update(
+      () => {
+        const host = new DeclaredV2HostNode();
+        const caption = $createTestShadowRootNode();
+        caption.append(
+          $createParagraphNode().append($createTextNode('Caption')),
+        );
+        $getRoot().clear().append(host);
+        $setSlot(host, 'caption', caption);
+      },
+      {discrete: true},
+    );
+
+    serialize(editor, binding);
+
+    const hostY = binding.root.toArray()[0];
+    assert(hostY instanceof XmlElement);
+    const slotsY = hostY.getAttribute('slots') as unknown;
+    assert(slotsY instanceof YMap);
+    // hand-add 'title' after 'caption' so the Y.Map receives its entries in
+    // REVERSE declared order. The value is a registered shadow-root type
+    // wrapping a paragraph + text, the shape setSlot accepts on restore.
+    doc.transact(() => {
+      const title = new XmlElement('test_shadow_root');
+      const titlePara = new XmlElement('paragraph');
+      const titleText = new XmlText();
+      titlePara.insert(0, [titleText]);
+      titleText.insert(0, 'Title');
+      title.insert(0, [titlePara]);
+      (slotsY as YMap<XmlElement>).set('title', title);
+    });
+    expect(Array.from(slotsY.keys())).toEqual(['caption', 'title']);
+
+    const {binding: binding2, editor: editor2} = buildRestoreBinding(doc, [
+      DeclaredV2HostNode,
+      TestShadowRootNode,
+    ]);
+    editor2.update(
+      () => {
+        $getRoot().clear();
+        $createOrUpdateNodeFromYElement(binding2.root, binding2, null, true);
+      },
+      {discrete: true},
+    );
+
+    editor2.read(() => {
+      const hostR = $getRoot().getFirstChild();
+      assert(hostR instanceof DeclaredV2HostNode);
+      // declared order, not the Y.Map's insertion order
+      expect($getSlotNames(hostR)).toEqual(['title', 'caption']);
+      expect($getSlot(hostR, 'title')?.getTextContent()).toBe('Title');
+      expect($getSlot(hostR, 'caption')?.getTextContent()).toBe('Caption');
     });
   });
 });

@@ -95,16 +95,21 @@ class CustomTextNode extends TextNode {
   /** @internal */
   declare ['constructor']: KlassConstructor<typeof CustomTextNode>;
 
-  __classes: Set<string>;
-  constructor(text: string, classes: Iterable<string>, key?: NodeKey) {
+  __classes: Set<string> = new Set();
+  constructor(
+    text: string = '',
+    classes: Iterable<string> = [],
+    key?: NodeKey,
+  ) {
     super(text, key);
     this.__classes = new Set(classes);
   }
-  static getType(): 'custom-text' {
-    return 'custom-text';
+  $config() {
+    return this.config('custom-text', {extends: TextNode});
   }
-  static clone(node: CustomTextNode): CustomTextNode {
-    return new CustomTextNode(node.__text, node.__classes, node.__key);
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__classes = new Set(prevNode.__classes);
   }
   addClass(className: string): this {
     const self = this.getWritable();
@@ -124,8 +129,10 @@ class CustomTextNode extends TextNode {
   getClasses(): ReadonlySet<string> {
     return this.getLatest().__classes;
   }
-  static importJSON({text, classes}: SerializedCustomTextNode): CustomTextNode {
-    return $createCustomTextNode(text, classes);
+  updateFromJSON(serializedNode: SerializedCustomTextNode): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setClasses(serializedNode.classes);
   }
   exportJSON(): SerializedCustomTextNode {
     return {

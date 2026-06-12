@@ -26,7 +26,6 @@ import {
   LineBreakNode,
   ParagraphNode,
   resetRandomKey,
-  SerializedParagraphNode,
   SerializedTextNode,
   TabNode,
   TextNode,
@@ -875,16 +874,8 @@ describe('$copyNode', () => {
   });
   class ExtendedParagraphNode extends ParagraphNode {
     __string: string = 'default';
-    static getType() {
-      return 'extended-paragraph';
-    }
-    static clone(node: ExtendedParagraphNode): ExtendedParagraphNode {
-      return new ExtendedParagraphNode(node.getKey());
-    }
-    static importJSON(
-      serializedNode: SerializedParagraphNode,
-    ): ExtendedParagraphNode {
-      throw new Error('Not implemented');
+    $config() {
+      return this.config('extended-paragraph', {extends: ParagraphNode});
     }
     afterCloneFrom(prevNode: this): void {
       super.afterCloneFrom(prevNode);

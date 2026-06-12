@@ -1529,11 +1529,8 @@ describe('LexicalReconciler', () => {
     // up a later dirty sibling's format instead.
     test('AUDIT-4: $bubbleChildFirstText misses cache on elements with wrapping DOM', () => {
       class WrapperElementNode extends ElementNode {
-        static getType(): string {
-          return 'audit_wrapper';
-        }
-        static clone(node: WrapperElementNode): WrapperElementNode {
-          return new WrapperElementNode(node.__key);
+        $config() {
+          return this.config('audit_wrapper', {extends: ElementNode});
         }
         createDOM(): HTMLElement {
           const el = document.createElement('main');
@@ -1552,9 +1549,6 @@ describe('LexicalReconciler', () => {
           return true;
         }
         exportJSON(): SerializedElementNode {
-          throw new Error('Not implemented');
-        }
-        static importJSON(): WrapperElementNode {
           throw new Error('Not implemented');
         }
       }

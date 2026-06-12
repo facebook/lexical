@@ -605,6 +605,155 @@
 .PlaygroundEditorTheme__embedBlockFocus {
   outline: 2px solid rgb(60, 132, 244);
 }
+
+/* GitHub Code Embed Styles */
+.github-code-embed {
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  margin: 16px 0;
+  overflow: hidden;
+  background-color: #f6f8fa;
+}
+
+.github-code-header {
+  background-color: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  color: #57606a;
+}
+
+.github-code-header a {
+  color: #0969da;
+  text-decoration: none;
+}
+
+.github-code-header a:hover {
+  text-decoration: underline;
+}
+
+.github-code-refresh {
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #24292f;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 20px;
+  padding: 0 8px;
+}
+
+.github-code-refresh:hover {
+  background: #f3f4f6;
+}
+
+.github-code-content {
+  background-color: #ffffff;
+  overflow-x: auto;
+}
+
+.github-code-code {
+  display: grid;
+  grid-template-columns: min-content 1fr;
+  margin: 0;
+  min-width: max-content;
+}
+
+.github-code-lines,
+.github-code-editor {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.github-code-lines {
+  background: #f6f8fa;
+  border-right: 1px solid #d0d7de;
+  color: #57606a;
+  margin: 0;
+  min-width: 48px;
+  padding: 16px 10px 16px 12px;
+  text-align: right;
+  user-select: none;
+}
+
+.github-code-editor {
+  box-sizing: border-box;
+  min-width: 100%;
+  outline: none;
+  padding: 8px 16px;
+}
+
+.github-code-editor .PlaygroundEditorTheme__code {
+  background: transparent;
+  font-size: inherit;
+  line-height: inherit;
+  margin: 0;
+  overflow: visible;
+  padding: 8px 0;
+}
+
+.github-code-editor .PlaygroundEditorTheme__code:before {
+  display: none;
+}
+
+.github-code-status {
+  border-top: 1px solid #d0d7de;
+  color: #57606a;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  font-size: 11px;
+  padding: 6px 16px;
+}
+
+.github-code-expand-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.github-code-expand {
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #0969da;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 18px;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+
+.github-code-expand:hover {
+  background: #f3f4f6;
+}
+
+.github-code-loading {
+  padding: 16px;
+  text-align: center;
+  color: #57606a;
+  font-style: italic;
+}
+
+.github-code-error {
+  padding: 16px;
+  color: #cf222e;
+  background-color: #ffebe9;
+  border-left: 4px solid #cf222e;
+}
 .PlaygroundEditorTheme__layoutContainer {
   display: grid;
   gap: 10px;

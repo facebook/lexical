@@ -6,6 +6,7 @@
  *
  */
 
+import type {GitHubCodePayload} from '../GitHubCodeExtension';
 import type {LexicalEditor} from 'lexical';
 import type {JSX} from 'react';
 
@@ -23,10 +24,18 @@ import useModal from '../../hooks/useModal';
 import Button from '../../ui/Button';
 import {DialogActions} from '../../ui/Dialog';
 import {INSERT_FIGMA_COMMAND} from '../FigmaExtension';
+import {INSERT_GITHUB_CODE_COMMAND} from '../GitHubCodeExtension';
 import {INSERT_TWEET_COMMAND} from '../TwitterExtension';
 import {INSERT_YOUTUBE_COMMAND} from '../YouTubeExtension';
 
-interface PlaygroundEmbedConfig extends EmbedConfig {
+export type GitHubCodeMatchResult = EmbedMatchResult & GitHubCodePayload;
+
+type PlaygroundEmbedMatchResult = EmbedMatchResult | GitHubCodeMatchResult;
+
+interface PlaygroundEmbedConfig extends EmbedConfig<
+  unknown,
+  PlaygroundEmbedMatchResult
+> {
   // Human readable name of the embedded content e.g. Tweet or Google Map.
   contentName: string;
 
@@ -41,6 +50,52 @@ interface PlaygroundEmbedConfig extends EmbedConfig {
 
   // Embed a Figma Project.
   description?: string;
+}
+
+function isGitHubCodeMatchResult(
+  result: PlaygroundEmbedMatchResult,
+): result is GitHubCodeMatchResult {
+  return (
+    'owner' in result &&
+    'repo' in result &&
+    'path' in result &&
+    'branch' in result
+  );
+}
+
+const LANGUAGE_BY_EXTENSION: Record<string, string> = {
+  c: 'c',
+  cc: 'cpp',
+  cpp: 'cpp',
+  cs: 'csharp',
+  css: 'css',
+  go: 'go',
+  h: 'c',
+  hpp: 'cpp',
+  html: 'html',
+  java: 'java',
+  js: 'javascript',
+  json: 'json',
+  jsx: 'jsx',
+  kt: 'kotlin',
+  md: 'markdown',
+  mjs: 'javascript',
+  php: 'php',
+  py: 'python',
+  rb: 'ruby',
+  rs: 'rust',
+  sh: 'bash',
+  ts: 'typescript',
+  tsx: 'tsx',
+  txt: 'text',
+  xml: 'xml',
+  yaml: 'yaml',
+  yml: 'yaml',
+};
+
+function getLanguageFromPath(path: string): string | undefined {
+  const extension = path.split('.').pop();
+  return extension ? LANGUAGE_BY_EXTENSION[extension.toLowerCase()] : undefined;
 }
 
 export const YoutubeEmbedConfig: PlaygroundEmbedConfig = {
@@ -147,10 +202,124 @@ export const FigmaEmbedConfig: PlaygroundEmbedConfig = {
   type: 'figma',
 };
 
+export const GitHubCodeEmbedConfig: PlaygroundEmbedConfig = {
+  contentName: 'GitHub Code',
+
+  exampleUrl: 'https://github.com/facebook/lexical/blob/main/README.md',
+
+  icon: <i className="icon github" />,
+
+  insertNode: (editor: LexicalEditor, result: EmbedMatchResult) => {
+    if (!isGitHubCodeMatchResult(result)) {
+      return;
+    }
+    editor.dispatchCommand(INSERT_GITHUB_CODE_COMMAND, {
+      branch: result.branch,
+      endLine: result.endLine,
+      language: result.language,
+      owner: result.owner,
+      path: result.path,
+      repo: result.repo,
+      startLine: result.startLine,
+      url: result.url,
+    });
+  },
+
+  keywords: ['github', 'code', 'gist'],
+
+  // Determine if a given URL is a match and return url data.
+  parseUrl: (text: string): GitHubCodeMatchResult | null => {
+    // Blob URL: https://github.com/{owner}/{repo}/blob/{branch}/{path}#L{start}-L{end}
+    const blobMatch =
+      /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+?)(?:#L(\d+)(?:-L(\d+))?)?$/.exec(
+        text,
+      );
+    if (blobMatch != null) {
+      const [, owner, repo, branch, path, startLine, endLine] = blobMatch;
+      return {
+        branch,
+        endLine: endLine ? parseInt(endLine, 10) : undefined,
+        id: text,
+        language: getLanguageFromPath(path),
+        owner,
+        path,
+        repo,
+        startLine: startLine ? parseInt(startLine, 10) : undefined,
+        url: text,
+      };
+    }
+
+    // Blame URL: https://github.com/{owner}/{repo}/blame/{branch}/{path}#L{start}
+    const blameMatch =
+      /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blame\/([^/]+)\/(.+?)(?:#L(\d+)(?:-L(\d+))?)?$/.exec(
+        text,
+      );
+    if (blameMatch != null) {
+      const [, owner, repo, branch, path, startLine, endLine] = blameMatch;
+      return {
+        branch,
+        endLine: endLine ? parseInt(endLine, 10) : undefined,
+        id: text,
+        language: getLanguageFromPath(path),
+        owner,
+        path,
+        repo,
+        startLine: startLine ? parseInt(startLine, 10) : undefined,
+        url: text,
+      };
+    }
+
+    // Gist URL: https://gist.github.com/{user}/{gist_id}#file-{filename}-L{start}-L{end}
+    const gistMatch =
+      /^https:\/\/gist\.github\.com\/([^/]+)\/([a-f0-9]+)(?:#file-(.+?)(?:-L(\d+)(?:-L(\d+))?)?)?$/i.exec(
+        text,
+      );
+    if (gistMatch != null) {
+      const [, owner, gistId, fileName, startLine, endLine] = gistMatch;
+      return {
+        branch: 'main',
+        endLine: endLine ? parseInt(endLine, 10) : undefined,
+        id: text,
+        language: fileName ? getLanguageFromPath(fileName) : undefined,
+        owner,
+        path: fileName || '',
+        repo: gistId,
+        startLine: startLine ? parseInt(startLine, 10) : undefined,
+        url: text,
+      };
+    }
+
+    // Raw URL: https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}
+    const rawMatch =
+      /^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+?)(?:#L(\d+)(?:-L(\d+))?)?$/.exec(
+        text,
+      );
+    if (rawMatch != null) {
+      const [, owner, repo, branch, path, startLine, endLine] = rawMatch;
+      return {
+        branch,
+        endLine: endLine ? parseInt(endLine, 10) : undefined,
+        id: text,
+        language: getLanguageFromPath(path),
+        owner,
+        path,
+        repo,
+        startLine: startLine ? parseInt(startLine, 10) : undefined,
+        url: text,
+      };
+    }
+
+    return null;
+  },
+
+  type: 'github-code',
+};
+
 export const EmbedConfigs = [
   TwitterEmbedConfig,
   YoutubeEmbedConfig,
   FigmaEmbedConfig,
+  GitHubCodeEmbedConfig,
 ];
 
 const debounce = (callback: (text: string) => void, delay: number) => {

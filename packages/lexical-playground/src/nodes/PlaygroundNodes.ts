@@ -26,6 +26,7 @@ import {EmojiNode} from './EmojiNode';
 import {EquationNode} from './EquationNode';
 import {ExcalidrawNode} from './ExcalidrawNode';
 import {FigmaNode} from './FigmaNode';
+import {GitHubCodeNode} from './GitHubCodeNode';
 import {ImageNode} from './ImageNode';
 import {KeywordNode} from './KeywordNode';
 import {LayoutContainerNode} from './LayoutContainerNode';
@@ -64,6 +65,7 @@ const PlaygroundNodes: Array<Klass<LexicalNode>> = [
   TweetNode,
   YouTubeNode,
   FigmaNode,
+  GitHubCodeNode,
   MarkNode,
   CollapsibleContainerNode,
   CollapsibleContentNode,

@@ -72,6 +72,7 @@ import {EmojisExtension} from './plugins/EmojisExtension';
 import {EquationsExtension} from './plugins/EquationsExtension';
 import {ExcalidrawExtension} from './plugins/ExcalidrawExtension';
 import {FigmaExtension} from './plugins/FigmaExtension';
+import {GitHubCodeExtension} from './plugins/GitHubCodeExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
 import {LayoutExtension} from './plugins/LayoutExtension/LayoutExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
@@ -195,6 +196,7 @@ const PlaygroundRichTextExtension = defineExtension({
     TwitterExtension,
     YouTubeExtension,
     FigmaExtension,
+    GitHubCodeExtension,
     TabFocusExtension,
     CollapsibleExtension,
     CodeHighlightExtension,

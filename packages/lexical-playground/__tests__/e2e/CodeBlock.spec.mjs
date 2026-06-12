@@ -9,6 +9,7 @@
 import {
   moveLeft,
   moveToEditorBeginning,
+  moveToEditorEnd,
   moveToEnd,
   moveToStart,
   pressShiftEnter,
@@ -983,4 +984,116 @@ test.describe('CodeBlock', () => {
       );
     }
   });
+
+  for (const key of ['ArrowRight', 'ArrowDown']) {
+    test(`${key} key should exit from the code block inside the layout`, async ({
+      page,
+      isPlainText,
+      isCollab,
+      browser,
+    }) => {
+      test.skip(isPlainText || isCollab || browser === 'firefox');
+      await initialize({page});
+      await focusEditor(page);
+
+      await page.keyboard.type('/');
+      await click(page, '.typeahead-popover .icon.columns');
+      await click(page, '.Modal__modal .Modal__content .Button__root');
+
+      // remove empty paragraphs around the layout
+      await moveToEditorEnd(page);
+      await page.keyboard.press('Backspace');
+      await moveToEditorBeginning(page);
+      await page.keyboard.press('Backspace');
+
+      // Focus on first column
+      await click(
+        page,
+        '.PlaygroundEditorTheme__layoutContainer .PlaygroundEditorTheme__layoutItem:nth-child(1)',
+      );
+      await page.keyboard.type('```');
+      await page.keyboard.press('Enter');
+
+      // selection at the code
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0, 0, 0],
+        focusOffset: 0,
+        focusPath: [0, 0, 0],
+      });
+      await assertHTML(
+        page,
+        html`
+          <div
+            class="PlaygroundEditorTheme__layoutContainer"
+            dir="auto"
+            style="grid-template-columns: 1fr 1fr">
+            <div
+              class="PlaygroundEditorTheme__layoutItem"
+              dir="auto"
+              data-lexical-layout-item="true">
+              <code
+                class="PlaygroundEditorTheme__code"
+                dir="auto"
+                spellcheck="false"
+                data-gutter="1">
+                <br />
+              </code>
+            </div>
+            <div
+              class="PlaygroundEditorTheme__layoutItem"
+              dir="auto"
+              data-lexical-layout-item="true">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </div>
+          </div>
+        `,
+      );
+
+      await page.keyboard.press(key);
+
+      // selection at the new paragraph but inside the layout
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0, 0, 1],
+        focusOffset: 0,
+        focusPath: [0, 0, 1],
+      });
+      await assertHTML(
+        page,
+        html`
+          <div
+            class="PlaygroundEditorTheme__layoutContainer"
+            dir="auto"
+            style="grid-template-columns: 1fr 1fr">
+            <div
+              class="PlaygroundEditorTheme__layoutItem"
+              dir="auto"
+              data-lexical-layout-item="true">
+              <code
+                class="PlaygroundEditorTheme__code"
+                dir="auto"
+                spellcheck="false"
+                data-gutter="1">
+                <br />
+              </code>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </div>
+            <div
+              class="PlaygroundEditorTheme__layoutItem"
+              dir="auto"
+              data-lexical-layout-item="true">
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br />
+              </p>
+            </div>
+          </div>
+        `,
+      );
+    });
+  }
 });

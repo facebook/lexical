@@ -2526,8 +2526,8 @@ describe('named-slots: canonical slot order', () => {
     );
 
     const hostJSON = editor.getEditorState().toJSON().root.children[0];
-    expect(hostJSON.slots).toBeDefined();
-    expect(Object.keys(hostJSON.slots!)).toEqual(['title', 'body', 'alpha']);
+    expect(hostJSON.$slots).toBeDefined();
+    expect(Object.keys(hostJSON.$slots!)).toEqual(['title', 'body', 'alpha']);
   });
 
   test('a duplicate name in a declaration throws when the rank is first computed', () => {

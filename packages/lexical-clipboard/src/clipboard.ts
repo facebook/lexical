@@ -455,10 +455,10 @@ export interface BaseSerializedNode {
   children?: BaseSerializedNode[];
   /**
    * Named slot subtrees keyed by slot name; present on serialized hosts.
-   * Mirrors {@link SerializedLexicalNode.slots}.
+   * Mirrors {@link SerializedLexicalNode.$slots}.
    * @experimental named-slots
    */
-  slots?: Record<string, BaseSerializedNode>;
+  $slots?: Record<string, BaseSerializedNode>;
   type: string;
   version: number;
 }
@@ -586,9 +586,9 @@ function $appendNodesToJSON(
       }
       (
         serializedNode as BaseSerializedNode & {
-          slots?: Record<string, BaseSerializedNode>;
+          $slots?: Record<string, BaseSerializedNode>;
         }
-      ).slots = serializedSlots;
+      ).$slots = serializedSlots;
     }
   }
 

@@ -97,9 +97,12 @@ export type SerializedLexicalNode = {
   /**
    * Named slot subtrees keyed by slot name. Present on host nodes (an
    * ElementNode or DecoratorNode that registered slots via `$setSlot`).
+   * The `$` prefix keeps the framework-owned key out of the namespace a
+   * third-party subclass may already use for its own serialized `slots`
+   * property (mirroring the reserved NodeState `'$'` key).
    * @experimental named-slots
    */
-  slots?: Record<string, SerializedLexicalNode>;
+  $slots?: Record<string, SerializedLexicalNode>;
 };
 
 /**

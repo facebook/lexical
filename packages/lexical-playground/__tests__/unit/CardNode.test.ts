@@ -231,7 +231,7 @@ describe('CardNode named slots', () => {
     });
   });
 
-  // Pins the shallower serialized shape: `slots.title` IS the paragraph,
+  // Pins the shallower serialized shape: `$slots.title` IS the paragraph,
   // with its inline content directly under it — no intermediary container
   // level in the JSON.
   it('serializes the title slot as a bare paragraph (no container level)', () => {
@@ -247,7 +247,7 @@ describe('CardNode named slots', () => {
     const json = editor.getEditorState().toJSON();
     const cardJson = json.root.children[0];
     expect(cardJson.type).toBe('card');
-    const title = cardJson.slots?.title as SerializedElementNode | undefined;
+    const title = cardJson.$slots?.title as SerializedElementNode | undefined;
     assert(title !== undefined, 'Card JSON must carry the title slot');
     expect(title.type).toBe('paragraph');
     expect(title.children.map(child => child.type)).toEqual(['text']);

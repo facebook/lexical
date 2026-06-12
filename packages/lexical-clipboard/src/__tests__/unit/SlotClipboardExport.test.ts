@@ -190,10 +190,10 @@ describe('slot clipboard export', () => {
     });
     expect(serialized!.nodes).toHaveLength(1);
     const hostJson = serialized!.nodes[0] as SerializedElementNode & {
-      slots?: Record<string, SerializedElementNode>;
+      $slots?: Record<string, SerializedElementNode>;
     };
-    expect(hostJson.slots).toBeDefined();
-    expect(hostJson.slots!.media).toBeDefined();
+    expect(hostJson.$slots).toBeDefined();
+    expect(hostJson.$slots!.media).toBeDefined();
 
     // Paste into a fresh editor and verify the slot survived.
     const editor2 = createHeadlessEditor({

@@ -106,9 +106,9 @@ function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
     }
     (
       serializedNode as SerializedLexicalNode & {
-        slots?: Record<string, SerializedLexicalNode>;
+        $slots?: Record<string, SerializedLexicalNode>;
       }
-    ).slots = serializedSlots;
+    ).$slots = serializedSlots;
   }
 
   // @ts-expect-error

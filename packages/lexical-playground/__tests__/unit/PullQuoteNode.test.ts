@@ -107,8 +107,8 @@ describe('PullQuoteNode atomic decorator host', () => {
     });
   });
 
-  // Pins the shallower serialized shape: `slots.attribution` IS the
-  // paragraph (no intermediary container level), while `slots.quote` keeps
+  // Pins the shallower serialized shape: `$slots.attribution` IS the
+  // paragraph (no intermediary container level), while `$slots.quote` keeps
   // its multi-block container.
   it('serializes the attribution slot as a bare paragraph (no container level)', () => {
     using editor = buildEditorFromExtensions(PullQuoteTestExtension);
@@ -123,7 +123,7 @@ describe('PullQuoteNode atomic decorator host', () => {
     const json = editor.getEditorState().toJSON();
     const pullquoteJson = json.root.children[0];
     expect(pullquoteJson.type).toBe('pullquote');
-    const attribution = pullquoteJson.slots?.attribution as
+    const attribution = pullquoteJson.$slots?.attribution as
       | SerializedElementNode
       | undefined;
     assert(
@@ -132,7 +132,7 @@ describe('PullQuoteNode atomic decorator host', () => {
     );
     expect(attribution.type).toBe('paragraph');
     expect(attribution.children.map(child => child.type)).toEqual(['text']);
-    expect(pullquoteJson.slots?.quote.type).toBe('slot-container');
+    expect(pullquoteJson.$slots?.quote.type).toBe('slot-container');
   });
 
   it('canonicalizes slots set in reverse to the declared order', () => {

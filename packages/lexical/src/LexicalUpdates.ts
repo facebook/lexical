@@ -391,7 +391,7 @@ function $applyAllTransforms(
 
 type InternalSerializedNode = {
   children?: InternalSerializedNode[];
-  slots?: Record<string, InternalSerializedNode>;
+  $slots?: Record<string, InternalSerializedNode>;
   type: string;
   version: number;
 };
@@ -445,7 +445,7 @@ function $parseSerializedNodeImpl<
 
   // Slots live in a separate Map on every LexicalNode (an ElementNode or a
   // DecoratorNode host), so re-attach them outside the element branch.
-  const slots = serializedNode.slots;
+  const slots = serializedNode.$slots;
   if (slots) {
     invariant(
       $isSlotHost(node),

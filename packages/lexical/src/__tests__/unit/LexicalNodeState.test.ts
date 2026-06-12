@@ -90,7 +90,7 @@ type _TestStateNodeExportJSON = Expect<
             boolState?: boolean | undefined;
           })
         | undefined;
-      slots?: Record<string, SerializedLexicalNode>;
+      $slots?: Record<string, SerializedLexicalNode>;
       version: number;
       type: 'state';
       numberState?: number | undefined;
@@ -108,7 +108,7 @@ type _TestExtraStateNodeExportJSON = Expect<
             boolState?: boolean | undefined;
           })
         | undefined;
-      slots?: Record<string, SerializedLexicalNode>;
+      $slots?: Record<string, SerializedLexicalNode>;
       version: number;
       type: 'extra-state';
       numberState?: number | undefined;

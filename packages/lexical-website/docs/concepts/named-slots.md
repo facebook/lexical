@@ -52,7 +52,7 @@ DOM as a **hidden placeholder** (`display: none`), in a canonical order
 derived from the host class (see [slot order](#slot-order)). Nothing is
 visible until the host explicitly attaches the container somewhere (see
 [Rendering](#rendering)) — mirroring how
-[`getDOMSlot`](/docs/api/classes/lexical.ElementNode#getdomslot) gives an element
+[`getDOMSlot`](/docs/api/modules/lexical#getdomslot) gives an element
 control over where its linked-list children render.
 
 ## Hosts and Values
@@ -72,7 +72,7 @@ shape decides the editing model:
   an `<input>` sanitizes its value — line breaks stripped, block-only
   decorators dropped.
 - **A shadow-root container** (an ElementNode whose
-  [`isShadowRoot()`](/docs/api/classes/lexical.ElementNode#isshadowroot) returns
+  [`isShadowRoot()`](/docs/api/modules/lexical#isshadowroot) returns
   `true`) behaves as a multi-block region with normal block editing inside.
 
 ## Declaring and Setting Slots
@@ -155,8 +155,8 @@ The core API surface (all exported from `lexical`):
   is not inside any slot.
 - [`$isSlotHost(node)`](/docs/api/modules/lexical#isslothost) /
   [`$isSlotChild(node)`](/docs/api/modules/lexical#isslotchild) — type guards
-  for the [`SlotHostNode`](/docs/api/interfaces/lexical.SlotHostNode) /
-  [`SlotChildNode`](/docs/api/interfaces/lexical.SlotChildNode) interfaces.
+  for the [`SlotHostNode`](/docs/api/modules/lexical#slothostnode) /
+  [`SlotChildNode`](/docs/api/modules/lexical#slotchildnode) interfaces.
 
 ## Slot Order
 
@@ -177,7 +177,7 @@ There are three ways to attach a slot, all sharing the same contract
 there, and reveals it; the container renders as a normal block):
 
 1. **Synchronously in-lexical**: register a `$getSlotTargetElement`
-   [`DOMRenderMatch`](/docs/api/interfaces/lexical_html.DOMRenderMatch)
+   [`DOMRenderMatch`](/docs/api/modules/lexical_html#domrendermatch)
    override for the host's node class (a
    [DOM render override](../serialization/dom-render.md), not a node
    method — this is an advanced hook). The reconciler consults it whenever
@@ -215,9 +215,9 @@ there, and reveals it; the container renders as a normal block):
    and
    [`unmountSlotContainer(editor, nodeKey, container)`](/docs/api/modules/lexical#unmountslotcontainer)
    from `lexical` are the framework-independent primitives (e.g. from a
-   [mutation listener](/docs/api/classes/lexical.LexicalEditor#registermutationlistener)).
+   [mutation listener](/docs/api/modules/lexical#registermutationlistener)).
    They read through
-   [`editor.readPending`](/docs/api/classes/lexical.LexicalEditor#readpending),
+   [`editor.readPending`](/docs/api/modules/lexical#readpending),
    so calling them mid-update
    observes the pending state without forcing a flush:
 
@@ -250,7 +250,7 @@ there, and reveals it; the container renders as a normal block):
    target goes away while the host remains.
 
 3. **From React chrome**: the
-   [`useLexicalSlotRef`](/docs/api/modules/lexical_react_useLexicalSlotRef#uselexicalslot)
+   [`useLexicalSlotRef`](/docs/api/modules/lexical_react_useLexicalSlotRef#uselexicalslotref)
    hook from `@lexical/react/useLexicalSlotRef` wraps the imperative pair and returns a
    ref that mounts a slot's container into your component — the usual choice
    for a DecoratorNode host's `decorate()` chrome (whose containers are
@@ -315,13 +315,13 @@ DecoratorNode's DOM has.
 ### Traversal is intentionally asymmetric
 
 Content reads include slot subtrees, slots-first:
-[`getTextContent()`](/docs/api/classes/lexical.LexicalNode#gettextcontent),
-[`getAllTextNodes()`](/docs/api/classes/lexical.ElementNode#getalltextnodes),
+[`getTextContent()`](/docs/api/modules/lexical#gettextcontent),
+[`getAllTextNodes()`](/docs/api/modules/lexical#getalltextnodes),
 and the [`$dfsWithSlots`](/docs/api/modules/lexical_utils#dfswithslots)
 family in `@lexical/utils` count slot content for search, copy, and
 accessibility. Navigation excludes them:
-[`getChildren()`](/docs/api/classes/lexical.ElementNode#getchildren),
-[`getFirstDescendant()`](/docs/api/classes/lexical.ElementNode#getfirstdescendant)
+[`getChildren()`](/docs/api/modules/lexical#getchildren),
+[`getFirstDescendant()`](/docs/api/modules/lexical#getfirstdescendant)
 and friends stay linked-list-only, so caret movement never walks into a slot
 by accident. Choose [`$dfs`](/docs/api/modules/lexical_utils#dfs) or
 `$dfsWithSlots` depending on whether "this subtree" should mean the

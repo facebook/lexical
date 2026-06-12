@@ -38,7 +38,6 @@ import {
 } from 'lexical';
 import {beforeEach, describe, expect, test} from 'vitest';
 
-import {SerializedElementNode} from '../..';
 import {$internalCreateRangeSelection} from '../../LexicalSelection';
 import {
   $assertRangeSelection,
@@ -845,14 +844,8 @@ describe('LexicalSelection tests', () => {
 describe('Regression tests for #6701', () => {
   test('insertNodes fails an invariant when there is no Block ancestor', async () => {
     class InlineElementNode extends ElementNode {
-      static clone(prevNode: InlineElementNode): InlineElementNode {
-        return new InlineElementNode(prevNode.__key);
-      }
-      static getType() {
-        return 'inline-element-node';
-      }
-      static importJSON(serializedNode: SerializedElementNode) {
-        return new InlineElementNode().updateFromJSON(serializedNode);
+      $config() {
+        return this.config('inline-element-node', {extends: ElementNode});
       }
       isInline() {
         return true;

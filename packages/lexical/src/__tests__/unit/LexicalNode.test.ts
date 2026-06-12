@@ -29,8 +29,6 @@ import {
   NodeKey,
   ParagraphNode,
   RangeSelection,
-  SerializedLexicalNode,
-  SerializedTextNode,
   TabNode,
   TextNode,
 } from 'lexical';
@@ -57,34 +55,18 @@ import {
 } from '../utils';
 
 export class TestNode extends LexicalNode {
-  static getType(): string {
-    return 'test';
-  }
-
-  static clone(node: TestNode) {
-    return new TestNode(node.__key);
+  $config() {
+    return this.config('test', {extends: LexicalNode});
   }
 
   createDOM() {
     return document.createElement('div');
   }
-
-  static importJSON(serializedNode: SerializedLexicalNode) {
-    return new TestNode().updateFromJSON(serializedNode);
-  }
 }
 
 class InlineDecoratorNode extends DecoratorNode<string> {
-  static getType(): string {
-    return 'inline-decorator';
-  }
-
-  static clone(): InlineDecoratorNode {
-    return new InlineDecoratorNode();
-  }
-
-  static importJSON(serializedNode: SerializedLexicalNode) {
-    return new InlineDecoratorNode().updateFromJSON(serializedNode);
+  $config() {
+    return this.config('inline-decorator', {extends: DecoratorNode});
   }
 
   createDOM(): HTMLElement {
@@ -180,14 +162,8 @@ describe('LexicalNode tests', () => {
         class VersionedTextNode extends TextNode {
           // declare ['constructor']: KlassConstructor<typeof VersionedTextNode>;
           __version = 0;
-          static getType(): 'vtext' {
-            return 'vtext';
-          }
-          static clone(node: VersionedTextNode): VersionedTextNode {
-            return new VersionedTextNode(node.__text, node.__key);
-          }
-          static importJSON(node: SerializedTextNode): VersionedTextNode {
-            throw new Error('Not implemented');
+          $config() {
+            return this.config('vtext', {extends: TextNode});
           }
           afterCloneFrom(node: this): void {
             super.afterCloneFrom(node);

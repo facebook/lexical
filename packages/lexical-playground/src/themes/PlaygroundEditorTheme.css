@@ -858,7 +858,8 @@
 }
 /* Title slot — a header section with a small-caps label above the editable
    paragraph and a thin separator below. The title's editable paragraph
-   reads as a header content, not as a separately-bordered box. */
+   reads as a header content, not as a separately-bordered box. The
+   container renders hidden until CardExtension mounts it in place. */
 .lexical-card-node [data-lexical-slot='title'] {
   border-bottom: 1px solid #d1d5db;
   outline: none;

@@ -471,11 +471,16 @@ function $setElementDirection(dom: HTMLElement, node: ElementNode): void {
 // @experimental named-slots. Slots are a separate channel from the
 // linked-list children: each slot subtree renders into its own
 // non-keyed container, and its text is concatenated with no separator to
-// match `ElementNode.getTextContent`. For an element host the container is
-// nested in the host DOM ahead of the children (slots-first); for a
-// decorator host it stays detached for the lexical-react component to place
-// inside the React-rendered chrome. Only the wrapper is scaffolding; the
-// slot subtree inside carries its own NodeKey and reconciles normally.
+// match `ElementNode.getTextContent`. Containers are synchronous hidden
+// placeholders: they mount slots-first in the host DOM with
+// `display: 'none'` so every slot subtree is always rendered and part of
+// the document, but nothing is visible until the host explicitly attaches
+// the container somewhere with `mountSlotContainer` (directly or through
+// lexical-react's `useLexicalSlot`), which reveals it — mirroring how
+// `getDOMSlot` gives an element control over where its linked-list children
+// render. Only the wrapper is
+// scaffolding; the slot subtree inside carries its own NodeKey and
+// reconciles normally.
 // Leaves `subTreeTextContent` unchanged (restored on exit); the caller folds
 // the returned text in slots-first.
 function $mountSlotChildren(
@@ -491,18 +496,13 @@ function $mountSlotChildren(
   for (const [name, slotKey] of slots) {
     const container = document.createElement('div');
     container.setAttribute('data-lexical-slot', name);
+    container.style.display = 'none';
     if (decoratorHost) {
       // The decorator host DOM is contentEditable=false; opt each slot
       // container back in so its Lexical-managed content stays editable.
       container.contentEditable = 'true';
-      // Leave the container detached: a decorator host owns no inline DOM
-      // layout of its own (its chrome is React-rendered), so the lexical-react
-      // component places the container wherever it wants. The slot subtree
-      // still mounts into the container below regardless of attachment, and
-      // $slotContainerForKey resolves it by the slotted key.
-    } else {
-      hostDom.appendChild(container);
     }
+    hostDom.appendChild(container);
     subTreeTextContent = '';
     const saved = $beginCaptureGuard();
     $createNode(slotKey, $getDOMSlot(node, container, activeEditor));
@@ -571,26 +571,26 @@ function $reconcileSlotChildren(
     if (container === null) {
       container = document.createElement('div');
       container.setAttribute('data-lexical-slot', name);
+      container.style.display = 'none';
       if (decoratorHost) {
         // Match the mount path: a slot added to a decorator host after its
-        // initial render needs the container opted back into editing, and the
-        // container stays detached for the lexical-react component to place.
+        // initial render needs the container opted back into editing.
         container.contentEditable = 'true';
-      } else {
-        // Keep slots-first: a slot added after the host's initial render must
-        // land ahead of the linked-list children (and the terminating <br>),
-        // not appended after them. Insert before the first non-slot child;
-        // earlier slot containers are skipped, so several slots added in one
-        // update preserve their Map order at the front.
-        let firstNonSlot: Element | null = null;
-        for (const child of hostDom.children) {
-          if (!child.hasAttribute('data-lexical-slot')) {
-            firstNonSlot = child;
-            break;
-          }
-        }
-        hostDom.insertBefore(container, firstNonSlot);
       }
+      // Keep the hidden placeholder slots-first: it must land ahead of the
+      // linked-list children (and the terminating <br>) so the leading
+      // DOMSlot boundary can skip it; it must not be appended after them.
+      // Insert before the first non-slot child; earlier slot containers are
+      // skipped, so several slots added in one update preserve their Map
+      // order at the front.
+      let firstNonSlot: Element | null = null;
+      for (const child of hostDom.children) {
+        if (!child.hasAttribute('data-lexical-slot')) {
+          firstNonSlot = child;
+          break;
+        }
+      }
+      hostDom.insertBefore(container, firstNonSlot);
       $createNode(nextSlotKey, $getDOMSlot(nextNode, container, activeEditor));
     } else if (prevSlotKey === nextSlotKey) {
       $reconcileNode(nextSlotKey, container);
@@ -605,16 +605,17 @@ function $reconcileSlotChildren(
     }
     $endCaptureGuard(saved);
     totalText += subTreeTextContent;
-    // Keep DOM container order in sync with the slot Map order. A reused
+    // Keep placeholder DOM order in sync with the slot Map order. A reused
     // container stays where it was first mounted, so a remove + re-add of an
     // existing name (which moves it to the Map's tail) would otherwise leave
     // its container stranded at its old DOM position, diverging from the model
     // order that getSlotNames / the text fold / the exporters all read. Anchor
     // each container right after the previous slot's (the first at the very
-    // front), staying slots-first ahead of the linked-list children. Skipped
-    // for decorator hosts: their containers are detached and positioned by the
-    // lexical-react component, so re-parenting them here would yank them back.
-    if (!decoratorHost) {
+    // front), staying slots-first ahead of the linked-list children. Only
+    // placeholders still parked in the host DOM are anchored: a container the
+    // host explicitly attached elsewhere (mountSlotContainer / useLexicalSlot)
+    // is owned by that mount and re-parenting it here would yank it back.
+    if (container.parentElement === hostDom) {
       const anchor: ChildNode | null =
         prevContainer === null ? hostDom.firstChild : prevContainer.nextSibling;
       if (anchor !== container) {

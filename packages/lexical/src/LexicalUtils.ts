@@ -2191,15 +2191,14 @@ export function $getDOMSlot<N extends LexicalNode>(
  * @experimental
  *
  * Returns the scaffolding container element that `host`'s named slot renders
- * into, or null if the slot is empty or not yet mounted. The container is the
+ * into, or null if the slot is empty or not yet rendered. The container is the
  * parent of the slotted node's DOM, resolved by key so it is found wherever it
- * sits: a decorator host leaves its slot container detached for the framework
- * binding to place inside the `decorate()` chrome, and this lookup still
- * resolves it after that relocation. Use it to mount a decorator host's
- * editable slot region into its rendered chrome (see lexical-react's
- * `useLexicalSlot`). Editor-time analog of the reconciler's internal
- * `$slotContainerForKey`, which resolves the same container from the
- * reconcile-time DOM map instead of `editor.getElementByKey`.
+ * sits — the reconciler parks it as a hidden placeholder in the host DOM, and
+ * an explicit mount ({@link mountSlotContainer}) may relocate it; this lookup
+ * still resolves it after that relocation. Editor-time analog of the
+ * reconciler's internal `$slotContainerForKey`, which resolves the same
+ * container from the reconcile-time DOM map instead of
+ * `editor.getElementByKey`.
  */
 export function $getSlotContainer(
   host: LexicalNode,
@@ -2212,6 +2211,71 @@ export function $getSlotContainer(
   }
   const slotDom = editor.getElementByKey(slot.getKey());
   return slotDom !== null ? slotDom.parentElement : null;
+}
+
+/**
+ * @experimental
+ *
+ * Attach a host's named-slot container to `target` and make it visible.
+ * The reconciler renders every slot subtree synchronously into a hidden
+ * (`display: 'none'`) placeholder container parked slots-first in the host
+ * DOM; nothing is visible until the host explicitly attaches the container
+ * somewhere — mirroring how `getDOMSlot` gives an element control over where
+ * its linked-list children render. This helper moves the container into
+ * `target` (a no-op when it is already there, so mounting in place just
+ * reveals it) and clears the inline `display` so the container renders as a
+ * normal block that stylesheets may restyle. It deliberately does NOT use
+ * `display: 'contents'`: Chromium cannot reliably edit inside a boxless
+ * contenteditable subtree (caret hit-testing resolves clicks to a
+ * neighboring box and native text insertion is dropped).
+ *
+ * Idempotent and framework-independent: lexical-react's `useLexicalSlot`
+ * wraps it, and a node class or extension can call it directly (e.g. from a
+ * mutation listener) to control slot placement without React. Reads through
+ * {@link LexicalEditor.readPending} so calling it mid-update observes the
+ * pending state without forcing a flush.
+ *
+ * @returns the container, or null when the slot (or its DOM) does not exist
+ * yet — e.g. before the host's first reconciliation.
+ */
+export function mountSlotContainer(
+  editor: LexicalEditor,
+  nodeKey: NodeKey,
+  slotName: string,
+  target: HTMLElement,
+): HTMLElement | null {
+  const container = editor.readPending(() => {
+    const host = $getNodeByKey(nodeKey);
+    return host !== null ? $getSlotContainer(host, slotName, editor) : null;
+  });
+  if (container !== null) {
+    if (container.parentElement !== target) {
+      target.appendChild(container);
+    }
+    container.style.display = '';
+  }
+  return container;
+}
+
+/**
+ * @experimental
+ *
+ * Reverse of {@link mountSlotContainer}: hide `container` again and park it
+ * back in the host's DOM as the leading hidden placeholder, where the
+ * reconciler manages it. Call when the mount target goes away while the host
+ * remains (e.g. chrome unmount) so the slot subtree stays in the document
+ * instead of leaving with the detached target.
+ */
+export function unmountSlotContainer(
+  editor: LexicalEditor,
+  nodeKey: NodeKey,
+  container: HTMLElement,
+): void {
+  container.style.display = 'none';
+  const hostDom = editor.getElementByKey(nodeKey);
+  if (hostDom !== null && container.parentElement !== hostDom) {
+    hostDom.insertBefore(container, hostDom.firstChild);
+  }
 }
 
 /**

@@ -1177,6 +1177,17 @@ declare export function $getSlotContainer(
   name: string,
   editor?: LexicalEditor,
 ): HTMLElement | null;
+declare export function mountSlotContainer(
+  editor: LexicalEditor,
+  nodeKey: NodeKey,
+  slotName: string,
+  target: HTMLElement,
+): HTMLElement | null;
+declare export function unmountSlotContainer(
+  editor: LexicalEditor,
+  nodeKey: NodeKey,
+  container: HTMLElement,
+): void;
 export interface SlotHostNode {
   __slots: null | Map<string, NodeKey>;
 }

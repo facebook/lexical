@@ -9,21 +9,31 @@
 import type {LexicalEditor, NodeKey} from 'lexical';
 import type {RefObject} from 'react';
 
-import {$getNodeByKey, $getSlotContainer} from 'lexical';
+import {mountSlotContainer, unmountSlotContainer} from 'lexical';
 import {useRef} from 'react';
 
 import useLayoutEffect from './shared/useLayoutEffect';
 
+interface MountedSlot {
+  container: HTMLElement;
+  editor: LexicalEditor;
+  nodeKey: NodeKey;
+}
+
 /**
  * @experimental
  *
- * Mounts a decorator host's named slot into the host's React-rendered chrome.
- * A decorator host leaves its slot container detached during reconciliation
- * (it owns no inline DOM layout of its own), so attach the returned ref to the
- * element where the slot should live and this hook moves the container there
- * after each render, before paint. It re-runs every render and is idempotent,
- * so a slot added after the host's first render — or a container recreated by a
- * remove/re-add — is picked up without extra wiring.
+ * Mounts a host's named slot into the host's React-rendered chrome. The
+ * reconciler renders every slot subtree synchronously into a hidden
+ * placeholder container; attach the returned ref to the element where the
+ * slot should live and this hook moves the container there after each
+ * render, before paint, revealing it. It re-runs
+ * every render and is idempotent (a React wrapper over the
+ * framework-independent {@link mountSlotContainer}), so a slot added after
+ * the host's first render — or a container recreated by a remove/re-add —
+ * is picked up without extra wiring. On unmount (or a nodeKey/slotName
+ * change) the previous container is parked back in its host DOM as a hidden
+ * placeholder via {@link unmountSlotContainer}.
  */
 export function useLexicalSlot<T extends HTMLElement = HTMLElement>(
   editor: LexicalEditor,
@@ -31,31 +41,42 @@ export function useLexicalSlot<T extends HTMLElement = HTMLElement>(
   slotName: string,
 ): RefObject<T | null> {
   const targetRef = useRef<T | null>(null);
-  const appendedContainerRef = useRef<HTMLElement | null>(null);
+  const mountedRef = useRef<MountedSlot | null>(null);
   useLayoutEffect(() => {
     const target = targetRef.current;
     if (target === null) {
       return;
     }
-    const container = editor.read(() => {
-      const host = $getNodeByKey(nodeKey);
-      return host !== null ? $getSlotContainer(host, slotName) : null;
-    });
-    // A nodeKey/slotName change resolves a different container; detach the
-    // one this hook appended previously (when it is still ours) so the stale
-    // slot DOM doesn't linger in the chrome next to the new one.
-    const previous = appendedContainerRef.current;
-    if (
-      previous !== null &&
-      previous !== container &&
-      previous.parentElement === target
-    ) {
-      target.removeChild(previous);
+    const container = mountSlotContainer(editor, nodeKey, slotName, target);
+    // A nodeKey/slotName change resolves a different container; park the one
+    // this hook mounted previously back in its host so the stale slot DOM
+    // doesn't linger in the chrome next to the new one.
+    const previous = mountedRef.current;
+    if (previous !== null && previous.container !== container) {
+      unmountSlotContainer(
+        previous.editor,
+        previous.nodeKey,
+        previous.container,
+      );
     }
-    if (container !== null && container.parentElement !== target) {
-      target.appendChild(container);
-    }
-    appendedContainerRef.current = container;
+    mountedRef.current =
+      container === null ? null : {container, editor, nodeKey};
   });
+  // Final unmount: park the mounted container back in its host DOM (hidden)
+  // so the slot subtree doesn't leave the document with the chrome. Reads the
+  // ref so it sees the latest mount even though the deps are empty.
+  useLayoutEffect(() => {
+    return () => {
+      const mounted = mountedRef.current;
+      if (mounted !== null) {
+        unmountSlotContainer(
+          mounted.editor,
+          mounted.nodeKey,
+          mounted.container,
+        );
+        mountedRef.current = null;
+      }
+    };
+  }, []);
   return targetRef;
 }

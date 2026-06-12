@@ -27,6 +27,7 @@ import {
   $getSlotHost,
   $getSlotNames,
   $getSlotNameWithinHost,
+  $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
   $isSlotHost,
@@ -38,8 +39,10 @@ import {
   defineExtension,
   ElementNode,
   getDOMSelection,
+  mountSlotContainer,
   type ParagraphNode,
   TextNode,
+  unmountSlotContainer,
 } from 'lexical';
 import {afterEach, assert, describe, expect, test} from 'vitest';
 
@@ -788,7 +791,7 @@ describe('named-slots: core foundation', () => {
     expect(editor.getElementByKey(titleTextKey)).not.toBe(null);
   });
 
-  test('a decorator host renders its slot into an editable detached keyed container', () => {
+  test('a decorator host renders its slot into an editable hidden placeholder', () => {
     using editor = createSlotEditor();
     let hostKey = '';
     let slotKey = '';
@@ -814,13 +817,13 @@ describe('named-slots: core foundation', () => {
     const hostDom = editor.getElementByKey(hostKey)!;
     // the decorator dom itself stays non-editable
     expect(hostDom.contentEditable).toBe('false');
-    // a decorator host leaves its slot container detached for the
-    // lexical-react component to place; it never lands in the host DOM
-    expect(hostDom.querySelector('[data-lexical-slot="title"]')).toBe(null);
-    // the container is discoverable by the slotted key (its DOM's parent)
+    // the slot renders synchronously into a hidden placeholder parked in the
+    // host DOM; it becomes visible only when explicitly attached somewhere
+    // (mountSlotContainer / useLexicalSlot)
     const slotContainer = editor.getElementByKey(slotKey)!.parentElement!;
     expect(slotContainer.getAttribute('data-lexical-slot')).toBe('title');
-    expect(hostDom.contains(slotContainer)).toBe(false);
+    expect(hostDom.contains(slotContainer)).toBe(true);
+    expect(slotContainer.style.display).toBe('none');
     // a decorator-host slot opts its container into editing so the otherwise
     // non-editable decorator chrome still hosts an editable region
     expect(slotContainer.contentEditable).toBe('true');
@@ -895,15 +898,136 @@ describe('named-slots: core foundation', () => {
       expect(elementContainer.getAttribute('data-lexical-slot')).toBe('title');
       expect(decoratorContainer.textContent).toBe('Deco');
       expect(elementContainer.textContent).toBe('Elem');
-      // a decorator host's container is detached; an element host's sits inside
-      // the host DOM
+      // both host kinds park their containers in the host DOM as hidden
+      // placeholders until something mounts them
       const decoratorDom = editor.getElementByKey(decoratorKey)!;
       const elementDom = editor.getElementByKey(elementKey)!;
-      expect(decoratorDom.contains(decoratorContainer)).toBe(false);
+      expect(decoratorDom.contains(decoratorContainer)).toBe(true);
       expect(elementDom.contains(elementContainer)).toBe(true);
+      expect(decoratorContainer.style.display).toBe('none');
+      expect(elementContainer.style.display).toBe('none');
       // an empty slot name resolves to null
       expect($getSlotContainer(decorator, 'missing')).toBe(null);
     });
+  });
+
+  // The reconciler renders slot subtrees synchronously into hidden
+  // placeholder containers; visibility is the host's explicit decision via
+  // mountSlotContainer (the named-slot analog of getDOMSlot's control over
+  // where children render).
+  test('an element host renders its slot as a hidden slots-first placeholder', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        host.append($createParagraphNode().append($createTextNode('Body')));
+        $getRoot().append(host);
+        $setSlot(host, 'title', $slotContainer('Title'));
+        hostKey = host.getKey();
+      },
+      {discrete: true},
+    );
+    const hostDom = editor.getElementByKey(hostKey)!;
+    const container = hostDom.querySelector<HTMLElement>(
+      '[data-lexical-slot="title"]',
+    )!;
+    expect(container).not.toBe(null);
+    expect(container.style.display).toBe('none');
+    // parked ahead of the linked-list children so the leading DOMSlot
+    // boundary can skip it
+    expect(hostDom.firstElementChild).toBe(container);
+  });
+
+  test('mountSlotContainer reveals and re-parents; unmount parks it back hidden', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        $getRoot().append(host);
+        $setSlot(host, 'title', $slotContainer('Title'));
+        hostKey = host.getKey();
+      },
+      {discrete: true},
+    );
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    try {
+      // missing slot name -> null, no throw
+      expect(mountSlotContainer(editor, hostKey, 'missing', target)).toBe(null);
+      const container = mountSlotContainer(editor, hostKey, 'title', target)!;
+      expect(container.parentElement).toBe(target);
+      expect(container.style.display).toBe('');
+      // idempotent: same container, no move
+      expect(mountSlotContainer(editor, hostKey, 'title', target)).toBe(
+        container,
+      );
+      expect(container.parentElement).toBe(target);
+      unmountSlotContainer(editor, hostKey, container);
+      expect(container.style.display).toBe('none');
+      expect(container.parentElement).toBe(editor.getElementByKey(hostKey));
+    } finally {
+      target.remove();
+    }
+  });
+
+  test('mounting in place (target is the host DOM) only reveals the placeholder', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        host.append($createParagraphNode().append($createTextNode('Body')));
+        $getRoot().append(host);
+        $setSlot(host, 'title', $slotContainer('Title'));
+        hostKey = host.getKey();
+      },
+      {discrete: true},
+    );
+    const hostDom = editor.getElementByKey(hostKey)!;
+    const container = mountSlotContainer(editor, hostKey, 'title', hostDom)!;
+    expect(container.parentElement).toBe(hostDom);
+    expect(container.style.display).toBe('');
+    // still slots-first ahead of the body child
+    expect(hostDom.firstElementChild).toBe(container);
+  });
+
+  test('a slot reconcile does not yank a mounted container back into the host', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        $getRoot().append(host);
+        $setSlot(host, 'title', $slotContainer('Title'));
+        hostKey = host.getKey();
+      },
+      {discrete: true},
+    );
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    try {
+      const container = mountSlotContainer(editor, hostKey, 'title', target)!;
+      // adding a second slot runs $reconcileSlotChildren's ordering pass; the
+      // mounted container is owned by the mount and must stay in the target
+      editor.update(
+        () => {
+          const host = $assertNodeType($getNodeByKey(hostKey), $isElementNode);
+          $setSlot(host, 'caption', $slotContainer('Caption'));
+        },
+        {discrete: true},
+      );
+      expect(container.parentElement).toBe(target);
+      expect(container.style.display).toBe('');
+      const hostDom = editor.getElementByKey(hostKey)!;
+      const captionContainer = hostDom.querySelector<HTMLElement>(
+        '[data-lexical-slot="caption"]',
+      )!;
+      expect(captionContainer.style.display).toBe('none');
+    } finally {
+      target.remove();
+    }
   });
 
   test('reconciler text cache folds slot text in slots-first (RootNode.__cachedText)', () => {

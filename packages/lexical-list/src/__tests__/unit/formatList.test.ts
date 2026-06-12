@@ -21,9 +21,9 @@ import {
   $createTableCellNode,
   $createTableNode,
   $createTableRowNode,
-  TableCellNode,
-  TableNode,
-  TableRowNode,
+  $isTableCellNode,
+  $isTableNode,
+  $isTableRowNode,
 } from '@lexical/table';
 import {
   $createLineBreakNode,
@@ -40,6 +40,7 @@ import {
   LexicalNode,
 } from 'lexical';
 import {
+  $assertNodeType,
   $createTestDecoratorNode,
   initializeUnitTest,
 } from 'lexical/src/__tests__/utils';
@@ -144,10 +145,9 @@ describe('insertList', () => {
       });
 
       editor.read(() => {
-        const cell = $getRoot()
-          .getFirstChildOrThrow<TableNode>()
-          .getFirstChildOrThrow<TableRowNode>()
-          .getFirstChildOrThrow<TableCellNode>();
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        const row = $assertNodeType(table.getFirstChild(), $isTableRowNode);
+        const cell = $assertNodeType(row.getFirstChild(), $isTableCellNode);
 
         expect(cell.getChildrenSize()).toBe(1);
 

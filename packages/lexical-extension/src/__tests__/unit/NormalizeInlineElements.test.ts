@@ -6,7 +6,10 @@
  *
  */
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  buildEditorFromExtensions,
+  NormalizeInlineElementsExtension,
+} from '@lexical/extension';
 import {
   $create,
   $createParagraphNode,
@@ -17,8 +20,6 @@ import {
 } from 'lexical';
 import {TestInlineElementNode} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, test} from 'vitest';
-
-import {NormalizeInlineElementsExtension} from '../../NormalizeInlineElementsExtension';
 
 describe('NormalizeInlineElements', () => {
   test('should remove empty inline elements by default', async () => {

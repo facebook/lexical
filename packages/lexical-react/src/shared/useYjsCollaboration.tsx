@@ -73,7 +73,7 @@ const COLLAB_UNDO_MANAGER = Symbol.for('@lexical/yjs/UndoManager');
 type OnYjsTreeChanges = (
   // The below `any` type is taken directly from the vendor types for YJS.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  events: Array<YEvent<any>>,
+  events: YEvent<any>[],
   transaction: Transaction,
 ) => void;
 

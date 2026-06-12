@@ -18,18 +18,18 @@ import type {
 import {ElementNode, LexicalNode} from 'lexical';
 
 export type SerializedMarkNode = SerializedElementNode & {
-  ids: Array<string>,
+  ids: string[],
 };
 
 declare export class MarkNode extends ElementNode {
-  __ids: Array<string>;
+  __ids: string[];
 
   // $FlowFixMe[incompatible-variance]
   static clone(node: this): MarkNode;
-  constructor(ids: Array<string>, key?: NodeKey): void;
+  constructor(ids: string[], key?: NodeKey): void;
 
   hasID(id: string): boolean;
-  getIDs(): Array<string>;
+  getIDs(): string[];
   addID(id: string): void;
   deleteID(id: string): void;
   canInsertTextBefore(): false;
@@ -41,18 +41,18 @@ declare export function $isMarkNode(
   node: ?LexicalNode,
 ): node is MarkNode;
 
-declare export function $createMarkNode(ids: Array<string>): MarkNode;
+declare export function $createMarkNode(ids: string[]): MarkNode;
 
 declare export function $getMarkIDs(
   node: TextNode,
   offset: number,
-): null | Array<string>;
+): null | string[];
 
 declare export function $wrapSelectionInMarkNode(
   selection: RangeSelection,
   isBackward: boolean,
   id: string,
-  createNode?: (ids: Array<string>) => MarkNode,
+  createNode?: (ids: string[]) => MarkNode,
 ): void;
 
 declare export function $unwrapMarkNode(node: MarkNode): void;

@@ -524,7 +524,7 @@ const dummyMentionsData = [
 ];
 
 const dummyLookupService = {
-  search(string: string, callback: (results: Array<string>) => void): void {
+  search(string: string, callback: (results: string[]) => void): void {
     setTimeout(() => {
       const results = dummyMentionsData.filter(mention =>
         mention.toLowerCase().includes(string.toLowerCase()),
@@ -535,7 +535,7 @@ const dummyLookupService = {
 };
 
 function useMentionLookupService(mentionString: string | null) {
-  const [results, setResults] = useState<Array<string>>([]);
+  const [results, setResults] = useState<string[]>([]);
 
   useEffect(() => {
     const cachedResults = mentionsCache.get(mentionString);

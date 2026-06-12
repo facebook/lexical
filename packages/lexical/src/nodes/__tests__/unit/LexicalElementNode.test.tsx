@@ -34,6 +34,7 @@ import {
 } from 'vitest';
 
 import {
+  $assertNodeType,
   $createTestElementNode,
   createTestEditor,
 } from '../../../__tests__/utils';
@@ -198,7 +199,10 @@ describe('LexicalElementNode tests', () => {
 
     test('some children', async () => {
       await update(() => {
-        const children = $getRoot().getFirstChild<ElementNode>()!.getChildren();
+        const children = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        ).getChildren();
         expect(children).toHaveLength(3);
       });
     });
@@ -207,9 +211,10 @@ describe('LexicalElementNode tests', () => {
   describe('getAllTextNodes()', () => {
     test('basic', async () => {
       await update(() => {
-        const textNodes = $getRoot()
-          .getFirstChild<ElementNode>()!
-          .getAllTextNodes();
+        const textNodes = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        ).getAllTextNodes();
         expect(textNodes).toHaveLength(3);
       });
     });
@@ -249,8 +254,7 @@ describe('LexicalElementNode tests', () => {
     test('basic', async () => {
       await update(() => {
         expect(
-          $getRoot()
-            .getFirstChild<ElementNode>()!
+          $assertNodeType($getRoot().getFirstChild(), $isElementNode)
             .getFirstChild()!
             .getTextContent(),
         ).toBe('Foo');
@@ -269,8 +273,7 @@ describe('LexicalElementNode tests', () => {
     test('basic', async () => {
       await update(() => {
         expect(
-          $getRoot()
-            .getFirstChild<ElementNode>()!
+          $assertNodeType($getRoot().getFirstChild(), $isElementNode)
             .getLastChild()!
             .getTextContent(),
         ).toBe('Baz');
@@ -360,13 +363,13 @@ describe('LexicalElementNode tests', () => {
       });
     });
 
-    const BASE_INSERTIONS: Array<{
+    const BASE_INSERTIONS: {
       deleteCount: number;
       deleteOnly: boolean | null | undefined;
       expectedText: string;
       name: string;
       start: number;
-    }> = [
+    }[] = [
       // Do nothing
       {
         deleteCount: 0,
@@ -475,7 +478,7 @@ describe('LexicalElementNode tests', () => {
 
     let nodes: Record<string, LexicalNode> = {};
 
-    const NESTED_ELEMENTS_TESTS: Array<{
+    const NESTED_ELEMENTS_TESTS: {
       deleteCount: number;
       deleteOnly?: boolean;
       expectedSelection: () => {
@@ -493,7 +496,7 @@ describe('LexicalElementNode tests', () => {
       expectedText: string;
       name: string;
       start: number;
-    }> = [
+    }[] = [
       {
         deleteCount: 0,
         deleteOnly: true,
@@ -695,7 +698,10 @@ describe('LexicalElementNode tests', () => {
 
       await update(() => {
         block.splice(1, 0, [
-          $getRoot().getLastChild<ElementNode>()!.getChildAtIndex(1)!,
+          $assertNodeType(
+            $getRoot().getLastChild(),
+            $isElementNode,
+          ).getChildAtIndex(1)!,
         ]);
       });
 

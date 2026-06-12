@@ -43,7 +43,7 @@ export type TextFormatTransformersIndex = Readonly<{
  * Renders markdown from a string. The selection is moved to the start after the operation.
  */
 export function createMarkdownImport(
-  transformers: Array<Transformer>,
+  transformers: Transformer[],
   shouldPreserveNewLines = false,
 ): (markdownString: string, node?: ElementNode) => void {
   const byType = transformersByType(transformers);
@@ -118,9 +118,9 @@ export function createMarkdownImport(
  * @returns first element of the returned tuple is a boolean indicating if a multiline element was imported. The second element is the index of the last line that was processed.
  */
 function $importMultiline(
-  lines: Array<string>,
+  lines: string[],
   startLineIndex: number,
-  multilineElementTransformers: Array<MultilineElementTransformer>,
+  multilineElementTransformers: MultilineElementTransformer[],
   rootNode: ElementNode,
 ): [boolean, number] {
   for (const transformer of multilineElementTransformers) {
@@ -232,9 +232,9 @@ function $importMultiline(
 function $importBlocks(
   lineText: string,
   rootNode: ElementNode,
-  elementTransformers: Array<ElementTransformer>,
+  elementTransformers: ElementTransformer[],
   textFormatTransformersIndex: TextFormatTransformersIndex,
-  textMatchTransformers: Array<TextMatchTransformer>,
+  textMatchTransformers: TextMatchTransformer[],
   shouldPreserveNewLines: boolean,
 ) {
   const textNode = $createTextNode(lineText);
@@ -315,7 +315,7 @@ function $normalizeMarkdownTextNode(textNode: TextNode): void {
 }
 
 function createTextFormatTransformersIndex(
-  textTransformers: Array<TextFormatTransformer>,
+  textTransformers: TextFormatTransformer[],
 ): TextFormatTransformersIndex {
   const transformersByTag: Record<string, TextFormatTransformer> = {};
   const fullMatchRegExpByTag: Record<string, RegExp> = {};

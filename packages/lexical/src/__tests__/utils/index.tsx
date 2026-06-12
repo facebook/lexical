@@ -486,7 +486,7 @@ export function createTestEditor(
     editorState?: EditorState;
     theme?: EditorThemeClasses;
     parentEditor?: LexicalEditor;
-    nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
+    nodes?: readonly (Klass<LexicalNode> | LexicalNodeReplacement)[];
     onError?: (error: Error) => void;
     onWarn?: (error: Error) => void;
     disableEvents?: boolean;
@@ -522,6 +522,23 @@ export function $assertRangeSelection(selection: unknown): RangeSelection {
     throw new Error(`Expected RangeSelection, got ${selection}`);
   }
   return selection;
+}
+
+/**
+ * Assert that a node matches the given type guard, returning it narrowed to
+ * the guard's type. Useful for safely narrowing the result of traversal
+ * methods such as getFirstChild() or getChildAtIndex() without an unchecked
+ * type cast.
+ */
+export function $assertNodeType<T extends LexicalNode>(
+  node: LexicalNode | null | undefined,
+  guard: (value: LexicalNode | null) => value is T,
+): T {
+  const resolved = node ?? null;
+  if (!guard(resolved)) {
+    throw new Error(`Expected node to match type guard, got ${node}`);
+  }
+  return resolved;
 }
 
 export function invariant(cond?: boolean, message?: string): asserts cond {

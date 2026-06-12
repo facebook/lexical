@@ -19,7 +19,7 @@ import styles from './styles.module.css';
 import {TagList} from './tagList';
 import {useFilteredExamples} from './utils';
 
-function CardList({cards}: {cards: Array<Example>}) {
+function CardList({cards}: {cards: Example[]}) {
   return (
     <div className="container">
       <ul className={clsx('clean-list', styles.cardList)}>

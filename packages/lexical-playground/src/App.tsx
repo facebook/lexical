@@ -14,6 +14,7 @@ import {
   ClickAfterLastBlockExtension,
   DecoratorTextExtension,
   HorizontalRuleExtension,
+  SelectBlockExtension,
   SelectionAlwaysOnDisplayExtension,
   WatchEditableExtension,
 } from '@lexical/extension';
@@ -234,6 +235,9 @@ const AppExtension = /* @__PURE__ */ defineExtension({
     PlaygroundAutoLinkExtension,
     ClickableLinkExtension,
     SelectionAlwaysOnDisplayExtension,
+    /* @__PURE__ */ configExtension(SelectBlockExtension, {
+      cascadeSelection: true,
+    }),
     TerseExportExtension,
     /* @__PURE__ */ configExtension(ClickAfterLastBlockExtension, {
       $shouldInsertAfter: node =>

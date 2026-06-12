@@ -31,7 +31,7 @@ export function createCommand<T>(type?: string): LexicalCommand<T> {
 export const SELECTION_CHANGE_COMMAND: LexicalCommand<void> =
   /* @__PURE__ */ createCommand('SELECTION_CHANGE_COMMAND');
 export const SELECTION_INSERT_CLIPBOARD_NODES_COMMAND: LexicalCommand<{
-  nodes: Array<LexicalNode>;
+  nodes: LexicalNode[];
   selection: BaseSelection;
 }> = /* @__PURE__ */ createCommand('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND');
 export const CLICK_COMMAND: LexicalCommand<MouseEvent> =

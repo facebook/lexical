@@ -141,7 +141,7 @@ function $getNearestManagedNodePairFromDOMNode(
 
 function flushMutations(
   editor: LexicalEditor,
-  mutations: Array<MutationRecord>,
+  mutations: MutationRecord[],
   observer: MutationObserver,
 ): void {
   isProcessingMutations = true;
@@ -316,7 +316,7 @@ export function flushRootMutations(editor: LexicalEditor): void {
 export function initMutationObserver(editor: LexicalEditor): void {
   initTextEntryListener(editor);
   editor._observer = new MutationObserver(
-    (mutations: Array<MutationRecord>, observer: MutationObserver) => {
+    (mutations: MutationRecord[], observer: MutationObserver) => {
       flushMutations(editor, mutations, observer);
     },
   );

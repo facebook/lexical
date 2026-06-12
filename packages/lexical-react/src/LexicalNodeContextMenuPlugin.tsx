@@ -145,8 +145,8 @@ const NodeContextMenuPlugin = forwardRef<
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const listItemsRef = useRef<Array<HTMLButtonElement | null>>([]);
-  const listContentRef = useRef<Array<string | null>>([]);
+  const listItemsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  const listContentRef = useRef<(string | null)[]>([]);
 
   const {refs, floatingStyles, context} = useFloating({
     middleware: [

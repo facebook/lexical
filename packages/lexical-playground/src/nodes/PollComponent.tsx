@@ -94,8 +94,7 @@ function PollOptionComponent({
           onChange={e => {
             const target = e.target;
             const value = target.value;
-            const selectionStart = target.selectionStart;
-            const selectionEnd = target.selectionEnd;
+            const {selectionStart, selectionEnd} = target;
             withPollNode(
               node => {
                 node.setOptionText(option, value);

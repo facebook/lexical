@@ -82,6 +82,7 @@ export function wrapTableHtml(
 export async function initialize({
   page,
   isCollab,
+  selectBlock,
   isAutocomplete,
   isCharLimit,
   isCharLimitUtf8,
@@ -133,6 +134,7 @@ export async function initialize({
     !!shouldAllowHighlightingWithBrackets;
 
   appSettings.selectionAlwaysOnDisplay = !!selectionAlwaysOnDisplay;
+  appSettings.selectBlock = !!selectBlock;
 
   appSettings.isShadowDOM = !!isShadowDOM;
 

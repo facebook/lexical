@@ -57,7 +57,7 @@ import {
  */
 function $convertFromMarkdownString(
   markdown: string,
-  transformers: Array<Transformer> = TRANSFORMERS,
+  transformers: Transformer[] = TRANSFORMERS,
   node?: ElementNode,
   shouldPreserveNewLines = false,
   shouldMergeAdjacentLines = false,
@@ -76,7 +76,7 @@ function $convertFromMarkdownString(
  * Renders string from markdown. The selection is moved to the start after the operation.
  */
 function $convertToMarkdownString(
-  transformers: Array<Transformer> = TRANSFORMERS,
+  transformers: Transformer[] = TRANSFORMERS,
   node?: ElementNode,
   shouldPreserveNewLines: boolean = false,
 ): string {

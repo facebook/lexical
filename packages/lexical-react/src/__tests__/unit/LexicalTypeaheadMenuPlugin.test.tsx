@@ -136,7 +136,7 @@ function TypeaheadPluginWithoutMenuRenderFn({
 
 function createApp(
   plugin: React.ReactNode,
-  nodes: Array<typeof ParagraphNode> = [],
+  nodes: (typeof ParagraphNode)[] = [],
 ): React.FC {
   return function App() {
     return (

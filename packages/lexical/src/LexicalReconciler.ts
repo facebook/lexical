@@ -842,7 +842,7 @@ function $createNode(key: NodeKey, slot: DOMSlot | null): HTMLElement {
       // mounts into its own detached contentEditable container that the
       // lexical-react component relocates into the decorate() chrome. The slot
       // text is already folded into `text` by getTextContent
-      // (LexicalNode.getSlotsTextContent), so this mount is render-only —
+      // ($getSlotsTextContent), so this mount is render-only —
       // $mountSlotChildren preserves subTreeTextContent.
       const slots = $readSlots(node);
       if (slots.size > 0) {

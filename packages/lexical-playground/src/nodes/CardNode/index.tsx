@@ -32,7 +32,13 @@ import {$isSlotContainerNode} from '../SlotContainerNode';
 // and multi-block paste flattens to inline content like an <input>.
 export class CardNode extends ElementNode {
   $config() {
-    return this.config('card', {extends: ElementNode, slots: ['title']});
+    return this.config('card', {
+      extends: ElementNode,
+      // Clicking the chrome selects "the whole Card", so whole-host copy
+      // carries the body children even though they aren't in the selection.
+      includeChildrenWhenSelected: true,
+      slots: ['title'],
+    });
   }
 
   createDOM(): HTMLElement {
@@ -53,16 +59,6 @@ export class CardNode extends ElementNode {
   // (inner) slot value since its slot link is a virtual shadow root and
   // resolution picks the innermost boundary.
   isShadowRoot(): true {
-    return true;
-  }
-
-  // When the Card is the only thing in a NodeSelection (the atomic chrome
-  // click promotes a click into one), the body children would otherwise be
-  // dropped on clipboard copy / HTML export because none of them are in the
-  // selection themselves. Opting in to `includeChildrenWhenSelected` pulls
-  // them in, mirroring how the Card reads to the user — clicking the chrome
-  // selects "the whole Card", not "the Card minus its body".
-  includeChildrenWhenSelected(): boolean {
     return true;
   }
 

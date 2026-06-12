@@ -13,6 +13,7 @@ import type {
   DOMConversionFn,
   EditorDOMRenderConfig,
   ElementFormatType,
+  Klass,
   LexicalEditor,
   LexicalNode,
 } from 'lexical';
@@ -35,6 +36,7 @@ import {
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
   ElementNode,
+  includeChildrenWhenSelected,
   isBlockDomNode,
   isDocumentFragment,
   isDOMDocumentNode,
@@ -318,7 +320,7 @@ function $appendNodesToHTML(
     shouldInclude &&
     $isNodeSelection(selection) &&
     $isElementNode(currentNode) &&
-    currentNode.includeChildrenWhenSelected()
+    includeChildrenWhenSelected(currentNode.constructor as Klass<LexicalNode>)
       ? null
       : selection;
   const fragmentAppend = fragment.append.bind(fragment);

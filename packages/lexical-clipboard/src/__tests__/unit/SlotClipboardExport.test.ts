@@ -86,7 +86,10 @@ function $createExcludedShadowRootNode(): ExcludedShadowRootNode {
 // promote partial RangeSelections.
 class CardLikeNode extends ElementNode {
   $config() {
-    return this.config('card_like', {extends: ElementNode});
+    return this.config('card_like', {
+      extends: ElementNode,
+      includeChildrenWhenSelected: true,
+    });
   }
   createDOM(): HTMLElement {
     return document.createElement('div');
@@ -95,9 +98,6 @@ class CardLikeNode extends ElementNode {
     return false;
   }
   isShadowRoot(): boolean {
-    return true;
-  }
-  includeChildrenWhenSelected(): boolean {
     return true;
   }
 }

@@ -245,6 +245,71 @@ export function getDeclaredSlots(klass: Klass<LexicalNode>): readonly string[] {
   return EMPTY_DECLARED_SLOTS;
 }
 
+/**
+ * Whether a NodeSelection that includes a node of this class force-includes
+ * its children in clipboard / export output, declared via
+ * {@link StaticNodeConfigValue.includeChildrenWhenSelected} in `$config()`.
+ * Resolved from the nearest declaration in the class hierarchy; defaults to
+ * false.
+ *
+ * @experimental
+ */
+export function includeChildrenWhenSelected(
+  klass: Klass<LexicalNode>,
+): boolean {
+  // Same import-free hierarchy walk as getDeclaredSlots (see above).
+  for (
+    let current: Klass<LexicalNode> = klass;
+    current != null && current.prototype != null;
+    current = Object.getPrototypeOf(current)
+  ) {
+    const {ownNodeConfig} = getStaticNodeConfig(current);
+    const value = ownNodeConfig && ownNodeConfig.includeChildrenWhenSelected;
+    if (value !== undefined) {
+      return value;
+    }
+  }
+  return false;
+}
+
+/**
+ * @internal
+ *
+ * Concatenated text of a node's named slots, read slots-first (in slot Map
+ * order). Shared by the getTextContent implementations so ElementNode and
+ * DecoratorNode hosts fold their slot text the same way; a node with no
+ * slots returns the empty string. A free function (not a LexicalNode method)
+ * so the framework-owned name cannot collide with a subclass's own members.
+ */
+export function $getSlotsTextContent(node: LexicalNode): string {
+  let textContent = '';
+  for (const name of $getSlotNames(node)) {
+    const slot = $getSlot(node, name);
+    if (slot !== null) {
+      textContent += slot.getTextContent();
+    }
+  }
+  return textContent;
+}
+
+/**
+ * @internal
+ *
+ * Size counterpart to {@link $getSlotsTextContent}, summing each slot's
+ * getTextContentSize (which a slot subtree may override independently of its
+ * text length) slots-first.
+ */
+export function $getSlotsTextContentSize(node: LexicalNode): number {
+  let textContentSize = 0;
+  for (const name of $getSlotNames(node)) {
+    const slot = $getSlot(node, name);
+    if (slot !== null) {
+      textContentSize += slot.getTextContentSize();
+    }
+  }
+  return textContentSize;
+}
+
 // @experimental named-slots. Declared name -> declaration index, cached per
 // class. Validates the declaration once: duplicates would make the order
 // ambiguous and reserved names can never be set.

@@ -43,7 +43,9 @@ import {
   COPY_COMMAND,
   defineExtension,
   getDOMSelection,
+  includeChildrenWhenSelected,
   isSelectionWithinEditor,
+  Klass,
   LexicalEditor,
   LexicalNode,
   PointCaret,
@@ -526,7 +528,7 @@ function $appendNodesToJSON(
     shouldInclude &&
     $isNodeSelection(selection) &&
     $isElementNode(currentNode) &&
-    currentNode.includeChildrenWhenSelected()
+    includeChildrenWhenSelected(currentNode.constructor as Klass<LexicalNode>)
       ? null
       : selection;
 

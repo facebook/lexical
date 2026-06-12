@@ -250,12 +250,12 @@ DecoratorNode's DOM has.
   Progressive expansion (block → enclosing slot frame → document on repeated
   presses) is provided by the opt-in `SelectBlockExtension` from
   `@lexical/extension`.
-- **Whole-host UX is opt-in.** An ElementNode host can override
-  `includeChildrenWhenSelected()` to make a NodeSelection of the host carry
-  its body children through copy and export, matching chrome interactions
-  that read as "select the whole Card". The promotion applies only to
-  NodeSelection; a partial RangeSelection over the host keeps per-child
-  slicing.
+- **Whole-host UX is opt-in.** An ElementNode host can declare
+  `includeChildrenWhenSelected: true` in `$config()` to make a NodeSelection
+  of the host carry its body children through copy and export, matching
+  chrome interactions that read as "select the whole Card". The promotion
+  applies only to NodeSelection; a partial RangeSelection over the host
+  keeps per-child slicing.
 
 ### Traversal is intentionally asymmetric
 
@@ -319,9 +319,6 @@ Adding slots reserves a few identifiers that custom node subclasses should
 not define for their own purposes:
 
 - the `__slots` and `__slotHost` fields on ElementNode / DecoratorNode;
-- the `getSlotsTextContent()` / `getSlotsTextContentSize()` methods on
-  LexicalNode (called by `getTextContent`) and
-  `includeChildrenWhenSelected()` on ElementNode;
 - the `$slots` serialized JSON key;
 - the bare `slots` collab attribute key — a custom node field literally
   named `slots` no longer syncs over collab.

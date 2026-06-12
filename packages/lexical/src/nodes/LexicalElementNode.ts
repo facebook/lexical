@@ -43,7 +43,13 @@ import {
   $isRangeSelection,
   moveSelectionPointToSibling,
 } from '../LexicalSelection';
-import {$errorOnSlotCycleChild, $getSlot, $getSlotNames} from '../LexicalSlot';
+import {
+  $errorOnSlotCycleChild,
+  $getSlot,
+  $getSlotNames,
+  $getSlotsTextContent,
+  $getSlotsTextContentSize,
+} from '../LexicalSlot';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
   $getDOMSlot,
@@ -438,7 +444,7 @@ export class ElementNode
   }
   getTextContent(): string {
     // Slots are read slots-first, ahead of the linked-list children.
-    let textContent = this.getSlotsTextContent();
+    let textContent = $getSlotsTextContent(this);
     const children = this.getChildren();
     const childrenLength = children.length;
     for (let i = 0; i < childrenLength; i++) {
@@ -457,7 +463,7 @@ export class ElementNode
   }
   getTextContentSize(): number {
     // Slots are counted slots-first, ahead of the linked-list children.
-    let textContentSize = this.getSlotsTextContentSize();
+    let textContentSize = $getSlotsTextContentSize(this);
     const children = this.getChildren();
     const childrenLength = children.length;
     for (let i = 0; i < childrenLength; i++) {
@@ -896,27 +902,6 @@ export class ElementNode
     selection: BaseSelection | null,
     destination: 'clone' | 'html',
   ): boolean {
-    return false;
-  }
-
-  /**
-   * When this node is itself included in a selection (e.g. a NodeSelection
-   * promoting the whole node from a chrome click), should its children be
-   * force-included in the clipboard / export output even when they aren't in
-   * the selection themselves? Defaults to false — only nodes that present as a
-   * single atomic unit from the user's perspective should opt in.
-   *
-   * Complements {@link extractWithChild}, which pulls the parent in when a
-   * descendant is selected (the "child carries parent" direction); this opt-in
-   * runs in the opposite direction ("parent carries descendants").
-   *
-   * Implementers should ensure their children serialize correctly when read
-   * outside the original selection scope — the clipboard caller recurses into
-   * them with a null outer selection so the whole subtree is captured.
-   *
-   * @experimental
-   */
-  includeChildrenWhenSelected(): boolean {
     return false;
   }
 

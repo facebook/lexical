@@ -146,7 +146,7 @@ describe('CardNode named slots', () => {
     });
   });
 
-  // CardNode.includeChildrenWhenSelected() opts in so the body rides along
+  // CardNode's includeChildrenWhenSelected $config opts in so the body rides along
   // when the whole card is promoted to a NodeSelection. The clipboard JSON
   // path already honors the opt-in; HTML export must too — both formats are
   // written to the clipboard, and external paste targets pick text/html.
@@ -168,7 +168,7 @@ describe('CardNode named slots', () => {
 
     expect(html).toContain('Title');
     // Body lives outside the selection (only the Card key was added). Without
-    // honoring includeChildrenWhenSelected(), the recursion forwards the
+    // honoring includeChildrenWhenSelected, the recursion forwards the
     // NodeSelection into each body child, none are selected, and the body
     // text never reaches the HTML.
     expect(html).toContain('Body');

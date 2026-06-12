@@ -52,6 +52,7 @@ import {
   $getSlotHost,
   $getSlotHostKey,
   $getSlotNames,
+  $getSlotsTextContent,
   $isSlotHost,
   $removeSlot,
   $setSlot,
@@ -179,6 +180,21 @@ export interface StaticNodeConfigValue<
    * ```
    */
   readonly stateConfigs?: readonly RequiredNodeStateConfig[];
+  /**
+   * When a node of this class is itself included in a selection (e.g. a
+   * NodeSelection promoting the whole node from a chrome click), force its
+   * children into clipboard / export output even when they aren't in the
+   * selection themselves. Defaults to false — only nodes that present as a
+   * single atomic unit from the user's perspective should opt in.
+   * Complements {@link ElementNode.extractWithChild}, which pulls the parent
+   * in when a descendant is selected; this opt-in runs in the opposite
+   * direction. Children must serialize correctly when read outside the
+   * original selection scope — the clipboard caller recurses into them with
+   * a null outer selection so the whole subtree is captured.
+   *
+   * @experimental
+   */
+  readonly includeChildrenWhenSelected?: boolean;
   /**
    * @experimental named-slots
    *
@@ -1434,50 +1450,13 @@ export class LexicalNode {
   }
 
   /**
-   * @internal
-   *
-   * Concatenated text of this node's named slots, read slots-first (in slot
-   * Map order). Shared by {@link LexicalNode.getTextContent} so both ElementNode and
-   * DecoratorNode hosts fold their slot text the same way; a node with no
-   * slots returns the empty string.
-   */
-  getSlotsTextContent(): string {
-    let textContent = '';
-    for (const name of $getSlotNames(this)) {
-      const slot = $getSlot(this, name);
-      if (slot !== null) {
-        textContent += slot.getTextContent();
-      }
-    }
-    return textContent;
-  }
-
-  /**
-   * @internal
-   *
-   * Size counterpart to {@link LexicalNode.getSlotsTextContent}, summing each slot's
-   * {@link LexicalNode.getTextContentSize} (which a slot subtree may override
-   * independently of its text length) slots-first.
-   */
-  getSlotsTextContentSize(): number {
-    let textContentSize = 0;
-    for (const name of $getSlotNames(this)) {
-      const slot = $getSlot(this, name);
-      if (slot !== null) {
-        textContentSize += slot.getTextContentSize();
-      }
-    }
-    return textContentSize;
-  }
-
-  /**
    * Returns the text content of the node. Override this for
    * custom nodes that should have a representation in plain text
    * format (for copy + paste, for example)
    *
    */
   getTextContent(): string {
-    return this.getSlotsTextContent();
+    return $getSlotsTextContent(this);
   }
 
   /**

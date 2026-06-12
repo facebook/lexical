@@ -23,7 +23,7 @@ import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
-import {mergeRegister, objectKlassEquals} from '@lexical/utils';
+import {eventFiles, mergeRegister, objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
@@ -415,10 +415,8 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     editor.registerCommand<DragEvent>(
       DRAGOVER_COMMAND,
       event => {
-        // Files check is inlined (rather than using eventFiles() from
-        // @lexical/rich-text) because plain-text cannot import from rich-text.
-        const dataTransfer = event.dataTransfer;
-        if (dataTransfer !== null && dataTransfer.types.includes('Files')) {
+        const [isFileTransfer] = eventFiles(event);
+        if (isFileTransfer) {
           return false;
         }
         // contenteditable is not a native drop target; preventDefault() is

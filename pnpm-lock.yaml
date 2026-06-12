@@ -381,6 +381,9 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
 
   packages/lexical-clipboard:
     dependencies:

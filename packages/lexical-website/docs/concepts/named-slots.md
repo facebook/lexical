@@ -46,10 +46,13 @@ host and the value. Isolation is structural rather than a convention — an
 accidental boundary crossing surfaces as a thrown invariant, not silent
 corruption.
 
-In the DOM, slots render slots-first, each value mounted inside a keyless
-`<div data-lexical-slot="<name>">` container ahead of the host's ordinary
-children, in a canonical order derived from the host class (see
-[slot order](#slot-order)).
+In the DOM, each value renders synchronously into a keyless
+`<div data-lexical-slot="<name>">` container parked slots-first in the host
+DOM as a **hidden placeholder** (`display: none`), in a canonical order
+derived from the host class (see [slot order](#slot-order)). Nothing is
+visible until the host explicitly attaches the container somewhere (see
+[Rendering](#rendering)) — mirroring how `getDOMSlot` gives an element
+control over where its linked-list children render.
 
 ## Hosts and Values
 
@@ -162,14 +165,40 @@ client. If presentation order matters, declare the names.
 
 ## Rendering
 
-For an ElementNode host, the reconciler creates and manages the
-`data-lexical-slot` containers automatically, prepended ahead of the host's
-ordinary children inside the host's DOM.
+The reconciler always renders every slot subtree synchronously, but into a
+hidden placeholder container — visibility is the host's explicit decision.
+There are three ways to attach a slot, all sharing the same contract
+(attaching moves the container to the target, a no-op when it is already
+there, and reveals it; the container renders as a normal block):
 
-A DecoratorNode host's containers are created detached (and opted back into
-`contentEditable`) so the host's React chrome can place them. The
-`useLexicalSlot` hook from `@lexical/react/useLexicalSlot` returns a ref that
-mounts a slot's container into your component:
+1. **Synchronously in-lexical**: override
+   `getSlotTargetElement(slotName, hostDom)` on the host class. The
+   reconciler consults it whenever it creates or reconciles the slot's
+   container and attaches/reveals within the same commit — no listener or
+   framework hop. Returning `hostDom` reveals the slot in its default
+   slots-first position:
+
+   ```ts
+   class CardNode extends ElementNode {
+     // ...
+     getSlotTargetElement(slotName: string, hostDom: HTMLElement) {
+       return hostDom;
+     }
+   }
+   ```
+
+2. **Imperatively**: `mountSlotContainer(editor, nodeKey, slotName, target)`
+   and `unmountSlotContainer(editor, nodeKey, container)` from `lexical` are
+   the framework-independent primitives (e.g. from a mutation listener).
+   They read through `editor.readPending`, so calling them mid-update
+   observes the pending state without forcing a flush.
+
+3. **From React chrome**: the `useLexicalSlot` hook from
+   `@lexical/react/useLexicalSlot` wraps the imperative pair and returns a
+   ref that mounts a slot's container into your component — the usual choice
+   for a DecoratorNode host's `decorate()` chrome (whose containers are
+   opted back into `contentEditable` automatically, since the decorator DOM
+   is non-editable):
 
 ```tsx
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -191,6 +220,16 @@ function PullQuoteComponent({nodeKey}: {nodeKey: NodeKey}) {
   );
 }
 ```
+
+A `contentEditable=false` ElementNode shell can host React chrome the same
+way (slot containers opt into editing whenever the host DOM is
+non-editable): the playground's Panel demo portals chrome into the host DOM,
+attaches the title slot with `useLexicalSlot`, and applies the identical
+hidden-then-attach technique to its `getDOMSlot` children element. Such a
+shell should call `setDOMUnmanaged(dom)` in `createDOM` — the portal and the
+attach moves mutate the shell's children from outside the reconciler, and
+the marker gives the shell the same mutation-observer exemption a
+DecoratorNode's DOM has.
 
 ## Editing Behavior
 
@@ -276,7 +315,8 @@ not define for their own purposes:
 
 - the `__slots` and `__slotHost` fields on ElementNode / DecoratorNode;
 - the `getSlotsTextContent()` / `getSlotsTextContentSize()` methods on
-  LexicalNode (called by `getTextContent`) and
+  LexicalNode (called by `getTextContent`), `getSlotTargetElement()` on
+  LexicalNode (consulted by the reconciler), and
   `includeChildrenWhenSelected()` on ElementNode;
 - the `$slots` serialized JSON key;
 - the bare `slots` collab attribute key — a custom node field literally

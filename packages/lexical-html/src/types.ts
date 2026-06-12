@@ -517,7 +517,7 @@ export interface DOMRenderMatch<T extends LexicalNode> {
    * reveals the slot in its default slots-first position). Call
    * `$next()` to defer to lower-priority overrides / the default
    * (null — a hidden placeholder for explicit imperative mounting via
-   * `mountSlotContainer` or lexical-react's `useLexicalSlot`).
+   * `mountSlotContainer` or lexical-react's `useLexicalSlotRef`).
    *
    * @experimental named-slots
    */

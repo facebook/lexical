@@ -211,8 +211,8 @@
       "@lexical/react/useLexicalNodeSelection": [
         "./packages/lexical-react/src/useLexicalNodeSelection.ts"
       ],
-      "@lexical/react/useLexicalSlot": [
-        "./packages/lexical-react/src/useLexicalSlot.ts"
+      "@lexical/react/useLexicalSlotRef": [
+        "./packages/lexical-react/src/useLexicalSlotRef.ts"
       ],
       "@lexical/react/useLexicalSubscription": [
         "./packages/lexical-react/src/useLexicalSubscription.tsx"

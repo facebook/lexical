@@ -10,7 +10,7 @@ import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
 import type {JSX, RefObject} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useLexicalSlot} from '@lexical/react/useLexicalSlot';
+import {useLexicalSlotRef} from '@lexical/react/useLexicalSlotRef';
 import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_EDITOR,
@@ -32,10 +32,10 @@ interface MountedChildren {
   hostDom: HTMLElement;
 }
 
-// The getDOMSlot analog of useLexicalSlot: attaches the Panel's hidden
+// The getDOMSlot analog of useLexicalSlotRef: attaches the Panel's hidden
 // children element (where the reconciler renders the linked-list body) into
 // the chrome and reveals it. Same idempotent no-cleanup-per-render shape as
-// useLexicalSlot so a chrome re-render never detaches the element mid-edit;
+// useLexicalSlotRef so a chrome re-render never detaches the element mid-edit;
 // the final unmount parks it back hidden in the host DOM.
 function usePanelChildren<T extends HTMLElement = HTMLElement>(
   editor: LexicalEditor,
@@ -92,7 +92,7 @@ function PanelChrome({
       setDOMUnmanaged(el);
     }
   }, []);
-  const titleRef = useLexicalSlot<HTMLDivElement>(editor, nodeKey, 'title');
+  const titleRef = useLexicalSlotRef<HTMLDivElement>(editor, nodeKey, 'title');
   const childrenRef = usePanelChildren<HTMLDivElement>(editor, nodeKey);
   return (
     <div className="lexical-panel-chrome" ref={chromeRef}>

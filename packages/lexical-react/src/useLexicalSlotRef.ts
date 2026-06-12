@@ -35,7 +35,7 @@ interface MountedSlot {
  * change) the previous container is parked back in its host DOM as a hidden
  * placeholder via {@link unmountSlotContainer}.
  */
-export function useLexicalSlot<T extends HTMLElement = HTMLElement>(
+export function useLexicalSlotRef<T extends HTMLElement = HTMLElement>(
   editor: LexicalEditor,
   nodeKey: NodeKey,
   slotName: string,

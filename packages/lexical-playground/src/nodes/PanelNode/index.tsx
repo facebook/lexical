@@ -25,7 +25,7 @@ import {
 // reconciler renders the slot container as a hidden placeholder (named-slots
 // default), and createDOM applies the identical pattern to the getDOMSlot
 // children element below. PanelExtension's React chrome reveals each region
-// (useLexicalSlot for the title, the children element by class). Contrast
+// (useLexicalSlotRef for the title, the children element by class). Contrast
 // with CardNode (in-lexical chrome via getSlotTargetElement) and
 // PullQuoteNode (DecoratorNode host).
 export class PanelNode extends ElementNode {

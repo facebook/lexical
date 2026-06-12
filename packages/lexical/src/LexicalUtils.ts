@@ -2229,7 +2229,7 @@ export function $getSlotContainer(
  * contenteditable subtree (caret hit-testing resolves clicks to a
  * neighboring box and native text insertion is dropped).
  *
- * Idempotent and framework-independent: lexical-react's `useLexicalSlot`
+ * Idempotent and framework-independent: lexical-react's `useLexicalSlotRef`
  * wraps it, and a node class or extension can call it directly (e.g. from a
  * mutation listener) to control slot placement without React. Reads through
  * {@link LexicalEditor.readPending} so calling it mid-update observes the

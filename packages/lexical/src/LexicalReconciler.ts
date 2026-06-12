@@ -476,7 +476,7 @@ function $setElementDirection(dom: HTMLElement, node: ElementNode): void {
 // `display: 'none'` so every slot subtree is always rendered and part of
 // the document, but nothing is visible until the host explicitly attaches
 // the container somewhere with `mountSlotContainer` (directly or through
-// lexical-react's `useLexicalSlot`), which reveals it — mirroring how
+// lexical-react's `useLexicalSlotRef`), which reveals it — mirroring how
 // `getDOMSlot` gives an element control over where its linked-list children
 // render. Only the wrapper is
 // scaffolding; the slot subtree inside carries its own NodeKey and
@@ -527,7 +527,7 @@ function $readSlots(node: LexicalNode): ReadonlyMap<string, NodeKey> {
 // with a `$getSlotTargetElement` render-config override has the reconciler
 // attach and reveal the container in the same commit that (re)mounts it —
 // no listener or framework hop. A null target (the default) leaves placement
-// to explicit imperative mounting (mountSlotContainer / useLexicalSlot).
+// to explicit imperative mounting (mountSlotContainer / useLexicalSlotRef).
 function $applySlotTarget(
   node: LexicalNode,
   name: string,
@@ -642,7 +642,7 @@ function $reconcileSlotChildren(
     // each container right after the previous slot's (the first at the very
     // front), staying slots-first ahead of the linked-list children. Only
     // placeholders still parked in the host DOM are anchored: a container the
-    // host explicitly attached elsewhere (mountSlotContainer / useLexicalSlot)
+    // host explicitly attached elsewhere (mountSlotContainer / useLexicalSlotRef)
     // is owned by that mount and re-parenting it here would yank it back.
     if (container.parentElement === hostDom) {
       const anchor: ChildNode | null =

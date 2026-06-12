@@ -16,7 +16,7 @@ import type {JSX} from 'react';
 
 import {$appendNodeToHTML} from '@lexical/html';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useLexicalSlot} from '@lexical/react/useLexicalSlot';
+import {useLexicalSlotRef} from '@lexical/react/useLexicalSlotRef';
 import {
   $create,
   $createParagraphNode,
@@ -46,8 +46,8 @@ import {
 // paragraph and the box is an atomic block from the user's perspective.
 function PullQuoteComponent({nodeKey}: {nodeKey: NodeKey}): JSX.Element {
   const [editor] = useLexicalComposerContext();
-  const quoteRef = useLexicalSlot<HTMLDivElement>(editor, nodeKey, 'quote');
-  const attributionRef = useLexicalSlot<HTMLDivElement>(
+  const quoteRef = useLexicalSlotRef<HTMLDivElement>(editor, nodeKey, 'quote');
+  const attributionRef = useLexicalSlotRef<HTMLDivElement>(
     editor,
     nodeKey,
     'attribution',

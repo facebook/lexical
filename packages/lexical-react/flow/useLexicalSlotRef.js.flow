@@ -9,7 +9,7 @@
 
 import type {LexicalEditor, NodeKey} from 'lexical';
 
-declare export function useLexicalSlot<T: HTMLElement = HTMLElement>(
+declare export function useLexicalSlotRef<T: HTMLElement = HTMLElement>(
   editor: LexicalEditor,
   nodeKey: NodeKey,
   slotName: string,

@@ -359,7 +359,7 @@ export interface EditorDOMRenderConfig {
    * returning `hostDom` reveals the slot in its default slots-first
    * position) and reveals it. Returning null (the default) leaves the
    * container as a hidden placeholder for explicit imperative mounting
-   * (`mountSlotContainer` / lexical-react's `useLexicalSlot`). The
+   * (`mountSlotContainer` / lexical-react's `useLexicalSlotRef`). The
    * named-slot analog of `$getDOMSlot`'s control over where linked-list
    * children render; the returned element should live within the host's
    * own DOM so it is torn down with the host. Override per node type via

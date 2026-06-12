@@ -821,7 +821,7 @@ describe('named-slots: core foundation', () => {
     expect(hostDom.contentEditable).toBe('false');
     // the slot renders synchronously into a hidden placeholder parked in the
     // host DOM; it becomes visible only when explicitly attached somewhere
-    // (mountSlotContainer / useLexicalSlot)
+    // (mountSlotContainer / useLexicalSlotRef)
     const slotContainer = editor.getElementByKey(slotKey)!.parentElement!;
     expect(slotContainer.getAttribute('data-lexical-slot')).toBe('title');
     expect(hostDom.contains(slotContainer)).toBe(true);

@@ -1815,40 +1815,40 @@
         "default": "./dist/useLexicalNodeSelection.js"
       }
     },
-    "./useLexicalSlot": {
-      "source": "./src/useLexicalSlot.ts",
+    "./useLexicalSlotRef": {
+      "source": "./src/useLexicalSlotRef.ts",
       "import": {
         "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/useLexicalSlot.d.ts",
-        "development": "./dist/useLexicalSlot.dev.mjs",
-        "production": "./dist/useLexicalSlot.prod.mjs",
-        "node": "./dist/useLexicalSlot.node.mjs",
-        "default": "./dist/useLexicalSlot.mjs"
+        "types": "./dist/useLexicalSlotRef.d.ts",
+        "development": "./dist/useLexicalSlotRef.dev.mjs",
+        "production": "./dist/useLexicalSlotRef.prod.mjs",
+        "node": "./dist/useLexicalSlotRef.node.mjs",
+        "default": "./dist/useLexicalSlotRef.mjs"
       },
       "require": {
         "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/useLexicalSlot.d.ts",
-        "development": "./dist/useLexicalSlot.dev.js",
-        "production": "./dist/useLexicalSlot.prod.js",
-        "default": "./dist/useLexicalSlot.js"
+        "types": "./dist/useLexicalSlotRef.d.ts",
+        "development": "./dist/useLexicalSlotRef.dev.js",
+        "production": "./dist/useLexicalSlotRef.prod.js",
+        "default": "./dist/useLexicalSlotRef.js"
       }
     },
-    "./useLexicalSlot.js": {
-      "source": "./src/useLexicalSlot.ts",
+    "./useLexicalSlotRef.js": {
+      "source": "./src/useLexicalSlotRef.ts",
       "import": {
         "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/useLexicalSlot.d.ts",
-        "development": "./dist/useLexicalSlot.dev.mjs",
-        "production": "./dist/useLexicalSlot.prod.mjs",
-        "node": "./dist/useLexicalSlot.node.mjs",
-        "default": "./dist/useLexicalSlot.mjs"
+        "types": "./dist/useLexicalSlotRef.d.ts",
+        "development": "./dist/useLexicalSlotRef.dev.mjs",
+        "production": "./dist/useLexicalSlotRef.prod.mjs",
+        "node": "./dist/useLexicalSlotRef.node.mjs",
+        "default": "./dist/useLexicalSlotRef.mjs"
       },
       "require": {
         "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/useLexicalSlot.d.ts",
-        "development": "./dist/useLexicalSlot.dev.js",
-        "production": "./dist/useLexicalSlot.prod.js",
-        "default": "./dist/useLexicalSlot.js"
+        "types": "./dist/useLexicalSlotRef.d.ts",
+        "development": "./dist/useLexicalSlotRef.dev.js",
+        "production": "./dist/useLexicalSlotRef.prod.js",
+        "default": "./dist/useLexicalSlotRef.js"
       }
     },
     "./useLexicalSubscription": {

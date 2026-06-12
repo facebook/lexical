@@ -63,6 +63,7 @@ import {
   makeStepwiseIterator,
   type NodeCaret,
   type NodeKey,
+  type PasteCommandType,
   PointCaret,
   type RangeSelection,
   type SiblingCaret,
@@ -689,6 +690,30 @@ export function objectKlassEquals<T>(
   return object !== null
     ? Object.getPrototypeOf(object).constructor.name === objectClass.name
     : false;
+}
+
+// Clipboard may contain files that we aren't allowed to read. While the event is arguably useless,
+// in certain occasions, we want to know whether it was a file transfer, as opposed to text. We
+// control this with the first boolean flag.
+export function eventFiles(
+  event: DragEvent | PasteCommandType,
+): [boolean, File[], boolean] {
+  let dataTransfer: null | DataTransfer = null;
+  if (objectKlassEquals(event, DragEvent)) {
+    dataTransfer = event.dataTransfer;
+  } else if (objectKlassEquals(event, ClipboardEvent)) {
+    dataTransfer = event.clipboardData;
+  }
+
+  if (dataTransfer === null) {
+    return [false, [], false];
+  }
+
+  const types = dataTransfer.types;
+  const hasFiles = types.includes('Files');
+  const hasContent =
+    types.includes('text/html') || types.includes('text/plain');
+  return [hasFiles, Array.from(dataTransfer.files), hasContent];
 }
 
 /**

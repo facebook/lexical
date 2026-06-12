@@ -7,7 +7,7 @@
  */
 
 import type {DOMPreprocessFn} from '@lexical/html';
-import type {LexicalNode} from 'lexical';
+import type {LexicalNode, ParagraphNode} from 'lexical';
 
 import {ClipboardDOMImportExtension} from '@lexical/clipboard';
 import {CodeImportExtension} from '@lexical/code-core';
@@ -25,7 +25,9 @@ import {TableImportExtension} from '@lexical/table';
 import {
   $createParagraphNode,
   $getSlot,
+  $isDecoratorNode,
   $isElementNode,
+  $isLineBreakNode,
   $isTextNode,
   $removeSlot,
   $setSlot,
@@ -109,13 +111,47 @@ const PlaygroundInlineStyleRule = /* @__PURE__ */ defineImportRule({
 });
 
 /**
+ * Build a single-line slot value from imported content: a bare paragraph
+ * whose children are the inline projection of `nodes`. Mirrors core's
+ * `<input>` analogy for block slot values (the flattening
+ * `RangeSelection.insertNodes` applies when pasting into one): recurse into
+ * non-inline elements for their inline children, strip line breaks, and drop
+ * block-only decorators — they have no single-line form.
+ */
+function $createLineSlotValue(nodes: LexicalNode[]): ParagraphNode {
+  const line = $createParagraphNode();
+  const appendInline = (children: LexicalNode[]): void => {
+    for (const node of children) {
+      if ($isLineBreakNode(node)) {
+        continue;
+      }
+      if (
+        ($isElementNode(node) || $isDecoratorNode(node)) &&
+        !node.isInline()
+      ) {
+        if ($isElementNode(node)) {
+          appendInline(node.getChildren());
+        }
+        continue;
+      }
+      line.append(node);
+    }
+  };
+  appendInline(nodes);
+  return line;
+}
+
+/**
  * Reconstruct a {@link CardNode} from its exported HTML. `CardNode.exportDOM`
  * emits the named title slot as a `<div data-lexical-slot="title">` child and
  * the body as regular paragraph siblings (Card is an ElementNode host with
  * children, so body serializes through the normal child path). This rule
  * re-attaches the title via `setSlot` and appends every other direct child as
- * a regular Card child. Slots are intentionally NOT auto-imported (mirroring
- * the export side and NodeState) — a host opts in with a rule.
+ * a regular Card child. The title is a single-line slot whose value is a bare
+ * paragraph (no container wrapper), so the wrapper's imported content is
+ * flattened to its inline projection. Slots are intentionally NOT
+ * auto-imported (mirroring the export side and NodeState) — a host opts in
+ * with a rule.
  */
 const CardImportRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
@@ -132,7 +168,7 @@ const CardImportRule = /* @__PURE__ */ defineImportRule({
         $setSlot(
           card,
           'title',
-          $createSlotContainerNode().append(...ctx.$importChildren(domChild)),
+          $createLineSlotValue(ctx.$importChildren(domChild)),
         );
         continue;
       }
@@ -142,11 +178,11 @@ const CardImportRule = /* @__PURE__ */ defineImportRule({
     }
     if (!importedTitle) {
       // No title wrapper in the source HTML: drop the seeded "Title" text
-      // (keeping an empty paragraph) so the import never fabricates content —
-      // mirrors PullQuoteImportRule's explicit seed-clearing.
+      // (keeping the empty paragraph value) so the import never fabricates
+      // content — mirrors PullQuoteImportRule's explicit seed-clearing.
       const title = $getSlot(card, 'title');
       if ($isElementNode(title)) {
-        title.clear().append($createParagraphNode());
+        title.clear();
       }
     }
     return [card];
@@ -253,8 +289,10 @@ export const PlaygroundImportRules = [PlaygroundInlineStyleRule];
  * Reconstruct a {@link PullQuoteNode} from its exported HTML. Mirrors
  * `PullQuoteNode.exportDOM`: a `<div class="lexical-pullquote-node">`
  * wrapping `<div data-lexical-slot="quote">` and
- * `<div data-lexical-slot="attribution">`, both of which become
- * SlotContainerNodes seeded with the imported children.
+ * `<div data-lexical-slot="attribution">`. The quote is multi-block, so it
+ * becomes a SlotContainerNode seeded with the imported children; the
+ * attribution is a single-line slot whose value is a bare paragraph holding
+ * the inline projection of the wrapper's content.
  *
  * `$createPullQuoteNode` seeds both slots with default text — we drop both
  * seeds before walking the imported wrappers so an HTML fragment that's
@@ -273,11 +311,17 @@ const PullQuoteImportRule = /* @__PURE__ */ defineImportRule({
     const orphans: LexicalNode[] = [];
     for (const domChild of Array.from(el.children)) {
       const slotName = domChild.getAttribute('data-lexical-slot');
-      if (slotName === 'quote' || slotName === 'attribution') {
+      if (slotName === 'quote') {
         $setSlot(
           pullquote,
           slotName,
           $createSlotContainerNode().append(...ctx.$importChildren(domChild)),
+        );
+      } else if (slotName === 'attribution') {
+        $setSlot(
+          pullquote,
+          slotName,
+          $createLineSlotValue(ctx.$importChildren(domChild)),
         );
       } else {
         orphans.push(...ctx.$importOne(domChild));

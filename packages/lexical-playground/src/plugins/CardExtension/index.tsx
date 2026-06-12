@@ -162,11 +162,15 @@ function $handleCardTab(
     return false;
   }
   if (!isBackward && context.in === 'title') {
-    const titleSlot = context.slotValue;
-    const titleLast = $isElementNode(titleSlot)
-      ? titleSlot.getLastChild()
-      : null;
-    if (titleLast === null || !$isAtBlockEnd(selection.anchor, titleLast)) {
+    // The slot value IS the caret block: the title is a bare single-line
+    // paragraph (the slot link itself is the virtual shadow root, no
+    // container wrapper). $isAtBlockEnd reads getLastDescendant, so the
+    // check is anchored at the slot's trailing edge either way.
+    const titleBlock = context.slotValue;
+    if (
+      !$isElementNode(titleBlock) ||
+      !$isAtBlockEnd(selection.anchor, titleBlock)
+    ) {
       return false;
     }
     const bodyFirst = context.card.getFirstChild();
@@ -192,14 +196,13 @@ function $handleCardTab(
     if (bodyFirst === null || !$isAtBlockStart(selection.anchor, bodyFirst)) {
       return false;
     }
+    // The title slot value is itself the caret block (a bare paragraph), so
+    // the caret lands at its end directly — no container to descend into.
     const titleSlot = $getSlot(context.card, 'title');
     if ($isElementNode(titleSlot)) {
-      const titleLast = titleSlot.getLastChild();
-      if ($isElementNode(titleLast)) {
-        event?.preventDefault();
-        titleLast.selectEnd();
-        return true;
-      }
+      event?.preventDefault();
+      titleSlot.selectEnd();
+      return true;
     }
   }
   return false;

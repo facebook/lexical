@@ -28,6 +28,8 @@ export interface HistoryAnnouncePluginProps {
  * Announces undo / redo into a polite `aria-live` region (provided by
  * `useLexicalAriaLiveRegion`) so screen readers pick up history
  * navigation.
+ *
+ * @deprecated A pure Lexical implementation is available in `@lexical/a11y` as HistoryAnnounceExtension
  */
 export function HistoryAnnouncePlugin({
   messages,

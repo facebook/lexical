@@ -20,6 +20,7 @@
   "module": "./dist/LexicalA11y.mjs",
   "sideEffects": false,
   "dependencies": {
+    "@lexical/extension": "workspace:*",
     "lexical": "workspace:*"
   },
   "files": [

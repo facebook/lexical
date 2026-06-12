@@ -6,12 +6,15 @@
  *
  */
 
+import {effect, namedSignals} from '@lexical/extension';
 import {
   COMMAND_PRIORITY_LOW,
+  defineExtension,
   isHTMLElement,
   KEY_DOWN_COMMAND,
   type LexicalEditor,
   REDO_COMMAND,
+  safeCast,
   UNDO_COMMAND,
 } from 'lexical';
 
@@ -528,3 +531,125 @@ export function registerEditorModeAnnounce(
     announce(editable ? editableMessage : readOnlyMessage);
   });
 }
+
+export interface AriaLiveRegionExtensionConfig {
+  /** {@link AriaPoliteness} for the mounted region. */
+  politeness: AriaPoliteness;
+  /**
+   * Owner element to append the live region to. `null` falls back to
+   * `document.body`; an explicit element keeps the region in the same
+   * accessibility subtree as the editor (shadow root or portaled overlay).
+   */
+  owner: HTMLElement | null;
+}
+
+/**
+ * Stable handle ref shared between {@link AriaLiveRegionExtension} and
+ * its dependents. The `register` step swaps `current` to a live handle
+ * for the editor's lifetime and restores `NOOP_HANDLE` on disposal, so
+ * dependent extensions can capture the ref in `build` while the actual
+ * sink is created without violating the "build must not require
+ * cleanup" contract.
+ */
+export interface AriaLiveRegionRef {
+  current: AriaLiveRegionHandle;
+}
+
+/**
+ * Platform-independent extension that owns a single `aria-live` region
+ * for the editor and exposes a stable {@link AriaLiveRegionRef} as the
+ * extension output. Other a11y extensions (`HistoryAnnounceExtension`,
+ * `EditorModeAnnounceExtension`) take this as a dependency and announce
+ * through `output.current.announce`.
+ *
+ * Mount / dispose happens in `register` (the "build must not require
+ * cleanup" contract); the ref's `current` is swapped to the live handle
+ * there and restored to `NOOP_HANDLE` on disposal.
+ */
+export const AriaLiveRegionExtension = defineExtension({
+  build(_editor, _config): AriaLiveRegionRef {
+    return {current: NOOP_HANDLE};
+  },
+  config: safeCast<AriaLiveRegionExtensionConfig>({
+    owner: null,
+    politeness: 'polite',
+  }),
+  name: '@lexical/a11y/AriaLiveRegion',
+  register(_editor, config, state) {
+    const ref = state.getOutput();
+    const handle = registerAriaLiveRegion({
+      owner: config.owner ?? undefined,
+      politeness: config.politeness,
+    });
+    ref.current = handle;
+    return () => {
+      handle.dispose();
+      ref.current = NOOP_HANDLE;
+    };
+  },
+});
+
+export interface HistoryAnnounceExtensionConfig {
+  /** Message announced after an undo. */
+  undone: string;
+  /** Message announced after a redo. */
+  redone: string;
+}
+
+/**
+ * Platform-independent extension that announces undo / redo through the
+ * `AriaLiveRegionExtension`'s shared sink. Replaces the React-only
+ * `HistoryAnnouncePlugin` for `@lexical/extension` hosts.
+ */
+export const HistoryAnnounceExtension = defineExtension({
+  build: (_editor, config) => namedSignals(config),
+  config: safeCast<HistoryAnnounceExtensionConfig>({
+    redone: 'Redone',
+    undone: 'Undone',
+  }),
+  dependencies: [AriaLiveRegionExtension],
+  name: '@lexical/a11y/HistoryAnnounce',
+  register(editor, _config, state) {
+    const {redone, undone} = state.getOutput();
+    const ref = state.getDependency(AriaLiveRegionExtension).output;
+    return effect(() =>
+      registerHistoryAnnounce(editor, ref.current.announce, {
+        redone: redone.value,
+        undone: undone.value,
+      }),
+    );
+  },
+});
+
+export interface EditorModeAnnounceExtensionConfig {
+  /** Message announced when the editor becomes editable. */
+  editable: string;
+  /** Message announced when the editor becomes read-only. */
+  readOnly: string;
+}
+
+/**
+ * Platform-independent extension that announces
+ * `editor.setEditable(true|false)` transitions through the
+ * `AriaLiveRegionExtension`'s shared sink. Replaces the React-only
+ * `EditorModeAnnouncePlugin` for `@lexical/extension` hosts.
+ */
+export const EditorModeAnnounceExtension = defineExtension({
+  build: (_editor, config) => namedSignals(config),
+  config: safeCast<EditorModeAnnounceExtensionConfig>({
+    editable: 'Editor is editable',
+    readOnly: 'Editor is read-only',
+  }),
+  dependencies: [AriaLiveRegionExtension],
+  name: '@lexical/a11y/EditorModeAnnounce',
+  register(editor, _config, state) {
+    const {editable, readOnly} = state.getOutput();
+    const ref = state.getDependency(AriaLiveRegionExtension).output;
+    return effect(() =>
+      registerEditorModeAnnounce(editor, ref.current.announce, {
+        editable: editable.value,
+        readOnly: readOnly.value,
+      }),
+    );
+  },
+});

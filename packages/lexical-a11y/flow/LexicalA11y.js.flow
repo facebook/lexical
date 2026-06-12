@@ -46,7 +46,8 @@ declare export function registerRovingTabIndex(
   options?: RovingTabIndexOptions,
 ): () => void;
 
-import type {LexicalEditor} from 'lexical';
+import type {LexicalEditor, LexicalExtension} from 'lexical';
+import type {NamedSignalsOutput} from '@lexical/extension';
 
 export type FocusManagerOptions = {
   toolbarItemSelector?: string,
@@ -79,3 +80,36 @@ declare export function registerEditorModeAnnounce(
   announce: (message: string) => void,
   options?: EditorModeAnnounceOptions,
 ): () => void;
+
+export type AriaLiveRegionExtensionConfig = {
+  politeness: AriaPoliteness,
+  owner: HTMLElement | null,
+};
+declare export var AriaLiveRegionExtension: LexicalExtension<
+  AriaLiveRegionExtensionConfig,
+  '@lexical/a11y/AriaLiveRegion',
+  AriaLiveRegionHandle,
+  void,
+>;
+
+export type HistoryAnnounceExtensionConfig = {
+  undone: string,
+  redone: string,
+};
+declare export var HistoryAnnounceExtension: LexicalExtension<
+  HistoryAnnounceExtensionConfig,
+  '@lexical/a11y/HistoryAnnounce',
+  NamedSignalsOutput<HistoryAnnounceExtensionConfig>,
+  void,
+>;
+
+export type EditorModeAnnounceExtensionConfig = {
+  editable: string,
+  readOnly: string,
+};
+declare export var EditorModeAnnounceExtension: LexicalExtension<
+  EditorModeAnnounceExtensionConfig,
+  '@lexical/a11y/EditorModeAnnounce',
+  NamedSignalsOutput<EditorModeAnnounceExtensionConfig>,
+  void,
+>;

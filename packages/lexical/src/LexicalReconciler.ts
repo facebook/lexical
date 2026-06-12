@@ -524,17 +524,22 @@ function $readSlots(node: LexicalNode): ReadonlyMap<string, NodeKey> {
 }
 
 // @experimental named-slots. Synchronous in-lexical slot attachment: a host
-// that overrides `getSlotTargetElement` has the reconciler attach and reveal
-// the container in the same commit that (re)mounts it — no listener or
-// framework hop. A null target leaves placement to explicit imperative
-// mounting (mountSlotContainer / useLexicalSlot).
+// with a `$getSlotTargetElement` render-config override has the reconciler
+// attach and reveal the container in the same commit that (re)mounts it —
+// no listener or framework hop. A null target (the default) leaves placement
+// to explicit imperative mounting (mountSlotContainer / useLexicalSlot).
 function $applySlotTarget(
   node: LexicalNode,
   name: string,
   hostDom: HTMLElement,
   container: HTMLElement,
 ): void {
-  const target = node.getSlotTargetElement(name, hostDom);
+  const target = activeEditorDOMRenderConfig.$getSlotTargetElement(
+    node,
+    name,
+    hostDom,
+    activeEditor,
+  );
   if (target !== null) {
     if (container.parentElement !== target) {
       target.appendChild(container);

@@ -1453,30 +1453,6 @@ export class LexicalNode {
   }
 
   /**
-   * @experimental named-slots
-   *
-   * Where a named slot's container should attach, for hosts that render
-   * their slots entirely in-lexical (no chrome framework). The reconciler
-   * consults this whenever it creates or reconciles the slot's container,
-   * synchronously within the same commit: a non-null return attaches the
-   * container to that element (a no-op when it is already there, so
-   * returning `hostDom` reveals the slot in its default slots-first
-   * position) and reveals it. Returning null (the default) leaves the
-   * container as a hidden placeholder for explicit imperative mounting
-   * (`mountSlotContainer` / lexical-react's `useLexicalSlot`) — use one
-   * mechanism per host, not both. The named-slot analog of
-   * {@link ElementNode.getDOMSlot}'s control over where linked-list
-   * children render; the returned element should live within the host's
-   * own DOM so it is torn down with the host.
-   */
-  getSlotTargetElement(
-    slotName: string,
-    hostDom: HTMLElement,
-  ): HTMLElement | null {
-    return null;
-  }
-
-  /**
    * @internal
    *
    * Size counterpart to {@link LexicalNode.getSlotsTextContent}, summing each slot's

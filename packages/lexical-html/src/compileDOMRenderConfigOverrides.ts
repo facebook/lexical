@@ -89,6 +89,7 @@ function makePrerender(): PreEditorDOMRenderConfig {
     $exportDOM: [],
     $extractWithChild: [],
     $getDOMSlot: [],
+    $getSlotTargetElement: [],
     $onDOMMount: [],
     $onDOMUpdate: [],
     $shouldExclude: [],
@@ -379,6 +380,13 @@ export function compileDOMRenderConfigOverrides(
   );
   compilePrerenderKey(prerender, '$shouldExclude', dom, merge3, ignoreNext3);
   compilePrerenderKey(prerender, '$shouldInclude', dom, merge3, ignoreNext3);
+  compilePrerenderKey(
+    prerender,
+    '$getSlotTargetElement',
+    dom,
+    merge4,
+    ignoreNext4,
+  );
   compilePrerenderKey(prerender, '$onDOMMount', dom, merge3, ignoreNext3);
   compilePrerenderKey(prerender, '$onDOMUpdate', dom, merge4, ignoreNext4);
   compilePrerenderKey(prerender, '$updateDOM', dom, merge4, ignoreNext4);

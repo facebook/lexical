@@ -15,6 +15,7 @@ import type {
 } from 'lexical';
 
 import {NodeSelectionDataSelectedExtension} from '@lexical/extension';
+import {domOverride, DOMRenderExtension} from '@lexical/html';
 import {$insertNodeToNearestRoot, mergeRegister} from '@lexical/utils';
 import {
   $createNodeSelection,
@@ -258,6 +259,18 @@ export const CardExtension = /* @__PURE__ */ defineExtension({
     // here rather than via `useLexicalNodeSelection` inside the component.
     /* @__PURE__ */ configExtension(NodeSelectionDataSelectedExtension, {
       nodes: [CardNode],
+    }),
+    // The Card renders its slots entirely in-lexical (no React chrome), so
+    // it attaches the title synchronously through the render config:
+    // returning the host DOM reveals the container in its default
+    // slots-first position within the same commit that renders it — the
+    // named-slot analog of $getDOMSlot.
+    /* @__PURE__ */ configExtension(DOMRenderExtension, {
+      overrides: [
+        /* @__PURE__ */ domOverride([CardNode], {
+          $getSlotTargetElement: (_node, _slotName, hostDom) => hostDom,
+        }),
+      ],
     }),
   ],
   name: '@lexical/playground/Card',

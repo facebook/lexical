@@ -509,6 +509,26 @@ export interface DOMRenderMatch<T extends LexicalNode> {
     editor: LexicalEditor,
   ) => void;
   /**
+   * Where a named slot's container should attach, for hosts rendered
+   * entirely in-lexical (no chrome framework). Consulted by the
+   * reconciler whenever it creates or reconciles the slot's container,
+   * synchronously within the same commit: a non-null return attaches
+   * the container to that element and reveals it (returning `hostDom`
+   * reveals the slot in its default slots-first position). Call
+   * `$next()` to defer to lower-priority overrides / the default
+   * (null — a hidden placeholder for explicit imperative mounting via
+   * `mountSlotContainer` or lexical-react's `useLexicalSlot`).
+   *
+   * @experimental named-slots
+   */
+  $getSlotTargetElement?: (
+    node: T,
+    slotName: string,
+    hostDom: HTMLElement,
+    $next: () => HTMLElement | null,
+    editor: LexicalEditor,
+  ) => HTMLElement | null;
+  /**
    * Set via {@link domOverride}'s options argument, not directly. See
    * {@link DOMOverrideOptions.disabledForEditor}.
    */

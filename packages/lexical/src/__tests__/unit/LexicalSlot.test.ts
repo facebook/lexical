@@ -10,6 +10,7 @@ import {
   buildEditorFromExtensions,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
+import {domOverride, DOMRenderExtension} from '@lexical/html';
 import {
   $create,
   $createLineBreakNode,
@@ -36,6 +37,7 @@ import {
   $selectAll,
   $setSelection,
   $setSlot,
+  configExtension,
   defineExtension,
   ElementNode,
   getDOMSelection,
@@ -993,10 +995,10 @@ describe('named-slots: core foundation', () => {
     expect(hostDom.firstElementChild).toBe(container);
   });
 
-  test('getSlotTargetElement attaches and reveals synchronously in the commit', () => {
-    // An in-lexical host (no chrome framework): returning the host DOM from
-    // getSlotTargetElement reveals the container in its default slots-first
-    // position within the same commit that renders it.
+  test('$getSlotTargetElement attaches and reveals synchronously in the commit', () => {
+    // An in-lexical host (no chrome framework): a render-config override
+    // returning the host DOM reveals the container in its default
+    // slots-first position within the same commit that renders it.
     class InPlaceHostNode extends ElementNode {
       $config() {
         return this.config('inplace_slot_host', {extends: ElementNode});
@@ -1007,18 +1009,21 @@ describe('named-slots: core foundation', () => {
       updateDOM(): boolean {
         return false;
       }
-      getSlotTargetElement(
-        _slotName: string,
-        hostDom: HTMLElement,
-      ): HTMLElement {
-        return hostDom;
-      }
     }
     using editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: () => {
           $getRoot().clear();
         },
+        dependencies: [
+          configExtension(DOMRenderExtension, {
+            overrides: [
+              domOverride([InPlaceHostNode], {
+                $getSlotTargetElement: (_node, _slotName, hostDom) => hostDom,
+              }),
+            ],
+          }),
+        ],
         name: '[inplace-slot-host]',
         nodes: [InPlaceHostNode, TestShadowRootNode],
       }),

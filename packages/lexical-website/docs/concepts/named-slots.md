@@ -171,20 +171,25 @@ There are three ways to attach a slot, all sharing the same contract
 (attaching moves the container to the target, a no-op when it is already
 there, and reveals it; the container renders as a normal block):
 
-1. **Synchronously in-lexical**: override
-   `getSlotTargetElement(slotName, hostDom)` on the host class. The
-   reconciler consults it whenever it creates or reconciles the slot's
-   container and attaches/reveals within the same commit — no listener or
-   framework hop. Returning `hostDom` reveals the slot in its default
-   slots-first position:
+1. **Synchronously in-lexical**: register a `$getSlotTargetElement` render
+   override for the host's node class (a
+   [DOM render override](../serialization/dom-render.md), not a node
+   method — this is an advanced hook). The reconciler consults it whenever
+   it creates or reconciles the slot's container and attaches/reveals
+   within the same commit — no listener or framework hop. Returning
+   `hostDom` reveals the slot in its default slots-first position:
 
    ```ts
-   class CardNode extends ElementNode {
-     // ...
-     getSlotTargetElement(slotName: string, hostDom: HTMLElement) {
-       return hostDom;
-     }
-   }
+   import {domOverride, DOMRenderExtension} from '@lexical/html';
+   import {configExtension} from 'lexical';
+
+   configExtension(DOMRenderExtension, {
+     overrides: [
+       domOverride([CardNode], {
+         $getSlotTargetElement: (node, slotName, hostDom, $next) => hostDom,
+       }),
+     ],
+   });
    ```
 
 2. **Imperatively**: `mountSlotContainer(editor, nodeKey, slotName, target)`
@@ -315,8 +320,7 @@ not define for their own purposes:
 
 - the `__slots` and `__slotHost` fields on ElementNode / DecoratorNode;
 - the `getSlotsTextContent()` / `getSlotsTextContentSize()` methods on
-  LexicalNode (called by `getTextContent`), `getSlotTargetElement()` on
-  LexicalNode (consulted by the reconciler), and
+  LexicalNode (called by `getTextContent`) and
   `includeChildrenWhenSelected()` on ElementNode;
 - the `$slots` serialized JSON key;
 - the bare `slots` collab attribute key — a custom node field literally

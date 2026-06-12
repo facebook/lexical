@@ -56,14 +56,6 @@ export class CardNode extends ElementNode {
     return true;
   }
 
-  // The Card renders its slots entirely in-lexical (no React chrome), so it
-  // attaches the title synchronously: returning the host DOM reveals the
-  // container in its default slots-first position within the same commit
-  // that renders it — the named-slot analog of getDOMSlot.
-  getSlotTargetElement(slotName: string, hostDom: HTMLElement): HTMLElement {
-    return hostDom;
-  }
-
   // When the Card is the only thing in a NodeSelection (the atomic chrome
   // click promotes a click into one), the body children would otherwise be
   // dropped on clipboard copy / HTML export because none of them are in the

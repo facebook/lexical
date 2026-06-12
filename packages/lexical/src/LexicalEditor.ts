@@ -348,6 +348,29 @@ export interface EditorDOMRenderConfig {
     hostDom: HTMLElement,
     editor: LexicalEditor,
   ) => void;
+  /**
+   * @internal @experimental named-slots
+   *
+   * Where a named slot's container should attach, for hosts rendered
+   * entirely in-lexical (no chrome framework). The reconciler consults
+   * this whenever it creates or reconciles the slot's container,
+   * synchronously within the same commit: a non-null return attaches the
+   * container to that element (a no-op when it is already there, so
+   * returning `hostDom` reveals the slot in its default slots-first
+   * position) and reveals it. Returning null (the default) leaves the
+   * container as a hidden placeholder for explicit imperative mounting
+   * (`mountSlotContainer` / lexical-react's `useLexicalSlot`). The
+   * named-slot analog of `$getDOMSlot`'s control over where linked-list
+   * children render; the returned element should live within the host's
+   * own DOM so it is torn down with the host. Override per node type via
+   * `DOMRenderMatch.$getSlotTargetElement` (lexical-html).
+   */
+  $getSlotTargetElement: <T extends LexicalNode>(
+    node: T,
+    slotName: string,
+    hostDom: HTMLElement,
+    editor: LexicalEditor,
+  ) => HTMLElement | null;
   /** @internal @experimental */
   $updateDOM: <T extends LexicalNode>(
     nextNode: T,
@@ -845,6 +868,7 @@ export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig = {
     dom: HTMLElement,
     _editor: LexicalEditor,
   ): DOMSlotForNode<N> => node.getDOMSlot(dom) as DOMSlotForNode<N>,
+  $getSlotTargetElement: (_node, _slotName, _hostDom, _editor) => null,
   $onDOMMount: (_node, _hostDom, _editor) => undefined,
   $onDOMUpdate: (_node, _prevNode, _hostDom, _editor) => undefined,
   $shouldExclude: (node, _selection, _editor) =>

@@ -14,6 +14,7 @@ import {
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {
+  $create,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -51,7 +52,7 @@ class PlainShadowRootNode extends ElementNode {
 }
 
 function $createPlainShadowRootNode(): PlainShadowRootNode {
-  return new PlainShadowRootNode();
+  return $create(PlainShadowRootNode);
 }
 
 // A shadow-root slot value that also excludes itself from copy — an
@@ -76,7 +77,7 @@ class ExcludedShadowRootNode extends ElementNode {
 }
 
 function $createExcludedShadowRootNode(): ExcludedShadowRootNode {
-  return new ExcludedShadowRootNode();
+  return $create(ExcludedShadowRootNode);
 }
 
 // A Card-shaped host: shadow root that opts in to whole-host child export
@@ -101,7 +102,7 @@ class CardLikeNode extends ElementNode {
 }
 
 function $createCardLikeNode(): CardLikeNode {
-  return new CardLikeNode();
+  return $create(CardLikeNode);
 }
 
 describe('slot clipboard export', () => {

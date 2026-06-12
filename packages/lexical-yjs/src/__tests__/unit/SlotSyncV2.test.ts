@@ -9,6 +9,7 @@
 import type {Provider} from '../../index';
 
 import {
+  $create,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -314,7 +315,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         const host = $createParagraphNode();
         host.append($createTextNode('Body'));
         $getRoot().clear().append(host);
-        $setSlot(host, 'cover', new BlockDecoratorNode());
+        $setSlot(host, 'cover', $create(BlockDecoratorNode));
       },
       {discrete: true},
     );
@@ -792,7 +793,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         body.append($createTextNode('Body'));
         // a decorator slot value that itself hosts a nested slot, so it gets
         // mapped (an unmapped plain decorator can't hit the same-identity path)
-        const cover = new BlockDecoratorNode();
+        const cover = $create(BlockDecoratorNode);
         const caption = $createTestShadowRootNode();
         caption.append($createParagraphNode().append($createTextNode('Cap')));
         $setSlot(cover, 'caption', caption);
@@ -841,7 +842,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         body.append($createTextNode('Body'));
         $getRoot().clear().append(host);
         host.append(body);
-        $setSlot(host, 'cover', new BlockDecoratorNode());
+        $setSlot(host, 'cover', $create(BlockDecoratorNode));
       },
       {discrete: true},
     );
@@ -903,7 +904,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     editor.update(
       () => {
-        const host = new BlockDecoratorNode();
+        const host = $create(BlockDecoratorNode);
         const title = $createTestShadowRootNode();
         title.append($createParagraphNode().append($createTextNode('Title')));
         $getRoot().clear().append(host);
@@ -938,7 +939,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     editor.update(
       () => {
-        $getRoot().clear().append(new BlockDecoratorNode());
+        $getRoot().clear().append($create(BlockDecoratorNode));
       },
       {discrete: true},
     );
@@ -958,7 +959,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     editor.update(
       () => {
-        const host = new BlockDecoratorNode();
+        const host = $create(BlockDecoratorNode);
         const title = $createTestShadowRootNode();
         title.append($createParagraphNode().append($createTextNode('Title')));
         $getRoot().clear().append(host);
@@ -1000,7 +1001,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     editor.update(
       () => {
-        const host = new BlockDecoratorNode();
+        const host = $create(BlockDecoratorNode);
         const title = $createTestShadowRootNode();
         title.append($createParagraphNode().append($createTextNode('Title')));
         $getRoot().clear().append(host);
@@ -1063,7 +1064,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     editor.update(
       () => {
-        const host = new BlockDecoratorNode();
+        const host = $create(BlockDecoratorNode);
         const title = $createTestShadowRootNode();
         title.append($createParagraphNode().append($createTextNode('Title')));
         $getRoot().clear().append(host);
@@ -1122,7 +1123,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     editor.update(
       () => {
-        const host = new BlockDecoratorNode();
+        const host = $create(BlockDecoratorNode);
         const title = $createTestShadowRootNode();
         title.append($createParagraphNode().append($createTextNode('Title')));
         $getRoot().clear().append(host);
@@ -1164,7 +1165,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     editor.update(
       () => {
-        const host = new BlockDecoratorNode();
+        const host = $create(BlockDecoratorNode);
         const title = $createTestShadowRootNode();
         title.append($createParagraphNode().append($createTextNode('Title')));
         $getRoot().clear().append(host);
@@ -1220,7 +1221,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         body.append($createTextNode('Body'));
         $getRoot().clear().append(host);
         host.append(body);
-        const cover = new BlockDecoratorAttrNode();
+        const cover = $create(BlockDecoratorAttrNode);
         cover.setCaption('before');
         $setSlot(host, 'cover', cover);
       },

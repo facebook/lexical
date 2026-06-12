@@ -17,6 +17,7 @@ import {
   CoreImportExtension,
 } from '@lexical/html';
 import {
+  $create,
   $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
@@ -102,7 +103,7 @@ describe('PullQuoteNode atomic decorator host', () => {
 
     editor.update(
       () => {
-        const pullquote = new PullQuoteNode();
+        const pullquote = $create(PullQuoteNode);
         $getRoot().clear().append(pullquote);
         // Reverse of the declaration: attribution first, then quote.
         $setSlot(

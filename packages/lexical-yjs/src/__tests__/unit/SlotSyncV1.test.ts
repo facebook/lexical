@@ -7,6 +7,7 @@
  */
 
 import {
+  $create,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -1678,7 +1679,7 @@ describe('named-slots collab-v1: two-client relay', () => {
     let hostKey = '';
     editor.update(
       () => {
-        const host = new DeclaredCollabHostNode();
+        const host = $create(DeclaredCollabHostNode);
         $getRoot().clear().append(host);
         hostKey = host.getKey();
       },
@@ -1739,7 +1740,7 @@ describe('named-slots collab-v1: two-client relay', () => {
   test('concurrent first slot sets on a declared host both survive and converge in canonical order', async () => {
     const {binding1, binding2, disconnect, doc1, doc2, editor1, editor2} =
       setupOfflineTwoClients(() => {
-        const host = new DeclaredCollabHostNode();
+        const host = $create(DeclaredCollabHostNode);
         const body = $createParagraphNode();
         body.append($createTextNode('Body'));
         $getRoot().clear().append(host);
@@ -1787,7 +1788,7 @@ describe('named-slots collab-v1: two-client relay', () => {
   test('concurrent declared and undeclared adds converge in canonical order', async () => {
     const {binding1, binding2, disconnect, doc1, doc2, editor1, editor2} =
       setupOfflineTwoClients(() => {
-        const host = new DeclaredCollabHostNode();
+        const host = $create(DeclaredCollabHostNode);
         const title = $createTestShadowRootNode();
         title.append($createParagraphNode().append($createTextNode('Title')));
         $getRoot().clear().append(host);

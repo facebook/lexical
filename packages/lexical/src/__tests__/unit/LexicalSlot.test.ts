@@ -11,6 +11,7 @@ import {
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {
+  $create,
   $createNodeSelection,
   $createRangeSelection,
   $getChildCaret,
@@ -1277,10 +1278,13 @@ describe('named-slots: core foundation', () => {
 
     editor.update(
       () => {
-        // no removeSlot API yet; delete from the writable slot map directly
-        $assertNodeType($getNodeByKey(hostKey), $isParagraphNode)
-          .getWritable()
-          .__slots!.delete('title');
+        // Through the API: __slots is copy-on-write and shared across
+        // versions, so a direct map mutation would corrupt the committed
+        // previous version instead of diffing against it.
+        $removeSlot(
+          $assertNodeType($getNodeByKey(hostKey), $isParagraphNode),
+          'title',
+        );
       },
       {discrete: true},
     );
@@ -2002,7 +2006,7 @@ describe('named-slots: cross-host slot move DOM reuse', () => {
     let valueKey = '';
     editor.update(
       () => {
-        const host = new TestUpdateDOMTrueHostNode();
+        const host = $create(TestUpdateDOMTrueHostNode);
         const value = $slotContainer('Hello');
         $getRoot().append(host);
         $setSlot(host, 'media', value);
@@ -2366,7 +2370,7 @@ describe('named-slots: canonical slot order', () => {
 
     editor.update(
       () => {
-        const host = new DeclaredHostNode();
+        const host = $create(DeclaredHostNode);
         $getRoot().append(host);
         // reverse of the declaration: body first, then title
         $setSlot(host, 'body', $slotContainer('Body'));
@@ -2391,7 +2395,7 @@ describe('named-slots: canonical slot order', () => {
 
     editor.update(
       () => {
-        const host = new DeclaredHostNode();
+        const host = $create(DeclaredHostNode);
         $getRoot().append(host);
         $setSlot(host, 'zeta', $slotContainer('Z'));
         $setSlot(host, 'body', $slotContainer('B'));
@@ -2441,7 +2445,7 @@ describe('named-slots: canonical slot order', () => {
 
     editor.update(
       () => {
-        const host = new ReorderedHostNode();
+        const host = $create(ReorderedHostNode);
         $getRoot().append(host);
         // set in the parent's declared order; the subclass declaration wins
         $setSlot(host, 'title', $slotContainer('Title'));
@@ -2464,7 +2468,7 @@ describe('named-slots: canonical slot order', () => {
 
     editor.update(
       () => {
-        const host = new DeclaredHostNode();
+        const host = $create(DeclaredHostNode);
         $getRoot().append(host);
         $setSlot(host, 'body', $slotContainer('Body'));
         hostKey = host.getKey();
@@ -2504,7 +2508,7 @@ describe('named-slots: canonical slot order', () => {
 
     editor.update(
       () => {
-        const host = new DeclaredHostNode();
+        const host = $create(DeclaredHostNode);
         $getRoot().append(host);
         // scrambled call order, including an undeclared name
         $setSlot(host, 'body', $slotContainer('Body'));
@@ -2524,7 +2528,7 @@ describe('named-slots: canonical slot order', () => {
 
     editor.update(
       () => {
-        const host = new DupDeclaredHostNode();
+        const host = $create(DupDeclaredHostNode);
         $getRoot().append(host);
         // The rank is computed lazily: a single-entry map needs no ordering,
         // so the first set does not validate the declaration.
@@ -2544,7 +2548,7 @@ describe('named-slots: canonical slot order', () => {
 
     editor.update(
       () => {
-        const host = new ReservedDeclaredHostNode();
+        const host = $create(ReservedDeclaredHostNode);
         $getRoot().append(host);
         expect(() => $setSlot(host, 'a', $slotContainer('A'))).not.toThrow();
         expect(() => $setSlot(host, 'b', $slotContainer('B'))).toThrow(
@@ -2553,5 +2557,92 @@ describe('named-slots: canonical slot order', () => {
       },
       {discrete: true},
     );
+  });
+});
+
+describe('named-slots: copy-on-write slot map', () => {
+  test('a host version cloned without slot changes shares the slot map', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        $getRoot().append(host);
+        $setSlot(host, 'title', $slotContainer('Title'));
+        hostKey = host.getKey();
+      },
+      {discrete: true},
+    );
+    const mapBefore = editor
+      .getEditorState()
+      .read(
+        () => $assertNodeType($getNodeByKey(hostKey), $isParagraphNode).__slots,
+      );
+    expect(mapBefore).not.toBe(null);
+    editor.update(
+      () => {
+        // Touch the host without touching its slots: getWritable clones the
+        // node version, and the map must ride along by reference instead of
+        // being copied per version.
+        $assertNodeType($getNodeByKey(hostKey), $isParagraphNode).setStyle(
+          'color: red',
+        );
+      },
+      {discrete: true},
+    );
+    const mapAfter = editor
+      .getEditorState()
+      .read(
+        () => $assertNodeType($getNodeByKey(hostKey), $isParagraphNode).__slots,
+      );
+    expect(mapAfter).toBe(mapBefore);
+  });
+
+  test('a slot mutation clones the map once per version and leaves prior versions intact', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        $getRoot().append(host);
+        $setSlot(host, 'a', $slotContainer('A'));
+        hostKey = host.getKey();
+      },
+      {discrete: true},
+    );
+    const stateA = editor.getEditorState();
+    const mapA = stateA.read(
+      () => $assertNodeType($getNodeByKey(hostKey), $isParagraphNode).__slots,
+    );
+    let mapAfterFirstWrite: ReadonlyMap<string, string> | null = null;
+    let mapAfterSecondWrite: ReadonlyMap<string, string> | null = null;
+    editor.update(
+      () => {
+        const host = $assertNodeType($getNodeByKey(hostKey), $isParagraphNode);
+        $setSlot(host, 'b', $slotContainer('B'));
+        mapAfterFirstWrite = host.getLatest().__slots;
+        $setSlot(host, 'c', $slotContainer('C'));
+        mapAfterSecondWrite = host.getLatest().__slots;
+      },
+      {discrete: true},
+    );
+    // The version's first write cloned the shared map; the second write
+    // reused the version-owned clone.
+    expect(mapAfterFirstWrite).not.toBe(mapA);
+    expect(mapAfterSecondWrite).toBe(mapAfterFirstWrite);
+    // The previously committed state still reads its own single-entry map.
+    expect(
+      stateA.read(() =>
+        $getSlotNames(
+          $assertNodeType($getNodeByKey(hostKey), $isParagraphNode),
+        ),
+      ),
+    ).toEqual(['a']);
+    expect(
+      stateA.read(
+        () => $assertNodeType($getNodeByKey(hostKey), $isParagraphNode).__slots,
+      ),
+    ).toBe(mapA);
+    expect(mapA!.size).toBe(1);
   });
 });

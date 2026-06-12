@@ -13,6 +13,7 @@ import {
 import {RichTextExtension} from '@lexical/rich-text';
 import {$isBlockFullySelected} from '@lexical/utils';
 import {
+  $create,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -56,7 +57,7 @@ class SlotContainerNode extends ElementNode {
 // A shadow-root container holding a paragraph + text per entry, so the slot
 // holds whole blocks (a shadow root's children must be elements).
 function $slotContainer(...texts: string[]): SlotContainerNode {
-  const container = new SlotContainerNode();
+  const container = $create(SlotContainerNode);
   for (const text of texts) {
     container.append($createParagraphNode().append($createTextNode(text)));
   }

@@ -178,6 +178,38 @@ export function $getSlot(node: LexicalNode, name: string): LexicalNode | null {
 
 const RESERVED_SLOT_NAMES = ['__proto__', 'constructor', 'prototype'];
 
+// Copy-on-write owner mark for slot maps, mirroring NodeState's scheme (its
+// state object carries a backpointer to the owning node version; getWritable
+// returns itself only for that version). afterCloneFrom shares the map
+// reference across versions, so a host that is cloned without a slot change
+// pays no per-version Map copy; the mutators below clone exactly once per
+// writable version, the first time that version writes. The owner rides on a
+// symbol property rather than a side table: it is stamped exactly once, on a
+// freshly constructed map (copy-on-write means a shared or committed map is
+// never written to, only replaced), and a plain `new Map(slots)` clone is
+// born unowned because expandos don't copy.
+const SLOT_MAP_OWNER = Symbol('slotMapOwner');
+
+interface OwnedSlotMap extends Map<string, NodeKey> {
+  [SLOT_MAP_OWNER]?: LexicalNode;
+}
+
+// @experimental named-slots. Returns a slot map that `writableHost` (the
+// current writable version, from getWritable()) is allowed to mutate,
+// cloning the shared map on the version's first write.
+function $getWritableSlots(
+  writableHost: LexicalNode & SlotHostNode,
+): Map<string, NodeKey> {
+  let slots: OwnedSlotMap | null = writableHost.__slots;
+  if (slots === null || slots[SLOT_MAP_OWNER] !== writableHost) {
+    // new Map(null) is the empty map, so first allocation and clone share it
+    slots = new Map(slots);
+    slots[SLOT_MAP_OWNER] = writableHost;
+    writableHost.__slots = slots;
+  }
+  return slots;
+}
+
 const slotRankCache = new WeakMap<
   Klass<LexicalNode>,
   ReadonlyMap<string, number>
@@ -347,10 +379,8 @@ export function $setSlot<T extends LexicalNode & SlotHostNode>(
     String($getSlotHostKey(node)),
   );
   const writableSelf = host.getWritable();
-  if (writableSelf.__slots === null) {
-    writableSelf.__slots = new Map();
-  }
-  const previousKey = writableSelf.__slots.get(name);
+  const slots = $getWritableSlots(writableSelf);
+  const previousKey = slots.get(name);
   if (previousKey !== undefined) {
     $detachSlottedNode(previousKey);
   }
@@ -361,7 +391,7 @@ export function $setSlot<T extends LexicalNode & SlotHostNode>(
   // Mirrors the patterns in ElementNode.append / replace / insertBefore.
   $removeFromParent(writableNode);
   writableNode.__slotHost = writableSelf.__key;
-  writableSelf.__slots.set(name, writableNode.__key);
+  slots.set(name, writableNode.__key);
   $canonicalizeSlotOrder(writableSelf);
   $getEditor()._slotsUsed = true;
   return writableSelf;
@@ -385,7 +415,7 @@ export function $removeSlot<T extends LexicalNode & SlotHostNode>(
   const previousKey = writableSelf.__slots.get(name);
   if (previousKey !== undefined) {
     $detachSlottedNode(previousKey);
-    writableSelf.__slots.delete(name);
+    $getWritableSlots(writableSelf).delete(name);
   }
   return writableSelf;
 }

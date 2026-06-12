@@ -51,8 +51,10 @@ export class DecoratorNode<T>
         String(this.__slotHost),
         String(this.__parent),
       );
-      this.__slots =
-        prevNode.__slots === null ? null : new Map(prevNode.__slots);
+      // Copy-on-write: share the map across versions; the LexicalSlot
+      // mutators clone it on a version's first write (owner ledger), so a
+      // host cloned for any non-slot change pays no per-version Map copy.
+      this.__slots = prevNode.__slots;
     }
   }
 

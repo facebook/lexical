@@ -74,15 +74,17 @@ function $slotContainer(...texts: string[]): SlotContainerNode {
 //   └── paragraph 'after'
 // Two in-slot blocks keep "select the caret's block" (SelectBlockExtension)
 // observably different from "select the whole slot" (the rich-text default).
-function setUpSlotEditor(options: {disabled?: boolean} = {}) {
-  const {disabled = false} = options;
+function setUpSlotEditor(
+  options: {disabled?: boolean; slotTexts?: string[]} = {},
+) {
+  const {disabled = false, slotTexts = ['slot one', 'slot two']} = options;
   return buildEditorFromExtensions(
     defineExtension({
       $initialEditorState: () => {
         const host = $createParagraphNode().append(
           $createTextNode('host body'),
         );
-        $setSlot(host, 'title', $slotContainer('slot one', 'slot two'));
+        $setSlot(host, 'title', $slotContainer(...slotTexts));
         $getRoot().append(
           $createParagraphNode().append($createTextNode('before')),
           host,
@@ -189,7 +191,7 @@ describe('SelectBlockExtension with named slots', () => {
     });
   });
 
-  test('a second select all expands to the whole document without throwing', () => {
+  test('repeated select all expands block, then slot, then document', () => {
     using editor = setUpSlotEditor();
     editor.update(
       () => {
@@ -197,12 +199,31 @@ describe('SelectBlockExtension with named slots', () => {
       },
       {discrete: true},
     );
+
+    // 1st press: the caret's in-slot block only
     editor.dispatchCommand(SELECT_ALL_COMMAND, selectAllKeyboardEvent());
     editor.read(() => {
       $expectFullySelected($slotParagraph(0));
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      expect($isBlockFullySelected($slotValue(), selection)).toBe(false);
     });
 
-    // The in-slot block is now fully selected. Comparing the selection
+    // 2nd press: the whole slot frame (every in-slot block), still inside it
+    expect(
+      editor.dispatchCommand(SELECT_ALL_COMMAND, selectAllKeyboardEvent()),
+    ).toBe(true);
+    editor.read(() => {
+      $expectFullySelected($slotValue());
+      $expectFullySelected($slotParagraph(0));
+      $expectFullySelected($slotParagraph(1));
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      expect($isBlockFullySelected($getRoot(), selection)).toBe(false);
+      $expectSelectionInSlotFrame();
+    });
+
+    // 3rd press: the whole document. Comparing the in-frame selection
     // against the root crosses the slot boundary; the slot-frame guard in
     // $isBlockFullySelected returns false gracefully (instead of throwing on
     // a caret comparison with no common ancestor), so bare $selectAll runs.
@@ -218,6 +239,29 @@ describe('SelectBlockExtension with named slots', () => {
       // the selection escaped the slot frame onto the document
       expect($getSlotFrame(selection.anchor.getNode())).toBe(null);
       expect($getSlotFrame(selection.focus.getNode())).toBe(null);
+    });
+  });
+
+  test('a one-block slot escalates block, then document, with no dead press', () => {
+    using editor = setUpSlotEditor({slotTexts: ['only block']});
+    editor.update(
+      () => {
+        $slotText(0).select(2, 2);
+      },
+      {discrete: true},
+    );
+
+    editor.dispatchCommand(SELECT_ALL_COMMAND, selectAllKeyboardEvent());
+    editor.read(() => {
+      $expectFullySelected($slotParagraph(0));
+    });
+
+    // The frame's only block is fully selected, so the frame counts as fully
+    // selected itself and the second press goes straight to the document
+    // instead of re-selecting an identical range.
+    editor.dispatchCommand(SELECT_ALL_COMMAND, selectAllKeyboardEvent());
+    editor.read(() => {
+      $expectFullySelected($getRoot());
     });
   });
 

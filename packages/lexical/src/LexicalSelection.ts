@@ -291,15 +291,28 @@ function $transferStartingElementPointToTextPoint(
   textNode.setStyle(style);
   if ($isParagraphNode(placementNode)) {
     placementNode.splice(0, 0, [textNode]);
-  } else {
+  } else if (placementNode !== null) {
     const target = $isRootNode(element)
       ? $createParagraphNode().append(textNode)
       : textNode;
-    if (placementNode === null) {
-      element.append(target);
+    placementNode.insertBefore(target);
+  } else if ($isRootOrShadowRoot(element)) {
+    // root or shadow-root + last-offset typing: reuse the empty trailing
+    // block when one exists (typical state after a sibling block decorator
+    // was deleted) instead of appending a fresh paragraph. The old behavior
+    // left a phantom empty paragraph above the user's input.
+    const lastChild = element.getLastChild();
+    if (
+      $isElementNode(lastChild) &&
+      !lastChild.isInline() &&
+      lastChild.isEmpty()
+    ) {
+      lastChild.append(textNode);
     } else {
-      placementNode.insertBefore(target);
+      element.append($createParagraphNode().append(textNode));
     }
+  } else {
+    element.append(textNode);
   }
   // Transfer the element point to a text point.
   if (start.is(end)) {

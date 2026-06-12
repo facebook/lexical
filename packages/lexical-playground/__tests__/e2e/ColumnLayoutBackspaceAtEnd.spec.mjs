@@ -84,9 +84,8 @@ for (const key of ['ArrowRight', 'ArrowDown']) {
     page,
     isPlainText,
     isCollab,
-    browser,
   }) => {
-    test.skip(isPlainText || isCollab || browser === 'firefox');
+    test.skip(isPlainText || isCollab);
     await initialize({page});
     await focusEditor(page);
 

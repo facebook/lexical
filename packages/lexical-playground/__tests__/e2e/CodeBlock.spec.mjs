@@ -990,9 +990,8 @@ test.describe('CodeBlock', () => {
       page,
       isPlainText,
       isCollab,
-      browser,
     }) => {
-      test.skip(isPlainText || isCollab || browser === 'firefox');
+      test.skip(isPlainText || isCollab);
       await initialize({page});
       await focusEditor(page);
 

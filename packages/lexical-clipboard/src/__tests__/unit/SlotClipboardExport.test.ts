@@ -11,7 +11,7 @@ import {
   $generateNodesFromSerializedNodes,
   $insertGeneratedNodes,
 } from '@lexical/clipboard';
-import {createHeadlessEditor} from '@lexical/headless';
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {
   $create,
@@ -27,6 +27,7 @@ import {
   $isTextNode,
   $setSelection,
   $setSlot,
+  defineExtension,
   ElementNode,
   type SerializedElementNode,
 } from 'lexical';
@@ -107,10 +108,13 @@ function $createCardLikeNode(): CardLikeNode {
 
 describe('slot clipboard export', () => {
   test('throws when a slot value is excluded from copy', () => {
-    const editor = createHeadlessEditor({
-      namespace: 'slot-exclude',
-      nodes: [ExcludedShadowRootNode],
-    });
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[slot-exclude]',
+        nodes: [ExcludedShadowRootNode],
+      }),
+    );
     editor.update(
       () => {
         const host = $createParagraphNode();
@@ -127,10 +131,13 @@ describe('slot clipboard export', () => {
   });
 
   test('a host outside the selection does not gate the export on its slot', () => {
-    const editor = createHeadlessEditor({
-      namespace: 'slot-exclude',
-      nodes: [ExcludedShadowRootNode],
-    });
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[slot-exclude]',
+        nodes: [ExcludedShadowRootNode],
+      }),
+    );
     let beforeKey = '';
     editor.update(
       () => {
@@ -167,10 +174,13 @@ describe('slot clipboard export', () => {
   // $generateNodesFromSerializedNodes + $insertGeneratedNodes with the slot
   // name and slot subtree text preserved.
   test('a slot-bearing host round-trips through JSON copy + insert', () => {
-    const editor = createHeadlessEditor({
-      namespace: 'slot-roundtrip',
-      nodes: [PlainShadowRootNode],
-    });
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[slot-roundtrip]',
+        nodes: [PlainShadowRootNode],
+      }),
+    );
     editor.update(
       () => {
         const host = $createParagraphNode();
@@ -196,10 +206,13 @@ describe('slot clipboard export', () => {
     expect(hostJson.$slots!.media).toBeDefined();
 
     // Paste into a fresh editor and verify the slot survived.
-    const editor2 = createHeadlessEditor({
-      namespace: 'slot-roundtrip',
-      nodes: [PlainShadowRootNode],
-    });
+    using editor2 = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[slot-roundtrip]',
+        nodes: [PlainShadowRootNode],
+      }),
+    );
     editor2.update(
       () => {
         const target = $createParagraphNode();
@@ -230,10 +243,13 @@ describe('slot clipboard export', () => {
   // exporters must walk the selection's slot frame instead of only the root —
   // otherwise copy returns an empty payload and cut is silent data loss.
   test('a selection inside a slot exports its content on both channels', () => {
-    const editor = createHeadlessEditor({
-      namespace: 'slot-inner-copy',
-      nodes: [PlainShadowRootNode],
-    });
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[slot-inner-copy]',
+        nodes: [PlainShadowRootNode],
+      }),
+    );
     let slotTextKey = '';
     editor.update(
       () => {
@@ -273,10 +289,13 @@ describe('slot clipboard export', () => {
   // slicing per child or a drag into the host over-exports content the user
   // never selected.
   test('a partial range over an includeChildrenWhenSelected host does not over-export', () => {
-    const editor = createHeadlessEditor({
-      namespace: 'slot-partial-range',
-      nodes: [CardLikeNode, PlainShadowRootNode],
-    });
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[slot-partial-range]',
+        nodes: [CardLikeNode, PlainShadowRootNode],
+      }),
+    );
     let introTextKey = '';
     let bodyTextKey = '';
     editor.update(
@@ -327,10 +346,13 @@ describe('slot clipboard export', () => {
   // child used to be spliced up and exported AS the slot value, silently
   // corrupting the payload. The guard must compare the exported type too.
   test('throws when a 1-child excluded slot value would export its child instead', () => {
-    const editor = createHeadlessEditor({
-      namespace: 'slot-exclude-one-child',
-      nodes: [ExcludedShadowRootNode],
-    });
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[slot-exclude-one-child]',
+        nodes: [ExcludedShadowRootNode],
+      }),
+    );
     editor.update(
       () => {
         const host = $createParagraphNode();

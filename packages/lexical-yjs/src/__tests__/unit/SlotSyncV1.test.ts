@@ -7,6 +7,10 @@
  */
 
 import {
+  buildEditorFromExtensions,
+  type LexicalEditorWithDispose,
+} from '@lexical/extension';
+import {
   $create,
   $createParagraphNode,
   $createTextNode,
@@ -18,7 +22,7 @@ import {
   $isTextNode,
   $removeSlot,
   $setSlot,
-  createEditor,
+  defineExtension,
   ElementNode,
   type LexicalEditor,
 } from 'lexical';
@@ -58,19 +62,22 @@ import {
 // and drive the observer (remote-change) path for a slot add / delete / in-slot
 // text edit through the real syncYjsChangesToLexical entry point.
 describe('named-slots collab-v1: lexical <-> yjs', () => {
-  const editors: LexicalEditor[] = [];
+  const editors: LexicalEditorWithDispose[] = [];
   afterEach(() => {
+    for (const editor of editors) {
+      editor.dispose();
+    }
     editors.length = 0;
   });
 
   function buildBinding() {
-    const editor = createEditor({
-      namespace: 'slot-sync-v1',
-      nodes: [TestShadowRootNode, TestDecoratorNode],
-      onError: e => {
-        throw e;
-      },
-    });
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[slot-sync-v1]',
+        nodes: [TestShadowRootNode, TestDecoratorNode],
+      }),
+    );
     editors.push(editor);
     const doc = new Doc();
     const docMap = new Map<string, Doc>([['slot-sync-v1', doc]]);
@@ -91,13 +98,13 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
   // share the in-process Doc, otherwise the restore reuses the serializer's
   // collab nodes and double-applies their children.
   function buildRestoreBinding(doc: Doc) {
-    const editor = createEditor({
-      namespace: 'slot-sync-v1',
-      nodes: [TestShadowRootNode],
-      onError: e => {
-        throw e;
-      },
-    });
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[slot-sync-v1]',
+        nodes: [TestShadowRootNode],
+      }),
+    );
     editors.push(editor);
     const docMap = new Map<string, Doc>([['slot-sync-v1', doc]]);
     const binding = createBinding(
@@ -899,19 +906,22 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
 // entry points (serialize, restore, observer, local update), exercising the
 // decorator-specific create-seed / restore / re-route / destroy paths.
 describe('named-slots collab-v1: decorator host <-> yjs', () => {
-  const editors: LexicalEditor[] = [];
+  const editors: LexicalEditorWithDispose[] = [];
   afterEach(() => {
+    for (const editor of editors) {
+      editor.dispose();
+    }
     editors.length = 0;
   });
 
   function buildBinding() {
-    const editor = createEditor({
-      namespace: 'slot-sync-v1',
-      nodes: [TestShadowRootNode, TestDecoratorNode],
-      onError: e => {
-        throw e;
-      },
-    });
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[slot-sync-v1]',
+        nodes: [TestShadowRootNode, TestDecoratorNode],
+      }),
+    );
     editors.push(editor);
     const doc = new Doc();
     const docMap = new Map<string, Doc>([['slot-sync-v1', doc]]);
@@ -926,13 +936,13 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
   }
 
   function buildRestoreBinding(doc: Doc) {
-    const editor = createEditor({
-      namespace: 'slot-sync-v1',
-      nodes: [TestShadowRootNode, TestDecoratorNode],
-      onError: e => {
-        throw e;
-      },
-    });
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[slot-sync-v1]',
+        nodes: [TestShadowRootNode, TestDecoratorNode],
+      }),
+    );
     editors.push(editor);
     const docMap = new Map<string, Doc>([['slot-sync-v1', doc]]);
     const binding = createBinding(
@@ -1351,8 +1361,11 @@ class DeclaredCollabHostNode extends ElementNode {
 // attribute, so the peer sees no YMapEvent at all, only a changed `slots` key
 // on the host's own event.
 describe('named-slots collab-v1: two-client relay', () => {
-  const editors: LexicalEditor[] = [];
+  const editors: LexicalEditorWithDispose[] = [];
   afterEach(() => {
+    for (const editor of editors) {
+      editor.dispose();
+    }
     editors.length = 0;
   });
 
@@ -1363,13 +1376,13 @@ describe('named-slots collab-v1: two-client relay', () => {
   } as unknown as Provider;
 
   function buildClient(doc: Doc) {
-    const editor = createEditor({
-      namespace: 'slot-sync-v1',
-      nodes: [TestShadowRootNode, TestDecoratorNode, DeclaredCollabHostNode],
-      onError: e => {
-        throw e;
-      },
-    });
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[slot-sync-v1]',
+        nodes: [TestShadowRootNode, TestDecoratorNode, DeclaredCollabHostNode],
+      }),
+    );
     editors.push(editor);
     const docMap = new Map<string, Doc>([['slot-sync-v1', doc]]);
     const binding = createBinding(

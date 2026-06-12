@@ -35,7 +35,6 @@ import {
   $selectAll,
   $setSelection,
   $setSlot,
-  createEditor,
   defineExtension,
   ElementNode,
   getDOMSelection,
@@ -550,12 +549,14 @@ describe('named-slots: core foundation', () => {
     // the deliberately-unresolvable slot key survives to export, where the
     // export invariant catches it. A mounted editor would reject the same
     // bad state earlier, when the reconciler walks the slot to render it.
-    const headless = createEditor({
-      namespace: 'slot-poc-headless',
-      onError: error => {
-        throw error;
-      },
-    });
+    using headless = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $getRoot().clear();
+        },
+        name: '[slot-poc-headless]',
+      }),
+    );
 
     headless.update(
       () => {
@@ -1797,13 +1798,15 @@ describe('named-slots: core foundation', () => {
 // slot replace therefore fails on the throwing path and passes on the fixed one.
 describe('named-slots: slot name with selector metacharacters', () => {
   test('reconciling a slot with such a name does not rebuild the host DOM', () => {
-    const editor = createEditor({
-      namespace: 'slot-meta',
-      nodes: [TestShadowRootNode],
-      onError: e => {
-        throw e;
-      },
-    });
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $getRoot().clear();
+        },
+        name: '[slot-meta]',
+        nodes: [TestShadowRootNode],
+      }),
+    );
     const rootElement = document.createElement('div');
     rootElement.contentEditable = 'true';
     document.body.appendChild(rootElement);
@@ -1879,7 +1882,7 @@ describe('named-slots: slot name with selector metacharacters', () => {
 // not a RangeSelection — the consumer promotes it to a NodeSelection).
 describe('named-slots: selection resolution onto a slotted decorator', () => {
   function resolveCaretOnDecorator(
-    editor: ReturnType<typeof createEditor>,
+    editor: LexicalEditorWithDispose,
     decoratorKey: string,
   ) {
     const decoratorDom = editor.getElementByKey(decoratorKey);

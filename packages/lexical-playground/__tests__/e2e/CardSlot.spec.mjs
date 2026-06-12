@@ -18,6 +18,7 @@ import {
   expect,
   focusEditor,
   initialize,
+  IS_LINUX,
   pasteFromClipboard,
   sleep,
   test,
@@ -365,6 +366,12 @@ test.describe('Card Tab / Shift+Tab slot caret navigation', () => {
 // implementation decisions). Typing a single character after Cmd+A in the
 // title slot must replace only the title text, leaving the body intact.
 test.describe('Card SELECT_ALL stays slot-scoped', () => {
+  // The Linux Firefox selectAll helper emulates a native whole-document
+  // selection instead of pressing the shortcut (#4665), so SELECT_ALL_COMMAND
+  // scoping can never be exercised there — the emulated selection is anchored
+  // at the document start, not at the caret in the slot. Same skip as
+  // SelectBlock.spec.mjs, which depends on the command path the same way.
+  test.skip(({browserName}) => browserName === 'firefox' && IS_LINUX);
   test.beforeEach(async ({isCollab, isPlainText, page}) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});

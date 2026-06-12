@@ -13,6 +13,7 @@ import {
   expect,
   focusEditor,
   initialize,
+  IS_LINUX,
   sleep,
   test,
   waitForSelector,
@@ -78,8 +79,13 @@ test.describe('PullQuote slot host', () => {
   });
 
   test('typing inside the quote slot replaces only its text', async ({
+    browserName,
     page,
   }) => {
+    // selectAll on Linux Firefox emulates a native whole-document selection
+    // (#4665) instead of the SELECT_ALL command, so the slot-scoped selection
+    // this test depends on can't be produced there (see SelectBlock.spec.mjs).
+    test.skip(browserName === 'firefox' && IS_LINUX);
     await focusEditor(page);
     await insertPullQuote(page);
 
@@ -95,8 +101,13 @@ test.describe('PullQuote slot host', () => {
   });
 
   test('typing inside the attribution slot replaces only its text', async ({
+    browserName,
     page,
   }) => {
+    // selectAll on Linux Firefox emulates a native whole-document selection
+    // (#4665) instead of the SELECT_ALL command, so the slot-scoped selection
+    // this test depends on can't be produced there (see SelectBlock.spec.mjs).
+    test.skip(browserName === 'firefox' && IS_LINUX);
     await focusEditor(page);
     await insertPullQuote(page);
 

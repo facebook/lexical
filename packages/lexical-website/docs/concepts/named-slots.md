@@ -187,14 +187,26 @@ there, and reveals it; the container renders as a normal block):
 
    ```ts
    import {domOverride, DOMRenderExtension} from '@lexical/html';
-   import {configExtension} from 'lexical';
+   import {configExtension, defineExtension} from 'lexical';
 
-   configExtension(DOMRenderExtension, {
-     overrides: [
-       domOverride([CardNode], {
-         $getSlotTargetElement: (node, slotName, hostDom, $next) => hostDom,
+   export const CardExtension = defineExtension({
+     dependencies: [
+       configExtension(DOMRenderExtension, {
+         overrides: [
+           domOverride([CardNode], {
+             // Reveal the title in its default slots-first position within
+             // the same commit that renders it. Returning an element from
+             // deeper inside the host's DOM attaches it there instead;
+             // $next() defers to lower-priority overrides (default: null,
+             // a hidden placeholder).
+             $getSlotTargetElement: (node, slotName, hostDom, $next) =>
+               hostDom,
+           }),
+         ],
        }),
      ],
+     name: 'card',
+     nodes: [CardNode],
    });
    ```
 
@@ -207,7 +219,35 @@ there, and reveals it; the container renders as a normal block):
    They read through
    [`editor.readPending`](/docs/api/classes/lexical.LexicalEditor#readpending),
    so calling them mid-update
-   observes the pending state without forcing a flush.
+   observes the pending state without forcing a flush:
+
+   ```ts
+   import {mountSlotContainer} from 'lexical';
+
+   // e.g. inside an extension's register(editor):
+   const unregister = editor.registerMutationListener(
+     CardNode,
+     (mutations) => {
+       for (const [nodeKey, mutation] of mutations) {
+         if (mutation === 'destroyed') {
+           continue;
+         }
+         const hostDom = editor.getElementByKey(nodeKey);
+         if (hostDom !== null) {
+           // Mounting in place: the placeholder is already parked in the
+           // host DOM, so this just reveals it in its slots-first position.
+           // Any element within the host's DOM works as a target.
+           mountSlotContainer(editor, nodeKey, 'title', hostDom);
+         }
+       }
+     },
+     {skipInitialization: false},
+   );
+   ```
+
+   `unmountSlotContainer(editor, nodeKey, container)` is the reverse: it
+   hides the container and parks it back in the host DOM, for when a mount
+   target goes away while the host remains.
 
 3. **From React chrome**: the
    [`useLexicalSlot`](/docs/api/modules/lexical_react_useLexicalSlot#uselexicalslot)

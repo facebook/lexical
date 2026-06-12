@@ -20,7 +20,6 @@ import type {
   NodeKey,
   NodeSelection,
   ParagraphNode,
-  PasteCommandType,
   RangeSelection,
   SerializedElementNode,
   Spread,
@@ -47,6 +46,7 @@ import {
   $getNearestBlockElementAncestorOrThrow,
   $handleIndentAndOutdent,
   addClassNamesToElement,
+  eventFiles,
   isHTMLElement,
   mergeRegister,
   objectKlassEquals,
@@ -514,29 +514,7 @@ async function onCutForRichText(
   );
 }
 
-// Clipboard may contain files that we aren't allowed to read. While the event is arguably useless,
-// in certain occasions, we want to know whether it was a file transfer, as opposed to text. We
-// control this with the first boolean flag.
-export function eventFiles(
-  event: DragEvent | PasteCommandType,
-): [boolean, File[], boolean] {
-  let dataTransfer: null | DataTransfer = null;
-  if (objectKlassEquals(event, DragEvent)) {
-    dataTransfer = event.dataTransfer;
-  } else if (objectKlassEquals(event, ClipboardEvent)) {
-    dataTransfer = event.clipboardData;
-  }
-
-  if (dataTransfer === null) {
-    return [false, [], false];
-  }
-
-  const types = dataTransfer.types;
-  const hasFiles = types.includes('Files');
-  const hasContent =
-    types.includes('text/html') || types.includes('text/plain');
-  return [hasFiles, Array.from(dataTransfer.files), hasContent];
-}
+export {eventFiles} from '@lexical/utils';
 
 function $isTargetWithinDecorator(target: HTMLElement): boolean {
   const node = $getNearestNodeFromDOMNode(target);
@@ -1246,17 +1224,9 @@ export function registerRichText(
         if (isFileTransfer && !$isRangeSelection(selection)) {
           return false;
         }
-        const x = event.clientX;
-        const y = event.clientY;
-        const eventRange = caretFromPoint(x, y);
-        if (eventRange !== null) {
-          const node = $getNearestNodeFromDOMNode(eventRange.node);
-          if ($isDecoratorNode(node)) {
-            // Show browser caret as the user is dragging the media across the screen. Won't work
-            // for DecoratorNode nor it's relevant.
-            event.preventDefault();
-          }
-        }
+        // contenteditable is not a native drop target; preventDefault() is
+        // required on dragover to allow the drop event to fire in Firefox.
+        event.preventDefault();
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

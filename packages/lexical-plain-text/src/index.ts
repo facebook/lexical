@@ -23,7 +23,7 @@ import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
-import {mergeRegister, objectKlassEquals} from '@lexical/utils';
+import {eventFiles, mergeRegister, objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
   $getSlotFrame,
@@ -39,6 +39,7 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
@@ -421,6 +422,20 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     editor.registerCommand<DragEvent>(
       DROP_COMMAND,
       event => $handlePlainTextDrop(event, editor),
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<DragEvent>(
+      DRAGOVER_COMMAND,
+      event => {
+        const [isFileTransfer] = eventFiles(event);
+        if (isFileTransfer) {
+          return false;
+        }
+        // contenteditable is not a native drop target; preventDefault() is
+        // required on dragover to allow the drop event to fire in Firefox.
+        event.preventDefault();
+        return true;
+      },
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand<DragEvent>(

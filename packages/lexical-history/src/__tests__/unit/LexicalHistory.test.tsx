@@ -95,7 +95,7 @@ class CustomTextNode extends TextNode {
   /** @internal */
   declare ['constructor']: KlassConstructor<typeof CustomTextNode>;
 
-  __classes: Set<string> = new Set();
+  __classes: Set<string>;
   constructor(
     text: string = '',
     classes: Iterable<string> = [],

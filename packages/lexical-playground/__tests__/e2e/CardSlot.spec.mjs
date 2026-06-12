@@ -184,26 +184,15 @@ test.describe('Card slot deletion boundaries', () => {
     await assertCardIntact(page, {body: 'ody', title: 'Title'});
   });
 
-  test('backspace at 2nd-paragraph start merges within slot', async ({
-    page,
-  }) => {
-    await focusEditor(page);
-    await insertCard(page);
-    await click(page, '[data-lexical-slot="title"]');
-    await sleep(100);
-    await moveToLineEnd(page);
-    await page.keyboard.press('Enter');
-    await page.keyboard.type('SECOND');
-    await sleep(120);
-    // Two paragraphs in the title slot before the merge.
-    expect(await slotText(page, 'title')).toBe(`Title${PARA}SECOND`);
-    await moveToLineBeginning(page);
-    await page.keyboard.press('Backspace');
-    await sleep(120);
-    await assertCardIntact(page, {body: 'Body', title: 'TitleSECOND'});
-  });
+  // --- Single-line slot: the title's value is a bare paragraph ---
 
-  test('forward-delete at 1st-paragraph end merges within slot', async ({
+  // The title slot's value is a bare ParagraphNode — the slot link itself is
+  // the virtual shadow root, so the slot holds exactly one block. Enter has
+  // no position for a sibling paragraph and is a core no-op (mirrors Enter
+  // in an <input>); typing afterwards continues on the same single line.
+  // (Multi-paragraph intra-slot merging is covered by the PullQuote quote
+  // slot, which keeps a multi-block SlotContainerNode.)
+  test('Enter inside the title slot is a no-op (single-line slot)', async ({
     page,
   }) => {
     await focusEditor(page);
@@ -214,11 +203,8 @@ test.describe('Card slot deletion boundaries', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('SECOND');
     await sleep(120);
-    expect(await slotText(page, 'title')).toBe(`Title${PARA}SECOND`);
-    await page.keyboard.press('ArrowUp');
-    await moveToLineEnd(page);
-    await page.keyboard.press('Delete');
-    await sleep(120);
+    // Still a single paragraph: the Enter did not split the title.
+    expect(await slotText(page, 'title')).not.toContain(PARA);
     await assertCardIntact(page, {body: 'Body', title: 'TitleSECOND'});
   });
 });

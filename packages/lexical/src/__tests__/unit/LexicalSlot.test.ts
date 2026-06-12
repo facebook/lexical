@@ -12,15 +12,18 @@ import {
 } from '@lexical/extension';
 import {
   $create,
+  $createLineBreakNode,
   $createNodeSelection,
   $createRangeSelection,
   $getChildCaret,
   $getDOMSlot,
+  $getNearestRootOrShadowRoot,
   $getNodeByKey,
   $getRoot,
   $getSelection,
   $getSlot,
   $getSlotContainer,
+  $getSlotFrame,
   $getSlotHost,
   $getSlotNames,
   $getSlotNameWithinHost,
@@ -36,6 +39,7 @@ import {
   defineExtension,
   ElementNode,
   getDOMSelection,
+  type ParagraphNode,
   TextNode,
 } from 'lexical';
 import {afterEach, assert, describe, expect, test} from 'vitest';
@@ -425,7 +429,7 @@ describe('named-slots: core foundation', () => {
     );
   });
 
-  test('setSlot enforces shadow-root element or non-inline decorator values', () => {
+  test('setSlot enforces non-inline element or decorator values', () => {
     using editor = createSlotEditor();
 
     editor.update(
@@ -445,10 +449,13 @@ describe('named-slots: core foundation', () => {
         expect(() =>
           $setSlot(host, 'title', $createTestDecoratorNode()),
         ).toThrow(/not a valid slot value/);
-        // a block element that is NOT a shadow root is rejected
-        expect(() => $setSlot(host, 'title', $createParagraphNode())).toThrow(
-          /not a valid slot value/,
-        );
+        // a plain block element is accepted: the slot link itself is the
+        // virtual shadow root, so the value need not be one (a ParagraphNode
+        // can serve as a single-line field)
+        const line = $createParagraphNode();
+        expect(() => $setSlot(host, 'line', line)).not.toThrow();
+        expect($getSlot(host, 'line')!.is(line)).toBe(true);
+        $removeSlot(host, 'line');
 
         // a shadow-root element is accepted
         const shadow = $createTestShadowRootNode();
@@ -2644,5 +2651,237 @@ describe('named-slots: copy-on-write slot map', () => {
       ),
     ).toBe(mapA);
     expect(mapA!.size).toBe(1);
+  });
+});
+
+// A slot value need not be a shadow root: the slot link itself is a virtual
+// invisible shadow root between the host and the value, so a plain block
+// (here a bare ParagraphNode used as a single-line field) is a valid slot
+// child. These tests pin the editing behavior of such block-shaped values:
+// the scope holds exactly one block, and interactions mirror an <input> —
+// Enter is a no-op, multi-block paste flattens to inline content with line
+// breaks stripped, and the boundary still clamps selection.
+describe('named-slots: block slot values (virtual shadow root)', () => {
+  function $createLineSlotHost(): {host: ParagraphNode; line: ParagraphNode} {
+    const host = $createParagraphNode();
+    host.append($createTextNode('body'));
+    $getRoot().append(host);
+    const line = $createParagraphNode();
+    line.append($createTextNode('Title'));
+    $setSlot(host, 'title', line);
+    return {host, line};
+  }
+
+  test('typing and inline insertNodes land inside the value', () => {
+    using editor = createSlotEditor();
+    let lineKey = '';
+    editor.update(
+      () => {
+        const {line} = $createLineSlotHost();
+        lineKey = line.getKey();
+        const text = line.getFirstChild();
+        assert(text !== null && $isTextNode(text));
+        text.select(5, 5);
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        selection.insertText('!');
+        selection.insertNodes([$createTextNode('?')]);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const line = $getNodeByKey(lineKey);
+      assert(line !== null && $isParagraphNode(line));
+      expect(line.getTextContent()).toBe('Title!?');
+      expect($getRoot().getChildrenSize()).toBe(1);
+    });
+  });
+
+  test('Enter inside the value is a no-op (single-block scope)', () => {
+    using editor = createSlotEditor();
+    let lineKey = '';
+    let hostKey = '';
+    editor.update(
+      () => {
+        const {host, line} = $createLineSlotHost();
+        lineKey = line.getKey();
+        hostKey = host.getKey();
+        const text = line.getFirstChild();
+        assert(text !== null && $isTextNode(text));
+        text.select(2, 2);
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        expect(selection.insertParagraph()).toBe(null);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const line = $getNodeByKey(lineKey);
+      assert(line !== null && $isParagraphNode(line));
+      // still one line, still slotted, host intact
+      expect(line.getTextContent()).toBe('Title');
+      expect($getSlotHost(line)!.getKey()).toBe(hostKey);
+      expect($getRoot().getChildrenSize()).toBe(1);
+    });
+  });
+
+  test('multi-block paste flattens to inline content like an <input>', () => {
+    using editor = createSlotEditor();
+    let lineKey = '';
+    editor.update(
+      () => {
+        const {line} = $createLineSlotHost();
+        lineKey = line.getKey();
+        const text = line.getFirstChild();
+        assert(text !== null && $isTextNode(text));
+        text.select(5, 5);
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        selection.insertNodes([
+          $createParagraphNode().append(
+            $createTextNode('A'),
+            $createLineBreakNode(),
+            $createTextNode('B'),
+          ),
+          $createParagraphNode().append($createTextNode('C')),
+          // block-only content has no single-line form and is dropped
+          $createTestDecoratorNode().setIsInline(false),
+        ]);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const line = $getNodeByKey(lineKey);
+      assert(line !== null && $isParagraphNode(line));
+      // line breaks stripped, blocks flattened, decorator dropped
+      expect(line.getTextContent()).toBe('TitleABC');
+      // nothing escaped to the document level
+      expect($getRoot().getChildrenSize()).toBe(1);
+      // slot text folds slots-first into the host with no separator
+      expect($getRoot().getTextContent()).toBe('TitleABCbody');
+    });
+  });
+
+  test('paste into an EMPTY block value inserts without seeding a paragraph', () => {
+    using editor = createSlotEditor();
+    let lineKey = '';
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        $getRoot().append(host);
+        const line = $createParagraphNode(); // empty single-line value
+        $setSlot(host, 'title', line);
+        lineKey = line.getKey();
+        line.select();
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        selection.insertNodes([
+          $createParagraphNode().append($createTextNode('pasted')),
+        ]);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const line = $getNodeByKey(lineKey);
+      assert(line !== null && $isParagraphNode(line));
+      expect(line.getTextContent()).toBe('pasted');
+      // flattened into the value itself: no nested paragraph was created
+      const first = line.getFirstChild();
+      assert(first !== null);
+      expect($isTextNode(first)).toBe(true);
+    });
+  });
+
+  test('the boundary still scopes selection and select-all', () => {
+    using editor = createSlotEditor();
+    let lineKey = '';
+    editor.update(
+      () => {
+        const {line} = $createLineSlotHost();
+        lineKey = line.getKey();
+        const text = line.getFirstChild();
+        assert(text !== null && $isTextNode(text));
+        // getTopLevelElement stops at the slotted value
+        expect(text.getTopLevelElement()!.is(line)).toBe(true);
+        // $selectAll scopes to the value's contents
+        text.select(2, 2);
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        const scoped = $selectAll(selection);
+        // normalization may descend the element points into the text; the
+        // scope is what matters: exactly the value's content, nothing outside
+        expect(scoped.getTextContent()).toBe('Title');
+        expect($getSlotFrame(scoped.anchor.getNode())!.is(line)).toBe(true);
+        expect($getSlotFrame(scoped.focus.getNode())!.is(line)).toBe(true);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const line = $getNodeByKey(lineKey);
+      assert(line !== null);
+      // and the frame helper reports the value as its own frame
+      expect($getSlotFrame(line)!.is(line)).toBe(true);
+    });
+  });
+
+  test('$getNearestRootOrShadowRoot stops at the slot value', () => {
+    using editor = createSlotEditor();
+    editor.update(
+      () => {
+        const {line} = $createLineSlotHost();
+        const text = line.getFirstChild();
+        assert(text !== null);
+        // The slotted value is the scope root for its own subtree — and for
+        // itself — instead of the parentless walk throwing. A container
+        // (shadow-root) value resolves the same way for its interior.
+        expect($getNearestRootOrShadowRoot(text).is(line)).toBe(true);
+        expect($getNearestRootOrShadowRoot(line).is(line)).toBe(true);
+
+        const host2 = $createParagraphNode();
+        $getRoot().append(host2);
+        const container = $slotContainer('inside');
+        $setSlot(host2, 'media', container);
+        const innerParagraph = container.getFirstChild();
+        assert(innerParagraph !== null && $isParagraphNode(innerParagraph));
+        expect($getNearestRootOrShadowRoot(innerParagraph).is(container)).toBe(
+          true,
+        );
+        expect($getNearestRootOrShadowRoot(container).is(container)).toBe(true);
+      },
+      {discrete: true},
+    );
+  });
+
+  test('backspace at the start of the value stays inside the boundary', () => {
+    using editor = createSlotEditor();
+    let lineKey = '';
+    editor.update(
+      () => {
+        const {line} = $createLineSlotHost();
+        lineKey = line.getKey();
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        const line = $getNodeByKey(lineKey);
+        assert(line !== null && $isParagraphNode(line));
+        const text = line.getFirstChild();
+        assert(text !== null && $isTextNode(text));
+        text.select(0, 0);
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        selection.deleteCharacter(true);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const line = $getNodeByKey(lineKey);
+      assert(line !== null && $isParagraphNode(line));
+      // nothing merged or escaped: value and host intact
+      expect(line.getTextContent()).toBe('Title');
+      expect($getRoot().getTextContent()).toBe('Titlebody');
+      expect($getRoot().getChildrenSize()).toBe(1);
+    });
   });
 });

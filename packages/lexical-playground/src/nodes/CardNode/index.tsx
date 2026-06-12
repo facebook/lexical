@@ -19,13 +19,16 @@ import {
   ElementNode,
 } from 'lexical';
 
-import {$createSlotContainerNode} from '../SlotContainerNode';
+import {$isSlotContainerNode} from '../SlotContainerNode';
 
 // The Card is an ElementNode host that demonstrates the dual capability of
 // hosting both a named slot (`title`, exactly one block) and regular
 // children (the body, zero or more blocks). The reconciler renders the named
 // slot ahead of the children, so the DOM order is `<title>` then the body
-// blocks, no React chrome required.
+// blocks, no React chrome required. The title is a single-line field, so its
+// slot value is a bare ParagraphNode — the slot link itself is the virtual
+// shadow root, no container wrapper needed; Enter inside it is a core no-op
+// and multi-block paste flattens to inline content like an <input>.
 export class CardNode extends ElementNode {
   $config() {
     return this.config('card', {extends: ElementNode, slots: ['title']});
@@ -46,8 +49,8 @@ export class CardNode extends ElementNode {
   // shortcut paragraph→heading transform) land inside the body channel
   // instead of splitting the Card and dropping the new block at the
   // document root. SELECT_ALL inside the title slot still scopes to the
-  // (inner) slot container since shadow-root resolution picks the
-  // innermost host.
+  // (inner) slot value since its slot link is a virtual shadow root and
+  // resolution picks the innermost boundary.
   isShadowRoot(): true {
     return true;
   }
@@ -79,8 +82,17 @@ export class CardNode extends ElementNode {
       }
       const wrapper = document.createElement('div');
       wrapper.setAttribute('data-lexical-slot', name);
-      for (const child of slot.getChildren()) {
-        $appendNodeToHTML(editor, child, wrapper);
+      if ($isSlotContainerNode(slot)) {
+        // A multi-block container is transparent in HTML: its blocks export
+        // directly into the wrapper (the container is a model-side scoping
+        // artifact, not content).
+        for (const child of slot.getChildren()) {
+          $appendNodeToHTML(editor, child, wrapper);
+        }
+      } else {
+        // A bare block value IS the slotted element: it exports itself, so
+        // the wrapper holds e.g. a single `<p>` directly.
+        $appendNodeToHTML(editor, slot, wrapper);
       }
       element.append(wrapper);
     }
@@ -93,9 +105,7 @@ export function $createCardNode(): CardNode {
   $setSlot(
     node,
     'title',
-    $createSlotContainerNode().append(
-      $createParagraphNode().append($createTextNode('Title')),
-    ),
+    $createParagraphNode().append($createTextNode('Title')),
   );
   node.append($createParagraphNode().append($createTextNode('Body')));
   return node;

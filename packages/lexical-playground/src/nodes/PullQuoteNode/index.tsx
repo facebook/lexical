@@ -28,16 +28,21 @@ import {
 } from 'lexical';
 import * as React from 'react';
 
-import {$createSlotContainerNode} from '../SlotContainerNode';
+import {
+  $createSlotContainerNode,
+  $isSlotContainerNode,
+} from '../SlotContainerNode';
 
-// PullQuote is a DecoratorNode-as-host with two editable shadow-root slots:
-// `quote` carries the inline-formatted body of the quote and `attribution`
-// carries the source / author line. Both slots are SlotContainerNodes, so
-// every extension registered on the host editor (RichText, Format, Link,
-// Mentions, etc.) applies inside them — exactly the framework alternative
-// to nested editors that #6613 / #5981 asked for. The host owns no children
-// channel, so neither slot can leak into a stray paragraph and the box is
-// an atomic block from the user's perspective.
+// PullQuote is a DecoratorNode-as-host with two editable slots: `quote`
+// carries the inline-formatted body of the quote and `attribution` carries
+// the source / author line. The quote is legitimately multi-block, so it is
+// a SlotContainerNode; the attribution is a single-line field, so its value
+// is a bare ParagraphNode — the slot link itself is the virtual shadow root,
+// no container wrapper needed. Every extension registered on the host editor
+// (RichText, Format, Link, Mentions, etc.) applies inside both — exactly the
+// framework alternative to nested editors that #6613 / #5981 asked for. The
+// host owns no children channel, so neither slot can leak into a stray
+// paragraph and the box is an atomic block from the user's perspective.
 function PullQuoteComponent({nodeKey}: {nodeKey: NodeKey}): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const quoteRef = useLexicalSlot<HTMLDivElement>(editor, nodeKey, 'quote');
@@ -97,8 +102,17 @@ export class PullQuoteNode extends DecoratorNode<JSX.Element> {
       }
       const wrapper = document.createElement('div');
       wrapper.setAttribute('data-lexical-slot', name);
-      for (const child of slot.getChildren()) {
-        $appendNodeToHTML(editor, child, wrapper);
+      if ($isSlotContainerNode(slot)) {
+        // A multi-block container is transparent in HTML: its blocks export
+        // directly into the wrapper (the container is a model-side scoping
+        // artifact, not content).
+        for (const child of slot.getChildren()) {
+          $appendNodeToHTML(editor, child, wrapper);
+        }
+      } else {
+        // A bare block value IS the slotted element: it exports itself, so
+        // the wrapper holds e.g. a single `<p>` directly.
+        $appendNodeToHTML(editor, slot, wrapper);
       }
       host.append(wrapper);
     }
@@ -122,9 +136,7 @@ export function $createPullQuoteNode(): PullQuoteNode {
   $setSlot(
     node,
     'attribution',
-    $createSlotContainerNode().append(
-      $createParagraphNode().append($createTextNode('Arthur C. Clarke')),
-    ),
+    $createParagraphNode().append($createTextNode('Arthur C. Clarke')),
   );
   return node;
 }

@@ -102,17 +102,14 @@ export function isReservedSlotName(name: string): boolean {
 }
 
 // @experimental named-slots. Mirrors the value invariant in core's $setSlot (a
-// slot value is a shadow-root ElementNode or a non-inline DecoratorNode), so a
-// peer-controlled value can be validated during reconcile rather than allowed
-// to reach $setSlot, whose invariant would throw inside the observer
-// editor.update.
+// slot value is any non-inline ElementNode or DecoratorNode — the slot link
+// itself is the shadow boundary), so a peer-controlled value can be validated
+// during reconcile rather than allowed to reach $setSlot, whose invariant
+// would throw inside the observer editor.update.
 export function $isSlotValueNode(
   node: LexicalNode,
 ): node is ElementNode | DecoratorNode<unknown> {
-  return (
-    ($isElementNode(node) && node.isShadowRoot()) ||
-    ($isDecoratorNode(node) && !node.isInline())
-  );
+  return ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
 }
 
 function isExcludedProperty(

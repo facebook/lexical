@@ -25,9 +25,11 @@ import {
   $getSlot,
   $getSlotHost,
   $getSlotNames,
+  $isParagraphNode,
   $setSelection,
   $setSlot,
   defineExtension,
+  type SerializedElementNode,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
@@ -64,7 +66,7 @@ const PullQuoteImportTestExtension = defineExtension({
 });
 
 describe('PullQuoteNode atomic decorator host', () => {
-  it('holds two editable shadow-root slots: quote and attribution', () => {
+  it('holds a multi-block quote container and a bare-paragraph attribution', () => {
     using editor = buildEditorFromExtensions(PullQuoteTestExtension);
 
     editor.update(
@@ -82,6 +84,8 @@ describe('PullQuoteNode atomic decorator host', () => {
       );
       expect($getSlotNames(pullquote)).toEqual(['quote', 'attribution']);
 
+      // The quote is legitimately multi-block, so it keeps the shadow-root
+      // SlotContainerNode wrapper.
       const quote = $getSlot(pullquote, 'quote');
       assert(
         quote instanceof SlotContainerNode,
@@ -89,13 +93,46 @@ describe('PullQuoteNode atomic decorator host', () => {
       );
       expect(quote.isShadowRoot()).toBe(true);
 
+      // The attribution is a single-line field: its value is a bare
+      // ParagraphNode — the slot link itself is the virtual shadow root,
+      // so no container wrapper is needed.
       const attribution = $getSlot(pullquote, 'attribution');
       assert(
-        attribution instanceof SlotContainerNode,
-        'attribution slot must be a SlotContainerNode',
+        $isParagraphNode(attribution),
+        'attribution slot value must be a bare ParagraphNode',
       );
-      expect(attribution.isShadowRoot()).toBe(true);
+      const text = attribution.getFirstChild();
+      assert(text !== null, 'attribution paragraph must hold the seed text');
+      expect(text.getTopLevelElement()).toBe(attribution);
     });
+  });
+
+  // Pins the shallower serialized shape: `slots.attribution` IS the
+  // paragraph (no intermediary container level), while `slots.quote` keeps
+  // its multi-block container.
+  it('serializes the attribution slot as a bare paragraph (no container level)', () => {
+    using editor = buildEditorFromExtensions(PullQuoteTestExtension);
+
+    editor.update(
+      () => {
+        $getRoot().clear().append($createPullQuoteNode());
+      },
+      {discrete: true},
+    );
+
+    const json = editor.getEditorState().toJSON();
+    const pullquoteJson = json.root.children[0];
+    expect(pullquoteJson.type).toBe('pullquote');
+    const attribution = pullquoteJson.slots?.attribution as
+      | SerializedElementNode
+      | undefined;
+    assert(
+      attribution !== undefined,
+      'PullQuote JSON must carry the attribution slot',
+    );
+    expect(attribution.type).toBe('paragraph');
+    expect(attribution.children.map(child => child.type)).toEqual(['text']);
+    expect(pullquoteJson.slots?.quote.type).toBe('slot-container');
   });
 
   it('canonicalizes slots set in reverse to the declared order', () => {
@@ -199,8 +236,8 @@ describe('PullQuoteNode atomic decorator host', () => {
       assert(quote instanceof SlotContainerNode, 'quote slot preserved');
       const attribution = $getSlot(pullquote, 'attribution');
       assert(
-        attribution instanceof SlotContainerNode,
-        'attribution slot preserved',
+        $isParagraphNode(attribution),
+        'attribution slot preserved as a bare paragraph',
       );
       // Default seed text rides through JSON round-trip intact.
       expect(quote.getTextContent()).toContain('discover the limits');
@@ -225,16 +262,11 @@ describe('PullQuoteNode atomic decorator host', () => {
           .append(
             $createParagraphNode().append($createTextNode('CUSTOM QUOTE')),
           );
+        // The attribution value is the line itself: replace its inline
+        // content directly.
         const attribution = $getSlot(pullquote, 'attribution');
-        assert(
-          attribution instanceof SlotContainerNode,
-          'attribution seed exists',
-        );
-        attribution
-          .clear()
-          .append(
-            $createParagraphNode().append($createTextNode('CUSTOM AUTHOR')),
-          );
+        assert($isParagraphNode(attribution), 'attribution seed exists');
+        attribution.clear().append($createTextNode('CUSTOM AUTHOR'));
       },
       {discrete: true},
     );
@@ -263,8 +295,8 @@ describe('PullQuoteNode atomic decorator host', () => {
       assert(quote instanceof SlotContainerNode, 'quote slot rebuilt');
       const attribution = $getSlot(pullquote, 'attribution');
       assert(
-        attribution instanceof SlotContainerNode,
-        'attribution slot rebuilt',
+        $isParagraphNode(attribution),
+        'attribution slot rebuilt as a bare paragraph',
       );
       expect(quote.getTextContent()).toBe('CUSTOM QUOTE');
       expect(attribution.getTextContent()).toBe('CUSTOM AUTHOR');
@@ -400,8 +432,8 @@ describe('PullQuoteNode atomic decorator host', () => {
       assert(quote instanceof SlotContainerNode, 'quote slot rebuilt');
       const attribution = $getSlot(pullquote, 'attribution');
       assert(
-        attribution instanceof SlotContainerNode,
-        'attribution slot rebuilt',
+        $isParagraphNode(attribution),
+        'attribution slot rebuilt as a bare paragraph',
       );
       expect(quote.getTextContent()).toBe('Quoted');
       expect(attribution.getTextContent()).toBe('Author');

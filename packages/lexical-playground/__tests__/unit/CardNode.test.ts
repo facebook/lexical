@@ -21,34 +21,39 @@ import {
 } from '@lexical/html';
 import {
   $createNodeSelection,
+  $getNearestRootOrShadowRoot,
   $getRoot,
   $getSelection,
   $getSlot,
+  $getSlotHost,
   $getSlotNames,
   $isElementNode,
   $isNodeSelection,
+  $isParagraphNode,
   $isRangeSelection,
   $selectAll,
   $setSelection,
   CLICK_COMMAND,
   defineExtension,
+  DELETE_CHARACTER_COMMAND,
   KEY_TAB_COMMAND,
+  type SerializedElementNode,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
 import {$createCardNode, $isCardNode, CardNode} from '../../src/nodes/CardNode';
 import {PlaygroundRichTextImportExtension} from '../../src/nodes/PlaygroundImportExtension';
-import {
-  $isSlotContainerNode,
-  SlotContainerNode,
-} from '../../src/nodes/SlotContainerNode';
 import {CardExtension} from '../../src/plugins/CardExtension';
 
+// SlotContainerNode is deliberately NOT registered: the Card's single-line
+// title slot value is a bare ParagraphNode (the slot link itself is the
+// virtual shadow root), so no Card code path may construct a container —
+// registering one here would let such a regression pass silently.
 const CardTestExtension = defineExtension({
   $initialEditorState: null,
   dependencies: [CardExtension],
   name: '[test-card]',
-  nodes: [CardNode, SlotContainerNode],
+  nodes: [CardNode],
 });
 
 // Adds the DOM import pipeline: PlaygroundRichTextImportExtension supplies
@@ -62,7 +67,7 @@ const CardImportTestExtension = defineExtension({
     PlaygroundRichTextImportExtension,
   ],
   name: '[test-card-import]',
-  nodes: [CardNode, SlotContainerNode],
+  nodes: [CardNode],
 });
 
 describe('CardNode named slots', () => {
@@ -300,7 +305,7 @@ describe('CardNode named slots', () => {
     });
   });
 
-  it('wraps the title slot value in a shadow-root SlotContainerNode', () => {
+  it('seeds the title slot with a bare paragraph value (no container wrapper)', () => {
     using editor = buildEditorFromExtensions(CardTestExtension);
 
     editor.update(
@@ -314,22 +319,47 @@ describe('CardNode named slots', () => {
       const card = $getRoot().getFirstChild();
       assert($isCardNode(card), 'Top-level node must be a CardNode');
       const slot = $getSlot(card, 'title');
+      // The one-block slot's block IS the slotted element: a bare
+      // ParagraphNode, no SlotContainerNode in between. The slot link
+      // itself acts as the virtual shadow root that scopes selection,
+      // editing, and traversal.
       assert(
-        $isSlotContainerNode(slot),
-        'Title slot value must be a SlotContainerNode',
+        $isParagraphNode(slot),
+        'Title slot value must be a bare ParagraphNode',
       );
-      // The container is a shadow root: SELECT_ALL / collapseAtStart scope
-      // to its contents instead of escaping into the host document.
-      expect(slot.isShadowRoot()).toBe(true);
-      const inner = slot.getFirstChild();
-      assert($isElementNode(inner), 'Title slot must hold a paragraph');
-      // getTopLevelElement of the inner paragraph stops at the container
-      // boundary rather than walking to the editor root.
-      expect(inner.getTopLevelElement()).toBe(inner);
+      expect(slot.getParent()).toBe(null);
+      expect($getSlotHost(slot)).toBe(card);
+      // getTopLevelElement of the slot content stops at the value boundary
+      // rather than walking to the editor root.
+      const text = slot.getFirstChild();
+      assert(text !== null, 'Title paragraph must hold the seeded text');
+      expect(text.getTopLevelElement()).toBe(slot);
     });
   });
 
-  it('SELECT_ALL inside a slot scopes to the slot container, not the root', () => {
+  // Pins the shallower serialized shape: `slots.title` IS the paragraph,
+  // with its inline content directly under it — no intermediary container
+  // level in the JSON.
+  it('serializes the title slot as a bare paragraph (no container level)', () => {
+    using editor = buildEditorFromExtensions(CardTestExtension);
+
+    editor.update(
+      () => {
+        $getRoot().clear().append($createCardNode());
+      },
+      {discrete: true},
+    );
+
+    const json = editor.getEditorState().toJSON();
+    const cardJson = json.root.children[0];
+    expect(cardJson.type).toBe('card');
+    const title = cardJson.slots?.title as SerializedElementNode | undefined;
+    assert(title !== undefined, 'Card JSON must carry the title slot');
+    expect(title.type).toBe('paragraph');
+    expect(title.children.map(child => child.type)).toEqual(['text']);
+  });
+
+  it('SELECT_ALL inside a slot scopes to the slot value, not the root', () => {
     using editor = buildEditorFromExtensions(CardTestExtension);
 
     editor.update(
@@ -344,30 +374,29 @@ describe('CardNode named slots', () => {
         const card = $getRoot().getFirstChild();
         assert($isCardNode(card), 'Top-level node must be a CardNode');
         const slot = $getSlot(card, 'title');
-        assert($isSlotContainerNode(slot), 'title slot must be a container');
-        const paragraph = slot.getFirstChild();
-        assert($isElementNode(paragraph), 'slot must hold a paragraph');
+        assert($isParagraphNode(slot), 'title slot must be a bare paragraph');
         // Caret inside the slot, then SELECT_ALL with the current selection
         // (mirrors the rich-text SELECT_ALL handler passing the selection).
-        const selection = paragraph.selectStart();
+        const selection = slot.selectStart();
         const result = $selectAll(selection);
-        // Scoped to the container: both ends stay inside the slot and the
-        // selected text is just the title, never the body or root content.
-        expect(slot.isParentOf(result.anchor.getNode())).toBe(true);
-        expect(slot.isParentOf(result.focus.getNode())).toBe(true);
+        // Scoped to the value: both ends stay inside the slot paragraph and
+        // the selected text is just the title, never the body or root
+        // content.
+        const anchorNode = result.anchor.getNode();
+        const focusNode = result.focus.getNode();
+        expect(slot.is(anchorNode) || slot.isParentOf(anchorNode)).toBe(true);
+        expect(slot.is(focusNode) || slot.isParentOf(focusNode)).toBe(true);
         expect(result.getTextContent()).toBe('Title');
       },
       {discrete: true},
     );
   });
 
-  // Backspace at the start of a non-empty slot paragraph falls through
-  // deleteCharacter to $collapseAtStart, which walks parents until an
-  // ElementNode returns true. jsdom doesn't implement Selection.modify (the
-  // step deleteCharacter takes first), so — like the HeadingNode suite — we
-  // exercise the collapseAtStart building blocks directly and leave the full
-  // Backspace to e2e.
-  it('Backspace at slot start is a no-op via the shadow-root container', () => {
+  // Backspace at the start of the title is a no-op: the slot link is a
+  // virtual shadow root, so deleteCharacter stops at the value's leading
+  // edge instead of merging the bare paragraph into the host document
+  // (the 'named-slots: block slot values' core suite pins the primitive).
+  it('Backspace at slot start is a no-op at the virtual shadow boundary', () => {
     using editor = buildEditorFromExtensions(CardTestExtension);
 
     editor.update(
@@ -382,16 +411,9 @@ describe('CardNode named slots', () => {
         const card = $getRoot().getFirstChild();
         assert($isCardNode(card), 'Top-level node must be a CardNode');
         const slot = $getSlot(card, 'title');
-        assert($isSlotContainerNode(slot), 'title slot must be a container');
-        const paragraph = slot.getFirstChild();
-        assert($isElementNode(paragraph), 'slot must hold a paragraph');
-        const selection = paragraph.selectStart();
-        // The non-empty paragraph defers (returns false), so the
-        // $collapseAtStart walk continues up to the container.
-        expect(paragraph.collapseAtStart(selection)).toBe(false);
-        // The container terminates the walk with a no-op true: the deletion
-        // bails instead of merging the paragraph into the host.
-        expect(slot.collapseAtStart()).toBe(true);
+        assert($isParagraphNode(slot), 'title slot must be a bare paragraph');
+        const selection = slot.selectStart();
+        selection.deleteCharacter(true);
       },
       {discrete: true},
     );
@@ -402,6 +424,54 @@ describe('CardNode named slots', () => {
       expect($getSlot(card, 'title')?.getTextContent()).toBe('Title');
       expect(card.getChildren()[0]?.getTextContent()).toBe('Body');
       // Nothing escaped into the root: the card is still the only child.
+      expect($getRoot().getChildrenSize()).toBe(1);
+    });
+  });
+
+  // Mid-text deletion inside the bare title value rides core's
+  // deleteCharacter: $getNearestRootOrShadowRoot treats the slotted value as
+  // its own scope root (the slot link is a virtual shadow root), so the
+  // native modify() path works without a wrapper.
+  it('mid-text deletion resolves its scope at the bare title value', () => {
+    using editor = buildEditorFromExtensions(CardTestExtension);
+
+    editor.update(
+      () => {
+        $getRoot().clear().append($createCardNode());
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const card = $getRoot().getFirstChild();
+        assert($isCardNode(card), 'Top-level node must be a CardNode');
+        const title = $getSlot(card, 'title');
+        assert($isParagraphNode(title), 'title slot must be a bare paragraph');
+        // The deletion path resolves its scope through
+        // $getNearestRootOrShadowRoot, which must treat the slotted value as
+        // its own scope root (virtual shadow root) instead of throwing on the
+        // parentless walk. The deletion itself depends on the native
+        // selection engine, so the character-level result is pinned by the
+        // CardSlot e2e spec rather than jsdom.
+        const text = title.getFirstChild();
+        assert(text !== null);
+        expect($getNearestRootOrShadowRoot(text).is(title)).toBe(true);
+        expect($getNearestRootOrShadowRoot(title).is(title)).toBe(true);
+        title.selectEnd();
+      },
+      {discrete: true},
+    );
+
+    expect(() =>
+      editor.dispatchCommand(DELETE_CHARACTER_COMMAND, true),
+    ).not.toThrow();
+
+    editor.read(() => {
+      const card = $getRoot().getFirstChild();
+      assert($isCardNode(card), 'Card must survive mid-text backspace');
+      // structure intact: nothing merged across or escaped the boundary
+      expect(card.getChildren()[0]?.getTextContent()).toBe('Body');
       expect($getRoot().getChildrenSize()).toBe(1);
     });
   });
@@ -424,11 +494,10 @@ describe('CardNode named slots', () => {
       () => {
         const card = $getRoot().getFirstChild();
         assert($isCardNode(card), 'Top-level node must be a CardNode');
+        // The title's caret block IS the slot value: a bare paragraph.
         const titleSlot = $getSlot(card, 'title');
-        assert($isElementNode(titleSlot), 'title slot must be an element');
-        const titlePara = titleSlot.getFirstChild();
-        assert($isElementNode(titlePara), 'title slot must hold a paragraph');
-        titlePara.selectEnd();
+        assert($isParagraphNode(titleSlot), 'title slot must be a paragraph');
+        titleSlot.selectEnd();
       },
       {discrete: true},
     );
@@ -503,11 +572,10 @@ describe('CardNode named slots', () => {
         for (const child of card.getChildren()) {
           child.remove();
         }
+        // The title's caret block IS the slot value: a bare paragraph.
         const titleSlot = $getSlot(card, 'title');
-        assert($isElementNode(titleSlot), 'title slot must be an element');
-        const titlePara = titleSlot.getFirstChild();
-        assert($isElementNode(titlePara), 'title slot must hold a paragraph');
-        titlePara.selectEnd();
+        assert($isParagraphNode(titleSlot), 'title slot must be a paragraph');
+        titleSlot.selectEnd();
       },
       {discrete: true},
     );
@@ -532,10 +600,8 @@ describe('CardNode named slots', () => {
       );
       // The title was not indented.
       const titleSlot = $getSlot(card, 'title');
-      assert($isElementNode(titleSlot), 'title slot must be an element');
-      const titlePara = titleSlot.getFirstChild();
-      assert($isElementNode(titlePara), 'title slot must hold a paragraph');
-      expect(titlePara.getIndent()).toBe(0);
+      assert($isParagraphNode(titleSlot), 'title slot must be a paragraph');
+      expect(titleSlot.getIndent()).toBe(0);
     });
   });
 

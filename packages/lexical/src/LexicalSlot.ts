@@ -49,7 +49,8 @@ export function $isSlotHost(
  * Shape predicate: true when `node` carries the child's `__slotHost` field —
  * i.e. it is an {@link ElementNode} or a {@link DecoratorNode}. Narrows to
  * {@link SlotChildNode}. This is a type guard only; {@link $setSlot} rejects
- * inline ElementNodes / inline DecoratorNodes at runtime.
+ * inline values at runtime. The slot link acts as a virtual shadow root, so
+ * any non-inline block — shadow root or not — can occupy a slot.
  *
  * @experimental
  */
@@ -331,12 +332,17 @@ function $canonicalizeSlotOrder(host: LexicalNode & SlotHostNode): void {
 
 /**
  * Places `node` into the named slot of `host`, replacing any existing value
- * under that name. A slot value must be a shadow-root {@link ElementNode} or a
- * non-inline {@link DecoratorNode}. If `node` is currently a child of another
- * element it is detached first; it must not already be slotted elsewhere — a
- * slotted node and a child are mutually exclusive. The replaced value, if any,
- * is detached. `host` is constrained to {@link SlotHostNode} so a non-host is
- * rejected at compile time.
+ * under that name. A slot value must be a non-inline {@link ElementNode} or a
+ * non-inline {@link DecoratorNode}: the slot link itself acts as a virtual
+ * shadow root between the host and the value, so the value does not need to
+ * be a shadow root — a plain block (e.g. a ParagraphNode subclass serving as
+ * a single-line field) is a valid slot value, and selection, traversal, and
+ * editing treat its slot boundary exactly like a shadow-root boundary. If
+ * `node` is currently a child of another element it is detached first; it
+ * must not already be slotted elsewhere — a slotted node and a child are
+ * mutually exclusive. The replaced value, if any, is detached. `host` is
+ * constrained to {@link SlotHostNode} so a non-host is rejected at compile
+ * time.
  *
  * @experimental
  */
@@ -361,9 +367,8 @@ export function $setSlot<T extends LexicalNode & SlotHostNode>(
     return latestHost;
   }
   invariant(
-    ($isElementNode(node) && node.isShadowRoot()) ||
-      ($isDecoratorNode(node) && !node.isInline()),
-    'setSlot: node %s is not a valid slot value; a slot must be a shadow-root ElementNode or a non-inline DecoratorNode.',
+    ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline(),
+    'setSlot: node %s is not a valid slot value; a slot value must be a non-inline ElementNode or DecoratorNode (the slot link itself is the shadow boundary).',
     node.__key,
   );
   invariant(

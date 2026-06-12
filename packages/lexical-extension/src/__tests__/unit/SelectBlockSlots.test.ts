@@ -300,6 +300,76 @@ describe('SelectBlockExtension with named slots', () => {
     );
   });
 
+  test('a block-shaped slot value escalates value, then document', () => {
+    // The slot link is a virtual shadow root, so the value need not be a
+    // container: a bare paragraph serving as a single-line field is its own
+    // block AND its own frame — the first press selects the line, the second
+    // goes straight to the document.
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          const host = $createParagraphNode().append(
+            $createTextNode('host body'),
+          );
+          const line = $createParagraphNode().append(
+            $createTextNode('the line'),
+          );
+          $setSlot(host, 'title', line);
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('before')),
+            host,
+          );
+        },
+        dependencies: [
+          RichTextExtension,
+          configExtension(SelectBlockExtension, {
+            cascadeSelection: false,
+            disabled: false,
+          }),
+        ],
+        name: 'select-block-line-slot-test',
+        nodes: [],
+        register: editor_ => {
+          const rootElement = document.createElement('div');
+          rootElement.contentEditable = 'true';
+          document.body.appendChild(rootElement);
+          editor_.setRootElement(rootElement);
+          return () => rootElement.remove();
+        },
+      }),
+    );
+    editor.update(
+      () => {
+        const host = $getRoot().getChildAtIndex(1);
+        assert($isElementNode(host));
+        const line = $getSlot(host, 'title');
+        assert(line !== null && $isElementNode(line));
+        const text = line.getFirstChild();
+        assert($isTextNode(text));
+        text.select(3, 3);
+      },
+      {discrete: true},
+    );
+
+    // 1st press: the line itself (it is the scope's only block)
+    editor.dispatchCommand(SELECT_ALL_COMMAND, selectAllKeyboardEvent());
+    editor.read(() => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      expect(selection.getTextContent()).toBe('the line');
+      const frame = $getSlotFrame(selection.anchor.getNode());
+      assert(frame !== null);
+      expect($isBlockFullySelected($getRoot(), selection)).toBe(false);
+    });
+
+    // 2nd press: the frame equals the block, so escalation goes straight to
+    // the document with no dead press
+    editor.dispatchCommand(SELECT_ALL_COMMAND, selectAllKeyboardEvent());
+    editor.read(() => {
+      $expectFullySelected($getRoot());
+    });
+  });
+
   test('with SelectBlockExtension disabled, the rich-text default scopes select all to the slot', () => {
     using editor = setUpSlotEditor({disabled: true});
     editor.update(

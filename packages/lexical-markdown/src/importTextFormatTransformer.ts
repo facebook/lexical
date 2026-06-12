@@ -30,6 +30,10 @@ export function findOutermostTextFormatTransformer(
   endIndex: number;
   transformer: TextFormatTransformer;
   match: RegExpMatchArray;
+  // True when the outermost format is a code span. Code spans are atomic: their
+  // content is never reprocessed and they bind tighter than text-match
+  // transformers, so this is tagged here rather than re-derived by callers.
+  isCodeSpan: boolean;
 } | null {
   const textContent = textNode.getTextContent();
 
@@ -116,6 +120,9 @@ export function findOutermostTextFormatTransformer(
 
   return {
     endIndex: resultMatch.endIndex,
+    // resultTransformer is the registered code transformer (by identity)
+    // exactly when the chosen match is the code span.
+    isCodeSpan: resultTransformer === codeTransformer,
     match: regexMatch,
     startIndex: resultMatch.startIndex,
     transformer: resultTransformer,

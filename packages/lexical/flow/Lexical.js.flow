@@ -563,6 +563,10 @@ declare export class LexicalNode {
     config: EditorConfig,
   ): boolean;
   getDOMSlot(element: HTMLElement): DOMSlot<HTMLElement>;
+  getSlotTargetElement(
+    slotName: string,
+    hostDom: HTMLElement,
+  ): HTMLElement | null;
   remove(preserveEmptyParent?: boolean): void;
   replace<N extends LexicalNode>(replaceWith: N): N;
   insertAfter(

@@ -40,7 +40,6 @@ import {
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_TAB_COMMAND,
-  mountSlotContainer,
 } from 'lexical';
 
 import {$createCardNode, $isCardNode, CardNode} from '../../nodes/CardNode';
@@ -301,27 +300,6 @@ export const CardExtension = /* @__PURE__ */ defineExtension({
       }
     };
     return mergeRegister(
-      // Slot containers render as hidden placeholders until explicitly
-      // attached somewhere (the host controls where its named slots render,
-      // like getDOMSlot does for children). The Card has no React chrome, so
-      // mount the title in place: the placeholder already sits slots-first
-      // inside the Card's own DOM, and mounting it there just reveals it.
-      // 'updated' re-mounts a container recreated by a slot remove/re-add.
-      editor.registerMutationListener(
-        CardNode,
-        mutations => {
-          for (const [key, mutation] of mutations) {
-            if (mutation === 'destroyed') {
-              continue;
-            }
-            const cardDom = editor.getElementByKey(key);
-            if (cardDom !== null) {
-              mountSlotContainer(editor, key, 'title', cardDom);
-            }
-          }
-        },
-        {skipInitialization: false},
-      ),
       editor.registerCommand<void>(
         INSERT_CARD_COMMAND,
         () => {

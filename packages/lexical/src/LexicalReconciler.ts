@@ -507,6 +507,7 @@ function $mountSlotChildren(
     const saved = $beginCaptureGuard();
     $createNode(slotKey, $getDOMSlot(node, container, activeEditor));
     $endCaptureGuard(saved);
+    $applySlotTarget(node, name, hostDom, container);
     totalText += subTreeTextContent;
   }
   $endCaptureGuard(outerSaved);
@@ -518,6 +519,26 @@ function $readSlots(node: LexicalNode): ReadonlyMap<string, NodeKey> {
   return $isSlotHost(node) && node.__slots !== null
     ? node.__slots
     : EMPTY_SLOTS;
+}
+
+// @experimental named-slots. Synchronous in-lexical slot attachment: a host
+// that overrides `getSlotTargetElement` has the reconciler attach and reveal
+// the container in the same commit that (re)mounts it — no listener or
+// framework hop. A null target leaves placement to explicit imperative
+// mounting (mountSlotContainer / useLexicalSlot).
+function $applySlotTarget(
+  node: LexicalNode,
+  name: string,
+  hostDom: HTMLElement,
+  container: HTMLElement,
+): void {
+  const target = node.getSlotTargetElement(name, hostDom);
+  if (target !== null) {
+    if (container.parentElement !== target) {
+      target.appendChild(container);
+    }
+    container.style.display = '';
+  }
 }
 
 // @experimental named-slots. A slot value's DOM is mounted directly inside its
@@ -604,6 +625,7 @@ function $reconcileSlotChildren(
       $createNode(nextSlotKey, $getDOMSlot(nextNode, container, activeEditor));
     }
     $endCaptureGuard(saved);
+    $applySlotTarget(nextNode, name, hostDom, container);
     totalText += subTreeTextContent;
     // Keep placeholder DOM order in sync with the slot Map order. A reused
     // container stays where it was first mounted, so a remove + re-add of an

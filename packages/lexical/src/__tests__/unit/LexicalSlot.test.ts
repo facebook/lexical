@@ -993,6 +993,78 @@ describe('named-slots: core foundation', () => {
     expect(hostDom.firstElementChild).toBe(container);
   });
 
+  test('getSlotTargetElement attaches and reveals synchronously in the commit', () => {
+    // An in-lexical host (no chrome framework): returning the host DOM from
+    // getSlotTargetElement reveals the container in its default slots-first
+    // position within the same commit that renders it.
+    class InPlaceHostNode extends ElementNode {
+      $config() {
+        return this.config('inplace_slot_host', {extends: ElementNode});
+      }
+      createDOM(): HTMLElement {
+        return document.createElement('div');
+      }
+      updateDOM(): boolean {
+        return false;
+      }
+      getSlotTargetElement(
+        _slotName: string,
+        hostDom: HTMLElement,
+      ): HTMLElement {
+        return hostDom;
+      }
+    }
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => {
+          $getRoot().clear();
+        },
+        name: '[inplace-slot-host]',
+        nodes: [InPlaceHostNode, TestShadowRootNode],
+      }),
+    );
+    const root = document.createElement('div');
+    root.contentEditable = 'true';
+    document.body.appendChild(root);
+    editor.setRootElement(root);
+    let hostKey = '';
+    try {
+      editor.update(
+        () => {
+          const host = $create(InPlaceHostNode);
+          host.append($createParagraphNode().append($createTextNode('Body')));
+          $getRoot().append(host);
+          $setSlot(host, 'title', $slotContainer('Title'));
+          hostKey = host.getKey();
+        },
+        {discrete: true},
+      );
+      const hostDom = editor.getElementByKey(hostKey)!;
+      const container = hostDom.querySelector<HTMLElement>(
+        '[data-lexical-slot="title"]',
+      )!;
+      // revealed synchronously, still slots-first, no imperative mount needed
+      expect(container.style.display).toBe('');
+      expect(hostDom.firstElementChild).toBe(container);
+      // a later slot-channel reconcile keeps it revealed in place
+      editor.update(
+        () => {
+          const host = $assertNodeType($getNodeByKey(hostKey), $isElementNode);
+          $setSlot(host, 'caption', $slotContainer('Caption'));
+        },
+        {discrete: true},
+      );
+      expect(container.style.display).toBe('');
+      const caption = hostDom.querySelector<HTMLElement>(
+        '[data-lexical-slot="caption"]',
+      )!;
+      expect(caption.style.display).toBe('');
+    } finally {
+      editor.setRootElement(null);
+      root.remove();
+    }
+  });
+
   test('a slot reconcile does not yank a mounted container back into the host', () => {
     using editor = createSlotEditor();
     let hostKey = '';

@@ -76,7 +76,7 @@ test.describe('Regression test #429', () => {
         page,
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <br data-lexical-managed-linebreak="true" />
+            <br />
             <span class="emoji happysmile" data-lexical-text="true">
               <span class="emoji-inner">🙂</span>
             </span>

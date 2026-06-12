@@ -255,7 +255,7 @@ test.describe('TextEntry', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Hello World.</span>
-            <br data-lexical-managed-linebreak="true" />
+            <br />
             <span data-lexical-text="true">This is another paragraph.</span>
             <span class="emoji happysmile" data-lexical-text="true">
               <span class="emoji-inner">🙂</span>

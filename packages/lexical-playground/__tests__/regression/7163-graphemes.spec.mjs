@@ -159,7 +159,7 @@ test.describe('Grapheme deleteCharacter', () => {
           ? html`
               <p dir="auto">
                 <span data-lexical-text="true">${description}</span>
-                <br data-lexical-managed-linebreak="true" />
+                <br />
                 <span data-lexical-text="true">${grapheme}</span>
               </p>
             `

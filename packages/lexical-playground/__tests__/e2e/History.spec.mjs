@@ -65,7 +65,7 @@ test.describe('History', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
-            <br data-lexical-managed-linebreak="true" />
+            <br />
             <span data-lexical-text="true">hello world, again and again</span>
           </p>
         `,
@@ -104,7 +104,7 @@ test.describe('History', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
-            <br data-lexical-managed-linebreak="true" />
+            <br />
             <span data-lexical-text="true">hello world again</span>
           </p>
         `,
@@ -306,7 +306,7 @@ test.describe('History', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
-            <br data-lexical-managed-linebreak="true" />
+            <br />
             <span data-lexical-text="true">hello world again</span>
           </p>
         `,
@@ -345,7 +345,7 @@ test.describe('History', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
-            <br data-lexical-managed-linebreak="true" />
+            <br />
             <span data-lexical-text="true">hello world, again and again</span>
           </p>
         `,
@@ -384,7 +384,7 @@ test.describe('History', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
-            <br data-lexical-managed-linebreak="true" />
+            <br />
             <span data-lexical-text="true">hello world, again again</span>
           </p>
         `,
@@ -423,7 +423,7 @@ test.describe('History', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
-            <br data-lexical-managed-linebreak="true" />
+            <br />
             <span data-lexical-text="true">hello world, again and again</span>
           </p>
         `,

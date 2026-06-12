@@ -82,6 +82,7 @@ import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
 import {MentionsExtension} from './plugins/MentionsExtension';
 import {PageBreakExtension} from './plugins/PageBreakExtension';
 import {PagesReactExtension} from './plugins/PagesReactExtension';
+import {PanelExtension} from './plugins/PanelExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {PollExtension} from './plugins/PollExtension';
 import {PullQuoteExtension} from './plugins/PullQuoteExtension';
@@ -221,6 +222,7 @@ const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
     LayoutExtension,
     ExcalidrawExtension,
     CardExtension,
+    PanelExtension,
     PullQuoteExtension,
   ],
   name: '@lexical/playground/RichText',

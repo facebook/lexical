@@ -497,9 +497,11 @@ function $mountSlotChildren(
     const container = document.createElement('div');
     container.setAttribute('data-lexical-slot', name);
     container.style.display = 'none';
-    if (decoratorHost) {
-      // The decorator host DOM is contentEditable=false; opt each slot
-      // container back in so its Lexical-managed content stays editable.
+    if (decoratorHost || hostDom.contentEditable === 'false') {
+      // The host DOM is contentEditable=false (a decorator host always is; an
+      // element host may opt out to render chrome around editable islands);
+      // opt each slot container back in so its Lexical-managed content stays
+      // editable.
       container.contentEditable = 'true';
     }
     hostDom.appendChild(container);
@@ -593,8 +595,8 @@ function $reconcileSlotChildren(
       container = document.createElement('div');
       container.setAttribute('data-lexical-slot', name);
       container.style.display = 'none';
-      if (decoratorHost) {
-        // Match the mount path: a slot added to a decorator host after its
+      if (decoratorHost || hostDom.contentEditable === 'false') {
+        // Match the mount path: a slot added to a non-editable host after its
         // initial render needs the container opted back into editing.
         container.contentEditable = 'true';
       }

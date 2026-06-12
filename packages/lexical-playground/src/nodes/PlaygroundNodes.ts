@@ -33,6 +33,7 @@ import {LayoutContainerNode} from './LayoutContainerNode';
 import {LayoutItemNode} from './LayoutItemNode';
 import {MentionNode} from './MentionNode';
 import {PageBreakNode} from './PageBreakNode';
+import {PanelNode} from './PanelNode';
 import {PollNode} from './PollNode';
 import {PullQuoteNode} from './PullQuoteNode';
 import {SlotContainerNode} from './SlotContainerNode';
@@ -78,6 +79,7 @@ const PlaygroundNodes: Klass<LexicalNode>[] = [
   DateTimeNode,
   CardNode,
   SlotContainerNode,
+  PanelNode,
   PullQuoteNode,
 ];
 

@@ -37,6 +37,7 @@ import {ExcalidrawPlugin} from './plugins/ExcalidrawExtension';
 import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
 import {MentionsPlugin} from './plugins/MentionsExtension';
+import {PanelPlugin} from './plugins/PanelExtension';
 import ShortcutsPlugin from './plugins/ShortcutsPlugin';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
@@ -132,6 +133,7 @@ export default function Editor(): JSX.Element {
           !isRichText ? 'plain-text' : ''
         }`}>
         <ComponentPickerPlugin />
+        <PanelPlugin />
         <EmojiPickerPlugin />
         <AutoEmbedPlugin />
         <MentionsPlugin />

@@ -200,6 +200,14 @@ function flushMutations(
               addedDOM !== blockCursorElement &&
               node === null &&
               !isManagedLineBreak(addedDOM, parentDOM, editor) &&
+              // @experimental named-slots. Slot containers are keyless
+              // reconciler scaffolding: a flush that observes one being
+              // parked in its host or relocated by an explicit mount must
+              // not evict it as foreign DOM.
+              !(
+                isHTMLElement(addedDOM) &&
+                addedDOM.hasAttribute('data-lexical-slot')
+              ) &&
               // Skip externally-added DOM that's explicitly opted out of
               // mutation tracking (e.g. an extension-rendered decoration
               // inside a TextNode's span, like the autocomplete ghost).

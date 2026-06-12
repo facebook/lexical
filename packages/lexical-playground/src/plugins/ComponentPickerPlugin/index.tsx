@@ -46,6 +46,7 @@ import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawExtension';
 import {INSERT_IMAGE_COMMAND, InsertImageDialog} from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutExtension/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
+import {INSERT_PANEL_COMMAND} from '../PanelExtension';
 import {InsertPollDialog} from '../PollExtension';
 import {INSERT_PULLQUOTE_COMMAND} from '../PullQuoteExtension';
 import {InsertTableDialog} from '../TablePlugin';
@@ -344,6 +345,11 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
       keywords: ['pull quote', 'quote', 'attribution', 'cite', 'slot'],
       onSelect: () =>
         editor.dispatchCommand(INSERT_PULLQUOTE_COMMAND, undefined),
+    }),
+    new ComponentPickerOption('Panel', {
+      icon: <i className="icon sticky" />,
+      keywords: ['panel', 'react', 'chrome', 'slot'],
+      onSelect: () => editor.dispatchCommand(INSERT_PANEL_COMMAND, undefined),
     }),
     new ComponentPickerOption('Columns Layout', {
       icon: <i className="icon columns" />,

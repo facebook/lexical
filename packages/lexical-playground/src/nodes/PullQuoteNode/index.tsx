@@ -90,8 +90,7 @@ export class PullQuoteNode extends DecoratorNode<JSX.Element> {
   // wrapper carrying our sentinel class — the import rule keys off that
   // class, which keeps the round-trip independent of lexical-rich-text's
   // `<blockquote>` importer (QuoteNode's importDOM also matches
-  // `blockquote`). External paste that strips the outer host wrapper is
-  // reassembled by `$rewrapOrphanedSlotWrappers` on the way in.
+  // `blockquote`).
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const host = document.createElement('div');
     host.className = 'lexical-pullquote-node';

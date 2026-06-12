@@ -53,7 +53,7 @@ const PullQuoteTestExtension = defineExtension({
 });
 
 // Adds the DOM import pipeline so HTML round-trip exercises the full
-// PullQuoteImportRule + `$rewrapOrphanedSlotWrappers` preprocess.
+// PullQuoteImportRule.
 const PullQuoteImportTestExtension = defineExtension({
   $initialEditorState: null,
   dependencies: [
@@ -398,45 +398,6 @@ describe('PullQuoteNode atomic decorator host', () => {
         'Quoted',
         'loose',
       ]);
-    });
-  });
-
-  // External paste: a browser's contenteditable Cmd+A → Cmd+C strips the
-  // outer `<div class="lexical-pullquote-node">` wrapper, leaving the
-  // quote / attribution slot wrappers as fragment-root siblings.
-  // `$rewrapOrphanedSlotWrappers` reassembles them under a synthetic
-  // `<div class="lexical-pullquote-node">` so the import rule matches.
-  it('rewraps orphaned quote+attribution wrappers into a PullQuoteNode', () => {
-    using editor = buildEditorFromExtensions(PullQuoteImportTestExtension);
-
-    const orphanedHtml =
-      '<div data-lexical-slot="quote"><p>Quoted</p></div>' +
-      '<div data-lexical-slot="attribution"><p>Author</p></div>';
-
-    editor.update(
-      () => {
-        $getRoot().clear().select();
-        const dom = new DOMParser().parseFromString(orphanedHtml, 'text/html');
-        $getRoot().append(...$generateNodesFromDOMViaExtension(dom));
-      },
-      {discrete: true},
-    );
-
-    editor.read(() => {
-      const pullquote = $getRoot().getFirstChild();
-      assert(
-        $isPullQuoteNode(pullquote),
-        'Reassembled top-level node must be a PullQuoteNode',
-      );
-      const quote = $getSlot(pullquote, 'quote');
-      assert(quote instanceof SlotContainerNode, 'quote slot rebuilt');
-      const attribution = $getSlot(pullquote, 'attribution');
-      assert(
-        $isParagraphNode(attribution),
-        'attribution slot rebuilt as a bare paragraph',
-      );
-      expect(quote.getTextContent()).toBe('Quoted');
-      expect(attribution.getTextContent()).toBe('Author');
     });
   });
 });

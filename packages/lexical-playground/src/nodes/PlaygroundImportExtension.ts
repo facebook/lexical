@@ -6,7 +6,6 @@
  *
  */
 
-import type {DOMPreprocessFn} from '@lexical/html';
 import type {LexicalNode, ParagraphNode} from 'lexical';
 
 import {ClipboardDOMImportExtension} from '@lexical/clipboard';
@@ -33,8 +32,6 @@ import {
   $setSlot,
   configExtension,
   defineExtension,
-  isDOMDocumentNode,
-  isHTMLElement,
 } from 'lexical';
 
 import {parseAllowedFontSize} from '../plugins/ToolbarPlugin/fontSize';
@@ -192,93 +189,6 @@ const CardImportRule = /* @__PURE__ */ defineImportRule({
 });
 
 /**
- * A browser's contenteditable Cmd+A → Cmd+C strips the outer
- * `<div class="lexical-card-node">` / `<div class="lexical-pullquote-node">`
- * wrapper that the host's exportDOM emits, leaving the
- * `<div data-lexical-slot="...">` children as fragment-root siblings.
- * Re-assemble them under a synthetic host div before the import walk so
- * CardImportRule / PullQuoteImportRule pick them up and the slot HTML
- * round-trip closes through external paste targets too.
- *
- * Two host shapes are handled in one pass over the fragment-root children:
- * - A Card group is opened by a `data-lexical-slot="title"` wrapper and
- *   absorbs every following non-slot sibling as Card body until the next
- *   slot wrapper closes the group. Two title wrappers in a row become two
- *   distinct Card groups (a single group would make CardImportRule's second
- *   `$setSlot(card, 'title', ...)` silently detach the first title).
- * - A PullQuote group is opened by a `data-lexical-slot="quote"` wrapper
- *   and absorbs the immediately following `data-lexical-slot="attribution"`
- *   if present. PullQuote is a DecoratorNode-as-host with no children
- *   channel, so other siblings would pull unrelated paste content into it.
- */
-const $rewrapOrphanedSlotWrappers: DOMPreprocessFn = (dom, _ctx, $next) => {
-  const doc = isDOMDocumentNode(dom) ? dom : dom.ownerDocument;
-  if (doc !== null) {
-    const root: ParentNode = isDOMDocumentNode(dom) ? dom.body : dom;
-    type Group = {
-      kind: 'card' | 'pullquote';
-      members: Element[];
-      anchor: Element;
-    };
-    const groups: Group[] = [];
-    let openCard: Group | null = null;
-    let openPullQuote: Group | null = null;
-    for (const child of Array.from(root.children)) {
-      if (!isHTMLElement(child)) {
-        // A non-element root sibling closes the current runs — we can't
-        // safely fold it (it's not part of the host's exported shape) and
-        // letting a run cross it would absorb unrelated content.
-        openCard = null;
-        openPullQuote = null;
-        continue;
-      }
-      const slotName = child.getAttribute('data-lexical-slot');
-      if (slotName === 'title') {
-        openCard = {anchor: child, kind: 'card', members: [child]};
-        openPullQuote = null;
-        groups.push(openCard);
-      } else if (slotName === 'quote') {
-        openPullQuote = {
-          anchor: child,
-          kind: 'pullquote',
-          members: [child],
-        };
-        openCard = null;
-        groups.push(openPullQuote);
-      } else if (slotName === 'attribution') {
-        // Only absorb attribution when a PullQuote is open; an orphan
-        // attribution wrapper with no preceding `quote` is dropped (it
-        // shouldn't leak into an unrelated Card body below) and closes any
-        // open Card run — later siblings must not reorder into it across
-        // the dropped wrapper.
-        if (openPullQuote !== null) {
-          openPullQuote.members.push(child);
-        } else {
-          openCard = null;
-        }
-      } else if (slotName !== null) {
-        // Any other orphan slot wrapper closes the open runs for the same
-        // reason; it is not part of either host's exported shape.
-        openCard = null;
-        openPullQuote = null;
-      } else if (openCard !== null) {
-        openCard.members.push(child);
-      }
-    }
-    for (const group of groups) {
-      const hostDiv = doc.createElement('div');
-      hostDiv.className =
-        group.kind === 'card' ? 'lexical-card-node' : 'lexical-pullquote-node';
-      group.anchor.parentNode?.insertBefore(hostDiv, group.anchor);
-      for (const member of group.members) {
-        hostDiv.appendChild(member);
-      }
-    }
-  }
-  $next();
-};
-
-/**
  * Mode-independent playground DOM import rules — currently just the
  * inline extra-styles overlay. The Card / PullQuote host rules are
  * rich-text-only and live in {@link PlaygroundRichTextImportRules}.
@@ -401,7 +311,6 @@ export const PlaygroundRichTextImportExtension =
       CodeImportExtension,
       HorizontalRuleImportExtension,
       /* @__PURE__ */ configExtension(DOMImportExtension, {
-        preprocess: [$rewrapOrphanedSlotWrappers],
         rules: PlaygroundRichTextImportRules,
       }),
     ],

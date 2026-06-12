@@ -57,8 +57,7 @@ const CardTestExtension = defineExtension({
 });
 
 // Adds the DOM import pipeline: PlaygroundRichTextImportExtension supplies
-// the Card / PullQuote rules AND the `$rewrapOrphanedSlotWrappers` preprocess
-// that re-assembles slot wrappers stripped from external paste.
+// the Card / PullQuote import rules.
 const CardImportTestExtension = defineExtension({
   $initialEditorState: null,
   dependencies: [
@@ -175,39 +174,6 @@ describe('CardNode named slots', () => {
     expect(html).toContain('Body');
   });
 
-  // External paste path: a browser's contenteditable Cmd+A → Cmd+C strips
-  // the outer `<div class="lexical-card-node">` wrapper that the Card's
-  // exportDOM emits, leaving the title slot wrapper and the body paragraphs
-  // as fragment-root siblings. `$rewrapOrphanedSlotWrappers` rebuilds the
-  // host before the import walk so the body content stays attached to the
-  // Card instead of promoting to root-level paragraphs.
-  it('rewraps an orphaned Card slot wrapper without losing the body siblings', () => {
-    using editor = buildEditorFromExtensions(CardImportTestExtension);
-
-    const orphanedHtml =
-      '<div data-lexical-slot="title"><p>Title</p></div>' + '<p>Body</p>';
-
-    editor.update(
-      () => {
-        $getRoot().clear().select();
-        const dom = new DOMParser().parseFromString(orphanedHtml, 'text/html');
-        $getRoot().append(...$generateNodesFromDOMViaExtension(dom));
-      },
-      {discrete: true},
-    );
-
-    editor.read(() => {
-      // Without the rewrap, the body promotes to a root paragraph and the
-      // Card lands bodiless; with it, the Card keeps both slot and body.
-      expect($getRoot().getChildrenSize()).toBe(1);
-      const card = $getRoot().getFirstChild();
-      assert($isCardNode(card), 'Top-level node must be a CardNode');
-      expect($getSlot(card, 'title')?.getTextContent()).toBe('Title');
-      expect(card.getChildrenSize()).toBe(1);
-      expect(card.getChildren()[0]?.getTextContent()).toBe('Body');
-    });
-  });
-
   // A Card div with no title wrapper must not resurrect the seeded "Title"
   // text: the title slot arrives with an empty paragraph, never content the
   // source HTML did not carry.
@@ -230,78 +196,6 @@ describe('CardNode named slots', () => {
       assert($isCardNode(card), 'Top-level node must be a CardNode');
       expect(card.getChildren()[0]?.getTextContent()).toBe('Body only');
       expect($getSlot(card, 'title')?.getTextContent()).toBe('');
-    });
-  });
-
-  // An orphan `attribution` wrapper (no preceding `quote`) is dropped by the
-  // rewrap preprocess, and it must also close the open Card run: otherwise
-  // unrelated later siblings reorder into the synthetic Card across the
-  // dropped wrapper.
-  it('an orphan attribution wrapper closes the open Card run', () => {
-    using editor = buildEditorFromExtensions(CardImportTestExtension);
-
-    const orphanedHtml =
-      '<div data-lexical-slot="title"><p>Title</p></div>' +
-      '<p>Body</p>' +
-      '<div data-lexical-slot="attribution"><p>Stray</p></div>' +
-      '<p>After</p>';
-
-    editor.update(
-      () => {
-        $getRoot().clear().select();
-        const dom = new DOMParser().parseFromString(orphanedHtml, 'text/html');
-        $getRoot().append(...$generateNodesFromDOMViaExtension(dom));
-      },
-      {discrete: true},
-    );
-
-    editor.read(() => {
-      const card = $getRoot().getFirstChild();
-      assert($isCardNode(card), 'Top-level node must be a CardNode');
-      expect($getSlot(card, 'title')?.getTextContent()).toBe('Title');
-      // Only the pre-wrapper sibling is absorbed as body; "After" stays a
-      // root-level paragraph instead of reordering into the Card.
-      expect(card.getChildrenSize()).toBe(1);
-      expect(card.getChildren()[0]?.getTextContent()).toBe('Body');
-      const last = $getRoot().getLastChild();
-      expect(last?.getTextContent()).toBe('After');
-    });
-  });
-
-  // Two-Card external paste: rewrap must split adjacent same-name orphan
-  // wrappers into per-host runs. Folding both title wrappers into a single
-  // synthetic Card div makes CardImportRule call `$setSlot(card, 'title')`
-  // twice — the second call detaches the first title silently, so the
-  // first Card's content is lost without warning.
-  it('rewraps two orphaned Card runs into two distinct CardNodes', () => {
-    using editor = buildEditorFromExtensions(CardImportTestExtension);
-
-    const orphanedHtml =
-      '<div data-lexical-slot="title"><p>First Title</p></div>' +
-      '<p>First Body</p>' +
-      '<div data-lexical-slot="title"><p>Second Title</p></div>' +
-      '<p>Second Body</p>';
-
-    editor.update(
-      () => {
-        $getRoot().clear().select();
-        const dom = new DOMParser().parseFromString(orphanedHtml, 'text/html');
-        $getRoot().append(...$generateNodesFromDOMViaExtension(dom));
-      },
-      {discrete: true},
-    );
-
-    editor.read(() => {
-      const cards = $getRoot()
-        .getChildren()
-        .filter(child => $isCardNode(child));
-      expect(cards).toHaveLength(2);
-      expect($getSlot(cards[0], 'title')?.getTextContent()).toBe('First Title');
-      expect(cards[0].getChildren()[0]?.getTextContent()).toBe('First Body');
-      expect($getSlot(cards[1], 'title')?.getTextContent()).toBe(
-        'Second Title',
-      );
-      expect(cards[1].getChildren()[0]?.getTextContent()).toBe('Second Body');
     });
   });
 

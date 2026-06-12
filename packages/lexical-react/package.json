@@ -631,6 +631,7 @@
     "./LexicalEditorModeAnnouncePlugin": {
       "source": "./src/LexicalEditorModeAnnouncePlugin.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/LexicalEditorModeAnnouncePlugin.d.ts",
         "development": "./dist/LexicalEditorModeAnnouncePlugin.dev.mjs",
         "production": "./dist/LexicalEditorModeAnnouncePlugin.prod.mjs",
@@ -638,6 +639,7 @@
         "default": "./dist/LexicalEditorModeAnnouncePlugin.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/LexicalEditorModeAnnouncePlugin.d.ts",
         "development": "./dist/LexicalEditorModeAnnouncePlugin.dev.js",
         "production": "./dist/LexicalEditorModeAnnouncePlugin.prod.js",
@@ -647,6 +649,7 @@
     "./LexicalEditorModeAnnouncePlugin.js": {
       "source": "./src/LexicalEditorModeAnnouncePlugin.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/LexicalEditorModeAnnouncePlugin.d.ts",
         "development": "./dist/LexicalEditorModeAnnouncePlugin.dev.mjs",
         "production": "./dist/LexicalEditorModeAnnouncePlugin.prod.mjs",
@@ -654,6 +657,7 @@
         "default": "./dist/LexicalEditorModeAnnouncePlugin.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/LexicalEditorModeAnnouncePlugin.d.ts",
         "development": "./dist/LexicalEditorModeAnnouncePlugin.dev.js",
         "production": "./dist/LexicalEditorModeAnnouncePlugin.prod.js",
@@ -843,6 +847,7 @@
     "./LexicalHistoryAnnouncePlugin": {
       "source": "./src/LexicalHistoryAnnouncePlugin.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/LexicalHistoryAnnouncePlugin.d.ts",
         "development": "./dist/LexicalHistoryAnnouncePlugin.dev.mjs",
         "production": "./dist/LexicalHistoryAnnouncePlugin.prod.mjs",
@@ -850,6 +855,7 @@
         "default": "./dist/LexicalHistoryAnnouncePlugin.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/LexicalHistoryAnnouncePlugin.d.ts",
         "development": "./dist/LexicalHistoryAnnouncePlugin.dev.js",
         "production": "./dist/LexicalHistoryAnnouncePlugin.prod.js",
@@ -859,6 +865,7 @@
     "./LexicalHistoryAnnouncePlugin.js": {
       "source": "./src/LexicalHistoryAnnouncePlugin.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/LexicalHistoryAnnouncePlugin.d.ts",
         "development": "./dist/LexicalHistoryAnnouncePlugin.dev.mjs",
         "production": "./dist/LexicalHistoryAnnouncePlugin.prod.mjs",
@@ -866,6 +873,7 @@
         "default": "./dist/LexicalHistoryAnnouncePlugin.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/LexicalHistoryAnnouncePlugin.d.ts",
         "development": "./dist/LexicalHistoryAnnouncePlugin.dev.js",
         "production": "./dist/LexicalHistoryAnnouncePlugin.prod.js",
@@ -1775,6 +1783,7 @@
     "./useLexicalAriaLiveRegion": {
       "source": "./src/useLexicalAriaLiveRegion.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalAriaLiveRegion.d.ts",
         "development": "./dist/useLexicalAriaLiveRegion.dev.mjs",
         "production": "./dist/useLexicalAriaLiveRegion.prod.mjs",
@@ -1782,6 +1791,7 @@
         "default": "./dist/useLexicalAriaLiveRegion.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalAriaLiveRegion.d.ts",
         "development": "./dist/useLexicalAriaLiveRegion.dev.js",
         "production": "./dist/useLexicalAriaLiveRegion.prod.js",
@@ -1791,6 +1801,7 @@
     "./useLexicalAriaLiveRegion.js": {
       "source": "./src/useLexicalAriaLiveRegion.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalAriaLiveRegion.d.ts",
         "development": "./dist/useLexicalAriaLiveRegion.dev.mjs",
         "production": "./dist/useLexicalAriaLiveRegion.prod.mjs",
@@ -1798,6 +1809,7 @@
         "default": "./dist/useLexicalAriaLiveRegion.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalAriaLiveRegion.d.ts",
         "development": "./dist/useLexicalAriaLiveRegion.dev.js",
         "production": "./dist/useLexicalAriaLiveRegion.prod.js",
@@ -1843,6 +1855,7 @@
     "./useLexicalFocusManager": {
       "source": "./src/useLexicalFocusManager.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalFocusManager.d.ts",
         "development": "./dist/useLexicalFocusManager.dev.mjs",
         "production": "./dist/useLexicalFocusManager.prod.mjs",
@@ -1850,6 +1863,7 @@
         "default": "./dist/useLexicalFocusManager.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalFocusManager.d.ts",
         "development": "./dist/useLexicalFocusManager.dev.js",
         "production": "./dist/useLexicalFocusManager.prod.js",
@@ -1859,6 +1873,7 @@
     "./useLexicalFocusManager.js": {
       "source": "./src/useLexicalFocusManager.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalFocusManager.d.ts",
         "development": "./dist/useLexicalFocusManager.dev.mjs",
         "production": "./dist/useLexicalFocusManager.prod.mjs",
@@ -1866,6 +1881,7 @@
         "default": "./dist/useLexicalFocusManager.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalFocusManager.d.ts",
         "development": "./dist/useLexicalFocusManager.dev.js",
         "production": "./dist/useLexicalFocusManager.prod.js",
@@ -1875,6 +1891,7 @@
     "./useLexicalFocusTrap": {
       "source": "./src/useLexicalFocusTrap.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalFocusTrap.d.ts",
         "development": "./dist/useLexicalFocusTrap.dev.mjs",
         "production": "./dist/useLexicalFocusTrap.prod.mjs",
@@ -1882,6 +1899,7 @@
         "default": "./dist/useLexicalFocusTrap.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalFocusTrap.d.ts",
         "development": "./dist/useLexicalFocusTrap.dev.js",
         "production": "./dist/useLexicalFocusTrap.prod.js",
@@ -1891,6 +1909,7 @@
     "./useLexicalFocusTrap.js": {
       "source": "./src/useLexicalFocusTrap.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalFocusTrap.d.ts",
         "development": "./dist/useLexicalFocusTrap.dev.mjs",
         "production": "./dist/useLexicalFocusTrap.prod.mjs",
@@ -1898,6 +1917,7 @@
         "default": "./dist/useLexicalFocusTrap.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalFocusTrap.d.ts",
         "development": "./dist/useLexicalFocusTrap.dev.js",
         "production": "./dist/useLexicalFocusTrap.prod.js",
@@ -1979,6 +1999,7 @@
     "./useLexicalRovingTabIndex": {
       "source": "./src/useLexicalRovingTabIndex.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalRovingTabIndex.d.ts",
         "development": "./dist/useLexicalRovingTabIndex.dev.mjs",
         "production": "./dist/useLexicalRovingTabIndex.prod.mjs",
@@ -1986,6 +2007,7 @@
         "default": "./dist/useLexicalRovingTabIndex.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalRovingTabIndex.d.ts",
         "development": "./dist/useLexicalRovingTabIndex.dev.js",
         "production": "./dist/useLexicalRovingTabIndex.prod.js",
@@ -1995,6 +2017,7 @@
     "./useLexicalRovingTabIndex.js": {
       "source": "./src/useLexicalRovingTabIndex.ts",
       "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalRovingTabIndex.d.ts",
         "development": "./dist/useLexicalRovingTabIndex.dev.mjs",
         "production": "./dist/useLexicalRovingTabIndex.prod.mjs",
@@ -2002,6 +2025,7 @@
         "default": "./dist/useLexicalRovingTabIndex.mjs"
       },
       "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
         "types": "./dist/useLexicalRovingTabIndex.d.ts",
         "development": "./dist/useLexicalRovingTabIndex.dev.js",
         "production": "./dist/useLexicalRovingTabIndex.prod.js",

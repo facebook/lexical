@@ -566,11 +566,11 @@ export interface AriaLiveRegionRef {
  * cleanup" contract); the ref's `current` is swapped to the live handle
  * there and restored to `NOOP_HANDLE` on disposal.
  */
-export const AriaLiveRegionExtension = defineExtension({
+export const AriaLiveRegionExtension = /* @__PURE__ */ defineExtension({
   build(_editor, _config): AriaLiveRegionRef {
     return {current: NOOP_HANDLE};
   },
-  config: safeCast<AriaLiveRegionExtensionConfig>({
+  config: /* @__PURE__ */ safeCast<AriaLiveRegionExtensionConfig>({
     owner: null,
     politeness: 'polite',
   }),
@@ -601,9 +601,9 @@ export interface HistoryAnnounceExtensionConfig {
  * `AriaLiveRegionExtension`'s shared sink. Replaces the React-only
  * `HistoryAnnouncePlugin` for `@lexical/extension` hosts.
  */
-export const HistoryAnnounceExtension = defineExtension({
+export const HistoryAnnounceExtension = /* @__PURE__ */ defineExtension({
   build: (_editor, config) => namedSignals(config),
-  config: safeCast<HistoryAnnounceExtensionConfig>({
+  config: /* @__PURE__ */ safeCast<HistoryAnnounceExtensionConfig>({
     redone: 'Redone',
     undone: 'Undone',
   }),
@@ -634,9 +634,9 @@ export interface EditorModeAnnounceExtensionConfig {
  * `AriaLiveRegionExtension`'s shared sink. Replaces the React-only
  * `EditorModeAnnouncePlugin` for `@lexical/extension` hosts.
  */
-export const EditorModeAnnounceExtension = defineExtension({
+export const EditorModeAnnounceExtension = /* @__PURE__ */ defineExtension({
   build: (_editor, config) => namedSignals(config),
-  config: safeCast<EditorModeAnnounceExtensionConfig>({
+  config: /* @__PURE__ */ safeCast<EditorModeAnnounceExtensionConfig>({
     editable: 'Editor is editable',
     readOnly: 'Editor is read-only',
   }),

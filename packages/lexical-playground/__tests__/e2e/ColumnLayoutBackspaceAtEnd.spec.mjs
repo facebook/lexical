@@ -80,7 +80,7 @@ test('Layout - removes layout completely when both columns are empty and backspa
 });
 
 for (const key of ['ArrowRight', 'ArrowDown']) {
-  test(`Layout - ${key} keys should exit from the layout if the selection is at the end of the element`, async ({
+  test(`Layout - ${key} key should exit from the layout if the selection is at the end of the element`, async ({
     page,
     isPlainText,
     isCollab,

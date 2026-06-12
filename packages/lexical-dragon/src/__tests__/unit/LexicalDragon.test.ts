@@ -266,15 +266,6 @@ describe('DragonExtension', () => {
     iframeDocument.write('<!doctype html><html><body></body></html>');
     iframeDocument.close();
 
-    // jsdom gives the iframe its own realm, so its Range.prototype never
-    // received the getBoundingClientRect stub that vitest.setup.mts installs
-    // on the top-level realm. Reuse that stub so the editor's
-    // scroll-into-view path can read a caret rect from an iframe-realm Range.
-    (
-      iframeWindow as Window & typeof globalThis
-    ).Range.prototype.getBoundingClientRect =
-      Range.prototype.getBoundingClientRect;
-
     const uninstall = installDragonSupport(iframeWindow);
     const topEdits: unknown[] = [];
     const topListener = (event: MessageEvent) => topEdits.push(event.data);

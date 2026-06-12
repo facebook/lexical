@@ -39,7 +39,7 @@ A host keeps a second child channel, a `Map` of slot name to NodeKey,
 separate from its ordinary linked-list children. A slot value has its slot
 host pointer set and `getParent() === null`, with exactly one of the two
 non-null: `getParent()` stops at the slot boundary, and you climb out only
-through `$getSlotHost()`.
+through [`$getSlotHost()`](/docs/api/modules/lexical#getslothost).
 
 The slot link itself acts as a **virtual invisible shadow root** between the
 host and the value. Isolation is structural rather than a convention — an
@@ -51,7 +51,8 @@ In the DOM, each value renders synchronously into a keyless
 DOM as a **hidden placeholder** (`display: none`), in a canonical order
 derived from the host class (see [slot order](#slot-order)). Nothing is
 visible until the host explicitly attaches the container somewhere (see
-[Rendering](#rendering)) — mirroring how `getDOMSlot` gives an element
+[Rendering](#rendering)) — mirroring how
+[`getDOMSlot`](/docs/api/classes/lexical.ElementNode#getdomslot) gives an element
 control over where its linked-list children render.
 
 ## Hosts and Values
@@ -70,13 +71,14 @@ shape decides the editing model:
   focus movement) and a multi-block paste flattens to inline content the way
   an `<input>` sanitizes its value — line breaks stripped, block-only
   decorators dropped.
-- **A shadow-root container** (an ElementNode whose `isShadowRoot()` returns
+- **A shadow-root container** (an ElementNode whose
+  [`isShadowRoot()`](/docs/api/classes/lexical.ElementNode#isshadowroot) returns
   `true`) behaves as a multi-block region with normal block editing inside.
 
 ## Declaring and Setting Slots
 
 A host class declares its slot names in [`$config()`](nodes.mdx); values are
-attached with `$setSlot`:
+attached with [`$setSlot`](/docs/api/modules/lexical#setslot):
 
 ```ts
 import {
@@ -139,20 +141,22 @@ $setSlot(
 
 The core API surface (all exported from `lexical`):
 
-- `$setSlot(host, name, node)` — place a value into a named slot, replacing
+- [`$setSlot(host, name, node)`](/docs/api/modules/lexical#setslot) — place a value into a named slot, replacing
   any existing value under that name. Throws if the value is inline, if
   inserting it would create a cycle, or if the name is one of the reserved
   prototype keys (`__proto__`, `constructor`, `prototype`).
-- `$getSlot(host, name)` — the value under a name, or `null`.
-- `$getSlotNames(host)` — the host's slot names in canonical order.
-- `$removeSlot(host, name)` — detach the value under a name (the subtree is
+- [`$getSlot(host, name)`](/docs/api/modules/lexical#getslot) — the value under a name, or `null`.
+- [`$getSlotNames(host)`](/docs/api/modules/lexical#getslotnames) — the host's slot names in canonical order.
+- [`$removeSlot(host, name)`](/docs/api/modules/lexical#removeslot) — detach the value under a name (the subtree is
   garbage-collected unless you reattach it elsewhere).
-- `$getSlotHost(node)` — the host a value is slotted into, or `null`.
-- `$getSlotFrame(node)` — the innermost slot value containing a node (the
+- [`$getSlotHost(node)`](/docs/api/modules/lexical#getslothost) — the host a value is slotted into, or `null`.
+- [`$getSlotFrame(node)`](/docs/api/modules/lexical#getslotframe) — the innermost slot value containing a node (the
   "frame" whose virtual shadow root scopes editing), or `null` when the node
   is not inside any slot.
-- `$isSlotHost(node)` / `$isSlotChild(node)` — type guards for the
-  `SlotHostNode` / `SlotChildNode` interfaces.
+- [`$isSlotHost(node)`](/docs/api/modules/lexical#isslothost) /
+  [`$isSlotChild(node)`](/docs/api/modules/lexical#isslotchild) — type guards
+  for the [`SlotHostNode`](/docs/api/interfaces/lexical.SlotHostNode) /
+  [`SlotChildNode`](/docs/api/interfaces/lexical.SlotChildNode) interfaces.
 
 ## Slot Order
 
@@ -172,7 +176,8 @@ There are three ways to attach a slot, all sharing the same contract
 (attaching moves the container to the target, a no-op when it is already
 there, and reveals it; the container renders as a normal block):
 
-1. **Synchronously in-lexical**: register a `$getSlotTargetElement` render
+1. **Synchronously in-lexical**: register a `$getSlotTargetElement`
+   [`DOMRenderMatch`](/docs/api/interfaces/lexical_html.DOMRenderMatch)
    override for the host's node class (a
    [DOM render override](../serialization/dom-render.md), not a node
    method — this is an advanced hook). The reconciler consults it whenever
@@ -193,14 +198,20 @@ there, and reveals it; the container renders as a normal block):
    });
    ```
 
-2. **Imperatively**: `mountSlotContainer(editor, nodeKey, slotName, target)`
-   and `unmountSlotContainer(editor, nodeKey, container)` from `lexical` are
-   the framework-independent primitives (e.g. from a mutation listener).
-   They read through `editor.readPending`, so calling them mid-update
+2. **Imperatively**:
+   [`mountSlotContainer(editor, nodeKey, slotName, target)`](/docs/api/modules/lexical#mountslotcontainer)
+   and
+   [`unmountSlotContainer(editor, nodeKey, container)`](/docs/api/modules/lexical#unmountslotcontainer)
+   from `lexical` are the framework-independent primitives (e.g. from a
+   [mutation listener](/docs/api/classes/lexical.LexicalEditor#registermutationlistener)).
+   They read through
+   [`editor.readPending`](/docs/api/classes/lexical.LexicalEditor#readpending),
+   so calling them mid-update
    observes the pending state without forcing a flush.
 
-3. **From React chrome**: the `useLexicalSlot` hook from
-   `@lexical/react/useLexicalSlot` wraps the imperative pair and returns a
+3. **From React chrome**: the
+   [`useLexicalSlot`](/docs/api/modules/lexical_react_useLexicalSlot#uselexicalslot)
+   hook from `@lexical/react/useLexicalSlot` wraps the imperative pair and returns a
    ref that mounts a slot's container into your component — the usual choice
    for a DecoratorNode host's `decorate()` chrome (whose containers are
    opted back into `contentEditable` automatically, since the decorator DOM
@@ -231,8 +242,9 @@ A `contentEditable=false` ElementNode shell can host React chrome the same
 way (slot containers opt into editing whenever the host DOM is
 non-editable): the playground's Panel demo portals chrome into the host DOM,
 attaches the title slot with `useLexicalSlot`, and applies the identical
-hidden-then-attach technique to its `getDOMSlot` children element. Such a
-shell should call `setDOMUnmanaged(dom)` in `createDOM` — the portal and the
+hidden-then-attach technique to its `getDOMSlot` children element. Such a shell should call
+[`setDOMUnmanaged(dom)`](/docs/api/modules/lexical#setdomunmanaged) in
+`createDOM` — the portal and the
 attach moves mutate the shell's children from outside the reconciler, and
 the marker gives the shell the same mutation-observer exemption a
 DecoratorNode's DOM has.
@@ -240,7 +252,8 @@ DecoratorNode's DOM has.
 ## Editing Behavior
 
 - **Selection never crosses a slot boundary.** Selections are clamped to the
-  anchor's slot frame at every entry point (DOM resolution, `$setSelection`,
+  anchor's slot frame at every entry point (DOM resolution,
+  [`$setSelection`](/docs/api/modules/lexical#setselection),
   and point mutation), so a mouse drag and a `shift+arrow` across the
   boundary land on the same clamped result.
 - **Deletion stops at the boundary.** Backspace at the start of a slot and
@@ -249,8 +262,9 @@ DecoratorNode's DOM has.
 - **`Cmd+A` scopes to the slot frame** when the caret is inside one; outside
   slots the default handlers keep the legacy whole-document behavior.
   Progressive expansion (block → enclosing slot frame → document on repeated
-  presses) is provided by the opt-in `SelectBlockExtension` from
-  `@lexical/extension`.
+  presses) is provided by the opt-in
+  [`SelectBlockExtension`](/docs/api/modules/lexical_extension#selectblockextension)
+  from `@lexical/extension`.
 - **Whole-host UX is opt-in.** An ElementNode host can declare
   `includeChildrenWhenSelected: true` in `$config()` to make a NodeSelection
   of the host carry its body children through copy and export, matching
@@ -260,18 +274,25 @@ DecoratorNode's DOM has.
 
 ### Traversal is intentionally asymmetric
 
-Content reads include slot subtrees, slots-first: `getTextContent()`,
-`getAllTextNodes()`, and the `$dfsWithSlots` family in `@lexical/utils`
-count slot content for search, copy, and accessibility. Navigation excludes
-them: `getChildren()`, `getFirstDescendant()` and friends stay
-linked-list-only, so caret movement never walks into a slot by accident.
-Choose `$dfs` or `$dfsWithSlots` depending on whether "this subtree" should
-mean the navigable tree or all content.
+Content reads include slot subtrees, slots-first:
+[`getTextContent()`](/docs/api/classes/lexical.LexicalNode#gettextcontent),
+[`getAllTextNodes()`](/docs/api/classes/lexical.ElementNode#getalltextnodes),
+and the [`$dfsWithSlots`](/docs/api/modules/lexical_utils#dfswithslots)
+family in `@lexical/utils` count slot content for search, copy, and
+accessibility. Navigation excludes them:
+[`getChildren()`](/docs/api/classes/lexical.ElementNode#getchildren),
+[`getFirstDescendant()`](/docs/api/classes/lexical.ElementNode#getfirstdescendant)
+and friends stay linked-list-only, so caret movement never walks into a slot
+by accident. Choose [`$dfs`](/docs/api/modules/lexical_utils#dfs) or
+`$dfsWithSlots` depending on whether "this subtree" should mean the
+navigable tree or all content.
 
 ## Serialization
 
 JSON serialization is automatic in both directions. A host's slots serialize
-under the reserved `$slots` key on `SerializedLexicalNode` (a sibling of
+under the reserved `$slots` key on
+[`SerializedLexicalNode`](/docs/api/modules/lexical#serializedlexicalnode)
+(a sibling of
 NodeState's reserved `'$'` key), keyed by slot name:
 
 ```json
@@ -292,7 +313,9 @@ framework-owned key from colliding with a subclass that already serializes a
 
 HTML serialization is opt-in per host, like NodeState: the exporter never
 descends into slots on its own. A host's `exportDOM` can emit each slot into
-a wrapper using `$appendNodeToHTML` from `@lexical/html`, and a
+a wrapper using
+[`$appendNodeToHTML`](/docs/api/modules/lexical_html#appendnodetohtml) from
+`@lexical/html`, and a
 [DOM import rule](../serialization/dom-import.md) on the host's
 distinguishing markup maps the wrappers back through `$setSlot`.
 

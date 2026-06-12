@@ -9,7 +9,6 @@ on:
       browser: {required: true, type: string}
       editor-mode: {required: true, type: string}
       prod: {required: false, type: boolean}
-      flaky: {required: false, type: boolean} # Defaults to false: dont run flaky
       fail-on-cache-miss: {required: false, type: boolean, default: true}
 
 permissions: {}
@@ -17,7 +16,6 @@ permissions: {}
 jobs:
   e2e-test:
     runs-on: ${{ inputs.os }}
-    continue-on-error: ${{ inputs.flaky }}
     if: (inputs.browser != 'webkit' || inputs.os == 'macos-latest')
     env:
       CI: true
@@ -39,19 +37,19 @@ jobs:
           node-version: ${{ inputs.node-version }}
           fail-on-cache-miss: ${{ inputs.fail-on-cache-miss }}
       - name: Run tests
-        if: inputs.editor-mode != 'rich-text-with-collab'
-        run: pnpm run test-e2e-${{ inputs.prod && 'prod-' || '' }}${{ inputs.browser }} ${{ inputs.flaky && '--grep' || '--grep-invert' }} "@flaky"${{ inputs.flaky && ' --pass-with-no-tests' || '' }}
+        if: ${{ !startsWith(inputs.editor-mode, 'rich-text-with-collab') }}
+        run: pnpm run test-e2e-${{ inputs.prod && 'prod-' || '' }}${{ inputs.browser }}
       - name: Run collab tests
-        if: inputs.editor-mode == 'rich-text-with-collab'
+        if: ${{ startsWith(inputs.editor-mode, 'rich-text-with-collab') }}
         shell: bash
         run: |
           pnpm exec concurrently -k -s first \
             "pnpm run collab" \
-            "pnpm run test-e2e-collab-${{ inputs.prod && 'prod-' || '' }}${{ inputs.browser }} ${{ inputs.flaky && '--grep' || '--grep-invert' }} @flaky${{ inputs.flaky && ' --pass-with-no-tests' || '' }}"
+            "pnpm run test-e2e-collab-${{ inputs.editor-mode == 'rich-text-with-collab-v2' && 'v2-' || '' }}${{ inputs.prod && 'prod-' || '' }}${{ inputs.browser }}"
       - name: Upload Artifacts
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: Test Results ${{ inputs.os }}-${{ inputs.browser }}-${{ inputs.editor-mode }}-${{ inputs.prod && 'prod' || 'dev' }}-${{ inputs.node-version }}-${{ inputs.flaky && 'flaky' || ''}}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: Test Results ${{ inputs.os }}-${{ inputs.browser }}-${{ inputs.editor-mode }}-${{ inputs.prod && 'prod' || 'dev' }}-${{ inputs.node-version }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ env.test_results_path }}
           retention-days: 7

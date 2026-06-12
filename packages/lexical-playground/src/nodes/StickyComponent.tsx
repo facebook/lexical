@@ -233,6 +233,7 @@ export default function StickyComponent({
               id={caption.getKey()}
               providerFactory={createWebsocketProvider}
               shouldBootstrap={true}
+              selectionHighlight={true}
             />
           ) : null}
         </LexicalExtensionEditorComposer>

@@ -11,7 +11,7 @@ import {describe, expect, test} from 'vitest';
 import {cloneMap, GenMap} from '../../LexicalGenMap';
 
 function buildGenMap(
-  entries: ReadonlyArray<[string, number]>,
+  entries: readonly [string, number][],
 ): GenMap<string, number> {
   const g = new GenMap<string, number>();
   for (const [k, v] of entries) {

@@ -81,7 +81,7 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild<TableNode>();
+        const table = $getRoot().getFirstChild();
         if (!$isTableNode(table)) {
           throw new Error('Expected table node');
         }
@@ -91,7 +91,7 @@ describe('$moveTableColumn', () => {
     );
 
     editor.getEditorState().read(() => {
-      const table = $getRoot().getFirstChild<TableNode>();
+      const table = $getRoot().getFirstChild();
       if (!$isTableNode(table)) {
         throw new Error('Expected table node');
       }
@@ -113,7 +113,7 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild<TableNode>();
+        const table = $getRoot().getFirstChild();
         if (!$isTableNode(table)) {
           throw new Error('Expected table node');
         }
@@ -123,7 +123,7 @@ describe('$moveTableColumn', () => {
     );
 
     editor.getEditorState().read(() => {
-      const table = $getRoot().getFirstChild<TableNode>();
+      const table = $getRoot().getFirstChild();
       if (!$isTableNode(table)) {
         throw new Error('Expected table node');
       }
@@ -145,7 +145,7 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild<TableNode>();
+        const table = $getRoot().getFirstChild();
         if (!$isTableNode(table)) {
           throw new Error('Expected table node');
         }
@@ -155,7 +155,7 @@ describe('$moveTableColumn', () => {
     );
 
     editor.getEditorState().read(() => {
-      const table = $getRoot().getFirstChild<TableNode>();
+      const table = $getRoot().getFirstChild();
       if (!$isTableNode(table)) {
         throw new Error('Expected table node');
       }
@@ -177,7 +177,7 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild<TableNode>();
+        const table = $getRoot().getFirstChild();
         if (!$isTableNode(table)) {
           throw new Error('Expected table node');
         }
@@ -187,7 +187,7 @@ describe('$moveTableColumn', () => {
     );
 
     editor.getEditorState().read(() => {
-      const table = $getRoot().getFirstChild<TableNode>();
+      const table = $getRoot().getFirstChild();
       if (!$isTableNode(table)) {
         throw new Error('Expected table node');
       }
@@ -209,7 +209,7 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild<TableNode>();
+        const table = $getRoot().getFirstChild();
         if (!$isTableNode(table)) {
           throw new Error('Expected table node');
         }
@@ -219,7 +219,7 @@ describe('$moveTableColumn', () => {
     );
 
     editor.getEditorState().read(() => {
-      const table = $getRoot().getFirstChild<TableNode>();
+      const table = $getRoot().getFirstChild();
       if (!$isTableNode(table)) {
         throw new Error('Expected table node');
       }
@@ -241,7 +241,7 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild<TableNode>();
+        const table = $getRoot().getFirstChild();
         if (!$isTableNode(table)) {
           throw new Error('Expected table node');
         }
@@ -251,7 +251,7 @@ describe('$moveTableColumn', () => {
     );
 
     editor.getEditorState().read(() => {
-      const table = $getRoot().getFirstChild<TableNode>();
+      const table = $getRoot().getFirstChild();
       if (!$isTableNode(table)) {
         throw new Error('Expected table node');
       }
@@ -273,7 +273,7 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild<TableNode>();
+        const table = $getRoot().getFirstChild();
         if (!$isTableNode(table)) {
           throw new Error('Expected table node');
         }
@@ -283,7 +283,7 @@ describe('$moveTableColumn', () => {
     );
 
     editor.getEditorState().read(() => {
-      const table = $getRoot().getFirstChild<TableNode>();
+      const table = $getRoot().getFirstChild();
       if (!$isTableNode(table)) {
         throw new Error('Expected table node');
       }
@@ -305,7 +305,7 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild<TableNode>();
+        const table = $getRoot().getFirstChild();
         if (!$isTableNode(table)) {
           throw new Error('Expected table node');
         }
@@ -315,7 +315,7 @@ describe('$moveTableColumn', () => {
     );
 
     editor.getEditorState().read(() => {
-      const table = $getRoot().getFirstChild<TableNode>();
+      const table = $getRoot().getFirstChild();
       if (!$isTableNode(table)) {
         throw new Error('Expected table node');
       }
@@ -339,7 +339,7 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild<TableNode>();
+        const table = $getRoot().getFirstChild();
         if (!$isTableNode(table)) {
           throw new Error('Expected table node');
         }
@@ -349,7 +349,7 @@ describe('$moveTableColumn', () => {
     );
 
     editor.getEditorState().read(() => {
-      const table = $getRoot().getFirstChild<TableNode>();
+      const table = $getRoot().getFirstChild();
       if (!$isTableNode(table)) {
         throw new Error('Expected table node');
       }
@@ -393,7 +393,7 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild<TableNode>();
+        const table = $getRoot().getFirstChild();
         if (!$isTableNode(table)) {
           throw new Error('Expected table node');
         }
@@ -403,7 +403,7 @@ describe('$moveTableColumn', () => {
     );
 
     editor.getEditorState().read(() => {
-      const table = $getRoot().getFirstChild<TableNode>();
+      const table = $getRoot().getFirstChild();
       if (!$isTableNode(table)) {
         throw new Error('Expected table node');
       }
@@ -433,7 +433,7 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild<TableNode>();
+        const table = $getRoot().getFirstChild();
         if (!$isTableNode(table)) {
           throw new Error('Expected table node');
         }
@@ -443,7 +443,7 @@ describe('$moveTableColumn', () => {
     );
 
     editor.getEditorState().read(() => {
-      const table = $getRoot().getFirstChild<TableNode>();
+      const table = $getRoot().getFirstChild();
       if (!$isTableNode(table)) {
         throw new Error('Expected table node');
       }
@@ -466,7 +466,7 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild<TableNode>();
+        const table = $getRoot().getFirstChild();
         if (!$isTableNode(table)) {
           throw new Error('Expected table node');
         }
@@ -476,7 +476,7 @@ describe('$moveTableColumn', () => {
     );
 
     editor.getEditorState().read(() => {
-      const table = $getRoot().getFirstChild<TableNode>();
+      const table = $getRoot().getFirstChild();
       if (!$isTableNode(table)) {
         throw new Error('Expected table node');
       }

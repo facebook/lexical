@@ -188,6 +188,7 @@ export {$isEditorState} from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
 export {stopLexicalPropagation} from './LexicalEvents';
 export type {
+  AbstractStaticNodeConfigRecord,
   BaseStaticNodeConfig,
   DOMChildConversion,
   DOMConversion,
@@ -206,8 +207,10 @@ export type {
   NodeMap,
   SerializedLexicalNode,
   StaticNodeConfig,
+  StaticNodeConfigAccessor,
   StaticNodeConfigRecord,
   StaticNodeConfigValue,
+  StaticNodeTypeAccessor,
 } from './LexicalNode';
 export {$isLexicalNode, buildImportMap} from './LexicalNode';
 export {
@@ -368,6 +371,7 @@ export {
   COLLABORATION_TAG,
   COMPOSITION_END_TAG,
   COMPOSITION_START_TAG,
+  CUT_TAG,
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,

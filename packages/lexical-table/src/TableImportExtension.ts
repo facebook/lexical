@@ -12,7 +12,6 @@ import {
   $propagateTextAlignToBlockChildren,
   contextValue,
   defineImportRule,
-  DOMImportExtension,
   ImportTextFormat,
   ImportTextStyle,
   sel,
@@ -23,8 +22,6 @@ import {
   $isInlineElementOrDecoratorNode,
   $isLineBreakNode,
   $isTextNode,
-  configExtension,
-  defineExtension,
   IS_BOLD,
   IS_ITALIC,
   IS_STRIKETHROUGH,
@@ -40,7 +37,6 @@ import {
   $isTableCellNode,
   TableCellHeaderStates,
 } from './LexicalTableCellNode';
-import {TableExtension} from './LexicalTableExtension';
 import {$createTableNode} from './LexicalTableNode';
 import {$createTableRowNode, $isTableRowNode} from './LexicalTableRowNode';
 
@@ -126,7 +122,7 @@ function $packageCellChildren(children: LexicalNode[]): LexicalNode[] {
   return result;
 }
 
-const TableRule = defineImportRule({
+const TableRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const node = $createTableNode();
     if (el.hasAttribute('data-lexical-row-striping')) {
@@ -170,7 +166,7 @@ const TableRule = defineImportRule({
   name: '@lexical/table/table',
 });
 
-const TableRowRule = defineImportRule({
+const TableRowRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const height = PIXEL_VALUE_REG_EXP.test(el.style.height)
       ? parseFloat(el.style.height)
@@ -187,7 +183,7 @@ const TableRowRule = defineImportRule({
   name: '@lexical/table/tr',
 });
 
-const TableCellRule = defineImportRule({
+const TableCellRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const isHeader = el.nodeName === 'TH';
     const width = PIXEL_VALUE_REG_EXP.test(el.style.width)
@@ -302,23 +298,11 @@ export const TableRowSchema: ChildSchema = {
  * Import rules for {@link TableNode}, {@link TableRowNode}, and
  * {@link TableCellNode}.
  *
- * @experimental
- */
-export const TableImportRules = [TableRule, TableRowRule, TableCellRule];
-
-/**
- * Bundles {@link TableImportRules} together with the runtime
- * {@link TableExtension}. The application is expected to already have
- * `CoreImportExtension` (or some equivalent) in its dependency graph —
- * the core/text/paragraph/inline-format rules are a shared baseline,
- * not something this leaf importer should re-declare.
+ * Registered by {@link TableExtension} itself (together with
+ * `CoreImportExtension`), so any editor that uses the table extension can
+ * import these tags through the `DOMImportExtension` pipeline without
+ * further configuration.
  *
  * @experimental
  */
-export const TableImportExtension = defineExtension({
-  dependencies: [
-    TableExtension,
-    configExtension(DOMImportExtension, {rules: TableImportRules}),
-  ],
-  name: '@lexical/table/Import',
-});
+export const TableImportRules = [TableRule, TableRowRule, TableCellRule];

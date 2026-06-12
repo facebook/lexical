@@ -89,7 +89,7 @@ export function LexicalExtensionComposer({
   const editor = useMemo(() => {
     const builder = LexicalBuilder.fromExtensions([
       ReactProviderExtension,
-      configExtension(
+      /* @__PURE__ */ configExtension(
         ReactExtension,
         contentEditable === undefined ? {} : {contentEditable},
       ),

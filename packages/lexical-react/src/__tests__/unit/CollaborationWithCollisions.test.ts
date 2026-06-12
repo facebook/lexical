@@ -11,12 +11,13 @@ import {
   $createRangeSelection,
   $createTextNode,
   $getRoot,
+  $isElementNode,
   $isTextNode,
   $setSelection,
   BaseSelection,
   LexicalNode,
 } from 'lexical';
-import {afterEach, beforeEach, describe, expect, it} from 'vitest';
+import {afterEach, assert, beforeEach, describe, expect, it} from 'vitest';
 
 import {
   connectClients,
@@ -28,7 +29,7 @@ import {
   waitForReact,
 } from '../utils';
 
-const $insertParagraph = (...children: Array<string | LexicalNode>) => {
+const $insertParagraph = (...children: (string | LexicalNode)[]) => {
   const root = $getRoot();
   const paragraph = $createParagraphNode();
   const nodes = children.map(child => {
@@ -45,21 +46,21 @@ const $createSelectionByPath = ({
   focusOffset,
 }: {
   anchorOffset: number;
-  anchorPath: Array<number>;
+  anchorPath: number[];
   focusOffset: number;
-  focusPath: Array<number>;
+  focusPath: number[];
 }): BaseSelection => {
   const selection = $createRangeSelection();
   const root = $getRoot();
 
-  const anchorNode = anchorPath.reduce(
-    (node, index) => node.getChildAtIndex(index)!,
-    root,
-  );
-  const focusNode = focusPath.reduce(
-    (node, index) => node.getChildAtIndex(index)!,
-    root,
-  );
+  const $reduceChildAtIndex = (node: LexicalNode, index: number) => {
+    assert($isElementNode(node), 'Expected an ElementNode in the path');
+    const child = node.getChildAtIndex(index);
+    assert(child !== null, 'Expected a child at the path index');
+    return child;
+  };
+  const anchorNode = anchorPath.reduce<LexicalNode>($reduceChildAtIndex, root);
+  const focusNode = focusPath.reduce<LexicalNode>($reduceChildAtIndex, root);
 
   selection.anchor.set(
     anchorNode.getKey(),
@@ -85,9 +86,9 @@ const $replaceTextByPath = ({
   text = '',
 }: {
   anchorOffset: number;
-  anchorPath: Array<number>;
+  anchorPath: number[];
   focusOffset: number;
-  focusPath: Array<number>;
+  focusPath: number[];
   text: string | null | undefined;
 }) => {
   const selection = $createSelectionByPath({
@@ -112,12 +113,12 @@ describe('CollaborationWithCollisions', () => {
     container = null;
   });
 
-  const SIMPLE_TEXT_COLLISION_TESTS: Array<{
-    clients: Array<() => void>;
+  const SIMPLE_TEXT_COLLISION_TESTS: {
+    clients: (() => void)[];
     expectedHTML: string | null | undefined;
     init: () => void;
     name: string;
-  }> = [
+  }[] = [
     {
       clients: [
         () => {

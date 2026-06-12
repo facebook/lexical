@@ -15,10 +15,11 @@ import {
   $isElementNode,
   KEY_ENTER_COMMAND,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
 
 import {$createCodeHighlightNode} from '../../CodeHighlightNode';
-import {$isCodeNode, CodeNode} from '../../CodeNode';
+import {$isCodeNode} from '../../CodeNode';
 
 describe('CodeExtension', () => {
   it('should not escape code block when content has consecutive blank lines (paste scenario)', () => {
@@ -67,7 +68,10 @@ describe('CodeExtension', () => {
     using editor = buildEditorFromExtensions(ext);
     editor.update(
       () => {
-        const codeNode = $getRoot().getFirstChildOrThrow<CodeNode>();
+        const codeNode = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isCodeNode,
+        );
         codeNode.select(codeNode.getChildrenSize(), codeNode.getChildrenSize());
       },
       {discrete: true},
@@ -108,7 +112,10 @@ describe('CodeExtension', () => {
     using editor = buildEditorFromExtensions(ext);
     editor.update(
       () => {
-        const codeNode = $getRoot().getFirstChildOrThrow<CodeNode>();
+        const codeNode = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isCodeNode,
+        );
         codeNode.select(codeNode.getChildrenSize(), codeNode.getChildrenSize());
       },
       {discrete: true},
@@ -148,7 +155,10 @@ describe('CodeExtension', () => {
     using editor = buildEditorFromExtensions(ext);
     editor.update(
       () => {
-        const codeNode = $getRoot().getFirstChildOrThrow<CodeNode>();
+        const codeNode = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isCodeNode,
+        );
         codeNode.select(1, 1);
       },
       {discrete: true},

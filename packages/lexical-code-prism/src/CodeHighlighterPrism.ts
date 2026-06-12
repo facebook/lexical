@@ -264,11 +264,11 @@ function $updateAndRetainSelection(
 // Finds minimal diff range between two nodes lists. It returns from/to range boundaries of prevNodes
 // that needs to be replaced with `nodes` (subset of nextNodes) to make prevNodes equal to nextNodes.
 function getDiffRange(
-  prevNodes: Array<LexicalNode>,
-  nextNodes: Array<LexicalNode>,
+  prevNodes: LexicalNode[],
+  nextNodes: LexicalNode[],
 ): {
   from: number;
-  nodesForReplacement: Array<LexicalNode>;
+  nodesForReplacement: LexicalNode[];
   to: number;
 } {
   let leadingMatch = 0;
@@ -441,9 +441,9 @@ export interface CodePrismConfig {
  * and the related keyboard handlers are activated automatically. Set
  * `tabSize` on `CodeIndentExtension` to enable space-indent outdent.
  */
-export const CodePrismExtension = defineExtension({
+export const CodePrismExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config) => namedSignals(config),
-  config: safeCast<CodePrismConfig>({
+  config: /* @__PURE__ */ safeCast<CodePrismConfig>({
     disabled: false,
     tokenizer: PrismTokenizer,
   }),

@@ -52,9 +52,8 @@ const COLORS = [
 
 type User = string; // username
 
-export const SHOW_VERSIONS_COMMAND: LexicalCommand<void> = createCommand(
-  'SHOW_VERSIONS_COMMAND',
-);
+export const SHOW_VERSIONS_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('SHOW_VERSIONS_COMMAND');
 
 export function VersionsPlugin({id}: {id: string}) {
   const [editor] = useLexicalComposerContext();
@@ -151,7 +150,7 @@ export function VersionsPlugin({id}: {id: string}) {
             if (mutation === 'destroyed') {
               continue;
             }
-            const node = $getNodeByKeyOrThrow<TextNode>(nodeKey);
+            const node = $getNodeByKeyOrThrow(nodeKey);
             const ychange = $getYChangeState<User>(node);
             const element = editor.getElementByKey(nodeKey);
             if (!ychange || !element) {

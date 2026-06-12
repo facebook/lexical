@@ -161,6 +161,7 @@ export default function Editor(): JSX.Element {
                   id={COLLAB_DOC_ID}
                   providerFactory={createWebsocketProvider}
                   shouldBootstrap={!skipCollaborationInit}
+                  selectionHighlight={true}
                 />
               )
             ) : null}
@@ -240,6 +241,7 @@ function CollabV2({
       doc={doc}
       provider={provider}
       __shouldBootstrapUnsafe={shouldBootstrap}
+      selectionHighlight={true}
     />
   );
 }

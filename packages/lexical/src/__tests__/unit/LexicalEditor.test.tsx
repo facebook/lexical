@@ -88,6 +88,7 @@ import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
 import {emptyFunction} from '../../LexicalUtils';
 import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {
+  $assertNodeType,
   $createTestDecoratorNode,
   $createTestElementNode,
   $createTestInlineElementNode,
@@ -192,13 +193,15 @@ describe('LexicalEditor tests', () => {
   function useLexicalEditor(
     rootElementRef: React.RefObject<null | HTMLDivElement>,
     onError?: (error: Error) => void,
-    nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
+    nodes?: readonly (Klass<LexicalNode> | LexicalNodeReplacement)[],
+    onWarn?: (error: Error) => void,
   ) {
     const editor = useMemo(
       () =>
         createTestEditor({
           nodes: nodes ?? [],
           onError: onError || vi.fn(),
+          onWarn,
           theme: {
             tableAlignment: {
               center: 'editor-table-alignment-center',
@@ -211,7 +214,7 @@ describe('LexicalEditor tests', () => {
             },
           },
         }),
-      [onError, nodes],
+      [onError, nodes, onWarn],
     );
 
     useEffect(() => {
@@ -227,12 +230,13 @@ describe('LexicalEditor tests', () => {
 
   function init(
     onError?: (error: Error) => void,
-    nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
+    nodes?: readonly (Klass<LexicalNode> | LexicalNodeReplacement)[],
+    onWarn?: (error: Error) => void,
   ) {
     const ref = createRef<HTMLDivElement>();
 
     function TestBase() {
-      editor = useLexicalEditor(ref, onError, nodes);
+      editor = useLexicalEditor(ref, onError, nodes, onWarn);
 
       return <div ref={ref} contentEditable={true} />;
     }
@@ -535,7 +539,7 @@ describe('LexicalEditor tests', () => {
     init();
     const onUpdate = vi.fn();
 
-    let log: Array<string> = [];
+    let log: string[] = [];
 
     editor.registerUpdateListener(onUpdate);
     editor.update(() => {
@@ -1092,7 +1096,7 @@ describe('LexicalEditor tests', () => {
         const root = $getRoot();
         const paragraph0 = $createParagraphNode();
         const paragraph1 = $createParagraphNode();
-        const textNodes: Array<LexicalNode> = [];
+        const textNodes: LexicalNode[] = [];
 
         for (let i = 0; i < 6; i++) {
           const node = $createTextNode(String(i)).toggleUnmergeable();
@@ -1191,33 +1195,69 @@ describe('LexicalEditor tests', () => {
     boldListener();
   });
 
-  it('Detects infinite recursivity on update listeners', async () => {
+  // The recursion guard in $triggerEnqueuedUpdates breaks the cascade (clears
+  // the update queue) and then routes the recovered condition through the
+  // editor's warn-level hook, editor._onWarn, rather than reporting a recovered
+  // condition as an uncaught error via editor._onError. The default _onWarn
+  // throws in development (so the recursion is impossible to miss) and only
+  // console.warns in production; embedders can supply their own onWarn to
+  // capture guard trips as warn-severity telemetry without an error alarm.
+  function runCascade(onWarn?: (error: Error) => void): {
+    errorListener: ReturnType<typeof vi.fn>;
+    unregister: () => void;
+  } {
     const errorListener = vi.fn();
-    init(errorListener);
+    init(errorListener, undefined, onWarn);
 
-    const unregisterListener = editor.registerUpdateListener(() => {
+    const unregister = editor.registerUpdateListener(() => {
       editor.update(() => {
         $getRoot().markDirty();
       });
     });
 
     expect(errorListener).toHaveBeenCalledTimes(0);
+    return {errorListener, unregister};
+  }
 
-    editor.update(() => {
-      $getRoot().markDirty();
-    });
+  it('Detects infinite recursivity on update listeners (dev: default onWarn throws)', async () => {
+    // Development behavior: with the default onWarn, the guard throws once the
+    // cascade limit is exceeded. The cascade is broken (update queue cleared)
+    // before the guard signals, so the throw surfaces from the scheduled
+    // microtask rather than synchronously from editor.update(), and is NOT
+    // routed through editor._onError.
+    const {errorListener, unregister} = runCascade();
 
-    // drain the microtask chain produced by the cascade
-    for (let i = 0; i < 200 && errorListener.mock.calls.length === 0; i++) {
-      await Promise.resolve();
+    const caught: Error[] = [];
+    const onUnhandled = (reason: unknown) => {
+      caught.push(reason instanceof Error ? reason : new Error(String(reason)));
+    };
+    process.on('unhandledRejection', onUnhandled);
+    process.on('uncaughtException', onUnhandled);
+
+    try {
+      editor.update(() => {
+        $getRoot().markDirty();
+      });
+
+      // drain the microtask chain produced by the cascade
+      for (let i = 0; i < 200 && caught.length === 0; i++) {
+        await Promise.resolve();
+      }
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+      process.off('uncaughtException', onUnhandled);
     }
 
-    expect(errorListener).toHaveBeenCalledTimes(1);
-    expect(errorListener.mock.calls[0][0].message).toMatch(
-      /endlessly enqueueing/,
+    expect(caught).toHaveLength(1);
+    expect(caught[0].message).toMatch(/endlessly enqueueing/);
+    // The error message should include the editor's namespace so the loop can
+    // be attributed to a specific product/editor in error aggregation, even
+    // when the production stack is minified to core frames.
+    expect(caught[0].message).toContain(
+      `Editor namespace: ${editor._config.namespace}`,
     );
 
-    unregisterListener();
+    unregister();
 
     // editor should be usable again after the cascade is cut
     editor.update(
@@ -1230,7 +1270,209 @@ describe('LexicalEditor tests', () => {
     for (let i = 0; i < 10; i++) {
       await Promise.resolve();
     }
-    expect(errorListener).toHaveBeenCalledTimes(1);
+    // The guard never routes through editor._onError — recovered conditions go
+    // through editor._onWarn instead.
+    expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('routes the recursion guard through a custom onWarn for embedder telemetry', async () => {
+    // Embedder behavior: a custom onWarn fully replaces the default and does
+    // not throw, so the recovered condition is captured for telemetry without
+    // surfacing as an uncaught error (neither via editor._onError nor as an
+    // unhandled rejection/exception). The cascade must still be broken and the
+    // editor must remain usable.
+    const warnListener = vi.fn();
+    const {errorListener, unregister} = runCascade(warnListener);
+
+    const caught: Error[] = [];
+    const onUnhandled = (reason: unknown) => {
+      caught.push(reason instanceof Error ? reason : new Error(String(reason)));
+    };
+    process.on('unhandledRejection', onUnhandled);
+    process.on('uncaughtException', onUnhandled);
+
+    try {
+      editor.update(() => {
+        $getRoot().markDirty();
+      });
+
+      // drain the microtask chain produced by the cascade; the custom onWarn
+      // does not throw, so just give the queue a chance to settle.
+      for (let i = 0; i < 200; i++) {
+        await Promise.resolve();
+      }
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+      process.off('uncaughtException', onUnhandled);
+    }
+
+    // onWarn received the namespace-tagged Error exactly once, so the guard
+    // trip is observable as warn-level telemetry...
+    expect(warnListener).toHaveBeenCalledTimes(1);
+    const warnArg = warnListener.mock.calls[0][0];
+    expect(warnArg).toBeInstanceOf(Error);
+    expect(warnArg.message).toMatch(/endlessly enqueueing/);
+    expect(warnArg.message).toContain(
+      `Editor namespace: ${editor._config.namespace}`,
+    );
+    // ...and nothing surfaced as an uncaught error or via editor._onError.
+    expect(caught).toHaveLength(0);
+    expect(errorListener).toHaveBeenCalledTimes(0);
+
+    unregister();
+
+    // editor should still be usable after the cascade is cut
+    editor.update(
+      () => {
+        $getRoot().markDirty();
+      },
+      {discrete: true},
+    );
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+    expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('does not trip the recursion guard on bounded re-enqueueing across separate actions', async () => {
+    // Regression test for over-firing (#8635): a listener that re-enqueues a
+    // bounded amount of work per commit must not accumulate cascade budget
+    // across many independent user actions. The enqueued no-op never produces
+    // a commit, so the queue is never observed empty by
+    // $triggerEnqueuedUpdates and, before the fix, _cascadeCount leaked +1 per
+    // action and falsely tripped after ~100 ordinary keystrokes.
+    const errorListener = vi.fn();
+    const warnListener = vi.fn();
+    init(errorListener, undefined, warnListener);
+
+    const unregister = editor.registerUpdateListener(() => {
+      editor.update(() => {
+        // bounded: a single no-op update per commit
+      });
+    });
+
+    for (let i = 0; i < 150; i++) {
+      editor.update(() => {
+        $getRoot().markDirty();
+      });
+      // Each action yields to the event loop, like real typing, which lets
+      // the macrotask budget reset run between actions.
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+    unregister();
+
+    expect(warnListener).toHaveBeenCalledTimes(0);
+    expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('does not trip the recursion guard on a fast input burst driven by commands', async () => {
+    // Rapid input (key repeat, synthetic events) can deliver many commands
+    // without the event loop running the macrotask budget reset in between.
+    // Each dispatched command is a fresh external action, so it resets the
+    // cascade budget directly (see triggerCommandListeners).
+    const errorListener = vi.fn();
+    const warnListener = vi.fn();
+    init(errorListener, undefined, warnListener);
+
+    const BURST_COMMAND = createCommand<void>('BURST_COMMAND');
+    const unregisterCommand = editor.registerCommand(
+      BURST_COMMAND,
+      () => {
+        editor.update(() => {
+          $getRoot().markDirty();
+        });
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    );
+    const unregisterUpdate = editor.registerUpdateListener(() => {
+      editor.update(() => {
+        // bounded: a single no-op update per commit
+      });
+    });
+
+    for (let i = 0; i < 150; i++) {
+      editor.dispatchCommand(BURST_COMMAND, undefined);
+      // Yield only microtasks: commits flush, but the macrotask budget reset
+      // never gets a chance to run within the burst.
+      for (let j = 0; j < 4; j++) {
+        await Promise.resolve();
+      }
+    }
+    unregisterUpdate();
+    unregisterCommand();
+
+    expect(warnListener).toHaveBeenCalledTimes(0);
+    expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('still detects a runaway cascade that dispatches commands from a mutation listener', async () => {
+    // Mutation listeners run during $commitPendingUpdates with
+    // editor._updating === false. A runaway loop whose every cycle also
+    // dispatches a command from one must not reset its own cascade budget and
+    // escape detection: commands dispatched mid-commit are update machinery,
+    // not fresh external actions (see isCommittingPendingUpdates).
+    const errorListener = vi.fn();
+    const warnListener = vi.fn();
+    init(errorListener, undefined, warnListener);
+
+    const NOOP_COMMAND = createCommand<void>('NOOP_COMMAND');
+    let textKey = '';
+    editor.update(
+      () => {
+        const text = $createTextNode('a');
+        $getRoot().clear().append($createParagraphNode().append(text));
+        textKey = text.getKey();
+      },
+      {discrete: true},
+    );
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    const unregisterMutation = editor.registerMutationListener(TextNode, () => {
+      editor.dispatchCommand(NOOP_COMMAND, undefined);
+    });
+    // Unbounded: flips the text content again on every commit, forever.
+    const unregisterUpdate = editor.registerUpdateListener(() => {
+      editor.update(() => {
+        const text = $getNodeByKey<TextNode>(textKey);
+        if (text !== null) {
+          text.setTextContent(text.getTextContent() === 'a' ? 'b' : 'a');
+        }
+      });
+    });
+
+    editor.update(() => {
+      const text = $getNodeByKey<TextNode>(textKey);
+      if (text !== null) {
+        text.setTextContent('b');
+      }
+    });
+    // Drain only microtasks: the runaway never yields to the event loop, so
+    // the macrotask budget reset cannot save it either.
+    for (let i = 0; i < 800 && warnListener.mock.calls.length === 0; i++) {
+      await Promise.resolve();
+    }
+    unregisterUpdate();
+    unregisterMutation();
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(warnListener).toHaveBeenCalledTimes(1);
+    expect(warnListener.mock.calls[0][0].message).toMatch(
+      /endlessly enqueueing/,
+    );
+    expect(errorListener).toHaveBeenCalledTimes(0);
+
+    // editor should still be usable after the cascade is cut
+    editor.update(
+      () => {
+        $getRoot().markDirty();
+      },
+      {discrete: true},
+    );
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+    expect(errorListener).toHaveBeenCalledTimes(0);
   });
 
   it('Should be able to update an editor state without a root element', () => {
@@ -1292,11 +1534,13 @@ describe('LexicalEditor tests', () => {
 
     editor.update(() => {
       const root = $getRoot();
-      root
-        .getFirstChild<ElementNode>()!
-        .getFirstChild<ElementNode>()!
-        .getFirstChild<TextNode>()!
-        .setTextContent('Foo');
+      $assertNodeType(
+        $assertNodeType(
+          $assertNodeType(root.getFirstChild(), $isElementNode).getFirstChild(),
+          $isElementNode,
+        ).getFirstChild(),
+        $isTextNode,
+      ).setTextContent('Foo');
     });
 
     expect(errorListener).toHaveBeenCalledTimes(1);
@@ -1630,7 +1874,12 @@ describe('LexicalEditor tests', () => {
       );
       parsedEditorStateFromObject.read(() => {
         const root = $getRoot();
-        expect(root.getFirstChild<ParagraphNode>()!.getDirection()).toBe('rtl');
+        expect(
+          $assertNodeType(
+            root.getFirstChild(),
+            $isParagraphNode,
+          ).getDirection(),
+        ).toBe('rtl');
         expect(root.getTextContent()).toMatch(/Hello world/);
       });
     });
@@ -2483,6 +2732,87 @@ describe('LexicalEditor tests', () => {
 
     await Promise.resolve();
     expect(editor._updateTags).toEqual(new Set([]));
+  });
+
+  it('does not leak a no-op update tag into the next update', () => {
+    init();
+    const observedTags: string[][] = [];
+    const unregister = editor.registerUpdateListener(({tags}) => {
+      observedTags.push([...tags]);
+    });
+
+    // A tagged update that dirties nothing still commits because it carries a
+    // deferred onUpdate callback -- this mirrors a remote collaboration sync
+    // that turns out to be a no-op (the targeted node was concurrently removed).
+    // Its tag must not survive into a later, unrelated update, otherwise a
+    // listener such as @lexical/yjs's syncLexicalUpdateToYjs would wrongly skip
+    // the next local edit.
+    editor.update(emptyFunction, {
+      discrete: true,
+      onUpdate: emptyFunction,
+      tag: 'collaboration',
+    });
+    expect(editor._updateTags).toEqual(new Set());
+
+    // A subsequent untagged local edit must not observe the leaked tag.
+    editor.update(
+      () => {
+        $getRoot().append($createParagraphNode());
+      },
+      {discrete: true},
+    );
+    unregister();
+
+    const lastObservedTags = observedTags[observedTags.length - 1];
+    expect(lastObservedTags).not.toContain('collaboration');
+  });
+
+  it('setEditorState keeps its tag when committed from inside an update', () => {
+    init();
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('historic'));
+        $getRoot().append(paragraph);
+      },
+      {discrete: true},
+    );
+    const historicState = editor.getEditorState();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('current'));
+        root.append(paragraph);
+      },
+      {discrete: true},
+    );
+
+    const observed: {content: string; tags: string[]}[] = [];
+    const unregister = editor.registerUpdateListener(({editorState, tags}) => {
+      observed.push({
+        content: editorState.read(() => $getRoot().getTextContent()),
+        tags: [...tags],
+      });
+    });
+    // Applying an editor state with a tag from *inside* an update -- the way
+    // history's undo does via dispatchCommand -- force-commits the wrapping
+    // no-op update, which resets _updateTags. The tag must still reach the
+    // update listener for the commit that actually applies the historic state;
+    // otherwise (e.g. @lexical/history) that transition is misclassified as a
+    // fresh edit rather than an undo.
+    editor.update(
+      () => {
+        editor.setEditorState(historicState, {tag: 'historic-tag'});
+      },
+      {discrete: true},
+    );
+    unregister();
+
+    const historicCommit = observed.find(o => o.content === 'historic');
+    expect(historicCommit).toBeDefined();
+    expect(historicCommit!.tags).toContain('historic-tag');
   });
 
   it('mutation listeners does not trigger when other node types are mutated', async () => {

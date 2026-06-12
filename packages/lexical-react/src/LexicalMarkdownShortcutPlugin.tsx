@@ -44,7 +44,7 @@ export const DEFAULT_TRANSFORMERS = [HR, ...TRANSFORMERS];
 export function MarkdownShortcutPlugin({
   transformers = DEFAULT_TRANSFORMERS,
 }: Readonly<{
-  transformers?: Array<Transformer>;
+  transformers?: Transformer[];
 }>): null {
   const [editor] = useLexicalComposerContext();
 

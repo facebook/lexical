@@ -53,6 +53,19 @@ async function dragSelectionToOffset(page, sourceText, clientTextOffset) {
           dataTransfer,
         }),
       );
+      const dragoverEvent = new DragEvent('dragover', {
+        bubbles: true,
+        cancelable: true,
+        clientX,
+        clientY,
+        dataTransfer,
+      });
+      editable.dispatchEvent(dragoverEvent);
+      if (!dragoverEvent.defaultPrevented) {
+        throw new Error(
+          'dragover was not prevented; drop will not fire in Firefox',
+        );
+      }
       editable.dispatchEvent(
         new DragEvent('drop', {
           bubbles: true,

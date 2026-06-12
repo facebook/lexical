@@ -18,12 +18,12 @@ import {
   $getRoot,
   $getSelection,
   $isNodeSelection,
+  $isParagraphNode,
   $isRangeSelection,
   LexicalEditor,
   NodeKey,
-  ParagraphNode,
 } from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {$assertNodeType, initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
 
 import {$mergePrevious} from '../../shared/useCharacterLimit';
@@ -61,9 +61,14 @@ describe('LexicalNodeHelpers tests', () => {
             [overflowLeftKey, overflowRightKey] =
               $initializeEditorWithLeftRightOverflowNodes();
 
-            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey)!;
-            const overflowRight =
-              $getNodeByKey<OverflowNode>(overflowRightKey)!;
+            const overflowLeft = $assertNodeType(
+              $getNodeByKey(overflowLeftKey),
+              $isOverflowNode,
+            );
+            const overflowRight = $assertNodeType(
+              $getNodeByKey(overflowRightKey),
+              $isOverflowNode,
+            );
 
             const text1 = $createTextNode('1');
             const text2 = $createTextNode('2');
@@ -85,10 +90,15 @@ describe('LexicalNodeHelpers tests', () => {
           });
 
           await editor.update(() => {
-            const paragraph = $getRoot().getFirstChild<ParagraphNode>()!;
+            const paragraph = $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isParagraphNode,
+            );
 
-            const overflowRight =
-              $getNodeByKey<OverflowNode>(overflowRightKey)!;
+            const overflowRight = $assertNodeType(
+              $getNodeByKey(overflowRightKey),
+              $isOverflowNode,
+            );
 
             $mergePrevious(overflowRight);
 
@@ -123,9 +133,14 @@ describe('LexicalNodeHelpers tests', () => {
           await editor.update(() => {
             [overflowLeftKey, overflowRightKey] =
               $initializeEditorWithLeftRightOverflowNodes();
-            const overflowLeft = $getNodeByKey<OverflowNode>(overflowLeftKey)!;
-            const overflowRight =
-              $getNodeByKey<OverflowNode>(overflowRightKey)!;
+            const overflowLeft = $assertNodeType(
+              $getNodeByKey(overflowLeftKey),
+              $isOverflowNode,
+            );
+            const overflowRight = $assertNodeType(
+              $getNodeByKey(overflowRightKey),
+              $isOverflowNode,
+            );
 
             const text1 = $createTextNode('1');
             const text2 = $createTextNode('2');
@@ -158,9 +173,14 @@ describe('LexicalNodeHelpers tests', () => {
           });
 
           await editor.update(() => {
-            const paragraph = $getRoot().getFirstChild<ParagraphNode>()!;
-            const overflowRight =
-              $getNodeByKey<OverflowNode>(overflowRightKey)!;
+            const paragraph = $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isParagraphNode,
+            );
+            const overflowRight = $assertNodeType(
+              $getNodeByKey(overflowRightKey),
+              $isOverflowNode,
+            );
 
             $mergePrevious(overflowRight);
 

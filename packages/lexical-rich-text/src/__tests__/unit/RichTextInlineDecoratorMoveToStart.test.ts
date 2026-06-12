@@ -9,11 +9,13 @@
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {$createHeadingNode, RichTextExtension} from '@lexical/rich-text';
 import {
+  $createNodeSelection,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  $setSelection,
   LexicalEditor,
   MOVE_TO_START,
 } from 'lexical';
@@ -153,15 +155,6 @@ describe('MOVE_TO_START no-op cases (Issue #8555)', () => {
         paragraph.select(0, 0);
       },
     },
-    {
-      label: 'decorator-only element (no selectable text)',
-      setup: () => {
-        const decorator = $createTestDecoratorNode().setIsInline(true);
-        const paragraph = $createParagraphNode().append(decorator);
-        $getRoot().clear().append(paragraph);
-        paragraph.select(1, 1);
-      },
-    },
   ])('no-op: $label', ({setup}) => {
     using editor = buildEditorFromExtensions({
       $initialEditorState: setup,
@@ -178,8 +171,8 @@ describe('MOVE_TO_START no-op cases (Issue #8555)', () => {
   });
 });
 
-describe('MOVE_TO_START decorator-only safety (crash fix)', () => {
-  test('Cmd+ArrowLeft on decorator-only element does not throw', () => {
+describe('MOVE_TO_START with no leading text (Issue #8601)', () => {
+  test('Cmd+ArrowLeft on decorator-only element moves caret to element offset 0', () => {
     using editor = buildEditorFromExtensions({
       $initialEditorState: () => {
         const decorator = $createTestDecoratorNode().setIsInline(true);
@@ -192,12 +185,168 @@ describe('MOVE_TO_START decorator-only safety (crash fix)', () => {
       nodes: [TestDecoratorNode],
     });
 
-    expect(() => dispatchMoveToStart(editor, false)).not.toThrow();
+    dispatchMoveToStart(editor, false);
 
     editor.read(() => {
       const selection = $getSelection();
       assert($isRangeSelection(selection));
-      expect(selection.anchor.type).toBeDefined();
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      expect(selection.isCollapsed()).toBe(true);
+      expect(selection.anchor.type).toBe('element');
+      expect(selection.anchor.key).toBe(paragraph.getKey());
+      expect(selection.anchor.offset).toBe(0);
+    });
+  });
+
+  test('Cmd+ArrowLeft from text caret inside [decorator][text][decorator] moves to element offset 0', () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: () => {
+        const leading = $createTestDecoratorNode().setIsInline(true);
+        const text = $createTextNode('hello');
+        const trailing = $createTestDecoratorNode().setIsInline(true);
+        const paragraph = $createParagraphNode().append(
+          leading,
+          text,
+          trailing,
+        );
+        $getRoot().clear().append(paragraph);
+        text.select(2, 2);
+      },
+      dependencies: [RichTextExtension],
+      name: 'test',
+      nodes: [TestDecoratorNode],
+    });
+
+    dispatchMoveToStart(editor, false);
+
+    editor.read(() => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      expect(selection.isCollapsed()).toBe(true);
+      expect(selection.anchor.type).toBe('element');
+      expect(selection.anchor.key).toBe(paragraph.getKey());
+      expect(selection.anchor.offset).toBe(0);
+    });
+  });
+
+  test('Shift+Cmd+ArrowLeft from text caret inside [decorator][text][decorator] selects back to element offset 0', () => {
+    using editor = buildEditorFromExtensions({
+      $initialEditorState: () => {
+        const leading = $createTestDecoratorNode().setIsInline(true);
+        const text = $createTextNode('hello');
+        const trailing = $createTestDecoratorNode().setIsInline(true);
+        const paragraph = $createParagraphNode().append(
+          leading,
+          text,
+          trailing,
+        );
+        $getRoot().clear().append(paragraph);
+        text.select(3, 3);
+      },
+      dependencies: [RichTextExtension],
+      name: 'test',
+      nodes: [TestDecoratorNode],
+    });
+
+    dispatchMoveToStart(editor, true);
+
+    editor.read(() => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      expect(selection.isCollapsed()).toBe(false);
+      expect(selection.anchor.type).toBe('text');
+      expect(selection.anchor.offset).toBe(3);
+      expect(selection.focus.type).toBe('element');
+      expect(selection.focus.key).toBe(paragraph.getKey());
+      expect(selection.focus.offset).toBe(0);
+    });
+  });
+});
+
+describe('MOVE_TO_START on a NodeSelection (Issue #8604)', () => {
+  test.for([
+    {
+      expected: () => {
+        const paragraph = $getRoot().getFirstChildOrThrow();
+        return {key: paragraph.getKey(), offset: 0};
+      },
+      label: 'single inline decorator collapses to the block start',
+      setup: () => {
+        const decorator = $createTestDecoratorNode().setIsInline(true);
+        const text = $createTextNode('hello');
+        const paragraph = $createParagraphNode().append(text, decorator);
+        $getRoot().clear().append(paragraph);
+        const ns = $createNodeSelection();
+        ns.add(decorator.getKey());
+        $setSelection(ns);
+      },
+    },
+    {
+      expected: () => {
+        const firstParagraph = $getRoot().getFirstChildOrThrow();
+        return {key: firstParagraph.getKey(), offset: 0};
+      },
+      label: 'multi-node selection picks the iteration-order first node',
+      setup: () => {
+        const firstDecorator = $createTestDecoratorNode().setIsInline(true);
+        const firstText = $createTextNode('A');
+        const firstParagraph = $createParagraphNode().append(
+          firstText,
+          firstDecorator,
+        );
+        const secondDecorator = $createTestDecoratorNode().setIsInline(true);
+        const secondText = $createTextNode('B');
+        const secondParagraph = $createParagraphNode().append(
+          secondText,
+          secondDecorator,
+        );
+        $getRoot().clear().append(firstParagraph, secondParagraph);
+        const ns = $createNodeSelection();
+        ns.add(firstDecorator.getKey());
+        ns.add(secondDecorator.getKey());
+        $setSelection(ns);
+      },
+    },
+    {
+      // Whole-element NodeSelection on a non-inline ElementNode (the
+      // paragraph itself). The helper's `n !== targetNode` guard skips
+      // the paragraph and walks up; with no other non-inline ancestor
+      // below the root, the lookup falls back to root. Without the
+      // guard, the paragraph would resolve to itself and the caret
+      // would land at the paragraph's leading edge — this case pins
+      // down the include-self regression.
+      expected: () => ({key: 'root', offset: 0}),
+      label: 'whole-element non-inline ElementNode resolves to its parent',
+      setup: () => {
+        const text = $createTextNode('hello');
+        const paragraph = $createParagraphNode().append(text);
+        $getRoot().clear().append(paragraph);
+        const ns = $createNodeSelection();
+        ns.add(paragraph.getKey());
+        $setSelection(ns);
+      },
+    },
+  ])('$label', ({setup, expected}) => {
+    using editor = buildEditorFromExtensions({
+      dependencies: [RichTextExtension],
+      name: 'test',
+      nodes: [TestDecoratorNode],
+    });
+
+    editor.update(setup, {discrete: true});
+
+    dispatchMoveToStart(editor, false);
+
+    editor.read(() => {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      const {key, offset} = expected();
+      expect(selection.isCollapsed()).toBe(true);
+      expect(selection.anchor.type).toBe('element');
+      expect(selection.anchor.key).toBe(key);
+      expect(selection.anchor.offset).toBe(offset);
     });
   });
 });

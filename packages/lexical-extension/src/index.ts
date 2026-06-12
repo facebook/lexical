@@ -46,6 +46,7 @@ export {
   INSERT_HORIZONTAL_RULE_COMMAND,
   type SerializedHorizontalRuleNode,
 } from './HorizontalRuleExtension';
+export {IMEExtension} from './IMEExtension';
 export {
   type InitialStateConfig,
   InitialStateExtension,
@@ -67,6 +68,14 @@ export {
   NormalizeTripleClickSelectionExtension,
   type NormalizeTripleClickSelectionOutput,
 } from './NormalizeTripleClickSelectionExtension';
+export {
+  type PreventSelectAllConfig,
+  PreventSelectAllExtension,
+} from './PreventSelectAllExtension';
+export {
+  type SelectBlockConfig,
+  SelectBlockExtension,
+} from './SelectBlockExtension';
 export {SelectionAlwaysOnDisplayExtension} from './SelectionAlwaysOnDisplayExtension';
 export {
   batch,

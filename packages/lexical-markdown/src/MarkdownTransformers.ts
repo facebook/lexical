@@ -59,7 +59,7 @@ export type Transformer =
   | TextMatchTransformer;
 
 export type ElementTransformer = {
-  dependencies: Array<Klass<LexicalNode>>;
+  dependencies: Klass<LexicalNode>[];
   /**
    * `export` is called when the `$convertToMarkdownString` is called to convert the editor state into markdown.
    *
@@ -80,8 +80,8 @@ export type ElementTransformer = {
    */
   replace: (
     parentNode: ElementNode,
-    children: Array<LexicalNode>,
-    match: Array<string>,
+    children: LexicalNode[],
+    match: string[],
     /**
      * Whether the match is from an import operation (e.g. through `$convertFromMarkdownString`) or not (e.g. through typing in the editor).
      */
@@ -104,13 +104,13 @@ export type MultilineElementTransformer = {
    * @returns a tuple or null. The first element of the returned tuple is a boolean indicating if a multiline element was imported. The second element is the index of the last line that was processed. If null is returned, the next multilineElementTransformer will be tried. If undefined is returned, the default behavior will be used.
    */
   handleImportAfterStartMatch?: (args: {
-    lines: Array<string>;
+    lines: string[];
     rootNode: ElementNode;
     startLineIndex: number;
     startMatch: RegExpMatchArray;
     transformer: MultilineElementTransformer;
   }) => [boolean, number] | null | undefined;
-  dependencies: Array<Klass<LexicalNode>>;
+  dependencies: Klass<LexicalNode>[];
   /**
    * `export` is called when the `$convertToMarkdownString` is called to convert the editor state into markdown.
    *
@@ -151,14 +151,14 @@ export type MultilineElementTransformer = {
      * During markdown shortcut transforms, children nodes may be provided to the transformer. If this is the case, no `linesInBetween` will be provided and
      * the children nodes should be used instead of the `linesInBetween` to create the new node.
      */
-    children: Array<LexicalNode> | null,
-    startMatch: Array<string>,
-    endMatch: Array<string> | null,
+    children: LexicalNode[] | null,
+    startMatch: string[],
+    endMatch: string[] | null,
     /**
      * linesInBetween includes the text between the start & end matches, split up by lines, not including the matches themselves.
      * This is null when the transformer is triggered through markdown shortcuts (by typing in the editor)
      */
-    linesInBetween: Array<string> | null,
+    linesInBetween: string[] | null,
     /**
      * Whether the match is from an import operation (e.g. through `$convertFromMarkdownString`) or not (e.g. through typing in the editor).
      */
@@ -168,14 +168,14 @@ export type MultilineElementTransformer = {
 };
 
 export type TextFormatTransformer = Readonly<{
-  format: ReadonlyArray<TextFormatType>;
+  format: readonly TextFormatType[];
   tag: string;
   intraword?: boolean;
   type: 'text-format';
 }>;
 
 export type TextMatchTransformer = Readonly<{
-  dependencies: Array<Klass<LexicalNode>>;
+  dependencies: Klass<LexicalNode>[];
   /**
    * Determines how a node should be exported to markdown
    */
@@ -228,18 +228,66 @@ const CODE_END_REGEX = /^[ \t]*`{3,}$/;
 const CODE_SINGLE_LINE_REGEX =
   /^[ \t]*```[^`]+(?:(?:`{1,2}|`{4,})[^`]+)*```(?:[^`]|$)/;
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
-const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-*:? ?)+\|\s?$/;
+
+/**
+ * Whether `line` is a Markdown table delimiter row such as `| --- | :--: |`.
+ *
+ * This is the linear-time equivalent of `/^(\| ?:?-*:? ?)+\|\s?$/`. That
+ * pattern nests `-*` inside a `(...)+` group, a shape that backtracking regexp
+ * engines (e.g. Safari/JavaScriptCore) may run in super-linear time. A manual
+ * scan is guaranteed O(n).
+ */
+export function isTableRowDivider(line: string): boolean {
+  // Must start with a leading pipe.
+  if (line[0] !== '|') {
+    return false;
+  }
+  const {length} = line;
+  let i = 1;
+  let cells = 0;
+  // Each iteration consumes one ` ?:?-*:? ?\|` cell-and-pipe unit. Cell
+  // characters (space, colon, dash) are disjoint from the `|` delimiter, so a
+  // greedy scan never needs to backtrack.
+  while (i < length) {
+    let j = i;
+    if (line[j] === ' ') {
+      j++;
+    }
+    if (line[j] === ':') {
+      j++;
+    }
+    while (line[j] === '-') {
+      j++;
+    }
+    if (line[j] === ':') {
+      j++;
+    }
+    if (line[j] === ' ') {
+      j++;
+    }
+    if (line[j] !== '|') {
+      break;
+    }
+    cells++;
+    i = j + 1;
+  }
+  // Require at least one cell, then an optional single trailing whitespace
+  // character (`\s?`) before the end of the line (`$`).
+  return (
+    cells > 0 && (i === length || (i === length - 1 && /\s/.test(line[i])))
+  );
+}
 const TAG_START_REGEX = /^<[a-z_][\w-]*(?:\s[^<>]*)?\/?>/i;
 const TAG_END_REGEX = /^<\/[a-z_][\w-]*\s*>/i;
 const ENDS_WITH = (regex: RegExp) =>
   new RegExp(`(?:${regex.source})$`, regex.flags);
 
-export const listMarkerState = createState('mdListMarker', {
+export const listMarkerState = /* @__PURE__ */ createState('mdListMarker', {
   parse: v => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : '-'),
   resetOnCopyNode: true,
 });
 
-export const codeFenceState = createState('mdCodeFence', {
+export const codeFenceState = /* @__PURE__ */ createState('mdCodeFence', {
   parse: val => {
     if (typeof val === 'string' && /^`{3,}$/.test(val)) {
       return val;
@@ -251,15 +299,18 @@ export const codeFenceState = createState('mdCodeFence', {
 
 export type MarkdownHardLineBreak = string;
 
-export const hardLineBreakState = createState('mdHardLineBreak', {
-  parse: (val): MarkdownHardLineBreak => {
-    if (typeof val === 'string' && /^(\\| {2,})$/.test(val)) {
-      return val;
-    }
-    return '';
+export const hardLineBreakState = /* @__PURE__ */ createState(
+  'mdHardLineBreak',
+  {
+    parse: (val): MarkdownHardLineBreak => {
+      if (typeof val === 'string' && /^(\\| {2,})$/.test(val)) {
+        return val;
+      }
+      return '';
+    },
+    resetOnCopyNode: true,
   },
-  resetOnCopyNode: true,
-});
+);
 
 export function parseMarkdownHardLineBreak(
   line: string,
@@ -273,7 +324,7 @@ export function parseMarkdownHardLineBreak(
 }
 
 function hasNonWhitespaceContentOnLine(
-  children: Array<LexicalNode>,
+  children: LexicalNode[],
   endIndex: number,
 ): boolean {
   for (let i = endIndex - 1; i >= 0; i--) {
@@ -332,7 +383,7 @@ export function $createMarkdownLineBreakNode(
 }
 
 const createBlockNode = (
-  createNode: (match: Array<string>) => ElementNode,
+  createNode: (match: string[]) => ElementNode,
 ): ElementTransformer['replace'] => {
   return (parentNode, children, match, isImport) => {
     const node = createNode(match);
@@ -389,6 +440,11 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
         // should never happen, but let's handle gracefully, just in case.
         nextNode.append(listItem);
       }
+      // The new list item lands at index 0, so the typed number becomes the
+      // list's starting value. #8677.
+      if (listType === 'number') {
+        nextNode.setStart(Number(match[2]));
+      }
       parentNode.remove();
     } else if (
       $isListNode(previousNode) &&
@@ -397,6 +453,8 @@ const listReplace = (listType: ListType): ElementTransformer['replace'] => {
       if (listMarker) {
         $setState(previousNode, listMarkerState, listMarker);
       }
+      // The new item is appended at the end and inherits the existing
+      // sequence, so the typed number is intentionally ignored here.
       previousNode.append(listItem);
       parentNode.remove();
     } else {
@@ -850,21 +908,22 @@ export const LINK: TextMatchTransformer = {
   type: 'text-match',
 };
 
-export const ELEMENT_TRANSFORMERS: Array<ElementTransformer> = [
+export const ELEMENT_TRANSFORMERS: ElementTransformer[] = [
   HEADING,
   QUOTE,
   UNORDERED_LIST,
   ORDERED_LIST,
 ];
 
-export const MULTILINE_ELEMENT_TRANSFORMERS: Array<MultilineElementTransformer> =
-  [CODE];
+export const MULTILINE_ELEMENT_TRANSFORMERS: MultilineElementTransformer[] = [
+  CODE,
+];
 
 // Order of text format transformers matters:
 //
 // - code should go first as it prevents any transformations inside
 // - then longer tags match (e.g. ** or __ should go before * or _)
-export const TEXT_FORMAT_TRANSFORMERS: Array<TextFormatTransformer> = [
+export const TEXT_FORMAT_TRANSFORMERS: TextFormatTransformer[] = [
   INLINE_CODE,
   BOLD_ITALIC_STAR,
   BOLD_ITALIC_UNDERSCORE,
@@ -876,9 +935,9 @@ export const TEXT_FORMAT_TRANSFORMERS: Array<TextFormatTransformer> = [
   STRIKETHROUGH,
 ];
 
-export const TEXT_MATCH_TRANSFORMERS: Array<TextMatchTransformer> = [LINK];
+export const TEXT_MATCH_TRANSFORMERS: TextMatchTransformer[] = [LINK];
 
-export const TRANSFORMERS: Array<Transformer> = [
+export const TRANSFORMERS: Transformer[] = [
   ...ELEMENT_TRANSFORMERS,
   ...MULTILINE_ELEMENT_TRANSFORMERS,
   ...TEXT_FORMAT_TRANSFORMERS,
@@ -934,7 +993,7 @@ export function normalizeMarkdown(
       UNORDERED_LIST_REGEX.test(line) ||
       CHECK_LIST_REGEX.test(line) ||
       TABLE_ROW_REG_EXP.test(line) ||
-      TABLE_ROW_DIVIDER_REG_EXP.test(line) ||
+      isTableRowDivider(line) ||
       lastLineHasHardLineBreak ||
       !shouldMergeAdjacentLines ||
       TAG_START_REGEX.test(line) ||

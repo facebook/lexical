@@ -354,6 +354,7 @@ export default [
           isSafeDollarFunction: '$createRootNode',
         }),
       ],
+      '@typescript-eslint/array-type': [ERROR, {default: 'array'}],
       '@typescript-eslint/ban-ts-comment': OFF,
       '@typescript-eslint/no-this-alias': OFF,
       '@typescript-eslint/no-unused-vars': [
@@ -400,6 +401,19 @@ export default [
     ],
     rules: {
       '@lexical/internal/no-optional-chaining': OFF,
+    },
+  },
+
+  // Override: Package sources - require /* @__PURE__ */ annotations on
+  // module-scope calls to the side-effect-free lexical factories
+  // (defineExtension, createCommand, defineImportRule, ...) so bundlers
+  // can tree-shake unused definitions. The pre-commit `eslint --fix`
+  // inserts them automatically. Not applied to tests (never bundled).
+  {
+    files: ['packages/**/src/**'],
+    ignores: ['packages/**/src/__tests__/**'],
+    rules: {
+      '@lexical/internal/require-pure-annotation': ERROR,
     },
   },
 

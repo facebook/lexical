@@ -8,6 +8,7 @@
 
 import {
   $copyNode,
+  $create,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -15,18 +16,21 @@ import {
   $getStateChange,
   $isParagraphNode,
   $setState,
+  createEditor,
   createState,
+  ElementNode,
   LexicalExportJSON,
   NODE_STATE_KEY,
   type NodeStateJSON,
   ParagraphNode,
   RootNode,
+  type SerializedElementNode,
   StateValueOrUpdater,
 } from 'lexical';
-import {beforeEach, describe, expect, test} from 'vitest';
+import {beforeEach, describe, expect, expectTypeOf, test} from 'vitest';
 
 import {nodeStatesAreEquivalent} from '../../LexicalNodeState';
-import {initializeUnitTest, invariant} from '../utils';
+import {$assertNodeType, initializeUnitTest, invariant} from '../utils';
 import {TestNode} from './LexicalNode.test';
 
 // https://www.totaltypescript.com/how-to-test-your-types
@@ -114,6 +118,64 @@ function $createStateNode() {
   return new StateNode();
 }
 
+// ===========================================================================
+// Interleaved abstract/concrete $config hierarchy:
+//   ElementNode -> InterleaveParagraph (concrete) -> InterleaveAbstract
+//   (abstract, Symbol-keyed) -> InterleaveConcrete (concrete)
+// A required flat state is declared at each level below ElementNode, and the
+// abstract base also registers a $transform. Before the accessor-based config
+// fix:
+//   - InterleaveAbstract.$config did not type-check as an override of the
+//     accessor-bearing InterleaveParagraph.$config, and
+//   - NodeStateJSON<InterleaveConcrete> truncated at the Symbol-keyed base to
+//     just {icState}, dropping iaState and ipState even though the runtime
+//     registered and serialized all three.
+// ===========================================================================
+const ipState = createState('ipState', {
+  parse: v => (typeof v === 'number' ? v : 0),
+});
+const iaState = createState('iaState', {
+  parse: v => (typeof v === 'number' ? v : 0),
+});
+const icState = createState('icState', {
+  parse: v => (typeof v === 'number' ? v : 0),
+});
+const interleaveTransforms: string[] = [];
+
+class InterleaveParagraph extends ElementNode {
+  $config() {
+    return this.config('interleave-paragraph', {
+      extends: ElementNode,
+      stateConfigs: [{flat: true, stateConfig: ipState}],
+    });
+  }
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+  updateDOM(): false {
+    return false;
+  }
+}
+class InterleaveAbstract extends InterleaveParagraph {
+  $config() {
+    return this.config(Symbol.for('InterleaveAbstract'), {
+      $transform: (node: InterleaveAbstract) => {
+        interleaveTransforms.push(node.getType());
+      },
+      extends: InterleaveParagraph,
+      stateConfigs: [{flat: true, stateConfig: iaState}],
+    });
+  }
+}
+class InterleaveConcrete extends InterleaveAbstract {
+  $config() {
+    return this.config('interleave-concrete', {
+      extends: InterleaveAbstract,
+      stateConfigs: [{flat: true, stateConfig: icState}],
+    });
+  }
+}
+
 describe('LexicalNode state', () => {
   initializeUnitTest(
     testEnv => {
@@ -195,6 +257,31 @@ describe('LexicalNode state', () => {
           expect(json3[NODE_STATE_KEY]).toStrictEqual({
             numberState: 1,
           });
+        });
+      });
+
+      test('importJSON ignores prototype-polluting state keys', () => {
+        const {editor} = testEnv;
+        editor.update(() => {
+          // `__proto__` is only an own enumerable key when produced by
+          // JSON.parse; an object literal would invoke the setter instead.
+          const malicious = JSON.parse(
+            `{"type":"paragraph","version":1,"${NODE_STATE_KEY}":{"__proto__":{"injectedKey":"evil"}}}`,
+          );
+          const paragraph = ParagraphNode.importJSON(malicious);
+          // The global prototype is untouched.
+          expect(({} as Record<string, unknown>).injectedKey).toBeUndefined();
+          expect(Object.prototype).not.toHaveProperty('injectedKey');
+          // The smuggled `__proto__` must not re-parent the state record:
+          // because getValue resolves keys with the `in` operator (which walks
+          // the prototype chain), an unguarded merge would let it inject this
+          // value. Reading the matching key must return the default instead.
+          const injectedState = createState('injectedKey', {
+            parse: v => (typeof v === 'string' ? v : 'default'),
+          });
+          expect($getState(paragraph, injectedState)).toBe('default');
+          // The dangerous key is dropped, so no node state is emitted.
+          expect(paragraph.exportJSON()).not.toHaveProperty(NODE_STATE_KEY);
         });
       });
 
@@ -412,8 +499,10 @@ describe('LexicalNode state', () => {
           // Revert to default value for number state.
           editor.update(
             () => {
-              const paragraph =
-                $getRoot().getFirstChildOrThrow<ParagraphNode>();
+              const paragraph = $assertNodeType(
+                $getRoot().getFirstChild(),
+                $isParagraphNode,
+              );
               const [firstTextNode] = paragraph.getChildren();
               $setState(firstTextNode, numberState, 0);
             },
@@ -702,4 +791,64 @@ describe('LexicalNode state', () => {
       theme: {},
     },
   );
+});
+
+describe('$config interleaved abstract/concrete classes', () => {
+  test('serializes, transforms, and types every interleaved level’s state', () => {
+    interleaveTransforms.length = 0;
+    const editor = createEditor({
+      nodes: [InterleaveConcrete],
+      onError: err => {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        const node = $setState(
+          $setState(
+            $setState($create(InterleaveConcrete), ipState, 1),
+            iaState,
+            2,
+          ),
+          icState,
+          3,
+        );
+        $getRoot().append(node);
+        const json = node.exportJSON();
+
+        // Value: every interleaved level's flat state was serialized — the
+        // concrete ancestor's (ipState), the Symbol-keyed abstract base's
+        // (iaState) and the concrete leaf's (icState).
+        expect(json).toMatchObject({
+          iaState: 2,
+          icState: 3,
+          ipState: 1,
+          type: 'interleave-concrete',
+        });
+
+        // Type: exportJSON()'s return stays the generic serialized type (it must,
+        // to remain compatible with subclassing) — the precise per-node JSON is
+        // described by NodeStateJSON, which now collects every interleaved
+        // level's flat state. Before the fix this truncated at the Symbol-keyed
+        // base to just {icState}.
+        expectTypeOf(json).toEqualTypeOf<SerializedElementNode>();
+        expectTypeOf<
+          keyof Omit<NodeStateJSON<InterleaveConcrete>, typeof NODE_STATE_KEY>
+        >().toEqualTypeOf<'ipState' | 'iaState' | 'icState'>();
+        expectTypeOf<
+          NodeStateJSON<InterleaveConcrete>['ipState']
+        >().toEqualTypeOf<number | undefined>();
+        expectTypeOf<
+          NodeStateJSON<InterleaveConcrete>['iaState']
+        >().toEqualTypeOf<number | undefined>();
+        expectTypeOf<
+          NodeStateJSON<InterleaveConcrete>['icState']
+        >().toEqualTypeOf<number | undefined>();
+      },
+      {discrete: true},
+    );
+    // The abstract base's $transform ran for the concrete leaf (transforms fire
+    // during reconciliation once the node is part of the document).
+    expect(interleaveTransforms).toContain('interleave-concrete');
+  });
 });

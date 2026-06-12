@@ -142,7 +142,7 @@ export {useDynamicPositioning} from './shared/LexicalMenu';
 export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
   index: number;
   option: MenuOption;
-}> = createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
+}> = /* @__PURE__ */ createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
 
 export function useBasicTypeaheadTriggerMatch(
   trigger: string,
@@ -200,7 +200,7 @@ export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
     closeMenu: () => void,
     matchingString: string,
   ) => void;
-  options: Array<TOption>;
+  options: TOption[];
   triggerFn: TriggerFn;
   menuRenderFn?: MenuRenderFn<TOption>;
   onOpen?: (resolution: MenuResolution) => void;

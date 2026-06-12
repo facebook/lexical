@@ -146,11 +146,11 @@ export interface TabIndentationConfig {
  * recommend using this plugin as it could negatively affect accessibility for keyboard
  * users, causing focus to become trapped within the editor.
  */
-export const TabIndentationExtension = defineExtension({
+export const TabIndentationExtension = /* @__PURE__ */ defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
-  config: safeCast<TabIndentationConfig>({
+  config: /* @__PURE__ */ safeCast<TabIndentationConfig>({
     $canIndent: $defaultCanIndent,
     disabled: false,
     maxIndent: null,

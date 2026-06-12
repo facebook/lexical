@@ -23,7 +23,7 @@ import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
-import {mergeRegister, objectKlassEquals} from '@lexical/utils';
+import {eventFiles, mergeRegister, objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
@@ -33,10 +33,12 @@ import {
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
+  CUT_TAG,
   defineExtension,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
@@ -100,6 +102,9 @@ function onPasteForPlainText(
       }
     },
     {
+      // PASTE_TAG gives the paste its own undo entry: @lexical/history treats
+      // the tag as a history boundary so undoing a paste does not also undo any
+      // typing that preceded it (see #8609).
       tag: PASTE_TAG,
     },
   );
@@ -110,13 +115,21 @@ function onCutForPlainText(
   editor: LexicalEditor,
 ): void {
   onCopyForPlainText(event, editor);
-  editor.update(() => {
-    const selection = $getSelection();
+  editor.update(
+    () => {
+      const selection = $getSelection();
 
-    if ($isRangeSelection(selection)) {
-      selection.removeText();
-    }
-  });
+      if ($isRangeSelection(selection)) {
+        selection.removeText();
+      }
+    },
+    {
+      // CUT_TAG gives the cut its own undo entry: @lexical/history treats the
+      // tag as a history boundary so undoing a cut does not also undo any typing
+      // that preceded it (see #8609).
+      tag: CUT_TAG,
+    },
+  );
 }
 
 export function registerPlainText(editor: LexicalEditor): () => void {
@@ -400,6 +413,20 @@ export function registerPlainText(editor: LexicalEditor): () => void {
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand<DragEvent>(
+      DRAGOVER_COMMAND,
+      event => {
+        const [isFileTransfer] = eventFiles(event);
+        if (isFileTransfer) {
+          return false;
+        }
+        // contenteditable is not a native drop target; preventDefault() is
+        // required on dragover to allow the drop event to fire in Firefox.
+        event.preventDefault();
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<DragEvent>(
       DRAGSTART_COMMAND,
       event => {
         const selection = $getSelection();
@@ -422,7 +449,7 @@ export function registerPlainText(editor: LexicalEditor): () => void {
 /**
  * An extension to register \@lexical/plain-text behavior
  */
-export const PlainTextExtension = defineExtension({
+export const PlainTextExtension = /* @__PURE__ */ defineExtension({
   conflictsWith: ['@lexical/rich-text'],
   dependencies: [
     DragonExtension,

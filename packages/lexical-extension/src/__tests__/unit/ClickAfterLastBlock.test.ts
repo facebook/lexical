@@ -6,7 +6,10 @@
  *
  */
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  buildEditorFromExtensions,
+  ClickAfterLastBlockExtension,
+} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
@@ -22,8 +25,6 @@ import {
   TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, test} from 'vitest';
-
-import {ClickAfterLastBlockExtension} from '../../ClickAfterLastBlockExtension';
 
 function setUpEditor(
   options: {
@@ -101,7 +102,7 @@ describe('ClickAfterLastBlockExtension', () => {
     editor.read(() => {
       const rootNode = $getRoot();
       expect(rootNode.getChildrenSize()).toBe(3);
-      const lastChild: LexicalNode | null = rootNode.getLastChild();
+      const lastChild = rootNode.getLastChild();
       assert(
         lastChild !== null && $isParagraphNode(lastChild),
         'last child after click should be an empty paragraph',

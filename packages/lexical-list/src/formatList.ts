@@ -45,7 +45,7 @@ import {
 
 function $isSelectingEmptyListItem(
   anchorNode: ListItemNode | LexicalNode,
-  nodes: Array<LexicalNode>,
+  nodes: LexicalNode[],
 ): boolean {
   return (
     $isListItemNode(anchorNode) &&
@@ -153,7 +153,7 @@ export function $insertList(listType: ListType): void {
   }
 }
 
-function append(node: ElementNode, nodesToAppend: Array<LexicalNode>) {
+function append(node: ElementNode, nodesToAppend: LexicalNode[]) {
   node.splice(node.getChildrenSize(), 0, nodesToAppend);
 }
 
@@ -369,11 +369,8 @@ export function $handleIndent(listItemNode: ListItemNode): void {
 
   const parent = listItemNode.getParent();
 
-  // We can cast both of the below `isNestedListNode` only returns a boolean type instead of a user-defined type guards
-  const nextSibling =
-    listItemNode.getNextSibling<ListItemNode>() as ListItemNode;
-  const previousSibling =
-    listItemNode.getPreviousSibling<ListItemNode>() as ListItemNode;
+  const nextSibling = listItemNode.getNextSibling();
+  const previousSibling = listItemNode.getPreviousSibling();
   // if there are nested lists on either side, merge them all together.
 
   if (isNestedListNode(nextSibling) && isNestedListNode(previousSibling)) {

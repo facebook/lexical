@@ -6,19 +6,18 @@
  *
  */
 
-import type {ElementNode, LexicalCommand, LexicalNode, NodeKey} from 'lexical';
+import type {LexicalCommand, NodeKey} from 'lexical';
 
 import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {
-  $findMatchingParent,
   $insertNodeToNearestRoot,
+  $onEscapeDown,
+  $onEscapeUp,
   mergeRegister,
 } from '@lexical/utils';
 import {
   $createParagraphNode,
   $getNodeByKey,
-  $getSelection,
-  $isRangeSelection,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   configExtension,
@@ -42,18 +41,18 @@ import {
 } from '../../nodes/LayoutItemNode';
 
 export const INSERT_LAYOUT_COMMAND: LexicalCommand<string> =
-  createCommand<string>();
+  /* @__PURE__ */ createCommand<string>();
 
 export const UPDATE_LAYOUT_COMMAND: LexicalCommand<{
   template: string;
   nodeKey: NodeKey;
-}> = createCommand<{template: string; nodeKey: NodeKey}>();
+}> = /* @__PURE__ */ createCommand<{template: string; nodeKey: NodeKey}>();
 
 function getItemsCountFromTemplate(template: string): number {
   return template.trim().split(/\s+/).length;
 }
 
-const LayoutContainerImportRule = defineImportRule({
+const LayoutContainerImportRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => [
     $createLayoutContainerNode(el.style.gridTemplateColumns).splice(
       0,
@@ -65,53 +64,13 @@ const LayoutContainerImportRule = defineImportRule({
   name: '@lexical/playground/layout-container',
 });
 
-const LayoutItemImportRule = defineImportRule({
+const LayoutItemImportRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => [
     $createLayoutItemNode().splice(0, 0, ctx.$importChildren(el)),
   ],
   match: sel.tag('div').attr('data-lexical-layout-item', true),
   name: '@lexical/playground/layout-item',
 });
-
-const $onEscape = (before: boolean) => {
-  const selection = $getSelection();
-  if (
-    $isRangeSelection(selection) &&
-    selection.isCollapsed() &&
-    selection.anchor.offset === 0
-  ) {
-    const container = $findMatchingParent(
-      selection.anchor.getNode(),
-      $isLayoutContainerNode,
-    );
-
-    if ($isLayoutContainerNode(container)) {
-      const parent = container.getParent<ElementNode>();
-      const child =
-        parent &&
-        (before
-          ? parent.getFirstChild<LexicalNode>()
-          : parent?.getLastChild<LexicalNode>());
-      const descendant = before
-        ? container.getFirstDescendant<LexicalNode>()?.getKey()
-        : container.getLastDescendant<LexicalNode>()?.getKey();
-
-      if (
-        parent !== null &&
-        child === container &&
-        selection.anchor.key === descendant
-      ) {
-        if (before) {
-          container.insertBefore($createParagraphNode());
-        } else {
-          container.insertAfter($createParagraphNode());
-        }
-      }
-    }
-  }
-
-  return false;
-};
 
 const $fillLayoutItemIfEmpty = (node: LayoutItemNode) => {
   if (node.isEmpty()) {
@@ -120,9 +79,9 @@ const $fillLayoutItemIfEmpty = (node: LayoutItemNode) => {
 };
 
 const $removeIsolatedLayoutItem = (node: LayoutItemNode): boolean => {
-  const parent = node.getParent<ElementNode>();
+  const parent = node.getParent();
   if (!$isLayoutContainerNode(parent)) {
-    const children = node.getChildren<LexicalNode>();
+    const children = node.getChildren();
     for (const child of children) {
       node.insertBefore(child);
     }
@@ -132,9 +91,9 @@ const $removeIsolatedLayoutItem = (node: LayoutItemNode): boolean => {
   return false;
 };
 
-export const LayoutExtension = defineExtension({
+export const LayoutExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    configExtension(DOMImportExtension, {
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
       rules: [LayoutContainerImportRule, LayoutItemImportRule],
     }),
   ],
@@ -147,23 +106,23 @@ export const LayoutExtension = defineExtension({
       // work even if a trailing paragraph is accidentally deleted.
       editor.registerCommand(
         KEY_ARROW_DOWN_COMMAND,
-        () => $onEscape(false),
+        () => $onEscapeDown($isLayoutContainerNode),
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_ARROW_RIGHT_COMMAND,
-        () => $onEscape(false),
+        () => $onEscapeDown($isLayoutContainerNode),
         COMMAND_PRIORITY_LOW,
       ),
       // Inverse: leading paragraph escape on up/left.
       editor.registerCommand(
         KEY_ARROW_UP_COMMAND,
-        () => $onEscape(true),
+        () => $onEscapeUp($isLayoutContainerNode),
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_ARROW_LEFT_COMMAND,
-        () => $onEscape(true),
+        () => $onEscapeUp($isLayoutContainerNode),
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
@@ -191,7 +150,7 @@ export const LayoutExtension = defineExtension({
         UPDATE_LAYOUT_COMMAND,
         ({template, nodeKey}) => {
           editor.update(() => {
-            const container = $getNodeByKey<LexicalNode>(nodeKey);
+            const container = $getNodeByKey(nodeKey);
 
             if (!$isLayoutContainerNode(container)) {
               return;
@@ -211,7 +170,7 @@ export const LayoutExtension = defineExtension({
               }
             } else if (itemsCount < prevItemsCount) {
               for (let i = prevItemsCount - 1; i >= itemsCount; i--) {
-                const layoutItem = container.getChildAtIndex<LexicalNode>(i);
+                const layoutItem = container.getChildAtIndex(i);
 
                 if ($isLayoutItemNode(layoutItem)) {
                   layoutItem.remove();
@@ -238,7 +197,7 @@ export const LayoutExtension = defineExtension({
         }
       }),
       editor.registerNodeTransform(LayoutContainerNode, node => {
-        const children = node.getChildren<LexicalNode>();
+        const children = node.getChildren();
         if (!children.every($isLayoutItemNode)) {
           for (const child of children) {
             node.insertBefore(child);

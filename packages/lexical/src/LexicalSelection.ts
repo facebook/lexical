@@ -309,17 +309,17 @@ function $transferStartingElementPointToTextPoint(
 }
 
 export interface BaseSelection {
-  _cachedNodes: Array<LexicalNode> | null;
+  _cachedNodes: LexicalNode[] | null;
   dirty: boolean;
 
   clone(): BaseSelection;
-  extract(): Array<LexicalNode>;
-  getNodes(): Array<LexicalNode>;
+  extract(): LexicalNode[];
+  getNodes(): LexicalNode[];
   getTextContent(): string;
   insertText(text: string): void;
   insertRawText(text: string): void;
   is(selection: null | BaseSelection): boolean;
-  insertNodes(nodes: Array<LexicalNode>): void;
+  insertNodes(nodes: LexicalNode[]): void;
   getStartEndPoints(): null | [PointType, PointType];
   isCollapsed(): boolean;
   isBackward(): boolean;
@@ -329,7 +329,7 @@ export interface BaseSelection {
 
 export class NodeSelection implements BaseSelection {
   _nodes: Set<NodeKey>;
-  _cachedNodes: Array<LexicalNode> | null;
+  _cachedNodes: LexicalNode[] | null;
   dirty: boolean;
 
   constructor(objects: Set<NodeKey>) {
@@ -393,7 +393,7 @@ export class NodeSelection implements BaseSelection {
     return new NodeSelection(new Set(this._nodes));
   }
 
-  extract(): Array<LexicalNode> {
+  extract(): LexicalNode[] {
     return this.getNodes();
   }
 
@@ -405,7 +405,7 @@ export class NodeSelection implements BaseSelection {
     // Do nothing?
   }
 
-  insertNodes(nodes: Array<LexicalNode>) {
+  insertNodes(nodes: LexicalNode[]) {
     const selectedNodes = this.getNodes();
     const selectedNodesLength = selectedNodes.length;
     const lastSelectedNode = selectedNodes[selectedNodesLength - 1];
@@ -424,7 +424,7 @@ export class NodeSelection implements BaseSelection {
     }
   }
 
-  getNodes(): Array<LexicalNode> {
+  getNodes(): LexicalNode[] {
     const cachedNodes = this._cachedNodes;
     if (cachedNodes !== null) {
       return cachedNodes;
@@ -478,7 +478,7 @@ export class RangeSelection implements BaseSelection {
   style: string;
   anchor: PointType;
   focus: PointType;
-  _cachedNodes: Array<LexicalNode> | null;
+  _cachedNodes: LexicalNode[] | null;
   /** @internal */
   _cachedIsBackward: boolean | null;
   dirty: boolean;
@@ -547,7 +547,7 @@ export class RangeSelection implements BaseSelection {
    *
    * @returns an Array containing all the nodes in the Selection
    */
-  getNodes(): Array<LexicalNode> {
+  getNodes(): LexicalNode[] {
     const cachedNodes = this._cachedNodes;
     if (cachedNodes !== null) {
       return cachedNodes;
@@ -867,11 +867,12 @@ export class RangeSelection implements BaseSelection {
         (!firstNodeParent.canInsertTextAfter() &&
           firstNode.getNextSibling() === null))
     ) {
-      let nextSibling = firstNode.getNextSibling<TextNode>();
+      const candidateNextSibling = firstNode.getNextSibling();
+      let nextSibling: TextNode;
       if (
-        !$isTextNode(nextSibling) ||
-        !nextSibling.canInsertTextBefore() ||
-        $isTokenOrSegmented(nextSibling)
+        !$isTextNode(candidateNextSibling) ||
+        !candidateNextSibling.canInsertTextBefore() ||
+        $isTokenOrSegmented(candidateNextSibling)
       ) {
         nextSibling = $createTextNode();
         nextSibling.setFormat(format);
@@ -881,6 +882,8 @@ export class RangeSelection implements BaseSelection {
         } else {
           firstNode.insertAfter(nextSibling);
         }
+      } else {
+        nextSibling = candidateNextSibling;
       }
       nextSibling.select(0, 0);
       firstNode = nextSibling;
@@ -896,8 +899,12 @@ export class RangeSelection implements BaseSelection {
         (!firstNodeParent.canInsertTextBefore() &&
           firstNode.getPreviousSibling() === null))
     ) {
-      let prevSibling = firstNode.getPreviousSibling<TextNode>();
-      if (!$isTextNode(prevSibling) || $isTokenOrSegmented(prevSibling)) {
+      const candidatePrevSibling = firstNode.getPreviousSibling();
+      let prevSibling: TextNode;
+      if (
+        !$isTextNode(candidatePrevSibling) ||
+        $isTokenOrSegmented(candidatePrevSibling)
+      ) {
         prevSibling = $createTextNode();
         prevSibling.setFormat(format);
         if (!firstNodeParent.canInsertTextBefore()) {
@@ -905,6 +912,8 @@ export class RangeSelection implements BaseSelection {
         } else {
           firstNode.insertBefore(prevSibling);
         }
+      } else {
+        prevSibling = candidatePrevSibling;
       }
       prevSibling.select();
       firstNode = prevSibling;
@@ -1202,7 +1211,7 @@ export class RangeSelection implements BaseSelection {
     }
 
     const selectedNodes = this.getNodes();
-    const selectedTextNodes: Array<TextNode> = [];
+    const selectedTextNodes: TextNode[] = [];
     for (const selectedNode of selectedNodes) {
       if ($isTextNode(selectedNode)) {
         selectedTextNodes.push(selectedNode);
@@ -1341,7 +1350,7 @@ export class RangeSelection implements BaseSelection {
    *
    * @param nodes - the nodes to insert
    */
-  insertNodes(nodes: Array<LexicalNode>): void {
+  insertNodes(nodes: LexicalNode[]): void {
     if (nodes.length === 0) {
       return;
     }
@@ -1508,7 +1517,7 @@ export class RangeSelection implements BaseSelection {
    *
    * @returns The nodes in the Selection
    */
-  extract(): Array<LexicalNode> {
+  extract(): LexicalNode[] {
     const selectedNodes = [...this.getNodes()];
     const selectedNodesLength = selectedNodes.length;
     let firstNode = selectedNodes[0];
@@ -3280,7 +3289,7 @@ export function $updateDOMSelection(
   markSelectionChangeFromDOMUpdate();
 }
 
-export function $insertNodes(nodes: Array<LexicalNode>) {
+export function $insertNodes(nodes: LexicalNode[]) {
   let selection = $getSelection() || $getPreviousSelection();
 
   if (selection === null) {

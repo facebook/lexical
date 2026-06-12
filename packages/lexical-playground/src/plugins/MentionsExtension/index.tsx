@@ -26,7 +26,7 @@ import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {$createMentionNode, MentionNode} from '../../nodes/MentionNode';
 
-const MentionImportRule = defineImportRule({
+const MentionImportRule = /* @__PURE__ */ defineImportRule({
   $import: (_ctx, el) => {
     const textContent = el.textContent ?? '';
     const mentionName =
@@ -37,14 +37,16 @@ const MentionImportRule = defineImportRule({
   name: '@lexical/playground/mention',
 });
 
-export const MentionsExtension = defineExtension({
+export const MentionsExtension = /* @__PURE__ */ defineExtension({
   // Depend on CoreImportExtension so the `<span data-lexical-mention>` rule is
   // merged after — and therefore out-prioritizes — the core inline-format
   // `<span>` rule, regardless of where the app lists this extension relative
   // to the import baseline.
   dependencies: [
     CoreImportExtension,
-    configExtension(DOMImportExtension, {rules: [MentionImportRule]}),
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: [MentionImportRule],
+    }),
   ],
   name: '@lexical/playground/Mentions',
   nodes: [MentionNode],
@@ -522,7 +524,7 @@ const dummyMentionsData = [
 ];
 
 const dummyLookupService = {
-  search(string: string, callback: (results: Array<string>) => void): void {
+  search(string: string, callback: (results: string[]) => void): void {
     setTimeout(() => {
       const results = dummyMentionsData.filter(mention =>
         mention.toLowerCase().includes(string.toLowerCase()),
@@ -533,7 +535,7 @@ const dummyLookupService = {
 };
 
 function useMentionLookupService(mentionString: string | null) {
-  const [results, setResults] = useState<Array<string>>([]);
+  const [results, setResults] = useState<string[]>([]);
 
   useEffect(() => {
     const cachedResults = mentionsCache.get(mentionString);

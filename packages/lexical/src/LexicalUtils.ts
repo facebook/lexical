@@ -534,12 +534,30 @@ export function $getCompositionKey(): null | NodeKey {
   return editor._compositionKey;
 }
 
+/**
+ * Returns the node with the given key from the active EditorState
+ * (or the given EditorState), or null if it does not exist.
+ */
+export function $getNodeByKey(
+  key: NodeKey,
+  _editorState?: EditorState,
+): LexicalNode | null;
+/**
+ * @deprecated The type parameter is an unchecked and unsafe cast,
+ * equivalent to `$getNodeByKey(key) as T | null`, and will be removed
+ * in a future release. Call this function without a type argument and
+ * narrow the result with a type guard instead.
+ */
 export function $getNodeByKey<T extends LexicalNode>(
   key: NodeKey,
   _editorState?: EditorState,
-): T | null {
+): T | null;
+export function $getNodeByKey(
+  key: NodeKey,
+  _editorState?: EditorState,
+): LexicalNode | null {
   const editorState = _editorState || getActiveEditorState();
-  const node = editorState._nodeMap.get(key) as T;
+  const node = editorState._nodeMap.get(key);
   if (node === undefined) {
     return null;
   }
@@ -715,9 +733,7 @@ export function doesContainSurrogatePair(str: string): boolean {
   return /[\uD800-\uDBFF][\uDC00-\uDFFF]/g.test(str);
 }
 
-export function getEditorsToPropagate(
-  editor: LexicalEditor,
-): Array<LexicalEditor> {
+export function getEditorsToPropagate(editor: LexicalEditor): LexicalEditor[] {
   const editorsToPropagate: LexicalEditor[] = [];
   for (
     let currentEditor: LexicalEditor | null = editor;
@@ -1249,7 +1265,7 @@ export function $selectAll(selection?: RangeSelection | null): RangeSelection {
 export function getCachedClassNameArray(
   classNamesTheme: EditorThemeClasses,
   classNameThemeType: string,
-): Array<string> {
+): string[] {
   if (classNamesTheme.__lexicalClassNameCache === undefined) {
     classNamesTheme.__lexicalClassNameCache = {};
   }
@@ -1307,7 +1323,7 @@ export function setMutatedNode(
 /**
  * @deprecated Use {@link LexicalEditor.registerMutationListener} with `skipInitialization: false` instead.
  */
-export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
+export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): T[] {
   const klassType = klass.getType();
   const editorState = getActiveEditorState();
   if (editorState._readOnly) {
@@ -1317,7 +1333,7 @@ export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
     return nodes ? Array.from(nodes.values()) : [];
   }
   const nodes = editorState._nodeMap;
-  const nodesOfType: Array<T> = [];
+  const nodesOfType: T[] = [];
   for (const [, node] of nodes) {
     if (
       node instanceof klass &&
@@ -1708,8 +1724,20 @@ export function errorOnInsertTextNodeOnRoot(
   }
 }
 
-export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N {
-  const node = $getNodeByKey<N>(key);
+/**
+ * Returns the node with the given key from the active EditorState,
+ * or throws if it does not exist.
+ */
+export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode;
+/**
+ * @deprecated The type parameter is an unchecked and unsafe cast,
+ * equivalent to `$getNodeByKeyOrThrow(key) as N`, and will be removed
+ * in a future release. Call this function without a type argument and
+ * narrow the result with a type guard instead.
+ */
+export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N;
+export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode {
+  const node = $getNodeByKey(key);
   if (node === null) {
     invariant(
       false,
@@ -2365,13 +2393,6 @@ export function hasOwnStaticMethod(
   return hasOwn(klass, k) && klass[k] !== LexicalNode[k];
 }
 
-/**
- * @internal
- */
-export function hasOwnExportDOM(klass: Klass<LexicalNode>) {
-  return hasOwn(klass.prototype, 'exportDOM');
-}
-
 /** @internal */
 function isAbstractNodeClass(klass: Klass<LexicalNode>): boolean {
   if (!(klass === LexicalNode || klass.prototype instanceof LexicalNode)) {
@@ -2405,7 +2426,9 @@ function isAbstractNodeClass(klass: Klass<LexicalNode>): boolean {
 /** @internal */
 export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
   ownNodeType: undefined | string;
-  ownNodeConfig: undefined | StaticNodeConfigValue<LexicalNode, string>;
+  ownNodeConfig:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, string | symbol>;
 } {
   const nodeConfigRecord =
     PROTOTYPE_CONFIG_METHOD in klass.prototype
@@ -2416,15 +2439,33 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
     !isAbstract && hasOwnStaticMethod(klass, 'getType')
       ? klass.getType()
       : undefined;
-  let ownNodeConfig: undefined | StaticNodeConfigValue<LexicalNode, string>;
+  let ownNodeConfig:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, string | symbol>;
   let ownNodeType = nodeType;
   if (nodeConfigRecord) {
     if (nodeType) {
       ownNodeConfig = nodeConfigRecord[nodeType];
     } else {
+      // No static getType(): derive the type and config from the $config
+      // record. The common case is a concrete node keyed by its string `type`.
       for (const [k, v] of Object.entries(nodeConfigRecord)) {
         ownNodeType = k;
         ownNodeConfig = v;
+      }
+      // Fall back to a well-known symbol key (e.g. Symbol.for('ElementNode'))
+      // for an abstract base class that has no concrete node type, using the
+      // first symbol whose value is a config record.
+      if (!ownNodeConfig) {
+        for (const symbolKey of Object.getOwnPropertySymbols(
+          nodeConfigRecord,
+        )) {
+          const symbolConfig = nodeConfigRecord[symbolKey];
+          if (symbolConfig) {
+            ownNodeConfig = symbolConfig;
+            break;
+          }
+        }
       }
     }
   }
@@ -2540,7 +2581,7 @@ export const $findMatchingParent: {
 export function $createChildrenArray(
   element: ElementNode,
   nodeMap: null | NodeMap,
-): Array<NodeKey> {
+): NodeKey[] {
   const children = [];
   let nodeKey = element.__first;
   while (nodeKey !== null) {

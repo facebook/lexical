@@ -178,7 +178,7 @@ declare export function $withRenderContext(
 declare export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document,
-): Array<LexicalNode>;
+): LexicalNode[];
 
 declare export function $generateDOMFromNodes<
   T extends HTMLElement | DocumentFragment,

@@ -63,7 +63,6 @@ import {
   getDOMSelection,
   getRegisteredNode,
   getStaticNodeConfig,
-  hasOwnExportDOM,
   hasOwnStaticMethod,
   markNodesWithTypesAsDirty,
   setNodeKeyOnDOMNode,
@@ -167,9 +166,9 @@ export interface EditorThemeClasses {
   link?: EditorThemeClassName;
   list?: {
     ul?: EditorThemeClassName;
-    ulDepth?: Array<EditorThemeClassName>;
+    ulDepth?: EditorThemeClassName[];
     ol?: EditorThemeClassName;
-    olDepth?: Array<EditorThemeClassName>;
+    olDepth?: EditorThemeClassName[];
     checklist?: EditorThemeClassName;
     listitem?: EditorThemeClassName;
     listitemChecked?: EditorThemeClassName;
@@ -342,8 +341,17 @@ export interface CreateEditorArgs {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
-  nodes?: ReadonlyArray<LexicalNodeConfig>;
+  nodes?: readonly LexicalNodeConfig[];
   onError?: ErrorHandler;
+  /**
+   * Optional handler for recoverable, warn-level conditions (e.g. the
+   * update-recursion guard tripping). Mirrors {@link onError} but is reserved
+   * for conditions the editor has already recovered from, so embedders can
+   * route them to telemetry at warn severity without raising an error alarm.
+   * Defaults to a handler that throws in development (so the condition is
+   * impossible to miss) and only `console.warn`s in production.
+   */
+  onWarn?: ErrorHandler;
   parentEditor?: LexicalEditor;
   editable?: boolean;
   theme?: EditorThemeClasses;
@@ -368,6 +376,21 @@ export type RegisteredNode = {
 export type Transform<T extends LexicalNode> = (node: T) => void;
 
 export type ErrorHandler = (error: Error) => void;
+
+/**
+ * Default {@link CreateEditorArgs.onWarn} handler. Used for recoverable,
+ * warn-level conditions (e.g. the update-recursion guard tripping) that the
+ * editor has already recovered from. Throws in development so the condition is
+ * impossible to miss, and only `console.warn`s in production so it is not
+ * reported as a fatal error. Embedders can override this via `onWarn` to route
+ * the condition to their own telemetry at warn severity.
+ */
+function defaultOnWarn(error: Error): void {
+  if (__DEV__) {
+    throw error;
+  }
+  console.warn(error);
+}
 
 export type MutationListeners = Map<MutationListener, Set<Klass<LexicalNode>>>;
 
@@ -603,10 +626,7 @@ export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
 type IntentionallyMarkedAsDirtyElement = boolean;
 
-type DOMConversionCache = Map<
-  string,
-  Array<(node: Node) => DOMConversion | null>
->;
+type DOMConversionCache = Map<string, ((node: Node) => DOMConversion | null)[]>;
 
 export type SerializedEditor = {
   editorState: SerializedEditorState;
@@ -809,7 +829,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     ArtificialNode__DO_NOT_USE,
     ...(config.nodes || []),
   ];
-  const {onError, html} = config;
+  const {onError, onWarn, html} = config;
   const isEditable = config.editable !== undefined ? config.editable : true;
   let registeredNodes: RegisteredNodes;
 
@@ -864,14 +884,6 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
               console.warn(`${name} must implement static "${method}" method`);
             }
           });
-          if (
-            !hasOwnStaticMethod(klass, 'importDOM') &&
-            hasOwnExportDOM(klass)
-          ) {
-            console.warn(
-              `${name} should implement "importDOM" if using a custom "exportDOM" method to ensure HTML serialization (important for copy & paste) works as expected`,
-            );
-          }
           if (!hasOwnStaticMethod(klass, 'importJSON')) {
             console.warn(
               `${name} should implement "importJSON" method to ensure JSON and default HTML serialization works as expected`,
@@ -905,6 +917,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       theme,
     },
     onError ? onError : console.error,
+    onWarn ? onWarn : defaultOnWarn,
     initializeConversionCache(registeredNodes, html ? html.import : undefined),
     isEditable,
     editorConfig,
@@ -969,11 +982,11 @@ export class LexicalEditor {
   /** @internal */
   _compositionKey: null | NodeKey;
   /** @internal */
-  _deferred: Array<() => void>;
+  _deferred: (() => void)[];
   /** @internal */
   _keyToDOMMap: Map<NodeKey, HTMLElement & LexicalPrivateDOM>;
   /** @internal */
-  _updates: Array<[() => void, EditorUpdateOptions | undefined]>;
+  _updates: [() => void, EditorUpdateOptions | undefined][];
   /** @internal */
   _updating: boolean;
   /** @internal */
@@ -1009,6 +1022,8 @@ export class LexicalEditor {
   /** @internal */
   _onError: ErrorHandler;
   /** @internal */
+  _onWarn: ErrorHandler;
+  /** @internal */
   _htmlConversions: DOMConversionCache;
   /** @internal */
   _window: null | Window;
@@ -1026,6 +1041,7 @@ export class LexicalEditor {
     nodes: RegisteredNodes,
     config: EditorConfig,
     onError: ErrorHandler,
+    onWarn: ErrorHandler,
     htmlConversions: DOMConversionCache,
     editable: boolean,
     createEditorArgs?: CreateEditorArgs,
@@ -1077,6 +1093,7 @@ export class LexicalEditor {
     this._key = createUID();
 
     this._onError = onError;
+    this._onWarn = onWarn;
     this._htmlConversions = htmlConversions;
     this._editable = editable;
     this._headless = parentEditor !== null && parentEditor._headless;
@@ -1399,7 +1416,7 @@ export class LexicalEditor {
    * depend on have been registered.
    * @returns True if the editor has registered all of the provided node types, false otherwise.
    */
-  hasNodes<T extends Klass<LexicalNode>>(nodes: Array<T>): boolean {
+  hasNodes<T extends Klass<LexicalNode>>(nodes: T[]): boolean {
     return nodes.every(this.hasNode.bind(this));
   }
 
@@ -1564,13 +1581,17 @@ export class LexicalEditor {
 
     flushRootMutations(this);
     const pendingEditorState = this._pendingEditorState;
-    const tags = this._updateTags;
     const tag = options !== undefined ? options.tag : null;
 
     if (pendingEditorState !== null && !pendingEditorState.isEmpty()) {
       if (tag != null) {
-        tags.add(tag);
+        this._updateTags.add(tag);
       }
+      // This may commit a no-op update (e.g. when called via dispatchCommand
+      // mid-update), which resets this._updateTags to a fresh Set. Always read
+      // this._updateTags fresh below rather than caching the reference, so the
+      // tag for the editor state we are about to apply is added to the live Set
+      // that the subsequent commit will observe.
       $commitPendingUpdates(this);
     }
 
@@ -1580,7 +1601,7 @@ export class LexicalEditor {
     this._compositionKey = null;
 
     if (tag != null) {
-      tags.add(tag);
+      this._updateTags.add(tag);
     }
 
     // Only commit pending updates if not already in an editor.update
@@ -1621,6 +1642,21 @@ export class LexicalEditor {
   read<T>(callbackFn: () => T): T {
     $commitPendingUpdates(this);
     return this.getEditorState().read(callbackFn, {editor: this});
+  }
+
+  /**
+   * Executes a read of the editor's pending state if it exists, otherwise
+   * the committed state, with the editor context available. Unlike
+   * {@link LexicalEditor.read}, pending updates are not flushed before the
+   * read, so this is safe to call when an update may already be in
+   * progress (such as from another editor's command listener) at the cost
+   * of possibly observing a state that has not been committed yet.
+   * @param callbackFn - A function that has access to read-only editor state.
+   */
+  readPending<T>(callbackFn: () => T): T {
+    return (this._pendingEditorState || this._editorState).read(callbackFn, {
+      editor: this,
+    });
   }
 
   /**

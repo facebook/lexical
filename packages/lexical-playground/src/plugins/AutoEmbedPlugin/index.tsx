@@ -37,7 +37,7 @@ interface PlaygroundEmbedConfig extends EmbedConfig {
   exampleUrl: string;
 
   // For extra searching.
-  keywords: Array<string>;
+  keywords: string[];
 
   // Embed a Figma Project.
   description?: string;

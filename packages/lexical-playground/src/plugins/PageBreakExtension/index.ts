@@ -20,17 +20,20 @@ import {
 
 import {$createPageBreakNode, PageBreakNode} from '../../nodes/PageBreakNode';
 
-export const INSERT_PAGE_BREAK: LexicalCommand<undefined> = createCommand();
+export const INSERT_PAGE_BREAK: LexicalCommand<undefined> =
+  /* @__PURE__ */ createCommand();
 
-const PageBreakImportRule = defineImportRule({
+const PageBreakImportRule = /* @__PURE__ */ defineImportRule({
   $import: () => [$createPageBreakNode()],
   match: sel.tag('figure').attr('type', PageBreakNode.getType()),
   name: '@lexical/playground/page-break',
 });
 
-export const PageBreakExtension = defineExtension({
+export const PageBreakExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    configExtension(DOMImportExtension, {rules: [PageBreakImportRule]}),
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: [PageBreakImportRule],
+    }),
   ],
   name: '@lexical/playground/PageBreak',
   nodes: [PageBreakNode],

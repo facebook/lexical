@@ -11,11 +11,15 @@ import {
   $create,
   $createLineBreakNode,
   $createRangeSelection,
+  $createTabNode,
+  $getNodeByKey,
+  $getNodeByKeyOrThrow,
   $getRoot,
   $getSelection,
   $isDecoratorNode,
   $isElementNode,
   $isRangeSelection,
+  $isTabNode,
   $setSelection,
   createEditor,
   DecoratorNode,
@@ -27,6 +31,7 @@ import {
   RangeSelection,
   SerializedLexicalNode,
   SerializedTextNode,
+  TabNode,
   TextNode,
 } from 'lexical';
 import {
@@ -35,6 +40,7 @@ import {
   beforeEach,
   describe,
   expect,
+  expectTypeOf,
   test,
   vi,
 } from 'vitest';
@@ -100,7 +106,17 @@ class InlineDecoratorNode extends DecoratorNode<string> {
 
 describe('LexicalNode tests', () => {
   beforeAll(() => {
-    vi.spyOn(LexicalNode, 'getType').mockImplementation(() => 'node');
+    // Give the abstract base a concrete type for `new LexicalNode()` tests, but
+    // delegate for subclasses: now that ported nodes derive their type from
+    // `$config` (instead of their own static `getType`), they reach this base
+    // method until `getStaticNodeConfig` injects their own, so it must resolve
+    // the real type rather than collapsing every subclass to 'node'.
+    const realGetType = LexicalNode.getType;
+    vi.spyOn(LexicalNode, 'getType').mockImplementation(function (
+      this: typeof LexicalNode,
+    ) {
+      return this === LexicalNode ? 'node' : realGetType.call(this);
+    });
   });
   afterAll(() => {
     vi.restoreAllMocks();
@@ -1626,7 +1642,7 @@ describe('Element-anchored selection on old parent (#6031)', () => {
     act: Mover;
     actNoRestore: Mover | null;
   };
-  const methods: ReadonlyArray<MethodSpec> = [
+  const methods: readonly MethodSpec[] = [
     {
       act: (target, mover) => target.insertBefore(mover),
       actNoRestore: (target, mover) => target.insertBefore(mover, false),
@@ -2082,5 +2098,161 @@ describe('LexicalNode.$config() without registration', () => {
         'correct-custom-decorator',
       );
     }
+  });
+
+  test('abstract base class declares shared $config under a Symbol key', () => {
+    // An abstract base class has no concrete node `type`, so it publishes the
+    // configuration it shares with its subclasses (here a $transform) under a
+    // well-known symbol rather than a string key. getStaticNodeConfig must
+    // resolve that symbol-keyed config so the transform is collected for the
+    // concrete subclass.
+    const transformed: string[] = [];
+    class AbstractBaseNode extends ElementNode {
+      $config() {
+        return this.config(Symbol.for('AbstractBaseNode'), {
+          $transform: (node: AbstractBaseNode) => {
+            transformed.push(node.getType());
+          },
+        });
+      }
+    }
+    class ConcreteChildNode extends AbstractBaseNode {
+      $config() {
+        return this.config('concrete-child-node', {extends: AbstractBaseNode});
+      }
+      createDOM(): HTMLElement {
+        return document.createElement('div');
+      }
+    }
+    // The abstract base must not be assigned a concrete type or static methods.
+    expect(() => AbstractBaseNode.getType()).toThrow(
+      /does not implement \.getType/,
+    );
+
+    const editor = createEditor({
+      nodes: [ConcreteChildNode],
+      onError(err) {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        $getRoot().append(new ConcreteChildNode());
+      },
+      {discrete: true},
+    );
+
+    expect(ConcreteChildNode.getType()).toEqual('concrete-child-node');
+    expect(transformed).toEqual(['concrete-child-node']);
+  });
+
+  test('a structurally-identical subclass stays narrowable', () => {
+    // TabNode adds nothing structural over TextNode (it only overrides methods
+    // with identical signatures). The $config protocol accumulates a node's own
+    // type under STATIC_NODE_TYPE, which keeps the two distinct so $isTabNode()
+    // narrows a TextNode correctly instead of collapsing the negative branch to
+    // `never` (which TypeScript would do if the base were assignable back to the
+    // subclass).
+    const $narrowFromTextNode = (node: TextNode): string => {
+      if ($isTabNode(node)) {
+        expectTypeOf(node).toEqualTypeOf<TabNode>();
+        return node.getType();
+      }
+      // This assertion fails to compile if the negative branch collapsed to
+      // `never` instead of staying `TextNode`.
+      expectTypeOf(node).toEqualTypeOf<TextNode>();
+      return node.getType();
+    };
+
+    const editor = createEditor({
+      onError(err) {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        const tab = $createTabNode();
+        const text = $createTextNode('x');
+        expect($isTabNode(tab)).toBe(true);
+        expect($isTabNode(text)).toBe(false);
+        expect($narrowFromTextNode(text)).toBe('text');
+        expect($narrowFromTextNode(tab)).toBe('tab');
+      },
+      {discrete: true},
+    );
+  });
+
+  test('traversal methods return base node types unless explicitly cast', () => {
+    // The type parameters on the traversal methods are deprecated unchecked
+    // casts. Calls without a type argument must resolve to the base node
+    // types rather than inferring the type parameter from context.
+    const $checkTraversalTypes = (node: LexicalNode, element: ElementNode) => {
+      expectTypeOf(node.getParent()).toEqualTypeOf<ElementNode | null>();
+      expectTypeOf(node.getParentOrThrow()).toEqualTypeOf<ElementNode>();
+      expectTypeOf(
+        node.getPreviousSibling(),
+      ).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(node.getNextSibling()).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(node.getPreviousSiblings()).toEqualTypeOf<LexicalNode[]>();
+      expectTypeOf(node.getNextSiblings()).toEqualTypeOf<LexicalNode[]>();
+      expectTypeOf(element.getChildren()).toEqualTypeOf<LexicalNode[]>();
+      expectTypeOf(
+        element.getChildAtIndex(0),
+      ).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(element.getFirstChild()).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(element.getFirstChildOrThrow()).toEqualTypeOf<LexicalNode>();
+      expectTypeOf(element.getLastChild()).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(element.getLastChildOrThrow()).toEqualTypeOf<LexicalNode>();
+      expectTypeOf(
+        element.getFirstDescendant(),
+      ).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(
+        element.getLastDescendant(),
+      ).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(
+        element.getDescendantByIndex(0),
+      ).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(
+        $getNodeByKey(node.getKey()),
+      ).toEqualTypeOf<LexicalNode | null>();
+      expectTypeOf(
+        $getNodeByKeyOrThrow(node.getKey()),
+      ).toEqualTypeOf<LexicalNode>();
+      // The deprecated generic overloads remain callable so that existing
+      // code continues to compile during migration.
+      expectTypeOf(
+        node.getParent<ParagraphNode>(),
+      ).toEqualTypeOf<ParagraphNode | null>();
+      expectTypeOf(
+        element.getFirstChild<TextNode>(),
+      ).toEqualTypeOf<TextNode | null>();
+      expectTypeOf(
+        $getNodeByKey<TextNode>(node.getKey()),
+      ).toEqualTypeOf<TextNode | null>();
+      expectTypeOf(
+        $getNodeByKeyOrThrow<TextNode>(node.getKey()),
+      ).toEqualTypeOf<TextNode>();
+      // The type parameter is no longer inferred from the contextual type,
+      // so this implicit unchecked cast is a compile error.
+      // @ts-expect-error - getFirstChild() returns LexicalNode | null
+      const child: TextNode | null = element.getFirstChild();
+      return child;
+    };
+
+    const editor = createEditor({
+      onError(err) {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('x');
+        paragraph.append(text);
+        $getRoot().append(paragraph);
+        expect($checkTraversalTypes(text, paragraph)).toBe(text);
+      },
+      {discrete: true},
+    );
   });
 });

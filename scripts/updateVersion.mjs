@@ -14,6 +14,12 @@ import prettier from 'prettier';
 import {PackageMetadata} from './shared/PackageMetadata.mjs';
 import {packagesManager} from './shared/packagesManager.mjs';
 import readMonorepoPackageJson from './shared/readMonorepoPackageJson.mjs';
+import {
+  MIN_TYPESCRIPT_VERSION,
+  tooOldStubPath,
+  tooOldTypesVersions,
+  TYPESCRIPT_TOO_OLD_CONDITION,
+} from './shared/typescriptTooOld.mjs';
 import npmToWwwName from './www/npmToWwwName.mjs';
 
 const monorepoPackageJson = readMonorepoPackageJson();
@@ -178,16 +184,22 @@ function exportEntry(
   // last per #5731. Keys are in descending priority order.
   const prefix = `./${DIST_DIR}/${basename}`;
   const types = `./${DIST_DIR}/${typesBasename}`;
+  // Redirect consumers that read "exports" but are below the minimum supported
+  // TypeScript version (TypeScript 4.9 understands `types@`, up to but not
+  // including the minimum) to the "too old" stub. Must precede `types`.
+  const tooOld = tooOldStubPath(DIST_DIR);
   return {
     /* eslint-disable sort-keys-fix/sort-keys-fix */
     ...(sourceRelPath ? {source: `./${sourceRelPath}`} : null),
     import: {
+      [TYPESCRIPT_TOO_OLD_CONDITION]: tooOld,
       types,
       ...withEnvironments(`${prefix}.mjs`),
       node: `${prefix}.node.mjs`,
       default: `${prefix}.mjs`,
     },
     require: {
+      [TYPESCRIPT_TOO_OLD_CONDITION]: tooOld,
       types,
       ...withEnvironments(`${prefix}.js`),
       default: `${prefix}.js`,
@@ -207,7 +219,9 @@ function withBrowser(exports) {
     Object.entries(exports.import).flatMap(([k, v]) => {
       if (k === 'node') {
         return [];
-      } else if (k === 'types') {
+      } else if (k === 'types' || k.startsWith('types@')) {
+        // `types` and the versioned `types@<min>` condition point at .d.ts
+        // files, never a browser bundle; pass them through unchanged.
         return [[k, v]];
       }
       return [[k, v.replace(/((?:\.dev|\.prod)?\.m?js)$/, '.browser$1')]];
@@ -308,18 +322,19 @@ function updatePublicPackage(pkg) {
   // If there's a main we expect a single entry point
   if (packageJson.main) {
     const mainBase = stripDistPrefix(packageJson.main);
-    const typesBase = packageJson.types
-      ? stripDistPrefix(packageJson.types)
-      : undefined;
     packageJson.main = `./${DIST_DIR}/${mainBase}`;
     packageJson.module = `./${DIST_DIR}/${replaceExtension(mainBase, '.mjs')}`;
-    if (typesBase) {
-      packageJson.types = `./${DIST_DIR}/${typesBase}`;
-    }
     const sourceRelPath = findMainSourceRelPath(
       pkg,
       replaceExtension(mainBase, ''),
     );
+    // Derive the declaration basename from the entry source (the build emits
+    // e.g. src/index.ts -> dist/index.d.ts) rather than from the existing
+    // `types` field: `types` is rewritten to the "too old" stub below, so
+    // reading it here would corrupt the real types on a second run.
+    const typesBase = sourceRelPath
+      ? `${path.basename(sourceRelPath).replace(/\.(tsx?|js)$/, '')}.d.ts`
+      : 'index.d.ts';
     packageJson.exports = {
       '.': exportEntry(
         replaceExtension(mainBase, ''),
@@ -358,6 +373,28 @@ function updatePublicPackage(pkg) {
     }
     packageJson.exports = exports;
   }
+  // Tombstone the legacy type-resolution fields. A consumer whose TypeScript
+  // cannot read "exports" (classic moduleResolution, at any version) resolves
+  // `types` for the package root and `typesVersions` for every subpath; point
+  // both at the "too old" stub so they get a clear upgrade message instead of
+  // a misleading "Cannot find module". Modern resolvers ignore both fields
+  // because "exports" takes priority over them (TypeScript >= 4.9).
+  packageJson.types = tooOldStubPath(DIST_DIR);
+  packageJson.typesVersions = tooOldTypesVersions(DIST_DIR);
+  // Advise (but do not require) a supported TypeScript at install time. npm and
+  // pnpm surface a peer-dependency warning when an out-of-range `typescript` is
+  // present; `optional` keeps it from being installed or hard-required for
+  // consumers that don't use TypeScript. This complements the type-check-time
+  // guard above with an earlier, install-time signal.
+  packageJson.peerDependencies = {
+    ...packageJson.peerDependencies,
+    typescript: `>=${MIN_TYPESCRIPT_VERSION}`,
+  };
+  packageJson.peerDependenciesMeta = {
+    ...packageJson.peerDependenciesMeta,
+    typescript: {optional: true},
+  };
+  pkg.sortDependencies('peerDependencies');
   // Whitelist what ships to npm. The package root is the publish root, so
   // we no longer need a separate `npm/` copy step.
   packageJson.files = [...PUBLIC_FILES_FIELD];

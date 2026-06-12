@@ -22,12 +22,12 @@ import {
 } from 'lexical';
 import * as React from 'react';
 
-export type Options = ReadonlyArray<Option>;
+export type Options = readonly Option[];
 
 export type Option = Readonly<{
   text: string;
   uid: string;
-  votes: Array<string>;
+  votes: string[];
 }>;
 
 const PollComponent = React.lazy(() => import('./PollComponent'));
@@ -47,11 +47,7 @@ export function createPollOption(text = ''): Option {
   };
 }
 
-function cloneOption(
-  option: Option,
-  text: string,
-  votes?: Array<string>,
-): Option {
+function cloneOption(option: Option, text: string, votes?: string[]): Option {
   return {
     text,
     uid: option.uid,
@@ -85,10 +81,10 @@ function parseOptions(json: unknown): Options {
   return options;
 }
 
-const questionState = createState('question', {
+const questionState = /* @__PURE__ */ createState('question', {
   parse: v => (typeof v === 'string' ? v : ''),
 });
-const optionsState = createState('options', {
+const optionsState = /* @__PURE__ */ createState('options', {
   isEqual: (a, b) =>
     a.length === b.length && JSON.stringify(a) === JSON.stringify(b),
   parse: parseOptions,

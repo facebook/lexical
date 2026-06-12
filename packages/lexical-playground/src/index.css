@@ -20,6 +20,9 @@ body {
     BlinkMacSystemFont,
     '.SFNSText-Regular',
     sans-serif;
+  --font-family:
+    system-ui, -apple-system, BlinkMacSystemFont, '.SFNSText-Regular',
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #eee;

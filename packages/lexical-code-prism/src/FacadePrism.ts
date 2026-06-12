@@ -18,6 +18,7 @@ import 'prismjs/components/prism-markup';
 import 'prismjs/components/prism-markdown';
 import 'prismjs/components/prism-c';
 import 'prismjs/components/prism-css';
+import 'prismjs/components/prism-go';
 import 'prismjs/components/prism-objectivec';
 import 'prismjs/components/prism-sql';
 import 'prismjs/components/prism-powershell';
@@ -45,6 +46,7 @@ export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
   clike: 'C-like',
   cpp: 'C++',
   css: 'CSS',
+  go: 'Go',
   html: 'HTML',
   java: 'Java',
   js: 'JavaScript',
@@ -62,6 +64,7 @@ export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
 
 export const CODE_LANGUAGE_MAP: Record<string, string> = {
   cpp: 'cpp',
+  golang: 'go',
   java: 'java',
   javascript: 'js',
   md: 'markdown',
@@ -80,7 +83,7 @@ export function getLanguageFriendlyName(lang: string) {
   return CODE_LANGUAGE_FRIENDLY_NAME_MAP[_lang] || _lang;
 }
 
-export const getCodeLanguages = (): Array<string> =>
+export const getCodeLanguages = (): string[] =>
   Object.keys(Prism.languages)
     .filter(
       // Prism has several language helpers mixed into languages object
@@ -149,7 +152,7 @@ function getTextContent(token: TokenStream): string {
 export function tokenizeDiffHighlight(
   tokens: (string | Token)[],
   language: string,
-): Array<string | Token> {
+): (string | Token)[] {
   const diffLanguage = language;
   const diffGrammar = Prism.languages[diffLanguage];
   const env = {tokens};
@@ -254,7 +257,7 @@ export function $getHighlightNodes(
 
   const code = codeNode.getTextContent();
 
-  let tokens: Array<string | Token> = Prism.tokenize(
+  let tokens: (string | Token)[] = Prism.tokenize(
     code,
     Prism.languages[diffLanguageMatch ? 'diff' : language],
   );
@@ -265,7 +268,7 @@ export function $getHighlightNodes(
 }
 
 function $mapTokensToLexicalStructure(
-  tokens: Array<string | Token>,
+  tokens: (string | Token)[],
   type?: string,
 ): LexicalNode[] {
   const nodes: LexicalNode[] = [];

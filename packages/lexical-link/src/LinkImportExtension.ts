@@ -6,18 +6,11 @@
  *
  */
 
-import {
-  $distributeInlineWrapper,
-  defineImportRule,
-  DOMImportExtension,
-  sel,
-} from '@lexical/html';
-import {configExtension, defineExtension} from 'lexical';
+import {$distributeInlineWrapper, defineImportRule, sel} from '@lexical/html';
 
-import {LinkExtension} from './LexicalLinkExtension';
 import {$createLinkNode} from './LexicalLinkNode';
 
-const AnchorRule = defineImportRule({
+const AnchorRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     if (!el.textContent && el.children.length === 0) {
       return [];
@@ -45,23 +38,11 @@ const AnchorRule = defineImportRule({
 /**
  * Import rules for {@link LinkNode}.
  *
- * @experimental
- */
-export const LinkImportRules = [AnchorRule];
-
-/**
- * Bundles {@link LinkImportRules} together with the runtime
- * {@link LinkExtension}. The application is expected to already have
- * `CoreImportExtension` (or some equivalent) in its dependency graph —
- * the core/text/paragraph/inline-format rules are a shared baseline,
- * not something this leaf importer should re-declare.
+ * Registered by {@link LinkExtension} itself (together with
+ * `CoreImportExtension`), so any editor that uses the link extension can
+ * import `<a>` through the `DOMImportExtension` pipeline without further
+ * configuration.
  *
  * @experimental
  */
-export const LinkImportExtension = defineExtension({
-  dependencies: [
-    LinkExtension,
-    configExtension(DOMImportExtension, {rules: LinkImportRules}),
-  ],
-  name: '@lexical/link/Import',
-});
+export const LinkImportRules = [AnchorRule];

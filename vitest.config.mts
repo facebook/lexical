@@ -7,6 +7,7 @@
  */
 
 import react from '@vitejs/plugin-react';
+import {playwright} from '@vitest/browser-playwright';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -43,6 +44,18 @@ function tsconfigTestAliases(): {find: RegExp; replacement: string}[] {
   });
 }
 
+// Browser-mode tests (packages/**/__tests__/browser) run in a real browser via
+// Playwright instead of jsdom, so unit tests that lean heavily on jsdom mocks
+// can be ported to a more realistic environment. The browsers to launch are
+// taken from the comma-separated VITEST_BROWSER env var (default: chromium) so
+// the default CI job can stay on linux + chromium while the extended matrix
+// fans out across firefox/webkit and additional operating systems.
+const browserInstances = (process.env.VITEST_BROWSER || 'chromium')
+  .split(',')
+  .map(name => name.trim())
+  .filter(Boolean)
+  .map(browser => ({browser}));
+
 export default defineConfig({
   resolve: {
     alias: tsconfigTestAliases(),
@@ -68,6 +81,57 @@ export default defineConfig({
           environment: 'jsdom',
           include: ['packages/**/__tests__/unit/**/*.test{.ts,.tsx,.js,.jsx}'],
           name: 'unit',
+          setupFiles: ['./vitest.setup.mts'],
+          typecheck: {
+            tsconfig: './tsconfig.test.json',
+          },
+        },
+      },
+      {
+        define: {
+          // https://react.dev/blog/2022/03/08/react-18-upgrade-guide#configuring-your-testing-environment
+          IS_REACT_ACT_ENVIRONMENT: true,
+        },
+        extends: true,
+        // Pre-bundle React (and react-dom/client) together so browser tests
+        // that render React share a single React instance with the
+        // source-aliased @lexical/react packages. Without this the optimized
+        // react-dom/client bundle gets its own copy and hooks fail with a null
+        // dispatcher ("Cannot read properties of null (reading 'useMemo')").
+        optimizeDeps: {
+          include: [
+            'react',
+            'react/jsx-dev-runtime',
+            'react-dom',
+            'react-dom/client',
+          ],
+        },
+        plugins: [react()],
+        test: {
+          browser: {
+            // Vitest's default browser server port (63315) is in the
+            // ephemeral range, and Windows reserves randomized blocks of
+            // that range (Hyper-V excluded port ranges), so on Windows CI
+            // runners listen() occasionally fails with EACCES
+            // (vitest-dev/vitest#9035). Pin a port below the ephemeral
+            // range instead; if it happens to be busy, Vite falls back to
+            // the next free port rather than failing.
+            api: {port: 8315},
+            enabled: true,
+            // Headless everywhere by default so the suite runs the same way in
+            // CI and in headless dev containers. Pass `--browser.headless=false`
+            // (or use the Vitest UI) to debug in a real window locally.
+            headless: true,
+            instances: browserInstances,
+            provider: playwright(),
+          },
+          env: {
+            LEXICAL_VERSION: JSON.stringify(
+              `${process.env.npm_package_version}+git`,
+            ),
+          },
+          include: ['packages/**/__tests__/browser/**/*.test{.ts,.tsx}'],
+          name: 'browser',
           setupFiles: ['./vitest.setup.mts'],
           typecheck: {
             tsconfig: './tsconfig.test.json',

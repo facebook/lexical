@@ -73,7 +73,7 @@ export type MenuRenderFn<TOption extends MenuOption> = (
     selectedIndex: number | null;
     selectOptionAndCleanUp: (option: TOption) => void;
     setHighlightedIndex: (index: number) => void;
-    options: Array<TOption>;
+    options: TOption[];
   },
   matchingString: string,
 ) => ReactPortal | JSX.Element | null;
@@ -260,7 +260,7 @@ export function useDynamicPositioning(
 export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
   index: number;
   option: MenuOption;
-}> = createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
+}> = /* @__PURE__ */ createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
 
 function MenuItem({
   index,
@@ -312,7 +312,7 @@ export function LexicalMenu<TOption extends MenuOption>({
   editor: LexicalEditor;
   anchorElementRef: RefObject<HTMLElement | null>;
   resolution: MenuResolution;
-  options: Array<TOption>;
+  options: TOption[];
   shouldSplitNodeWithQuery?: boolean;
   menuRenderFn?: MenuRenderFn<TOption>;
   onSelectOption: (

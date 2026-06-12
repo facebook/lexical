@@ -52,7 +52,7 @@ function getTotalTableWidth(colWidths: readonly number[]): number {
 
 function $calculateResizeRootTables(
   tables: ReadonlySet<TableNode>,
-): ReadonlyArray<TableNode> {
+): readonly TableNode[] {
   const inputTables: ReadonlySet<LexicalNode> = tables;
   const roots: TableNode[] = [];
   for (const table of tables) {
@@ -130,8 +130,8 @@ export default function TableFitNestedTablePlugin(): null {
         const modifiedTables = new Set<TableNode>();
         for (const [nodeKey, mutation] of nodeMutations) {
           if (mutation === 'created' || mutation === 'updated') {
-            const tableNode = $getNodeByKey<TableNode>(nodeKey);
-            if (tableNode) {
+            const tableNode = $getNodeByKey(nodeKey);
+            if ($isTableNode(tableNode)) {
               modifiedTables.add(tableNode);
             }
           }

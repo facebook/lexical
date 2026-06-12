@@ -38,7 +38,7 @@ export function $wrapSelectionInMarkNode(
   selection: RangeSelection,
   isBackward: boolean,
   id: string,
-  createNode?: (ids: Array<string>) => MarkNode,
+  createNode?: (ids: string[]) => MarkNode,
 ): void {
   // Force a forwards selection since append is used, ignore the argument.
   // A new selection is used to avoid side-effects of flipping the given
@@ -135,10 +135,7 @@ export function $wrapSelectionInMarkNode(
   }
 }
 
-export function $getMarkIDs(
-  node: TextNode,
-  offset: number,
-): null | Array<string> {
+export function $getMarkIDs(node: TextNode, offset: number): null | string[] {
   let currentNode: LexicalNode | null = node;
   while (currentNode !== null) {
     if ($isMarkNode(currentNode)) {
@@ -160,7 +157,7 @@ export function $getMarkIDs(
 /**
  * Configures {@link MarkNode}
  */
-export const MarkExtension = defineExtension({
+export const MarkExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/mark',
   nodes: () => [MarkNode],
 });

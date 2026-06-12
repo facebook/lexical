@@ -11,10 +11,12 @@ import {
   $createTextNode,
   $getEditor,
   $getRoot,
+  $isParagraphNode,
+  $isTextNode,
   ParagraphNode,
   TextNode,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 import {EditorState} from '../../LexicalEditorState';
 import {$createRootNode, RootNode} from '../../nodes/LexicalRootNode';
@@ -29,6 +31,30 @@ describe('LexicalEditorState tests', () => {
       const editorState = new EditorState(nodeMap);
       expect(editorState._nodeMap).toBe(nodeMap);
       expect(editorState._selection).toBe(null);
+    });
+
+    test('readPending()', () => {
+      const {editor} = testEnv;
+
+      // a regular update is processed synchronously but committed
+      // asynchronously
+      editor.update(() => {
+        $getRoot().append(
+          $createParagraphNode().append($createTextNode('foo')),
+        );
+      });
+      expect(
+        editor.getEditorState().read(() => $getRoot().getTextContent()),
+      ).toBe('');
+      // readPending() observes the pending state without flushing it
+      expect(editor.readPending(() => $getRoot().getTextContent())).toBe('foo');
+      expect(
+        editor.getEditorState().read(() => $getRoot().getTextContent()),
+      ).toBe('');
+      // read() flushes the pending state
+      expect(editor.read(() => $getRoot().getTextContent())).toBe('foo');
+      // without a pending state, readPending() reads the committed state
+      expect(editor.readPending(() => $getRoot().getTextContent())).toBe('foo');
     });
 
     test('read()', async () => {
@@ -47,8 +73,12 @@ describe('LexicalEditorState tests', () => {
 
       editor.getEditorState().read(() => {
         root = $getRoot();
-        paragraph = root.getFirstChild()!;
-        text = paragraph.getFirstChild()!;
+        const firstChild = root.getFirstChild();
+        assert($isParagraphNode(firstChild), 'Expected a ParagraphNode');
+        paragraph = firstChild;
+        const firstGrandchild = firstChild.getFirstChild();
+        assert($isTextNode(firstGrandchild), 'Expected a TextNode');
+        text = firstGrandchild;
       });
 
       expect(root).toEqual({

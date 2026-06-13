@@ -274,7 +274,13 @@ if (isJsdom) {
                 ? (node as Window)
                 : (node as Document).defaultView;
           if (childWin) {
-            patchRealm(childWin as RealmGlobal);
+            try {
+              patchRealm(childWin as RealmGlobal);
+            } catch {
+              // Cross-origin child realm — its globals are inaccessible and
+              // the browser blocks the patch attempt. Same-origin iframes
+              // (the only case the lexical browser tests use) are unaffected.
+            }
           }
           return node;
         },

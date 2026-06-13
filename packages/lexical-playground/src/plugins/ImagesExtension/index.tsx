@@ -476,5 +476,9 @@ function getDragSelection(
     domSelection.collapse(event.rangeParent, event.rangeOffset || 0);
     return domSelection.getRangeAt(0);
   }
-  throw Error(`Cannot get the selection when dragging`);
+  // The pre-shadow code returned the caretRangeFromPoint result directly,
+  // which could be null when the cursor was over a gap with no text node.
+  // The caller ($onDrop above) is written to accept null/undefined here,
+  // so preserve the original silent fall-through rather than throwing.
+  return null;
 }

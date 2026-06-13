@@ -24,7 +24,18 @@ import {
   waitForSelector,
 } from '../utils/index.mjs';
 
+// Insert a Card and type the demo "Title" / "Body" content the slot-mechanics
+// tests operate on. The model seeds empty fields (the hints are CSS
+// placeholders), so the content is typed here rather than baked into the node.
 async function insertCard(page) {
+  await insertEmptyCard(page);
+  await click(page, '[data-lexical-slot="title"] p');
+  await page.keyboard.type('Title');
+  await click(page, '.lexical-card-node > p');
+  await page.keyboard.type('Body');
+}
+
+async function insertEmptyCard(page) {
   await page.keyboard.type('/card');
   await waitForSelector(page, '.typeahead-popover');
   await page.keyboard.press('Enter');
@@ -272,33 +283,82 @@ test.describe('Card host data-selected mirroring', () => {
   });
 });
 
-// Counterpart to the data-selected mirroring above: a click on the title
-// slot wrapper (the data-lexical-slot region with the "Title" ::before
-// label or its surrounding padding / border) must drop the caret into the
-// slot and NOT promote to a whole-Card NodeSelection. The reconciler
-// scaffold wrapper is keyless, so without the explicit guard
-// $getNearestNodeFromDOMNode would walk past it to the Card and the
-// CLICK_COMMAND would promote — turning a click on the visible "Title"
-// hint into a whole-card selection.
+// Counterpart to the data-selected mirroring above: a click inside the title
+// slot wrapper (the keyless data-lexical-slot region — its editable paragraph
+// or surrounding padding / border) must drop the caret into the slot and NOT
+// promote to a whole-Card NodeSelection. The reconciler scaffold wrapper is
+// keyless, so without the explicit guard $getNearestNodeFromDOMNode would walk
+// past it to the Card and the CLICK_COMMAND would promote.
 test.describe('Card slot wrapper click does not promote', () => {
   test.beforeEach(async ({isCollab, isPlainText, page}) => {
     test.skip(isPlainText);
     await initialize({isCollab, page});
   });
 
-  test('clicking the title slot ::before label keeps the click in the slot', async ({
+  test('clicking inside the title slot keeps the click in the slot', async ({
     page,
   }) => {
     await focusEditor(page);
     await insertCard(page);
     expect(await selectedCardCount(page)).toBe(0);
-    // The ::before "Title" label is the top ~17px of the wrapper (11px font
-    // + 6px margin-bottom); a click at (4, 4) lands on the label or the
-    // padding above the editable paragraph, where the wrapper itself is
-    // the click target.
+    // A click at the wrapper's top-left lands on the title's editable
+    // paragraph (or the wrapper padding around it), which must keep the
+    // caret in the slot rather than select the whole card.
     await click(page, '[data-lexical-slot="title"]', {position: {x: 4, y: 4}});
     await sleep(120);
     expect(await selectedCardCount(page)).toBe(0);
+  });
+});
+
+// The Card model seeds empty fields; the "Title" / "Body" hints are CSS
+// placeholders shown only while a field is empty (no seeded TextNodes), so
+// they never appear in the serialized model or in copied text.
+test.describe('Card empty-field placeholders', () => {
+  test.beforeEach(async ({isCollab, isPlainText, page}) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+  });
+
+  test('an inserted card starts empty with CSS placeholders, which clear on typing', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertEmptyCard(page);
+    await sleep(120);
+
+    // the model carries no text — the hints are purely presentational
+    expect(await slotText(page, 'title')).toBe('');
+    expect(await bodyText(page)).toBe('');
+
+    // the placeholder text comes from CSS ::before, not from the DOM text
+    const placeholders = await evaluate(page, () => {
+      const titleP = document.querySelector(
+        '.lexical-card-node [data-lexical-slot="title"] p',
+      );
+      const bodyP = document.querySelector('.lexical-card-node > p');
+      const before = el =>
+        el && window.getComputedStyle(el, '::before').content;
+      return {body: before(bodyP), title: before(titleP)};
+    });
+    expect(placeholders.title).toContain('Title');
+    expect(placeholders.body).toContain('Body');
+
+    // typing into the title clears its placeholder but not the body's
+    await click(page, '[data-lexical-slot="title"] p');
+    await page.keyboard.type('Hi');
+    await sleep(120);
+    const afterTyping = await evaluate(page, () => {
+      const titleP = document.querySelector(
+        '.lexical-card-node [data-lexical-slot="title"] p',
+      );
+      const bodyP = document.querySelector('.lexical-card-node > p');
+      const before = el =>
+        el && window.getComputedStyle(el, '::before').content;
+      return {body: before(bodyP), title: before(titleP)};
+    });
+    // a non-empty title no longer matches :has(br:only-child); body still does
+    expect(afterTyping.title === 'none' || afterTyping.title === '').toBe(true);
+    expect(afterTyping.body).toContain('Body');
   });
 });
 

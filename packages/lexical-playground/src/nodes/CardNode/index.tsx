@@ -12,7 +12,6 @@ import {$appendNodeToHTML} from '@lexical/html';
 import {
   $create,
   $createParagraphNode,
-  $createTextNode,
   $getSlot,
   $getSlotNames,
   $isElementNode,
@@ -93,12 +92,11 @@ export class CardNode extends ElementNode {
 
 export function $createCardNode(): CardNode {
   const node = $create(CardNode);
-  $setSlot(
-    node,
-    'title',
-    $createParagraphNode().append($createTextNode('Title')),
-  );
-  node.append($createParagraphNode().append($createTextNode('Body')));
+  // Both fields start empty; the "Title" / "Body" hints are CSS placeholders
+  // (see PlaygroundEditorTheme.css) shown while the field holds only the
+  // empty-paragraph <br>, so the model carries no seeded placeholder text.
+  $setSlot(node, 'title', $createParagraphNode());
+  node.append($createParagraphNode());
   return node;
 }
 

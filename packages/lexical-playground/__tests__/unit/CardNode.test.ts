@@ -21,6 +21,7 @@ import {
 } from '@lexical/html';
 import {
   $createNodeSelection,
+  $createTextNode,
   $getNearestRootOrShadowRoot,
   $getRoot,
   $getSelection,
@@ -69,6 +70,19 @@ const CardImportTestExtension = defineExtension({
   nodes: [CardNode],
 });
 
+// A Card with the demo "Title" / "Body" text typed in. The model seeds empty
+// fields (the hints are CSS placeholders), so content tests populate it here.
+function $createCardWithText(): CardNode {
+  const card = $createCardNode();
+  const title = $getSlot(card, 'title');
+  assert($isParagraphNode(title), 'title slot must be a bare paragraph');
+  title.append($createTextNode('Title'));
+  const body = card.getChildren()[0];
+  assert($isParagraphNode(body), 'body must be a paragraph');
+  body.append($createTextNode('Body'));
+  return card;
+}
+
 describe('CardNode named slots', () => {
   it('round-trips the title slot and body children through clipboard copy -> paste', () => {
     using editor = buildEditorFromExtensions(CardTestExtension);
@@ -76,7 +90,7 @@ describe('CardNode named slots', () => {
     let exported: ReturnType<typeof $generateJSONFromSelectedNodes>;
     editor.update(
       () => {
-        const card = $createCardNode();
+        const card = $createCardWithText();
         $getRoot().clear().append(card);
         const selection = $createNodeSelection();
         selection.add(card.getKey());
@@ -111,7 +125,7 @@ describe('CardNode named slots', () => {
 
     editor.update(
       () => {
-        $getRoot().clear().append($createCardNode());
+        $getRoot().clear().append($createCardWithText());
       },
       {discrete: true},
     );
@@ -157,7 +171,7 @@ describe('CardNode named slots', () => {
     let html = '';
     editor.update(
       () => {
-        const card = $createCardNode();
+        const card = $createCardWithText();
         $getRoot().clear().append(card);
         const selection = $createNodeSelection();
         selection.add(card.getKey());
@@ -205,7 +219,7 @@ describe('CardNode named slots', () => {
 
     editor.update(
       () => {
-        $getRoot().clear().append($createCardNode());
+        $getRoot().clear().append($createCardWithText());
       },
       {discrete: true},
     );
@@ -240,7 +254,7 @@ describe('CardNode named slots', () => {
 
     editor.update(
       () => {
-        $getRoot().clear().append($createCardNode());
+        $getRoot().clear().append($createCardWithText());
       },
       {discrete: true},
     );
@@ -259,7 +273,7 @@ describe('CardNode named slots', () => {
 
     editor.update(
       () => {
-        $getRoot().clear().append($createCardNode());
+        $getRoot().clear().append($createCardWithText());
       },
       {discrete: true},
     );
@@ -296,7 +310,7 @@ describe('CardNode named slots', () => {
 
     editor.update(
       () => {
-        $getRoot().clear().append($createCardNode());
+        $getRoot().clear().append($createCardWithText());
       },
       {discrete: true},
     );
@@ -332,7 +346,7 @@ describe('CardNode named slots', () => {
 
     editor.update(
       () => {
-        $getRoot().clear().append($createCardNode());
+        $getRoot().clear().append($createCardWithText());
       },
       {discrete: true},
     );
@@ -380,7 +394,7 @@ describe('CardNode named slots', () => {
 
     editor.update(
       () => {
-        $getRoot().clear().append($createCardNode());
+        $getRoot().clear().append($createCardWithText());
       },
       {discrete: true},
     );
@@ -419,7 +433,7 @@ describe('CardNode named slots', () => {
 
     editor.update(
       () => {
-        $getRoot().clear().append($createCardNode());
+        $getRoot().clear().append($createCardWithText());
       },
       {discrete: true},
     );

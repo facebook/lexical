@@ -893,26 +893,14 @@
   outline: none;
 }
 
-/* Title slot — a header section with a small-caps label above the editable
-   paragraph and a thin separator below. The title's editable paragraph
-   reads as a header content, not as a separately-bordered box. The
-   container renders hidden until CardExtension mounts it in place. */
+/* Title slot — a header field: large, bold editable text with a thin
+   separator below. The title's editable paragraph reads as header content,
+   not a separately-bordered box. The container renders hidden until
+   CardExtension mounts it in place. */
 .lexical-card-node [data-lexical-slot='title'] {
   border-bottom: 1px solid #d1d5db;
   outline: none;
   padding-bottom: 4px;
-}
-.lexical-card-node [data-lexical-slot='title']::before {
-  color: #6b7280;
-  content: 'Title';
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  user-select: none;
-  -webkit-user-select: none;
 }
 .lexical-card-node [data-lexical-slot='title'] > * {
   font-size: 20px;
@@ -925,6 +913,31 @@
 .lexical-card-node > *:not([data-lexical-slot]) {
   line-height: 1.6;
   margin-top: 12px;
+}
+/* CSS placeholders for the empty title / body fields. Shown only while a
+   field holds just its empty-paragraph <br> (the codebase's
+   :has(br:only-child) idiom), hidden the moment the user types, so the model
+   seeds no placeholder TextNodes. Absolutely positioned and pointer-inert so
+   they overlay the empty line without shifting the caret or blocking clicks. */
+.lexical-card-node [data-lexical-slot='title'] > p:has(br:only-child),
+.lexical-card-node > p:first-of-type:has(br:only-child) {
+  position: relative;
+}
+.lexical-card-node [data-lexical-slot='title'] > p:has(br:only-child)::before {
+  content: 'Title';
+}
+.lexical-card-node > p:first-of-type:has(br:only-child)::before {
+  content: 'Body';
+}
+.lexical-card-node [data-lexical-slot='title'] > p:has(br:only-child)::before,
+.lexical-card-node > p:first-of-type:has(br:only-child)::before {
+  color: #9ca3af;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  user-select: none;
+  -webkit-user-select: none;
 }
 /* Caret-slot focus indicator. The active slot gets an orange accent (the
    card's existing chrome family) so it visibly differs from the blue

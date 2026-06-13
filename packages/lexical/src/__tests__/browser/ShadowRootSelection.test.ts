@@ -683,5 +683,80 @@ describe('DOM shadow root selection (browser)', () => {
       expect(shadowScrollFired).toBe(true);
       expect(documentScrollFired).toBe(false);
     });
+
+    // LexicalMenu's reposition path registers a scroll listener on every
+    // enclosing shadow root via getDOMShadowRoots; when the menu's target
+    // lives in a nested shadow tree, the listener must catch scrolls in
+    // *both* the inner and the outer shadow roots so the floating menu
+    // repositions for either.
+    test('catches scrolls at every enclosing shadow root for a nested target', async () => {
+      const outerHost = document.createElement('div');
+      document.body.appendChild(outerHost);
+      onTestFinished(() => {
+        document.body.removeChild(outerHost);
+      });
+      const outerShadow = outerHost.attachShadow({mode: 'open'});
+
+      // Outer scroller wraps the inner shadow host.
+      const outerScroller = document.createElement('div');
+      outerScroller.style.height = '60px';
+      outerScroller.style.overflow = 'auto';
+      const innerHost = document.createElement('div');
+      innerHost.style.height = '400px';
+      outerScroller.appendChild(innerHost);
+      outerShadow.appendChild(outerScroller);
+      const innerShadow = innerHost.attachShadow({mode: 'open'});
+
+      // Inner scroller inside the inner shadow.
+      const innerScroller = document.createElement('div');
+      innerScroller.style.height = '40px';
+      innerScroller.style.overflow = 'auto';
+      const innerTall = document.createElement('div');
+      innerTall.style.height = '300px';
+      const target = document.createElement('span');
+      target.textContent = 'target';
+      innerTall.appendChild(target);
+      innerScroller.appendChild(innerTall);
+      innerShadow.appendChild(innerScroller);
+
+      // Mirror LexicalMenu's reposition logic: walk every enclosing
+      // shadow root of the target via getDOMShadowRoots and attach a
+      // listener on each.
+      const enclosing = getDOMShadowRoots(target);
+      expect(enclosing).toEqual([innerShadow, outerShadow]);
+
+      let firedFor: ShadowRoot[] = [];
+      const handlersByRoot = new Map<ShadowRoot, () => void>();
+      for (const root of enclosing) {
+        const handler = () => {
+          firedFor.push(root);
+        };
+        handlersByRoot.set(root, handler);
+        root.addEventListener('scroll', handler, {
+          capture: true,
+          passive: true,
+        });
+      }
+      onTestFinished(() => {
+        for (const [root, handler] of handlersByRoot) {
+          root.removeEventListener('scroll', handler, true);
+        }
+      });
+
+      // Scrolling the outer scroller fires on the outer shadow only.
+      outerScroller.scrollTop = 50;
+      await new Promise<void>(resolve =>
+        requestAnimationFrame(() => resolve()),
+      );
+      expect(firedFor).toEqual([outerShadow]);
+
+      // Scrolling the inner scroller fires on the inner shadow only.
+      firedFor = [];
+      innerScroller.scrollTop = 50;
+      await new Promise<void>(resolve =>
+        requestAnimationFrame(() => resolve()),
+      );
+      expect(firedFor).toEqual([innerShadow]);
+    });
   });
 });

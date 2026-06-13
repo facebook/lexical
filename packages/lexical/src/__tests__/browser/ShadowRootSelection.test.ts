@@ -18,6 +18,7 @@ import {
   createEditor,
   getActiveElement,
   getActiveElementDeep,
+  getComposedEventTarget,
   getComposedStaticRange,
   getDOMSelection,
   getDOMSelectionPoints,
@@ -423,6 +424,214 @@ describe('DOM shadow root selection (browser)', () => {
       if ($isRangeSelection(selection)) {
         expect(selection.getTextContent()).toBe('Hello');
       }
+    });
+  });
+
+  describe('getComposedEventTarget', () => {
+    test('returns the composed-path target inside a shadow root', () => {
+      const {shadow, contentEditable} = setUpShadowEditor();
+
+      const innerSpan = document.createElement('span');
+      innerSpan.textContent = 'inner';
+      contentEditable.appendChild(innerSpan);
+
+      let observedTarget: EventTarget | null = null;
+      const listener = (event: Event) => {
+        observedTarget = getComposedEventTarget(event);
+      };
+      // Listener on window (outside the shadow tree) — composed events bubble
+      // up retargeted to the shadow host, so event.target alone would be the
+      // host, not the inner span. getComposedEventTarget should recover the inner
+      // target via composedPath().
+      window.addEventListener('click', listener);
+      onTestFinished(() => {
+        window.removeEventListener('click', listener);
+      });
+
+      innerSpan.dispatchEvent(
+        new MouseEvent('click', {bubbles: true, composed: true}),
+      );
+
+      expect(observedTarget).toBe(innerSpan);
+      expect(observedTarget).not.toBe(shadow.host);
+    });
+
+    test('falls back to event.target when composedPath is unavailable', () => {
+      const div = document.createElement('div');
+      document.body.appendChild(div);
+      onTestFinished(() => {
+        document.body.removeChild(div);
+      });
+
+      const event = new Event('custom');
+      Object.defineProperty(event, 'target', {value: div});
+      // Force composedPath to be undefined (simulate an older engine).
+      Object.defineProperty(event, 'composedPath', {value: undefined});
+
+      expect(getComposedEventTarget(event)).toBe(div);
+    });
+
+    test('returns event.target when composedPath returns an empty array', () => {
+      const div = document.createElement('div');
+      document.body.appendChild(div);
+      onTestFinished(() => {
+        document.body.removeChild(div);
+      });
+
+      const event = new Event('custom');
+      Object.defineProperty(event, 'target', {value: div});
+      Object.defineProperty(event, 'composedPath', {
+        value: () => [],
+      });
+
+      expect(getComposedEventTarget(event)).toBe(div);
+    });
+  });
+
+  describe('window-attached pointerdown listener (shadow root regression)', () => {
+    test.skipIf(!SUPPORTS_COMPOSED_RANGES)(
+      'rootElement.contains(getComposedEventTarget(event)) is true for clicks inside the shadow editor',
+      () => {
+        const {contentEditable} = setUpShadowEditor('Hello');
+        const root = contentEditable;
+
+        let matched = false;
+        const listener = (event: PointerEvent) => {
+          const target = getComposedEventTarget(event);
+          // Mirrors LexicalTableSelectionHelpers' pointerdown gate.
+          matched =
+            target !== null && target instanceof Node && root.contains(target);
+        };
+        window.addEventListener('pointerdown', listener);
+        onTestFinished(() =>
+          window.removeEventListener('pointerdown', listener),
+        );
+
+        const textNode = contentEditable.querySelector('span') as HTMLElement;
+        textNode.dispatchEvent(
+          new PointerEvent('pointerdown', {
+            bubbles: true,
+            composed: true,
+          }),
+        );
+
+        expect(matched).toBe(true);
+      },
+    );
+  });
+
+  describe('shadow-aware querySelector helpers', () => {
+    test('descends open shadow roots when collecting editors', () => {
+      const outer = document.createElement('div');
+      document.body.appendChild(outer);
+      onTestFinished(() => {
+        document.body.removeChild(outer);
+      });
+      const shadowOuter = outer.attachShadow({mode: 'open'});
+      const inner = document.createElement('div');
+      shadowOuter.appendChild(inner);
+      const shadowInner = inner.attachShadow({mode: 'open'});
+      const editorDiv = document.createElement('div');
+      editorDiv.setAttribute('data-lexical-editor', 'true');
+      shadowInner.appendChild(editorDiv);
+
+      // Mirrors devtools queryLexicalNodes / LexicalUpdates' iterContentEditables.
+      const out: Element[] = [];
+      function collect(root: Document | ShadowRoot): void {
+        for (const el of root.querySelectorAll('[data-lexical-editor]')) {
+          out.push(el);
+        }
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            collect(el.shadowRoot);
+          }
+        }
+      }
+      collect(document);
+
+      expect(out).toContain(editorDiv);
+    });
+
+    test('descends open shadow roots from elementFromPoint', () => {
+      const outer = document.createElement('div');
+      outer.style.position = 'fixed';
+      outer.style.left = '0';
+      outer.style.top = '0';
+      outer.style.width = '40px';
+      outer.style.height = '40px';
+      document.body.appendChild(outer);
+      onTestFinished(() => {
+        document.body.removeChild(outer);
+      });
+      const shadow = outer.attachShadow({mode: 'open'});
+      const inner = document.createElement('div');
+      inner.style.width = '40px';
+      inner.style.height = '40px';
+      shadow.appendChild(inner);
+
+      // Mirrors devtools element-picker's descent loop.
+      let hit: Element | null = document.elementFromPoint(10, 10);
+      while (hit !== null && hit.shadowRoot !== null) {
+        const next = hit.shadowRoot.elementFromPoint(10, 10);
+        if (next === null || next === hit) {
+          break;
+        }
+        hit = next;
+      }
+
+      expect(hit).toBe(inner);
+    });
+  });
+
+  describe('scroll listener attached to a shadow root', () => {
+    test('fires for internal scrolls that do not cross the shadow boundary', async () => {
+      const host = document.createElement('div');
+      document.body.appendChild(host);
+      onTestFinished(() => {
+        document.body.removeChild(host);
+      });
+      const shadow = host.attachShadow({mode: 'open'});
+      const scroller = document.createElement('div');
+      scroller.style.height = '50px';
+      scroller.style.overflow = 'auto';
+      const tall = document.createElement('div');
+      tall.style.height = '500px';
+      scroller.appendChild(tall);
+      shadow.appendChild(scroller);
+
+      let documentScrollFired = false;
+      const documentListener = () => {
+        documentScrollFired = true;
+      };
+      document.addEventListener('scroll', documentListener, {
+        capture: true,
+        passive: true,
+      });
+
+      let shadowScrollFired = false;
+      const shadowListener = () => {
+        shadowScrollFired = true;
+      };
+      shadow.addEventListener('scroll', shadowListener, {
+        capture: true,
+        passive: true,
+      });
+
+      onTestFinished(() => {
+        document.removeEventListener('scroll', documentListener, true);
+        shadow.removeEventListener('scroll', shadowListener, true);
+      });
+
+      scroller.scrollTop = 50;
+      // Wait one frame for the scroll event to fire.
+      await new Promise<void>(resolve =>
+        requestAnimationFrame(() => resolve()),
+      );
+
+      // The shadow-root listener catches the internal scroll. The
+      // document-level listener does not (scroll is non-composed).
+      expect(shadowScrollFired).toBe(true);
+      expect(documentScrollFired).toBe(false);
     });
   });
 });

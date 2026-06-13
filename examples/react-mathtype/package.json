@@ -11,7 +11,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@lexical/extension": "0.45.0",
+    "@lexical/history": "0.45.0",
     "@lexical/react": "0.45.0",
+    "@lexical/rich-text": "0.45.0",
     "@wiris/mathtype-generic": "^8.15.2",
     "lexical": "0.45.0",
     "react": "^19.2.5",

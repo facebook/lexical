@@ -6,23 +6,20 @@
  *
  */
 
-import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
-import {LexicalComposer} from '@lexical/react/LexicalComposer';
+import {AutoFocusExtension} from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
+import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
-import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
-import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
-import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
+import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
+import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  ParagraphNode,
-  TextNode,
+  defineExtension,
 } from 'lexical';
 
-import {MathTypeProvider} from './MathTypeContext';
-import {MathTypeNode} from './MathTypeNode';
-import {MathTypePlugin} from './MathTypePlugin';
+import {MathTypeExtension} from './MathTypeExtension';
 
 const placeholder = 'Write a math note...';
 
@@ -30,46 +27,40 @@ const theme = {
   paragraph: 'editor-paragraph',
 };
 
-const editorConfig = {
-  editorState: () => {
+const appExtension = /* @__PURE__ */ defineExtension({
+  $initialEditorState: () => {
     $getRoot().append(
       $createParagraphNode().append(
         $createTextNode('Use the MathType toolbar to insert a formula. '),
       ),
     );
   },
-  namespace: 'MathType Example',
-  nodes: [ParagraphNode, TextNode, MathTypeNode],
-  onError(error: Error) {
-    throw error;
-  },
+  dependencies: [
+    RichTextExtension,
+    HistoryExtension,
+    AutoFocusExtension,
+    MathTypeExtension,
+  ],
+  name: '@lexical/react-mathtype-example/App',
+  namespace: '@lexical/react-mathtype-example',
   theme,
-};
+});
 
 export default function App() {
   return (
-    <LexicalComposer initialConfig={editorConfig}>
-      <MathTypeProvider>
-        <div className="editor-shell">
-          <MathTypePlugin />
-          <div className="editor-inner">
-            <RichTextPlugin
-              contentEditable={
-                <ContentEditable
-                  className="editor-input"
-                  aria-placeholder={placeholder}
-                  placeholder={
-                    <div className="editor-placeholder">{placeholder}</div>
-                  }
-                />
-              }
-              ErrorBoundary={LexicalErrorBoundary}
-            />
-            <HistoryPlugin />
-            <AutoFocusPlugin />
-          </div>
+    <LexicalExtensionComposer extension={appExtension} contentEditable={null}>
+      <div className="editor-shell">
+        <ExtensionComponent lexical:extension={MathTypeExtension} />
+        <div className="editor-inner">
+          <ContentEditable
+            className="editor-input"
+            aria-placeholder={placeholder}
+            placeholder={
+              <div className="editor-placeholder">{placeholder}</div>
+            }
+          />
         </div>
-      </MathTypeProvider>
-    </LexicalComposer>
+      </div>
+    </LexicalExtensionComposer>
   );
 }

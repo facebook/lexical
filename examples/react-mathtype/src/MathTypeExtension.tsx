@@ -8,25 +8,33 @@
 
 import type {MathTypeFormula} from './MathTypeData';
 import type {MathTypeIntegrationInstance} from './MathTypeGlobals';
+import type {EditorChildrenComponentProps} from '@lexical/react/ReactExtension';
 import type {LexicalEditor, NodeKey} from 'lexical';
 import type {JSX, MutableRefObject} from 'react';
 
 import '@wiris/mathtype-generic';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {ReactExtension} from '@lexical/react/ReactExtension';
 import {
   $createParagraphNode,
   $getNodeByKey,
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  configExtension,
+  defineExtension,
 } from 'lexical';
 import {useCallback, useEffect, useRef} from 'react';
 
-import {useMathTypeContext} from './MathTypeContext';
+import {MathTypeProvider, useMathTypeContext} from './MathTypeContext';
 import {createFormulaFromImage} from './MathTypeData';
 import {getWirisPlugin} from './MathTypeGlobals';
-import {$createMathTypeNode, $isMathTypeNode} from './MathTypeNode';
+import {
+  $createMathTypeNode,
+  $isMathTypeNode,
+  MathTypeNode,
+} from './MathTypeNode';
 
 type InsertFormulaResult = {
   focusElement: HTMLElement | Window;
@@ -105,7 +113,7 @@ function createIntegration(
   return integration;
 }
 
-export function MathTypePlugin(): JSX.Element {
+function MathTypeIntegrationComponent(): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const toolbarRef = useRef<HTMLDivElement | null>(null);
   const targetRef = useRef<HTMLDivElement | null>(null);
@@ -164,3 +172,26 @@ export function MathTypePlugin(): JSX.Element {
     </>
   );
 }
+
+function MathTypeEditorChildren({
+  children,
+  contentEditable,
+}: EditorChildrenComponentProps): JSX.Element {
+  return (
+    <MathTypeProvider>
+      {contentEditable}
+      {children}
+    </MathTypeProvider>
+  );
+}
+
+export const MathTypeExtension = /* @__PURE__ */ defineExtension({
+  build: () => ({Component: MathTypeIntegrationComponent}),
+  dependencies: [
+    /* @__PURE__ */ configExtension(ReactExtension, {
+      EditorChildrenComponent: MathTypeEditorChildren,
+    }),
+  ],
+  name: '@lexical/react-mathtype-example/MathType',
+  nodes: [MathTypeNode],
+});

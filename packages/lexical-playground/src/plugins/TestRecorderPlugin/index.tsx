@@ -16,6 +16,7 @@ import {
   $createTextNode,
   $getRoot,
   getDOMSelection,
+  getDOMSelectionPoints,
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
@@ -178,14 +179,21 @@ function useTestRecorder(
   const generateTestContent = useCallback(() => {
     const rootElement = editor.getRootElement();
     const browserSelection = getDOMSelection(editor._window);
+    // Resolve through any enclosing DOM shadow roots; anchorNode/focusNode
+    // are retargeted to the shadow host when the editor is in a shadow tree.
+    const browserPoints =
+      browserSelection !== null
+        ? getDOMSelectionPoints(browserSelection, rootElement)
+        : null;
 
     if (
       rootElement == null ||
       browserSelection == null ||
-      browserSelection.anchorNode == null ||
-      browserSelection.focusNode == null ||
-      !rootElement.contains(browserSelection.anchorNode) ||
-      !rootElement.contains(browserSelection.focusNode)
+      browserPoints == null ||
+      browserPoints.anchorNode == null ||
+      browserPoints.focusNode == null ||
+      !rootElement.contains(browserPoints.anchorNode) ||
+      !rootElement.contains(browserPoints.focusNode)
     ) {
       return null;
     }
@@ -329,10 +337,15 @@ ${steps.map(formatStep).join(`\n`)}
             !skipNextSelectionChange
           ) {
             const browserSelection = getDOMSelection(editor._window);
-            if (
+            // Resolve through any enclosing DOM shadow roots; anchorNode is
+            // retargeted to the shadow host when the editor is in a shadow tree.
+            const browserPoints =
               browserSelection &&
-              (browserSelection.anchorNode == null ||
-                browserSelection.focusNode == null)
+              getDOMSelectionPoints(browserSelection, editor.getRootElement());
+            if (
+              browserPoints &&
+              (browserPoints.anchorNode == null ||
+                browserPoints.focusNode == null)
             ) {
               return;
             }
@@ -386,15 +399,21 @@ ${steps.map(formatStep).join(`\n`)}
       return;
     }
     const browserSelection = getDOMSelection(getCurrentEditor()._window);
+    const rootElement = getCurrentEditor().getRootElement();
+    // Resolve through any enclosing DOM shadow roots; anchorNode/focusNode
+    // are retargeted to the shadow host when the editor is in a shadow tree.
+    const browserPoints =
+      browserSelection !== null
+        ? getDOMSelectionPoints(browserSelection, rootElement)
+        : null;
     if (
-      browserSelection === null ||
-      browserSelection.anchorNode == null ||
-      browserSelection.focusNode == null
+      browserPoints === null ||
+      browserPoints.anchorNode == null ||
+      browserPoints.focusNode == null
     ) {
       return;
     }
-    const {anchorNode, anchorOffset, focusNode, focusOffset} = browserSelection;
-    const rootElement = getCurrentEditor().getRootElement();
+    const {anchorNode, anchorOffset, focusNode, focusOffset} = browserPoints;
     let anchorPath;
     if (anchorNode !== null) {
       anchorPath = getPathFromNodeToEditor(anchorNode, rootElement);

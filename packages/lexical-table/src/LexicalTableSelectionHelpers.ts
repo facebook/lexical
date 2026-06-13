@@ -76,12 +76,15 @@ import {
   FOCUS_COMMAND,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  getComposedEventTarget,
   getDOMSelection,
   getDOMSelectionPoints,
   getDOMSelectionRange,
   INSERT_PARAGRAPH_COMMAND,
   IS_FIREFOX,
+  isDOMDocumentNode,
   isDOMNode,
+  isDOMShadowRoot,
   isHTMLElement,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -204,7 +207,11 @@ export function registerTableWindowHandlers(
     }
 
     const pointerDownCallback = (event: PointerEvent) => {
-      const target = event.target;
+      // Resolve through any enclosing DOM shadow roots; the listener is
+      // attached to editorWindow, so event.target would otherwise be
+      // retargeted to the shadow host and fail the rootElement.contains
+      // check below.
+      const target = getComposedEventTarget(event);
       if (
         event.button !== 0 ||
         !isDOMNode(target) ||
@@ -284,17 +291,28 @@ function $handleTableClick(
         editorWindow.removeEventListener('pointermove', onPointerMove);
         return;
       }
-      if (!isDOMNode(moveEvent.target)) {
+      // Resolve through any enclosing DOM shadow roots; moveEvent.target is
+      // retargeted to the shadow host when the table lives in a shadow tree.
+      const moveTarget = getComposedEventTarget(moveEvent);
+      if (!isDOMNode(moveTarget)) {
         return;
       }
       let focusCell: null | TableDOMCell = null;
       // In firefox the moveEvent.target may be captured so we must always
       // consult the coordinates #7245
-      const override = !(IS_FIREFOX || tableElement.contains(moveEvent.target));
+      const override = !(IS_FIREFOX || tableElement.contains(moveTarget));
       if (override) {
-        focusCell = getDOMCellInTableFromTarget(tableElement, moveEvent.target);
+        focusCell = getDOMCellInTableFromTarget(tableElement, moveTarget);
       } else {
-        for (const el of document.elementsFromPoint(
+        // Resolve via the table's owning root (Document or ShadowRoot);
+        // document.elementsFromPoint is retargeted to the shadow host inside
+        // a shadow tree. Narrow with the type guards rather than casting so
+        // the detached-table case (Node) falls through to no hit-test.
+        const tableRoot = tableElement.getRootNode();
+        if (!isDOMDocumentNode(tableRoot) && !isDOMShadowRoot(tableRoot)) {
+          return;
+        }
+        for (const el of tableRoot.elementsFromPoint(
           moveEvent.clientX,
           moveEvent.clientY,
         )) {

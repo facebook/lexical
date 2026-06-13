@@ -6,7 +6,7 @@
  *
  */
 
-import {LexicalEditor} from 'lexical';
+import {getDOMSelectionPoints, LexicalEditor} from 'lexical';
 
 import markSelection from './markSelection';
 
@@ -18,8 +18,14 @@ export default function selectionAlwaysOnDisplay(
 
   const onSelectionChange = () => {
     const domSelection = getSelection();
-    const domAnchorNode = domSelection && domSelection.anchorNode;
     const editorRootElement = editor.getRootElement();
+    // Resolve through any enclosing DOM shadow roots; Selection.anchorNode
+    // is retargeted to the shadow host when the editor is in a shadow tree,
+    // which would make the contains() check below always fail.
+    const domAnchorNode =
+      domSelection !== null
+        ? getDOMSelectionPoints(domSelection, editorRootElement).anchorNode
+        : null;
 
     const isSelectionInsideEditor =
       domAnchorNode !== null &&

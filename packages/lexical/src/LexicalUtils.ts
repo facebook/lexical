@@ -171,6 +171,9 @@ export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
   // Resolve the focused element through any shadow trees; document.activeElement
   // reports the outermost shadow host, hiding an input focused inside an open
   // shadow root (e.g. when the editor or a decorator lives in a web component).
+  // Use getActiveElementDeep (not getActiveElement) because the decorator
+  // input itself can attach a nested shadow root — e.g. a web component used
+  // as the decorator's editable surface — and only the descent finds it.
   const root = anchorDOM.getRootNode();
   const activeElement =
     isDOMDocumentNode(root) || isDOMShadowRoot(root)
@@ -2015,6 +2018,13 @@ export function getDOMShadowRoots(node: Node): ShadowRoot[] {
   return shadowRoots;
 }
 
+/**
+ * A subset of `Selection` covering the four boundary-point fields Lexical
+ * reads. Designed so a `Selection` instance can be returned where a
+ * `DOMSelectionPoints` is expected (see {@link getDOMSelectionPoints}).
+ *
+ * @experimental shape may change as shadow DOM support stabilizes.
+ */
 export interface DOMSelectionPoints {
   anchorNode: Node | null;
   anchorOffset: number;
@@ -2119,6 +2129,21 @@ export function getDOMSelectionRange(
  *
  * Use this instead of reading `Selection.anchorNode`/`focusNode` directly,
  * which are retargeted to the shadow host inside a shadow tree.
+ *
+ * @remarks
+ * The two return paths have different read semantics:
+ * - light DOM: the return aliases `domSelection`, so subsequent reads
+ *   reflect any post-call selection changes. The aliasing is intentional;
+ *   each `Selection` property read forces a synchronous style/layout
+ *   recalculation, so `$updateDOMSelection` defers these reads until they
+ *   are actually needed.
+ * - shadow DOM: the return is a snapshot taken at call time.
+ *
+ * Read the four points immediately after the call, or compare identity
+ * via `points === domSelection` to detect the light-DOM path, rather than
+ * caching the returned reference across selection mutations.
+ *
+ * @experimental shape may change as shadow DOM support stabilizes.
  */
 export function getDOMSelectionPoints(
   domSelection: Selection,

@@ -57,7 +57,7 @@ describe('LexicalExtensionComposer', () => {
       reactRoot.render(<MyEditor />);
     });
     expect(container.innerHTML).toEqual(
-      `<div contenteditable="true" role="textbox" spellcheck="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>`,
+      `<div contenteditable="true" role="textbox" spellcheck="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>`,
     );
   });
   it('$commitPendingUpdates flushes deferred callbacks even with no pending state', async () => {

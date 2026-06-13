@@ -115,7 +115,8 @@ function fixOffset(node: Node, offset: number) {
     if (
       child &&
       child.nodeType === Node.ELEMENT_NODE &&
-      child.getAttribute('data-lexical-linebreak') === 'true'
+      child.nodeName === 'IMG' &&
+      child.getAttribute('data-lexical-managed-linebreak') === 'true'
     ) {
       return offset - 1;
     }

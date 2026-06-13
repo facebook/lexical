@@ -47,7 +47,9 @@ test.describe('CopyAndPaste', () => {
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Copy + pasting?</span>
           </p>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Sounds good!</span>
           </p>
@@ -88,7 +90,9 @@ test.describe('CopyAndPaste', () => {
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Copy + pasting?</span>
           </p>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Sounds good!</span>
           </p>
@@ -131,7 +135,9 @@ test.describe('CopyAndPaste', () => {
             <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Copy + pasting?</span>
             </p>
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <br data-lexical-managed-linebreak="true" />
+            </p>
             <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Sounds good!</span>
             </p>
@@ -161,11 +167,15 @@ test.describe('CopyAndPaste', () => {
             <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Copy + pasting?</span>
             </p>
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <br data-lexical-managed-linebreak="true" />
+            </p>
             <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Sounds good!Copy + pasting?</span>
             </p>
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <br data-lexical-managed-linebreak="true" />
+            </p>
             <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Sounds good!</span>
             </p>
@@ -666,7 +676,9 @@ test.describe('CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         `,
       );
       await assertSelection(page, {
@@ -774,7 +786,9 @@ test.describe('CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
           <div contenteditable="false" data-lexical-decorator="true">
             <div class="PlaygroundEditorTheme__embedBlock">
               <iframe
@@ -926,7 +940,9 @@ test.describe('CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         `,
       );
 

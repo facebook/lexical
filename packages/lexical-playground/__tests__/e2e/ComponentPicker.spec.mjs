@@ -77,7 +77,7 @@ test.describe('ComponentPicker', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         <div class="PlaygroundEditorTheme__tableScrollableWrapper" dir="auto">
           <table class="PlaygroundEditorTheme__table">
@@ -90,14 +90,14 @@ test.describe('ComponentPicker', () => {
                 class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
                 dir="auto">
                 <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
+                  <br data-lexical-managed-linebreak="true" />
                 </p>
               </th>
               <th
                 class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
                 dir="auto">
                 <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
+                  <br data-lexical-managed-linebreak="true" />
                 </p>
               </th>
             </tr>
@@ -106,19 +106,19 @@ test.describe('ComponentPicker', () => {
                 class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
                 dir="auto">
                 <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
+                  <br data-lexical-managed-linebreak="true" />
                 </p>
               </th>
               <td class="PlaygroundEditorTheme__tableCell" dir="auto">
                 <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                  <br />
+                  <br data-lexical-managed-linebreak="true" />
                 </p>
               </td>
             </tr>
           </table>
         </div>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );

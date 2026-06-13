@@ -337,10 +337,11 @@ export class ElementDOMSlot<
     const element: HTMLElement & LexicalPrivateDOM = this.element;
     const before = this.before;
     const br = document.createElement('br');
+    br.setAttribute('data-lexical-managed-linebreak', 'true');
     element.insertBefore(br, before);
     if (webkitHack) {
       const img = document.createElement('img');
-      img.setAttribute('data-lexical-linebreak', 'true');
+      img.setAttribute('data-lexical-managed-linebreak', 'true');
       img.style.setProperty('display', 'inline', 'important');
       img.style.setProperty('border', '0px', 'important');
       img.style.setProperty('margin', '0px', 'important');

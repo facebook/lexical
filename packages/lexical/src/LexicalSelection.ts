@@ -87,6 +87,7 @@ import {
   $getNodeFromDOM,
   $getRoot,
   $hasAncestor,
+  $isInlineElementOrDecoratorNode,
   $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $isTokenOrTab,
@@ -299,15 +300,28 @@ function $transferStartingElementPointToTextPoint(
   textNode.setStyle(style);
   if ($isParagraphNode(placementNode)) {
     placementNode.splice(0, 0, [textNode]);
-  } else {
+  } else if (placementNode !== null) {
     const target = $isRootNode(element)
       ? $createParagraphNode().append(textNode)
       : textNode;
-    if (placementNode === null) {
-      element.append(target);
+    placementNode.insertBefore(target);
+  } else if ($isRootOrShadowRoot(element)) {
+    // root or shadow-root + last-offset typing: reuse the empty trailing
+    // block when one exists (typical state after a sibling block decorator
+    // was deleted) instead of appending a fresh paragraph. The old behavior
+    // left a phantom empty paragraph above the user's input.
+    const lastChild = element.getLastChild();
+    if (
+      $isElementNode(lastChild) &&
+      !lastChild.isInline() &&
+      lastChild.isEmpty()
+    ) {
+      lastChild.append(textNode);
     } else {
-      placementNode.insertBefore(target);
+      element.append($createParagraphNode().append(textNode));
     }
+  } else {
+    element.append(textNode);
   }
   // Transfer the element point to a text point.
   if (start.is(end)) {
@@ -3798,37 +3812,43 @@ function $splitNodeAtPoint(
   return [parent, node.getIndexWithinParent() + 1];
 }
 
+function $isInlineRunNode(node: LexicalNode): boolean {
+  return (
+    $isLineBreakNode(node) ||
+    $isInlineElementOrDecoratorNode(node) ||
+    $isTextNode(node) ||
+    node.isParentRequired()
+  );
+}
+
 function $wrapInlineNodes(nodes: LexicalNode[]) {
   // We temporarily insert the topLevelNodes into an arbitrary ElementNode,
   // since insertAfter does not work on nodes that have no parent (TO-DO: fix that).
   const virtualRoot = $createParagraphNode();
 
-  let currentBlock = null;
+  let currentBlock: ElementNode | null = null;
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
 
-    const isLineBreakNode = $isLineBreakNode(node);
-
-    if (
-      isLineBreakNode ||
-      ($isDecoratorNode(node) && node.isInline()) ||
-      ($isElementNode(node) && node.isInline()) ||
-      $isTextNode(node) ||
-      node.isParentRequired()
-    ) {
+    if ($isInlineRunNode(node)) {
       if (currentBlock === null) {
         currentBlock = node.createParentElementNode();
         virtualRoot.append(currentBlock);
-        // In the case of LineBreakNode, we just need to
-        // add an empty ParagraphNode to the topLevelBlocks.
-        if (isLineBreakNode) {
+        // A LineBreakNode that is an entire run by itself collapses to an
+        // empty paragraph, since the block boundary already provides the
+        // visual newline (the form that clipboard pastes ending in a
+        // trailing <br> rely on, and the same policy as
+        // $paragraphPackageRun in @lexical/html). A linebreak followed by
+        // more inline content in the same run is preserved.
+        const nextNode: LexicalNode | undefined = nodes[i + 1];
+        if (
+          $isLineBreakNode(node) &&
+          (nextNode === undefined || !$isInlineRunNode(nextNode))
+        ) {
           continue;
         }
       }
-
-      if (currentBlock !== null) {
-        currentBlock.append(node);
-      }
+      currentBlock.append(node);
     } else {
       virtualRoot.append(node);
       currentBlock = null;

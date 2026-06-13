@@ -418,6 +418,13 @@ describe('Markdown', () => {
       md: '`$$hello`',
     },
     {
+      // Code spans bind tighter than text-match transformers, so the $...$
+      // (HIGHLIGHT_TEXT_MATCH_IMPORT) must not consume across the code spans.
+      // https://github.com/facebook/lexical/issues/8687
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>$a</span></code><span style="white-space: pre-wrap;"> </span><code spellcheck="false" style="white-space: pre-wrap;"><span>$b</span></code></p>',
+      md: '`$a` `$b`',
+    },
+    {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">Hello</span></a><span style="white-space: pre-wrap;"> world</span></p>',
       md: '[Hello](https://lexical.dev) world',
     },

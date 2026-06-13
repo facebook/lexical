@@ -1279,11 +1279,20 @@ export function makeStateWrapper<K extends string, V>(
  * A paragraph is inserted if that the cursor is positioned at the beginning inside the container,
  * and the container itself is the first element in the document and has no preceding sibling
  *
+ * When a paragraph is inserted the selection is moved to it and, if the
+ * triggering keyboard event is provided, its default action is prevented so
+ * the browser does not additionally move the selection. Relying on the native
+ * caret movement is not portable: Chromium moves into the freshly inserted
+ * paragraph while Firefox leaves the caret inside the container.
+ *
  * @param $isContainerNode - Type guard identifying the container node type to escape from.
+ * @param event - The keyboard event that triggered the escape, if any. Its
+ *   default action is prevented when a paragraph is inserted.
  * @returns `true` if a paragraph was inserted, `false` otherwise.
  */
 export function $onEscapeUp(
   $isContainerNode: (node?: LexicalNode | null) => node is ElementNode,
+  event?: KeyboardEvent | null,
 ) {
   const selection = $getSelection();
   if (
@@ -1311,6 +1320,9 @@ export function $onEscapeUp(
               anchorNode.getFirstDescendant() === firstDescendant))
         ) {
           containerNode.insertBefore($createParagraphNode()).selectEnd();
+          if (event) {
+            event.preventDefault();
+          }
           return true;
         }
       }
@@ -1329,11 +1341,20 @@ export function $onEscapeUp(
  * A paragraph is inserted if that the cursor is positioned at the ending inside the container,
  * and the container itself is the last element in the document and has no next sibling
  *
+ * When a paragraph is inserted the selection is moved to it and, if the
+ * triggering keyboard event is provided, its default action is prevented so
+ * the browser does not additionally move the selection. Relying on the native
+ * caret movement is not portable: Chromium moves into the freshly inserted
+ * paragraph while Firefox leaves the caret inside the container.
+ *
  * @param $isContainerNode - Type guard identifying the container node type to escape from.
+ * @param event - The keyboard event that triggered the escape, if any. Its
+ *   default action is prevented when a paragraph is inserted.
  * @returns `true` if a paragraph was inserted, `false` otherwise.
  */
 export function $onEscapeDown(
   $isContainerNode: (node?: LexicalNode | null) => node is ElementNode,
+  event?: KeyboardEvent | null,
 ) {
   const selection = $getSelection();
   if ($isRangeSelection(selection) && selection.isCollapsed()) {
@@ -1358,6 +1379,9 @@ export function $onEscapeDown(
               anchorNode.getLastDescendant() === lastDescendant))
         ) {
           containerNode.insertAfter($createParagraphNode()).selectEnd();
+          if (event) {
+            event.preventDefault();
+          }
           return true;
         }
       }

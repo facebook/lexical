@@ -788,7 +788,7 @@ describe('SharedHistoryExtension', () => {
           data-lexical-editor="true">
           <p dir="auto"><span data-lexical-text="true">Child editor</span></p>
         </div>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
     );
     editor.read(() => {
@@ -813,7 +813,7 @@ describe('SharedHistoryExtension', () => {
             <span data-lexical-text="true">Child editor. Updated!</span>
           </p>
         </div>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
     );
     expect(
@@ -846,7 +846,7 @@ describe('SharedHistoryExtension', () => {
           data-lexical-editor="true">
           <p dir="auto"><span data-lexical-text="true">Child editor</span></p>
         </div>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
     );
     editor.update(() => editor.dispatchCommand(UNDO_COMMAND, undefined), {

@@ -289,7 +289,7 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               <ul dir="auto">
                 <li value="1">
                   <span data-lexical-text="true">two</span>
@@ -326,7 +326,7 @@ describe('LexicalListItemNode tests', () => {
                   <span data-lexical-text="true">two</span>
                 </li>
               </ul>
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </div>
           `,
         );
@@ -352,7 +352,7 @@ describe('LexicalListItemNode tests', () => {
                   <span data-lexical-text="true">one</span>
                 </li>
               </ul>
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               <ul dir="auto">
                 <li value="1">
                   <span data-lexical-text="true">three</span>
@@ -399,7 +399,7 @@ describe('LexicalListItemNode tests', () => {
               contenteditable="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word;"
               data-lexical-editor="true">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </div>
           `,
         );
@@ -1138,7 +1138,7 @@ describe('LexicalListItemNode tests', () => {
                 <li value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
-                <li value="2"><br /></li>
+                <li value="2"><br data-lexical-managed-linebreak="true" /></li>
                 <li value="3">
                   <span data-lexical-text="true">two</span>
                 </li>
@@ -1175,7 +1175,7 @@ describe('LexicalListItemNode tests', () => {
                 <li value="3">
                   <span data-lexical-text="true">three</span>
                 </li>
-                <li value="4"><br /></li>
+                <li value="4"><br data-lexical-managed-linebreak="true" /></li>
               </ul>
             </div>
           `,
@@ -1206,7 +1206,7 @@ describe('LexicalListItemNode tests', () => {
                 <li value="3">
                   <span data-lexical-text="true">three</span>
                 </li>
-                <li value="4"><br /></li>
+                <li value="4"><br data-lexical-managed-linebreak="true" /></li>
               </ul>
             </div>
           `,
@@ -1252,7 +1252,7 @@ describe('LexicalListItemNode tests', () => {
                 <li value="1">
                   <span data-lexical-text="true">one</span>
                 </li>
-                <li value="2"><br /></li>
+                <li value="2"><br data-lexical-managed-linebreak="true" /></li>
               </ul>
             </div>
           `,
@@ -1456,7 +1456,7 @@ describe('LexicalListItemNode tests', () => {
           '<li value="1"><span data-lexical-text="true">A</span></li>' +
           '<li value="2"><span data-lexical-text="true">B</span></li>' +
           '</ol>' +
-          '<p dir="auto"><br></p>' +
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
           '<ol dir="auto">' + // Reset to 1 (Default)
           '<li value="1"><span data-lexical-text="true">C</span></li>' +
           '</ol>' +
@@ -1495,7 +1495,7 @@ describe('LexicalListItemNode tests', () => {
           '<li value="1"><span data-lexical-text="true">A</span></li>' +
           '<li value="2"><span data-lexical-text="true">B</span></li>' +
           '</ol>' +
-          '<p dir="auto"><br></p>' +
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
           '<ol start="3" dir="auto">' +
           '<li value="3"><span data-lexical-text="true">C</span></li>' +
           '</ol>' +

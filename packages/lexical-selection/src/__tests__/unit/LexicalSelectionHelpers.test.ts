@@ -2531,8 +2531,8 @@ describe('LexicalSelectionHelpers tests', () => {
         $insertNodes([element1, element2]);
       });
       expect([
-        '<div dir="auto"><br></div><div dir="auto"><br></div>',
-        '<div dir="auto"><br></div><p dir="auto"><br></p>',
+        '<div dir="auto"><br data-lexical-managed-linebreak="true"></div><div dir="auto"><br data-lexical-managed-linebreak="true"></div>',
+        '<div dir="auto"><br data-lexical-managed-linebreak="true"></div><p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
       ]).toContain(element.innerHTML);
     });
   });
@@ -2679,7 +2679,9 @@ describe('insertNodes', () => {
     });
     editor.getEditorState().read(() => {
       expect(element.innerHTML).toBe(
-        '<h1 dir="auto"><span data-lexical-text="true">heading</span></h1><p dir="auto"><br></p>',
+        // the lone trailing LineBreakNode collapses to an empty paragraph,
+        // rendered with only the managed linebreak
+        '<h1 dir="auto"><span data-lexical-text="true">heading</span></h1><p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
       );
       const selectedNode = ($getSelection() as RangeSelection).anchor.getNode();
       expect($isParagraphNode(selectedNode)).toBeTruthy();

@@ -120,10 +120,14 @@ export class LexicalEditorElement extends HTMLElement {
   }
 
   connectedCallback(): void {
-    if (this.shadowRoot !== null) {
-      return;
+    // On re-attach the shadowRoot persists from the previous mount but
+    // disconnectedCallback has disposed the editor. Reuse the existing
+    // shadow root and clear its children so the flow below rebuilds them
+    // cleanly instead of leaving the element with editor === null.
+    const shadow = this.shadowRoot ?? this.attachShadow({mode: 'open'});
+    while (shadow.firstChild !== null) {
+      shadow.removeChild(shadow.firstChild);
     }
-    const shadow = this.attachShadow({mode: 'open'});
 
     const style = document.createElement('style');
     style.textContent = STYLE_SHEET;

@@ -37,7 +37,7 @@ describe('HTMLCopyAndPaste tests', () => {
           pastedHTML: `Hello!`,
         },
         {
-          expectedHTML: `<p dir="auto"><span data-lexical-text="true">Hello!</span></p><p dir="auto"><br></p>`,
+          expectedHTML: `<p dir="auto"><span data-lexical-text="true">Hello!</span></p><p dir="auto"><br data-lexical-managed-linebreak="true"></p>`,
           name: 'a paragraph element',
           pastedHTML: `<p>Hello!<p>`,
         },

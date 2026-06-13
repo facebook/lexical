@@ -144,7 +144,7 @@ test.describe('Auto Links', () => {
       page,
       htmlWithLink +
         html`
-          <p dir="auto"><br /></p>
+          <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         `,
       undefined,
       {ignoreClasses: true},

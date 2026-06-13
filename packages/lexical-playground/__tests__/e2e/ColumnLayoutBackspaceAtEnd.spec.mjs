@@ -42,7 +42,9 @@ test('Layout - removes layout completely when both columns are empty and backspa
   await assertHTML(
     page,
     html`
-      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <br data-lexical-managed-linebreak="true" />
+      </p>
       <div
         class="PlaygroundEditorTheme__layoutContainer"
         dir="auto"
@@ -51,16 +53,22 @@ test('Layout - removes layout completely when both columns are empty and backspa
           class="PlaygroundEditorTheme__layoutItem"
           dir="auto"
           data-lexical-layout-item="true">
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         </div>
         <div
           class="PlaygroundEditorTheme__layoutItem"
           dir="auto"
           data-lexical-layout-item="true">
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         </div>
       </div>
-      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <br data-lexical-managed-linebreak="true" />
+      </p>
     `,
   );
 
@@ -73,8 +81,12 @@ test('Layout - removes layout completely when both columns are empty and backspa
   await assertHTML(
     page,
     html`
-      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <br data-lexical-managed-linebreak="true" />
+      </p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <br data-lexical-managed-linebreak="true" />
+      </p>
     `,
   );
 });
@@ -124,7 +136,9 @@ for (const key of ['ArrowRight', 'ArrowDown']) {
             class="PlaygroundEditorTheme__layoutItem"
             dir="auto"
             data-lexical-layout-item="true">
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <br data-lexical-managed-linebreak="true" />
+            </p>
           </div>
           <div
             class="PlaygroundEditorTheme__layoutItem"
@@ -160,7 +174,9 @@ for (const key of ['ArrowRight', 'ArrowDown']) {
             class="PlaygroundEditorTheme__layoutItem"
             dir="auto"
             data-lexical-layout-item="true">
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <br data-lexical-managed-linebreak="true" />
+            </p>
           </div>
           <div
             class="PlaygroundEditorTheme__layoutItem"
@@ -173,7 +189,9 @@ for (const key of ['ArrowRight', 'ArrowDown']) {
             </p>
           </div>
         </div>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });

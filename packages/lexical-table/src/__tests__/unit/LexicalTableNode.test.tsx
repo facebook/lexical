@@ -169,7 +169,9 @@ describe('LexicalTableNode tests', () => {
                     <colgroup><col /></colgroup>
                     <tr dir="auto">
                       <td dir="auto">
-                        <p dir="auto"><br /></p>
+                        <p dir="auto">
+                          <br data-lexical-managed-linebreak="true" />
+                        </p>
                       </td>
                     </tr>
                   </table>
@@ -184,7 +186,9 @@ describe('LexicalTableNode tests', () => {
                     <colgroup><col /></colgroup>
                     <tr dir="auto">
                       <td dir="auto">
-                        <p dir="auto"><br /></p>
+                        <p dir="auto">
+                          <br data-lexical-managed-linebreak="true" />
+                        </p>
                       </td>
                     </tr>
                   </table>
@@ -219,7 +223,9 @@ describe('LexicalTableNode tests', () => {
                     <colgroup><col /></colgroup>
                     <tr dir="auto">
                       <td dir="auto">
-                        <p dir="auto"><br /></p>
+                        <p dir="auto">
+                          <br data-lexical-managed-linebreak="true" />
+                        </p>
                       </td>
                     </tr>
                   </table>
@@ -234,7 +240,9 @@ describe('LexicalTableNode tests', () => {
                     <colgroup><col /></colgroup>
                     <tr dir="auto">
                       <td dir="auto">
-                        <p dir="auto"><br /></p>
+                        <p dir="auto">
+                          <br data-lexical-managed-linebreak="true" />
+                        </p>
                       </td>
                     </tr>
                   </table>
@@ -376,7 +384,7 @@ describe('LexicalTableNode tests', () => {
             const dataTransfer = new DataTransfer();
             dataTransfer.setData(
               'text/html',
-              '<html><body><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-16a69100-7fff-6cb9-b829-cb1def16a58d"><div dir="ltr" style="margin-left:0pt;" align="left"><table style="border:none;border-collapse:collapse;table-layout:fixed"><colgroup><col style="width:100px"/><col style="width:200px"/></colgroup><tbody><tr style="height:22.015pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Hello there</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">General Kenobi!</span></p></td></tr><tr style="height:22.015pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Lexical is nice</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><br /></td></tr></tbody></table></div></b><!--EndFragment--></body></html>',
+              '<html><body><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-16a69100-7fff-6cb9-b829-cb1def16a58d"><div dir="ltr" style="margin-left:0pt;" align="left"><table style="border:none;border-collapse:collapse;table-layout:fixed"><colgroup><col style="width:100px"/><col style="width:200px"/></colgroup><tbody><tr style="height:22.015pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Hello there</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">General Kenobi!</span></p></td></tr><tr style="height:22.015pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Lexical is nice</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><br data-lexical-managed-linebreak="true"></td></tr></tbody></table></div></b><!--EndFragment--></body></html>',
             );
             await editor.update(() => {
               const selection = $getSelection();
@@ -387,7 +395,8 @@ describe('LexicalTableNode tests', () => {
               $insertDataTransferForRichText(dataTransfer, selection, editor);
             });
             // Make sure paragraph is inserted inside empty cells
-            const emptyCell = '<td dir="auto"><p dir="auto"><br></p></td>';
+            const emptyCell =
+              '<td dir="auto"><p dir="auto"><br data-lexical-managed-linebreak="true"></p></td>';
             expectReconciledTableHtmlToBeEqual(
               testEnv.innerHTML,
               html`
@@ -666,7 +675,9 @@ describe('LexicalTableNode tests', () => {
                   </colgroup>
                   <tr dir="auto" style="text-align: start">
                     <td dir="auto" style="background-color: rgb(240, 240, 240)">
-                      <p dir="auto" style="text-align: center"><br /></p>
+                      <p dir="auto" style="text-align: center">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                     <th dir="auto" style="background-color: rgb(230, 230, 230)">
                       <p dir="auto">
@@ -828,7 +839,7 @@ describe('LexicalTableNode tests', () => {
             expectHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               `,
             );
           });
@@ -859,7 +870,7 @@ describe('LexicalTableNode tests', () => {
             expectHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               `,
             );
           });
@@ -890,7 +901,7 @@ describe('LexicalTableNode tests', () => {
             expectHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               `,
             );
           });
@@ -931,7 +942,7 @@ describe('LexicalTableNode tests', () => {
             expectHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               `,
             );
           });
@@ -972,7 +983,7 @@ describe('LexicalTableNode tests', () => {
             expectReconciledTableHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
                 <table class="test-table-class">
                   <colgroup>
                     <col />
@@ -982,58 +993,90 @@ describe('LexicalTableNode tests', () => {
                   </colgroup>
                   <tr dir="auto">
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                   </tr>
                   <tr dir="auto">
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                   </tr>
                   <tr dir="auto">
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                   </tr>
                   <tr dir="auto">
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                   </tr>
                 </table>
@@ -1843,18 +1886,26 @@ describe('LexicalTableNode tests', () => {
                 </colgroup>
                 <tr dir="auto">
                   <th dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </th>
                   <th dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </th>
                 </tr>
                 <tr dir="auto">
                   <th dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </th>
                   <td dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </td>
                 </tr>
               </table>
@@ -1877,18 +1928,26 @@ describe('LexicalTableNode tests', () => {
                   </colgroup>
                   <tr dir="auto">
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                   </tr>
                   <tr dir="auto">
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                   </tr>
                 </table>
@@ -1911,18 +1970,26 @@ describe('LexicalTableNode tests', () => {
                 </colgroup>
                 <tr dir="auto">
                   <th dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </th>
                   <th dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </th>
                 </tr>
                 <tr dir="auto">
                   <th dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </th>
                   <td dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </td>
                 </tr>
               </table>

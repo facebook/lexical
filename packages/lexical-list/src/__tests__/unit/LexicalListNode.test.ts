@@ -353,7 +353,7 @@ describe('LexicalListNode tests', () => {
       });
 
       expect(testEnv.innerHTML).toEqual(
-        '<ul dir="auto"><li role="checkbox" tabindex="-1" aria-checked="false" value="1"><br></li></ul>',
+        '<ul dir="auto"><li role="checkbox" tabindex="-1" aria-checked="false" value="1"><br data-lexical-managed-linebreak="true"></li></ul>',
       );
 
       await waitForReact(() => {
@@ -367,7 +367,7 @@ describe('LexicalListNode tests', () => {
       });
 
       expect(testEnv.innerHTML).toEqual(
-        '<ul dir="auto"><li value="1"><br></li></ul>',
+        '<ul dir="auto"><li value="1"><br data-lexical-managed-linebreak="true"></li></ul>',
       );
     });
 
@@ -391,10 +391,10 @@ describe('LexicalListNode tests', () => {
         html`
           <ul dir="auto">
             <li role="checkbox" tabindex="-1" value="1" aria-checked="false">
-              <br />
+              <br data-lexical-managed-linebreak="true" />
             </li>
             <li role="checkbox" tabindex="-1" value="2" aria-checked="false">
-              <br />
+              <br data-lexical-managed-linebreak="true" />
             </li>
           </ul>
         `,
@@ -421,12 +421,12 @@ describe('LexicalListNode tests', () => {
         html`
           <ul dir="auto">
             <li role="checkbox" tabindex="-1" value="1" aria-checked="false">
-              <br />
+              <br data-lexical-managed-linebreak="true" />
             </li>
             <li value="2">
               <ul>
                 <li value="1">
-                  <br />
+                  <br data-lexical-managed-linebreak="true" />
                 </li>
               </ul>
             </li>

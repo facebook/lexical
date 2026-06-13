@@ -326,7 +326,7 @@ accessibility. Navigation excludes them:
 [`getFirstDescendant()`](/docs/api/modules/lexical#getfirstdescendant)
 and friends stay linked-list-only, so caret movement never walks into a slot
 by accident. Choose [`$dfs`](/docs/api/modules/lexical_utils#dfs) or
-`$dfsWithSlots` depending on whether "this subtree" should mean the
+[`$dfsWithSlots`](/docs/api/modules/lexical_utils#dfswithslots) depending on whether "this subtree" should mean the
 navigable tree or all content.
 
 ## Serialization

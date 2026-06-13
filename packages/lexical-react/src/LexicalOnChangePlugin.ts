@@ -9,15 +9,17 @@
 import type {EditorState, LexicalEditor} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {HISTORY_MERGE_TAG} from 'lexical';
+import {FOCUS_TAG, HISTORY_MERGE_TAG} from 'lexical';
 
 import useLayoutEffect from './shared/useLayoutEffect';
 
 export function OnChangePlugin({
+  ignoreFocusChange = false,
   ignoreHistoryMergeTagChange = true,
   ignoreSelectionChange = false,
   onChange,
 }: {
+  ignoreFocusChange?: boolean;
   ignoreHistoryMergeTagChange?: boolean;
   ignoreSelectionChange?: boolean;
   onChange: (
@@ -37,6 +39,7 @@ export function OnChangePlugin({
               dirtyElements.size === 0 &&
               dirtyLeaves.size === 0) ||
             (ignoreHistoryMergeTagChange && tags.has(HISTORY_MERGE_TAG)) ||
+            (ignoreFocusChange && tags.has(FOCUS_TAG)) ||
             prevEditorState.isEmpty()
           ) {
             return;
@@ -46,7 +49,13 @@ export function OnChangePlugin({
         },
       );
     }
-  }, [editor, ignoreHistoryMergeTagChange, ignoreSelectionChange, onChange]);
+  }, [
+    editor,
+    ignoreFocusChange,
+    ignoreHistoryMergeTagChange,
+    ignoreSelectionChange,
+    onChange,
+  ]);
 
   return null;
 }

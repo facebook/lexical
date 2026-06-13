@@ -43,6 +43,7 @@ import {
   COPY_COMMAND,
   defineExtension,
   getDOMSelection,
+  getDOMSelectionPoints,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
@@ -225,8 +226,15 @@ function findEditorRootByKey(key: string, doc: Document): HTMLElement | null {
   return null;
 }
 
-function $resolveDropPointCaret(event: DragEvent): null | PointCaret<'next'> {
-  const hit = caretFromPoint(event.clientX, event.clientY);
+function $resolveDropPointCaret(
+  event: DragEvent,
+  editor: LexicalEditor,
+): null | PointCaret<'next'> {
+  const hit = caretFromPoint(
+    event.clientX,
+    event.clientY,
+    editor.getRootElement(),
+  );
   if (hit === null) {
     return null;
   }
@@ -284,7 +292,7 @@ function $doDrop(
     return false;
   }
 
-  const dropCaret = $resolveDropPointCaret(event);
+  const dropCaret = $resolveDropPointCaret(event, editor);
   if (dropCaret === null) {
     return false;
   }
@@ -753,8 +761,11 @@ function $copyToClipboardEvent(
     if (!domSelection) {
       return false;
     }
-    const anchorDOM = domSelection.anchorNode;
-    const focusDOM = domSelection.focusNode;
+    // Resolve through any enclosing DOM shadow roots; Selection.anchorNode is
+    // retargeted to the shadow host when the editor lives in a shadow tree.
+    const points = getDOMSelectionPoints(domSelection, editor.getRootElement());
+    const anchorDOM = points.anchorNode;
+    const focusDOM = points.focusNode;
     if (
       anchorDOM !== null &&
       focusDOM !== null &&

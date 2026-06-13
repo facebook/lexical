@@ -1159,7 +1159,7 @@ export function registerRichText(
         if (files.length > 0) {
           const x = event.clientX;
           const y = event.clientY;
-          const eventRange = caretFromPoint(x, y);
+          const eventRange = caretFromPoint(x, y, editor.getRootElement());
           if (eventRange !== null) {
             const {offset: domOffset, node: domNode} = eventRange;
             const node = $getNearestNodeFromDOMNode(domNode);

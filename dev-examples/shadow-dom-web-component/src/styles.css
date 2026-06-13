@@ -1,0 +1,87 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * Page-level (light DOM) styles only. The editors style themselves inside
+ * their shadow roots; none of these rules reach into them.
+ */
+
+body {
+  margin: 0;
+  background: #eee;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.App {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.App > h1 {
+  text-align: center;
+  font-size: 24px;
+  color: #333;
+}
+
+.App-blurb {
+  text-align: center;
+  color: #555;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.App-blurb code {
+  background: #f3f3f3;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 90%;
+}
+
+form label {
+  display: block;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: #444;
+}
+
+form lexical-editor {
+  margin-top: 6px;
+  font-weight: 400;
+}
+
+form button[type='submit'] {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #4f46e5;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#last-edited {
+  color: #777;
+  font-size: 13px;
+}
+
+#form-output {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+#form-output:empty {
+  display: none;
+}

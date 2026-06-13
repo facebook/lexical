@@ -1,0 +1,90 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * Light-DOM styles for the page chrome and the toolbar. The editor itself is
+ * styled by editor.css, which is injected inside the shadow root.
+ */
+
+body {
+  margin: 0;
+  background: #eee;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+}
+
+.App {
+  font-family: sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.App > h1 {
+  text-align: center;
+  font-size: 24px;
+  color: #333;
+}
+
+.App-blurb {
+  text-align: center;
+  color: #555;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.App-blurb code {
+  background: #f3f3f3;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 90%;
+}
+
+.editor-container {
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: #fff;
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  background: #fafafa;
+}
+
+.toolbar button {
+  min-width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  color: #222;
+}
+
+.toolbar button:hover {
+  background: #ececec;
+}
+
+.toolbar-divider {
+  width: 1px;
+  align-self: stretch;
+  background: #e0e0e0;
+  margin: 0 4px;
+}
+
+.shadow-host {
+  display: block;
+}

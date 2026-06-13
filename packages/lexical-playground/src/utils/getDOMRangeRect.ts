@@ -5,15 +5,22 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+
+import {getDOMSelectionPoints, getDOMSelectionRange} from 'lexical';
+
 export function getDOMRangeRect(
   nativeSelection: Selection,
   rootElement: HTMLElement,
 ): DOMRect {
-  const domRange = nativeSelection.getRangeAt(0);
+  // Resolve through any enclosing DOM shadow roots; getRangeAt(0) and
+  // anchorNode are retargeted to the shadow host when the editor is in a
+  // shadow tree.
+  const domRange = getDOMSelectionRange(nativeSelection, rootElement);
+  const {anchorNode} = getDOMSelectionPoints(nativeSelection, rootElement);
 
   let rect;
 
-  if (nativeSelection.anchorNode === rootElement) {
+  if (anchorNode === rootElement || domRange === null) {
     let inner = rootElement;
     while (inner.firstElementChild != null) {
       inner = inner.firstElementChild as HTMLElement;

@@ -12,6 +12,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   defineExtension,
+  getActiveElementDeep,
   getEditorPropertyFromDOMNode,
   isLexicalEditor,
   LexicalEditor,
@@ -164,7 +165,7 @@ function getFocusedEditor(
     return null;
   }
   const activeEditor = getEditorPropertyFromDOMNode(
-    targetWindow.document.activeElement,
+    getActiveElementDeep(targetWindow.document),
   );
   return isLexicalEditor(activeEditor) && state.editors.has(activeEditor)
     ? activeEditor

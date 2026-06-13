@@ -2091,6 +2091,36 @@ export function getActiveElementDeep(
   return active;
 }
 
+/**
+ * Returns the un-retargeted event target — the real element the user
+ * interacted with — for events observed by a listener above an enclosing
+ * DOM shadow root. `Event.target` is retargeted to the outermost shadow
+ * host in that case, hiding the actual element; `composedPath()[0]`
+ * returns the original target for `composed: true` events (most
+ * user-agent UI events: click, mousedown, pointerdown, focusin, etc.).
+ * Falls back to `event.target` when `composedPath` is unavailable or
+ * returns an empty array (e.g. the event has already finished
+ * dispatching).
+ *
+ * Pairs with the shadow-aware helpers above
+ * ({@link getDOMSelectionPoints}, {@link getActiveElement}) for the
+ * event side of the shadow boundary — useful when an
+ * `Element.contains(target)` check needs to test against an editor root
+ * inside a shadow tree.
+ *
+ * @param event the dispatched event
+ * @returns the un-retargeted target, or null when the event has none
+ */
+export function getComposedEventTarget(event: Event): EventTarget | null {
+  if (typeof event.composedPath === 'function') {
+    const path = event.composedPath();
+    if (path.length > 0) {
+      return path[0];
+    }
+  }
+  return event.target;
+}
+
 export function $splitNode(
   node: ElementNode,
   offset: number,

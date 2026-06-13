@@ -302,6 +302,7 @@ export {
   type DOMSelectionPoints,
   getActiveElement,
   getActiveElementDeep,
+  getComposedEventTarget,
   getComposedStaticRange,
   getDOMOwnerDocument,
   getDOMSelection,

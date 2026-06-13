@@ -307,6 +307,52 @@ describe('DOM shadow root selection (browser)', () => {
     });
   });
 
+  // IME composition through a shadow root: the $onCompositionEndImpl path
+  // reads selection through getDOMSelectionPoints to find the textnode under
+  // the caret; if the read returned the retargeted shadow host instead, the
+  // composed character would land on the wrong node or be silently dropped.
+  // This is the silent-bug class the audit flagged for CJK input inside a
+  // shadow tree.
+  test('composition end commits the composed character inside a shadow root', () => {
+    if (!SUPPORTS_COMPOSED_RANGES) {
+      return;
+    }
+    const {contentEditable, editor} = setUpShadowEditor('Hi');
+    contentEditable.focus();
+
+    const textNode = getInnerTextNode(contentEditable);
+    // Place the caret at the end of "Hi" inside the shadow tree.
+    getDOMSelection(window)!.setBaseAndExtent(textNode, 2, textNode, 2);
+    editor.update(() => {}, {
+      discrete: true,
+      event: new Event('selectionchange'),
+    });
+
+    contentEditable.dispatchEvent(
+      new CompositionEvent('compositionstart', {
+        bubbles: true,
+        composed: true,
+        data: '',
+      }),
+    );
+    expect(editor.isComposing()).toBe(true);
+
+    // Simulate the IME writing the composed character into the DOM textnode.
+    textNode.nodeValue = 'Hi가';
+    getDOMSelection(window)!.setBaseAndExtent(textNode, 3, textNode, 3);
+
+    contentEditable.dispatchEvent(
+      new CompositionEvent('compositionend', {
+        bubbles: true,
+        composed: true,
+        data: '가',
+      }),
+    );
+
+    expect(editor.isComposing()).toBe(false);
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('Hi가');
+  });
+
   // Regression test for #2119 and #8125: an editor hosted in a web
   // component's shadow root must accept real keyboard input (key events,
   // beforeinput, mutation handling) — previously characters never appeared

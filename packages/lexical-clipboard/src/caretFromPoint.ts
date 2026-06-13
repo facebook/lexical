@@ -20,15 +20,20 @@ export function caretFromPoint(
   // When the editor lives in a DOM shadow tree, a point over shadow content is
   // retargeted to the shadow host by caretRangeFromPoint. Prefer
   // caretPositionFromPoint with the shadowRoots option, which returns the
-  // un-retargeted node; browsers without the option ignore it and fall through
-  // to the (retargeted) results below.
+  // un-retargeted node. Browsers that don't implement the option silently
+  // ignore it and return a retargeted result, so verify the offset node
+  // actually landed inside one of the requested shadow roots before trusting
+  // it; otherwise fall through to the legacy paths below.
   const shadowRoots = rootElement ? getDOMShadowRoots(rootElement) : [];
   if (
     shadowRoots.length > 0 &&
     typeof document.caretPositionFromPoint === 'function'
   ) {
     const caretPosition = document.caretPositionFromPoint(x, y, {shadowRoots});
-    if (caretPosition !== null) {
+    if (
+      caretPosition !== null &&
+      shadowRoots.some(root => root.contains(caretPosition.offsetNode))
+    ) {
       return {node: caretPosition.offsetNode, offset: caretPosition.offset};
     }
   }

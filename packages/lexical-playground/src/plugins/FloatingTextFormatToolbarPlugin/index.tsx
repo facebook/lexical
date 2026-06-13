@@ -24,6 +24,8 @@ import {
   FORMAT_TEXT_COMMAND,
   getDOMSelection,
   getDOMSelectionPoints,
+  isDOMDocumentNode,
+  isDOMShadowRoot,
   LexicalEditor,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -96,11 +98,14 @@ function TextFormatFloatingToolbar({
         const y = e.clientY;
         // Resolve through the popup's root (Document or ShadowRoot);
         // document.elementFromPoint is retargeted to the shadow host when the
-        // popup is inside a shadow root.
+        // popup is inside a shadow root. Guard the root narrowing so that a
+        // detached popup (its getRootNode returns the popup itself) does not
+        // throw when we look up an element at the cursor.
         const popupRoot = popupCharStylesEditorRef.current.getRootNode();
-        const elementUnderMouse = (
-          popupRoot as Document | ShadowRoot
-        ).elementFromPoint(x, y);
+        const elementUnderMouse =
+          isDOMDocumentNode(popupRoot) || isDOMShadowRoot(popupRoot)
+            ? popupRoot.elementFromPoint(x, y)
+            : null;
 
         if (!popupCharStylesEditorRef.current.contains(elementUnderMouse)) {
           // Mouse is not over the target element => not a normal click, but probably a drag

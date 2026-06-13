@@ -30,9 +30,14 @@ function isStyleNode(node: Node): node is HTMLStyleElement | HTMLLinkElement {
  * (including Vite's dev `<style>` tags) does not reach the editor once it is
  * inside a shadow tree. We clone the existing `<style>`/`<link>` nodes and keep
  * the shadow root in sync with any that are injected later (e.g. HMR).
+ *
+ * We scope both the initial scan and the MutationObserver to `document.head`,
+ * which is where Vite and the playground inject stylesheets. Keeping both
+ * stages aligned avoids cloning body-injected styles on mount only to miss
+ * any added later.
  */
 function adoptDocumentStyles(shadowRoot: ShadowRoot): () => void {
-  for (const node of document.querySelectorAll(
+  for (const node of document.head.querySelectorAll(
     'style, link[rel="stylesheet"]',
   )) {
     shadowRoot.appendChild(node.cloneNode(true));

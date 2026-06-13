@@ -21,6 +21,8 @@ import invariant from '@lexical/internal/invariant';
 import {$getEditor, $getNodeByKey, $isDecoratorNode, $isElementNode} from '.';
 import {$removeFromParent, getStaticNodeConfig} from './LexicalUtils';
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 /**
  * Shared empty slot map. Reads coalesce here when a host's `__slots` is null
  * (lazy allocation), so non-slot trees don't pay a per-node allocation cost.
@@ -412,12 +414,22 @@ export function $setSlot<T extends LexicalNode & SlotHostNode>(
     '$setSlot: node %s is not a valid slot value; a slot value must be a non-inline ElementNode or DecoratorNode (the slot link itself is the shadow boundary).',
     node.__key,
   );
-  invariant(
-    !$isSlotAncestorOrSelf(node, host),
-    '$setSlot: node %s cannot be slotted into %s; a node may not host itself or an ancestor reached through children or slot up-links — the slot up-link would form a cycle that loops isAttached/GC.',
-    node.__key,
-    host.__key,
-  );
+  // The ancestor/self check is the slot analog of appending a node into its
+  // own descendant through the children channel: a programmer error that
+  // forms an up-chain cycle and hangs isAttached/GC at commit. The children
+  // channel has no production guard for its equivalent (collab/JSON can't
+  // express the cycle — slot values are always freshly materialized, never
+  // aliased to an existing ancestor — so only a direct local call can reach
+  // it), so this guard matches: the O(depth) up-walk runs in __DEV__ only,
+  // and production behaves like the unguarded children channel.
+  if (__DEV__) {
+    invariant(
+      !$isSlotAncestorOrSelf(node, host),
+      '$setSlot: node %s cannot be slotted into %s; a node may not host itself or an ancestor reached through children or slot up-links — the slot up-link would form a cycle that loops isAttached/GC.',
+      node.__key,
+      host.__key,
+    );
+  }
   const writableSelf = host.getWritable();
   const slots = $getWritableSlots(writableSelf);
   const previousKey = slots.get(name);
@@ -502,13 +514,17 @@ function $isSlotAncestorOrSelf(node: LexicalNode, host: LexicalNode): boolean {
  * reach `slotValue` while `slotValue.__slotHost` reaches `host`, looping
  * isAttached/GC — and hanging the commit itself). Called from the child
  * attachment points (ElementNode.splice, insertBefore/insertAfter/replace).
- * Gated on the editor slot latch so non-slot editors skip the up-walk.
+ * __DEV__-only and gated on the editor slot latch: the up-walk is an O(depth)
+ * cost on the hot children path, and like {@link $setSlot}'s direct guard it
+ * only catches direct local programmer error (collab/JSON can't alias a host
+ * into its own slot value), so production matches the unguarded children
+ * channel's own ancestor-append behavior.
  */
 export function $errorOnSlotCycleChild(
   parent: LexicalNode,
   child: LexicalNode,
 ): void {
-  if (!$getEditor()._slotsUsed) {
+  if (!__DEV__ || !$getEditor()._slotsUsed) {
     return;
   }
   invariant(

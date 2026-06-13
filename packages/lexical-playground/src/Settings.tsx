@@ -40,6 +40,7 @@ export default function Settings(): JSX.Element {
       selectBlock,
       isCodeHighlighted,
       isCodeShiki,
+      isShadowDOM,
     },
   } = useSettings();
   const [showSettings, setShowSettings] = useState(false);
@@ -223,6 +224,14 @@ export default function Settings(): JSX.Element {
             }}
             checked={isCodeShiki}
             text="Use Shiki for Code Highlighting"
+          />
+
+          <Switch
+            onClick={() => {
+              setOption('isShadowDOM', !isShadowDOM);
+            }}
+            checked={isShadowDOM}
+            text="Render in Shadow DOM"
           />
         </div>
       ) : null}

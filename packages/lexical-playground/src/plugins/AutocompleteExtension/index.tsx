@@ -29,6 +29,7 @@ import {
   COMPOSITION_START_COMMAND,
   defineExtension,
   type EditorState,
+  getActiveElement,
   isHTMLElement,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_TAB_COMMAND,
@@ -397,7 +398,10 @@ export const AutocompleteExtension = /* @__PURE__ */ defineExtension({
     // extension registration.
     function isEditorFocused(): boolean {
       const rootElem = editor.getRootElement();
-      const active = rootElem && rootElem.ownerDocument.activeElement;
+      // getActiveElement rather than ownerDocument.activeElement, which reports
+      // the shadow host (not contained in rootElem) when the editor is in a
+      // shadow root.
+      const active = rootElem ? getActiveElement(rootElem) : null;
       return rootElem != null && active != null && rootElem.contains(active);
     }
 

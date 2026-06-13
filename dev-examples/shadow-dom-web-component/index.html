@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lexical Web Component (Shadow DOM) Example</title>
+  </head>
+  <body>
+    <div class="App">
+      <h1>Lexical as a Web Component</h1>
+      <p class="App-blurb">
+        Two independent
+        <code>&lt;lexical-editor&gt;</code>
+        custom elements, each fully encapsulated in its own open shadow root —
+        toolbar, styles and
+        <code>contentEditable</code>
+        included. No React, no frameworks. They are form-associated via
+        <code>ElementInternals</code>
+        , so submitting the form below collects each editor's serialized state.
+      </p>
+      <form id="demo-form">
+        <label>
+          Notes
+          <lexical-editor
+            name="notes"
+            placeholder-text="Try typing, selecting words, and formatting…"></lexical-editor>
+        </label>
+        <label>
+          Summary
+          <lexical-editor
+            name="summary"
+            placeholder-text="A second editor, in its own shadow root."></lexical-editor>
+        </label>
+        <p id="last-edited">Last edited: (none)</p>
+        <button type="submit">Submit form</button>
+      </form>
+      <pre id="form-output"></pre>
+    </div>
+    <script src="/src/main.ts" type="module"></script>
+  </body>
+</html>

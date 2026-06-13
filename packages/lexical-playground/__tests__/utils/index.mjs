@@ -98,6 +98,7 @@ export async function initialize({
   tableHorizontalScroll,
   shouldAllowHighlightingWithBrackets,
   selectionAlwaysOnDisplay,
+  isShadowDOM,
 }) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
@@ -134,6 +135,8 @@ export async function initialize({
 
   appSettings.selectionAlwaysOnDisplay = !!selectionAlwaysOnDisplay;
   appSettings.selectBlock = !!selectBlock;
+
+  appSettings.isShadowDOM = !!isShadowDOM;
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${
@@ -238,9 +241,24 @@ async function exposeLexicalEditor(page, pageError = null) {
     ),
   );
   await leftFrame.evaluate(() => {
-    window.lexicalEditor = document.querySelector(
-      '[data-lexical-editor="true"]',
-    ).__lexicalEditor;
+    // querySelector does not pierce shadow roots, so descend into any open
+    // shadow trees to support the "Render in Shadow DOM" playground setting.
+    const findEditorElement = root => {
+      const found = root.querySelector('[data-lexical-editor="true"]');
+      if (found !== null) {
+        return found;
+      }
+      for (const element of root.querySelectorAll('*')) {
+        if (element.shadowRoot !== null) {
+          const inner = findEditorElement(element.shadowRoot);
+          if (inner !== null) {
+            return inner;
+          }
+        }
+      }
+      return null;
+    };
+    window.lexicalEditor = findEditorElement(document).__lexicalEditor;
   });
 }
 

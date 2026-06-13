@@ -90,6 +90,7 @@ import {VisibleNonPrintingExtension} from './plugins/VisibleNonPrintingExtension
 import {YouTubeExtension} from './plugins/YouTubeExtension';
 import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
+import ShadowDomWrapper from './ui/ShadowDomWrapper';
 import {validateUrl} from './utils/url';
 
 console.warn(
@@ -306,7 +307,13 @@ function buildExtensionFromSettings(settings: DynamicSettings) {
 
 function App(): JSX.Element {
   const {
-    settings: {isCollab, emptyEditor, isRichText, measureTypingPerf},
+    settings: {
+      isCollab,
+      emptyEditor,
+      isRichText,
+      isShadowDOM,
+      measureTypingPerf,
+    },
   } = useSettings();
 
   // Only the editor-recreating settings belong in this memo's deps. Table
@@ -328,7 +335,13 @@ function App(): JSX.Element {
             </a>
           </header>
           <div className="editor-shell">
-            <Editor />
+            {isShadowDOM ? (
+              <ShadowDomWrapper>
+                <Editor />
+              </ShadowDomWrapper>
+            ) : (
+              <Editor />
+            )}
           </div>
           <Settings />
           {isDevPlayground ? <DocsPlugin /> : null}

@@ -8,6 +8,7 @@
 
 import type {JSX} from 'react';
 
+import {caretFromPoint} from '@lexical/clipboard';
 import {
   $generateNodesFromDOM,
   defineImportRule,
@@ -401,7 +402,7 @@ function $onDrop(event: DragEvent, editor: LexicalEditor): boolean {
   );
   event.preventDefault();
   if (canDropImage(event)) {
-    const range = getDragSelection(event);
+    const range = getDragSelection(event, editor.getRootElement());
     node.remove();
     const rangeSelection = $createRangeSelection();
     if (range !== null && range !== undefined) {
@@ -456,17 +457,24 @@ function canDropImage(event: DragEvent): boolean {
   );
 }
 
-function getDragSelection(event: DragEvent): Range | null | undefined {
-  let range;
+function getDragSelection(
+  event: DragEvent,
+  rootElement: HTMLElement | null,
+): Range | null | undefined {
   const domSelection = getDOMSelectionFromTarget(event.target);
-  if (document.caretRangeFromPoint) {
-    range = document.caretRangeFromPoint(event.clientX, event.clientY);
+  // caretFromPoint resolves through any DOM shadow roots enclosing rootElement
+  // (via caretPositionFromPoint's shadowRoots option); document.caretRangeFromPoint
+  // is retargeted to the shadow host when the editor is in a shadow root.
+  const caret = caretFromPoint(event.clientX, event.clientY, rootElement);
+  if (caret !== null) {
+    const ownerDocument = rootElement ? rootElement.ownerDocument : document;
+    const range = ownerDocument.createRange();
+    range.setStart(caret.node, caret.offset);
+    range.collapse(true);
+    return range;
   } else if (event.rangeParent && domSelection !== null) {
     domSelection.collapse(event.rangeParent, event.rangeOffset || 0);
-    range = domSelection.getRangeAt(0);
-  } else {
-    throw Error(`Cannot get the selection when dragging`);
+    return domSelection.getRangeAt(0);
   }
-
-  return range;
+  throw Error(`Cannot get the selection when dragging`);
 }

@@ -6,7 +6,7 @@
  *
  */
 
-import {defineExtension, safeCast} from 'lexical';
+import {defineExtension, getActiveElement, safeCast} from 'lexical';
 
 import {namedSignals} from './namedSignals';
 import {effect} from './signals';
@@ -49,7 +49,10 @@ export const AutoFocusExtension = /* @__PURE__ */ defineExtension({
                 // trigger a re-focus on the element. So in the case this occurs, we'll need to correct it.
                 // Normally this is fine, Selection API !== Focus API, but fore the intents of the naming
                 // of this plugin, which should preserve focus too.
-                const activeElement = document.activeElement;
+                // getActiveElement rather than document.activeElement, which
+                // reports the shadow host when the editor is in a shadow root.
+                const activeElement =
+                  rootElement !== null ? getActiveElement(rootElement) : null;
                 if (
                   rootElement !== null &&
                   (activeElement === null ||

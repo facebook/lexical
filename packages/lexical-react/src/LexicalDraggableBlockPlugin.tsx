@@ -22,6 +22,8 @@ import {
   COMMAND_PRIORITY_LOW,
   DRAGOVER_COMMAND,
   DROP_COMMAND,
+  getActiveElement,
+  getActiveElementDeep,
   IS_FIREFOX,
   LexicalEditor,
 } from 'lexical';
@@ -487,7 +489,12 @@ function useDraggableBlockMenu(
         BLUR_COMMAND,
         () => {
           const rootElement = editor.getRootElement();
-          const activeElement = document.activeElement;
+          // getActiveElementDeep so the menu is found whether it is portaled
+          // into the light DOM or inside a shadow root (where
+          // document.activeElement only reports the shadow host).
+          const activeElement = getActiveElementDeep(
+            rootElement ? rootElement.ownerDocument : document,
+          );
           if (
             rootElement &&
             isHTMLElement(activeElement) &&
@@ -532,7 +539,12 @@ function useDraggableBlockMenu(
     // and to ensure selection is properly maintained during drag.
     if (IS_FIREFOX) {
       const rootElement = editor.getRootElement();
-      if (rootElement !== null && document.activeElement !== rootElement) {
+      // getActiveElement rather than document.activeElement, which reports the
+      // shadow host when the editor is in a shadow root.
+      if (
+        rootElement !== null &&
+        getActiveElement(rootElement) !== rootElement
+      ) {
         // Restore focus synchronously - don't use requestAnimationFrame as blur already happened
         // and we need immediate focus restoration to maintain cursor visibility
         rootElement.focus({preventScroll: true});

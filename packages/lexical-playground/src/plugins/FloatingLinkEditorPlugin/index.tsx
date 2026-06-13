@@ -37,7 +37,10 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
+  getActiveElementDeep,
   getDOMSelection,
+  getDOMSelectionPoints,
+  getDOMSelectionRange,
   KEY_ESCAPE_COMMAND,
   LexicalEditor,
   RangeSelection,
@@ -160,9 +163,13 @@ function FloatingLinkEditor({
     }
 
     const nativeSelection = getDOMSelection(editor._window);
-    const activeElement = document.activeElement;
 
     const rootElement = editor.getRootElement();
+    // getActiveElementDeep rather than document.activeElement, which reports
+    // the shadow host when the editor (or the link input) is in a shadow root.
+    const activeElement = getActiveElementDeep(
+      rootElement ? rootElement.ownerDocument : document,
+    );
 
     if (selection !== null && rootElement !== null && editor.isEditable()) {
       let referenceElement: Element | null = null;
@@ -176,7 +183,11 @@ function FloatingLinkEditor({
         $isRangeSelection(selection) &&
         nativeSelection !== null &&
         nativeSelection.rangeCount > 0 &&
-        rootElement.contains(nativeSelection.anchorNode)
+        // Resolve through any enclosing DOM shadow roots; the raw anchorNode
+        // is retargeted to the shadow host when the editor is in a shadow tree.
+        rootElement.contains(
+          getDOMSelectionPoints(nativeSelection, rootElement).anchorNode,
+        )
       ) {
         const linkNode = $getSelectedLinkNode(selection);
         if (linkNode) {
@@ -203,9 +214,17 @@ function FloatingLinkEditor({
       } else if (
         nativeSelection !== null &&
         nativeSelection.rangeCount > 0 &&
-        rootElement.contains(nativeSelection.anchorNode)
+        rootElement.contains(
+          getDOMSelectionPoints(nativeSelection, rootElement).anchorNode,
+        )
       ) {
-        refs.setPositionReference(nativeSelection.getRangeAt(0));
+        const selectionRange = getDOMSelectionRange(
+          nativeSelection,
+          rootElement,
+        );
+        if (selectionRange !== null) {
+          refs.setPositionReference(selectionRange);
+        }
       }
       setLastSelection(selection);
     } else if (!activeElement || activeElement.className !== 'link-input') {

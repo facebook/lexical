@@ -559,6 +559,56 @@ describe('named-slots: core foundation', () => {
     });
   });
 
+  // A nested host: the outer slot value is a shadow root that itself contains
+  // another host with its own slot. Both levels of the slot channel must
+  // survive a JSON round-trip ($slots is recursive — every host serializes
+  // its own slots regardless of nesting depth). Mirrors a realistic shape
+  // (e.g. a Panel whose body contains a Card).
+  test('a nested host (slot value contains another host with its own slot) round-trips', () => {
+    using editor = createSlotEditor();
+
+    editor.update(
+      () => {
+        const outerHost = $createParagraphNode();
+        $getRoot().append(outerHost);
+        // outer slot value: a shadow root whose child is itself a host
+        const container = $createTestShadowRootNode();
+        const innerHost = $createParagraphNode();
+        innerHost.append($createTextNode('inner body'));
+        container.append(innerHost);
+        $setSlot(innerHost, 'inner', $slotContainer('InnerSlot'));
+        $setSlot(outerHost, 'outer', container);
+      },
+      {discrete: true},
+    );
+
+    const stringified = JSON.stringify(editor.getEditorState().toJSON());
+    const parsedState = editor.parseEditorState(stringified);
+
+    parsedState.read(() => {
+      const outerHost = $assertNodeType(
+        $getRoot().getFirstChild(),
+        $isParagraphNode,
+      );
+      const outerSlot = $getSlot(outerHost, 'outer');
+      assert(outerSlot != null && $isElementNode(outerSlot));
+      expect($getSlotHost(outerSlot)!.is(outerHost)).toBe(true);
+
+      // the inner host lives in the outer slot value's children channel
+      const innerHost = outerSlot.getFirstChild();
+      assert(innerHost != null && $isElementNode(innerHost));
+      expect(innerHost.getChildren()[0]?.getTextContent()).toBe('inner body');
+
+      // the inner host's own slot survived the round-trip, still linked
+      const innerSlot = $getSlot(innerHost, 'inner');
+      assert(innerSlot != null);
+      expect(innerSlot.getTextContent()).toBe('InnerSlot');
+      expect($getSlotHost(innerSlot)!.is(innerHost)).toBe(true);
+      expect(innerSlot.getParent()).toBe(null);
+      expect(innerSlot.isAttached()).toBe(true);
+    });
+  });
+
   test('export throws when a slot key resolves to no node', () => {
     // Headless (no root element): the commit skips DOM reconciliation, so
     // the deliberately-unresolvable slot key survives to export, where the
@@ -1074,6 +1124,15 @@ describe('named-slots: core foundation', () => {
         '[data-lexical-slot="caption"]',
       )!;
       expect(caption.style.display).toBe('');
+      // 'caption' sorts before 'title' in canonical (code-unit) order, so the
+      // late add must reorder its in-place container ahead of title's — the
+      // reorder pass acts on in-place-revealed containers (parentElement is
+      // the host DOM) and must not strand or re-hide the existing title.
+      const order = Array.from(
+        hostDom.querySelectorAll<HTMLElement>('[data-lexical-slot]'),
+      ).map(el => el.getAttribute('data-lexical-slot'));
+      expect(order).toEqual(['caption', 'title']);
+      expect(hostDom.firstElementChild).toBe(caption);
     } finally {
       editor.setRootElement(null);
       root.remove();

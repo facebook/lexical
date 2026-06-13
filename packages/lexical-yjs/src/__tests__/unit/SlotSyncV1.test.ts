@@ -897,6 +897,70 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     expect(binding2.collabNodeMap.has(hostKey)).toBe(false);
     expect(binding2.collabNodeMap.has(slotKey)).toBe(false);
   });
+
+  // $setSlot move semantics over V1 collab: a value moved between hosts runs
+  // the slot diff's remove-and-destroy on the losing host and the add on the
+  // gaining host in the same incremental sync. Driven through the real local
+  // update path (syncLexicalUpdateToYjs), then relayed: a peer must converge —
+  // value under the new host, gone from the old, not duplicated.
+  test('moving a slot value between hosts converges on a peer', () => {
+    const {binding, doc, editor} = buildBinding();
+
+    editor.update(
+      () => {
+        const root = $getRoot().clear();
+        const hostA = $createParagraphNode().append($createTextNode('A'));
+        const hostB = $createParagraphNode().append($createTextNode('B'));
+        root.append(hostA).append(hostB);
+        const title = $createTestShadowRootNode();
+        title.append(
+          $createParagraphNode().append($createTextNode('MovedTitle')),
+        );
+        $setSlot(hostA, 'title', title);
+      },
+      {discrete: true},
+    );
+    serialize(editor, binding); // establish the initial collab tree + doc
+
+    applyLocalUpdate(binding, editor, () => {
+      const hostA = $getRoot().getFirstChild();
+      const hostB = $getRoot().getLastChild();
+      assert($isElementNode(hostA) && $isElementNode(hostB));
+      const title = $getSlot(hostA, 'title');
+      assert(title != null);
+      $setSlot(hostB, 'title', title); // real incremental move A -> B
+    });
+
+    // the post-move local doc is well-formed: A's slots Y.Map drops 'title',
+    // B's holds it exactly once
+    const hostACollab = binding.root._children[0];
+    const hostBCollab = binding.root._children[1];
+    assert(hostACollab instanceof CollabElementNode);
+    assert(hostBCollab instanceof CollabElementNode);
+    const slotsAY = hostACollab._xmlText.getAttribute('slots') as unknown;
+    if (slotsAY instanceof YMap) {
+      expect(Array.from(slotsAY.keys())).toEqual([]);
+    }
+    const slotsBY = hostBCollab._xmlText.getAttribute('slots') as unknown;
+    assert(slotsBY instanceof YMap);
+    expect(Array.from(slotsBY.keys())).toEqual(['title']);
+
+    const doc2 = new Doc();
+    applyUpdate(doc2, encodeStateAsUpdate(doc));
+    const {binding: binding2, editor: editor2} = buildRestoreBinding(doc2);
+    restore(editor2, binding2);
+
+    editor2.read(() => {
+      const hostA = $getRoot().getFirstChild();
+      const hostB = $getRoot().getLastChild();
+      assert($isElementNode(hostA) && $isElementNode(hostB));
+      expect($getSlotNames(hostA)).toEqual([]);
+      const titleR = $getSlot(hostB, 'title');
+      assert(titleR != null && $isElementNode(titleR));
+      expect(titleR.getTextContent()).toBe('MovedTitle');
+      expect(titleR.getParent()).toBe(null);
+    });
+  });
 });
 
 // V1 with a DECORATOR host. A non-inline decorator can host named slots even

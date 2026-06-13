@@ -1568,4 +1568,88 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
       expect($getSlot(hostR, 'caption')?.getTextContent()).toBe('Caption');
     });
   });
+
+  // $setSlot has move semantics, so a value can move between hosts in one
+  // update. Over collab the incremental diff runs the *removal* side on the
+  // losing host (which destroys the moved value's collab node) and the *add*
+  // side on the gaining host in the same serialize pass — exercise that path
+  // and confirm a peer restoring from the post-move doc converges: the value
+  // ends up under the new host, gone from the old, never duplicated or lost.
+  test('moving a slot value between hosts converges on a peer', () => {
+    const {binding, doc, editor} = buildBinding([TestShadowRootNode]);
+
+    editor.update(
+      () => {
+        const root = $getRoot().clear();
+        const hostA = $createParagraphNode().append($createTextNode('A'));
+        const hostB = $createParagraphNode().append($createTextNode('B'));
+        root.append(hostA).append(hostB);
+        const title = $createTestShadowRootNode();
+        title.append(
+          $createParagraphNode().append($createTextNode('MovedTitle')),
+        );
+        $setSlot(hostA, 'title', title);
+      },
+      {discrete: true},
+    );
+    serialize(editor, binding); // initial diff: A gains the slot
+
+    editor.update(
+      () => {
+        const hostA = $getRoot().getFirstChild();
+        const hostB = $getRoot().getLastChild();
+        assert($isElementNode(hostA) && $isElementNode(hostB));
+        const title = $getSlot(hostA, 'title');
+        assert(title !== null);
+        $setSlot(hostB, 'title', title); // move A -> B
+      },
+      {discrete: true},
+    );
+    serialize(editor, binding); // incremental diff: A removes (+destroy), B adds
+
+    // local convergence first
+    editor.read(() => {
+      const hostA = $getRoot().getFirstChild();
+      const hostB = $getRoot().getLastChild();
+      assert($isElementNode(hostA) && $isElementNode(hostB));
+      expect($getSlotNames(hostA)).toEqual([]);
+      expect($getSlot(hostB, 'title')?.getTextContent()).toBe('MovedTitle');
+    });
+
+    // the post-move Y doc is well-formed: A's slots Y.Map is empty/absent and
+    // B's holds the value exactly once
+    const hostAY = binding.root.toArray()[0];
+    const hostBY = binding.root.toArray()[1];
+    assert(hostAY instanceof XmlElement && hostBY instanceof XmlElement);
+    const slotsAY = hostAY.getAttribute('slots') as unknown;
+    if (slotsAY instanceof YMap) {
+      expect(Array.from(slotsAY.keys())).toEqual([]);
+    }
+    const slotsBY = hostBY.getAttribute('slots') as unknown;
+    assert(slotsBY instanceof YMap);
+    expect(Array.from(slotsBY.keys())).toEqual(['title']);
+
+    // a peer restoring from the post-move doc converges
+    const {binding: binding2, editor: editor2} = buildRestoreBinding(doc, [
+      TestShadowRootNode,
+    ]);
+    editor2.update(
+      () => {
+        $getRoot().clear();
+        $createOrUpdateNodeFromYElement(binding2.root, binding2, null, true);
+      },
+      {discrete: true},
+    );
+
+    editor2.read(() => {
+      const hostA = $getRoot().getFirstChild();
+      const hostB = $getRoot().getLastChild();
+      assert($isElementNode(hostA) && $isElementNode(hostB));
+      expect($getSlotNames(hostA)).toEqual([]);
+      const titleR = $getSlot(hostB, 'title');
+      assert(titleR !== null && $isElementNode(titleR));
+      expect(titleR.getTextContent()).toBe('MovedTitle');
+      expect(titleR.getParent()).toBe(null);
+    });
+  });
 });

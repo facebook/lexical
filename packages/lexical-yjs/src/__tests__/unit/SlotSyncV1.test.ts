@@ -16,6 +16,7 @@ import {
   $createTextNode,
   $getRoot,
   $getSlot,
+  $getSlotHost,
   $getSlotNames,
   $isDecoratorNode,
   $isElementNode,
@@ -1904,6 +1905,139 @@ describe('named-slots collab-v1: two-client relay', () => {
           expect($getSlot(host, 'zzz')?.getTextContent()).toBe('Zzz');
         });
       }
+    } finally {
+      disconnect();
+    }
+  });
+
+  // Concurrent move: two offline peers move the SAME slot value to DIFFERENT
+  // hosts, then merge. Yjs has no move-aware CRDT for the cross-host slot
+  // channel, so this is not guaranteed to resolve to a single destination —
+  // but the two clients MUST still converge to the *same* state, with every
+  // surviving slot well-linked to its host (no dangling up-link), the
+  // original host emptied, and no hang. This pins the convergence /
+  // no-corruption guarantee for the genuinely-ambiguous case.
+  test('concurrent move of one slot value to different hosts converges without corruption', async () => {
+    const {binding1, binding2, disconnect, doc1, doc2, editor1, editor2} =
+      setupOfflineTwoClients(() => {
+        const hostA = $createParagraphNode().append($createTextNode('A'));
+        const hostB = $createParagraphNode().append($createTextNode('B'));
+        const hostC = $createParagraphNode().append($createTextNode('C'));
+        const title = $createTestShadowRootNode();
+        title.append($createParagraphNode().append($createTextNode('Moved')));
+        $getRoot().clear().append(hostA).append(hostB).append(hostC);
+        $setSlot(hostA, 'title', title);
+      });
+
+    try {
+      // client 1 moves title A -> B
+      applyLocalUpdate(binding1, editor1, () => {
+        const children = $getRoot().getChildren();
+        const hostA = children[0];
+        const hostB = children[1];
+        assert($isElementNode(hostA) && $isElementNode(hostB));
+        const title = $getSlot(hostA, 'title');
+        assert(title != null);
+        $setSlot(hostB, 'title', title);
+      });
+      // client 2 concurrently moves title A -> C
+      applyLocalUpdate(binding2, editor2, () => {
+        const children = $getRoot().getChildren();
+        const hostA = children[0];
+        const hostC = children[2];
+        assert($isElementNode(hostA) && $isElementNode(hostC));
+        const title = $getSlot(hostA, 'title');
+        assert(title != null);
+        $setSlot(hostC, 'title', title);
+      });
+
+      exchangeUpdates(doc1, doc2);
+      await flush();
+
+      const snapshot = (editor: LexicalEditor) =>
+        editor.read(() =>
+          $getRoot()
+            .getChildren()
+            .map(host => {
+              assert($isElementNode(host));
+              const names = $getSlotNames(host);
+              for (const name of names) {
+                const value = $getSlot(host, name);
+                assert(value != null);
+                // no dangling up-link: every surviving slot points back here
+                expect($getSlotHost(value)!.is(host)).toBe(true);
+                // content survived the merge
+                expect(value.getTextContent()).toBe('Moved');
+              }
+              return names;
+            }),
+        );
+
+      const layout1 = snapshot(editor1);
+      const layout2 = snapshot(editor2);
+      // the two clients converge to identical slot layout (the core guarantee)
+      expect(layout1).toEqual(layout2);
+      // the original host is emptied on both clients
+      expect(layout1[0]).toEqual([]);
+    } finally {
+      disconnect();
+    }
+  });
+
+  // Concurrent edits *inside* the same slot value's subtree: two offline peers
+  // each append a block to the same slot container, then merge. Editing within
+  // a slot value syncs incrementally (the value's collab node persists — it is
+  // not re-serialized like a move), so both concurrent inserts must survive the
+  // merge and converge, exactly as they would for any non-slot subtree.
+  test('concurrent edits inside one slot value merge and converge', async () => {
+    const {binding1, binding2, disconnect, doc1, doc2, editor1, editor2} =
+      setupOfflineTwoClients(() => {
+        const host = $createParagraphNode();
+        const body = $createTestShadowRootNode();
+        body.append($createParagraphNode().append($createTextNode('Start')));
+        $getRoot().clear().append(host);
+        $setSlot(host, 'body', body);
+      });
+
+    try {
+      applyLocalUpdate(binding1, editor1, () => {
+        const host = $getRoot().getFirstChild();
+        assert($isElementNode(host));
+        const body = $getSlot(host, 'body');
+        assert($isElementNode(body));
+        body.append($createParagraphNode().append($createTextNode('One')));
+      });
+      applyLocalUpdate(binding2, editor2, () => {
+        const host = $getRoot().getFirstChild();
+        assert($isElementNode(host));
+        const body = $getSlot(host, 'body');
+        assert($isElementNode(body));
+        body.append($createParagraphNode().append($createTextNode('Two')));
+      });
+
+      exchangeUpdates(doc1, doc2);
+      await flush();
+
+      const bodyText = (editor: LexicalEditor) =>
+        editor.read(() => {
+          const host = $getRoot().getFirstChild();
+          assert($isElementNode(host));
+          const body = $getSlot(host, 'body');
+          assert($isElementNode(body));
+          // the slot stays linked to its host through the concurrent merge
+          expect($getSlotHost(body)!.is(host)).toBe(true);
+          return body
+            .getChildren()
+            .map(child => child.getTextContent())
+            .sort();
+        });
+
+      const text1 = bodyText(editor1);
+      const text2 = bodyText(editor2);
+      // both clients converge on the same merged content
+      expect(text1).toEqual(text2);
+      // and both concurrent inserts survived alongside the original
+      expect(text1).toEqual(['One', 'Start', 'Two']);
     } finally {
       disconnect();
     }

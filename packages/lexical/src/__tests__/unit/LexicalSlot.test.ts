@@ -609,6 +609,58 @@ describe('named-slots: core foundation', () => {
     });
   });
 
+  // The property undo/redo relies on: a captured editor state survives a
+  // later slot move unmutated, so restoring it reverts the move. Exercises
+  // copy-on-write versioning — if the move had mutated a slot map shared with
+  // the prior version, the restored state would be corrupted.
+  test('restoring a prior editor state reverts a slot move (undo-style)', () => {
+    using editor = createSlotEditor();
+    let slotKey = '';
+
+    editor.update(
+      () => {
+        const hostA = $createParagraphNode();
+        const hostB = $createParagraphNode();
+        $getRoot().append(hostA).append(hostB);
+        const slot = $slotContainer('Moved');
+        $setSlot(hostA, 'title', slot);
+        slotKey = slot.getKey();
+      },
+      {discrete: true},
+    );
+
+    // snapshot the pre-move state (what an undo would restore)
+    const beforeMove = editor.getEditorState();
+
+    editor.update(
+      () => {
+        const hostA = $getRoot().getFirstChild();
+        const hostB = $getRoot().getLastChild();
+        assert($isElementNode(hostA) && $isElementNode(hostB));
+        $setSlot(hostB, 'title', $getSlot(hostA, 'title')!);
+      },
+      {discrete: true},
+    );
+
+    // the move happened
+    editor.read(() => {
+      const hostB = $getRoot().getLastChild();
+      assert($isElementNode(hostB));
+      expect($getSlot(hostB, 'title')!.getKey()).toBe(slotKey);
+    });
+
+    // restoring the snapshot reverts the move: slot back on host A, off host B
+    editor.setEditorState(beforeMove);
+    editor.read(() => {
+      const hostA = $getRoot().getFirstChild();
+      const hostB = $getRoot().getLastChild();
+      assert($isElementNode(hostA) && $isElementNode(hostB));
+      expect($getSlotNames(hostB)).toEqual([]);
+      expect($getSlot(hostA, 'title')!.getKey()).toBe(slotKey);
+      expect($getSlotHost($getNodeByKey(slotKey)!)!.is(hostA)).toBe(true);
+    });
+  });
+
   test('export throws when a slot key resolves to no node', () => {
     // Headless (no root element): the commit skips DOM reconciliation, so
     // the deliberately-unresolvable slot key survives to export, where the
@@ -693,6 +745,60 @@ describe('named-slots: core foundation', () => {
     );
 
     // after the host is detached, its slot node must not leak
+    editor.read(() => {
+      expect($getNodeByKey(slotKey)).toBe(null);
+    });
+  });
+
+  test('a slot value moved to another host survives the old host being removed in the same commit', () => {
+    using editor = createSlotEditor();
+    let slotKey = '';
+
+    editor.update(
+      () => {
+        const hostA = $createParagraphNode();
+        const hostB = $createParagraphNode();
+        $getRoot().append(hostA).append(hostB);
+        const slot = $slotContainer('Moved');
+        $setSlot(hostA, 'title', slot);
+        slotKey = slot.getKey();
+      },
+      {discrete: true},
+    );
+
+    // Move the value A -> B and remove the now-empty host A in the same
+    // commit: GC processes the detached A in the very commit its slot's
+    // __slotHost flipped to B. A's map no longer holds the value, so GC must
+    // not reap it — it is live under B.
+    editor.update(
+      () => {
+        const hostA = $getRoot().getFirstChild();
+        const hostB = $getRoot().getLastChild();
+        assert($isElementNode(hostA) && $isElementNode(hostB));
+        const slot = $getSlot(hostA, 'title');
+        assert(slot !== null);
+        $setSlot(hostB, 'title', slot);
+        hostA.remove();
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      // value survives on host B (now the only root child)
+      expect($getNodeByKey(slotKey)).not.toBe(null);
+      const hostB = $getRoot().getFirstChild();
+      assert($isElementNode(hostB));
+      expect($getSlot(hostB, 'title')!.getKey()).toBe(slotKey);
+      expect($getNodeByKey(slotKey)!.isAttached()).toBe(true);
+    });
+
+    // removing the new host now collects the value (no longer reachable)
+    editor.update(
+      () => {
+        $getRoot().getFirstChild()!.remove();
+      },
+      {discrete: true},
+    );
     editor.read(() => {
       expect($getNodeByKey(slotKey)).toBe(null);
     });

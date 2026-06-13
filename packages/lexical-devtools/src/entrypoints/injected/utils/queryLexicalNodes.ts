@@ -8,8 +8,22 @@
 import {LexicalHTMLElement} from '../../../types';
 import {isLexicalNode} from '../../../utils/isLexicalNode';
 
+// Descend into open shadow roots so editors mounted inside web components or
+// shadow trees are discoverable. querySelectorAll does not pierce shadow
+// boundaries on its own.
+function collectFromRoot(root: Document | ShadowRoot, out: Element[]): void {
+  for (const el of root.querySelectorAll('div[data-lexical-editor]')) {
+    out.push(el);
+  }
+  for (const el of root.querySelectorAll('*')) {
+    if (el.shadowRoot !== null) {
+      collectFromRoot(el.shadowRoot, out);
+    }
+  }
+}
+
 export default function queryLexicalNodes(): LexicalHTMLElement[] {
-  return Array.from(
-    document.querySelectorAll('div[data-lexical-editor]'),
-  ).filter(isLexicalNode);
+  const out: Element[] = [];
+  collectFromRoot(document, out);
+  return out.filter(isLexicalNode);
 }

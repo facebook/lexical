@@ -32,7 +32,7 @@ import * as React from 'react';
 import {
   $createSlotContainerNode,
   $isSlotContainerNode,
-} from '../SlotContainerNode';
+} from '../../nodes/SlotContainerNode';
 
 // PullQuote is a DecoratorNode-as-host with two editable slots: `quote`
 // carries the inline-formatted body of the quote and `attribution` carries

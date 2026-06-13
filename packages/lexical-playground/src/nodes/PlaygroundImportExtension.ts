@@ -34,10 +34,10 @@ import {
   defineExtension,
 } from 'lexical';
 
+import {$createCardNode} from '../plugins/CardExtension/CardNode';
+import {$createPullQuoteNode} from '../plugins/PullQuoteExtension/PullQuoteNode';
 import {parseAllowedFontSize} from '../plugins/ToolbarPlugin/fontSize';
 import {parseAllowedColor} from '../ui/ColorPicker';
-import {$createCardNode} from './CardNode';
-import {$createPullQuoteNode} from './PullQuoteNode';
 import {$createSlotContainerNode} from './SlotContainerNode';
 
 function getPlaygroundExtraStyles(element: HTMLElement): string {
@@ -174,9 +174,10 @@ const CardImportRule = /* @__PURE__ */ defineImportRule({
       }
     }
     if (!importedTitle) {
-      // No title wrapper in the source HTML: drop the seeded "Title" text
-      // (keeping the empty paragraph value) so the import never fabricates
-      // content — mirrors PullQuoteImportRule's explicit seed-clearing.
+      // No title wrapper in the source HTML: the title slot value is already
+      // an empty paragraph ($createCardNode seeds no text — the hint is a CSS
+      // placeholder), but clear it defensively so the import can never carry
+      // over fabricated content.
       const title = $getSlot(card, 'title');
       if ($isElementNode(title)) {
         title.clear();

@@ -28,7 +28,7 @@ import {
   $createPullQuoteNode,
   $isPullQuoteNode,
   PullQuoteNode,
-} from '../../nodes/PullQuoteNode';
+} from './PullQuoteNode';
 
 export const INSERT_PULLQUOTE_COMMAND: LexicalCommand<void> =
   /* @__PURE__ */ createCommand('INSERT_PULLQUOTE_COMMAND');

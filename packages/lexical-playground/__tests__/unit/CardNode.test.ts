@@ -42,9 +42,13 @@ import {
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
-import {$createCardNode, $isCardNode, CardNode} from '../../src/nodes/CardNode';
 import {PlaygroundRichTextImportExtension} from '../../src/nodes/PlaygroundImportExtension';
 import {CardExtension} from '../../src/plugins/CardExtension';
+import {
+  $createCardNode,
+  $isCardNode,
+  CardNode,
+} from '../../src/plugins/CardExtension/CardNode';
 
 // SlotContainerNode is deliberately NOT registered: the Card's single-line
 // title slot value is a bare ParagraphNode (the slot link itself is the

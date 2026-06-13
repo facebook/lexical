@@ -19,7 +19,7 @@ import {
   ElementNode,
 } from 'lexical';
 
-import {$isSlotContainerNode} from '../SlotContainerNode';
+import {$isSlotContainerNode} from '../../nodes/SlotContainerNode';
 
 // The Card is an ElementNode host that demonstrates the dual capability of
 // hosting both a named slot (`title`, exactly one block) and regular

@@ -43,7 +43,7 @@ import {
   KEY_TAB_COMMAND,
 } from 'lexical';
 
-import {$createCardNode, $isCardNode, CardNode} from '../../nodes/CardNode';
+import {$createCardNode, $isCardNode, CardNode} from './CardNode';
 
 export const INSERT_CARD_COMMAND: LexicalCommand<void> =
   /* @__PURE__ */ createCommand('INSERT_CARD_COMMAND');

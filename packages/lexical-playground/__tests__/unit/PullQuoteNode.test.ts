@@ -35,15 +35,15 @@ import {assert, describe, expect, it} from 'vitest';
 
 import {PlaygroundRichTextImportExtension} from '../../src/nodes/PlaygroundImportExtension';
 import {
-  $createPullQuoteNode,
-  $isPullQuoteNode,
-  PullQuoteNode,
-} from '../../src/nodes/PullQuoteNode';
-import {
   $createSlotContainerNode,
   SlotContainerNode,
 } from '../../src/nodes/SlotContainerNode';
 import {PullQuoteExtension} from '../../src/plugins/PullQuoteExtension';
+import {
+  $createPullQuoteNode,
+  $isPullQuoteNode,
+  PullQuoteNode,
+} from '../../src/plugins/PullQuoteExtension/PullQuoteNode';
 
 const PullQuoteTestExtension = defineExtension({
   $initialEditorState: null,

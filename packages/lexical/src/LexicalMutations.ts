@@ -203,8 +203,11 @@ function flushMutations(
               // @experimental named-slots. Slot containers are keyless
               // reconciler scaffolding: a flush that observes one being
               // parked in its host or relocated by an explicit mount must
-              // not evict it as foreign DOM.
+              // not evict it as foreign DOM. Gated on the editor slot latch so
+              // a non-slot editor still evicts foreign DOM that happens to
+              // carry a `data-lexical-slot` attribute.
               !(
+                editor._slotsUsed &&
                 isHTMLElement(addedDOM) &&
                 addedDOM.hasAttribute('data-lexical-slot')
               ) &&

@@ -24,10 +24,18 @@ function otherFrame(page) {
   return page.frame('right');
 }
 
+// Insert a Card and type its "Title" / "Body" content on the left frame. The
+// Card model seeds empty fields (the hints are CSS placeholders), so the slot
+// text whose convergence these tests assert is typed here rather than baked
+// into the node.
 async function insertCard(page) {
   await page.keyboard.type('/card');
   await waitForSelector(page, '.typeahead-popover');
   await page.keyboard.press('Enter');
+  await click(page, '[data-lexical-slot="title"] p');
+  await page.keyboard.type('Title');
+  await click(page, '.lexical-card-node > p');
+  await page.keyboard.type('Body');
 }
 
 async function insertPullQuote(page) {

@@ -181,9 +181,10 @@ export class LexicalEditorElement extends HTMLElement {
     addButton('↻', () => editor.dispatchCommand(REDO_COMMAND, undefined));
 
     const removeUpdateListener = editor.registerUpdateListener(
-      ({editorState}) => {
+      ({editorState, dirtyElements, dirtyLeaves}) => {
         // Reflect the selection's formats in the toolbar, proving selection
-        // reads work inside the shadow root.
+        // reads work inside the shadow root. Runs on every update so pure
+        // selection changes still refresh the active-format indicators.
         editorState.read(() => {
           const selection = $getSelection();
           for (const [format, button] of formatButtons) {
@@ -195,6 +196,12 @@ export class LexicalEditorElement extends HTMLElement {
             );
           }
         });
+        // Form value + bubbling input event mirror an HTMLInputElement: only
+        // fire on real content changes, not on pure selection updates, so
+        // page-level form/input listeners aren't woken up for caret moves.
+        if (dirtyElements.size === 0 && dirtyLeaves.size === 0) {
+          return;
+        }
         // Standard form association: the form value is the serialized state.
         this.internals.setFormValue(JSON.stringify(editorState.toJSON()));
         // Composed so it crosses the shadow boundary to page listeners.

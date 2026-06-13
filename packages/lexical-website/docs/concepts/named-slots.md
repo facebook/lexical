@@ -210,7 +210,7 @@ there, and reveals it; the container renders as a normal block):
              // deeper inside the host's DOM attaches it there instead;
              // $next() defers to lower-priority overrides (default: null,
              // a hidden placeholder).
-             $getSlotTargetElement: (node, slotName, hostDom, $next) =>
+             $getSlotTargetElement: (node, slotName, hostDom, $next, editor) =>
                hostDom,
            }),
          ],

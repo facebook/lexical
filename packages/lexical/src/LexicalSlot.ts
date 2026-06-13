@@ -373,19 +373,21 @@ function $canonicalizeSlotOrder(host: LexicalNode & SlotHostNode): void {
 /**
  * Places `node` into the named slot of `host`, replacing any existing value
  * under that name. Move semantics, mirroring `ElementNode.append` /
- * `insertBefore`: the value is detached from any current parent or slot
- * (including another name on the same host) before linking, so re-slotting
- * never requires an explicit remove first. A slot value must be a non-inline {@link ElementNode} or a
- * non-inline {@link DecoratorNode}: the slot link itself acts as a virtual
- * shadow root between the host and the value, so the value does not need to
- * be a shadow root — a plain block (e.g. a ParagraphNode subclass serving as
- * a single-line field) is a valid slot value, and selection, traversal, and
- * editing treat its slot boundary exactly like a shadow-root boundary. If
- * `node` is currently a child of another element it is detached first; it
- * must not already be slotted elsewhere — a slotted node and a child are
- * mutually exclusive. The replaced value, if any, is detached. `host` is
- * constrained to {@link SlotHostNode} so a non-host is rejected at compile
- * time.
+ * `insertBefore`: the value is detached from wherever it currently lives —
+ * a child of another element, or a slot on this or another host (a node's two
+ * up-links, `__parent` and `__slotHost`, are mutually exclusive, so it holds
+ * exactly one) — before linking, so re-slotting never requires an explicit
+ * remove first. The replaced value, if any, is detached.
+ *
+ * A slot value must be a non-inline {@link ElementNode} or a non-inline
+ * {@link DecoratorNode}: the slot link itself acts as a virtual shadow root
+ * between the host and the value, so the value does not need to be a shadow
+ * root — a plain block (e.g. a ParagraphNode subclass serving as a
+ * single-line field) is a valid slot value, and selection, traversal, and
+ * editing treat its slot boundary exactly like a shadow-root boundary.
+ *
+ * `host` is constrained to {@link SlotHostNode} so a non-host is rejected at
+ * compile time.
  *
  * @experimental
  */

@@ -60,7 +60,10 @@ function adoptDocumentStyles(shadowRoot: ShadowRoot): () => void {
       for (const node of mutation.removedNodes) {
         const clone = clones.get(node);
         if (clone !== undefined) {
-          shadowRoot.removeChild(clone);
+          // Use clone.remove() rather than shadowRoot.removeChild(clone)
+          // so a clone that was already detached by an upstream HMR pass
+          // is a no-op instead of throwing NotFoundError.
+          (clone as ChildNode).remove();
           clones.delete(node);
         }
       }

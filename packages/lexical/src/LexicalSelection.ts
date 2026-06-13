@@ -3108,7 +3108,8 @@ export function $internalCreateRangeSelection(
       return null;
     }
     // Resolve the boundary points through any enclosing DOM shadow roots. In
-    // the light DOM this returns null and we read the Selection directly.
+    // the light DOM getDOMSelectionPoints returns `domSelection` itself, so
+    // `points` aliases the live Selection and we read its properties directly.
     const points = getDOMSelectionPoints(domSelection, editor._rootElement);
     anchorDOM = points.anchorNode;
     focusDOM = points.focusNode;
@@ -3484,9 +3485,9 @@ export function $updateDOMSelection(
   // Resolve the live DOM selection's boundary points through any enclosing
   // DOM shadow roots; Selection.anchorNode/focusNode are retargeted to the
   // shadow host, so the comparisons below read composed points instead. In
-  // the light DOM this is null (without reading the Selection) and
-  // currentPoints aliases domSelection, preserving the deferred reads
-  // described below.
+  // the light DOM getDOMSelectionPoints returns `domSelection` itself (no
+  // Selection property reads happen here), so `currentPoints` aliases it and
+  // preserves the deferred reads described below.
   const currentPoints = getDOMSelectionPoints(domSelection, rootElement);
 
   if (!$isRangeSelection(nextSelection)) {
@@ -3620,15 +3621,17 @@ export function $updateDOMSelection(
     IS_FIREFOX &&
     nextSelection.isCollapsed() &&
     rootElement !== null &&
-    !tags.has(SKIP_SELECTION_FOCUS_TAG) &&
-    (getActiveElement(rootElement) === null ||
-      !rootElement.contains(getActiveElement(rootElement)))
+    !tags.has(SKIP_SELECTION_FOCUS_TAG)
   ) {
-    // Restore focus immediately to ensure cursor visibility
-    rootElement.focus({preventScroll: true});
-    // Note: We rely on the normal selection update mechanism to ensure the cursor
-    // is visible. Using requestAnimationFrame here could cause race conditions where
-    // another update changes the selection before the rAF callback executes.
+    const focusedElement = getActiveElement(rootElement);
+    if (focusedElement === null || !rootElement.contains(focusedElement)) {
+      // Restore focus immediately to ensure cursor visibility.
+      // Note: We rely on the normal selection update mechanism to ensure the
+      // cursor is visible. Using requestAnimationFrame here could cause race
+      // conditions where another update changes the selection before the rAF
+      // callback executes.
+      rootElement.focus({preventScroll: true});
+    }
   }
 
   if (

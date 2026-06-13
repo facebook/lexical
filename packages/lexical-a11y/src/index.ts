@@ -471,8 +471,8 @@ export interface HistoryAnnounceOptions {
  * command chain intact.
  *
  * Framework-agnostic — pair with `registerAriaLiveRegion`'s `announce`
- * for a vanilla integration, or use `HistoryAnnouncePlugin` from
- * `@lexical/react` for the React version.
+ * for a vanilla integration, or use `HistoryAnnounceExtension` for
+ * `@lexical/extension` hosts.
  */
 export function registerHistoryAnnounce(
   editor: LexicalEditor,
@@ -517,8 +517,8 @@ export interface EditorModeAnnounceOptions {
  * contributes the announcement.
  *
  * Framework-agnostic — pair with `registerAriaLiveRegion`'s `announce`
- * for a vanilla integration, or use `EditorModeAnnouncePlugin` from
- * `@lexical/react` for the React version.
+ * for a vanilla integration, or use `EditorModeAnnounceExtension` for
+ * `@lexical/extension` hosts.
  */
 export function registerEditorModeAnnounce(
   editor: LexicalEditor,
@@ -598,8 +598,7 @@ export interface HistoryAnnounceExtensionConfig {
 
 /**
  * Platform-independent extension that announces undo / redo through the
- * `AriaLiveRegionExtension`'s shared sink. Replaces the React-only
- * `HistoryAnnouncePlugin` for `@lexical/extension` hosts.
+ * `AriaLiveRegionExtension`'s shared sink.
  */
 export const HistoryAnnounceExtension = /* @__PURE__ */ defineExtension({
   build: (_editor, config) => namedSignals(config),
@@ -631,8 +630,7 @@ export interface EditorModeAnnounceExtensionConfig {
 /**
  * Platform-independent extension that announces
  * `editor.setEditable(true|false)` transitions through the
- * `AriaLiveRegionExtension`'s shared sink. Replaces the React-only
- * `EditorModeAnnouncePlugin` for `@lexical/extension` hosts.
+ * `AriaLiveRegionExtension`'s shared sink.
  */
 export const EditorModeAnnounceExtension = /* @__PURE__ */ defineExtension({
   build: (_editor, config) => namedSignals(config),

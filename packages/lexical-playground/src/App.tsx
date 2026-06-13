@@ -6,6 +6,10 @@
  *
  */
 
+import {
+  EditorModeAnnounceExtension,
+  HistoryAnnounceExtension,
+} from '@lexical/a11y';
 import {$isCodeNode} from '@lexical/code';
 import {
   $defaultShouldInsertAfter,
@@ -221,6 +225,8 @@ const AppExtension = /* @__PURE__ */ defineExtension({
     // registerSettingsSynchronization to drive ClickableLinkExtension.
     WatchEditableExtension,
     HistoryExtension,
+    HistoryAnnounceExtension,
+    EditorModeAnnounceExtension,
     KeywordsExtension,
     HashtagExtension,
     DateTimeExtension,

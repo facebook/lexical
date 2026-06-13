@@ -14,8 +14,6 @@ import {
   CollaborationPluginV2__EXPERIMENTAL,
 } from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {EditorModeAnnouncePlugin} from '@lexical/react/LexicalEditorModeAnnouncePlugin';
-import {HistoryAnnouncePlugin} from '@lexical/react/LexicalHistoryAnnouncePlugin';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {CAN_USE_DOM} from '@lexical/utils';
 import {useEffect, useMemo, useState} from 'react';
@@ -115,8 +113,6 @@ export default function Editor(): JSX.Element {
 
   return (
     <>
-      <EditorModeAnnouncePlugin />
-      <HistoryAnnouncePlugin />
       {isRichText && (
         <ToolbarPlugin
           editor={editor}

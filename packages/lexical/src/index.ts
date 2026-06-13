@@ -320,7 +320,7 @@ export {
   $setFormatFromDOM,
   $setSelection,
   $splitNode,
-  type DOMSelectionPoints,
+  type DOMSelectionBoundaryPoints,
   getActiveElement,
   getActiveElementDeep,
   getComposedEventTarget,

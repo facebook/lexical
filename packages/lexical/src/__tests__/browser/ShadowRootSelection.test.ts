@@ -68,6 +68,9 @@ function setUpShadowEditor(text = 'Hello world'): ShadowEditor {
     defineExtension({
       $initialEditorState: () => $prepopulate(text),
       name: 'shadow-root-selection',
+      onError: error => {
+        throw error;
+      },
     }),
   );
   editor.setRootElement(contentEditable);
@@ -175,6 +178,9 @@ describe('DOM shadow root selection (browser)', () => {
       defineExtension({
         $initialEditorState: () => $prepopulate('Hello world'),
         name: 'light',
+        onError: error => {
+          throw error;
+        },
       }),
     );
     editor.setRootElement(light);
@@ -329,6 +335,9 @@ describe('DOM shadow root selection (browser)', () => {
       defineExtension({
         $initialEditorState: () => $prepopulate('Hi'),
         name: 'web-component',
+        onError: error => {
+          throw error;
+        },
       }),
     );
     // Command handlers for backspace/delete/etc.; insertion of plain typed
@@ -377,6 +386,9 @@ describe('DOM shadow root selection (browser)', () => {
       defineExtension({
         $initialEditorState: () => $prepopulate('Hello world'),
         name: 'iframe',
+        onError: error => {
+          throw error;
+        },
       }),
     );
     editor.setRootElement(contentEditable);

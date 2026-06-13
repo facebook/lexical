@@ -2045,8 +2045,9 @@ export function getDOMSelectionRange(
  * - shadow DOM: the return is a snapshot taken at call time.
  *
  * Read the four points immediately after the call, or compare identity
- * via `points === domSelection` to detect the light-DOM path, rather than
- * caching the returned reference across selection mutations.
+ * via `points === domSelection` to detect when the return aliases
+ * `domSelection`, rather than caching the returned reference across
+ * selection mutations.
  *
  * @experimental shape may change as shadow DOM support stabilizes.
  */

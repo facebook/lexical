@@ -360,6 +360,41 @@ test.describe('Card empty-field placeholders', () => {
     expect(afterTyping.title === 'none' || afterTyping.title === '').toBe(true);
     expect(afterTyping.body).toContain('Body');
   });
+
+  test('the body placeholder shows only for a single empty body paragraph', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertEmptyCard(page);
+    await sleep(120);
+
+    const firstBodyBefore = () =>
+      evaluate(page, () => {
+        const ps = document.querySelectorAll('.lexical-card-node > p');
+        return {
+          before: ps[0]
+            ? window.getComputedStyle(ps[0], '::before').content
+            : null,
+          count: ps.length,
+        };
+      });
+
+    // a single empty body paragraph: the placeholder shows
+    let state = await firstBodyBefore();
+    expect(state.count).toBe(1);
+    expect(state.before).toContain('Body');
+
+    // add a second (empty) body paragraph: now neither is the only paragraph,
+    // so the placeholder must NOT show even though the first is still empty
+    await click(page, '.lexical-card-node > p');
+    await sleep(80);
+    await page.keyboard.press('Enter');
+    await sleep(120);
+
+    state = await firstBodyBefore();
+    expect(state.count).toBe(2);
+    expect(state.before === 'none' || state.before === '').toBe(true);
+  });
 });
 
 // Tab from the title's editable paragraph hops the caret into the first

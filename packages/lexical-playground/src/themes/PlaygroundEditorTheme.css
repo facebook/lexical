@@ -920,17 +920,17 @@
    seeds no placeholder TextNodes. Absolutely positioned and pointer-inert so
    they overlay the empty line without shifting the caret or blocking clicks. */
 .lexical-card-node [data-lexical-slot='title'] > p:has(br:only-child),
-.lexical-card-node > p:first-of-type:has(br:only-child) {
+.lexical-card-node > p:only-of-type:has(br:only-child) {
   position: relative;
 }
 .lexical-card-node [data-lexical-slot='title'] > p:has(br:only-child)::before {
   content: 'Title';
 }
-.lexical-card-node > p:first-of-type:has(br:only-child)::before {
+.lexical-card-node > p:only-of-type:has(br:only-child)::before {
   content: 'Body';
 }
 .lexical-card-node [data-lexical-slot='title'] > p:has(br:only-child)::before,
-.lexical-card-node > p:first-of-type:has(br:only-child)::before {
+.lexical-card-node > p:only-of-type:has(br:only-child)::before {
   color: #9ca3af;
   left: 0;
   pointer-events: none;

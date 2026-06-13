@@ -26,10 +26,17 @@ slots, editing a slot is just editing the one tree.
 
 :::note
 
-This concept is unrelated to `ElementDOMSlot` in the
-[DOM rendering](../serialization/dom-render.md) documentation, which is a
-lower-level pointer to the content-bearing element of a node's DOM. Named
-slots are a model-level feature.
+Named slots are the model-level generalization of the rendering concept
+behind [`$getDOMSlot`](/docs/api/modules/lexical#getdomslot) /
+`ElementDOMSlot` in the
+[DOM rendering](../serialization/dom-render.md) documentation. Every
+ElementNode already has one _unnamed_ children channel, and `$getDOMSlot`
+controls where that channel's content attaches in the node's DOM. Named
+slots are additional, explicitly-named channels alongside it — symmetric in
+that each renders into a controllable location in the host's DOM — but they
+also carry the model-level semantics the unnamed channel doesn't: isolation
+(the virtual shadow root below), a separate NodeKey map, and their own
+serialization and collaboration.
 
 :::
 

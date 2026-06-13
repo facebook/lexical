@@ -9,16 +9,20 @@
 import {
   deleteNextWord,
   moveToEditorBeginning,
+  moveToEditorEnd,
   selectAll,
   selectPrevWord,
   toggleBold,
 } from '../keyboardShortcuts/index.mjs';
 import {
   assertHTML,
+  copyToClipboard,
   expect,
   focusEditor,
   html,
   initialize,
+  insertTable,
+  pasteFromClipboard,
   test,
 } from '../utils/index.mjs';
 
@@ -112,5 +116,72 @@ test.describe('Shadow DOM', () => {
       .textContent();
     expect(text).not.toContain('Hello');
     expect(text).toContain('world');
+  });
+
+  test('clicking a table cell creates a range selection inside the cell', async ({
+    page,
+    browserName,
+  }) => {
+    // Webkit's headless pointer dispatch is flaky on the table cell hit-test;
+    // the underlying handler is exercised by the chromium/firefox runs.
+    test.skip(browserName === 'webkit');
+    await focusEditor(page);
+    await insertTable(page, 2, 2);
+    // Clicking a cell goes through the window-attached pointerdown listener
+    // in lexical-table; without getComposedEventTarget the event.target is
+    // retargeted to the shadow host and the rootElement.contains() gate
+    // rejects the click. Type into a non-first cell to assert the click
+    // actually placed the caret inside that cell.
+    const targetCell = page.locator('table td').nth(3);
+    await targetCell.click();
+    await page.keyboard.type('typed');
+    const cellText = await targetCell.textContent();
+    expect(cellText).toContain('typed');
+  });
+
+  test('component picker opens, navigates and inserts a heading', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    // The slash menu (LexicalTypeaheadMenuPlugin) repositions on scroll; the
+    // popup is anchored to the editor's selection and its open/close cycle
+    // exercises the typeahead path that reads the composed selection.
+    await page.keyboard.type('/heading');
+    await expect(
+      page.locator('[data-test-id="component-picker-menu"]'),
+    ).toBeVisible();
+    // Insert the first option (Heading 1).
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Heading text');
+    await assertHTML(
+      page,
+      html`
+        <h1><span data-lexical-text="true">Heading text</span></h1>
+      `,
+      undefined,
+      IGNORE,
+    );
+  });
+
+  test('copy and paste round-trips text inside the shadow root', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('hi');
+    await selectAll(page);
+    // The copy guard in @lexical/clipboard reads selection through
+    // getDOMSelectionPoints; without it the shadow host makes
+    // isSelectionWithinEditor return false and the copy is dropped.
+    const clipboard = await copyToClipboard(page);
+    await moveToEditorEnd(page);
+    await pasteFromClipboard(page, clipboard);
+    await assertHTML(
+      page,
+      html`
+        <p><span data-lexical-text="true">hihi</span></p>
+      `,
+      undefined,
+      IGNORE,
+    );
   });
 });

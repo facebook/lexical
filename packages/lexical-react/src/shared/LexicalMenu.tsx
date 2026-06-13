@@ -17,7 +17,7 @@ import {
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
   createCommand,
-  isDOMShadowRoot,
+  getDOMShadowRoots,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_ENTER_COMMAND,
@@ -250,14 +250,13 @@ export function useDynamicPositioning(
       });
       // Scroll events are non-composed and do not cross shadow boundaries,
       // so the document-level listener above never sees scrolls inside an
-      // enclosing shadow tree. When the menu's target lives in a shadow
-      // root, also register on that root so internal scrolls reposition the
-      // floating menu. isDOMShadowRoot rather than `instanceof ShadowRoot`
-      // because the latter is per-realm and false-negatives across frames.
-      const targetRoot = targetElement.getRootNode();
-      const targetIsInShadow = isDOMShadowRoot(targetRoot);
-      if (targetIsInShadow) {
-        targetRoot.addEventListener('scroll', handleScroll, {
+      // enclosing shadow tree. Register on every shadow root between the
+      // target and the document so internal scrolls at any depth reposition
+      // the floating menu. getDOMShadowRoots walks parent hosts and is
+      // empty in the light DOM.
+      const enclosingShadowRoots = getDOMShadowRoots(targetElement);
+      for (const root of enclosingShadowRoots) {
+        root.addEventListener('scroll', handleScroll, {
           capture: true,
           passive: true,
         });
@@ -267,8 +266,8 @@ export function useDynamicPositioning(
         resizeObserver.unobserve(targetElement);
         window.removeEventListener('resize', onReposition);
         document.removeEventListener('scroll', handleScroll, true);
-        if (targetIsInShadow) {
-          targetRoot.removeEventListener('scroll', handleScroll, true);
+        for (const root of enclosingShadowRoots) {
+          root.removeEventListener('scroll', handleScroll, true);
         }
       };
     }

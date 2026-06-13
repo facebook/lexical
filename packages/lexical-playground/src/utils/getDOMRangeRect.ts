@@ -6,7 +6,7 @@
  *
  */
 
-import {getDOMSelectionPoints, getDOMSelectionRange} from 'lexical';
+import {getComposedStaticRange} from 'lexical';
 
 export function getDOMRangeRect(
   nativeSelection: Selection,
@@ -14,9 +14,41 @@ export function getDOMRangeRect(
 ): DOMRect {
   // Resolve through any enclosing DOM shadow roots; getRangeAt(0) and
   // anchorNode are retargeted to the shadow host when the editor is in a
-  // shadow tree.
-  const domRange = getDOMSelectionRange(nativeSelection, rootElement);
-  const {anchorNode} = getDOMSelectionPoints(nativeSelection, rootElement);
+  // shadow tree. Read the composed static range once and derive both the
+  // live Range (for getBoundingClientRect) and the anchor node from it,
+  // rather than going through getDOMSelectionRange + getDOMSelectionPoints
+  // which each call getComposedStaticRange internally.
+  const staticRange = getComposedStaticRange(nativeSelection, rootElement);
+  let domRange: Range | null;
+  let anchorNode: Node | null;
+
+  if (staticRange !== null) {
+    const doc = staticRange.startContainer.ownerDocument;
+    domRange = null;
+    if (doc !== null) {
+      const range = doc.createRange();
+      try {
+        range.setStart(staticRange.startContainer, staticRange.startOffset);
+        range.setEnd(staticRange.endContainer, staticRange.endOffset);
+        domRange = range;
+      } catch (_error) {
+        // Fall through to the retargeted range below.
+      }
+    }
+    if (domRange === null) {
+      domRange =
+        nativeSelection.rangeCount > 0 ? nativeSelection.getRangeAt(0) : null;
+    }
+    // Selection.direction maps the StaticRange's start/end onto anchor/focus.
+    anchorNode =
+      nativeSelection.direction === 'backward'
+        ? staticRange.endContainer
+        : staticRange.startContainer;
+  } else {
+    domRange =
+      nativeSelection.rangeCount > 0 ? nativeSelection.getRangeAt(0) : null;
+    anchorNode = nativeSelection.anchorNode;
+  }
 
   let rect;
 

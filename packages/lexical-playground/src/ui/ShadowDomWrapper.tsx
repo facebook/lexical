@@ -37,17 +37,31 @@ function isStyleNode(node: Node): node is HTMLStyleElement | HTMLLinkElement {
  * any added later.
  */
 function adoptDocumentStyles(shadowRoot: ShadowRoot): () => void {
+  // Track original → clone so a removed light-DOM stylesheet also drops its
+  // mirrored copy from the shadow root, instead of leaking under HMR churn.
+  const clones = new Map<Node, Node>();
   for (const node of document.head.querySelectorAll(
     'style, link[rel="stylesheet"]',
   )) {
-    shadowRoot.appendChild(node.cloneNode(true));
+    const clone = node.cloneNode(true);
+    clones.set(node, clone);
+    shadowRoot.appendChild(clone);
   }
 
   const observer = new MutationObserver(mutations => {
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
         if (isStyleNode(node)) {
-          shadowRoot.appendChild(node.cloneNode(true));
+          const clone = node.cloneNode(true);
+          clones.set(node, clone);
+          shadowRoot.appendChild(clone);
+        }
+      }
+      for (const node of mutation.removedNodes) {
+        const clone = clones.get(node);
+        if (clone !== undefined) {
+          shadowRoot.removeChild(clone);
+          clones.delete(node);
         }
       }
     }

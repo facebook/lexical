@@ -370,7 +370,10 @@ function $canonicalizeSlotOrder(host: LexicalNode & SlotHostNode): void {
 
 /**
  * Places `node` into the named slot of `host`, replacing any existing value
- * under that name. A slot value must be a non-inline {@link ElementNode} or a
+ * under that name. Move semantics, mirroring `ElementNode.append` /
+ * `insertBefore`: the value is detached from any current parent or slot
+ * (including another name on the same host) before linking, so re-slotting
+ * never requires an explicit remove first. A slot value must be a non-inline {@link ElementNode} or a
  * non-inline {@link DecoratorNode}: the slot link itself acts as a virtual
  * shadow root between the host and the value, so the value does not need to
  * be a shadow root — a plain block (e.g. a ParagraphNode subclass serving as
@@ -415,12 +418,6 @@ export function $setSlot<T extends LexicalNode & SlotHostNode>(
     node.__key,
     host.__key,
   );
-  invariant(
-    $getSlotHostKey(node) === null,
-    '$setSlot: node %s is already slotted into host %s; remove it from its current slot first.',
-    node.__key,
-    String($getSlotHostKey(node)),
-  );
   const writableSelf = host.getWritable();
   const slots = $getWritableSlots(writableSelf);
   const previousKey = slots.get(name);
@@ -428,6 +425,18 @@ export function $setSlot<T extends LexicalNode & SlotHostNode>(
     $detachSlottedNode(previousKey);
   }
   const writableNode = node.getWritable();
+  // Move semantics: a value slotted elsewhere (or under another name on this
+  // same host) is unlinked from its current host's map without destroying the
+  // moving subtree — the up-link is rewritten below. The cycle guard above
+  // already rejected any placement that would loop the up-chain.
+  const previousHost = $getSlotHost(writableNode);
+  if (previousHost !== null) {
+    const previousName = $getSlotNameWithinHost(writableNode);
+    if (previousName !== null) {
+      $getWritableSlots(previousHost.getWritable()).delete(previousName);
+    }
+    writableNode.__slotHost = null;
+  }
   // $removeFromParent (not node.remove()) so the host survives even when it
   // would otherwise cascade on becoming empty (e.g. a third-party host with
   // canBeEmpty()=false whose single shadow-root child is being slotted in).

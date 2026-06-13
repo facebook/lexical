@@ -1698,9 +1698,10 @@ export class LexicalNode {
     // Slots live in a separate Map keyed off __slotHost, not the child list,
     // so the splice above (when includeChildren) never moves them — and
     // decorator hosts skip that branch entirely. Re-home each slot onto the
-    // replacement regardless of includeChildren (removeSlot clears the old
-    // __slotHost so setSlot's "already slotted" invariant passes); otherwise
-    // they orphan and GC. Slot-less nodes have no names, so this is a no-op.
+    // replacement regardless of includeChildren ($setSlot has move semantics;
+    // the explicit $removeSlot keeps the doomed host's map consistent before
+    // it is destroyed); otherwise they orphan and GC. Slot-less nodes have no
+    // names, so this is a no-op.
     const slotNames = $getSlotNames(this);
     if (slotNames.length > 0) {
       if (!$isSlotHost(this) || !$isSlotHost(writableReplaceWith)) {

@@ -215,8 +215,9 @@ export const $createOrUpdateNodeFromYElement = (
   }
 
   // Reconcile the dedicated `slots` channel against the host's `slots` Y.Map.
-  // Diff (not blind $setSlot) so the observer path is safe: re-running $setSlot
-  // on an already-slotted node would trip $setSlot's `__slotHost === null` invariant. A
+  // Diff (not blind $setSlot) so unchanged entries don't churn writables on
+  // every remote reconcile ($setSlot has move semantics, so a re-set is safe
+  // but not free). A
   // host is an ElementNode or a non-inline DecoratorNode; both store slots as a
   // `slots` Y.Map attribute, and the reconcile only uses base-node slot methods.
   if (node instanceof ElementNode || $isDecoratorNode(node)) {

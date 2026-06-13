@@ -142,9 +142,11 @@ $setSlot(
 The core API surface (all exported from `lexical`):
 
 - [`$setSlot(host, name, node)`](/docs/api/modules/lexical#setslot) — place a value into a named slot, replacing
-  any existing value under that name. Throws if the value is inline, if
-  inserting it would create a cycle, or if the name is one of the reserved
-  prototype keys (`__proto__`, `constructor`, `prototype`).
+  any existing value under that name. Move semantics, mirroring `append`:
+  the value is detached from any current parent or slot first. Throws if the
+  value is inline, if inserting it would create a cycle, or if the name is
+  one of the reserved prototype keys (`__proto__`, `constructor`,
+  `prototype`).
 - [`$getSlot(host, name)`](/docs/api/modules/lexical#getslot) — the value under a name, or `null`.
 - [`$getSlotNames(host)`](/docs/api/modules/lexical#getslotnames) — the host's slot names in canonical order.
 - [`$removeSlot(host, name)`](/docs/api/modules/lexical#removeslot) — detach the value under a name (the subtree is

@@ -321,7 +321,7 @@ describe('named-slots: core foundation', () => {
     );
   });
 
-  test('setSlot rejects a node already slotted elsewhere', () => {
+  test('$setSlot moves a node already slotted elsewhere (move semantics)', () => {
     using editor = createSlotEditor();
 
     editor.update(
@@ -331,7 +331,17 @@ describe('named-slots: core foundation', () => {
         const slot = $createTestShadowRootNode();
         $getRoot().append(hostA).append(hostB);
         $setSlot(hostA, 'title', slot);
-        expect(() => $setSlot(hostB, 'title', slot)).toThrow();
+        // Mirrors append/insertBefore: re-slotting detaches from the old
+        // host instead of throwing.
+        $setSlot(hostB, 'title', slot);
+        expect($getSlotNames(hostA)).toEqual([]);
+        expect($getSlot(hostB, 'title')!.is(slot)).toBe(true);
+        expect($getSlotHost(slot)!.is(hostB)).toBe(true);
+        // Same-host rename is a move too: the old name's entry is dropped.
+        $setSlot(hostB, 'subtitle', slot);
+        expect($getSlotNames(hostB)).toEqual(['subtitle']);
+        expect($getSlot(hostB, 'subtitle')!.is(slot)).toBe(true);
+        expect($getSlotHost(slot)!.is(hostB)).toBe(true);
       },
       {discrete: true},
     );

@@ -6,6 +6,7 @@
  *
  */
 
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {registerRichText} from '@lexical/rich-text';
 import {
   $createParagraphNode,
@@ -15,7 +16,6 @@ import {
   $getSelection,
   $isRangeSelection,
   $setSelection,
-  createEditor,
   getActiveElement,
   getActiveElementDeep,
   getComposedEventTarget,
@@ -64,15 +64,13 @@ function setUpShadowEditor(text = 'Hello world'): ShadowEditor {
   contentEditable.contentEditable = 'true';
   shadow.appendChild(contentEditable);
 
-  const editor = createEditor({
-    namespace: 'shadow-root-selection',
-    nodes: [],
-    onError: error => {
-      throw error;
-    },
-  });
+  const editor = buildEditorFromExtensions(
+    defineExtension({
+      $initialEditorState: () => $prepopulate(text),
+      name: 'shadow-root-selection',
+    }),
+  );
   editor.setRootElement(contentEditable);
-  editor.update(() => $prepopulate(text), {discrete: true});
 
   onTestFinished(() => {
     editor.setRootElement(null);
@@ -173,15 +171,13 @@ describe('DOM shadow root selection (browser)', () => {
     onTestFinished(() => {
       document.body.removeChild(light);
     });
-    const editor = createEditor({
-      namespace: 'light',
-      nodes: [],
-      onError: error => {
-        throw error;
-      },
-    });
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => $prepopulate('Hello world'),
+        name: 'light',
+      }),
+    );
     editor.setRootElement(light);
-    editor.update(() => $prepopulate('Hello world'), {discrete: true});
     onTestFinished(() => editor.setRootElement(null));
 
     const {domSelection} = selectInnerText(light, 0, 5);
@@ -329,18 +325,16 @@ describe('DOM shadow root selection (browser)', () => {
     const host = document.createElement('test-lexical-host');
     document.body.appendChild(host);
     const contentEditable = host.shadowRoot!.firstElementChild as HTMLElement;
-    const editor = createEditor({
-      namespace: 'web-component',
-      nodes: [],
-      onError: error => {
-        throw error;
-      },
-    });
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => $prepopulate('Hi'),
+        name: 'web-component',
+      }),
+    );
     // Command handlers for backspace/delete/etc.; insertion of plain typed
     // text is otherwise handled by the mutation observer path.
     const removeRichText = registerRichText(editor);
     editor.setRootElement(contentEditable);
-    editor.update(() => $prepopulate('Hi'), {discrete: true});
     onTestFinished(() => {
       removeRichText();
       editor.setRootElement(null);
@@ -379,15 +373,13 @@ describe('DOM shadow root selection (browser)', () => {
     const contentEditable = iframeDoc.createElement('div');
     contentEditable.contentEditable = 'true';
     iframeDoc.body.appendChild(contentEditable);
-    const editor = createEditor({
-      namespace: 'iframe',
-      nodes: [],
-      onError: error => {
-        throw error;
-      },
-    });
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => $prepopulate('Hello world'),
+        name: 'iframe',
+      }),
+    );
     editor.setRootElement(contentEditable);
-    editor.update(() => $prepopulate('Hello world'), {discrete: true});
     onTestFinished(() => {
       editor.setRootElement(null);
       document.body.removeChild(iframe);

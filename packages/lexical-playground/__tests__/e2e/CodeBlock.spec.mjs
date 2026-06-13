@@ -147,7 +147,9 @@ test.describe('CodeBlock', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">yar</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">meh</span>
         </p>
@@ -207,7 +209,9 @@ test.describe('CodeBlock', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">yar</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">meh</span>
         </p>
@@ -673,7 +677,9 @@ test.describe('CodeBlock', () => {
           data-gutter="1">
           <span data-lexical-text="true">console.log("test");</span>
         </code>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 

@@ -61,7 +61,7 @@ test.describe('HTML CopyAndPaste', () => {
           </strong>
         </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );

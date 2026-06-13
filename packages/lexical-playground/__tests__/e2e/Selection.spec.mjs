@@ -188,7 +188,9 @@ test.describe('Selection', () => {
             </p>
           `
         : html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <br data-lexical-managed-linebreak="true" />
+            </p>
           `;
     const lines = (...args) => html`
       ${args.map(p).join('')}
@@ -227,7 +229,9 @@ test.describe('Selection', () => {
             </p>
           `
         : html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <br data-lexical-managed-linebreak="true" />
+            </p>
           `;
     const lines = (...args) => html`
       ${args.map(p).join('')}
@@ -281,7 +285,9 @@ test.describe('Selection', () => {
             </p>
           `
         : html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <br data-lexical-managed-linebreak="true" />
+            </p>
           `;
     const lines = (...args) => html`
       ${args.map(p).join('')}
@@ -342,7 +348,9 @@ test.describe('Selection', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -395,7 +403,9 @@ test.describe('Selection', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">One</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -410,7 +420,7 @@ test.describe('Selection', () => {
         </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           ${imageHtml}
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -427,7 +437,9 @@ test.describe('Selection', () => {
           ${imageHtml}
           <span data-lexical-text="true">Two</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -452,8 +464,12 @@ test.describe('Selection', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">One</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -464,7 +480,9 @@ test.describe('Selection', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">One</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -476,7 +494,9 @@ test.describe('Selection', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">One</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -485,8 +505,12 @@ test.describe('Selection', () => {
     await assertImageHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -494,7 +518,9 @@ test.describe('Selection', () => {
     await assertImageHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -502,7 +528,9 @@ test.describe('Selection', () => {
     await assertImageHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -522,8 +550,12 @@ test.describe('Selection', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">text</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -570,7 +602,7 @@ test.describe('Selection', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">aaa</span>
           <br />
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -600,7 +632,9 @@ test.describe('Selection', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -643,10 +677,10 @@ test.describe('Selection', () => {
             </p>
           </summary>
           <div class="Collapsible__content" dir="auto">
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br data-lexical-managed-linebreak="true" /></p>
           </div>
         </${collapsibleTag}>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
     );
   });
@@ -690,7 +724,7 @@ test.describe('Selection', () => {
             </p>
           </summary>
           <div class="Collapsible__content" dir="auto">
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br data-lexical-managed-linebreak="true" /></p>
           </div>
         </${collapsibleTag}>
         <p
@@ -738,7 +772,7 @@ test.describe('Selection', () => {
               </p>
             </summary>
             <div class="Collapsible__content" dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </div>
           </${collapsibleTag}>
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -799,16 +833,22 @@ test.describe('Selection', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
         </table>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -842,12 +882,16 @@ test.describe('Selection', () => {
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
             <th
               class="PlaygroundEditorTheme__tableCell PlaygroundEditorTheme__tableCellHeader"
               dir="auto">
-              <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+              <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+                <br data-lexical-managed-linebreak="true" />
+              </p>
             </th>
           </tr>
         </table>
@@ -882,7 +926,7 @@ test.describe('Selection', () => {
       page,
       html`
         <h1 class="PlaygroundEditorTheme__h1" dir="auto">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </h1>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">b</span>
@@ -895,7 +939,7 @@ test.describe('Selection', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">b</span>
@@ -1107,7 +1151,9 @@ test.describe('Selection', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -1131,7 +1177,9 @@ test.describe('Selection', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -1346,7 +1394,9 @@ test.describe('Selection', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -1477,7 +1527,9 @@ test.describe('Selection', () => {
             Line1
           </strong>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <strong
             class="PlaygroundEditorTheme__textBold"
@@ -1522,7 +1574,9 @@ test.describe('Selection', () => {
             Line1
           </strong>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Line3</span>
         </p>
@@ -1592,7 +1646,9 @@ test.describe('Selection', () => {
             Line1
           </span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span style="color: rgb(208, 2, 27)" data-lexical-text="true">
             Line3

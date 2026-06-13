@@ -64,7 +64,7 @@ test.describe('CodeActionMenu', () => {
           <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'Hello'
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
           <span data-lexical-text="true"></span>
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
@@ -77,7 +77,7 @@ test.describe('CodeActionMenu', () => {
           <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'World'
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
           <span data-lexical-text="true"></span>
         </code>
       `,
@@ -134,7 +134,7 @@ test.describe('CodeActionMenu', () => {
           <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'Hello'
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
           <span data-lexical-text="true"></span>
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
@@ -147,7 +147,7 @@ test.describe('CodeActionMenu', () => {
           <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'World'
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
           <span data-lexical-text="true"></span>
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
@@ -160,7 +160,7 @@ test.describe('CodeActionMenu', () => {
           <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'Hello'
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
           <span data-lexical-text="true"></span>
           <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
             const
@@ -173,7 +173,7 @@ test.describe('CodeActionMenu', () => {
           <span class="PlaygroundEditorTheme__tokenSelector" data-lexical-text="true">
             'World'
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
           <span data-lexical-text="true"></span>
         </code>
       `,
@@ -226,7 +226,7 @@ test.describe('CodeActionMenu', () => {
         data-gutter="12">
           <span data-lexical-text="true">const luci = "Hello World";</span>
           <br />
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </code>
       `,
     );

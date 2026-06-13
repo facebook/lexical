@@ -1088,7 +1088,7 @@ describe('LexicalNode tests', () => {
         });
 
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
         );
         expect(() => textNode.remove()).toThrow();
       });
@@ -1128,7 +1128,7 @@ describe('LexicalNode tests', () => {
         });
 
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">bar</span></p><p dir="auto"><br></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">bar</span></p><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
         );
       });
 
@@ -1383,7 +1383,7 @@ describe('LexicalNode tests', () => {
         });
 
         expect(testEnv.outerHTML).toBe(
-          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p><p dir="auto"><br></p><p dir="auto"><span data-lexical-text="true">C</span><span data-lexical-text="true">B</span><span data-lexical-text="true">A</span></p></div>',
+          '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br data-lexical-managed-linebreak="true"></p><p dir="auto"><br data-lexical-managed-linebreak="true"></p><p dir="auto"><span data-lexical-text="true">C</span><span data-lexical-text="true">B</span><span data-lexical-text="true">A</span></p></div>',
         );
       });
 

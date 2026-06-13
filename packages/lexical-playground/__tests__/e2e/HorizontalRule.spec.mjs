@@ -50,12 +50,16 @@ test.describe('HorizontalRule', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <hr
           class="PlaygroundEditorTheme__hr"
           contenteditable="false"
           data-lexical-decorator="true" />
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -196,7 +200,9 @@ test.describe('HorizontalRule', () => {
           class="PlaygroundEditorTheme__hr"
           contenteditable="false"
           data-lexical-decorator="true" />
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -359,7 +365,7 @@ test.describe('HorizontalRule', () => {
       html`
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
           <li class="PlaygroundEditorTheme__listItem" value="1">
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </li>
         </ul>
       `,
@@ -374,7 +380,7 @@ test.describe('HorizontalRule', () => {
       html`
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
           <li class="PlaygroundEditorTheme__listItem" value="1">
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </li>
         </ul>
         <hr
@@ -383,7 +389,7 @@ test.describe('HorizontalRule', () => {
           data-lexical-decorator="true" />
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
           <li class="PlaygroundEditorTheme__listItem" value="1">
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </li>
         </ul>
       `,
@@ -409,12 +415,16 @@ test.describe('HorizontalRule', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <hr
           class="PlaygroundEditorTheme__hr"
           contenteditable="false"
           data-lexical-decorator="true" />
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -440,12 +450,16 @@ test.describe('HorizontalRule', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
           <hr
             class="PlaygroundEditorTheme__hr"
             contenteditable="false"
             data-lexical-decorator="true" />
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         `,
       );
 
@@ -465,17 +479,23 @@ test.describe('HorizontalRule', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <hr
           class="PlaygroundEditorTheme__hr"
           contenteditable="false"
           data-lexical-decorator="true" />
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <hr
           class="PlaygroundEditorTheme__hr"
           contenteditable="false"
           data-lexical-decorator="true" />
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -504,12 +524,16 @@ test.describe('HorizontalRule', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <hr
           class="PlaygroundEditorTheme__hr"
           contenteditable="false"
           data-lexical-decorator="true" />
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
     await assertSelection(page, {
@@ -527,7 +551,9 @@ test.describe('HorizontalRule', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <hr
           class="PlaygroundEditorTheme__hr PlaygroundEditorTheme__hrSelected"
           contenteditable="false"

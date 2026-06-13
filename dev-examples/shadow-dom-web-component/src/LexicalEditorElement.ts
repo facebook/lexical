@@ -157,6 +157,9 @@ export class LexicalEditorElement extends HTMLElement {
     );
     editor.setRootElement(contentEditable);
     this.editor = editor;
+    // Initialize the form value so a submit before the user types still
+    // produces a non-empty serialized state, mirroring `<input value="...">`.
+    this.internals.setFormValue(this.value);
 
     const formatButtons = new Map<TextFormatType, HTMLButtonElement>();
     const addButton = (label: string, onClick: () => void) => {

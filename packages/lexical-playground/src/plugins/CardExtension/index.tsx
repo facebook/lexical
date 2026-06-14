@@ -34,6 +34,7 @@ import {
   $getSlotHost,
   $getSlotNameWithinHost,
   $isElementNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
@@ -51,7 +52,7 @@ import {
   KEY_TAB_COMMAND,
 } from 'lexical';
 
-import {$createLineSlotValue} from '../../nodes/slotImport';
+import {$appendInline} from '../../nodes/slotImport';
 import {$createCardNode, $isCardNode, CardNode} from './CardNode';
 
 export const INSERT_CARD_COMMAND: LexicalCommand<void> =
@@ -262,33 +263,22 @@ function $resolveCardChromeTarget(
 // export side and NodeState) — a host opts in with a rule.
 const CardImportRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
-    const card = $createCardNode();
-    // Clear the seeded default body paragraph so imported children replace it.
-    for (const child of card.getChildren()) {
-      child.remove();
-    }
-    let importedTitle = false;
+    // Clear any seeded default body paragraph so imported children replace it.
+    const card = $createCardNode().clear();
+    // Reuse the seeded title paragraph (cleared) as the title slot value so a
+    // source HTML without a title wrapper can never carry over fabricated
+    // content; imported title content is appended into it below.
+    const prevTitle = $getSlot(card, 'title');
+    const title = $isParagraphNode(prevTitle)
+      ? prevTitle.clear()
+      : $createParagraphNode();
+    $setSlot(card, 'title', title);
     for (const domChild of Array.from(el.children)) {
       const slotName = domChild.getAttribute('data-lexical-slot');
       if (slotName === 'title') {
-        importedTitle = true;
-        $setSlot(
-          card,
-          'title',
-          $createLineSlotValue(ctx.$importChildren(domChild)),
-        );
-        continue;
-      }
-      for (const node of ctx.$importOne(domChild)) {
-        card.append(node);
-      }
-    }
-    if (!importedTitle) {
-      // No title wrapper in the source HTML: clear the seeded empty paragraph
-      // defensively so the import can never carry over fabricated content.
-      const title = $getSlot(card, 'title');
-      if ($isElementNode(title)) {
-        title.clear();
+        $appendInline(title, ctx.$importChildren(domChild));
+      } else {
+        card.splice(card.getChildrenSize(), 0, ctx.$importOne(domChild));
       }
     }
     return [card];

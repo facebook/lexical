@@ -31,21 +31,32 @@
           <lexical-editor
             name="notes"
             placeholder-text="Try typing, selecting words, and formatting…"
-            required>
+            required
+            aria-label="Notes editor">
             <button slot="toolbar-extra" type="button" data-clear>Clear</button>
           </lexical-editor>
+          <span class="error" id="notes-error" hidden>
+            This field can't be empty.
+          </span>
         </label>
         <label>
           Summary
           <lexical-editor
             name="summary"
-            placeholder-text="A second editor, in its own shadow root."></lexical-editor>
+            placeholder-text="A second editor, in its own shadow root."
+            aria-label="Summary editor"></lexical-editor>
         </label>
         <label class="control">
           <input id="summary-readonly" type="checkbox" />
           Lock the summary editor (sets the standard
           <code>readonly</code>
           attribute)
+        </label>
+        <label class="control">
+          <input id="summary-rtl" type="checkbox" />
+          Right-to-left summary (sets
+          <code>dir="rtl"</code>
+          on the host — inherits into the shadow content)
         </label>
         <p id="last-edited">Last edited: (none)</p>
         <button type="submit">Submit form</button>

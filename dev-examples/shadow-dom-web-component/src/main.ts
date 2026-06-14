@@ -132,3 +132,40 @@ if (readonlyToggle !== null) {
     }
   });
 }
+
+// Right-to-left toggle. `dir` is an inherited HTML attribute, so flipping
+// it on the host changes the writing direction of the contentEditable
+// inside the shadow root without crossing the boundary — no editor-side
+// glue is needed beyond setting the attribute.
+const rtlToggle = document.querySelector<HTMLInputElement>('#summary-rtl');
+if (rtlToggle !== null) {
+  rtlToggle.addEventListener('change', () => {
+    const summary = document.querySelector<LexicalEditorElement>(
+      'lexical-editor[name="summary"]',
+    );
+    if (summary !== null) {
+      summary.setAttribute('dir', rtlToggle.checked ? 'rtl' : 'ltr');
+    }
+  });
+}
+
+// Visible error message tied to the notes editor's required validation.
+// The host element fires a composed `lexical-validity-change` event when
+// its constraint-validation state changes; the page toggles the visible
+// message based on the live state. (ARIA's `aria-describedby` can't
+// reference IDs across the shadow boundary, so the page handles its own
+// visible message and Lexical sets `aria-invalid` on the contentEditable
+// for screen readers.)
+const notesError = document.querySelector<HTMLElement>('#notes-error');
+const notesHost = document.querySelector<LexicalEditorElement>(
+  'lexical-editor[name="notes"]',
+);
+if (notesError !== null && notesHost !== null) {
+  notesHost.addEventListener('lexical-validity-change', event => {
+    const detail = (event as CustomEvent<{message: string; valid: boolean}>)
+      .detail;
+    notesError.hidden = detail.valid;
+    notesError.textContent =
+      detail.message !== '' ? detail.message : "This field can't be empty.";
+  });
+}

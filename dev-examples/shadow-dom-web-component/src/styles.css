@@ -94,6 +94,18 @@ form label.control {
   margin-bottom: 12px;
 }
 
+.error {
+  display: block;
+  margin-top: 4px;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.error[hidden] {
+  display: none;
+}
+
 #last-edited {
   color: #777;
   font-size: 13px;

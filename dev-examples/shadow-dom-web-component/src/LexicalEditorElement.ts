@@ -64,6 +64,9 @@ const STYLE_SHEET = `
     cursor: pointer;
     font-size: 13px;
   }
+  .toolbar button {
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
   .toolbar button:hover {
     background: var(--lexical-toolbar-hover-bg);
   }
@@ -101,6 +104,44 @@ const STYLE_SHEET = `
   .bold { font-weight: bold; }
   .italic { font-style: italic; }
   .underline { text-decoration: underline; }
+
+  /* The page sees these media queries inside the shadow root the same way
+   * it sees them in the light DOM. Each editor adapts to the user's OS
+   * preferences on its own — the page only needs to override variables
+   * when it wants to opt out of (or force) a colour scheme. */
+  @media (prefers-color-scheme: dark) {
+    :host {
+      --lexical-bg: #1c1d22;
+      --lexical-fg: #e6e6e9;
+      --lexical-border: #2d2f36;
+      --lexical-toolbar-bg: #25262c;
+      --lexical-toolbar-divider: #2d2f36;
+      --lexical-toolbar-hover-bg: #32343a;
+      --lexical-toolbar-pressed-bg: #2a2f4a;
+      --lexical-toolbar-pressed-border: #3a4267;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .toolbar button,
+    .toolbar ::slotted(button) {
+      transition: none;
+    }
+  }
+  /* Windows High Contrast / forced-colors map our custom palette to the
+   * user's system colours, so the editor stays usable in the high-contrast
+   * theme without losing focus indicators or borders. */
+  @media (forced-colors: active) {
+    :host {
+      --lexical-border: CanvasText;
+      --lexical-toolbar-divider: CanvasText;
+      --lexical-toolbar-pressed-border: Highlight;
+    }
+    .toolbar button[aria-pressed='true'] {
+      forced-color-adjust: none;
+      background: Highlight;
+      color: HighlightText;
+    }
+  }
 `;
 
 const TEXT_FORMATS: readonly TextFormatType[] = ['bold', 'italic', 'underline'];
@@ -120,7 +161,12 @@ const TEXT_FORMATS: readonly TextFormatType[] = ['bold', 'italic', 'underline'];
  */
 export class LexicalEditorElement extends HTMLElement {
   static formAssociated = true;
-  static observedAttributes = ['required', 'disabled', 'readonly'];
+  static observedAttributes = [
+    'required',
+    'disabled',
+    'readonly',
+    'aria-label',
+  ];
 
   private internals: ElementInternals;
   private editor: LexicalEditor | null = null;
@@ -238,9 +284,7 @@ export class LexicalEditorElement extends HTMLElement {
   private updateValidity(): void {
     if (!this.required) {
       this.internals.setValidity({});
-      return;
-    }
-    if (this.getPlainText().trim().length === 0) {
+    } else if (this.getPlainText().trim().length === 0) {
       // Find the toolbar's first focusable button as the anchor for the
       // browser's validation tooltip when the editor itself isn't focusable.
       const shadow = this.shadowRoot;
@@ -256,6 +300,58 @@ export class LexicalEditorElement extends HTMLElement {
     } else {
       this.internals.setValidity({});
     }
+    // Reflect the validity state on the contentEditable through
+    // `aria-invalid`, which screen readers expose on focus, and let the
+    // page hook a visible error message through a composed CustomEvent.
+    // (ARIA's `aria-describedby` can't reference IDs across the shadow
+    // boundary in practice, so the page side has to wire up its own
+    // visible message and Lexical can't do that part for it.)
+    const contentEditable = this.findContentEditable();
+    if (contentEditable !== null) {
+      contentEditable.setAttribute(
+        'aria-invalid',
+        this.internals.validity.valid ? 'false' : 'true',
+      );
+    }
+    this.dispatchEvent(
+      new CustomEvent('lexical-validity-change', {
+        bubbles: true,
+        composed: true,
+        detail: {
+          message: this.internals.validationMessage,
+          valid: this.internals.validity.valid,
+        },
+      }),
+    );
+  }
+
+  /**
+   * Mirror the host's `aria-label` onto the contentEditable so screen
+   * readers announce the editor with the page-supplied label rather than
+   * the generic "edit text" prompt.
+   */
+  private syncAriaLabel(): void {
+    const contentEditable = this.findContentEditable();
+    if (contentEditable === null) {
+      return;
+    }
+    const fromAria = this.getAttribute('aria-label');
+    const fromName = this.getAttribute('name');
+    const label =
+      fromAria !== null
+        ? fromAria
+        : fromName !== null
+          ? fromName
+          : 'Rich text editor';
+    contentEditable.setAttribute('aria-label', label);
+  }
+
+  private findContentEditable(): HTMLElement | null {
+    const shadow = this.shadowRoot;
+    if (shadow === null) {
+      return null;
+    }
+    return shadow.querySelector<HTMLElement>('.content');
   }
 
   attributeChangedCallback(name: string): void {
@@ -263,6 +359,8 @@ export class LexicalEditorElement extends HTMLElement {
       this.updateValidity();
     } else if (name === 'disabled' || name === 'readonly') {
       this.updateEditableState();
+    } else if (name === 'aria-label') {
+      this.syncAriaLabel();
     }
   }
 
@@ -297,7 +395,10 @@ export class LexicalEditorElement extends HTMLElement {
     // disconnectedCallback has disposed the editor. Reuse the existing
     // shadow root and clear its children so the flow below rebuilds them
     // cleanly instead of leaving the element with editor === null.
-    const shadow = this.shadowRoot ?? this.attachShadow({mode: 'open'});
+    const shadow =
+      this.shadowRoot !== null
+        ? this.shadowRoot
+        : this.attachShadow({mode: 'open'});
     while (shadow.firstChild !== null) {
       shadow.removeChild(shadow.firstChild);
     }
@@ -323,9 +424,20 @@ export class LexicalEditorElement extends HTMLElement {
     const contentEditable = document.createElement('div');
     contentEditable.className = 'content';
     contentEditable.contentEditable = 'true';
+    // Surface the editor to assistive tech the same way a built-in
+    // `<input type="text">` would. `contenteditable="true"` already gets an
+    // implicit textbox role, but spelling it out keeps the intent visible
+    // and makes the ARIA review at PR time simple. `aria-multiline` is
+    // what tells screen readers to announce Enter as "newline" instead of
+    // "submit".
+    contentEditable.setAttribute('role', 'textbox');
+    contentEditable.setAttribute('aria-multiline', 'true');
     shadow.appendChild(contentEditable);
 
-    const initialText = this.getAttribute('placeholder-text') ?? '';
+    const initialText =
+      this.getAttribute('placeholder-text') !== null
+        ? (this.getAttribute('placeholder-text') as string)
+        : '';
     const editor = buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: () => {
@@ -352,6 +464,7 @@ export class LexicalEditorElement extends HTMLElement {
     // Initialize the form value so a submit before the user types still
     // produces a non-empty serialized state, mirroring `<input value="...">`.
     this.internals.setFormValue(this.value);
+    this.syncAriaLabel();
     this.updateValidity();
     this.updateEditableState();
 

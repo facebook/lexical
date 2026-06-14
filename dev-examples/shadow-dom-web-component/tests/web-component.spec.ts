@@ -270,6 +270,100 @@ test('the floating popover anchors to the shadow-root selection', async ({
   await expect(popover).toBeHidden();
 });
 
+test('mirrors aria-label and aria-invalid onto the contentEditable', async ({
+  page,
+}) => {
+  const readAria = (name: string) =>
+    page.evaluate(n => {
+      const host = document.querySelector(
+        `lexical-editor[name="${n}"]`,
+      ) as Element & {shadowRoot: ShadowRoot};
+      const ce = host.shadowRoot.querySelector('[data-lexical-editor]')!;
+      return {
+        ariaInvalid: ce.getAttribute('aria-invalid'),
+        ariaLabel: ce.getAttribute('aria-label'),
+        ariaMultiline: ce.getAttribute('aria-multiline'),
+        role: ce.getAttribute('role'),
+      };
+    }, name);
+
+  // aria-label flows from the host attribute to the contentEditable;
+  // role and aria-multiline are spelled out for assistive tech.
+  expect(await readAria('notes')).toEqual({
+    ariaInvalid: 'false',
+    ariaLabel: 'Notes editor',
+    ariaMultiline: 'true',
+    role: 'textbox',
+  });
+  expect(await readAria('summary')).toEqual({
+    ariaInvalid: 'false',
+    ariaLabel: 'Summary editor',
+    ariaMultiline: 'true',
+    role: 'textbox',
+  });
+
+  // Emptying the required notes editor flips aria-invalid to true.
+  await editor(page, 'notes').click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.press('Delete');
+  expect((await readAria('notes')).ariaInvalid).toBe('true');
+});
+
+test('a visible error message follows the required validation state', async ({
+  page,
+}) => {
+  const error = page.locator('#notes-error');
+  // The notes editor starts with placeholder text, so the page-level
+  // error message is hidden.
+  await expect(error).toBeHidden();
+
+  // Emptying the editor makes the host fire `lexical-validity-change`
+  // with valid=false; the page-level listener shows the message.
+  await editor(page, 'notes').click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.press('Delete');
+  await expect(error).toBeVisible();
+  await expect(error).toHaveText('Please fill in this field.');
+
+  // Typing again hides the message.
+  await page.keyboard.type('filled in');
+  await expect(error).toBeHidden();
+});
+
+test('dir on the host flips writing direction inside the shadow root', async ({
+  page,
+}) => {
+  await page.locator('#summary-rtl').check();
+  const directions = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="summary"]',
+    ) as Element & {shadowRoot: ShadowRoot};
+    const ce = host.shadowRoot.querySelector(
+      '[data-lexical-editor]',
+    ) as HTMLElement;
+    return {
+      ceDir: window.getComputedStyle(ce).direction,
+      hostDir: host.getAttribute('dir'),
+    };
+  });
+  // The inherited `dir` attribute crosses into the shadow root without
+  // any explicit forwarding — the contentEditable's computed direction
+  // follows the host.
+  expect(directions).toEqual({ceDir: 'rtl', hostDir: 'rtl'});
+
+  await page.locator('#summary-rtl').uncheck();
+  const ltr = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="summary"]',
+    ) as Element & {shadowRoot: ShadowRoot};
+    const ce = host.shadowRoot.querySelector(
+      '[data-lexical-editor]',
+    ) as HTMLElement;
+    return window.getComputedStyle(ce).direction;
+  });
+  expect(ltr).toBe('ltr');
+});
+
 test('a required <lexical-editor> participates in form validation', async ({
   page,
 }) => {

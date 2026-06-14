@@ -588,6 +588,80 @@ describe('LexicalUtils tests', () => {
         doc.documentElement.style.scrollPaddingTop = '';
       }
     });
+
+    test('scrollIntoViewIfNeeded handles horizontal scrolling', () => {
+      const {editor} = testEnv;
+      const rootElement = editor.getRootElement()!;
+
+      // Create a code block element that is a child of rootElement
+      // simulating overflow-x: auto with limited width
+      const codeBlock = document.createElement('code');
+      codeBlock.style.overflowX = 'auto';
+      codeBlock.style.width = '200px';
+      codeBlock.style.display = 'block';
+      rootElement.appendChild(codeBlock);
+
+      // Mock getBoundingClientRect for the code block
+      const codeBlockRect = new DOMRect(0, 0, 200, 100);
+      vi.spyOn(codeBlock, 'getBoundingClientRect').mockReturnValue(
+        codeBlockRect,
+      );
+
+      // Selection rect is beyond the right edge of the code block (at x=250)
+      const selectionRect = new DOMRect(250, 50, 2, 20);
+
+      // scrollLeft should be adjusted
+      codeBlock.scrollLeft = 0;
+      // Mock scrollLeft setter behavior (jsdom doesn't handle overflow)
+      Object.defineProperty(codeBlock, 'scrollLeft', {
+        configurable: true,
+        get: function () {
+          return this._scrollLeft || 0;
+        },
+        set: function (val) {
+          this._scrollLeft = val;
+        },
+      });
+
+      scrollIntoViewIfNeeded(editor, selectionRect, rootElement, codeBlock);
+
+      // The cursor right edge (250+2=252) is 52px past the container right (200px)
+      // So scrollLeft should be increased by 52
+      expect(codeBlock.scrollLeft).toBe(52);
+    });
+
+    test('scrollIntoViewIfNeeded scrolls left when cursor is before left edge', () => {
+      const {editor} = testEnv;
+      const rootElement = editor.getRootElement()!;
+
+      const codeBlock = document.createElement('code');
+      rootElement.appendChild(codeBlock);
+
+      // Code block starts at x=50
+      const codeBlockRect = new DOMRect(50, 0, 200, 100);
+      vi.spyOn(codeBlock, 'getBoundingClientRect').mockReturnValue(
+        codeBlockRect,
+      );
+
+      // Selection rect is before the left edge of the code block (at x=20)
+      const selectionRect = new DOMRect(20, 50, 2, 20);
+
+      Object.defineProperty(codeBlock, 'scrollLeft', {
+        configurable: true,
+        get: function () {
+          return this._scrollLeft || 0;
+        },
+        set: function (val) {
+          this._scrollLeft = val;
+        },
+      });
+
+      scrollIntoViewIfNeeded(editor, selectionRect, rootElement, codeBlock);
+
+      // The cursor at x=20 is 30px before the left edge (50px)
+      // So scrollLeft should be decreased by 30
+      expect(codeBlock.scrollLeft).toBe(-30);
+    });
   });
 });
 describe('$applyNodeReplacement', () => {

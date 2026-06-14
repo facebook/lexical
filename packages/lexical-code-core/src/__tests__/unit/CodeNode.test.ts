@@ -8,11 +8,11 @@
 
 import type {EditorConfig} from 'lexical';
 
-import {$getRoot} from 'lexical';
+import {$getRoot, NODE_STATE_KEY} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
 
-import {$createCodeNode} from '../../CodeNode';
+import {$createCodeNode, CodeNode} from '../../CodeNode';
 
 const editorConfig = {
   namespace: '',
@@ -70,6 +70,50 @@ describe('CodeNode', () => {
         expect(exportedElement).not.toBeNull();
         expect(exportedElement!.style.padding).toBe('1px');
         expect(exportedElement!.style.color).toBe('blue');
+      });
+
+      it('round-trips wordWrap through JSON without changing the wire format', () => {
+        const {editor} = testEnv;
+
+        editor.update(
+          () => {
+            // Default value: nothing should be emitted (no top-level
+            // `wordWrap` key, and no `$` bucket entry — the migration to
+            // NodeState must remain invisible to existing serialized data).
+            const defaultNode = $createCodeNode('javascript');
+            const defaultJSON = defaultNode.exportJSON();
+            expect(defaultJSON).not.toHaveProperty('wordWrap');
+            if (NODE_STATE_KEY in defaultJSON) {
+              expect(defaultJSON[NODE_STATE_KEY]).not.toHaveProperty(
+                'wordWrap',
+              );
+            }
+            expect(defaultNode.getWordWrap()).toBe(false);
+
+            // Enabled value: `wordWrap: true` is emitted at the top level
+            // (matches the pre-NodeState wire format) and never under `$`.
+            const wrappedNode = $createCodeNode('javascript');
+            wrappedNode.setWordWrap(true);
+            const wrappedJSON = wrappedNode.exportJSON();
+            expect(wrappedJSON.wordWrap).toBe(true);
+            if (NODE_STATE_KEY in wrappedJSON) {
+              expect(wrappedJSON[NODE_STATE_KEY]).not.toHaveProperty(
+                'wordWrap',
+              );
+            }
+
+            // Re-import and confirm the value survives the round-trip.
+            const reimported = CodeNode.importJSON(wrappedJSON);
+            expect(reimported.getWordWrap()).toBe(true);
+
+            // Toggling back to false strips the top-level key on re-export.
+            const toggledOff = reimported.setWordWrap(false);
+            const toggledJSON = toggledOff.exportJSON();
+            expect(toggledJSON).not.toHaveProperty('wordWrap');
+            expect(toggledOff.getWordWrap()).toBe(false);
+          },
+          {discrete: true},
+        );
       });
     },
     {

@@ -210,8 +210,46 @@ test.describe('Shadow DOM', () => {
     // Sanity: if the shadow-path copy guard ever regresses, surface that
     // here rather than letting paste become a silent no-op.
     expect(Object.keys(clipboard).length).toBeGreaterThan(0);
+    // DIAGNOSTIC: surface clipboard payload sizes so CI failures can point
+    // at the actual cause (empty lexical payload vs paste-side insertion).
+    const clipboardDebug = await page.evaluate(
+      data => ({
+        htmlLen: (data['text/html'] ?? '').length,
+        lexicalLen: (data['application/x-lexical-editor'] ?? '').length,
+        textPlain: data['text/plain'] ?? null,
+        types: Object.keys(data),
+      }),
+      clipboard,
+    );
+    // eslint-disable-next-line no-console
+    console.log('CLIPBOARD DEBUG:', JSON.stringify(clipboardDebug));
     await moveToEditorEnd(page);
     await pasteFromClipboard(page, clipboard);
+    // DIAGNOSTIC: editor innerHTML right after paste, before assertHTML
+    // retries, so we see exactly what landed in the editor when CI fails.
+    const afterPasteDebug = await page.evaluate(() => {
+      const findEditor = root => {
+        const direct = root.querySelector(
+          'div[contenteditable="true"][data-lexical-editor="true"]',
+        );
+        if (direct !== null) return direct;
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            const inner = findEditor(el.shadowRoot);
+            if (inner !== null) return inner;
+          }
+        }
+        return null;
+      };
+      const editor = findEditor(document);
+      return {
+        activeIsEditable: document.activeElement?.isContentEditable ?? null,
+        activeTag: document.activeElement?.tagName ?? null,
+        innerHTML: editor?.innerHTML?.slice(0, 400) ?? null,
+      };
+    });
+    // eslint-disable-next-line no-console
+    console.log('AFTER PASTE:', JSON.stringify(afterPasteDebug));
     await assertHTML(
       page,
       html`

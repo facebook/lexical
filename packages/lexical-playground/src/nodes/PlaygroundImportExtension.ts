@@ -36,6 +36,7 @@ import {
 
 import {$createCardNode} from '../plugins/CardExtension/CardNode';
 import {$createPullQuoteNode} from '../plugins/PullQuoteExtension/PullQuoteNode';
+import {$createReviewNode} from '../plugins/ReviewExtension/ReviewNode';
 import {parseAllowedFontSize} from '../plugins/ToolbarPlugin/fontSize';
 import {parseAllowedColor} from '../ui/ColorPicker';
 import {$createSlotContainerNode} from './SlotContainerNode';
@@ -255,16 +256,69 @@ const PullQuoteImportRule = /* @__PURE__ */ defineImportRule({
 });
 
 /**
+ * Reconstruct a {@link ReviewNode} from its exported HTML. Mirrors
+ * `ReviewNode.exportDOM`: a `<div class="lexical-review-node" data-rating="N">`
+ * wrapping a `<div data-lexical-slot="author">` and the body prose as regular
+ * paragraph siblings (Review is an ElementNode host with children, like the
+ * Card). The author is a single-line slot whose value is a bare paragraph, so
+ * the wrapper's imported content is flattened to its inline projection; the
+ * body children import through the normal child path. The `rating` is NodeState
+ * (not a child or slot), so it is restored from the `data-rating` attribute and
+ * clamped to 0–5 so hand-authored HTML can't push it out of range.
+ */
+const ReviewImportRule = /* @__PURE__ */ defineImportRule({
+  $import: (ctx, el) => {
+    const review = $createReviewNode();
+    // Clear the seeded default body paragraph so imported children replace it.
+    for (const child of review.getChildren()) {
+      child.remove();
+    }
+    const rating = Number(el.getAttribute('data-rating'));
+    if (Number.isFinite(rating)) {
+      review.setRating(Math.max(0, Math.min(5, Math.round(rating))));
+    }
+    let importedAuthor = false;
+    for (const domChild of Array.from(el.children)) {
+      const slotName = domChild.getAttribute('data-lexical-slot');
+      if (slotName === 'author') {
+        importedAuthor = true;
+        $setSlot(
+          review,
+          'author',
+          $createLineSlotValue(ctx.$importChildren(domChild)),
+        );
+        continue;
+      }
+      for (const node of ctx.$importOne(domChild)) {
+        review.append(node);
+      }
+    }
+    if (!importedAuthor) {
+      // No author wrapper in the source HTML: clear the seeded empty paragraph
+      // defensively so the import can never carry over fabricated content.
+      const author = $getSlot(review, 'author');
+      if ($isElementNode(author)) {
+        author.clear();
+      }
+    }
+    return [review];
+  },
+  match: sel.tag('div').classAll('lexical-review-node'),
+  name: '@lexical/playground/review-host',
+});
+
+/**
  * Rich-text-only playground import rules. `PlaygroundNodes` registers
- * `CardNode`/`PullQuoteNode` in every mode, so this is not about unregistered
- * nodes: the rules live with {@link PlaygroundRichTextImportExtension} so they
- * ride the same mode gate as the other block-level import rules — plain-text
- * paste never reconstructs block hosts, so carrying these rules there would
- * be dead weight.
+ * `CardNode`/`PullQuoteNode`/`ReviewNode` in every mode, so this is not about
+ * unregistered nodes: the rules live with {@link PlaygroundRichTextImportExtension}
+ * so they ride the same mode gate as the other block-level import rules —
+ * plain-text paste never reconstructs block hosts, so carrying these rules
+ * there would be dead weight.
  */
 export const PlaygroundRichTextImportRules = [
   CardImportRule,
   PullQuoteImportRule,
+  ReviewImportRule,
 ];
 
 /**

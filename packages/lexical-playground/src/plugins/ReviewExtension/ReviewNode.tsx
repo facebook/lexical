@@ -7,16 +7,21 @@
  */
 
 import type {
+  DOMExportOutput,
   ElementDOMSlot,
+  LexicalEditor,
   LexicalNode,
   StateConfigValue,
   StateValueOrUpdater,
 } from 'lexical';
 
+import {$appendNodeToHTML} from '@lexical/html';
 import {
   $create,
   $createParagraphNode,
+  $getSlot,
   $getState,
+  $isElementNode,
   $setSlot,
   $setState,
   createState,
@@ -106,6 +111,30 @@ export class ReviewNode extends ElementNode {
   // Review (mirrors CardNode).
   isShadowRoot(): true {
     return true;
+  }
+
+  // Make the Review round-trip through HTML (copy/paste, getHTML). Like
+  // CardNode, the slots ride a separate Map so the exporter never descends
+  // into them on its own — emit the `author` slot into a `data-lexical-slot`
+  // wrapper that ReviewImportRule maps back with $setSlot. `author` is a
+  // single-line bare paragraph, so it exports itself directly into the
+  // wrapper; the body children serialize through the normal child path,
+  // appended after this element by the outer $appendNodesToHTML loop. The
+  // rating is NodeState — not a child or slot — so it can't serialize
+  // implicitly either; round-trip it as a data attribute the import reads back
+  // through setRating().
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    const element = document.createElement('div');
+    element.className = 'lexical-review-node';
+    element.setAttribute('data-rating', String(this.getRating()));
+    const author = $getSlot(this, 'author');
+    if ($isElementNode(author)) {
+      const wrapper = document.createElement('div');
+      wrapper.setAttribute('data-lexical-slot', 'author');
+      $appendNodeToHTML(editor, author, wrapper);
+      element.append(wrapper);
+    }
+    return {element};
   }
 }
 

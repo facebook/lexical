@@ -6,13 +6,15 @@
  *
  */
 
-import {moveToEditorBeginning} from '../keyboardShortcuts/index.mjs';
+import {moveToEditorBeginning, selectAll} from '../keyboardShortcuts/index.mjs';
 import {
   click,
+  copyToClipboard,
   evaluate,
   expect,
   focusEditor,
   initialize,
+  pasteFromClipboard,
   sleep,
   test,
   waitForSelector,
@@ -63,6 +65,13 @@ async function starOnCount(page) {
   return evaluate(
     page,
     () => document.querySelectorAll('.lexical-review-star-on').length,
+  );
+}
+
+async function reviewCount(page) {
+  return evaluate(
+    page,
+    () => document.querySelectorAll('.lexical-review-node').length,
   );
 }
 
@@ -237,5 +246,50 @@ test.describe('Review React-chromed ElementNode', () => {
     ).toContain('Before');
     // The rating widget is still present and the regions are intact.
     expect(await page.locator(STAR).count()).toBe(5);
+  });
+
+  test('exports to HTML and re-imports through the DOMImportExtension rule', async ({
+    page,
+    isCollab,
+  }) => {
+    // Clipboard round-trips run once; collab adds nothing to the import path.
+    test.skip(isCollab);
+    await focusEditor(page);
+    await insertReview(page);
+    await waitForSelector(page, '.lexical-review-chrome');
+
+    // Set a rating and fill both editable regions.
+    await click(page, `${STAR}:nth-child(4)`);
+    await sleep(100);
+    await click(page, `${AUTHOR} p`);
+    await page.keyboard.type('Jane Doe');
+    await click(page, `${BODY} p`);
+    await page.keyboard.type('Loved it');
+    await sleep(120);
+
+    // Select the whole document from a top-level paragraph (outside the
+    // Review's shadow root, so Cmd+A is document-scoped) and copy.
+    await moveToEditorBeginning(page);
+    await selectAll(page);
+    const clipboard = await copyToClipboard(page);
+    // Export side: the author rides its named wrapper, and the rating — being
+    // NodeState rather than a child or slot — rides a data attribute.
+    expect(clipboard['text/html']).toContain('data-lexical-slot="author"');
+    expect(clipboard['text/html']).toContain('data-rating="4"');
+
+    // Drop everything, then paste HTML-only so the import must go through the
+    // DOMImportExtension review rule (the clipboard's lexical JSON is dropped).
+    await page.keyboard.press('Backspace');
+    await sleep(120);
+    expect(await reviewCount(page)).toBe(0);
+    await pasteFromClipboard(page, {'text/html': clipboard['text/html']});
+    await sleep(200);
+    await waitForSelector(page, '.lexical-review-chrome');
+
+    // Import side: the host, both regions, and the rating are reconstructed.
+    expect(await reviewCount(page)).toBe(1);
+    expect(await regionText(page, AUTHOR)).toBe('Jane Doe');
+    expect(await regionText(page, BODY)).toBe('Loved it');
+    expect(await ratingValue(page)).toBe(4);
   });
 });

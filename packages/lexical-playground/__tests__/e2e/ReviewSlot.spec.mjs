@@ -6,7 +6,11 @@
  *
  */
 
-import {moveToEditorBeginning, selectAll} from '../keyboardShortcuts/index.mjs';
+import {
+  moveToEditorBeginning,
+  moveToLineBeginning,
+  selectAll,
+} from '../keyboardShortcuts/index.mjs';
 import {
   click,
   copyToClipboard,
@@ -291,6 +295,44 @@ test.describe('Review React-chromed ElementNode', () => {
     expect(await reviewCount(page)).toBe(1);
     expect(await regionText(page, AUTHOR)).toBe('Jane Doe');
     expect(await regionText(page, BODY)).toBe('Loved it');
+    expect(await ratingValue(page)).toBe(4);
+  });
+
+  // Backspace deletes an empty Review (like the Card), from the start of its
+  // body — but a set rating counts as content, so a rated Review is kept.
+  test('backspace from the body of an empty review deletes it', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertReview(page);
+    await waitForSelector(page, '.lexical-review-chrome');
+    expect(await reviewCount(page)).toBe(1);
+
+    await click(page, `${BODY} p`);
+    await moveToLineBeginning(page);
+    await page.keyboard.press('Backspace');
+    await sleep(120);
+
+    expect(await reviewCount(page)).toBe(0);
+  });
+
+  test('backspace keeps a textless review that has a rating', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertReview(page);
+    await waitForSelector(page, '.lexical-review-chrome');
+    await click(page, `${STAR}:nth-child(4)`);
+    await sleep(100);
+    expect(await ratingValue(page)).toBe(4);
+
+    await click(page, `${BODY} p`);
+    await moveToLineBeginning(page);
+    await page.keyboard.press('Backspace');
+    await sleep(120);
+
+    // The rating is content, so the Review survives with its rating intact.
+    expect(await reviewCount(page)).toBe(1);
     expect(await ratingValue(page)).toBe(4);
   });
 });

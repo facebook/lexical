@@ -119,6 +119,30 @@ async function assertCardIntact(page, {title, body}) {
   expect(await bodyText(page)).toBe(body);
 }
 
+// Place the caret at the start of the block immediately after the card (the
+// trailing paragraph $insertNodeToNearestRoot leaves behind), for the
+// "backspace from after the card" deletion case.
+async function selectStartAfterCard(page) {
+  await evaluate(page, () => {
+    const editor = window.lexicalEditor;
+    editor.update(
+      () => {
+        const root = editor.getEditorState()._nodeMap.get('root');
+        for (const child of root.getChildren()) {
+          if (child.getType() === 'card') {
+            const next = child.getNextSibling();
+            if (next) {
+              next.selectStart();
+            }
+          }
+        }
+      },
+      {discrete: true},
+    );
+  });
+  await sleep(60);
+}
+
 test.describe('Card slot deletion boundaries', () => {
   test.beforeEach(async ({isCollab, isPlainText, page}) => {
     test.skip(isPlainText);
@@ -192,6 +216,37 @@ test.describe('Card slot deletion boundaries', () => {
     await page.keyboard.press('Delete');
     await sleep(120);
     await assertCardIntact(page, {body: 'ody', title: 'Title'});
+  });
+
+  // --- Empty-card deletion: backspace removes the whole box ---
+
+  test('backspace from the title of an empty card deletes the card', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertEmptyCard(page);
+    expect(await cardCount(page)).toBe(1);
+
+    await click(page, '[data-lexical-slot="title"]');
+    await moveToLineBeginning(page);
+    await page.keyboard.press('Backspace');
+    await sleep(120);
+
+    expect(await cardCount(page)).toBe(0);
+  });
+
+  test('backspace from the block after an empty card deletes the card', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertEmptyCard(page);
+    expect(await cardCount(page)).toBe(1);
+
+    await selectStartAfterCard(page);
+    await page.keyboard.press('Backspace');
+    await sleep(120);
+
+    expect(await cardCount(page)).toBe(0);
   });
 
   // --- Single-line slot: the title's value is a bare paragraph ---

@@ -70,6 +70,23 @@ async function selectedPullquoteCount(page) {
   );
 }
 
+// Whether the collapsed DOM caret is inside an element matching `selector`.
+async function caretInSelector(page, selector) {
+  return evaluate(
+    page,
+    sel => {
+      const s = window.getSelection();
+      if (!s || s.rangeCount === 0 || s.anchorNode === null) {
+        return false;
+      }
+      const node = s.anchorNode;
+      const el = node.nodeType === 3 ? node.parentElement : node;
+      return el !== null && el.closest(sel) !== null;
+    },
+    selector,
+  );
+}
+
 test.describe('PullQuote slot host', () => {
   test.beforeEach(async ({isCollab, isPlainText, page}) => {
     test.skip(isPlainText);
@@ -202,5 +219,53 @@ test.describe('PullQuote slot host', () => {
     await click(page, '[data-lexical-slot="quote"]', {position: {x: 4, y: 4}});
     await sleep(120);
     expect(await selectedPullquoteCount(page)).toBe(0);
+  });
+
+  // Enter on the selected PullQuote drops the caret into the quote slot, and
+  // Escape from either slot selects the whole PullQuote again — a keyboard
+  // counterpart to the chrome click, so the box is reachable both ways.
+  test('Enter on the selected PullQuote drops the caret into the quote', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertPullQuote(page);
+    await click(page, '.lexical-pullquote-node', {position: {x: 4, y: 4}});
+    await sleep(120);
+    expect(await selectedPullquoteCount(page)).toBe(1);
+
+    await page.keyboard.press('Enter');
+    await sleep(120);
+    expect(await caretInSelector(page, '[data-lexical-slot="quote"]')).toBe(
+      true,
+    );
+    expect(await selectedPullquoteCount(page)).toBe(0);
+  });
+
+  test('Escape from the quote selects the whole PullQuote', async ({page}) => {
+    await focusEditor(page);
+    await insertPullQuote(page);
+    await click(page, '[data-lexical-slot="quote"]', {position: {x: 4, y: 4}});
+    await sleep(120);
+    expect(await selectedPullquoteCount(page)).toBe(0);
+
+    await page.keyboard.press('Escape');
+    await sleep(120);
+    expect(await selectedPullquoteCount(page)).toBe(1);
+  });
+
+  test('Escape from the attribution selects the whole PullQuote', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertPullQuote(page);
+    await click(page, '[data-lexical-slot="attribution"]', {
+      position: {x: 4, y: 4},
+    });
+    await sleep(120);
+    expect(await selectedPullquoteCount(page)).toBe(0);
+
+    await page.keyboard.press('Escape');
+    await sleep(120);
+    expect(await selectedPullquoteCount(page)).toBe(1);
   });
 });

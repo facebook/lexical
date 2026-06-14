@@ -17,20 +17,32 @@ import {
 } from '@lexical/html';
 import {$insertNodeToNearestRoot, mergeRegister} from '@lexical/utils';
 import {
+  $createNodeSelection,
   $createParagraphNode,
+  $getSelection,
   $getSlot,
   $isElementNode,
+  $isNodeSelection,
+  $isRangeSelection,
   $removeSlot,
+  $setSelection,
   $setSlot,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_LOW,
   configExtension,
   createCommand,
   defineExtension,
+  KEY_ENTER_COMMAND,
+  KEY_ESCAPE_COMMAND,
 } from 'lexical';
 
 import {registerHostChromeSelection} from '../../nodes/hostChromeSelection';
 import {$createSlotContainerNode} from '../../nodes/SlotContainerNode';
-import {registerSlotHostArrowEscape} from '../../nodes/slotHostEscape';
+import {
+  $findSlotHost,
+  registerSlotHostArrowEscape,
+} from '../../nodes/slotHostEscape';
 import {$appendInline} from '../../nodes/slotImport';
 import {
   $createPullQuoteNode,
@@ -40,6 +52,44 @@ import {
 
 export const INSERT_PULLQUOTE_COMMAND: LexicalCommand<void> =
   /* @__PURE__ */ createCommand('INSERT_PULLQUOTE_COMMAND');
+
+// Enter while the PullQuote is the only selected node drops the caret into its
+// quote slot, so the keyboard can step into the box the way a chrome click does.
+function $handlePullQuoteEnter(event: KeyboardEvent | null): boolean {
+  const selection = $getSelection();
+  if (!$isNodeSelection(selection)) {
+    return false;
+  }
+  const nodes = selection.getNodes();
+  if (nodes.length !== 1 || !$isPullQuoteNode(nodes[0])) {
+    return false;
+  }
+  const quote = $getSlot(nodes[0], 'quote');
+  if (!$isElementNode(quote)) {
+    return false;
+  }
+  event?.preventDefault();
+  quote.selectStart();
+  return true;
+}
+
+// Escape from inside either slot promotes the RangeSelection to a NodeSelection
+// on the whole PullQuote — the inverse of $handlePullQuoteEnter, and the
+// keyboard counterpart to the chrome click.
+function $handlePullQuoteEscape(): boolean {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection)) {
+    return false;
+  }
+  const host = $findSlotHost(selection.anchor.getNode(), $isPullQuoteNode);
+  if (host === null) {
+    return false;
+  }
+  const nodeSelection = $createNodeSelection();
+  nodeSelection.add(host.getKey());
+  $setSelection(nodeSelection);
+  return true;
+}
 
 // Reconstruct a PullQuoteNode from its exported HTML (see
 // PullQuoteNode.exportDOM): a `<div class="lexical-pullquote-node">` wrapping a
@@ -123,6 +173,18 @@ export const PullQuoteExtension = /* @__PURE__ */ defineExtension({
       registerHostChromeSelection(editor, $isPullQuoteNode),
       // ArrowDown/Up at the PullQuote's bottom/top slot edge steps out of it.
       registerSlotHostArrowEscape(editor, $isPullQuoteNode),
+      // Enter on the selected PullQuote drops the caret into its quote slot...
+      editor.registerCommand<KeyboardEvent | null>(
+        KEY_ENTER_COMMAND,
+        $handlePullQuoteEnter,
+        COMMAND_PRIORITY_BEFORE_EDITOR,
+      ),
+      // ...and Escape from either slot selects the whole PullQuote again.
+      editor.registerCommand<KeyboardEvent | null>(
+        KEY_ESCAPE_COMMAND,
+        $handlePullQuoteEscape,
+        COMMAND_PRIORITY_LOW,
+      ),
     );
   },
 });

@@ -17,16 +17,19 @@ import {
   $getSlotNames,
   $isElementNode,
   $isRangeSelection,
+  $isRootOrShadowRoot,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_LOW,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
+  KEY_BACKSPACE_COMMAND,
 } from 'lexical';
 
 // Find the slot host (Card / Review / PullQuote) that contains `start`. The
 // caret may be in the host's regular children — getParent reaches the host — or
 // in a named slot, where slot values have `__parent === null`, so walk to the
 // slot value and resolve its host with $getSlotHost.
-function $findSlotHost<T extends LexicalNode>(
+export function $findSlotHost<T extends LexicalNode>(
   start: LexicalNode,
   $isHost: (node: LexicalNode | null | undefined) => node is T,
 ): T | null {
@@ -249,5 +252,113 @@ export function registerSlotHostArrowEscape<T extends LexicalNode>(
       event => $handleSlotHostArrow(editor, $isHost, event, false),
       COMMAND_PRIORITY_LOW,
     ),
+  );
+}
+
+/**
+ * Whether a slot host has no text in its children or in any of its named slots —
+ * the baseline "empty" test {@link registerEmptyHostBackspace} deletes on. A
+ * host with other meaningful state (e.g. the Review's rating) composes an extra
+ * check on top of this.
+ */
+export function $isSlotHostTextEmpty(host: LexicalNode): boolean {
+  if ($isElementNode(host) && host.getTextContentSize() !== 0) {
+    return false;
+  }
+  for (const name of $getSlotNames(host)) {
+    const value = $getSlot(host, name);
+    if ($isElementNode(value) && value.getTextContentSize() !== 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Remove an empty host and put the caret where it was: at the end of the
+// previous block, else the start of the next, else in a fresh paragraph that
+// replaces it (the document always needs at least one block).
+function $deleteEmptyHost(host: LexicalNode): void {
+  const prev = host.getPreviousSibling();
+  if ($isElementNode(prev)) {
+    host.remove();
+    prev.selectEnd();
+    return;
+  }
+  const next = host.getNextSibling();
+  if ($isElementNode(next)) {
+    host.remove();
+    next.selectStart();
+    return;
+  }
+  host.replace($createParagraphNode()).selectStart();
+}
+
+/**
+ * Backspace deletes an *empty* slot host (per `$isEmpty`) from either edge:
+ *
+ * - From inside the host, at the start of its first region (the Card's `title`
+ *   slot, the Review's body) — the analog of backspacing an empty block away.
+ * - From outside, at the start of the block immediately after the host.
+ *
+ * A non-empty host is left to the default handler, so the slots' shadow-root
+ * boundary still protects their content (backspace at a non-empty slot start
+ * stays a no-op). Mirrors the Card/Review "delete the empty box" gesture.
+ */
+export function registerEmptyHostBackspace<T extends LexicalNode>(
+  editor: LexicalEditor,
+  $isHost: (node: LexicalNode | null | undefined) => node is T,
+  $isEmpty: (host: T) => boolean,
+): () => void {
+  return editor.registerCommand<KeyboardEvent | null>(
+    KEY_BACKSPACE_COMMAND,
+    event => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+        return false;
+      }
+      const anchor = selection.anchor;
+      const inner = $findSlotHost(anchor.getNode(), $isHost);
+      if (inner !== null) {
+        // Inside the host: only delete from the start of its first region.
+        const first = $orderedRegions(editor, inner)[0];
+        if (
+          first !== undefined &&
+          $isElementNode(first.startNode) &&
+          $isAtStartOfNode(anchor, first.startNode) &&
+          $isEmpty(inner)
+        ) {
+          $deleteEmptyHost(inner);
+          if (event) {
+            event.preventDefault();
+          }
+          return true;
+        }
+        return false;
+      }
+      // Outside the host: delete when the caret is at the start of the block
+      // immediately after an empty host.
+      let block: LexicalNode | null = anchor.getNode();
+      while (block !== null) {
+        const parent: LexicalNode | null = block.getParent();
+        if (parent !== null && $isRootOrShadowRoot(parent)) {
+          break;
+        }
+        block = parent;
+      }
+      if (block === null || !$isElementNode(block)) {
+        return false;
+      }
+      const prev = block.getPreviousSibling();
+      if ($isHost(prev) && $isEmpty(prev) && $isAtStartOfNode(anchor, block)) {
+        prev.remove();
+        block.selectStart();
+        if (event) {
+          event.preventDefault();
+        }
+        return true;
+      }
+      return false;
+    },
+    COMMAND_PRIORITY_BEFORE_EDITOR,
   );
 }

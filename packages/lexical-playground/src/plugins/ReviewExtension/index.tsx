@@ -39,7 +39,11 @@ import {
 import {useCallback, useState} from 'react';
 import {createPortal} from 'react-dom';
 
-import {registerSlotHostArrowEscape} from '../../nodes/slotHostEscape';
+import {
+  $isSlotHostTextEmpty,
+  registerEmptyHostBackspace,
+  registerSlotHostArrowEscape,
+} from '../../nodes/slotHostEscape';
 import {$appendInline} from '../../nodes/slotImport';
 import {$createReviewNode, $isReviewNode, ReviewNode} from './ReviewNode';
 
@@ -250,6 +254,14 @@ export const ReviewExtension = /* @__PURE__ */ defineExtension({
       // helper reads the rendered order, so the Review's body-above-author
       // chrome needs no special handling here.
       registerSlotHostArrowEscape(editor, $isReviewNode),
+      // Backspace at the start of the body of an empty Review — or from the
+      // block right after one — deletes it (like the Card). A set rating counts
+      // as content, so a rated-but-textless Review is kept.
+      registerEmptyHostBackspace(
+        editor,
+        $isReviewNode,
+        node => $isSlotHostTextEmpty(node) && node.getRating() === 0,
+      ),
     ),
 });
 

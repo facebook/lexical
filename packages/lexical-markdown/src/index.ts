@@ -24,6 +24,8 @@ import {
 import {createMarkdownImport} from './MarkdownImport';
 import {registerMarkdownShortcuts} from './MarkdownShortcuts';
 import {
+  $createHeadingTransformer,
+  $createQuoteTransformer,
   BOLD_ITALIC_STAR,
   BOLD_ITALIC_UNDERSCORE,
   BOLD_STAR,
@@ -109,6 +111,8 @@ export {
   $convertFromMarkdownString,
   $convertSelectionToMarkdownString,
   $convertToMarkdownString,
+  $createHeadingTransformer,
+  $createQuoteTransformer,
   BOLD_ITALIC_STAR,
   BOLD_ITALIC_UNDERSCORE,
   BOLD_STAR,

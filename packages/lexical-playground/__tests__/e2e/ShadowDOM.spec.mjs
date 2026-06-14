@@ -223,13 +223,38 @@ test.describe('Shadow DOM', () => {
     );
     // eslint-disable-next-line no-console
     console.log('CLIPBOARD DEBUG:', JSON.stringify(clipboardDebug));
-    // Re-focus the shadow-internal contentEditable: between the type and
-    // moveToEditorEnd steps CI loses real focus to the shadow host
-    // (document.activeElement = host DIV), so the Ctrl/Cmd+End keystroke
-    // dispatched on the host never reaches the editor and selectAll's
-    // full-text range stays put — making paste a destructive replace.
-    await focusEditor(page);
-    await moveToEditorEnd(page);
+    // Move selection to the end of "hi" directly. moveToEditorEnd's
+    // Ctrl/Cmd+End keystroke never reaches the shadow-internal editor
+    // on CI (document.activeElement reverts to the shadow host), so
+    // collapse the selection to the end of the textnode via DOM APIs
+    // instead so paste inserts at the cursor rather than replacing the
+    // selectAll range.
+    await page.evaluate(() => {
+      const findEditor = root => {
+        const direct = root.querySelector(
+          'div[contenteditable="true"][data-lexical-editor="true"]',
+        );
+        if (direct !== null) return direct;
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            const inner = findEditor(el.shadowRoot);
+            if (inner !== null) return inner;
+          }
+        }
+        return null;
+      };
+      const editor = findEditor(document);
+      const lastText = editor?.querySelector('[data-lexical-text="true"]');
+      const textNode = lastText?.firstChild;
+      if (textNode && textNode.nodeType === 3) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        const range = document.createRange();
+        range.setStart(textNode, textNode.textContent.length);
+        range.collapse(true);
+        sel.addRange(range);
+      }
+    });
     // DIAGNOSTIC: editor state right before paste — confirms which element
     // paste should target and whether activeElement is the editor.
     const beforePasteDebug = await page.evaluate(() => {

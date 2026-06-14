@@ -7,6 +7,7 @@
  */
 
 import {
+  $cloneWithProperties,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -92,7 +93,7 @@ describe('LexicalRootNode tests', () => {
     });
 
     test('RootNode.clone()', async () => {
-      const rootNodeClone = (rootNode.constructor as typeof RootNode).clone();
+      const rootNodeClone = $cloneWithProperties(rootNode);
 
       expect(rootNodeClone).not.toBe(rootNode);
       expect(rootNodeClone).toStrictEqual(rootNode);

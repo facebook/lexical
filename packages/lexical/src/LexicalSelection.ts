@@ -1762,6 +1762,18 @@ export class RangeSelection implements BaseSelection {
         (parent === null ? null : parent.getNextSibling());
 
       if ($isElementNode(nextSibling) && nextSibling.isShadowRoot()) {
+        if (
+          anchor.type === 'element' &&
+          $isElementNode(anchorNode) &&
+          anchorNode.isEmpty()
+        ) {
+          const caret = $normalizeCaret($getChildCaret(nextSibling, 'next'));
+          $updateRangeSelectionFromCaretRange(
+            this,
+            $getCaretRange(caret, caret),
+          );
+          anchorNode.remove();
+        }
         return true;
       }
     }

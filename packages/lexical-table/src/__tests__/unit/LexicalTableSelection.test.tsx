@@ -25,6 +25,7 @@ import {
   $getRoot,
   $getSelection,
   $isParagraphNode,
+  $isRangeSelection,
   $isTextNode,
   $setSelection,
 } from 'lexical';
@@ -164,6 +165,28 @@ describe('table selection', () => {
             expect(nodes).toEqual([]);
           }
         });
+      });
+    });
+
+    describe('regression #8075', () => {
+      test('forward delete removes an empty paragraph before a table', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            const paragraph = $createParagraphNode();
+            root.clear().append(paragraph, tableNode);
+            paragraph.select();
+
+            const selection = $getSelection();
+            if (!$isRangeSelection(selection)) {
+              throw new Error('Expected range selection');
+            }
+            selection.deleteCharacter(false);
+
+            expect(root.getChildren()).toEqual([tableNode]);
+          },
+          {discrete: true},
+        );
       });
     });
   });

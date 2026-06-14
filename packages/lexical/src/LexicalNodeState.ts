@@ -31,6 +31,22 @@ import {getRegisteredNodeOrThrow, getStaticNodeConfig} from './LexicalUtils';
 const __DEV__ = process.env.NODE_ENV !== 'production';
 
 /**
+ * Read the state directly from the given object without `node.getLatest()`.
+ * Safe to use outside of editor state context or to read a previous version,
+ * equivalent to reading the property directly.
+ */
+export const NODE_STATE_DIRECT = 'direct';
+/**
+ * Use `node.getLatest()` before reading the state, per the lexical convention
+ * of only working with the latest version of a node.
+ */
+export const NODE_STATE_LATEST = 'latest';
+
+export type NodeStateVersion =
+  | typeof NODE_STATE_DIRECT
+  | typeof NODE_STATE_LATEST;
+
+/**
  * Get the value type (V) from a StateConfig
  */
 export type StateConfigValue<S extends AnyStateConfig> =
@@ -345,26 +361,27 @@ export function createState<K extends symbol | string, V>(
  * state on the given node, and will return `stateConfig.defaultValue` if the
  * state has never been set on this node.
  *
- * The `version` parameter is optional and should generally be `'latest'`,
+ * The `version` parameter is optional and should generally be {@link NODE_STATE_LATEST},
  * consistent with the behavior of other node methods and functions,
  * but for certain use cases such as `updateDOM` you may have a need to
- * use `'direct'` to read the state from a previous version of the node.
+ * use {@link NODE_STATE_DIRECT} to read the state from a previous version of the node.
  *
- * For very advanced use cases, you can expect that 'direct' does not
+ * For very advanced use cases, you can expect that {@link NODE_STATE_DIRECT} does not
  * require an editor state, just like directly accessing other properties
  * of a node without an accessor (e.g. `textNode.__text`).
  *
  * @param node Any LexicalNode
  * @param stateConfig The configuration of the state to read
- * @param version The default value 'latest' will read the latest version of the node state, 'direct' will read the version that is stored on this LexicalNode which not reflect the version used in the current editor state
+ * @param version The default value {@link NODE_STATE_LATEST} will read the latest version of the node state, {@link NODE_STATE_DIRECT} will read the version that is stored on this LexicalNode which not reflect the version used in the current editor state
  * @returns The current value from the state, or the default value provided by the configuration.
  */
 export function $getState<K extends string, V>(
   node: LexicalNode,
   stateConfig: StateConfig<K, V>,
-  version: 'latest' | 'direct' = 'latest',
+  version: NodeStateVersion = NODE_STATE_LATEST,
 ): V {
-  const latestOrDirectNode = version === 'latest' ? node.getLatest() : node;
+  const latestOrDirectNode =
+    version === NODE_STATE_LATEST ? node.getLatest() : node;
   const state = latestOrDirectNode.__state;
   if (state) {
     $checkCollision(node, stateConfig, state);
@@ -375,11 +392,11 @@ export function $getState<K extends string, V>(
 
 /**
  * Given two versions of a node and a stateConfig, compare their state values
- * using `$getState(nodeVersion, stateConfig, 'direct')`.
+ * using `$getState(nodeVersion, stateConfig, NODE_STATE_DIRECT)`.
  * If the values are equal according to `stateConfig.isEqual`, return `null`,
  * otherwise return `[value, prevValue]`.
  *
- * This is useful for implementing updateDOM. Note that the `'direct'`
+ * This is useful for implementing updateDOM. Note that the `NODE_STATE_DIRECT`
  * version argument is used for both nodes.
  *
  * @param node Any LexicalNode
@@ -392,8 +409,8 @@ export function $getStateChange<T extends LexicalNode, K extends string, V>(
   prevNode: T,
   stateConfig: StateConfig<K, V>,
 ): null | [value: V, prevValue: V] {
-  const value = $getState(node, stateConfig, 'direct');
-  const prevValue = $getState(prevNode, stateConfig, 'direct');
+  const value = $getState(node, stateConfig, NODE_STATE_DIRECT);
+  const prevValue = $getState(prevNode, stateConfig, NODE_STATE_DIRECT);
   return stateConfig.isEqual(value, prevValue) ? null : [value, prevValue];
 }
 

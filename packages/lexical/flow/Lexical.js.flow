@@ -1739,11 +1739,13 @@ type CollectStateConfigs<Configs> = Configs extends [
 export type GetNodeStateConfig<T extends LexicalNode> = CollectStateConfigs<
   GetStaticNodeConfigs<T>
 >;
-
+export const NODE_STATE_LATEST = 'latest';
+export const NODE_STATE_DIRECT = 'direct';
+export type NodeStateVersion = typeof NODE_STATE_LATEST | typeof NODE_STATE_DIRECT;
 declare export function $getState<K extends string, V>(
   node: LexicalNode,
   stateConfig: StateConfig<K, V>,
-  version?: 'latest' | 'direct',
+  version?: NodeStateVersion,
 ): V;
 declare export function $getStateChange<T extends LexicalNode, K extends string, V>(
   node: T,

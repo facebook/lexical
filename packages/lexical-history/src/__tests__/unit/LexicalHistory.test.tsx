@@ -56,6 +56,7 @@ import {
   LexicalEditor,
   LexicalEditorWithDispose,
   LexicalNode,
+  NODE_STATE_DIRECT,
   type NodeKey,
   REDO_COMMAND,
   SerializedElementNode,
@@ -197,8 +198,9 @@ const ChildEditorExtension = defineExtension({
           const prevNode = $getNodeByKey(key, prevEditorState);
           const curNode = $getNodeByKey(key, curEditorState);
           const prevEditor =
-            prevNode && $getState(prevNode, EditorKey, 'direct');
-          const curEditor = curNode && $getState(curNode, EditorKey, 'direct');
+            prevNode && $getState(prevNode, EditorKey, NODE_STATE_DIRECT);
+          const curEditor =
+            curNode && $getState(curNode, EditorKey, NODE_STATE_DIRECT);
           if (prevEditor && prevEditor !== curEditor) {
             prevEditor.setRootElement(null);
           }

@@ -35,6 +35,7 @@ import {
   configExtension,
   createCommand,
   defineExtension,
+  NODE_STATE_DIRECT,
 } from 'lexical';
 import {useCallback, useState} from 'react';
 import {createPortal} from 'react-dom';
@@ -102,7 +103,7 @@ function ReviewStars({
   editor: LexicalEditor;
   node: ReviewNode;
 }): JSX.Element {
-  const rating = editor.getEditorState().read(() => node.getRating());
+  const rating = node.getRating(NODE_STATE_DIRECT);
   const isEditable = useSignalValue(
     useExtensionDependency(WatchEditableExtension).output,
   );

@@ -20,6 +20,7 @@ import {
   createState,
   ElementNode,
   LexicalExportJSON,
+  NODE_STATE_DIRECT,
   NODE_STATE_KEY,
   type NodeStateJSON,
   ParagraphNode,
@@ -448,7 +449,7 @@ describe('LexicalNode state', () => {
             expect(v1.is(v0)).toBe(true);
             // This is testing getLatest()
             expect($getState(v0, vk)).toBe(1);
-            expect($getState(v0, vk, 'direct')).toBe(0);
+            expect($getState(v0, vk, NODE_STATE_DIRECT)).toBe(0);
             expect($getState(v1, vk)).toBe(1);
             expect($getStateChange(v1, v0, vk)).toEqual([1, 0]);
           },
@@ -467,11 +468,15 @@ describe('LexicalNode state', () => {
             return f();
           },
         };
-        expect(noState.read(() => $getState(initialRoot, vk, 'direct'))).toBe(
-          null,
+        expect(
+          noState.read(() => $getState(initialRoot, vk, NODE_STATE_DIRECT)),
+        ).toBe(null);
+        expect(noState.read(() => $getState(v0, vk, NODE_STATE_DIRECT))).toBe(
+          0,
         );
-        expect(noState.read(() => $getState(v0, vk, 'direct'))).toBe(0);
-        expect(noState.read(() => $getState(v1, vk, 'direct'))).toBe(1);
+        expect(noState.read(() => $getState(v1, vk, NODE_STATE_DIRECT))).toBe(
+          1,
+        );
       });
       describe('nodeStatesAreEquivalent', () => {
         test('undefined states are equivalent', () => {
@@ -610,7 +615,7 @@ describe('LexicalNode state', () => {
               expect(v1.is(v0)).toBe(true);
               // This is testing getLatest()
               expect($getState(v0, vk)).toBe(1);
-              expect($getState(v0, vk, 'direct')).toBe(0);
+              expect($getState(v0, vk, NODE_STATE_DIRECT)).toBe(0);
               expect($getState(v1, vk)).toBe(1);
               expect($getStateChange(v1, v0, vk)).toEqual([1, 0]);
             },

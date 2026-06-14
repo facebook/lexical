@@ -12,6 +12,7 @@ import type {
   ElementDOMSlot,
   LexicalEditor,
   LexicalNode,
+  NodeStateVersion,
   StateConfigValue,
   StateValueOrUpdater,
 } from 'lexical';
@@ -60,8 +61,8 @@ export class ReviewNode extends ElementNode {
     });
   }
 
-  getRating(): StateConfigValue<typeof ratingState> {
-    return $getState(this, ratingState);
+  getRating(version?: NodeStateVersion): StateConfigValue<typeof ratingState> {
+    return $getState(this, ratingState, version);
   }
   setRating(valueOrUpdater: StateValueOrUpdater<typeof ratingState>): this {
     return $setState(this, ratingState, valueOrUpdater);

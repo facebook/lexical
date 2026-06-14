@@ -2231,9 +2231,7 @@ export function $getSlotContainer(
  *
  * Idempotent and framework-independent: lexical-react's `useLexicalSlotRef`
  * wraps it, and a node class or extension can call it directly (e.g. from a
- * mutation listener) to control slot placement without React. Reads through
- * {@link LexicalEditor.readPending} so calling it mid-update observes the
- * pending state without forcing a flush.
+ * mutation listener) to control slot placement without React.
  *
  * @returns the container, or null when the slot (or its DOM) does not exist
  * yet — e.g. before the host's first reconciliation.
@@ -2244,10 +2242,13 @@ export function mountSlotContainer(
   slotName: string,
   target: HTMLElement,
 ): HTMLElement | null {
-  const container = editor.readPending(() => {
-    const host = $getNodeByKey(nodeKey);
-    return host !== null ? $getSlotContainer(host, slotName, editor) : null;
-  });
+  const container = editor.getEditorState().read(
+    () => {
+      const host = $getNodeByKey(nodeKey);
+      return host !== null ? $getSlotContainer(host, slotName, editor) : null;
+    },
+    {editor},
+  );
   if (container !== null) {
     if (container.parentElement !== target) {
       target.appendChild(container);

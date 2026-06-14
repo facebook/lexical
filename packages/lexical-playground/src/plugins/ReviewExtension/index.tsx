@@ -7,9 +7,9 @@
  */
 
 import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
-import type {JSX, RefObject} from 'react';
+import type {JSX, RefCallback} from 'react';
 
-import {namedSignals} from '@lexical/extension';
+import {namedSignals, WatchEditableExtension} from '@lexical/extension';
 import {
   CoreImportExtension,
   defineImportRule,
@@ -18,7 +18,11 @@ import {
 } from '@lexical/html';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {DecoratorComponentProps} from '@lexical/react/ReactPluginHostExtension';
-import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
+import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
+import {
+  useExtensionSignalValue,
+  useSignalValue,
+} from '@lexical/react/useExtensionSignalValue';
 import {useLexicalSlotRef} from '@lexical/react/useLexicalSlotRef';
 import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
@@ -32,7 +36,7 @@ import {
   createCommand,
   defineExtension,
 } from 'lexical';
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import {$appendInline} from '../../nodes/slotImport';
@@ -43,11 +47,6 @@ export const INSERT_REVIEW_COMMAND: LexicalCommand<void> =
 
 const STARS = [1, 2, 3, 4, 5];
 
-interface MountedChildren {
-  childrenEl: HTMLElement;
-  hostDom: HTMLElement;
-}
-
 // The getDOMSlot analog of useLexicalSlotRef: attaches the Review's hidden
 // children element (where the reconciler renders the linked-list body prose)
 // into the chrome and reveals it. Same idempotent no-cleanup-per-render shape
@@ -56,40 +55,32 @@ interface MountedChildren {
 function useReviewChildren<T extends HTMLElement = HTMLElement>(
   editor: LexicalEditor,
   nodeKey: NodeKey,
-): RefObject<T | null> {
-  const targetRef = useRef<T | null>(null);
-  const mountedRef = useRef<MountedChildren | null>(null);
-  useEffect(() => {
-    const target = targetRef.current;
-    const hostDom = editor.getElementByKey(nodeKey);
-    if (target === null || hostDom === null) {
-      return;
-    }
-    const childrenEl = hostDom.querySelector<HTMLElement>(
-      '.lexical-review-children',
-    );
-    if (childrenEl === null) {
-      return;
-    }
-    if (childrenEl.parentElement !== target) {
-      target.appendChild(childrenEl);
-    }
-    childrenEl.style.display = '';
-    mountedRef.current = {childrenEl, hostDom};
-  });
-  useEffect(() => {
-    return () => {
-      const mounted = mountedRef.current;
-      if (mounted !== null) {
-        mounted.childrenEl.style.display = 'none';
-        if (mounted.childrenEl.parentElement !== mounted.hostDom) {
-          mounted.hostDom.appendChild(mounted.childrenEl);
-        }
-        mountedRef.current = null;
+): RefCallback<T | null> {
+  return useCallback<RefCallback<T | null>>(
+    target => {
+      const hostDom = editor.getElementByKey(nodeKey);
+      if (target === null || hostDom === null) {
+        return;
       }
-    };
-  }, []);
-  return targetRef;
+      const childrenEl = hostDom.querySelector<HTMLElement>(
+        '.lexical-review-children',
+      );
+      if (childrenEl === null) {
+        return;
+      }
+      if (childrenEl.parentElement !== target) {
+        target.appendChild(childrenEl);
+      }
+      childrenEl.style.display = '';
+      return () => {
+        childrenEl.style.display = 'none';
+        if (childrenEl.parentElement !== hostDom) {
+          hostDom.appendChild(childrenEl);
+        }
+      };
+    },
+    [editor, nodeKey],
+  );
 }
 
 // The interactive rating control — the React-driven part that distinguishes
@@ -106,13 +97,16 @@ function ReviewStars({
   node: ReviewNode;
 }): JSX.Element {
   const rating = editor.getEditorState().read(() => node.getRating());
+  const isEditable = useSignalValue(
+    useExtensionDependency(WatchEditableExtension).output,
+  );
   const [hover, setHover] = useState(0);
   const setStars = (value: number) =>
     editor.update(() => {
       // Clicking the current top star clears the rating back to zero.
       node.setRating(value === rating ? 0 : value);
     });
-  const shown = hover || rating;
+  const shown = (isEditable && hover) || rating;
   return (
     <div
       className="lexical-review-stars"
@@ -129,8 +123,13 @@ function ReviewStars({
           }
           aria-pressed={value <= rating}
           aria-label={`${value} star${value === 1 ? '' : 's'}`}
+          disabled={!isEditable}
           onMouseEnter={() => setHover(value)}
-          onClick={() => setStars(value)}>
+          onClick={() => {
+            if (isEditable) {
+              setStars(value);
+            }
+          }}>
           ★
         </button>
       ))}
@@ -247,24 +246,21 @@ export const ReviewExtension = /* @__PURE__ */ defineExtension({
     ),
 });
 
+/**
+ * This provides the in-editor React rendering for the review extension
+ */
 export const ReactReviewExtension = /* @__PURE__ */ defineExtension({
-  build(editor, config, state) {
-    return namedSignals({nodeMap: new Map<NodeKey, ReviewNode>()});
-  },
-  // The Review's HTML import rule rides its own extension — like every other
-  // node extension that registers its own DOM-import rules — rather than a
-  // central playground aggregate. CoreImportExtension supplies the
-  // paragraph/text rules the rule's children-import relies on and orders this
-  // host rule ahead of the generic block rules (the playground's always-on
-  // ClipboardDOMImportExtension routes pastes through this pipeline).
+  build: () => namedSignals({nodeMap: new Map<NodeKey, ReviewNode>()}),
   dependencies: [
     /* @__PURE__ */ configExtension(ReactExtension, {
       decorators: [ReviewPlugin],
     }),
+    WatchEditableExtension,
     ReviewExtension,
   ],
   name: '@lexical/playground/ReactReview',
   register: (editor, config, state) => {
+    // Track all live ReviewNodes to render their portals
     const nodeMapSignal = state.getOutput().nodeMap;
     return editor.registerMutationListener(ReviewNode, nodes => {
       nodeMapSignal.value = editor.getEditorState().read(() => {

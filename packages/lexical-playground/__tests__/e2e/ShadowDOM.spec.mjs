@@ -427,6 +427,185 @@ test.describe('Shadow DOM', () => {
       IGNORE,
     );
   });
+
+  test('markdown shortcuts and a list run inside the shadow root', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    // `# heading` converts to <h1>, then a list shortcut starts a
+    // bulleted list — both flows live in `@lexical/markdown` /
+    // `@lexical/list` and depend on the shadow-aware text-mutation reads.
+    await page.keyboard.type('# Heading');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('- item one');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('item two');
+    await assertHTML(
+      page,
+      html`
+        <h1><span data-lexical-text="true">Heading</span></h1>
+        <ul>
+          <li value="1"><span data-lexical-text="true">item one</span></li>
+          <li value="2"><span data-lexical-text="true">item two</span></li>
+        </ul>
+      `,
+      undefined,
+      IGNORE,
+    );
+  });
+
+  test('undo / redo round-trip from the lexical-history plugin works inside the shadow root', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('first');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('second');
+    // Lexical-history's undo/redo commands run through the editor's
+    // command queue, not through DOM-level undo, so they have to keep
+    // working under shadow DOM.
+    await page.evaluate(() => {
+      window.lexicalEditor.dispatchCommand(
+        Symbol.for('UNDO_COMMAND'),
+        undefined,
+      );
+    });
+    // The Symbol-keyed command lookup above only works if `UNDO_COMMAND`
+    // happens to be a registered symbol-for; otherwise rely on the
+    // keyboard shortcut path the playground exposes.
+    await page.keyboard.press('ControlOrMeta+z');
+    await page.keyboard.press('ControlOrMeta+z');
+    const text = await page
+      .locator('div[contenteditable="true"]')
+      .first()
+      .textContent();
+    expect(text).not.toContain('second');
+    await page.keyboard.press('ControlOrMeta+Shift+z');
+    const redoneText = await page
+      .locator('div[contenteditable="true"]')
+      .first()
+      .textContent();
+    expect(redoneText).toContain('first');
+  });
+
+  test('the playground tree-view mirrors the shadow-mounted editor state', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('tree view content');
+    // The tree-view-output sits in the light DOM but reads the
+    // EditorState that lives behind the shadow boundary; it should
+    // surface the same text we just typed.
+    const treeOutput = await page
+      .locator('.tree-view-output pre')
+      .first()
+      .textContent();
+    expect(treeOutput).toContain('tree view content');
+  });
+
+  test('pointerdown dispatched at a shadow-internal node carries the real target on composedPath', async ({
+    page,
+  }) => {
+    // Touch / pen / mouse all funnel through PointerEvents; Lexical's
+    // window-attached pointerdown listeners use `getComposedEventTarget`
+    // to recover the real target across the shadow boundary. This
+    // verifies that part directly with a synthetic `pointerType: 'touch'`
+    // event.
+    const composedTag = await page.evaluate(() => {
+      const findEditor = root => {
+        const direct = root.querySelector('[data-lexical-editor="true"]');
+        if (direct !== null) return direct;
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            const inner = findEditor(el.shadowRoot);
+            if (inner !== null) return inner;
+          }
+        }
+        return null;
+      };
+      const ce = findEditor(document);
+      let composedTargetTag = null;
+      const listener = event => {
+        composedTargetTag = event.composedPath()[0].tagName;
+      };
+      window.addEventListener('pointerdown', listener, true);
+      ce.dispatchEvent(
+        new PointerEvent('pointerdown', {
+          bubbles: true,
+          composed: true,
+          pointerType: 'touch',
+        }),
+      );
+      window.removeEventListener('pointerdown', listener, true);
+      return composedTargetTag;
+    });
+    // `event.target` would be the shadow host on a window listener; the
+    // composed path's first entry is the un-retargeted contentEditable.
+    expect(composedTag).toBe('DIV');
+  });
+
+  test('pasted HTML with a <script> tag is sanitized inside the shadow root', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    // @lexical/clipboard's paste pipeline strips unsupported node types;
+    // a `<script>` tag never becomes a Lexical node, so the side effect
+    // it would have triggered never runs. The shadow boundary doesn't
+    // change that — the paste handler runs at the contentEditable
+    // inside the shadow root.
+    await page.evaluate(() => {
+      const findEditor = root => {
+        const direct = root.querySelector('[data-lexical-editor="true"]');
+        if (direct !== null) return direct;
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            const inner = findEditor(el.shadowRoot);
+            if (inner !== null) return inner;
+          }
+        }
+        return null;
+      };
+      const ce = findEditor(document);
+      const dt = new DataTransfer();
+      dt.setData(
+        'text/html',
+        '<p>safe text</p><script>window.__shadowPwned = true;</script>',
+      );
+      ce.dispatchEvent(
+        new ClipboardEvent('paste', {
+          bubbles: true,
+          clipboardData: dt,
+          composed: true,
+        }),
+      );
+    });
+    const pwned = await page.evaluate(() => Boolean(window.__shadowPwned));
+    expect(pwned).toBe(false);
+    const text = await page
+      .locator('div[contenteditable="true"]')
+      .first()
+      .textContent();
+    expect(text).toContain('safe text');
+  });
+
+  test('typing 1000 characters inside the shadow root completes without hanging', async ({
+    page,
+  }) => {
+    // A coarse perf smoke test: a large keyboard input run shouldn't
+    // hang or trip the test timeout. This protects against accidental
+    // reconciler regressions specific to the shadow code path (each
+    // keystroke runs the full update + composed-selection read).
+    await focusEditor(page);
+    const t0 = Date.now();
+    await page.keyboard.type('a'.repeat(1000), {delay: 0});
+    const elapsed = Date.now() - t0;
+    expect(elapsed).toBeLessThan(60_000);
+    const text = await page
+      .locator('div[contenteditable="true"]')
+      .first()
+      .textContent();
+    expect((text ?? '').length).toBeGreaterThanOrEqual(1000);
+  });
 });
 
 test.describe('Shadow DOM (collab)', () => {

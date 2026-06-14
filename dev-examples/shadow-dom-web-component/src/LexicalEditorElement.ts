@@ -475,6 +475,16 @@ export class LexicalEditorElement extends HTMLElement {
       this.shadowRoot !== null
         ? this.shadowRoot
         : this.attachShadow({delegatesFocus: true, mode: 'open'});
+    // Honour a shadow root left behind by a [Declarative Shadow
+    // DOM](https://developer.mozilla.org/docs/Web/API/Web_components/Using_shadow_DOM#declarative_shadow_dom)
+    // (`<template shadowrootmode="open">`): if the SSR layer already
+    // pre-rendered a `.content` div we reuse the element node so the
+    // page doesn't flash a fresh contentEditable on hydration. The
+    // editor's initial state still replaces the pre-rendered children
+    // — `@lexical/html`'s `$generateNodesFromDOM` would let downstream
+    // users keep that content, but pulling it in here would balloon
+    // the example beyond the shadow integration story.
+    const prerendered = shadow.querySelector<HTMLElement>('.content');
     while (shadow.firstChild !== null) {
       shadow.removeChild(shadow.firstChild);
     }
@@ -497,7 +507,8 @@ export class LexicalEditorElement extends HTMLElement {
     const toolbarSlot = document.createElement('slot');
     toolbarSlot.name = 'toolbar-extra';
 
-    const contentEditable = document.createElement('div');
+    const contentEditable =
+      prerendered !== null ? prerendered : document.createElement('div');
     contentEditable.className = 'content';
     contentEditable.contentEditable = 'true';
     // Surface the editor to assistive tech the same way a built-in

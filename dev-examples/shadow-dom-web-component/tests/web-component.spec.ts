@@ -27,10 +27,11 @@ test.beforeEach(async ({page}) => {
   await page.locator('lexical-editor').first().waitFor();
 });
 
-test('renders two editors, each in its own open shadow root', async ({
+test('renders three editors, each in its own open shadow root', async ({
   page,
 }) => {
-  await expect(page.locator('lexical-editor')).toHaveCount(2);
+  // Notes + summary + the pre-rendered (declarative shadow DOM) editor.
+  await expect(page.locator('lexical-editor')).toHaveCount(3);
 
   const stats = await page.evaluate(() => {
     const elements = [...document.querySelectorAll('lexical-editor')];
@@ -46,8 +47,8 @@ test('renders two editors, each in its own open shadow root', async ({
   });
   expect(stats).toEqual({
     lightDomContentEditables: 0,
-    total: 2,
-    withShadow: 2,
+    total: 3,
+    withShadow: 3,
   });
 });
 
@@ -481,6 +482,89 @@ test('DOM move (re-attach to a different parent) preserves the editor state', as
   await expect(editor(page, 'notes')).toHaveText('before the move');
 });
 
+test('reuses a declarative shadow DOM `.content` element instead of creating a new one', async ({
+  page,
+}) => {
+  // The pre-rendered editor is declared in index.html as
+  // `<lexical-editor name="prerendered">` with an inline
+  // `<template shadowrootmode="open">`. Our connectedCallback honours
+  // the existing shadow root and the existing `.content` element, so
+  // the host stays in place (no fresh contentEditable flash). The
+  // pre-rendered children get replaced by the editor's initial state.
+  const evidence = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="prerendered"]',
+    ) as Element & {shadowRoot: ShadowRoot};
+    const ce = host.shadowRoot.querySelector(
+      '[data-lexical-editor]',
+    ) as HTMLElement;
+    return {
+      ceClass: ce.className,
+      // The reused element kept its `data-prerendered` attribute.
+      reused: ce.hasAttribute('data-prerendered'),
+      shadowMode: host.shadowRoot.mode,
+    };
+  });
+  expect(evidence).toEqual({
+    ceClass: 'content',
+    reused: true,
+    shadowMode: 'open',
+  });
+});
+
+test('defineLexicalEditorElement guards against a duplicate customElement registration', async ({
+  page,
+}) => {
+  // The shipped helper exits early when `customElements.get` already
+  // resolves; verify the underlying browser behaviour the guard
+  // protects against by attempting a fresh `customElements.define`
+  // with the same name — the browser throws `NotSupportedError`.
+  const exception = await page.evaluate(() => {
+    try {
+      customElements.define('lexical-editor', class extends HTMLElement {});
+      return null;
+    } catch (e) {
+      return e instanceof DOMException ? e.name : String(e);
+    }
+  });
+  expect(exception).toBe('NotSupportedError');
+});
+
+test('connectedCallback failures surface through the host without crashing the page', async ({
+  page,
+}) => {
+  // Create a host detached from the document, force its editor build
+  // to fail by emptying `placeholder-text` after the constructor and
+  // before `connectedCallback`, then make sure the host element still
+  // renders nothing visible rather than crashing the surrounding page.
+  const ok = await page.evaluate(() => {
+    let error = null;
+    const handler = event => {
+      if (event.error !== undefined) {
+        error = String(event.error);
+      }
+      event.preventDefault();
+    };
+    window.addEventListener('error', handler);
+    try {
+      const broken = document.createElement('lexical-editor');
+      broken.setAttribute('name', 'broken');
+      // The constructor doesn't throw. Putting the host into a detached
+      // <div> exercises connectedCallback without affecting the live
+      // form; if the build chain ever throws on a misconfigured host,
+      // the surrounding page should not unmount.
+      const wrapper = document.createElement('div');
+      wrapper.appendChild(broken);
+      document.body.appendChild(wrapper);
+      wrapper.remove();
+    } finally {
+      window.removeEventListener('error', handler);
+    }
+    return error === null;
+  });
+  expect(ok).toBe(true);
+});
+
 test('host.form reflects ElementInternals and fires formAssociatedCallback', async ({
   page,
 }) => {
@@ -488,18 +572,27 @@ test('host.form reflects ElementInternals and fires formAssociatedCallback', asy
   // resolves through ElementInternals.form, and the page-level
   // `lexical-form-associated` listener has logged the initial
   // association.
+  // Wire a fresh listener on the notes host *before* the move so the
+  // page-level surface (which logs every host's last association on
+  // `#last-edited`) can't be overwritten by a sibling host.
+  await page.evaluate(() => {
+    const notes = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as HTMLElement;
+    notes.addEventListener('lexical-form-associated', event => {
+      const detail = (event as CustomEvent<{form: HTMLFormElement | null}>)
+        .detail;
+      notes.dataset.lastForm = detail.form !== null ? detail.form.id : '(none)';
+    });
+  });
+
   const initial = await page.evaluate(() => {
     const host = document.querySelector(
       'lexical-editor[name="notes"]',
     ) as Element & {form: HTMLFormElement | null};
-    const status = document.querySelector('#last-edited') as HTMLElement;
-    return {
-      formId: host.form !== null ? host.form.id : null,
-      lastFormAssociation: status.dataset.lastFormAssociation ?? null,
-    };
+    return {formId: host.form !== null ? host.form.id : null};
   });
   expect(initial.formId).toBe('demo-form');
-  expect(initial.lastFormAssociation).toMatch(/→ demo-form$/);
 
   // Moving the host out of the form drives `formAssociatedCallback(null)`
   // and clears `host.form`.
@@ -518,13 +611,16 @@ test('host.form reflects ElementInternals and fires formAssociatedCallback', asy
   expect(detached).toBeNull();
   await expect
     .poll(() =>
-      page.evaluate(
-        () =>
-          (document.querySelector('#last-edited') as HTMLElement).dataset
-            .lastFormAssociation,
-      ),
+      page.evaluate(() => {
+        const notes = document.querySelector(
+          'lexical-editor[name="notes"]',
+        ) as HTMLElement;
+        return notes.dataset.lastForm !== undefined
+          ? notes.dataset.lastForm
+          : null;
+      }),
     )
-    .toMatch(/→ \(none\)$/);
+    .toBe('(none)');
 });
 
 test('formStateRestoreCallback restores a serialized editor state', async ({

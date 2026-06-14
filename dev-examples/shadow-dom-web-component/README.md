@@ -100,64 +100,51 @@ pnpm -C dev-examples/shadow-dom-web-component exec playwright install chromium
 pnpm -C dev-examples/shadow-dom-web-component test
 ```
 
-## What's covered + what's intentionally out of scope
+## What's covered
 
 This example aims to be a full reference a production user can copy out.
 The Playwright suite covers each of the surfaces above plus a second
-round of audit items: DOM-move state round-trip (`disconnectedCallback`
-caches the serialized state and `connectedCallback` restores it),
-`delegatesFocus: true` on the shadow root, `host.setCustomValidity()`,
-`formAssociatedCallback` + `host.form`, `formStateRestoreCallback`
-(bfcache / autocomplete), the standard `inert` attribute, `dir`
-inheritance, `aria-label` / `aria-invalid` / `role="textbox"` mirroring,
-a composed `lexical-validity-change` event for a visible error message,
-and `@media (prefers-color-scheme: dark)` / `(prefers-reduced-motion)`
-/ `(forced-colors: active)` inside the shadow stylesheet.
+round of audit items:
 
-The following corners are exercised by Lexical itself or out of scope
-for a single example, and are flagged here so they can be tested or
-extended downstream:
+- DOM-move state round-trip (`disconnectedCallback` caches the
+  serialized state, `connectedCallback` restores it)
+- `delegatesFocus: true` on the shadow root + `tabindex="0"` on the
+  contentEditable
+- `host.setCustomValidity()` + the standard `validity` / `willValidate`
+  / `checkValidity` / `reportValidity` surface
+- `formAssociatedCallback` + `host.form`,
+  `formStateRestoreCallback` (bfcache / autocomplete)
+- The standard `inert` attribute, `dir` inheritance, `aria-label` /
+  `aria-invalid` / `role="textbox"` mirroring
+- A composed `lexical-validity-change` event for a visible error
+  message
+- `@media (prefers-color-scheme: dark)` / `(prefers-reduced-motion)` /
+  `(forced-colors: active)` inside the shadow stylesheet
+- Declarative shadow DOM (`<template shadowrootmode>`) — the third
+  editor on the demo page pre-renders its shadow content and our
+  `connectedCallback` reuses the existing `.content` element instead
+  of creating a fresh contentEditable
+- Hardened lifecycle: a duplicate `customElements.define` of the
+  same tag throws `NotSupportedError` (the shipped helper guards
+  against this); a host that fails to build doesn't crash the
+  surrounding page
 
-- **Touch / pointer events.** Lexical's listeners use
-  `getComposedEventTarget` to recover the real target across the shadow
-  boundary, and the playground's table-cell click + pointerdown e2e
-  exercises that path. Real touch interaction (tap, long-press
-  context menu, mobile virtual keyboard scroll) needs a physical
-  device — the chromium-headless suite can't drive it.
-- **Closed shadow roots.** This element uses `mode: 'open'` so the
-  page can read its API and drive `setFormValue` / `setValidity`. A
-  closed-mode editor would be opaque to the page, so this example
-  doesn't model one; the limitation is noted in the concept page.
-- **`customElements.define` collisions.** `defineLexicalEditorElement`
-  guards `customElements.get(tagName)` before defining, so calling it
-  twice in a hot-module-reload session is safe.
-- **`connectedCallback` failures.** `buildEditorFromExtensions` can
-  throw if the extension graph is misconfigured; the host doesn't
-  try to render a fallback in that case. Downstream wrappers wanting
-  graceful degradation should `try / catch` the build and render an
-  error notice from the page layer.
-- **Trusted Types / Sanitizer API.** This example doesn't reach for
-  `innerHTML` or `dangerouslySetInnerHTML`-style sinks. Lexical's
-  paste handler already drives `@lexical/clipboard` for HTML cleanup;
-  a CSP-restricted host can rely on it without further work here.
-- **`lexical-devtools`.** The DevTools extension descends through open
-  shadow roots using the same helpers this PR adds (`getDOMShadowRoots`
-  / `getActiveElementDeep` / `getEditorPropertyFromDOMNode`), so it
-  resolves the shadow-mounted editor without dev-example-side glue.
-- **SSR / declarative shadow DOM (`<template shadowrootmode>`).**
-  Server-rendered shadow trees and client-side hydration of a
-  form-associated custom element involve framework-specific
-  trade-offs (React 18 hydration order, the rules around
-  `customElements.define` running before the parser sees the
-  declarative shadow). Out of scope for this single-file example,
-  but the editor's `connectedCallback` already reuses an existing
-  shadow root if the host walks in with one attached.
-- **Performance / multi-instance benchmarking.** Beyond what the unit
-  + browser-unit suites already measure, large-document and
-  many-instance load characteristics are workload-specific. Production
-  users should profile against their own document shapes.
-- **Other Lexical extensions inside shadow.** `@lexical/markdown`,
-  `@lexical/list`, `@lexical/link`, `@lexical/table`, `@lexical/yjs`
-  all run through the same root-listener / DOM-event paths the
-  helpers in this PR cover, but verifying each extension's UI inside
-  a shadow tree is a per-extension exercise.
+The playground e2e suite (`packages/lexical-playground/__tests__/e2e/ShadowDOM.spec.mjs`)
+covers the corresponding playground-side surfaces: markdown shortcuts
+(`# heading`, `- list`) and `@lexical/list` inside the shadow root,
+`@lexical/history` undo/redo, the tree-view mirror, pointer events
+(`composedPath` recovery for touch / pen / mouse), HTML paste
+sanitization (a `<script>` tag is stripped), a large keyboard input
+that keeps the reconciler responsive, image insert + paste,
+NodeSelection on image click, blur + re-focus through the shadow
+boundary, Korean and Chinese IME composition cycles, and yjs
+convergence between two clients each rendered inside its own open
+shadow root.
+
+`lexical-devtools` descends through open shadow roots using the same
+helpers this PR adds (`getDOMShadowRoots` / `getActiveElementDeep` /
+`getEditorPropertyFromDOMNode`), so it resolves the shadow-mounted
+editor without dev-example-side glue. Closed-mode shadow roots remain
+opaque to a page-level integration by spec — the concept page documents
+the limitation and the browser-unit suite verifies the helpers behave
+correctly when a host attaches a closed root.

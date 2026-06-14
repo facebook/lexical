@@ -69,6 +69,25 @@
         <button type="submit">Submit form</button>
       </form>
       <pre id="form-output"></pre>
+      <hr />
+      <!--
+        Declarative Shadow DOM: the HTML parser attaches the open shadow
+        root from the inline <template> before our element's
+        connectedCallback runs. The element walks in already wearing a
+        `.content` div so we reuse it instead of creating a fresh
+        contentEditable. The editor's initial state still replaces the
+        pre-rendered children — `@lexical/html`'s
+        `$generateNodesFromDOM` would let a downstream user import that
+        content; this example just notes the integration point.
+      -->
+      <label>
+        Pre-rendered (declarative shadow DOM)
+        <lexical-editor name="prerendered" placeholder-text="Hydrated.">
+          <template shadowrootmode="open">
+            <div class="content" data-prerendered="true">pre-rendered text</div>
+          </template>
+        </lexical-editor>
+      </label>
     </div>
     <!--
       A light-DOM floating popover that anchors to the live selection rect

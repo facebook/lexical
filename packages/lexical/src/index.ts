@@ -330,6 +330,7 @@ export {
   getDOMSelectionFromTarget,
   getDOMSelectionPoints,
   getDOMSelectionRange,
+  getDOMSelectionRangeAndPoints,
   getDOMShadowRoots,
   getDOMTextNode,
   getEditorPropertyFromDOMNode,

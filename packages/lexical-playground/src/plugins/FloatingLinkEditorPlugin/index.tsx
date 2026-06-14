@@ -40,7 +40,7 @@ import {
   getActiveElementDeep,
   getDOMSelection,
   getDOMSelectionPoints,
-  getDOMSelectionRange,
+  getDOMSelectionRangeAndPoints,
   KEY_ESCAPE_COMMAND,
   LexicalEditor,
   RangeSelection,
@@ -209,18 +209,15 @@ function FloatingLinkEditor({
           getBoundingClientRect: () => refEl.getBoundingClientRect(),
           getClientRects: () => refEl.getClientRects(),
         });
-      } else if (
-        nativeSelection !== null &&
-        nativeSelection.rangeCount > 0 &&
-        rootElement.contains(
-          getDOMSelectionPoints(nativeSelection, rootElement).anchorNode,
-        )
-      ) {
-        const selectionRange = getDOMSelectionRange(
+      } else if (nativeSelection !== null && nativeSelection.rangeCount > 0) {
+        const {points, range: selectionRange} = getDOMSelectionRangeAndPoints(
           nativeSelection,
           rootElement,
         );
-        if (selectionRange !== null) {
+        if (
+          rootElement.contains(points.anchorNode) &&
+          selectionRange !== null
+        ) {
           refs.setPositionReference(selectionRange);
         }
       }

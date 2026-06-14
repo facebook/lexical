@@ -306,9 +306,8 @@ function onSelectionChange(
   editor: LexicalEditor,
   isActive: boolean,
 ): void {
-  // Resolve the boundary points through any enclosing DOM shadow roots;
-  // Selection.anchorNode/focusNode are retargeted to the shadow host, which
-  // would make isSelectionWithinEditor below fail and drop the selection.
+  // Shadow-aware boundary points so isSelectionWithinEditor below isn't
+  // fooled by the retargeted shadow host into dropping the selection.
   const {
     anchorNode: anchorDOM,
     anchorOffset,

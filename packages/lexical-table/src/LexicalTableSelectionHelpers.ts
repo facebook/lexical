@@ -207,10 +207,8 @@ export function registerTableWindowHandlers(
     }
 
     const pointerDownCallback = (event: PointerEvent) => {
-      // Resolve through any enclosing DOM shadow roots; the listener is
-      // attached to editorWindow, so event.target would otherwise be
-      // retargeted to the shadow host and fail the rootElement.contains
-      // check below.
+      // Listener is on editorWindow; the composed target is needed so the
+      // rootElement.contains check below sees the shadow-internal target.
       const target = getComposedEventTarget(event);
       if (
         event.button !== 0 ||
@@ -302,10 +300,9 @@ function $handleTableClick(
       if (override) {
         focusCell = getDOMCellInTableFromTarget(tableElement, moveTarget);
       } else {
-        // Resolve via the table's owning root (Document or ShadowRoot);
-        // document.elementsFromPoint is retargeted to the shadow host inside
-        // a shadow tree. Narrow with the type guards rather than casting so
-        // the detached-table case (Node) falls through to no hit-test.
+        // Resolve via the table's own root so elementsFromPoint isn't
+        // retargeted; narrow with the type guards rather than casting so the
+        // detached-table case (Node) falls through to no hit-test.
         const tableRoot = tableElement.getRootNode();
         if (!isDOMDocumentNode(tableRoot) && !isDOMShadowRoot(tableRoot)) {
           return;

@@ -45,6 +45,17 @@ function $findSlotHost<T extends LexicalNode>(
   return null;
 }
 
+// A navigable region of a host: a named slot value, or the host's children as a
+// unit (bounded by the first/last child, which render contiguously into one
+// element — the browser already steps between the children, so they are one
+// region for cross-region navigation). `startNode` is where the caret enters
+// from above; `endNode`'s end is the region's bottom edge.
+interface Region {
+  startNode: LexicalNode;
+  endNode: LexicalNode;
+  isChildren: boolean;
+}
+
 // Whether DOM element `a` precedes `b` in document order.
 function isBefore(a: HTMLElement, b: HTMLElement): boolean {
   return (
@@ -52,68 +63,176 @@ function isBefore(a: HTMLElement, b: HTMLElement): boolean {
   );
 }
 
-// The host's top-most ('first') or bottom-most ('last') navigable region. A
-// host's regions are its children (bounded by the first/last child, since they
-// render contiguously into one element) and its named slot values. Nothing
-// requires the chrome to render children before, between, or after the slots —
-// the Card renders its `title` slot above its body children, the Review renders
-// its body children above its `author` slot, a DecoratorNode like PullQuote has
-// only slots — so the visual order lives in the DOM, not the model. Pick the
-// candidate whose rendered element sits first/last in document order.
-function $edgeRegion(
-  editor: LexicalEditor,
-  host: LexicalNode,
-  edge: 'first' | 'last',
-): LexicalNode | null {
-  const candidates: LexicalNode[] = [];
+// The host's regions in rendered (visual) order. Nothing requires the chrome to
+// render children before, between, or after the named slots — the Card renders
+// its `title` slot above its body, the Review renders its body above its
+// `author` slot — so order by the regions' actual document position rather than
+// assuming one.
+function $orderedRegions(editor: LexicalEditor, host: LexicalNode): Region[] {
+  const regions: Region[] = [];
   if ($isElementNode(host)) {
-    const child = edge === 'first' ? host.getFirstChild() : host.getLastChild();
-    if (child !== null) {
-      candidates.push(child);
+    const first = host.getFirstChild();
+    const last = host.getLastChild();
+    if (first !== null && last !== null) {
+      regions.push({endNode: last, isChildren: true, startNode: first});
     }
   }
   for (const name of $getSlotNames(host)) {
     const value = $getSlot(host, name);
     if (value !== null) {
-      candidates.push(value);
+      regions.push({endNode: value, isChildren: false, startNode: value});
     }
   }
-  let best: LexicalNode | null = null;
-  let bestDom: HTMLElement | null = null;
-  for (const candidate of candidates) {
-    const dom = editor.getElementByKey(candidate.getKey());
-    if (dom === null) {
-      continue;
+  return regions.sort((a, b) => {
+    const aDom = editor.getElementByKey(a.startNode.getKey());
+    const bDom = editor.getElementByKey(b.startNode.getKey());
+    if (aDom === null || bDom === null) {
+      return 0;
     }
-    if (
-      bestDom === null ||
-      (edge === 'first' ? isBefore(dom, bestDom) : isBefore(bestDom, dom))
+    return isBefore(aDom, bDom) ? -1 : 1;
+  });
+}
+
+// Whether `anchorNode` sits within `region`.
+function $regionContains(
+  region: Region,
+  anchorNode: LexicalNode,
+  host: LexicalNode,
+): boolean {
+  if (region.isChildren) {
+    for (
+      let b: LexicalNode | null = anchorNode;
+      b !== null;
+      b = b.getParent()
     ) {
-      best = candidate;
-      bestDom = dom;
+      if (b.getParent() === host) {
+        return true;
+      }
     }
+    return false;
   }
-  return best;
+  const value = region.startNode;
+  return (
+    value === anchorNode ||
+    ($isElementNode(value) && value.isParentOf(anchorNode))
+  );
+}
+
+// The contentEditable editing host of a node's rendered element. Two regions
+// that share one (e.g. the Card's slots, which are not contentEditable islands)
+// are navigated natively; two that differ (the Review / PullQuote chrome wraps
+// each region in its own contentEditable=true island under a
+// contentEditable=false shell) are an island boundary the browser may not cross.
+function $editingHost(
+  editor: LexicalEditor,
+  node: LexicalNode,
+): Element | null {
+  const dom = editor.getElementByKey(node.getKey());
+  return dom === null ? null : dom.closest('[contenteditable="true"]');
+}
+
+function $handleSlotHostArrow<T extends LexicalNode>(
+  editor: LexicalEditor,
+  $isHost: (node: LexicalNode | null | undefined) => node is T,
+  event: KeyboardEvent | null,
+  down: boolean,
+): boolean {
+  if (event !== null && event.altKey) {
+    return false;
+  }
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+    return false;
+  }
+  const anchor = selection.anchor;
+  const host = $findSlotHost(anchor.getNode(), $isHost);
+  if (host === null) {
+    return false;
+  }
+  const regions = $orderedRegions(editor, host);
+  const index = regions.findIndex(r =>
+    $regionContains(r, anchor.getNode(), host),
+  );
+  if (index === -1) {
+    return false;
+  }
+  const region = regions[index];
+  // Only act at the trailing (down) / leading (up) edge of the current region;
+  // mid-region — including between visual lines of a wrapped text node, since
+  // $isAtEndOfNode / $isAtStartOfNode check the offset — defers to the browser.
+  const edgeNode = down ? region.endNode : region.startNode;
+  if (!$isElementNode(edgeNode)) {
+    return false;
+  }
+  if (
+    down
+      ? !$isAtEndOfNode(anchor, edgeNode)
+      : !$isAtStartOfNode(anchor, edgeNode)
+  ) {
+    return false;
+  }
+  const adjacent = regions[index + (down ? 1 : -1)];
+  if (adjacent !== undefined) {
+    // Step into the adjacent region. The browser does this on its own when both
+    // regions share an editing host (the Card), so only take over across an
+    // island boundary (Review / PullQuote), which Firefox will not cross.
+    const from = $editingHost(editor, edgeNode);
+    const to = $editingHost(
+      editor,
+      down ? adjacent.startNode : adjacent.endNode,
+    );
+    if (from === null || to === null || from === to) {
+      return false;
+    }
+    if (down) {
+      adjacent.startNode.selectStart();
+    } else {
+      adjacent.endNode.selectEnd();
+    }
+    if (event) {
+      event.preventDefault();
+    }
+    return true;
+  }
+  // No adjacent region: the caret is at the very bottom/top of the host. Mirror
+  // $onEscapeDown / $onEscapeUp — insert a paragraph only when the host is the
+  // last/first block, otherwise leave stepping into a sibling to the browser.
+  if ((down ? host.getNextSibling() : host.getPreviousSibling()) !== null) {
+    return false;
+  }
+  const paragraph = $createParagraphNode();
+  if (down) {
+    host.insertAfter(paragraph);
+  } else {
+    host.insertBefore(paragraph);
+  }
+  paragraph.selectEnd();
+  if (event) {
+    event.preventDefault();
+  }
+  return true;
 }
 
 /**
- * Slot-aware companion to `$onEscapeDown` / `$onEscapeUp` (@lexical/utils): let
- * ArrowDown at the bottom of a slot host (Card / Review / PullQuote) and ArrowUp
- * at its top step out of the host when it is the last/first block, so it is
- * never a dead end. Those helpers walk `getParent` to find the container, which
- * can't reach a host from inside a named slot (slot values have
- * `__parent === null`) and are typed for `ElementNode` containers (PullQuote is
- * a `DecoratorNode`); this resolves the host with `$getSlotHost`, finds the
- * host's top/bottom region from the rendered DOM order (see {@link $edgeRegion}),
- * and reuses their shared edge checks ({@link $isAtStartOfNode} /
- * {@link $isAtEndOfNode}).
+ * Slot-aware companion to `$onEscapeDown` / `$onEscapeUp` (@lexical/utils) for
+ * slot hosts (Card / Review / PullQuote). Two jobs:
  *
- * The browser already steps the caret between a host's editable regions and into
- * an adjacent sibling on its own, even across the `contentEditable=false` chrome
- * of a React-chromed host; the gap those native moves leave is the dead end when
- * the host is the *first or last* block with nowhere to go. So this only acts
- * there — inserting a paragraph before/after the host and moving to it — and
- * defers to the browser otherwise (returning `false`).
+ * 1. Step the caret between a host's regions (its named slots and its children)
+ *    at their shared edge. The browser does this natively when the regions share
+ *    an editing host, but the Review / PullQuote chrome renders each region as
+ *    its own `contentEditable=true` island under a `contentEditable=false`
+ *    shell, and Firefox will not move the caret across that boundary — so the
+ *    move is done programmatically across an island boundary (see
+ *    {@link $editingHost}).
+ * 2. When the caret is at the very top/bottom of the host and the host is the
+ *    first/last block, insert a paragraph before/after it so the host is never a
+ *    navigational dead end (stepping into an existing sibling is left to the
+ *    browser).
+ *
+ * Region order is read from the rendered DOM (see {@link $orderedRegions}), and
+ * the edge checks reuse {@link $isAtStartOfNode} / {@link $isAtEndOfNode} so a
+ * mid-region caret — including between the visual lines of a wrapped text node —
+ * defers to the browser.
  */
 export function registerSlotHostArrowEscape<T extends LexicalNode>(
   editor: LexicalEditor,
@@ -122,63 +241,12 @@ export function registerSlotHostArrowEscape<T extends LexicalNode>(
   return mergeRegister(
     editor.registerCommand<KeyboardEvent | null>(
       KEY_ARROW_DOWN_COMMAND,
-      event => {
-        if (event !== null && event.altKey) {
-          return false;
-        }
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
-          return false;
-        }
-        const host = $findSlotHost(selection.anchor.getNode(), $isHost);
-        // Mirror $onEscapeDown: only escape when the host is the last block, so
-        // ArrowDown into a following sibling still goes through the browser.
-        if (host === null || host.getNextSibling() !== null) {
-          return false;
-        }
-        const region = $edgeRegion(editor, host, 'last');
-        if (
-          !$isElementNode(region) ||
-          !$isAtEndOfNode(selection.anchor, region)
-        ) {
-          return false;
-        }
-        host.insertAfter($createParagraphNode()).selectEnd();
-        if (event) {
-          event.preventDefault();
-        }
-        return true;
-      },
+      event => $handleSlotHostArrow(editor, $isHost, event, true),
       COMMAND_PRIORITY_LOW,
     ),
     editor.registerCommand<KeyboardEvent | null>(
       KEY_ARROW_UP_COMMAND,
-      event => {
-        if (event !== null && event.altKey) {
-          return false;
-        }
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
-          return false;
-        }
-        const host = $findSlotHost(selection.anchor.getNode(), $isHost);
-        // Mirror $onEscapeUp: only escape when the host is the first block.
-        if (host === null || host.getPreviousSibling() !== null) {
-          return false;
-        }
-        const region = $edgeRegion(editor, host, 'first');
-        if (
-          !$isElementNode(region) ||
-          !$isAtStartOfNode(selection.anchor, region)
-        ) {
-          return false;
-        }
-        host.insertBefore($createParagraphNode()).selectEnd();
-        if (event) {
-          event.preventDefault();
-        }
-        return true;
-      },
+      event => $handleSlotHostArrow(editor, $isHost, event, false),
       COMMAND_PRIORITY_LOW,
     ),
   );

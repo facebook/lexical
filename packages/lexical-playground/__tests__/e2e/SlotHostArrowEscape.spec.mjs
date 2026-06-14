@@ -119,6 +119,34 @@ async function blockCount(page) {
   );
 }
 
+// Place the caret at the end of a named slot value via the editor API. Used for
+// the PullQuote quote, whose seeded text wraps to several lines, so a keyboard
+// line-end would land mid-text rather than at the slot's true end.
+async function selectSlotEnd(page, hostType, slotName) {
+  await evaluate(
+    page,
+    ([type, slot]) => {
+      const editor = window.lexicalEditor;
+      editor.update(
+        () => {
+          const map = editor.getEditorState()._nodeMap;
+          for (const child of map.get('root').getChildren()) {
+            if (child.getType() === type) {
+              const value = map.get(child.__slots.get(slot));
+              if (value) {
+                value.selectEnd();
+              }
+            }
+          }
+        },
+        {discrete: true},
+      );
+    },
+    [hostType, slotName],
+  );
+  await sleep(60);
+}
+
 const REVIEW = '.lexical-review-node';
 const REVIEW_AUTHOR = '.lexical-review-author [data-lexical-slot="author"] p';
 const REVIEW_BODY_FIRST = '.lexical-review-children p:first-child';
@@ -129,11 +157,12 @@ const PULLQUOTE = '.lexical-pullquote-node';
 const PQ_QUOTE_FIRST = '[data-lexical-slot="quote"] p:first-child';
 const PQ_ATTRIBUTION = '[data-lexical-slot="attribution"] p';
 
-// The slot-aware ArrowDown/Up escape (registerSlotHostArrowEscape) lets a slot
-// host that is the first/last block step out instead of trapping the caret. The
-// browser already moves the caret between a host's editable regions and into an
-// existing sibling — even across a contentEditable=false chrome — so the helper
-// only fills the dead-end gap by inserting a paragraph before/after the host.
+// The slot-aware ArrowDown/Up navigation (registerSlotHostArrowEscape) keeps a
+// slot host from trapping the caret: it steps between the host's regions across
+// the contentEditable island boundaries that Firefox will not cross on its own,
+// and inserts a paragraph before/after the host when it is the first/last block
+// so the host is never a dead end. Stepping into an existing sibling is left to
+// the browser.
 test.describe('Slot host ArrowDown/Up escape', () => {
   test.beforeEach(({isCollab, isPlainText, page}) => {
     test.skip(isPlainText);
@@ -141,8 +170,8 @@ test.describe('Slot host ArrowDown/Up escape', () => {
   });
 
   // The Review is the interesting case: its chrome renders the body children
-  // ABOVE the `author` slot, the opposite of the slots-first Card / PullQuote,
-  // so the helper is given explicit top/bottom regions.
+  // ABOVE the `author` slot, the opposite of the slots-first Card / PullQuote.
+  // The helper reads the rendered order, so no per-host configuration is needed.
   test('Review: ArrowDown at the end of the author (last block) exits below it', async ({
     page,
   }) => {
@@ -190,7 +219,7 @@ test.describe('Slot host ArrowDown/Up escape', () => {
     expect(await blockOutsideHost(page, REVIEW, 'before')).toBe('Before');
   });
 
-  test('Review: ArrowDown from the body does not escape past the author', async ({
+  test('Review: ArrowDown from the body steps into the author', async ({
     page,
   }) => {
     await focusEditor(page);
@@ -199,13 +228,11 @@ test.describe('Slot host ArrowDown/Up escape', () => {
     await page.keyboard.type('Body');
     await click(page, REVIEW_AUTHOR);
     await page.keyboard.type('Jane');
-    // The `author` slot renders below the body in the chrome, so even as the
-    // last block, ArrowDown from the body must NOT escape the Review (the old
-    // inverted-edge bug took the body as the bottom region and inserted a
-    // paragraph past the author). Whether the caret then steps into the author
-    // is up to the browser — Chromium crosses the contentEditable island, while
-    // Firefox leaves the caret in the body — so assert only the cross-browser
-    // guarantee: the caret stays inside the Review and nothing is inserted.
+    // The `author` slot renders below the body in the chrome. Even as the last
+    // block (no trailing sibling to step into), ArrowDown from the body steps
+    // into the author across the contentEditable island rather than escaping the
+    // Review. The helper performs the move programmatically, so it works in
+    // Firefox too — not only via Chromium's native cross-island navigation.
     await makeHostEdgeBlock(page, 'last');
     const before = await blockCount(page);
 
@@ -214,7 +241,31 @@ test.describe('Slot host ArrowDown/Up escape', () => {
     await page.keyboard.press('ArrowDown');
     await sleep(100);
 
-    expect(await caretInSelector(page, REVIEW)).toBe(true);
+    expect(await caretInSelector(page, '[data-lexical-slot="author"]')).toBe(
+      true,
+    );
+    // Stepping between regions must not insert a paragraph.
+    expect(await blockCount(page)).toBe(before);
+  });
+
+  test('Review: ArrowUp from the author steps into the body', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertReview(page);
+    await click(page, REVIEW_BODY_FIRST);
+    await page.keyboard.type('Body');
+    await click(page, REVIEW_AUTHOR);
+    await page.keyboard.type('Jane');
+    const before = await blockCount(page);
+
+    // From the start of the author, ArrowUp steps up into the body above it.
+    await click(page, REVIEW_AUTHOR);
+    await moveToLineBeginning(page);
+    await page.keyboard.press('ArrowUp');
+    await sleep(100);
+
+    expect(await caretInSelector(page, '.lexical-review-children')).toBe(true);
     expect(await blockCount(page)).toBe(before);
   });
 
@@ -284,5 +335,44 @@ test.describe('Slot host ArrowDown/Up escape', () => {
     await sleep(120);
 
     expect(await blockOutsideHost(page, PULLQUOTE, 'before')).toBe('Before');
+  });
+
+  test('PullQuote: ArrowDown from the quote steps into the attribution', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertPullQuote(page);
+    const before = await blockCount(page);
+
+    // From the end of the quote, ArrowDown steps into the attribution below it
+    // across the contentEditable island.
+    await click(page, PQ_QUOTE_FIRST);
+    await selectSlotEnd(page, 'pullquote', 'quote');
+    await page.keyboard.press('ArrowDown');
+    await sleep(100);
+
+    expect(
+      await caretInSelector(page, '[data-lexical-slot="attribution"]'),
+    ).toBe(true);
+    expect(await blockCount(page)).toBe(before);
+  });
+
+  test('PullQuote: ArrowUp from the attribution steps into the quote', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertPullQuote(page);
+    const before = await blockCount(page);
+
+    // From the start of the attribution, ArrowUp steps into the quote above it.
+    await click(page, PQ_ATTRIBUTION);
+    await moveToLineBeginning(page);
+    await page.keyboard.press('ArrowUp');
+    await sleep(100);
+
+    expect(await caretInSelector(page, '[data-lexical-slot="quote"]')).toBe(
+      true,
+    );
+    expect(await blockCount(page)).toBe(before);
   });
 });

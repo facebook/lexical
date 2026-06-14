@@ -364,6 +364,111 @@ test('dir on the host flips writing direction inside the shadow root', async ({
   expect(ltr).toBe('ltr');
 });
 
+test('host.form reflects ElementInternals and fires formAssociatedCallback', async ({
+  page,
+}) => {
+  // The host is mounted inside `<form id="demo-form">`, so `host.form`
+  // resolves through ElementInternals.form, and the page-level
+  // `lexical-form-associated` listener has logged the initial
+  // association.
+  const initial = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {form: HTMLFormElement | null};
+    const status = document.querySelector('#last-edited') as HTMLElement;
+    return {
+      formId: host.form !== null ? host.form.id : null,
+      lastFormAssociation: status.dataset.lastFormAssociation ?? null,
+    };
+  });
+  expect(initial.formId).toBe('demo-form');
+  expect(initial.lastFormAssociation).toMatch(/→ demo-form$/);
+
+  // Moving the host out of the form drives `formAssociatedCallback(null)`
+  // and clears `host.form`.
+  await page.evaluate(() => {
+    const host = document.querySelector('lexical-editor[name="notes"]')!;
+    document.body.appendChild(host);
+  });
+  const detached = await page.evaluate(
+    () =>
+      (
+        document.querySelector('lexical-editor[name="notes"]') as Element & {
+          form: HTMLFormElement | null;
+        }
+      ).form,
+  );
+  expect(detached).toBeNull();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (document.querySelector('#last-edited') as HTMLElement).dataset
+            .lastFormAssociation,
+      ),
+    )
+    .toMatch(/→ \(none\)$/);
+});
+
+test('formStateRestoreCallback restores a serialized editor state', async ({
+  page,
+}) => {
+  // Type something so the host has a non-trivial serialized state, then
+  // capture it.
+  await clearAndType(page, 'notes', 'original content');
+  const snapshot = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {value: string};
+    return host.value;
+  });
+
+  // Wipe the editor.
+  await editor(page, 'notes').click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.press('Delete');
+  await expect(editor(page, 'notes')).toHaveText('');
+
+  // Replay the serialized state through formStateRestoreCallback — the
+  // same path the browser uses for bfcache navigation and form
+  // autocomplete restore.
+  await page.evaluate(state => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {
+      formStateRestoreCallback: (
+        value: string,
+        reason: 'autocomplete' | 'restore',
+      ) => void;
+    };
+    host.formStateRestoreCallback(state, 'restore');
+  }, snapshot);
+
+  await expect(editor(page, 'notes')).toHaveText('original content');
+});
+
+test('inert on the host blocks input across the shadow boundary', async ({
+  page,
+}) => {
+  await clearAndType(page, 'summary', 'baseline');
+  await page.locator('#summary-inert').check();
+
+  // The standard `inert` attribute crosses the shadow boundary on its
+  // own, so the contentEditable inside the summary's shadow root rejects
+  // both focus and keyboard input without Lexical-side glue.
+  const ce = editor(page, 'summary');
+  await ce.click({force: true});
+  await page.keyboard.type(' should be ignored');
+  await expect(ce).toHaveText('baseline');
+
+  // Removing the attribute restores interaction.
+  await page.locator('#summary-inert').uncheck();
+  await ce.click();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' restored');
+  await expect(ce).toHaveText('baseline restored');
+});
+
 test('a required <lexical-editor> participates in form validation', async ({
   page,
 }) => {

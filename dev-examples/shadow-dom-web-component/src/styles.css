@@ -106,6 +106,16 @@ form label.control {
   display: none;
 }
 
+/*
+ * `inert` is a standard HTML attribute that turns a subtree into a
+ * non-interactive region; focus, pointer events, and selection skip it
+ * entirely, and the property crosses the shadow boundary on its own.
+ * The page-level rule below just adds a visual cue.
+ */
+form lexical-editor[inert] {
+  opacity: 0.55;
+}
+
 #last-edited {
   color: #777;
   font-size: 13px;

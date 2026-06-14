@@ -133,6 +133,53 @@ if (readonlyToggle !== null) {
   });
 }
 
+// `inert` toggle. The standard `inert` attribute turns the editor's
+// subtree into a non-interactive region — focus, pointer events and
+// selection skip it. Like `dir`, the property crosses the shadow
+// boundary on its own, so no editor-side glue is needed.
+const inertToggle = document.querySelector<HTMLInputElement>('#summary-inert');
+if (inertToggle !== null) {
+  inertToggle.addEventListener('change', () => {
+    const summary = document.querySelector<LexicalEditorElement>(
+      'lexical-editor[name="summary"]',
+    );
+    if (summary !== null) {
+      if (inertToggle.checked) {
+        summary.setAttribute('inert', '');
+      } else {
+        summary.removeAttribute('inert');
+      }
+    }
+  });
+}
+
+// Form-associated lifecycle log. The host fires the composed
+// `lexical-form-associated` event from `formAssociatedCallback`; the
+// page listens once so a page-level handler could, for instance, drop
+// any form-scoped state when the editor is moved into a different
+// `<form>`. The last association is stashed on the status node as a
+// data attribute so the Playwright suite can read it.
+for (const ed of document.querySelectorAll<LexicalEditorElement>(
+  'lexical-editor',
+)) {
+  const surface = (associatedForm: HTMLFormElement | null) => {
+    const name = ed.getAttribute('name');
+    const formId =
+      associatedForm !== null
+        ? associatedForm.id !== ''
+          ? associatedForm.id
+          : 'form'
+        : '(none)';
+    status.dataset.lastFormAssociation = `${name} → ${formId}`;
+  };
+  ed.addEventListener('lexical-form-associated', event => {
+    surface((event as CustomEvent<{form: HTMLFormElement | null}>).detail.form);
+  });
+  // The initial association already fired before this listener was
+  // attached, so surface it from `host.form` directly.
+  surface(ed.form);
+}
+
 // Right-to-left toggle. `dir` is an inherited HTML attribute, so flipping
 // it on the host changes the writing direction of the contentEditable
 // inside the shadow root without crossing the boundary — no editor-side

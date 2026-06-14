@@ -382,6 +382,48 @@ export class LexicalEditorElement extends HTMLElement {
     this.updateEditableState();
   }
 
+  /**
+   * Fires whenever the host associates with or disassociates from a
+   * `<form>` (e.g. the element is moved into / out of one programmatically).
+   * Surfaced as a composed CustomEvent so a page-level handler can drop
+   * form-scoped listeners as the host changes forms without having to
+   * walk the DOM itself.
+   */
+  formAssociatedCallback(form: HTMLFormElement | null): void {
+    this.dispatchEvent(
+      new CustomEvent('lexical-form-associated', {
+        bubbles: true,
+        composed: true,
+        detail: {form},
+      }),
+    );
+  }
+
+  /**
+   * Form state restore — fires on bfcache navigation (`reason: 'restore'`)
+   * and on the browser's autocomplete restore (`reason: 'autocomplete'`).
+   * The state argument is whatever this host last passed to
+   * `internals.setFormValue` (a serialized editor state JSON string in
+   * our case), so a round-trip through `parseEditorState` brings the
+   * editor back to where it was before the navigation.
+   */
+  formStateRestoreCallback(
+    state: File | string | FormData,
+    _reason: 'autocomplete' | 'restore',
+  ): void {
+    if (typeof state !== 'string' || state === '' || this.editor === null) {
+      return;
+    }
+    this.editor.setEditorState(this.editor.parseEditorState(state));
+    this.internals.setFormValue(this.value);
+    this.updateValidity();
+  }
+
+  /** The `<form>` the host is currently associated with, or null. */
+  get form(): HTMLFormElement | null {
+    return this.internals.form;
+  }
+
   private updateEditableState(): void {
     if (this.editor !== null) {
       this.editor.setEditable(

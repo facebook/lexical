@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {getDOMSelection, getDOMSelectionRange} from 'lexical';
+
 const VERTICAL_GAP = 10;
 const HORIZONTAL_OFFSET = 5;
 
@@ -31,10 +33,10 @@ export function setFloatingElemPosition(
   let top = targetRect.top - floatingElemRect.height - verticalGap;
   let left = targetRect.left - horizontalOffset;
 
-  // Check if text is end-aligned
-  const selection = window.getSelection();
-  if (selection && selection.rangeCount > 0) {
-    const range = selection.getRangeAt(0);
+  // Check if text is end-aligned.
+  const domSelection = getDOMSelection(anchorElem.ownerDocument.defaultView);
+  const range = domSelection && getDOMSelectionRange(domSelection, anchorElem);
+  if (range) {
     const textNode = range.startContainer;
     if (textNode.nodeType === Node.ELEMENT_NODE || textNode.parentElement) {
       const textElement =

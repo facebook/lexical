@@ -26,6 +26,7 @@ import {
   $getNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
   getDOMSelection,
+  getDOMSelectionPoints,
   getNodeKeyFromDOMNode,
   getParentElement,
   getWindow,
@@ -82,12 +83,14 @@ function $handleTextMutation(
   editor: LexicalEditor,
 ): void {
   const domSelection = getDOMSelection(getWindow(editor));
+  const domSelectionPoints =
+    domSelection && getDOMSelectionPoints(domSelection, editor._rootElement);
   let anchorOffset = null;
   let focusOffset = null;
 
-  if (domSelection !== null && domSelection.anchorNode === target) {
-    anchorOffset = domSelection.anchorOffset;
-    focusOffset = domSelection.focusOffset;
+  if (domSelectionPoints !== null && domSelectionPoints.anchorNode === target) {
+    anchorOffset = domSelectionPoints.anchorOffset;
+    focusOffset = domSelectionPoints.focusOffset;
   }
 
   const text = target.nodeValue;

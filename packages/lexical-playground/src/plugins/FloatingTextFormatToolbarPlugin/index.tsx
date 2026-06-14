@@ -23,6 +23,9 @@ import {
   COMMAND_PRIORITY_LOW,
   FORMAT_TEXT_COMMAND,
   getDOMSelection,
+  getDOMSelectionPoints,
+  isDOMDocumentNode,
+  isDOMShadowRoot,
   LexicalEditor,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -93,7 +96,13 @@ function TextFormatFloatingToolbar({
       if (popupCharStylesEditorRef.current.style.pointerEvents !== 'none') {
         const x = e.clientX;
         const y = e.clientY;
-        const elementUnderMouse = document.elementFromPoint(x, y);
+        // Guard the root narrowing so a detached popup (its getRootNode
+        // returns the popup itself) doesn't throw on elementFromPoint.
+        const popupRoot = popupCharStylesEditorRef.current.getRootNode();
+        const elementUnderMouse =
+          isDOMDocumentNode(popupRoot) || isDOMShadowRoot(popupRoot)
+            ? popupRoot.elementFromPoint(x, y)
+            : null;
 
         if (!popupCharStylesEditorRef.current.contains(elementUnderMouse)) {
           // Mouse is not over the target element => not a normal click, but probably a drag
@@ -138,7 +147,9 @@ function TextFormatFloatingToolbar({
       nativeSelection !== null &&
       !nativeSelection.isCollapsed &&
       rootElement !== null &&
-      rootElement.contains(nativeSelection.anchorNode)
+      rootElement.contains(
+        getDOMSelectionPoints(nativeSelection, rootElement).anchorNode,
+      )
     ) {
       const rangeRect = getDOMRangeRect(nativeSelection, rootElement);
 
@@ -353,7 +364,9 @@ function useFloatingTextFormatToolbar(
         nativeSelection !== null &&
         (!$isRangeSelection(selection) ||
           rootElement === null ||
-          !rootElement.contains(nativeSelection.anchorNode))
+          !rootElement.contains(
+            getDOMSelectionPoints(nativeSelection, rootElement).anchorNode,
+          ))
       ) {
         setIsText(false);
         return;

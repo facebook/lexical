@@ -6,36 +6,48 @@
  *
  */
 
+import {getDOMShadowRoots} from 'lexical';
+
 /** @internal */
 export function caretFromPoint(
   x: number,
   y: number,
+  rootElement: HTMLElement | null = null,
 ): null | {
   offset: number;
   node: Node;
 } {
-  if (typeof document.caretRangeFromPoint !== 'undefined') {
-    const range = document.caretRangeFromPoint(x, y);
-    if (range === null) {
-      return null;
+  // When the editor lives in a DOM shadow tree, a point over shadow content is
+  // retargeted to the shadow host by caretRangeFromPoint. Prefer
+  // caretPositionFromPoint with the shadowRoots option, which returns the
+  // un-retargeted node. Browsers that don't implement the option silently
+  // ignore it and return a retargeted result, so verify the offset node
+  // actually landed inside one of the requested shadow roots before trusting
+  // it; otherwise fall through to the legacy paths below.
+  const shadowRoots = rootElement ? getDOMShadowRoots(rootElement) : [];
+  if (
+    shadowRoots.length > 0 &&
+    typeof document.caretPositionFromPoint === 'function'
+  ) {
+    const caretPosition = document.caretPositionFromPoint(x, y, {shadowRoots});
+    if (
+      caretPosition !== null &&
+      shadowRoots.some(root => root.contains(caretPosition.offsetNode))
+    ) {
+      return {node: caretPosition.offsetNode, offset: caretPosition.offset};
     }
-    return {
-      node: range.startContainer,
-      offset: range.startOffset,
-    };
-    // @ts-ignore
-  } else if (document.caretPositionFromPoint !== 'undefined') {
-    // @ts-ignore FF - no types
-    const range = document.caretPositionFromPoint(x, y);
-    if (range === null) {
-      return null;
-    }
-    return {
-      node: range.offsetNode,
-      offset: range.offset,
-    };
-  } else {
-    // Gracefully handle IE
-    return null;
   }
+  if (typeof document.caretRangeFromPoint === 'function') {
+    const range = document.caretRangeFromPoint(x, y);
+    return range === null
+      ? null
+      : {node: range.startContainer, offset: range.startOffset};
+  } else if (typeof document.caretPositionFromPoint === 'function') {
+    const caretPosition = document.caretPositionFromPoint(x, y);
+    return caretPosition === null
+      ? null
+      : {node: caretPosition.offsetNode, offset: caretPosition.offset};
+  }
+  // Gracefully handle IE
+  return null;
 }

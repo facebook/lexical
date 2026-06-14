@@ -167,12 +167,27 @@ export function $fullReconcile(): void {
   getActiveEditor()._dirtyType = FULL_RECONCILE;
 }
 
+function* iterContentEditables(
+  root: Document | ShadowRoot,
+): Generator<Element> {
+  for (const node of root.querySelectorAll('[contenteditable]')) {
+    yield node;
+  }
+  // Descend into open shadow roots so editors mounted inside web components
+  // are counted; querySelectorAll does not pierce shadow boundaries.
+  for (const el of root.querySelectorAll('*')) {
+    if (el.shadowRoot !== null) {
+      yield* iterContentEditables(el.shadowRoot);
+    }
+  }
+}
+
 function collectBuildInformation(): string {
   let compatibleEditors = 0;
   const incompatibleEditors = new Set<string>();
   const thisVersion = LexicalEditor.version;
   if (typeof window !== 'undefined') {
-    for (const node of document.querySelectorAll('[contenteditable]')) {
+    for (const node of iterContentEditables(document)) {
       const editor = getEditorPropertyFromDOMNode(node);
       if (isLexicalEditor(editor)) {
         compatibleEditors++;

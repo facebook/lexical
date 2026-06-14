@@ -98,6 +98,7 @@ export async function initialize({
   tableHorizontalScroll,
   shouldAllowHighlightingWithBrackets,
   selectionAlwaysOnDisplay,
+  isShadowDOM,
 }) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
@@ -134,6 +135,8 @@ export async function initialize({
 
   appSettings.selectionAlwaysOnDisplay = !!selectionAlwaysOnDisplay;
   appSettings.selectBlock = !!selectBlock;
+
+  appSettings.isShadowDOM = !!isShadowDOM;
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${
@@ -238,9 +241,24 @@ async function exposeLexicalEditor(page, pageError = null) {
     ),
   );
   await leftFrame.evaluate(() => {
-    window.lexicalEditor = document.querySelector(
-      '[data-lexical-editor="true"]',
-    ).__lexicalEditor;
+    // querySelector does not pierce shadow roots, so descend into any open
+    // shadow trees to support the "Render in Shadow DOM" playground setting.
+    const findEditorElement = root => {
+      const found = root.querySelector('[data-lexical-editor="true"]');
+      if (found !== null) {
+        return found;
+      }
+      for (const element of root.querySelectorAll('*')) {
+        if (element.shadowRoot !== null) {
+          const inner = findEditorElement(element.shadowRoot);
+          if (inner !== null) {
+            return inner;
+          }
+        }
+      }
+      return null;
+    };
+    window.lexicalEditor = findEditorElement(document).__lexicalEditor;
   });
 }
 
@@ -591,8 +609,30 @@ export async function keyUpCtrlOrAlt(page) {
 
 async function copyToClipboardPageOrFrame(pageOrFrame) {
   return await pageOrFrame.evaluate(() => {
+    // document.querySelector doesn't pierce shadow roots; descend into any
+    // open shadow trees so this works for the "Render in Shadow DOM"
+    // playground setting too. Match `data-lexical-editor` rather than any
+    // contenteditable so we don't accidentally grab a comment/draft input
+    // that also has contenteditable=true.
+    const findEditor = root => {
+      const direct = root.querySelector(
+        'div[contenteditable="true"][data-lexical-editor="true"]',
+      );
+      if (direct !== null) {
+        return direct;
+      }
+      for (const el of root.querySelectorAll('*')) {
+        if (el.shadowRoot !== null) {
+          const inner = findEditor(el.shadowRoot);
+          if (inner !== null) {
+            return inner;
+          }
+        }
+      }
+      return null;
+    };
     const clipboardData = {};
-    const editor = document.querySelector('div[contenteditable="true"]');
+    const editor = findEditor(document);
     const copyEvent = new ClipboardEvent('copy');
     Object.defineProperty(copyEvent, 'clipboardData', {
       value: {
@@ -620,6 +660,7 @@ async function pasteWithClipboardDataFromPageOrFrame(
     async ({
       clipboardData: _clipboardData,
       canUseBeforeInput: _canUseBeforeInput,
+      editorSelector: _editorSelector,
     }) => {
       const files = [];
       for (const [clipboardKey, clipboardValue] of Object.entries(
@@ -652,10 +693,35 @@ async function pasteWithClipboardDataFromPageOrFrame(
         };
       }
 
+      // document.querySelector doesn't pierce shadow roots; descend into any
+      // open shadow trees so paste works for the "Render in Shadow DOM"
+      // playground setting too. Match `data-lexical-editor` (not just any
+      // contenteditable) so a draft/comment input doesn't shadow the real
+      // editor when activeElement is not contenteditable.
+      const findEditor = root => {
+        const direct = root.querySelector(
+          'div[contenteditable="true"][data-lexical-editor="true"]',
+        );
+        if (direct !== null) {
+          return direct;
+        }
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            const inner = findEditor(el.shadowRoot);
+            if (inner !== null) {
+              return inner;
+            }
+          }
+        }
+        return null;
+      };
+      const activeElement = document.activeElement;
       const editor =
-        document.activeElement && document.activeElement.isContentEditable
-          ? document.activeElement
-          : document.querySelector(editorSelector);
+        activeElement &&
+        activeElement.isContentEditable &&
+        activeElement.matches(_editorSelector)
+          ? activeElement
+          : findEditor(document);
       const pasteEvent = new ClipboardEvent('paste', {
         bubbles: true,
         cancelable: true,
@@ -680,7 +746,7 @@ async function pasteWithClipboardDataFromPageOrFrame(
         }
       }
     },
-    {canUseBeforeInput, clipboardData},
+    {canUseBeforeInput, clipboardData, editorSelector},
   );
 }
 

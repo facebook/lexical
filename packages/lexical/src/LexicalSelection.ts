@@ -85,7 +85,11 @@ import {
   $isTokenOrTab,
   $setCompositionKey,
   doesContainSurrogatePair,
+  getActiveElement,
+  getComposedStaticRange,
   getDOMSelection,
+  getDOMSelectionPoints,
+  getDOMSelectionRange,
   getElementByKeyOrThrow,
   getNodeKeyFromDOMNode,
   getWindow,
@@ -1672,7 +1676,13 @@ export class RangeSelection implements BaseSelection {
     );
     // Guard against no ranges
     if (domSelection.rangeCount > 0) {
-      const range = domSelection.getRangeAt(0);
+      // Inside a DOM shadow root getRangeAt(0) is retargeted to the host;
+      // read the composed StaticRange (real nodes) where available.
+      const composedRange = getComposedStaticRange(
+        domSelection,
+        editor._rootElement,
+      );
+      const range = composedRange || domSelection.getRangeAt(0);
       // Apply the DOM selection to our Lexical selection.
       const anchorNode = this.anchor.getNode();
       const root = $isRootNode(anchorNode)
@@ -1715,11 +1725,14 @@ export class RangeSelection implements BaseSelection {
 
         // Because a range works on start and end, we might need to flip
         // the anchor and focus points to match what the DOM has, not what
-        // the range has specifically.
-        if (
-          domSelection.anchorNode !== range.startContainer ||
-          domSelection.anchorOffset !== range.startOffset
-        ) {
+        // the range has specifically. Inside a shadow root anchorNode is
+        // retargeted to the host, so use the standard Selection.direction
+        // (which agrees with the composed range we applied above).
+        const anchorIsAtRangeStart = composedRange
+          ? domSelection.direction !== 'backward'
+          : domSelection.anchorNode === range.startContainer &&
+            domSelection.anchorOffset === range.startOffset;
+        if (!anchorIsAtRangeStart) {
           $swapPoints(this);
         }
       }
@@ -2760,10 +2773,11 @@ export function $internalCreateRangeSelection(
     if (domSelection === null) {
       return null;
     }
-    anchorDOM = domSelection.anchorNode;
-    focusDOM = domSelection.focusNode;
-    anchorOffset = domSelection.anchorOffset;
-    focusOffset = domSelection.focusOffset;
+    const points = getDOMSelectionPoints(domSelection, editor._rootElement);
+    anchorDOM = points.anchorNode;
+    focusDOM = points.focusNode;
+    anchorOffset = points.anchorOffset;
+    focusOffset = points.focusOffset;
     if (
       (isSelectionChange || eventType === undefined) &&
       $isRangeSelection(lastSelection) &&
@@ -3119,7 +3133,7 @@ export function $updateDOMSelection(
   tags: Set<string>,
   rootElement: HTMLElement,
 ): void {
-  const activeElement = document.activeElement;
+  const activeElement = getActiveElement(rootElement);
 
   // TODO: make this not hard-coded, and add another config option
   // that makes this configurable.
@@ -3131,6 +3145,14 @@ export function $updateDOMSelection(
     return;
   }
 
+  // Resolve the live DOM selection's boundary points through any enclosing
+  // DOM shadow roots; Selection.anchorNode/focusNode are retargeted to the
+  // shadow host, so the comparisons below read composed points instead. In
+  // the light DOM getDOMSelectionPoints returns `domSelection` itself (no
+  // Selection property reads happen here), so `currentPoints` aliases it and
+  // preserves the deferred reads described below.
+  const currentPoints = getDOMSelectionPoints(domSelection, rootElement);
+
   if (!$isRangeSelection(nextSelection)) {
     // We don't remove selection if the prevSelection is null because
     // of editor.setRootElement(). If this occurs on init when the
@@ -3140,8 +3162,8 @@ export function $updateDOMSelection(
       prevSelection !== null &&
       isSelectionWithinEditor(
         editor,
-        domSelection.anchorNode,
-        domSelection.focusNode,
+        currentPoints.anchorNode,
+        currentPoints.focusNode,
       )
     ) {
       domSelection.removeAllRanges();
@@ -3226,10 +3248,10 @@ export function $updateDOMSelection(
   // sometimes be problematic around scrolling.
   if (
     !(domSelection.type === 'Range' && isCollapsed) && // Badly interpreted range selection when collapsed - #1482
-    domSelection.anchorOffset === nextAnchorOffset &&
-    domSelection.focusOffset === nextFocusOffset &&
-    domSelection.anchorNode === nextAnchorNode &&
-    domSelection.focusNode === nextFocusNode
+    currentPoints.anchorOffset === nextAnchorOffset &&
+    currentPoints.focusOffset === nextFocusOffset &&
+    currentPoints.anchorNode === nextAnchorNode &&
+    currentPoints.focusNode === nextFocusNode
   ) {
     // If the root element does not have focus, ensure it has focus
     if (activeElement === null || !rootElement.contains(activeElement)) {
@@ -3262,31 +3284,31 @@ export function $updateDOMSelection(
     IS_FIREFOX &&
     nextSelection.isCollapsed() &&
     rootElement !== null &&
-    !tags.has(SKIP_SELECTION_FOCUS_TAG) &&
-    (document.activeElement === null ||
-      !rootElement.contains(document.activeElement))
+    !tags.has(SKIP_SELECTION_FOCUS_TAG)
   ) {
-    // Restore focus immediately to ensure cursor visibility
-    rootElement.focus({preventScroll: true});
-    // Note: We rely on the normal selection update mechanism to ensure the cursor
-    // is visible. Using requestAnimationFrame here could cause race conditions where
-    // another update changes the selection before the rAF callback executes.
+    const focusedElement = getActiveElement(rootElement);
+    if (focusedElement === null || !rootElement.contains(focusedElement)) {
+      // Restore focus immediately to ensure cursor visibility.
+      // Note: We rely on the normal selection update mechanism to ensure the
+      // cursor is visible. Using requestAnimationFrame here could cause race
+      // conditions where another update changes the selection before the rAF
+      // callback executes.
+      rootElement.focus({preventScroll: true});
+    }
   }
 
   if (
     !tags.has(SKIP_SCROLL_INTO_VIEW_TAG) &&
     nextSelection.isCollapsed() &&
     rootElement !== null &&
-    rootElement === document.activeElement
+    rootElement === getActiveElement(rootElement)
   ) {
     const selectionTarget: null | Range | HTMLElement | Text =
       $isRangeSelection(nextSelection) &&
       nextSelection.anchor.type === 'element'
         ? (nextAnchorNode.childNodes[nextAnchorOffset] as HTMLElement | Text) ||
           null
-        : domSelection.rangeCount > 0
-          ? domSelection.getRangeAt(0)
-          : null;
+        : getDOMSelectionRange(domSelection, rootElement);
     if (selectionTarget !== null) {
       let selectionRect: DOMRect;
       if (selectionTarget instanceof Text) {

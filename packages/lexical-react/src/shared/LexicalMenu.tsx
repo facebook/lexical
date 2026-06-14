@@ -17,6 +17,7 @@ import {
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
   createCommand,
+  getDOMShadowRoots,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_ENTER_COMMAND,
@@ -247,11 +248,27 @@ export function useDynamicPositioning(
         capture: true,
         passive: true,
       });
+      // Scroll events are non-composed and do not cross shadow boundaries,
+      // so the document-level listener above never sees scrolls inside an
+      // enclosing shadow tree. Register on every shadow root between the
+      // target and the document so internal scrolls at any depth reposition
+      // the floating menu. getDOMShadowRoots walks parent hosts and is
+      // empty in the light DOM.
+      const enclosingShadowRoots = getDOMShadowRoots(targetElement);
+      for (const root of enclosingShadowRoots) {
+        root.addEventListener('scroll', handleScroll, {
+          capture: true,
+          passive: true,
+        });
+      }
       resizeObserver.observe(targetElement);
       return () => {
         resizeObserver.unobserve(targetElement);
         window.removeEventListener('resize', onReposition);
         document.removeEventListener('scroll', handleScroll, true);
+        for (const root of enclosingShadowRoots) {
+          root.removeEventListener('scroll', handleScroll, true);
+        }
       };
     }
   }, [targetElement, editor, onVisibilityChange, onReposition, resolution]);

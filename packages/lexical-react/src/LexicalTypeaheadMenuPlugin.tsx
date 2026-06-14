@@ -23,6 +23,7 @@ import {
   CommandListenerPriority,
   createCommand,
   getDOMSelection,
+  getDOMSelectionPoints,
   LexicalCommand,
   LexicalEditor,
   RangeSelection,
@@ -53,14 +54,16 @@ function tryToPositionRange(
   leadOffset: number,
   range: Range,
   editorWindow: Window,
+  rootElement: HTMLElement | null,
 ): boolean {
   const domSelection = getDOMSelection(editorWindow);
   if (domSelection === null || !domSelection.isCollapsed) {
     return false;
   }
-  const anchorNode = domSelection.anchorNode;
+  const points = getDOMSelectionPoints(domSelection, rootElement);
+  const anchorNode = points.anchorNode;
   const startOffset = leadOffset;
-  const endOffset = domSelection.anchorOffset;
+  const endOffset = points.anchorOffset;
 
   if (anchorNode == null || endOffset == null) {
     return false;
@@ -304,6 +307,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
             match.leadOffset,
             range,
             editorWindow,
+            editor.getRootElement(),
           );
           if (isRangePositioned !== null) {
             startTransition(() =>

@@ -108,9 +108,12 @@ import {
   $updateTextNodeFromDOMContent,
   dispatchCommand,
   doesContainSurrogatePair,
+  getActiveElementDeep,
   getAnchorTextFromDOM,
+  getDOMOwnerDocument,
   getDOMSelection,
   getDOMSelectionFromTarget,
+  getDOMSelectionPoints,
   getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
@@ -128,6 +131,7 @@ import {
   isDeleteWordForward,
   isDOMCapturingSelection,
   isDOMNode,
+  isDOMShadowRoot,
   isDOMTextNode,
   isEscape,
   isFirefoxClipboardEvents,
@@ -229,7 +233,12 @@ function $shouldPreventDefaultAndInsertText(
   const anchorNode = anchor.getNode();
   const editor = getActiveEditor();
   const domSelection = getDOMSelection(getWindow(editor));
-  const domAnchorNode = domSelection !== null ? domSelection.anchorNode : null;
+  const domSelectionPoints =
+    domSelection !== null
+      ? getDOMSelectionPoints(domSelection, editor._rootElement)
+      : null;
+  const domAnchorNode =
+    domSelectionPoints !== null ? domSelectionPoints.anchorNode : null;
   const anchorKey = anchor.key;
   const backingAnchorElement = editor.getElementByKey(anchorKey);
   const textLength = text.length;
@@ -266,11 +275,11 @@ function $shouldPreventDefaultAndInsertText(
         $getDOMTextNode(anchorNode, backingAnchorElement, editor)) ||
     // If TargetRange is not the same as the DOM selection; browser trying to edit random parts
     // of the editor.
-    (domSelection !== null &&
+    (domSelectionPoints !== null &&
       domTargetRange !== null &&
       (!domTargetRange.collapsed ||
-        domTargetRange.startContainer !== domSelection.anchorNode ||
-        domTargetRange.startOffset !== domSelection.anchorOffset)) ||
+        domTargetRange.startContainer !== domSelectionPoints.anchorNode ||
+        domTargetRange.startOffset !== domSelectionPoints.anchorOffset)) ||
     // Check if we're changing from bold to italics, or some other format.
     (!anchorNode.isComposing() &&
       (anchorNode.getFormat() !== selection.format ||
@@ -297,12 +306,14 @@ function onSelectionChange(
   editor: LexicalEditor,
   isActive: boolean,
 ): void {
+  // Shadow-aware boundary points so isSelectionWithinEditor below isn't
+  // fooled by the retargeted shadow host into dropping the selection.
   const {
     anchorNode: anchorDOM,
     anchorOffset,
     focusNode: focusDOM,
     focusOffset,
-  } = domSelection;
+  } = getDOMSelectionPoints(domSelection, editor._rootElement);
   if (isSelectionChangeFromDOMUpdate) {
     isSelectionChangeFromDOMUpdate = false;
 
@@ -366,10 +377,7 @@ function onSelectionChange(
 
       if (selection.isCollapsed()) {
         // Badly interpreted range selection when collapsed - #1482
-        if (
-          domSelection.type === 'Range' &&
-          domSelection.anchorNode === domSelection.focusNode
-        ) {
+        if (domSelection.type === 'Range' && anchorDOM === focusDOM) {
           selection.dirty = true;
         }
 
@@ -524,7 +532,10 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
       } else if (event.pointerType === 'touch' || event.pointerType === 'pen') {
         // This is used to update the selection on touch devices (including Apple Pencil) when the user clicks on text after a
         // node selection. See isSelectionChangeFromMouseDown for the inverse
-        const domAnchorNode = domSelection.anchorNode;
+        const domAnchorNode = getDOMSelectionPoints(
+          domSelection,
+          editor._rootElement,
+        ).anchorNode;
         // If the user is attempting to click selection back onto text, then
         // we should attempt create a range selection.
         // When we click on an empty paragraph node or the end of a paragraph that ends
@@ -1115,6 +1126,10 @@ function $handleInput(event: InputEvent): boolean {
     if (domSelection === null) {
       return true;
     }
+    const domSelectionPoints = getDOMSelectionPoints(
+      domSelection,
+      editor._rootElement,
+    );
     const isBackward = selection.isBackward();
     const startOffset = isBackward
       ? selection.anchor.offset
@@ -1129,11 +1144,11 @@ function $handleInput(event: InputEvent): boolean {
       !CAN_USE_BEFORE_INPUT ||
       selection.isCollapsed() ||
       !$isTextNode(anchorNode) ||
-      domSelection.anchorNode === null ||
+      domSelectionPoints.anchorNode === null ||
       anchorNode.getTextContent().slice(0, startOffset) +
         data +
         anchorNode.getTextContent().slice(startOffset + endOffset) !==
-        getAnchorTextFromDOM(domSelection.anchorNode)
+        getAnchorTextFromDOM(domSelectionPoints.anchorNode)
     ) {
       dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
     }
@@ -1254,12 +1269,18 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
         $isTextNode(node)
       ) {
         const domSelection = getDOMSelection(getWindow(editor));
+        const domSelectionPoints =
+          domSelection &&
+          getDOMSelectionPoints(domSelection, editor._rootElement);
         let anchorOffset = null;
         let focusOffset = null;
 
-        if (domSelection !== null && domSelection.anchorNode === textNode) {
-          anchorOffset = domSelection.anchorOffset;
-          focusOffset = domSelection.focusOffset;
+        if (
+          domSelectionPoints !== null &&
+          domSelectionPoints.anchorNode === textNode
+        ) {
+          anchorOffset = domSelectionPoints.anchorOffset;
+          focusOffset = domSelectionPoints.focusOffset;
         }
 
         $updateTextNodeFromDOMContent(
@@ -1465,7 +1486,28 @@ function onDocumentSelectionChange(event: Event): void {
   if (domSelection === null) {
     return;
   }
-  const nextActiveEditor = getNearestEditorFromDOMNode(domSelection.anchorNode);
+  // In a shadow tree the document Selection's anchorNode is retargeted to
+  // the shadow host (outside any editor), so the direct lookup would always
+  // return null. Skip straight to the shadow fallback below in that case.
+  const rawAnchor = domSelection.anchorNode;
+  let nextActiveEditor: LexicalEditor | null =
+    rawAnchor !== null && !isDOMShadowRoot(rawAnchor.getRootNode())
+      ? getNearestEditorFromDOMNode(rawAnchor)
+      : null;
+  if (nextActiveEditor === null) {
+    // Resolve the real focused element by descending through the open shadow
+    // roots. Only fires when focus is actually inside a shadow tree, so
+    // light DOM behavior is unchanged.
+    const ownerDocument = getDOMOwnerDocument(event.target);
+    const activeElement =
+      ownerDocument !== null ? getActiveElementDeep(ownerDocument) : null;
+    if (
+      activeElement !== null &&
+      isDOMShadowRoot(activeElement.getRootNode())
+    ) {
+      nextActiveEditor = getNearestEditorFromDOMNode(activeElement);
+    }
+  }
   if (nextActiveEditor === null) {
     return;
   }
@@ -1474,7 +1516,10 @@ function onDocumentSelectionChange(event: Event): void {
     isSelectionChangeFromMouseDown = false;
     updateEditorSync(nextActiveEditor, () => {
       const lastSelection = $getPreviousSelection();
-      const domAnchorNode = domSelection.anchorNode;
+      const domAnchorNode = getDOMSelectionPoints(
+        domSelection,
+        nextActiveEditor._rootElement,
+      ).anchorNode;
       if (isHTMLElement(domAnchorNode) || isDOMTextNode(domAnchorNode)) {
         // If the user is attempting to click selection back onto text, then
         // we should attempt create a range selection.

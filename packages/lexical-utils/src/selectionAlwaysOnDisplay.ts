@@ -6,7 +6,7 @@
  *
  */
 
-import {LexicalEditor} from 'lexical';
+import {getDOMSelectionPoints, LexicalEditor} from 'lexical';
 
 import markSelection from './markSelection';
 
@@ -18,8 +18,13 @@ export default function selectionAlwaysOnDisplay(
 
   const onSelectionChange = () => {
     const domSelection = getSelection();
-    const domAnchorNode = domSelection && domSelection.anchorNode;
     const editorRootElement = editor.getRootElement();
+    // Shadow-aware anchor so the contains() check below isn't fooled by the
+    // retargeted host.
+    const domAnchorNode =
+      domSelection !== null
+        ? getDOMSelectionPoints(domSelection, editorRootElement).anchorNode
+        : null;
 
     const isSelectionInsideEditor =
       domAnchorNode !== null &&

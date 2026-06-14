@@ -139,6 +139,33 @@ describe('DOM shadow root selection (browser)', () => {
     const leaf = document.createElement('span');
     innerShadow.appendChild(leaf);
     expect(getDOMShadowRoots(leaf)).toEqual([innerShadow, shadow]);
+
+    // Three levels deep walks all the way out.
+    const middleLeaf = document.createElement('div');
+    innerShadow.appendChild(middleLeaf);
+    const deepestShadow = middleLeaf.attachShadow({mode: 'open'});
+    const deepLeaf = document.createElement('span');
+    deepestShadow.appendChild(deepLeaf);
+    expect(getDOMShadowRoots(deepLeaf)).toEqual([
+      deepestShadow,
+      innerShadow,
+      shadow,
+    ]);
+  });
+
+  test('closed shadow roots are opaque from outside', () => {
+    // A closed shadow root is unreachable from outside code: host.shadowRoot
+    // reads as null, getDOMShadowRoots can't walk into it, and selection
+    // can't be resolved through it. This documents the limitation behind
+    // the "open shadow roots only" docs entry.
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    onTestFinished(() => {
+      document.body.removeChild(host);
+    });
+    host.attachShadow({mode: 'closed'});
+    expect(host.shadowRoot).toBeNull();
+    expect(getDOMShadowRoots(host)).toEqual([]);
   });
 
   test('getDOMSelectionPoints resolves a retargeted shadow selection', () => {
@@ -473,6 +500,93 @@ describe('DOM shadow root selection (browser)', () => {
       assert($isRangeSelection(selection));
       expect(selection.getTextContent()).toBe('Hello');
     });
+  });
+
+  test('resolves selection for a shadow-mounted editor inside an iframe', () => {
+    if (!SUPPORTS_COMPOSED_RANGES) {
+      return;
+    }
+    // iframe + shadow combined: the editor's contentEditable lives in a
+    // shadow tree inside an iframe document, so the helpers must walk both
+    // boundaries — Node.getRootNode through the shadow root + the
+    // iframe's own document for active element / selection reads.
+    const iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+    const iframeDoc = iframe.contentDocument!;
+    const host = iframeDoc.createElement('div');
+    iframeDoc.body.appendChild(host);
+    const shadow = host.attachShadow({mode: 'open'});
+    const contentEditable = iframeDoc.createElement('div');
+    contentEditable.contentEditable = 'true';
+    shadow.appendChild(contentEditable);
+
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: () => $prepopulate('Hello world'),
+        name: 'iframe-shadow',
+        onError: error => {
+          throw error;
+        },
+      }),
+    );
+    editor.setRootElement(contentEditable);
+    onTestFinished(() => {
+      editor.setRootElement(null);
+      document.body.removeChild(iframe);
+    });
+
+    // getDOMShadowRoots walks the shadow boundary inside the iframe.
+    expect(getDOMShadowRoots(contentEditable)).toEqual([shadow]);
+    // getActiveElement resolves through both boundaries: shadow root +
+    // iframe document.
+    contentEditable.focus();
+    expect(getActiveElement(contentEditable)).toBe(shadow.activeElement);
+
+    // Composed selection read from the iframe's window resolves the
+    // shadow-internal textnode rather than the retargeted host.
+    const textNode = contentEditable.querySelector(
+      '[data-lexical-text="true"]',
+    )!.firstChild as Text;
+    const iframeSelection = iframe.contentWindow!.getSelection()!;
+    iframeSelection.setBaseAndExtent(textNode, 0, textNode, 5);
+    const points = getDOMSelectionPoints(iframeSelection, contentEditable);
+    expect(points.anchorNode).toBe(textNode);
+    expect(points.anchorOffset).toBe(0);
+    expect(points.focusOffset).toBe(5);
+  });
+
+  test('Selection.direction defaults to forward when absent', () => {
+    // Firefox before 124 ships `Selection.getComposedRanges` without
+    // `Selection.direction`; the helpers must treat the missing field as
+    // "not backward" so the StaticRange's start/end map onto anchor/focus
+    // in tree order rather than getting silently swapped.
+    const {contentEditable} = setUpShadowEditor();
+    if (!SUPPORTS_COMPOSED_RANGES) {
+      return;
+    }
+    const {domSelection, textNode} = selectInnerText(contentEditable, 1, 4);
+    const original = Object.getOwnPropertyDescriptor(
+      Selection.prototype,
+      'direction',
+    );
+    Object.defineProperty(Selection.prototype, 'direction', {
+      configurable: true,
+      get() {
+        return undefined;
+      },
+    });
+    onTestFinished(() => {
+      if (original) {
+        Object.defineProperty(Selection.prototype, 'direction', original);
+      } else {
+        delete (Selection.prototype as unknown as {direction?: unknown})
+          .direction;
+      }
+    });
+    const points = getDOMSelectionPoints(domSelection, contentEditable);
+    expect(points.anchorNode).toBe(textNode);
+    expect(points.anchorOffset).toBe(1);
+    expect(points.focusOffset).toBe(4);
   });
 
   describe('getComposedEventTarget', () => {

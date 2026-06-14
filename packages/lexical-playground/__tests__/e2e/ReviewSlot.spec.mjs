@@ -14,6 +14,7 @@ import {
   expect,
   focusEditor,
   initialize,
+  locate,
   pasteFromClipboard,
   sleep,
   test,
@@ -118,7 +119,7 @@ test.describe('Review React-chromed ElementNode', () => {
     expect(regions.childrenEditable).toBe('true');
 
     // The rating widget renders five star buttons, none set at rating 0.
-    expect(await page.locator(STAR).count()).toBe(5);
+    expect(await locate(page, STAR).count()).toBe(5);
     expect(await ratingValue(page)).toBe(0);
   });
 
@@ -155,13 +156,13 @@ test.describe('Review React-chromed ElementNode', () => {
     expect(await ratingValue(page)).toBe(2);
 
     // Hovering a higher star lights it as a preview but does not commit it...
-    await page.hover(`${STAR}:nth-child(4)`);
+    await locate(page, `${STAR}:nth-child(4)`).hover();
     await sleep(50);
     expect(await starOnCount(page)).toBe(4);
     expect(await ratingValue(page)).toBe(2);
 
     // ...and leaving the widget reverts the preview to the committed rating.
-    await page.hover(AUTHOR);
+    await locate(page, AUTHOR).hover();
     await sleep(50);
     expect(await starOnCount(page)).toBe(2);
     expect(await ratingValue(page)).toBe(2);
@@ -245,7 +246,7 @@ test.describe('Review React-chromed ElementNode', () => {
       }),
     ).toContain('Before');
     // The rating widget is still present and the regions are intact.
-    expect(await page.locator(STAR).count()).toBe(5);
+    expect(await locate(page, STAR).count()).toBe(5);
   });
 
   test('exports to HTML and re-imports through the DOMImportExtension rule', async ({

@@ -298,8 +298,8 @@ test.describe('Review React-chromed ElementNode', () => {
     expect(await ratingValue(page)).toBe(4);
   });
 
-  // Backspace deletes an empty Review (like the Card), from the start of its
-  // body — but a set rating counts as content, so a rated Review is kept.
+  // Backspace deletes a text-empty Review (like the Card) from the start of its
+  // body. The rating is not counted as content, so a rated Review goes too.
   test('backspace from the body of an empty review deletes it', async ({
     page,
   }) => {
@@ -316,7 +316,7 @@ test.describe('Review React-chromed ElementNode', () => {
     expect(await reviewCount(page)).toBe(0);
   });
 
-  test('backspace keeps a textless review that has a rating', async ({
+  test('backspace deletes a textless review even with a rating set', async ({
     page,
   }) => {
     await focusEditor(page);
@@ -326,13 +326,12 @@ test.describe('Review React-chromed ElementNode', () => {
     await sleep(100);
     expect(await ratingValue(page)).toBe(4);
 
+    // The rating is not content, so an empty-text Review is still deleted.
     await click(page, `${BODY} p`);
     await moveToLineBeginning(page);
     await page.keyboard.press('Backspace');
     await sleep(120);
 
-    // The rating is content, so the Review survives with its rating intact.
-    expect(await reviewCount(page)).toBe(1);
-    expect(await ratingValue(page)).toBe(4);
+    expect(await reviewCount(page)).toBe(0);
   });
 });

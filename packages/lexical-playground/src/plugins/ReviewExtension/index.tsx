@@ -254,14 +254,10 @@ export const ReviewExtension = /* @__PURE__ */ defineExtension({
       // helper reads the rendered order, so the Review's body-above-author
       // chrome needs no special handling here.
       registerSlotHostArrowEscape(editor, $isReviewNode),
-      // Backspace at the start of the body of an empty Review — or from the
-      // block right after one — deletes it (like the Card). A set rating counts
-      // as content, so a rated-but-textless Review is kept.
-      registerEmptyHostBackspace(
-        editor,
-        $isReviewNode,
-        node => $isSlotHostTextEmpty(node) && node.getRating() === 0,
-      ),
+      // Backspace at the start of the body of a text-empty Review — or from the
+      // block right after one — deletes it, exactly like the Card. The rating is
+      // not counted as content, so a rated-but-textless Review is deleted too.
+      registerEmptyHostBackspace(editor, $isReviewNode, $isSlotHostTextEmpty),
     ),
 });
 

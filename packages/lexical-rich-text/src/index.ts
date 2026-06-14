@@ -1262,7 +1262,19 @@ export function registerRichText(
       PASTE_COMMAND,
       event => {
         const [, files, hasTextContent] = eventFiles(event);
-        if (files.length > 0 && !hasTextContent) {
+        // When the clipboard contains both Files and text/html (e.g. a
+        // browser right-click Copy Image), prefer the actual File object
+        // over the text/html fallback. However, applications such as Word
+        // also place a rasterized image in the Files slot alongside
+        // text/plain and text/html when copying rich text. The presence of
+        // text/plain is the reliable signal that the primary intent is a
+        // text paste, not a file paste, so we only bypass hasTextContent
+        // when text/plain is absent from the clipboard.
+        const hasPlainText =
+          objectKlassEquals(event, ClipboardEvent) &&
+          event.clipboardData !== null &&
+          event.clipboardData.types.includes('text/plain');
+        if (files.length > 0 && (!hasTextContent || !hasPlainText)) {
           editor.dispatchCommand(DRAG_DROP_PASTE, files);
           return true;
         }

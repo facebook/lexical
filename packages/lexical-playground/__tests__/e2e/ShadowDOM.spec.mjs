@@ -20,6 +20,7 @@ import {
   focusEditor,
   html,
   initialize,
+  insertSampleImage,
   pasteFromClipboard,
   test,
 } from '../utils/index.mjs';
@@ -182,6 +183,141 @@ test.describe('Shadow DOM', () => {
     );
   });
 
+  test('inserts a sample image through the shadow toolbar', async ({page}) => {
+    await focusEditor(page);
+    // The Insert dropdown opens inside the shadow toolbar and the modal's
+    // "Sample" button inserts an ImageNode whose <img> renders inside the
+    // shadow root. Playwright's selector engine pierces open shadow roots,
+    // so the image element is reachable from the page locator.
+    await insertSampleImage(page);
+    await expect(page.locator('.editor-image img').first()).toBeVisible();
+  });
+
+  test('pastes a file image into the shadow editor', async ({page}) => {
+    await focusEditor(page);
+    // Simulate a file-bearing paste targeted at the shadow-internal
+    // contentEditable. `@lexical/clipboard`'s paste handler runs against
+    // a real `ClipboardEvent`, reads `clipboardData.files`, and inserts
+    // an ImageNode through `INSERT_IMAGE_COMMAND`. The interesting bit
+    // here is that the paste event is dispatched at a node inside an
+    // open shadow root and still reaches Lexical's listener.
+    await page.evaluate(() => {
+      const findEditor = root => {
+        const direct = root.querySelector(
+          'div[contenteditable="true"][data-lexical-editor="true"]',
+        );
+        if (direct !== null) return direct;
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            const inner = findEditor(el.shadowRoot);
+            if (inner !== null) return inner;
+          }
+        }
+        return null;
+      };
+      const ce = findEditor(document);
+      // 1x1 transparent PNG.
+      const bytes = Uint8Array.from(
+        atob(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+        ),
+        c => c.charCodeAt(0),
+      );
+      const file = new File([bytes], 'tiny.png', {type: 'image/png'});
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      ce.dispatchEvent(
+        new ClipboardEvent('paste', {
+          bubbles: true,
+          clipboardData: dt,
+          composed: true,
+        }),
+      );
+    });
+    await expect(page.locator('.editor-image img').first()).toBeVisible();
+  });
+
+  test('clicking an image inside the shadow root selects the ImageNode', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertSampleImage(page);
+    const img = page.locator('.editor-image img').first();
+    await img.click();
+    // Lexical's image plugin upgrades the selection to a NodeSelection
+    // (registered as a click listener on the rootElement, which lives
+    // inside the shadow root). The plugin reflects the selected state by
+    // toggling a `focused` class on the underlying <img>.
+    await expect(img).toHaveClass(/focused/);
+  });
+
+  test('blur and re-focus on the shadow-internal editor exercise the focus path', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('before');
+    // Drive the rootElement's blur path. Lexical registers focus / blur
+    // listeners directly on the rootElement, which lives inside the
+    // shadow root, so the listeners fire even though the document-level
+    // `activeElement` is reported as the shadow host.
+    await page.evaluate(() => {
+      window.lexicalEditor.getRootElement().blur();
+    });
+    await focusEditor(page);
+    await page.keyboard.type(' after');
+    const text = await page
+      .locator('div[contenteditable="true"]')
+      .first()
+      .textContent();
+    expect(text).toContain('before after');
+  });
+
+  test('survives a Korean IME composition cycle inside the shadow root', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('start ');
+    // Walk a Korean composition cycle (jamo → syllable) at the
+    // shadow-internal contentEditable. Lexical registers its composition
+    // listeners on the rootElement (inside the shadow root), so this
+    // exercises them across the boundary. The platform IME normally
+    // commits the composed text through DOM mutations the headless
+    // browser can't simulate, but the editor must stay alive and accept
+    // input after the cycle ends.
+    await page.evaluate(() => {
+      const findEditor = root => {
+        const direct = root.querySelector(
+          'div[contenteditable="true"][data-lexical-editor="true"]',
+        );
+        if (direct !== null) return direct;
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            const inner = findEditor(el.shadowRoot);
+            if (inner !== null) return inner;
+          }
+        }
+        return null;
+      };
+      const ce = findEditor(document);
+      const fire = (type, data) =>
+        ce.dispatchEvent(
+          new CompositionEvent(type, {bubbles: true, composed: true, data}),
+        );
+      fire('compositionstart', '');
+      fire('compositionupdate', 'ㄱ');
+      fire('compositionupdate', '가');
+      fire('compositionupdate', '한');
+      fire('compositionend', '한');
+    });
+    await page.keyboard.type(' end');
+    const text = await page
+      .locator('div[contenteditable="true"]')
+      .first()
+      .textContent();
+    expect(text).toContain('start');
+    expect(text).toContain('end');
+  });
+
   test('copy and paste round-trips text inside the shadow root', async ({
     page,
   }) => {
@@ -246,5 +382,32 @@ test.describe('Shadow DOM', () => {
       undefined,
       IGNORE,
     );
+  });
+});
+
+test.describe('Shadow DOM (collab)', () => {
+  test.beforeEach(({isCollab, isPlainText, page}) => {
+    // The split view's two clients both render through ShadowDomWrapper
+    // when the playground's shadow toggle is on. Rich-text-only mirrors
+    // the non-collab block above; this describe only runs when the suite
+    // is invoked in a collab mode.
+    test.skip(isPlainText || !isCollab);
+    return initialize({isCollab, isShadowDOM: true, page});
+  });
+
+  test('text typed on one client converges on the other inside shadow roots', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('shadow collab');
+    // yjs sync is asynchronous; assert on the right frame's
+    // contentEditable text. Both clients render inside their own open
+    // shadow root, and Lexical's collab plugin uses the same composed
+    // selection reads that drive the non-collab path.
+    const rightEditable = page
+      .frameLocator('[name="right"]')
+      .locator('div[contenteditable="true"][data-lexical-editor="true"]')
+      .first();
+    await expect(rightEditable).toContainText('shadow collab');
   });
 });

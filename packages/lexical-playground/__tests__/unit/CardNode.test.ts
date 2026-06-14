@@ -467,12 +467,9 @@ describe('CardNode named slots', () => {
 
     editor.update(
       () => {
-        const card = $createCardNode();
-        $getRoot().clear().append(card);
         // Strip the seeded body so the Card has no element child.
-        for (const child of card.getChildren()) {
-          child.remove();
-        }
+        const card = $createCardNode().clear();
+        $getRoot().clear().append(card);
         // The title's caret block IS the slot value: a bare paragraph.
         const titleSlot = $getSlot(card, 'title');
         assert($isParagraphNode(titleSlot), 'title slot must be a paragraph');

@@ -9,31 +9,34 @@
 import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
 import type {JSX, RefObject} from 'react';
 
+import {namedSignals} from '@lexical/extension';
 import {
   CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
   sel,
 } from '@lexical/html';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {ReactExtension} from '@lexical/react/ReactExtension';
+import {DecoratorComponentProps} from '@lexical/react/ReactPluginHostExtension';
+import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
 import {useLexicalSlotRef} from '@lexical/react/useLexicalSlotRef';
 import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
+  $createParagraphNode,
   $getNodeByKey,
   $getSlot,
-  $isElementNode,
+  $isParagraphNode,
   $setSlot,
   COMMAND_PRIORITY_EDITOR,
   configExtension,
   createCommand,
   defineExtension,
-  setDOMUnmanaged,
+  mergeRegister,
 } from 'lexical';
-import * as React from 'react';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
-import {$createLineSlotValue} from '../../nodes/slotImport';
+import {$appendInline} from '../../nodes/slotImport';
 import {$createReviewNode, $isReviewNode, ReviewNode} from './ReviewNode';
 
 export const INSERT_REVIEW_COMMAND: LexicalCommand<void> =
@@ -98,30 +101,17 @@ function useReviewChildren<T extends HTMLElement = HTMLElement>(
 // shell, so clicking them sets the rating without moving the editor selection.
 function ReviewStars({
   editor,
-  nodeKey,
+  node,
 }: {
   editor: LexicalEditor;
-  nodeKey: NodeKey;
+  node: ReviewNode;
 }): JSX.Element {
-  const [rating, setRating] = useState(0);
+  const rating = editor.getEditorState().read(() => node.getRating());
   const [hover, setHover] = useState(0);
-  useEffect(() => {
-    const read = () => {
-      const node = $getNodeByKey(nodeKey);
-      setRating($isReviewNode(node) ? node.getRating() : 0);
-    };
-    editor.getEditorState().read(read);
-    return editor.registerUpdateListener(({editorState}) =>
-      editorState.read(read),
-    );
-  }, [editor, nodeKey]);
   const setStars = (value: number) =>
     editor.update(() => {
-      const node = $getNodeByKey(nodeKey);
-      if ($isReviewNode(node)) {
-        // Clicking the current top star clears the rating back to zero.
-        node.setRating(value === rating ? 0 : value);
-      }
+      // Clicking the current top star clears the rating back to zero.
+      node.setRating(value === rating ? 0 : value);
     });
   const shown = hover || rating;
   return (
@@ -151,20 +141,12 @@ function ReviewStars({
 
 function ReviewChrome({
   editor,
-  nodeKey,
+  node,
 }: {
   editor: LexicalEditor;
-  nodeKey: NodeKey;
+  node: ReviewNode;
 }): JSX.Element {
-  // The chrome is foreign DOM injected into a managed element's host DOM; mark
-  // it unmanaged synchronously (a ref callback runs before any layout effect
-  // moves the editable regions into it) so the mutation observer skips the
-  // whole chrome subtree instead of evicting it as unknown DOM.
-  const chromeRef = useCallback((el: HTMLDivElement | null) => {
-    if (el !== null) {
-      setDOMUnmanaged(el);
-    }
-  }, []);
+  const nodeKey = node.getKey();
   const authorRef = useLexicalSlotRef<HTMLDivElement>(
     editor,
     nodeKey,
@@ -173,8 +155,8 @@ function ReviewChrome({
   const childrenRef = useReviewChildren<HTMLDivElement>(editor, nodeKey);
   // Testimonial layout: rating, then the quoted prose, then the attribution.
   return (
-    <div className="lexical-review-chrome" ref={chromeRef}>
-      <ReviewStars editor={editor} nodeKey={nodeKey} />
+    <div className="lexical-review-chrome">
+      <ReviewStars editor={editor} node={node} />
       <div className="lexical-review-body" ref={childrenRef} />
       <div className="lexical-review-author" ref={authorRef} />
     </div>
@@ -185,38 +167,17 @@ function ReviewChrome({
 // renders the chrome, and the chrome attaches the editable regions and the
 // rating widget. This is the ElementNode equivalent of a DecoratorNode's
 // decorate(), implemented in userland with a mutation listener.
-export function ReviewPlugin(): JSX.Element {
-  const [editor] = useLexicalComposerContext();
-  const [keys, setKeys] = useState<ReadonlySet<NodeKey>>(() => new Set());
-  useEffect(() => {
-    return editor.registerMutationListener(
-      ReviewNode,
-      mutations => {
-        setKeys(prev => {
-          let changed = false;
-          const next = new Set(prev);
-          for (const [key, mutation] of mutations) {
-            if (mutation === 'destroyed') {
-              changed = next.delete(key) || changed;
-            } else if (!next.has(key)) {
-              next.add(key);
-              changed = true;
-            }
-          }
-          return changed ? next : prev;
-        });
-      },
-      {skipInitialization: false},
-    );
-  }, [editor]);
+export function ReviewPlugin({context}: DecoratorComponentProps): JSX.Element {
+  const [editor] = context;
+  const nodeMap = useExtensionSignalValue(ReviewExtension, 'nodeMap');
   return (
     <>
-      {Array.from(keys, key => {
+      {Array.from(nodeMap.entries(), ([key, node]) => {
         const dom = editor.getElementByKey(key);
         return dom === null
           ? null
           : createPortal(
-              <ReviewChrome editor={editor} nodeKey={key} />,
+              <ReviewChrome editor={editor} node={node} />,
               dom,
               key,
             );
@@ -234,37 +195,25 @@ export function ReviewPlugin(): JSX.Element {
 // hand-authored HTML can't push it out of range.
 const ReviewImportRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
-    const review = $createReviewNode();
-    // Clear the seeded default body paragraph so imported children replace it.
-    for (const child of review.getChildren()) {
-      child.remove();
-    }
+    // Clear any seeded default body paragraph so imported children replace it.
+    const review = $createReviewNode().clear();
+    // Clear the seeded empty paragraph
+    // defensively so the import can never carry over fabricated content.
+    const prevAuthor = $getSlot(review, 'author');
+    const author = $isParagraphNode(prevAuthor)
+      ? prevAuthor.clear()
+      : $createParagraphNode();
+    $setSlot(review, 'author', author);
     const rating = Number(el.getAttribute('data-rating'));
     if (Number.isFinite(rating)) {
       review.setRating(Math.max(0, Math.min(5, Math.round(rating))));
     }
-    let importedAuthor = false;
     for (const domChild of Array.from(el.children)) {
       const slotName = domChild.getAttribute('data-lexical-slot');
       if (slotName === 'author') {
-        importedAuthor = true;
-        $setSlot(
-          review,
-          'author',
-          $createLineSlotValue(ctx.$importChildren(domChild)),
-        );
-        continue;
-      }
-      for (const node of ctx.$importOne(domChild)) {
-        review.append(node);
-      }
-    }
-    if (!importedAuthor) {
-      // No author wrapper in the source HTML: clear the seeded empty paragraph
-      // defensively so the import can never carry over fabricated content.
-      const author = $getSlot(review, 'author');
-      if ($isElementNode(author)) {
-        author.clear();
+        $appendInline(author, ctx.$importChildren(domChild));
+      } else {
+        review.splice(review.getChildrenSize(), 0, ctx.$importOne(domChild));
       }
     }
     return [review];
@@ -274,6 +223,9 @@ const ReviewImportRule = /* @__PURE__ */ defineImportRule({
 });
 
 export const ReviewExtension = /* @__PURE__ */ defineExtension({
+  build(editor, config, state) {
+    return namedSignals({nodeMap: new Map<NodeKey, ReviewNode>()});
+  },
   // The Review's HTML import rule rides its own extension — like every other
   // node extension that registers its own DOM-import rules — rather than a
   // central playground aggregate. CoreImportExtension supplies the
@@ -281,6 +233,9 @@ export const ReviewExtension = /* @__PURE__ */ defineExtension({
   // host rule ahead of the generic block rules (the playground's always-on
   // ClipboardDOMImportExtension routes pastes through this pipeline).
   dependencies: [
+    /* @__PURE__ */ configExtension(ReactExtension, {
+      decorators: [ReviewPlugin],
+    }),
     CoreImportExtension,
     /* @__PURE__ */ configExtension(DOMImportExtension, {
       rules: [ReviewImportRule],
@@ -288,14 +243,31 @@ export const ReviewExtension = /* @__PURE__ */ defineExtension({
   ],
   name: '@lexical/playground/Review',
   nodes: [ReviewNode],
-  register: editor => {
-    return editor.registerCommand<void>(
-      INSERT_REVIEW_COMMAND,
-      () => {
-        $insertNodeToNearestRoot($createReviewNode());
-        return true;
-      },
-      COMMAND_PRIORITY_EDITOR,
+  register: (editor, config, state) => {
+    const nodeMapSignal = state.getOutput().nodeMap;
+    return mergeRegister(
+      editor.registerMutationListener(ReviewNode, nodes => {
+        nodeMapSignal.value = editor.getEditorState().read(() => {
+          const nodeMap = new Map(nodeMapSignal.peek());
+          for (const k of nodes.keys()) {
+            const node = $getNodeByKey(k);
+            if ($isReviewNode(node)) {
+              nodeMap.set(k, node);
+            } else {
+              nodeMap.delete(k);
+            }
+          }
+          return nodeMap;
+        });
+      }),
+      editor.registerCommand<void>(
+        INSERT_REVIEW_COMMAND,
+        () => {
+          $insertNodeToNearestRoot($createReviewNode());
+          return true;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      ),
     );
   },
 });

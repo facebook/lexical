@@ -6,14 +6,9 @@
  *
  */
 
-import type {LexicalNode, ParagraphNode} from 'lexical';
+import type {ElementNode, LexicalNode, ParagraphNode} from 'lexical';
 
-import {
-  $createParagraphNode,
-  $isDecoratorNode,
-  $isElementNode,
-  $isLineBreakNode,
-} from 'lexical';
+import {$createParagraphNode, $isElementNode, $isLineBreakNode} from 'lexical';
 
 /**
  * Build a single-line slot value from imported content: a bare paragraph whose
@@ -28,24 +23,29 @@ import {
  * extension.
  */
 export function $createLineSlotValue(nodes: LexicalNode[]): ParagraphNode {
-  const line = $createParagraphNode();
-  const appendInline = (children: LexicalNode[]): void => {
-    for (const node of children) {
-      if ($isLineBreakNode(node)) {
-        continue;
-      }
-      if (
-        ($isElementNode(node) || $isDecoratorNode(node)) &&
-        !node.isInline()
-      ) {
-        if ($isElementNode(node)) {
-          appendInline(node.getChildren());
-        }
-        continue;
-      }
-      line.append(node);
+  return $appendInline($createParagraphNode(), nodes);
+}
+
+function $flattenInlines(
+  output: LexicalNode[],
+  input: Iterable<LexicalNode>,
+): void {
+  for (const node of input) {
+    if ($isLineBreakNode(node)) {
+      // ignore
+    } else if (node.isInline()) {
+      output.push(node);
+    } else if ($isElementNode(node)) {
+      $flattenInlines(output, node.getChildren());
     }
-  };
-  appendInline(nodes);
-  return line;
+  }
+}
+
+export function $appendInline<T extends ElementNode>(
+  line: T,
+  nodes: Iterable<LexicalNode>,
+): T {
+  const children: LexicalNode[] = [];
+  $flattenInlines(children, nodes);
+  return line.splice(line.getChildrenSize(), 0, children);
 }

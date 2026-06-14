@@ -223,6 +223,12 @@ test.describe('Shadow DOM', () => {
     );
     // eslint-disable-next-line no-console
     console.log('CLIPBOARD DEBUG:', JSON.stringify(clipboardDebug));
+    // Re-focus the shadow-internal contentEditable: between the type and
+    // moveToEditorEnd steps CI loses real focus to the shadow host
+    // (document.activeElement = host DIV), so the Ctrl/Cmd+End keystroke
+    // dispatched on the host never reaches the editor and selectAll's
+    // full-text range stays put — making paste a destructive replace.
+    await focusEditor(page);
     await moveToEditorEnd(page);
     // DIAGNOSTIC: editor state right before paste — confirms which element
     // paste should target and whether activeElement is the editor.

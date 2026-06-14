@@ -40,7 +40,9 @@ import {$createSlotContainerNode} from '../../nodes/SlotContainerNode';
 import {
   $findSlotHost,
   $insertSlotHostAtRoot,
+  $isSlotHostTextEmpty,
   registerSlotHostArrowEscape,
+  registerSlotHostBackspace,
 } from '../../nodes/slotHostEscape';
 import {$appendInline} from '../../nodes/slotImport';
 import {
@@ -111,7 +113,7 @@ const PullQuoteImportRule = /* @__PURE__ */ defineImportRule({
       } else if (slotName === 'attribution') {
         $appendInline(attribution, ctx.$importChildren(domChild));
       } else {
-        // import any ophans to the quote
+        // import any orphans to the quote
         quote.splice(quote.getChildrenSize(), 0, ctx.$importOne(domChild));
       }
     }
@@ -154,6 +156,10 @@ export const PullQuoteExtension = /* @__PURE__ */ defineExtension({
       registerHostChromeSelection(editor, $isPullQuoteNode),
       // ArrowDown/Up at the PullQuote's bottom/top slot edge steps out of it.
       registerSlotHostArrowEscape(editor, $isPullQuoteNode),
+      // Backspace deletes an empty PullQuote (from a slot start or the block
+      // after it), like the Card / Review. The range-replace path is a no-op for
+      // a DecoratorNode (it is already atomic, so a select-all deletes it).
+      registerSlotHostBackspace(editor, $isPullQuoteNode, $isSlotHostTextEmpty),
       // Enter on the selected PullQuote drops the caret into its quote slot...
       editor.registerCommand<KeyboardEvent | null>(
         KEY_ENTER_COMMAND,

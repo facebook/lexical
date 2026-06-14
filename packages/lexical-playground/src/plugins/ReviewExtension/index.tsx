@@ -261,6 +261,13 @@ export const ReviewExtension = /* @__PURE__ */ defineExtension({
       // replaces the whole Review with a paragraph. The rating is not counted as
       // content, so a rated-but-textless Review is deleted too.
       registerSlotHostBackspace(editor, $isReviewNode, $isSlotHostTextEmpty),
+      // Unlike the Card / PullQuote, the Review deliberately has no
+      // chrome-click / Escape whole-node NodeSelection: its React chrome is
+      // interactive (the star widget) and its body is a getDOMSlot element, not
+      // a `data-lexical-slot` wrapper, so there is no clean "chrome padding" hit
+      // zone to promote from without stealing the rating clicks. Selecting and
+      // deleting the whole box is instead covered by the select-all replace and
+      // empty-host backspace above.
     ),
 });
 

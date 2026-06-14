@@ -208,7 +208,8 @@ test.describe('Slot host ArrowDown/Up escape', () => {
     await insertReview(page);
     await click(page, REVIEW_BODY_FIRST);
     await page.keyboard.type('Body');
-    await makeHostEdgeBlock(page, 'first');
+    // Insertion seeds no leading paragraph, so the Review is already the first
+    // block.
 
     await click(page, REVIEW_BODY_FIRST);
     await moveToLineBeginning(page);
@@ -294,7 +295,7 @@ test.describe('Slot host ArrowDown/Up escape', () => {
     await insertCard(page);
     await click(page, CARD_TITLE);
     await page.keyboard.type('Title');
-    await makeHostEdgeBlock(page, 'first');
+    // The Card is already the first block (insertion seeds no leading paragraph).
 
     await click(page, CARD_TITLE);
     await moveToLineBeginning(page);
@@ -326,7 +327,8 @@ test.describe('Slot host ArrowDown/Up escape', () => {
   }) => {
     await focusEditor(page);
     await insertPullQuote(page);
-    await makeHostEdgeBlock(page, 'first');
+    // The PullQuote is already the first block (insertion seeds no leading
+    // paragraph).
 
     await click(page, PQ_QUOTE_FIRST);
     await moveToLineBeginning(page);

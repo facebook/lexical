@@ -70,7 +70,14 @@ function $handleCardArrow(
   isBackward: boolean,
 ): boolean {
   const selection = $getSelection();
-  if (!$isRangeSelection(selection) || event?.shiftKey) {
+  // Bail on a modified arrow (shift = extend selection, alt = word jump, meta =
+  // line/doc jump) so the OS navigation isn't swallowed by NodeSelection promotion.
+  if (
+    !$isRangeSelection(selection) ||
+    event?.shiftKey ||
+    event?.altKey ||
+    event?.metaKey
+  ) {
     return false;
   }
   const adjacent = $getAdjacentNode(selection.focus, isBackward);

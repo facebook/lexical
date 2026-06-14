@@ -268,4 +268,31 @@ test.describe('PullQuote slot host', () => {
     await sleep(120);
     expect(await selectedPullquoteCount(page)).toBe(1);
   });
+
+  // Backspace deletes an empty PullQuote, like the Card / Review.
+  test('backspace from the quote of an empty pullquote deletes it', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertPullQuote(page);
+
+    // Clear both seeded slots (select-all is slot-scoped inside each).
+    await click(page, '[data-lexical-slot="quote"] p');
+    await selectAll(page);
+    await page.keyboard.press('Backspace');
+    await sleep(80);
+    await click(page, '[data-lexical-slot="attribution"] p');
+    await selectAll(page);
+    await page.keyboard.press('Backspace');
+    await sleep(80);
+    expect(await slotText(page, 'quote')).toBe('');
+    expect(await slotText(page, 'attribution')).toBe('');
+
+    // Now backspace from the start of the (empty) quote deletes the whole box.
+    await click(page, '[data-lexical-slot="quote"] p');
+    await moveToLineBeginning(page);
+    await page.keyboard.press('Backspace');
+    await sleep(120);
+    expect(await pullquoteCount(page)).toBe(0);
+  });
 });

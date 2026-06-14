@@ -249,6 +249,32 @@ test.describe('Card slot deletion boundaries', () => {
     expect(await cardCount(page)).toBe(0);
   });
 
+  test('select-all + Backspace replaces a first-block card with a paragraph', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertEmptyCard(page);
+    await click(page, '.lexical-card-node > p');
+    await page.keyboard.type('Body');
+    await sleep(100);
+
+    // Cmd+A from the body is document-scoped (the body is the child channel),
+    // so this selects the whole document; one Backspace replaces the Card.
+    await selectAll(page);
+    await sleep(80);
+    await page.keyboard.press('Backspace');
+    await sleep(120);
+
+    expect(await cardCount(page)).toBe(0);
+    expect(
+      await evaluate(page, () =>
+        Array.from(
+          document.querySelector('[data-lexical-editor="true"]').children,
+        ).map(c => c.tagName.toLowerCase()),
+      ),
+    ).toEqual(['p']);
+  });
+
   // --- Single-line slot: the title's value is a bare paragraph ---
 
   // The title slot's value is a bare ParagraphNode — the slot link itself is

@@ -422,4 +422,31 @@ test.describe('Review React-chromed ElementNode', () => {
     expect(await reviewCount(page)).toBe(1);
     expect(await regionText(page, AUTHOR)).toBe('');
   });
+
+  // Forward Delete on the document-wide select-all replaces the Review too, not
+  // just Backspace.
+  test('select-all + forward Delete replaces a first-block review', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertReview(page);
+    await waitForSelector(page, '.lexical-review-chrome');
+    await click(page, `${BODY} p`);
+    await page.keyboard.type('Hello');
+    await sleep(100);
+
+    await selectAll(page);
+    await sleep(80);
+    await page.keyboard.press('Delete');
+    await sleep(120);
+
+    expect(await reviewCount(page)).toBe(0);
+    expect(
+      await evaluate(page, () =>
+        Array.from(
+          document.querySelector('[data-lexical-editor="true"]').children,
+        ).map(c => c.tagName.toLowerCase()),
+      ),
+    ).toEqual(['p']);
+  });
 });

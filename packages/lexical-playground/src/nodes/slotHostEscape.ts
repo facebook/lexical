@@ -29,6 +29,7 @@ import {
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_BACKSPACE_COMMAND,
+  KEY_DELETE_COMMAND,
 } from 'lexical';
 
 // Find the slot host (Card / Review / PullQuote) that contains `start`. The
@@ -95,6 +96,8 @@ function $orderedRegions(editor: LexicalEditor, host: LexicalNode): Region[] {
   return regions.sort((a, b) => {
     const aDom = editor.getElementByKey(a.startNode.getKey());
     const bDom = editor.getElementByKey(b.startNode.getKey());
+    // Every region is mounted whenever a key handler runs, so a null lookup is
+    // not expected; fall back to insertion order rather than throwing.
     if (aDom === null || bDom === null) {
       return 0;
     }
@@ -299,16 +302,18 @@ function $deleteEmptyHost(host: LexicalNode): void {
   host.replace($createParagraphNode()).selectStart();
 }
 
-// A non-collapsed selection whose start sits exactly at a host's first-region
-// start and whose end is outside the host — e.g. a document-wide select-all of
-// a first-block host — only clears the host's contents on delete, leaving the
-// (now empty) shell, because the start point is *inside* the host. Move that
-// start point to just before the host in its parent so the host itself falls in
-// the deleted range and the default delete replaces the whole node with a
-// paragraph. Returns `false` either way: the adjusted selection is left for the
-// default delete handler.
+// A non-collapsed selection whose start sits at a host's content start and whose
+// end is outside the host — e.g. a document-wide select-all of a first-block
+// host — only clears the host's contents on delete, leaving the (now empty)
+// shell, because the start point is *inside* the host. Move that start point to
+// just before the host in its parent so the host itself falls in the deleted
+// range and the default delete replaces the whole node with a paragraph. The
+// adjusted selection is left for the default delete handler (the caller returns
+// false). `$isAtStartOfNode` reads the host's first *navigable* descendant, which
+// skips slots, so both the Review (body first) and the Card (title slot first in
+// DOM, but body first in navigation) match; a slot-scoped or partial selection
+// whose end stays inside the host is left untouched.
 function $reanchorRangeBeforeHost<T extends LexicalNode>(
-  editor: LexicalEditor,
   selection: RangeSelection,
   $isHost: (node: LexicalNode | null | undefined) => node is T,
 ): void {
@@ -319,30 +324,27 @@ function $reanchorRangeBeforeHost<T extends LexicalNode>(
   if (host === null || $findSlotHost(end.getNode(), $isHost) === host) {
     return;
   }
-  const first = $orderedRegions(editor, host)[0];
   const parent = host.getParent();
   if (
-    first !== undefined &&
-    $isElementNode(first.startNode) &&
     parent !== null &&
-    $isAtStartOfNode(start, first.startNode)
+    $isElementNode(host) &&
+    $isAtStartOfNode(start, host)
   ) {
     start.set(parent.getKey(), host.getIndexWithinParent(), 'element');
   }
 }
 
 /**
- * Backspace deletes a slot host from a range or its edges:
+ * Delete a slot host from a range or its edges:
  *
- * - A non-collapsed selection that starts at the host's first region and
- *   extends out of it (a select-all of a first-block host) replaces the whole
- *   host with a paragraph rather than only clearing its contents (see
- *   {@link $reanchorRangeBeforeHost}).
- * - A collapsed caret at the start of an *empty* host's first region (the Card's
- *   `title` slot, the Review's body) deletes the host — the analog of
+ * - A non-collapsed selection that starts at the host's content and extends out
+ *   of it (a select-all of a first-block host) replaces the whole host with a
+ *   paragraph rather than only clearing its contents (see
+ *   {@link $reanchorRangeBeforeHost}) — on both Backspace and forward Delete.
+ * - On Backspace, a collapsed caret at the start of an *empty* host's first
+ *   region (the Card's `title` slot, the Review's body), or at the start of the
+ *   block immediately after an *empty* host, deletes the host — the analog of
  *   backspacing an empty block away.
- * - A collapsed caret at the start of the block immediately after an *empty*
- *   host deletes the host.
  *
  * A non-empty host is otherwise left to the default handler, so the slots'
  * shadow-root boundary still protects their content (backspace at a non-empty
@@ -353,61 +355,81 @@ export function registerSlotHostBackspace<T extends LexicalNode>(
   $isHost: (node: LexicalNode | null | undefined) => node is T,
   $isEmpty: (host: T) => boolean,
 ): () => void {
-  return editor.registerCommand<KeyboardEvent | null>(
-    KEY_BACKSPACE_COMMAND,
-    event => {
-      const selection = $getSelection();
-      if (!$isRangeSelection(selection)) {
-        return false;
-      }
-      if (!selection.isCollapsed()) {
-        $reanchorRangeBeforeHost(editor, selection, $isHost);
-        return false;
-      }
-      const anchor = selection.anchor;
-      const inner = $findSlotHost(anchor.getNode(), $isHost);
-      if (inner !== null) {
-        // Inside the host: only delete from the start of its first region.
-        const first = $orderedRegions(editor, inner)[0];
+  return mergeRegister(
+    editor.registerCommand<KeyboardEvent | null>(
+      KEY_BACKSPACE_COMMAND,
+      event => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        if (!selection.isCollapsed()) {
+          $reanchorRangeBeforeHost(selection, $isHost);
+          return false;
+        }
+        const anchor = selection.anchor;
+        const inner = $findSlotHost(anchor.getNode(), $isHost);
+        if (inner !== null) {
+          // Inside the host: only delete from the start of its first region.
+          const first = $orderedRegions(editor, inner)[0];
+          if (
+            first !== undefined &&
+            $isElementNode(first.startNode) &&
+            $isAtStartOfNode(anchor, first.startNode) &&
+            $isEmpty(inner)
+          ) {
+            $deleteEmptyHost(inner);
+            if (event) {
+              event.preventDefault();
+            }
+            return true;
+          }
+          return false;
+        }
+        // Outside the host: delete when the caret is at the start of the block
+        // immediately after an empty host.
+        let block: LexicalNode | null = anchor.getNode();
+        while (block !== null) {
+          const parent: LexicalNode | null = block.getParent();
+          if (parent !== null && $isRootOrShadowRoot(parent)) {
+            break;
+          }
+          block = parent;
+        }
+        if (block === null || !$isElementNode(block)) {
+          return false;
+        }
+        const prev = block.getPreviousSibling();
         if (
-          first !== undefined &&
-          $isElementNode(first.startNode) &&
-          $isAtStartOfNode(anchor, first.startNode) &&
-          $isEmpty(inner)
+          $isHost(prev) &&
+          $isEmpty(prev) &&
+          $isAtStartOfNode(anchor, block)
         ) {
-          $deleteEmptyHost(inner);
+          prev.remove();
+          block.selectStart();
           if (event) {
             event.preventDefault();
           }
           return true;
         }
         return false;
-      }
-      // Outside the host: delete when the caret is at the start of the block
-      // immediately after an empty host.
-      let block: LexicalNode | null = anchor.getNode();
-      while (block !== null) {
-        const parent: LexicalNode | null = block.getParent();
-        if (parent !== null && $isRootOrShadowRoot(parent)) {
-          break;
+      },
+      COMMAND_PRIORITY_BEFORE_EDITOR,
+    ),
+    // Forward delete: a select-all spanning a first-block host should replace it
+    // with a paragraph too. The empty-host edge cases above stay backspace-only
+    // (forward-delete at a start deletes into the content, not the box).
+    editor.registerCommand<KeyboardEvent | null>(
+      KEY_DELETE_COMMAND,
+      () => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection) && !selection.isCollapsed()) {
+          $reanchorRangeBeforeHost(selection, $isHost);
         }
-        block = parent;
-      }
-      if (block === null || !$isElementNode(block)) {
         return false;
-      }
-      const prev = block.getPreviousSibling();
-      if ($isHost(prev) && $isEmpty(prev) && $isAtStartOfNode(anchor, block)) {
-        prev.remove();
-        block.selectStart();
-        if (event) {
-          event.preventDefault();
-        }
-        return true;
-      }
-      return false;
-    },
-    COMMAND_PRIORITY_BEFORE_EDITOR,
+      },
+      COMMAND_PRIORITY_BEFORE_EDITOR,
+    ),
   );
 }
 

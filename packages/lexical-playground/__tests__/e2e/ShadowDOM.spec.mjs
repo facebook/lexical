@@ -9,7 +9,6 @@
 import {
   deleteNextWord,
   moveToEditorBeginning,
-  moveToEditorEnd,
   selectAll,
   selectPrevWord,
   toggleBold,
@@ -207,28 +206,14 @@ test.describe('Shadow DOM', () => {
     // getDOMSelectionPoints; without it the shadow host makes
     // isSelectionWithinEditor return false and the copy is dropped.
     const clipboard = await copyToClipboard(page);
-    // Sanity: if the shadow-path copy guard ever regresses, surface that
-    // here rather than letting paste become a silent no-op.
-    expect(Object.keys(clipboard).length).toBeGreaterThan(0);
-    // DIAGNOSTIC: surface clipboard payload sizes so CI failures can point
-    // at the actual cause (empty lexical payload vs paste-side insertion).
-    const clipboardDebug = await page.evaluate(
-      data => ({
-        htmlSlice: (data['text/html'] ?? '').slice(0, 200),
-        lexicalRaw: data['application/x-lexical-editor'] ?? null,
-        textPlain: data['text/plain'] ?? null,
-        types: Object.keys(data),
-      }),
-      clipboard,
-    );
-    // eslint-disable-next-line no-console
-    console.log('CLIPBOARD DEBUG:', JSON.stringify(clipboardDebug));
-    // Move selection to the end of "hi" directly. moveToEditorEnd's
-    // Ctrl/Cmd+End keystroke never reaches the shadow-internal editor
-    // on CI (document.activeElement reverts to the shadow host), so
-    // collapse the selection to the end of the textnode via DOM APIs
-    // instead so paste inserts at the cursor rather than replacing the
-    // selectAll range.
+    // Collapse the caret to the end of "hi" via window.getSelection so
+    // paste inserts at the cursor rather than replacing the selectAll
+    // range. moveToEditorEnd's Ctrl/Cmd+End keystroke never reaches the
+    // shadow-internal editor on CI (document.activeElement reverts to
+    // the shadow host), and WebKit ignores `addRange` with a start
+    // container inside an open shadow tree — setBaseAndExtent works
+    // across all engines (same approach as selectInnerText in the
+    // browser-unit suite).
     await page.evaluate(() => {
       const findEditor = root => {
         const direct = root.querySelector(
@@ -249,97 +234,10 @@ test.describe('Shadow DOM', () => {
       if (textNode && textNode.nodeType === 3) {
         const end = textNode.textContent.length;
         const sel = window.getSelection();
-        // setBaseAndExtent: WebKit doesn't register a Range added with
-        // addRange when its start container is inside an open shadow tree,
-        // but the explicit setBaseAndExtent form does (same approach as
-        // selectInnerText in the browser-unit suite).
         sel.setBaseAndExtent(textNode, end, textNode, end);
       }
     });
-    // DIAGNOSTIC: editor state right before paste — confirms which element
-    // paste should target and whether activeElement is the editor.
-    const beforePasteDebug = await page.evaluate(() => {
-      const findEditor = root => {
-        const direct = root.querySelector(
-          'div[contenteditable="true"][data-lexical-editor="true"]',
-        );
-        if (direct !== null) return direct;
-        for (const el of root.querySelectorAll('*')) {
-          if (el.shadowRoot !== null) {
-            const inner = findEditor(el.shadowRoot);
-            if (inner !== null) return inner;
-          }
-        }
-        return null;
-      };
-      const editor = findEditor(document);
-      const editorRoot = editor?.getRootNode();
-      const sel = window.getSelection();
-      let composedStart = null;
-      let composedEnd = null;
-      let composedStartNode = null;
-      try {
-        if (
-          sel &&
-          typeof sel.getComposedRanges === 'function' &&
-          editorRoot !== null &&
-          editorRoot !== document
-        ) {
-          const ranges = sel.getComposedRanges({shadowRoots: [editorRoot]});
-          const r = ranges?.[0];
-          if (r) {
-            composedStart = r.startOffset;
-            composedEnd = r.endOffset;
-            composedStartNode = r.startContainer?.nodeName ?? null;
-          }
-        }
-      } catch (_e) {
-        // ignore
-      }
-      return {
-        activeIsEditable: document.activeElement?.isContentEditable ?? null,
-        activeMatchesLexical:
-          document.activeElement?.matches?.('[data-lexical-editor]') ?? null,
-        activeTag: document.activeElement?.tagName ?? null,
-        composedEnd,
-        composedStart,
-        composedStartNode,
-        editorInShadow: editorRoot !== null && editorRoot !== document,
-        editorOuterStart: editor?.outerHTML?.slice(0, 200) ?? null,
-        selAnchorOffset: sel?.anchorOffset ?? null,
-        selFocusOffset: sel?.focusOffset ?? null,
-        selIsCollapsed: sel?.isCollapsed ?? null,
-        selRangeCount: sel?.rangeCount ?? null,
-      };
-    });
-    // eslint-disable-next-line no-console
-    console.log('BEFORE PASTE:', JSON.stringify(beforePasteDebug));
     await pasteFromClipboard(page, clipboard);
-    // DIAGNOSTIC: editor innerHTML right after paste, before assertHTML
-    // retries, so we see exactly what landed in the editor when CI fails.
-    const afterPasteDebug = await page.evaluate(() => {
-      const findEditor = root => {
-        const direct = root.querySelector(
-          'div[contenteditable="true"][data-lexical-editor="true"]',
-        );
-        if (direct !== null) return direct;
-        for (const el of root.querySelectorAll('*')) {
-          if (el.shadowRoot !== null) {
-            const inner = findEditor(el.shadowRoot);
-            if (inner !== null) return inner;
-          }
-        }
-        return null;
-      };
-      const editor = findEditor(document);
-      return {
-        activeIsEditable: document.activeElement?.isContentEditable ?? null,
-        activeTag: document.activeElement?.tagName ?? null,
-        innerHTML: editor?.innerHTML?.slice(0, 400) ?? null,
-      };
-    });
-    // eslint-disable-next-line no-console
-    console.log('AFTER PASTE:', JSON.stringify(afterPasteDebug));
     await assertHTML(
       page,
       html`

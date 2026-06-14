@@ -95,6 +95,15 @@ the page's existing `<link>` / `<style>` nodes into the shadow root so it can
 reuse Vite's HMR-managed stylesheets. This is a property of Shadow DOM, not
 of Lexical.
 
+CSS custom properties and inherited HTML attributes (`dir`, `lang`) cross
+the shadow boundary on their own, so a page-level rule like `:root {
+--editor-bg: #1c1d22; }` or a host attribute like `<my-editor dir="rtl"
+lang="ko">` propagates into the editor without further setup. User
+preference media queries (`@media (prefers-color-scheme: dark)`,
+`(prefers-reduced-motion: reduce)`, `(forced-colors: active)`) evaluate
+inside the shadow root just like outside; place them in the shadow-mounted
+stylesheet rather than the page sheet.
+
 ## Embedding in an iframe
 
 An editor whose root element belongs to an `<iframe>` document is also
@@ -272,6 +281,29 @@ and watches for additions via `MutationObserver`, mirror removals too;
 otherwise stylesheets removed by HMR or a runtime theme swap linger inside
 the shadow. `ShadowDomWrapper` tracks an `original → clone` map so an
 upstream removal drops the corresponding clone.
+
+### Popover and dialog layout
+
+The UA stylesheet defaults a closed
+[Popover](https://developer.mozilla.org/docs/Web/API/Popover_API) (or a
+`<dialog>` without `open`) to `display: none`. A base rule like
+`#my-popover { display: flex; ... }` overrides that and leaves the popover
+visible after `hidePopover()`. Scope layout to the open state instead —
+`#my-popover:popover-open { display: flex; }` — so the closed state honors
+the UA default. This is a popover-API gotcha, not a shadow-specific one,
+but it surfaces here because floating UI anchored to a shadow-root
+selection (a format popover or link editor that reads coordinates through
+`getDOMSelectionRangeAndPoints`) is a common shadow integration pattern.
+
+### Observers across the shadow boundary
+
+`ResizeObserver`, `IntersectionObserver`, and `MutationObserver` observe
+nodes inside an open shadow root with no special configuration — pass the
+inner node (the contentEditable or the host) just like any other DOM
+target. A `MutationObserver` registered on the host does not see mutations
+inside the shadow tree, though; observe the contentEditable or a
+shadow-internal container instead. The host's `attributeChangedCallback`
+covers the host's own attribute changes.
 
 ## Migrating an existing light-DOM editor
 

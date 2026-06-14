@@ -6,25 +6,9 @@
  *
  */
 
-import type {ElementNode, LexicalNode, ParagraphNode} from 'lexical';
+import type {ElementNode, LexicalNode} from 'lexical';
 
-import {$createParagraphNode, $isElementNode, $isLineBreakNode} from 'lexical';
-
-/**
- * Build a single-line slot value from imported content: a bare paragraph whose
- * children are the inline projection of `nodes`. Mirrors core's `<input>`
- * analogy for block slot values (the flattening `RangeSelection.insertNodes`
- * applies when pasting into one): recurse into non-inline elements for their
- * inline children, strip line breaks, and drop block-only decorators — they
- * have no single-line form.
- *
- * Shared by the single-line slot host import rules (Card's `title`, PullQuote's
- * `attribution`, Review's `author`), each of which lives with its own
- * extension.
- */
-export function $createLineSlotValue(nodes: LexicalNode[]): ParagraphNode {
-  return $appendInline($createParagraphNode(), nodes);
-}
+import {$isElementNode, $isLineBreakNode} from 'lexical';
 
 function $flattenInlines(
   output: LexicalNode[],
@@ -41,6 +25,17 @@ function $flattenInlines(
   }
 }
 
+/**
+ * Append the inline projection of `nodes` to `line`, in a single splice.
+ * Mirrors core's `<input>` analogy for single-line slot values (the flattening
+ * `RangeSelection.insertNodes` applies when pasting into one): recurse into
+ * non-inline elements for their inline children, strip line breaks, and drop
+ * block-only decorators — they have no single-line form.
+ *
+ * Used by the single-line slot host import rules (Card's `title`, PullQuote's
+ * `attribution`, Review's `author`), each of which lives with its own
+ * extension.
+ */
 export function $appendInline<T extends ElementNode>(
   line: T,
   nodes: Iterable<LexicalNode>,

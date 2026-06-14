@@ -6,13 +6,7 @@
  *
  */
 
-import type {
-  LexicalCommand,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  PointType,
-} from 'lexical';
+import type {LexicalCommand, LexicalNode, NodeKey, PointType} from 'lexical';
 
 import {NodeSelectionDataSelectedExtension} from '@lexical/extension';
 import {
@@ -28,7 +22,6 @@ import {
   $createNodeSelection,
   $createParagraphNode,
   $getAdjacentNode,
-  $getNearestNodeFromDOMNode,
   $getSelection,
   $getSlot,
   $getSlotHost,
@@ -39,19 +32,17 @@ import {
   $isTextNode,
   $setSelection,
   $setSlot,
-  CLICK_COMMAND,
   COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_EDITOR,
   configExtension,
   createCommand,
   defineExtension,
-  getDOMSelection,
-  isHTMLElement,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_TAB_COMMAND,
 } from 'lexical';
 
+import {registerHostChromeSelection} from '../../nodes/hostChromeSelection';
 import {$appendInline} from '../../nodes/slotImport';
 import {$createCardNode, $isCardNode, CardNode} from './CardNode';
 
@@ -219,42 +210,6 @@ function $handleCardTab(
   return false;
 }
 
-// Resolve a click / mousedown target to the CardNode a chrome interaction
-// should select, or null when the target is inside the title slot or body
-// children (where the caret must enter the paragraph normally). The Card is
-// an ElementNode host, so $getNearestNodeFromDOMNode resolves the target to
-// the CardNode itself only when the click landed on the card's own chrome
-// (border / padding around its children); a click on a body paragraph or a
-// title slot descendant resolves to that node, not the card. Shared by the
-// CLICK_COMMAND promotion and the mousedown caret suppression so the two
-// stay in lockstep.
-function $resolveCardChromeTarget(
-  editor: LexicalEditor,
-  target: HTMLElement,
-): CardNode | null {
-  const node = $getNearestNodeFromDOMNode(target);
-  if (!$isCardNode(node)) {
-    return null;
-  }
-  const hostElement = editor.getElementByKey(node.getKey());
-  if (hostElement === null || !hostElement.contains(target)) {
-    return null;
-  }
-  // The reconciler wraps each slot in a keyless `<div data-lexical-slot=...>`
-  // scaffold; a click on the wrapper's padding / border / ::before label
-  // ($getNearestNodeFromDOMNode walks past keyless ancestors) would otherwise
-  // resolve to the Card and promote — turning a click on the visible "TITLE"
-  // hint into a whole-Card selection instead of entering the slot. Only a
-  // wrapper inside this Card's own DOM counts: when the Card is itself nested
-  // in another host's slot, the OUTER wrapper contains the whole Card and
-  // must not turn its chrome into a dead zone.
-  const slotWrapper = target.closest('[data-lexical-slot]');
-  if (slotWrapper !== null && hostElement.contains(slotWrapper)) {
-    return null;
-  }
-  return node;
-}
-
 // Reconstruct a CardNode from its exported HTML (see CardNode.exportDOM): the
 // named title slot rides a `<div data-lexical-slot="title">` child and the body
 // is regular paragraph siblings. Re-attach the title via $setSlot (flattened to
@@ -325,43 +280,6 @@ export const CardExtension = /* @__PURE__ */ defineExtension({
   ],
   name: '@lexical/playground/Card',
   register: editor => {
-    const onChromeMouseDown = (event: MouseEvent) => {
-      // Read-only mode: leave the reader's native selection alone — the
-      // preventDefault / focus / removeAllRanges below would destroy it.
-      if (!editor.isEditable()) {
-        return;
-      }
-      const target = event.target;
-      if (!isHTMLElement(target)) {
-        return;
-      }
-      const isChrome = editor.read(
-        () => $resolveCardChromeTarget(editor, target) !== null,
-      );
-      if (isChrome) {
-        event.preventDefault();
-        // Move focus off any slot's contentEditable onto the editor root so
-        // the chrome click resolves to a clean whole-Card NodeSelection. The
-        // preventDefault above suppresses the native focus shift, so without
-        // this the slot keeps DOM focus: its :focus-within highlight stays lit
-        // alongside the Card's selected outline, and the keyboard selection
-        // (now a NodeSelection) is out of sync with the focused slot, so
-        // Backspace never reaches the Card-delete path.
-        const root = editor.getRootElement();
-        if (root !== null && root !== document.activeElement) {
-          root.focus({preventScroll: true});
-          // root.focus() drops a native caret where the slot focus was; clear
-          // it in this same synchronous turn so it never paints before the
-          // click promotes the chrome interaction to a whole-Card
-          // NodeSelection. Safari/Chrome would otherwise flash the caret in
-          // the paragraph above the Card for a frame.
-          const domSelection = getDOMSelection(root.ownerDocument.defaultView);
-          if (domSelection !== null) {
-            domSelection.removeAllRanges();
-          }
-        }
-      }
-    };
     return mergeRegister(
       editor.registerCommand<void>(
         INSERT_CARD_COMMAND,
@@ -386,48 +304,10 @@ export const CardExtension = /* @__PURE__ */ defineExtension({
         event => $handleCardTab(event, event.shiftKey),
         COMMAND_PRIORITY_BEFORE_EDITOR,
       ),
-      // Click on the Card chrome (the host DOM itself, outside the slot
-      // containers) selects the whole Card as a NodeSelection. Routing
-      // through CLICK_COMMAND rather than a DOM onClick lets the
-      // selectionchange flow on the same lexical pass, so the freshly-set
-      // NodeSelection isn't overwritten by the native click → focus →
-      // range-selection fallback.
-      editor.registerCommand<MouseEvent>(
-        CLICK_COMMAND,
-        event => {
-          // Read-only mode never promotes — mirrors the mousedown gate.
-          if (!editor.isEditable()) {
-            return false;
-          }
-          const target = event.target;
-          if (!isHTMLElement(target)) {
-            return false;
-          }
-          const card = $resolveCardChromeTarget(editor, target);
-          if (card === null) {
-            return false;
-          }
-          event.preventDefault();
-          const ns = $createNodeSelection();
-          ns.add(card.getKey());
-          $setSelection(ns);
-          return true;
-        },
-        COMMAND_PRIORITY_BEFORE_EDITOR,
-      ),
-      // Suppress the native caret the browser would place at the mousedown
-      // point before the CLICK_COMMAND above promotes a chrome click to a
-      // whole-Card NodeSelection. Without this the caret flashes in the
-      // clicked region for a frame. Editable-slot mousedowns fall through so
-      // the caret still enters the slot.
-      editor.registerRootListener((rootElement, prevRootElement) => {
-        if (prevRootElement !== null) {
-          prevRootElement.removeEventListener('mousedown', onChromeMouseDown);
-        }
-        if (rootElement !== null) {
-          rootElement.addEventListener('mousedown', onChromeMouseDown);
-        }
-      }),
+      // Click on the Card chrome (outside its slot wrappers) selects the whole
+      // Card as a NodeSelection, with a matching mousedown that suppresses the
+      // native caret the browser would otherwise drop there.
+      registerHostChromeSelection(editor, $isCardNode),
       // Mirror the caret's slot context onto a `data-current-slot` attribute
       // on the active Card so CSS can render a focus hint. The (cardKey,
       // slot) memo + read-scope-outside mutation mirror the

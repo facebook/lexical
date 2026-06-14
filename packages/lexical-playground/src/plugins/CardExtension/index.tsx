@@ -17,7 +17,7 @@ import {
   DOMRenderExtension,
   sel,
 } from '@lexical/html';
-import {$insertNodeToNearestRoot, mergeRegister} from '@lexical/utils';
+import {mergeRegister} from '@lexical/utils';
 import {
   $createNodeSelection,
   $createParagraphNode,
@@ -44,6 +44,7 @@ import {
 
 import {registerHostChromeSelection} from '../../nodes/hostChromeSelection';
 import {
+  $insertSlotHostAtRoot,
   $isSlotHostTextEmpty,
   registerEmptyHostBackspace,
   registerSlotHostArrowEscape,
@@ -289,7 +290,7 @@ export const CardExtension = /* @__PURE__ */ defineExtension({
       editor.registerCommand<void>(
         INSERT_CARD_COMMAND,
         () => {
-          $insertNodeToNearestRoot($createCardNode());
+          $insertSlotHostAtRoot($createCardNode());
           return true;
         },
         COMMAND_PRIORITY_EDITOR,

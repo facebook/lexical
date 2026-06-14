@@ -24,7 +24,7 @@ import {
   useSignalValue,
 } from '@lexical/react/useExtensionSignalValue';
 import {useLexicalSlotRef} from '@lexical/react/useLexicalSlotRef';
-import {$insertNodeToNearestRoot, mergeRegister} from '@lexical/utils';
+import {mergeRegister} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getNodeByKey,
@@ -40,6 +40,7 @@ import {useCallback, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import {
+  $insertSlotHostAtRoot,
   $isSlotHostTextEmpty,
   registerEmptyHostBackspace,
   registerSlotHostArrowEscape,
@@ -245,7 +246,7 @@ export const ReviewExtension = /* @__PURE__ */ defineExtension({
       editor.registerCommand<void>(
         INSERT_REVIEW_COMMAND,
         () => {
-          $insertNodeToNearestRoot($createReviewNode());
+          $insertSlotHostAtRoot($createReviewNode());
           return true;
         },
         COMMAND_PRIORITY_EDITOR,

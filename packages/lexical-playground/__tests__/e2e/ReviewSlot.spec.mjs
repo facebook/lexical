@@ -7,7 +7,7 @@
  */
 
 import {
-  moveToEditorBeginning,
+  moveToEditorEnd,
   moveToLineBeginning,
   selectAll,
 } from '../keyboardShortcuts/index.mjs';
@@ -78,6 +78,36 @@ async function reviewCount(page) {
     page,
     () => document.querySelectorAll('.lexical-review-node').length,
   );
+}
+
+// Reset the document to a single empty paragraph via the editor API. A
+// document-wide range Backspace leaves a first-block shadow-root host (the
+// Review, which now starts the document since insertion seeds no leading
+// paragraph) in place, and unlike the Card the Review has no chrome-click
+// NodeSelection to delete it, so clearing here stays deterministic.
+async function clearDocument(page) {
+  await evaluate(page, () => {
+    const editor = window.lexicalEditor;
+    editor.update(
+      () => {
+        const root = editor.getEditorState()._nodeMap.get('root');
+        let kept = null;
+        for (const child of Array.from(root.getChildren())) {
+          if (kept === null && child.getType() === 'paragraph') {
+            child.clear();
+            kept = child;
+          } else {
+            child.remove();
+          }
+        }
+        if (kept !== null) {
+          kept.selectStart();
+        }
+      },
+      {discrete: true},
+    );
+  });
+  await sleep(80);
 }
 
 // The Review is an ElementNode whose presentation is React chrome that goes
@@ -239,16 +269,23 @@ test.describe('Review React-chromed ElementNode', () => {
     await insertReview(page);
     await waitForSelector(page, '.lexical-review-chrome');
 
-    await moveToEditorBeginning(page);
-    await page.keyboard.type('Before');
+    // Insertion seeds no leading paragraph, so the Review is the first block;
+    // the trailing top-level paragraph is where surrounding prose goes.
+    await moveToEditorEnd(page);
+    await page.keyboard.type('After');
     await sleep(120);
     expect(
       await evaluate(page, () => {
-        return document.querySelector(
-          '[contenteditable="true"][data-lexical-editor="true"]',
-        ).textContent;
+        const root = document.querySelector('[data-lexical-editor="true"]');
+        const review = document.querySelector('.lexical-review-node');
+        // The prose lands in a top-level paragraph sibling of the Review, not
+        // inside one of its regions.
+        return Array.from(root.children)
+          .filter(c => c !== review)
+          .map(c => c.textContent)
+          .join('');
       }),
-    ).toContain('Before');
+    ).toContain('After');
     // The rating widget is still present and the regions are intact.
     expect(await locate(page, STAR).count()).toBe(5);
   });
@@ -272,9 +309,11 @@ test.describe('Review React-chromed ElementNode', () => {
     await page.keyboard.type('Loved it');
     await sleep(120);
 
-    // Select the whole document from a top-level paragraph (outside the
-    // Review's shadow root, so Cmd+A is document-scoped) and copy.
-    await moveToEditorBeginning(page);
+    // Select the whole document from the trailing top-level paragraph (outside
+    // the Review's shadow root, so Cmd+A is document-scoped) and copy. The
+    // Review is the first block now that insertion seeds no leading paragraph,
+    // so start from the end rather than the beginning.
+    await moveToEditorEnd(page);
     await selectAll(page);
     const clipboard = await copyToClipboard(page);
     // Export side: the author rides its named wrapper, and the rating — being
@@ -284,8 +323,7 @@ test.describe('Review React-chromed ElementNode', () => {
 
     // Drop everything, then paste HTML-only so the import must go through the
     // DOMImportExtension review rule (the clipboard's lexical JSON is dropped).
-    await page.keyboard.press('Backspace');
-    await sleep(120);
+    await clearDocument(page);
     expect(await reviewCount(page)).toBe(0);
     await pasteFromClipboard(page, {'text/html': clipboard['text/html']});
     await sleep(200);

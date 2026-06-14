@@ -15,7 +15,7 @@ import {
   DOMImportExtension,
   sel,
 } from '@lexical/html';
-import {$insertNodeToNearestRoot, mergeRegister} from '@lexical/utils';
+import {mergeRegister} from '@lexical/utils';
 import {
   $createNodeSelection,
   $createParagraphNode,
@@ -39,6 +39,7 @@ import {registerHostChromeSelection} from '../../nodes/hostChromeSelection';
 import {$createSlotContainerNode} from '../../nodes/SlotContainerNode';
 import {
   $findSlotHost,
+  $insertSlotHostAtRoot,
   registerSlotHostArrowEscape,
 } from '../../nodes/slotHostEscape';
 import {$appendInline} from '../../nodes/slotImport';
@@ -142,7 +143,7 @@ export const PullQuoteExtension = /* @__PURE__ */ defineExtension({
       editor.registerCommand<void>(
         INSERT_PULLQUOTE_COMMAND,
         () => {
-          $insertNodeToNearestRoot($createPullQuoteNode());
+          $insertSlotHostAtRoot($createPullQuoteNode());
           return true;
         },
         COMMAND_PRIORITY_EDITOR,

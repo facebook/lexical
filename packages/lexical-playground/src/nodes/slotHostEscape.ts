@@ -8,7 +8,12 @@
 
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
-import {$isAtEndOfNode, $isAtStartOfNode, mergeRegister} from '@lexical/utils';
+import {
+  $insertNodeToNearestRoot,
+  $isAtEndOfNode,
+  $isAtStartOfNode,
+  mergeRegister,
+} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getSelection,
@@ -16,6 +21,7 @@ import {
   $getSlotHost,
   $getSlotNames,
   $isElementNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
   COMMAND_PRIORITY_BEFORE_EDITOR,
@@ -361,4 +367,21 @@ export function registerEmptyHostBackspace<T extends LexicalNode>(
     },
     COMMAND_PRIORITY_BEFORE_EDITOR,
   );
+}
+
+/**
+ * Insert a slot host at the nearest root for an INSERT_* command. Same as
+ * `$insertNodeToNearestRoot`, but drops the empty paragraph it leaves *before*
+ * the host: `$insertNodeToNearestRoot` splits the current block, so inserting
+ * from an otherwise-empty paragraph (the `/command` flow) seeds a stray blank
+ * line above the host. ArrowUp escape re-creates one on demand, so it is not
+ * needed up front; the trailing paragraph (where the caret lands) is kept.
+ */
+export function $insertSlotHostAtRoot<T extends LexicalNode>(node: T): T {
+  $insertNodeToNearestRoot(node);
+  const before = node.getPreviousSibling();
+  if ($isParagraphNode(before) && before.getTextContentSize() === 0) {
+    before.remove();
+  }
+  return node.getLatest();
 }

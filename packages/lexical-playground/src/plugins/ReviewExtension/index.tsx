@@ -31,7 +31,6 @@ import {
   configExtension,
   createCommand,
   defineExtension,
-  mergeRegister,
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
@@ -169,7 +168,7 @@ function ReviewChrome({
 // decorate(), implemented in userland with a mutation listener.
 export function ReviewPlugin({context}: DecoratorComponentProps): JSX.Element {
   const [editor] = context;
-  const nodeMap = useExtensionSignalValue(ReviewExtension, 'nodeMap');
+  const nodeMap = useExtensionSignalValue(ReactReviewExtension, 'nodeMap');
   return (
     <>
       {Array.from(nodeMap.entries(), ([key, node]) => {
@@ -223,6 +222,32 @@ const ReviewImportRule = /* @__PURE__ */ defineImportRule({
 });
 
 export const ReviewExtension = /* @__PURE__ */ defineExtension({
+  // The Review's HTML import rule rides its own extension — like every other
+  // node extension that registers its own DOM-import rules — rather than a
+  // central playground aggregate. CoreImportExtension supplies the
+  // paragraph/text rules the rule's children-import relies on and orders this
+  // host rule ahead of the generic block rules (the playground's always-on
+  // ClipboardDOMImportExtension routes pastes through this pipeline).
+  dependencies: [
+    CoreImportExtension,
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: [ReviewImportRule],
+    }),
+  ],
+  name: '@lexical/playground/Review',
+  nodes: [ReviewNode],
+  register: editor =>
+    editor.registerCommand<void>(
+      INSERT_REVIEW_COMMAND,
+      () => {
+        $insertNodeToNearestRoot($createReviewNode());
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+});
+
+export const ReactReviewExtension = /* @__PURE__ */ defineExtension({
   build(editor, config, state) {
     return namedSignals({nodeMap: new Map<NodeKey, ReviewNode>()});
   },
@@ -236,38 +261,24 @@ export const ReviewExtension = /* @__PURE__ */ defineExtension({
     /* @__PURE__ */ configExtension(ReactExtension, {
       decorators: [ReviewPlugin],
     }),
-    CoreImportExtension,
-    /* @__PURE__ */ configExtension(DOMImportExtension, {
-      rules: [ReviewImportRule],
-    }),
+    ReviewExtension,
   ],
-  name: '@lexical/playground/Review',
-  nodes: [ReviewNode],
+  name: '@lexical/playground/ReactReview',
   register: (editor, config, state) => {
     const nodeMapSignal = state.getOutput().nodeMap;
-    return mergeRegister(
-      editor.registerMutationListener(ReviewNode, nodes => {
-        nodeMapSignal.value = editor.getEditorState().read(() => {
-          const nodeMap = new Map(nodeMapSignal.peek());
-          for (const k of nodes.keys()) {
-            const node = $getNodeByKey(k);
-            if ($isReviewNode(node)) {
-              nodeMap.set(k, node);
-            } else {
-              nodeMap.delete(k);
-            }
+    return editor.registerMutationListener(ReviewNode, nodes => {
+      nodeMapSignal.value = editor.getEditorState().read(() => {
+        const nodeMap = new Map(nodeMapSignal.peek());
+        for (const k of nodes.keys()) {
+          const node = $getNodeByKey(k);
+          if ($isReviewNode(node)) {
+            nodeMap.set(k, node);
+          } else {
+            nodeMap.delete(k);
           }
-          return nodeMap;
-        });
-      }),
-      editor.registerCommand<void>(
-        INSERT_REVIEW_COMMAND,
-        () => {
-          $insertNodeToNearestRoot($createReviewNode());
-          return true;
-        },
-        COMMAND_PRIORITY_EDITOR,
-      ),
-    );
+        }
+        return nodeMap;
+      });
+    });
   },
 });

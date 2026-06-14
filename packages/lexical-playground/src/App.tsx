@@ -82,7 +82,7 @@ import {PagesReactExtension} from './plugins/PagesReactExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {PollExtension} from './plugins/PollExtension';
 import {PullQuoteExtension} from './plugins/PullQuoteExtension';
-import {ReviewExtension} from './plugins/ReviewExtension';
+import {ReactReviewExtension} from './plugins/ReviewExtension';
 import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import {TabFocusExtension} from './plugins/TabFocusExtension';
 import {TerseExportExtension} from './plugins/TerseExportExtension';
@@ -215,7 +215,7 @@ const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
     LayoutExtension,
     ExcalidrawExtension,
     CardExtension,
-    ReviewExtension,
+    ReactReviewExtension,
     PullQuoteExtension,
   ],
   name: '@lexical/playground/RichText',

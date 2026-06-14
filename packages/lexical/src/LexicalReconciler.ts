@@ -515,9 +515,11 @@ function $createSlotContainer(
     // editor's editable state: gate the initial value, and mark it so
     // SlotEditableExtension can flip it when setEditable toggles. A read-only
     // editor's slots must not stay editable just because they sit in a
-    // non-editable host.
+    // non-editable host. The marker carries this editor's key so the extension
+    // only touches its own slots — a nested editor's containers live in the
+    // same root DOM but must not change with the outer editor's editable state.
     container.contentEditable = activeEditor.isEditable() ? 'true' : 'false';
-    container.setAttribute('data-lexical-slot-editable', '');
+    container.setAttribute('data-lexical-slot-editable', activeEditor._key);
   }
   return container;
 }

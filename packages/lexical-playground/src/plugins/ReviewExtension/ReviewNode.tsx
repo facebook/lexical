@@ -90,10 +90,11 @@ export class ReviewNode extends ElementNode {
     children.style.display = 'none';
     // The body is a getDOMSlot editable island inside the contentEditable=false
     // shell. Like a named-slot container, it follows the editor's editable
-    // state: gate the initial value and tag it with `data-lexical-slot-editable`
-    // so SlotEditableExtension flips it on read-only toggle.
+    // state: gate the initial value and tag it with this editor's key (keyed so
+    // a nested editor isn't toggled) so SlotEditableExtension flips it on
+    // read-only toggle.
     children.contentEditable = editor.isEditable() ? 'true' : 'false';
-    children.setAttribute('data-lexical-slot-editable', '');
+    children.setAttribute('data-lexical-slot-editable', editor.getKey());
     dom.appendChild(children);
     return dom;
   }

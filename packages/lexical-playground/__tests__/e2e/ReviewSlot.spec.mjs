@@ -372,4 +372,54 @@ test.describe('Review React-chromed ElementNode', () => {
 
     expect(await reviewCount(page)).toBe(0);
   });
+
+  // Select-all then Backspace on a first-block Review replaces the whole node
+  // with a paragraph in one press (the deletion's start is re-anchored before
+  // the Review), rather than only clearing its contents and leaving the shell.
+  test('select-all + Backspace replaces a first-block review with a paragraph', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await insertReview(page);
+    await waitForSelector(page, '.lexical-review-chrome');
+    await click(page, `${BODY} p`);
+    await page.keyboard.type('Hello');
+    await sleep(100);
+
+    // Cmd+A from the body is document-scoped (the body is the child channel,
+    // not a slot frame), so this selects the whole document.
+    await selectAll(page);
+    await sleep(80);
+    await page.keyboard.press('Backspace');
+    await sleep(120);
+
+    expect(await reviewCount(page)).toBe(0);
+    expect(
+      await evaluate(page, () =>
+        Array.from(
+          document.querySelector('[data-lexical-editor="true"]').children,
+        ).map(c => c.tagName.toLowerCase()),
+      ),
+    ).toEqual(['p']);
+  });
+
+  // The author IS a slot frame, so select-all there is slot-scoped: the
+  // re-anchor must not fire and the Review must survive with only its author
+  // text cleared.
+  test('select-all in the author slot keeps the review', async ({page}) => {
+    await focusEditor(page);
+    await insertReview(page);
+    await waitForSelector(page, '.lexical-review-chrome');
+    await click(page, `${AUTHOR} p`);
+    await page.keyboard.type('Jane');
+    await sleep(100);
+
+    await selectAll(page);
+    await sleep(80);
+    await page.keyboard.press('Backspace');
+    await sleep(120);
+
+    expect(await reviewCount(page)).toBe(1);
+    expect(await regionText(page, AUTHOR)).toBe('');
+  });
 });

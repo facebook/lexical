@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalEditor, LexicalNode} from 'lexical';
+import type {LexicalEditor, LexicalNode, RangeSelection} from 'lexical';
 
 import {
   $insertNodeToNearestRoot,
@@ -299,18 +299,56 @@ function $deleteEmptyHost(host: LexicalNode): void {
   host.replace($createParagraphNode()).selectStart();
 }
 
+// A non-collapsed selection whose start sits exactly at a host's first-region
+// start and whose end is outside the host — e.g. a document-wide select-all of
+// a first-block host — only clears the host's contents on delete, leaving the
+// (now empty) shell, because the start point is *inside* the host. Move that
+// start point to just before the host in its parent so the host itself falls in
+// the deleted range and the default delete replaces the whole node with a
+// paragraph. Returns `false` either way: the adjusted selection is left for the
+// default delete handler.
+function $reanchorRangeBeforeHost<T extends LexicalNode>(
+  editor: LexicalEditor,
+  selection: RangeSelection,
+  $isHost: (node: LexicalNode | null | undefined) => node is T,
+): void {
+  const backward = selection.isBackward();
+  const start = backward ? selection.focus : selection.anchor;
+  const end = backward ? selection.anchor : selection.focus;
+  const host = $findSlotHost(start.getNode(), $isHost);
+  if (host === null || $findSlotHost(end.getNode(), $isHost) === host) {
+    return;
+  }
+  const first = $orderedRegions(editor, host)[0];
+  const parent = host.getParent();
+  if (
+    first !== undefined &&
+    $isElementNode(first.startNode) &&
+    parent !== null &&
+    $isAtStartOfNode(start, first.startNode)
+  ) {
+    start.set(parent.getKey(), host.getIndexWithinParent(), 'element');
+  }
+}
+
 /**
- * Backspace deletes an *empty* slot host (per `$isEmpty`) from either edge:
+ * Backspace deletes a slot host from a range or its edges:
  *
- * - From inside the host, at the start of its first region (the Card's `title`
- *   slot, the Review's body) — the analog of backspacing an empty block away.
- * - From outside, at the start of the block immediately after the host.
+ * - A non-collapsed selection that starts at the host's first region and
+ *   extends out of it (a select-all of a first-block host) replaces the whole
+ *   host with a paragraph rather than only clearing its contents (see
+ *   {@link $reanchorRangeBeforeHost}).
+ * - A collapsed caret at the start of an *empty* host's first region (the Card's
+ *   `title` slot, the Review's body) deletes the host — the analog of
+ *   backspacing an empty block away.
+ * - A collapsed caret at the start of the block immediately after an *empty*
+ *   host deletes the host.
  *
- * A non-empty host is left to the default handler, so the slots' shadow-root
- * boundary still protects their content (backspace at a non-empty slot start
- * stays a no-op). Mirrors the Card/Review "delete the empty box" gesture.
+ * A non-empty host is otherwise left to the default handler, so the slots'
+ * shadow-root boundary still protects their content (backspace at a non-empty
+ * slot start stays a no-op).
  */
-export function registerEmptyHostBackspace<T extends LexicalNode>(
+export function registerSlotHostBackspace<T extends LexicalNode>(
   editor: LexicalEditor,
   $isHost: (node: LexicalNode | null | undefined) => node is T,
   $isEmpty: (host: T) => boolean,
@@ -319,7 +357,11 @@ export function registerEmptyHostBackspace<T extends LexicalNode>(
     KEY_BACKSPACE_COMMAND,
     event => {
       const selection = $getSelection();
-      if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+      if (!$isRangeSelection(selection)) {
+        return false;
+      }
+      if (!selection.isCollapsed()) {
+        $reanchorRangeBeforeHost(editor, selection, $isHost);
         return false;
       }
       const anchor = selection.anchor;

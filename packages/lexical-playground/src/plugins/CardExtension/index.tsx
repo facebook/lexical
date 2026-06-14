@@ -46,8 +46,8 @@ import {registerHostChromeSelection} from '../../nodes/hostChromeSelection';
 import {
   $insertSlotHostAtRoot,
   $isSlotHostTextEmpty,
-  registerEmptyHostBackspace,
   registerSlotHostArrowEscape,
+  registerSlotHostBackspace,
 } from '../../nodes/slotHostEscape';
 import {$appendInline} from '../../nodes/slotImport';
 import {$createCardNode, $isCardNode, CardNode} from './CardNode';
@@ -316,9 +316,10 @@ export const CardExtension = /* @__PURE__ */ defineExtension({
       registerHostChromeSelection(editor, $isCardNode),
       // ArrowDown/Up at the Card's bottom/top edge steps out of it.
       registerSlotHostArrowEscape(editor, $isCardNode),
-      // Backspace at the start of the title of an empty Card — or from the
-      // block right after an empty Card — deletes the Card.
-      registerEmptyHostBackspace(editor, $isCardNode, $isSlotHostTextEmpty),
+      // Backspace deletes an empty Card (from the start of its title slot or
+      // the block right after it), and a select-all that spans a first-block
+      // Card replaces the whole Card with a paragraph.
+      registerSlotHostBackspace(editor, $isCardNode, $isSlotHostTextEmpty),
       // Mirror the caret's slot context onto a `data-current-slot` attribute
       // on the active Card so CSS can render a focus hint. The (cardKey,
       // slot) memo + read-scope-outside mutation mirror the

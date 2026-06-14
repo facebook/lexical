@@ -214,8 +214,8 @@ test.describe('Shadow DOM', () => {
     // at the actual cause (empty lexical payload vs paste-side insertion).
     const clipboardDebug = await page.evaluate(
       data => ({
-        htmlLen: (data['text/html'] ?? '').length,
-        lexicalLen: (data['application/x-lexical-editor'] ?? '').length,
+        htmlSlice: (data['text/html'] ?? '').slice(0, 200),
+        lexicalRaw: data['application/x-lexical-editor'] ?? null,
         textPlain: data['text/plain'] ?? null,
         types: Object.keys(data),
       }),
@@ -224,6 +224,35 @@ test.describe('Shadow DOM', () => {
     // eslint-disable-next-line no-console
     console.log('CLIPBOARD DEBUG:', JSON.stringify(clipboardDebug));
     await moveToEditorEnd(page);
+    // DIAGNOSTIC: editor state right before paste — confirms which element
+    // paste should target and whether activeElement is the editor.
+    const beforePasteDebug = await page.evaluate(() => {
+      const findEditor = root => {
+        const direct = root.querySelector(
+          'div[contenteditable="true"][data-lexical-editor="true"]',
+        );
+        if (direct !== null) return direct;
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            const inner = findEditor(el.shadowRoot);
+            if (inner !== null) return inner;
+          }
+        }
+        return null;
+      };
+      const editor = findEditor(document);
+      const root = editor?.getRootNode();
+      return {
+        activeIsEditable: document.activeElement?.isContentEditable ?? null,
+        activeMatchesLexical:
+          document.activeElement?.matches?.('[data-lexical-editor]') ?? null,
+        activeTag: document.activeElement?.tagName ?? null,
+        editorInShadow: root !== null && root !== document,
+        editorOuterStart: editor?.outerHTML?.slice(0, 200) ?? null,
+      };
+    });
+    // eslint-disable-next-line no-console
+    console.log('BEFORE PASTE:', JSON.stringify(beforePasteDebug));
     await pasteFromClipboard(page, clipboard);
     // DIAGNOSTIC: editor innerHTML right after paste, before assertHTML
     // retries, so we see exactly what landed in the editor when CI fails.

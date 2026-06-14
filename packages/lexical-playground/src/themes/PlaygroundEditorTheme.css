@@ -894,16 +894,37 @@
   outline: none;
 }
 .lexical-review-author [data-lexical-slot='author'] {
+  align-items: baseline;
+  display: flex;
   outline: none;
 }
 .lexical-review-author [data-lexical-slot='author'] > * {
   color: #57534e;
+  /* Fill the row beside the permanent '— ' prefix so the editable line (and
+     its empty-state placeholder overlay) does not collapse to zero width. */
+  flex: 1;
   font-size: 14px;
   font-weight: 600;
+  min-width: 0;
+}
+/* Permanent '— ' prefix before the author, always shown (like the PullQuote
+   attribution) rather than only as part of the empty-field placeholder. Flex on
+   the slot container keeps it inline with the author paragraph; an empty
+   paragraph's <br> would otherwise drop a block-container ::before to its own
+   line. */
+.lexical-review-author [data-lexical-slot='author']::before {
+  content: '— ';
+  color: #57534e;
+  font-size: 14px;
+  font-weight: 600;
+  user-select: none;
+  -webkit-user-select: none;
 }
 /* CSS placeholders for the empty author / prose fields, same idiom as the
    Card: shown only while a field holds just its empty-paragraph <br>, hidden
-   the moment the user types, so the model seeds no placeholder TextNodes. */
+   the moment the user types, so the model seeds no placeholder TextNodes. The
+   author placeholder is just 'Author' now — the '— ' prefix above is
+   permanent. */
 .lexical-review-author [data-lexical-slot='author'] > p:has(br:only-child),
 .lexical-review-children > p:only-of-type:has(br:only-child) {
   position: relative;
@@ -911,7 +932,7 @@
 .lexical-review-author
   [data-lexical-slot='author']
   > p:has(br:only-child)::before {
-  content: '— Author';
+  content: 'Author';
 }
 .lexical-review-children > p:only-of-type:has(br:only-child)::before {
   content: 'Write a review…';

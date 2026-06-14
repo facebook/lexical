@@ -190,7 +190,7 @@ test.describe('Slot host ArrowDown/Up escape', () => {
     expect(await blockOutsideHost(page, REVIEW, 'before')).toBe('Before');
   });
 
-  test('Review: ArrowDown from the body enters the author, not out of the Review', async ({
+  test('Review: ArrowDown from the body does not escape past the author', async ({
     page,
   }) => {
     await focusEditor(page);
@@ -199,8 +199,13 @@ test.describe('Slot host ArrowDown/Up escape', () => {
     await page.keyboard.type('Body');
     await click(page, REVIEW_AUTHOR);
     await page.keyboard.type('Jane');
-    // Even as the last block, ArrowDown from the body must reach the author
-    // (below it in the chrome) rather than escaping past it.
+    // The `author` slot renders below the body in the chrome, so even as the
+    // last block, ArrowDown from the body must NOT escape the Review (the old
+    // inverted-edge bug took the body as the bottom region and inserted a
+    // paragraph past the author). Whether the caret then steps into the author
+    // is up to the browser — Chromium crosses the contentEditable island, while
+    // Firefox leaves the caret in the body — so assert only the cross-browser
+    // guarantee: the caret stays inside the Review and nothing is inserted.
     await makeHostEdgeBlock(page, 'last');
     const before = await blockCount(page);
 
@@ -209,10 +214,7 @@ test.describe('Slot host ArrowDown/Up escape', () => {
     await page.keyboard.press('ArrowDown');
     await sleep(100);
 
-    expect(await caretInSelector(page, '[data-lexical-slot="author"]')).toBe(
-      true,
-    );
-    // No paragraph was inserted: the Review did not escape.
+    expect(await caretInSelector(page, REVIEW)).toBe(true);
     expect(await blockCount(page)).toBe(before);
   });
 

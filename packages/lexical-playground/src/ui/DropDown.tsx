@@ -9,7 +9,7 @@
 import type {JSX} from 'react';
 
 import {calculateZoomLevel} from '@lexical/utils';
-import {isDOMNode} from 'lexical';
+import {getComposedEventTarget, isDOMNode} from 'lexical';
 import * as React from 'react';
 import {
   ReactNode,
@@ -208,7 +208,10 @@ export default function DropDown({
 
     if (button !== null && showDropDown) {
       const handle = (event: PointerEvent) => {
-        const target = event.target;
+        // click bubbles up from a shadow tree with event.target retargeted
+        // to the shadow host, which would make button.contains(target) false
+        // and immediately close the dropdown. Use the composed-path target.
+        const target = getComposedEventTarget(event);
         if (!isDOMNode(target)) {
           return;
         }

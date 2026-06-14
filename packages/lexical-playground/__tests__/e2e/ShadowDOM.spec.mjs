@@ -21,7 +21,6 @@ import {
   focusEditor,
   html,
   initialize,
-  insertTable,
   pasteFromClipboard,
   test,
 } from '../utils/index.mjs';
@@ -95,7 +94,7 @@ test.describe('Shadow DOM', () => {
     await assertHTML(
       page,
       html`
-        <p><br /></p>
+        <p><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       IGNORE,
@@ -126,13 +125,31 @@ test.describe('Shadow DOM', () => {
     // the underlying handler is exercised by the chromium/firefox runs.
     test.skip(browserName === 'webkit');
     await focusEditor(page);
-    await insertTable(page, 2, 2);
+    // Manual sequence — `insertTable` from utils opens the Insert dropdown
+    // via click() but the dropdown's outside-click handler also runs against
+    // the same synthetic click event in the shadow-mounted toolbar; explicit
+    // steps with waitFor between them keep the dropdown open long enough to
+    // pick the Table item.
+    await page
+      .locator('.toolbar-item[aria-label="Insert specialized editor node"]')
+      .click();
+    const tableItem = page.locator('.dropdown .item .table');
+    await tableItem.waitFor();
+    await tableItem.click();
+    await page.locator('input[data-test-id="table-modal-rows"]').fill('2');
+    await page.locator('input[data-test-id="table-modal-columns"]').fill('2');
+    await page
+      .locator('div[data-test-id="table-model-confirm-insert"] > .Button__root')
+      .click();
+    await page.locator('table').waitFor();
     // Clicking a cell goes through the window-attached pointerdown listener
     // in lexical-table; without getComposedEventTarget the event.target is
     // retargeted to the shadow host and the rootElement.contains() gate
     // rejects the click. Type into a non-first cell to assert the click
     // actually placed the caret inside that cell.
-    const targetCell = page.locator('table td').nth(3);
+    // InsertTableDialog defaults to includeHeaders=true, so 3 of the 4 cells
+    // are <th>; pick the only <td> as the non-first cell.
+    const targetCell = page.locator('table td').last();
     await targetCell.click();
     await page.keyboard.type('typed');
     const cellText = await targetCell.textContent();
@@ -147,8 +164,11 @@ test.describe('Shadow DOM', () => {
     // popup is anchored to the editor's selection and its open/close cycle
     // exercises the typeahead path that reads the composed selection.
     await page.keyboard.type('/heading');
+    // LexicalMenu's defaultMenuRenderFn portals the typeahead popup as
+    // `<div class="typeahead-popover mentions-menu">`; there is no
+    // dedicated data-test-id, so target the rendered class.
     await expect(
-      page.locator('[data-test-id="component-picker-menu"]'),
+      page.locator('.typeahead-popover.mentions-menu'),
     ).toBeVisible();
     // Insert the first option (Heading 1).
     await page.keyboard.press('Enter');

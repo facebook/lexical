@@ -615,8 +615,26 @@ export async function keyUpCtrlOrAlt(page) {
 
 async function copyToClipboardPageOrFrame(pageOrFrame) {
   return await pageOrFrame.evaluate(() => {
+    // document.querySelector doesn't pierce shadow roots; descend into any
+    // open shadow trees so this works for the "Render in Shadow DOM"
+    // playground setting too.
+    const findContentEditable = root => {
+      const direct = root.querySelector('div[contenteditable="true"]');
+      if (direct !== null) {
+        return direct;
+      }
+      for (const el of root.querySelectorAll('*')) {
+        if (el.shadowRoot !== null) {
+          const inner = findContentEditable(el.shadowRoot);
+          if (inner !== null) {
+            return inner;
+          }
+        }
+      }
+      return null;
+    };
     const clipboardData = {};
-    const editor = document.querySelector('div[contenteditable="true"]');
+    const editor = findContentEditable(document);
     const copyEvent = new ClipboardEvent('copy');
     Object.defineProperty(copyEvent, 'clipboardData', {
       value: {
@@ -644,6 +662,7 @@ async function pasteWithClipboardDataFromPageOrFrame(
     async ({
       clipboardData: _clipboardData,
       canUseBeforeInput: _canUseBeforeInput,
+      editorSelector: _editorSelector,
     }) => {
       const files = [];
       for (const [clipboardKey, clipboardValue] of Object.entries(
@@ -676,10 +695,28 @@ async function pasteWithClipboardDataFromPageOrFrame(
         };
       }
 
+      // document.querySelector doesn't pierce shadow roots; descend into any
+      // open shadow trees so paste works for the "Render in Shadow DOM"
+      // playground setting too.
+      const findContentEditable = root => {
+        const direct = root.querySelector(_editorSelector);
+        if (direct !== null) {
+          return direct;
+        }
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            const inner = findContentEditable(el.shadowRoot);
+            if (inner !== null) {
+              return inner;
+            }
+          }
+        }
+        return null;
+      };
       const editor =
         document.activeElement && document.activeElement.isContentEditable
           ? document.activeElement
-          : document.querySelector(editorSelector);
+          : findContentEditable(document);
       const pasteEvent = new ClipboardEvent('paste', {
         bubbles: true,
         cancelable: true,
@@ -704,7 +741,7 @@ async function pasteWithClipboardDataFromPageOrFrame(
         }
       }
     },
-    {canUseBeforeInput, clipboardData},
+    {canUseBeforeInput, clipboardData, editorSelector},
   );
 }
 

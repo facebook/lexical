@@ -187,8 +187,18 @@ test.describe('Shadow DOM', () => {
     page,
   }) => {
     await focusEditor(page);
+    // Wait until the editor's data-lexical-editor mount finishes so the
+    // typed characters land on the shadow-internal contentEditable rather
+    // than racing against the initial mount on CI.
+    await page
+      .locator('div[contenteditable="true"][data-lexical-editor="true"]')
+      .waitFor();
     await page.keyboard.type('hi');
     await selectAll(page);
+    // Let the native selectionchange event propagate so the editor's
+    // selection state reflects the selectAll before dispatching copy.
+    // CI's faster timing surfaces this race; local headless absorbs it.
+    await page.waitForTimeout(50);
     // The copy guard in @lexical/clipboard reads selection through
     // getDOMSelectionPoints; without it the shadow host makes
     // isSelectionWithinEditor return false and the copy is dropped.

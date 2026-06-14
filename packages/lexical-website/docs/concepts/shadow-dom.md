@@ -221,6 +221,23 @@ the update listener has not fired yet at that point. A full reference
 implementation lives in
 [`dev-examples/shadow-dom-web-component`](https://github.com/facebook/lexical/tree/main/dev-examples/shadow-dom-web-component).
 
+DOM moves (re-parenting the host into a different `<form>` or list) trigger
+`disconnectedCallback` followed by `connectedCallback`, which rebuilds the
+editor against a fresh contentEditable. Round-trip the user's content the
+same way `<input>` and `<textarea>` round-trip their `value` attribute:
+cache the serialized state in `disconnectedCallback` and replay it through
+`parseEditorState` on the next mount. The reference dev example uses a
+`pendingState` field for exactly this.
+
+The same form-associated host can also implement
+[`formStateRestoreCallback(state, reason)`](https://developer.mozilla.org/docs/Web/API/Web_components/Using_custom_elements#form-associated_callbacks)
+to re-hydrate the editor on bfcache navigation (`reason: 'restore'`) or
+form autocomplete restore (`reason: 'autocomplete'`), and
+[`formAssociatedCallback(form)`](https://developer.mozilla.org/docs/Web/API/Web_components/Using_custom_elements#form-associated_callbacks)
+to react to programmatic form moves. The serialized JSON
+`internals.setFormValue` published earlier is what comes back in those
+callbacks.
+
 ## Common pitfalls
 
 Moving an existing editor into a shadow root exposes a handful of recurring

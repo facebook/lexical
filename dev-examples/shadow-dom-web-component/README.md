@@ -99,3 +99,65 @@ server automatically:
 pnpm -C dev-examples/shadow-dom-web-component exec playwright install chromium
 pnpm -C dev-examples/shadow-dom-web-component test
 ```
+
+## What's covered + what's intentionally out of scope
+
+This example aims to be a full reference a production user can copy out.
+The Playwright suite covers each of the surfaces above plus a second
+round of audit items: DOM-move state round-trip (`disconnectedCallback`
+caches the serialized state and `connectedCallback` restores it),
+`delegatesFocus: true` on the shadow root, `host.setCustomValidity()`,
+`formAssociatedCallback` + `host.form`, `formStateRestoreCallback`
+(bfcache / autocomplete), the standard `inert` attribute, `dir`
+inheritance, `aria-label` / `aria-invalid` / `role="textbox"` mirroring,
+a composed `lexical-validity-change` event for a visible error message,
+and `@media (prefers-color-scheme: dark)` / `(prefers-reduced-motion)`
+/ `(forced-colors: active)` inside the shadow stylesheet.
+
+The following corners are exercised by Lexical itself or out of scope
+for a single example, and are flagged here so they can be tested or
+extended downstream:
+
+- **Touch / pointer events.** Lexical's listeners use
+  `getComposedEventTarget` to recover the real target across the shadow
+  boundary, and the playground's table-cell click + pointerdown e2e
+  exercises that path. Real touch interaction (tap, long-press
+  context menu, mobile virtual keyboard scroll) needs a physical
+  device — the chromium-headless suite can't drive it.
+- **Closed shadow roots.** This element uses `mode: 'open'` so the
+  page can read its API and drive `setFormValue` / `setValidity`. A
+  closed-mode editor would be opaque to the page, so this example
+  doesn't model one; the limitation is noted in the concept page.
+- **`customElements.define` collisions.** `defineLexicalEditorElement`
+  guards `customElements.get(tagName)` before defining, so calling it
+  twice in a hot-module-reload session is safe.
+- **`connectedCallback` failures.** `buildEditorFromExtensions` can
+  throw if the extension graph is misconfigured; the host doesn't
+  try to render a fallback in that case. Downstream wrappers wanting
+  graceful degradation should `try / catch` the build and render an
+  error notice from the page layer.
+- **Trusted Types / Sanitizer API.** This example doesn't reach for
+  `innerHTML` or `dangerouslySetInnerHTML`-style sinks. Lexical's
+  paste handler already drives `@lexical/clipboard` for HTML cleanup;
+  a CSP-restricted host can rely on it without further work here.
+- **`lexical-devtools`.** The DevTools extension descends through open
+  shadow roots using the same helpers this PR adds (`getDOMShadowRoots`
+  / `getActiveElementDeep` / `getEditorPropertyFromDOMNode`), so it
+  resolves the shadow-mounted editor without dev-example-side glue.
+- **SSR / declarative shadow DOM (`<template shadowrootmode>`).**
+  Server-rendered shadow trees and client-side hydration of a
+  form-associated custom element involve framework-specific
+  trade-offs (React 18 hydration order, the rules around
+  `customElements.define` running before the parser sees the
+  declarative shadow). Out of scope for this single-file example,
+  but the editor's `connectedCallback` already reuses an existing
+  shadow root if the host walks in with one attached.
+- **Performance / multi-instance benchmarking.** Beyond what the unit
+  + browser-unit suites already measure, large-document and
+  many-instance load characteristics are workload-specific. Production
+  users should profile against their own document shapes.
+- **Other Lexical extensions inside shadow.** `@lexical/markdown`,
+  `@lexical/list`, `@lexical/link`, `@lexical/table`, `@lexical/yjs`
+  all run through the same root-listener / DOM-event paths the
+  helpers in this PR cover, but verifying each extension's UI inside
+  a shadow tree is a per-extension exercise.

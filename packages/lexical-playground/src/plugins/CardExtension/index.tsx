@@ -43,6 +43,7 @@ import {
 } from 'lexical';
 
 import {registerHostChromeSelection} from '../../nodes/hostChromeSelection';
+import {registerSlotHostArrowEscape} from '../../nodes/slotHostEscape';
 import {$appendInline} from '../../nodes/slotImport';
 import {$createCardNode, $isCardNode, CardNode} from './CardNode';
 
@@ -308,6 +309,8 @@ export const CardExtension = /* @__PURE__ */ defineExtension({
       // Card as a NodeSelection, with a matching mousedown that suppresses the
       // native caret the browser would otherwise drop there.
       registerHostChromeSelection(editor, $isCardNode),
+      // ArrowDown/Up at the Card's bottom/top edge steps out of it.
+      registerSlotHostArrowEscape(editor, $isCardNode),
       // Mirror the caret's slot context onto a `data-current-slot` attribute
       // on the active Card so CSS can render a focus hint. The (cardKey,
       // slot) memo + read-scope-outside mutation mirror the

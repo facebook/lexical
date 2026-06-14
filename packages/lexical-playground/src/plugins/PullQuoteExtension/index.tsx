@@ -30,6 +30,7 @@ import {
 
 import {registerHostChromeSelection} from '../../nodes/hostChromeSelection';
 import {$createSlotContainerNode} from '../../nodes/SlotContainerNode';
+import {registerSlotHostArrowEscape} from '../../nodes/slotHostEscape';
 import {$appendInline} from '../../nodes/slotImport';
 import {
   $createPullQuoteNode,
@@ -120,6 +121,8 @@ export const PullQuoteExtension = /* @__PURE__ */ defineExtension({
       // whole node as a NodeSelection, with a matching mousedown that
       // suppresses the native caret the browser would otherwise drop there.
       registerHostChromeSelection(editor, $isPullQuoteNode),
+      // ArrowDown/Up at the PullQuote's bottom/top slot edge steps out of it.
+      registerSlotHostArrowEscape(editor, $isPullQuoteNode),
     );
   },
 });

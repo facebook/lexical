@@ -24,7 +24,7 @@ import {
   useSignalValue,
 } from '@lexical/react/useExtensionSignalValue';
 import {useLexicalSlotRef} from '@lexical/react/useLexicalSlotRef';
-import {$insertNodeToNearestRoot} from '@lexical/utils';
+import {$insertNodeToNearestRoot, mergeRegister} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getNodeByKey,
@@ -39,6 +39,7 @@ import {
 import {useCallback, useState} from 'react';
 import {createPortal} from 'react-dom';
 
+import {registerSlotHostArrowEscape} from '../../nodes/slotHostEscape';
 import {$appendInline} from '../../nodes/slotImport';
 import {$createReviewNode, $isReviewNode, ReviewNode} from './ReviewNode';
 
@@ -236,13 +237,17 @@ export const ReviewExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/Review',
   nodes: [ReviewNode],
   register: editor =>
-    editor.registerCommand<void>(
-      INSERT_REVIEW_COMMAND,
-      () => {
-        $insertNodeToNearestRoot($createReviewNode());
-        return true;
-      },
-      COMMAND_PRIORITY_EDITOR,
+    mergeRegister(
+      editor.registerCommand<void>(
+        INSERT_REVIEW_COMMAND,
+        () => {
+          $insertNodeToNearestRoot($createReviewNode());
+          return true;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      ),
+      // ArrowDown/Up at the Review's bottom/top edge steps out of it.
+      registerSlotHostArrowEscape(editor, $isReviewNode),
     ),
 });
 

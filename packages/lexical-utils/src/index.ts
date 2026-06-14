@@ -70,6 +70,7 @@ import {
   type NodeKey,
   type PasteCommandType,
   PointCaret,
+  type PointType,
   type RangeSelection,
   type SiblingCaret,
   SplitAtPointCaretNextOptions,
@@ -1295,36 +1296,23 @@ export function $onEscapeUp(
   event?: KeyboardEvent | null,
 ) {
   const selection = $getSelection();
-  if (
-    $isRangeSelection(selection) &&
-    selection.isCollapsed() &&
-    selection.anchor.offset === 0
-  ) {
+  if ($isRangeSelection(selection) && selection.isCollapsed()) {
     const containerNode = $findMatchingParent(
       selection.anchor.getNode(),
       $isContainerNode,
     );
-
     if (containerNode) {
       const parent = containerNode.getParent();
-      if (parent !== null && parent.getFirstChild() === containerNode) {
-        const firstDescendant =
-          containerNode.getFirstDescendant() ?? containerNode;
-        const anchorNode = selection.anchor.getNode();
-        if (
-          firstDescendant !== null &&
-          // the selection can be at the edge of the text
-          (anchorNode === firstDescendant ||
-            // or at the edge of the parent element
-            ($isElementNode(anchorNode) &&
-              anchorNode.getFirstDescendant() === firstDescendant))
-        ) {
-          containerNode.insertBefore($createParagraphNode()).selectEnd();
-          if (event) {
-            event.preventDefault();
-          }
-          return true;
+      if (
+        parent !== null &&
+        parent.getFirstChild() === containerNode &&
+        $isAtStartOfNode(selection.anchor, containerNode)
+      ) {
+        containerNode.insertBefore($createParagraphNode()).selectEnd();
+        if (event) {
+          event.preventDefault();
         }
+        return true;
       }
     }
   }
@@ -1362,30 +1350,56 @@ export function $onEscapeDown(
       selection.anchor.getNode(),
       $isContainerNode,
     );
-
     if (containerNode) {
       const parent = containerNode.getParent();
-      if (parent !== null && parent.getLastChild() === containerNode) {
-        const lastDescendant =
-          containerNode.getLastDescendant() ?? containerNode;
-        const anchorNode = selection.anchor.getNode();
-        if (
-          lastDescendant !== null &&
-          $isAtNodeEnd(selection.anchor) &&
-          // the selection can be at the edge of the text
-          (anchorNode === lastDescendant ||
-            // or at the edge of the parent element
-            ($isElementNode(anchorNode) &&
-              anchorNode.getLastDescendant() === lastDescendant))
-        ) {
-          containerNode.insertAfter($createParagraphNode()).selectEnd();
-          if (event) {
-            event.preventDefault();
-          }
-          return true;
+      if (
+        parent !== null &&
+        parent.getLastChild() === containerNode &&
+        $isAtEndOfNode(selection.anchor, containerNode)
+      ) {
+        containerNode.insertAfter($createParagraphNode()).selectEnd();
+        if (event) {
+          event.preventDefault();
         }
+        return true;
       }
     }
   }
   return false;
+}
+
+/**
+ * Whether the collapsed `point` sits at the very start of `node`'s content —
+ * on its first descendant (or on the empty node itself) at offset 0. Shared by
+ * {@link $onEscapeUp} and slot-aware variants so the "at the leading edge of a
+ * container" test stays in one place.
+ */
+export function $isAtStartOfNode(point: PointType, node: ElementNode): boolean {
+  if (point.offset !== 0) {
+    return false;
+  }
+  const first = node.getFirstDescendant() ?? node;
+  const anchorNode = point.getNode();
+  return (
+    anchorNode === first ||
+    ($isElementNode(anchorNode) && anchorNode.getFirstDescendant() === first)
+  );
+}
+
+/**
+ * Whether the collapsed `point` sits at the very end of `node`'s content — on
+ * its last descendant (or on the empty node itself) at that node's end. Shared
+ * by {@link $onEscapeDown} and slot-aware variants so the "at the trailing edge
+ * of a container" test stays in one place.
+ */
+export function $isAtEndOfNode(point: PointType, node: ElementNode): boolean {
+  if (!$isAtNodeEnd(point)) {
+    return false;
+  }
+  const last = node.getLastDescendant() ?? node;
+  const anchorNode = point.getNode();
+  return (
+    anchorNode === last ||
+    ($isElementNode(anchorNode) && anchorNode.getLastDescendant() === last)
+  );
 }

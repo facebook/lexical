@@ -695,8 +695,18 @@ export function objectKlassEquals<T>(
 // Clipboard may contain files that we aren't allowed to read. While the event is arguably useless,
 // in certain occasions, we want to know whether it was a file transfer, as opposed to text. We
 // control this with the first boolean flag.
+//
+// When filesOnly is true and the DataTransfer contains file entries, hasContent
+// is returned as false even if text/html or text/plain are also present. This
+// lets callers such as the PASTE_COMMAND handler in @lexical/rich-text treat
+// file transfers as primary and dispatch DRAG_DROP_PASTE instead of falling
+// through to HTML import. A browser-copied image (right-click Copy Image)
+// places both 'Files' and 'text/html' in the clipboard; without filesOnly the
+// text/html entry would win and the image would be imported as a remote URL
+// rather than as the actual File object.
 export function eventFiles(
   event: DragEvent | PasteCommandType,
+  filesOnly?: boolean,
 ): [boolean, File[], boolean] {
   let dataTransfer: null | DataTransfer = null;
   if (objectKlassEquals(event, DragEvent)) {
@@ -712,7 +722,7 @@ export function eventFiles(
   const types = dataTransfer.types;
   const hasFiles = types.includes('Files');
   const hasContent =
-    types.includes('text/html') || types.includes('text/plain');
+    !filesOnly && (types.includes('text/html') || types.includes('text/plain'));
   return [hasFiles, Array.from(dataTransfer.files), hasContent];
 }
 

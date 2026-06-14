@@ -611,15 +611,19 @@ async function copyToClipboardPageOrFrame(pageOrFrame) {
   return await pageOrFrame.evaluate(() => {
     // document.querySelector doesn't pierce shadow roots; descend into any
     // open shadow trees so this works for the "Render in Shadow DOM"
-    // playground setting too.
-    const findContentEditable = root => {
-      const direct = root.querySelector('div[contenteditable="true"]');
+    // playground setting too. Match `data-lexical-editor` rather than any
+    // contenteditable so we don't accidentally grab a comment/draft input
+    // that also has contenteditable=true.
+    const findEditor = root => {
+      const direct = root.querySelector(
+        'div[contenteditable="true"][data-lexical-editor="true"]',
+      );
       if (direct !== null) {
         return direct;
       }
       for (const el of root.querySelectorAll('*')) {
         if (el.shadowRoot !== null) {
-          const inner = findContentEditable(el.shadowRoot);
+          const inner = findEditor(el.shadowRoot);
           if (inner !== null) {
             return inner;
           }
@@ -628,7 +632,7 @@ async function copyToClipboardPageOrFrame(pageOrFrame) {
       return null;
     };
     const clipboardData = {};
-    const editor = findContentEditable(document);
+    const editor = findEditor(document);
     const copyEvent = new ClipboardEvent('copy');
     Object.defineProperty(copyEvent, 'clipboardData', {
       value: {
@@ -691,15 +695,19 @@ async function pasteWithClipboardDataFromPageOrFrame(
 
       // document.querySelector doesn't pierce shadow roots; descend into any
       // open shadow trees so paste works for the "Render in Shadow DOM"
-      // playground setting too.
-      const findContentEditable = root => {
-        const direct = root.querySelector(_editorSelector);
+      // playground setting too. Match `data-lexical-editor` (not just any
+      // contenteditable) so a draft/comment input doesn't shadow the real
+      // editor when activeElement is not contenteditable.
+      const findEditor = root => {
+        const direct = root.querySelector(
+          'div[contenteditable="true"][data-lexical-editor="true"]',
+        );
         if (direct !== null) {
           return direct;
         }
         for (const el of root.querySelectorAll('*')) {
           if (el.shadowRoot !== null) {
-            const inner = findContentEditable(el.shadowRoot);
+            const inner = findEditor(el.shadowRoot);
             if (inner !== null) {
               return inner;
             }
@@ -707,10 +715,13 @@ async function pasteWithClipboardDataFromPageOrFrame(
         }
         return null;
       };
+      const activeElement = document.activeElement;
       const editor =
-        document.activeElement && document.activeElement.isContentEditable
-          ? document.activeElement
-          : findContentEditable(document);
+        activeElement &&
+        activeElement.isContentEditable &&
+        activeElement.matches(_editorSelector)
+          ? activeElement
+          : findEditor(document);
       const pasteEvent = new ClipboardEvent('paste', {
         bubbles: true,
         cancelable: true,

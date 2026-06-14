@@ -172,6 +172,12 @@ export class LexicalEditorElement extends HTMLElement {
   private editor: LexicalEditor | null = null;
   private disposeEditor: (() => void) | null = null;
   private formDisabled = false;
+  // Cached serialized state from the previous mount, used to round-trip
+  // the editor across DOM moves the same way `<input>` and `<textarea>`
+  // round-trip their `value` attribute. Reset on the initial mount and
+  // refilled in `disconnectedCallback`.
+  private pendingState: string | null = null;
+  private customValidityMessage = '';
 
   constructor() {
     super();
@@ -271,6 +277,17 @@ export class LexicalEditorElement extends HTMLElement {
   }
 
   /**
+   * Mirror `<input>.setCustomValidity()`: a non-empty message marks the
+   * host as having a `customError`, an empty string clears it. The
+   * built-in `required` check still runs underneath, but the custom
+   * message wins when both apply (matches the platform behaviour).
+   */
+  setCustomValidity(message: string): void {
+    this.customValidityMessage = message;
+    this.updateValidity();
+  }
+
+  /**
    * The editor's text content, used for the `required` empty check. Mirrors
    * what a server-side validator would see when stripping the rich-text JSON
    * down to plain text.
@@ -282,7 +299,18 @@ export class LexicalEditorElement extends HTMLElement {
   }
 
   private updateValidity(): void {
-    if (!this.required) {
+    if (this.customValidityMessage !== '') {
+      const shadow = this.shadowRoot;
+      const anchor =
+        shadow !== null
+          ? ((shadow.querySelector('.content') as HTMLElement | null) ?? this)
+          : this;
+      this.internals.setValidity(
+        {customError: true},
+        this.customValidityMessage,
+        anchor,
+      );
+    } else if (!this.required) {
       this.internals.setValidity({});
     } else if (this.getPlainText().trim().length === 0) {
       // Find the toolbar's first focusable button as the anchor for the
@@ -437,10 +465,16 @@ export class LexicalEditorElement extends HTMLElement {
     // disconnectedCallback has disposed the editor. Reuse the existing
     // shadow root and clear its children so the flow below rebuilds them
     // cleanly instead of leaving the element with editor === null.
+    // `delegatesFocus: true` makes `host.focus()` (and labelled-field
+    // focus from `<label for="...">`) route to the first focusable
+    // element inside the shadow root — for us that's the contentEditable.
+    // `:focus-within` on the host also lights up while focus is anywhere
+    // inside the shadow tree, which keeps Tab navigation feeling like a
+    // built-in form control.
     const shadow =
       this.shadowRoot !== null
         ? this.shadowRoot
-        : this.attachShadow({mode: 'open'});
+        : this.attachShadow({delegatesFocus: true, mode: 'open'});
     while (shadow.firstChild !== null) {
       shadow.removeChild(shadow.firstChild);
     }
@@ -474,6 +508,11 @@ export class LexicalEditorElement extends HTMLElement {
     // "submit".
     contentEditable.setAttribute('role', 'textbox');
     contentEditable.setAttribute('aria-multiline', 'true');
+    // `delegatesFocus: true` on the shadow root routes `host.focus()` to
+    // the first focusable element inside; the focus-delegate algorithm
+    // checks `tabindex` first, so make the contentEditable explicitly
+    // focusable.
+    contentEditable.tabIndex = 0;
     shadow.appendChild(contentEditable);
 
     const initialText =
@@ -503,6 +542,14 @@ export class LexicalEditorElement extends HTMLElement {
       contentEditable.contentEditable = editable ? 'true' : 'false';
     });
     this.editor = editor;
+    // Round-trip the editor state across DOM moves. `disconnectedCallback`
+    // cached the last serialized state before disposal; restore it here so
+    // re-attaching the host to a different parent doesn't drop the user's
+    // content the way a naive rebuild would.
+    if (this.pendingState !== null) {
+      editor.setEditorState(editor.parseEditorState(this.pendingState));
+      this.pendingState = null;
+    }
     // Initialize the form value so a submit before the user types still
     // produces a non-empty serialized state, mirroring `<input value="...">`.
     this.internals.setFormValue(this.value);
@@ -610,6 +657,11 @@ export class LexicalEditorElement extends HTMLElement {
 
   disconnectedCallback(): void {
     if (this.disposeEditor !== null) {
+      // Cache the serialized editor state before tearing the editor
+      // down, so a subsequent `connectedCallback` (DOM move) can rebuild
+      // the editor and restore the user's content from where they left
+      // off.
+      this.pendingState = this.value;
       this.disposeEditor();
       this.disposeEditor = null;
       this.editor = null;

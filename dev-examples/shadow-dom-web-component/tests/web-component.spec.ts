@@ -364,6 +364,123 @@ test('dir on the host flips writing direction inside the shadow root', async ({
   expect(ltr).toBe('ltr');
 });
 
+test('the shadow root is attached with delegatesFocus and the contentEditable is tab-focusable', async ({
+  page,
+}) => {
+  // `attachShadow({delegatesFocus: true})` routes `host.focus()` and
+  // implicit-label focus to the first focusable element inside the
+  // shadow tree. The Chromium delegate-focus algorithm picks the first
+  // element with `tabindex >= 0`, so the contentEditable carries
+  // `tabindex="0"` explicitly. (Programmatic `host.focus()` interactions
+  // with form-associated custom elements vary across engines, so the
+  // dev-example asserts the configuration rather than driving focus.)
+  const config = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="summary"]',
+    ) as Element & {shadowRoot: ShadowRoot};
+    const shadow = host.shadowRoot as ShadowRoot & {
+      delegatesFocus?: boolean;
+    };
+    const ce = shadow.querySelector('.content') as HTMLElement;
+    return {
+      ceTabindex: ce.tabIndex,
+      delegatesFocus: shadow.delegatesFocus === true,
+    };
+  });
+  expect(config).toEqual({ceTabindex: 0, delegatesFocus: true});
+
+  // The contentEditable still focuses normally when clicked, proving
+  // the tabindex addition didn't break the standard focus path.
+  await editor(page, 'summary').click();
+  const focusedAfterClick = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="summary"]',
+    ) as Element & {shadowRoot: ShadowRoot};
+    const active = host.shadowRoot.activeElement;
+    return active !== null ? active.getAttribute('data-lexical-editor') : null;
+  });
+  expect(focusedAfterClick).toBe('true');
+});
+
+test('setCustomValidity flags a customError and clears it with an empty message', async ({
+  page,
+}) => {
+  // The notes editor starts with placeholder text so the form is valid.
+  const initial = await page.evaluate(
+    () =>
+      (
+        document.querySelector('lexical-editor[name="notes"]') as Element & {
+          validity: ValidityState;
+        }
+      ).validity.valid,
+  );
+  expect(initial).toBe(true);
+
+  // Apply a custom error message — host.validity.customError flips to
+  // true and form.checkValidity() refuses to submit.
+  await page.evaluate(() => {
+    (
+      document.querySelector('lexical-editor[name="notes"]') as Element & {
+        setCustomValidity: (msg: string) => void;
+      }
+    ).setCustomValidity('Custom rejection.');
+  });
+  const flagged = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {
+      validationMessage: string;
+      validity: ValidityState;
+    };
+    const form = document.querySelector('#demo-form') as HTMLFormElement;
+    return {
+      formValid: form.checkValidity(),
+      hostMessage: host.validationMessage,
+      hostValid: host.validity.valid,
+    };
+  });
+  expect(flagged).toEqual({
+    formValid: false,
+    hostMessage: 'Custom rejection.',
+    hostValid: false,
+  });
+
+  // Clearing the custom message returns the host to its required-only
+  // state — the notes editor has placeholder text, so it's valid again.
+  await page.evaluate(() => {
+    (
+      document.querySelector('lexical-editor[name="notes"]') as Element & {
+        setCustomValidity: (msg: string) => void;
+      }
+    ).setCustomValidity('');
+  });
+  const cleared = await page.evaluate(
+    () =>
+      (
+        document.querySelector('lexical-editor[name="notes"]') as Element & {
+          validity: ValidityState;
+        }
+      ).validity.valid,
+  );
+  expect(cleared).toBe(true);
+});
+
+test('DOM move (re-attach to a different parent) preserves the editor state', async ({
+  page,
+}) => {
+  await clearAndType(page, 'notes', 'before the move');
+  await page.evaluate(() => {
+    const host = document.querySelector('lexical-editor[name="notes"]')!;
+    // Appending to a new parent triggers disconnectedCallback +
+    // connectedCallback on the host, which currently rebuilds the
+    // editor. A production-grade `<my-editor>` should round-trip its
+    // value through that lifecycle the same way `<input>` and
+    // `<textarea>` round-trip theirs.
+    document.body.appendChild(host);
+  });
+  await expect(editor(page, 'notes')).toHaveText('before the move');
+});
+
 test('host.form reflects ElementInternals and fires formAssociatedCallback', async ({
   page,
 }) => {

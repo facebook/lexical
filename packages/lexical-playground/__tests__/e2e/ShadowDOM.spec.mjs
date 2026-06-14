@@ -318,6 +318,50 @@ test.describe('Shadow DOM', () => {
     expect(text).toContain('end');
   });
 
+  test('survives a Chinese pinyin IME composition cycle inside the shadow root', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('start ');
+    // Same shape as the Korean cycle above, but with the pinyin → hanzi
+    // progression a Chinese IME typically drives. The platform IME
+    // commits the final hanzi through DOM mutations the headless
+    // browser can't simulate; the editor must stay alive and keep
+    // accepting input.
+    await page.evaluate(() => {
+      const findEditor = root => {
+        const direct = root.querySelector(
+          'div[contenteditable="true"][data-lexical-editor="true"]',
+        );
+        if (direct !== null) return direct;
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            const inner = findEditor(el.shadowRoot);
+            if (inner !== null) return inner;
+          }
+        }
+        return null;
+      };
+      const ce = findEditor(document);
+      const fire = (type, data) =>
+        ce.dispatchEvent(
+          new CompositionEvent(type, {bubbles: true, composed: true, data}),
+        );
+      fire('compositionstart', '');
+      fire('compositionupdate', 'ni');
+      fire('compositionupdate', 'ni h');
+      fire('compositionupdate', 'ni hao');
+      fire('compositionend', '你好');
+    });
+    await page.keyboard.type(' end');
+    const text = await page
+      .locator('div[contenteditable="true"]')
+      .first()
+      .textContent();
+    expect(text).toContain('start');
+    expect(text).toContain('end');
+  });
+
   test('copy and paste round-trips text inside the shadow root', async ({
     page,
   }) => {

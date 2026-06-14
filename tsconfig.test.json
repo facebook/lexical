@@ -4,6 +4,7 @@
     "esModuleInterop": true,
     "paths": {
       "lexical": ["./packages/lexical/src/index.ts"],
+      "@lexical/a11y": ["./packages/lexical-a11y/src/index.ts"],
       "@lexical/clipboard": ["./packages/lexical-clipboard/src/index.ts"],
       "@lexical/code": ["./packages/lexical-code/src/index.ts"],
       "@lexical/code-core": ["./packages/lexical-code-core/src/index.ts"],
@@ -102,6 +103,9 @@
       "@lexical/react/LexicalDraggableBlockPlugin": [
         "./packages/lexical-react/src/LexicalDraggableBlockPlugin.tsx"
       ],
+      "@lexical/react/LexicalEditorModeAnnouncePlugin": [
+        "./packages/lexical-react/src/LexicalEditorModeAnnouncePlugin.ts"
+      ],
       "@lexical/react/LexicalEditorRefPlugin": [
         "./packages/lexical-react/src/LexicalEditorRefPlugin.tsx"
       ],
@@ -116,6 +120,9 @@
       ],
       "@lexical/react/LexicalHashtagPlugin": [
         "./packages/lexical-react/src/LexicalHashtagPlugin.ts"
+      ],
+      "@lexical/react/LexicalHistoryAnnouncePlugin": [
+        "./packages/lexical-react/src/LexicalHistoryAnnouncePlugin.ts"
       ],
       "@lexical/react/LexicalHistoryPlugin": [
         "./packages/lexical-react/src/LexicalHistoryPlugin.ts"
@@ -192,14 +199,26 @@
       "@lexical/react/useExtensionSignalValue": [
         "./packages/lexical-react/src/useExtensionSignalValue.ts"
       ],
+      "@lexical/react/useLexicalAriaLiveRegion": [
+        "./packages/lexical-react/src/useLexicalAriaLiveRegion.ts"
+      ],
       "@lexical/react/useLexicalEditable": [
         "./packages/lexical-react/src/useLexicalEditable.ts"
+      ],
+      "@lexical/react/useLexicalFocusManager": [
+        "./packages/lexical-react/src/useLexicalFocusManager.ts"
+      ],
+      "@lexical/react/useLexicalFocusTrap": [
+        "./packages/lexical-react/src/useLexicalFocusTrap.ts"
       ],
       "@lexical/react/useLexicalIsTextContentEmpty": [
         "./packages/lexical-react/src/useLexicalIsTextContentEmpty.ts"
       ],
       "@lexical/react/useLexicalNodeSelection": [
         "./packages/lexical-react/src/useLexicalNodeSelection.ts"
+      ],
+      "@lexical/react/useLexicalRovingTabIndex": [
+        "./packages/lexical-react/src/useLexicalRovingTabIndex.ts"
       ],
       "@lexical/react/useLexicalSubscription": [
         "./packages/lexical-react/src/useLexicalSubscription.tsx"
@@ -219,6 +238,8 @@
         "./packages/lexical/src/__tests__/utils/index.tsx"
       ],
       "lexical/src/*": ["./packages/lexical/src/*"],
+      "@lexical/a11y/src": ["./packages/lexical-a11y/src"],
+      "@lexical/a11y/src/*": ["./packages/lexical-a11y/src/*"],
       "@lexical/clipboard/src": ["./packages/lexical-clipboard/src"],
       "@lexical/clipboard/src/*": ["./packages/lexical-clipboard/src/*"],
       "@lexical/code/src": ["./packages/lexical-code/src"],

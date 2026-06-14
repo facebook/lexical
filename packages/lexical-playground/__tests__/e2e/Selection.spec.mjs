@@ -109,7 +109,7 @@ test.describe('Selection', () => {
     expect(await hasSelection('.editor-shell')).toBe(false);
 
     // Click outside of the editor and check that selection remains the same
-    await click(page, 'header img');
+    await click(page, 'header .logo');
     expect(await hasSelection('.image-caption-container')).toBe(true);
     expect(await hasSelection('.editor-shell')).toBe(false);
 
@@ -127,7 +127,7 @@ test.describe('Selection', () => {
     expect(await hasSelection('.editor-shell')).toBe(true);
 
     // Click outside of the editor and check that selection remains the same
-    await click(page, 'header img');
+    await click(page, 'header .logo');
     expect(await hasSelection('.image-caption-container')).toBe(false);
     expect(await hasSelection('.editor-shell')).toBe(true);
 

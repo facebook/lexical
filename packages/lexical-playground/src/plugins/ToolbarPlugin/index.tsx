@@ -23,6 +23,8 @@ import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {$isListNode, ListNode} from '@lexical/list';
 import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';
+import {useLexicalFocusManager} from '@lexical/react/useLexicalFocusManager';
+import {useLexicalRovingTabIndex} from '@lexical/react/useLexicalRovingTabIndex';
 import {$isHeadingNode} from '@lexical/rich-text';
 import {
   $getSelectionStyleValueForProperty,
@@ -67,7 +69,7 @@ import {
   TextFormatType,
   UNDO_COMMAND,
 } from 'lexical';
-import {Dispatch, useCallback, useEffect, useState} from 'react';
+import {Dispatch, useCallback, useEffect, useRef, useState} from 'react';
 
 import {useSettings} from '../../context/SettingsContext';
 import {
@@ -98,6 +100,7 @@ import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
 import {PagesReactExtension} from '../PagesReactExtension';
 import {InsertPollDialog} from '../PollExtension';
 import {SHORTCUTS} from '../ShortcutsPlugin/shortcuts';
+import ShortcutsHelpDialog from '../ShortcutsPlugin/ShortcutsHelpDialog';
 import {InsertTableDialog} from '../TablePlugin';
 import FontSize, {parseFontSizeForToolbar} from './fontSize';
 import {
@@ -579,6 +582,9 @@ export default function ToolbarPlugin({
   const [modal, showModal] = useModal();
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const {toolbarState, updateToolbarState} = useToolbarState();
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  useLexicalRovingTabIndex(toolbarRef);
+  useLexicalFocusManager(activeEditor, toolbarRef);
 
   const dispatchToolbarCommand = <T extends LexicalCommand<unknown>>(
     command: T,
@@ -929,7 +935,11 @@ export default function ToolbarPlugin({
   const canViewerSeeInsertCodeButton = !toolbarState.isImageCaption;
 
   return (
-    <div className="toolbar">
+    <div
+      ref={toolbarRef}
+      className="toolbar"
+      role="toolbar"
+      aria-label="Editor toolbar">
       <button
         disabled={!toolbarState.canUndo || !isEditable}
         onClick={e =>
@@ -1451,6 +1461,17 @@ export default function ToolbarPlugin({
         editor={activeEditor}
         isRTL={toolbarState.isRTL}
       />
+      <Divider />
+      <button
+        type="button"
+        className="toolbar-item spaced"
+        title="Keyboard shortcuts"
+        aria-label="Show keyboard shortcuts"
+        onClick={() =>
+          showModal('Keyboard shortcuts', () => <ShortcutsHelpDialog />)
+        }>
+        <span className="text">?</span>
+      </button>
 
       {modal}
     </div>

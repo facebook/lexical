@@ -10,9 +10,10 @@ import type {JSX} from 'react';
 
 import './Modal.css';
 
+import {useLexicalFocusTrap} from '@lexical/react/useLexicalFocusTrap';
 import {isDOMNode} from 'lexical';
 import * as React from 'react';
-import {ReactNode, useEffect, useRef} from 'react';
+import {ReactNode, useEffect, useId, useRef} from 'react';
 import {createPortal} from 'react-dom';
 
 function PortalImpl({
@@ -27,12 +28,9 @@ function PortalImpl({
   title: string;
 }) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
 
-  useEffect(() => {
-    if (modalRef.current !== null) {
-      modalRef.current.focus();
-    }
-  }, []);
+  useLexicalFocusTrap(modalRef, true, 'container');
 
   useEffect(() => {
     let modalOverlayElement: HTMLElement | null = null;
@@ -71,9 +69,15 @@ function PortalImpl({
   }, [closeOnClickOutside, onClose]);
 
   return (
-    <div className="Modal__overlay" role="dialog">
+    <div
+      className="Modal__overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}>
       <div className="Modal__modal" tabIndex={-1} ref={modalRef}>
-        <h2 className="Modal__title">{title}</h2>
+        <h2 className="Modal__title" id={titleId}>
+          {title}
+        </h2>
         <button
           className="Modal__closeButton"
           aria-label="Close modal"

@@ -21,6 +21,7 @@
       ],
       "@site/*": ["./*"],
       "lexical": ["../lexical/src/index.ts"],
+      "@lexical/a11y": ["../lexical-a11y/src/index.ts"],
       "@lexical/clipboard": ["../lexical-clipboard/src/index.ts"],
       "@lexical/code": ["../lexical-code/src/index.ts"],
       "@lexical/code-core": ["../lexical-code-core/src/index.ts"],
@@ -201,14 +202,26 @@
       "@lexical/react/useExtensionSignalValue": [
         "../lexical-react/src/useExtensionSignalValue.ts"
       ],
+      "@lexical/react/useLexicalAriaLiveRegion": [
+        "../lexical-react/src/useLexicalAriaLiveRegion.ts"
+      ],
       "@lexical/react/useLexicalEditable": [
         "../lexical-react/src/useLexicalEditable.ts"
+      ],
+      "@lexical/react/useLexicalFocusManager": [
+        "../lexical-react/src/useLexicalFocusManager.ts"
+      ],
+      "@lexical/react/useLexicalFocusTrap": [
+        "../lexical-react/src/useLexicalFocusTrap.ts"
       ],
       "@lexical/react/useLexicalIsTextContentEmpty": [
         "../lexical-react/src/useLexicalIsTextContentEmpty.ts"
       ],
       "@lexical/react/useLexicalNodeSelection": [
         "../lexical-react/src/useLexicalNodeSelection.ts"
+      ],
+      "@lexical/react/useLexicalRovingTabIndex": [
+        "../lexical-react/src/useLexicalRovingTabIndex.ts"
       ],
       "@lexical/react/useLexicalSubscription": [
         "../lexical-react/src/useLexicalSubscription.tsx"

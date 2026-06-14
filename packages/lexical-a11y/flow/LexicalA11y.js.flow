@@ -1,0 +1,149 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+export type AriaPoliteness = 'polite' | 'assertive';
+
+export type AriaLiveRegionOptions = {
+  politeness?: AriaPoliteness,
+  owner?: HTMLElement,
+};
+
+export type AriaLiveRegionHandle = {
+  announce: (message: string) => void,
+  dispose: () => void,
+};
+
+declare export function registerAriaLiveRegion(
+  options?: AriaLiveRegionOptions,
+): AriaLiveRegionHandle;
+
+export type FocusTrapInitialFocus = 'firstFocusable' | 'container';
+
+export type FocusTrapOptions = {
+  initialFocus?: FocusTrapInitialFocus,
+};
+
+declare export function registerFocusTrap(
+  container: HTMLElement,
+  options?: FocusTrapOptions,
+): () => void;
+
+export type RovingOrientation = 'horizontal' | 'vertical' | 'both';
+
+export type RovingTabIndexOptions = {
+  orientation?: RovingOrientation,
+  itemSelector?: string,
+};
+
+declare export function registerRovingTabIndex(
+  container: HTMLElement,
+  options?: RovingTabIndexOptions,
+): () => void;
+
+import type {LexicalEditor, LexicalExtension} from 'lexical';
+import type {NamedSignalsOutput} from '@lexical/extension';
+
+export type FocusManagerOptions = {
+  toolbarItemSelector?: string,
+};
+
+declare export function registerFocusManager(
+  editor: LexicalEditor,
+  toolbar: HTMLElement,
+  options?: FocusManagerOptions,
+): () => void;
+
+export type HistoryAnnounceOptions = {
+  undone?: string,
+  redone?: string,
+};
+
+declare export function registerHistoryAnnounce(
+  editor: LexicalEditor,
+  announce: (message: string) => void,
+  options?: HistoryAnnounceOptions,
+): () => void;
+
+export type EditorModeAnnounceOptions = {
+  editable?: string,
+  readOnly?: string,
+};
+
+declare export function registerEditorModeAnnounce(
+  editor: LexicalEditor,
+  announce: (message: string) => void,
+  options?: EditorModeAnnounceOptions,
+): () => void;
+
+export type AriaLiveRegionExtensionConfig = {
+  politeness: AriaPoliteness,
+  owner: HTMLElement | null,
+};
+declare export var AriaLiveRegionExtension: LexicalExtension<
+  AriaLiveRegionExtensionConfig,
+  '@lexical/a11y/AriaLiveRegion',
+  AriaLiveRegionHandle,
+  void,
+>;
+
+export type HistoryAnnounceExtensionConfig = {
+  undone: string,
+  redone: string,
+};
+declare export var HistoryAnnounceExtension: LexicalExtension<
+  HistoryAnnounceExtensionConfig,
+  '@lexical/a11y/HistoryAnnounce',
+  NamedSignalsOutput<HistoryAnnounceExtensionConfig>,
+  void,
+>;
+
+export type EditorModeAnnounceExtensionConfig = {
+  editable: string,
+  readOnly: string,
+};
+declare export var EditorModeAnnounceExtension: LexicalExtension<
+  EditorModeAnnounceExtensionConfig,
+  '@lexical/a11y/EditorModeAnnounce',
+  NamedSignalsOutput<EditorModeAnnounceExtensionConfig>,
+  void,
+>;
+
+export type FocusTrapExtensionConfig = {
+  container: HTMLElement | null,
+  initialFocus: FocusTrapInitialFocus,
+};
+declare export var FocusTrapExtension: LexicalExtension<
+  FocusTrapExtensionConfig,
+  '@lexical/a11y/FocusTrap',
+  NamedSignalsOutput<FocusTrapExtensionConfig>,
+  void,
+>;
+
+export type RovingTabIndexExtensionConfig = {
+  container: HTMLElement | null,
+  orientation: RovingOrientation,
+  itemSelector: string | null,
+};
+declare export var RovingTabIndexExtension: LexicalExtension<
+  RovingTabIndexExtensionConfig,
+  '@lexical/a11y/RovingTabIndex',
+  NamedSignalsOutput<RovingTabIndexExtensionConfig>,
+  void,
+>;
+
+export type FocusManagerExtensionConfig = {
+  toolbar: HTMLElement | null,
+  toolbarItemSelector: string | null,
+};
+declare export var FocusManagerExtension: LexicalExtension<
+  FocusManagerExtensionConfig,
+  '@lexical/a11y/FocusManager',
+  NamedSignalsOutput<FocusManagerExtensionConfig>,
+  void,
+>;

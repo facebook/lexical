@@ -60,3 +60,15 @@
 .Modal__content {
   padding-top: 20px;
 }
+.Modal__modal:focus {
+  outline: none;
+}
+.Modal__modal :focus {
+  outline: 2px solid rgb(60, 132, 244);
+  outline-offset: 2px;
+}
+@media (forced-colors: active) {
+  .Modal__modal :focus {
+    outline-color: Highlight;
+  }
+}

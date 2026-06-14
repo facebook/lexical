@@ -7,6 +7,15 @@ sidebar_position: 1
 This section covers how to use Lexical, independently of any framework or library. For those intending to use Lexical in their React applications,
 it's advisable to [check out the Getting Started with React page](../getting-started/react.md).
 
+If you want to try Lexical in the browser without setting up TypeScript, npm, or
+a bundler first, see the [browser-only ESM playground](https://playground.lexical.dev/esm/).
+It uses an HTML import map and regular `<script type="module">` tags; the
+complete source lives in
+[`packages/lexical-playground/esm`](https://github.com/facebook/lexical/tree/main/packages/lexical-playground/esm).
+For a framework-free editor built with Lexical Extensions, see the
+[Extension: Vanilla Tailwind](https://lexical.dev/gallery#extension-vanilla-tailwind)
+gallery example.
+
 ### Creating an editor and using it
 
 When you work with Lexical, you normally work with a single editor instance. An editor instance can be thought of as the one responsible

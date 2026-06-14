@@ -588,6 +588,128 @@ test.describe('Shadow DOM', () => {
     expect(text).toContain('safe text');
   });
 
+  test('wheel events propagate out of the shadow root through composed:true', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    // A page-level wheel listener should see a wheel event dispatched
+    // at a node inside the shadow root, because `WheelEvent` is
+    // composed. The native scroll path (mouse wheel on the user agent)
+    // depends on layout details outside the shadow story; the event
+    // flow is what we want to pin here.
+    const seen = await page.evaluate(() => {
+      const findEditor = root => {
+        const direct = root.querySelector('[data-lexical-editor="true"]');
+        if (direct !== null) return direct;
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            const inner = findEditor(el.shadowRoot);
+            if (inner !== null) return inner;
+          }
+        }
+        return null;
+      };
+      const ce = findEditor(document);
+      let caught = false;
+      const listener = () => {
+        caught = true;
+      };
+      window.addEventListener('wheel', listener);
+      ce.dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          composed: true,
+          deltaY: 50,
+        }),
+      );
+      window.removeEventListener('wheel', listener);
+      return caught;
+    });
+    expect(seen).toBe(true);
+  });
+
+  test('transitionend events bubble out of the shadow root through composed:true', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    // Wire a window-level listener, dispatch a synthetic transitionend
+    // at a node inside the shadow root, and verify the listener sees it.
+    // Lexical's plugins (and the playground's floating UI) rely on this
+    // event flow for transition-driven animations.
+    const composed = await page.evaluate(() => {
+      const findEditor = root => {
+        const direct = root.querySelector('[data-lexical-editor="true"]');
+        if (direct !== null) return direct;
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            const inner = findEditor(el.shadowRoot);
+            if (inner !== null) return inner;
+          }
+        }
+        return null;
+      };
+      const ce = findEditor(document);
+      let seen = false;
+      const listener = () => {
+        seen = true;
+      };
+      window.addEventListener('transitionend', listener);
+      ce.dispatchEvent(
+        new TransitionEvent('transitionend', {
+          bubbles: true,
+          composed: true,
+          propertyName: 'opacity',
+        }),
+      );
+      window.removeEventListener('transitionend', listener);
+      return seen;
+    });
+    expect(composed).toBe(true);
+  });
+
+  test('file drop into the shadow editor inserts an ImageNode', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    // Synthesize an OS-style file drag and drop: a `DataTransfer`
+    // carrying an `image/png` file, then `dragenter` / `dragover` /
+    // `drop` dispatched at the shadow-internal contentEditable.
+    await page.evaluate(() => {
+      const findEditor = root => {
+        const direct = root.querySelector('[data-lexical-editor="true"]');
+        if (direct !== null) return direct;
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            const inner = findEditor(el.shadowRoot);
+            if (inner !== null) return inner;
+          }
+        }
+        return null;
+      };
+      const ce = findEditor(document);
+      const bytes = Uint8Array.from(
+        atob(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+        ),
+        c => c.charCodeAt(0),
+      );
+      const file = new File([bytes], 'dropped.png', {type: 'image/png'});
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      for (const type of ['dragenter', 'dragover', 'drop']) {
+        ce.dispatchEvent(
+          new DragEvent(type, {
+            bubbles: true,
+            cancelable: true,
+            composed: true,
+            dataTransfer: dt,
+          }),
+        );
+      }
+    });
+    await expect(page.locator('.editor-image img').first()).toBeVisible();
+  });
+
   test('typing 1000 characters inside the shadow root completes without hanging', async ({
     page,
   }) => {

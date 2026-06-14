@@ -35,7 +35,7 @@
             aria-label="Notes editor">
             <button slot="toolbar-extra" type="button" data-clear>Clear</button>
           </lexical-editor>
-          <span class="error" id="notes-error" hidden>
+          <span class="error" id="notes-error" hidden aria-live="polite">
             This field can't be empty.
           </span>
         </label>
@@ -67,6 +67,7 @@
         </label>
         <p id="last-edited">Last edited: (none)</p>
         <button type="submit">Submit form</button>
+        <button type="reset">Reset form</button>
       </form>
       <pre id="form-output"></pre>
       <hr />

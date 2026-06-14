@@ -565,6 +565,229 @@ test('connectedCallback failures surface through the host without crashing the p
   expect(ok).toBe(true);
 });
 
+test('exposes CSS Shadow Parts for the toolbar and content', async ({page}) => {
+  const parts = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {shadowRoot: ShadowRoot};
+    const shadow = host.shadowRoot;
+    return {
+      contentPart: shadow.querySelector('.content')!.getAttribute('part'),
+      toolbarPart: shadow.querySelector('.toolbar')!.getAttribute('part'),
+    };
+  });
+  expect(parts).toEqual({contentPart: 'content', toolbarPart: 'toolbar'});
+
+  // The page-level `::part(toolbar)` rule actually paints — the
+  // computed letter-spacing carries through the boundary.
+  const spacing = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {shadowRoot: ShadowRoot};
+    const tb = host.shadowRoot.querySelector('.toolbar') as HTMLElement;
+    return window.getComputedStyle(tb).letterSpacing;
+  });
+  expect(spacing).not.toBe('normal');
+});
+
+test('a MutationObserver registered against the shadow root sees content edits', async ({
+  page,
+}) => {
+  await clearAndType(page, 'notes', 'observed');
+  // A MutationObserver on a node inside the shadow root sees mutations
+  // there just like in the light DOM — there is no special boundary
+  // setup. Verifying this directly catches future regressions to the
+  // observer-side of the shadow story.
+  const sawMutation = await page.evaluate(async () => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {shadowRoot: ShadowRoot};
+    const ce = host.shadowRoot.querySelector('.content') as HTMLElement;
+    return new Promise<boolean>(resolve => {
+      const observer = new MutationObserver(() => {
+        observer.disconnect();
+        resolve(true);
+      });
+      observer.observe(ce, {
+        characterData: true,
+        childList: true,
+        subtree: true,
+      });
+      setTimeout(() => {
+        observer.disconnect();
+        resolve(false);
+      }, 1000);
+      // Direct DOM mutation inside the shadow root. The observer is
+      // registered on a shadow-internal node and sees the change with
+      // no special configuration.
+      const marker = document.createElement('span');
+      marker.textContent = ' observer-marker';
+      ce.appendChild(marker);
+    });
+  });
+  expect(sawMutation).toBe(true);
+});
+
+test('the host spellcheck attribute mirrors onto the contentEditable', async ({
+  page,
+}) => {
+  // Set `spellcheck="false"` on the host and confirm the contentEditable
+  // picks it up. Toggling it back to true reverts.
+  await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as HTMLElement;
+    host.setAttribute('spellcheck', 'false');
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        (
+          (
+            document.querySelector(
+              'lexical-editor[name="notes"]',
+            ) as Element & {shadowRoot: ShadowRoot}
+          ).shadowRoot.querySelector('.content') as HTMLElement
+        ).getAttribute('spellcheck'),
+      ),
+    )
+    .toBe('false');
+  await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as HTMLElement;
+    host.setAttribute('spellcheck', 'true');
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        (
+          (
+            document.querySelector(
+              'lexical-editor[name="notes"]',
+            ) as Element & {shadowRoot: ShadowRoot}
+          ).shadowRoot.querySelector('.content') as HTMLElement
+        ).getAttribute('spellcheck'),
+      ),
+    )
+    .toBe('true');
+});
+
+test('lang on the host inherits into the shadow contentEditable', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="summary"]',
+    ) as HTMLElement;
+    host.setAttribute('lang', 'ko');
+  });
+  const matches = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="summary"]',
+    ) as Element & {shadowRoot: ShadowRoot};
+    const ce = host.shadowRoot.querySelector('.content') as HTMLElement;
+    // `lang` is an inherited HTML attribute — the CSS `:lang()`
+    // selector picks up the host's `lang="ko"` on the shadow-internal
+    // contentEditable without any JavaScript glue forwarding it.
+    return ce.matches(':lang(ko)');
+  });
+  expect(matches).toBe(true);
+});
+
+test('focusin / focusout bubble across the shadow boundary', async ({page}) => {
+  // `focusin` / `focusout` are composed + bubble; a page-level listener
+  // sees the editor's focus changes despite the host sitting outside
+  // the shadow tree.
+  await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="summary"]',
+    ) as HTMLElement;
+    host.dataset.lastFocus = '';
+    host.addEventListener('focusin', () => {
+      host.dataset.lastFocus = 'in';
+    });
+    host.addEventListener('focusout', () => {
+      host.dataset.lastFocus = 'out';
+    });
+  });
+  await editor(page, 'summary').click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            document.querySelector(
+              'lexical-editor[name="summary"]',
+            ) as HTMLElement
+          ).dataset.lastFocus,
+      ),
+    )
+    .toBe('in');
+  await editor(page, 'notes').click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            document.querySelector(
+              'lexical-editor[name="summary"]',
+            ) as HTMLElement
+          ).dataset.lastFocus,
+      ),
+    )
+    .toBe('out');
+});
+
+test('customElements.whenDefined resolves with the already-mounted host class', async ({
+  page,
+}) => {
+  // `customElements.whenDefined` is the standard way to wait for an
+  // element's class to be defined before reaching for its API. With our
+  // module-side `defineLexicalEditorElement` already having run by
+  // the time the page settled, the promise resolves immediately and
+  // hands back the constructor we registered.
+  const result = await page.evaluate(async () => {
+    const ctor = await customElements.whenDefined('lexical-editor');
+    return {
+      hasGetEditor:
+        typeof (ctor as unknown as {prototype: {getEditor: unknown}}).prototype
+          .getEditor === 'function',
+      name: ctor.name,
+    };
+  });
+  expect(result.hasGetEditor).toBe(true);
+  expect(result.name).toBe('LexicalEditorElement');
+});
+
+test('the form reset button drives formResetCallback on every editor', async ({
+  page,
+}) => {
+  await clearAndType(page, 'notes', 'will be reset');
+  await clearAndType(page, 'summary', 'also reset');
+  await page.locator('button[type="reset"]').click();
+  // `formResetCallback` clears the editor back to a single empty
+  // paragraph; the contentEditable's text content is empty.
+  await expect(editor(page, 'notes')).toHaveText('');
+  await expect(editor(page, 'summary')).toHaveText('');
+});
+
+test('outerHTML / serialization carries the host element but not the shadow content by default', async ({
+  page,
+}) => {
+  await clearAndType(page, 'notes', 'serialized');
+  // Standard HTML serialization stops at the shadow boundary — the
+  // host's outerHTML carries any light-DOM children but not the
+  // shadow-mounted contentEditable. Pages that need to round-trip
+  // server-rendered shadows can opt into declarative shadow DOM
+  // serialization via `getHTML({serializableShadowRoots: true})`.
+  const outer = await page.evaluate(
+    () => document.querySelector('lexical-editor[name="notes"]')!.outerHTML,
+  );
+  expect(outer).not.toContain('serialized');
+  expect(outer).toMatch(/<lexical-editor/);
+});
+
 test('host.form reflects ElementInternals and fires formAssociatedCallback', async ({
   page,
 }) => {

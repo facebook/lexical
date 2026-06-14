@@ -105,6 +105,20 @@ const STYLE_SHEET = `
   .italic { font-style: italic; }
   .underline { text-decoration: underline; }
 
+  /* Print stylesheet — drop the toolbar and host chrome so the
+   * editor's content prints cleanly. Each shadow root carries its
+   * own copy of this rule, so multi-instance pages print each
+   * editor's content with consistent typography. */
+  @media print {
+    :host {
+      border: none;
+      box-shadow: none;
+    }
+    .toolbar {
+      display: none;
+    }
+  }
+
   /* The page sees these media queries inside the shadow root the same way
    * it sees them in the light DOM. Each editor adapts to the user's OS
    * preferences on its own — the page only needs to override variables
@@ -166,6 +180,7 @@ export class LexicalEditorElement extends HTMLElement {
     'disabled',
     'readonly',
     'aria-label',
+    'spellcheck',
   ];
 
   private internals: ElementInternals;
@@ -389,7 +404,26 @@ export class LexicalEditorElement extends HTMLElement {
       this.updateEditableState();
     } else if (name === 'aria-label') {
       this.syncAriaLabel();
+    } else if (name === 'spellcheck') {
+      this.syncSpellcheck();
     }
+  }
+
+  /**
+   * Mirror the host's `spellcheck` attribute onto the contentEditable so
+   * the browser's native spell checking is opt-in / opt-out from the
+   * page just like it is on `<input>` and `<textarea>`.
+   */
+  private syncSpellcheck(): void {
+    const contentEditable = this.findContentEditable();
+    if (contentEditable === null) {
+      return;
+    }
+    const attr = this.getAttribute('spellcheck');
+    contentEditable.setAttribute(
+      'spellcheck',
+      attr !== 'false' ? 'true' : 'false',
+    );
   }
 
   formResetCallback(): void {
@@ -495,6 +529,11 @@ export class LexicalEditorElement extends HTMLElement {
 
     const toolbar = document.createElement('div');
     toolbar.className = 'toolbar';
+    // Expose the toolbar through the [CSS Shadow Parts]
+    // (https://developer.mozilla.org/docs/Web/CSS/::part) API so the
+    // page can style it with `lexical-editor::part(toolbar)` without
+    // reaching through the shadow boundary.
+    toolbar.setAttribute('part', 'toolbar');
     toolbar.setAttribute('role', 'toolbar');
     shadow.appendChild(toolbar);
     // A named slot at the end of the toolbar lets the page project its own
@@ -517,6 +556,7 @@ export class LexicalEditorElement extends HTMLElement {
     // and makes the ARIA review at PR time simple. `aria-multiline` is
     // what tells screen readers to announce Enter as "newline" instead of
     // "submit".
+    contentEditable.setAttribute('part', 'content');
     contentEditable.setAttribute('role', 'textbox');
     contentEditable.setAttribute('aria-multiline', 'true');
     // `delegatesFocus: true` on the shadow root routes `host.focus()` to
@@ -565,6 +605,7 @@ export class LexicalEditorElement extends HTMLElement {
     // produces a non-empty serialized state, mirroring `<input value="...">`.
     this.internals.setFormValue(this.value);
     this.syncAriaLabel();
+    this.syncSpellcheck();
     this.updateValidity();
     this.updateEditableState();
 

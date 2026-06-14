@@ -148,3 +148,14 @@ editor without dev-example-side glue. Closed-mode shadow roots remain
 opaque to a page-level integration by spec — the concept page documents
 the limitation and the browser-unit suite verifies the helpers behave
 correctly when a host attaches a closed root.
+
+A handful of newer platform APIs are not exercised by this single
+example because they slot in at the page layer rather than the editor
+itself: the
+[View Transitions API](https://developer.mozilla.org/docs/Web/API/View_Transitions_API)
+animates between shadow-mounted instances on `document.startViewTransition`
+without any editor-side glue, and the
+[CSS Custom Highlight API](https://developer.mozilla.org/docs/Web/API/CSS_Custom_Highlight_API)
+(`Highlight` + `::highlight()`) styles ranges that span the shadow
+boundary as long as the page hands them un-retargeted boundary points —
+the same shape `getDOMSelectionRangeAndPoints` already returns.

@@ -63,6 +63,17 @@ form lexical-editor {
  * never reaches into the shadow root — inherited custom properties cross
  * the boundary on their own. The encapsulated layout stays private.
  */
+/*
+ * CSS Shadow Parts: the host exposes its `.toolbar` and `.content`
+ * children as `part="toolbar"` / `part="content"`, so the page can
+ * style them with `::part()` without reaching through the shadow
+ * boundary. This is the lighter-weight cousin of `::slotted()` for
+ * elements the host itself owns.
+ */
+form lexical-editor::part(toolbar) {
+  letter-spacing: 0.02em;
+}
+
 form lexical-editor[name='summary'] {
   --lexical-bg: #1c1d22;
   --lexical-fg: #e6e6e9;

@@ -86,7 +86,6 @@ import {createRoot, Root} from 'react-dom/client';
 import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';
-import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {
   $assertNodeType,
   $createTestDecoratorNode,
@@ -1825,6 +1824,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1841,6 +1842,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 0,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1921,6 +1924,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1937,6 +1942,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -2005,6 +2012,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -2021,6 +2030,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -3705,16 +3716,8 @@ describe('LexicalEditor tests', () => {
     vi.spyOn(ParagraphNode, 'importDOM');
 
     class CustomParagraphNode extends ParagraphNode {
-      static getType() {
-        return 'custom-paragraph';
-      }
-
-      static clone(node: CustomParagraphNode) {
-        return new CustomParagraphNode(node.__key);
-      }
-
-      static importJSON(serializedNode: SerializedParagraphNode) {
-        return new CustomParagraphNode().updateFromJSON(serializedNode);
+      $config() {
+        return this.config('custom-paragraph', {extends: ParagraphNode});
       }
     }
 

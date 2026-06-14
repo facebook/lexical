@@ -41,6 +41,7 @@ import {GenMap} from './LexicalGenMap';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
+import {$isSlotHost} from './LexicalSlot';
 import {
   $commitPendingUpdates,
   internalGetActiveEditor,
@@ -316,6 +317,74 @@ export interface EditorDOMRenderConfig {
     dom: HTMLElement,
     editor: LexicalEditor,
   ) => void;
+  /**
+   * @internal @experimental
+   *
+   * Called when the host DOM for this node is first mounted. May return
+   * a cleanup function that is invoked when the node's DOM is unmounted
+   * — same shape as `editor.register*` listeners. For framework
+   * integrations that own the host DOM, this is the entry point for
+   * `createRoot` / first render.
+   */
+  $onDOMMount: <T extends LexicalNode>(
+    node: T,
+    hostDom: HTMLElement,
+    editor: LexicalEditor,
+  ) => void | (() => void);
+  /**
+   * @internal @experimental
+   *
+   * Called when the node updates and the host DOM was preserved (no
+   * `createDOM` recreate). Use this to re-render a framework view
+   * bound to the node. `prevNode` is the previous state.
+   *
+   * The name carries the `$onDOM` prefix to avoid colliding with
+   * lexical's top-level {@link $onUpdate} free function, which queues
+   * a post-commit callback inside an update transaction.
+   */
+  $onDOMUpdate: <T extends LexicalNode>(
+    node: T,
+    prevNode: T,
+    hostDom: HTMLElement,
+    editor: LexicalEditor,
+  ) => void;
+  /**
+   * @internal @experimental named-slots
+   *
+   * Where a named slot's container should attach, for hosts rendered
+   * entirely in-lexical (no chrome framework). The reconciler consults
+   * this whenever it creates or reconciles the slot's container,
+   * synchronously within the same commit: a non-null return attaches the
+   * container to that element (a no-op when it is already there, so
+   * returning `hostDom` reveals the slot in its default slots-first
+   * position) and reveals it. Returning null (the default) leaves the
+   * container as a hidden placeholder for explicit imperative mounting
+   * (`mountSlotContainer` / lexical-react's `useLexicalSlotRef`). The
+   * named-slot analog of `$getDOMSlot`'s control over where linked-list
+   * children render; the returned element should live within the host's
+   * own DOM so it is torn down with the host. Override per node type via
+   * `DOMRenderMatch.$getSlotTargetElement` (lexical-html).
+   */
+  $getSlotTargetElement: <T extends LexicalNode>(
+    node: T,
+    slotName: string,
+    hostDom: HTMLElement,
+    editor: LexicalEditor,
+  ) => HTMLElement | null;
+  /**
+   * @experimental named-slots. Pin a slot container's `contentEditable` to a
+   * specific value, overriding the default where an editable island (a slot in
+   * a decorator host or a non-editable element shell) follows the editor's
+   * editable state. Return `true`/`false` to force editability regardless of
+   * `editor.isEditable()`, or `null` (the default) to follow the editor —
+   * `SlotEditableExtension` keeps the following containers in sync on toggle.
+   * Override per node type via `DOMRenderMatch.$getSlotEditable` (lexical-html).
+   */
+  $getSlotEditable: <T extends LexicalNode>(
+    node: T,
+    slotName: string,
+    editor: LexicalEditor,
+  ) => boolean | null;
   /** @internal @experimental */
   $updateDOM: <T extends LexicalNode>(
     nextNode: T,
@@ -659,6 +728,26 @@ export function resetEditor(
   pendingEditorState: EditorState,
   options?: ResetEditorOptions,
 ): void {
+  // Tear down any $onDOMMount cleanups before discarding the node-to-DOM
+  // map. resetEditor clears the DOM tree via `textContent = ''` rather
+  // than walking $destroyNode per node, so the per-node cleanup path in
+  // the reconciler doesn't run here — external resources (e.g. React
+  // roots) need to be released explicitly.
+  if (editor._onDOMMountCleanup.size > 0) {
+    try {
+      for (const cleanup of editor._onDOMMountCleanup.values()) {
+        try {
+          cleanup();
+        } catch (error) {
+          if (error instanceof Error) {
+            editor._onError(error);
+          }
+        }
+      }
+    } finally {
+      editor._onDOMMountCleanup.clear();
+    }
+  }
   const keyNodeMap = editor._keyToDOMMap;
   keyNodeMap.clear();
   editor._editorState = createEmptyEditorState();
@@ -793,6 +882,10 @@ export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig = {
     dom: HTMLElement,
     _editor: LexicalEditor,
   ): DOMSlotForNode<N> => node.getDOMSlot(dom) as DOMSlotForNode<N>,
+  $getSlotEditable: (_node, _slotName, _editor) => null,
+  $getSlotTargetElement: (_node, _slotName, _hostDom, _editor) => null,
+  $onDOMMount: (_node, _hostDom, _editor) => undefined,
+  $onDOMUpdate: (_node, _prevNode, _hostDom, _editor) => undefined,
   $shouldExclude: (node, _selection, _editor) =>
     $isElementNode(node) && node.excludeFromCopy('html'),
   $shouldInclude: (node, selection, _editor) =>
@@ -1031,6 +1124,26 @@ export class LexicalEditor {
   _editable: boolean;
   /** @internal */
   _blockCursorElement: null | HTMLDivElement;
+  /**
+   * @internal @experimental
+   *
+   * Cleanup functions returned from {@link EditorDOMRenderConfig.$onDOMMount}.
+   * Keyed by node key. Invoked by the reconciler when the node's DOM is
+   * unmounted, and by {@link resetEditor} when the whole editor is torn
+   * down so external resources (e.g. React roots) get released.
+   */
+  _onDOMMountCleanup: Map<NodeKey, () => void>;
+  /**
+   * @internal @experimental
+   *
+   * Latches to `true` the first time {@link $setSlot} runs in this
+   * editor. Gates the commit-time slot-containment clamp so editors that never
+   * use slots skip the per-update frame walk entirely. The latch persists for
+   * the lifetime of the editor instance — `resetEditor` and `setEditorState`
+   * do not clear it, so an editor that once used slots keeps paying the clamp
+   * cost even after switching to a slot-free state.
+   */
+  _slotsUsed: boolean;
   /** @internal */
   _createEditorArgs?: undefined | CreateEditorArgs;
 
@@ -1099,6 +1212,8 @@ export class LexicalEditor {
     this._headless = parentEditor !== null && parentEditor._headless;
     this._window = null;
     this._blockCursorElement = null;
+    this._onDOMMountCleanup = new Map();
+    this._slotsUsed = false;
   }
 
   /**
@@ -1599,6 +1714,24 @@ export class LexicalEditor {
     this._dirtyType = FULL_RECONCILE;
     this._dirtyElements.set('root', false);
     this._compositionKey = null;
+
+    // `_slotsUsed` is normally latched by `$setSlot`, but `setEditorState`
+    // swaps in a parsed state without walking it. If the incoming state
+    // already contains slot nodes (e.g. SSR + hydration, cross-editor state
+    // transfer), latch on so the selection clamps still kick in on this
+    // editor.
+    if (!this._slotsUsed) {
+      for (const node of writableEditorState._nodeMap.values()) {
+        if (
+          $isSlotHost(node) &&
+          node.__slots !== null &&
+          node.__slots.size > 0
+        ) {
+          this._slotsUsed = true;
+          break;
+        }
+      }
+    }
 
     if (tag != null) {
       this._updateTags.add(tag);

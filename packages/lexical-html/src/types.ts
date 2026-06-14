@@ -358,7 +358,6 @@ export interface DOMRenderMatch<T extends LexicalNode> {
     dom: HTMLElement,
     editor: LexicalEditor,
   ) => void;
-
   /**
    * Controls how the this node is serialized to HTML. This is important for
    * copy and paste between Lexical and non-Lexical editors, or Lexical
@@ -445,6 +444,105 @@ export interface DOMRenderMatch<T extends LexicalNode> {
     $next: () => boolean,
     editor: LexicalEditor,
   ) => boolean;
+  /**
+   * Called when the host DOM for this node is first mounted. May return
+   * a cleanup function that is invoked when the node's DOM is unmounted
+   * (same shape as `editor.register*` listeners). For framework
+   * integrations that own the host DOM, this is the entry point for
+   * `createRoot` / first render.
+   *
+   * Use `$decorateDOM` for stateless DOM annotations (attributes,
+   * classes, inline styles). Use `$onDOMMount` / `$onDOMUpdate` when
+   * the consumer needs a per-mount cleanup such as a React root or
+   * an event subscription bound to `hostDom`.
+   *
+   * Timing: runs immediately after the host DOM is registered in the
+   * keyed map and BEFORE the reconciler mounts children into the host.
+   * The reconciler also sets the host-level marker attribute
+   * (`data-lexical-decorator`) and the unmanaged flag AFTER this
+   * callback returns, so the host is half-initialized at mount time —
+   * read those attrs lazily, not
+   * synchronously in the callback body. Callbacks that synchronously
+   * mutate `hostDom`'s child list will race the children mount that
+   * follows — use the asynchronous commit of a framework view, or
+   * schedule any direct DOM work in the cleanup half.
+   *
+   * Teardown order: per-node cleanup runs in `$destroyNode` as part of
+   * the normal unmount flow. On `editor.setRootElement(null)` /
+   * `resetEditor`, cleanups are iterated in node-insertion order
+   * (i.e. parents before children); callbacks that walk the keyed
+   * DOM map at teardown should not assume reverse-tree order.
+   *
+   * @experimental
+   */
+  $onDOMMount?: (
+    node: T,
+    hostDom: HTMLElement,
+    $next: () => void | (() => void),
+    editor: LexicalEditor,
+  ) => void | (() => void);
+  /**
+   * Called when the node updates and the host DOM was preserved (no
+   * `createDOM` recreate). Use this to re-render a framework view
+   * bound to the node. `prevNode` is the previous state. The `$onDOM`
+   * prefix mirrors `$onDOMMount` and avoids colliding with lexical's
+   * top-level `$onUpdate(fn)` free function.
+   *
+   * Timing: runs BEFORE the dirty-children reconcile for this update,
+   * so the same caveat as `$onDOMMount` applies — do not synchronously
+   * rewrite `hostDom`'s direct children from this callback.
+   *
+   * Triggers: fires whenever `$reconcileNode` runs for the host —
+   * this includes reconciles driven by descendant dirtiness (e.g. a
+   * paragraph deep in the subtree was edited) as well as host-level
+   * changes. Consumers that re-render off `node`'s state should
+   * either trust their framework's prop-equality bail-out or memoize
+   * upstream of the re-render call.
+   *
+   * @experimental
+   */
+  $onDOMUpdate?: (
+    node: T,
+    prevNode: T,
+    hostDom: HTMLElement,
+    $next: () => void,
+    editor: LexicalEditor,
+  ) => void;
+  /**
+   * Where a named slot's container should attach, for hosts rendered
+   * entirely in-lexical (no chrome framework). Consulted by the
+   * reconciler whenever it creates or reconciles the slot's container,
+   * synchronously within the same commit: a non-null return attaches
+   * the container to that element and reveals it (returning `hostDom`
+   * reveals the slot in its default slots-first position). Call
+   * `$next()` to defer to lower-priority overrides / the default
+   * (null — a hidden placeholder for explicit imperative mounting via
+   * `mountSlotContainer` or lexical-react's `useLexicalSlotRef`).
+   *
+   * @experimental named-slots
+   */
+  $getSlotTargetElement?: (
+    node: T,
+    slotName: string,
+    hostDom: HTMLElement,
+    $next: () => HTMLElement | null,
+    editor: LexicalEditor,
+  ) => HTMLElement | null;
+  /**
+   * Pin a named slot's container `contentEditable` to a fixed `true`/`false`,
+   * overriding the default where an editable island follows the editor's
+   * editable state. Call `$next()` to defer to lower-priority overrides / the
+   * default (`null` — follow the editor). Consulted by the reconciler when it
+   * creates the slot container.
+   *
+   * @experimental named-slots
+   */
+  $getSlotEditable?: (
+    node: T,
+    slotName: string,
+    $next: () => boolean | null,
+    editor: LexicalEditor,
+  ) => boolean | null;
   /**
    * Set via {@link domOverride}'s options argument, not directly. See
    * {@link DOMOverrideOptions.disabledForEditor}.

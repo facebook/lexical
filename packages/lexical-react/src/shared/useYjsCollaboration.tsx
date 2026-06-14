@@ -298,6 +298,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
         prevEditorState,
         editorState,
         dirtyElements,
+        dirtyLeaves,
         normalizedNodes,
         tags,
       }) => {
@@ -308,6 +309,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
             prevEditorState,
             editorState,
             dirtyElements,
+            dirtyLeaves,
             normalizedNodes,
             tags,
           );

@@ -53,6 +53,7 @@ import {
   $moveSelectionToPreviousNode,
   doesSelectionNeedRecovering,
   getNodeTypeFromSharedType,
+  SLOTS_ATTR_KEY,
   syncWithTransaction,
 } from './Utils';
 
@@ -91,15 +92,62 @@ function $syncEvent(binding: Binding, event: any): void {
     return;
   }
   const {target} = event;
+  // Slots channel: a slot add / delete lands on the host's `slots` attribute
+  // Y.Map (parentSub === 'slots'). An element host stores it on its `_xmlText`,
+  // a decorator host on its `_xmlElem` (XmlElement). The Y.Map carries no
+  // `__type`, so the default dispatch below would trip the shared-type
+  // invariant. Re-route it to a host slot reconcile instead.
+  if (
+    event instanceof YMapEvent &&
+    target instanceof YMap &&
+    target._item != null &&
+    target._item.parentSub === SLOTS_ATTR_KEY &&
+    (target.parent instanceof XmlText || target.parent instanceof XmlElement)
+  ) {
+    const hostCollab = $getOrInitCollabNodeFromSharedType(
+      binding,
+      target.parent,
+    );
+    // The two branches are textually identical but stay separate because
+    // CollabElementNode and CollabDecoratorNode each typed `syncSlotsFromYjs`
+    // against its own lexical-node side (ElementNode vs DecoratorNode); a
+    // union narrow at the call site intersects to `never`. A null host node
+    // means it was concurrently removed from Lexical; nothing to sync.
+    if (hostCollab instanceof CollabElementNode) {
+      const hostNode = hostCollab.getNode();
+      if (hostNode !== null) {
+        hostCollab.syncSlotsFromYjs(binding, hostNode);
+      }
+    } else if (hostCollab instanceof CollabDecoratorNode) {
+      const hostNode = hostCollab.getNode();
+      if (hostNode !== null) {
+        hostCollab.syncSlotsFromYjs(binding, hostNode);
+      }
+    }
+    return;
+  }
   const collabNode = $getOrInitCollabNodeFromSharedType(binding, target);
 
   if (collabNode instanceof CollabElementNode && event instanceof YTextEvent) {
     // @ts-expect-error We need to access the private childListChanged property of the class
     const {keysChanged, childListChanged, delta} = event;
 
-    // Update
+    // Update. `slots` is a reserved key excluded from property sync; a change
+    // to it is handled by the slot reconcile below.
     if (keysChanged.size > 0) {
       collabNode.syncPropertiesFromYjs(binding, keysChanged);
+    }
+
+    // A host's first slot set integrates the slots Y.Map in the same
+    // transaction that assigns the attribute, so no YMapEvent fires for the
+    // (brand-new) map — the change surfaces only as a changed `slots` key
+    // here. The undo of a first set (attribute removed) has the same shape. A
+    // null host node means it was concurrently removed; nothing to sync.
+    if (keysChanged.has(SLOTS_ATTR_KEY)) {
+      const node = collabNode.getNode();
+      if (node !== null) {
+        collabNode.syncSlotsFromYjs(binding, node);
+      }
     }
 
     if (childListChanged) {
@@ -122,9 +170,20 @@ function $syncEvent(binding: Binding, event: any): void {
   ) {
     const {attributesChanged} = event;
 
-    // Update
+    // Update. `slots` is a reserved key excluded from property sync; a change
+    // to it is handled by the slot reconcile below.
     if (attributesChanged.size > 0) {
       collabNode.syncPropertiesFromYjs(binding, attributesChanged);
+    }
+
+    // Same shape as the element-host case above: a first slot set (or its
+    // undo) surfaces only as a changed `slots` attribute on the host's
+    // XmlElement, never as a YMapEvent.
+    if (attributesChanged.has(SLOTS_ATTR_KEY)) {
+      const node = collabNode.getNode();
+      if (node !== null) {
+        collabNode.syncSlotsFromYjs(binding, node);
+      }
     }
   } else {
     invariant(false, 'Expected text, element, or decorator event');
@@ -174,6 +233,31 @@ export function syncYjsChangesToLexical(
       tag: isFromUndoManger ? HISTORIC_TAG : COLLABORATION_TAG,
     },
   );
+
+  // Remove deleted nodes from the collab node map (mirrors the
+  // binding.mapping sweep in syncYjsChangesToLexicalV2__EXPERIMENTAL). The
+  // destroy paths above can't reach a deleted host's slot values: the host's
+  // `slots` attribute reads back undefined once its shared type is deleted, so
+  // without this sweep their entries leak. Double deletes are idempotent.
+  if (events.length > 0) {
+    const transaction = events[0].transaction;
+    iterateDeletedStructs(transaction, transaction.deleteSet, struct => {
+      if (struct.constructor === Item) {
+        const content = struct.content as ContentType;
+        const type = content.type;
+        if (type) {
+          const collabNode = (type as XmlText | XmlElement | YMap<unknown>)
+            ._collabNode;
+          if (
+            collabNode !== undefined &&
+            binding.collabNodeMap.get(collabNode._key) === collabNode
+          ) {
+            binding.collabNodeMap.delete(collabNode._key);
+          }
+        }
+      }
+    });
+  }
 }
 
 function $syncCursorFromYjs(
@@ -313,6 +397,16 @@ export function syncLexicalUpdateToYjs(
           dirtyElements,
           dirtyLeaves,
         );
+        // Slots live outside the linked-list children channel, so the root's
+        // own slot map needs its dedicated diff too (child hosts get theirs
+        // via _syncChildFromLexical).
+        collabRoot.syncSlotsFromLexical(
+          binding,
+          nextLexicalRoot,
+          prevNodeMap,
+          dirtyElements,
+          dirtyLeaves,
+        );
         // If a local edit emptied the root, schedule recovery outside the
         // collaboration/historic tag so the paragraph syncs back to Yjs.
         // Mirrors the $ensureEditorNotEmpty call in syncYjsChangesToLexical's onUpdate.
@@ -336,7 +430,7 @@ export function syncLexicalUpdateToYjs(
 
 function $syncEventV2(
   binding: BindingV2,
-  event: YEvent<XmlElement | XmlText>,
+  event: YEvent<XmlElement | XmlText | YMap<unknown>>,
 ): void {
   const {target} = event;
   if (target instanceof XmlElement && event instanceof YXmlEvent) {
@@ -354,6 +448,28 @@ function $syncEventV2(
       $createOrUpdateNodeFromYElement(parent, binding, new Set(), true);
     } else {
       invariant(false, 'Expected XmlElement parent for XmlText');
+    }
+  } else if (
+    target instanceof YMap &&
+    event instanceof YMapEvent &&
+    target._item != null &&
+    target._item.parentSub === SLOTS_ATTR_KEY
+  ) {
+    // A slot add/remove arrives as a YMapEvent on the host's `slots` Y.Map.
+    // Re-route to the host element so its slots channel gets reconciled. The
+    // parentSub guard narrows this branch to the slot Y.Map specifically —
+    // other YMap attributes (e.g. `__state` nested maps) reach this dispatch
+    // too and must fall through to the default handler.
+    const parent = target.parent;
+    if (parent instanceof XmlElement) {
+      $createOrUpdateNodeFromYElement(
+        parent,
+        binding,
+        new Set([SLOTS_ATTR_KEY]),
+        false,
+      );
+    } else {
+      invariant(false, 'Expected XmlElement parent for slots Y.Map');
     }
   } else {
     invariant(false, 'Expected xml or text event');
@@ -453,6 +569,7 @@ export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
   prevEditorState: EditorState,
   currEditorState: EditorState,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
+  dirtyLeaves: Set<NodeKey>,
   normalizedNodes: Set<NodeKey>,
   tags: Set<string>,
 ): void {
@@ -471,12 +588,16 @@ export function syncLexicalUpdateToYjsV2__EXPERIMENTAL(
     currEditorState.read(() => {
       if (dirtyElements.has('root')) {
         const nextLexicalRoot = $getRoot();
+        // A DecoratorNode slot value lands in dirtyLeaves (only ElementNodes
+        // are routed to dirtyElements), so unioning the two ensures
+        // $updateSlotsYType's same-identity recursion gate sees a dirty
+        // decorator slot value and propagates its own-attribute changes.
         $updateYFragment(
           binding.doc,
           binding.root,
           nextLexicalRoot,
           binding,
-          new Set(dirtyElements.keys()),
+          new Set([...dirtyElements.keys(), ...dirtyLeaves]),
         );
         // If a local edit emptied the root, schedule recovery outside the
         // collaboration/historic tag so the paragraph syncs back to Yjs.

@@ -25,6 +25,7 @@ import {
   ParagraphNode,
   RootNode,
   type SerializedElementNode,
+  type SerializedLexicalNode,
   StateValueOrUpdater,
 } from 'lexical';
 import {beforeEach, describe, expect, expectTypeOf, test} from 'vitest';
@@ -89,6 +90,7 @@ type _TestStateNodeExportJSON = Expect<
             boolState?: boolean | undefined;
           })
         | undefined;
+      $slots?: Record<string, SerializedLexicalNode>;
       version: number;
       type: 'state';
       numberState?: number | undefined;
@@ -106,6 +108,7 @@ type _TestExtraStateNodeExportJSON = Expect<
             boolState?: boolean | undefined;
           })
         | undefined;
+      $slots?: Record<string, SerializedLexicalNode>;
       version: number;
       type: 'extra-state';
       numberState?: number | undefined;

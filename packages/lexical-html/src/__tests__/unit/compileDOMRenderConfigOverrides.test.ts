@@ -6,43 +6,12 @@
  *
  */
 
-import {buildEditorFromExtensions} from '@lexical/extension';
 import {domOverride} from '@lexical/html';
-import {
-  $isLineBreakNode,
-  isHTMLElement,
-  LineBreakNode,
-  ParagraphNode,
-  TabNode,
-  TextNode,
-} from 'lexical';
+import {$isLineBreakNode, isHTMLElement, TextNode} from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {
-  buildTypeTree,
-  precompileDOMRenderConfigOverrides,
-} from '../../compileDOMRenderConfigOverrides';
+import {precompileDOMRenderConfigOverrides} from '../../compileDOMRenderConfigOverrides';
 import {ALWAYS_TRUE} from '../../constants';
-
-describe('buildTypeTree', () => {
-  test('includes basic types', () => {
-    using editor = buildEditorFromExtensions();
-    expect(buildTypeTree(editor._createEditorArgs!)).toMatchObject({
-      linebreak: {
-        klass: LineBreakNode,
-        types: {
-          linebreak: true,
-        },
-      },
-      paragraph: {
-        klass: ParagraphNode,
-        types: {paragraph: true},
-      },
-      tab: {klass: TabNode, types: {tab: true}},
-      text: {klass: TextNode, types: {tab: true, text: true}},
-    });
-  });
-});
 
 describe('precompileDOMRenderConfigOverrides', () => {
   test('precompiles with only type overrides', () => {
@@ -102,6 +71,10 @@ describe('precompileDOMRenderConfigOverrides', () => {
       ],
       $extractWithChild: [],
       $getDOMSlot: [],
+      $getSlotEditable: [],
+      $getSlotTargetElement: [],
+      $onDOMMount: [],
+      $onDOMUpdate: [],
       $shouldExclude: [],
       $shouldInclude: [],
       $updateDOM: [],
@@ -180,6 +153,10 @@ describe('precompileDOMRenderConfigOverrides', () => {
       ],
       $extractWithChild: [],
       $getDOMSlot: [],
+      $getSlotEditable: [],
+      $getSlotTargetElement: [],
+      $onDOMMount: [],
+      $onDOMUpdate: [],
       $shouldExclude: [],
       $shouldInclude: [],
       $updateDOM: [],

@@ -7,21 +7,36 @@
  */
 
 import type {Binding} from '.';
-import type {CollabElementNode} from './CollabElementNode';
 import type {DecoratorNode, NodeKey, NodeMap} from 'lexical';
 import type {XmlElement} from 'yjs';
 
+import invariant from '@lexical/internal/invariant';
 import {$getNodeByKey, $isDecoratorNode} from 'lexical';
 
-import {$syncPropertiesFromYjs, syncPropertiesFromLexical} from './Utils';
+import {CollabElementNode} from './CollabElementNode';
+import {
+  $destroySlotsShared,
+  $syncPropertiesFromYjs,
+  $syncSlotsFromLexicalShared,
+  $syncSlotsFromYjsShared,
+  syncPropertiesFromLexical,
+} from './Utils';
+
+type IntentionallyMarkedAsDirtyElement = boolean;
 
 export class CollabDecoratorNode {
   _xmlElem: XmlElement;
   _key: NodeKey;
-  _parent: CollabElementNode;
+  // Normally a decorator's parent is an element, but a slot-value decorator
+  // hosted by another decorator has that decorator as its parent.
+  _parent: CollabElementNode | CollabDecoratorNode;
   _type: string;
 
-  constructor(xmlElem: XmlElement, parent: CollabElementNode, type: string) {
+  constructor(
+    xmlElem: XmlElement,
+    parent: CollabElementNode | CollabDecoratorNode,
+    type: string,
+  ) {
     this._key = '';
     this._xmlElem = xmlElem;
     this._parent = parent;
@@ -59,8 +74,14 @@ export class CollabDecoratorNode {
   }
 
   getOffset(): number {
-    const collabElementNode = this._parent;
-    return collabElementNode.getChildOffset(this);
+    // A slot-value decorator has a decorator parent, but slots live outside the
+    // linked-list children channel so getOffset is never called on one. Only an
+    // element parent exposes getChildOffset, so narrow before dereferencing.
+    invariant(
+      !(this._parent instanceof CollabDecoratorNode),
+      'getOffset: expected parent to be a collab element node',
+    );
+    return this._parent.getChildOffset(this);
   }
 
   syncPropertiesFromLexical(
@@ -92,8 +113,49 @@ export class CollabDecoratorNode {
     $syncPropertiesFromYjs(binding, xmlElem, lexicalNode, keysChanged);
   }
 
+  // Reconcile named slots from the `slots` Y.Map attribute on this decorator's
+  // `_xmlElem` into the lexical node. A decorator host has no children channel,
+  // so slots are its only structural descendants. Mirrors
+  // CollabElementNode.syncSlotsFromYjs but reads `_xmlElem` instead of
+  // `_xmlText`.
+  syncSlotsFromYjs(
+    binding: Binding,
+    lexicalNode: DecoratorNode<unknown>,
+  ): void {
+    $syncSlotsFromYjsShared(binding, this._xmlElem, lexicalNode, this);
+  }
+
+  // Mirror of the lexical slot map into the `slots` Y.Map attribute on this
+  // decorator's `_xmlElem`. Local (lexical -> yjs) counterpart of
+  // syncSlotsFromYjs. Mirrors CollabElementNode.syncSlotsFromLexical but writes
+  // `_xmlElem` instead of `_xmlText`.
+  syncSlotsFromLexical(
+    binding: Binding,
+    nextLexicalNode: DecoratorNode<unknown>,
+    prevNodeMap: null | NodeMap,
+    dirtyElements: null | Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
+    dirtyLeaves: null | Set<NodeKey>,
+  ): void {
+    $syncSlotsFromLexicalShared(
+      binding,
+      this._xmlElem,
+      nextLexicalNode,
+      prevNodeMap,
+      dirtyElements,
+      dirtyLeaves,
+      this,
+    );
+  }
+
   destroy(binding: Binding): void {
     const collabNodeMap = binding.collabNodeMap;
+
+    // A decorator host has no children channel; its slots are its only
+    // descendants. Destroy each slot's collab node so it doesn't dangle in
+    // binding.collabNodeMap after the host is removed. The host's `_xmlElem`
+    // must still be attached here for `slots` to read back.
+    $destroySlotsShared(binding, this._xmlElem);
+
     if (collabNodeMap.get(this._key) === this) {
       collabNodeMap.delete(this._key);
     }
@@ -102,7 +164,7 @@ export class CollabDecoratorNode {
 
 export function $createCollabDecoratorNode(
   xmlElem: XmlElement,
-  parent: CollabElementNode,
+  parent: CollabElementNode | CollabDecoratorNode,
   type: string,
 ): CollabDecoratorNode {
   const collabNode = new CollabDecoratorNode(xmlElem, parent, type);

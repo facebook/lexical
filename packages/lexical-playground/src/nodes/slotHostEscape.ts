@@ -45,10 +45,13 @@ function $findSlotHost<T extends LexicalNode>(
   return null;
 }
 
-// The host's bottom-most navigable region: its last child (children render
-// after slots in DOM order), or — for a host with no children, like the
-// DecoratorNode PullQuote — its last named slot value.
-function $bottomRegion(host: LexicalNode): LexicalNode | null {
+// Default bottom-most navigable region for the common "slots render first, then
+// children" layout (Card, PullQuote): the last child if the host has one, else
+// — for a childless host like the DecoratorNode PullQuote — its last named slot
+// value. A host whose chrome lays its regions out in a different order (e.g. the
+// Review renders its children above its `author` slot) passes a `$bottomRegion`
+// override instead.
+function $defaultBottomRegion(host: LexicalNode): LexicalNode | null {
   if ($isElementNode(host)) {
     const lastChild = host.getLastChild();
     if (lastChild !== null) {
@@ -59,9 +62,10 @@ function $bottomRegion(host: LexicalNode): LexicalNode | null {
   return names.length > 0 ? $getSlot(host, names[names.length - 1]) : null;
 }
 
-// The host's top-most navigable region: its first named slot value (slots
-// render first), or — with no slots — its first child.
-function $topRegion(host: LexicalNode): LexicalNode | null {
+// Default top-most navigable region for the same slots-first layout: the first
+// named slot value, or — with no slots — the first child. Overridden via
+// `$topRegion` for hosts that order their regions differently.
+function $defaultTopRegion(host: LexicalNode): LexicalNode | null {
   const names = $getSlotNames(host);
   if (names.length > 0) {
     return $getSlot(host, names[0]);
@@ -69,25 +73,53 @@ function $topRegion(host: LexicalNode): LexicalNode | null {
   return $isElementNode(host) ? host.getFirstChild() : null;
 }
 
+export interface SlotHostArrowEscapeOptions<T extends LexicalNode> {
+  /**
+   * The host's top-most navigable region, used by the ArrowUp handler. Defaults
+   * to the first named slot value (else the first child), which matches a
+   * slots-first chrome like Card / PullQuote. Override it when the chrome lays
+   * its regions out in another order — the Review renders its body children
+   * above its `author` slot, so its top region is the first body child.
+   */
+  $topRegion?: (host: T) => LexicalNode | null;
+  /**
+   * The host's bottom-most navigable region, used by the ArrowDown handler.
+   * Defaults to the last child (else the last named slot value). Override it for
+   * a non-slots-first chrome — the Review's bottom region is its `author` slot,
+   * which renders below the body children.
+   */
+  $bottomRegion?: (host: T) => LexicalNode | null;
+}
+
 /**
  * Slot-aware companion to `$onEscapeDown` / `$onEscapeUp` (@lexical/utils): let
  * ArrowDown at the bottom of a slot host (Card / Review / PullQuote) and ArrowUp
- * at its top step out of the host, so it is never a dead end. Those helpers walk
- * `getParent` to find the container, which can't reach a host from inside a
- * named slot (slot values have `__parent === null`) and are typed for
- * `ElementNode` containers (PullQuote is a `DecoratorNode`); this resolves the
- * host with `$getSlotHost` and treats the last child *or* last slot as the
- * bottom region, while reusing their shared edge checks
- * ({@link $isAtStartOfNode} / {@link $isAtEndOfNode}).
+ * at its top step out of the host when it is the last/first block, so it is
+ * never a dead end. Those helpers walk `getParent` to find the container, which
+ * can't reach a host from inside a named slot (slot values have
+ * `__parent === null`) and are typed for `ElementNode` containers (PullQuote is
+ * a `DecoratorNode`); this resolves the host with `$getSlotHost` and reuses
+ * their shared edge checks ({@link $isAtStartOfNode} / {@link $isAtEndOfNode}).
  *
- * Like those helpers it only acts when the host is the first/last block — it
- * inserts a paragraph before/after the host and moves there — and otherwise
- * defers to the default handler that steps into the adjacent sibling.
+ * The browser already steps the caret between a host's editable regions and into
+ * an adjacent sibling on its own, even across the `contentEditable=false` chrome
+ * of a React-chromed host; the gap those native moves leave is the dead end when
+ * the host is the *first or last* block with nowhere to go. So this only acts
+ * there — inserting a paragraph before/after the host and moving to it — and
+ * defers to the browser otherwise (returning `false`).
+ *
+ * The top/bottom regions default to a slots-first chrome (Card / PullQuote);
+ * pass {@link SlotHostArrowEscapeOptions.$topRegion} / `$bottomRegion` for a host
+ * that orders its regions differently (the Review's body children render above
+ * its `author` slot).
  */
 export function registerSlotHostArrowEscape<T extends LexicalNode>(
   editor: LexicalEditor,
   $isHost: (node: LexicalNode | null | undefined) => node is T,
+  options: SlotHostArrowEscapeOptions<T> = {},
 ): () => void {
+  const $bottomRegion = options.$bottomRegion ?? $defaultBottomRegion;
+  const $topRegion = options.$topRegion ?? $defaultTopRegion;
   return mergeRegister(
     editor.registerCommand<KeyboardEvent | null>(
       KEY_ARROW_DOWN_COMMAND,
@@ -101,8 +133,7 @@ export function registerSlotHostArrowEscape<T extends LexicalNode>(
         }
         const host = $findSlotHost(selection.anchor.getNode(), $isHost);
         // Mirror $onEscapeDown: only escape when the host is the last block, so
-        // ArrowDown into a following sibling still goes through the default
-        // handler.
+        // ArrowDown into a following sibling still goes through the browser.
         if (host === null || host.getNextSibling() !== null) {
           return false;
         }

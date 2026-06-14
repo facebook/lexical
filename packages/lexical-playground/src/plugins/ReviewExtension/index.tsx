@@ -246,8 +246,14 @@ export const ReviewExtension = /* @__PURE__ */ defineExtension({
         },
         COMMAND_PRIORITY_EDITOR,
       ),
-      // ArrowDown/Up at the Review's bottom/top edge steps out of it.
-      registerSlotHostArrowEscape(editor, $isReviewNode),
+      // ArrowDown/Up at the Review's bottom/top edge steps out of it. Unlike
+      // the slots-first Card / PullQuote, the Review's chrome renders the body
+      // children above the `author` slot, so its bottom region is the author
+      // and its top region is the first body child.
+      registerSlotHostArrowEscape(editor, $isReviewNode, {
+        $bottomRegion: node => $getSlot(node, 'author'),
+        $topRegion: node => node.getFirstChild(),
+      }),
     ),
 });
 

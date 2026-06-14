@@ -301,6 +301,29 @@ attach moves mutate the shell's children from outside the reconciler, and
 the marker gives the shell the same mutation-observer exemption a
 DecoratorNode's DOM has.
 
+## Editable state
+
+A slot container that opts into `contentEditable` inside a non-editable host
+(a DecoratorNode, or a `contentEditable=false` element shell) tracks the
+editor's editable state by default. The reconciler sets its initial value from
+`editor.isEditable()` and tags it `data-lexical-slot-editable="<editorKey>"`;
+the `SlotEditableExtension` from `@lexical/extension` flips every tagged
+container whenever `setEditable` toggles, so a read-only editor's slots are not
+left editable. The marker carries the *owning* editor's key, so a nested
+editor's containers in the same root DOM are not flipped by the outer editor's
+state.
+
+A host that attaches its own editable island which is *not* a slot container —
+for example the Review demo's `getDOMSlot` children element inside its
+`contentEditable=false` shell — opts it into the same behavior with
+[`markSlotEditable(element, editor)`](/docs/api/modules/lexical#marksloteditable).
+
+To pin a slot to a fixed editability regardless of the editor's state — say an
+always-editable region inside a read-only shell — return a boolean (rather than
+the default `null`) from the `$getSlotEditable` DOM render-config override.
+Pinned containers are left untagged, so `SlotEditableExtension` never toggles
+them.
+
 ## Editing Behavior
 
 - **Selection never crosses a slot boundary.** Selections are clamped to the

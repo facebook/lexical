@@ -28,6 +28,7 @@ import {
   $setState,
   createState,
   ElementNode,
+  markSlotEditable,
   setDOMUnmanaged,
 } from 'lexical';
 
@@ -90,12 +91,11 @@ export class ReviewNode extends ElementNode {
     children.className = 'lexical-review-children';
     children.style.display = 'none';
     // The body is a getDOMSlot editable island inside the contentEditable=false
-    // shell. Like a named-slot container, it follows the editor's editable
-    // state: gate the initial value and tag it with this editor's key (keyed so
-    // a nested editor isn't toggled) so SlotEditableExtension flips it on
-    // read-only toggle.
-    children.contentEditable = editor.isEditable() ? 'true' : 'false';
-    children.setAttribute('data-lexical-slot-editable', editor.getKey());
+    // shell. Tag it the same way the reconciler tags a named-slot container so
+    // it follows the editor's editable state (keyed to this editor so a nested
+    // editor isn't toggled) and SlotEditableExtension flips it on read-only
+    // toggle — one shared helper, so the two paths can't drift.
+    markSlotEditable(children, editor);
     dom.appendChild(children);
     return dom;
   }

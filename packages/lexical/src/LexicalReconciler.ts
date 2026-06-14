@@ -52,6 +52,7 @@ import {
   $isRootOrShadowRoot,
   cloneDecorators,
   getElementByKeyOrThrow,
+  markSlotEditable,
   setDOMUnmanaged,
   setMutatedNode,
   setNodeKeyOnDOMNode,
@@ -491,38 +492,45 @@ function $setElementDirection(dom: HTMLElement, node: ElementNode): void {
 // and opts back into editing whenever the host DOM is non-editable: a
 // decorator host always is, and an element host may opt out to render chrome
 // around editable islands.
-function $createSlotContainer(
+function $createSlotContainer(name: string): HTMLElement {
+  const container = document.createElement('div');
+  container.setAttribute('data-lexical-slot', name);
+  container.style.display = 'none';
+  return container;
+}
+
+// Apply a slot container's editability. Re-run on every (re)mount — including
+// the reconcile-reuse path — so a reused container can never keep a stale value.
+// A `$getSlotEditable` render-config override pins it to a fixed value
+// (left unmarked, so SlotEditableExtension never toggles it). Otherwise, inside
+// a non-editable host (a decorator, or an element shell that renders chrome
+// around editable islands), it follows the editor's editable state via
+// `markSlotEditable` (gated initial value + marker keyed to this editor, so a
+// read-only editor's slots are not left editable and a nested editor's
+// containers in the same root DOM are not flipped by the outer editor).
+// Otherwise the host is editable and the container inherits, so any stale
+// marker / contentEditable from a previous non-editable host state is cleared.
+function $applySlotEditable(
   node: LexicalNode,
   name: string,
   hostDom: HTMLElement,
   decoratorHost: boolean,
-): HTMLElement {
-  const container = document.createElement('div');
-  container.setAttribute('data-lexical-slot', name);
-  container.style.display = 'none';
+  container: HTMLElement,
+): void {
   const editableOverride = activeEditorDOMRenderConfig.$getSlotEditable(
     node,
     name,
     activeEditor,
   );
   if (editableOverride !== null) {
-    // A render-config override pins this slot's editability to a fixed value,
-    // independent of the editor's editable state (so it is left unmarked and
-    // SlotEditableExtension never toggles it).
     container.contentEditable = editableOverride ? 'true' : 'false';
     container.removeAttribute('data-lexical-slot-editable');
   } else if (decoratorHost || hostDom.contentEditable === 'false') {
-    // Editable island inside a non-editable host. By default it follows the
-    // editor's editable state: gate the initial value, and mark it so
-    // SlotEditableExtension can flip it when setEditable toggles. A read-only
-    // editor's slots must not stay editable just because they sit in a
-    // non-editable host. The marker carries this editor's key so the extension
-    // only touches its own slots — a nested editor's containers live in the
-    // same root DOM but must not change with the outer editor's editable state.
-    container.contentEditable = activeEditor.isEditable() ? 'true' : 'false';
-    container.setAttribute('data-lexical-slot-editable', activeEditor._key);
+    markSlotEditable(container, activeEditor);
+  } else {
+    container.removeAttribute('contenteditable');
+    container.removeAttribute('data-lexical-slot-editable');
   }
-  return container;
 }
 
 function $mountSlotChildren(
@@ -536,7 +544,8 @@ function $mountSlotChildren(
   let totalText = '';
   const decoratorHost = $isDecoratorNode(node);
   for (const [name, slotKey] of slots) {
-    const container = $createSlotContainer(node, name, hostDom, decoratorHost);
+    const container = $createSlotContainer(name);
+    $applySlotEditable(node, name, hostDom, decoratorHost, container);
     hostDom.appendChild(container);
     subTreeTextContent = '';
     const saved = $beginCaptureGuard();
@@ -630,7 +639,7 @@ function $reconcileSlotChildren(
     subTreeTextContent = '';
     const saved = $beginCaptureGuard();
     if (container === null) {
-      container = $createSlotContainer(nextNode, name, hostDom, decoratorHost);
+      container = $createSlotContainer(name);
       // Keep the hidden placeholder slots-first: it must land ahead of the
       // linked-list children (and the terminating <br>) so the leading
       // DOMSlot boundary can skip it; it must not be appended after them.
@@ -658,6 +667,7 @@ function $reconcileSlotChildren(
       $createNode(nextSlotKey, $getDOMSlot(nextNode, container, activeEditor));
     }
     $endCaptureGuard(saved);
+    $applySlotEditable(nextNode, name, hostDom, decoratorHost, container);
     $applySlotTarget(nextNode, name, hostDom, container);
     totalText += subTreeTextContent;
     // Keep placeholder DOM order in sync with the slot Map order. A reused

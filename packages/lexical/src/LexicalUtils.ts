@@ -2546,6 +2546,29 @@ export function isDOMUnmanaged(elementDom: Node & LexicalPrivateDOM): boolean {
 }
 
 /**
+ * Mark a DOM element as a named-slot editable island that tracks the editor's
+ * editable state: set its `contentEditable` from {@link LexicalEditor.isEditable}
+ * and tag it `data-lexical-slot-editable="<editorKey>"` so `SlotEditableExtension`
+ * flips it whenever {@link LexicalEditor.setEditable} toggles. The key scopes the
+ * tag to this editor, so a nested editor's islands in the same root DOM are not
+ * affected by the outer editor's state.
+ *
+ * The reconciler applies this to slot containers rendered inside a non-editable
+ * host automatically; call it for any other editable island an app attaches
+ * itself (e.g. a `getDOMSlot` children element rendered inside a
+ * `contentEditable=false` shell).
+ *
+ * @experimental
+ */
+export function markSlotEditable(
+  element: HTMLElement,
+  editor: LexicalEditor,
+): void {
+  element.contentEditable = editor.isEditable() ? 'true' : 'false';
+  element.setAttribute('data-lexical-slot-editable', editor.getKey());
+}
+
+/**
  * True if the DOM node sits inside a subtree marked with
  * `{captureSelection: true}` via {@link setDOMUnmanaged}. Walks ancestors
  * so any descendant of a marked subtree (e.g. an `<input>` inside a marked

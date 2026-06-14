@@ -31,8 +31,8 @@ import {defineExtension} from 'lexical';
  */
 export const SlotEditableExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/extension/SlotEditable',
-  register: editor =>
-    editor.registerEditableListener(editable => {
+  register: editor => {
+    const apply = (editable: boolean) => {
       const root = editor.getRootElement();
       if (root === null) {
         return;
@@ -45,5 +45,10 @@ export const SlotEditableExtension = /* @__PURE__ */ defineExtension({
         .forEach(container => {
           container.contentEditable = value;
         });
-    }),
+    };
+    // registerEditableListener does not fire on registration, so apply the
+    // current state once up front in case tagged containers already exist.
+    apply(editor.isEditable());
+    return editor.registerEditableListener(apply);
+  },
 });

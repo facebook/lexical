@@ -347,6 +347,7 @@ export {
   isModifierMatch,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
+  markSlotEditable,
   mountSlotContainer,
   removeFromParent,
   resetRandomKey,

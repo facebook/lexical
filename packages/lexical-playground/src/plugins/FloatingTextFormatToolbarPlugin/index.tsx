@@ -96,11 +96,8 @@ function TextFormatFloatingToolbar({
       if (popupCharStylesEditorRef.current.style.pointerEvents !== 'none') {
         const x = e.clientX;
         const y = e.clientY;
-        // Resolve through the popup's root (Document or ShadowRoot);
-        // document.elementFromPoint is retargeted to the shadow host when the
-        // popup is inside a shadow root. Guard the root narrowing so that a
-        // detached popup (its getRootNode returns the popup itself) does not
-        // throw when we look up an element at the cursor.
+        // Guard the root narrowing so a detached popup (its getRootNode
+        // returns the popup itself) doesn't throw on elementFromPoint.
         const popupRoot = popupCharStylesEditorRef.current.getRootNode();
         const elementUnderMouse =
           isDOMDocumentNode(popupRoot) || isDOMShadowRoot(popupRoot)

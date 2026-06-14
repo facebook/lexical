@@ -462,9 +462,8 @@ function getDragSelection(
   rootElement: HTMLElement | null,
 ): Range | null | undefined {
   const domSelection = getDOMSelectionFromTarget(event.target);
-  // caretFromPoint resolves through any DOM shadow roots enclosing rootElement
-  // (via caretPositionFromPoint's shadowRoots option); document.caretRangeFromPoint
-  // is retargeted to the shadow host when the editor is in a shadow root.
+  // Pass rootElement so caretFromPoint uses caretPositionFromPoint's
+  // shadowRoots option rather than the retargeted caretRangeFromPoint.
   const caret = caretFromPoint(event.clientX, event.clientY, rootElement);
   if (caret !== null) {
     const ownerDocument = rootElement ? rootElement.ownerDocument : document;

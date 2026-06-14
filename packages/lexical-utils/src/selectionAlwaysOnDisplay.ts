@@ -19,9 +19,8 @@ export default function selectionAlwaysOnDisplay(
   const onSelectionChange = () => {
     const domSelection = getSelection();
     const editorRootElement = editor.getRootElement();
-    // Resolve through any enclosing DOM shadow roots; Selection.anchorNode
-    // is retargeted to the shadow host when the editor is in a shadow tree,
-    // which would make the contains() check below always fail.
+    // Shadow-aware anchor so the contains() check below isn't fooled by the
+    // retargeted host.
     const domAnchorNode =
       domSelection !== null
         ? getDOMSelectionPoints(domSelection, editorRootElement).anchorNode

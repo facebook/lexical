@@ -14,12 +14,9 @@ import {
   $createParagraphNode,
   $getSlot,
   $getSlotNames,
-  $isElementNode,
   $setSlot,
   ElementNode,
 } from 'lexical';
-
-import {$isSlotContainerNode} from '../../nodes/SlotContainerNode';
 
 // The Card is an ElementNode host that demonstrates the dual capability of
 // hosting both a named slot (`title`, exactly one block) and regular
@@ -67,24 +64,12 @@ export class CardNode extends ElementNode {
     element.className = 'lexical-card-node';
     for (const name of $getSlotNames(this)) {
       const slot = $getSlot(this, name);
-      if (!$isElementNode(slot)) {
-        continue;
-      }
-      const wrapper = document.createElement('div');
-      wrapper.setAttribute('data-lexical-slot', name);
-      if ($isSlotContainerNode(slot)) {
-        // A multi-block container is transparent in HTML: its blocks export
-        // directly into the wrapper (the container is a model-side scoping
-        // artifact, not content).
-        for (const child of slot.getChildren()) {
-          $appendNodeToHTML(editor, child, wrapper);
-        }
-      } else {
-        // A bare block value IS the slotted element: it exports itself, so
-        // the wrapper holds e.g. a single `<p>` directly.
+      if (slot) {
+        const wrapper = document.createElement('div');
+        wrapper.setAttribute('data-lexical-slot', name);
         $appendNodeToHTML(editor, slot, wrapper);
+        element.append(wrapper);
       }
-      element.append(wrapper);
     }
     return {element};
   }

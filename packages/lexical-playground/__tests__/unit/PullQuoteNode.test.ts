@@ -34,6 +34,7 @@ import {assert, describe, expect, it} from 'vitest';
 
 import {
   $createSlotContainerNode,
+  $isSlotContainerNode,
   SlotContainerNode,
 } from '../../src/nodes/SlotContainerNode';
 import {PullQuoteExtension} from '../../src/plugins/PullQuoteExtension';
@@ -77,7 +78,7 @@ describe('PullQuoteNode atomic decorator host', () => {
       // SlotContainerNode wrapper.
       const quote = $getSlot(pullquote, 'quote');
       assert(
-        quote instanceof SlotContainerNode,
+        $isSlotContainerNode(quote),
         'quote slot must be a SlotContainerNode',
       );
       expect(quote.isShadowRoot()).toBe(true);
@@ -222,7 +223,7 @@ describe('PullQuoteNode atomic decorator host', () => {
       );
       expect($getSlotNames(pullquote)).toEqual(['quote', 'attribution']);
       const quote = $getSlot(pullquote, 'quote');
-      assert(quote instanceof SlotContainerNode, 'quote slot preserved');
+      assert($isSlotContainerNode(quote), 'quote slot preserved');
       const attribution = $getSlot(pullquote, 'attribution');
       assert(
         $isParagraphNode(attribution),
@@ -245,7 +246,7 @@ describe('PullQuoteNode atomic decorator host', () => {
         // assertion actually validates the import path (if the import
         // silently fell back to the seed, these assertions would fail).
         const quote = $getSlot(pullquote, 'quote');
-        assert(quote instanceof SlotContainerNode, 'quote seed exists');
+        assert($isSlotContainerNode(quote), 'quote seed exists');
         quote
           .clear()
           .append(
@@ -281,7 +282,7 @@ describe('PullQuoteNode atomic decorator host', () => {
         'Imported top-level node must be a PullQuoteNode',
       );
       const quote = $getSlot(pullquote, 'quote');
-      assert(quote instanceof SlotContainerNode, 'quote slot rebuilt');
+      assert($isSlotContainerNode(quote), 'quote slot rebuilt');
       const attribution = $getSlot(pullquote, 'attribution');
       assert(
         $isParagraphNode(attribution),
@@ -317,11 +318,13 @@ describe('PullQuoteNode atomic decorator host', () => {
       const pullquote = $getRoot().getFirstChild();
       assert($isPullQuoteNode(pullquote), 'host imported');
       const quote = $getSlot(pullquote, 'quote');
-      assert(quote instanceof SlotContainerNode, 'quote slot rebuilt');
+      assert($isSlotContainerNode(quote), 'quote slot rebuilt');
       expect(quote.getTextContent()).toBe('Only the quote');
-      // The attribution slot was not present in HTML — it must be absent,
-      // not silently populated with the seed default.
-      expect($getSlot(pullquote, 'attribution')).toBe(null);
+      const attribution = $getSlot(pullquote, 'attribution');
+      assert(
+        $isParagraphNode(attribution) && attribution.isEmpty(),
+        'attribution slot rebuilt',
+      );
     });
   });
 
@@ -348,13 +351,14 @@ describe('PullQuoteNode atomic decorator host', () => {
       const pullquote = $getRoot().getFirstChild();
       assert($isPullQuoteNode(pullquote), 'host imported');
       const quote = $getSlot(pullquote, 'quote');
-      assert(
-        quote instanceof SlotContainerNode,
-        'quote slot created on demand',
-      );
+      assert($isSlotContainerNode(quote), 'quote slot created on demand');
       expect(quote.getTextContent()).toBe('hello');
+      const attribution = $getSlot(pullquote, 'attribution');
       // No attribution in the HTML, so none is fabricated.
-      expect($getSlot(pullquote, 'attribution')).toBe(null);
+      assert(
+        $isParagraphNode(attribution) && attribution.isEmpty(),
+        'attribution should be empty',
+      );
     });
   });
 
@@ -382,7 +386,7 @@ describe('PullQuoteNode atomic decorator host', () => {
       const pullquote = $getRoot().getFirstChild();
       assert($isPullQuoteNode(pullquote), 'host imported');
       const quote = $getSlot(pullquote, 'quote');
-      assert(quote instanceof SlotContainerNode, 'quote slot rebuilt');
+      assert($isSlotContainerNode(quote), 'quote slot rebuilt');
       expect(quote.getChildren().map(child => child.getTextContent())).toEqual([
         'Quoted',
         'loose',

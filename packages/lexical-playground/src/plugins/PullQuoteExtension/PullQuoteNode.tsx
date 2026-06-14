@@ -11,6 +11,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  SlotChildNode,
 } from 'lexical';
 import type {JSX} from 'react';
 
@@ -23,16 +24,12 @@ import {
   $createTextNode,
   $getSlot,
   $getSlotNames,
-  $isElementNode,
   $setSlot,
   DecoratorNode,
 } from 'lexical';
 import * as React from 'react';
 
-import {
-  $createSlotContainerNode,
-  $isSlotContainerNode,
-} from '../../nodes/SlotContainerNode';
+import {$createSlotContainerNode} from '../../nodes/SlotContainerNode';
 
 // PullQuote is a DecoratorNode-as-host with two editable slots: `quote`
 // carries the inline-formatted body of the quote and `attribution` carries
@@ -97,46 +94,39 @@ export class PullQuoteNode extends DecoratorNode<JSX.Element> {
     host.className = 'lexical-pullquote-node';
     for (const name of $getSlotNames(this)) {
       const slot = $getSlot(this, name);
-      if (!$isElementNode(slot)) {
-        continue;
-      }
-      const wrapper = document.createElement('div');
-      wrapper.setAttribute('data-lexical-slot', name);
-      if ($isSlotContainerNode(slot)) {
-        // A multi-block container is transparent in HTML: its blocks export
-        // directly into the wrapper (the container is a model-side scoping
-        // artifact, not content).
-        for (const child of slot.getChildren()) {
-          $appendNodeToHTML(editor, child, wrapper);
-        }
-      } else {
-        // A bare block value IS the slotted element: it exports itself, so
-        // the wrapper holds e.g. a single `<p>` directly.
+      if (slot) {
+        const wrapper = document.createElement('div');
+        wrapper.setAttribute('data-lexical-slot', name);
         $appendNodeToHTML(editor, slot, wrapper);
+        host.append(wrapper);
       }
-      host.append(wrapper);
     }
     return {element: host};
   }
 }
 
-export function $createPullQuoteNode(): PullQuoteNode {
+export function $createPullQuoteNode(
+  quote?: LexicalNode & SlotChildNode,
+  attribution?: LexicalNode & SlotChildNode,
+): PullQuoteNode {
   const node = $create(PullQuoteNode);
   $setSlot(
     node,
     'quote',
-    $createSlotContainerNode().append(
-      $createParagraphNode().append(
-        $createTextNode(
-          'The only way to discover the limits of the possible is to go beyond them into the impossible.',
+    quote ||
+      $createSlotContainerNode().append(
+        $createParagraphNode().append(
+          $createTextNode(
+            'The only way to discover the limits of the possible is to go beyond them into the impossible.',
+          ),
         ),
       ),
-    ),
   );
   $setSlot(
     node,
     'attribution',
-    $createParagraphNode().append($createTextNode('Arthur C. Clarke')),
+    attribution ||
+      $createParagraphNode().append($createTextNode('Arthur C. Clarke')),
   );
   return node;
 }

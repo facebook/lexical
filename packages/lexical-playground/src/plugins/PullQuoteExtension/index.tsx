@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalCommand, LexicalNode} from 'lexical';
+import type {LexicalCommand} from 'lexical';
 
 import {NodeSelectionDataSelectedExtension} from '@lexical/extension';
 import {
@@ -24,9 +24,7 @@ import {
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
-  $removeSlot,
   $setSelection,
-  $setSlot,
   COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
@@ -102,37 +100,19 @@ function $handlePullQuoteEscape(): boolean {
 // being dropped.
 const PullQuoteImportRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
-    const pullquote = $createPullQuoteNode();
-    $removeSlot(pullquote, 'quote');
-    $removeSlot(pullquote, 'attribution');
-    const orphans: LexicalNode[] = [];
+    const quote = $createSlotContainerNode();
+    const attribution = $createParagraphNode();
+    const pullquote = $createPullQuoteNode(quote, attribution);
     for (const domChild of Array.from(el.children)) {
       const slotName = domChild.getAttribute('data-lexical-slot');
       if (slotName === 'quote') {
-        $setSlot(
-          pullquote,
-          slotName,
-          $createSlotContainerNode().append(...ctx.$importChildren(domChild)),
-        );
+        quote.splice(quote.getChildrenSize(), 0, ctx.$importChildren(domChild));
       } else if (slotName === 'attribution') {
-        $setSlot(
-          pullquote,
-          slotName,
-          $appendInline($createParagraphNode(), ctx.$importChildren(domChild)),
-        );
+        $appendInline(attribution, ctx.$importChildren(domChild));
       } else {
-        orphans.push(...ctx.$importOne(domChild));
+        // import any ophans to the quote
+        quote.splice(quote.getChildrenSize(), 0, ctx.$importOne(domChild));
       }
-    }
-    if (orphans.length > 0) {
-      const existing = $getSlot(pullquote, 'quote');
-      const quote = $isElementNode(existing)
-        ? existing
-        : $createSlotContainerNode();
-      if (quote !== existing) {
-        $setSlot(pullquote, 'quote', quote);
-      }
-      quote.append(...orphans);
     }
     return [pullquote];
   },

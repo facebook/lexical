@@ -6,7 +6,7 @@
  *
  */
 
-import type {LexicalNode} from 'lexical';
+import type {DOMExportOutput, LexicalEditor, LexicalNode} from 'lexical';
 
 import {$create, ElementNode} from 'lexical';
 
@@ -22,6 +22,11 @@ export class SlotContainerNode extends ElementNode {
     const div = document.createElement('div');
     div.className = 'lexical-slot-container';
     return div;
+  }
+
+  // Export as a fragment since it "is" the slot wrapper created by the host
+  exportDOM(editor: LexicalEditor): DOMExportOutput {
+    return {element: document.createDocumentFragment()};
   }
 
   updateDOM(): false {

@@ -27,6 +27,7 @@ import {
   configExtension,
   defineExtension,
   ElementNode,
+  LexicalNode,
   SELECT_ALL_COMMAND,
   type TextNode,
 } from 'lexical';
@@ -53,6 +54,12 @@ class SlotContainerNode extends ElementNode {
   isShadowRoot(): boolean {
     return true;
   }
+}
+
+function $isSlotContainerNode(
+  node: LexicalNode | undefined | null,
+): node is SlotContainerNode {
+  return node instanceof SlotContainerNode;
 }
 
 // A shadow-root container holding a paragraph + text per entry, so the slot
@@ -133,7 +140,7 @@ function $hostParagraph(): ElementNode {
 
 function $slotValue(): SlotContainerNode {
   const slot = $getSlot($hostParagraph(), 'title');
-  assert(slot instanceof SlotContainerNode, 'slot value must exist');
+  assert($isSlotContainerNode(slot), 'slot value must exist');
   return slot;
 }
 

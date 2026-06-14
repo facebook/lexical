@@ -788,6 +788,42 @@ test('outerHTML / serialization carries the host element but not the shadow cont
   expect(outer).toMatch(/<lexical-editor/);
 });
 
+test('saveToIndexedDB / restoreFromIndexedDB round-trip the editor state', async ({
+  page,
+}) => {
+  await clearAndType(page, 'notes', 'persisted to IndexedDB');
+  // App-driven save: drop the current value into IndexedDB under a key.
+  await page.evaluate(async () => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {saveToIndexedDB: (k: string) => Promise<void>};
+    await host.saveToIndexedDB('autosave/notes');
+  });
+  // Wipe the editor so the restore below can be observed.
+  await editor(page, 'notes').click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.press('Delete');
+  await expect(editor(page, 'notes')).toHaveText('');
+
+  const restored = await page.evaluate(async () => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {restoreFromIndexedDB: (k: string) => Promise<boolean>};
+    return host.restoreFromIndexedDB('autosave/notes');
+  });
+  expect(restored).toBe(true);
+  await expect(editor(page, 'notes')).toHaveText('persisted to IndexedDB');
+
+  // Missing keys return false without throwing.
+  const missing = await page.evaluate(async () => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {restoreFromIndexedDB: (k: string) => Promise<boolean>};
+    return host.restoreFromIndexedDB('autosave/does-not-exist');
+  });
+  expect(missing).toBe(false);
+});
+
 test('host.form reflects ElementInternals and fires formAssociatedCallback', async ({
   page,
 }) => {

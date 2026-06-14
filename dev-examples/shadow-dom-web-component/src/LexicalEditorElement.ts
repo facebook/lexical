@@ -165,6 +165,8 @@ const STYLE_SHEET = `
 `;
 
 const TEXT_FORMATS: readonly TextFormatType[] = ['bold', 'italic', 'underline'];
+const STATE_DB = 'lexical-editor-element';
+const STATE_STORE = 'states';
 
 /**
  * `<lexical-editor>`: a self-contained rich-text editor web component.
@@ -490,6 +492,57 @@ export class LexicalEditorElement extends HTMLElement {
   /** The `<form>` the host is currently associated with, or null. */
   get form(): HTMLFormElement | null {
     return this.internals.form;
+  }
+
+  /**
+   * Persist the current serialized state under `key` in IndexedDB.
+   * Distinct from `formStateRestoreCallback` (bfcache / autocomplete):
+   * this path is for app-driven persistence — auto-save drafts, manual
+   * "save" buttons, offline-first storage.
+   */
+  async saveToIndexedDB(key: string): Promise<void> {
+    const db = await this.openIndexedDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STATE_STORE, 'readwrite');
+      tx.objectStore(STATE_STORE).put(this.value, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  /**
+   * Restore a previously persisted state. Returns true if `key` was
+   * found and applied, false if no state was stored for that key.
+   */
+  async restoreFromIndexedDB(key: string): Promise<boolean> {
+    if (this.editor === null) {
+      return false;
+    }
+    const db = await this.openIndexedDB();
+    const value = await new Promise<unknown>((resolve, reject) => {
+      const tx = db.transaction(STATE_STORE, 'readonly');
+      const req = tx.objectStore(STATE_STORE).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    if (typeof value !== 'string' || value === '') {
+      return false;
+    }
+    this.editor.setEditorState(this.editor.parseEditorState(value));
+    this.internals.setFormValue(this.value);
+    this.updateValidity();
+    return true;
+  }
+
+  private openIndexedDB(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(STATE_DB, 1);
+      req.onupgradeneeded = () => {
+        req.result.createObjectStore(STATE_STORE);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
   }
 
   private updateEditableState(): void {

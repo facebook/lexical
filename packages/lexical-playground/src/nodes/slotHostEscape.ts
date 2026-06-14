@@ -45,50 +45,55 @@ function $findSlotHost<T extends LexicalNode>(
   return null;
 }
 
-// Default bottom-most navigable region for the common "slots render first, then
-// children" layout (Card, PullQuote): the last child if the host has one, else
-// — for a childless host like the DecoratorNode PullQuote — its last named slot
-// value. A host whose chrome lays its regions out in a different order (e.g. the
-// Review renders its children above its `author` slot) passes a `$bottomRegion`
-// override instead.
-function $defaultBottomRegion(host: LexicalNode): LexicalNode | null {
+// Whether DOM element `a` precedes `b` in document order.
+function isBefore(a: HTMLElement, b: HTMLElement): boolean {
+  return (
+    (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
+  );
+}
+
+// The host's top-most ('first') or bottom-most ('last') navigable region. A
+// host's regions are its children (bounded by the first/last child, since they
+// render contiguously into one element) and its named slot values. Nothing
+// requires the chrome to render children before, between, or after the slots —
+// the Card renders its `title` slot above its body children, the Review renders
+// its body children above its `author` slot, a DecoratorNode like PullQuote has
+// only slots — so the visual order lives in the DOM, not the model. Pick the
+// candidate whose rendered element sits first/last in document order.
+function $edgeRegion(
+  editor: LexicalEditor,
+  host: LexicalNode,
+  edge: 'first' | 'last',
+): LexicalNode | null {
+  const candidates: LexicalNode[] = [];
   if ($isElementNode(host)) {
-    const lastChild = host.getLastChild();
-    if (lastChild !== null) {
-      return lastChild;
+    const child = edge === 'first' ? host.getFirstChild() : host.getLastChild();
+    if (child !== null) {
+      candidates.push(child);
     }
   }
-  const names = $getSlotNames(host);
-  return names.length > 0 ? $getSlot(host, names[names.length - 1]) : null;
-}
-
-// Default top-most navigable region for the same slots-first layout: the first
-// named slot value, or — with no slots — the first child. Overridden via
-// `$topRegion` for hosts that order their regions differently.
-function $defaultTopRegion(host: LexicalNode): LexicalNode | null {
-  const names = $getSlotNames(host);
-  if (names.length > 0) {
-    return $getSlot(host, names[0]);
+  for (const name of $getSlotNames(host)) {
+    const value = $getSlot(host, name);
+    if (value !== null) {
+      candidates.push(value);
+    }
   }
-  return $isElementNode(host) ? host.getFirstChild() : null;
-}
-
-export interface SlotHostArrowEscapeOptions<T extends LexicalNode> {
-  /**
-   * The host's top-most navigable region, used by the ArrowUp handler. Defaults
-   * to the first named slot value (else the first child), which matches a
-   * slots-first chrome like Card / PullQuote. Override it when the chrome lays
-   * its regions out in another order — the Review renders its body children
-   * above its `author` slot, so its top region is the first body child.
-   */
-  $topRegion?: (host: T) => LexicalNode | null;
-  /**
-   * The host's bottom-most navigable region, used by the ArrowDown handler.
-   * Defaults to the last child (else the last named slot value). Override it for
-   * a non-slots-first chrome — the Review's bottom region is its `author` slot,
-   * which renders below the body children.
-   */
-  $bottomRegion?: (host: T) => LexicalNode | null;
+  let best: LexicalNode | null = null;
+  let bestDom: HTMLElement | null = null;
+  for (const candidate of candidates) {
+    const dom = editor.getElementByKey(candidate.getKey());
+    if (dom === null) {
+      continue;
+    }
+    if (
+      bestDom === null ||
+      (edge === 'first' ? isBefore(dom, bestDom) : isBefore(bestDom, dom))
+    ) {
+      best = candidate;
+      bestDom = dom;
+    }
+  }
+  return best;
 }
 
 /**
@@ -98,8 +103,10 @@ export interface SlotHostArrowEscapeOptions<T extends LexicalNode> {
  * never a dead end. Those helpers walk `getParent` to find the container, which
  * can't reach a host from inside a named slot (slot values have
  * `__parent === null`) and are typed for `ElementNode` containers (PullQuote is
- * a `DecoratorNode`); this resolves the host with `$getSlotHost` and reuses
- * their shared edge checks ({@link $isAtStartOfNode} / {@link $isAtEndOfNode}).
+ * a `DecoratorNode`); this resolves the host with `$getSlotHost`, finds the
+ * host's top/bottom region from the rendered DOM order (see {@link $edgeRegion}),
+ * and reuses their shared edge checks ({@link $isAtStartOfNode} /
+ * {@link $isAtEndOfNode}).
  *
  * The browser already steps the caret between a host's editable regions and into
  * an adjacent sibling on its own, even across the `contentEditable=false` chrome
@@ -107,19 +114,11 @@ export interface SlotHostArrowEscapeOptions<T extends LexicalNode> {
  * the host is the *first or last* block with nowhere to go. So this only acts
  * there — inserting a paragraph before/after the host and moving to it — and
  * defers to the browser otherwise (returning `false`).
- *
- * The top/bottom regions default to a slots-first chrome (Card / PullQuote);
- * pass {@link SlotHostArrowEscapeOptions.$topRegion} / `$bottomRegion` for a host
- * that orders its regions differently (the Review's body children render above
- * its `author` slot).
  */
 export function registerSlotHostArrowEscape<T extends LexicalNode>(
   editor: LexicalEditor,
   $isHost: (node: LexicalNode | null | undefined) => node is T,
-  options: SlotHostArrowEscapeOptions<T> = {},
 ): () => void {
-  const $bottomRegion = options.$bottomRegion ?? $defaultBottomRegion;
-  const $topRegion = options.$topRegion ?? $defaultTopRegion;
   return mergeRegister(
     editor.registerCommand<KeyboardEvent | null>(
       KEY_ARROW_DOWN_COMMAND,
@@ -137,7 +136,7 @@ export function registerSlotHostArrowEscape<T extends LexicalNode>(
         if (host === null || host.getNextSibling() !== null) {
           return false;
         }
-        const region = $bottomRegion(host);
+        const region = $edgeRegion(editor, host, 'last');
         if (
           !$isElementNode(region) ||
           !$isAtEndOfNode(selection.anchor, region)
@@ -167,7 +166,7 @@ export function registerSlotHostArrowEscape<T extends LexicalNode>(
         if (host === null || host.getPreviousSibling() !== null) {
           return false;
         }
-        const region = $topRegion(host);
+        const region = $edgeRegion(editor, host, 'first');
         if (
           !$isElementNode(region) ||
           !$isAtStartOfNode(selection.anchor, region)

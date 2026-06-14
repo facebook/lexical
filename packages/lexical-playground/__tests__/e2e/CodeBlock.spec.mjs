@@ -1042,7 +1042,7 @@ test.describe('CodeBlock', () => {
                 dir="auto"
                 spellcheck="false"
                 data-gutter="1">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </code>
             </div>
             <div
@@ -1050,7 +1050,7 @@ test.describe('CodeBlock', () => {
               dir="auto"
               data-lexical-layout-item="true">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </div>
           </div>
@@ -1082,10 +1082,10 @@ test.describe('CodeBlock', () => {
                 dir="auto"
                 spellcheck="false"
                 data-gutter="1">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </code>
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </div>
             <div
@@ -1093,7 +1093,7 @@ test.describe('CodeBlock', () => {
               dir="auto"
               data-lexical-layout-item="true">
               <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-                <br />
+                <br data-lexical-managed-linebreak="true" />
               </p>
             </div>
           </div>

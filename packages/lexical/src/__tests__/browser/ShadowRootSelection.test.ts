@@ -309,10 +309,9 @@ describe('DOM shadow root selection (browser)', () => {
 
   // IME composition through a shadow root: the $onCompositionEndImpl path
   // reads selection through getDOMSelectionPoints to find the textnode under
-  // the caret; if the read returned the retargeted shadow host instead, the
-  // composed character would land on the wrong node or be silently dropped.
-  // This is the silent-bug class the audit flagged for CJK input inside a
-  // shadow tree.
+  // the caret. Without the shadow-aware read, a composed CJK character would
+  // land on the retargeted shadow host rather than the textnode and be
+  // silently dropped.
   test('composition end commits the composed character inside a shadow root', () => {
     if (!SUPPORTS_COMPOSED_RANGES) {
       return;

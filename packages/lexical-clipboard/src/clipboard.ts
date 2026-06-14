@@ -761,8 +761,6 @@ function $copyToClipboardEvent(
     if (!domSelection) {
       return false;
     }
-    // Resolve through any enclosing DOM shadow roots; Selection.anchorNode is
-    // retargeted to the shadow host when the editor lives in a shadow tree.
     const points = getDOMSelectionPoints(domSelection, editor.getRootElement());
     const anchorDOM = points.anchorNode;
     const focusDOM = points.focusNode;

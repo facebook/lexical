@@ -10,12 +10,10 @@ import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {registerRichText} from '@lexical/rich-text';
 import {
   $createParagraphNode,
-  $createRangeSelection,
   $createTextNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
-  $setSelection,
   getActiveElement,
   getActiveElementDeep,
   getComposedEventTarget,
@@ -26,7 +24,14 @@ import {
   isDOMShadowRoot,
   type LexicalEditor,
 } from 'lexical';
-import {beforeEach, describe, expect, onTestFinished, test} from 'vitest';
+import {
+  assert,
+  beforeEach,
+  describe,
+  expect,
+  onTestFinished,
+  test,
+} from 'vitest';
 import {userEvent} from 'vitest/browser';
 
 // These tests exercise the DOM shadow root support that relies on platform
@@ -211,11 +216,7 @@ describe('DOM shadow root selection (browser)', () => {
     contentEditable.focus();
     editor.update(
       () => {
-        const text = $getRoot().getAllTextNodes()[0];
-        const selection = $createRangeSelection();
-        selection.anchor.set(text.getKey(), 0, 'text');
-        selection.focus.set(text.getKey(), 5, 'text');
-        $setSelection(selection);
+        $getRoot().getAllTextNodes()[0].select(0, 5);
       },
       {discrete: true},
     );
@@ -250,12 +251,10 @@ describe('DOM shadow root selection (browser)', () => {
 
     editor.read(() => {
       const selection = $getSelection();
-      expect($isRangeSelection(selection)).toBe(true);
-      if ($isRangeSelection(selection)) {
-        expect(selection.anchor.offset).toBe(2);
-        expect(selection.focus.offset).toBe(7);
-        expect(selection.getTextContent()).toBe('llo w');
-      }
+      assert($isRangeSelection(selection));
+      expect(selection.anchor.offset).toBe(2);
+      expect(selection.focus.offset).toBe(7);
+      expect(selection.getTextContent()).toBe('llo w');
     });
   });
 
@@ -269,41 +268,34 @@ describe('DOM shadow root selection (browser)', () => {
     // Character granularity is deterministic across browsers.
     editor.update(
       () => {
-        const text = $getRoot().getAllTextNodes()[0];
-        const selection = $createRangeSelection();
-        selection.anchor.set(text.getKey(), 0, 'text');
-        selection.focus.set(text.getKey(), 0, 'text');
-        $setSelection(selection);
-        selection.modify('extend', false, 'character');
+        $getRoot()
+          .getAllTextNodes()[0]
+          .select(0, 0)
+          .modify('extend', false, 'character');
       },
       {discrete: true},
     );
     editor.read(() => {
       const selection = $getSelection();
-      expect($isRangeSelection(selection)).toBe(true);
-      if ($isRangeSelection(selection)) {
-        expect(selection.getTextContent()).toBe('H');
-      }
+      assert($isRangeSelection(selection));
+      expect(selection.getTextContent()).toBe('H');
     });
 
     // Word granularity should at least cover the first word.
     editor.update(
       () => {
-        const text = $getRoot().getAllTextNodes()[0];
-        const selection = $createRangeSelection();
-        selection.anchor.set(text.getKey(), 0, 'text');
-        selection.focus.set(text.getKey(), 0, 'text');
-        $setSelection(selection);
-        selection.modify('extend', false, 'word');
+        $getRoot()
+          .getAllTextNodes()[0]
+          .select(0, 0)
+          .modify('extend', false, 'word');
       },
       {discrete: true},
     );
     editor.read(() => {
       const selection = $getSelection();
-      if ($isRangeSelection(selection)) {
-        expect(selection.getTextContent().startsWith('Hello')).toBe(true);
-        expect(selection.isCollapsed()).toBe(false);
-      }
+      assert($isRangeSelection(selection));
+      expect(selection.getTextContent().startsWith('Hello')).toBe(true);
+      expect(selection.isCollapsed()).toBe(false);
     });
   });
 
@@ -469,10 +461,8 @@ describe('DOM shadow root selection (browser)', () => {
     });
     editor.read(() => {
       const selection = $getSelection();
-      expect($isRangeSelection(selection)).toBe(true);
-      if ($isRangeSelection(selection)) {
-        expect(selection.getTextContent()).toBe('Hello');
-      }
+      assert($isRangeSelection(selection));
+      expect(selection.getTextContent()).toBe('Hello');
     });
   });
 

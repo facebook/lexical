@@ -1261,7 +1261,7 @@ export function registerRichText(
     editor.registerCommand(
       PASTE_COMMAND,
       event => {
-        const [, files, hasTextContent] = eventFiles(event);
+        const [, files, hasTextContent] = eventFiles(event, true);
         if (files.length > 0 && !hasTextContent) {
           editor.dispatchCommand(DRAG_DROP_PASTE, files);
           return true;

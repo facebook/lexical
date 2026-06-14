@@ -179,8 +179,6 @@ function useTestRecorder(
   const generateTestContent = useCallback(() => {
     const rootElement = editor.getRootElement();
     const browserSelection = getDOMSelection(editor._window);
-    // Resolve through any enclosing DOM shadow roots; anchorNode/focusNode
-    // are retargeted to the shadow host when the editor is in a shadow tree.
     const browserPoints =
       browserSelection !== null
         ? getDOMSelectionPoints(browserSelection, rootElement)
@@ -337,8 +335,6 @@ ${steps.map(formatStep).join(`\n`)}
             !skipNextSelectionChange
           ) {
             const browserSelection = getDOMSelection(editor._window);
-            // Resolve through any enclosing DOM shadow roots; anchorNode is
-            // retargeted to the shadow host when the editor is in a shadow tree.
             const browserPoints =
               browserSelection &&
               getDOMSelectionPoints(browserSelection, editor.getRootElement());
@@ -400,8 +396,6 @@ ${steps.map(formatStep).join(`\n`)}
     }
     const browserSelection = getDOMSelection(getCurrentEditor()._window);
     const rootElement = getCurrentEditor().getRootElement();
-    // Resolve through any enclosing DOM shadow roots; anchorNode/focusNode
-    // are retargeted to the shadow host when the editor is in a shadow tree.
     const browserPoints =
       browserSelection !== null
         ? getDOMSelectionPoints(browserSelection, rootElement)

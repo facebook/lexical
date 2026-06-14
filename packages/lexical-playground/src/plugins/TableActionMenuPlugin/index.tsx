@@ -763,8 +763,6 @@ function TableCellActionMenuContainer({
       $isRangeSelection(selection) &&
       rootElement !== null &&
       nativeSelection !== null &&
-      // Resolve through any enclosing DOM shadow roots; the raw anchorNode is
-      // retargeted to the shadow host when the editor is in a shadow tree.
       rootElement.contains(
         getDOMSelectionPoints(nativeSelection, rootElement).anchorNode,
       )

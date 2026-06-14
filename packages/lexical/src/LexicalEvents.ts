@@ -533,8 +533,6 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
       } else if (event.pointerType === 'touch' || event.pointerType === 'pen') {
         // This is used to update the selection on touch devices (including Apple Pencil) when the user clicks on text after a
         // node selection. See isSelectionChangeFromMouseDown for the inverse
-        // Resolve through any enclosing DOM shadow roots; the raw anchorNode
-        // would be retargeted to the shadow host (always isHTMLElement true).
         const domAnchorNode = getDOMSelectionPoints(
           domSelection,
           editor._rootElement,
@@ -1489,13 +1487,18 @@ function onDocumentSelectionChange(event: Event): void {
   if (domSelection === null) {
     return;
   }
-  let nextActiveEditor = getNearestEditorFromDOMNode(domSelection.anchorNode);
+  // In a shadow tree the document Selection's anchorNode is retargeted to
+  // the shadow host (outside any editor), so the direct lookup would always
+  // return null. Skip straight to the shadow fallback below in that case.
+  const rawAnchor = domSelection.anchorNode;
+  let nextActiveEditor: LexicalEditor | null =
+    rawAnchor !== null && !isDOMShadowRoot(rawAnchor.getRootNode())
+      ? getNearestEditorFromDOMNode(rawAnchor)
+      : null;
   if (nextActiveEditor === null) {
-    // Inside a DOM shadow root the document Selection's anchorNode is
-    // retargeted to the shadow host (outside the editor). Resolve the real
-    // focused element by descending through the open shadow roots instead.
-    // Only applies when focus is actually inside a shadow tree, so light
-    // DOM behavior is unchanged.
+    // Resolve the real focused element by descending through the open shadow
+    // roots. Only fires when focus is actually inside a shadow tree, so
+    // light DOM behavior is unchanged.
     const ownerDocument = getDOMOwnerDocument(event.target);
     const activeElement =
       ownerDocument !== null ? getActiveElementDeep(ownerDocument) : null;
@@ -1514,8 +1517,6 @@ function onDocumentSelectionChange(event: Event): void {
     isSelectionChangeFromMouseDown = false;
     updateEditorSync(nextActiveEditor, () => {
       const lastSelection = $getPreviousSelection();
-      // Resolve through any enclosing DOM shadow roots; the raw anchorNode
-      // would be retargeted to the shadow host (always isHTMLElement true).
       const domAnchorNode = getDOMSelectionPoints(
         domSelection,
         nextActiveEditor._rootElement,

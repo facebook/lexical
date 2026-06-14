@@ -33,9 +33,7 @@ export function setFloatingElemPosition(
   let top = targetRect.top - floatingElemRect.height - verticalGap;
   let left = targetRect.left - horizontalOffset;
 
-  // Check if text is end-aligned. Resolve the range through any DOM shadow
-  // roots enclosing anchorElem; window.getSelection().getRangeAt(0) is
-  // retargeted to the shadow host when the editor is in a shadow root.
+  // Check if text is end-aligned.
   const domSelection = getDOMSelection(anchorElem.ownerDocument.defaultView);
   const range = domSelection && getDOMSelectionRange(domSelection, anchorElem);
   if (range) {

@@ -2773,9 +2773,6 @@ export function $internalCreateRangeSelection(
     if (domSelection === null) {
       return null;
     }
-    // Resolve the boundary points through any enclosing DOM shadow roots. In
-    // the light DOM getDOMSelectionPoints returns `domSelection` itself, so
-    // `points` aliases the live Selection and we read its properties directly.
     const points = getDOMSelectionPoints(domSelection, editor._rootElement);
     anchorDOM = points.anchorNode;
     focusDOM = points.focusNode;

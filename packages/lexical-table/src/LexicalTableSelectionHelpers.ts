@@ -291,8 +291,6 @@ function $handleTableClick(
         editorWindow.removeEventListener('pointermove', onPointerMove);
         return;
       }
-      // Resolve through any enclosing DOM shadow roots; moveEvent.target is
-      // retargeted to the shadow host when the table lives in a shadow tree.
       const moveTarget = getComposedEventTarget(moveEvent);
       if (!isDOMNode(moveTarget)) {
         return;
@@ -1106,8 +1104,6 @@ function $fixTableSelectionForSelectedTable(
   const tableNode = $getTableNodeByKeyOrThrow(selection.tableKey);
   // if selection goes outside of the table we need to change it to Range selection
   const domSelection = getDOMSelection(editorWindow);
-  // Resolve through any enclosing DOM shadow roots; the raw boundary nodes
-  // are retargeted to the shadow host when the editor is in a shadow tree.
   const points =
     domSelection &&
     getDOMSelectionPoints(domSelection, editor.getRootElement());
@@ -2365,8 +2361,6 @@ function $getTableEdgeCursorPosition(
   if (!domSelection) {
     return undefined;
   }
-  // Resolve through any enclosing DOM shadow roots; the raw anchorNode is
-  // retargeted to the shadow host when the editor is in a shadow tree.
   const domAnchorNode = getDOMSelectionPoints(
     domSelection,
     editor.getRootElement(),

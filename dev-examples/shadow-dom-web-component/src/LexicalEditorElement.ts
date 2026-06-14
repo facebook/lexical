@@ -45,6 +45,12 @@ const STYLE_SHEET = `
     background: var(--lexical-bg);
     color: var(--lexical-fg);
     font-family: system-ui, -apple-system, sans-serif;
+    /* contain: layout style isolates the editor internal layout
+     * recalculation and counter / quote scoping from the rest of the
+     * page so reflow inside one editor does not ripple through the
+     * outer form. paint is intentionally omitted so the native focus
+     * ring on the host is not clipped to the border-radius. */
+    contain: layout style;
   }
   .toolbar {
     display: flex;

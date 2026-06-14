@@ -247,12 +247,13 @@ test.describe('Shadow DOM', () => {
       const lastText = editor?.querySelector('[data-lexical-text="true"]');
       const textNode = lastText?.firstChild;
       if (textNode && textNode.nodeType === 3) {
+        const end = textNode.textContent.length;
         const sel = window.getSelection();
-        sel.removeAllRanges();
-        const range = document.createRange();
-        range.setStart(textNode, textNode.textContent.length);
-        range.collapse(true);
-        sel.addRange(range);
+        // setBaseAndExtent: WebKit doesn't register a Range added with
+        // addRange when its start container is inside an open shadow tree,
+        // but the explicit setBaseAndExtent form does (same approach as
+        // selectInnerText in the browser-unit suite).
+        sel.setBaseAndExtent(textNode, end, textNode, end);
       }
     });
     // DIAGNOSTIC: editor state right before paste — confirms which element

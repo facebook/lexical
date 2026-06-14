@@ -22,8 +22,8 @@ import {CardNode} from '../plugins/CardExtension/CardNode';
 import {CollapsibleContainerNode} from '../plugins/CollapsibleExtension/CollapsibleContainerNode';
 import {CollapsibleContentNode} from '../plugins/CollapsibleExtension/CollapsibleContentNode';
 import {CollapsibleTitleNode} from '../plugins/CollapsibleExtension/CollapsibleTitleNode';
-import {PanelNode} from '../plugins/PanelExtension/PanelNode';
 import {PullQuoteNode} from '../plugins/PullQuoteExtension/PullQuoteNode';
+import {ReviewNode} from '../plugins/ReviewExtension/ReviewNode';
 import {DateTimeNode} from './DateTimeNode/DateTimeNode';
 import {EmojiNode} from './EmojiNode';
 import {EquationNode} from './EquationNode';
@@ -79,7 +79,7 @@ const PlaygroundNodes: Klass<LexicalNode>[] = [
   DateTimeNode,
   CardNode,
   SlotContainerNode,
-  PanelNode,
+  ReviewNode,
   PullQuoteNode,
 ];
 

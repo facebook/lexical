@@ -46,9 +46,9 @@ import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawExtension';
 import {INSERT_IMAGE_COMMAND, InsertImageDialog} from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutExtension/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
-import {INSERT_PANEL_COMMAND} from '../PanelExtension';
 import {InsertPollDialog} from '../PollExtension';
 import {INSERT_PULLQUOTE_COMMAND} from '../PullQuoteExtension';
+import {INSERT_REVIEW_COMMAND} from '../ReviewExtension';
 import {InsertTableDialog} from '../TablePlugin';
 
 export class ComponentPickerOption extends MenuOption {
@@ -346,10 +346,10 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
       onSelect: () =>
         editor.dispatchCommand(INSERT_PULLQUOTE_COMMAND, undefined),
     }),
-    new ComponentPickerOption('Panel', {
-      icon: <i className="icon sticky" />,
-      keywords: ['panel', 'react', 'chrome', 'slot'],
-      onSelect: () => editor.dispatchCommand(INSERT_PANEL_COMMAND, undefined),
+    new ComponentPickerOption('Review', {
+      icon: <i className="icon star" />,
+      keywords: ['review', 'testimonial', 'rating', 'stars', 'react', 'slot'],
+      onSelect: () => editor.dispatchCommand(INSERT_REVIEW_COMMAND, undefined),
     }),
     new ComponentPickerOption('Columns Layout', {
       icon: <i className="icon columns" />,

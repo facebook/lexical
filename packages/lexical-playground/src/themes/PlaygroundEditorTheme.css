@@ -856,41 +856,77 @@
   user-select: none;
   -webkit-user-select: none;
 }
-/* Panel — an ElementNode whose presentation is React chrome: the shell is
-   contentEditable=false, and the chrome attaches the editable islands (the
-   title slot container and the getDOMSlot children element). */
-.lexical-panel-node {
-  border: 1px solid #c7d2fe;
+/* Review — an ElementNode whose React chrome goes beyond static presentation:
+   an interactive star-rating widget (click/hover to set, persisted via
+   NodeState) sits above the editable islands — the testimonial prose
+   (getDOMSlot children) and the `author` slot container. */
+.lexical-review-node {
+  background: #fafaf9;
+  border: 1px solid #e7e5e4;
   border-radius: 8px;
   margin: 8px 0;
 }
-.lexical-panel-chrome {
+.lexical-review-chrome {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 12px 16px;
+  gap: 8px;
+  padding: 14px 18px;
 }
-.lexical-panel-label {
-  color: #6366f1;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  user-select: none;
-  -webkit-user-select: none;
+.lexical-review-stars {
+  display: flex;
+  gap: 2px;
 }
-.lexical-panel-title [data-lexical-slot='title'] {
-  border-bottom: 1px solid #c7d2fe;
-  outline: none;
-  padding-bottom: 4px;
+.lexical-review-star {
+  background: none;
+  border: none;
+  color: #d6d3d1;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  padding: 0;
 }
-.lexical-panel-title [data-lexical-slot='title'] > * {
-  font-size: 18px;
-  font-weight: 600;
+.lexical-review-star-on {
+  color: #f59e0b;
 }
-.lexical-panel-body .lexical-panel-children {
+.lexical-review-children {
+  font-style: italic;
   line-height: 1.6;
   outline: none;
+}
+.lexical-review-author [data-lexical-slot='author'] {
+  outline: none;
+}
+.lexical-review-author [data-lexical-slot='author'] > * {
+  color: #57534e;
+  font-size: 14px;
+  font-weight: 600;
+}
+/* CSS placeholders for the empty author / prose fields, same idiom as the
+   Card: shown only while a field holds just its empty-paragraph <br>, hidden
+   the moment the user types, so the model seeds no placeholder TextNodes. */
+.lexical-review-author [data-lexical-slot='author'] > p:has(br:only-child),
+.lexical-review-children > p:only-of-type:has(br:only-child) {
+  position: relative;
+}
+.lexical-review-author
+  [data-lexical-slot='author']
+  > p:has(br:only-child)::before {
+  content: '— Author';
+}
+.lexical-review-children > p:only-of-type:has(br:only-child)::before {
+  content: 'Write a review…';
+}
+.lexical-review-author
+  [data-lexical-slot='author']
+  > p:has(br:only-child)::before,
+.lexical-review-children > p:only-of-type:has(br:only-child)::before {
+  color: #a8a29e;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* Title slot — a header field: large, bold editable text with a thin

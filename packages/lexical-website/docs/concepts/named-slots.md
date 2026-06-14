@@ -291,8 +291,9 @@ function PullQuoteComponent({nodeKey}: {nodeKey: NodeKey}) {
 
 A `contentEditable=false` ElementNode shell can host React chrome the same
 way (slot containers opt into editing whenever the host DOM is
-non-editable): the playground's Panel demo portals chrome into the host DOM,
-attaches the title slot with `useLexicalSlotRef`, and applies the identical
+non-editable): the playground's Review demo portals chrome into the host DOM,
+attaches the author slot with `useLexicalSlotRef`, drives an interactive
+star-rating widget that persists to NodeState, and applies the identical
 hidden-then-attach technique to its `getDOMSlot` children element. Such a shell should call
 [`setDOMUnmanaged(dom)`](/docs/api/modules/lexical#setdomunmanaged) in
 `createDOM` — the portal and the

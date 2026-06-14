@@ -241,14 +241,43 @@ test.describe('Shadow DOM', () => {
         return null;
       };
       const editor = findEditor(document);
-      const root = editor?.getRootNode();
+      const editorRoot = editor?.getRootNode();
+      const sel = window.getSelection();
+      let composedStart = null;
+      let composedEnd = null;
+      let composedStartNode = null;
+      try {
+        if (
+          sel &&
+          typeof sel.getComposedRanges === 'function' &&
+          editorRoot !== null &&
+          editorRoot !== document
+        ) {
+          const ranges = sel.getComposedRanges({shadowRoots: [editorRoot]});
+          const r = ranges?.[0];
+          if (r) {
+            composedStart = r.startOffset;
+            composedEnd = r.endOffset;
+            composedStartNode = r.startContainer?.nodeName ?? null;
+          }
+        }
+      } catch (_e) {
+        // ignore
+      }
       return {
         activeIsEditable: document.activeElement?.isContentEditable ?? null,
         activeMatchesLexical:
           document.activeElement?.matches?.('[data-lexical-editor]') ?? null,
         activeTag: document.activeElement?.tagName ?? null,
-        editorInShadow: root !== null && root !== document,
+        composedEnd,
+        composedStart,
+        composedStartNode,
+        editorInShadow: editorRoot !== null && editorRoot !== document,
         editorOuterStart: editor?.outerHTML?.slice(0, 200) ?? null,
+        selAnchorOffset: sel?.anchorOffset ?? null,
+        selFocusOffset: sel?.focusOffset ?? null,
+        selIsCollapsed: sel?.isCollapsed ?? null,
+        selRangeCount: sel?.rangeCount ?? null,
       };
     });
     // eslint-disable-next-line no-console

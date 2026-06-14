@@ -8,6 +8,7 @@
 
 import type {
   DOMExportOutput,
+  EditorConfig,
   ElementDOMSlot,
   LexicalEditor,
   LexicalNode,
@@ -66,7 +67,7 @@ export class ReviewNode extends ElementNode {
     return $setState(this, ratingState, valueOrUpdater);
   }
 
-  createDOM(): HTMLElement {
+  createDOM(_config: EditorConfig, editor: LexicalEditor): HTMLElement {
     const dom = document.createElement('div');
     dom.className = 'lexical-review-node';
     // The shell is chrome: only the slot containers and the children element
@@ -87,7 +88,12 @@ export class ReviewNode extends ElementNode {
     const children = document.createElement('div');
     children.className = 'lexical-review-children';
     children.style.display = 'none';
-    children.contentEditable = 'true';
+    // The body is a getDOMSlot editable island inside the contentEditable=false
+    // shell. Like a named-slot container, it follows the editor's editable
+    // state: gate the initial value and tag it with `data-lexical-slot-editable`
+    // so SlotEditableExtension flips it on read-only toggle.
+    children.contentEditable = editor.isEditable() ? 'true' : 'false';
+    children.setAttribute('data-lexical-slot-editable', '');
     dom.appendChild(children);
     return dom;
   }

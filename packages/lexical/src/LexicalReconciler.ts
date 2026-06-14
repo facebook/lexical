@@ -492,6 +492,7 @@ function $setElementDirection(dom: HTMLElement, node: ElementNode): void {
 // decorator host always is, and an element host may opt out to render chrome
 // around editable islands.
 function $createSlotContainer(
+  node: LexicalNode,
   name: string,
   hostDom: HTMLElement,
   decoratorHost: boolean,
@@ -499,8 +500,24 @@ function $createSlotContainer(
   const container = document.createElement('div');
   container.setAttribute('data-lexical-slot', name);
   container.style.display = 'none';
-  if (decoratorHost || hostDom.contentEditable === 'false') {
-    container.contentEditable = 'true';
+  const editableOverride = activeEditorDOMRenderConfig.$getSlotEditable(
+    node,
+    name,
+    activeEditor,
+  );
+  if (editableOverride !== null) {
+    // A render-config override pins this slot's editability to a fixed value,
+    // independent of the editor's editable state (so it is left unmarked and
+    // SlotEditableExtension never toggles it).
+    container.contentEditable = editableOverride ? 'true' : 'false';
+  } else if (decoratorHost || hostDom.contentEditable === 'false') {
+    // Editable island inside a non-editable host. By default it follows the
+    // editor's editable state: gate the initial value, and mark it so
+    // SlotEditableExtension can flip it when setEditable toggles. A read-only
+    // editor's slots must not stay editable just because they sit in a
+    // non-editable host.
+    container.contentEditable = activeEditor.isEditable() ? 'true' : 'false';
+    container.setAttribute('data-lexical-slot-editable', '');
   }
   return container;
 }
@@ -516,7 +533,7 @@ function $mountSlotChildren(
   let totalText = '';
   const decoratorHost = $isDecoratorNode(node);
   for (const [name, slotKey] of slots) {
-    const container = $createSlotContainer(name, hostDom, decoratorHost);
+    const container = $createSlotContainer(node, name, hostDom, decoratorHost);
     hostDom.appendChild(container);
     subTreeTextContent = '';
     const saved = $beginCaptureGuard();
@@ -610,7 +627,7 @@ function $reconcileSlotChildren(
     subTreeTextContent = '';
     const saved = $beginCaptureGuard();
     if (container === null) {
-      container = $createSlotContainer(name, hostDom, decoratorHost);
+      container = $createSlotContainer(nextNode, name, hostDom, decoratorHost);
       // Keep the hidden placeholder slots-first: it must land ahead of the
       // linked-list children (and the terminating <br>) so the leading
       // DOMSlot boundary can skip it; it must not be appended after them.

@@ -194,15 +194,22 @@ test.describe('Shadow DOM', () => {
       .locator('div[contenteditable="true"][data-lexical-editor="true"]')
       .waitFor();
     await page.keyboard.type('hi');
+    // Wait until the typed text is reflected in the editor state and the
+    // selection collapsed at the end of "hi". CI's faster timing races
+    // selectAll/copy against the typing reconcile; local headless absorbs
+    // it.
+    await page
+      .locator('div[contenteditable="true"][data-lexical-editor="true"]')
+      .getByText('hi')
+      .waitFor();
     await selectAll(page);
-    // Let the native selectionchange event propagate so the editor's
-    // selection state reflects the selectAll before dispatching copy.
-    // CI's faster timing surfaces this race; local headless absorbs it.
-    await page.waitForTimeout(50);
     // The copy guard in @lexical/clipboard reads selection through
     // getDOMSelectionPoints; without it the shadow host makes
     // isSelectionWithinEditor return false and the copy is dropped.
     const clipboard = await copyToClipboard(page);
+    // Sanity: if the shadow-path copy guard ever regresses, surface that
+    // here rather than letting paste become a silent no-op.
+    expect(Object.keys(clipboard).length).toBeGreaterThan(0);
     await moveToEditorEnd(page);
     await pasteFromClipboard(page, clipboard);
     await assertHTML(

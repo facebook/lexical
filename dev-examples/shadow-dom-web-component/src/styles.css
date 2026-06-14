@@ -57,6 +57,23 @@ form lexical-editor {
   font-weight: 400;
 }
 
+/*
+ * The summary editor is themed purely from the page by redefining the
+ * CSS custom properties the editor exposes on its host element. The page
+ * never reaches into the shadow root — inherited custom properties cross
+ * the boundary on their own. The encapsulated layout stays private.
+ */
+form lexical-editor[name='summary'] {
+  --lexical-bg: #1c1d22;
+  --lexical-fg: #e6e6e9;
+  --lexical-border: #2d2f36;
+  --lexical-toolbar-bg: #25262c;
+  --lexical-toolbar-divider: #2d2f36;
+  --lexical-toolbar-hover-bg: #32343a;
+  --lexical-toolbar-pressed-bg: #2a2f4a;
+  --lexical-toolbar-pressed-border: #3a4267;
+}
+
 form button[type='submit'] {
   padding: 8px 16px;
   border: none;
@@ -65,6 +82,16 @@ form button[type='submit'] {
   color: #fff;
   font-size: 14px;
   cursor: pointer;
+}
+
+form label.control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400;
+  color: #555;
+  font-size: 13px;
+  margin-bottom: 12px;
 }
 
 #last-edited {
@@ -84,4 +111,45 @@ form button[type='submit'] {
 
 #form-output:empty {
   display: none;
+}
+
+/*
+ * Floating format popover. Page-level CSS positions it; the editor
+ * supplies viewport coordinates through a composed CustomEvent. The
+ * `popover` attribute opts into the top-layer popover API so the
+ * popover renders above the editors regardless of stacking context.
+ */
+#format-popover {
+  position: fixed;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  gap: 2px;
+}
+
+/*
+ * The popover API's UA stylesheet defaults `display: none` on a closed
+ * popover. Scope our layout to the open state so we don't override that
+ * — otherwise the popover stays visible after `hidePopover()`.
+ */
+#format-popover:popover-open {
+  display: flex;
+}
+
+#format-popover button {
+  min-width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+#format-popover button:hover {
+  background: #ececec;
 }

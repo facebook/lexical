@@ -57,10 +57,7 @@ import Editor from './Editor';
 import {registerSettingsSynchronization} from './hooks/useSynchronizeSettings';
 import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
-import {
-  PlaygroundImportExtension,
-  PlaygroundRichTextImportExtension,
-} from './nodes/PlaygroundImportExtension';
+import {PlaygroundImportExtension} from './nodes/PlaygroundImportExtension';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
 import {PlaygroundDOMRenderExtension} from './PlaygroundDOMRenderExtension';
 import {AutocompleteExtension} from './plugins/AutocompleteExtension';
@@ -190,16 +187,12 @@ const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
         code: {arrow: true, click: true, enter: true, onlyAtBoundary: true},
       },
     }),
-    // Playground-specific node rules (CardImportRule, PullQuoteImportRule) —
-    // Card and PullQuote live inside lexical-playground so they can't ride the
-    // per-package implicit registration; they need an explicit aggregate.
-    // Kept out of the always-on PlaygroundImportExtension so plain-text mode
-    // doesn't pull it in.
-    PlaygroundRichTextImportExtension,
-    // Each node extension below registers its own DOM-import rules, so the
-    // rich-text importer set tracks this node set automatically (kept out of
-    // the always-on PlaygroundImportExtension so plain-text mode doesn't pull
-    // in RichTextExtension, which conflicts with PlainTextExtension).
+    // Each node extension below registers its own DOM-import rules — the
+    // framework nodes (rich-text, list, table, code) and the playground block
+    // hosts (Card, PullQuote, Review) alike — so the rich-text importer set
+    // tracks this node set automatically (kept out of the always-on
+    // PlaygroundImportExtension so plain-text mode doesn't pull in
+    // RichTextExtension, which conflicts with PlainTextExtension).
     TableExtension,
     ImagesExtension,
     HorizontalRuleExtension,

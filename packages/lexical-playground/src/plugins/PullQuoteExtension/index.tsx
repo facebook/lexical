@@ -6,14 +6,24 @@
  *
  */
 
-import type {LexicalCommand, LexicalEditor} from 'lexical';
+import type {LexicalCommand, LexicalEditor, LexicalNode} from 'lexical';
 
 import {NodeSelectionDataSelectedExtension} from '@lexical/extension';
+import {
+  CoreImportExtension,
+  defineImportRule,
+  DOMImportExtension,
+  sel,
+} from '@lexical/html';
 import {$insertNodeToNearestRoot, mergeRegister} from '@lexical/utils';
 import {
   $createNodeSelection,
   $getNearestNodeFromDOMNode,
+  $getSlot,
+  $isElementNode,
+  $removeSlot,
   $setSelection,
+  $setSlot,
   CLICK_COMMAND,
   COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_EDITOR,
@@ -24,6 +34,8 @@ import {
   isHTMLElement,
 } from 'lexical';
 
+import {$createSlotContainerNode} from '../../nodes/SlotContainerNode';
+import {$createLineSlotValue} from '../../nodes/slotImport';
 import {
   $createPullQuoteNode,
   $isPullQuoteNode,
@@ -63,12 +75,69 @@ function $resolveChromeTarget(
   return node;
 }
 
+// Reconstruct a PullQuoteNode from its exported HTML (see
+// PullQuoteNode.exportDOM): a `<div class="lexical-pullquote-node">` wrapping a
+// `<div data-lexical-slot="quote">` and `<div data-lexical-slot="attribution">`.
+// The quote is multi-block, so it becomes a SlotContainerNode seeded with the
+// imported children; the attribution is a single-line slot flattened to its
+// inline projection. Both seeds are dropped first so an HTML fragment missing a
+// slot can't inherit the default text. The host is a DecoratorNode with no
+// children channel, so non-slot children land in the quote slot rather than
+// being dropped.
+const PullQuoteImportRule = /* @__PURE__ */ defineImportRule({
+  $import: (ctx, el) => {
+    const pullquote = $createPullQuoteNode();
+    $removeSlot(pullquote, 'quote');
+    $removeSlot(pullquote, 'attribution');
+    const orphans: LexicalNode[] = [];
+    for (const domChild of Array.from(el.children)) {
+      const slotName = domChild.getAttribute('data-lexical-slot');
+      if (slotName === 'quote') {
+        $setSlot(
+          pullquote,
+          slotName,
+          $createSlotContainerNode().append(...ctx.$importChildren(domChild)),
+        );
+      } else if (slotName === 'attribution') {
+        $setSlot(
+          pullquote,
+          slotName,
+          $createLineSlotValue(ctx.$importChildren(domChild)),
+        );
+      } else {
+        orphans.push(...ctx.$importOne(domChild));
+      }
+    }
+    if (orphans.length > 0) {
+      const existing = $getSlot(pullquote, 'quote');
+      const quote = $isElementNode(existing)
+        ? existing
+        : $createSlotContainerNode();
+      if (quote !== existing) {
+        $setSlot(pullquote, 'quote', quote);
+      }
+      quote.append(...orphans);
+    }
+    return [pullquote];
+  },
+  match: sel.tag('div').classAll('lexical-pullquote-node'),
+  name: '@lexical/playground/pullquote-host',
+});
+
 export const PullQuoteExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     // Mirror NodeSelection state onto a `data-selected` attribute on the
     // host DOM so CSS can render the selected outline.
     /* @__PURE__ */ configExtension(NodeSelectionDataSelectedExtension, {
       nodes: [PullQuoteNode],
+    }),
+    // The PullQuote's HTML import rule rides its own extension (like every
+    // other node extension that registers its own DOM-import rules). CoreImport
+    // supplies the paragraph/text rules the rule's children-import relies on
+    // and orders this host rule ahead of the generic block rules.
+    CoreImportExtension,
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: [PullQuoteImportRule],
     }),
   ],
   name: '@lexical/playground/PullQuote',

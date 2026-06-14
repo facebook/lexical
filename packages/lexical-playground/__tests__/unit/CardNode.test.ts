@@ -17,7 +17,6 @@ import {
 import {
   $generateHtmlFromNodes,
   $generateNodesFromDOMViaExtension,
-  CoreImportExtension,
 } from '@lexical/html';
 import {
   $createNodeSelection,
@@ -42,7 +41,6 @@ import {
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
-import {PlaygroundRichTextImportExtension} from '../../src/nodes/PlaygroundImportExtension';
 import {CardExtension} from '../../src/plugins/CardExtension';
 import {
   $createCardNode,
@@ -53,24 +51,14 @@ import {
 // SlotContainerNode is deliberately NOT registered: the Card's single-line
 // title slot value is a bare ParagraphNode (the slot link itself is the
 // virtual shadow root), so no Card code path may construct a container —
-// registering one here would let such a regression pass silently.
+// registering one here would let such a regression pass silently. CardExtension
+// brings its own DOM import pipeline (CoreImportExtension + its import rule), so
+// this same extension also drives the HTML round-trip tests below — using it
+// alone verifies the extension is a self-contained importer.
 const CardTestExtension = defineExtension({
   $initialEditorState: null,
   dependencies: [CardExtension],
   name: '[test-card]',
-  nodes: [CardNode],
-});
-
-// Adds the DOM import pipeline: PlaygroundRichTextImportExtension supplies
-// the Card / PullQuote import rules.
-const CardImportTestExtension = defineExtension({
-  $initialEditorState: null,
-  dependencies: [
-    CardExtension,
-    CoreImportExtension,
-    PlaygroundRichTextImportExtension,
-  ],
-  name: '[test-card-import]',
   nodes: [CardNode],
 });
 
@@ -125,7 +113,7 @@ describe('CardNode named slots', () => {
   });
 
   it('round-trips the title slot and body children through HTML export -> DOMImportExtension', () => {
-    using editor = buildEditorFromExtensions(CardImportTestExtension);
+    using editor = buildEditorFromExtensions(CardTestExtension);
 
     editor.update(
       () => {
@@ -170,7 +158,7 @@ describe('CardNode named slots', () => {
   // formats are written to the clipboard, and external paste targets pick
   // text/html.
   it('keeps the body in HTML export when the Card is in a NodeSelection', () => {
-    using editor = buildEditorFromExtensions(CardImportTestExtension);
+    using editor = buildEditorFromExtensions(CardTestExtension);
 
     let html = '';
     editor.update(
@@ -197,7 +185,7 @@ describe('CardNode named slots', () => {
   // text: the title slot arrives with an empty paragraph, never content the
   // source HTML did not carry.
   it('does not fabricate the seeded title when importing a Card without a title wrapper', () => {
-    using editor = buildEditorFromExtensions(CardImportTestExtension);
+    using editor = buildEditorFromExtensions(CardTestExtension);
 
     const noTitleHtml = '<div class="lexical-card-node"><p>Body only</p></div>';
 

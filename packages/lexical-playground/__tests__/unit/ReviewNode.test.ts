@@ -10,7 +10,6 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $generateHtmlFromNodes,
   $generateNodesFromDOMViaExtension,
-  CoreImportExtension,
 } from '@lexical/html';
 import {
   $createNodeSelection,
@@ -24,7 +23,6 @@ import {
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
-import {PlaygroundRichTextImportExtension} from '../../src/nodes/PlaygroundImportExtension';
 import {ReviewExtension} from '../../src/plugins/ReviewExtension';
 import {
   $createReviewNode,
@@ -32,15 +30,11 @@ import {
   ReviewNode,
 } from '../../src/plugins/ReviewExtension/ReviewNode';
 
-// Adds the DOM import pipeline: PlaygroundRichTextImportExtension supplies the
-// Card / PullQuote / Review import rules.
+// ReviewExtension brings its own DOM import pipeline (CoreImportExtension + its
+// import rule), so the runtime extension alone is a self-contained importer.
 const ReviewImportTestExtension = defineExtension({
   $initialEditorState: null,
-  dependencies: [
-    ReviewExtension,
-    CoreImportExtension,
-    PlaygroundRichTextImportExtension,
-  ],
+  dependencies: [ReviewExtension],
   name: '[test-review-import]',
   nodes: [ReviewNode],
 });

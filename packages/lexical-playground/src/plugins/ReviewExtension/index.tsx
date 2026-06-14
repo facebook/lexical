@@ -9,12 +9,22 @@
 import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
 import type {JSX, RefObject} from 'react';
 
+import {
+  CoreImportExtension,
+  defineImportRule,
+  DOMImportExtension,
+  sel,
+} from '@lexical/html';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalSlotRef} from '@lexical/react/useLexicalSlotRef';
 import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   $getNodeByKey,
+  $getSlot,
+  $isElementNode,
+  $setSlot,
   COMMAND_PRIORITY_EDITOR,
+  configExtension,
   createCommand,
   defineExtension,
   setDOMUnmanaged,
@@ -23,6 +33,7 @@ import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
+import {$createLineSlotValue} from '../../nodes/slotImport';
 import {$createReviewNode, $isReviewNode, ReviewNode} from './ReviewNode';
 
 export const INSERT_REVIEW_COMMAND: LexicalCommand<void> =
@@ -214,7 +225,67 @@ export function ReviewPlugin(): JSX.Element {
   );
 }
 
+// Reconstruct a ReviewNode from its exported HTML (see ReviewNode.exportDOM):
+// a `<div class="lexical-review-node" data-rating="N">` wrapping a
+// `<div data-lexical-slot="author">` and the body prose as regular paragraph
+// siblings. The author is a single-line slot flattened to its inline
+// projection; the body imports through the normal child path; the `rating`
+// NodeState is restored from the data attribute, clamped to 0-5 so
+// hand-authored HTML can't push it out of range.
+const ReviewImportRule = /* @__PURE__ */ defineImportRule({
+  $import: (ctx, el) => {
+    const review = $createReviewNode();
+    // Clear the seeded default body paragraph so imported children replace it.
+    for (const child of review.getChildren()) {
+      child.remove();
+    }
+    const rating = Number(el.getAttribute('data-rating'));
+    if (Number.isFinite(rating)) {
+      review.setRating(Math.max(0, Math.min(5, Math.round(rating))));
+    }
+    let importedAuthor = false;
+    for (const domChild of Array.from(el.children)) {
+      const slotName = domChild.getAttribute('data-lexical-slot');
+      if (slotName === 'author') {
+        importedAuthor = true;
+        $setSlot(
+          review,
+          'author',
+          $createLineSlotValue(ctx.$importChildren(domChild)),
+        );
+        continue;
+      }
+      for (const node of ctx.$importOne(domChild)) {
+        review.append(node);
+      }
+    }
+    if (!importedAuthor) {
+      // No author wrapper in the source HTML: clear the seeded empty paragraph
+      // defensively so the import can never carry over fabricated content.
+      const author = $getSlot(review, 'author');
+      if ($isElementNode(author)) {
+        author.clear();
+      }
+    }
+    return [review];
+  },
+  match: sel.tag('div').classAll('lexical-review-node'),
+  name: '@lexical/playground/review-host',
+});
+
 export const ReviewExtension = /* @__PURE__ */ defineExtension({
+  // The Review's HTML import rule rides its own extension — like every other
+  // node extension that registers its own DOM-import rules — rather than a
+  // central playground aggregate. CoreImportExtension supplies the
+  // paragraph/text rules the rule's children-import relies on and orders this
+  // host rule ahead of the generic block rules (the playground's always-on
+  // ClipboardDOMImportExtension routes pastes through this pipeline).
+  dependencies: [
+    CoreImportExtension,
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: [ReviewImportRule],
+    }),
+  ],
   name: '@lexical/playground/Review',
   nodes: [ReviewNode],
   register: editor => {

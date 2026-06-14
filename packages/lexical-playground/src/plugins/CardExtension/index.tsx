@@ -15,7 +15,14 @@ import type {
 } from 'lexical';
 
 import {NodeSelectionDataSelectedExtension} from '@lexical/extension';
-import {domOverride, DOMRenderExtension} from '@lexical/html';
+import {
+  CoreImportExtension,
+  defineImportRule,
+  DOMImportExtension,
+  domOverride,
+  DOMRenderExtension,
+  sel,
+} from '@lexical/html';
 import {$insertNodeToNearestRoot, mergeRegister} from '@lexical/utils';
 import {
   $createNodeSelection,
@@ -30,6 +37,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   $setSelection,
+  $setSlot,
   CLICK_COMMAND,
   COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_EDITOR,
@@ -43,6 +51,7 @@ import {
   KEY_TAB_COMMAND,
 } from 'lexical';
 
+import {$createLineSlotValue} from '../../nodes/slotImport';
 import {$createCardNode, $isCardNode, CardNode} from './CardNode';
 
 export const INSERT_CARD_COMMAND: LexicalCommand<void> =
@@ -245,6 +254,49 @@ function $resolveCardChromeTarget(
   return node;
 }
 
+// Reconstruct a CardNode from its exported HTML (see CardNode.exportDOM): the
+// named title slot rides a `<div data-lexical-slot="title">` child and the body
+// is regular paragraph siblings. Re-attach the title via $setSlot (flattened to
+// a single-line bare paragraph) and append every other direct child as a
+// regular Card child. Slots are intentionally NOT auto-imported (mirroring the
+// export side and NodeState) — a host opts in with a rule.
+const CardImportRule = /* @__PURE__ */ defineImportRule({
+  $import: (ctx, el) => {
+    const card = $createCardNode();
+    // Clear the seeded default body paragraph so imported children replace it.
+    for (const child of card.getChildren()) {
+      child.remove();
+    }
+    let importedTitle = false;
+    for (const domChild of Array.from(el.children)) {
+      const slotName = domChild.getAttribute('data-lexical-slot');
+      if (slotName === 'title') {
+        importedTitle = true;
+        $setSlot(
+          card,
+          'title',
+          $createLineSlotValue(ctx.$importChildren(domChild)),
+        );
+        continue;
+      }
+      for (const node of ctx.$importOne(domChild)) {
+        card.append(node);
+      }
+    }
+    if (!importedTitle) {
+      // No title wrapper in the source HTML: clear the seeded empty paragraph
+      // defensively so the import can never carry over fabricated content.
+      const title = $getSlot(card, 'title');
+      if ($isElementNode(title)) {
+        title.clear();
+      }
+    }
+    return [card];
+  },
+  match: sel.tag('div').classAll('lexical-card-node'),
+  name: '@lexical/playground/card',
+});
+
 export const CardExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     // No ClickAfterLastBlockExtension override: CardNode.isShadowRoot() is
@@ -271,6 +323,14 @@ export const CardExtension = /* @__PURE__ */ defineExtension({
           $getSlotTargetElement: (_node, _slotName, hostDom) => hostDom,
         }),
       ],
+    }),
+    // The Card's HTML import rule rides its own extension (like every other
+    // node extension that registers its own DOM-import rules). CoreImport
+    // supplies the paragraph/text rules the rule's children-import relies on
+    // and orders this host rule ahead of the generic block rules.
+    CoreImportExtension,
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: [CardImportRule],
     }),
   ],
   name: '@lexical/playground/Card',

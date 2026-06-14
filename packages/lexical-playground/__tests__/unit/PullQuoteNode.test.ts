@@ -14,7 +14,6 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $generateHtmlFromNodes,
   $generateNodesFromDOMViaExtension,
-  CoreImportExtension,
 } from '@lexical/html';
 import {
   $create,
@@ -33,7 +32,6 @@ import {
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
-import {PlaygroundRichTextImportExtension} from '../../src/nodes/PlaygroundImportExtension';
 import {
   $createSlotContainerNode,
   SlotContainerNode,
@@ -45,23 +43,14 @@ import {
   PullQuoteNode,
 } from '../../src/plugins/PullQuoteExtension/PullQuoteNode';
 
+// PullQuoteExtension brings its own DOM import pipeline (CoreImportExtension +
+// its import rule), so this single extension drives both the slot-mechanics and
+// the HTML round-trip tests — using it alone verifies the extension is a
+// self-contained importer.
 const PullQuoteTestExtension = defineExtension({
   $initialEditorState: null,
   dependencies: [PullQuoteExtension],
   name: '[test-pullquote]',
-  nodes: [PullQuoteNode, SlotContainerNode],
-});
-
-// Adds the DOM import pipeline so HTML round-trip exercises the full
-// PullQuoteImportRule.
-const PullQuoteImportTestExtension = defineExtension({
-  $initialEditorState: null,
-  dependencies: [
-    PullQuoteExtension,
-    CoreImportExtension,
-    PlaygroundRichTextImportExtension,
-  ],
-  name: '[test-pullquote-import]',
   nodes: [PullQuoteNode, SlotContainerNode],
 });
 
@@ -246,7 +235,7 @@ describe('PullQuoteNode atomic decorator host', () => {
   });
 
   it('round-trips through HTML export -> DOMImportExtension', () => {
-    using editor = buildEditorFromExtensions(PullQuoteImportTestExtension);
+    using editor = buildEditorFromExtensions(PullQuoteTestExtension);
 
     editor.update(
       () => {
@@ -308,7 +297,7 @@ describe('PullQuoteNode atomic decorator host', () => {
   // the HTML, so a fragment that only carries `quote` arrives with an empty
   // attribution slot, not "Arthur C. Clarke" silently fabricated.
   it('does not leak default seed into missing slots on import', () => {
-    using editor = buildEditorFromExtensions(PullQuoteImportTestExtension);
+    using editor = buildEditorFromExtensions(PullQuoteTestExtension);
 
     const onlyQuoteHtml =
       '<div class="lexical-pullquote-node">' +
@@ -341,7 +330,7 @@ describe('PullQuoteNode atomic decorator host', () => {
   // in the quote slot (created on demand) instead of being dropped into a
   // dead zero-slot block.
   it('imports non-slot children into the quote slot instead of dropping them', () => {
-    using editor = buildEditorFromExtensions(PullQuoteImportTestExtension);
+    using editor = buildEditorFromExtensions(PullQuoteTestExtension);
 
     const bareChildHtml =
       '<div class="lexical-pullquote-node"><p>hello</p></div>';
@@ -372,7 +361,7 @@ describe('PullQuoteNode atomic decorator host', () => {
   // Non-slot children that follow a quote wrapper append into the same quote
   // slot after the wrapper's own content.
   it('appends trailing non-slot children after the imported quote content', () => {
-    using editor = buildEditorFromExtensions(PullQuoteImportTestExtension);
+    using editor = buildEditorFromExtensions(PullQuoteTestExtension);
 
     const mixedHtml =
       '<div class="lexical-pullquote-node">' +

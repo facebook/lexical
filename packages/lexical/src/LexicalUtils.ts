@@ -772,10 +772,22 @@ export function $updateSelectedTextFromDOM(
     let textContent = getAnchorTextFromDOM(anchorNode);
     const node = $getNearestNodeFromDOMNode(anchorNode);
     if (textContent !== null && $isTextNode(node)) {
+      // The DOM text of a node that was composing still carries the trailing
+      // COMPOSITION_SUFFIX appended by the reconciler, so the placeholder DOM
+      // text is e.g. COMPOSITION_START_CHAR + COMPOSITION_SUFFIX. Strip that
+      // suffix before comparing against the placeholder. Without this, a dead
+      // key composed on a fresh paragraph (where the committed character only
+      // arrives via `data` and is never written into the DOM text node) would
+      // strip down to an empty string and remove the node entirely (#8697).
+      const placeholderTextContent =
+        textContent !== COMPOSITION_SUFFIX &&
+        textContent.endsWith(COMPOSITION_SUFFIX)
+          ? textContent.slice(0, -COMPOSITION_SUFFIX.length)
+          : textContent;
       // Data is intentionally truthy, as we check for boolean, null and empty string.
       if (
-        (textContent === COMPOSITION_SUFFIX ||
-          textContent === COMPOSITION_START_CHAR) &&
+        (placeholderTextContent === COMPOSITION_SUFFIX ||
+          placeholderTextContent === COMPOSITION_START_CHAR) &&
         data
       ) {
         const offset = data.length;

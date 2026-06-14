@@ -17,13 +17,23 @@
         included. No React, no frameworks. They are form-associated via
         <code>ElementInternals</code>
         , so submitting the form below collects each editor's serialized state.
+        The first editor uses the standard
+        <code>required</code>
+        attribute, so the form refuses to submit while it is empty. The second
+        editor is themed entirely from the page through inherited CSS custom
+        properties — the editor's internal styles stay private, but the page can
+        recolour every surface from outside.
       </p>
       <form id="demo-form">
         <label>
           Notes
+          <small>(required)</small>
           <lexical-editor
             name="notes"
-            placeholder-text="Try typing, selecting words, and formatting…"></lexical-editor>
+            placeholder-text="Try typing, selecting words, and formatting…"
+            required>
+            <button slot="toolbar-extra" type="button" data-clear>Clear</button>
+          </lexical-editor>
         </label>
         <label>
           Summary
@@ -31,10 +41,33 @@
             name="summary"
             placeholder-text="A second editor, in its own shadow root."></lexical-editor>
         </label>
+        <label class="control">
+          <input id="summary-readonly" type="checkbox" />
+          Lock the summary editor (sets the standard
+          <code>readonly</code>
+          attribute)
+        </label>
         <p id="last-edited">Last edited: (none)</p>
         <button type="submit">Submit form</button>
       </form>
       <pre id="form-output"></pre>
+    </div>
+    <!--
+      A light-DOM floating popover that anchors to the live selection rect
+      inside either editor's shadow root. The page never reaches into the
+      shadow root — it positions itself from coordinates the editor emits
+      through a composed CustomEvent.
+    -->
+    <div id="format-popover" popover="manual">
+      <button type="button" aria-label="Bold" data-format="bold">
+        <b>B</b>
+      </button>
+      <button type="button" aria-label="Italic" data-format="italic">
+        <i>I</i>
+      </button>
+      <button type="button" aria-label="Underline" data-format="underline">
+        <u>U</u>
+      </button>
     </div>
     <script src="/src/main.ts" type="module"></script>
   </body>

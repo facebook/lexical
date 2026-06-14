@@ -17,28 +17,41 @@ import {
   $isRangeSelection,
   defineExtension,
   FORMAT_TEXT_COMMAND,
+  getDOMSelectionRangeAndPoints,
   type LexicalEditor,
   REDO_COMMAND,
   type TextFormatType,
   UNDO_COMMAND,
 } from 'lexical';
 
-// All of the editor's styles live inside the shadow root, fully encapsulated
-// from the page. Nothing leaks in or out.
+// Styles live inside the shadow root, encapsulated from the page. Colours
+// and font are surfaced as CSS custom properties so the page can theme each
+// editor from the outside without reaching across the shadow boundary —
+// inherited properties cross naturally.
 const STYLE_SHEET = `
   :host {
+    --lexical-bg: #fff;
+    --lexical-fg: #1f2328;
+    --lexical-border: #ddd;
+    --lexical-toolbar-bg: #fafafa;
+    --lexical-toolbar-divider: #eee;
+    --lexical-toolbar-hover-bg: #ececec;
+    --lexical-toolbar-pressed-bg: #e0e7ff;
+    --lexical-toolbar-pressed-border: #c7d2fe;
+
     display: block;
-    border: 1px solid #ddd;
+    border: 1px solid var(--lexical-border);
     border-radius: 8px;
-    background: #fff;
+    background: var(--lexical-bg);
+    color: var(--lexical-fg);
     font-family: system-ui, -apple-system, sans-serif;
   }
   .toolbar {
     display: flex;
     gap: 4px;
     padding: 6px;
-    border-bottom: 1px solid #eee;
-    background: #fafafa;
+    border-bottom: 1px solid var(--lexical-toolbar-divider);
+    background: var(--lexical-toolbar-bg);
     border-radius: 8px 8px 0 0;
   }
   .toolbar button {
@@ -47,15 +60,33 @@ const STYLE_SHEET = `
     border: 1px solid transparent;
     border-radius: 4px;
     background: transparent;
+    color: inherit;
     cursor: pointer;
     font-size: 13px;
   }
   .toolbar button:hover {
-    background: #ececec;
+    background: var(--lexical-toolbar-hover-bg);
   }
   .toolbar button[aria-pressed='true'] {
-    background: #e0e7ff;
-    border-color: #c7d2fe;
+    background: var(--lexical-toolbar-pressed-bg);
+    border-color: var(--lexical-toolbar-pressed-border);
+  }
+  .toolbar .toolbar-spacer {
+    flex: 1;
+  }
+  .toolbar ::slotted(button) {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid var(--lexical-border);
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .toolbar ::slotted(button:hover) {
+    background: var(--lexical-toolbar-hover-bg);
   }
   .content {
     min-height: 110px;
@@ -89,11 +120,12 @@ const TEXT_FORMATS: readonly TextFormatType[] = ['bold', 'italic', 'underline'];
  */
 export class LexicalEditorElement extends HTMLElement {
   static formAssociated = true;
-  static observedAttributes = [];
+  static observedAttributes = ['required', 'disabled', 'readonly'];
 
   private internals: ElementInternals;
   private editor: LexicalEditor | null = null;
   private disposeEditor: (() => void) | null = null;
+  private formDisabled = false;
 
   constructor() {
     super();
@@ -111,12 +143,153 @@ export class LexicalEditorElement extends HTMLElement {
     const editor = this.editor;
     if (editor !== null && serializedEditorState !== '') {
       editor.setEditorState(editor.parseEditorState(serializedEditorState));
+      this.updateValidity();
+    }
+  }
+
+  /**
+   * Whether this editor's `<form>` should block submission when it has no
+   * text content. Mirrors `<input required>` / `<textarea required>`.
+   */
+  get required(): boolean {
+    return this.hasAttribute('required');
+  }
+
+  set required(value: boolean) {
+    if (value) {
+      this.setAttribute('required', '');
+    } else {
+      this.removeAttribute('required');
+    }
+  }
+
+  /**
+   * Mirrors `<input disabled>`. A disabled editor is non-editable, drops out
+   * of `FormData` (the standard form-associated custom-element behaviour),
+   * and skips constraint validation.
+   */
+  get disabled(): boolean {
+    return this.hasAttribute('disabled');
+  }
+
+  set disabled(value: boolean) {
+    if (value) {
+      this.setAttribute('disabled', '');
+    } else {
+      this.removeAttribute('disabled');
+    }
+  }
+
+  /**
+   * Mirrors `<input readonly>`. A read-only editor is non-editable but still
+   * submits its value and participates in constraint validation.
+   */
+  get readOnly(): boolean {
+    return this.hasAttribute('readonly');
+  }
+
+  set readOnly(value: boolean) {
+    if (value) {
+      this.setAttribute('readonly', '');
+    } else {
+      this.removeAttribute('readonly');
     }
   }
 
   /** The underlying LexicalEditor, for programmatic access from the page. */
   getEditor(): LexicalEditor | null {
     return this.editor;
+  }
+
+  // Mirror the standard constraint-validation surface from `<input>` /
+  // `<textarea>`. ElementInternals tracks the state but does not auto-expose
+  // it on the host element.
+  get validity(): ValidityState {
+    return this.internals.validity;
+  }
+
+  get validationMessage(): string {
+    return this.internals.validationMessage;
+  }
+
+  get willValidate(): boolean {
+    return this.internals.willValidate;
+  }
+
+  checkValidity(): boolean {
+    return this.internals.checkValidity();
+  }
+
+  reportValidity(): boolean {
+    return this.internals.reportValidity();
+  }
+
+  /**
+   * The editor's text content, used for the `required` empty check. Mirrors
+   * what a server-side validator would see when stripping the rich-text JSON
+   * down to plain text.
+   */
+  private getPlainText(): string {
+    return this.editor
+      ? this.editor.getEditorState().read(() => $getRoot().getTextContent())
+      : '';
+  }
+
+  private updateValidity(): void {
+    if (!this.required) {
+      this.internals.setValidity({});
+      return;
+    }
+    if (this.getPlainText().trim().length === 0) {
+      // Find the toolbar's first focusable button as the anchor for the
+      // browser's validation tooltip when the editor itself isn't focusable.
+      const shadow = this.shadowRoot;
+      const anchor =
+        shadow !== null
+          ? ((shadow.querySelector('.content') as HTMLElement | null) ?? this)
+          : this;
+      this.internals.setValidity(
+        {valueMissing: true},
+        'Please fill in this field.',
+        anchor,
+      );
+    } else {
+      this.internals.setValidity({});
+    }
+  }
+
+  attributeChangedCallback(name: string): void {
+    if (name === 'required') {
+      this.updateValidity();
+    } else if (name === 'disabled' || name === 'readonly') {
+      this.updateEditableState();
+    }
+  }
+
+  formResetCallback(): void {
+    if (this.editor !== null) {
+      this.editor.update(() => {
+        $getRoot().clear().append($createParagraphNode());
+      });
+      this.internals.setFormValue(this.value);
+      this.updateValidity();
+    }
+  }
+
+  // Form-associated custom elements receive this when an ancestor `<form>`
+  // or `<fieldset>` toggles its disabled state. Treated the same as the
+  // element's own `disabled` attribute.
+  formDisabledCallback(isDisabled: boolean): void {
+    this.formDisabled = isDisabled;
+    this.updateEditableState();
+  }
+
+  private updateEditableState(): void {
+    if (this.editor !== null) {
+      this.editor.setEditable(
+        !this.disabled && !this.readOnly && !this.formDisabled,
+      );
+    }
   }
 
   connectedCallback(): void {
@@ -137,6 +310,15 @@ export class LexicalEditorElement extends HTMLElement {
     toolbar.className = 'toolbar';
     toolbar.setAttribute('role', 'toolbar');
     shadow.appendChild(toolbar);
+    // A named slot at the end of the toolbar lets the page project its own
+    // buttons (`<button slot="toolbar-extra">…</button>`) into the editor's
+    // toolbar row. Slotted nodes stay in the light DOM — their events bubble
+    // out to page-level listeners — but they render visually inside the
+    // shadow root alongside our built-in toolbar buttons.
+    const toolbarSpacer = document.createElement('span');
+    toolbarSpacer.className = 'toolbar-spacer';
+    const toolbarSlot = document.createElement('slot');
+    toolbarSlot.name = 'toolbar-extra';
 
     const contentEditable = document.createElement('div');
     contentEditable.className = 'content';
@@ -160,10 +342,18 @@ export class LexicalEditorElement extends HTMLElement {
       }),
     );
     editor.setRootElement(contentEditable);
+    // Mirror `@lexical/react`'s ContentEditable: flip the DOM attribute when
+    // Lexical's editable flag changes, so toggling `disabled` / `readonly`
+    // on the host actually blocks input on the contentEditable.
+    const removeEditableListener = editor.registerEditableListener(editable => {
+      contentEditable.contentEditable = editable ? 'true' : 'false';
+    });
     this.editor = editor;
     // Initialize the form value so a submit before the user types still
     // produces a non-empty serialized state, mirroring `<input value="...">`.
     this.internals.setFormValue(this.value);
+    this.updateValidity();
+    this.updateEditableState();
 
     const formatButtons = new Map<TextFormatType, HTMLButtonElement>();
     const addButton = (label: string, onClick: () => void) => {
@@ -186,6 +376,8 @@ export class LexicalEditorElement extends HTMLElement {
     }
     addButton('↺', () => editor.dispatchCommand(UNDO_COMMAND, undefined));
     addButton('↻', () => editor.dispatchCommand(REDO_COMMAND, undefined));
+    toolbar.appendChild(toolbarSpacer);
+    toolbar.appendChild(toolbarSlot);
 
     const removeUpdateListener = editor.registerUpdateListener(
       ({editorState, dirtyElements, dirtyLeaves}) => {
@@ -202,6 +394,42 @@ export class LexicalEditorElement extends HTMLElement {
               ),
             );
           }
+          // Surface the live selection rect to the page so a light-DOM
+          // floating popover can anchor to text inside the shadow root.
+          // `getDOMSelectionRangeAndPoints` un-retargets the boundary
+          // points across the shadow boundary and returns a live Range, so
+          // `getBoundingClientRect()` gives viewport coordinates the page
+          // can use directly. Collapsed (or no) range -> rect is null.
+          let rect: DOMRectInit | null = null;
+          if ($isRangeSelection(selection) && !selection.isCollapsed()) {
+            const native = contentEditable.ownerDocument.getSelection();
+            if (native !== null) {
+              const {range} = getDOMSelectionRangeAndPoints(
+                native,
+                contentEditable,
+              );
+              const measured =
+                range !== null ? range.getBoundingClientRect() : null;
+              if (
+                measured !== null &&
+                (measured.width !== 0 || measured.height !== 0)
+              ) {
+                rect = {
+                  height: measured.height,
+                  width: measured.width,
+                  x: measured.x,
+                  y: measured.y,
+                };
+              }
+            }
+          }
+          this.dispatchEvent(
+            new CustomEvent('lexical-selection-rect', {
+              bubbles: true,
+              composed: true,
+              detail: {rect},
+            }),
+          );
         });
         // Form value + bubbling input event mirror an HTMLInputElement: only
         // fire on real content changes, not on pure selection updates, so
@@ -211,6 +439,8 @@ export class LexicalEditorElement extends HTMLElement {
         }
         // Standard form association: the form value is the serialized state.
         this.internals.setFormValue(JSON.stringify(editorState.toJSON()));
+        // Re-evaluate `required` validity now that the text content changed.
+        this.updateValidity();
         // Composed so it crosses the shadow boundary to page listeners.
         this.dispatchEvent(new Event('input', {bubbles: true, composed: true}));
       },
@@ -218,6 +448,7 @@ export class LexicalEditorElement extends HTMLElement {
 
     this.disposeEditor = () => {
       removeUpdateListener();
+      removeEditableListener();
       editor.dispose();
     };
   }

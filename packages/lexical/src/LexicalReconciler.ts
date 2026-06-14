@@ -510,6 +510,7 @@ function $createSlotContainer(
     // independent of the editor's editable state (so it is left unmarked and
     // SlotEditableExtension never toggles it).
     container.contentEditable = editableOverride ? 'true' : 'false';
+    container.removeAttribute('data-lexical-slot-editable');
   } else if (decoratorHost || hostDom.contentEditable === 'false') {
     // Editable island inside a non-editable host. By default it follows the
     // editor's editable state: gate the initial value, and mark it so

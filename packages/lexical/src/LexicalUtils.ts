@@ -2090,6 +2090,62 @@ export function getDOMSelectionPoints(
 }
 
 /**
+ * Resolves the live DOM Range (for layout reads like `getBoundingClientRect`)
+ * and the anchor/focus boundary points in one pass, sharing a single
+ * {@link getComposedStaticRange} read rather than computing it twice as a
+ * call to {@link getDOMSelectionRange} followed by {@link getDOMSelectionPoints}
+ * would. Use this at sites that need both shapes from the same selection.
+ *
+ * @returns The composed Range plus the boundary points; the Range is null
+ *   when the selection has no ranges.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function getDOMSelectionRangeAndPoints(
+  domSelection: Selection,
+  rootElement: HTMLElement | null,
+): {points: DOMSelectionBoundaryPoints; range: Range | null} {
+  const staticRange = getComposedStaticRange(domSelection, rootElement);
+  if (staticRange === null) {
+    return {
+      points: domSelection,
+      range: domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null,
+    };
+  }
+  const {startContainer, startOffset, endContainer, endOffset} = staticRange;
+  let range: Range | null = null;
+  const doc = startContainer.ownerDocument;
+  if (doc !== null) {
+    const newRange = doc.createRange();
+    try {
+      newRange.setStart(startContainer, startOffset);
+      newRange.setEnd(endContainer, endOffset);
+      range = newRange;
+    } catch (_error) {
+      // Fall through to the retargeted range.
+    }
+  }
+  if (range === null) {
+    range = domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null;
+  }
+  const points: DOMSelectionBoundaryPoints =
+    domSelection.direction === 'backward'
+      ? {
+          anchorNode: endContainer,
+          anchorOffset: endOffset,
+          focusNode: startContainer,
+          focusOffset: startOffset,
+        }
+      : {
+          anchorNode: startContainer,
+          anchorOffset: startOffset,
+          focusNode: endContainer,
+          focusOffset: endOffset,
+        };
+  return {points, range};
+}
+
+/**
  * Returns the focused element within the same Document or ShadowRoot as
  * `node`, using the standard `DocumentOrShadowRoot.activeElement`.
  *

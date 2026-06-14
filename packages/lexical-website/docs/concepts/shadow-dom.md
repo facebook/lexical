@@ -86,18 +86,14 @@ encapsulated.
 ### Styling
 
 Shadow trees do not inherit the document's stylesheets, so your editor/theme
-CSS must be placed inside the shadow root. Three common patterns:
-
-- A `<style>` element appended to the shadow root.
-- A
-  [constructable stylesheet](https://developer.mozilla.org/docs/Web/API/CSSStyleSheet#constructor)
-  shared via `shadowRoot.adoptedStyleSheets` — preferred when one stylesheet
-  serves many editor instances.
-- Cloning the page's existing `<link rel="stylesheet">` / `<style>` nodes into
-  the shadow root (what the playground's `ShadowDomWrapper` does so it can
-  reuse Vite's HMR-managed stylesheets).
-
-This is a property of Shadow DOM, not of Lexical.
+CSS has to live inside the shadow root. A `<style>` element appended to the
+root is the simplest option; a
+[constructable stylesheet](https://developer.mozilla.org/docs/Web/API/CSSStyleSheet#constructor)
+adopted via `shadowRoot.adoptedStyleSheets` scales better when one stylesheet
+serves several editor instances. The playground's `ShadowDomWrapper` clones
+the page's existing `<link>` / `<style>` nodes into the shadow root so it can
+reuse Vite's HMR-managed stylesheets. This is a property of Shadow DOM, not
+of Lexical.
 
 ## Embedding in an iframe
 
@@ -144,17 +140,13 @@ return shape may change, but the behavior in the light DOM is stable.
 
 ### `getDOMSelectionPoints` read semantics
 
-`getDOMSelectionPoints` has two return paths:
-
-- **Light DOM**: the return aliases `domSelection`, so subsequent reads
-  reflect any post-call selection changes. The aliasing is intentional — each
-  `Selection` property read forces a synchronous style/layout recalculation,
-  so `$updateDOMSelection` defers these reads until they are actually needed.
-- **Shadow DOM**: the return is a snapshot taken at call time.
-
-Read the four points immediately after the call, or compare identity via
-`points === domSelection` to detect when the return aliases `domSelection`,
-rather than caching the returned reference across selection mutations.
+In the light DOM `getDOMSelectionPoints` returns the live `Selection` itself,
+so each property read is deferred and `$updateDOMSelection` only pays for the
+synchronous style/layout recalculation that a `Selection.anchorNode` /
+`focusNode` read triggers when it actually needs the value. Inside a shadow
+tree the return is a snapshot taken at call time. Read the four points
+immediately after the call rather than caching the returned reference, or
+use `points === domSelection` to detect the alias path.
 
 ## Form association
 
@@ -212,33 +204,26 @@ class LexicalEditorElement extends HTMLElement {
 }
 ```
 
-Two contract details worth respecting:
-
-- **Mirror `<input>`'s `input` event.** Fire `input` only on content changes,
-  not on pure selection updates. Without the dirty-leaf/element gate every
-  caret move would wake the form's `oninput` listeners.
-- **Seed the initial value.** Without an initial `setFormValue` call, a form
-  submission before the user types carries an empty value because the update
-  listener has not fired yet.
-
-The full reference implementation is in
+Without the dirty-leaf/element gate every caret move would wake the form's
+`oninput` listeners, so the `input` event matches `HTMLInputElement`'s
+contract only after that guard. The initial `setFormValue` is what keeps a
+form submission before the user types from carrying an empty value, since
+the update listener has not fired yet at that point. A full reference
+implementation lives in
 [`dev-examples/shadow-dom-web-component`](https://github.com/facebook/lexical/tree/main/dev-examples/shadow-dom-web-component).
 
-## Common pitfalls and how the helpers solve them
+## Common pitfalls
 
-The shadow-aware helpers fix concrete failure modes that come up when you move
-an existing editor into a shadow root. The recurring ones:
+Moving an existing editor into a shadow root exposes a handful of recurring
+mismatches between the DOM APIs you'd reach for and what they report.
 
-### `rootElement.contains(...)` always returns false
+### Event retargeting
 
-Listeners attached above the shadow boundary (the editor `window`,
-`document.addEventListener('selectionchange')`, popups portaled to
-`document.body`, etc.) receive the **retargeted** event: `event.target` is the
-shadow host, not the actual clicked element. `rootElement.contains(host)` is
-false because the host lives in the light DOM, so any "click inside the
-editor?" gate rejects the event.
-
-Resolve through the composed path:
+Listeners above the shadow boundary — `window`, `document`'s
+`selectionchange`, popups portaled to `document.body` — see `event.target`
+retargeted to the shadow host, not the actual clicked element. A
+`rootElement.contains(event.target)` gate therefore always rejects clicks
+that came from the editor. Resolve through the composed path:
 
 ```js
 const target = getComposedEventTarget(event);
@@ -247,82 +232,66 @@ if (target instanceof Node && rootElement.contains(target)) {
 }
 ```
 
-### `document.activeElement` reports the host
+### Focus probes
 
-When focus is inside an open shadow tree `document.activeElement` is the host
-element, not the focused contenteditable. Code that checks "is the editor
-focused?" by `document.activeElement === rootElement` therefore always reads
-false.
-
-Use the shadow-aware helper, which is identical to `document.activeElement` in
-the light DOM and descends `ShadowRoot.activeElement` otherwise:
+`document.activeElement` reports the host when focus is inside an open
+shadow tree, so `document.activeElement === rootElement` is always false.
+`getActiveElement(rootElement)` reads `DocumentOrShadowRoot.activeElement`
+through `Node.getRootNode` instead, and `getActiveElementDeep` keeps
+descending into nested shadow roots when an editor whose decorator embeds a
+web component needs the innermost focused element.
 
 ```js
 if (getActiveElement(rootElement) === rootElement) { ... }
 ```
 
-For probes that may need to descend several nested shadow roots (e.g. an
-editor whose decorator embeds a web component), use `getActiveElementDeep`.
+### Outside-click handlers
 
-### Popups and dropdowns close on their own opening click
+A typical dropdown registers `document.addEventListener('click', ...)` and
+calls `setShowDropDown(false)` whenever `button.contains(event.target)` is
+false. From inside a shadow tree that check always fails (the target is the
+host), so the dropdown closes on the very click that opened it. Compare
+against `getComposedEventTarget(event)` instead — the same fix Lexical's
+`LexicalMenu` and the playground's `DropDown` use.
 
-A common pattern is "click the button → open dropdown → outside-click
-handler closes the dropdown". The outside-click handler usually compares
-`button.contains(event.target)` to decide whether the click was inside the
-button. Inside a shadow tree `event.target` is the shadow host, so the check
-returns false and the dropdown closes on the same click that opened it.
+### Drop hit-tests
 
-The fix is `getComposedEventTarget(event)` inside the outside-click handler,
-the same way Lexical's `LexicalMenu` and the playground's `DropDown` use it.
+`document.caretRangeFromPoint` and the no-argument
+`document.caretPositionFromPoint` return the host when the pointer is over
+shadow content, so an image drop lands on the host rather than the textnode
+under the cursor. `@lexical/clipboard/caretFromPoint` switches to
+`caretPositionFromPoint(x, y, {shadowRoots})` when `rootElement` lives in a
+shadow tree, and verifies the returned offset node really did land inside
+one of the requested shadow roots — engines that silently ignore the option
+fall through to the legacy paths.
 
-### Drop targets fall on the wrong node
-
-`document.caretRangeFromPoint(x, y)` and the no-argument
-`document.caretPositionFromPoint(x, y)` both return the shadow host when the
-pointer is over shadow content. Image drop and drag-to-position therefore
-land on the host, not the textnode under the cursor.
-
-`@lexical/clipboard/caretFromPoint` uses the
-`caretPositionFromPoint(x, y, {shadowRoots})` form when a `rootElement` lives
-inside a shadow tree, and verifies the returned offset node actually landed
-inside one of the requested shadow roots — engines that silently ignore the
-option (an empty implementation returns a retargeted host) fall through to
-the legacy paths.
-
-### Style sheets removed in the light DOM linger inside the shadow
+### Style mirror cleanup
 
 If your shadow mount mirrors `<style>` / `<link>` nodes from `document.head`
-into the shadow root and listens for additions via `MutationObserver`, watch
-for *removals* too — otherwise stylesheets removed by HMR or a runtime theme
-swap stay in the shadow root.
-
-The playground's `ShadowDomWrapper` tracks an `original → clone` map and
-mirrors removals as well as additions.
+and watches for additions via `MutationObserver`, mirror removals too;
+otherwise stylesheets removed by HMR or a runtime theme swap linger inside
+the shadow. `ShadowDomWrapper` tracks an `original → clone` map so an
+upstream removal drops the corresponding clone.
 
 ## Migrating an existing light-DOM editor
 
-The shape that works in the light DOM keeps working in a shadow root — the
-checklist is mostly about removing pre-shadow workarounds.
+The same code shape keeps working in a shadow root; migration is mostly
+about removing pre-shadow workarounds. Direct selection reads
+(`Selection.anchorNode`, `Selection.getRangeAt(0)`,
+`document.querySelector('[contenteditable]')` used as an editor probe) route
+through `getDOMSelectionPoints` / `getDOMSelectionRange` /
+`getActiveElement`, and any `event.target` read above the shadow boundary
+becomes `getComposedEventTarget(event)`. CSS variables inherit through the
+shadow boundary but class declarations don't, so the editor/theme CSS has
+to be adopted or cloned into the shadow root.
 
-1. **Replace direct selection reads** — search your code for
-   `Selection.anchorNode`, `Selection.focusNode`,
-   `Selection.getRangeAt(0)`, and `document.querySelector('[contenteditable]')`
-   when used as part of "is this inside the editor?" or "what's at the caret?".
-   Route each through `getDOMSelectionPoints` /
-   `getDOMSelectionRange` / `getActiveElement` instead.
-2. **Replace direct event-target reads** above the shadow boundary —
-   `event.target` becomes `getComposedEventTarget(event)`.
-3. **Style the shadow root** — adopt or clone the editor/theme CSS into the
-   shadow. CSS variables inherit through the shadow boundary; class names and
-   declarations do not.
-4. **Test the focus-restoration paths** — outside-click handlers, blur-then-
-   refocus, "did the editor lose focus?" probes. These usually need
-   `getActiveElement(rootElement)` rather than `document.activeElement`.
-5. **Re-verify popups and floating UI** — most floating elements portal into
-   `document.body` and resolve mouse hover with `element.getRootNode()
-   .elementFromPoint(x, y)`. The shadow-aware variant is the same call shape;
-   the API change is `event.target → getComposedEventTarget(event)` and a
-   guard against the popup being detached.
+The focus and popup paths are the ones that surprise people in review:
+outside-click handlers, blur-then-refocus, and "did the editor lose focus?"
+probes usually need `getActiveElement(rootElement)` rather than
+`document.activeElement`; floating UI that portals into `document.body` and
+resolves hover with `element.getRootNode().elementFromPoint(x, y)` keeps the
+same call shape but has to guard the popup root narrowing against a
+detached popup whose `getRootNode()` returns itself.
 
 ## Examples
 

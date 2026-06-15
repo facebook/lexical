@@ -91,7 +91,9 @@ import {$normalizeSelection} from './LexicalNormalization';
 import {$clampRangeSelectionToSlotFrame} from './LexicalSelection';
 import {
   $getSlot,
+  $getSlotHost,
   $getSlotHostKey,
+  $getSlotNameWithinHost,
   $isSlotChild,
   $isSlotHost,
 } from './LexicalSlot';
@@ -2546,26 +2548,63 @@ export function isDOMUnmanaged(elementDom: Node & LexicalPrivateDOM): boolean {
 }
 
 /**
- * Mark a DOM element as a named-slot editable island that tracks the editor's
- * editable state: set its `contentEditable` from {@link LexicalEditor.isEditable}
- * and tag it `data-lexical-slot-editable="<editorKey>"` so `SlotEditableExtension`
- * flips it whenever {@link LexicalEditor.setEditable} toggles. The key scopes the
- * tag to this editor, so a nested editor's islands in the same root DOM are not
- * affected by the outer editor's state.
+ * Resolve the editable state a node's DOM should have by walking the model from
+ * the node up to the root. At each slot boundary an `$getSlotEditable`
+ * render-config override (see {@link EditorDOMRenderConfig}) pins the result;
+ * otherwise resolution continues up through the host. A node that is neither a
+ * slot value nor contained by one resolves to {@link LexicalEditor.isEditable}.
  *
- * The reconciler applies this to slot containers rendered inside a non-editable
- * host automatically; call it for any other editable island an app attaches
- * itself (e.g. a `getDOMSlot` children element rendered inside a
- * `contentEditable=false` shell).
+ * Walking the model rather than the DOM keeps this correct when a host portals
+ * its slot content elsewhere, and it cascades: a slot pinned editable inside a
+ * read-only editor keeps the slots nested within it editable too, unless one of
+ * those nested slots carries its own override.
  *
  * @experimental
  */
-export function markSlotEditable(
+export function $resolveSlotEditable(
+  node: LexicalNode,
+  editor: LexicalEditor = $getEditor(),
+): boolean {
+  const host = $getSlotHost(node);
+  if (host !== null) {
+    const name = $getSlotNameWithinHost(node);
+    const override =
+      name === null
+        ? null
+        : $getEditorDOMRenderConfig(editor).$getSlotEditable(
+            host,
+            name,
+            editor,
+          );
+    return override !== null ? override : $resolveSlotEditable(host, editor);
+  }
+  const parent = node.getParent();
+  return parent === null
+    ? editor.isEditable()
+    : $resolveSlotEditable(parent, editor);
+}
+
+/**
+ * Mark a DOM element as a named-slot editable island: set its `contentEditable`
+ * to the editable state {@link $resolveSlotEditable} resolves for `node`, the
+ * content rendered into the element. Re-run whenever that resolution can change
+ * — the reconciler does this for slot containers rendered inside a non-editable
+ * host, and {@link $fullReconcile} re-triggers it on an editable toggle.
+ *
+ * Call it for any other editable island an app attaches itself (e.g. a
+ * `getDOMSlot` children element rendered inside a `contentEditable=false`
+ * shell), passing the node whose content the element holds.
+ *
+ * @experimental
+ */
+export function $markSlotEditable(
   element: HTMLElement,
-  editor: LexicalEditor,
+  node: LexicalNode,
+  editor: LexicalEditor = $getEditor(),
 ): void {
-  element.contentEditable = editor.isEditable() ? 'true' : 'false';
-  element.setAttribute('data-lexical-slot-editable', editor.getKey());
+  element.contentEditable = $resolveSlotEditable(node, editor)
+    ? 'true'
+    : 'false';
 }
 
 /**

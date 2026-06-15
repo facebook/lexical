@@ -21,14 +21,15 @@ import {$appendNodeToHTML} from '@lexical/html';
 import {
   $create,
   $createParagraphNode,
+  $getEditor,
   $getSlot,
   $getState,
   $isElementNode,
+  $markSlotEditable,
   $setSlot,
   $setState,
   createState,
   ElementNode,
-  markSlotEditable,
   setDOMUnmanaged,
 } from 'lexical';
 
@@ -91,16 +92,21 @@ export class ReviewNode extends ElementNode {
     children.className = 'lexical-review-children';
     children.style.display = 'none';
     // The body is a getDOMSlot editable island inside the contentEditable=false
-    // shell. Tag it the same way the reconciler tags a named-slot container so
-    // it follows the editor's editable state (keyed to this editor so a nested
-    // editor isn't toggled) and SlotEditableExtension flips it on read-only
-    // toggle — one shared helper, so the two paths can't drift.
-    markSlotEditable(children, editor);
+    // shell. Resolve its editability the same way the reconciler resolves a
+    // named-slot container's, through the model from this node, so it follows
+    // the editor's editable state (and any slot override cascading from a host
+    // this Review is nested in) — one shared helper, so the two paths can't
+    // drift. updateDOM re-applies it so an editable toggle reaches the island.
+    $markSlotEditable(children, this, editor);
     dom.appendChild(children);
     return dom;
   }
 
-  updateDOM(): boolean {
+  updateDOM(_prevNode: this, dom: HTMLElement): boolean {
+    const children = dom.querySelector<HTMLElement>('.lexical-review-children');
+    if (children !== null) {
+      $markSlotEditable(children, this, $getEditor());
+    }
     return false;
   }
 

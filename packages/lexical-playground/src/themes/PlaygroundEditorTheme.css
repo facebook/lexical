@@ -856,6 +856,27 @@
   user-select: none;
   -webkit-user-select: none;
 }
+.lexical-pullquote-editable-toggle {
+  float: right;
+  margin: -8px -10px 4px 8px;
+  padding: 2px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #fff;
+  color: #475569;
+  font-size: 11px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.lexical-pullquote-editable-toggle[data-quote-editable='true'] {
+  border-color: #16a34a;
+  color: #166534;
+}
+.lexical-pullquote-editable-toggle[data-quote-editable='false'] {
+  border-color: #dc2626;
+  color: #991b1b;
+}
 /* Review — an ElementNode whose React chrome goes beyond static presentation:
    an interactive star-rating widget (click/hover to set, persisted via
    NodeState) sits above the editable islands — the testimonial prose

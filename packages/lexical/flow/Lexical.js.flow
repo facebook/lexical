@@ -1057,9 +1057,14 @@ declare export function setDOMUnmanaged(
   options?: SetDOMUnmanagedOptions,
 ): void;
 declare export function isDOMUnmanaged(elementDOM: HTMLElement): boolean;
-declare export function markSlotEditable(
+declare export function $resolveSlotEditable(
+  node: LexicalNode,
+  editor?: LexicalEditor,
+): boolean;
+declare export function $markSlotEditable(
   element: HTMLElement,
-  editor: LexicalEditor,
+  node: LexicalNode,
+  editor?: LexicalEditor,
 ): void;
 declare export function isDOMCapturingSelection(
   elementDOM: Node,

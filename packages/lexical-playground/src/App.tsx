@@ -16,7 +16,6 @@ import {
   HorizontalRuleExtension,
   SelectBlockExtension,
   SelectionAlwaysOnDisplayExtension,
-  SlotEditableExtension,
   WatchEditableExtension,
 } from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
@@ -230,9 +229,6 @@ const AppExtension = /* @__PURE__ */ defineExtension({
     // Exposes editor.isEditable() as a signal; consumed by
     // registerSettingsSynchronization to drive ClickableLinkExtension.
     WatchEditableExtension,
-    // Keeps named-slot editable islands (PullQuote's slots, the Review's
-    // author) in lockstep with the editor's editable state on read-only toggle.
-    SlotEditableExtension,
     HistoryExtension,
     KeywordsExtension,
     HashtagExtension,

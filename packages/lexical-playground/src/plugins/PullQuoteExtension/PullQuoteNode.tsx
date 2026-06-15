@@ -12,6 +12,7 @@ import type {
   LexicalNode,
   NodeKey,
   SlotChildNode,
+  StateValueOrUpdater,
 } from 'lexical';
 import type {JSX} from 'react';
 
@@ -22,14 +23,44 @@ import {
   $create,
   $createParagraphNode,
   $createTextNode,
+  $fullReconcile,
+  $getNodeByKey,
   $getSlot,
   $getSlotNames,
+  $getState,
   $setSlot,
+  $setState,
+  createState,
   DecoratorNode,
 } from 'lexical';
 import * as React from 'react';
+import {useEffect, useState} from 'react';
 
 import {$createSlotContainerNode} from '../../nodes/SlotContainerNode';
+
+// A per-PullQuote override for whether its `quote` slot is editable, persisted
+// as NodeState so it rides undo/redo, copy/paste and collab like any other model
+// state. Tri-state: `null` follows the editor, `true` pins the quote editable
+// even in a read-only editor, `false` locks it even in an editable one. The
+// PullQuote `$getSlotEditable` render override reads it; a change re-renders the
+// quote subtree via `$fullReconcile(node)` so the new value (and its cascade
+// into any slots nested in the quote) reaches the DOM.
+const quoteEditableState = /* @__PURE__ */ createState('quoteEditable', {
+  parse: (v): boolean | null => (typeof v === 'boolean' ? v : null),
+});
+
+// Cycle the tri-state: null -> true -> false -> null.
+function nextQuoteEditable(value: boolean | null): boolean | null {
+  return value === null ? true : value === true ? false : null;
+}
+
+function quoteEditableLabel(value: boolean | null): string {
+  return value === null
+    ? 'Quote: follows editor'
+    : value
+      ? 'Quote: always editable'
+      : 'Quote: locked';
+}
 
 // PullQuote is a DecoratorNode-as-host with two editable slots: `quote`
 // carries the inline-formatted body of the quote and `attribution` carries
@@ -49,8 +80,49 @@ function PullQuoteComponent({nodeKey}: {nodeKey: NodeKey}): JSX.Element {
     nodeKey,
     'attribution',
   );
+  // Mirror the quote-editable override into React so the toggle reflects undo,
+  // collab and copy/paste, not just local clicks.
+  const [quoteEditable, setQuoteEditableValue] = useState<boolean | null>(() =>
+    editor.read(() => {
+      const node = $getNodeByKey(nodeKey);
+      return $isPullQuoteNode(node) ? node.getQuoteEditable() : null;
+    }),
+  );
+  useEffect(
+    () =>
+      editor.registerUpdateListener(() => {
+        setQuoteEditableValue(
+          editor.read(() => {
+            const node = $getNodeByKey(nodeKey);
+            return $isPullQuoteNode(node) ? node.getQuoteEditable() : null;
+          }),
+        );
+      }),
+    [editor, nodeKey],
+  );
+  const cycleQuoteEditable = () =>
+    editor.update(() => {
+      const node = $getNodeByKey(nodeKey);
+      if ($isPullQuoteNode(node)) {
+        node.setQuoteEditable(nextQuoteEditable(node.getQuoteEditable()));
+        // Re-render the quote and everything beneath it so the new editable
+        // value — and its cascade into any slots nested in the quote — reaches
+        // the DOM, without a document mutation observed on those descendants.
+        $fullReconcile(node);
+      }
+    });
   return (
     <div className="lexical-pullquote-chrome">
+      <button
+        type="button"
+        className="lexical-pullquote-editable-toggle"
+        data-chrome-control=""
+        data-quote-editable={String(quoteEditable)}
+        contentEditable={false}
+        onMouseDown={e => e.preventDefault()}
+        onClick={cycleQuoteEditable}>
+        {quoteEditableLabel(quoteEditable)}
+      </button>
       <div ref={quoteRef} className="lexical-pullquote-body" />
       <div ref={attributionRef} className="lexical-pullquote-attribution" />
     </div>
@@ -78,6 +150,17 @@ export class PullQuoteNode extends DecoratorNode<JSX.Element> {
 
   isInline(): false {
     return false;
+  }
+
+  // The quote-slot editable override (null follows the editor, true/false pin
+  // it). Stored as NodeState; see `quoteEditableState`.
+  getQuoteEditable(): boolean | null {
+    return $getState(this, quoteEditableState);
+  }
+  setQuoteEditable(
+    valueOrUpdater: StateValueOrUpdater<typeof quoteEditableState>,
+  ): this {
+    return $setState(this, quoteEditableState, valueOrUpdater);
   }
 
   decorate(): JSX.Element {

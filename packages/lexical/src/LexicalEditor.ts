@@ -44,6 +44,7 @@ import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
 import {$isSlotHost} from './LexicalSlot';
 import {
   $commitPendingUpdates,
+  $fullReconcile,
   internalGetActiveEditor,
   parseEditorState,
   triggerListeners,
@@ -372,13 +373,16 @@ export interface EditorDOMRenderConfig {
     editor: LexicalEditor,
   ) => HTMLElement | null;
   /**
-   * @experimental named-slots. Pin a slot container's `contentEditable` to a
-   * specific value, overriding the default where an editable island (a slot in
-   * a decorator host or a non-editable element shell) follows the editor's
+   * @experimental named-slots. Pin a slot's `contentEditable` to a specific
+   * value, overriding the default where an editable island (a slot in a
+   * decorator host or a non-editable element shell) follows the editor's
    * editable state. Return `true`/`false` to force editability regardless of
-   * `editor.isEditable()`, or `null` (the default) to follow the editor —
-   * `SlotEditableExtension` keeps the following containers in sync on toggle.
-   * Override per node type via `DOMRenderMatch.$getSlotEditable` (lexical-html).
+   * `editor.isEditable()`, or `null` (the default) to follow the editor; the
+   * value cascades, so a slot pinned editable keeps the slots nested within it
+   * editable unless they pin their own. The reconciler resolves and applies this
+   * through {@link $resolveSlotEditable} and re-renders on a `setEditable`
+   * toggle, so no extension is needed to keep islands in sync. Override per node
+   * type via `DOMRenderMatch.$getSlotEditable` (lexical-html).
    */
   $getSlotEditable: <T extends LexicalNode>(
     node: T,
@@ -1881,6 +1885,17 @@ export class LexicalEditor {
     if (this._editable !== editable) {
       this._editable = editable;
       triggerListeners('editable', this, true, editable);
+      // A named-slot island rendered inside a non-editable host carries an
+      // explicit `contentEditable` resolved from this editable state, so it
+      // does not follow the root's editability on its own. Re-render to push
+      // the toggle into those islands. A normal (non-discrete) update is safe
+      // whether `setEditable` is called standalone (it commits on a microtask)
+      // or from inside an update (it queues into that update's commit). Gated
+      // on `_slotsUsed` so an editor that never slots anything keeps the
+      // original no-reconcile behavior.
+      if (this._slotsUsed) {
+        this.update(() => $fullReconcile());
+      }
     }
   }
   /**

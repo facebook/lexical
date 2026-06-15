@@ -91,7 +91,6 @@ export {
   type SignalOptions,
   untracked,
 } from './signals';
-export {SlotEditableExtension} from './SlotEditableExtension';
 export {
   type CanIndentPredicate,
   registerTabIndentation,

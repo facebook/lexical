@@ -45,14 +45,14 @@ import {
 } from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
 import {cloneMap} from './LexicalGenMap';
-import {$isSlotChild, $isSlotHost, EMPTY_SLOTS} from './LexicalSlot';
+import {$getSlot, $isSlotChild, $isSlotHost, EMPTY_SLOTS} from './LexicalSlot';
 import {
   $createChildrenArray,
   $getDOMSlot,
   $isRootOrShadowRoot,
+  $markSlotEditable,
   cloneDecorators,
   getElementByKeyOrThrow,
-  markSlotEditable,
   setDOMUnmanaged,
   setMutatedNode,
   setNodeKeyOnDOMNode,
@@ -499,15 +499,16 @@ function createSlotDOM(name: string): HTMLElement {
 
 // Apply a slot container's editability. Re-run on every (re)mount — including
 // the reconcile-reuse path — so a reused container can never keep a stale value.
-// A `$getSlotEditable` render-config override pins it to a fixed value
-// (left unmarked, so SlotEditableExtension never toggles it). Otherwise, inside
-// a non-editable host (a decorator, or an element shell that renders chrome
-// around editable islands), it follows the editor's editable state via
-// `markSlotEditable` (gated initial value + marker keyed to this editor, so a
-// read-only editor's slots are not left editable and a nested editor's
-// containers in the same root DOM are not flipped by the outer editor).
-// Otherwise the host is editable and the container inherits, so any stale
-// marker / contentEditable from a previous non-editable host state is cleared.
+// The container gets an explicit `contentEditable` when it is an island (its
+// host renders non-editable — a decorator, or an element shell that wraps
+// editable islands in chrome) or when a `$getSlotEditable` render-config
+// override pins this slot on an otherwise-editable host. In both cases the
+// value comes from `$markSlotEditable`, which resolves it through the model:
+// the slot's own override, else the editable state cascading down from the
+// nearest host that pins one, else the editor's editable state. Re-resolving on
+// every reconcile is what carries an editable toggle (a `$fullReconcile`) and an
+// override change into the DOM. Otherwise the host is editable and the container
+// inherits, so any stale `contentEditable` from a previous host state is cleared.
 function $applySlotEditable(
   node: LexicalNode,
   name: string,
@@ -515,19 +516,19 @@ function $applySlotEditable(
   decoratorHost: boolean,
   container: HTMLElement,
 ): void {
-  const editableOverride = activeEditorDOMRenderConfig.$getSlotEditable(
+  const override = activeEditorDOMRenderConfig.$getSlotEditable(
     node,
     name,
     activeEditor,
   );
-  if (editableOverride !== null) {
-    container.contentEditable = editableOverride ? 'true' : 'false';
-    container.removeAttribute('data-lexical-slot-editable');
-  } else if (decoratorHost || hostDom.contentEditable === 'false') {
-    markSlotEditable(container, activeEditor);
+  const slot = $getSlot(node, name);
+  if (
+    slot !== null &&
+    (decoratorHost || hostDom.contentEditable === 'false' || override !== null)
+  ) {
+    $markSlotEditable(container, slot, activeEditor);
   } else {
     container.removeAttribute('contenteditable');
-    container.removeAttribute('data-lexical-slot-editable');
   }
 }
 

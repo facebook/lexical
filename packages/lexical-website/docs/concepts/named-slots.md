@@ -229,10 +229,13 @@ there, and reveals it; the container renders as a normal block):
    and
    [`unmountSlotContainer(editor, nodeKey, container)`](/docs/api/modules/lexical#unmountslotcontainer)
    from `lexical` are the framework-independent primitives (e.g. from a
-   [mutation listener](/docs/api/modules/lexical#registermutationlistener)).
-   `mountSlotContainer` resolves the container through
-   [`editor.readPending`](/docs/api/modules/lexical#readpending), so calling it
-   mid-update observes the pending state without forcing a flush:
+   [mutation listener](/docs/api/modules/lexical#registermutationlistener),
+   which fires after the commit). `mountSlotContainer` resolves the container
+   against the committed editor state
+   ([`editor.getEditorState()`](/docs/api/modules/lexical#geteditorstate)), so
+   the model it reads matches the reconciled DOM it reveals;
+   `unmountSlotContainer` takes the container you already hold and only touches
+   the DOM:
 
    ```ts
    import {mountSlotContainer} from 'lexical';

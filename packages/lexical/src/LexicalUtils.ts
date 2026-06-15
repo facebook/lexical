@@ -2242,10 +2242,13 @@ export function mountSlotContainer(
   slotName: string,
   target: HTMLElement,
 ): HTMLElement | null {
-  const container = editor.readPending(() => {
-    const host = $getNodeByKey(nodeKey);
-    return host !== null ? $getSlotContainer(host, slotName, editor) : null;
-  });
+  const container = editor.getEditorState().read(
+    () => {
+      const host = $getNodeByKey(nodeKey);
+      return host !== null ? $getSlotContainer(host, slotName, editor) : null;
+    },
+    {editor},
+  );
   if (container !== null) {
     if (container.parentElement !== target) {
       target.appendChild(container);

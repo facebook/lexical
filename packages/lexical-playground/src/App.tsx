@@ -342,15 +342,17 @@ function App(): JSX.Element {
               <img src={logo} alt="Lexical Logo" />
             </a>
           </header>
-          <div className="editor-shell">
-            {isShadowDOM ? (
-              <ShadowDomWrapper>
+          {isShadowDOM ? (
+            <ShadowDomWrapper>
+              <div className="editor-shell">
                 <Editor />
-              </ShadowDomWrapper>
-            ) : (
+              </div>
+            </ShadowDomWrapper>
+          ) : (
+            <div className="editor-shell">
               <Editor />
-            )}
-          </div>
+            </div>
+          )}
           <Settings />
           {isDevPlayground ? <DocsPlugin /> : null}
           {isDevPlayground ? <PasteLogPlugin /> : null}

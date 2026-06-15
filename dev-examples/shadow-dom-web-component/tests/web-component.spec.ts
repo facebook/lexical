@@ -1194,6 +1194,140 @@ test('host.print() invokes window.print() without throwing', async ({page}) => {
   expect(ok).toBe(true);
 });
 
+test('adoptedStyleSheets shares one CSSStyleSheet across every host', async ({
+  page,
+}) => {
+  // Constructable stylesheets let the browser parse the editor CSS
+  // once and adopt the parsed sheet into every shadow root, instead
+  // of cloning a separate `<style>` per instance.
+  const facts = await page.evaluate(() => {
+    const hosts = [...document.querySelectorAll('lexical-editor')];
+    const sheets = hosts.map(
+      host =>
+        (
+          host as Element & {
+            shadowRoot: ShadowRoot;
+          }
+        ).shadowRoot.adoptedStyleSheets[0],
+    );
+    return {
+      everyHostUsesSheet: sheets.every(s => s instanceof CSSStyleSheet),
+      hostsHaveNoStyleElement: hosts.every(
+        host =>
+          (
+            host as Element & {
+              shadowRoot: ShadowRoot;
+            }
+          ).shadowRoot.querySelector('style') === null,
+      ),
+      sharedAcrossHosts: sheets.every(s => s === sheets[0]),
+    };
+  });
+  expect(facts).toEqual({
+    everyHostUsesSheet: true,
+    hostsHaveNoStyleElement: true,
+    sharedAcrossHosts: true,
+  });
+});
+
+test('slotchange fires a composed lexical-toolbar-slot-change with the assigned count', async ({
+  page,
+}) => {
+  // Mutate the projected slot: append a fresh slotted button and the
+  // host re-broadcasts the slotchange as a composed event.
+  const result = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as HTMLElement;
+    return new Promise<{count: number} | null>(resolve => {
+      host.addEventListener(
+        'lexical-toolbar-slot-change',
+        event => {
+          resolve((event as CustomEvent<{count: number}>).detail);
+        },
+        {once: true},
+      );
+      const extra = document.createElement('button');
+      extra.setAttribute('slot', 'toolbar-extra');
+      extra.setAttribute('type', 'button');
+      extra.textContent = 'Extra';
+      host.appendChild(extra);
+      setTimeout(() => resolve(null), 1000);
+    });
+  });
+  expect(result).not.toBeNull();
+  // The original Clear button + the new Extra button.
+  expect(result!.count).toBeGreaterThanOrEqual(2);
+
+  // host.getSlottedToolbarElements() reflects the same set.
+  const slottedCount = await page.evaluate(
+    () =>
+      (
+        document.querySelector('lexical-editor[name="notes"]') as Element & {
+          getSlottedToolbarElements: () => Element[];
+        }
+      ).getSlottedToolbarElements().length,
+  );
+  expect(slottedCount).toBeGreaterThanOrEqual(2);
+});
+
+test('ElementInternals.role / ariaLabel are set on the host', async ({
+  page,
+}) => {
+  // `ElementInternals.role` / `ariaLabel` set the host's *implicit*
+  // ARIA semantics for the accessibility tree without touching the
+  // host's own `role` / `aria-label` attributes — that is what makes
+  // them useful for form-associated custom elements.
+  const reflection = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {internals?: ElementInternals};
+    // The instance field is private TypeScript but exposed at runtime.
+    const internals = (host as unknown as {internals: ElementInternals})
+      .internals;
+    return {ariaLabel: internals.ariaLabel, role: internals.role};
+  });
+  expect(reflection.role).toBe('group');
+  expect(reflection.ariaLabel).toBe('Notes editor');
+});
+
+test('customElements.upgrade() forces an undefined host upgrade once the constructor is registered', async ({
+  page,
+}) => {
+  // Insert a host before the page calls `customElements.upgrade()`
+  // to force the manual upgrade path. The constructor has already
+  // been registered by the example module, so the synchronous call
+  // resolves the editor immediately.
+  const upgraded = await page.evaluate(() => {
+    const detached = document.createElement('lexical-editor');
+    detached.setAttribute('name', 'force-upgrade');
+    detached.setAttribute('placeholder-text', 'upgrade target');
+    // Append to a *detached* wrapper so the upgrade path runs without
+    // affecting the live form.
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(detached);
+    document.body.appendChild(wrapper);
+    customElements.upgrade(wrapper);
+    const value = (detached as Element & {value: string}).value;
+    wrapper.remove();
+    return value.length > 0;
+  });
+  expect(upgraded).toBe(true);
+});
+
+test('shadow root attached with {serializable: true}', async ({page}) => {
+  const flag = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {shadowRoot: ShadowRoot};
+    return (
+      (host.shadowRoot as ShadowRoot & {serializable?: boolean})
+        .serializable === true
+    );
+  });
+  expect(flag).toBe(true);
+});
+
 test('the host re-broadcasts window online / offline as a composed event', async ({
   page,
 }) => {

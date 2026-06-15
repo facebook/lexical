@@ -168,6 +168,19 @@ const TEXT_FORMATS: readonly TextFormatType[] = ['bold', 'italic', 'underline'];
 const STATE_DB = 'lexical-editor-element';
 const STATE_STORE = 'states';
 
+// A single constructable stylesheet shared between every instance.
+// Cloning a `<style>` per host duplicates the same bytes in every
+// shadow root; `adoptedStyleSheets` lets the user-agent share the
+// parsed sheet across all of them.
+let sharedSheet: CSSStyleSheet | null = null;
+const getSharedSheet = (): CSSStyleSheet => {
+  if (sharedSheet === null) {
+    sharedSheet = new CSSStyleSheet();
+    sharedSheet.replaceSync(STYLE_SHEET);
+  }
+  return sharedSheet;
+};
+
 /**
  * `<lexical-editor>`: a self-contained rich-text editor web component.
  *
@@ -280,6 +293,23 @@ export class LexicalEditorElement extends HTMLElement {
   /** The underlying LexicalEditor, for programmatic access from the page. */
   getEditor(): LexicalEditor | null {
     return this.editor;
+  }
+
+  /**
+   * Returns the page-supplied elements currently projected into the
+   * `toolbar-extra` slot — handy for a page-side reconciliation pass
+   * that needs to enumerate what it has projected without subscribing
+   * to `slotchange` itself.
+   */
+  getSlottedToolbarElements(): Element[] {
+    const shadow = this.shadowRoot;
+    if (shadow === null) {
+      return [];
+    }
+    const slot = shadow.querySelector<HTMLSlotElement>(
+      'slot[name="toolbar-extra"]',
+    );
+    return slot !== null ? slot.assignedElements() : [];
   }
 
   // Mirror the standard constraint-validation surface from `<input>` /
@@ -765,10 +795,24 @@ export class LexicalEditorElement extends HTMLElement {
     // `:focus-within` on the host also lights up while focus is anywhere
     // inside the shadow tree, which keeps Tab navigation feeling like a
     // built-in form control.
+    // `serializable: true` opts the shadow root into
+    // `Element.getHTML({serializableShadowRoots: true})` and the
+    // declarative shadow DOM serialization Chrome 124+ ships.
+    // `delegatesFocus: true` makes `host.focus()` route into the
+    // contentEditable.
     const shadow =
       this.shadowRoot !== null
         ? this.shadowRoot
-        : this.attachShadow({delegatesFocus: true, mode: 'open'});
+        : this.attachShadow({
+            delegatesFocus: true,
+            mode: 'open',
+            serializable: true,
+          });
+    // Reflect the host's role + label through ElementInternals so
+    // assistive tech sees the editor as a labelled "group" form
+    // control without coupling to ARIA attributes on the host itself.
+    this.internals.role = 'group';
+    this.internals.ariaLabel = this.getAttribute('aria-label') ?? null;
     // Honour a shadow root left behind by a [Declarative Shadow
     // DOM](https://developer.mozilla.org/docs/Web/API/Web_components/Using_shadow_DOM#declarative_shadow_dom)
     // (`<template shadowrootmode="open">`): if the SSR layer already
@@ -783,9 +827,9 @@ export class LexicalEditorElement extends HTMLElement {
       shadow.removeChild(shadow.firstChild);
     }
 
-    const style = document.createElement('style');
-    style.textContent = STYLE_SHEET;
-    shadow.appendChild(style);
+    // Adopt the shared sheet so every host points at the same parsed
+    // CSS rather than each cloning its own `<style>` text.
+    shadow.adoptedStyleSheets = [getSharedSheet()];
 
     const toolbar = document.createElement('div');
     toolbar.className = 'toolbar';
@@ -805,6 +849,20 @@ export class LexicalEditorElement extends HTMLElement {
     toolbarSpacer.className = 'toolbar-spacer';
     const toolbarSlot = document.createElement('slot');
     toolbarSlot.name = 'toolbar-extra';
+    // `slotchange` fires whenever the page adds, removes, or
+    // re-projects a slotted child. Re-broadcast as a composed
+    // `lexical-toolbar-slot-change` event so the page can react
+    // without subscribing to the shadow-internal slot itself.
+    toolbarSlot.addEventListener('slotchange', () => {
+      const assigned = toolbarSlot.assignedElements();
+      this.dispatchEvent(
+        new CustomEvent('lexical-toolbar-slot-change', {
+          bubbles: true,
+          composed: true,
+          detail: {count: assigned.length},
+        }),
+      );
+    });
 
     const contentEditable =
       prerendered !== null ? prerendered : document.createElement('div');

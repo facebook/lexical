@@ -195,9 +195,14 @@ class LexicalEditorElement extends HTMLElement {
   }
 
   connectedCallback() {
-    const shadow = this.shadowRoot ?? this.attachShadow({mode: 'open'});
+    // `delegatesFocus: true` routes `host.focus()` (and implicit focus
+    // from `<label for="...">`) to the first focusable element inside
+    // the shadow root — for the editor that's the contentEditable.
+    const shadow =
+      this.shadowRoot ?? this.attachShadow({delegatesFocus: true, mode: 'open'});
     const contentEditable = document.createElement('div');
     contentEditable.contentEditable = 'true';
+    contentEditable.tabIndex = 0;
     shadow.appendChild(contentEditable);
 
     const editor = buildEditorFromExtensions(
@@ -237,14 +242,16 @@ cache the serialized state in `disconnectedCallback` and replay it through
 `parseEditorState` on the next mount. The reference dev example uses a
 `pendingState` field for exactly this.
 
-The same form-associated host can also implement
-[`formStateRestoreCallback(state, reason)`](https://developer.mozilla.org/docs/Web/API/Web_components/Using_custom_elements#form-associated_callbacks)
-to re-hydrate the editor on bfcache navigation (`reason: 'restore'`) or
-form autocomplete restore (`reason: 'autocomplete'`), and
-[`formAssociatedCallback(form)`](https://developer.mozilla.org/docs/Web/API/Web_components/Using_custom_elements#form-associated_callbacks)
-to react to programmatic form moves. The serialized JSON
-`internals.setFormValue` published earlier is what comes back in those
-callbacks.
+The same form-associated host can also implement the rest of the
+[form-associated callbacks](https://developer.mozilla.org/docs/Web/API/Web_components/Using_custom_elements#form-associated_callbacks):
+`formStateRestoreCallback(state, reason)` re-hydrates the editor on bfcache
+navigation (`reason: 'restore'`) or form autocomplete restore
+(`reason: 'autocomplete'`); `formAssociatedCallback(form)` reacts to
+programmatic form moves; `formResetCallback()` clears the editor when the
+surrounding form is reset; and `formDisabledCallback(isDisabled)` flips the
+editor's editable state when an ancestor `<fieldset disabled>` toggles. The
+serialized JSON `internals.setFormValue` published earlier is what comes
+back in the state-restore callback.
 
 ## Common pitfalls
 
@@ -305,7 +312,18 @@ If your shadow mount mirrors `<style>` / `<link>` nodes from `document.head`
 and watches for additions via `MutationObserver`, mirror removals too;
 otherwise stylesheets removed by HMR or a runtime theme swap linger inside
 the shadow. `ShadowDomWrapper` tracks an `original → clone` map so an
-upstream removal drops the corresponding clone.
+upstream removal drops the corresponding clone, and on unmount it removes
+every clone so React 18 StrictMode's double-mount can't accumulate
+duplicates through the persistent shadow root.
+
+Dev-mode HMR has two paths that a `childList`-only observer misses.
+Firefox replaces a `<style>`'s text content in place, so the observer
+needs `characterData + subtree` to see the mutation; Chrome and WebKit
+update CSS through the CSSOM (`style.sheet.replaceSync` / `insertRule`),
+which the DOM observer never sees at all. `ShadowDomWrapper` also
+subscribes to Vite's `vite:afterUpdate` hook for an explicit resync of
+every clone after each HMR pass — `import.meta.hot` is `undefined` in
+production builds, so the hook is a no-op outside dev.
 
 ### Popover and dialog layout
 
@@ -358,7 +376,9 @@ Runnable examples live in the repository:
   — a React editor inside a shadow root with a light‑DOM toolbar.
 - [`dev-examples/shadow-dom-web-component`](https://github.com/facebook/lexical/tree/main/dev-examples/shadow-dom-web-component)
   — a framework‑free `<lexical-editor>` custom element, form‑associated via
-  `ElementInternals`.
+  `ElementInternals`. The page also mounts one instance inside a wrapper
+  `<div>` that opens its own shadow root, exercising the multi‑level
+  walk through two nested shadow boundaries.
 - [`examples/vanilla-js-iframe`](https://github.com/facebook/lexical/tree/main/examples/vanilla-js-iframe)
   — an editor rendered into an `<iframe>`.
 - The playground's **Render in Shadow DOM** setting toggles the same editor

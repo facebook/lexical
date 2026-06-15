@@ -10,8 +10,14 @@ the scenario from
 
 Where the sibling [`shadow-dom`](../shadow-dom) example demonstrates a React
 app with the editor in a shadow root and the toolbar outside it, this one
-demonstrates the inverse packaging: a fully self-contained web component, with
-two independent instances on one page, using platform APIs only:
+demonstrates the inverse packaging: a fully self-contained web component.
+The demo page mounts four instances — three light-DOM `<lexical-editor>`
+hosts inside the form (a `required` notes editor, a themable summary editor,
+and a pre-rendered editor that hydrates from `<template shadowrootmode="open">`)
+plus a fourth instance inside a wrapper `<div>` that opens its own shadow root,
+so the editor's contentEditable sits two shadow boundaries below the document
+and exercises the multi-level walk through `getDOMShadowRoots`. Everything
+runs on platform APIs only:
 
 - `Element.attachShadow({mode: 'open'})` in `connectedCallback`, with the
   editor built by `@lexical/extension`'s `buildEditorFromExtensions` and torn
@@ -63,8 +69,8 @@ pnpm -C dev-examples/shadow-dom-web-component dev
 
 Then open the printed URL. Try:
 
-- Typing in both editors and switching between them (each keeps its own
-  selection and history).
+- Typing in any of the four editors and switching between them (each keeps
+  its own selection and history).
 - Selecting words with `Alt`/`Ctrl` + `Shift` + arrow keys, then using the
   in-shadow toolbar buttons — they reflect the selection's formats.
 - Word/line deletion with `Alt`/`Ctrl` + `Backspace`/`Delete`.
@@ -90,10 +96,12 @@ Then open the printed URL. Try:
 ## Tests
 
 [Playwright](https://playwright.dev/) tests in [`tests/`](./tests) cover the
-two editors rendering in independent shadow roots, typing and formatting,
-editor independence, word deletion, `ElementInternals` form association, and
-the composed `input` event crossing the shadow boundary. They start the dev
-server automatically:
+editors rendering in independent shadow roots (including the nested
+editor inside the wrapper shadow root), typing and formatting, editor
+independence, word deletion, `ElementInternals` form association, the
+composed `input` event crossing the shadow boundary, and the floating
+popover anchoring to a selection inside the nested shadow root. They
+start the dev server automatically:
 
 ```sh
 pnpm -C dev-examples/shadow-dom-web-component exec playwright install chromium
@@ -112,10 +120,10 @@ round of audit items:
   contentEditable
 - `host.setCustomValidity()` + the standard `validity` / `willValidate`
   / `checkValidity` / `reportValidity` surface
-- `formAssociatedCallback` + `host.form`,
-  `formStateRestoreCallback` (bfcache / autocomplete)
-- The standard `inert` attribute, `dir` inheritance, `aria-label` /
-  `aria-invalid` / `role="textbox"` mirroring
+- `formAssociatedCallback` + `host.form`, `formResetCallback`,
+  `formDisabledCallback`, `formStateRestoreCallback` (bfcache / autocomplete)
+- The standard `inert` attribute, `aria-label` / `aria-invalid` /
+  `role="textbox"` mirroring
 - A composed `lexical-validity-change` event for a visible error
   message
 - `@media (prefers-color-scheme: dark)` / `(prefers-reduced-motion)` /

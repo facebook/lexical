@@ -841,6 +841,101 @@ test('loading="lazy" defers the editor build until the host is visible', async (
     .not.toBe('');
 });
 
+test('exposes custom element states for `:state(invalid)` / `:state(saved)`', async ({
+  page,
+}) => {
+  // Emptying the required notes editor drives `internals.states.add('invalid')`.
+  await editor(page, 'notes').click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.press('Delete');
+  const invalidState = await page.evaluate(() =>
+    document
+      .querySelector('lexical-editor[name="notes"]')!
+      .matches(':state(invalid)'),
+  );
+  expect(invalidState).toBe(true);
+
+  // saveToIndexedDB adds the `saved` state.
+  await page.evaluate(async () => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {saveToIndexedDB: (k: string) => Promise<void>};
+    await host.saveToIndexedDB('autosave/state-test');
+  });
+  const savedState = await page.evaluate(() =>
+    document
+      .querySelector('lexical-editor[name="notes"]')!
+      .matches(':state(saved)'),
+  );
+  expect(savedState).toBe(true);
+});
+
+test('a ResizeObserver flips :state(compact) when the host shrinks below the breakpoint', async ({
+  page,
+}) => {
+  // Shrink the notes editor below the 320px breakpoint. The host's
+  // own ResizeObserver flips the `compact` custom element state.
+  await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as HTMLElement;
+    host.style.width = '240px';
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        document
+          .querySelector('lexical-editor[name="notes"]')!
+          .matches(':state(compact)'),
+      ),
+    )
+    .toBe(true);
+
+  // Restore the width and the state clears.
+  await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as HTMLElement;
+    host.style.width = '';
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        document
+          .querySelector('lexical-editor[name="notes"]')!
+          .matches(':state(compact)'),
+      ),
+    )
+    .toBe(false);
+});
+
+test('the Page Visibility API drives a composed `lexical-page-hidden` event', async ({
+  page,
+}) => {
+  const fired = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as HTMLElement;
+    return new Promise<boolean>(resolve => {
+      host.addEventListener('lexical-page-hidden', () => resolve(true), {
+        once: true,
+      });
+      // Spoof the document into hidden + dispatch visibilitychange.
+      Object.defineProperty(document, 'hidden', {
+        configurable: true,
+        value: true,
+      });
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        value: 'hidden',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+      setTimeout(() => resolve(false), 1000);
+    });
+  });
+  expect(fired).toBe(true);
+});
+
 test('the host re-broadcasts window online / offline as a composed event', async ({
   page,
 }) => {

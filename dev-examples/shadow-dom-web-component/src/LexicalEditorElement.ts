@@ -205,6 +205,8 @@ export class LexicalEditorElement extends HTMLElement {
   private lazyObserver: IntersectionObserver | null = null;
   private lazyBuildScheduled = false;
   private removeOnlineListeners: (() => void) | null = null;
+  private resizeObserver: ResizeObserver | null = null;
+  private removeVisibilityListener: (() => void) | null = null;
 
   constructor() {
     super();
@@ -368,6 +370,15 @@ export class LexicalEditorElement extends HTMLElement {
         this.internals.validity.valid ? 'false' : 'true',
       );
     }
+    // Expose the validity state as a custom element state too, so the
+    // page can target it with `lexical-editor:state(invalid)` from
+    // light-DOM CSS without coupling to the contentEditable's ARIA
+    // attribute.
+    if (this.internals.validity.valid) {
+      this.internals.states.delete('invalid');
+    } else {
+      this.internals.states.add('invalid');
+    }
     this.dispatchEvent(
       new CustomEvent('lexical-validity-change', {
         bubbles: true,
@@ -512,6 +523,9 @@ export class LexicalEditorElement extends HTMLElement {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
+    // Flag the host as "we just persisted" so the page can paint a
+    // saved indicator through `lexical-editor:state(saved)`.
+    this.internals.states.add('saved');
   }
 
   /**
@@ -564,6 +578,59 @@ export class LexicalEditorElement extends HTMLElement {
     this.removeOnlineListeners = () => {
       window.removeEventListener('online', fire);
       window.removeEventListener('offline', fire);
+    };
+  }
+
+  /**
+   * Track the host's rendered width and flip the `compact` custom state
+   * when the editor shrinks below a breakpoint. The page can target
+   * `lexical-editor:state(compact)` to rearrange the toolbar without
+   * coupling to a class name or attribute.
+   */
+  private installResizeObserver(): void {
+    if (this.resizeObserver !== null || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    this.resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const width =
+          entry.contentBoxSize !== undefined && entry.contentBoxSize.length > 0
+            ? entry.contentBoxSize[0].inlineSize
+            : entry.contentRect.width;
+        if (width < 320) {
+          this.internals.states.add('compact');
+        } else {
+          this.internals.states.delete('compact');
+        }
+      }
+    });
+    this.resizeObserver.observe(this);
+  }
+
+  /**
+   * Page Visibility API: when the page enters the background (tab
+   * switch, navigation) fire a composed `lexical-page-hidden`
+   * CustomEvent so the surrounding app can autosave or pause expensive
+   * work. The host itself doesn't autosave — that policy lives in the
+   * page — but it broadcasts the trigger.
+   */
+  private installVisibilityListener(): void {
+    if (this.removeVisibilityListener !== null) {
+      return;
+    }
+    const fire = () => {
+      if (document.hidden) {
+        this.dispatchEvent(
+          new CustomEvent('lexical-page-hidden', {
+            bubbles: true,
+            composed: true,
+          }),
+        );
+      }
+    };
+    document.addEventListener('visibilitychange', fire);
+    this.removeVisibilityListener = () => {
+      document.removeEventListener('visibilitychange', fire);
     };
   }
 
@@ -731,6 +798,8 @@ export class LexicalEditorElement extends HTMLElement {
     this.updateValidity();
     this.updateEditableState();
     this.installOnlineListeners();
+    this.installResizeObserver();
+    this.installVisibilityListener();
 
     const formatButtons = new Map<TextFormatType, HTMLButtonElement>();
     const addButton = (label: string, onClick: () => void) => {
@@ -839,6 +908,14 @@ export class LexicalEditorElement extends HTMLElement {
     if (this.removeOnlineListeners !== null) {
       this.removeOnlineListeners();
       this.removeOnlineListeners = null;
+    }
+    if (this.resizeObserver !== null) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
+    if (this.removeVisibilityListener !== null) {
+      this.removeVisibilityListener();
+      this.removeVisibilityListener = null;
     }
     if (this.disposeEditor !== null) {
       // Cache the serialized editor state before tearing the editor

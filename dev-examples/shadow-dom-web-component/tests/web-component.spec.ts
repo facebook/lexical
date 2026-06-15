@@ -27,27 +27,31 @@ test.beforeEach(async ({page}) => {
   await page.locator('lexical-editor').first().waitFor();
 });
 
-test('renders three editors, each in its own open shadow root', async ({
+test('renders three light-DOM editors plus one nested inside a wrapper shadow', async ({
   page,
 }) => {
-  // Notes + summary + the pre-rendered (declarative shadow DOM) editor.
-  await expect(page.locator('lexical-editor')).toHaveCount(3);
+  // Notes + summary + the pre-rendered (declarative shadow DOM) editor in
+  // the light DOM, plus the nested editor that mounts inside #nested-host's
+  // own shadow root. Playwright's locator pierces open shadow roots so it
+  // sees all four; document.querySelectorAll does not, so it sees only the
+  // three light-DOM hosts.
+  await expect(page.locator('lexical-editor')).toHaveCount(4);
 
   const stats = await page.evaluate(() => {
-    const elements = [...document.querySelectorAll('lexical-editor')];
+    const lightDomEditors = [...document.querySelectorAll('lexical-editor')];
     return {
       // querySelector does not pierce shadow roots, so none of the
       // contentEditables should be reachable from the document.
       lightDomContentEditables: document.querySelectorAll(
         'div[contenteditable="true"]',
       ).length,
-      total: elements.length,
-      withShadow: elements.filter(el => el.shadowRoot !== null).length,
+      lightDomEditors: lightDomEditors.length,
+      withShadow: lightDomEditors.filter(el => el.shadowRoot !== null).length,
     };
   });
   expect(stats).toEqual({
     lightDomContentEditables: 0,
-    total: 3,
+    lightDomEditors: 3,
     withShadow: 3,
   });
 });
@@ -961,4 +965,28 @@ test('a required <lexical-editor> participates in form validation', async ({
 
   await page.locator('button[type="submit"]').click();
   await expect(page.locator('#form-output')).toContainText('now filled in');
+});
+
+test('renders an editor inside two nested shadow roots', async ({page}) => {
+  // page → #nested-host shadow → <lexical-editor> shadow. The contentEditable
+  // is two shadow boundaries deep; getDOMShadowRoots' multi-level walk and the
+  // composed selection reads should still resolve it.
+  const nestedEditor = page.locator(
+    '#nested-host >> lexical-editor[name="nested"] >> [data-lexical-editor]',
+  );
+  await expect(nestedEditor).toBeVisible();
+  await nestedEditor.click();
+  await page.keyboard.type('nested shadow works');
+  await expect(nestedEditor).toHaveText('nested shadow works');
+
+  // The composed StaticRange resolves through both shadow boundaries, so
+  // Bold via the in-shadow toolbar still operates on the right selection.
+  for (let i = 0; i < 5; i++) {
+    await page.keyboard.press('Shift+ArrowLeft');
+  }
+  const boldButton = page
+    .locator('#nested-host >> lexical-editor[name="nested"] >> .toolbar button')
+    .first();
+  await boldButton.click();
+  await expect(nestedEditor.locator('strong')).toHaveText('works');
 });

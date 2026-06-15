@@ -21,6 +21,23 @@ import {
 
 defineLexicalEditorElement();
 
+// Mount a <lexical-editor> inside a second shadow root so the editor's
+// contentEditable lives two shadow boundaries below the document. This
+// exercises the multi-level getDOMShadowRoots walk and the per-shadow-root
+// scroll listeners that the floating popover relies on.
+const nestedHost = document.querySelector<HTMLDivElement>('#nested-host');
+if (nestedHost !== null) {
+  const wrapperShadow = nestedHost.attachShadow({mode: 'open'});
+  const nestedEditor = document.createElement('lexical-editor');
+  nestedEditor.setAttribute('name', 'nested');
+  nestedEditor.setAttribute(
+    'placeholder-text',
+    'Editor inside two nested shadow roots',
+  );
+  nestedEditor.setAttribute('aria-label', 'Nested editor');
+  wrapperShadow.appendChild(nestedEditor);
+}
+
 // Demonstrate the form association: submitting the form shows the value each
 // editor contributed through ElementInternals.setFormValue.
 const form = document.querySelector<HTMLFormElement>('#demo-form')!;

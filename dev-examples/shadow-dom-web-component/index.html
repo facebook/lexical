@@ -89,6 +89,18 @@
           </template>
         </lexical-editor>
       </label>
+      <hr />
+      <!--
+        Nested shadow roots: a wrapper <div> attaches its own open shadow
+        root, and a <lexical-editor> mounts inside *that* shadow tree. The
+        editor's contentEditable is now two shadow boundaries below the
+        document, exercising getDOMShadowRoots' multi-level walk and the
+        per-shadow-root scroll listeners.
+      -->
+      <label>
+        Nested shadow (page → wrapper shadow → editor shadow)
+        <div id="nested-host"></div>
+      </label>
     </div>
     <!--
       A light-DOM floating popover that anchors to the live selection rect

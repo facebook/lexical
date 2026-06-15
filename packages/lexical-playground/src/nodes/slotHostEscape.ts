@@ -255,12 +255,12 @@ export function registerSlotHostArrowEscape<T extends LexicalNode>(
   $isHost: (node: LexicalNode | null | undefined) => node is T,
 ): () => void {
   return mergeRegister(
-    editor.registerCommand<KeyboardEvent | null>(
+    editor.registerCommand(
       KEY_ARROW_DOWN_COMMAND,
       event => $handleSlotHostArrow(editor, $isHost, event, true),
       COMMAND_PRIORITY_LOW,
     ),
-    editor.registerCommand<KeyboardEvent | null>(
+    editor.registerCommand(
       KEY_ARROW_UP_COMMAND,
       event => $handleSlotHostArrow(editor, $isHost, event, false),
       COMMAND_PRIORITY_LOW,
@@ -360,7 +360,7 @@ export function registerSlotHostBackspace<T extends LexicalNode>(
   $isEmpty: (host: T) => boolean,
 ): () => void {
   return mergeRegister(
-    editor.registerCommand<KeyboardEvent | null>(
+    editor.registerCommand(
       KEY_BACKSPACE_COMMAND,
       event => {
         const selection = $getSelection();
@@ -423,7 +423,7 @@ export function registerSlotHostBackspace<T extends LexicalNode>(
     // Forward delete: a select-all spanning a first-block host should replace it
     // with a paragraph too. The empty-host edge cases above stay backspace-only
     // (forward-delete at a start deletes into the content, not the box).
-    editor.registerCommand<KeyboardEvent | null>(
+    editor.registerCommand(
       KEY_DELETE_COMMAND,
       () => {
         const selection = $getSelection();

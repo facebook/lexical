@@ -159,7 +159,7 @@ export const PullQuoteExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/PullQuote',
   register: editor => {
     return mergeRegister(
-      editor.registerCommand<void>(
+      editor.registerCommand(
         INSERT_PULLQUOTE_COMMAND,
         () => {
           $insertSlotHostAtRoot($createPullQuoteNode());
@@ -178,13 +178,13 @@ export const PullQuoteExtension = /* @__PURE__ */ defineExtension({
       // a DecoratorNode (it is already atomic, so a select-all deletes it).
       registerSlotHostBackspace(editor, $isPullQuoteNode, $isSlotHostTextEmpty),
       // Enter on the selected PullQuote drops the caret into its quote slot...
-      editor.registerCommand<KeyboardEvent | null>(
+      editor.registerCommand(
         KEY_ENTER_COMMAND,
         $handlePullQuoteEnter,
         COMMAND_PRIORITY_BEFORE_EDITOR,
       ),
       // ...and Escape from either slot selects the whole PullQuote again.
-      editor.registerCommand<KeyboardEvent | null>(
+      editor.registerCommand(
         KEY_ESCAPE_COMMAND,
         $handlePullQuoteEscape,
         COMMAND_PRIORITY_LOW,

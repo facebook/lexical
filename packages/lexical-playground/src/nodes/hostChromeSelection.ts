@@ -109,7 +109,7 @@ export function registerHostChromeSelection<T extends LexicalNode>(
     // selectionchange flows on the same lexical pass and the freshly-set
     // NodeSelection isn't overwritten by the native click → focus → range
     // fallback. BEFORE_EDITOR so it wins the race with the default handlers.
-    editor.registerCommand<MouseEvent>(
+    editor.registerCommand(
       CLICK_COMMAND,
       event => {
         // Read-only mode never promotes — mirrors the mousedown gate.

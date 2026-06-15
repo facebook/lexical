@@ -244,7 +244,7 @@ export const ReviewExtension = /* @__PURE__ */ defineExtension({
   nodes: [ReviewNode],
   register: editor =>
     mergeRegister(
-      editor.registerCommand<void>(
+      editor.registerCommand(
         INSERT_REVIEW_COMMAND,
         () => {
           $insertSlotHostAtRoot($createReviewNode());

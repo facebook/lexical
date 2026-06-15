@@ -294,7 +294,7 @@ export const CardExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/Card',
   register: editor => {
     return mergeRegister(
-      editor.registerCommand<void>(
+      editor.registerCommand(
         INSERT_CARD_COMMAND,
         () => {
           $insertSlotHostAtRoot($createCardNode());
@@ -302,17 +302,17 @@ export const CardExtension = /* @__PURE__ */ defineExtension({
         },
         COMMAND_PRIORITY_EDITOR,
       ),
-      editor.registerCommand<KeyboardEvent | null>(
+      editor.registerCommand(
         KEY_ARROW_RIGHT_COMMAND,
         event => $handleCardArrow(event, false),
         COMMAND_PRIORITY_BEFORE_EDITOR,
       ),
-      editor.registerCommand<KeyboardEvent | null>(
+      editor.registerCommand(
         KEY_ARROW_LEFT_COMMAND,
         event => $handleCardArrow(event, true),
         COMMAND_PRIORITY_BEFORE_EDITOR,
       ),
-      editor.registerCommand<KeyboardEvent>(
+      editor.registerCommand(
         KEY_TAB_COMMAND,
         event => $handleCardTab(event, event.shiftKey),
         COMMAND_PRIORITY_BEFORE_EDITOR,

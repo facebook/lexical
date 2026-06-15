@@ -1537,6 +1537,91 @@ test('Element.toggleAttribute() switches the host disabled state without a value
   expect(final).toEqual({after1: true, after2: false});
 });
 
+test('scheduleIdleCallback runs the callback', async ({page}) => {
+  const ran = await page.evaluate(
+    () =>
+      new Promise<boolean>(resolve => {
+        const host = document.querySelector(
+          'lexical-editor[name="notes"]',
+        ) as Element & {scheduleIdleCallback: (cb: () => void) => number};
+        host.scheduleIdleCallback(() => resolve(true));
+        setTimeout(() => resolve(false), 2000);
+      }),
+  );
+  expect(ran).toBe(true);
+});
+
+test('withSaveLock serialises concurrent saves through navigator.locks', async ({
+  page,
+}) => {
+  // Two simultaneous `withSaveLock` calls observe the inner task
+  // running one at a time — the second waits for the first.
+  const order = await page.evaluate(async () => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {
+      withSaveLock: <T>(name: string, task: () => Promise<T>) => Promise<T>;
+    };
+    const events: string[] = [];
+    const first = host.withSaveLock('autosave/notes', async () => {
+      events.push('first:start');
+      await new Promise(resolve => setTimeout(resolve, 50));
+      events.push('first:end');
+    });
+    const second = host.withSaveLock('autosave/notes', async () => {
+      events.push('second:start');
+      events.push('second:end');
+    });
+    await Promise.all([first, second]);
+    return events;
+  });
+  expect(order).toEqual([
+    'first:start',
+    'first:end',
+    'second:start',
+    'second:end',
+  ]);
+});
+
+test('form.requestSubmit() walks through the form lifecycle', async ({
+  page,
+}) => {
+  await clearAndType(page, 'notes', 'programmatic submit');
+  await page.evaluate(() => {
+    const form = document.querySelector('#demo-form') as HTMLFormElement;
+    form.requestSubmit();
+  });
+  await expect(page.locator('#form-output')).toContainText(
+    'programmatic submit',
+  );
+});
+
+test('a formdata listener sees every editor value through ElementInternals.setFormValue', async ({
+  page,
+}) => {
+  await clearAndType(page, 'notes', 'in formdata');
+  await clearAndType(page, 'summary', 'also in formdata');
+  const entries = await page.evaluate(() => {
+    const form = document.querySelector('#demo-form') as HTMLFormElement;
+    return new Promise<Record<string, string>>(resolve => {
+      form.addEventListener(
+        'formdata',
+        event => {
+          const collected: Record<string, string> = {};
+          for (const [name, value] of event.formData) {
+            collected[name] = String(value);
+          }
+          resolve(collected);
+        },
+        {once: true},
+      );
+      form.requestSubmit();
+    });
+  });
+  expect(entries.notes).toContain('in formdata');
+  expect(entries.summary).toContain('also in formdata');
+});
+
 test('the host re-broadcasts window online / offline as a composed event', async ({
   page,
 }) => {

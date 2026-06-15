@@ -763,6 +763,36 @@ export class LexicalEditorElement extends HTMLElement {
     return this.dirty;
   }
 
+  /**
+   * Schedule a callback when the browser is idle, falling back to
+   * `setTimeout` on engines that don't expose `requestIdleCallback`
+   * (Safari). Returns a cancellation token compatible with the
+   * fallback path.
+   */
+  scheduleIdleCallback(callback: () => void, timeoutMs = 1000): number {
+    const w = window as Window & {
+      requestIdleCallback?: (
+        cb: () => void,
+        opts?: {timeout: number},
+      ) => number;
+    };
+    if (typeof w.requestIdleCallback === 'function') {
+      return w.requestIdleCallback(callback, {timeout: timeoutMs});
+    }
+    return window.setTimeout(callback, 0);
+  }
+
+  /**
+   * Cooperatively acquire a `navigator.locks` lock named after this
+   * editor before running `task`. Useful when two tabs of the same
+   * origin both edit the same backing record — the lock serialises
+   * the autosave so concurrent writes don't clobber each other.
+   */
+  async withSaveLock<T>(lockName: string, task: () => Promise<T>): Promise<T> {
+    // eslint-disable-next-line compat/compat -- Safari 16+ targets only.
+    return navigator.locks.request(lockName, task);
+  }
+
   /** Clear the dirty flag (call after a successful save). */
   markClean(): void {
     this.dirty = false;

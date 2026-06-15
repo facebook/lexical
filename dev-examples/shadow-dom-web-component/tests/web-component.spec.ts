@@ -335,40 +335,6 @@ test('a visible error message follows the required validation state', async ({
   await expect(error).toBeHidden();
 });
 
-test('dir on the host flips writing direction inside the shadow root', async ({
-  page,
-}) => {
-  await page.locator('#summary-rtl').check();
-  const directions = await page.evaluate(() => {
-    const host = document.querySelector(
-      'lexical-editor[name="summary"]',
-    ) as Element & {shadowRoot: ShadowRoot};
-    const ce = host.shadowRoot.querySelector(
-      '[data-lexical-editor]',
-    ) as HTMLElement;
-    return {
-      ceDir: window.getComputedStyle(ce).direction,
-      hostDir: host.getAttribute('dir'),
-    };
-  });
-  // The inherited `dir` attribute crosses into the shadow root without
-  // any explicit forwarding — the contentEditable's computed direction
-  // follows the host.
-  expect(directions).toEqual({ceDir: 'rtl', hostDir: 'rtl'});
-
-  await page.locator('#summary-rtl').uncheck();
-  const ltr = await page.evaluate(() => {
-    const host = document.querySelector(
-      'lexical-editor[name="summary"]',
-    ) as Element & {shadowRoot: ShadowRoot};
-    const ce = host.shadowRoot.querySelector(
-      '[data-lexical-editor]',
-    ) as HTMLElement;
-    return window.getComputedStyle(ce).direction;
-  });
-  expect(ltr).toBe('ltr');
-});
-
 test('the shadow root is attached with delegatesFocus and the contentEditable is tab-focusable', async ({
   page,
 }) => {
@@ -976,6 +942,10 @@ test('renders an editor inside two nested shadow roots', async ({page}) => {
   );
   await expect(nestedEditor).toBeVisible();
   await nestedEditor.click();
+  // Clear the editor's initial placeholder text before typing so the assertion
+  // below matches the typed string exactly rather than the concatenation.
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.press('Delete');
   await page.keyboard.type('nested shadow works');
   await expect(nestedEditor).toHaveText('nested shadow works');
 

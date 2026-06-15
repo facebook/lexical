@@ -26,6 +26,16 @@ import {
  * Shared by the Card and PullQuote demos: both are slot hosts whose chrome
  * selects the whole node, while a click inside a slot must enter that slot.
  *
+ * An interactive control rendered directly in the chrome (a button, a select,
+ * etc.) must carry a `data-host-control` attribute so its clicks actuate the
+ * control instead of promoting to a NodeSelection — see PullQuote's editable
+ * toggle. The opt-out is explicit rather than inferred from interactivity (e.g.
+ * "is the target a button or link?") because a host may legitimately contain
+ * interactive *content* whose clicks must not be swallowed — a LinkNode renders
+ * an `<a href>`, for instance — so being interactive is not the same as being a
+ * chrome affordance. Controls placed inside a slot are already exempt (a click
+ * there enters the slot), so this is only needed for controls in the chrome.
+ *
  * Returns a cleanup function (it registers a CLICK_COMMAND handler and a root
  * mousedown listener), so add it to the host extension's `mergeRegister`.
  */

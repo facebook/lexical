@@ -585,6 +585,27 @@ export class LexicalEditorElement extends HTMLElement {
    * `content-visibility`, `opacity: 0`, etc. Convenient for autosave
    * skip logic (no point persisting the state of an invisible editor).
    */
+  /**
+   * Publish the current value on a BroadcastChannel so other tabs of
+   * the same origin can react to edits. The channel is opened on
+   * demand and closed by the caller; multiple invocations are safe.
+   */
+  broadcastState(channelName: string): void {
+    // eslint-disable-next-line compat/compat -- Safari 16+ targets only.
+    const channel = new BroadcastChannel(channelName);
+    channel.postMessage({name: this.getAttribute('name'), value: this.value});
+    channel.close();
+  }
+
+  /**
+   * Trigger the browser's print dialog. Combined with the host's
+   * `@media print` stylesheet this prints the editor content without
+   * the toolbar chrome.
+   */
+  print(): void {
+    window.print();
+  }
+
   isVisible(): boolean {
     if (
       typeof (this as Element & {checkVisibility?: () => boolean})

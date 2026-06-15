@@ -1073,6 +1073,127 @@ test('saveToIndexedDB({compress: true}) gzip-compresses the persisted state', as
   await expect(editor(page, 'notes')).toHaveText('will be compressed');
 });
 
+test('window.find() does NOT reach text inside an open shadow root (engine limitation)', async ({
+  page,
+  browserName,
+}) => {
+  // `window.find()` is non-standard but ships in Chromium / WebKit;
+  // skip the Firefox run which omits it.
+  test.skip(browserName === 'firefox');
+  await clearAndType(page, 'notes', 'findable token');
+  // The engine's find-in-page algorithm does not descend into open
+  // shadow roots, so the text we just typed isn't matched. This test
+  // pins the limitation so future regressions on the editor side
+  // aren't blamed for it.
+  const found = await page.evaluate(() => {
+    const w = window as Window & {find?: (s: string) => boolean};
+    return w.find !== undefined ? w.find('findable token') : false;
+  });
+  expect(found).toBe(false);
+
+  // Light-DOM text is matched, so the API itself works.
+  const lightDom = await page.evaluate(() => {
+    const probe = document.createElement('div');
+    probe.textContent = 'light-dom-anchor';
+    document.body.appendChild(probe);
+    const w = window as Window & {find?: (s: string) => boolean};
+    const ok = w.find !== undefined ? w.find('light-dom-anchor') : false;
+    probe.remove();
+    return ok;
+  });
+  expect(lightDom).toBe(true);
+});
+
+test('Web Animations API drives an animation on a node inside the shadow root', async ({
+  page,
+}) => {
+  // The contentEditable inside the shadow root accepts a Web
+  // Animations API call the same way any DOM node would. The shadow
+  // boundary doesn't affect `Element.animate()`.
+  const finished = await page.evaluate(async () => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {shadowRoot: ShadowRoot};
+    const ce = host.shadowRoot.querySelector('.content') as HTMLElement;
+    const anim = ce.animate([{opacity: 1}, {opacity: 0.5}, {opacity: 1}], {
+      duration: 50,
+      iterations: 1,
+    });
+    await anim.finished;
+    return true;
+  });
+  expect(finished).toBe(true);
+});
+
+test('BroadcastChannel sends the editor value to listeners on the same channel', async ({
+  page,
+}) => {
+  await clearAndType(page, 'notes', 'broadcast payload');
+  const message = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {broadcastState: (c: string) => void};
+    return new Promise<unknown>(resolve => {
+      // eslint-disable-next-line compat/compat -- Safari 16+ targets only.
+      const channel = new BroadcastChannel('lexical-test');
+      channel.addEventListener(
+        'message',
+        event => {
+          channel.close();
+          resolve(event.data);
+        },
+        {once: true},
+      );
+      // Same-page subscribers receive the broadcast immediately.
+      host.broadcastState('lexical-test');
+      setTimeout(() => {
+        channel.close();
+        resolve(null);
+      }, 1000);
+    });
+  });
+  expect(message).not.toBeNull();
+  expect(typeof (message as {value: string}).value).toBe('string');
+  expect((message as {value: string}).value.length).toBeGreaterThan(0);
+});
+
+test('popstate after history.pushState fires while the host stays mounted', async ({
+  page,
+}) => {
+  // The host doesn't bind to `popstate` itself, but the page can hook
+  // it without any shadow-boundary specials. This test pins the
+  // baseline behaviour so an autosave-on-navigation pattern can rely
+  // on it.
+  const sawPopstate = await page.evaluate(() => {
+    return new Promise<boolean>(resolve => {
+      window.addEventListener('popstate', () => resolve(true), {once: true});
+      window.history.pushState({}, '', '?probe');
+      window.history.back();
+      setTimeout(() => resolve(false), 1000);
+    });
+  });
+  expect(sawPopstate).toBe(true);
+});
+
+test('host.print() invokes window.print() without throwing', async ({page}) => {
+  // Playwright's headless mode can't drive the OS print dialog, but it
+  // does intercept `window.print()` so the call returns without
+  // throwing. We verify the host method is wired up and does not
+  // dispose the editor on the way out.
+  const ok = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {getEditor: () => unknown; print: () => void};
+    try {
+      host.print();
+      return host.getEditor() !== null;
+    } catch {
+      return false;
+    }
+  });
+  expect(ok).toBe(true);
+});
+
 test('the host re-broadcasts window online / offline as a composed event', async ({
   page,
 }) => {

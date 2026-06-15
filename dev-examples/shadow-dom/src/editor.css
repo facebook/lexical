@@ -32,6 +32,10 @@
   top: 15px;
   left: 20px;
   font-size: 16px;
+  /* Match the editor's line-height so the placeholder's text baseline
+     aligns with the first typed character. Without this the placeholder
+     used the browser default (~1.2) and sat slightly above the input. */
+  line-height: 1.5;
   user-select: none;
   pointer-events: none;
 }

@@ -70,7 +70,17 @@ function adoptDocumentStyles(shadowRoot: ShadowRoot): () => void {
     }
   });
   observer.observe(document.head, {childList: true});
-  return () => observer.disconnect();
+  return () => {
+    observer.disconnect();
+    // Drop the mirrored stylesheets too: React 18 StrictMode runs the mount
+    // effect twice, and a browser-attached shadow root can't be detached, so
+    // the second mount would re-scan document.head on top of the first batch
+    // and leak duplicate <style>/<link> clones (also during Vite HMR).
+    for (const clone of clones.values()) {
+      (clone as ChildNode).remove();
+    }
+    clones.clear();
+  };
 }
 
 /**

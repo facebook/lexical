@@ -202,20 +202,7 @@ test.describe('Shadow DOM', () => {
     // here is that the paste event is dispatched at a node inside an
     // open shadow root and still reaches Lexical's listener.
     await page.evaluate(() => {
-      const findEditor = root => {
-        const direct = root.querySelector(
-          'div[contenteditable="true"][data-lexical-editor="true"]',
-        );
-        if (direct !== null) return direct;
-        for (const el of root.querySelectorAll('*')) {
-          if (el.shadowRoot !== null) {
-            const inner = findEditor(el.shadowRoot);
-            if (inner !== null) return inner;
-          }
-        }
-        return null;
-      };
-      const ce = findEditor(document);
+      const ce = window.__findShadowEditor(document);
       // 1x1 transparent PNG.
       const bytes = Uint8Array.from(
         atob(
@@ -285,20 +272,7 @@ test.describe('Shadow DOM', () => {
     // browser can't simulate, but the editor must stay alive and accept
     // input after the cycle ends.
     await page.evaluate(() => {
-      const findEditor = root => {
-        const direct = root.querySelector(
-          'div[contenteditable="true"][data-lexical-editor="true"]',
-        );
-        if (direct !== null) return direct;
-        for (const el of root.querySelectorAll('*')) {
-          if (el.shadowRoot !== null) {
-            const inner = findEditor(el.shadowRoot);
-            if (inner !== null) return inner;
-          }
-        }
-        return null;
-      };
-      const ce = findEditor(document);
+      const ce = window.__findShadowEditor(document);
       const fire = (type, data) =>
         ce.dispatchEvent(
           new CompositionEvent(type, {bubbles: true, composed: true, data}),
@@ -329,20 +303,7 @@ test.describe('Shadow DOM', () => {
     // browser can't simulate; the editor must stay alive and keep
     // accepting input.
     await page.evaluate(() => {
-      const findEditor = root => {
-        const direct = root.querySelector(
-          'div[contenteditable="true"][data-lexical-editor="true"]',
-        );
-        if (direct !== null) return direct;
-        for (const el of root.querySelectorAll('*')) {
-          if (el.shadowRoot !== null) {
-            const inner = findEditor(el.shadowRoot);
-            if (inner !== null) return inner;
-          }
-        }
-        return null;
-      };
-      const ce = findEditor(document);
+      const ce = window.__findShadowEditor(document);
       const fire = (type, data) =>
         ce.dispatchEvent(
           new CompositionEvent(type, {bubbles: true, composed: true, data}),
@@ -395,20 +356,7 @@ test.describe('Shadow DOM', () => {
     // across all engines (same approach as selectInnerText in the
     // browser-unit suite).
     await page.evaluate(() => {
-      const findEditor = root => {
-        const direct = root.querySelector(
-          'div[contenteditable="true"][data-lexical-editor="true"]',
-        );
-        if (direct !== null) return direct;
-        for (const el of root.querySelectorAll('*')) {
-          if (el.shadowRoot !== null) {
-            const inner = findEditor(el.shadowRoot);
-            if (inner !== null) return inner;
-          }
-        }
-        return null;
-      };
-      const editor = findEditor(document);
+      const editor = window.__findShadowEditor(document);
       const lastText = editor?.querySelector('[data-lexical-text="true"]');
       const textNode = lastText?.firstChild;
       if (textNode && textNode.nodeType === 3) {
@@ -461,18 +409,10 @@ test.describe('Shadow DOM', () => {
     await page.keyboard.type('first');
     await page.keyboard.press('Enter');
     await page.keyboard.type('second');
-    // Lexical-history's undo/redo commands run through the editor's
-    // command queue, not through DOM-level undo, so they have to keep
-    // working under shadow DOM.
-    await page.evaluate(() => {
-      window.lexicalEditor.dispatchCommand(
-        Symbol.for('UNDO_COMMAND'),
-        undefined,
-      );
-    });
-    // The Symbol-keyed command lookup above only works if `UNDO_COMMAND`
-    // happens to be a registered symbol-for; otherwise rely on the
-    // keyboard shortcut path the playground exposes.
+    // Lexical-history's undo/redo run through the editor's command queue,
+    // not through DOM-level undo, and the playground's keyboard shortcut
+    // dispatches them through the rootElement that lives inside the shadow
+    // root.
     await page.keyboard.press('ControlOrMeta+z');
     await page.keyboard.press('ControlOrMeta+z');
     const text = await page
@@ -512,18 +452,7 @@ test.describe('Shadow DOM', () => {
     // verifies that part directly with a synthetic `pointerType: 'touch'`
     // event.
     const composedTag = await page.evaluate(() => {
-      const findEditor = root => {
-        const direct = root.querySelector('[data-lexical-editor="true"]');
-        if (direct !== null) return direct;
-        for (const el of root.querySelectorAll('*')) {
-          if (el.shadowRoot !== null) {
-            const inner = findEditor(el.shadowRoot);
-            if (inner !== null) return inner;
-          }
-        }
-        return null;
-      };
-      const ce = findEditor(document);
+      const ce = window.__findShadowEditor(document);
       let composedTargetTag = null;
       const listener = event => {
         composedTargetTag = event.composedPath()[0].tagName;
@@ -554,18 +483,7 @@ test.describe('Shadow DOM', () => {
     // change that — the paste handler runs at the contentEditable
     // inside the shadow root.
     await page.evaluate(() => {
-      const findEditor = root => {
-        const direct = root.querySelector('[data-lexical-editor="true"]');
-        if (direct !== null) return direct;
-        for (const el of root.querySelectorAll('*')) {
-          if (el.shadowRoot !== null) {
-            const inner = findEditor(el.shadowRoot);
-            if (inner !== null) return inner;
-          }
-        }
-        return null;
-      };
-      const ce = findEditor(document);
+      const ce = window.__findShadowEditor(document);
       const dt = new DataTransfer();
       dt.setData(
         'text/html',
@@ -598,18 +516,7 @@ test.describe('Shadow DOM', () => {
     // depends on layout details outside the shadow story; the event
     // flow is what we want to pin here.
     const seen = await page.evaluate(() => {
-      const findEditor = root => {
-        const direct = root.querySelector('[data-lexical-editor="true"]');
-        if (direct !== null) return direct;
-        for (const el of root.querySelectorAll('*')) {
-          if (el.shadowRoot !== null) {
-            const inner = findEditor(el.shadowRoot);
-            if (inner !== null) return inner;
-          }
-        }
-        return null;
-      };
-      const ce = findEditor(document);
+      const ce = window.__findShadowEditor(document);
       let caught = false;
       const listener = () => {
         caught = true;
@@ -637,18 +544,7 @@ test.describe('Shadow DOM', () => {
     // Lexical's plugins (and the playground's floating UI) rely on this
     // event flow for transition-driven animations.
     const composed = await page.evaluate(() => {
-      const findEditor = root => {
-        const direct = root.querySelector('[data-lexical-editor="true"]');
-        if (direct !== null) return direct;
-        for (const el of root.querySelectorAll('*')) {
-          if (el.shadowRoot !== null) {
-            const inner = findEditor(el.shadowRoot);
-            if (inner !== null) return inner;
-          }
-        }
-        return null;
-      };
-      const ce = findEditor(document);
+      const ce = window.__findShadowEditor(document);
       let seen = false;
       const listener = () => {
         seen = true;
@@ -675,18 +571,7 @@ test.describe('Shadow DOM', () => {
     // carrying an `image/png` file, then `dragenter` / `dragover` /
     // `drop` dispatched at the shadow-internal contentEditable.
     await page.evaluate(() => {
-      const findEditor = root => {
-        const direct = root.querySelector('[data-lexical-editor="true"]');
-        if (direct !== null) return direct;
-        for (const el of root.querySelectorAll('*')) {
-          if (el.shadowRoot !== null) {
-            const inner = findEditor(el.shadowRoot);
-            if (inner !== null) return inner;
-          }
-        }
-        return null;
-      };
-      const ce = findEditor(document);
+      const ce = window.__findShadowEditor(document);
       const bytes = Uint8Array.from(
         atob(
           'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
@@ -721,7 +606,7 @@ test.describe('Shadow DOM', () => {
     const t0 = Date.now();
     await page.keyboard.type('a'.repeat(1000), {delay: 0});
     const elapsed = Date.now() - t0;
-    expect(elapsed).toBeLessThan(60_000);
+    expect(elapsed).toBeLessThan(10_000);
     const text = await page
       .locator('div[contenteditable="true"]')
       .first()

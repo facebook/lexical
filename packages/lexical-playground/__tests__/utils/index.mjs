@@ -157,6 +157,31 @@ export async function initialize({
   // shard for hours.
   const pageError = rejectOnPageError(page);
 
+  if (isShadowDOM) {
+    // Walk open shadow roots to find the editor's contentEditable. Used by
+    // shadow DOM specs that synthesize events at a node inside the shadow
+    // tree; document.querySelector does not pierce shadow boundaries.
+    await page.addInitScript(() => {
+      window.__findShadowEditor = function findEditor(root) {
+        const direct = root.querySelector(
+          'div[contenteditable="true"][data-lexical-editor="true"]',
+        );
+        if (direct !== null) {
+          return direct;
+        }
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            const inner = findEditor(el.shadowRoot);
+            if (inner !== null) {
+              return inner;
+            }
+          }
+        }
+        return null;
+      };
+    });
+  }
+
   await page.goto(url);
 
   await exposeLexicalEditor(page, pageError);

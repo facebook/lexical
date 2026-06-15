@@ -2456,7 +2456,8 @@ describe('named-slots: editable islands', () => {
       {discrete: true},
     );
     expect(slotEditable(editor, slotKey)).toBe('true');
-    // No SlotEditableExtension: the reconcile driven by setEditable flips it.
+    // Islands always follow the editor: the reconcile that setEditable
+    // schedules re-applies the container's contentEditable.
     editor.setEditable(false);
     await flush();
     expect(slotEditable(editor, slotKey)).toBe('false');

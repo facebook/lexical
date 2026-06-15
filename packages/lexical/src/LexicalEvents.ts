@@ -532,10 +532,11 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
       } else if (event.pointerType === 'touch' || event.pointerType === 'pen') {
         // This is used to update the selection on touch devices (including Apple Pencil) when the user clicks on text after a
         // node selection. See isSelectionChangeFromMouseDown for the inverse
-        const domAnchorNode = getDOMSelectionPoints(
+        const domSelectionPoints = getDOMSelectionPoints(
           domSelection,
           editor._rootElement,
-        ).anchorNode;
+        );
+        const domAnchorNode = domSelectionPoints.anchorNode;
         // If the user is attempting to click selection back onto text, then
         // we should attempt create a range selection.
         // When we click on an empty paragraph node or the end of a paragraph that ends

@@ -27,11 +27,12 @@ test.beforeEach(async ({page}) => {
   await page.locator('lexical-editor').first().waitFor();
 });
 
-test('renders three editors, each in its own open shadow root', async ({
+test('renders four editors, each in its own open shadow root', async ({
   page,
 }) => {
-  // Notes + summary + the pre-rendered (declarative shadow DOM) editor.
-  await expect(page.locator('lexical-editor')).toHaveCount(3);
+  // Notes + summary + the pre-rendered (declarative shadow DOM) editor
+  // + the editor inside <dialog>.
+  await expect(page.locator('lexical-editor')).toHaveCount(4);
 
   const stats = await page.evaluate(() => {
     const elements = [...document.querySelectorAll('lexical-editor')];
@@ -47,8 +48,8 @@ test('renders three editors, each in its own open shadow root', async ({
   });
   expect(stats).toEqual({
     lightDomContentEditables: 0,
-    total: 3,
-    withShadow: 3,
+    total: 4,
+    withShadow: 4,
   });
 });
 
@@ -93,7 +94,7 @@ test('is form-associated via ElementInternals', async ({page}) => {
   await clearAndType(page, 'notes', 'form value one');
   await clearAndType(page, 'summary', 'form value two');
 
-  await page.locator('button[type="submit"]').click();
+  await page.locator('#demo-form button[type="submit"]').click();
 
   // The form value of each editor is its serialized Lexical state, collected
   // by FormData without any hidden <input>.
@@ -187,7 +188,7 @@ test('readonly blocks edits but still submits the value', async ({page}) => {
 
   // The form still has the original value — `readonly` keeps the field in
   // FormData, matching `<input readonly>`.
-  await page.locator('button[type="submit"]').click();
+  await page.locator('#demo-form button[type="submit"]').click();
   await expect(page.locator('#form-output')).toContainText('summary:');
   await expect(page.locator('#form-output')).toContainText('locked content');
 
@@ -217,7 +218,7 @@ test('disabled drops the editor out of form submission', async ({page}) => {
   await page.keyboard.type(' still typing');
   await expect(editor(page, 'summary')).toHaveText('will be dropped');
 
-  await page.locator('button[type="submit"]').click();
+  await page.locator('#demo-form button[type="submit"]').click();
   const output = await page.locator('#form-output').textContent();
   expect(output).toContain('notes:');
   expect(output).not.toContain('summary:');
@@ -936,6 +937,142 @@ test('the Page Visibility API drives a composed `lexical-page-hidden` event', as
   expect(fired).toBe(true);
 });
 
+test('popovertarget button toggles the format popover', async ({page}) => {
+  const popover = page.locator('#format-popover');
+  const trigger = page.locator('button[popovertarget="format-popover"]');
+  // Initially the popover is closed.
+  await expect(popover).not.toBeVisible();
+  await trigger.click();
+  await expect(popover).toBeVisible();
+  await trigger.click();
+  await expect(popover).not.toBeVisible();
+});
+
+test('a lexical-editor inside <dialog> mounts with its own shadow root and form', async ({
+  page,
+}) => {
+  await page.locator('#open-dialog').click();
+  // The dialog editor mounts a shadow root, exposes the same API, and
+  // its `host.form` resolves to the dialog's `<form method="dialog">`.
+  await expect(page.locator('#editor-dialog')).toBeVisible();
+  const dialogInfo = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="dialog-note"]',
+    ) as Element & {form: HTMLFormElement | null; shadowRoot: ShadowRoot};
+    return {
+      formMethod: host.form !== null ? host.form.method : null,
+      hasShadowRoot: host.shadowRoot !== null,
+    };
+  });
+  expect(dialogInfo).toEqual({formMethod: 'dialog', hasShadowRoot: true});
+
+  // Typing in the dialog editor reflects.
+  const dialogEditor = page.locator(
+    'lexical-editor[name="dialog-note"] [data-lexical-editor]',
+  );
+  await dialogEditor.click();
+  await page.keyboard.type('inside the dialog');
+  await expect(dialogEditor).toContainText('inside the dialog');
+});
+
+test('dragstart from inside the shadow root bubbles to the page through composed:true', async ({
+  page,
+}) => {
+  await clearAndType(page, 'notes', 'draggable selection');
+  const captured = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {shadowRoot: ShadowRoot};
+    const ce = host.shadowRoot.querySelector('.content') as HTMLElement;
+    let receivedTag: string | null = null;
+    const listener = (event: DragEvent) => {
+      receivedTag = (event.composedPath()[0] as Element).tagName;
+    };
+    document.addEventListener('dragstart', listener);
+    ce.dispatchEvent(
+      new DragEvent('dragstart', {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+      }),
+    );
+    document.removeEventListener('dragstart', listener);
+    return receivedTag;
+  });
+  // A page-level dragstart listener sees the un-retargeted
+  // shadow-internal node through `composedPath()[0]`.
+  expect(captured).toBe('DIV');
+});
+
+test('host.isVisible() reports false while the host is display:none', async ({
+  page,
+}) => {
+  const reports = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {isVisible: () => boolean};
+    const beforeHide = host.isVisible();
+    (host as HTMLElement).style.display = 'none';
+    const afterHide = host.isVisible();
+    (host as HTMLElement).style.display = '';
+    return {afterHide, beforeHide};
+  });
+  expect(reports.beforeHide).toBe(true);
+  expect(reports.afterHide).toBe(false);
+});
+
+test('saveToIndexedDB({compress: true}) gzip-compresses the persisted state', async ({
+  page,
+}) => {
+  await clearAndType(page, 'notes', 'will be compressed');
+  // Compressed save followed by a restore from the same key.
+  const text = await page.evaluate(async () => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {
+      restoreFromIndexedDB: (k: string) => Promise<boolean>;
+      saveToIndexedDB: (
+        k: string,
+        opts?: {compress?: boolean},
+      ) => Promise<void>;
+    };
+    await host.saveToIndexedDB('autosave/compressed', {compress: true});
+    return new Promise<string | null>(resolve => {
+      const req = indexedDB.open('lexical-editor-element', 1);
+      req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction('states', 'readonly');
+        const get = tx.objectStore('states').get('autosave/compressed');
+        get.onsuccess = () => {
+          const stored = get.result;
+          if (stored instanceof Uint8Array) {
+            // First two bytes of a gzip stream are 0x1f 0x8b.
+            resolve(`gzip-${stored[0].toString(16)}-${stored[1].toString(16)}`);
+          } else {
+            resolve(null);
+          }
+        };
+      };
+    });
+  });
+  expect(text).toBe('gzip-1f-8b');
+
+  // Round-trip: emptying then restoring brings the original text back.
+  await editor(page, 'notes').click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.press('Delete');
+  const restored = await page.evaluate(async () => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {
+      restoreFromIndexedDB: (k: string) => Promise<boolean>;
+    };
+    return host.restoreFromIndexedDB('autosave/compressed');
+  });
+  expect(restored).toBe(true);
+  await expect(editor(page, 'notes')).toHaveText('will be compressed');
+});
+
 test('the host re-broadcasts window online / offline as a composed event', async ({
   page,
 }) => {
@@ -1147,7 +1284,7 @@ test('a required <lexical-editor> participates in form validation', async ({
 
   // Clicking submit on an invalid form does not run the submit handler, so
   // `#form-output` stays empty.
-  await page.locator('button[type="submit"]').click();
+  await page.locator('#demo-form button[type="submit"]').click();
   await expect(page.locator('#form-output')).toHaveText('');
 
   // Once the user types something, the editor becomes valid and the form
@@ -1168,6 +1305,6 @@ test('a required <lexical-editor> participates in form validation', async ({
     notesValueMissing: false,
   });
 
-  await page.locator('button[type="submit"]').click();
+  await page.locator('#demo-form button[type="submit"]').click();
   await expect(page.locator('#form-output')).toContainText('now filled in');
 });

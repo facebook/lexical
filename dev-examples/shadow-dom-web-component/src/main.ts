@@ -133,6 +133,17 @@ if (readonlyToggle !== null) {
   });
 }
 
+// Dialog open trigger. The dialog hosts another `<lexical-editor>`
+// instance; the editor's lifecycle (shadow root attach, editor build,
+// form association) runs unchanged inside the modal.
+const dialogTrigger = document.querySelector<HTMLButtonElement>('#open-dialog');
+const dialog = document.querySelector<HTMLDialogElement>('#editor-dialog');
+if (dialogTrigger !== null && dialog !== null) {
+  dialogTrigger.addEventListener('click', () => {
+    dialog.showModal();
+  });
+}
+
 // `inert` toggle. The standard `inert` attribute turns the editor's
 // subtree into a non-interactive region — focus, pointer events and
 // selection skip it. Like `dir`, the property crosses the shadow

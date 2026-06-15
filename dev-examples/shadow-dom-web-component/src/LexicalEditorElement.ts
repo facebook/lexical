@@ -515,11 +515,24 @@ export class LexicalEditorElement extends HTMLElement {
    * this path is for app-driven persistence — auto-save drafts, manual
    * "save" buttons, offline-first storage.
    */
-  async saveToIndexedDB(key: string): Promise<void> {
+  async saveToIndexedDB(
+    key: string,
+    options?: {compress?: boolean},
+  ): Promise<void> {
     const db = await this.openIndexedDB();
+    let payload: string | Uint8Array = this.value;
+    if (options !== undefined && options.compress === true) {
+      // Compression Streams API: gzip the serialized JSON before
+      // persisting it. The matching decompression branch lives in
+      // `restoreFromIndexedDB`.
+      const stream = new Blob([this.value])
+        .stream()
+        .pipeThrough(new CompressionStream('gzip'));
+      payload = new Uint8Array(await new Response(stream).arrayBuffer());
+    }
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STATE_STORE, 'readwrite');
-      tx.objectStore(STATE_STORE).put(this.value, key);
+      tx.objectStore(STATE_STORE).put(payload, key);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
@@ -543,13 +556,50 @@ export class LexicalEditorElement extends HTMLElement {
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
-    if (typeof value !== 'string' || value === '') {
+    let serialized: string;
+    if (typeof value === 'string') {
+      if (value === '') {
+        return false;
+      }
+      serialized = value;
+    } else if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
+      // Decompress gzip-compressed payload (see `saveToIndexedDB`).
+      const bytes =
+        value instanceof ArrayBuffer ? new Uint8Array(value) : value;
+      const stream = new Blob([bytes])
+        .stream()
+        .pipeThrough(new DecompressionStream('gzip'));
+      serialized = await new Response(stream).text();
+    } else {
       return false;
     }
-    this.editor.setEditorState(this.editor.parseEditorState(value));
+    this.editor.setEditorState(this.editor.parseEditorState(serialized));
     this.internals.setFormValue(this.value);
     this.updateValidity();
     return true;
+  }
+
+  /**
+   * Spec wrapper around `Element.checkVisibility()`. Returns whether
+   * the host is laid out, painted, and not occluded by `inert`,
+   * `content-visibility`, `opacity: 0`, etc. Convenient for autosave
+   * skip logic (no point persisting the state of an invisible editor).
+   */
+  isVisible(): boolean {
+    if (
+      typeof (this as Element & {checkVisibility?: () => boolean})
+        .checkVisibility !== 'function'
+    ) {
+      return this.offsetParent !== null;
+    }
+    return (
+      this as Element & {
+        checkVisibility: (opts?: {
+          checkOpacity?: boolean;
+          checkVisibilityCSS?: boolean;
+        }) => boolean;
+      }
+    ).checkVisibility({checkOpacity: true, checkVisibilityCSS: true});
   }
 
   /**

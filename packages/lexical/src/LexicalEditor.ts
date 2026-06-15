@@ -319,37 +319,6 @@ export interface EditorDOMRenderConfig {
     editor: LexicalEditor,
   ) => void;
   /**
-   * @internal @experimental
-   *
-   * Called when the host DOM for this node is first mounted. May return
-   * a cleanup function that is invoked when the node's DOM is unmounted
-   * — same shape as `editor.register*` listeners. For framework
-   * integrations that own the host DOM, this is the entry point for
-   * `createRoot` / first render.
-   */
-  $onDOMMount: <T extends LexicalNode>(
-    node: T,
-    hostDom: HTMLElement,
-    editor: LexicalEditor,
-  ) => void | (() => void);
-  /**
-   * @internal @experimental
-   *
-   * Called when the node updates and the host DOM was preserved (no
-   * `createDOM` recreate). Use this to re-render a framework view
-   * bound to the node. `prevNode` is the previous state.
-   *
-   * The name carries the `$onDOM` prefix to avoid colliding with
-   * lexical's top-level {@link $onUpdate} free function, which queues
-   * a post-commit callback inside an update transaction.
-   */
-  $onDOMUpdate: <T extends LexicalNode>(
-    node: T,
-    prevNode: T,
-    hostDom: HTMLElement,
-    editor: LexicalEditor,
-  ) => void;
-  /**
    * @internal @experimental named-slots
    *
    * Where a named slot's container should attach, for hosts rendered
@@ -732,26 +701,6 @@ export function resetEditor(
   pendingEditorState: EditorState,
   options?: ResetEditorOptions,
 ): void {
-  // Tear down any $onDOMMount cleanups before discarding the node-to-DOM
-  // map. resetEditor clears the DOM tree via `textContent = ''` rather
-  // than walking $destroyNode per node, so the per-node cleanup path in
-  // the reconciler doesn't run here — external resources (e.g. React
-  // roots) need to be released explicitly.
-  if (editor._onDOMMountCleanup.size > 0) {
-    try {
-      for (const cleanup of editor._onDOMMountCleanup.values()) {
-        try {
-          cleanup();
-        } catch (error) {
-          if (error instanceof Error) {
-            editor._onError(error);
-          }
-        }
-      }
-    } finally {
-      editor._onDOMMountCleanup.clear();
-    }
-  }
   const keyNodeMap = editor._keyToDOMMap;
   keyNodeMap.clear();
   editor._editorState = createEmptyEditorState();
@@ -888,8 +837,6 @@ export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig = {
   ): DOMSlotForNode<N> => node.getDOMSlot(dom) as DOMSlotForNode<N>,
   $getSlotEditable: (_node, _slotName, _editor) => null,
   $getSlotTargetElement: (_node, _slotName, _hostDom, _editor) => null,
-  $onDOMMount: (_node, _hostDom, _editor) => undefined,
-  $onDOMUpdate: (_node, _prevNode, _hostDom, _editor) => undefined,
   $shouldExclude: (node, _selection, _editor) =>
     $isElementNode(node) && node.excludeFromCopy('html'),
   $shouldInclude: (node, selection, _editor) =>
@@ -1131,15 +1078,6 @@ export class LexicalEditor {
   /**
    * @internal @experimental
    *
-   * Cleanup functions returned from {@link EditorDOMRenderConfig.$onDOMMount}.
-   * Keyed by node key. Invoked by the reconciler when the node's DOM is
-   * unmounted, and by {@link resetEditor} when the whole editor is torn
-   * down so external resources (e.g. React roots) get released.
-   */
-  _onDOMMountCleanup: Map<NodeKey, () => void>;
-  /**
-   * @internal @experimental
-   *
    * Latches to `true` the first time {@link $setSlot} runs in this
    * editor. Gates the commit-time slot-containment clamp so editors that never
    * use slots skip the per-update frame walk entirely. The latch persists for
@@ -1216,7 +1154,6 @@ export class LexicalEditor {
     this._headless = parentEditor !== null && parentEditor._headless;
     this._window = null;
     this._blockCursorElement = null;
-    this._onDOMMountCleanup = new Map();
     this._slotsUsed = false;
   }
 

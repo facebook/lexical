@@ -317,27 +317,6 @@ function $destroyNode(key: NodeKey, parentDOM: null | HTMLElement): void {
     return;
   }
 
-  // Invoke the cleanup returned by `$onDOMMount`, if any. Run before
-  // the DOM-map delete so the cleanup can still read `getElementByKey`
-  // if it needs to (e.g. to unmount a framework view bound to the host
-  // DOM). Errors are routed through `editor._onError` instead of
-  // bubbling so a misbehaving cleanup can't break the rest of the
-  // teardown sweep.
-  const onDOMMountCleanup = activeEditor._onDOMMountCleanup.get(key);
-  if (onDOMMountCleanup !== undefined) {
-    try {
-      try {
-        onDOMMountCleanup();
-      } catch (error) {
-        if (error instanceof Error) {
-          activeEditor._onError(error);
-        }
-      }
-    } finally {
-      activeEditor._onDOMMountCleanup.delete(key);
-    }
-  }
-
   // This logic is really important, otherwise we will leak DOM nodes
   // when their corresponding LexicalNodes are removed from the editor state.
   activeEditor._keyToDOMMap.delete(key);
@@ -741,49 +720,7 @@ function $createNode(key: NodeKey, slot: DOMSlot | null): HTMLElement {
   const dom: HTMLElement & LexicalPrivateDOM =
     activeEditorDOMRenderConfig.$createDOM(node, activeEditor);
 
-  // Recreate path safety: when `$updateDOM` returns `true`,
-  // `$reconcileNode` invokes `$createNode(key, null)` for the same key
-  // and then `$destroyNode(key, null)`. `$destroyNode` short-circuits
-  // on `isMoved` (the key is still in the next node map) and skips
-  // cleanup, so the previous mount's cleanup would never run unless we
-  // do it here — and its reference would be overwritten by the new
-  // registration below.
-  //
-  // The invocation is placed BEFORE `storeDOMWithKey` so any cleanup
-  // that reads `editor.getElementByKey(key)` still resolves to the
-  // OLD DOM. (Cleanup observes the OLD DOM still attached to its
-  // parent — `parentDOM.replaceChild` runs after `$createNode`
-  // returns.)
-  const previousOnDOMMountCleanup = activeEditor._onDOMMountCleanup.get(key);
-  if (previousOnDOMMountCleanup !== undefined) {
-    try {
-      try {
-        previousOnDOMMountCleanup();
-      } catch (error) {
-        if (error instanceof Error) {
-          activeEditor._onError(error);
-        }
-      }
-    } finally {
-      activeEditor._onDOMMountCleanup.delete(key);
-    }
-  }
-
   storeDOMWithKey(key, dom, activeEditor);
-
-  // Run the host's `$onDOMMount` immediately after the DOM is
-  // registered. Children mount into this DOM further down — running
-  // before them is intentional: a framework integration that owns the
-  // host DOM (e.g. a React root rendered through `$onDOMMount`) is set
-  // up before its child content reconciles into it.
-  const onDOMMountCleanup = activeEditorDOMRenderConfig.$onDOMMount(
-    node,
-    dom,
-    activeEditor,
-  );
-  if (typeof onDOMMountCleanup === 'function') {
-    activeEditor._onDOMMountCleanup.set(key, onDOMMountCleanup);
-  }
 
   // This helps preserve the text, and stops spell check tools from
   // merging or break the spans (which happens if they are missing
@@ -1825,17 +1762,6 @@ function $reconcileNode(
     $destroyNode(key, null);
     return replacementDOM;
   }
-
-  // DOM was preserved across the update — notify the host so it can
-  // re-render its framework view. Skipped on the recreate path above
-  // because `$destroyNode` + `$createNode` already drive the
-  // unmount/mount cycle.
-  activeEditorDOMRenderConfig.$onDOMUpdate(
-    nextNode,
-    prevNode,
-    dom,
-    activeEditor,
-  );
 
   if ($isElementNode(prevNode)) {
     invariant(

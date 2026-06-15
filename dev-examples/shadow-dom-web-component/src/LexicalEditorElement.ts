@@ -189,6 +189,7 @@ export class LexicalEditorElement extends HTMLElement {
     'readonly',
     'aria-label',
     'spellcheck',
+    'loading',
   ];
 
   private internals: ElementInternals;
@@ -201,6 +202,8 @@ export class LexicalEditorElement extends HTMLElement {
   // refilled in `disconnectedCallback`.
   private pendingState: string | null = null;
   private customValidityMessage = '';
+  private lazyObserver: IntersectionObserver | null = null;
+  private lazyBuildScheduled = false;
 
   constructor() {
     super();
@@ -554,6 +557,36 @@ export class LexicalEditorElement extends HTMLElement {
   }
 
   connectedCallback(): void {
+    // Honour `loading="lazy"`: defer the editor build until the host
+    // scrolls into view. Useful for pages with many instances where
+    // most are off-screen at first paint. The observer fires once and
+    // re-enters `connectedCallback`. External callers that touch the
+    // host before it scrolls into view see `editor === null` and a
+    // serialized value of `''`, matching the lifecycle of an
+    // unbuilt host.
+    if (
+      this.getAttribute('loading') === 'lazy' &&
+      this.editor === null &&
+      !this.lazyBuildScheduled
+    ) {
+      this.lazyBuildScheduled = true;
+      this.lazyObserver = new IntersectionObserver(entries => {
+        if (entries.some(e => e.isIntersecting)) {
+          const observer = this.lazyObserver;
+          this.lazyObserver = null;
+          // Leave `lazyBuildScheduled = true` so the recursive call
+          // below falls through to the build path instead of
+          // re-scheduling itself.
+          if (observer !== null) {
+            observer.disconnect();
+          }
+          this.connectedCallback();
+        }
+      });
+      this.lazyObserver.observe(this);
+      return;
+    }
+
     // On re-attach the shadowRoot persists from the previous mount but
     // disconnectedCallback has disposed the editor. Reuse the existing
     // shadow root and clear its children so the flow below rebuilds them
@@ -767,6 +800,11 @@ export class LexicalEditorElement extends HTMLElement {
   }
 
   disconnectedCallback(): void {
+    if (this.lazyObserver !== null) {
+      this.lazyObserver.disconnect();
+      this.lazyObserver = null;
+    }
+    this.lazyBuildScheduled = false;
     if (this.disposeEditor !== null) {
       // Cache the serialized editor state before tearing the editor
       // down, so a subsequent `connectedCallback` (DOM move) can rebuild

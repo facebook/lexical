@@ -788,6 +788,59 @@ test('outerHTML / serialization carries the host element but not the shadow cont
   expect(outer).toMatch(/<lexical-editor/);
 });
 
+test('loading="lazy" defers the editor build until the host is visible', async ({
+  page,
+}) => {
+  // Mount a lazy host outside the viewport so the IntersectionObserver
+  // does not fire on initial paint.
+  await page.evaluate(() => {
+    const host = document.createElement('lexical-editor');
+    host.setAttribute('name', 'lazy');
+    host.setAttribute('loading', 'lazy');
+    host.setAttribute('placeholder-text', 'lazy host');
+    host.style.position = 'absolute';
+    host.style.top = '6000px';
+    document.body.appendChild(host);
+  });
+  // Before the host scrolls in: the editor isn't built yet, so the
+  // public value is an empty string.
+  const beforeScroll = await page.evaluate(
+    () =>
+      (
+        document.querySelector('lexical-editor[name="lazy"]') as Element & {
+          value: string;
+        }
+      ).value,
+  );
+  expect(beforeScroll).toBe('');
+
+  // Promote the host into the viewport by moving it back to `top: 0`.
+  // That triggers the IntersectionObserver, which re-enters
+  // `connectedCallback` and builds the editor.
+  await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="lazy"]',
+    ) as HTMLElement;
+    host.style.top = '0px';
+  });
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            (
+              document.querySelector(
+                'lexical-editor[name="lazy"]',
+              ) as Element & {
+                value: string;
+              }
+            ).value,
+        ),
+      {timeout: 5000},
+    )
+    .not.toBe('');
+});
+
 test('saveToIndexedDB / restoreFromIndexedDB round-trip the editor state', async ({
   page,
 }) => {

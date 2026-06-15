@@ -595,10 +595,10 @@ describe('DOM shadow root selection (browser)', () => {
   });
 
   test('Selection.direction absent + backward selection signals unknown direction', () => {
-    // When the engine ships getComposedRanges without Selection.direction
-    // (e.g. Firefox 124–125), the helper can't tell a backward selection
-    // from a forward one — anchor/focus default to tree order and the
-    // undefined direction is the explicit signal to callers.
+    // If a future engine ships getComposedRanges without Selection.direction
+    // (no current shipping configuration matches), the helper can't tell a
+    // backward selection from a forward one — anchor/focus default to tree
+    // order and the undefined direction is the explicit signal to callers.
     const {contentEditable} = setUpShadowEditor();
     if (!SUPPORTS_COMPOSED_RANGES) {
       return;

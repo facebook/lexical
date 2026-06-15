@@ -61,8 +61,8 @@ live in a shadow tree keep working on any engine the rest of Lexical supports.
 
 | Platform API | Used for | Chrome / Edge | Firefox | Safari |
 | --- | --- | --- | --- | --- |
-| `Selection.getComposedRanges` | Reading the un‑retargeted boundary points | 121+ | 126+ | 17.4+ |
-| `Selection.direction` | Mapping the composed range back onto anchor/focus | 121+ | 124+ | 17.4+ |
+| `Selection.getComposedRanges` | Reading the un‑retargeted boundary points | 137+ | 142+ | 17.0+ |
+| `Selection.direction` | Mapping the composed range back onto anchor/focus | 137+ | 126+ | 17.0+ |
 | `ShadowRoot.activeElement` | Resolving the focused element through the host | All modern | All modern | All modern |
 | `Document.caretPositionFromPoint({shadowRoots})` | Shadow-aware drop / drag hit-tests | 128+ | (not yet) | 18.1+ |
 
@@ -153,9 +153,17 @@ In the light DOM `getDOMSelectionPoints` returns the live `Selection` itself,
 so each property read is deferred and `$updateDOMSelection` only pays for the
 synchronous style/layout recalculation that a `Selection.anchorNode` /
 `focusNode` read triggers when it actually needs the value. Inside a shadow
-tree the return is a snapshot taken at call time. Read the four points
-immediately after the call rather than caching the returned reference, or
-use `points === domSelection` to detect the alias path.
+tree the return is a snapshot taken at call time, including
+`Selection.direction` so callers can branch on it explicitly. Read the four
+points immediately after the call rather than caching the returned reference,
+or use `points === domSelection` to detect the alias path.
+
+If a future engine ships `getComposedRanges` without `Selection.direction`
+(no current configuration matches — every engine that ships the former
+also ships the latter), the snapshot's `direction` is `undefined` and
+anchor/focus default to the StaticRange's tree order; callers needing strict
+backward fidelity should check `direction !== undefined` before relying on
+the swap.
 
 ## Form association
 

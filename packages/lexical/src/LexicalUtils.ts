@@ -2030,11 +2030,12 @@ export function getDOMShadowRoots(node: Node): ShadowRoot[] {
  * `direction` is the standard
  * {@link https://developer.mozilla.org/docs/Web/API/Selection/direction | Selection.direction}
  * pass-through: `'forward'` / `'backward'` / `'none'` when the engine
- * implements it, or `undefined` when the engine ships `getComposedRanges`
- * without `direction` (e.g. Firefox 124–125). In the undefined case
- * anchor/focus default to the composed StaticRange's tree order; callers
- * needing strict backward fidelity inside a shadow root should check
- * `direction !== undefined`.
+ * implements it, or `undefined` when a future engine ships
+ * `getComposedRanges` without `direction` (no current shipping
+ * configuration matches — every engine that ships the former also ships
+ * the latter). In the undefined case anchor/focus default to the composed
+ * StaticRange's tree order; callers needing strict backward fidelity
+ * inside a shadow root should check `direction !== undefined`.
  *
  * @experimental Shape may change as shadow DOM support stabilizes.
  */
@@ -2162,10 +2163,11 @@ export function getDOMSelectionRange(
  *   recalculation, so `$updateDOMSelection` defers these reads until they
  *   are actually needed.
  * - shadow DOM: the return is a snapshot taken at call time, including
- *   `direction`. When the engine ships `getComposedRanges` without
- *   `Selection.direction` (e.g. Firefox 124–125), the snapshot's
- *   `direction` is `undefined` and anchor/focus default to the
- *   StaticRange's tree order — a backward selection will appear forward.
+ *   `direction`. If a future engine ships `getComposedRanges` without
+ *   `Selection.direction` (no current shipping configuration matches),
+ *   the snapshot's `direction` is `undefined` and anchor/focus default
+ *   to the StaticRange's tree order — a backward selection will appear
+ *   forward.
  *
  * Read the four points immediately after the call, or compare identity
  * via `points === domSelection` to detect when the return aliases

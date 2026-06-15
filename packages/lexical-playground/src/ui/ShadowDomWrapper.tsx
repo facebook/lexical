@@ -50,6 +50,24 @@ function adoptDocumentStyles(shadowRoot: ShadowRoot): () => void {
 
   const observer = new MutationObserver(mutations => {
     for (const mutation of mutations) {
+      if (mutation.type === 'characterData') {
+        // Vite HMR replaces the style's text content in place rather than
+        // swapping in a new <style> node, so the childList branch below
+        // never sees it. Walk up to the enclosing style/link and mirror
+        // the new contents onto the clone so the shadow root stays in
+        // sync.
+        let node: Node | null = mutation.target;
+        while (node !== null && !isStyleNode(node)) {
+          node = node.parentNode;
+        }
+        if (node !== null) {
+          const clone = clones.get(node);
+          if (clone !== undefined) {
+            clone.textContent = node.textContent;
+          }
+        }
+        continue;
+      }
       for (const node of mutation.addedNodes) {
         if (isStyleNode(node)) {
           const clone = node.cloneNode(true);
@@ -69,9 +87,47 @@ function adoptDocumentStyles(shadowRoot: ShadowRoot): () => void {
       }
     }
   });
-  observer.observe(document.head, {childList: true});
+  observer.observe(document.head, {
+    characterData: true,
+    childList: true,
+    subtree: true,
+  });
+
+  // Vite HMR fallback: Chrome / Safari sometimes update CSS through
+  // CSSOM (style.sheet.replaceSync / insertRule) rather than the DOM, so
+  // the MutationObserver above never fires. The vite:afterUpdate event
+  // does fire on every HMR pass, so reconcile clones against document.head
+  // verbatim then. No-ops in production builds (import.meta.hot is
+  // undefined).
+  const resyncFromHead = (): void => {
+    for (const [source, clone] of clones) {
+      if (!document.head.contains(source)) {
+        (clone as ChildNode).remove();
+        clones.delete(source);
+      } else if (clone.textContent !== source.textContent) {
+        clone.textContent = source.textContent;
+      }
+    }
+    for (const source of document.head.querySelectorAll(
+      'style, link[rel="stylesheet"]',
+    )) {
+      if (!clones.has(source)) {
+        const clone = source.cloneNode(true);
+        clones.set(source, clone);
+        shadowRoot.appendChild(clone);
+      }
+    }
+  };
+  const hot = import.meta.hot;
+  if (hot) {
+    hot.on('vite:afterUpdate', resyncFromHead);
+  }
+
   return () => {
     observer.disconnect();
+    if (hot) {
+      hot.off('vite:afterUpdate', resyncFromHead);
+    }
     // Drop the mirrored stylesheets too: React 18 StrictMode runs the mount
     // effect twice, and a browser-attached shadow root can't be detached, so
     // the second mount would re-scan document.head on top of the first batch

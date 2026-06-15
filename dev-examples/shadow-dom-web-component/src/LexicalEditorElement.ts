@@ -220,6 +220,8 @@ export class LexicalEditorElement extends HTMLElement {
   private removeOnlineListeners: (() => void) | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private removeVisibilityListener: (() => void) | null = null;
+  private removePageLifecycleListeners: (() => void) | null = null;
+  private dirty = false;
 
   constructor() {
     super();
@@ -709,6 +711,65 @@ export class LexicalEditorElement extends HTMLElement {
   }
 
   /**
+   * Wire `beforeunload` + `pagehide` + `pageshow` so the page can
+   * react to navigation away from the editor:
+   * - `beforeunload` consults the host's dirty flag and prompts the
+   *   browser confirmation dialog if the user has unsaved edits.
+   * - `pagehide` re-broadcasts as a composed `lexical-page-hide`
+   *   event carrying `event.persisted` so the surrounding app can
+   *   tell bfcache stash from a real unload.
+   * - `pageshow` re-broadcasts as `lexical-page-show` so a bfcache
+   *   restore can re-validate (re-sync with the server, etc.).
+   */
+  private installPageLifecycleListeners(): void {
+    if (this.removePageLifecycleListeners !== null) {
+      return;
+    }
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (this.dirty) {
+        event.preventDefault();
+      }
+    };
+    const onPageHide = (event: PageTransitionEvent) => {
+      this.dispatchEvent(
+        new CustomEvent('lexical-page-hide', {
+          bubbles: true,
+          composed: true,
+          detail: {persisted: event.persisted},
+        }),
+      );
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      this.dispatchEvent(
+        new CustomEvent('lexical-page-show', {
+          bubbles: true,
+          composed: true,
+          detail: {persisted: event.persisted},
+        }),
+      );
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('pagehide', onPageHide);
+    window.addEventListener('pageshow', onPageShow);
+    this.removePageLifecycleListeners = () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      window.removeEventListener('pagehide', onPageHide);
+      window.removeEventListener('pageshow', onPageShow);
+    };
+  }
+
+  /** Whether the editor has been edited since the last save / load. */
+  get isDirty(): boolean {
+    return this.dirty;
+  }
+
+  /** Clear the dirty flag (call after a successful save). */
+  markClean(): void {
+    this.dirty = false;
+    this.internals.states.delete('dirty');
+  }
+
+  /**
    * Page Visibility API: when the page enters the background (tab
    * switch, navigation) fire a composed `lexical-page-hidden`
    * CustomEvent so the surrounding app can autosave or pause expensive
@@ -929,6 +990,7 @@ export class LexicalEditorElement extends HTMLElement {
     this.installOnlineListeners();
     this.installResizeObserver();
     this.installVisibilityListener();
+    this.installPageLifecycleListeners();
 
     const formatButtons = new Map<TextFormatType, HTMLButtonElement>();
     const addButton = (label: string, onClick: () => void) => {
@@ -1016,6 +1078,11 @@ export class LexicalEditorElement extends HTMLElement {
         this.internals.setFormValue(JSON.stringify(editorState.toJSON()));
         // Re-evaluate `required` validity now that the text content changed.
         this.updateValidity();
+        // Track dirty state for `beforeunload` and the page-side
+        // autosave story. `markClean()` resets the flag once the page
+        // has persisted the value.
+        this.dirty = true;
+        this.internals.states.add('dirty');
         // Composed so it crosses the shadow boundary to page listeners.
         this.dispatchEvent(new Event('input', {bubbles: true, composed: true}));
       },
@@ -1045,6 +1112,10 @@ export class LexicalEditorElement extends HTMLElement {
     if (this.removeVisibilityListener !== null) {
       this.removeVisibilityListener();
       this.removeVisibilityListener = null;
+    }
+    if (this.removePageLifecycleListeners !== null) {
+      this.removePageLifecycleListeners();
+      this.removePageLifecycleListeners = null;
     }
     if (this.disposeEditor !== null) {
       // Cache the serialized editor state before tearing the editor

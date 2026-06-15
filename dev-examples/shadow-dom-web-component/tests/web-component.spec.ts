@@ -1328,6 +1328,147 @@ test('shadow root attached with {serializable: true}', async ({page}) => {
   expect(flag).toBe(true);
 });
 
+test('isDirty + markClean track the unsaved-changes state', async ({page}) => {
+  // Pristine until the user types.
+  const before = await page.evaluate(
+    () =>
+      (
+        document.querySelector('lexical-editor[name="notes"]') as Element & {
+          isDirty: boolean;
+        }
+      ).isDirty,
+  );
+  expect(before).toBe(false);
+
+  await clearAndType(page, 'notes', 'dirty content');
+  const afterEdit = await page.evaluate(
+    () =>
+      (
+        document.querySelector('lexical-editor[name="notes"]') as Element & {
+          isDirty: boolean;
+        }
+      ).isDirty,
+  );
+  expect(afterEdit).toBe(true);
+  // `:state(dirty)` is exposed alongside isDirty.
+  expect(
+    await page.evaluate(() =>
+      document
+        .querySelector('lexical-editor[name="notes"]')!
+        .matches(':state(dirty)'),
+    ),
+  ).toBe(true);
+
+  // markClean resets both the flag and the custom state.
+  await page.evaluate(() => {
+    (
+      document.querySelector('lexical-editor[name="notes"]') as Element & {
+        markClean: () => void;
+      }
+    ).markClean();
+  });
+  expect(
+    await page.evaluate(() =>
+      document
+        .querySelector('lexical-editor[name="notes"]')!
+        .matches(':state(dirty)'),
+    ),
+  ).toBe(false);
+});
+
+test('pagehide / pageshow re-broadcast as composed events with `persisted`', async ({
+  page,
+}) => {
+  const detail = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as HTMLElement;
+    return new Promise<{persisted: boolean} | null>(resolve => {
+      host.addEventListener(
+        'lexical-page-hide',
+        event => {
+          resolve((event as CustomEvent<{persisted: boolean}>).detail);
+        },
+        {once: true},
+      );
+      window.dispatchEvent(
+        new PageTransitionEvent('pagehide', {persisted: true}),
+      );
+      setTimeout(() => resolve(null), 1000);
+    });
+  });
+  expect(detail).toEqual({persisted: true});
+});
+
+test('beforeunload preventDefault fires only while the editor is dirty', async ({
+  page,
+}) => {
+  // Page is pristine: beforeunload runs but `defaultPrevented` stays false.
+  const pristine = await page.evaluate(() => {
+    const event = new Event('beforeunload', {cancelable: true});
+    window.dispatchEvent(event);
+    return event.defaultPrevented;
+  });
+  expect(pristine).toBe(false);
+
+  await clearAndType(page, 'notes', 'unsaved edit');
+  const dirty = await page.evaluate(() => {
+    const event = new Event('beforeunload', {cancelable: true});
+    window.dispatchEvent(event);
+    return event.defaultPrevented;
+  });
+  expect(dirty).toBe(true);
+});
+
+test('popover toggle event fires on showPopover / hidePopover', async ({
+  page,
+}) => {
+  const transitions = await page.evaluate(async () => {
+    const popover = document.querySelector('#format-popover') as HTMLElement & {
+      hidePopover: () => void;
+      showPopover: () => void;
+    };
+    const seen: string[] = [];
+    const listener = (event: Event) => {
+      seen.push((event as ToggleEvent).newState);
+    };
+    popover.addEventListener('toggle', listener);
+    popover.showPopover();
+    await new Promise(resolve => setTimeout(resolve, 50));
+    popover.hidePopover();
+    await new Promise(resolve => setTimeout(resolve, 50));
+    popover.removeEventListener('toggle', listener);
+    return seen;
+  });
+  expect(transitions).toEqual(['open', 'closed']);
+});
+
+test('contextmenu inside the shadow root reaches a page-level listener', async ({
+  page,
+}) => {
+  const tag = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {shadowRoot: ShadowRoot};
+    const ce = host.shadowRoot.querySelector('.content') as HTMLElement;
+    let composedTag: string | null = null;
+    const listener = (event: Event) => {
+      composedTag = (event.composedPath()[0] as Element).tagName;
+    };
+    document.addEventListener('contextmenu', listener);
+    ce.dispatchEvent(
+      new MouseEvent('contextmenu', {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+      }),
+    );
+    document.removeEventListener('contextmenu', listener);
+    return composedTag;
+  });
+  expect(tag).toBe('DIV');
+});
+
 test('the host re-broadcasts window online / offline as a composed event', async ({
   page,
 }) => {

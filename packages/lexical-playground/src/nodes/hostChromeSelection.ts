@@ -56,10 +56,10 @@ export function registerHostChromeSelection<T extends LexicalNode>(
     if (slotWrapper !== null && hostElement.contains(slotWrapper)) {
       return null;
     }
-    // Interactive chrome controls (e.g. PullQuote's editable toggle) opt out of
-    // the whole-node promotion so a click actuates the control rather than
-    // selecting the host.
-    if (target.closest('[data-chrome-control]') !== null) {
+    // Interactive controls in the host's chrome (e.g. PullQuote's editable
+    // toggle) opt out of the whole-node promotion so a click actuates the
+    // control rather than selecting the host.
+    if (target.closest('[data-host-control]') !== null) {
       return null;
     }
     return node;

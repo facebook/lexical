@@ -116,7 +116,7 @@ function PullQuoteComponent({nodeKey}: {nodeKey: NodeKey}): JSX.Element {
       <button
         type="button"
         className="lexical-pullquote-editable-toggle"
-        data-chrome-control=""
+        data-host-control=""
         data-quote-editable={String(quoteEditable)}
         contentEditable={false}
         onMouseDown={e => e.preventDefault()}

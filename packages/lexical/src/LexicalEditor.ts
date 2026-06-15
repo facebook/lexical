@@ -139,6 +139,21 @@ export type EditorSetOptions = {
   tag?: string;
 };
 
+/**
+ * Controls which editor state {@link LexicalEditor.read} observes and whether
+ * pending updates are flushed before the read.
+ *
+ * - `'force-commit'` (the default) flushes any pending updates immediately
+ *   before the read, so it always observes a fully committed and reconciled
+ *   state.
+ * - `'pending'` reads the pending state if it exists, otherwise the committed
+ *   state, without flushing. This is safe to call when an update may already
+ *   be in progress at the cost of possibly observing an uncommitted state.
+ * - `'latest'` reads the latest committed state without flushing pending
+ *   updates, equivalent to `editor.getEditorState().read(callbackFn, {editor})`.
+ */
+export type EditorReadMode = 'force-commit' | 'pending' | 'latest';
+
 export interface EditorFocusOptions {
   /**
    * Where to move selection when the editor is
@@ -1691,28 +1706,36 @@ export class LexicalEditor {
    * Executes a read of the editor's state, with the
    * editor context available (useful for exporting and read-only DOM
    * operations). Much like update, but prevents any mutation of the
-   * editor's state. Any pending updates will be flushed immediately before
-   * the read.
+   * editor's state.
+   *
+   * When called with a single argument the `mode` defaults to
+   * `'force-commit'`, which flushes any pending updates immediately before the
+   * read so it always observes a fully committed and reconciled state. See
+   * {@link EditorReadMode} for the behavior of the other modes (`'pending'`
+   * and `'latest'`).
    * @param callbackFn - A function that has access to read-only editor state.
    */
-  read<T>(callbackFn: () => T): T {
-    $commitPendingUpdates(this);
-    return this.getEditorState().read(callbackFn, {editor: this});
-  }
-
+  read<T>(callbackFn: () => T): T;
   /**
-   * Executes a read of the editor's pending state if it exists, otherwise
-   * the committed state, with the editor context available. Unlike
-   * {@link LexicalEditor.read}, pending updates are not flushed before the
-   * read, so this is safe to call when an update may already be in
-   * progress (such as from another editor's command listener) at the cost
-   * of possibly observing a state that has not been committed yet.
+   * Executes a read of the editor's state in the given `mode`, with the editor
+   * context available. See {@link EditorReadMode} for the available modes.
+   * @param mode - Which editor state to read and whether to flush first.
    * @param callbackFn - A function that has access to read-only editor state.
    */
-  readPending<T>(callbackFn: () => T): T {
-    return (this._pendingEditorState || this._editorState).read(callbackFn, {
-      editor: this,
-    });
+  read<T>(mode: EditorReadMode, callbackFn: () => T): T;
+  read<T>(...args: [() => T] | [EditorReadMode, () => T]): T {
+    const [mode, callbackFn]: [EditorReadMode, () => T] =
+      args.length === 1 ? ['force-commit', args[0]] : args;
+    if (mode === 'force-commit') {
+      $commitPendingUpdates(this);
+    }
+    // 'pending' observes an in-progress or queued update without flushing it;
+    // 'force-commit' and 'latest' read the committed (reconciled) state.
+    const editorState =
+      mode === 'pending'
+        ? this._pendingEditorState || this._editorState
+        : this.getEditorState();
+    return editorState.read(callbackFn, {editor: this});
   }
 
   /**

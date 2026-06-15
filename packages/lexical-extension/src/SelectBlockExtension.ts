@@ -81,11 +81,11 @@ export const SelectBlockExtension = /* @__PURE__ */ defineExtension({
                 if (!stores.cascadeSelection.peek()) {
                   return false;
                 }
-                // readPending() reflects an update in progress or queued
+                // read('pending') reflects an update in progress or queued
                 // in the nested editor (such as its initial state) without
                 // flushing it, which would not be safe if its update is
                 // still in progress
-                const isAllSelected = triggerEditor.readPending(() => {
+                const isAllSelected = triggerEditor.read('pending', () => {
                   const nestedSelection = $getSelection();
                   return (
                     $isRangeSelection(nestedSelection) &&

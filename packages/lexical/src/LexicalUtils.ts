@@ -885,16 +885,19 @@ export function $updateTextNodeFromDOMContent(
       }
     }
     const prevTextContent = node.getTextContent();
-
     if (compositionEnd || normalizedTextContent !== prevTextContent) {
+      const selection = $getSelection();
+
       if (normalizedTextContent === '') {
         $setCompositionKey(null);
         if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT) {
           // For composition (mainly Android), we have to remove the node on a later update
           const editor = getActiveEditor();
+          $setTextContentWithSelection(node, '', selection);
+
           setTimeout(() => {
             editor.update(() => {
-              if (node.isAttached()) {
+              if (node.isAttached() && node.getTextContent() === '') {
                 node.remove();
               }
             });
@@ -933,7 +936,6 @@ export function $updateTextNodeFromDOMContent(
         node.markDirty();
         return;
       }
-      const selection = $getSelection();
 
       if (
         !$isRangeSelection(selection) ||

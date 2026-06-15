@@ -159,21 +159,3 @@ without any editor-side glue, and the
 (`Highlight` + `::highlight()`) styles ranges that span the shadow
 boundary as long as the page hands them un-retargeted boundary points —
 the same shape `getDOMSelectionRangeAndPoints` already returns.
-
-Wrapping the element in a framework (Lit, Stencil, FAST, …) is a
-pure-additive layer: each of those tools renders a host that the
-parser upgrades the same way, and our `connectedCallback` honours
-both `delegatesFocus: true` and the declarative shadow DOM reuse
-path either way. A wrapper example would pull a framework dependency
-into this vanilla showcase, so it lives outside this dev-example.
-
-A few modern CSS surfaces — `container-type: inline-size`,
-`anchor-name`, and `text-wrap: pretty` — show non-deterministic
-flake in the chromium-headless Playwright runner when applied to
-the editor's shadow-internal layers (the same suite that completes
-in ~10 s with the surfaces absent has hung for 15 min on rerun with
-them present). The shadow-DOM integration itself is not at fault.
-Production users who want any of these can apply them in a
-page-level stylesheet without involving the shadow root; a
-page-level popover can still target the host directly with anchor
-positioning.

@@ -74,23 +74,6 @@ form lexical-editor::part(toolbar) {
   letter-spacing: 0.02em;
 }
 
-/*
- * Custom element states: `ElementInternals.states` exposes flags the
- * page can target with the `:state()` selector without reaching for
- * an ARIA attribute or a class. The host sets `invalid` whenever its
- * constraint-validation state is invalid, and `saved` after a
- * `saveToIndexedDB` call.
- */
-form lexical-editor:state(invalid) {
-  outline: 2px solid rgba(185, 28, 28, 0.4);
-  outline-offset: 2px;
-}
-
-form lexical-editor:state(saved) {
-  outline: 2px solid rgba(22, 163, 74, 0.4);
-  outline-offset: 2px;
-}
-
 form lexical-editor[name='summary'] {
   --lexical-bg: #1c1d22;
   --lexical-fg: #e6e6e9;

@@ -45,12 +45,6 @@ const STYLE_SHEET = `
     background: var(--lexical-bg);
     color: var(--lexical-fg);
     font-family: system-ui, -apple-system, sans-serif;
-    /* contain: layout style isolates the editor internal layout
-     * recalculation and counter / quote scoping from the rest of the
-     * page so reflow inside one editor does not ripple through the
-     * outer form. paint is intentionally omitted so the native focus
-     * ring on the host is not clipped to the border-radius. */
-    contain: layout style;
   }
   .toolbar {
     display: flex;
@@ -165,21 +159,6 @@ const STYLE_SHEET = `
 `;
 
 const TEXT_FORMATS: readonly TextFormatType[] = ['bold', 'italic', 'underline'];
-const STATE_DB = 'lexical-editor-element';
-const STATE_STORE = 'states';
-
-// A single constructable stylesheet shared between every instance.
-// Cloning a `<style>` per host duplicates the same bytes in every
-// shadow root; `adoptedStyleSheets` lets the user-agent share the
-// parsed sheet across all of them.
-let sharedSheet: CSSStyleSheet | null = null;
-const getSharedSheet = (): CSSStyleSheet => {
-  if (sharedSheet === null) {
-    sharedSheet = new CSSStyleSheet();
-    sharedSheet.replaceSync(STYLE_SHEET);
-  }
-  return sharedSheet;
-};
 
 /**
  * `<lexical-editor>`: a self-contained rich-text editor web component.
@@ -202,7 +181,6 @@ export class LexicalEditorElement extends HTMLElement {
     'readonly',
     'aria-label',
     'spellcheck',
-    'loading',
   ];
 
   private internals: ElementInternals;
@@ -215,13 +193,6 @@ export class LexicalEditorElement extends HTMLElement {
   // refilled in `disconnectedCallback`.
   private pendingState: string | null = null;
   private customValidityMessage = '';
-  private lazyObserver: IntersectionObserver | null = null;
-  private lazyBuildScheduled = false;
-  private removeOnlineListeners: (() => void) | null = null;
-  private resizeObserver: ResizeObserver | null = null;
-  private removeVisibilityListener: (() => void) | null = null;
-  private removePageLifecycleListeners: (() => void) | null = null;
-  private dirty = false;
 
   constructor() {
     super();
@@ -295,23 +266,6 @@ export class LexicalEditorElement extends HTMLElement {
   /** The underlying LexicalEditor, for programmatic access from the page. */
   getEditor(): LexicalEditor | null {
     return this.editor;
-  }
-
-  /**
-   * Returns the page-supplied elements currently projected into the
-   * `toolbar-extra` slot — handy for a page-side reconciliation pass
-   * that needs to enumerate what it has projected without subscribing
-   * to `slotchange` itself.
-   */
-  getSlottedToolbarElements(): Element[] {
-    const shadow = this.shadowRoot;
-    if (shadow === null) {
-      return [];
-    }
-    const slot = shadow.querySelector<HTMLSlotElement>(
-      'slot[name="toolbar-extra"]',
-    );
-    return slot !== null ? slot.assignedElements() : [];
   }
 
   // Mirror the standard constraint-validation surface from `<input>` /
@@ -401,15 +355,6 @@ export class LexicalEditorElement extends HTMLElement {
         'aria-invalid',
         this.internals.validity.valid ? 'false' : 'true',
       );
-    }
-    // Expose the validity state as a custom element state too, so the
-    // page can target it with `lexical-editor:state(invalid)` from
-    // light-DOM CSS without coupling to the contentEditable's ARIA
-    // attribute.
-    if (this.internals.validity.valid) {
-      this.internals.states.delete('invalid');
-    } else {
-      this.internals.states.add('invalid');
     }
     this.dispatchEvent(
       new CustomEvent('lexical-validity-change', {
@@ -541,302 +486,6 @@ export class LexicalEditorElement extends HTMLElement {
     return this.internals.form;
   }
 
-  /**
-   * Persist the current serialized state under `key` in IndexedDB.
-   * Distinct from `formStateRestoreCallback` (bfcache / autocomplete):
-   * this path is for app-driven persistence — auto-save drafts, manual
-   * "save" buttons, offline-first storage.
-   */
-  async saveToIndexedDB(
-    key: string,
-    options?: {compress?: boolean},
-  ): Promise<void> {
-    const db = await this.openIndexedDB();
-    let payload: string | Uint8Array = this.value;
-    if (options !== undefined && options.compress === true) {
-      // Compression Streams API: gzip the serialized JSON before
-      // persisting it. The matching decompression branch lives in
-      // `restoreFromIndexedDB`.
-      const stream = new Blob([this.value])
-        .stream()
-        .pipeThrough(new CompressionStream('gzip'));
-      payload = new Uint8Array(await new Response(stream).arrayBuffer());
-    }
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STATE_STORE, 'readwrite');
-      tx.objectStore(STATE_STORE).put(payload, key);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-    // Flag the host as "we just persisted" so the page can paint a
-    // saved indicator through `lexical-editor:state(saved)`.
-    this.internals.states.add('saved');
-  }
-
-  /**
-   * Restore a previously persisted state. Returns true if `key` was
-   * found and applied, false if no state was stored for that key.
-   */
-  async restoreFromIndexedDB(key: string): Promise<boolean> {
-    if (this.editor === null) {
-      return false;
-    }
-    const db = await this.openIndexedDB();
-    const value = await new Promise<unknown>((resolve, reject) => {
-      const tx = db.transaction(STATE_STORE, 'readonly');
-      const req = tx.objectStore(STATE_STORE).get(key);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-    let serialized: string;
-    if (typeof value === 'string') {
-      if (value === '') {
-        return false;
-      }
-      serialized = value;
-    } else if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
-      // Decompress gzip-compressed payload (see `saveToIndexedDB`).
-      const bytes =
-        value instanceof ArrayBuffer ? new Uint8Array(value) : value;
-      const stream = new Blob([bytes])
-        .stream()
-        .pipeThrough(new DecompressionStream('gzip'));
-      serialized = await new Response(stream).text();
-    } else {
-      return false;
-    }
-    this.editor.setEditorState(this.editor.parseEditorState(serialized));
-    this.internals.setFormValue(this.value);
-    this.updateValidity();
-    return true;
-  }
-
-  /**
-   * Spec wrapper around `Element.checkVisibility()`. Returns whether
-   * the host is laid out, painted, and not occluded by `inert`,
-   * `content-visibility`, `opacity: 0`, etc. Convenient for autosave
-   * skip logic (no point persisting the state of an invisible editor).
-   */
-  /**
-   * Publish the current value on a BroadcastChannel so other tabs of
-   * the same origin can react to edits. The channel is opened on
-   * demand and closed by the caller; multiple invocations are safe.
-   */
-  broadcastState(channelName: string): void {
-    // eslint-disable-next-line compat/compat -- Safari 16+ targets only.
-    const channel = new BroadcastChannel(channelName);
-    channel.postMessage({name: this.getAttribute('name'), value: this.value});
-    channel.close();
-  }
-
-  /**
-   * Trigger the browser's print dialog. Combined with the host's
-   * `@media print` stylesheet this prints the editor content without
-   * the toolbar chrome.
-   */
-  print(): void {
-    window.print();
-  }
-
-  isVisible(): boolean {
-    if (
-      typeof (this as Element & {checkVisibility?: () => boolean})
-        .checkVisibility !== 'function'
-    ) {
-      return this.offsetParent !== null;
-    }
-    return (
-      this as Element & {
-        checkVisibility: (opts?: {
-          checkOpacity?: boolean;
-          checkVisibilityCSS?: boolean;
-        }) => boolean;
-      }
-    ).checkVisibility({checkOpacity: true, checkVisibilityCSS: true});
-  }
-
-  /**
-   * Track the browser online / offline state so a downstream service
-   * worker (or the page's own sync layer) can react to network
-   * transitions through a composed event without subscribing twice.
-   * The host re-broadcasts `window.online` / `window.offline` as
-   * `lexical-online-state` carrying the current `navigator.onLine`
-   * value; listeners attached above the shadow boundary see it.
-   */
-  private installOnlineListeners(): void {
-    if (this.removeOnlineListeners !== null) {
-      return;
-    }
-    const fire = () => {
-      this.dispatchEvent(
-        new CustomEvent('lexical-online-state', {
-          bubbles: true,
-          composed: true,
-          detail: {online: navigator.onLine},
-        }),
-      );
-    };
-    window.addEventListener('online', fire);
-    window.addEventListener('offline', fire);
-    this.removeOnlineListeners = () => {
-      window.removeEventListener('online', fire);
-      window.removeEventListener('offline', fire);
-    };
-  }
-
-  /**
-   * Track the host's rendered width and flip the `compact` custom state
-   * when the editor shrinks below a breakpoint. The page can target
-   * `lexical-editor:state(compact)` to rearrange the toolbar without
-   * coupling to a class name or attribute.
-   */
-  private installResizeObserver(): void {
-    if (this.resizeObserver !== null || typeof ResizeObserver === 'undefined') {
-      return;
-    }
-    this.resizeObserver = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        const width =
-          entry.contentBoxSize !== undefined && entry.contentBoxSize.length > 0
-            ? entry.contentBoxSize[0].inlineSize
-            : entry.contentRect.width;
-        if (width < 320) {
-          this.internals.states.add('compact');
-        } else {
-          this.internals.states.delete('compact');
-        }
-      }
-    });
-    this.resizeObserver.observe(this);
-  }
-
-  /**
-   * Wire `beforeunload` + `pagehide` + `pageshow` so the page can
-   * react to navigation away from the editor:
-   * - `beforeunload` consults the host's dirty flag and prompts the
-   *   browser confirmation dialog if the user has unsaved edits.
-   * - `pagehide` re-broadcasts as a composed `lexical-page-hide`
-   *   event carrying `event.persisted` so the surrounding app can
-   *   tell bfcache stash from a real unload.
-   * - `pageshow` re-broadcasts as `lexical-page-show` so a bfcache
-   *   restore can re-validate (re-sync with the server, etc.).
-   */
-  private installPageLifecycleListeners(): void {
-    if (this.removePageLifecycleListeners !== null) {
-      return;
-    }
-    const onBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (this.dirty) {
-        event.preventDefault();
-      }
-    };
-    const onPageHide = (event: PageTransitionEvent) => {
-      this.dispatchEvent(
-        new CustomEvent('lexical-page-hide', {
-          bubbles: true,
-          composed: true,
-          detail: {persisted: event.persisted},
-        }),
-      );
-    };
-    const onPageShow = (event: PageTransitionEvent) => {
-      this.dispatchEvent(
-        new CustomEvent('lexical-page-show', {
-          bubbles: true,
-          composed: true,
-          detail: {persisted: event.persisted},
-        }),
-      );
-    };
-    window.addEventListener('beforeunload', onBeforeUnload);
-    window.addEventListener('pagehide', onPageHide);
-    window.addEventListener('pageshow', onPageShow);
-    this.removePageLifecycleListeners = () => {
-      window.removeEventListener('beforeunload', onBeforeUnload);
-      window.removeEventListener('pagehide', onPageHide);
-      window.removeEventListener('pageshow', onPageShow);
-    };
-  }
-
-  /** Whether the editor has been edited since the last save / load. */
-  get isDirty(): boolean {
-    return this.dirty;
-  }
-
-  /**
-   * Schedule a callback when the browser is idle, falling back to
-   * `setTimeout` on engines that don't expose `requestIdleCallback`
-   * (Safari). Returns a cancellation token compatible with the
-   * fallback path.
-   */
-  scheduleIdleCallback(callback: () => void, timeoutMs = 1000): number {
-    const w = window as Window & {
-      requestIdleCallback?: (
-        cb: () => void,
-        opts?: {timeout: number},
-      ) => number;
-    };
-    if (typeof w.requestIdleCallback === 'function') {
-      return w.requestIdleCallback(callback, {timeout: timeoutMs});
-    }
-    return window.setTimeout(callback, 0);
-  }
-
-  /**
-   * Cooperatively acquire a `navigator.locks` lock named after this
-   * editor before running `task`. Useful when two tabs of the same
-   * origin both edit the same backing record — the lock serialises
-   * the autosave so concurrent writes don't clobber each other.
-   */
-  async withSaveLock<T>(lockName: string, task: () => Promise<T>): Promise<T> {
-    // eslint-disable-next-line compat/compat -- Safari 16+ targets only.
-    return navigator.locks.request(lockName, task);
-  }
-
-  /** Clear the dirty flag (call after a successful save). */
-  markClean(): void {
-    this.dirty = false;
-    this.internals.states.delete('dirty');
-  }
-
-  /**
-   * Page Visibility API: when the page enters the background (tab
-   * switch, navigation) fire a composed `lexical-page-hidden`
-   * CustomEvent so the surrounding app can autosave or pause expensive
-   * work. The host itself doesn't autosave — that policy lives in the
-   * page — but it broadcasts the trigger.
-   */
-  private installVisibilityListener(): void {
-    if (this.removeVisibilityListener !== null) {
-      return;
-    }
-    const fire = () => {
-      if (document.hidden) {
-        this.dispatchEvent(
-          new CustomEvent('lexical-page-hidden', {
-            bubbles: true,
-            composed: true,
-          }),
-        );
-      }
-    };
-    document.addEventListener('visibilitychange', fire);
-    this.removeVisibilityListener = () => {
-      document.removeEventListener('visibilitychange', fire);
-    };
-  }
-
-  private openIndexedDB(): Promise<IDBDatabase> {
-    return new Promise((resolve, reject) => {
-      const req = indexedDB.open(STATE_DB, 1);
-      req.onupgradeneeded = () => {
-        req.result.createObjectStore(STATE_STORE);
-      };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-  }
-
   private updateEditableState(): void {
     if (this.editor !== null) {
       this.editor.setEditable(
@@ -846,36 +495,6 @@ export class LexicalEditorElement extends HTMLElement {
   }
 
   connectedCallback(): void {
-    // Honour `loading="lazy"`: defer the editor build until the host
-    // scrolls into view. Useful for pages with many instances where
-    // most are off-screen at first paint. The observer fires once and
-    // re-enters `connectedCallback`. External callers that touch the
-    // host before it scrolls into view see `editor === null` and a
-    // serialized value of `''`, matching the lifecycle of an
-    // unbuilt host.
-    if (
-      this.getAttribute('loading') === 'lazy' &&
-      this.editor === null &&
-      !this.lazyBuildScheduled
-    ) {
-      this.lazyBuildScheduled = true;
-      this.lazyObserver = new IntersectionObserver(entries => {
-        if (entries.some(e => e.isIntersecting)) {
-          const observer = this.lazyObserver;
-          this.lazyObserver = null;
-          // Leave `lazyBuildScheduled = true` so the recursive call
-          // below falls through to the build path instead of
-          // re-scheduling itself.
-          if (observer !== null) {
-            observer.disconnect();
-          }
-          this.connectedCallback();
-        }
-      });
-      this.lazyObserver.observe(this);
-      return;
-    }
-
     // On re-attach the shadowRoot persists from the previous mount but
     // disconnectedCallback has disposed the editor. Reuse the existing
     // shadow root and clear its children so the flow below rebuilds them
@@ -886,24 +505,10 @@ export class LexicalEditorElement extends HTMLElement {
     // `:focus-within` on the host also lights up while focus is anywhere
     // inside the shadow tree, which keeps Tab navigation feeling like a
     // built-in form control.
-    // `serializable: true` opts the shadow root into
-    // `Element.getHTML({serializableShadowRoots: true})` and the
-    // declarative shadow DOM serialization Chrome 124+ ships.
-    // `delegatesFocus: true` makes `host.focus()` route into the
-    // contentEditable.
     const shadow =
       this.shadowRoot !== null
         ? this.shadowRoot
-        : this.attachShadow({
-            delegatesFocus: true,
-            mode: 'open',
-            serializable: true,
-          });
-    // Reflect the host's role + label through ElementInternals so
-    // assistive tech sees the editor as a labelled "group" form
-    // control without coupling to ARIA attributes on the host itself.
-    this.internals.role = 'group';
-    this.internals.ariaLabel = this.getAttribute('aria-label') ?? null;
+        : this.attachShadow({delegatesFocus: true, mode: 'open'});
     // Honour a shadow root left behind by a [Declarative Shadow
     // DOM](https://developer.mozilla.org/docs/Web/API/Web_components/Using_shadow_DOM#declarative_shadow_dom)
     // (`<template shadowrootmode="open">`): if the SSR layer already
@@ -918,9 +523,9 @@ export class LexicalEditorElement extends HTMLElement {
       shadow.removeChild(shadow.firstChild);
     }
 
-    // Adopt the shared sheet so every host points at the same parsed
-    // CSS rather than each cloning its own `<style>` text.
-    shadow.adoptedStyleSheets = [getSharedSheet()];
+    const style = document.createElement('style');
+    style.textContent = STYLE_SHEET;
+    shadow.appendChild(style);
 
     const toolbar = document.createElement('div');
     toolbar.className = 'toolbar';
@@ -940,20 +545,6 @@ export class LexicalEditorElement extends HTMLElement {
     toolbarSpacer.className = 'toolbar-spacer';
     const toolbarSlot = document.createElement('slot');
     toolbarSlot.name = 'toolbar-extra';
-    // `slotchange` fires whenever the page adds, removes, or
-    // re-projects a slotted child. Re-broadcast as a composed
-    // `lexical-toolbar-slot-change` event so the page can react
-    // without subscribing to the shadow-internal slot itself.
-    toolbarSlot.addEventListener('slotchange', () => {
-      const assigned = toolbarSlot.assignedElements();
-      this.dispatchEvent(
-        new CustomEvent('lexical-toolbar-slot-change', {
-          bubbles: true,
-          composed: true,
-          detail: {count: assigned.length},
-        }),
-      );
-    });
 
     const contentEditable =
       prerendered !== null ? prerendered : document.createElement('div');
@@ -1017,10 +608,6 @@ export class LexicalEditorElement extends HTMLElement {
     this.syncSpellcheck();
     this.updateValidity();
     this.updateEditableState();
-    this.installOnlineListeners();
-    this.installResizeObserver();
-    this.installVisibilityListener();
-    this.installPageLifecycleListeners();
 
     const formatButtons = new Map<TextFormatType, HTMLButtonElement>();
     const addButton = (label: string, onClick: () => void) => {
@@ -1108,11 +695,6 @@ export class LexicalEditorElement extends HTMLElement {
         this.internals.setFormValue(JSON.stringify(editorState.toJSON()));
         // Re-evaluate `required` validity now that the text content changed.
         this.updateValidity();
-        // Track dirty state for `beforeunload` and the page-side
-        // autosave story. `markClean()` resets the flag once the page
-        // has persisted the value.
-        this.dirty = true;
-        this.internals.states.add('dirty');
         // Composed so it crosses the shadow boundary to page listeners.
         this.dispatchEvent(new Event('input', {bubbles: true, composed: true}));
       },
@@ -1126,27 +708,6 @@ export class LexicalEditorElement extends HTMLElement {
   }
 
   disconnectedCallback(): void {
-    if (this.lazyObserver !== null) {
-      this.lazyObserver.disconnect();
-      this.lazyObserver = null;
-    }
-    this.lazyBuildScheduled = false;
-    if (this.removeOnlineListeners !== null) {
-      this.removeOnlineListeners();
-      this.removeOnlineListeners = null;
-    }
-    if (this.resizeObserver !== null) {
-      this.resizeObserver.disconnect();
-      this.resizeObserver = null;
-    }
-    if (this.removeVisibilityListener !== null) {
-      this.removeVisibilityListener();
-      this.removeVisibilityListener = null;
-    }
-    if (this.removePageLifecycleListeners !== null) {
-      this.removePageLifecycleListeners();
-      this.removePageLifecycleListeners = null;
-    }
     if (this.disposeEditor !== null) {
       // Cache the serialized editor state before tearing the editor
       // down, so a subsequent `connectedCallback` (DOM move) can rebuild

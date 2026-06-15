@@ -68,27 +68,7 @@
         <p id="last-edited">Last edited: (none)</p>
         <button type="submit">Submit form</button>
         <button type="reset">Reset form</button>
-        <!-- popovertarget anchors the format popover to a manual button.
-          The button toggles the popover open/closed, independent of the
-          selection-driven path the editor itself drives. -->
-        <button popovertarget="format-popover" type="button">
-          Toggle format popover
-        </button>
-        <button id="open-dialog" type="button">Open editor in dialog</button>
       </form>
-      <!-- A dialog hosting a lexical-editor. Modal `<dialog>` opens via
-        `showModal()`; the editor reuses everything we already wire up. -->
-      <dialog id="editor-dialog">
-        <form method="dialog">
-          <label>
-            Quick note
-            <lexical-editor
-              name="dialog-note"
-              placeholder-text="Inside a <dialog>."></lexical-editor>
-          </label>
-          <button type="submit">Close</button>
-        </form>
-      </dialog>
       <pre id="form-output"></pre>
       <hr />
       <!--

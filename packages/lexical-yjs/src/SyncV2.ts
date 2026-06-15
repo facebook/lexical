@@ -66,6 +66,7 @@ import {
   $syncPropertiesFromYjs,
   getDefaultNodeProperties,
   isReservedSlotName,
+  setSlotsAttr,
   SLOTS_ATTR_KEY,
 } from './Utils';
 
@@ -196,7 +197,7 @@ export const $createOrUpdateNodeFromYElement = (
       k !== 'prototype'
     ) {
       // Skip prototype-polluting property keys from untrusted remote attrs.
-      // `slots` is a dedicated channel restored below, not a node property.
+      // SLOTS_ATTR_KEY is a dedicated channel restored below, not a node property.
       properties[k] = attrs[k];
     }
   }
@@ -214,14 +215,14 @@ export const $createOrUpdateNodeFromYElement = (
     }
   }
 
-  // Reconcile the dedicated `slots` channel against the host's `__slots` Y.Map.
+  // Reconcile the dedicated `__slots` channel against the host's `__slots` Y.Map.
   // Diff (not blind $setSlot) so unchanged entries don't churn writables on
   // every remote reconcile ($setSlot has move semantics, so a re-set is safe
   // but not free). A
   // host is an ElementNode or a non-inline DecoratorNode; both store slots as a
   // `__slots` Y.Map attribute, and the reconcile only uses base-node slot methods.
   if (node instanceof ElementNode || $isDecoratorNode(node)) {
-    // `slots` is stored as a Y.Map attribute; `attrs` widens it to unknown so
+    // SLOTS_ATTR_KEY is stored as a Y.Map attribute; `attrs` widens it to unknown so
     // instanceof can narrow it back, and is already snapshot-aware, so a
     // historical render sees the membership the snapshot had.
     const slotsY = attrs[SLOTS_ATTR_KEY];
@@ -538,9 +539,7 @@ const $updateSlotsYType = (
     slotsY = existing as YMap<XmlElement>;
   } else {
     slotsY = new YMap<XmlElement>();
-    // TODO(collab-v2): typing for XmlElement generic
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    yDomFragment.setAttribute(SLOTS_ATTR_KEY, slotsY as any);
+    setSlotsAttr(yDomFragment, slotsY);
   }
 
   const nextNames = new Set(names);
@@ -601,18 +600,14 @@ const $createTypeFromElementNode = (
   if (!(node instanceof ElementNode)) {
     const decoratorSlotsY = $createSlotsYType(node, binding);
     if (decoratorSlotsY !== undefined) {
-      // TODO(collab-v2): typing for XmlElement generic
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      type.setAttribute(SLOTS_ATTR_KEY, decoratorSlotsY as any);
+      setSlotsAttr(type, decoratorSlotsY);
       binding.mapping.set(type, node);
     }
     return type;
   }
   const slotsY = $createSlotsYType(node, binding);
   if (slotsY !== undefined) {
-    // TODO(collab-v2): typing for XmlElement generic
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    type.setAttribute(SLOTS_ATTR_KEY, slotsY as any);
+    setSlotsAttr(type, slotsY);
   }
   type.insert(
     0,
@@ -780,7 +775,7 @@ const $equalYTypePNode = (
     matchNodeName(ytype, lnode)
   ) {
     const normalizedContent = normalizeNodeContent(lnode);
-    // `slots` is a dedicated channel compared by $equalSlots, never a node
+    // SLOTS_ATTR_KEY is a dedicated channel compared by $equalSlots, never a node
     // property; leaving it in would make every slotted host compare unequal.
     const yattrs = ytype.getAttributes() as Record<string, unknown>;
     delete yattrs[SLOTS_ATTR_KEY];

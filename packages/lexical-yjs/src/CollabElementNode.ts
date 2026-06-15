@@ -760,7 +760,7 @@ export class CollabElementNode {
     // Slots live outside the linked-list children channel, so destroying the
     // children above never reaches them. Destroy each slot's collab node too;
     // otherwise it dangles in binding.collabNodeMap after the host is removed.
-    // The host's `_xmlText` must still be attached here for `slots` to read
+    // The host's `_xmlText` must still be attached here for SLOTS_ATTR_KEY to read
     // back (its caller — splice — destroys before detaching the embed).
     $destroySlotsShared(binding, this._xmlText);
 

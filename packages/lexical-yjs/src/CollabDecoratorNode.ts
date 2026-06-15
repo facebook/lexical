@@ -153,7 +153,7 @@ export class CollabDecoratorNode {
     // A decorator host has no children channel; its slots are its only
     // descendants. Destroy each slot's collab node so it doesn't dangle in
     // binding.collabNodeMap after the host is removed. The host's `_xmlElem`
-    // must still be attached here for `slots` to read back.
+    // must still be attached here for SLOTS_ATTR_KEY to read back.
     $destroySlotsShared(binding, this._xmlElem);
 
     if (collabNodeMap.get(this._key) === this) {

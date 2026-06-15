@@ -58,7 +58,7 @@ import {
 import {SLOTS_ATTR_KEY} from '../../Utils';
 
 // V1 (stable, CollabElementNode): serialize a lexical tree with a named slot
-// into the V1 yjs representation (the slot lands in a dedicated `slots`
+// into the V1 yjs representation (the slot lands in a dedicated `__slots`
 // attribute Y.Map on the host's `_xmlText`, separate from the linked-list
 // children embedded in the same `_xmlText`), restore it into a fresh editor,
 // and drive the observer (remote-change) path for a slot add / delete / in-slot
@@ -157,7 +157,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     );
   }
 
-  test('a host with a "title" slot serializes the slot into a `slots` Y.Map', () => {
+  test('a host with a "title" slot serializes the slot into a `__slots` Y.Map', () => {
     const {binding, editor} = buildBinding();
 
     editor.update(
@@ -180,7 +180,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     assert('_xmlText' in hostCollab);
     const hostXmlText = hostCollab._xmlText as XmlText;
 
-    // the slot lives in the dedicated `slots` attribute channel, not children.
+    // the slot lives in the dedicated `__slots` attribute channel, not children.
     const slotsY = hostXmlText.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     expect(Array.from(slotsY.keys())).toEqual(['title']);
@@ -194,7 +194,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     expect(titleY.toString()).toContain('Title');
   });
 
-  test('a host with no slots sets no `slots` attribute', () => {
+  test('a host with no slots sets no `__slots` attribute', () => {
     const {binding, editor} = buildBinding();
 
     editor.update(
@@ -877,7 +877,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
 
   // observer (h): a remote host deletion transitively deletes the slots Y.Map
   // and the slot value's shared type, so the destroy path can no longer read
-  // the `slots` attribute to find the slot's collab node — the
+  // the `__slots` attribute to find the slot's collab node — the
   // transaction-level deleted-structs sweep must drop it from
   // binding.collabNodeMap instead of leaking it forever.
   test('observer: a remote host deletion clears the slot value from the collab node map', async () => {
@@ -1158,7 +1158,7 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
     expect(titleY.toString()).toContain('Title');
   });
 
-  test('a decorator host with no slots sets no `slots` attribute', () => {
+  test('a decorator host with no slots sets no `__slots` attribute', () => {
     const {binding, editor} = buildBinding();
 
     editor.update(
@@ -1435,8 +1435,8 @@ class DeclaredCollabHostNode extends ElementNode {
 // origin filter (own-binding transactions skipped, UndoManager origin marks an
 // undo replay). This exercises the event shapes only a genuine remote
 // transaction produces — in particular a host's FIRST slot set, which
-// integrates the slots Y.Map in the same transaction that assigns the `slots`
-// attribute, so the peer sees no YMapEvent at all, only a changed `slots` key
+// integrates the slots Y.Map in the same transaction that assigns the `__slots`
+// attribute, so the peer sees no YMapEvent at all, only a changed `__slots` key
 // on the host's own event.
 describe('named-slots collab-v1: two-client relay', () => {
   const editors: LexicalEditorWithDispose[] = [];
@@ -1702,8 +1702,8 @@ describe('named-slots collab-v1: two-client relay', () => {
     }
   });
 
-  // Undoing a first set removes the `slots` attribute in the same shape the
-  // set arrived in (a changed `slots` key, no YMapEvent), so both clients and
+  // Undoing a first set removes the `__slots` attribute in the same shape the
+  // set arrived in (a changed `__slots` key, no YMapEvent), so both clients and
   // both docs must converge back to the slotless host.
   test('undo of a first slot set converges on both clients', async () => {
     const {binding1, binding2, disconnect2, editor1, editor2} = setupTwoClients(

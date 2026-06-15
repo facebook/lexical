@@ -93,7 +93,7 @@ function $syncEvent(binding: Binding, event: any): void {
   }
   const {target} = event;
   // Slots channel: a slot add / delete lands on the host's `__slots` attribute
-  // Y.Map (parentSub === '__slots'). An element host stores it on its `_xmlText`,
+  // Y.Map (parentSub === SLOTS_ATTR_KEY). An element host stores it on its `_xmlText`,
   // a decorator host on its `_xmlElem` (XmlElement). The Y.Map carries no
   // `__type`, so the default dispatch below would trip the shared-type
   // invariant. Re-route it to a host slot reconcile instead.
@@ -132,7 +132,7 @@ function $syncEvent(binding: Binding, event: any): void {
     // @ts-expect-error We need to access the private childListChanged property of the class
     const {keysChanged, childListChanged, delta} = event;
 
-    // Update. `__slots` is a reserved key excluded from property sync; a change
+    // Update. SLOTS_ATTR_KEY is a reserved key excluded from property sync; a change
     // to it is handled by the slot reconcile below.
     if (keysChanged.size > 0) {
       collabNode.syncPropertiesFromYjs(binding, keysChanged);
@@ -170,7 +170,7 @@ function $syncEvent(binding: Binding, event: any): void {
   ) {
     const {attributesChanged} = event;
 
-    // Update. `__slots` is a reserved key excluded from property sync; a change
+    // Update. SLOTS_ATTR_KEY is a reserved key excluded from property sync; a change
     // to it is handled by the slot reconcile below.
     if (attributesChanged.size > 0) {
       collabNode.syncPropertiesFromYjs(binding, attributesChanged);

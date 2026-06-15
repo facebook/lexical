@@ -87,10 +87,13 @@ const textExcludedProperties = new Set<string>(['__text']);
 
 // @experimental named-slots. Writes the slots Y.Map onto a host shared type.
 // yjs types an XmlElement attribute value as string (its default KV), so a
-// YMap value needs a cast; isolated here instead of repeated at each host call.
-export function setSlotsAttr(
+// nested Y.Map value needs a cast; isolated here — the single, encapsulated
+// cast — instead of repeated at each host call. Generic over the Y.Map's value
+// type because `Y.Map<T>` is invariant, so the V1 (`YMap<unknown>`) and V2
+// (`YMap<XmlElement>`) callers can't share a single non-generic parameter.
+export function setSlotsAttr<T>(
   sharedType: XmlText | XmlElement,
-  slotsY: YMap<unknown>,
+  slotsY: YMap<T>,
 ): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sharedType.setAttribute(SLOTS_ATTR_KEY, slotsY as any);

@@ -52,7 +52,7 @@ import {$createOrUpdateNodeFromYElement, $updateYFragment} from '../../SyncV2';
 import {SLOTS_ATTR_KEY} from '../../Utils';
 
 // collab-v2 named-slot coverage: serialize a lexical tree with a named slot into
-// the V2 representation (the slot lands in the host's dedicated `slots` Y.Map,
+// the V2 representation (the slot lands in the host's dedicated `__slots` Y.Map,
 // separate from the linked-list children), restore it into a fresh editor
 // (round-trip), and exercise the remote-change reconcile
 // ($createOrUpdateNodeFromYElement) and the local update path
@@ -205,7 +205,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     });
   }
 
-  test('a host with a "title" slot serializes the slot into a `slots` Y.Map', () => {
+  test('a host with a "title" slot serializes the slot into a `__slots` Y.Map', () => {
     const {binding, editor} = buildBinding([TestShadowRootNode]);
 
     editor.update(
@@ -230,7 +230,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     const childY = hostY.toArray()[0];
     assert(childY instanceof XmlElement);
 
-    // the slot lives in the dedicated `slots` attribute channel, not children.
+    // the slot lives in the dedicated `__slots` attribute channel, not children.
     // `getAttribute` is typed as returning a string, so widen to unknown before
     // the runtime `instanceof` narrows it back to the Y.Map we actually stored.
     const slotsY = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
@@ -249,7 +249,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     expect(titleText.toString()).toBe('Title');
   });
 
-  test('a host with no slots sets no `slots` attribute', () => {
+  test('a host with no slots sets no `__slots` attribute', () => {
     const {binding, editor} = buildBinding();
 
     editor.update(
@@ -330,7 +330,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     serialize(editor, binding);
 
-    // the decorator slot lands in the `slots` channel as an XmlElement named
+    // the decorator slot lands in the `__slots` channel as an XmlElement named
     // after its node type, alongside (not inside) the linked-list children
     const hostY = binding.root.toArray()[0];
     assert(hostY instanceof XmlElement);
@@ -911,12 +911,12 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
   // DECORATOR host: a non-inline decorator hosts named slots even though it has
   // no linked-list children channel. In V2 it serializes to an XmlElement named
-  // after its node type, carrying the `slots` Y.Map attribute, and is mapped
+  // after its node type, carrying the `__slots` Y.Map attribute, and is mapped
   // (only because it has slots) so its in-place slot updates can find it. These
   // mirror the element-host cases through the same V2 entry points
   // (createTypeFromElementNode non-element branch, the generic slot reconcile,
   // and the widened fast-match recursion for a mapped dirty decorator host).
-  test('decorator host: a "title" slot serializes into a `slots` Y.Map', () => {
+  test('decorator host: a "title" slot serializes into a `__slots` Y.Map', () => {
     const {binding, editor} = buildBinding([
       BlockDecoratorNode,
       TestShadowRootNode,
@@ -954,7 +954,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     expect(titleText.toString()).toBe('Title');
   });
 
-  test('decorator host: a host with no slots stays unmapped with no `slots` attribute', () => {
+  test('decorator host: a host with no slots stays unmapped with no `__slots` attribute', () => {
     const {binding, editor} = buildBinding([BlockDecoratorNode]);
 
     editor.update(
@@ -1496,7 +1496,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
   });
 
   // A class that declares its slots opts into eager slots Y.Map creation:
-  // even with zero occupied slots the host carries an (empty) `slots` Y.Map
+  // even with zero occupied slots the host carries an (empty) `__slots` Y.Map
   // after sync, so each name's later first set is an entry-level op that
   // merges per-key under concurrency instead of racing on attribute LWW.
   // Covers the CREATION path ($createTypeFromElementNode -> $createSlotsYType)

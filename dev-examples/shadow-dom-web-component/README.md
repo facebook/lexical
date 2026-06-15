@@ -166,3 +166,16 @@ parser upgrades the same way, and our `connectedCallback` honours
 both `delegatesFocus: true` and the declarative shadow DOM reuse
 path either way. A wrapper example would pull a framework dependency
 into this vanilla showcase, so it lives outside this dev-example.
+
+A few modern CSS surfaces — `container-type: inline-size` on the
+shadow-internal layers, `anchor-name` on the contentEditable, and
+`text-wrap: pretty` on paragraphs — were verified non-additive: the
+Playwright suite hung in the chromium-headless runner whenever any
+of them was applied to the editor's internals. The shadow-DOM
+integration is not at fault; production users who want container
+queries, anchor positioning, or pretty text-wrap can apply them in
+their page-level stylesheets without re-running the Lexical
+reconciler against the new layout primitives. Browsers that ship
+CSS anchor positioning can target the page-level popover at the
+host directly (`position-anchor: var(--whatever)`) without
+involving the shadow root.

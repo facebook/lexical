@@ -960,3 +960,33 @@ test('renders an editor inside two nested shadow roots', async ({page}) => {
   await boldButton.click();
   await expect(nestedEditor.locator('strong')).toHaveText('works');
 });
+
+test('floating popover anchors to a selection inside the nested shadow root', async ({
+  page,
+}) => {
+  // The composed `lexical-selection-rect` event crosses two shadow boundaries
+  // (editor shadow → wrapper shadow → light DOM document). `event.target` is
+  // retargeted to #nested-host (the wrapper's light-DOM host), so main.ts has
+  // to walk composedPath() to recover the actual <lexical-editor>. Without
+  // that walk the page-side popover never opens for the nested editor — this
+  // exercises the active-editor lookup end-to-end. It also confirms that a
+  // non-active editor's null `lexical-selection-rect` event (every editor
+  // emits one on every scroll, with $getSelection() === null for the inactive
+  // ones) doesn't close the popover while the nested editor still has a
+  // non-empty selection.
+  const nestedEditor = page.locator(
+    '#nested-host >> lexical-editor[name="nested"] >> [data-lexical-editor]',
+  );
+  await nestedEditor.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.press('Delete');
+  await page.keyboard.type('hello popover');
+  for (let i = 0; i < 7; i++) {
+    await page.keyboard.press('Shift+ArrowLeft');
+  }
+
+  const popover = page.locator('#format-popover');
+  await expect(popover).toBeVisible();
+  await popover.locator('button[data-format="bold"]').click();
+  await expect(nestedEditor.locator('strong')).toHaveText('popover');
+});

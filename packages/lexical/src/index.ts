@@ -313,7 +313,6 @@ export {
   $nodesOfType,
   $onUpdate,
   $removeFromParent,
-  $resolveSlotEditable,
   $selectAll,
   $setCompositionKey,
   $setDirectionFromDOM,

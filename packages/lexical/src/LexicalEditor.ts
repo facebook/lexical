@@ -341,23 +341,6 @@ export interface EditorDOMRenderConfig {
     hostDom: HTMLElement,
     editor: LexicalEditor,
   ) => HTMLElement | null;
-  /**
-   * @experimental named-slots. Pin a slot's `contentEditable` to a specific
-   * value, overriding the default where an editable island (a slot in a
-   * decorator host or a non-editable element shell) follows the editor's
-   * editable state. Return `true`/`false` to force editability regardless of
-   * `editor.isEditable()`, or `null` (the default) to follow the editor; the
-   * value cascades, so a slot pinned editable keeps the slots nested within it
-   * editable unless they pin their own. The reconciler resolves and applies this
-   * through {@link $resolveSlotEditable} and re-renders on a `setEditable`
-   * toggle, so no extension is needed to keep islands in sync. Override per node
-   * type via `DOMRenderMatch.$getSlotEditable` (lexical-html).
-   */
-  $getSlotEditable: <T extends LexicalNode>(
-    node: T,
-    slotName: string,
-    editor: LexicalEditor,
-  ) => boolean | null;
   /** @internal @experimental */
   $updateDOM: <T extends LexicalNode>(
     nextNode: T,
@@ -835,7 +818,6 @@ export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig = {
     dom: HTMLElement,
     _editor: LexicalEditor,
   ): DOMSlotForNode<N> => node.getDOMSlot(dom) as DOMSlotForNode<N>,
-  $getSlotEditable: (_node, _slotName, _editor) => null,
   $getSlotTargetElement: (_node, _slotName, _hostDom, _editor) => null,
   $shouldExclude: (node, _selection, _editor) =>
     $isElementNode(node) && node.excludeFromCopy('html'),

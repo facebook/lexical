@@ -92,12 +92,11 @@ export class ReviewNode extends ElementNode {
     children.className = 'lexical-review-children';
     children.style.display = 'none';
     // The body is a getDOMSlot editable island inside the contentEditable=false
-    // shell. Resolve its editability the same way the reconciler resolves a
-    // named-slot container's, through the model from this node, so it follows
-    // the editor's editable state (and any slot override cascading from a host
-    // this Review is nested in) — one shared helper, so the two paths can't
-    // drift. updateDOM re-applies it so an editable toggle reaches the island.
-    $markSlotEditable(children, this, editor);
+    // shell. Apply the same explicit editability the reconciler gives a
+    // named-slot container so it follows the editor's editable state — one
+    // shared helper, so the two paths can't drift. updateDOM re-applies it so an
+    // editable toggle reaches the island.
+    $markSlotEditable(children, editor);
     dom.appendChild(children);
     return dom;
   }
@@ -105,7 +104,7 @@ export class ReviewNode extends ElementNode {
   updateDOM(_prevNode: this, dom: HTMLElement): boolean {
     const children = dom.querySelector<HTMLElement>('.lexical-review-children');
     if (children !== null) {
-      $markSlotEditable(children, this, $getEditor());
+      $markSlotEditable(children, $getEditor());
     }
     return false;
   }

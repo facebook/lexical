@@ -16,7 +16,6 @@ import {
   $createLineBreakNode,
   $createNodeSelection,
   $createRangeSelection,
-  $fullReconcile,
   $getChildCaret,
   $getDOMSlot,
   $getNearestRootOrShadowRoot,
@@ -42,7 +41,6 @@ import {
   defineExtension,
   ElementNode,
   getDOMSelection,
-  type LexicalNode,
   mountSlotContainer,
   type ParagraphNode,
   TextNode,
@@ -2430,42 +2428,6 @@ describe('named-slots: cross-host slot move DOM reuse', () => {
   });
 });
 
-// An editor whose slot islands resolve their editable state through the model.
-// An optional `$getSlotEditable` is surfaced to the reconciler via
-// DOMRenderExtension, exactly as a node extension (e.g. the playground's
-// PullQuote) would pin a slot's editability.
-function createIslandEditor(
-  $getSlotEditable?: (node: LexicalNode, slotName: string) => boolean | null,
-): LexicalEditorWithDispose {
-  const editor = buildEditorFromExtensions(
-    defineExtension({
-      $initialEditorState: () => {
-        $getRoot().clear();
-      },
-      dependencies: $getSlotEditable
-        ? [
-            configExtension(DOMRenderExtension, {
-              overrides: [
-                domOverride('*', {
-                  $getSlotEditable: (node, slotName, $next) =>
-                    $getSlotEditable(node, slotName) ?? $next(),
-                }),
-              ],
-            }),
-          ]
-        : [],
-      name: '[editable-island]',
-      nodes: [TestShadowRootNode, TestDecoratorNode],
-    }),
-  );
-  const root = document.createElement('div');
-  root.contentEditable = 'true';
-  document.body.appendChild(root);
-  mountedRoots.push(root);
-  editor.setRootElement(root);
-  return editor;
-}
-
 describe('named-slots: editable islands', () => {
   // The container element is the slot value's DOM parent (the
   // `[data-lexical-slot]` placeholder); read its resolved contentEditable.
@@ -2498,112 +2460,6 @@ describe('named-slots: editable islands', () => {
     editor.setEditable(true);
     await flush();
     expect(slotEditable(editor, slotKey)).toBe('true');
-  });
-
-  test('a $getSlotEditable override pins a slot editable in a read-only editor', async () => {
-    using editor = createIslandEditor((_node, name) =>
-      name === 'q' ? true : null,
-    );
-    let pinnedKey = '';
-    let followKey = '';
-    editor.update(
-      () => {
-        const host = $createTestDecoratorNode().setIsInline(false);
-        $getRoot().append(host);
-        $setSlot(host, 'q', $slotContainer('Pinned'));
-        $setSlot(host, 'title', $slotContainer('Follows'));
-        pinnedKey = $getSlot(host, 'q')!.getKey();
-        followKey = $getSlot(host, 'title')!.getKey();
-      },
-      {discrete: true},
-    );
-    editor.setEditable(false);
-    await flush();
-    // The pinned slot stays editable; the unpinned one follows the editor.
-    expect(slotEditable(editor, pinnedKey)).toBe('true');
-    expect(slotEditable(editor, followKey)).toBe('false');
-  });
-
-  test('a pinned-editable slot cascades editability into slots nested within it', async () => {
-    using editor = createIslandEditor((_node, name) =>
-      name === 'q' ? true : null,
-    );
-    let innerKey = '';
-    let controlKey = '';
-    editor.update(
-      () => {
-        // outer.q (pinned) holds a nested decorator that hosts its own
-        // (unpinned) `inner` slot — an island inside an island.
-        const outer = $createTestDecoratorNode().setIsInline(false);
-        const nested = $createTestDecoratorNode().setIsInline(false);
-        $setSlot(nested, 'inner', $slotContainer('Inner'));
-        $setSlot(outer, 'q', nested);
-        $getRoot().append(outer);
-        innerKey = $getSlot(nested, 'inner')!.getKey();
-        // A control decorator that is not under any pinned slot.
-        const control = $createTestDecoratorNode().setIsInline(false);
-        $setSlot(control, 'title', $slotContainer('Control'));
-        $getRoot().append(control);
-        controlKey = $getSlot(control, 'title')!.getKey();
-      },
-      {discrete: true},
-    );
-    editor.setEditable(false);
-    await flush();
-    // The nested slot inherits the outer pin even though it has no override.
-    expect(slotEditable(editor, innerKey)).toBe('true');
-    // The control, under no pin, follows the read-only editor.
-    expect(slotEditable(editor, controlKey)).toBe('false');
-  });
-
-  test('$fullReconcile(node) re-resolves a host subtree without a document mutation', async () => {
-    let pinned: boolean | null = null;
-    using editor = createIslandEditor((_node, name) =>
-      name === 'q' ? pinned : null,
-    );
-    let outerKey = '';
-    let qKey = '';
-    let innerKey = '';
-    editor.update(
-      () => {
-        const outer = $createTestDecoratorNode().setIsInline(false);
-        const nested = $createTestDecoratorNode().setIsInline(false);
-        $setSlot(nested, 'inner', $slotContainer('Inner'));
-        $setSlot(outer, 'q', nested);
-        $getRoot().append(outer);
-        outerKey = outer.getKey();
-        qKey = nested.getKey();
-        innerKey = $getSlot(nested, 'inner')!.getKey();
-      },
-      {discrete: true},
-    );
-    editor.setEditable(false);
-    await flush();
-    expect(slotEditable(editor, qKey)).toBe('false');
-    expect(slotEditable(editor, innerKey)).toBe('false');
-
-    // Flipping the override is a pure view change; a subtree $fullReconcile must
-    // re-resolve the whole subtree (so the cascade reaches `inner`) without any
-    // mutation listener observing a change.
-    let mutations = 0;
-    const unregister = editor.registerMutationListener(
-      TestShadowRootNode,
-      () => {
-        mutations++;
-      },
-      {skipInitialization: true},
-    );
-    pinned = true;
-    editor.update(
-      () => {
-        $fullReconcile($getNodeByKey(outerKey)!);
-      },
-      {discrete: true},
-    );
-    unregister();
-    expect(slotEditable(editor, qKey)).toBe('true');
-    expect(slotEditable(editor, innerKey)).toBe('true');
-    expect(mutations).toBe(0);
   });
 });
 

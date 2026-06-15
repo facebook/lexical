@@ -89,7 +89,6 @@ function makePrerender(): PreEditorDOMRenderConfig {
     $exportDOM: [],
     $extractWithChild: [],
     $getDOMSlot: [],
-    $getSlotEditable: [],
     $getSlotTargetElement: [],
     $shouldExclude: [],
     $shouldInclude: [],
@@ -386,7 +385,6 @@ export function compileDOMRenderConfigOverrides(
     merge4,
     ignoreNext4,
   );
-  compilePrerenderKey(prerender, '$getSlotEditable', dom, merge3, ignoreNext3);
   compilePrerenderKey(prerender, '$updateDOM', dom, merge4, ignoreNext4);
   compilePrerenderKey(prerender, '$decorateDOM', dom, sequence4, identity);
   return dom;

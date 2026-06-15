@@ -45,7 +45,7 @@ import {
 } from './LexicalConstants';
 import {EditorState} from './LexicalEditorState';
 import {cloneMap} from './LexicalGenMap';
-import {$getSlot, $isSlotChild, $isSlotHost, EMPTY_SLOTS} from './LexicalSlot';
+import {$isSlotChild, $isSlotHost, EMPTY_SLOTS} from './LexicalSlot';
 import {
   $createChildrenArray,
   $getDOMSlot,
@@ -478,34 +478,20 @@ function createSlotDOM(name: string): HTMLElement {
 
 // Apply a slot container's editability. Re-run on every (re)mount — including
 // the reconcile-reuse path — so a reused container can never keep a stale value.
-// The container gets an explicit `contentEditable` when it is an island (its
-// host renders non-editable — a decorator, or an element shell that wraps
-// editable islands in chrome) or when a `$getSlotEditable` render-config
-// override pins this slot on an otherwise-editable host. In both cases the
-// value comes from `$markSlotEditable`, which resolves it through the model:
-// the slot's own override, else the editable state cascading down from the
-// nearest host that pins one, else the editor's editable state. Re-resolving on
-// every reconcile is what carries an editable toggle (a `$fullReconcile`) and an
-// override change into the DOM. Otherwise the host is editable and the container
-// inherits, so any stale `contentEditable` from a previous host state is cleared.
+// Inside a non-editable host (a decorator, or an element shell that wraps
+// editable islands in chrome) the container is an island that would not track
+// the editor on its own, so it carries an explicit `contentEditable` following
+// the editor via `$markSlotEditable`; re-applying on every reconcile is what
+// carries an editable toggle (a `$fullReconcile`) into the DOM. Otherwise the
+// host is editable and the container inherits, so any stale `contentEditable`
+// from a previous host state is cleared.
 function $applySlotEditable(
-  node: LexicalNode,
-  name: string,
   hostDom: HTMLElement,
   decoratorHost: boolean,
   container: HTMLElement,
 ): void {
-  const override = activeEditorDOMRenderConfig.$getSlotEditable(
-    node,
-    name,
-    activeEditor,
-  );
-  const slot = $getSlot(node, name);
-  if (
-    slot !== null &&
-    (decoratorHost || hostDom.contentEditable === 'false' || override !== null)
-  ) {
-    $markSlotEditable(container, slot, activeEditor);
+  if (decoratorHost || hostDom.contentEditable === 'false') {
+    $markSlotEditable(container, activeEditor);
   } else {
     container.removeAttribute('contenteditable');
   }
@@ -523,7 +509,7 @@ function $mountSlotChildren(
   const decoratorHost = $isDecoratorNode(node);
   for (const [name, slotKey] of slots) {
     const container = createSlotDOM(name);
-    $applySlotEditable(node, name, hostDom, decoratorHost, container);
+    $applySlotEditable(hostDom, decoratorHost, container);
     hostDom.appendChild(container);
     subTreeTextContent = '';
     const saved = $beginCaptureGuard();
@@ -645,7 +631,7 @@ function $reconcileSlotChildren(
       $createNode(nextSlotKey, $getDOMSlot(nextNode, container, activeEditor));
     }
     $endCaptureGuard(saved);
-    $applySlotEditable(nextNode, name, hostDom, decoratorHost, container);
+    $applySlotEditable(hostDom, decoratorHost, container);
     $applySlotTarget(nextNode, name, hostDom, container);
     totalText += subTreeTextContent;
     // Keep placeholder DOM order in sync with the slot Map order. A reused

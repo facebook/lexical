@@ -303,32 +303,19 @@ DecoratorNode's DOM has.
 
 ## Editable state
 
-A slot container that opts into `contentEditable` inside a non-editable host
-(a DecoratorNode, or a `contentEditable=false` element shell) tracks the
-editor's editable state by default. The reconciler resolves each island's value
-through the model — from the slotted node up through its hosts to the root — and
-re-renders the islands whenever `setEditable` toggles, so a read-only editor's
-slots are not left editable. Because the walk follows the model rather than the
-DOM it stays correct when a host portals its slot content elsewhere, and it is
-scoped per editor, so a nested editor's islands in the same root DOM are not
-flipped by the outer editor's state. No extension is required.
+A slot rendered inside a non-editable host (a DecoratorNode, or a
+`contentEditable=false` element shell) would not track the editor's editable
+state on its own, so the reconciler gives its container an explicit
+`contentEditable` that follows `editor.isEditable()`, and re-renders the islands
+whenever `setEditable` toggles — so a read-only editor's slots are not left
+editable. No extension is required. Slots always follow the editor; there is
+currently no way for a slot to override its own editable state.
 
 A host that attaches its own editable island which is *not* a slot container —
 for example the Review demo's `getDOMSlot` children element inside its
 `contentEditable=false` shell — opts it into the same behavior with
-[`$markSlotEditable(element, node, editor)`](/docs/api/modules/lexical#marksloteditable),
-passing the node whose content the element holds, and re-applies it from
-`updateDOM` so an editable toggle reaches the island.
-
-To pin a slot to a fixed editability regardless of the editor's state — say an
-always-editable region inside a read-only shell — return a boolean (rather than
-the default `null`) from the `$getSlotEditable` DOM render-config override. The
-pinned value **cascades**: a slot pinned editable keeps the slots nested within
-it editable too (e.g. a Review placed in a PullQuote's pinned-editable `quote`
-slot stays editable in a read-only editor), unless one of those nested slots
-carries its own override. The playground's PullQuote demo persists such an
-override as `NodeState` and re-renders the quote subtree on change with a
-subtree `$fullReconcile(node)`.
+[`$markSlotEditable(element, editor)`](/docs/api/modules/lexical#marksloteditable),
+re-applying it from `updateDOM` so an editable toggle reaches the island.
 
 ## Editing Behavior
 

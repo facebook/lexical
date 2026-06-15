@@ -856,35 +856,6 @@
   user-select: none;
   -webkit-user-select: none;
 }
-.lexical-pullquote-chrome {
-  display: flex;
-  flex-direction: column;
-}
-.lexical-pullquote-editable-toggle {
-  /* Its own row, right-aligned above the quote, so it never overlaps the
-     editable body or its focus outline. */
-  align-self: flex-end;
-  margin-bottom: 6px;
-  padding: 2px 8px;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
-  background: #fff;
-  color: #475569;
-  font-size: 11px;
-  line-height: 1.4;
-  cursor: pointer;
-  white-space: nowrap;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.lexical-pullquote-editable-toggle[data-quote-editable='true'] {
-  border-color: #16a34a;
-  color: #166534;
-}
-.lexical-pullquote-editable-toggle[data-quote-editable='false'] {
-  border-color: #dc2626;
-  color: #991b1b;
-}
 /* Review — an ElementNode whose React chrome goes beyond static presentation:
    an interactive star-rating widget (click/hover to set, persisted via
    NodeState) sits above the editable islands — the testimonial prose

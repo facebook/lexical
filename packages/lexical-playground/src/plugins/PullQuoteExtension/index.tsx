@@ -13,8 +13,6 @@ import {
   CoreImportExtension,
   defineImportRule,
   DOMImportExtension,
-  domOverride,
-  DOMRenderExtension,
   sel,
 } from '@lexical/html';
 import {mergeRegister} from '@lexical/utils';
@@ -131,21 +129,6 @@ export const PullQuoteExtension = /* @__PURE__ */ defineExtension({
     // host DOM so CSS can render the selected outline.
     /* @__PURE__ */ configExtension(NodeSelectionDataSelectedExtension, {
       nodes: [PullQuoteNode],
-    }),
-    // The `quote` slot carries a per-node editable override (the chrome's
-    // tri-state toggle, persisted as NodeState). Surface it to the reconciler
-    // as a `$getSlotEditable` so a pinned quote stays editable in a read-only
-    // editor (and cascades to slots nested in the quote) or locked in an
-    // editable one; `attribution` always follows the editor.
-    /* @__PURE__ */ configExtension(DOMRenderExtension, {
-      overrides: [
-        /* @__PURE__ */ domOverride([PullQuoteNode], {
-          $getSlotEditable: (node, slotName, $next) =>
-            slotName === 'quote'
-              ? (node.getQuoteEditable() ?? $next())
-              : $next(),
-        }),
-      ],
     }),
     // The PullQuote's HTML import rule rides its own extension (like every
     // other node extension that registers its own DOM-import rules). CoreImport

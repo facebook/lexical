@@ -465,21 +465,6 @@ export interface DOMRenderMatch<T extends LexicalNode> {
     editor: LexicalEditor,
   ) => HTMLElement | null;
   /**
-   * Pin a named slot's container `contentEditable` to a fixed `true`/`false`,
-   * overriding the default where an editable island follows the editor's
-   * editable state. Call `$next()` to defer to lower-priority overrides / the
-   * default (`null` — follow the editor). Consulted by the reconciler when it
-   * creates the slot container.
-   *
-   * @experimental named-slots
-   */
-  $getSlotEditable?: (
-    node: T,
-    slotName: string,
-    $next: () => boolean | null,
-    editor: LexicalEditor,
-  ) => boolean | null;
-  /**
    * Set via {@link domOverride}'s options argument, not directly. See
    * {@link DOMOverrideOptions.disabledForEditor}.
    */

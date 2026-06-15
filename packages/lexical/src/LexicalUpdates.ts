@@ -51,7 +51,7 @@ import {
   $updateDOMSelection,
   applySelectionTransforms,
 } from './LexicalSelection';
-import {$getSlot, $getSlotNames, $isSlotHost, $setSlot} from './LexicalSlot';
+import {$isSlotHost, $setSlot} from './LexicalSlot';
 import {
   $getCompositionKey,
   $updateDOMBlockCursorElement,
@@ -61,7 +61,6 @@ import {
   getEditorsToPropagate,
   getRegisteredNodeOrThrow,
   getWindow,
-  internalMarkNodeAsDirty,
   isLexicalEditor,
   removeDOMBlockCursorElement,
   scheduleMicroTask,
@@ -158,49 +157,16 @@ export function getActiveEditor(): LexicalEditor {
 }
 
 /**
- * Schedule a reconcile that re-renders nodes through the current
- * {@link EditorDOMRenderConfig} on the next commit. Unlike
- * {@link LexicalNode.markDirty}, this does not clone or otherwise mutate the
- * node map, so no mutation/collaboration listeners observe a change. Must be
- * called within an `editor.update`.
- *
- * With no argument it schedules a full reconcile of the active editor (every
- * node). Pass a `node` to limit it to that node and its whole subtree — its
- * children and slot children, recursively — which is enough to re-resolve the
- * slot islands under a single host (e.g. after a local `$getSlotEditable`
- * override change) without re-rendering the entire document. The subtree form
- * never sets the editor's dirty type to a full reconcile.
+ * Schedule a full reconcile of the active editor, so that every node is
+ * re-rendered through the current {@link EditorDOMRenderConfig} on the next
+ * commit. Unlike {@link LexicalNode.markDirty}, this does not clone or
+ * otherwise mutate the node map, so no mutation/collaboration listeners
+ * observe a change. Must be called within an `editor.update`.
  *
  * @internal
  */
-export function $fullReconcile(node?: LexicalNode): void {
-  if (node === undefined) {
-    getActiveEditor()._dirtyType = FULL_RECONCILE;
-    return;
-  }
-  $markSubtreeDirty(node);
-}
-
-// Dirty `node` and everything beneath it — children and slot children — without
-// cloning, so the reconciler re-renders the subtree (re-resolving each slot
-// island's editable state) while leaving the node map untouched. A reconcile of
-// the host alone would re-render only its own slots, not the slots nested inside
-// them, so the cascade requires the whole subtree to be dirty.
-function $markSubtreeDirty(node: LexicalNode): void {
-  internalMarkNodeAsDirty(node);
-  if ($isElementNode(node)) {
-    for (const child of node.getChildren()) {
-      $markSubtreeDirty(child);
-    }
-  }
-  if ($isSlotHost(node)) {
-    for (const name of $getSlotNames(node)) {
-      const slot = $getSlot(node, name);
-      if (slot !== null) {
-        $markSubtreeDirty(slot);
-      }
-    }
-  }
+export function $fullReconcile(): void {
+  getActiveEditor()._dirtyType = FULL_RECONCILE;
 }
 
 function collectBuildInformation(): string {

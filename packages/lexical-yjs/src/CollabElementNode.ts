@@ -416,7 +416,7 @@ export class CollabElementNode {
     this.syncSlotsFromYjs(binding, lexicalNode);
   }
 
-  // Reconcile named slots from the `slots` Y.Map attribute on this element's
+  // Reconcile named slots from the `__slots` Y.Map attribute on this element's
   // `_xmlText` into the lexical node. Slots live outside the linked-list
   // children channel, so they are not reached by the delta-driven children
   // reconcile above. This diff serves both initial fresh-restore and the
@@ -504,7 +504,7 @@ export class CollabElementNode {
     }
   }
 
-  // Mirror of the lexical slot map into the `slots` Y.Map attribute on this
+  // Mirror of the lexical slot map into the `__slots` Y.Map attribute on this
   // element's `_xmlText`. Slots live outside the linked-list children channel,
   // so syncChildrenFromLexical never reaches them; this diff is the local
   // (lexical -> yjs) counterpart of syncSlotsFromYjs. A name gone from lexical

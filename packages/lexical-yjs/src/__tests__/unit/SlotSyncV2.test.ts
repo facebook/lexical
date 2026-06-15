@@ -49,6 +49,7 @@ import {
 import {createBindingV2__EXPERIMENTAL} from '../../Bindings';
 import {syncLexicalUpdateToYjsV2__EXPERIMENTAL} from '../../SyncEditorStates';
 import {$createOrUpdateNodeFromYElement, $updateYFragment} from '../../SyncV2';
+import {SLOTS_ATTR_KEY} from '../../Utils';
 
 // collab-v2 named-slot coverage: serialize a lexical tree with a named slot into
 // the V2 representation (the slot lands in the host's dedicated `slots` Y.Map,
@@ -232,7 +233,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     // the slot lives in the dedicated `slots` attribute channel, not children.
     // `getAttribute` is typed as returning a string, so widen to unknown before
     // the runtime `instanceof` narrows it back to the Y.Map we actually stored.
-    const slotsY = hostY.getAttribute('slots') as unknown;
+    const slotsY = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     expect(Array.from(slotsY.keys())).toEqual(['title']);
 
@@ -264,7 +265,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     const hostY = binding.root.toArray()[0];
     assert(hostY instanceof XmlElement);
-    expect(hostY.getAttribute('slots')).toBeUndefined();
+    expect(hostY.getAttribute(SLOTS_ATTR_KEY)).toBeUndefined();
   });
 
   test('round-trip: a serialized slot restores into a fresh editor', () => {
@@ -333,7 +334,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     // after its node type, alongside (not inside) the linked-list children
     const hostY = binding.root.toArray()[0];
     assert(hostY instanceof XmlElement);
-    const slotsY = hostY.getAttribute('slots') as unknown;
+    const slotsY = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     const coverY = slotsY.get('cover');
     assert(coverY instanceof XmlElement);
@@ -402,7 +403,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     // slot is a shadow root, so the text lives in the inner paragraph's XmlText.
     const hostY = binding2.root.toArray()[0];
     assert(hostY instanceof XmlElement);
-    const slotsY = hostY.getAttribute('slots') as unknown;
+    const slotsY = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     const titleY = slotsY.get('title');
     assert(titleY instanceof XmlElement);
@@ -468,7 +469,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     const hostY = binding2.root.toArray()[0];
     assert(hostY instanceof XmlElement);
-    const slotsY = hostY.getAttribute('slots') as unknown;
+    const slotsY = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     // the slot value is a shadow root wrapping a paragraph — the multi-block
     // value shape this suite uses throughout.
@@ -488,7 +489,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         $createOrUpdateNodeFromYElement(
           hostY,
           binding2,
-          new Set(['slots']),
+          new Set([SLOTS_ATTR_KEY]),
           false,
         );
       },
@@ -536,7 +537,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     const hostY = binding2.root.toArray()[0];
     assert(hostY instanceof XmlElement);
-    const slotsY = hostY.getAttribute('slots') as unknown;
+    const slotsY = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     doc.transact(() => {
       slotsY.delete('title');
@@ -547,7 +548,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         $createOrUpdateNodeFromYElement(
           hostY,
           binding2,
-          new Set(['slots']),
+          new Set([SLOTS_ATTR_KEY]),
           false,
         );
       },
@@ -647,7 +648,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
       $setSlot(host, 'subtitle', subtitle);
     });
 
-    const slotsY = hostY.getAttribute('slots') as unknown;
+    const slotsY = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     expect(Array.from(slotsY.keys()).sort()).toEqual(['subtitle', 'title']);
     const subY = slotsY.get('subtitle');
@@ -665,7 +666,9 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
   // its text updated, not recreated.
   test('local: editing text inside a slot updates the slot shared type in place', () => {
     const {binding, editor, hostY} = setupLocalSlotTree();
-    const slotsY = hostY.getAttribute('slots') as unknown as YMap<unknown>;
+    const slotsY = hostY.getAttribute(
+      SLOTS_ATTR_KEY,
+    ) as unknown as YMap<unknown>;
     const titleYBefore = slotsY.get('title');
 
     applyLocalUpdate(binding, editor, () => {
@@ -702,7 +705,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
       $removeSlot(host, 'title');
     });
 
-    const slotsY = hostY.getAttribute('slots') as unknown;
+    const slotsY = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     if (slotsY instanceof YMap) {
       expect(Array.from(slotsY.keys())).toEqual([]);
     }
@@ -714,7 +717,9 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
   // type lingers in the mapping for the doc's lifetime.
   test('local: removing a slot clears the departing shared type from the mapping', () => {
     const {binding, editor, hostY} = setupLocalSlotTree();
-    const slotsY = hostY.getAttribute('slots') as unknown as YMap<XmlElement>;
+    const slotsY = hostY.getAttribute(
+      SLOTS_ATTR_KEY,
+    ) as unknown as YMap<XmlElement>;
     const oldType = slotsY.get('title');
     assert(oldType != null);
     expect(binding.mapping.has(oldType)).toBe(true);
@@ -733,7 +738,9 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
   // would otherwise overwrite the Y.Map entry while the old type lingers).
   test('local: replacing a slot under the same name clears the old shared type from the mapping', () => {
     const {binding, editor, hostY} = setupLocalSlotTree();
-    const slotsY = hostY.getAttribute('slots') as unknown as YMap<XmlElement>;
+    const slotsY = hostY.getAttribute(
+      SLOTS_ATTR_KEY,
+    ) as unknown as YMap<XmlElement>;
     const oldType = slotsY.get('title');
     assert(oldType != null);
 
@@ -759,7 +766,9 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
   // rather than recreating and re-setting it.
   test('local: an unrelated host edit leaves an untouched slot identical', () => {
     const {binding, editor, hostY} = setupLocalSlotTree();
-    const slotsY = hostY.getAttribute('slots') as unknown as YMap<unknown>;
+    const slotsY = hostY.getAttribute(
+      SLOTS_ATTR_KEY,
+    ) as unknown as YMap<unknown>;
     const titleYBefore = slotsY.get('title');
 
     applyLocalUpdate(binding, editor, () => {
@@ -815,7 +824,9 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     const hostY = binding.root.toArray()[0];
     assert(hostY instanceof XmlElement);
-    const slotsY = hostY.getAttribute('slots') as unknown as YMap<unknown>;
+    const slotsY = hostY.getAttribute(
+      SLOTS_ATTR_KEY,
+    ) as unknown as YMap<unknown>;
     const coverYBefore = slotsY.get('cover');
     assert(coverYBefore instanceof XmlElement);
 
@@ -858,7 +869,9 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     const hostY = binding.root.toArray()[0];
     assert(hostY instanceof XmlElement);
-    const slotsY = hostY.getAttribute('slots') as unknown as YMap<unknown>;
+    const slotsY = hostY.getAttribute(
+      SLOTS_ATTR_KEY,
+    ) as unknown as YMap<unknown>;
     const coverYBefore = slotsY.get('cover');
     assert(coverYBefore instanceof XmlElement);
 
@@ -928,7 +941,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     // a decorator host has no children channel
     expect(hostY.toArray()).toEqual([]);
 
-    const slotsY = hostY.getAttribute('slots') as unknown;
+    const slotsY = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     expect(Array.from(slotsY.keys())).toEqual(['title']);
     const titleY = slotsY.get('title');
@@ -955,7 +968,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     const hostY = binding.root.toArray()[0];
     assert(hostY instanceof XmlElement);
-    expect(hostY.getAttribute('slots')).toBeUndefined();
+    expect(hostY.getAttribute(SLOTS_ATTR_KEY)).toBeUndefined();
   });
 
   test('decorator host round-trip: a serialized slot restores into a fresh editor', () => {
@@ -1033,7 +1046,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     const hostY = binding2.root.toArray()[0];
     assert(hostY instanceof XmlElement);
-    const slotsY = hostY.getAttribute('slots') as unknown;
+    const slotsY = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     const titleY = slotsY.get('title');
     assert(titleY instanceof XmlElement);
@@ -1096,7 +1109,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     const hostY = binding2.root.toArray()[0];
     assert(hostY instanceof XmlElement);
-    const slotsY = hostY.getAttribute('slots') as unknown;
+    const slotsY = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     doc.transact(() => {
       slotsY.delete('title');
@@ -1107,7 +1120,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
         $createOrUpdateNodeFromYElement(
           hostY,
           binding2,
-          new Set(['slots']),
+          new Set([SLOTS_ATTR_KEY]),
           false,
         );
       },
@@ -1152,7 +1165,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
       $setSlot(host, 'subtitle', subtitle);
     });
 
-    const slotsY = hostY.getAttribute('slots') as unknown;
+    const slotsY = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     expect(Array.from(slotsY.keys()).sort()).toEqual(['subtitle', 'title']);
     const subY = slotsY.get('subtitle');
@@ -1185,7 +1198,9 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     const hostY = binding.root.toArray()[0];
     assert(hostY instanceof XmlElement);
-    const slotsY = hostY.getAttribute('slots') as unknown as YMap<unknown>;
+    const slotsY = hostY.getAttribute(
+      SLOTS_ATTR_KEY,
+    ) as unknown as YMap<unknown>;
     const titleYBefore = slotsY.get('title');
 
     applyLocalUpdate(binding, editor, () => {
@@ -1239,7 +1254,9 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     const hostY = binding.root.toArray()[0];
     assert(hostY instanceof XmlElement);
-    const slotsY = hostY.getAttribute('slots') as unknown as YMap<unknown>;
+    const slotsY = hostY.getAttribute(
+      SLOTS_ATTR_KEY,
+    ) as unknown as YMap<unknown>;
     const coverYBefore = slotsY.get('cover');
     assert(coverYBefore instanceof XmlElement);
     expect(coverYBefore.getAttribute('__caption')).toBe('before');
@@ -1267,7 +1284,9 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
   // binding.mapping.
   test('V2: removing a slot also cleans up its nested mapping entries', () => {
     const {binding, editor, hostY} = setupLocalSlotTree();
-    const slotsY = hostY.getAttribute('slots') as unknown as YMap<XmlElement>;
+    const slotsY = hostY.getAttribute(
+      SLOTS_ATTR_KEY,
+    ) as unknown as YMap<XmlElement>;
     const slotType = slotsY.get('title');
     assert(slotType != null);
 
@@ -1329,7 +1348,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     const hostY = binding.root.toArray()[0];
     assert(hostY instanceof XmlElement);
-    expect(hostY.getAttribute('slots')).toBeUndefined();
+    expect(hostY.getAttribute(SLOTS_ATTR_KEY)).toBeUndefined();
 
     applyLocalUpdate(binding, editor, () => {
       const host = $getRoot().getFirstChild();
@@ -1340,7 +1359,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     });
 
     // written to yjs in the same flush as the local update
-    const slotsY = hostY.getAttribute('slots') as unknown;
+    const slotsY = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     expect(Array.from(slotsY.keys())).toEqual(['title']);
 
@@ -1375,7 +1394,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
   // first-set creation race — and that add still syncs.
   test('local: removing the last slot keeps the empty slots attribute and a later add syncs', () => {
     const {binding, editor, hostY} = setupLocalSlotTree();
-    const slotsYBefore = hostY.getAttribute('slots') as unknown;
+    const slotsYBefore = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsYBefore instanceof YMap);
 
     applyLocalUpdate(binding, editor, () => {
@@ -1385,7 +1404,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     });
 
     // the (now empty) Y.Map attribute survives the removal of the last slot
-    const slotsYAfter = hostY.getAttribute('slots') as unknown;
+    const slotsYAfter = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsYAfter instanceof YMap);
     expect(slotsYAfter).toBe(slotsYBefore);
     expect(Array.from(slotsYAfter.keys())).toEqual([]);
@@ -1445,7 +1464,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     // the live doc carries both slots
     const hostY = binding.root.toArray()[0];
     assert(hostY instanceof XmlElement);
-    const slotsY = hostY.getAttribute('slots') as unknown;
+    const slotsY = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     expect(Array.from(slotsY.keys()).sort()).toEqual(['subtitle', 'title']);
 
@@ -1499,7 +1518,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     const hostY = binding.root.toArray()[0];
     assert(hostY instanceof XmlElement);
-    const slotsY = hostY.getAttribute('slots') as unknown;
+    const slotsY = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     expect(slotsY.size).toBe(0);
   });
@@ -1531,7 +1550,7 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
 
     const hostY = binding.root.toArray()[0];
     assert(hostY instanceof XmlElement);
-    const slotsY = hostY.getAttribute('slots') as unknown;
+    const slotsY = hostY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     // hand-add 'title' after 'caption' so the Y.Map receives its entries in
     // REVERSE declared order. The value is a registered shadow-root type
@@ -1621,11 +1640,11 @@ describe('named-slots collab-v2: lexical <-> yjs', () => {
     const hostAY = binding.root.toArray()[0];
     const hostBY = binding.root.toArray()[1];
     assert(hostAY instanceof XmlElement && hostBY instanceof XmlElement);
-    const slotsAY = hostAY.getAttribute('slots') as unknown;
+    const slotsAY = hostAY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     if (slotsAY instanceof YMap) {
       expect(Array.from(slotsAY.keys())).toEqual([]);
     }
-    const slotsBY = hostBY.getAttribute('slots') as unknown;
+    const slotsBY = hostBY.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsBY instanceof YMap);
     expect(Array.from(slotsBY.keys())).toEqual(['title']);
 

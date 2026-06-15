@@ -214,12 +214,12 @@ export const $createOrUpdateNodeFromYElement = (
     }
   }
 
-  // Reconcile the dedicated `slots` channel against the host's `slots` Y.Map.
+  // Reconcile the dedicated `slots` channel against the host's `__slots` Y.Map.
   // Diff (not blind $setSlot) so unchanged entries don't churn writables on
   // every remote reconcile ($setSlot has move semantics, so a re-set is safe
   // but not free). A
   // host is an ElementNode or a non-inline DecoratorNode; both store slots as a
-  // `slots` Y.Map attribute, and the reconcile only uses base-node slot methods.
+  // `__slots` Y.Map attribute, and the reconcile only uses base-node slot methods.
   if (node instanceof ElementNode || $isDecoratorNode(node)) {
     // `slots` is stored as a Y.Map attribute; `attrs` widens it to unknown so
     // instanceof can narrow it back, and is already snapshot-aware, so a
@@ -501,7 +501,7 @@ const $deleteMappingForSubtree = (
   }
 };
 
-// Per-slot diff of the host's `__slots` against its `slots` Y.Map, applied in
+// Per-slot diff of the host's `__slots` against its `__slots` Y.Map, applied in
 // place during a host update (the lexical->yjs counterpart of the yjs->lexical
 // slot reconcile in $createOrUpdateNodeFromYElement). Names gone from lexical
 // are deleted; a slot whose node identity is preserved is recursed via
@@ -734,7 +734,7 @@ const equalYTextLText = (
   );
 };
 
-// Slots half of $equalYTypePNode: the `slots` attribute is excluded from the
+// Slots half of $equalYTypePNode: the `__slots` attribute is excluded from the
 // plain attribute comparison (it is a dedicated channel, not a node property),
 // so the equality scan would otherwise repoint the mapping without recursing
 // and a slot diff would never be written to yjs. An absent attribute and an

@@ -113,7 +113,7 @@ export class CollabDecoratorNode {
     $syncPropertiesFromYjs(binding, xmlElem, lexicalNode, keysChanged);
   }
 
-  // Reconcile named slots from the `slots` Y.Map attribute on this decorator's
+  // Reconcile named slots from the `__slots` Y.Map attribute on this decorator's
   // `_xmlElem` into the lexical node. A decorator host has no children channel,
   // so slots are its only structural descendants. Mirrors
   // CollabElementNode.syncSlotsFromYjs but reads `_xmlElem` instead of
@@ -125,7 +125,7 @@ export class CollabDecoratorNode {
     $syncSlotsFromYjsShared(binding, this._xmlElem, lexicalNode, this);
   }
 
-  // Mirror of the lexical slot map into the `slots` Y.Map attribute on this
+  // Mirror of the lexical slot map into the `__slots` Y.Map attribute on this
   // decorator's `_xmlElem`. Local (lexical -> yjs) counterpart of
   // syncSlotsFromYjs. Mirrors CollabElementNode.syncSlotsFromLexical but writes
   // `_xmlElem` instead of `_xmlText`.

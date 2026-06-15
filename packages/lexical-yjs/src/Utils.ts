@@ -53,9 +53,14 @@ type IntentionallyMarkedAsDirtyElement = boolean;
 
 // @experimental named-slots. Slots are a structural channel separate from the
 // linked-list children (excluded from the auto property->attribute path via the
-// sets below) and live under this reserved attribute key. '$' can't prefix the
-// key — it breaks XmlElement.toDOM — so a plain key is used.
-export const SLOTS_ATTR_KEY = 'slots';
+// sets below) and live under this reserved attribute key. The key reuses the
+// host's `__slots` field name on purpose: '$' can't prefix it ('$' breaks
+// XmlElement.toDOM), and node properties sync under their `__`-prefixed name, so
+// reusing `__slots` lets the single `__slots` exclusion below stand in for both
+// the field (the Map never auto-syncs as a property) and the channel (its Y.Map
+// is never restored as a property). A user field literally named `slots` (no
+// `__`) keeps syncing — only the framework's `__slots` is reserved.
+export const SLOTS_ATTR_KEY = '__slots';
 
 const baseExcludedProperties = new Set<string>([
   '__key',
@@ -65,14 +70,12 @@ const baseExcludedProperties = new Set<string>([
   '__state',
   '__slotHost',
   // `__slots` lives on the base LexicalNode (an ElementNode or DecoratorNode can
-  // host slots), so it is a structural channel excluded for every node type, not
-  // just elements — otherwise a decorator host's `__slots` Map leaks into the
-  // property->attribute sync.
+  // host slots), so it is excluded for every node type, not just elements —
+  // otherwise a decorator host's `__slots` Map leaks into the property->attribute
+  // sync. It is also `SLOTS_ATTR_KEY` (the slots channel reuses the field name),
+  // so this one entry doubles as the channel reservation: the channel's Y.Map is
+  // never restored as a node property in either sync version.
   '__slots',
-  // The bare attribute key is reserved for the slots channel in both sync
-  // versions: a node property with this name must never be written over the
-  // channel, and the channel's Y.Map must never be restored as a node property.
-  SLOTS_ATTR_KEY,
 ]);
 const elementExcludedProperties = new Set<string>([
   '__first',
@@ -360,7 +363,7 @@ export function getNodeTypeFromSharedType(
   return type;
 }
 
-// A decorator host stores its named slots as a `slots` Y.Map attribute on its
+// A decorator host stores its named slots as a `__slots` Y.Map attribute on its
 // `_xmlElem`. A decorator may only parent a node that is genuinely one of its
 // slot values; this confirms that relationship so the parent invariant below
 // stays tight (a non-slot node mis-parented to a decorator is still rejected,
@@ -849,7 +852,7 @@ export function $moveSelectionToPreviousNode(
 // slots present in yjs) is identical, so keeping it in one place avoids the
 // risk of one path drifting from the other.
 //
-// `slotsParent` is the yjs node carrying the `slots` Y.Map attribute (the
+// `slotsParent` is the yjs node carrying the `__slots` Y.Map attribute (the
 // host's `_xmlText` for element hosts, `_xmlElem` for decorator hosts).
 // `ownerCollab` is the collab host that owns the slot map; it's passed to
 // `$getOrInitCollabNodeFromSharedType` so a newly materialized slot collab

@@ -393,8 +393,10 @@ distinguishing markup maps the wrappers back through `$setSlot`.
 ## Collaboration
 
 Slots sync on both the V1 and V2 Yjs bindings through a per-slot-diffed
-`Y.Map` stored under the reserved `slots` attribute key on the host's shared
-type. Hosts with declared slots create that map eagerly, so two clients
+`Y.Map` stored under the reserved `__slots` attribute key on the host's shared
+type (the channel reuses the host's `__slots` field name, which is already
+excluded from the property sync). Hosts with declared slots create that map
+eagerly, so two clients
 concurrently setting *different* slot names for the first time merge
 per-entry instead of racing. Malformed or hostile remote entries are
 validated and skipped.
@@ -413,10 +415,10 @@ tolerate unknown slot data going forward.
 Adding slots reserves a few identifiers that custom node subclasses should
 not define for their own purposes:
 
-- the `__slots` and `__slotHost` fields on ElementNode / DecoratorNode;
-- the `$slots` serialized JSON key;
-- the bare `slots` collab attribute key — a custom node field literally
-  named `slots` no longer syncs over collab.
+- the `__slots` and `__slotHost` fields on ElementNode / DecoratorNode — the
+  `__slots` name is also the collab attribute key for the slots channel, so it
+  is reserved on the Yjs shared type too;
+- the `$slots` serialized JSON key.
 
 ## Current Limitations
 

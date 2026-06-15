@@ -55,6 +55,7 @@ import {
   syncLexicalUpdateToYjs,
   syncYjsChangesToLexical,
 } from '../../SyncEditorStates';
+import {SLOTS_ATTR_KEY} from '../../Utils';
 
 // V1 (stable, CollabElementNode): serialize a lexical tree with a named slot
 // into the V1 yjs representation (the slot lands in a dedicated `slots`
@@ -180,7 +181,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     const hostXmlText = hostCollab._xmlText as XmlText;
 
     // the slot lives in the dedicated `slots` attribute channel, not children.
-    const slotsY = hostXmlText.getAttribute('slots') as unknown;
+    const slotsY = hostXmlText.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     expect(Array.from(slotsY.keys())).toEqual(['title']);
 
@@ -210,7 +211,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     const hostCollab = binding.root._children[0];
     assert('_xmlText' in hostCollab);
     const hostXmlText = hostCollab._xmlText as XmlText;
-    expect(hostXmlText.getAttribute('slots')).toBeUndefined();
+    expect(hostXmlText.getAttribute(SLOTS_ATTR_KEY)).toBeUndefined();
   });
 
   // Serialize a host with a 'title' slot + 'Body' child into doc, then restore
@@ -243,7 +244,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
 
     const hostCollab = binding2.root._children[0];
     assert(hostCollab instanceof CollabElementNode);
-    const slotsY = hostCollab._xmlText.getAttribute('slots') as unknown;
+    const slotsY = hostCollab._xmlText.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
 
     return {binding2, doc2, editor2, hostCollab, slotsY};
@@ -520,7 +521,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
       $setSlot(host, 'subtitle', subtitle);
     });
 
-    const slotsY = hostCollab._xmlText.getAttribute('slots') as unknown;
+    const slotsY = hostCollab._xmlText.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     expect(Array.from(slotsY.keys()).sort()).toEqual(['subtitle', 'title']);
     const subY = slotsY.get('subtitle');
@@ -534,7 +535,9 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
   // recreated.
   test('local: editing text inside a slot updates the slot shared type in place', () => {
     const {binding, editor, hostCollab} = setupLocalSlotTree();
-    const slotsY = hostCollab._xmlText.getAttribute('slots') as YMap<unknown>;
+    const slotsY = hostCollab._xmlText.getAttribute(
+      SLOTS_ATTR_KEY,
+    ) as YMap<unknown>;
     const titleYBefore = slotsY.get('title');
 
     applyLocalUpdate(binding, editor, () => {
@@ -567,7 +570,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
       $removeSlot(host, 'title');
     });
 
-    const slotsY = hostCollab._xmlText.getAttribute('slots') as unknown;
+    const slotsY = hostCollab._xmlText.getAttribute(SLOTS_ATTR_KEY) as unknown;
     if (slotsY instanceof YMap) {
       expect(Array.from(slotsY.keys())).toEqual([]);
     }
@@ -595,7 +598,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
       $removeSlot(host, 'title');
     });
 
-    const slotsY = hostCollab._xmlText.getAttribute('slots') as unknown;
+    const slotsY = hostCollab._xmlText.getAttribute(SLOTS_ATTR_KEY) as unknown;
     if (slotsY instanceof YMap) {
       expect(Array.from(slotsY.keys())).toEqual([]);
     }
@@ -631,7 +634,7 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
 
     expect(binding.collabNodeMap.has(oldKey)).toBe(false);
     expect(binding.collabNodeMap.has(newKey)).toBe(true);
-    const slotsY = hostCollab._xmlText.getAttribute('slots') as unknown;
+    const slotsY = hostCollab._xmlText.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     expect(Array.from(slotsY.keys())).toEqual(['title']);
     const titleY = slotsY.get('title');
@@ -701,7 +704,9 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
   // recreating and re-setting it.
   test('local: an unrelated host edit leaves an untouched slot identical', () => {
     const {binding, editor, hostCollab} = setupLocalSlotTree();
-    const slotsY = hostCollab._xmlText.getAttribute('slots') as YMap<unknown>;
+    const slotsY = hostCollab._xmlText.getAttribute(
+      SLOTS_ATTR_KEY,
+    ) as YMap<unknown>;
     const titleYBefore = slotsY.get('title');
 
     applyLocalUpdate(binding, editor, () => {
@@ -748,7 +753,9 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
 
     const hostCollab = binding.root._children[0];
     assert(hostCollab instanceof CollabElementNode);
-    const slotsY = hostCollab._xmlText.getAttribute('slots') as YMap<unknown>;
+    const slotsY = hostCollab._xmlText.getAttribute(
+      SLOTS_ATTR_KEY,
+    ) as YMap<unknown>;
     const coverYBefore = slotsY.get('cover');
     assert(coverYBefore != null);
 
@@ -847,8 +854,10 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
       $setSlot($getRoot(), 'banner', banner);
     });
 
-    // the slot lands on the shared root's own `slots` attribute channel
-    const slotsY = binding.root._xmlText.getAttribute('slots') as unknown;
+    // the slot lands on the shared root's own `__slots` attribute channel
+    const slotsY = binding.root._xmlText.getAttribute(
+      SLOTS_ATTR_KEY,
+    ) as unknown;
     assert(slotsY instanceof YMap);
     expect(Array.from(slotsY.keys())).toEqual(['banner']);
 
@@ -938,11 +947,15 @@ describe('named-slots collab-v1: lexical <-> yjs', () => {
     const hostBCollab = binding.root._children[1];
     assert(hostACollab instanceof CollabElementNode);
     assert(hostBCollab instanceof CollabElementNode);
-    const slotsAY = hostACollab._xmlText.getAttribute('slots') as unknown;
+    const slotsAY = hostACollab._xmlText.getAttribute(
+      SLOTS_ATTR_KEY,
+    ) as unknown;
     if (slotsAY instanceof YMap) {
       expect(Array.from(slotsAY.keys())).toEqual([]);
     }
-    const slotsBY = hostBCollab._xmlText.getAttribute('slots') as unknown;
+    const slotsBY = hostBCollab._xmlText.getAttribute(
+      SLOTS_ATTR_KEY,
+    ) as unknown;
     assert(slotsBY instanceof YMap);
     expect(Array.from(slotsBY.keys())).toEqual(['title']);
 
@@ -1136,7 +1149,7 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
     const hostCollab = binding.root._children[0];
     assert(hostCollab instanceof CollabDecoratorNode);
     // a decorator host stores its slots on `_xmlElem`, not a `_xmlText` channel.
-    const slotsY = hostCollab._xmlElem.getAttribute('slots') as unknown;
+    const slotsY = hostCollab._xmlElem.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     expect(Array.from(slotsY.keys())).toEqual(['title']);
 
@@ -1160,7 +1173,7 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
 
     const hostCollab = binding.root._children[0];
     assert(hostCollab instanceof CollabDecoratorNode);
-    expect(hostCollab._xmlElem.getAttribute('slots')).toBeUndefined();
+    expect(hostCollab._xmlElem.getAttribute(SLOTS_ATTR_KEY)).toBeUndefined();
   });
 
   function setupRestoredSlotTree() {
@@ -1187,7 +1200,7 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
 
     const hostCollab = binding2.root._children[0];
     assert(hostCollab instanceof CollabDecoratorNode);
-    const slotsY = hostCollab._xmlElem.getAttribute('slots') as unknown;
+    const slotsY = hostCollab._xmlElem.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
 
     return {binding2, doc2, editor2, hostCollab, slotsY};
@@ -1334,7 +1347,7 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
       $setSlot(host, 'subtitle', subtitle);
     });
 
-    const slotsY = hostCollab._xmlElem.getAttribute('slots') as unknown;
+    const slotsY = hostCollab._xmlElem.getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     expect(Array.from(slotsY.keys()).sort()).toEqual(['subtitle', 'title']);
     const subY = slotsY.get('subtitle');
@@ -1345,7 +1358,7 @@ describe('named-slots collab-v1: decorator host <-> yjs', () => {
   test('local: editing text inside a decorator-host slot updates the shared type in place', () => {
     const {binding, editor, hostCollab} = setupLocalSlotTree();
     const slotsY = hostCollab._xmlElem.getAttribute(
-      'slots',
+      SLOTS_ATTR_KEY,
     ) as unknown as YMap<unknown>;
     const titleYBefore = slotsY.get('title');
 
@@ -1611,7 +1624,7 @@ describe('named-slots collab-v1: two-client relay', () => {
         assert($isElementNode(titleR));
         expect(titleR.getTextContent()).toBe('Title');
         expect(titleR.getParent()).toBe(null);
-        // `slots` is a reserved channel key: the raw Y.Map must not be
+        // `__slots` is a reserved channel key: the raw Y.Map must not be
         // restored as a junk node property on the host.
         expect(
           (hostR as unknown as Record<string, unknown>).slots,
@@ -1632,7 +1645,9 @@ describe('named-slots collab-v1: two-client relay', () => {
 
       const hostCollab2 = binding2.root._children[0];
       assert(hostCollab2 instanceof CollabElementNode);
-      const slotsY2 = hostCollab2._xmlText.getAttribute('slots') as unknown;
+      const slotsY2 = hostCollab2._xmlText.getAttribute(
+        SLOTS_ATTR_KEY,
+      ) as unknown;
       assert(slotsY2 instanceof YMap);
       expect(Array.from(slotsY2.keys())).toEqual(['title']);
     } finally {
@@ -1677,7 +1692,9 @@ describe('named-slots collab-v1: two-client relay', () => {
 
       const hostCollab2 = binding2.root._children[0];
       assert(hostCollab2 instanceof CollabDecoratorNode);
-      const slotsY2 = hostCollab2._xmlElem.getAttribute('slots') as unknown;
+      const slotsY2 = hostCollab2._xmlElem.getAttribute(
+        SLOTS_ATTR_KEY,
+      ) as unknown;
       assert(slotsY2 instanceof YMap);
       expect(Array.from(slotsY2.keys())).toEqual(['title']);
     } finally {
@@ -1739,7 +1756,9 @@ describe('named-slots collab-v1: two-client relay', () => {
       for (const binding of [binding1, binding2]) {
         const hostCollab = binding.root._children[0];
         assert(hostCollab instanceof CollabElementNode);
-        expect(hostCollab._xmlText.getAttribute('slots')).toBeUndefined();
+        expect(
+          hostCollab._xmlText.getAttribute(SLOTS_ATTR_KEY),
+        ).toBeUndefined();
       }
     } finally {
       disconnect1();
@@ -1768,7 +1787,9 @@ describe('named-slots collab-v1: two-client relay', () => {
 
     const hostCollab = binding.collabNodeMap.get(hostKey);
     assert(hostCollab instanceof CollabElementNode);
-    const slotsY = hostCollab.getSharedType().getAttribute('slots') as unknown;
+    const slotsY = hostCollab
+      .getSharedType()
+      .getAttribute(SLOTS_ATTR_KEY) as unknown;
     assert(slotsY instanceof YMap);
     expect(slotsY.size).toBe(0);
   });

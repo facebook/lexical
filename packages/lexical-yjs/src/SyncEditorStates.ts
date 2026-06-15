@@ -92,8 +92,8 @@ function $syncEvent(binding: Binding, event: any): void {
     return;
   }
   const {target} = event;
-  // Slots channel: a slot add / delete lands on the host's `slots` attribute
-  // Y.Map (parentSub === 'slots'). An element host stores it on its `_xmlText`,
+  // Slots channel: a slot add / delete lands on the host's `__slots` attribute
+  // Y.Map (parentSub === '__slots'). An element host stores it on its `_xmlText`,
   // a decorator host on its `_xmlElem` (XmlElement). The Y.Map carries no
   // `__type`, so the default dispatch below would trip the shared-type
   // invariant. Re-route it to a host slot reconcile instead.
@@ -132,7 +132,7 @@ function $syncEvent(binding: Binding, event: any): void {
     // @ts-expect-error We need to access the private childListChanged property of the class
     const {keysChanged, childListChanged, delta} = event;
 
-    // Update. `slots` is a reserved key excluded from property sync; a change
+    // Update. `__slots` is a reserved key excluded from property sync; a change
     // to it is handled by the slot reconcile below.
     if (keysChanged.size > 0) {
       collabNode.syncPropertiesFromYjs(binding, keysChanged);
@@ -140,7 +140,7 @@ function $syncEvent(binding: Binding, event: any): void {
 
     // A host's first slot set integrates the slots Y.Map in the same
     // transaction that assigns the attribute, so no YMapEvent fires for the
-    // (brand-new) map — the change surfaces only as a changed `slots` key
+    // (brand-new) map — the change surfaces only as a changed `__slots` key
     // here. The undo of a first set (attribute removed) has the same shape. A
     // null host node means it was concurrently removed; nothing to sync.
     if (keysChanged.has(SLOTS_ATTR_KEY)) {
@@ -170,14 +170,14 @@ function $syncEvent(binding: Binding, event: any): void {
   ) {
     const {attributesChanged} = event;
 
-    // Update. `slots` is a reserved key excluded from property sync; a change
+    // Update. `__slots` is a reserved key excluded from property sync; a change
     // to it is handled by the slot reconcile below.
     if (attributesChanged.size > 0) {
       collabNode.syncPropertiesFromYjs(binding, attributesChanged);
     }
 
     // Same shape as the element-host case above: a first slot set (or its
-    // undo) surfaces only as a changed `slots` attribute on the host's
+    // undo) surfaces only as a changed `__slots` attribute on the host's
     // XmlElement, never as a YMapEvent.
     if (attributesChanged.has(SLOTS_ATTR_KEY)) {
       const node = collabNode.getNode();
@@ -237,7 +237,7 @@ export function syncYjsChangesToLexical(
   // Remove deleted nodes from the collab node map (mirrors the
   // binding.mapping sweep in syncYjsChangesToLexicalV2__EXPERIMENTAL). The
   // destroy paths above can't reach a deleted host's slot values: the host's
-  // `slots` attribute reads back undefined once its shared type is deleted, so
+  // `__slots` attribute reads back undefined once its shared type is deleted, so
   // without this sweep their entries leak. Double deletes are idempotent.
   if (events.length > 0) {
     const transaction = events[0].transaction;
@@ -455,7 +455,7 @@ function $syncEventV2(
     target._item != null &&
     target._item.parentSub === SLOTS_ATTR_KEY
   ) {
-    // A slot add/remove arrives as a YMapEvent on the host's `slots` Y.Map.
+    // A slot add/remove arrives as a YMapEvent on the host's `__slots` Y.Map.
     // Re-route to the host element so its slots channel gets reconciled. The
     // parentSub guard narrows this branch to the slot Y.Map specifically —
     // other YMap attributes (e.g. `__state` nested maps) reach this dispatch

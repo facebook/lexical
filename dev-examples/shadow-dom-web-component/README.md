@@ -159,3 +159,10 @@ without any editor-side glue, and the
 (`Highlight` + `::highlight()`) styles ranges that span the shadow
 boundary as long as the page hands them un-retargeted boundary points —
 the same shape `getDOMSelectionRangeAndPoints` already returns.
+
+Wrapping the element in a framework (Lit, Stencil, FAST, …) is a
+pure-additive layer: each of those tools renders a host that the
+parser upgrades the same way, and our `connectedCallback` honours
+both `delegatesFocus: true` and the declarative shadow DOM reuse
+path either way. A wrapper example would pull a framework dependency
+into this vanilla showcase, so it lives outside this dev-example.

@@ -1469,6 +1469,74 @@ test('contextmenu inside the shadow root reaches a page-level listener', async (
   expect(tag).toBe('DIV');
 });
 
+test('getRootNode({composed: true}) crosses the shadow boundary', async ({
+  page,
+}) => {
+  const result = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {shadowRoot: ShadowRoot};
+    const ce = host.shadowRoot.querySelector('.content') as HTMLElement;
+    return {
+      composedRoot: ce.getRootNode({composed: true}).nodeName,
+      uncomposedRoot: ce.getRootNode().nodeName,
+    };
+  });
+  // Default `getRootNode()` returns the shadow root; composed:true
+  // crosses every shadow boundary and lands on the document.
+  expect(result).toEqual({
+    composedRoot: '#document',
+    uncomposedRoot: '#document-fragment',
+  });
+});
+
+test('document.elementsFromPoint() does NOT descend into open shadow roots (engine baseline)', async ({
+  page,
+}) => {
+  // Pin the platform behaviour: `document.elementsFromPoint()` stops
+  // at shadow boundaries. Descending into the shadow tree requires
+  // calling `shadowRoot.elementsFromPoint(x, y)` on each open
+  // shadow root in turn (Lexical's `getComposedHitTest` covers this
+  // for the editor's internal hit-tests).
+  const tags = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as Element & {shadowRoot: ShadowRoot};
+    const rect = host.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const topLevelHasShadowInternals = document
+      .elementsFromPoint(x, y)
+      .some(el => el.classList.contains('content'));
+    const descendedHasShadowInternals = host.shadowRoot
+      .elementsFromPoint(x, y)
+      .some(el => el.classList.contains('content'));
+    return {descendedHasShadowInternals, topLevelHasShadowInternals};
+  });
+  // The top-level call doesn't return the shadow-internal `.content`
+  // element; the shadow root's own `elementsFromPoint` does.
+  expect(tags.topLevelHasShadowInternals).toBe(false);
+  expect(tags.descendedHasShadowInternals).toBe(true);
+});
+
+test('Element.toggleAttribute() switches the host disabled state without a value', async ({
+  page,
+}) => {
+  // `toggleAttribute('disabled')` flips on / off in one call. The
+  // observed-attribute pipeline still picks up each change.
+  const final = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="summary"]',
+    ) as Element & {disabled: boolean};
+    host.toggleAttribute('disabled');
+    const after1 = host.disabled;
+    host.toggleAttribute('disabled');
+    const after2 = host.disabled;
+    return {after1, after2};
+  });
+  expect(final).toEqual({after1: true, after2: false});
+});
+
 test('the host re-broadcasts window online / offline as a composed event', async ({
   page,
 }) => {

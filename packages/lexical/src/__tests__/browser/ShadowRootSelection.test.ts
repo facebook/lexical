@@ -176,6 +176,7 @@ describe('DOM shadow root selection (browser)', () => {
     const {domSelection, textNode} = selectInnerText(contentEditable, 1, 4);
 
     const points = getDOMSelectionPoints(domSelection, contentEditable);
+    expect(points.direction).toBe('forward');
     expect(points.anchorNode).toBe(textNode);
     expect(points.anchorOffset).toBe(1);
     expect(points.focusNode).toBe(textNode);
@@ -204,6 +205,7 @@ describe('DOM shadow root selection (browser)', () => {
 
     const points = getDOMSelectionPoints(domSelection, contentEditable);
     // anchor is the base (5), focus is the extent (2).
+    expect(points.direction).toBe('backward');
     expect(points.anchorOffset).toBe(5);
     expect(points.focusOffset).toBe(2);
   });
@@ -584,9 +586,50 @@ describe('DOM shadow root selection (browser)', () => {
       }
     });
     const points = getDOMSelectionPoints(domSelection, contentEditable);
+    // direction is undefined; anchor/focus default to the StaticRange's tree
+    // order (forward) since the engine can't report the actual direction.
+    expect(points.direction).toBeUndefined();
     expect(points.anchorNode).toBe(textNode);
     expect(points.anchorOffset).toBe(1);
     expect(points.focusOffset).toBe(4);
+  });
+
+  test('Selection.direction absent + backward selection signals unknown direction', () => {
+    // When the engine ships getComposedRanges without Selection.direction
+    // (e.g. Firefox 124–125), the helper can't tell a backward selection
+    // from a forward one — anchor/focus default to tree order and the
+    // undefined direction is the explicit signal to callers.
+    const {contentEditable} = setUpShadowEditor();
+    if (!SUPPORTS_COMPOSED_RANGES) {
+      return;
+    }
+    const textNode = getInnerTextNode(contentEditable);
+    const domSelection = getDOMSelection(window)!;
+    domSelection.removeAllRanges();
+    domSelection.setBaseAndExtent(textNode, 5, textNode, 2);
+    const original = Object.getOwnPropertyDescriptor(
+      Selection.prototype,
+      'direction',
+    );
+    Object.defineProperty(Selection.prototype, 'direction', {
+      configurable: true,
+      get() {
+        return undefined;
+      },
+    });
+    onTestFinished(() => {
+      if (original) {
+        Object.defineProperty(Selection.prototype, 'direction', original);
+      } else {
+        delete (Selection.prototype as unknown as {direction?: unknown})
+          .direction;
+      }
+    });
+    const points = getDOMSelectionPoints(domSelection, contentEditable);
+    expect(points.direction).toBeUndefined();
+    expect(points.anchorNode).toBe(textNode);
+    expect(points.anchorOffset).toBe(2);
+    expect(points.focusOffset).toBe(5);
   });
 
   describe('getComposedEventTarget', () => {

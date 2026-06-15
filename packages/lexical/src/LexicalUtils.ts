@@ -2024,14 +2024,24 @@ export function getDOMShadowRoots(node: Node): ShadowRoot[] {
 
 /**
  * A subset of `Selection` covering the four boundary-point fields Lexical
- * reads. Designed so a `Selection` instance can be returned where a
- * `DOMSelectionBoundaryPoints` is expected (see {@link getDOMSelectionPoints}).
+ * reads plus `direction`. Designed so a `Selection` instance can be returned
+ * where a `DOMSelectionBoundaryPoints` is expected (see {@link getDOMSelectionPoints}).
+ *
+ * `direction` is the standard
+ * {@link https://developer.mozilla.org/docs/Web/API/Selection/direction | Selection.direction}
+ * pass-through: `'forward'` / `'backward'` / `'none'` when the engine
+ * implements it, or `undefined` when the engine ships `getComposedRanges`
+ * without `direction` (e.g. Firefox 124–125). In the undefined case
+ * anchor/focus default to the composed StaticRange's tree order; callers
+ * needing strict backward fidelity inside a shadow root should check
+ * `direction !== undefined`.
  *
  * @experimental Shape may change as shadow DOM support stabilizes.
  */
 export interface DOMSelectionBoundaryPoints {
   anchorNode: Node | null;
   anchorOffset: number;
+  direction?: string;
   focusNode: Node | null;
   focusOffset: number;
 }
@@ -2151,7 +2161,11 @@ export function getDOMSelectionRange(
  *   each `Selection` property read forces a synchronous style/layout
  *   recalculation, so `$updateDOMSelection` defers these reads until they
  *   are actually needed.
- * - shadow DOM: the return is a snapshot taken at call time.
+ * - shadow DOM: the return is a snapshot taken at call time, including
+ *   `direction`. When the engine ships `getComposedRanges` without
+ *   `Selection.direction` (e.g. Firefox 124–125), the snapshot's
+ *   `direction` is `undefined` and anchor/focus default to the
+ *   StaticRange's tree order — a backward selection will appear forward.
  *
  * Read the four points immediately after the call, or compare identity
  * via `points === domSelection` to detect when the return aliases
@@ -2169,16 +2183,19 @@ export function getDOMSelectionPoints(
     return domSelection;
   }
   const {startContainer, startOffset, endContainer, endOffset} = staticRange;
-  return domSelection.direction === 'backward'
+  const direction = domSelection.direction;
+  return direction === 'backward'
     ? {
         anchorNode: endContainer,
         anchorOffset: endOffset,
+        direction,
         focusNode: startContainer,
         focusOffset: startOffset,
       }
     : {
         anchorNode: startContainer,
         anchorOffset: startOffset,
+        direction,
         focusNode: endContainer,
         focusOffset: endOffset,
       };
@@ -2223,17 +2240,20 @@ export function getDOMSelectionRangeAndPoints(
   if (range === null) {
     range = domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null;
   }
+  const direction = domSelection.direction;
   const points: DOMSelectionBoundaryPoints =
-    domSelection.direction === 'backward'
+    direction === 'backward'
       ? {
           anchorNode: endContainer,
           anchorOffset: endOffset,
+          direction,
           focusNode: startContainer,
           focusOffset: startOffset,
         }
       : {
           anchorNode: startContainer,
           anchorOffset: startOffset,
+          direction,
           focusNode: endContainer,
           focusOffset: endOffset,
         };

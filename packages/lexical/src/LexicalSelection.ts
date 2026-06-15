@@ -1819,8 +1819,10 @@ export class RangeSelection implements BaseSelection {
         // Because a range works on start and end, we might need to flip
         // the anchor and focus points to match what the DOM has, not what
         // the range has specifically. Inside a shadow root anchorNode is
-        // retargeted to the host, so use the standard Selection.direction
-        // (which agrees with the composed range we applied above).
+        // retargeted to the host, so use the standard Selection.direction.
+        // When direction is unavailable (e.g. Firefox 124–125) this falls
+        // through to forward; backward fidelity is the known limitation
+        // documented on getDOMSelectionPoints.
         const anchorIsAtRangeStart = composedRange
           ? domSelection.direction !== 'backward'
           : domSelection.anchorNode === range.startContainer &&

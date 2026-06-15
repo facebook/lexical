@@ -11,6 +11,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  NodeStateVersion,
   SlotChildNode,
   StateValueOrUpdater,
 } from 'lexical';
@@ -24,7 +25,6 @@ import {
   $createParagraphNode,
   $createTextNode,
   $fullReconcile,
-  $getNodeByKey,
   $getSlot,
   $getSlotNames,
   $getState,
@@ -32,9 +32,8 @@ import {
   $setState,
   createState,
   DecoratorNode,
+  NODE_STATE_DIRECT,
 } from 'lexical';
-import * as React from 'react';
-import {useEffect, useState} from 'react';
 
 import {$createSlotContainerNode} from '../../nodes/SlotContainerNode';
 
@@ -72,7 +71,13 @@ function quoteEditableLabel(value: boolean | null): string {
 // framework alternative to nested editors that #6613 / #5981 asked for. The
 // host owns no children channel, so neither slot can leak into a stray
 // paragraph and the box is an atomic block from the user's perspective.
-function PullQuoteComponent({nodeKey}: {nodeKey: NodeKey}): JSX.Element {
+function PullQuoteComponent({
+  node,
+  nodeKey,
+}: {
+  node: PullQuoteNode;
+  nodeKey: NodeKey;
+}): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const quoteRef = useLexicalSlotRef<HTMLDivElement>(editor, nodeKey, 'quote');
   const attributionRef = useLexicalSlotRef<HTMLDivElement>(
@@ -82,34 +87,14 @@ function PullQuoteComponent({nodeKey}: {nodeKey: NodeKey}): JSX.Element {
   );
   // Mirror the quote-editable override into React so the toggle reflects undo,
   // collab and copy/paste, not just local clicks.
-  const [quoteEditable, setQuoteEditableValue] = useState<boolean | null>(() =>
-    editor.read(() => {
-      const node = $getNodeByKey(nodeKey);
-      return $isPullQuoteNode(node) ? node.getQuoteEditable() : null;
-    }),
-  );
-  useEffect(
-    () =>
-      editor.registerUpdateListener(() => {
-        setQuoteEditableValue(
-          editor.read(() => {
-            const node = $getNodeByKey(nodeKey);
-            return $isPullQuoteNode(node) ? node.getQuoteEditable() : null;
-          }),
-        );
-      }),
-    [editor, nodeKey],
-  );
+  const quoteEditable = node.getQuoteEditable(NODE_STATE_DIRECT);
   const cycleQuoteEditable = () =>
     editor.update(() => {
-      const node = $getNodeByKey(nodeKey);
-      if ($isPullQuoteNode(node)) {
-        node.setQuoteEditable(nextQuoteEditable(node.getQuoteEditable()));
-        // Re-render the quote and everything beneath it so the new editable
-        // value — and its cascade into any slots nested in the quote — reaches
-        // the DOM, without a document mutation observed on those descendants.
-        $fullReconcile(node);
-      }
+      node.setQuoteEditable(nextQuoteEditable);
+      // Re-render the quote and everything beneath it so the new editable
+      // value — and its cascade into any slots nested in the quote — reaches
+      // the DOM, without a document mutation observed on those descendants.
+      $fullReconcile(node);
     });
   return (
     <div className="lexical-pullquote-chrome">
@@ -154,8 +139,8 @@ export class PullQuoteNode extends DecoratorNode<JSX.Element> {
 
   // The quote-slot editable override (null follows the editor, true/false pin
   // it). Stored as NodeState; see `quoteEditableState`.
-  getQuoteEditable(): boolean | null {
-    return $getState(this, quoteEditableState);
+  getQuoteEditable(version?: NodeStateVersion): boolean | null {
+    return $getState(this, quoteEditableState, version);
   }
   setQuoteEditable(
     valueOrUpdater: StateValueOrUpdater<typeof quoteEditableState>,
@@ -164,7 +149,7 @@ export class PullQuoteNode extends DecoratorNode<JSX.Element> {
   }
 
   decorate(): JSX.Element {
-    return <PullQuoteComponent nodeKey={this.__key} />;
+    return <PullQuoteComponent node={this} nodeKey={this.__key} />;
   }
 
   // Emit both slots inside a `<div class="lexical-pullquote-node">` host

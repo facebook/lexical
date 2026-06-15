@@ -288,7 +288,7 @@ export const ReactReviewExtension = /* @__PURE__ */ defineExtension({
     // Track all live ReviewNodes to render their portals
     const nodeMapSignal = state.getOutput().nodeMap;
     return editor.registerMutationListener(ReviewNode, nodes => {
-      nodeMapSignal.value = editor.getEditorState().read(() => {
+      nodeMapSignal.value = editor.read('latest', () => {
         const nodeMap = new Map(nodeMapSignal.peek());
         for (const k of nodes.keys()) {
           const node = $getNodeByKey(k);

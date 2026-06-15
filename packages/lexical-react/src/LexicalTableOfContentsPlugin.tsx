@@ -150,7 +150,7 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
   useEffect(() => {
     // Set table of contents initial state
     let currentTableOfContents: TableOfContentsEntry[] = [];
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const updateCurrentTableOfContents = (node: ElementNode) => {
         for (const child of node.getChildren()) {
           if ($isHeadingNode(child)) {
@@ -204,7 +204,7 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
     const removeHeaderMutationListener = editor.registerMutationListener(
       HeadingNode,
       (mutatedNodes: Map<string, NodeMutation>) => {
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           for (const [nodeKey, mutation] of mutatedNodes) {
             if (mutation === 'created') {
               const newHeading = $getNodeByKey(nodeKey);
@@ -244,7 +244,7 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
     const removeTextNodeMutationListener = editor.registerMutationListener(
       TextNode,
       (mutatedNodes: Map<string, NodeMutation>) => {
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           for (const [nodeKey, mutation] of mutatedNodes) {
             if (mutation === 'updated') {
               const currNode = $getNodeByKey(nodeKey);

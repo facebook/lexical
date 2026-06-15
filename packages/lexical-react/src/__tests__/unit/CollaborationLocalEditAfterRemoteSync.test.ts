@@ -233,7 +233,7 @@ function execEdit(peer: Peer, k: number, off: number, ch: string) {
 // A structural snapshot that distinguishes "no children" from "one empty
 // paragraph" (plain text content cannot).
 function liveSnapshot(peer: Peer): string {
-  return peer.editor.getEditorState().read(() =>
+  return peer.editor.read('latest', () =>
     $getRoot()
       .getChildren()
       .map(c => `${c.getType()}(${JSON.stringify(c.getTextContent())})`)
@@ -260,7 +260,7 @@ function reloadSnapshot(peer: Peer): string {
     },
     {discrete: true},
   );
-  return ed.getEditorState().read(() =>
+  return ed.read('latest', () =>
     $getRoot()
       .getChildren()
       .map(c => `${c.getType()}(${JSON.stringify(c.getTextContent())})`)

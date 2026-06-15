@@ -824,7 +824,7 @@ describe('LexicalSelection tests', () => {
             },
             {discrete: true},
           );
-          testEnv.editor.getEditorState().read(() => {
+          testEnv.editor.read('latest', () => {
             const allTextNodes = $getRoot().getAllTextNodes();
             // These should get merged in reconciliation
             expect(allTextNodes.map(node => node.getTextContent())).toEqual([

@@ -157,7 +157,7 @@ describe('LexicalComposer tests', () => {
           // otherwise you could see 'initial stateinitial state'.
           expect([
             i,
-            editor.getEditorState().read(() => $getRoot().getTextContent()),
+            editor.read('latest', () => $getRoot().getTextContent()),
           ]).toEqual([i, 'initial state']);
         });
         // Only one context is created in both cases though!

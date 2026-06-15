@@ -70,7 +70,7 @@ function isManagedLineBreak(
 }
 
 function getLastSelection(editor: LexicalEditor): null | BaseSelection {
-  return editor.getEditorState().read(() => {
+  return editor.read('latest', () => {
     const selection = $getSelection();
     return selection !== null ? selection.clone() : null;
   });

@@ -391,7 +391,7 @@ describe('LexicalUtils tests', () => {
         rootNode.append(paragraphNode);
       });
 
-      await editor.getEditorState().read(() => {
+      await editor.read('latest', () => {
         expect($getNodeByKey('1')).toBe(paragraphNode);
         expect($getNodeByKey('2')).toBe(textNode);
         expect($getNodeByKey('3')).toBe(null);
@@ -421,7 +421,7 @@ describe('LexicalUtils tests', () => {
           expect.arrayContaining(paragraphKeys),
         );
       });
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const currentParagraphKeys = $paragraphKeys();
         expect(currentParagraphKeys).toHaveLength(paragraphKeys.length);
         expect(currentParagraphKeys).toEqual(

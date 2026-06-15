@@ -230,10 +230,9 @@ there, and reveals it; the container renders as a normal block):
    [`unmountSlotContainer(editor, nodeKey, container)`](/docs/api/modules/lexical#unmountslotcontainer)
    from `lexical` are the framework-independent primitives (e.g. from a
    [mutation listener](/docs/api/modules/lexical#registermutationlistener)).
-   They read through
-   [`editor.readPending`](/docs/api/modules/lexical#readpending),
-   so calling them mid-update
-   observes the pending state without forcing a flush:
+   `mountSlotContainer` resolves the container through
+   [`editor.readPending`](/docs/api/modules/lexical#readpending), so calling it
+   mid-update observes the pending state without forcing a flush:
 
    ```ts
    import {mountSlotContainer} from 'lexical';

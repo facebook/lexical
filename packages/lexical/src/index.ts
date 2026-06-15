@@ -144,6 +144,7 @@ export type {
   EditableListener,
   EditorConfig,
   EditorDOMRenderConfig,
+  EditorReadMode,
   EditorSetOptions,
   EditorThemeClasses,
   EditorThemeClassName,

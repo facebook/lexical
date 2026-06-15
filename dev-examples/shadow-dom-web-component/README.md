@@ -167,15 +167,13 @@ both `delegatesFocus: true` and the declarative shadow DOM reuse
 path either way. A wrapper example would pull a framework dependency
 into this vanilla showcase, so it lives outside this dev-example.
 
-A few modern CSS surfaces — `container-type: inline-size` on the
-shadow-internal layers, `anchor-name` on the contentEditable, and
-`text-wrap: pretty` on paragraphs — were verified non-additive: the
-Playwright suite hung in the chromium-headless runner whenever any
-of them was applied to the editor's internals. The shadow-DOM
-integration is not at fault; production users who want container
-queries, anchor positioning, or pretty text-wrap can apply them in
-their page-level stylesheets without re-running the Lexical
-reconciler against the new layout primitives. Browsers that ship
-CSS anchor positioning can target the page-level popover at the
-host directly (`position-anchor: var(--whatever)`) without
-involving the shadow root.
+A few modern CSS surfaces — `container-type: inline-size`,
+`anchor-name`, and `text-wrap: pretty` — show non-deterministic
+flake in the chromium-headless Playwright runner when applied to
+the editor's shadow-internal layers (the same suite that completes
+in ~10 s with the surfaces absent has hung for 15 min on rerun with
+them present). The shadow-DOM integration itself is not at fault.
+Production users who want any of these can apply them in a
+page-level stylesheet without involving the shadow root; a
+page-level popover can still target the host directly with anchor
+positioning.

@@ -8,14 +8,14 @@
     "code"
   ],
   "license": "MIT",
-  "version": "0.45.0",
+  "version": "0.45.1-nightly.20260615.0",
   "main": "./dist/LexicalCodeCore.js",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/extension": "workspace:*",
-    "@lexical/utils": "workspace:*",
     "@lexical/html": "workspace:*",
     "@lexical/internal": "workspace:*",
+    "@lexical/utils": "workspace:*",
     "lexical": "workspace:*"
   },
   "repository": {

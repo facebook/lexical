@@ -33,8 +33,9 @@ describe('LexicalEditorState tests', () => {
       expect(editorState._selection).toBe(null);
     });
 
-    test('readPending()', () => {
+    test("read('pending' | 'latest' | 'force-commit')", () => {
       const {editor} = testEnv;
+      const $textContent = () => $getRoot().getTextContent();
 
       // a regular update is processed synchronously but committed
       // asynchronously
@@ -43,18 +44,21 @@ describe('LexicalEditorState tests', () => {
           $createParagraphNode().append($createTextNode('foo')),
         );
       });
-      expect(
-        editor.getEditorState().read(() => $getRoot().getTextContent()),
-      ).toBe('');
-      // readPending() observes the pending state without flushing it
-      expect(editor.readPending(() => $getRoot().getTextContent())).toBe('foo');
-      expect(
-        editor.getEditorState().read(() => $getRoot().getTextContent()),
-      ).toBe('');
-      // read() flushes the pending state
-      expect(editor.read(() => $getRoot().getTextContent())).toBe('foo');
-      // without a pending state, readPending() reads the committed state
-      expect(editor.readPending(() => $getRoot().getTextContent())).toBe('foo');
+      expect(editor.getEditorState().read($textContent)).toBe('');
+      // read('pending') observes the pending state without flushing it
+      expect(editor.read('pending', $textContent)).toBe('foo');
+      // read('latest') reads the committed state without flushing the pending
+      // state, equivalent to editor.getEditorState().read(fn, {editor})
+      expect(editor.read('latest', $textContent)).toBe('');
+      // neither 'pending' nor 'latest' commits the pending state
+      expect(editor.getEditorState().read($textContent)).toBe('');
+      // read() defaults to 'force-commit', which flushes the pending state
+      expect(editor.read($textContent)).toBe('foo');
+      expect(editor.getEditorState().read($textContent)).toBe('foo');
+      // without a pending state, all modes read the committed state
+      expect(editor.read('pending', $textContent)).toBe('foo');
+      expect(editor.read('latest', $textContent)).toBe('foo');
+      expect(editor.read('force-commit', $textContent)).toBe('foo');
     });
 
     test('read()', async () => {

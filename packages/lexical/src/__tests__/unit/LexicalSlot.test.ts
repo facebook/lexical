@@ -6,6 +6,8 @@
  *
  */
 
+import type {GetStaticNodeOwnConfig} from '../../LexicalNode';
+
 import {
   buildEditorFromExtensions,
   type LexicalEditorWithDispose,
@@ -42,10 +44,11 @@ import {
   getDOMSelection,
   mountSlotContainer,
   type ParagraphNode,
+  type SlotName,
   TextNode,
   unmountSlotContainer,
 } from 'lexical';
-import {afterEach, assert, describe, expect, test} from 'vitest';
+import {afterEach, assert, describe, expect, expectTypeOf, test} from 'vitest';
 
 import {$internalCreateRangeSelection} from '../../LexicalSelection';
 import {$getSlotContainer} from '../../LexicalUtils';
@@ -2460,6 +2463,29 @@ describe('named-slots: editable islands', () => {
     editor.setEditable(true);
     await flush();
     expect(slotEditable(editor, slotKey)).toBe('true');
+  });
+});
+
+describe('named-slots: slot-name type hints', () => {
+  test('a host class declared slots are preserved as a literal union', () => {
+    // DeclaredHostNode declares slots: ['title', 'body']. The `const` type
+    // parameter on LexicalNode.config keeps that as a tuple, so the names are
+    // recoverable as a literal union — what drives $getSlot / $setSlot /
+    // $removeSlot autocomplete via SlotName — rather than widening to `string`.
+    type Declared =
+      GetStaticNodeOwnConfig<DeclaredHostNode> extends {
+        slots: infer S extends readonly string[];
+      }
+        ? S[number]
+        : never;
+    expectTypeOf<Declared>().toEqualTypeOf<'title' | 'body'>();
+    // SlotName unions those with `string`, so every name is still accepted (a
+    // host takes undeclared slot names at runtime); the declared ones surface as
+    // suggestions.
+    expectTypeOf<SlotName<DeclaredHostNode>>().toExtend<string>();
+    const declared: SlotName<DeclaredHostNode> = 'title';
+    const undeclared: SlotName<DeclaredHostNode> = 'anything';
+    expect([declared, undeclared]).toEqual(['title', 'anything']);
   });
 });
 

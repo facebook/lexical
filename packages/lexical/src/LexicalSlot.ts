@@ -8,6 +8,7 @@
 
 import type {Klass} from './LexicalEditor';
 import type {
+  GetStaticNodeOwnConfig,
   LexicalNode,
   NodeKey,
   SlotChildNode,
@@ -167,6 +168,30 @@ export function $getSlotNames(node: LexicalNode): string[] {
   return Array.from($getSlotMap(node).keys());
 }
 
+// The slot names a host's class declares in `$config().slots`, as a literal
+// union (only the node's own declaration is read, so a subclass that inherits
+// slots without redeclaring resolves to `never`). Relies on the `const` type
+// parameter on `LexicalNode.config` to preserve the declared array as a tuple.
+type DeclaredSlotNames<T extends LexicalNode> =
+  GetStaticNodeOwnConfig<T> extends {slots: infer S extends readonly string[]}
+    ? S[number]
+    : never;
+
+/**
+ * Slot-name hint for a host node's slot accessors: the names declared in the
+ * host class's `$config().slots` (for editor autocomplete) unioned with `string`
+ * — every string is still accepted (slots take undeclared names at runtime), the
+ * declared names just surface as suggestions. A class declaring no slots, or a
+ * subclass that inherits them without redeclaring, resolves to plain `string`.
+ *
+ * @experimental
+ */
+export type SlotName<T extends LexicalNode> =
+  | DeclaredSlotNames<T>
+  // `string & {}` keeps any string assignable without TS collapsing the union
+  // (and erasing the literal suggestions) back into a bare `string`.
+  | (string & {});
+
 /**
  * Returns the node occupying the named slot, or null if the slot is empty.
  * Slots are a shadow-root-isolated channel kept separate from children; see
@@ -174,7 +199,10 @@ export function $getSlotNames(node: LexicalNode): string[] {
  *
  * @experimental
  */
-export function $getSlot(node: LexicalNode, name: string): LexicalNode | null {
+export function $getSlot<T extends LexicalNode>(
+  node: T,
+  name: SlotName<T>,
+): LexicalNode | null {
   const key = $getSlotMap(node).get(name);
   return key === undefined ? null : $getNodeByKey(key);
 }
@@ -393,7 +421,7 @@ function $canonicalizeSlotOrder(host: LexicalNode & SlotHostNode): void {
  */
 export function $setSlot<T extends LexicalNode & SlotHostNode>(
   host: T,
-  name: string,
+  name: SlotName<T>,
   node: LexicalNode,
 ): T {
   invariant(
@@ -472,7 +500,7 @@ export function $setSlot<T extends LexicalNode & SlotHostNode>(
  */
 export function $removeSlot<T extends LexicalNode & SlotHostNode>(
   host: T,
-  name: string,
+  name: SlotName<T>,
 ): T {
   const writableSelf = host.getWritable();
   if (writableSelf.__slots === null) {

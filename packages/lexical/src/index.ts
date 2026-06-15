@@ -262,6 +262,7 @@ export {
   type RawTextVisitor,
   tokenizeRawText,
 } from './LexicalSelection';
+export type {SlotName} from './LexicalSlot';
 export {
   $getSlot,
   $getSlotFrame,

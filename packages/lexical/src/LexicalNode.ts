@@ -790,14 +790,14 @@ export class LexicalNode {
    * well-known symbol (by convention `Symbol.for(<NodeClassName>)`) instead of
    * a string `type` to declare configuration shared with its subclasses.
    */
-  config<Config extends StaticNodeConfigValue<this, string>>(
+  config<const Config extends StaticNodeConfigValue<this, string>>(
     type: symbol,
     config: Config,
   ): AbstractStaticNodeConfigRecord<Config>;
-  config<Type extends string, Config extends StaticNodeConfigValue<this, Type>>(
-    type: Type,
-    config: Config,
-  ): StaticNodeConfigRecord<Type, Config>;
+  config<
+    Type extends string,
+    const Config extends StaticNodeConfigValue<this, Type>,
+  >(type: Type, config: Config): StaticNodeConfigRecord<Type, Config>;
   config(
     type: string | symbol,
     config: AnyStaticNodeConfigValue,

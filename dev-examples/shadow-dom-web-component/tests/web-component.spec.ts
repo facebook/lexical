@@ -841,6 +841,31 @@ test('loading="lazy" defers the editor build until the host is visible', async (
     .not.toBe('');
 });
 
+test('the host re-broadcasts window online / offline as a composed event', async ({
+  page,
+}) => {
+  const detail = await page.evaluate(() => {
+    const host = document.querySelector(
+      'lexical-editor[name="notes"]',
+    ) as HTMLElement;
+    return new Promise<{online: boolean} | null>(resolve => {
+      host.addEventListener(
+        'lexical-online-state',
+        event => {
+          resolve((event as CustomEvent<{online: boolean}>).detail);
+        },
+        {once: true},
+      );
+      window.dispatchEvent(new Event('offline'));
+      setTimeout(() => resolve(null), 1000);
+    });
+  });
+  expect(detail).not.toBeNull();
+  // The event detail carries the live `navigator.onLine` value at the
+  // time the window event fired.
+  expect(typeof detail!.online).toBe('boolean');
+});
+
 test('saveToIndexedDB / restoreFromIndexedDB round-trip the editor state', async ({
   page,
 }) => {

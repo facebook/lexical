@@ -204,6 +204,7 @@ export class LexicalEditorElement extends HTMLElement {
   private customValidityMessage = '';
   private lazyObserver: IntersectionObserver | null = null;
   private lazyBuildScheduled = false;
+  private removeOnlineListeners: (() => void) | null = null;
 
   constructor() {
     super();
@@ -537,6 +538,35 @@ export class LexicalEditorElement extends HTMLElement {
     return true;
   }
 
+  /**
+   * Track the browser online / offline state so a downstream service
+   * worker (or the page's own sync layer) can react to network
+   * transitions through a composed event without subscribing twice.
+   * The host re-broadcasts `window.online` / `window.offline` as
+   * `lexical-online-state` carrying the current `navigator.onLine`
+   * value; listeners attached above the shadow boundary see it.
+   */
+  private installOnlineListeners(): void {
+    if (this.removeOnlineListeners !== null) {
+      return;
+    }
+    const fire = () => {
+      this.dispatchEvent(
+        new CustomEvent('lexical-online-state', {
+          bubbles: true,
+          composed: true,
+          detail: {online: navigator.onLine},
+        }),
+      );
+    };
+    window.addEventListener('online', fire);
+    window.addEventListener('offline', fire);
+    this.removeOnlineListeners = () => {
+      window.removeEventListener('online', fire);
+      window.removeEventListener('offline', fire);
+    };
+  }
+
   private openIndexedDB(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
       const req = indexedDB.open(STATE_DB, 1);
@@ -700,6 +730,7 @@ export class LexicalEditorElement extends HTMLElement {
     this.syncSpellcheck();
     this.updateValidity();
     this.updateEditableState();
+    this.installOnlineListeners();
 
     const formatButtons = new Map<TextFormatType, HTMLButtonElement>();
     const addButton = (label: string, onClick: () => void) => {
@@ -805,6 +836,10 @@ export class LexicalEditorElement extends HTMLElement {
       this.lazyObserver = null;
     }
     this.lazyBuildScheduled = false;
+    if (this.removeOnlineListeners !== null) {
+      this.removeOnlineListeners();
+      this.removeOnlineListeners = null;
+    }
     if (this.disposeEditor !== null) {
       // Cache the serialized editor state before tearing the editor
       // down, so a subsequent `connectedCallback` (DOM move) can rebuild

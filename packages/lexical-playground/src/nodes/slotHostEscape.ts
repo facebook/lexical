@@ -270,7 +270,7 @@ export function registerSlotHostArrowEscape<T extends LexicalNode>(
 
 /**
  * Whether a slot host has no text in its children or in any of its named slots —
- * the baseline "empty" test {@link registerEmptyHostBackspace} deletes on. A
+ * the baseline "empty" test {@link registerSlotHostBackspace} deletes on. A
  * host with other meaningful state (e.g. the Review's rating) composes an extra
  * check on top of this.
  */

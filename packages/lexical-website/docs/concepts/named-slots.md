@@ -161,6 +161,9 @@ The core API surface (all exported from `lexical`):
 - [`$removeSlot(host, name)`](/docs/api/modules/lexical#removeslot) — detach the value under a name (the subtree is
   garbage-collected unless you reattach it elsewhere).
 - [`$getSlotHost(node)`](/docs/api/modules/lexical#getslothost) — the host a value is slotted into, or `null`.
+- [`$getSlotNameWithinHost(node)`](/docs/api/modules/lexical#getslotnamewithinhost) — the name of the slot
+  a value occupies on its host (the reverse direction of `$getSlotHost`), or
+  `null` when the node is not a slot value.
 - [`$getSlotFrame(node)`](/docs/api/modules/lexical#getslotframe) — the innermost slot value containing a node (the
   "frame" whose virtual shadow root scopes editing), or `null` when the node
   is not inside any slot.

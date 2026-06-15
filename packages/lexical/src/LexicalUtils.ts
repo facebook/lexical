@@ -2188,7 +2188,7 @@ export function $getDOMSlot<N extends LexicalNode>(
 }
 
 /**
- * @experimental
+ * @internal
  *
  * Returns the scaffolding container element that `host`'s named slot renders
  * into, or null if the slot is empty or not yet rendered. The container is the

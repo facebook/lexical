@@ -300,7 +300,6 @@ export {
   $getNodeByKeyOrThrow,
   $getNodeFromDOMNode,
   $getRoot,
-  $getSlotContainer,
   $hasAncestor,
   $hasUpdateTag,
   $isElementDOMSlot,

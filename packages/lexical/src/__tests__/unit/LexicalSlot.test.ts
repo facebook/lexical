@@ -23,7 +23,6 @@ import {
   $getRoot,
   $getSelection,
   $getSlot,
-  $getSlotContainer,
   $getSlotFrame,
   $getSlotHost,
   $getSlotNames,
@@ -49,6 +48,7 @@ import {
 import {afterEach, assert, describe, expect, test} from 'vitest';
 
 import {$internalCreateRangeSelection} from '../../LexicalSelection';
+import {$getSlotContainer} from '../../LexicalUtils';
 import {$createParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {$createTextNode} from '../../nodes/LexicalTextNode';
 import {

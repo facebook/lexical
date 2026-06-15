@@ -18,6 +18,7 @@ import {
   defineExtension,
   FORMAT_TEXT_COMMAND,
   getDOMSelectionRangeAndPoints,
+  getDOMShadowRoots,
   type LexicalEditor,
   REDO_COMMAND,
   type TextFormatType,
@@ -633,6 +634,56 @@ export class LexicalEditorElement extends HTMLElement {
     toolbar.appendChild(toolbarSpacer);
     toolbar.appendChild(toolbarSlot);
 
+    // Surface the live selection rect to the page so a light-DOM floating
+    // popover can anchor to text inside the shadow root. Called from the
+    // update listener (selection change) and the scroll listeners below
+    // (selection unchanged but its viewport position moved).
+    // `getDOMSelectionRangeAndPoints` un-retargets the boundary points across
+    // the shadow boundary and returns a live Range, so `getBoundingClientRect()`
+    // gives viewport coordinates the page can use directly. Collapsed (or no)
+    // range -> rect is null.
+    const dispatchSelectionRect = (): void => {
+      editor.read(() => {
+        const selection = $getSelection();
+        let rect: DOMRectInit | null = null;
+        if ($isRangeSelection(selection) && !selection.isCollapsed()) {
+          const native = contentEditable.ownerDocument.getSelection();
+          if (native !== null) {
+            const {range} = getDOMSelectionRangeAndPoints(
+              native,
+              contentEditable,
+            );
+            const measured =
+              range !== null ? range.getBoundingClientRect() : null;
+            if (
+              measured !== null &&
+              (measured.width !== 0 || measured.height !== 0)
+            ) {
+              const view = contentEditable.ownerDocument.defaultView;
+              const viewportHeight = view !== null ? view.innerHeight : 0;
+              const inViewport =
+                measured.bottom > 0 && measured.top < viewportHeight;
+              if (inViewport) {
+                rect = {
+                  height: measured.height,
+                  width: measured.width,
+                  x: measured.x,
+                  y: measured.y,
+                };
+              }
+            }
+          }
+        }
+        this.dispatchEvent(
+          new CustomEvent('lexical-selection-rect', {
+            bubbles: true,
+            composed: true,
+            detail: {rect},
+          }),
+        );
+      });
+    };
+
     const removeUpdateListener = editor.registerUpdateListener(
       ({editorState, dirtyElements, dirtyLeaves}) => {
         // Reflect the selection's formats in the toolbar, proving selection
@@ -648,43 +699,8 @@ export class LexicalEditorElement extends HTMLElement {
               ),
             );
           }
-          // Surface the live selection rect to the page so a light-DOM
-          // floating popover can anchor to text inside the shadow root.
-          // `getDOMSelectionRangeAndPoints` un-retargets the boundary
-          // points across the shadow boundary and returns a live Range, so
-          // `getBoundingClientRect()` gives viewport coordinates the page
-          // can use directly. Collapsed (or no) range -> rect is null.
-          let rect: DOMRectInit | null = null;
-          if ($isRangeSelection(selection) && !selection.isCollapsed()) {
-            const native = contentEditable.ownerDocument.getSelection();
-            if (native !== null) {
-              const {range} = getDOMSelectionRangeAndPoints(
-                native,
-                contentEditable,
-              );
-              const measured =
-                range !== null ? range.getBoundingClientRect() : null;
-              if (
-                measured !== null &&
-                (measured.width !== 0 || measured.height !== 0)
-              ) {
-                rect = {
-                  height: measured.height,
-                  width: measured.width,
-                  x: measured.x,
-                  y: measured.y,
-                };
-              }
-            }
-          }
-          this.dispatchEvent(
-            new CustomEvent('lexical-selection-rect', {
-              bubbles: true,
-              composed: true,
-              detail: {rect},
-            }),
-          );
         });
+        dispatchSelectionRect();
         // Form value + bubbling input event mirror an HTMLInputElement: only
         // fire on real content changes, not on pure selection updates, so
         // page-level form/input listeners aren't woken up for caret moves.
@@ -700,9 +716,33 @@ export class LexicalEditorElement extends HTMLElement {
       },
     );
 
+    // Scroll-aware popover anchoring. The lexical-selection-rect event above
+    // only fires on editor updates, so once the user scrolls the popover
+    // stays anchored to a stale viewport coordinate. Listen for scroll on the
+    // editor's window + every enclosing shadow root (per the LexicalMenu
+    // pattern from R3) so the page-side popover follows the selection as it
+    // moves through the viewport.
+    const win = contentEditable.ownerDocument.defaultView;
+    const scrollTargets: EventTarget[] = win !== null ? [win] : [];
+    for (const root of getDOMShadowRoots(contentEditable)) {
+      scrollTargets.push(root);
+    }
+    const onScroll = (): void => {
+      dispatchSelectionRect();
+    };
+    for (const target of scrollTargets) {
+      target.addEventListener('scroll', onScroll, {
+        capture: true,
+        passive: true,
+      });
+    }
+
     this.disposeEditor = () => {
       removeUpdateListener();
       removeEditableListener();
+      for (const target of scrollTargets) {
+        target.removeEventListener('scroll', onScroll, true);
+      }
       editor.dispose();
     };
   }

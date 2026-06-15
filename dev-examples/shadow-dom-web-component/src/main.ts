@@ -97,14 +97,35 @@ let activeEditor: LexicalEditorElement | null = null;
 
 document.addEventListener('lexical-selection-rect', event => {
   const detail = (event as CustomEvent<SelectionRectDetail>).detail;
+  // `event.target` is retargeted to the outermost shadow host when the event
+  // crosses multiple shadow boundaries (the nested editor's composed event
+  // lands on the wrapper's host div, not on `<lexical-editor>`). Walk the
+  // composed path to recover the actual `<lexical-editor>` element.
+  const sourceEditor =
+    (event
+      .composedPath()
+      .find(
+        (el): el is LexicalEditorElement =>
+          el instanceof HTMLElement && el.tagName === 'LEXICAL-EDITOR',
+      ) as LexicalEditorElement | undefined) ?? null;
   if (detail.rect === null) {
-    if (popover.matches(':popover-open')) {
-      popover.hidePopover();
+    // Every editor reports its own rect on every scroll, so a non-active
+    // editor's null event (its $getSelection() is null) would close the
+    // popover even while the active editor still has a valid selection.
+    // Only honour null from the active editor (or when no editor is
+    // active yet) — anything else is just background chatter.
+    if (sourceEditor === activeEditor || activeEditor === null) {
+      if (popover.matches(':popover-open')) {
+        popover.hidePopover();
+      }
+      activeEditor = null;
     }
-    activeEditor = null;
     return;
   }
-  activeEditor = event.target as LexicalEditorElement;
+  activeEditor = sourceEditor;
+  if (activeEditor === null) {
+    return;
+  }
   // Anchor below the selection rect. Viewport coordinates from the editor
   // are usable directly because `position: fixed` shares the same frame.
   const left = Math.max(8, detail.rect.x);
@@ -195,22 +216,6 @@ for (const ed of document.querySelectorAll<LexicalEditorElement>(
   // The initial association already fired before this listener was
   // attached, so surface it from `host.form` directly.
   surface(ed.form);
-}
-
-// Right-to-left toggle. `dir` is an inherited HTML attribute, so flipping
-// it on the host changes the writing direction of the contentEditable
-// inside the shadow root without crossing the boundary — no editor-side
-// glue is needed beyond setting the attribute.
-const rtlToggle = document.querySelector<HTMLInputElement>('#summary-rtl');
-if (rtlToggle !== null) {
-  rtlToggle.addEventListener('change', () => {
-    const summary = document.querySelector<LexicalEditorElement>(
-      'lexical-editor[name="summary"]',
-    );
-    if (summary !== null) {
-      summary.setAttribute('dir', rtlToggle.checked ? 'rtl' : 'ltr');
-    }
-  });
 }
 
 // Visible error message tied to the notes editor's required validation.

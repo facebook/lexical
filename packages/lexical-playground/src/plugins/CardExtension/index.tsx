@@ -37,6 +37,7 @@ import {
   configExtension,
   createCommand,
   defineExtension,
+  isModifierMatch,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_TAB_COMMAND,
@@ -70,13 +71,12 @@ function $handleCardArrow(
   isBackward: boolean,
 ): boolean {
   const selection = $getSelection();
-  // Bail on a modified arrow (shift = extend selection, alt = word jump, meta =
-  // line/doc jump) so the OS navigation isn't swallowed by NodeSelection promotion.
+  // Only a plain arrow promotes to a NodeSelection; any modifier (shift = extend
+  // selection, alt/ctrl = word jump, meta = line/doc jump) is OS navigation that
+  // must pass through rather than be swallowed by the promotion.
   if (
     !$isRangeSelection(selection) ||
-    event?.shiftKey ||
-    event?.altKey ||
-    event?.metaKey
+    (event !== null && !isModifierMatch(event, {}))
   ) {
     return false;
   }

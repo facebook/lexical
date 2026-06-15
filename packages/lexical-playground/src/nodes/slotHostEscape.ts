@@ -26,6 +26,7 @@ import {
   $isRootOrShadowRoot,
   COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_LOW,
+  isModifierMatch,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_BACKSPACE_COMMAND,
@@ -149,7 +150,10 @@ function $handleSlotHostArrow<T extends LexicalNode>(
   event: KeyboardEvent | null,
   down: boolean,
 ): boolean {
-  if (event !== null && event.altKey) {
+  // Only a plain ArrowDown/Up escapes; a modified arrow (word/line/doc jump or
+  // selection extend) is left to the browser. (Shift is also caught below by the
+  // collapsed-selection check.)
+  if (event !== null && !isModifierMatch(event, {})) {
     return false;
   }
   const selection = $getSelection();

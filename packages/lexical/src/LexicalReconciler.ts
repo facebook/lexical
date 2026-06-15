@@ -484,15 +484,13 @@ function $setElementDirection(dom: HTMLElement, node: ElementNode): void {
 // reconciles normally.
 // Leaves `subTreeTextContent` unchanged (restored on exit); the caller folds
 // the returned text in slots-first.
-// @experimental named-slots. Builds a hidden slot placeholder container,
-// shared by the mount and reconcile paths so the two never drift. The
-// container is configured but left unattached — the caller inserts it
-// (appended on a fresh mount, slots-first on reconcile). It starts
-// `display: none` (revealed only by an explicit mount / $getSlotTargetElement)
-// and opts back into editing whenever the host DOM is non-editable: a
-// decorator host always is, and an element host may opt out to render chrome
-// around editable islands.
-function $createSlotContainer(name: string): HTMLElement {
+// @experimental named-slots. Build a hidden slot placeholder element (DOM only,
+// no Lexical state), shared by the mount and reconcile paths so the two never
+// drift. The container is left unattached — the caller inserts it (appended on a
+// fresh mount, slots-first on reconcile) — and starts `display: none`, revealed
+// only by an explicit mount / $getSlotTargetElement. Editability is applied
+// separately by $applySlotEditable.
+function createSlotDOM(name: string): HTMLElement {
   const container = document.createElement('div');
   container.setAttribute('data-lexical-slot', name);
   container.style.display = 'none';
@@ -544,7 +542,7 @@ function $mountSlotChildren(
   let totalText = '';
   const decoratorHost = $isDecoratorNode(node);
   for (const [name, slotKey] of slots) {
-    const container = $createSlotContainer(name);
+    const container = createSlotDOM(name);
     $applySlotEditable(node, name, hostDom, decoratorHost, container);
     hostDom.appendChild(container);
     subTreeTextContent = '';
@@ -639,7 +637,7 @@ function $reconcileSlotChildren(
     subTreeTextContent = '';
     const saved = $beginCaptureGuard();
     if (container === null) {
-      container = $createSlotContainer(name);
+      container = createSlotDOM(name);
       // Keep the hidden placeholder slots-first: it must land ahead of the
       // linked-list children (and the terminating <br>) so the leading
       // DOMSlot boundary can skip it; it must not be appended after them.

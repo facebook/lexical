@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {mergeRegister} from '@lexical/utils';
 import {defineExtension} from 'lexical';
 
 /**
@@ -32,12 +33,12 @@ import {defineExtension} from 'lexical';
 export const SlotEditableExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/extension/SlotEditable',
   register: editor => {
-    const apply = (editable: boolean) => {
+    const apply = () => {
       const root = editor.getRootElement();
       if (root === null) {
         return;
       }
-      const value = editable ? 'true' : 'false';
+      const value = editor.isEditable() ? 'true' : 'false';
       root
         .querySelectorAll<HTMLElement>(
           `[data-lexical-slot-editable="${editor.getKey()}"]`,
@@ -46,9 +47,13 @@ export const SlotEditableExtension = /* @__PURE__ */ defineExtension({
           container.contentEditable = value;
         });
     };
-    // registerEditableListener does not fire on registration, so apply the
-    // current state once up front in case tagged containers already exist.
-    apply(editor.isEditable());
-    return editor.registerEditableListener(apply);
+    return mergeRegister(
+      editor.registerEditableListener(apply),
+      // registerEditableListener does not fire on registration and the root may
+      // not be attached yet; registerRootListener fires with the current root
+      // (and on any later root change), so the tagged containers are synced
+      // whenever a root is present.
+      editor.registerRootListener(apply),
+    );
   },
 });

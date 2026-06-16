@@ -94,9 +94,10 @@ const PlaygroundInlineStyleRule = /* @__PURE__ */ defineImportRule({
 });
 
 /**
- * Aggregate of every playground-specific DOM import rule, ordered so the
- * more-specific selectors win dispatch over the generic ones (rule at
- * index 0 has the highest priority).
+ * Mode-independent playground DOM import rules — currently just the inline
+ * extra-styles overlay. The block-host rules (Card, PullQuote, Review) are
+ * registered by their own node extensions, so they ride the same mode gate as
+ * the rest of the rich-text node set rather than living here.
  */
 export const PlaygroundImportRules = [PlaygroundInlineStyleRule];
 
@@ -105,18 +106,19 @@ export const PlaygroundImportRules = [PlaygroundInlineStyleRule];
  * every editor mode:
  *
  *  - {@link CoreImportExtension} (paragraphs, text, line breaks, generic
- *    block/inline handling)
+ *    block/inline handling, plus the registration-gated core rules such as the
+ *    `<hr>` rule)
  *  - {@link LinkExtension} (always in the playground; registers its own
  *    `<a>` import rule)
  *  - {@link ClipboardDOMImportExtension} so pastes flow through the pipeline
  *  - the playground-specific {@link PlaygroundImportRules} overlay
  *
- * The rich-text-only import rules (rich-text, list, table, code,
- * horizontal-rule) come along with the corresponding node extensions in
- * `PlaygroundRichTextExtension` — each node package registers its own
- * rules — so the importer set automatically matches the node set per
- * mode, and plain-text mode never pulls in `RichTextExtension` (which
- * *conflicts* with `PlainTextExtension`).
+ * Every other import rule rides its node extension — the rich-text framework
+ * nodes (rich-text, list, table, code) each register their own rules, and the
+ * playground block hosts (Card, PullQuote, Review) do the same in
+ * `PlaygroundRichTextExtension`. So the importer set automatically matches the
+ * node set per mode, and plain-text mode never pulls in `RichTextExtension`
+ * (which *conflicts* with `PlainTextExtension`).
  */
 export const PlaygroundImportExtension = /* @__PURE__ */ defineExtension({
   dependencies: [

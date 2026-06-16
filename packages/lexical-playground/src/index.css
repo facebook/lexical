@@ -603,6 +603,10 @@ i.sticky {
   background-image: url(images/icons/sticky.svg);
 }
 
+i.star {
+  background-image: url(images/icons/star.svg);
+}
+
 i.mic {
   background-image: url(images/icons/mic.svg);
 }

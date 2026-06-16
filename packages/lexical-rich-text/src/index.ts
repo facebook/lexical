@@ -62,6 +62,7 @@ import {
   $getRoot,
   $getSelection,
   $getSiblingCaret,
+  $getSlotFrame,
   $insertNodes,
   $isDecoratorNode,
   $isElementNode,
@@ -1233,8 +1234,19 @@ export function registerRichText(
     editor.registerCommand(
       SELECT_ALL_COMMAND,
       () => {
-        $selectAll();
-
+        // Scope SELECT_ALL only when the caret is inside a named-slot frame:
+        // slots are shadow-root isolated, so a whole-document select-all
+        // would escape the slot and let a single keystroke replace the host.
+        // Every other context (including TableCell shadow roots) keeps the
+        // legacy whole-document behavior; block/document scoping elsewhere
+        // is provided by the opt-in SelectBlockExtension.
+        const selection = $getSelection();
+        $selectAll(
+          $isRangeSelection(selection) &&
+            $getSlotFrame(selection.anchor.getNode()) !== null
+            ? selection
+            : null,
+        );
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

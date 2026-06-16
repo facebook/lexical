@@ -27,7 +27,7 @@ export const DEFAULT_SETTINGS = {
   isVisibleNonPrinting: false,
   listStrictIndent: false,
   measureTypingPerf: false,
-  selectBlock: false,
+  selectBlock: true,
   selectionAlwaysOnDisplay: false,
   shouldAllowHighlightingWithBrackets: false,
   shouldDisableFocusOnClickChecklist: false,

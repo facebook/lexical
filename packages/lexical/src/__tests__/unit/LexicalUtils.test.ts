@@ -20,17 +20,21 @@ import {
   $setState,
   createEditor,
   createState,
+  getRegisteredSubtypeMap,
   IS_APPLE,
   isSelectionWithinEditor,
+  LineBreakNode,
   ParagraphNode,
   resetRandomKey,
-  SerializedParagraphNode,
   SerializedTextNode,
+  TabNode,
   TextNode,
 } from 'lexical';
-import {describe, expect, test, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 
 import {
+  $setCompositionKey,
+  $updateTextNodeFromDOMContent,
   emptyFunction,
   generateRandomKey,
   getCachedTypeToNodeMap,
@@ -872,16 +876,8 @@ describe('$copyNode', () => {
   });
   class ExtendedParagraphNode extends ParagraphNode {
     __string: string = 'default';
-    static getType() {
-      return 'extended-paragraph';
-    }
-    static clone(node: ExtendedParagraphNode): ExtendedParagraphNode {
-      return new ExtendedParagraphNode(node.getKey());
-    }
-    static importJSON(
-      serializedNode: SerializedParagraphNode,
-    ): ExtendedParagraphNode {
-      throw new Error('Not implemented');
+    $config() {
+      return this.config('extended-paragraph', {extends: ParagraphNode});
     }
     afterCloneFrom(prevNode: this): void {
       super.afterCloneFrom(prevNode);
@@ -964,6 +960,144 @@ describe('$copyNode', () => {
       expect($getState(copiedParagraph, STRING_STATE)).toBe('non-default');
       expect(initialParagraph.__string).toBe('not-aliased');
       expect(copiedParagraph.__string).toBe('non-default');
+    });
+  });
+});
+
+describe('getRegisteredSubtypeMap', () => {
+  const toObject = (map: Map<string, Set<string>>) =>
+    Object.fromEntries(
+      [...map].map(([type, subtypes]) => [type, [...subtypes].sort()]),
+    );
+
+  test('maps each type to itself and its registered subclass types', () => {
+    expect(
+      toObject(
+        getRegisteredSubtypeMap([
+          TextNode,
+          TabNode,
+          ParagraphNode,
+          LineBreakNode,
+        ]),
+      ),
+    ).toEqual({
+      linebreak: ['linebreak'],
+      paragraph: ['paragraph'],
+      tab: ['tab'],
+      text: ['tab', 'text'],
+    });
+  });
+
+  test('expands a $config subclass under its base type', () => {
+    class TextNodeA extends TextNode {
+      $config() {
+        return this.config('text-a', {extends: TextNode});
+      }
+    }
+    expect(toObject(getRegisteredSubtypeMap([TextNode, TextNodeA]))).toEqual({
+      text: ['text', 'text-a'],
+      'text-a': ['text-a'],
+    });
+  });
+
+  test('omits an unregistered base type even when a subclass is registered', () => {
+    class TextNodeA extends TextNode {
+      $config() {
+        return this.config('text-a', {extends: TextNode});
+      }
+    }
+    const map = getRegisteredSubtypeMap([TextNodeA]);
+    expect(map.has('text')).toBe(false);
+    expect([...map.get('text-a')!].sort()).toEqual(['text-a']);
+  });
+});
+
+describe('$updateTextNodeFromDOMContent', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function createEditorWithTextNode(initialText: string) {
+    const editor = createEditor({
+      namespace: 'test',
+      nodes: [ParagraphNode, TextNode],
+      onError(error) {
+        throw error;
+      },
+    });
+
+    let textNode!: TextNode;
+    editor.update(
+      () => {
+        textNode = $createTextNode(initialText).toggleUnmergeable();
+        $getRoot().append($createParagraphNode().append(textNode));
+      },
+      {discrete: true},
+    );
+
+    return {editor, textNode};
+  }
+
+  test('removes delayed composition text node if it stays empty', () => {
+    const {editor, textNode} = createEditorWithTextNode('ツ');
+
+    editor.update(
+      () => {
+        $setCompositionKey(textNode.getKey());
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        $updateTextNodeFromDOMContent(textNode.getLatest(), '', 0, 0, false);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      expect(textNode.getLatest().getTextContent()).toBe('');
+    });
+
+    vi.runOnlyPendingTimers();
+
+    editor.read(() => {
+      expect(() => textNode.getLatest()).toThrow();
+    });
+  });
+
+  test('does not remove delayed composition text node if IME repopulates it', () => {
+    const {editor, textNode} = createEditorWithTextNode('ツ');
+
+    editor.update(
+      () => {
+        $setCompositionKey(textNode.getKey());
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        $updateTextNodeFromDOMContent(textNode.getLatest(), '', 0, 0, false);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        $updateTextNodeFromDOMContent(textNode.getLatest(), 'ツ', 1, 1, false);
+      },
+      {discrete: true},
+    );
+
+    vi.runOnlyPendingTimers();
+
+    editor.read(() => {
+      expect(textNode.getLatest().getTextContent()).toBe('ツ');
     });
   });
 });

@@ -61,7 +61,7 @@ Which is later handled in [`registerList`](https://github.com/facebook/lexical/b
 editor.registerCommand(
   INSERT_UNORDERED_LIST_COMMAND,
   () => {
-    insertList(editor, 'ul');
+    $insertList('ul');
     return true;
   },
   COMMAND_PRIORITY_LOW,

@@ -1405,7 +1405,11 @@ export function setMutatedNode(
   }
 }
 /**
- * @deprecated Use {@link LexicalEditor.registerMutationListener} with `skipInitialization: false` instead.
+ * Returns all nodes of the given type in the active editor state.
+ *
+ * Consider {@link LexicalEditor.registerMutationListener} with
+ * `skipInitialization: false` instead if you need to track these nodes over
+ * time rather than read them once.
  */
 export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): T[] {
   const klassType = klass.getType();

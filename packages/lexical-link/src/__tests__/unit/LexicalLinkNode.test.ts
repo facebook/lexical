@@ -8,6 +8,7 @@
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {
+  $createAutoLinkNode,
   $createLinkNode,
   $isLinkNode,
   $toggleLink,
@@ -1398,6 +1399,166 @@ describe('LinkNode transform (Regression #8083)', () => {
       expect(selection.isCollapsed()).toBe(true);
       expect(selection.anchor.type).toBe('text');
       expect(selection.anchor.offset).toBe(0);
+    });
+  });
+});
+
+describe('LinkNode.extractWithChild (Issue #5046 — preserve link wrap across browsers)', () => {
+  initializeUnitTest(testEnv => {
+    function $setupLinkInParagraph() {
+      const root = $getRoot();
+      const paragraph = $createParagraphNode();
+      const linkNode = $createLinkNode('https://example.com');
+      const textNode = $createTextNode('hello link');
+      linkNode.append(textNode);
+      paragraph.append(linkNode);
+      root.append(paragraph);
+      return {linkNode, paragraph, textNode};
+    }
+
+    test('Chrome-like — anchor/focus both on inner TextNode', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const {linkNode, textNode} = $setupLinkInParagraph();
+          const selection = textNode.select(0, 10);
+          expect(linkNode.extractWithChild(textNode, selection, 'clone')).toBe(
+            true,
+          );
+        },
+        {discrete: true},
+      );
+    });
+
+    test('Firefox-like — anchor/focus both on LinkNode itself (element point)', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const {linkNode, textNode} = $setupLinkInParagraph();
+          // 0,1 (asymmetric offsets) keeps select() in the element-point
+          // branch — 0,0 / undefined,undefined would redirect into the
+          // first/last child because LinkNode.canBeEmpty() is false.
+          const selection = linkNode.select(0, 1);
+          expect(linkNode.extractWithChild(textNode, selection, 'clone')).toBe(
+            true,
+          );
+        },
+        {discrete: true},
+      );
+    });
+
+    test('Safari-like — asymmetric (anchor on LinkNode, focus on inner TextNode)', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const {linkNode, textNode} = $setupLinkInParagraph();
+          const selection = linkNode.select(0, 1);
+          selection.focus.set(textNode.getKey(), 10, 'text');
+          expect(linkNode.extractWithChild(textNode, selection, 'clone')).toBe(
+            true,
+          );
+        },
+        {discrete: true},
+      );
+    });
+
+    test('selection entirely outside the link returns false', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          const linkNode = $createLinkNode('https://example.com');
+          const textNode = $createTextNode('hello link');
+          linkNode.append(textNode);
+          const outsideText = $createTextNode('outside');
+          paragraph.append(linkNode);
+          paragraph.append(outsideText);
+          root.append(paragraph);
+          const selection = outsideText.select(0, 7);
+          expect(linkNode.extractWithChild(textNode, selection, 'clone')).toBe(
+            false,
+          );
+        },
+        {discrete: true},
+      );
+    });
+
+    test('collapsed (zero-length) selection inside the link returns false', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const {linkNode, textNode} = $setupLinkInParagraph();
+          const selection = textNode.select(5, 5);
+          expect(linkNode.extractWithChild(textNode, selection, 'clone')).toBe(
+            false,
+          );
+        },
+        {discrete: true},
+      );
+    });
+
+    test('AutoLinkNode (LinkNode subclass) inherits the Firefox-like fix', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          const autoLink = $createAutoLinkNode('https://example.com');
+          const textNode = $createTextNode('https://example.com');
+          autoLink.append(textNode);
+          paragraph.append(autoLink);
+          root.append(paragraph);
+          const selection = autoLink.select(0, 1);
+          expect(autoLink.extractWithChild(textNode, selection, 'clone')).toBe(
+            true,
+          );
+        },
+        {discrete: true},
+      );
+    });
+
+    test('partial text selection inside link with Firefox-like element anchor still preserves wrap', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const {linkNode, textNode} = $setupLinkInParagraph();
+          // anchor on LinkNode (element), focus partway through inner text
+          const selection = linkNode.select(0, 1);
+          selection.focus.set(textNode.getKey(), 4, 'text');
+          expect(linkNode.extractWithChild(textNode, selection, 'clone')).toBe(
+            true,
+          );
+        },
+        {discrete: true},
+      );
+    });
+
+    test('selecting one of two adjacent links does not pull in the other', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const paragraph = $createParagraphNode();
+          const link1 = $createLinkNode('https://first.example');
+          const text1 = $createTextNode('first');
+          link1.append(text1);
+          const between = $createTextNode(' and ');
+          const link2 = $createLinkNode('https://second.example');
+          const text2 = $createTextNode('second');
+          link2.append(text2);
+          paragraph.append(link1);
+          paragraph.append(between);
+          paragraph.append(link2);
+          root.append(paragraph);
+          // Firefox-like selection that wraps link1 entirely
+          const selection = link1.select(0, 1);
+          // link1 includes its own child, link2 does not
+          expect(link1.extractWithChild(text1, selection, 'clone')).toBe(true);
+          expect(link2.extractWithChild(text2, selection, 'clone')).toBe(false);
+        },
+        {discrete: true},
+      );
     });
   });
 });

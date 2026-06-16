@@ -44,12 +44,14 @@ import {initMutationObserver} from './LexicalMutations';
 import {$normalizeTextNode} from './LexicalNormalization';
 import {$reconcileRoot} from './LexicalReconciler';
 import {
+  $clampRangeSelectionToSlotFrame,
   $internalCreateSelection,
   $isNodeSelection,
   $isRangeSelection,
   $updateDOMSelection,
   applySelectionTransforms,
 } from './LexicalSelection';
+import {$isSlotHost, $setSlot} from './LexicalSlot';
 import {
   $getCompositionKey,
   $updateDOMBlockCursorElement,
@@ -389,6 +391,7 @@ function $applyAllTransforms(
 
 type InternalSerializedNode = {
   children?: InternalSerializedNode[];
+  $slots?: Record<string, InternalSerializedNode>;
   type: string;
   version: number;
 };
@@ -437,6 +440,21 @@ function $parseSerializedNodeImpl<
         registeredNodes,
       );
       node.append(childNode);
+    }
+  }
+
+  // Slots live in a separate Map on every LexicalNode (an ElementNode or a
+  // DecoratorNode host), so re-attach them outside the element branch.
+  const slots = serializedNode.$slots;
+  if (slots) {
+    invariant(
+      $isSlotHost(node),
+      '$parseSerializedNode: node %s has slots but is not a valid slot host; only ElementNodes and DecoratorNodes can host slots.',
+      nodeClass.name,
+    );
+    for (const name in slots) {
+      const slotNode = $parseSerializedNodeImpl(slots[name], registeredNodes);
+      $setSlot(node, name, slotNode);
     }
   }
 
@@ -1170,6 +1188,13 @@ function $beginUpdate(
     const pendingSelection = pendingEditorState._selection;
 
     if ($isRangeSelection(pendingSelection)) {
+      // Slot containment: a RangeSelection must not straddle a slot boundary.
+      // Every committed selection passes here, including ones produced by an
+      // in-place point mutation that bypassed `$setSelection`. Gated on
+      // `_slotsUsed` so editors that never slot anything skip the frame walk.
+      if (editor._slotsUsed) {
+        $clampRangeSelectionToSlotFrame(pendingSelection);
+      }
       const pendingNodeMap = pendingEditorState._nodeMap;
       const anchorKey = pendingSelection.anchor.key;
       const focusKey = pendingSelection.focus.key;

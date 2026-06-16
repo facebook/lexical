@@ -79,6 +79,7 @@ import {LexicalEditor} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
 import {
   $isEphemeral,
+  $isLexicalNode,
   $markEphemeral,
   LexicalNode,
   type LexicalPrivateDOM,
@@ -87,6 +88,13 @@ import {
   type StaticNodeConfigValue,
 } from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
+import {$clampRangeSelectionToSlotFrame} from './LexicalSelection';
+import {
+  $getSlot,
+  $getSlotHostKey,
+  $isSlotChild,
+  $isSlotHost,
+} from './LexicalSlot';
 import {
   errorOnInfiniteTransforms,
   errorOnReadOnly,
@@ -163,6 +171,13 @@ export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
   const activeElement = document.activeElement;
 
   if (!isHTMLElement(activeElement)) {
+    return false;
+  }
+  // @experimental named-slots. A slot container is contentEditable inside an
+  // otherwise non-editable decorator host, but its content is Lexical-managed —
+  // not a foreign editor input — so it must stay under Lexical's DOM-selection
+  // control instead of being treated as captured.
+  if (activeElement.hasAttribute('data-lexical-slot')) {
     return false;
   }
   const nodeName = activeElement.nodeName;
@@ -402,7 +417,16 @@ function internalMarkParentElementsAsDirty(
       break;
     }
     dirtyElements.set(nextParentKey, false);
-    nextParentKey = node.__parent;
+    // @experimental named-slots. A slotted node has no __parent; its
+    // up-pointer is __slotHost. Crossing that boundary here lets a slot
+    // content edit dirty the host so it re-reconciles. Non-slot trees keep
+    // __slotHost === null, so this is the plain __parent walk there.
+    nextParentKey =
+      node.__parent !== null
+        ? node.__parent
+        : $isSlotChild(node)
+          ? node.__slotHost
+          : null;
   }
 }
 
@@ -419,7 +443,13 @@ function internalMarkParentElementsAsDirty(
  * This function is for internal use of the library.
  * Please do not use it as it may change in the future.
  */
-export function removeFromParent(node: LexicalNode): void {
+export function $removeFromParent(node: LexicalNode): void {
+  invariant(
+    $getSlotHostKey(node) === null,
+    '$removeFromParent: node %s is slotted into host %s; a slotted node and a child are mutually exclusive. Remove it from its slot first.',
+    node.__key,
+    String($getSlotHostKey(node)),
+  );
   const oldParent = node.getParent();
   if (oldParent !== null) {
     const writableNode = node.getWritable();
@@ -462,6 +492,8 @@ export function removeFromParent(node: LexicalNode): void {
     writableParent.__size--;
   }
 }
+/** @deprecated renamed to {@link $removeFromParent} by @lexical/eslint-plugin rules-of-lexical */
+export const removeFromParent = $removeFromParent;
 
 // Never use this function directly! It will break
 // the cloning heuristic. Instead use node.getWritable().
@@ -474,7 +506,16 @@ export function internalMarkNodeAsDirty(node: LexicalNode): void {
     node.__type,
   );
   const latest = node.getLatest();
-  const parent = latest.__parent;
+  // @experimental named-slots. A slotted node's up-pointer is __slotHost,
+  // not __parent; start the dirty walk from whichever is set so a slot
+  // content edit propagates into the host. Non-slot trees keep
+  // __slotHost === null, so this is the plain __parent start there.
+  const parent =
+    latest.__parent !== null
+      ? latest.__parent
+      : $isSlotChild(latest)
+        ? latest.__slotHost
+        : null;
   const editorState = getActiveEditorState();
   const editor = getActiveEditor();
   const nodeMap = editorState._nodeMap;
@@ -688,6 +729,14 @@ export function $setSelection(selection: null | BaseSelection): void {
     }
     selection.dirty = true;
     selection.setCachedNodes(null);
+    // @experimental named-slots. A RangeSelection committed through the API
+    // must not straddle a slot boundary (slots are shadow-root-isolated), the
+    // programmatic counterpart of the DOM-read clamp in selection resolution.
+    // Gated on `_slotsUsed` so editors that never slot anything skip the walk,
+    // mirroring the commit-time clamp.
+    if ($isRangeSelection(selection) && getActiveEditor()._slotsUsed) {
+      $clampRangeSelectionToSlotFrame(selection);
+    }
   }
   editorState._selection = selection;
 }
@@ -1250,8 +1299,41 @@ export function $selectAll(selection?: RangeSelection | null): RangeSelection {
     const anchor = selection.anchor;
     const focus = selection.focus;
     const anchorNode = anchor.getNode();
+    // `RootNode.getTopLevelElementOrThrow` always throws by design, so when
+    // the caret is at the root's element-level (typically after deleting
+    // every top-level child) fall through to the regular "select all root
+    // children" path before the throw fires.
+    if ($isRootNode(anchorNode)) {
+      anchor.set(anchorNode.getKey(), 0, 'element');
+      focus.set(anchorNode.getKey(), anchorNode.getChildrenSize(), 'element');
+      $normalizeSelection(selection);
+      return selection;
+    }
     const topParent = anchorNode.getTopLevelElementOrThrow();
-    const rootNode = topParent.getParentOrThrow();
+    // A slot value's getTopLevelElement stops at itself (slot boundary) and
+    // its __parent is null (its up-link is __slotHost), so getParentOrThrow
+    // would throw. Scope SELECT_ALL to the slot value's contents instead —
+    // anchor at its first child, focus at its last — which matches the
+    // shadow-root semantics the slot boundary advertises. The
+    // `$isElementNode` narrow guards `getChildrenSize` (a non-inline
+    // DecoratorNode is also a valid slot-value shape but has no children
+    // channel).
+    const parent = topParent.getParent();
+    if (parent === null) {
+      // ElementNode-shaped slot value: scope selection to its contents.
+      // A non-inline DecoratorNode is also a valid slot value but carries no
+      // children channel; the explicit narrow surfaces a future protocol
+      // drift instead of throwing at `getChildrenSize`. The Decorator
+      // branch is currently unreachable from any RangeSelection anchor
+      // because a non-inline decorator slot value has no editable text.
+      if ($isElementNode(topParent)) {
+        anchor.set(topParent.getKey(), 0, 'element');
+        focus.set(topParent.getKey(), topParent.getChildrenSize(), 'element');
+        $normalizeSelection(selection);
+      }
+      return selection;
+    }
+    const rootNode = parent;
     anchor.set(rootNode.getKey(), 0, 'element');
     focus.set(rootNode.getKey(), rootNode.getChildrenSize(), 'element');
     $normalizeSelection(selection);
@@ -1617,14 +1699,21 @@ export function $isInlineElementOrDecoratorNode<T>(node: LexicalNode): node is (
 export function $getNearestRootOrShadowRoot(
   node: LexicalNode,
 ): RootNode | ElementNode {
-  let parent = node.getParentOrThrow();
-  while (parent !== null) {
+  let current = node.getLatest();
+  while (current !== null) {
+    // The slot link is a virtual shadow root: a slotted node is the root of
+    // its own isolated scope (its parent is null), so it is the nearest
+    // scope root for everything inside it — including itself.
+    if ($getSlotHostKey(current) !== null && $isElementNode(current)) {
+      return current;
+    }
+    const parent = current.getParentOrThrow();
     if ($isRootOrShadowRoot(parent)) {
       return parent;
     }
-    parent = parent.getParentOrThrow();
+    current = parent;
   }
-  return parent;
+  return current;
 }
 
 const ShadowRootNodeBrand: unique symbol = Symbol.for(
@@ -2105,6 +2194,95 @@ export function $getDOMSlot<N extends LexicalNode>(
 }
 
 /**
+ * @internal
+ *
+ * Returns the scaffolding container element that `host`'s named slot renders
+ * into, or null if the slot is empty or not yet rendered. The container is the
+ * parent of the slotted node's DOM, resolved by key so it is found wherever it
+ * sits — the reconciler parks it as a hidden placeholder in the host DOM, and
+ * an explicit mount ({@link mountSlotContainer}) may relocate it; this lookup
+ * still resolves it after that relocation. Editor-time analog of the
+ * reconciler's internal `$slotContainerForKey`, which resolves the same
+ * container from the reconcile-time DOM map instead of
+ * `editor.getElementByKey`.
+ */
+export function $getSlotContainer(
+  host: LexicalNode,
+  name: string,
+  editor: LexicalEditor = $getEditor(),
+): HTMLElement | null {
+  const slot = $getSlot(host, name);
+  if (slot === null) {
+    return null;
+  }
+  const slotDom = editor.getElementByKey(slot.getKey());
+  return slotDom !== null ? slotDom.parentElement : null;
+}
+
+/**
+ * @experimental
+ *
+ * Attach a host's named-slot container to `target` and make it visible.
+ * The reconciler renders every slot subtree synchronously into a hidden
+ * (`display: 'none'`) placeholder container parked slots-first in the host
+ * DOM; nothing is visible until the host explicitly attaches the container
+ * somewhere — mirroring how `getDOMSlot` gives an element control over where
+ * its linked-list children render. This helper moves the container into
+ * `target` (a no-op when it is already there, so mounting in place just
+ * reveals it) and clears the inline `display` so the container renders as a
+ * normal block that stylesheets may restyle. It deliberately does NOT use
+ * `display: 'contents'`: Chromium cannot reliably edit inside a boxless
+ * contenteditable subtree (caret hit-testing resolves clicks to a
+ * neighboring box and native text insertion is dropped).
+ *
+ * Idempotent and framework-independent: lexical-react's `useLexicalSlotRef`
+ * wraps it, and a node class or extension can call it directly (e.g. from a
+ * mutation listener) to control slot placement without React.
+ *
+ * @returns the container, or null when the slot (or its DOM) does not exist
+ * yet — e.g. before the host's first reconciliation.
+ */
+export function mountSlotContainer(
+  editor: LexicalEditor,
+  nodeKey: NodeKey,
+  slotName: string,
+  target: HTMLElement,
+): HTMLElement | null {
+  const container = editor.read('latest', () => {
+    const host = $getNodeByKey(nodeKey);
+    return host !== null ? $getSlotContainer(host, slotName, editor) : null;
+  });
+  if (container !== null) {
+    if (container.parentElement !== target) {
+      target.appendChild(container);
+    }
+    container.style.display = '';
+  }
+  return container;
+}
+
+/**
+ * @experimental
+ *
+ * Reverse of {@link mountSlotContainer}: hide `container` again and park it
+ * back in the host's DOM as the leading hidden placeholder, where the
+ * reconciler manages it. Call when the mount target goes away while the host
+ * remains (e.g. chrome unmount) so the slot subtree stays in the document
+ * instead of leaving with the detached target.
+ */
+export function unmountSlotContainer(
+  editor: LexicalEditor,
+  nodeKey: NodeKey,
+  container: HTMLElement,
+): void {
+  container.style.display = 'none';
+  const hostDom = editor.getElementByKey(nodeKey);
+  if (hostDom !== null && container.parentElement !== hostDom) {
+    hostDom.insertBefore(container, hostDom.firstChild);
+  }
+}
+
+/**
  * @experimental
  *
  * Type guard narrowing a {@link DOMSlot} to an {@link ElementDOMSlot}, which
@@ -2214,6 +2392,30 @@ export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
       constructor.name,
       constructor.getType(),
     );
+    if ($isSlotChild(mutableNode) && $isSlotChild(latestNode)) {
+      invariant(
+        mutableNode.__slotHost === latestNode.__slotHost,
+        "$cloneWithProperties: %s.clone(node) (with type '%s') overrode afterCloneFrom but did not preserve __slotHost",
+        constructor.name,
+        constructor.getType(),
+      );
+    }
+    if ($isSlotHost(mutableNode) && $isSlotHost(latestNode)) {
+      const mutSlots = mutableNode.__slots;
+      const latSlots = latestNode.__slots;
+      const slotsMatch =
+        mutSlots === latSlots ||
+        (mutSlots !== null &&
+          latSlots !== null &&
+          mutSlots.size === latSlots.size &&
+          Array.from(mutSlots).every(([k, v]) => latSlots.get(k) === v));
+      invariant(
+        slotsMatch,
+        "$cloneWithProperties: %s.clone(node) (with type '%s') overrode afterCloneFrom but did not preserve __slots",
+        constructor.name,
+        constructor.getType(),
+      );
+    }
   }
   return mutableNode;
 }
@@ -2347,6 +2549,24 @@ export function isDOMUnmanaged(elementDom: Node & LexicalPrivateDOM): boolean {
 }
 
 /**
+ * Mark a DOM element as a named-slot editable island: set its `contentEditable`
+ * to follow the editor's editable state. A slot rendered inside a non-editable
+ * host (a decorator, or a `contentEditable=false` element shell) does not track
+ * the editor on its own, so its container carries an explicit `contentEditable`;
+ * {@link $fullReconcile} re-applies this when {@link LexicalEditor.setEditable}
+ * toggles. Call it for any other editable island an app attaches itself (e.g. a
+ * `getDOMSlot` children element rendered inside a `contentEditable=false` shell).
+ *
+ * @experimental
+ */
+export function $markSlotEditable(
+  element: HTMLElement,
+  editor: LexicalEditor = $getEditor(),
+): void {
+  element.contentEditable = editor.isEditable() ? 'true' : 'false';
+}
+
+/**
  * True if the DOM node sits inside a subtree marked with
  * `{captureSelection: true}` via {@link setDOMUnmanaged}. Walks ancestors
  * so any descendant of a marked subtree (e.g. an `<input>` inside a marked
@@ -2371,6 +2591,15 @@ export function isDOMCapturingSelection(
   while (dom != null) {
     if (dom.__lexicalCapturedSelection === true) {
       return true;
+    }
+    // @experimental named-slots. A decorator host's slot container is a
+    // key-less scaffolding wrapper made contentEditable so its Lexical-managed
+    // content stays editable. Walking up from inside a slot would otherwise
+    // reach the decorator host's captured-selection flag and misread the slot
+    // as foreign-captured DOM, suppressing Lexical's input / selection
+    // handling. The container is a capturing boundary: stop here.
+    if (isHTMLElement(dom) && dom.hasAttribute('data-lexical-slot')) {
+      return false;
     }
     if (getNodeKeyFromDOMNode(dom, editor) !== undefined) {
       return false;
@@ -2519,6 +2748,46 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
     }
   }
   return {ownNodeConfig, ownNodeType};
+}
+
+/**
+ * Build a map from each registered node type to the set of registered node
+ * types that are it or extend it (including the type itself). For every node
+ * class in `nodes`, its prototype chain is walked and the class's own type is
+ * added to the bucket of each registered ancestor type it inherits from.
+ *
+ * The result lets callers expand a base node type to all of its registered
+ * subclass types up front, so a subclass instance can be matched by type
+ * without a runtime `instanceof`.
+ *
+ * @experimental
+ */
+export function getRegisteredSubtypeMap(
+  nodes: Iterable<Klass<LexicalNode>>,
+): Map<string, Set<string>> {
+  const subtypes = new Map<string, Set<string>>();
+  const klassByType = new Map<string, Klass<LexicalNode>>();
+  for (const klass of nodes) {
+    const {ownNodeType} = getStaticNodeConfig(klass);
+    if (ownNodeType) {
+      klassByType.set(ownNodeType, klass);
+      subtypes.set(ownNodeType, new Set());
+    }
+  }
+  for (const [type, klass] of klassByType) {
+    for (
+      let current: Klass<LexicalNode> = klass;
+      $isLexicalNode(current.prototype);
+      current = Object.getPrototypeOf(current)
+    ) {
+      const {ownNodeType} = getStaticNodeConfig(current);
+      const bucket = ownNodeType && subtypes.get(ownNodeType);
+      if (bucket) {
+        bucket.add(type);
+      }
+    }
+  }
+  return subtypes;
 }
 
 /**

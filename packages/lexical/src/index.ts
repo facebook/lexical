@@ -207,6 +207,8 @@ export type {
   NodeKey,
   NodeMap,
   SerializedLexicalNode,
+  SlotChildNode,
+  SlotHostNode,
   StaticNodeConfig,
   StaticNodeConfigAccessor,
   StaticNodeConfigRecord,
@@ -222,7 +224,10 @@ export {
   type AnyStateConfig,
   createSharedNodeState,
   createState,
+  NODE_STATE_DIRECT,
+  NODE_STATE_LATEST,
   type NodeStateJSON,
+  type NodeStateVersion,
   type StateConfig,
   type StateConfigKey,
   type StateConfigValue,
@@ -258,6 +263,19 @@ export {
   type RawTextVisitor,
   tokenizeRawText,
 } from './LexicalSelection';
+export type {SlotName} from './LexicalSlot';
+export {
+  $getSlot,
+  $getSlotFrame,
+  $getSlotHost,
+  $getSlotNames,
+  $getSlotNameWithinHost,
+  $isSlotChild,
+  $isSlotHost,
+  $removeSlot,
+  $setSlot,
+  getDeclaredSlots,
+} from './LexicalSlot';
 export {
   $assumeActiveEditor,
   $fullReconcile,
@@ -292,8 +310,10 @@ export {
   $isRootOrShadowRoot,
   $isTokenOrSegmented,
   $isTokenOrTab,
+  $markSlotEditable,
   $nodesOfType,
   $onUpdate,
+  $removeFromParent,
   $selectAll,
   $setCompositionKey,
   $setDirectionFromDOM,
@@ -308,6 +328,7 @@ export {
   getNearestEditorFromDOMNode,
   getRegisteredNode,
   getRegisteredNodeOrThrow,
+  getRegisteredSubtypeMap,
   getStaticNodeConfig,
   getTextDirection,
   INTERNAL_$isBlock,
@@ -328,12 +349,14 @@ export {
   isModifierMatch,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
+  mountSlotContainer,
   removeFromParent,
   resetRandomKey,
   setDOMUnmanaged,
   type SetDOMUnmanagedOptions,
   setNodeIndentFromDOM,
   toggleTextFormatType,
+  unmountSlotContainer,
 } from './LexicalUtils';
 export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';

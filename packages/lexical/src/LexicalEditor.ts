@@ -41,8 +41,10 @@ import {GenMap} from './LexicalGenMap';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
+import {$isSlotHost} from './LexicalSlot';
 import {
   $commitPendingUpdates,
+  $fullReconcile,
   internalGetActiveEditor,
   parseEditorState,
   triggerListeners,
@@ -331,6 +333,29 @@ export interface EditorDOMRenderConfig {
     dom: HTMLElement,
     editor: LexicalEditor,
   ) => void;
+  /**
+   * @internal @experimental named-slots
+   *
+   * Where a named slot's container should attach, for hosts rendered
+   * entirely in-lexical (no chrome framework). The reconciler consults
+   * this whenever it creates or reconciles the slot's container,
+   * synchronously within the same commit: a non-null return attaches the
+   * container to that element (a no-op when it is already there, so
+   * returning `hostDom` reveals the slot in its default slots-first
+   * position) and reveals it. Returning null (the default) leaves the
+   * container as a hidden placeholder for explicit imperative mounting
+   * (`mountSlotContainer` / lexical-react's `useLexicalSlotRef`). The
+   * named-slot analog of `$getDOMSlot`'s control over where linked-list
+   * children render; the returned element should live within the host's
+   * own DOM so it is torn down with the host. Override per node type via
+   * `DOMRenderMatch.$getSlotTargetElement` (lexical-html).
+   */
+  $getSlotTargetElement: <T extends LexicalNode>(
+    node: T,
+    slotName: string,
+    hostDom: HTMLElement,
+    editor: LexicalEditor,
+  ) => HTMLElement | null;
   /** @internal @experimental */
   $updateDOM: <T extends LexicalNode>(
     nextNode: T,
@@ -808,6 +833,7 @@ export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig = {
     dom: HTMLElement,
     _editor: LexicalEditor,
   ): DOMSlotForNode<N> => node.getDOMSlot(dom) as DOMSlotForNode<N>,
+  $getSlotTargetElement: (_node, _slotName, _hostDom, _editor) => null,
   $shouldExclude: (node, _selection, _editor) =>
     $isElementNode(node) && node.excludeFromCopy('html'),
   $shouldInclude: (node, selection, _editor) =>
@@ -1046,6 +1072,17 @@ export class LexicalEditor {
   _editable: boolean;
   /** @internal */
   _blockCursorElement: null | HTMLDivElement;
+  /**
+   * @internal @experimental
+   *
+   * Latches to `true` the first time {@link $setSlot} runs in this
+   * editor. Gates the commit-time slot-containment clamp so editors that never
+   * use slots skip the per-update frame walk entirely. The latch persists for
+   * the lifetime of the editor instance — `resetEditor` and `setEditorState`
+   * do not clear it, so an editor that once used slots keeps paying the clamp
+   * cost even after switching to a slot-free state.
+   */
+  _slotsUsed: boolean;
   /** @internal */
   _createEditorArgs?: undefined | CreateEditorArgs;
 
@@ -1114,6 +1151,7 @@ export class LexicalEditor {
     this._headless = parentEditor !== null && parentEditor._headless;
     this._window = null;
     this._blockCursorElement = null;
+    this._slotsUsed = false;
   }
 
   /**
@@ -1615,6 +1653,24 @@ export class LexicalEditor {
     this._dirtyElements.set('root', false);
     this._compositionKey = null;
 
+    // `_slotsUsed` is normally latched by `$setSlot`, but `setEditorState`
+    // swaps in a parsed state without walking it. If the incoming state
+    // already contains slot nodes (e.g. SSR + hydration, cross-editor state
+    // transfer), latch on so the selection clamps still kick in on this
+    // editor.
+    if (!this._slotsUsed) {
+      for (const node of writableEditorState._nodeMap.values()) {
+        if (
+          $isSlotHost(node) &&
+          node.__slots !== null &&
+          node.__slots.size > 0
+        ) {
+          this._slotsUsed = true;
+          break;
+        }
+      }
+    }
+
     if (tag != null) {
       this._updateTags.add(tag);
     }
@@ -1771,6 +1827,17 @@ export class LexicalEditor {
     if (this._editable !== editable) {
       this._editable = editable;
       triggerListeners('editable', this, true, editable);
+      // A named-slot island rendered inside a non-editable host carries an
+      // explicit `contentEditable` resolved from this editable state, so it
+      // does not follow the root's editability on its own. Re-render to push
+      // the toggle into those islands. A normal (non-discrete) update is safe
+      // whether `setEditable` is called standalone (it commits on a microtask)
+      // or from inside an update (it queues into that update's commit). Gated
+      // on `_slotsUsed` so an editor that never slots anything keeps the
+      // original no-reconcile behavior.
+      if (this._slotsUsed) {
+        this.update(() => $fullReconcile());
+      }
     }
   }
   /**

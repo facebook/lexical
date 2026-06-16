@@ -23,7 +23,6 @@ import {
   $mergeCells,
   INSERT_TABLE_COMMAND,
   TableExtension,
-  type TableNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,
@@ -38,6 +37,7 @@ import {
   NodeKey,
   SELECT_ALL_COMMAND,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {
   afterEach,
   assert,
@@ -83,7 +83,7 @@ describe('TableExtension', () => {
         'table',
         'paragraph',
       ]);
-      const table = children[1] as TableNode;
+      const table = $assertNodeType(children[1], $isTableNode);
       expect($isTableNode(table)).toBe(true);
       const rows = table.getChildren();
       expect(rows.length).toBe(2);
@@ -96,6 +96,43 @@ describe('TableExtension', () => {
         }
       });
     });
+  });
+
+  it('repaints existing tables when hasHorizontalScroll toggles', async () => {
+    const div = document.createElement('div');
+    editor.setRootElement(div);
+    editor.update(
+      () => {
+        $getRoot().selectEnd();
+        editor.dispatchCommand(INSERT_TABLE_COMMAND, {columns: '2', rows: '2'});
+      },
+      {discrete: true},
+    );
+
+    const {hasHorizontalScroll} = getExtensionDependencyFromEditor(
+      editor,
+      TableExtension,
+    ).output;
+
+    // Default config enables horizontal scroll: the table is wrapped in the
+    // scrollable <div>.
+    expect(div.querySelector('.table-scrollable-wrapper > table')).not.toBe(
+      null,
+    );
+
+    // Toggling the signal re-renders existing tables via a (deferred) full
+    // reconcile, removing the wrapper.
+    hasHorizontalScroll.value = false;
+    await Promise.resolve();
+    expect(div.querySelector('.table-scrollable-wrapper')).toBe(null);
+    expect(div.querySelector('table')).not.toBe(null);
+
+    // And restored when re-enabled.
+    hasHorizontalScroll.value = true;
+    await Promise.resolve();
+    expect(div.querySelector('.table-scrollable-wrapper > table')).not.toBe(
+      null,
+    );
   });
 
   it('Prevents nested tables by default', async () => {
@@ -372,7 +409,7 @@ describe('TableExtension', () => {
             columns: '2',
             rows: '2',
           });
-          const table = root.getFirstChildOrThrow<TableNode>();
+          const table = $assertNodeType(root.getFirstChild(), $isTableNode);
           table.setColWidths([]);
         },
         {discrete: true},
@@ -380,7 +417,7 @@ describe('TableExtension', () => {
 
       editor.getEditorState().read(() => {
         const root = $getRoot();
-        const table = root.getFirstChildOrThrow<TableNode>();
+        const table = $assertNodeType(root.getFirstChild(), $isTableNode);
         expect(table.getColWidths()).toBe(undefined);
       });
     });
@@ -394,7 +431,7 @@ describe('TableExtension', () => {
             columns: '3',
             rows: '2',
           });
-          const table = root.getFirstChildOrThrow<TableNode>();
+          const table = $assertNodeType(root.getFirstChild(), $isTableNode);
           table.setColWidths([10, 20]);
         },
         {discrete: true},
@@ -402,7 +439,7 @@ describe('TableExtension', () => {
 
       editor.getEditorState().read(() => {
         const root = $getRoot();
-        const table = root.getFirstChildOrThrow<TableNode>();
+        const table = $assertNodeType(root.getFirstChild(), $isTableNode);
         expect(table.getColWidths()).toEqual([10, 20, 20]);
       });
     });
@@ -416,7 +453,7 @@ describe('TableExtension', () => {
             columns: '2',
             rows: '2',
           });
-          const table = root.getFirstChildOrThrow<TableNode>();
+          const table = $assertNodeType(root.getFirstChild(), $isTableNode);
           table.setColWidths([10, 20, 30]);
         },
         {discrete: true},
@@ -424,7 +461,7 @@ describe('TableExtension', () => {
 
       editor.getEditorState().read(() => {
         const root = $getRoot();
-        const table = root.getFirstChildOrThrow<TableNode>();
+        const table = $assertNodeType(root.getFirstChild(), $isTableNode);
         expect(table.getColWidths()).toEqual([10, 20]);
       });
     });

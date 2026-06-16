@@ -11,16 +11,8 @@ import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
-import {
-  CAN_USE_BEFORE_INPUT,
-  IS_ANDROID_CHROME,
-  IS_APPLE_WEBKIT,
-  IS_FIREFOX,
-  IS_IOS,
-  IS_SAFARI,
-} from 'shared/environment';
-import invariant from 'shared/invariant';
-import warnOnlyOnce from 'shared/warnOnlyOnce';
+import invariant from '@lexical/internal/invariant';
+import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
 
 import {
   $getPreviousSelection,
@@ -76,6 +68,14 @@ import {
   UNDO_COMMAND,
 } from '.';
 import {
+  CAN_USE_BEFORE_INPUT,
+  IS_ANDROID_CHROME,
+  IS_APPLE_WEBKIT,
+  IS_FIREFOX,
+  IS_IOS,
+  IS_SAFARI,
+} from './environment';
+import {
   BEFORE_INPUT_COMMAND,
   COMPOSITION_END_COMMAND,
   COMPOSITION_START_COMMAND,
@@ -98,8 +98,8 @@ import {
   $findMatchingParent,
   $flushMutations,
   $getAdjacentNode,
+  $getDOMTextNode,
   $getNodeByKey,
-  $isSelectionCapturedInDecorator,
   $isTokenOrSegmented,
   $isTokenOrTab,
   $setSelection,
@@ -111,7 +111,6 @@ import {
   getAnchorTextFromDOM,
   getDOMSelection,
   getDOMSelectionFromTarget,
-  getDOMTextNode,
   getEditorPropertyFromDOMNode,
   getEditorsToPropagate,
   getNearestEditorFromDOMNode,
@@ -127,6 +126,7 @@ import {
   isDeleteLineForward,
   isDeleteWordBackward,
   isDeleteWordForward,
+  isDOMCapturingSelection,
   isDOMNode,
   isDOMTextNode,
   isEscape,
@@ -153,13 +153,11 @@ import {
   isUndo,
 } from './LexicalUtils';
 
-type RootElementRemoveHandles = Array<() => void>;
-type RootElementEvents = Array<
-  [
-    string,
-    Record<string, unknown> | ((event: Event, editor: LexicalEditor) => void),
-  ]
->;
+type RootElementRemoveHandles = (() => void)[];
+type RootElementEvents = [
+  string,
+  Record<string, unknown> | ((event: Event, editor: LexicalEditor) => void),
+][];
 const PASS_THROUGH_COMMAND = Object.freeze({});
 const ANDROID_COMPOSITION_LATENCY = 30;
 const rootElementEvents: RootElementEvents = [
@@ -264,7 +262,8 @@ function $shouldPreventDefaultAndInsertText(
     ((isBeforeInput || !CAN_USE_BEFORE_INPUT) &&
       backingAnchorElement !== null &&
       !anchorNode.isComposing() &&
-      domAnchorNode !== getDOMTextNode(backingAnchorElement)) ||
+      domAnchorNode !==
+        $getDOMTextNode(anchorNode, backingAnchorElement, editor)) ||
     // If TargetRange is not the same as the DOM selection; browser trying to edit random parts
     // of the editor.
     (domSelection !== null &&
@@ -559,7 +558,7 @@ function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
     updateEditorSync(editor, () => {
       // Drag & drop should not recompute selection until mouse up; otherwise the initially
       // selected content is lost.
-      if (!$isSelectionCapturedInDecorator(target)) {
+      if (!isDOMCapturingSelection(target, editor)) {
         isSelectionChangeFromMouseDown = true;
       }
     });
@@ -1081,14 +1080,13 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
 }
 
 function $handleInput(event: InputEvent): boolean {
+  const editor = getActiveEditor();
   if (
     isHTMLElement(event.target) &&
-    $isSelectionCapturedInDecorator(event.target)
+    isDOMCapturingSelection(event.target, editor)
   ) {
     return true;
   }
-
-  const editor = getActiveEditor();
   const selection = $getSelection();
   const data = event.data;
   const targetRange = getTargetRange(event);
@@ -1164,9 +1162,14 @@ function $handleInput(event: InputEvent): boolean {
     const characterData = data !== null ? data : undefined;
     $updateSelectedTextFromDOM(false, editor, characterData);
 
-    // onInput always fires after onCompositionEnd for FF.
+    // onInput always fires after onCompositionEnd for FF, so the composition
+    // end runs here. Mirror the COMPOSITION_END_TAG that $handleCompositionEnd
+    // adds on Chrome/Webkit so listeners gated on this tag (markdown shortcut
+    // trigger, history merge, autocomplete post-commit) see the same signal on
+    // Firefox.
     if (isFirefoxEndingComposition) {
       $onCompositionEndImpl(editor, data || undefined);
+      $addUpdateTag(COMPOSITION_END_TAG);
       isFirefoxEndingComposition = false;
     }
   }
@@ -1240,7 +1243,10 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
     if (data === '') {
       const node = $getNodeByKey(compositionKey);
       const domElement = editor.getElementByKey(compositionKey);
-      const textNode = getDOMTextNode(domElement);
+      const textNode =
+        domElement !== null && $isTextNode(node)
+          ? $getDOMTextNode(node, domElement, editor)
+          : null;
 
       if (
         textNode !== null &&

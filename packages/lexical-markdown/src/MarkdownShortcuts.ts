@@ -13,9 +13,10 @@ import type {
   TextMatchTransformer,
   Transformer,
 } from './MarkdownTransformers';
-import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
+import type {ElementNode, LexicalEditor, LexicalNode, TextNode} from 'lexical';
 
 import {$isCodeNode} from '@lexical/code-core';
+import invariant from '@lexical/internal/invariant';
 import {
   $addUpdateTag,
   $createRangeSelection,
@@ -33,7 +34,6 @@ import {
   KEY_ENTER_COMMAND,
   mergeRegister,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {canContainTransformableMarkdown} from './importTextTransformers';
 import {TRANSFORMERS} from './MarkdownTransformers';
@@ -43,7 +43,7 @@ function runElementTransformers(
   parentNode: ElementNode,
   anchorNode: TextNode,
   anchorOffset: number,
-  elementTransformers: ReadonlyArray<ElementTransformer>,
+  elementTransformers: readonly ElementTransformer[],
   triggerOnEnter?: boolean,
 ): boolean {
   const grandParentNode = parentNode.getParent();
@@ -97,7 +97,7 @@ function runMultilineElementTransformers(
   parentNode: ElementNode,
   anchorNode: TextNode,
   anchorOffset: number,
-  elementTransformers: ReadonlyArray<MultilineElementTransformer>,
+  elementTransformers: readonly MultilineElementTransformer[],
   triggerOnEnter?: boolean,
 ): boolean {
   const grandParentNode = parentNode.getParent();
@@ -162,7 +162,7 @@ function runMultilineElementTransformers(
 function runTextMatchTransformers(
   anchorNode: TextNode,
   anchorOffset: number,
-  transformersByTrigger: Readonly<Record<string, Array<TextMatchTransformer>>>,
+  transformersByTrigger: Readonly<Record<string, TextMatchTransformer[]>>,
 ): boolean {
   let textContent = anchorNode.getTextContent();
   const lastChar = textContent[anchorOffset - 1];
@@ -210,7 +210,7 @@ function $runTextFormatTransformers(
   anchorNode: TextNode,
   anchorOffset: number,
   textFormatTransformers: Readonly<
-    Record<string, ReadonlyArray<TextFormatTransformer>>
+    Record<string, readonly TextFormatTransformer[]>
   >,
 ): boolean {
   const textContent = anchorNode.getTextContent();
@@ -263,12 +263,9 @@ function $runTextFormatTransformers(
 
     // Go through text node siblings and search for opening tag
     // if haven't found it within the same text node as closing tag
-    let sibling: TextNode | null = openNode;
+    let sibling: LexicalNode | null = openNode;
 
-    while (
-      openTagStartIndex < 0 &&
-      (sibling = sibling.getPreviousSibling<TextNode>())
-    ) {
+    while (openTagStartIndex < 0 && (sibling = sibling.getPreviousSibling())) {
       if ($isLineBreakNode(sibling)) {
         break;
       }
@@ -438,7 +435,7 @@ function isEqualSubString(
 
 export function registerMarkdownShortcuts(
   editor: LexicalEditor,
-  transformers: Array<Transformer> = TRANSFORMERS,
+  transformers: Transformer[] = TRANSFORMERS,
 ): () => void {
   const byType = transformersByType(transformers);
   const elementTransformersForEnter = byType.element.filter(

@@ -17,6 +17,7 @@ import {
 import {waitForReact} from '@lexical/react/src/__tests__/utils';
 import {$createTextNode, $getRoot, ParagraphNode, TextNode} from 'lexical';
 import {
+  $assertNodeType,
   expectHtmlToBeEqual,
   html,
   initializeUnitTest,
@@ -244,9 +245,12 @@ describe('LexicalListNode tests', () => {
 
         expect(listNode.append(...nodesToAppend)).toBe(listNode);
         expect($isListItemNode(listNode.getFirstChild())).toBe(true);
-        expect(listNode.getFirstChild<ListItemNode>()!.getFirstChild()).toBe(
-          nestedListNode,
-        );
+        expect(
+          $assertNodeType(
+            listNode.getFirstChild(),
+            $isListItemNode,
+          ).getFirstChild(),
+        ).toBe(nestedListNode);
       });
     });
 
@@ -349,18 +353,21 @@ describe('LexicalListNode tests', () => {
       });
 
       expect(testEnv.innerHTML).toEqual(
-        '<ul dir="auto"><li role="checkbox" tabindex="-1" aria-checked="false" value="1"><br></li></ul>',
+        '<ul dir="auto"><li role="checkbox" tabindex="-1" aria-checked="false" value="1"><br data-lexical-managed-linebreak="true"></li></ul>',
       );
 
       await waitForReact(() => {
         editor.update(() => {
-          const listNode = $getRoot().getFirstChildOrThrow<ListNode>();
+          const listNode = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isListNode,
+          );
           listNode.setListType('bullet');
         });
       });
 
       expect(testEnv.innerHTML).toEqual(
-        '<ul dir="auto"><li value="1"><br></li></ul>',
+        '<ul dir="auto"><li value="1"><br data-lexical-managed-linebreak="true"></li></ul>',
       );
     });
 
@@ -384,10 +391,10 @@ describe('LexicalListNode tests', () => {
         html`
           <ul dir="auto">
             <li role="checkbox" tabindex="-1" value="1" aria-checked="false">
-              <br />
+              <br data-lexical-managed-linebreak="true" />
             </li>
             <li role="checkbox" tabindex="-1" value="2" aria-checked="false">
-              <br />
+              <br data-lexical-managed-linebreak="true" />
             </li>
           </ul>
         `,
@@ -395,8 +402,14 @@ describe('LexicalListNode tests', () => {
 
       await waitForReact(() => {
         editor.update(() => {
-          const listNode = $getRoot().getFirstChildOrThrow<ListNode>();
-          const listItemNode = listNode.getChildAtIndex<ListItemNode>(1)!;
+          const listNode = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isListNode,
+          );
+          const listItemNode = $assertNodeType(
+            listNode.getChildAtIndex(1),
+            $isListItemNode,
+          );
           listItemNode.append(
             $createListNode('bullet').append($createListItemNode()),
           );
@@ -408,12 +421,12 @@ describe('LexicalListNode tests', () => {
         html`
           <ul dir="auto">
             <li role="checkbox" tabindex="-1" value="1" aria-checked="false">
-              <br />
+              <br data-lexical-managed-linebreak="true" />
             </li>
             <li value="2">
               <ul>
                 <li value="1">
-                  <br />
+                  <br data-lexical-managed-linebreak="true" />
                 </li>
               </ul>
             </li>

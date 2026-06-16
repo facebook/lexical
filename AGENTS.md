@@ -11,8 +11,10 @@ This file provides detailed guidance for AI agents and automated tools working w
 - `pnpm run build-types` - Build TypeScript type definitions and validate them
 
 ### Testing
-- `pnpm run test-unit` - Run all unit tests (Vitest)
+- `pnpm run test-unit` - Run all unit tests (Vitest, jsdom)
 - `pnpm run test-unit-watch` - Run unit tests in watch mode
+- `pnpm run test-browser` - Run browser-mode unit tests (Vitest + Playwright, real browser)
+- `pnpm run test-browser-watch` - Run browser-mode tests in watch mode
 - `pnpm run test-e2e-chromium` - Run E2E tests in Chromium (requires dev server running)
 - `pnpm run test-e2e-firefox` - Run E2E tests in Firefox
 - `pnpm run test-e2e-webkit` - Run E2E tests in WebKit
@@ -37,6 +39,20 @@ For E2E testing workflow:
 - `pnpm run flow` - Run Flow type checker
 - `pnpm run tsc` - Run TypeScript compiler
 - `pnpm run ci-check` - Run all checks (TypeScript, Flow, Prettier, ESLint)
+
+### Tree-shaking annotations
+
+Module-scope calls to the side-effect-free factories (`defineExtension`,
+`configExtension`, `safeCast`, `createCommand`, `createState`,
+`defineImportRule`, etc.) must be annotated with `/* @__PURE__ */` so
+bundlers can drop unused definitions from application bundles. This is
+enforced (with an autofixer) by the
+`@lexical/internal/require-pure-annotation` ESLint rule — run
+`pnpm run lint:fix` (also run by the pre-commit hook) to insert the
+annotations automatically. When adding a new factory of this kind,
+annotate its definition with `@__NO_SIDE_EFFECTS__` and add its name to
+the rule's default list in
+`packages/lexical-eslint-plugin-internal/src/rules/require-pure-annotation.js`.
 
 ## High-Level Architecture
 
@@ -161,6 +177,16 @@ This codebase uses **both TypeScript and Flow**:
 
 When adding/modifying APIs, types must be maintained for both systems.
 
+## Backwards Compatibility
+
+**All changes MUST be backwards compatible.** Lexical is a widely-adopted OSS library, and breaking changes ripple out to every downstream consumer.
+
+- Do NOT remove or rename existing public APIs, exported functions, types, or `$` functions. Add new APIs alongside the old ones instead.
+- Do NOT change the signature, return type, or behavior of existing public APIs in ways that could break callers. Prefer additive, optional parameters.
+- Preserve the serialization format of `EditorState` and node JSON. Serialized content produced by older versions must continue to deserialize correctly.
+- If an API genuinely must change, deprecate the old one first (keep it working, document the replacement) rather than removing it outright.
+- When in doubt, assume external code depends on the current behavior and keep it intact.
+
 ## Important Development Notes
 
 ### Reconciliation and Updates
@@ -174,7 +200,21 @@ When adding/modifying APIs, types must be maintained for both systems.
 Always access node properties/methods within read/update context. Nodes automatically resolve to their latest version via their key. Don't store node references across update boundaries.
 
 ### Testing Strategy
-- **Unit tests** - Vitest, located in `packages/**/__tests__/unit/**/*.test.{ts,tsx}`
+- **Unit tests** - Vitest (jsdom), located in `packages/**/__tests__/unit/**/*.test.{ts,tsx}`
+- **Browser tests** - Vitest browser mode driven by the Playwright runner, located in
+  `packages/**/__tests__/browser/**/*.test.{ts,tsx}`. Use these for behavior that depends on
+  a real layout/selection engine instead of stubbing the missing jsdom functionality from
+  `vitest.setup.mts` (e.g. `Range.getBoundingClientRect`, the Selection API). Run with
+  `pnpm run test-browser`; the browser set is controlled by the `VITEST_BROWSER` env var
+  (comma-separated, default `chromium`). Prefer building editors with the extension APIs
+  (`buildEditorFromExtensions`, or `LexicalExtensionComposer`/`LexicalExtensionEditorComposer`
+  in React).
+  - **Do not use `using`/`Disposable` in browser tests (or any browser-facing code).**
+    Explicit Resource Management (`using`, `Symbol.dispose`, `Disposable`) is not supported
+    in WebKit/Safari yet, so the syntax throws a `SyntaxError` there. `using` is fine in unit
+    tests (jsdom/Node), but browser tests should clean up with
+    `onTestFinished(() => editor.dispose())` instead — `editor.dispose()` is a plain method
+    available on the result of `buildEditorFromExtensions`.
 - **E2E tests** - Playwright, located in `packages/lexical-playground/__tests__/e2e/**/*.spec.{ts,mjs}`
 - E2E tests require the playground dev server running
 - Use `pnpm run debug-test-e2e-chromium` to debug E2E tests with browser UI

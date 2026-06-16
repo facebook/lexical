@@ -12,7 +12,8 @@ import type {JSX} from 'react';
 import * as React from 'react';
 import {Suspense, useEffect, useMemo, useState} from 'react';
 import {createPortal, flushSync} from 'react-dom';
-import useLayoutEffect from 'shared/useLayoutEffect';
+
+import useLayoutEffect from './useLayoutEffect';
 
 type ErrorBoundaryProps = {
   children: JSX.Element;
@@ -26,7 +27,7 @@ export type ErrorBoundaryType =
 export function useDecorators(
   editor: LexicalEditor,
   ErrorBoundary: ErrorBoundaryType,
-): Array<JSX.Element> {
+): JSX.Element[] {
   const [decorators, setDecorators] = useState<Record<NodeKey, JSX.Element>>(
     () => editor.getDecorators<JSX.Element>(),
   );

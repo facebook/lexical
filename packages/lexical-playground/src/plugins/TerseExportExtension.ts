@@ -5,8 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {DOMOverrideOptions} from '@lexical/html';
+
 import {
-  $getRenderContextValue,
   createRenderState,
   domOverride,
   DOMRenderExtension,
@@ -18,62 +19,78 @@ import {
   ParagraphNode,
 } from 'lexical';
 
-export const RenderContextTerse = createRenderState('isTerse', Boolean);
-export const TerseExportExtension = defineExtension({
+export const RenderContextTerse = /* @__PURE__ */ createRenderState(
+  'isTerse',
+  Boolean,
+);
+
+/**
+ * Install these overrides only for export sessions where terse output was
+ * requested (`RenderContextTerse` is set). Non-terse exports never enter the
+ * terse middleware at all, rather than running it and bailing per node.
+ */
+const terseOnly: DOMOverrideOptions = {
+  disabledForSession: ctx => !ctx.get(RenderContextTerse),
+};
+
+export const TerseExportExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    configExtension(DOMRenderExtension, {
+    /* @__PURE__ */ configExtension(DOMRenderExtension, {
       overrides: [
-        domOverride('*', {
-          $exportDOM: (node, $next, editor) => {
-            const rval = $next();
-            const {element} = rval;
-            if (
-              isHTMLElement(element) &&
-              $getRenderContextValue(RenderContextTerse)
-            ) {
-              // Strip all theme classes
-              for (const className of Array.from(element.classList)) {
-                if (className.startsWith('PlaygroundEditorTheme__')) {
-                  element.classList.remove(className);
+        /* @__PURE__ */ domOverride(
+          '*',
+          {
+            $exportDOM: (node, $next) => {
+              const rval = $next();
+              const {element} = rval;
+              if (isHTMLElement(element)) {
+                // Strip all theme classes
+                for (const className of Array.from(element.classList)) {
+                  if (className.startsWith('PlaygroundEditorTheme__')) {
+                    element.classList.remove(className);
+                  }
+                }
+                // Strip white-space: pre-wrap when not necessary
+                if (
+                  element.style.getPropertyValue('white-space') ===
+                    'pre-wrap' &&
+                  !/^\s|\s$|\s\s/.test(element.textContent)
+                ) {
+                  element.style.setProperty('white-space', null);
+                }
+                if (element.classList.length === 0) {
+                  element.removeAttribute('class');
+                }
+                if (element.style.length === 0) {
+                  // For some reason this getAttribute prevents style=""
+                  element.getAttribute('style');
+                  element.removeAttribute('style');
                 }
               }
-              // Strip white-space: pre-wrap when not necessary
-              if (
-                element.style.getPropertyValue('white-space') === 'pre-wrap' &&
-                !/^\s|\s$|\s\s/.test(element.textContent)
-              ) {
-                element.style.setProperty('white-space', null);
-              }
-              if (element.classList.length === 0) {
-                element.removeAttribute('class');
-              }
-              if (element.style.length === 0) {
-                // For some reason this getAttribute prevents style=""
-                element.getAttribute('style');
-                element.removeAttribute('style');
-              }
-            }
-            return rval;
+              return rval;
+            },
           },
-        }),
-        domOverride([ParagraphNode], {
-          $exportDOM: (node, $next, editor) => {
-            const rval = $next();
-            const {element} = rval;
-            if (
-              isHTMLElement(element) &&
-              $getRenderContextValue(RenderContextTerse)
-            ) {
-              // clear any empty br
-              if (node.isEmpty()) {
-                for (const el of element.querySelectorAll(':scope > br')) {
-                  el.remove();
+          terseOnly,
+        ),
+        /* @__PURE__ */ domOverride(
+          [ParagraphNode],
+          {
+            $exportDOM: (node, $next) => {
+              const rval = $next();
+              const {element} = rval;
+              if (isHTMLElement(element)) {
+                // clear any empty br
+                if (node.isEmpty()) {
+                  for (const el of element.querySelectorAll(':scope > br')) {
+                    el.remove();
+                  }
                 }
               }
-            }
-            return rval;
+              return rval;
+            },
           },
-        }),
+          terseOnly,
+        ),
       ],
     }),
   ],

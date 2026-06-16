@@ -8,6 +8,7 @@
 
 import type {BaseBinding, Binding, YjsNode} from '.';
 
+import invariant from '@lexical/internal/invariant';
 import {
   $getNodeByKey,
   $getRoot,
@@ -27,7 +28,6 @@ import {
   RangeSelection,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 import {Doc, Map as YMap, XmlElement, XmlText} from 'yjs';
 
 import {isBindingV1} from './Bindings';
@@ -624,7 +624,7 @@ export function $moveSelectionToPreviousNode(
   }
   // Get previous node
   const prevNodeKey = anchorNode.__prev;
-  let prevNode: ElementNode | null = null;
+  let prevNode: LexicalNode | null = null;
   if (prevNodeKey) {
     prevNode = $getNodeByKey(prevNodeKey);
   }

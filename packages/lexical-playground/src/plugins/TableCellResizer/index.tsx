@@ -239,7 +239,7 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
 
           let height = tableRow.getHeight();
           if (height === undefined) {
-            const rowCells = tableRow.getChildren<TableCellNode>();
+            const rowCells = tableRow.getChildren().filter($isTableCellNode);
             height = Math.min(
               ...rowCells.map(
                 // eslint-disable-next-line react-hooks/immutability

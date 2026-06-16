@@ -20,7 +20,7 @@ export interface Token {
   content: TokenContent;
 }
 export interface Tokenizer {
-  defaultLanguage: string;
+  defaultLanguage: string | null;
   tokenize(code: string, language?: string): (string | Token)[];
 }
 declare export var PrismTokenizer: Tokenizer;
@@ -38,7 +38,7 @@ declare export var CodePrismExtension: LexicalExtension<CodePrismConfig, "@lexic
 
 declare export function normalizeCodeLanguage(lang: string): string;
 
-declare export var getCodeLanguages: () => Array<string>;
+declare export var getCodeLanguages: () => string[];
 declare export function getLanguageFriendlyName(lang: string): string;
 
 declare export var CODE_LANGUAGE_FRIENDLY_NAME_MAP: {[string]: string};

@@ -7,8 +7,14 @@
  */
 
 import {effect, namedSignals} from '@lexical/extension';
+import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
 import {mergeRegister} from '@lexical/utils';
-import {defineExtension, safeCast} from 'lexical';
+import {
+  $fullReconcile,
+  configExtension,
+  defineExtension,
+  safeCast,
+} from 'lexical';
 
 import {TableCellNode} from './LexicalTableCellNode';
 import {
@@ -22,6 +28,7 @@ import {
   registerTableSelectionObserver,
 } from './LexicalTablePluginHelpers';
 import {TableRowNode} from './LexicalTableRowNode';
+import {TableImportRules} from './TableImportExtension';
 
 export interface TableConfig {
   /**
@@ -53,17 +60,26 @@ export interface TableConfig {
  * Configures {@link TableNode}, {@link TableRowNode}, {@link TableCellNode} and
  * registers table behaviors (see {@link TableConfig})
  */
-export const TableExtension = defineExtension({
+export const TableExtension = /* @__PURE__ */ defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
-  config: safeCast<TableConfig>({
+  config: /* @__PURE__ */ safeCast<TableConfig>({
     hasCellBackgroundColor: true,
     hasCellMerge: true,
     hasHorizontalScroll: true,
     hasNestedTables: false,
     hasTabHandler: true,
   }),
+  dependencies: [
+    // DOMImportExtension support for the nodes registered here. Inert
+    // unless the editor routes HTML through the pipeline (e.g. via
+    // ClipboardDOMImportExtension or $generateNodesFromDOMViaExtension).
+    CoreImportExtension,
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: TableImportRules,
+    }),
+  ],
   name: '@lexical/table/Table',
   nodes: () => [TableNode, TableRowNode, TableCellNode],
   register(editor, config, state) {
@@ -74,9 +90,11 @@ export const TableExtension = defineExtension({
         const hadHorizontalScroll = $isScrollableTablesActive(editor);
         if (hadHorizontalScroll !== hasHorizontalScroll) {
           setScrollableTablesActive(editor, hasHorizontalScroll);
-          // Registering the transform has the side-effect of marking all existing
-          // TableNodes as dirty. The handler is immediately unregistered.
-          editor.registerNodeTransform(TableNode, () => {})();
+          // Re-render existing tables through the new scroll-wrapper config
+          // without cloning every TableNode the way marking them dirty would. A
+          // full reconcile marks no nodes dirty, so it's deferred (no
+          // synchronous render from this effect) and produces no history entry.
+          editor.update($fullReconcile);
         }
       }),
       registerTablePlugin(editor, stores),
@@ -99,4 +117,18 @@ export const TableExtension = defineExtension({
       ),
     );
   },
+});
+
+/**
+ * Bundles {@link TableImportRules} together with the runtime
+ * {@link TableExtension}.
+ *
+ * @experimental
+ * @deprecated {@link TableExtension} now registers
+ * {@link TableImportRules} (and `CoreImportExtension`) itself — depend on
+ * it directly instead.
+ */
+export const TableImportExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [TableExtension],
+  name: '@lexical/table/Import',
 });

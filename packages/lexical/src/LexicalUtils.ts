@@ -8,6 +8,7 @@
 
 import type {
   CommandPayloadType,
+  DOMSlotForNode,
   EditorConfig,
   EditorDOMRenderConfig,
   EditorThemeClasses,
@@ -28,9 +29,7 @@ import type {
 } from './LexicalSelection';
 import type {RootNode} from './nodes/LexicalRootNode';
 
-import {CAN_USE_DOM} from 'shared/canUseDOM';
-import {IS_APPLE, IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {
   $createTextNode,
@@ -54,6 +53,13 @@ import {
   UpdateTag,
 } from '.';
 import {
+  CAN_USE_DOM,
+  IS_APPLE,
+  IS_APPLE_WEBKIT,
+  IS_IOS,
+  IS_SAFARI,
+} from './environment';
+import {
   COMPOSITION_START_CHAR,
   COMPOSITION_SUFFIX,
   DOM_DOCUMENT_FRAGMENT_TYPE,
@@ -63,10 +69,12 @@ import {
   ELEMENT_TYPE_TO_FORMAT,
   HAS_DIRTY_NODES,
   LTR_REGEX,
+  NO_DIRTY_NODES,
   PROTOTYPE_CONFIG_METHOD,
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
+import {DOMSlot, ElementDOMSlot} from './LexicalDOMSlot';
 import {LexicalEditor} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
 import {
@@ -89,6 +97,8 @@ import {
   triggerCommandListeners,
 } from './LexicalUpdates';
 import {type TextFormatType, TextNode} from './nodes/LexicalTextNode';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 export const emptyFunction = () => {
   return;
@@ -148,10 +158,6 @@ export const scheduleMicroTask: (fn: () => void) => void =
         // No window prefix intended (#1400)
         Promise.resolve().then(fn);
       };
-
-export function $isSelectionCapturedInDecorator(node: Node): boolean {
-  return $isDecoratorNode($getNearestNodeFromDOMNode(node));
-}
 
 export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
   const activeElement = document.activeElement;
@@ -332,7 +338,10 @@ export function $setNodeKey(
     editor._dirtyLeaves.add(key);
   }
   editor._cloneNotNeeded.add(key);
-  editor._dirtyType = HAS_DIRTY_NODES;
+  // Don't downgrade FULL_RECONCILE; upgrade only when nothing has been marked yet.
+  if (editor._dirtyType === NO_DIRTY_NODES) {
+    editor._dirtyType = HAS_DIRTY_NODES;
+  }
   node.__key = key;
 }
 
@@ -474,7 +483,10 @@ export function internalMarkNodeAsDirty(node: LexicalNode): void {
     internalMarkParentElementsAsDirty(parent, nodeMap, dirtyElements);
   }
   const key = latest.__key;
-  editor._dirtyType = HAS_DIRTY_NODES;
+  // Don't downgrade FULL_RECONCILE; upgrade only when nothing has been marked yet.
+  if (editor._dirtyType === NO_DIRTY_NODES) {
+    editor._dirtyType = HAS_DIRTY_NODES;
+  }
   if ($isElementNode(node)) {
     dirtyElements.set(key, true);
   } else {
@@ -522,12 +534,30 @@ export function $getCompositionKey(): null | NodeKey {
   return editor._compositionKey;
 }
 
+/**
+ * Returns the node with the given key from the active EditorState
+ * (or the given EditorState), or null if it does not exist.
+ */
+export function $getNodeByKey(
+  key: NodeKey,
+  _editorState?: EditorState,
+): LexicalNode | null;
+/**
+ * @deprecated The type parameter is an unchecked and unsafe cast,
+ * equivalent to `$getNodeByKey(key) as T | null`, and will be removed
+ * in a future release. Call this function without a type argument and
+ * narrow the result with a type guard instead.
+ */
 export function $getNodeByKey<T extends LexicalNode>(
   key: NodeKey,
   _editorState?: EditorState,
-): T | null {
+): T | null;
+export function $getNodeByKey(
+  key: NodeKey,
+  _editorState?: EditorState,
+): LexicalNode | null {
   const editorState = _editorState || getActiveEditorState();
-  const node = editorState._nodeMap.get(key) as T;
+  const node = editorState._nodeMap.get(key);
   if (node === undefined) {
     return null;
   }
@@ -553,6 +583,11 @@ export function setNodeKeyOnDOMNode(
 ) {
   const prop = `__lexicalKey_${editor._key}`;
   (dom as Node & Record<typeof prop, NodeKey | undefined>)[prop] = key;
+}
+
+export function clearNodeKeyOnDOMNode(dom: Node, editor: LexicalEditor) {
+  const prop = `__lexicalKey_${editor._key}`;
+  delete (dom as Node & Record<typeof prop, NodeKey | undefined>)[prop];
 }
 
 export function getNodeKeyFromDOMNode(
@@ -667,10 +702,6 @@ export function $getNodeFromDOM(dom: Node): null | LexicalNode {
   const editor = getActiveEditor();
   const nodeKey = getNodeKeyFromDOMTree(dom, editor);
   if (nodeKey === null) {
-    const rootElement = editor.getRootElement();
-    if (dom === rootElement) {
-      return $getNodeByKey('root');
-    }
     return null;
   }
   return $getNodeByKey(nodeKey);
@@ -702,9 +733,7 @@ export function doesContainSurrogatePair(str: string): boolean {
   return /[\uD800-\uDBFF][\uDC00-\uDFFF]/g.test(str);
 }
 
-export function getEditorsToPropagate(
-  editor: LexicalEditor,
-): Array<LexicalEditor> {
+export function getEditorsToPropagate(editor: LexicalEditor): LexicalEditor[] {
   const editorsToPropagate: LexicalEditor[] = [];
   for (
     let currentEditor: LexicalEditor | null = editor;
@@ -807,16 +836,19 @@ export function $updateTextNodeFromDOMContent(
       }
     }
     const prevTextContent = node.getTextContent();
-
     if (compositionEnd || normalizedTextContent !== prevTextContent) {
+      const selection = $getSelection();
+
       if (normalizedTextContent === '') {
         $setCompositionKey(null);
         if (!IS_SAFARI && !IS_IOS && !IS_APPLE_WEBKIT) {
           // For composition (mainly Android), we have to remove the node on a later update
           const editor = getActiveEditor();
+          $setTextContentWithSelection(node, '', selection);
+
           setTimeout(() => {
             editor.update(() => {
-              if (node.isAttached()) {
+              if (node.isAttached() && node.getTextContent() === '') {
                 node.remove();
               }
             });
@@ -855,7 +887,6 @@ export function $updateTextNodeFromDOMContent(
         node.markDirty();
         return;
       }
-      const selection = $getSelection();
 
       if (
         !$isRangeSelection(selection) ||
@@ -1148,7 +1179,10 @@ export function isMoveBackward(event: KeyboardEventModifiers): boolean {
 }
 
 export function isMoveToStart(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowLeft', CONTROL_OR_META);
+  return isExactShortcutMatch(event, 'ArrowLeft', {
+    ...CONTROL_OR_META,
+    shiftKey: 'any',
+  });
 }
 
 export function isMoveForward(event: KeyboardEventModifiers): boolean {
@@ -1158,7 +1192,10 @@ export function isMoveForward(event: KeyboardEventModifiers): boolean {
 }
 
 export function isMoveToEnd(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowRight', CONTROL_OR_META);
+  return isExactShortcutMatch(event, 'ArrowRight', {
+    ...CONTROL_OR_META,
+    shiftKey: 'any',
+  });
 }
 
 export function isMoveUp(event: KeyboardEventModifiers): boolean {
@@ -1230,7 +1267,7 @@ export function $selectAll(selection?: RangeSelection | null): RangeSelection {
 export function getCachedClassNameArray(
   classNamesTheme: EditorThemeClasses,
   classNameThemeType: string,
-): Array<string> {
+): string[] {
   if (classNamesTheme.__lexicalClassNameCache === undefined) {
     classNamesTheme.__lexicalClassNameCache = {};
   }
@@ -1288,7 +1325,7 @@ export function setMutatedNode(
 /**
  * @deprecated Use {@link LexicalEditor.registerMutationListener} with `skipInitialization: false` instead.
  */
-export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
+export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): T[] {
   const klassType = klass.getType();
   const editorState = getActiveEditorState();
   if (editorState._readOnly) {
@@ -1298,7 +1335,7 @@ export function $nodesOfType<T extends LexicalNode>(klass: Klass<T>): Array<T> {
     return nodes ? Array.from(nodes.values()) : [];
   }
   const nodes = editorState._nodeMap;
-  const nodesOfType: Array<T> = [];
+  const nodesOfType: T[] = [];
   for (const [, node] of nodes) {
     if (
       node instanceof klass &&
@@ -1689,8 +1726,20 @@ export function errorOnInsertTextNodeOnRoot(
   }
 }
 
-export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N {
-  const node = $getNodeByKey<N>(key);
+/**
+ * Returns the node with the given key from the active EditorState,
+ * or throws if it does not exist.
+ */
+export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode;
+/**
+ * @deprecated The type parameter is an unchecked and unsafe cast,
+ * equivalent to `$getNodeByKeyOrThrow(key) as N`, and will be removed
+ * in a future release. Call this function without a type argument and
+ * narrow the result with a type guard instead.
+ */
+export function $getNodeByKeyOrThrow<N extends LexicalNode>(key: NodeKey): N;
+export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode {
+  const node = $getNodeByKey(key);
   if (node === null) {
     invariant(
       false,
@@ -1740,7 +1789,7 @@ export function removeDOMBlockCursorElement(
   }
 }
 
-export function updateDOMBlockCursorElement(
+export function $updateDOMBlockCursorElement(
   editor: LexicalEditor,
   rootElement: HTMLElement,
   nextSelection: null | BaseSelection,
@@ -1776,9 +1825,16 @@ export function updateDOMBlockCursorElement(
       }
     }
     if (isBlockCursor) {
-      const elementDOM = editor.getElementByKey(
-        elementNode.__key,
-      ) as HTMLElement;
+      // Route through the slot so the cursor lands in the content-bearing
+      // element. For a node whose `getDOMSlot` wraps its content, the keyed
+      // DOM is the wrapper but the managed children (and `insertBeforeElement`)
+      // live in `slot.element`; inserting into the keyed wrapper would throw
+      // because the reference node is not its child.
+      const elementDOM = $getDOMSlot(
+        elementNode,
+        editor.getElementByKey(elementNode.__key) as HTMLElement,
+        editor,
+      ).element;
       if (blockCursorElement === null) {
         editor._blockCursorElement = blockCursorElement =
           createBlockCursorElement(editor._config);
@@ -1876,6 +1932,23 @@ export function $splitNode(
  */
 export function isHTMLAnchorElement(x: unknown): x is HTMLAnchorElement {
   return isHTMLElement(x) && x.tagName === 'A';
+}
+
+/**
+ * @param x - The element being tested
+ * @returns Returns true if x is an HTML `<tr>` element, false otherwise
+ */
+export function isHTMLTableRowElement(x: unknown): x is HTMLTableRowElement {
+  return isHTMLElement(x) && x.tagName === 'TR';
+}
+
+/**
+ * @param x - The element being tested
+ * @returns Returns true if x is an HTML `<td>` or `<th>` element, false
+ *   otherwise
+ */
+export function isHTMLTableCellElement(x: unknown): x is HTMLTableCellElement {
+  return isHTMLElement(x) && (x.tagName === 'TD' || x.tagName === 'TH');
 }
 
 /**
@@ -1986,12 +2059,77 @@ export function $getEditor(): LexicalEditor {
 }
 
 /**
- * @internal @experimental
+ * @experimental
+ *
+ * Read the editor's `$getDOMSlot` configuration (defaulting to the base
+ * implementation when no override is registered via {@link DOMRenderExtension}).
+ * Cross-package consumers (`@lexical/utils`, `@lexical/react`) use this to
+ * route selection / DOM lookups through extension-configured slots.
  */
 export function $getEditorDOMRenderConfig(
   editor: LexicalEditor = $getEditor(),
 ): EditorDOMRenderConfig {
   return editor._config.dom || DEFAULT_EDITOR_DOM_CONFIG;
+}
+
+/**
+ * @experimental
+ *
+ * Resolve the DOM slot for a node through the configured `$getDOMSlot` hook,
+ * narrowing the return type via {@link DOMSlotForNode}: for an `ElementNode`
+ * the result is an {@link ElementDOMSlot} (with children-management methods),
+ * for non-Element nodes the base {@link DOMSlot} pointing at the keyed DOM.
+ *
+ * Invariants if an extension override returns a slot that doesn't match the
+ * expected narrow type for the node (extension contract violation).
+ */
+export function $getDOMSlot<N extends LexicalNode>(
+  node: N,
+  dom: HTMLElement,
+  editor: LexicalEditor = $getEditor(),
+): DOMSlotForNode<N> {
+  const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(node, dom, editor);
+  if ($isElementNode(node)) {
+    invariant(
+      $isElementDOMSlot(slot),
+      '$getDOMSlot: expected ElementDOMSlot for ElementNode (key %s type %s)',
+      node.getKey(),
+      node.getType(),
+    );
+  }
+  return slot;
+}
+
+/**
+ * @experimental
+ *
+ * Type guard narrowing a {@link DOMSlot} to an {@link ElementDOMSlot}, which
+ * exposes children-management methods like `insertChild` and the managed
+ * line-break helpers.
+ */
+export function $isElementDOMSlot(
+  slot: DOMSlot<HTMLElement>,
+): slot is ElementDOMSlot<HTMLElement> {
+  return slot instanceof ElementDOMSlot;
+}
+
+/**
+ * @experimental
+ *
+ * Resolve the actual text DOM (`Text`) for a `TextNode` through the
+ * configured `$getDOMSlot` hook. Unlike the plain {@link getDOMTextNode}
+ * which descends the first child chain from a raw element, this routes
+ * through the slot so an extension wrapping the text node's keyed DOM
+ * (e.g. one that injects a `contentEditable=false` sibling before the
+ * text) still points at the correct content element.
+ */
+export function $getDOMTextNode(
+  node: TextNode,
+  dom: HTMLElement,
+  editor: LexicalEditor = $getEditor(),
+): Text | null {
+  const slot = $getDOMSlot(node, dom, editor);
+  return getDOMTextNode(slot.element);
 }
 
 /** @internal */
@@ -2155,24 +2293,87 @@ export function $setFormatFromDOM<T extends ElementNode>(
 }
 
 /**
- * @internal
+ * Options accepted by {@link setDOMUnmanaged}.
  *
- * Mark this node as unmanaged by lexical's mutation observer like
- * decorator nodes
+ * @experimental
  */
-export function setDOMUnmanaged(
-  elementDom: HTMLElement & LexicalPrivateDOM,
-): void {
-  elementDom.__lexicalUnmanaged = true;
+export interface SetDOMUnmanagedOptions {
+  /**
+   * When true, the marked subtree owns its own window selection — analogous
+   * to a DecoratorNode subtree. Selection resolution that would otherwise
+   * mark the selection dirty for a caret position inside unmanaged DOM
+   * leaves it alone, so the embedded interaction (custom input, focusable
+   * widget, etc.) can keep its native caret.
+   *
+   * Pass `false` to clear a previously-set marker; omit the field to leave
+   * `__lexicalCapturedSelection` untouched.
+   */
+  captureSelection?: boolean;
 }
 
 /**
- * @internal
+ * Mark this DOM element as unmanaged by lexical's mutation observer (like
+ * decorator nodes are). Extensions that inject non-lexical decoration
+ * elements into a node's DOM should mark them so the mutation observer
+ * doesn't evict them as "unknown DOM children" during cleanup.
  *
- * True if this DOM node was marked with {@link setDOMUnmanaged}
+ * Pass `{captureSelection: true}` to additionally treat the subtree's
+ * window selection as decorator-like, so resolution does not force-sync
+ * the caret out of unmanaged DOM (see {@link isDOMCapturingSelection}).
+ *
+ * @experimental
+ */
+export function setDOMUnmanaged(
+  elementDom: HTMLElement & LexicalPrivateDOM,
+  options?: SetDOMUnmanagedOptions,
+): void {
+  elementDom.__lexicalUnmanaged = true;
+  if (options && options.captureSelection !== undefined) {
+    elementDom.__lexicalCapturedSelection = options.captureSelection;
+  }
+}
+
+/**
+ * True if this DOM node was marked with {@link setDOMUnmanaged}.
+ *
+ * @experimental
  */
 export function isDOMUnmanaged(elementDom: Node & LexicalPrivateDOM): boolean {
   return elementDom.__lexicalUnmanaged === true;
+}
+
+/**
+ * True if the DOM node sits inside a subtree marked with
+ * `{captureSelection: true}` via {@link setDOMUnmanaged}. Walks ancestors
+ * so any descendant of a marked subtree (e.g. an `<input>` inside a marked
+ * `<div>`) reports as captured too.
+ *
+ * The walk aborts at the first DOM node that corresponds to a Lexical
+ * node in `editor` — that boundary is the implicit owner of the subtree's
+ * selection, so a captureSelection marker above it (in non-Lexical
+ * scaffolding around the editor) does not leak in.
+ *
+ * DecoratorNode DOM is marked with `setDOMUnmanaged({captureSelection:
+ * true})` by the reconciler, so decorator subtrees also report as
+ * captured here.
+ *
+ * @experimental
+ */
+export function isDOMCapturingSelection(
+  elementDom: Node & LexicalPrivateDOM,
+  editor: LexicalEditor,
+): boolean {
+  let dom: (Node & LexicalPrivateDOM) | null = elementDom;
+  while (dom != null) {
+    if (dom.__lexicalCapturedSelection === true) {
+      return true;
+    }
+    if (getNodeKeyFromDOMNode(dom, editor) !== undefined) {
+      return false;
+    }
+    dom = getParentElement(dom);
+  }
+  return false;
 }
 
 /**
@@ -2192,13 +2393,6 @@ export function hasOwnStaticMethod(
   k: keyof Klass<LexicalNode>,
 ): boolean {
   return hasOwn(klass, k) && klass[k] !== LexicalNode[k];
-}
-
-/**
- * @internal
- */
-export function hasOwnExportDOM(klass: Klass<LexicalNode>) {
-  return hasOwn(klass.prototype, 'exportDOM');
 }
 
 /** @internal */
@@ -2234,7 +2428,9 @@ function isAbstractNodeClass(klass: Klass<LexicalNode>): boolean {
 /** @internal */
 export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
   ownNodeType: undefined | string;
-  ownNodeConfig: undefined | StaticNodeConfigValue<LexicalNode, string>;
+  ownNodeConfig:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, string | symbol>;
 } {
   const nodeConfigRecord =
     PROTOTYPE_CONFIG_METHOD in klass.prototype
@@ -2245,15 +2441,33 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
     !isAbstract && hasOwnStaticMethod(klass, 'getType')
       ? klass.getType()
       : undefined;
-  let ownNodeConfig: undefined | StaticNodeConfigValue<LexicalNode, string>;
+  let ownNodeConfig:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, string | symbol>;
   let ownNodeType = nodeType;
   if (nodeConfigRecord) {
     if (nodeType) {
       ownNodeConfig = nodeConfigRecord[nodeType];
     } else {
+      // No static getType(): derive the type and config from the $config
+      // record. The common case is a concrete node keyed by its string `type`.
       for (const [k, v] of Object.entries(nodeConfigRecord)) {
         ownNodeType = k;
         ownNodeConfig = v;
+      }
+      // Fall back to a well-known symbol key (e.g. Symbol.for('ElementNode'))
+      // for an abstract base class that has no concrete node type, using the
+      // first symbol whose value is a config record.
+      if (!ownNodeConfig) {
+        for (const symbolKey of Object.getOwnPropertySymbols(
+          nodeConfigRecord,
+        )) {
+          const symbolConfig = nodeConfigRecord[symbolKey];
+          if (symbolConfig) {
+            ownNodeConfig = symbolConfig;
+            break;
+          }
+        }
       }
     }
   }
@@ -2369,7 +2583,7 @@ export const $findMatchingParent: {
 export function $createChildrenArray(
   element: ElementNode,
   nodeMap: null | NodeMap,
-): Array<NodeKey> {
+): NodeKey[] {
   const children = [];
   let nodeKey = element.__first;
   while (nodeKey !== null) {

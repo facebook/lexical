@@ -7,13 +7,16 @@
  */
 
 import {effect, namedSignals, NamedSignalsOutput} from '@lexical/extension';
+import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
 import {mergeRegister, objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
   $isElementNode,
   $isRangeSelection,
+  $isTextNode,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
+  configExtension,
   defineExtension,
   LexicalEditor,
   PASTE_COMMAND,
@@ -27,6 +30,7 @@ import {
   LinkNode,
   TOGGLE_LINK_COMMAND,
 } from './LexicalLinkNode';
+import {LinkImportRules} from './LinkImportExtension';
 
 export interface LinkConfig {
   /**
@@ -110,8 +114,15 @@ export function registerLink(
           if (!validateUrl(clipboardText)) {
             return false;
           }
-          // If we select nodes that are elements then avoid applying the link.
-          if (!selection.getNodes().some(node => $isElementNode(node))) {
+          // Skip link wrapping for non-simple text nodes (e.g. code blocks).
+          const nodes = selection.getNodes();
+          if (
+            !nodes.some(
+              node =>
+                $isElementNode(node) ||
+                ($isTextNode(node) && !node.isSimpleText()),
+            )
+          ) {
             editor.dispatchCommand(TOGGLE_LINK_COMMAND, {
               ...attributes,
               url: clipboardText,
@@ -133,11 +144,20 @@ export function registerLink(
  * listener to wrap selected nodes in a link when a
  * URL is pasted and `validateUrl` is defined.
  */
-export const LinkExtension = defineExtension({
+export const LinkExtension = /* @__PURE__ */ defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
   config: defaultProps,
+  dependencies: [
+    // DOMImportExtension support for the nodes registered here. Inert
+    // unless the editor routes HTML through the pipeline (e.g. via
+    // ClipboardDOMImportExtension or $generateNodesFromDOMViaExtension).
+    CoreImportExtension,
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: LinkImportRules,
+    }),
+  ],
   mergeConfig(config, overrides) {
     const merged = shallowMergeConfig(config, overrides);
     if (config.attributes) {
@@ -153,4 +173,18 @@ export const LinkExtension = defineExtension({
   register(editor, config, state) {
     return registerLink(editor, state.getOutput());
   },
+});
+
+/**
+ * Bundles {@link LinkImportRules} together with the runtime
+ * {@link LinkExtension}.
+ *
+ * @experimental
+ * @deprecated {@link LinkExtension} now registers
+ * {@link LinkImportRules} (and `CoreImportExtension`) itself — depend on
+ * it directly instead.
+ */
+export const LinkImportExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [LinkExtension],
+  name: '@lexical/link/Import',
 });

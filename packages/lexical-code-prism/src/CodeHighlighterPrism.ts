@@ -11,6 +11,7 @@ import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 import {
   $isCodeHighlightNode,
   $isCodeNode,
+  $plainifyCodeContent,
   CodeExtension,
   CodeHighlightNode,
   CodeIndentExtension,
@@ -50,20 +51,32 @@ export interface Token {
 }
 
 export interface Tokenizer {
-  defaultLanguage: string;
+  /**
+   * Language to fall back to when a {@link CodeNode} doesn't carry one.
+   * Set to `null` to opt out of the implicit fallback — code blocks
+   * without a language stay untouched (no `data-language` attribute, no
+   * syntax highlighting) so a markdown round-trip can preserve ``` with
+   * no info string.
+   */
+  defaultLanguage: string | null;
   tokenize(code: string, language?: string): (string | Token)[];
   $tokenize(codeNode: CodeNode, language?: string): LexicalNode[];
 }
 
 export const PrismTokenizer: Tokenizer = {
   $tokenize(codeNode: CodeNode, language?: string): LexicalNode[] {
-    return $getHighlightNodes(codeNode, language || this.defaultLanguage);
+    const lang = language || this.defaultLanguage;
+    return lang === null
+      ? $plainifyCodeContent(codeNode.getTextContent())
+      : $getHighlightNodes(codeNode, lang);
   },
   defaultLanguage: DEFAULT_CODE_LANGUAGE,
   tokenize(code: string, language?: string): (string | Token)[] {
+    const fallback = this.defaultLanguage;
     return Prism.tokenize(
       code,
-      Prism.languages[language || ''] || Prism.languages[this.defaultLanguage],
+      Prism.languages[language || ''] ||
+        (fallback === null ? undefined : Prism.languages[fallback]),
     );
   },
 };
@@ -119,22 +132,29 @@ function $codeNodeTransform(
   const {nodesCurrentlyHighlighting} = transformState;
   const nodeKey = node.getKey();
 
-  // When new code block inserted it might not have language selected
-  if (node.getLanguage() === undefined) {
+  // When new code block inserted it might not have language selected.
+  // Tokenizers configured with `defaultLanguage: null` opt out of the
+  // implicit fallback — leave the node unset and skip highlighting so
+  // markdown round-trips ``` (no info string) without injecting one.
+  if (node.getLanguage() === undefined && tokenizer.defaultLanguage !== null) {
     node.setLanguage(tokenizer.defaultLanguage);
   }
 
   const language = node.getLanguage() || tokenizer.defaultLanguage;
-  if (isCodeLanguageLoaded(language)) {
-    if (!node.getIsSyntaxHighlightSupported()) {
-      node.setIsSyntaxHighlightSupported(true);
+  if (language) {
+    if (isCodeLanguageLoaded(language)) {
+      if (!node.getIsSyntaxHighlightSupported()) {
+        node.setIsSyntaxHighlightSupported(true);
+      }
+    } else {
+      if (node.getIsSyntaxHighlightSupported()) {
+        node.setIsSyntaxHighlightSupported(false);
+      }
+      loadCodeLanguage(language, editor, nodeKey);
+      return;
     }
-  } else {
-    if (node.getIsSyntaxHighlightSupported()) {
-      node.setIsSyntaxHighlightSupported(false);
-    }
-    loadCodeLanguage(language, editor, nodeKey);
-    return;
+  } else if (node.getIsSyntaxHighlightSupported()) {
+    node.setIsSyntaxHighlightSupported(false);
   }
 
   if (nodesCurrentlyHighlighting.has(nodeKey)) {
@@ -161,7 +181,10 @@ function $codeNodeTransform(
       currentNode.getLanguage() || tokenizer.defaultLanguage;
     //const diffLanguageMatch = DIFF_LANGUAGE_REGEX.exec(currentLanguage);
 
-    const highlightNodes = tokenizer.$tokenize(currentNode, currentLanguage);
+    const highlightNodes = tokenizer.$tokenize(
+      currentNode,
+      currentLanguage ?? undefined,
+    );
 
     const diffRange = getDiffRange(currentNode.getChildren(), highlightNodes);
     const {from, to, nodesForReplacement} = diffRange;
@@ -241,11 +264,11 @@ function $updateAndRetainSelection(
 // Finds minimal diff range between two nodes lists. It returns from/to range boundaries of prevNodes
 // that needs to be replaced with `nodes` (subset of nextNodes) to make prevNodes equal to nextNodes.
 function getDiffRange(
-  prevNodes: Array<LexicalNode>,
-  nextNodes: Array<LexicalNode>,
+  prevNodes: LexicalNode[],
+  nextNodes: LexicalNode[],
 ): {
   from: number;
-  nodesForReplacement: Array<LexicalNode>;
+  nodesForReplacement: LexicalNode[];
   to: number;
 } {
   let leadingMatch = 0;
@@ -418,9 +441,9 @@ export interface CodePrismConfig {
  * and the related keyboard handlers are activated automatically. Set
  * `tabSize` on `CodeIndentExtension` to enable space-indent outdent.
  */
-export const CodePrismExtension = defineExtension({
+export const CodePrismExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config) => namedSignals(config),
-  config: safeCast<CodePrismConfig>({
+  config: /* @__PURE__ */ safeCast<CodePrismConfig>({
     disabled: false,
     tokenizer: PrismTokenizer,
   }),

@@ -8,7 +8,6 @@
 
 import type {
   DOMExportOutput,
-  LexicalPrivateDOM,
   NodeKey,
   SerializedLexicalNode,
 } from '../LexicalNode';
@@ -25,8 +24,7 @@ import type {
   TextFormatType,
 } from 'lexical';
 
-import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from 'shared/environment';
-import invariant from 'shared/invariant';
+import invariant from '@lexical/internal/invariant';
 
 import {$isTextNode, TextNode} from '../index';
 import {
@@ -35,6 +33,7 @@ import {
   ELEMENT_TYPE_TO_FORMAT,
   TEXT_TYPE_TO_FORMAT,
 } from '../LexicalConstants';
+import {ElementDOMSlot} from '../LexicalDOMSlot';
 import {$isEphemeral, LexicalNode} from '../LexicalNode';
 import {
   $getSelection,
@@ -44,7 +43,7 @@ import {
 } from '../LexicalSelection';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
-  $getEditorDOMRenderConfig,
+  $getDOMSlot,
   $getNodeByKey,
   $isRootOrShadowRoot,
   isHTMLElement,
@@ -56,7 +55,7 @@ export type SerializedElementNode<
   T extends SerializedLexicalNode = SerializedLexicalNode,
 > = Spread<
   {
-    children: Array<T>;
+    children: T[];
     direction: 'ltr' | 'rtl' | null;
     format: ElementFormatType;
     indent: number;
@@ -79,235 +78,6 @@ export type ElementFormatType =
 export interface ElementNode {
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
-}
-
-/**
- * A utility class for managing the DOM children of an ElementNode
- */
-export class ElementDOMSlot<T extends HTMLElement = HTMLElement> {
-  readonly element: T;
-  readonly before: Node | null;
-  readonly after: Node | null;
-  constructor(
-    /** The element returned by createDOM */
-    element: T,
-    /** All managed children will be inserted before this node, if defined */
-    before?: Node | undefined | null,
-    /** All managed children will be inserted after this node, if defined */
-    after?: Node | undefined | null,
-  ) {
-    this.element = element;
-    this.before = before || null;
-    this.after = after || null;
-  }
-  /**
-   * Return a new ElementDOMSlot where all managed children will be inserted before this node
-   */
-  withBefore(before: Node | undefined | null): ElementDOMSlot<T> {
-    return new ElementDOMSlot(this.element, before, this.after);
-  }
-  /**
-   * Return a new ElementDOMSlot where all managed children will be inserted after this node
-   */
-  withAfter(after: Node | undefined | null): ElementDOMSlot<T> {
-    return new ElementDOMSlot(this.element, this.before, after);
-  }
-  /**
-   * Return a new ElementDOMSlot with an updated root element
-   */
-  withElement<ElementType extends HTMLElement>(
-    element: ElementType,
-  ): ElementDOMSlot<ElementType> {
-    if (this.element === (element as HTMLElement)) {
-      return this as unknown as ElementDOMSlot<ElementType>;
-    }
-    return new ElementDOMSlot(element, this.before, this.after);
-  }
-  /**
-   * Insert the given child before this.before and any reconciler managed line break node,
-   * or append it if this.before is not defined
-   */
-  insertChild(dom: Node): this {
-    const before = this.before || this.getManagedLineBreak();
-    invariant(
-      before === null || before.parentElement === this.element,
-      'ElementDOMSlot.insertChild: before is not in element',
-    );
-    this.element.insertBefore(dom, before);
-    return this;
-  }
-  /**
-   * Remove the managed child from this container, will throw if it was not already there
-   */
-  removeChild(dom: Node): this {
-    invariant(
-      dom.parentElement === this.element,
-      'ElementDOMSlot.removeChild: dom is not in element',
-    );
-    this.element.removeChild(dom);
-    return this;
-  }
-  /**
-   * Replace managed child prevDom with dom. Will throw if prevDom is not a child
-   *
-   * @param dom The new node to replace prevDom
-   * @param prevDom the node that will be replaced
-   */
-  replaceChild(dom: Node, prevDom: Node): this {
-    invariant(
-      prevDom.parentElement === this.element,
-      'ElementDOMSlot.replaceChild: prevDom is not in element',
-    );
-    this.element.replaceChild(dom, prevDom);
-    return this;
-  }
-  /**
-   * Returns the first managed child of this node,
-   * which will either be this.after.nextSibling or this.element.firstChild,
-   * and will never be this.before if it is defined.
-   */
-  getFirstChild(): ChildNode | null {
-    const firstChild = this.after
-      ? this.after.nextSibling
-      : this.element.firstChild;
-    return firstChild === this.before ||
-      firstChild === this.getManagedLineBreak()
-      ? null
-      : firstChild;
-  }
-  /**
-   * @internal
-   */
-  getManagedLineBreak(): Exclude<
-    LexicalPrivateDOM['__lexicalLineBreak'],
-    undefined
-  > {
-    const element: HTMLElement & LexicalPrivateDOM = this.element;
-    return element.__lexicalLineBreak || null;
-  }
-  /** @internal */
-  setManagedLineBreak(
-    lineBreakType: null | 'empty' | 'line-break' | 'decorator',
-  ): void {
-    const element: HTMLElement & LexicalPrivateDOM = this.element;
-    element.__lexicalLastChildKind = lineBreakType;
-    if (lineBreakType === null) {
-      this.removeManagedLineBreak();
-    } else {
-      const webkitHack =
-        lineBreakType === 'decorator' &&
-        (IS_APPLE_WEBKIT || IS_IOS || IS_SAFARI);
-      this.insertManagedLineBreak(webkitHack);
-    }
-  }
-
-  /** @internal */
-  removeManagedLineBreak(): void {
-    const br = this.getManagedLineBreak();
-    if (br) {
-      const element: HTMLElement & LexicalPrivateDOM = this.element;
-      const sibling = br.nodeName === 'IMG' ? br.nextSibling : null;
-      if (sibling) {
-        element.removeChild(sibling);
-      }
-      element.removeChild(br);
-      element.__lexicalLineBreak = undefined;
-    }
-  }
-  /** @internal */
-  insertManagedLineBreak(webkitHack: boolean): void {
-    const prevBreak = this.getManagedLineBreak();
-    if (prevBreak) {
-      if (webkitHack === (prevBreak.nodeName === 'IMG')) {
-        return;
-      }
-      this.removeManagedLineBreak();
-    }
-    const element: HTMLElement & LexicalPrivateDOM = this.element;
-    const before = this.before;
-    const br = document.createElement('br');
-    element.insertBefore(br, before);
-    if (webkitHack) {
-      const img = document.createElement('img');
-      img.setAttribute('data-lexical-linebreak', 'true');
-      img.style.setProperty('display', 'inline', 'important');
-      img.style.setProperty('border', '0px', 'important');
-      img.style.setProperty('margin', '0px', 'important');
-      img.alt = '';
-      element.insertBefore(img, br);
-      element.__lexicalLineBreak = img;
-    } else {
-      element.__lexicalLineBreak = br;
-    }
-  }
-
-  /**
-   * @internal
-   *
-   * Returns the offset of the first child
-   */
-  getFirstChildOffset(): number {
-    let i = 0;
-    for (let node = this.after; node !== null; node = node.previousSibling) {
-      i++;
-    }
-    return i;
-  }
-
-  /**
-   * @internal
-   */
-  resolveChildIndex(
-    element: ElementNode,
-    elementDOM: HTMLElement,
-    initialDOM: Node,
-    initialOffset: number,
-  ): [node: ElementNode, idx: number] {
-    if (initialDOM === this.element) {
-      const firstChildOffset = this.getFirstChildOffset();
-      return [
-        element,
-        Math.min(
-          firstChildOffset + element.getChildrenSize(),
-          Math.max(firstChildOffset, initialOffset),
-        ),
-      ];
-    }
-    // The resolved offset must be before or after the children
-    const initialPath = indexPath(elementDOM, initialDOM);
-    initialPath.push(initialOffset);
-    const elementPath = indexPath(elementDOM, this.element);
-    let offset = element.getIndexWithinParent();
-    for (let i = 0; i < elementPath.length; i++) {
-      const target = initialPath[i];
-      const source = elementPath[i];
-      if (target === undefined || target < source) {
-        break;
-      } else if (target > source) {
-        offset += 1;
-        break;
-      }
-    }
-    return [element.getParentOrThrow(), offset];
-  }
-}
-
-export function indexPath(root: HTMLElement, child: Node): number[] {
-  const path: number[] = [];
-  let node: Node | null = child;
-  for (; node !== root && node !== null; node = node.parentNode) {
-    let i = 0;
-    for (
-      let sibling = node.previousSibling;
-      sibling !== null;
-      sibling = sibling.previousSibling
-    ) {
-      i++;
-    }
-    path.push(i);
-  }
-  invariant(node === root, 'indexPath: root is not a parent of child');
-  return path.reverse();
 }
 
 /** @noInheritDoc */
@@ -378,18 +148,29 @@ export class ElementNode extends LexicalNode {
     const self = this.getLatest();
     return self.__indent;
   }
-  getChildren<T extends LexicalNode>(): Array<T> {
-    const children: Array<T> = [];
-    let child: T | null = this.getFirstChild();
+  /**
+   * Returns the children of this node, in document order.
+   */
+  getChildren(): LexicalNode[];
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getChildren() as T[]`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the results with a type guard instead.
+   */
+  getChildren<T extends LexicalNode>(): T[];
+  getChildren(): LexicalNode[] {
+    const children: LexicalNode[] = [];
+    let child = this.getFirstChild();
     while (child !== null) {
       children.push(child);
       child = child.getNextSibling();
     }
     return children;
   }
-  getChildrenKeys(): Array<NodeKey> {
-    const children: Array<NodeKey> = [];
-    let child: LexicalNode | null = this.getFirstChild();
+  getChildrenKeys(): NodeKey[] {
+    const children: NodeKey[] = [];
+    let child = this.getFirstChild();
     while (child !== null) {
       children.push(child.__key);
       child = child.getNextSibling();
@@ -413,9 +194,9 @@ export class ElementNode extends LexicalNode {
     const parentLastChild = this.getParentOrThrow().getLastChild();
     return parentLastChild !== null && parentLastChild.is(self);
   }
-  getAllTextNodes(): Array<TextNode> {
+  getAllTextNodes(): TextNode[] {
     const textNodes = [];
-    let child: LexicalNode | null = this.getFirstChild();
+    let child = this.getFirstChild();
     while (child !== null) {
       if ($isTextNode(child)) {
         textNodes.push(child);
@@ -428,10 +209,22 @@ export class ElementNode extends LexicalNode {
     }
     return textNodes;
   }
-  getFirstDescendant<T extends LexicalNode>(): null | T {
-    let node = this.getFirstChild<T>();
+  /**
+   * Returns the deepest first descendant of this node,
+   * or null if it has no children.
+   */
+  getFirstDescendant(): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getFirstDescendant() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getFirstDescendant<T extends LexicalNode>(): null | T;
+  getFirstDescendant(): null | LexicalNode {
+    let node = this.getFirstChild();
     while ($isElementNode(node)) {
-      const child = node.getFirstChild<T>();
+      const child = node.getFirstChild();
       if (child === null) {
         break;
       }
@@ -439,10 +232,22 @@ export class ElementNode extends LexicalNode {
     }
     return node;
   }
-  getLastDescendant<T extends LexicalNode>(): null | T {
-    let node = this.getLastChild<T>();
+  /**
+   * Returns the deepest last descendant of this node,
+   * or null if it has no children.
+   */
+  getLastDescendant(): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getLastDescendant() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getLastDescendant<T extends LexicalNode>(): null | T;
+  getLastDescendant(): null | LexicalNode {
+    let node = this.getLastChild();
     while ($isElementNode(node)) {
-      const child = node.getLastChild<T>();
+      const child = node.getLastChild();
       if (child === null) {
         break;
       }
@@ -450,8 +255,20 @@ export class ElementNode extends LexicalNode {
     }
     return node;
   }
-  getDescendantByIndex<T extends LexicalNode>(index: number): null | T {
-    const children = this.getChildren<T>();
+  /**
+   * Returns the deepest descendant corresponding to the child at the given
+   * index, or null if this node has no children.
+   */
+  getDescendantByIndex(index: number): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getDescendantByIndex(index) as T | null`, and
+   * will be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
+  getDescendantByIndex<T extends LexicalNode>(index: number): null | T;
+  getDescendantByIndex(index: number): null | LexicalNode {
+    const children = this.getChildren();
     const childrenLength = children.length;
     // For non-empty element nodes, we resolve its descendant
     // (either a leaf node or the bottom-most element)
@@ -470,36 +287,92 @@ export class ElementNode extends LexicalNode {
       null
     );
   }
-  getFirstChild<T extends LexicalNode>(): null | T {
+  /**
+   * Returns the first child of this node, or null if it has no children.
+   */
+  getFirstChild(): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getFirstChild() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getFirstChild<T extends LexicalNode>(): null | T;
+  getFirstChild(): null | LexicalNode {
     const self = this.getLatest();
     const firstKey = self.__first;
-    return firstKey === null ? null : $getNodeByKey<T>(firstKey);
+    return firstKey === null ? null : $getNodeByKey(firstKey);
   }
-  getFirstChildOrThrow<T extends LexicalNode>(): T {
-    const firstChild = this.getFirstChild<T>();
+  /**
+   * Returns the first child of this node, or throws if it has no children.
+   */
+  getFirstChildOrThrow(): LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getFirstChildOrThrow() as T`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getFirstChildOrThrow<T extends LexicalNode>(): T;
+  getFirstChildOrThrow(): LexicalNode {
+    const firstChild = this.getFirstChild();
     if (firstChild === null) {
       invariant(false, 'Expected node %s to have a first child.', this.__key);
     }
     return firstChild;
   }
-  getLastChild<T extends LexicalNode>(): null | T {
+  /**
+   * Returns the last child of this node, or null if it has no children.
+   */
+  getLastChild(): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getLastChild() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getLastChild<T extends LexicalNode>(): null | T;
+  getLastChild(): null | LexicalNode {
     const self = this.getLatest();
     const lastKey = self.__last;
-    return lastKey === null ? null : $getNodeByKey<T>(lastKey);
+    return lastKey === null ? null : $getNodeByKey(lastKey);
   }
-  getLastChildOrThrow<T extends LexicalNode>(): T {
-    const lastChild = this.getLastChild<T>();
+  /**
+   * Returns the last child of this node, or throws if it has no children.
+   */
+  getLastChildOrThrow(): LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getLastChildOrThrow() as T`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getLastChildOrThrow<T extends LexicalNode>(): T;
+  getLastChildOrThrow(): LexicalNode {
+    const lastChild = this.getLastChild();
     if (lastChild === null) {
       invariant(false, 'Expected node %s to have a last child.', this.__key);
     }
     return lastChild;
   }
-  getChildAtIndex<T extends LexicalNode>(index: number): null | T {
+  /**
+   * Returns the child of this node at the given index, or null if
+   * the index is out of range.
+   */
+  getChildAtIndex(index: number): null | LexicalNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `element.getChildAtIndex(index) as T | null`, and will
+   * be removed in a future release. Call this method without a type
+   * argument and narrow the result with a type guard instead.
+   */
+  getChildAtIndex<T extends LexicalNode>(index: number): null | T;
+  getChildAtIndex(index: number): null | LexicalNode {
     const size = this.getChildrenSize();
-    let node: null | T;
+    let node: null | LexicalNode;
     let i;
     if (index < size / 2) {
-      node = this.getFirstChild<T>();
+      node = this.getFirstChild();
       i = 0;
       while (node !== null && i <= index) {
         if (i === index) {
@@ -510,7 +383,7 @@ export class ElementNode extends LexicalNode {
       }
       return null;
     }
-    node = this.getLastChild<T>();
+    node = this.getLastChild();
     i = size - 1;
     while (node !== null && i >= index) {
       if (i === index) {
@@ -689,7 +562,7 @@ export class ElementNode extends LexicalNode {
   splice(
     start: number,
     deleteCount: number,
-    nodesToInsert: Array<LexicalNode>,
+    nodesToInsert: LexicalNode[],
   ): this {
     invariant(
       !$isEphemeral(this),
@@ -828,12 +701,12 @@ export class ElementNode extends LexicalNode {
     return writableSelf;
   }
   /**
-   * @internal
+   * @experimental
    *
-   * An experimental API that an ElementNode can override to control where its
-   * children are inserted into the DOM, this is useful to add a wrapping node
-   * or accessory nodes before or after the children. The root of the node returned
-   * by createDOM must still be exactly one HTMLElement.
+   * An ElementNode subclass can override this to control where its children
+   * are inserted into the DOM, e.g. to add a wrapping node or accessory nodes
+   * before or after the children. The root of the node returned by createDOM
+   * must still be exactly one HTMLElement.
    */
   getDOMSlot(element: HTMLElement): ElementDOMSlot<HTMLElement> {
     return new ElementDOMSlot(element);
@@ -996,11 +869,7 @@ export class ElementNode extends LexicalNode {
 
   /** @internal */
   reconcileObservedMutation(dom: HTMLElement, editor: LexicalEditor): void {
-    const slot = $getEditorDOMRenderConfig(editor).$getDOMSlot(
-      this,
-      dom,
-      editor,
-    );
+    const slot = $getDOMSlot(this, dom, editor);
     let currentDOM = slot.getFirstChild();
     for (
       let currentNode = this.getFirstChild();

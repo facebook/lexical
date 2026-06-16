@@ -14,6 +14,7 @@ import {
   signal,
   untracked,
 } from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 import {mergeRegister} from '@lexical/utils';
@@ -31,7 +32,6 @@ import * as React from 'react';
 import {Suspense, useEffect, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {type Container, createRoot, type Root} from 'react-dom/client';
-import invariant from 'shared/invariant';
 
 export type {DecoratorComponentProps};
 
@@ -109,9 +109,11 @@ export function mountReactPluginHost(
 }
 
 export const REACT_PLUGIN_HOST_MOUNT_ROOT_COMMAND =
-  createCommand<HostMountCommandArg>('REACT_PLUGIN_HOST_MOUNT_ROOT_COMMAND');
+  /* @__PURE__ */ createCommand<HostMountCommandArg>(
+    'REACT_PLUGIN_HOST_MOUNT_ROOT_COMMAND',
+  );
 export const REACT_PLUGIN_HOST_MOUNT_PLUGIN_COMMAND =
-  createCommand<MountPluginCommandArg>(
+  /* @__PURE__ */ createCommand<MountPluginCommandArg>(
     'REACT_PLUGIN_HOST_MOUNT_PLUGIN_COMMAND',
   );
 
@@ -161,7 +163,7 @@ function PluginHostDecorator({
  * {@link mountReactPluginElement} can be used to render
  * legacy React plug-ins (or any React content).
  */
-export const ReactPluginHostExtension = defineExtension({
+export const ReactPluginHostExtension = /* @__PURE__ */ defineExtension({
   build(editor, config, state) {
     const mountedPluginsStore = signal({
       plugins: new Map<MountPluginCommandArg['key'], MountPluginCommandArg>(),
@@ -181,7 +183,9 @@ export const ReactPluginHostExtension = defineExtension({
   },
   dependencies: [
     ReactProviderExtension,
-    configExtension(ReactExtension, {decorators: [PluginHostDecorator]}),
+    /* @__PURE__ */ configExtension(ReactExtension, {
+      decorators: [PluginHostDecorator],
+    }),
   ],
   name: '@lexical/react/ReactPluginHost',
   register(editor, _config, state) {

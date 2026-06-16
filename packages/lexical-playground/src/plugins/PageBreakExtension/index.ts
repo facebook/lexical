@@ -6,11 +6,13 @@
  *
  */
 
+import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_EDITOR,
+  configExtension,
   createCommand,
   defineExtension,
   LexicalCommand,
@@ -18,9 +20,21 @@ import {
 
 import {$createPageBreakNode, PageBreakNode} from '../../nodes/PageBreakNode';
 
-export const INSERT_PAGE_BREAK: LexicalCommand<undefined> = createCommand();
+export const INSERT_PAGE_BREAK: LexicalCommand<undefined> =
+  /* @__PURE__ */ createCommand();
 
-export const PageBreakExtension = defineExtension({
+const PageBreakImportRule = /* @__PURE__ */ defineImportRule({
+  $import: () => [$createPageBreakNode()],
+  match: sel.tag('figure').attr('type', PageBreakNode.getType()),
+  name: '@lexical/playground/page-break',
+});
+
+export const PageBreakExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: [PageBreakImportRule],
+    }),
+  ],
   name: '@lexical/playground/PageBreak',
   nodes: [PageBreakNode],
   register: editor =>

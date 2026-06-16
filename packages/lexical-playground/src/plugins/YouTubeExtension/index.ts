@@ -6,9 +6,11 @@
  *
  */
 
+import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_EDITOR,
+  configExtension,
   createCommand,
   defineExtension,
   LexicalCommand,
@@ -16,11 +18,23 @@ import {
 
 import {$createYouTubeNode, YouTubeNode} from '../../nodes/YouTubeNode';
 
-export const INSERT_YOUTUBE_COMMAND: LexicalCommand<string> = createCommand(
-  'INSERT_YOUTUBE_COMMAND',
-);
+export const INSERT_YOUTUBE_COMMAND: LexicalCommand<string> =
+  /* @__PURE__ */ createCommand('INSERT_YOUTUBE_COMMAND');
 
-export const YouTubeExtension = defineExtension({
+const YouTubeImportRule = /* @__PURE__ */ defineImportRule({
+  $import: ctx => [$createYouTubeNode(ctx.captures.id[0])],
+  match: sel
+    .tag('iframe')
+    .attr('data-lexical-youtube', /^.+$/, {capture: 'id'}),
+  name: '@lexical/playground/youtube',
+});
+
+export const YouTubeExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: [YouTubeImportRule],
+    }),
+  ],
   name: '@lexical/playground/YouTube',
   nodes: [YouTubeNode],
   register: editor =>

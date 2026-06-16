@@ -6,6 +6,7 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {
   $createTextNode,
   $isTextNode,
@@ -14,7 +15,6 @@ import {
   LexicalNode,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 export type EntityMatch = {end: number; start: number};
 
@@ -42,7 +42,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
   getMatch: (text: string) => null | EntityMatch,
   targetNode: Klass<T>,
   createNode: (textNode: TextNode) => T,
-): Array<() => void> {
+): (() => void)[] {
   const isTargetNode = (node: LexicalNode | null | undefined): node is T => {
     return node instanceof targetNode;
   };

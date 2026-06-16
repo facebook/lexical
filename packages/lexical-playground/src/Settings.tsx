@@ -29,6 +29,7 @@ export default function Settings(): JSX.Element {
       isCharLimit,
       isCharLimitUtf8,
       isAutocomplete,
+      isVisibleNonPrinting,
       showTreeView,
       showNestedEditorTreeView,
       showTableOfContents,
@@ -36,6 +37,7 @@ export default function Settings(): JSX.Element {
       shouldPreserveNewLinesInMarkdown,
       shouldAllowHighlightingWithBrackets,
       selectionAlwaysOnDisplay,
+      selectBlock,
       isCodeHighlighted,
       isCodeShiki,
     },
@@ -147,6 +149,13 @@ export default function Settings(): JSX.Element {
             text="Autocomplete"
           />
           <Switch
+            onClick={() =>
+              setOption('isVisibleNonPrinting', !isVisibleNonPrinting)
+            }
+            checked={isVisibleNonPrinting}
+            text="Visible Non-Printing"
+          />
+          <Switch
             onClick={() => {
               setOption('showTableOfContents', !showTableOfContents);
             }}
@@ -190,6 +199,14 @@ export default function Settings(): JSX.Element {
             }}
             checked={selectionAlwaysOnDisplay}
             text="Retain selection"
+          />
+
+          <Switch
+            onClick={() => {
+              setOption('selectBlock', !selectBlock);
+            }}
+            checked={selectBlock}
+            text="Block selection"
           />
 
           <Switch

@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import invariant from '@lexical/internal/invariant';
 import {$getRoot, $getState, createState, LexicalNode} from 'lexical';
-import invariant from 'shared/invariant';
 import {
   emptySnapshot,
   ID,
@@ -28,7 +28,10 @@ export type YChange<UserT = any> = {
   user: UserT | null;
 };
 
-const ychangeState = createState<typeof STATE_KEY, YChange | null>(STATE_KEY, {
+const ychangeState = /* @__PURE__ */ createState<
+  typeof STATE_KEY,
+  YChange | null
+>(STATE_KEY, {
   isEqual: (a, b) => a === b,
   parse: value => (value as YChange) ?? null,
 });

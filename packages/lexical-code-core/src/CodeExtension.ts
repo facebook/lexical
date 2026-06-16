@@ -6,21 +6,37 @@
  *
  */
 
+import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
 import {
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
+  configExtension,
   defineExtension,
   KEY_ENTER_COMMAND,
 } from 'lexical';
 
 import {CodeHighlightNode} from './CodeHighlightNode';
+import {
+  $installVscodeCodePasteOverlay,
+  CodeImportRules,
+} from './CodeImportExtension';
 import {$exitCodeNodeOnEnter, CodeNode} from './CodeNode';
 
 /**
  * Add code blocks to the editor (syntax highlighting provided separately)
  */
-export const CodeExtension = defineExtension({
+export const CodeExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [
+    // DOMImportExtension support for the nodes registered here. Inert
+    // unless the editor routes HTML through the pipeline (e.g. via
+    // ClipboardDOMImportExtension or $generateNodesFromDOMViaExtension).
+    CoreImportExtension,
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      preprocess: [$installVscodeCodePasteOverlay],
+      rules: CodeImportRules,
+    }),
+  ],
   name: '@lexical/code',
   nodes: () => [CodeNode, CodeHighlightNode],
   register(editor) {
@@ -37,4 +53,18 @@ export const CodeExtension = defineExtension({
       COMMAND_PRIORITY_LOW,
     );
   },
+});
+
+/**
+ * Bundles {@link CodeImportRules} together with the runtime
+ * {@link CodeExtension}.
+ *
+ * @experimental
+ * @deprecated {@link CodeExtension} now registers
+ * {@link CodeImportRules} (and `CoreImportExtension`) itself — depend on
+ * it directly instead.
+ */
+export const CodeImportExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [CodeExtension],
+  name: '@lexical/code/Import',
 });

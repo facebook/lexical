@@ -7,8 +7,8 @@
  */
 import type {LexicalNode, NodeKey} from '../LexicalNode';
 
-import devInvariant from 'shared/devInvariant';
-import invariant from 'shared/invariant';
+import devInvariant from '@lexical/internal/devInvariant';
+import invariant from '@lexical/internal/invariant';
 
 import {$getRoot, $isRootOrShadowRoot} from '../LexicalUtils';
 import {$isElementNode, ElementNode} from '../nodes/LexicalElementNode';

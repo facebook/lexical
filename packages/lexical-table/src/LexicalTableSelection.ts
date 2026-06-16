@@ -6,6 +6,7 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {$findMatchingParent} from '@lexical/utils';
 import {
   $createPoint,
@@ -24,7 +25,6 @@ import {
   TextFormatType,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
 import {$isTableNode, TableNode} from './LexicalTableNode';
@@ -35,6 +35,8 @@ import {
   $computeTableMap,
   $getTableCellNodeRect,
 } from './LexicalTableUtils';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 export type TableSelectionShape = {
   fromX: number;
@@ -48,7 +50,7 @@ export type TableMapValueType = {
   startRow: number;
   startColumn: number;
 };
-export type TableMapType = Array<Array<TableMapValueType>>;
+export type TableMapType = TableMapValueType[][];
 
 function $getCellNodes(tableSelection: TableSelection): {
   anchorCell: TableCellNode;
@@ -110,7 +112,7 @@ export class TableSelection implements BaseSelection {
   tableKey: NodeKey;
   anchor: PointType;
   focus: PointType;
-  _cachedNodes: Array<LexicalNode> | null;
+  _cachedNodes: LexicalNode[] | null;
   dirty: boolean;
 
   constructor(tableKey: NodeKey, anchor: PointType, focus: PointType) {
@@ -204,7 +206,7 @@ export class TableSelection implements BaseSelection {
     return false;
   }
 
-  extract(): Array<LexicalNode> {
+  extract(): LexicalNode[] {
     return this.getNodes();
   }
 
@@ -238,7 +240,7 @@ export class TableSelection implements BaseSelection {
     return (format & formatFlag) !== 0;
   }
 
-  insertNodes(nodes: Array<LexicalNode>) {
+  insertNodes(nodes: LexicalNode[]) {
     const focusNode = this.focus.getNode();
     invariant(
       $isElementNode(focusNode),
@@ -290,7 +292,7 @@ export class TableSelection implements BaseSelection {
     };
   }
 
-  getNodes(): Array<LexicalNode> {
+  getNodes(): LexicalNode[] {
     if (!this.isValid()) {
       return [];
     }

@@ -28,8 +28,12 @@ export function sanitizeUrl(url: string): string {
 }
 
 // Source: https://stackoverflow.com/a/8234912/2013580
+// The original pattern uses unbounded `+`/`*` quantifiers that backtrack in
+// O(n^2) time (e.g. a long run of word characters with no `@`, retried from
+// every offset). Capping each run at 256 characters keeps validation linear
+// while still accepting any realistic URL.
 const urlRegExp = new RegExp(
-  /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=+$,\w]+@)[A-Za-z0-9.-]+)((?:\/[+~%/.\w-_]*)?\??(?:[-+=&;%@.\w_]*)#?(?:[\w]*))?)/,
+  /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,\w]{1,256}@)?[A-Za-z0-9.-]{1,256}|(?:www.|[-;:&=+$,\w]{1,256}@)[A-Za-z0-9.-]{1,256})((?:\/[+~%/.\w-_]{0,256})?\??(?:[-+=&;%@.\w_]{0,256})#?(?:[\w]{0,256}))?)/,
 );
 export function validateUrl(url: string): boolean {
   // TODO Fix UI for link insertion; it should never default to an invalid URL such as https://.

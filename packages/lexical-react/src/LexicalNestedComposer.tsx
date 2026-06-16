@@ -10,6 +10,8 @@ import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerCon
 import type {EditableListener} from 'lexical';
 import type {JSX} from 'react';
 
+import invariant from '@lexical/internal/invariant';
+import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
 import {CollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {
   createLexicalComposerContext,
@@ -27,8 +29,6 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
-import invariant from 'shared/invariant';
-import warnOnlyOnce from 'shared/warnOnlyOnce';
 
 export interface LexicalNestedComposerProps {
   /**
@@ -60,7 +60,7 @@ export interface LexicalNestedComposerProps {
    * editor = createEditor({nodes: [], parentEditor: $getEditor()});
    * ```
    */
-  initialNodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
+  initialNodes?: readonly (Klass<LexicalNode> | LexicalNodeReplacement)[];
   /**
    * If this is not explicitly set to true, and the collab plugin is active,
    * rendering the children of this component will not happen until collab is ready.

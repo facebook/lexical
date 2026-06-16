@@ -27,19 +27,21 @@ import {
 import {
   $createTestDecoratorNode,
   createTestEditor,
-  DataTransferMock,
   initializeUnitTest,
   invariant,
 } from 'lexical/src/__tests__/utils';
-import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
+import {afterEach, beforeEach, describe, expect, Mock, test, vi} from 'vitest';
 
 const caretFromPointState = vi.hoisted(() => ({
   current: (_x: number, _y: number): null | {node: Node; offset: number} =>
     null,
 }));
 
-vi.mock('shared/caretFromPoint', () => ({
-  default: (x: number, y: number) => caretFromPointState.current(x, y),
+// `$handleRichTextDrop` (in @lexical/clipboard) resolves the drop caret via
+// `./caretFromPoint`, which jsdom can't hit-test. Mock that exact module via
+// its `@lexical/clipboard/src/caretFromPoint` test alias.
+vi.mock('@lexical/clipboard/src/caretFromPoint', () => ({
+  caretFromPoint: (x: number, y: number) => caretFromPointState.current(x, y),
 }));
 
 function setCaretFromPoint(node: Node, offset: number): void {
@@ -48,17 +50,20 @@ function setCaretFromPoint(node: Node, offset: number): void {
 
 function createDropEvent(): {
   event: DragEvent;
-  dataTransfer: DataTransferMock;
-  preventDefault: ReturnType<typeof vi.fn>;
+  dataTransfer: DataTransfer;
+  preventDefault: Mock<() => void>;
 } {
-  const dataTransfer = new DataTransferMock();
-  const preventDefault = vi.fn();
-  const event = {
+  const dataTransfer = new DataTransfer();
+  const event = new DragEvent('drop', {
     clientX: 0,
     clientY: 0,
     dataTransfer,
-    preventDefault,
-  } as unknown as DragEvent;
+  });
+  const preventDefault = vi.fn(() => {});
+  Object.defineProperty(event, 'preventDefault', {
+    enumerable: false,
+    value: preventDefault,
+  });
   return {dataTransfer, event, preventDefault};
 }
 
@@ -74,15 +79,12 @@ function getParagraphTextDOM(editor: LexicalEditor, textKey: string): Text {
 }
 
 function $markActiveSelectionAsDragSource(
-  dataTransfer: DataTransferMock,
+  dataTransfer: DataTransfer,
   editor: LexicalEditor,
 ): void {
   const sel = $getSelection();
   if ($isRangeSelection(sel) && !sel.isCollapsed()) {
-    $writeDragSourceToDataTransfer(
-      dataTransfer as unknown as DataTransfer,
-      editor,
-    );
+    $writeDragSourceToDataTransfer(dataTransfer, editor);
   }
 }
 
@@ -496,7 +498,7 @@ describe('$handleRichTextDrop across editors', () => {
       destTextKey = text.getKey();
     });
 
-    const dataTransfer = new DataTransferMock();
+    const dataTransfer = new DataTransfer();
     await sourceEditor.update(() => {
       const selection = $getSelection();
       invariant($isRangeSelection(selection), 'expected source selection');

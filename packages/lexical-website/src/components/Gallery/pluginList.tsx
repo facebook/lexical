@@ -20,12 +20,10 @@ export type Example = {
   uri?: string;
   preview?: string;
   renderPreview?: () => ReactNode;
-  tags: Array<string>;
+  tags: string[];
 };
 
-export const plugins = (customFields: {
-  [key: string]: unknown;
-}): Array<Example> =>
+export const plugins = (customFields: {[key: string]: unknown}): Example[] =>
   galleryExamples.map(example => ({
     description: example.description,
     preview: getScreenshotPreview(example),

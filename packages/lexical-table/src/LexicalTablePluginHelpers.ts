@@ -7,6 +7,7 @@
  */
 
 import {NamedSignalsOutput, Signal, signal} from '@lexical/extension';
+import invariant from '@lexical/internal/invariant';
 import {
   $dfs,
   $findMatchingParent,
@@ -39,7 +40,6 @@ import {
   SELECTION_CHANGE_COMMAND,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {
   $createTableCellNode,
@@ -364,15 +364,11 @@ export function registerTableSelectionObserver(
                   initializeTableNode(tableNode, nodeKey, tableElement);
                 } else if (tableElement !== tableSelection[1]) {
                   // The update created a new DOM node, destroy the existing TableObserver
-                  tableSelection[0].removeListeners();
-                  tableObservers.observers.delete(nodeKey);
+                  tableObservers.removeObserver(nodeKey);
                   initializeTableNode(tableNode, nodeKey, tableElement);
                 }
               } else if (mutation === 'destroyed') {
-                if (tableSelection !== undefined) {
-                  tableSelection[0].removeListeners();
-                  tableObservers.observers.delete(nodeKey);
-                }
+                tableObservers.removeObserver(nodeKey);
               }
             }
           },
@@ -384,9 +380,7 @@ export function registerTableSelectionObserver(
     () => {
       // Hook might be called multiple times so cleaning up tables listeners as well,
       // as it'll be reinitialized during recurring call
-      for (const [, [tableSelection]] of tableObservers.observers) {
-        tableSelection.removeListeners();
-      }
+      tableObservers.removeAllObservers();
     },
   );
 }

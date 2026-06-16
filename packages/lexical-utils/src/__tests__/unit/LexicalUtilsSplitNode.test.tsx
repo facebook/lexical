@@ -28,14 +28,14 @@ describe('LexicalUtils#splitNode', () => {
     editor._headless = true;
   });
 
-  const testCases: Array<{
+  const testCases: {
     _: string;
     expectedHtml: string;
     initialHtml: string;
-    splitPath: Array<number>;
+    splitPath: number[];
     splitOffset: number;
     only?: boolean;
-  }> = [
+  }[] = [
     {
       _: 'split paragraph in between two text nodes',
       expectedHtml:
@@ -115,10 +115,11 @@ describe('LexicalUtils#splitNode', () => {
 
         let nodeToSplit: ElementNode = $getRoot();
         for (const index of testCase.splitPath) {
-          nodeToSplit = nodeToSplit.getChildAtIndex(index)!;
-          if (!$isElementNode(nodeToSplit)) {
+          const child = nodeToSplit.getChildAtIndex(index)!;
+          if (!$isElementNode(child)) {
             throw new Error('Expected node to be element');
           }
+          nodeToSplit = child;
         }
 
         $splitNode(nodeToSplit, testCase.splitOffset);

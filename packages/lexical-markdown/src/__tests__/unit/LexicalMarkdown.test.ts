@@ -9,6 +9,7 @@
 import {$createCodeNode, CodeNode} from '@lexical/code-core';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import invariant from '@lexical/internal/invariant';
 import {$createLinkNode, LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
@@ -41,7 +42,6 @@ import {
   KEY_ENTER_COMMAND,
   type TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
 import {assert, describe, expect, it} from 'vitest';
 
 import {
@@ -272,7 +272,7 @@ export const CANCELED_HEADING_REPLACE_EXAMPLE: ElementTransformer = {
 };
 
 describe('Markdown', () => {
-  type Input = Array<{
+  type Input = {
     html: string;
     md: string;
     skipExport?: true;
@@ -281,7 +281,7 @@ describe('Markdown', () => {
     shouldMergeAdjacentLines?: true | false;
     customTransformers?: Transformer[];
     mdAfterExport?: string;
-  }>;
+  }[];
 
   const URL = 'https://lexical.dev';
 
@@ -416,6 +416,13 @@ describe('Markdown', () => {
     {
       html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>$$hello</span></code></p>',
       md: '`$$hello`',
+    },
+    {
+      // Code spans bind tighter than text-match transformers, so the $...$
+      // (HIGHLIGHT_TEXT_MATCH_IMPORT) must not consume across the code spans.
+      // https://github.com/facebook/lexical/issues/8687
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>$a</span></code><span style="white-space: pre-wrap;"> </span><code spellcheck="false" style="white-space: pre-wrap;"><span>$b</span></code></p>',
+      md: '`$a` `$b`',
     },
     {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">Hello</span></a><span style="white-space: pre-wrap;"> world</span></p>',
@@ -877,7 +884,9 @@ describe('Markdown', () => {
       );
 
       expect(
-        editor.getEditorState().read(() => $generateHtmlFromNodes(editor)),
+        editor
+          .getEditorState()
+          .read(() => $generateHtmlFromNodes(editor), {editor}),
       ).toBe(html);
     });
   }
@@ -2616,5 +2625,155 @@ describe('$convertSelectionToMarkdownString', () => {
         {editor},
       );
     expect(result).toBe('    - Nested A');
+  });
+});
+
+describe('Ordered list start adjustment (#8677)', () => {
+  const baseNodes = [
+    HeadingNode,
+    ListNode,
+    ListItemNode,
+    QuoteNode,
+    CodeNode,
+    LinkNode,
+  ];
+
+  it('updates list start when typed marker precedes an existing ordered list', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        const list = $createListNode('number', 2).append(
+          $createListItemNode().append($createTextNode('A')),
+          $createListItemNode().append($createTextNode('B')),
+        );
+        root.append(paragraph, list);
+        paragraph.selectEnd().insertText('1.');
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText(' ');
+        }
+      },
+      {discrete: true},
+    );
+
+    expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+      '<ol><li value="1"></li><li value="2"><span style="white-space: pre-wrap;">A</span></li><li value="3"><span style="white-space: pre-wrap;">B</span></li></ol>',
+    );
+  });
+
+  it('respects an arbitrary typed start number', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        const list = $createListNode('number', 2).append(
+          $createListItemNode().append($createTextNode('A')),
+        );
+        root.append(paragraph, list);
+        paragraph.selectEnd().insertText('7.');
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText(' ');
+        }
+      },
+      {discrete: true},
+    );
+
+    expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+      '<ol start="7"><li value="7"></li><li value="8"><span style="white-space: pre-wrap;">A</span></li></ol>',
+    );
+  });
+
+  it('does not change start when typed marker follows an existing ordered list', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const list = $createListNode('number', 2).append(
+          $createListItemNode().append($createTextNode('A')),
+        );
+        const paragraph = $createParagraphNode();
+        root.append(list, paragraph);
+        paragraph.selectEnd().insertText('9.');
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText(' ');
+        }
+      },
+      {discrete: true},
+    );
+
+    // Branch (2) of listReplace: paragraph after the list is appended as the
+    // trailing item and the list start stays at 2. The typed "9." is
+    // overwritten by updateChildrenListItemValue.
+    expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+      '<ol start="2"><li value="2"><span style="white-space: pre-wrap;">A</span></li><li value="3"></li></ol>',
+    );
+  });
+
+  it('creates a fresh ordered list when the next sibling is a different list type', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        const bullets = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('A')),
+        );
+        root.append(paragraph, bullets);
+        paragraph.selectEnd().insertText('5.');
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText(' ');
+        }
+      },
+      {discrete: true},
+    );
+
+    // Adjacent list is a different type, so listReplace falls through to the
+    // branch that creates a fresh ordered list with the typed start. The
+    // existing bullet list stays intact.
+    expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+      '<ol start="5"><li value="5"></li></ol><ul><li value="1"><span style="white-space: pre-wrap;">A</span></li></ul>',
+    );
   });
 });

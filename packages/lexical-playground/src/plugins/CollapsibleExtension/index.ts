@@ -9,6 +9,12 @@
 import './Collapsible.css';
 
 import {
+  BlockSchema,
+  defineImportRule,
+  DOMImportExtension,
+  sel,
+} from '@lexical/html';
+import {
   $findMatchingParent,
   $insertNodeToNearestRoot,
   mergeRegister,
@@ -21,6 +27,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_LOW,
+  configExtension,
   createCommand,
   defineExtension,
   ElementNode,
@@ -29,6 +36,7 @@ import {
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
+  type LexicalNode,
 } from 'lexical';
 
 import {
@@ -47,7 +55,78 @@ import {
   CollapsibleTitleNode,
 } from './CollapsibleTitleNode';
 
-export const INSERT_COLLAPSIBLE_COMMAND = createCommand<void>(
+const SummaryRule = /* @__PURE__ */ defineImportRule({
+  $import: (ctx, el) => [
+    $createCollapsibleTitleNode().splice(0, 0, ctx.$importChildren(el)),
+  ],
+  match: sel.tag('summary'),
+  name: '@lexical/playground/summary',
+});
+
+const CollapsibleContentRule = /* @__PURE__ */ defineImportRule({
+  $import: (ctx, el) => [
+    $createCollapsibleContentNode().splice(
+      0,
+      0,
+      ctx.$importChildren(el, {schema: BlockSchema}),
+    ),
+  ],
+  match: sel.tag('div').attr('data-lexical-collapsible-content', true),
+  name: '@lexical/playground/collapsible-content',
+});
+
+const DetailsRule = /* @__PURE__ */ defineImportRule({
+  $import: (ctx, el) => {
+    let titleNode: CollapsibleTitleNode | null = null;
+    // BlockSchema wraps inline runs in paragraphs, and `$onChild` siphons
+    // the synthesized CollapsibleTitleNode out before it ever reaches the
+    // ContentNode below. CollapsibleContentNode is itself block-level so
+    // BlockSchema leaves it intact in `bodyNodes`.
+    const bodyNodes = ctx.$importChildren(el, {
+      $onChild: child => {
+        if (titleNode === null && $isCollapsibleTitleNode(child)) {
+          titleNode = child;
+          return null;
+        }
+        return child;
+      },
+      schema: BlockSchema,
+    });
+    let contentNode: CollapsibleContentNode | null = null;
+    const restBody: LexicalNode[] = [];
+    for (const child of bodyNodes) {
+      if ($isCollapsibleContentNode(child)) {
+        if (contentNode === null) {
+          contentNode = child;
+        } else {
+          // Multiple content nodes (rare): fold the extras into restBody so
+          // they get appended to the canonical one below.
+          for (const grand of child.getChildren()) {
+            restBody.push(grand);
+          }
+        }
+      } else {
+        restBody.push(child);
+      }
+    }
+    if (titleNode === null) {
+      titleNode = $createCollapsibleTitleNode();
+    }
+    if (contentNode === null) {
+      contentNode = $createCollapsibleContentNode();
+    }
+    for (const node of restBody) {
+      contentNode.append(node);
+    }
+    return [
+      $createCollapsibleContainerNode(el.open).append(titleNode, contentNode),
+    ];
+  },
+  match: sel.tag('details'),
+  name: '@lexical/playground/details',
+});
+
+export const INSERT_COLLAPSIBLE_COMMAND = /* @__PURE__ */ createCommand<void>(
   'INSERT_COLLAPSIBLE_COMMAND',
 );
 
@@ -99,7 +178,8 @@ const $onEscapeDown = () => {
               contentParagraph.getTextContentSize()) ||
           (titleParagraph !== null &&
             selection.anchor.key === titleParagraph.getKey() &&
-            selection.anchor.offset === titleParagraph.getTextContentSize())
+            selection.anchor.offset === titleParagraph.getTextContentSize() &&
+            !container.getOpen())
         ) {
           container.insertAfter($createParagraphNode());
         }
@@ -137,7 +217,12 @@ const $wrapInlineContentChildren = (node: CollapsibleContentNode) => {
   }
 };
 
-export const CollapsibleExtension = defineExtension({
+export const CollapsibleExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: [DetailsRule, SummaryRule, CollapsibleContentRule],
+    }),
+  ],
   name: '@lexical/playground/Collapsible',
   nodes: [
     CollapsibleContainerNode,

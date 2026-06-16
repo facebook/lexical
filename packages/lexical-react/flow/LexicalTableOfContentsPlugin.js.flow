@@ -12,7 +12,7 @@ import type {LexicalEditor, NodeKey} from 'lexical';
 
 declare export function TableOfContentsPlugin({
   children: (
-    tableOfContents: Array<[NodeKey, string, HeadingTagType]>,
+    tableOfContents: [NodeKey, string, HeadingTagType][],
     editor: LexicalEditor,
   ) => React.Node,
 }): React.Node;

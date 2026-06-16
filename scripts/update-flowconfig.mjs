@@ -21,6 +21,10 @@ const headerTemplate = fs.readFileSync(
 const BLOCK_REGEX =
   /^([\s\S]+?\n;; \[generated-start update-flowconfig\]\n)([\s\S]*?)(;; \[generated-end update-flowconfig\][\s\S]+)$/;
 
+/**
+ * @param {string} wwwName
+ * @returns {string}
+ */
 function flowTemplate(wwwName) {
   return (
     headerTemplate.replace(/^( \*\/)$/m, ' * @flow strict\n$1') +
@@ -51,11 +55,16 @@ function updateFlowconfig(flowconfigPath = './.flowconfig') {
   const configDir = path.resolve(path.dirname(flowconfigPath));
   /** @type {Array<string>} */
   const generatedBlock = [];
+  /**
+   * @param {string} moduleName
+   * @param {string} flowFilename
+   */
   const emit = (moduleName, flowFilename) =>
     generatedBlock.push(
       `module.name_mapper='^${moduleName}$' -> '${flowFilename}'\n`,
     );
   for (const pkg of packagesManager.getPackages()) {
+    /** @param {string[]} subPaths */
     const resolveRelative = (...subPaths) =>
       '<PROJECT_ROOT>/' +
       path.relative(configDir, pkg.resolve(...subPaths)).replace(/^(?!\.)/, '');

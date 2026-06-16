@@ -24,6 +24,7 @@
  * prefix. (NB: '$' couldn't be used as the prefix because it breaks XmlElement.toDOM().)
  */
 
+import invariant from '@lexical/internal/invariant';
 import {
   $getSelection,
   $getWritableNodeState,
@@ -35,8 +36,6 @@ import {
   RootNode,
   TextNode,
 } from 'lexical';
-import invariant from 'shared/invariant';
-import simpleDiffWithCursor from 'shared/simpleDiffWithCursor';
 import {
   ContentFormat,
   ContentString,
@@ -53,6 +52,7 @@ import {
 } from 'yjs';
 
 import {BindingV2} from './Bindings';
+import simpleDiffWithCursor from './simpleDiffWithCursor';
 import {$syncPropertiesFromYjs, getDefaultNodeProperties} from './Utils';
 
 type ComputeYChange = (
@@ -172,8 +172,11 @@ export const $createOrUpdateNodeFromYElement = (
   const state: Record<string, unknown> = {};
   for (const k in attrs) {
     if (k.startsWith(STATE_KEY_PREFIX)) {
+      // State keys route through NodeState.updateFromJSON, which guards
+      // against prototype-polluting keys.
       state[attrKeyToStateKey(k)] = attrs[k];
-    } else {
+    } else if (k !== '__proto__' && k !== 'constructor' && k !== 'prototype') {
+      // Skip prototype-polluting property keys from untrusted remote attrs.
       properties[k] = attrs[k];
     }
   }
@@ -271,7 +274,7 @@ const $createOrUpdateTextNodesFromYText = (
   snapshot?: Snapshot,
   prevSnapshot?: Snapshot,
   computeYChange?: ComputeYChange,
-): Array<TextNode> | null => {
+): TextNode[] | null => {
   const deltas = toDelta(text, snapshot, prevSnapshot, computeYChange);
 
   // Use existing text nodes if the count and types all align, otherwise throw out the existing
@@ -404,7 +407,7 @@ const equalAttrs = (
   return eq;
 };
 
-type NormalizedPNodeContent = Array<Array<TextNode> | LexicalNode>;
+type NormalizedPNodeContent = (TextNode[] | LexicalNode)[];
 
 const normalizeNodeContent = (node: LexicalNode): NormalizedPNodeContent => {
   if (!(node instanceof ElementNode)) {
@@ -626,7 +629,7 @@ const toDelta = (
   snapshot?: Snapshot,
   prevSnapshot?: Snapshot,
   computeYChange?: ComputeYChange,
-): Array<{insert: string; attributes: TextAttributes}> => {
+): {insert: string; attributes: TextAttributes}[] => {
   return ytext
     .toDelta(snapshot, prevSnapshot, computeYChange)
     .map((delta: {insert: string; attributes?: TextAttributes}) => {

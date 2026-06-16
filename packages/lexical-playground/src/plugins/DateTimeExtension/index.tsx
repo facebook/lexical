@@ -6,13 +6,22 @@
  *
  */
 
+import {applyFormatFromStyle} from '@lexical/extension';
+import {
+  CoreImportExtension,
+  defineImportRule,
+  DOMImportExtension,
+  sel,
+} from '@lexical/html';
 import {$insertNodeIntoLeaf, $wrapNodeInElement} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $isTextNode,
   COMMAND_PRIORITY_EDITOR,
+  configExtension,
   createCommand,
   defineExtension,
   LexicalCommand,
@@ -28,9 +37,59 @@ type CommandPayload = {
 };
 
 export const INSERT_DATETIME_COMMAND: LexicalCommand<CommandPayload> =
-  createCommand('INSERT_DATETIME_COMMAND');
+  /* @__PURE__ */ createCommand('INSERT_DATETIME_COMMAND');
 
-export const DateTimeExtension = defineExtension({
+const DateTimeRule = /* @__PURE__ */ defineImportRule({
+  $import: (ctx, el) => {
+    const dateTimeValue = el.getAttribute('data-lexical-datetime')!;
+    const node = $createDateTimeNode(new Date(Date.parse(dateTimeValue)));
+    const [firstChild] = ctx.$importChildren(el);
+    if ($isTextNode(firstChild)) {
+      node.setFormat(firstChild.getFormat());
+    }
+    return [node];
+  },
+  match: sel.tag('span').attr('data-lexical-datetime', true),
+  name: '@lexical/playground/datetime',
+});
+
+const GoogleDocsDateRule = /* @__PURE__ */ defineImportRule({
+  $import: (_ctx, el, $next) => {
+    let parsed: {dat_df?: {dfie_ts?: {tv?: {tv_s?: number}}; dfie_dt?: string}};
+    try {
+      parsed = JSON.parse(el.getAttribute('data-rich-links') ?? '{}');
+    } catch {
+      return $next();
+    }
+    if (parsed?.dat_df === undefined) {
+      return $next();
+    }
+    const parsedDate =
+      (parsed.dat_df.dfie_ts?.tv?.tv_s ?? 0) * 1000 ||
+      Date.parse(parsed.dat_df.dfie_dt ?? '');
+    if (isNaN(parsedDate)) {
+      return $next();
+    }
+    return [
+      applyFormatFromStyle($createDateTimeNode(new Date(parsedDate)), el.style),
+    ];
+  },
+  match: sel.tag('span').attr('data-rich-links', /"type"\s*:\s*"date"/),
+  name: '@lexical/playground/datetime-google-docs',
+});
+
+export const DateTimeExtension = /* @__PURE__ */ defineExtension({
+  // Depend on CoreImportExtension so this extension's rules are merged after
+  // the core rules (later-merged rules win dispatch). Without this the core
+  // inline-format `<span>` rule could out-prioritize the `<span
+  // data-lexical-datetime>` rule below, depending on where the app lists this
+  // extension relative to the import baseline.
+  dependencies: [
+    CoreImportExtension,
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: [DateTimeRule, GoogleDocsDateRule],
+    }),
+  ],
   name: '@lexical/playground/DateTime',
   nodes: [DateTimeNode],
   register: editor =>

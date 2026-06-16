@@ -47,7 +47,7 @@ export const TreeView = forwardRef<
   ref,
 ): JSX.Element {
   const [timeStampedEditorStates, setTimeStampedEditorStates] = useState<
-    Array<[number, EditorState]>
+    [number, EditorState][]
   >([]);
   const [content, setContent] = useState<string>('');
   const [timeTravelEnabled, setTimeTravelEnabled] = useState(false);

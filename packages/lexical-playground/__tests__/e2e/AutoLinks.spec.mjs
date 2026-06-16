@@ -26,7 +26,7 @@ import {
   test,
 } from '../utils/index.mjs';
 
-test.describe.parallel('Auto Links', () => {
+test.describe('Auto Links', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
 
   test('Can convert url-like text into links', async ({page, isPlainText}) => {
@@ -144,7 +144,7 @@ test.describe.parallel('Auto Links', () => {
       page,
       htmlWithLink +
         html`
-          <p dir="auto"><br /></p>
+          <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
         `,
       undefined,
       {ignoreClasses: true},

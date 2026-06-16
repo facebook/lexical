@@ -36,13 +36,13 @@ function toEntry(heading: HeadingNode): TableOfContentsEntry {
 function $insertHeadingIntoTableOfContents(
   prevHeading: HeadingNode | null,
   newHeading: HeadingNode | null,
-  currentTableOfContents: Array<TableOfContentsEntry>,
-): Array<TableOfContentsEntry> {
+  currentTableOfContents: TableOfContentsEntry[],
+): TableOfContentsEntry[] {
   if (newHeading === null) {
     return currentTableOfContents;
   }
   const newEntry: TableOfContentsEntry = toEntry(newHeading);
-  let newTableOfContents: Array<TableOfContentsEntry> = [];
+  let newTableOfContents: TableOfContentsEntry[] = [];
   if (prevHeading === null) {
     // check if key already exists
     if (
@@ -73,8 +73,8 @@ function $insertHeadingIntoTableOfContents(
 
 function $deleteHeadingFromTableOfContents(
   key: NodeKey,
-  currentTableOfContents: Array<TableOfContentsEntry>,
-): Array<TableOfContentsEntry> {
+  currentTableOfContents: TableOfContentsEntry[],
+): TableOfContentsEntry[] {
   const newTableOfContents = [];
   for (const heading of currentTableOfContents) {
     if (heading[0] !== key) {
@@ -86,9 +86,9 @@ function $deleteHeadingFromTableOfContents(
 
 function $updateHeadingInTableOfContents(
   heading: HeadingNode,
-  currentTableOfContents: Array<TableOfContentsEntry>,
-): Array<TableOfContentsEntry> {
-  const newTableOfContents: Array<TableOfContentsEntry> = [];
+  currentTableOfContents: TableOfContentsEntry[],
+): TableOfContentsEntry[] {
+  const newTableOfContents: TableOfContentsEntry[] = [];
   for (const oldHeading of currentTableOfContents) {
     if (oldHeading[0] === heading.getKey()) {
       newTableOfContents.push(toEntry(heading));
@@ -106,9 +106,9 @@ function $updateHeadingInTableOfContents(
 function $updateHeadingPosition(
   prevHeading: HeadingNode | null,
   heading: HeadingNode,
-  currentTableOfContents: Array<TableOfContentsEntry>,
-): Array<TableOfContentsEntry> {
-  const newTableOfContents: Array<TableOfContentsEntry> = [];
+  currentTableOfContents: TableOfContentsEntry[],
+): TableOfContentsEntry[] {
+  const newTableOfContents: TableOfContentsEntry[] = [];
   const newEntry: TableOfContentsEntry = toEntry(heading);
 
   if (!prevHeading) {
@@ -137,19 +137,19 @@ function $getPreviousHeading(node: HeadingNode): HeadingNode | null {
 
 type Props = {
   children: (
-    values: Array<TableOfContentsEntry>,
+    values: TableOfContentsEntry[],
     editor: LexicalEditor,
   ) => JSX.Element;
 };
 
 export function TableOfContentsPlugin({children}: Props): JSX.Element {
   const [tableOfContents, setTableOfContents] = useState<
-    Array<TableOfContentsEntry>
+    TableOfContentsEntry[]
   >([]);
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     // Set table of contents initial state
-    let currentTableOfContents: Array<TableOfContentsEntry> = [];
+    let currentTableOfContents: TableOfContentsEntry[] = [];
     editor.getEditorState().read(() => {
       const updateCurrentTableOfContents = (node: ElementNode) => {
         for (const child of node.getChildren()) {
@@ -207,8 +207,8 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
         editor.getEditorState().read(() => {
           for (const [nodeKey, mutation] of mutatedNodes) {
             if (mutation === 'created') {
-              const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
-              if (newHeading !== null) {
+              const newHeading = $getNodeByKey(nodeKey);
+              if ($isHeadingNode(newHeading)) {
                 const prevHeading = $getPreviousHeading(newHeading);
                 currentTableOfContents = $insertHeadingIntoTableOfContents(
                   prevHeading,
@@ -222,8 +222,8 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
                 currentTableOfContents,
               );
             } else if (mutation === 'updated') {
-              const newHeading = $getNodeByKey<HeadingNode>(nodeKey);
-              if (newHeading !== null) {
+              const newHeading = $getNodeByKey(nodeKey);
+              if ($isHeadingNode(newHeading)) {
                 const prevHeading = $getPreviousHeading(newHeading);
                 currentTableOfContents = $updateHeadingPosition(
                   prevHeading,

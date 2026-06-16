@@ -8,7 +8,14 @@
 
 import type {PropertiesHyphenFallback} from 'csstype';
 
-import {domOverride, DOMRenderExtension} from '@lexical/html';
+import {
+  CoreImportExtension,
+  defineImportRule,
+  DOMImportExtension,
+  domOverride,
+  DOMRenderExtension,
+  sel,
+} from '@lexical/html';
 import {$forEachSelectedTextNode} from '@lexical/selection';
 import {
   $caretRangeFromSelection,
@@ -24,7 +31,6 @@ import {
   createCommand,
   createState,
   defineExtension,
-  DOMConversionMap,
   getStyleObjectFromCSS,
   isHTMLElement,
   LexicalNode,
@@ -310,88 +316,101 @@ const IGNORE_STYLES: Set<keyof StyleObject> = new Set([
 
 export type StyleMapping = (input: StyleObject) => StyleObject;
 
-// TODO there's no reasonable way to hook into importDOM from a plug-in https://github.com/facebook/lexical/issues/7259
-export function constructStyleImportMap(
-  styleMapping: StyleMapping = input => input,
-): DOMConversionMap {
-  const importMap: DOMConversionMap = {};
-
-  // Wrap all TextNode importers with a function that also imports
-  // styles that are not otherwise imported
-  for (const [tag, fn] of Object.entries(TextNode.importDOM() || {})) {
-    importMap[tag] = importNode => {
-      const importer = fn(importNode);
-      if (!importer) {
-        return null;
-      }
-      return {
-        ...importer,
-        conversion: element => {
-          const output = importer.conversion(element);
-          if (
-            output === null ||
-            output.forChild === undefined ||
-            output.after !== undefined ||
-            output.node !== null ||
-            !element.hasAttribute('style')
-          ) {
-            return output;
-          }
-          let extraStyles: undefined | Record<string, string>;
-          for (const k of element.style) {
-            if (IGNORE_STYLES.has(k as keyof StyleObject)) {
-              continue;
-            }
-            extraStyles = extraStyles || {};
-            extraStyles[k] = element.style.getPropertyValue(k);
-          }
-          if (extraStyles) {
-            const {forChild} = output;
-            return {
-              ...output,
-              forChild: (child, parent) => {
-                const node = forChild(child, parent);
-                return $isTextNode(node)
-                  ? $setStyleObject(
-                      node,
-                      styleMapping(extraStyles as StyleObject),
-                    )
-                  : node;
-              },
-            };
-          }
-          return output;
-        },
-      };
-    };
+/**
+ * Extract the styles to import — i.e. every CSS property other than the
+ * ones already handled by the core inline-format rule
+ * ({@link IGNORE_STYLES}).
+ */
+function extractExtraStyles(el: HTMLElement): StyleObject | null {
+  let extra: undefined | Record<string, string>;
+  for (const k of el.style) {
+    if (IGNORE_STYLES.has(k as keyof StyleObject)) {
+      continue;
+    }
+    extra = extra || {};
+    extra[k] = el.style.getPropertyValue(k);
   }
-  return importMap;
+  return extra ? (extra as StyleObject) : null;
+}
+
+/**
+ * Build a wildcard import rule that decorates every TextNode produced by
+ * a styled element with the element's "extra" styles (those not already
+ * handled by the core inline-format rule).
+ *
+ * This is the {@link DOMImportExtension}-native replacement for the
+ * legacy `constructStyleImportMap` workaround that wrapped every TextNode
+ * importer in turn.
+ */
+export function createStyleImportRule(
+  styleMapping: StyleMapping = input => input,
+) {
+  return defineImportRule({
+    $import: (_ctx, el, $next) => {
+      const extra = el.hasAttribute('style') ? extractExtraStyles(el) : null;
+      const out = $next();
+      if (extra) {
+        const mapped = styleMapping(extra);
+        for (const child of out) {
+          if ($isTextNode(child)) {
+            $setStyleObject(child, prev => mergeStyleObjects(prev, mapped));
+          }
+        }
+      }
+      return out;
+    },
+    // Match every styled element — the per-element refinement happens in
+    // the body (only TextNodes produced by `$next()` get styled, and we
+    // skip ignored properties). The wildcard sits at the lowest priority
+    // (registered last in the rules array below) so per-tag rules from
+    // CoreImportExtension still drive node creation.
+    match: sel.any().attr('style', /\S/),
+    name: '@lexical/examples/node-state-style/style',
+  });
 }
 
 export const StyleStateExtension = defineExtension({
   dependencies: [
+    // New-pipeline import: register the style-capturing wildcard rule via
+    // DOMImportExtension. Replaces the legacy `html: {import: ...}` field
+    // that used `constructStyleImportMap`.
+    CoreImportExtension,
+    configExtension(DOMImportExtension, {
+      rules: [createStyleImportRule()],
+    }),
     configExtension(DOMRenderExtension, {
       overrides: [
-        // Remove pre-wrap from TextNode export when not needed
+        // Remove pre-wrap from TextNode export when not needed, and
+        // strip any resulting empty `style=""` attributes (which can be
+        // left behind by `el.style.removeProperty(...)` in some browsers
+        // / JSDOM, or added incidentally by an upstream `el.style.foo = …`
+        // followed by another override that clears that property).
         domOverride([TextNode], {
           $exportDOM(_node, $next) {
             const result = $next();
             if (isHTMLElement(result.element)) {
+              const textContent = result.element.textContent || '';
+              // We know there aren't tabs or newlines, but if there are
+              // leading, trailing, or adjacent spaces we need pre-wrap to
+              // preserve them.
+              const needsPreWrap = /^\s|\s$|\s\s/.test(textContent);
               for (const el of [
                 result.element,
                 ...result.element.querySelectorAll('*'),
               ]) {
-                if (
-                  isHTMLElement(el) &&
-                  el.style.whiteSpace === 'pre-wrap' && // we know there aren't tabs or newlines but if there are
-                  // leading, trailing, or adjacent spaces then we need the
-                  // pre-wrap to preserve the content
-                  !/^\s|\s$|\s\s/.test(result.element.textContent)
-                ) {
-                  el.style.setProperty('white-space', null);
-                  if (el.style.cssText === '') {
-                    el.removeAttribute('style');
-                  }
+                if (!isHTMLElement(el)) {
+                  continue;
+                }
+                if (!needsPreWrap && el.style.whiteSpace === 'pre-wrap') {
+                  el.style.removeProperty('white-space');
+                }
+                // Strip an empty `style` attribute regardless of how it
+                // got there — `removeProperty` above can leave the
+                // attribute as `style=""`, and so can any earlier
+                // override that cleared its only set property.
+                const styleAttr = el.getAttribute('style');
+                if (styleAttr !== null && styleAttr.trim() === '') {
+                  el.removeAttribute('style');
                 }
               }
             }
@@ -438,9 +457,6 @@ export const StyleStateExtension = defineExtension({
       ],
     }),
   ],
-  html: {
-    import: constructStyleImportMap(),
-  },
   name: '@lexical/examples/node-state-style/StyleState',
   register: editor =>
     editor.registerCommand(

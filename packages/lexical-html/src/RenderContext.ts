@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {EditorDOMRenderConfig} from 'lexical';
+
 import {getPeerDependencyFromEditor} from '@lexical/extension';
-import {$getEditor, LexicalEditor} from 'lexical';
+import {$getEditor, $getEditorDOMRenderConfig, LexicalEditor} from 'lexical';
 
 import {DOMRenderContextSymbol, DOMRenderExtensionName} from './constants';
 import {
@@ -48,13 +50,19 @@ export function createRenderState<V>(
  * Render context state that is true if the export was initiated from the root of the document.
  * @experimental
  */
-export const RenderContextRoot = createRenderState('root', Boolean);
+export const RenderContextRoot = /* @__PURE__ */ createRenderState(
+  'root',
+  Boolean,
+);
 
 /**
  * Render context state that is true if this is an export operation ($generateHtmlFromNodes).
  * @experimental
  */
-export const RenderContextExport = createRenderState('isExport', Boolean);
+export const RenderContextExport = /* @__PURE__ */ createRenderState(
+  'isExport',
+  Boolean,
+);
 
 function getDefaultRenderContext(
   editor: LexicalEditor,
@@ -84,6 +92,73 @@ export function $getRenderContextValue<V>(
   editor: LexicalEditor = $getEditor(),
 ): V {
   return getContextValue(getRenderContext(editor), cfg);
+}
+
+function getRuntime(editor: LexicalEditor) {
+  const dep = getPeerDependencyFromEditor<typeof DOMRenderExtension>(
+    editor,
+    DOMRenderExtensionName,
+  );
+  return dep ? dep.output.runtime : undefined;
+}
+
+/**
+ * Imperatively set a value in the persistent editor render context.
+ *
+ * Unlike {@link $withRenderContext} (which scopes values to a callback), this
+ * persists on the editor. If the change flips any override's
+ * `disabledForEditor` result, the resident render config is recompiled and the
+ * affected nodes are re-rendered. No-op if {@link DOMRenderExtension} is not
+ * installed.
+ *
+ * @experimental
+ */
+export function $setRenderContextValue<V>(
+  cfg: RenderStateConfig<V>,
+  value: V,
+  editor: LexicalEditor = $getEditor(),
+): void {
+  const runtime = getRuntime(editor);
+  if (runtime) {
+    runtime.setContextValue(cfg, value);
+  }
+}
+
+/**
+ * Imperatively update a value in the persistent editor render context with an
+ * updater function. See {@link $setRenderContextValue}.
+ *
+ * @experimental
+ */
+export function $updateRenderContextValue<V>(
+  cfg: RenderStateConfig<V>,
+  updater: (prev: V) => V,
+  editor: LexicalEditor = $getEditor(),
+): void {
+  const runtime = getRuntime(editor);
+  if (runtime) {
+    runtime.setContextValue(
+      cfg,
+      updater(getContextValue(runtime.editorContext, cfg)),
+    );
+  }
+}
+
+/**
+ * Resolve the {@link EditorDOMRenderConfig} to use for the current
+ * export/generate session, applying any `disabledForSession` overrides against
+ * the active session context. Falls back to the editor's resident config when
+ * {@link DOMRenderExtension} is not installed.
+ *
+ * @experimental
+ */
+export function $getSessionDOMRenderConfig(
+  editor: LexicalEditor = $getEditor(),
+): EditorDOMRenderConfig {
+  const runtime = getRuntime(editor);
+  return runtime
+    ? runtime.getSessionConfig()
+    : $getEditorDOMRenderConfig(editor);
 }
 
 /**

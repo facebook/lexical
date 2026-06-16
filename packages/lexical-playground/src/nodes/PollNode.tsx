@@ -11,10 +11,8 @@ import type {JSX} from 'react';
 import {
   $getState,
   $setState,
-  buildImportMap,
   createState,
   DecoratorNode,
-  DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
   SerializedLexicalNode,
@@ -24,12 +22,12 @@ import {
 } from 'lexical';
 import * as React from 'react';
 
-export type Options = ReadonlyArray<Option>;
+export type Options = readonly Option[];
 
 export type Option = Readonly<{
   text: string;
   uid: string;
-  votes: Array<string>;
+  votes: string[];
 }>;
 
 const PollComponent = React.lazy(() => import('./PollComponent'));
@@ -49,11 +47,7 @@ export function createPollOption(text = ''): Option {
   };
 }
 
-function cloneOption(
-  option: Option,
-  text: string,
-  votes?: Array<string>,
-): Option {
+function cloneOption(option: Option, text: string, votes?: string[]): Option {
   return {
     text,
     uid: option.uid,
@@ -68,18 +62,6 @@ export type SerializedPollNode = Spread<
   },
   SerializedLexicalNode
 >;
-
-function $convertPollElement(
-  domNode: HTMLSpanElement,
-): DOMConversionOutput | null {
-  const question = domNode.getAttribute('data-lexical-poll-question');
-  const options = domNode.getAttribute('data-lexical-poll-options');
-  if (question !== null && options !== null) {
-    const node = $createPollNode(question, JSON.parse(options));
-    return {node};
-  }
-  return null;
-}
 
 function parseOptions(json: unknown): Options {
   const options = [];
@@ -99,10 +81,10 @@ function parseOptions(json: unknown): Options {
   return options;
 }
 
-const questionState = createState('question', {
+const questionState = /* @__PURE__ */ createState('question', {
   parse: v => (typeof v === 'string' ? v : ''),
 });
-const optionsState = createState('options', {
+const optionsState = /* @__PURE__ */ createState('options', {
   isEqual: (a, b) =>
     a.length === b.length && JSON.stringify(a) === JSON.stringify(b),
   parse: parseOptions,
@@ -112,15 +94,6 @@ export class PollNode extends DecoratorNode<JSX.Element> {
   $config() {
     return this.config('poll', {
       extends: DecoratorNode,
-      importDOM: buildImportMap({
-        span: domNode =>
-          domNode.getAttribute('data-lexical-poll-question') !== null
-            ? {
-                conversion: $convertPollElement,
-                priority: 2,
-              }
-            : null,
-      }),
       stateConfigs: [
         {flat: true, stateConfig: questionState},
         {flat: true, stateConfig: optionsState},

@@ -19,7 +19,12 @@ import {
   stringifyTokenStyle,
 } from '@shikijs/core';
 import {createJavaScriptRegexEngine} from '@shikijs/engine-javascript';
-import {$createLineBreakNode, $createTabNode, $getNodeByKey} from 'lexical';
+import {
+  $createLineBreakNode,
+  $createTabNode,
+  $getNodeByKey,
+  tokenizeRawText,
+} from 'lexical';
 import {bundledLanguagesInfo} from 'shiki/langs';
 import {bundledThemesInfo} from 'shiki/themes';
 
@@ -48,6 +53,19 @@ export function isCodeLanguageLoaded(language: string) {
   return shiki.getLoadedLanguages().includes(langId);
 }
 
+/**
+ * Loads a syntax highlighting grammar for the given language via Shiki.
+ * If the language is already loaded or is not supported, the call is a no-op.
+ *
+ * When both `editor` and `codeNodeKey` are passed, the corresponding
+ * {@link CodeNode} is updated to enable syntax highlighting once the
+ * language becomes available
+ * @param language language identifier (e.g. `"typescript"`, `"diff-js"`)
+ * @param editor - Lexical editor instance to update after the language loads.
+ * @param codeNodeKey - Key of the {@link CodeNode} to mark as syntax-highlight-supported.
+ * @returns A Promise that resolves when the language is ready,
+ * or `undefined` if the `language` was already loaded or is not supported.
+ */
 export function loadCodeLanguage(
   language: string,
   editor?: LexicalEditor,
@@ -195,19 +213,17 @@ function mapTokensToLexicalStructure(
         }
       }
 
-      const parts = text.split('\t');
-      parts.forEach((part: string, pidx: number) => {
-        if (pidx) {
-          nodes.push($createTabNode());
-        }
-        if (part !== '') {
+      const style = stringifyTokenStyle(
+        token.htmlStyle || getTokenStyleObject(token),
+      );
+      tokenizeRawText(text, {
+        linebreak: () => nodes.push($createLineBreakNode()),
+        tab: () => nodes.push($createTabNode()),
+        text: (part: string) => {
           const node = $createCodeHighlightNode(part);
-          const style = stringifyTokenStyle(
-            token.htmlStyle || getTokenStyleObject(token),
-          );
           node.setStyle(style);
           nodes.push(node);
-        }
+        },
       });
     });
   });

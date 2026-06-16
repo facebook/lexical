@@ -45,10 +45,9 @@ import {
   TextNode,
 } from 'lexical';
 import * as React from 'react';
-import {createRef} from 'react';
+import {act, createRef} from 'react';
 import {createRoot} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
-import {afterEach, beforeEach, expect, type Mock, vi} from 'vitest';
+import {afterEach, beforeEach, expect} from 'vitest';
 
 import {
   CreateEditorArgs,
@@ -140,7 +139,7 @@ export function initializeUnitTest(
       );
     };
 
-    ReactTestUtils.act(() => {
+    act(() => {
       createRoot(testEnv.container).render(<Editor />);
     });
   });
@@ -487,8 +486,9 @@ export function createTestEditor(
     editorState?: EditorState;
     theme?: EditorThemeClasses;
     parentEditor?: LexicalEditor;
-    nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
+    nodes?: readonly (Klass<LexicalNode> | LexicalNodeReplacement)[];
     onError?: (error: Error) => void;
+    onWarn?: (error: Error) => void;
     disableEvents?: boolean;
     readOnly?: boolean;
     html?: HTMLConfig;
@@ -524,6 +524,23 @@ export function $assertRangeSelection(selection: unknown): RangeSelection {
   return selection;
 }
 
+/**
+ * Assert that a node matches the given type guard, returning it narrowed to
+ * the guard's type. Useful for safely narrowing the result of traversal
+ * methods such as getFirstChild() or getChildAtIndex() without an unchecked
+ * type cast.
+ */
+export function $assertNodeType<T extends LexicalNode>(
+  node: LexicalNode | null | undefined,
+  guard: (value: LexicalNode | null) => value is T,
+): T {
+  const resolved = node ?? null;
+  if (!guard(resolved)) {
+    throw new Error(`Expected node to match type guard, got ${node}`);
+  }
+  return resolved;
+}
+
 export function invariant(cond?: boolean, message?: string): asserts cond {
   if (cond) {
     return;
@@ -531,190 +548,12 @@ export function invariant(cond?: boolean, message?: string): asserts cond {
   throw new Error(`Invariant: ${message}`);
 }
 
-export class ClipboardDataMock {
-  getData: Mock<(type: string) => [string]>;
-  setData: Mock<() => [string, string]>;
-
-  constructor() {
-    this.getData = vi.fn();
-    this.setData = vi.fn();
-  }
-}
-
-export class DataTransferMock implements DataTransfer {
-  _data: Map<string, string> = new Map();
-  get dropEffect(): DataTransfer['dropEffect'] {
-    throw new Error('Getter not implemented.');
-  }
-  get effectAllowed(): DataTransfer['effectAllowed'] {
-    throw new Error('Getter not implemented.');
-  }
-  get files(): FileList {
-    throw new Error('Getter not implemented.');
-  }
-  get items(): DataTransferItemList {
-    throw new Error('Getter not implemented.');
-  }
-  get types(): ReadonlyArray<string> {
-    return Array.from(this._data.keys());
-  }
-  clearData(dataType?: string): void {
-    //
-  }
-  getData(dataType: string): string {
-    return this._data.get(dataType) || '';
-  }
-  setData(dataType: string, data: string): void {
-    this._data.set(dataType, data);
-  }
-  setDragImage(image: Element, x: number, y: number): void {
-    //
-  }
-}
-
-export class EventMock implements Event {
-  get bubbles(): boolean {
-    throw new Error('Getter not implemented.');
-  }
-  get cancelBubble(): boolean {
-    throw new Error('Gettter not implemented.');
-  }
-  get cancelable(): boolean {
-    throw new Error('Gettter not implemented.');
-  }
-  get composed(): boolean {
-    throw new Error('Gettter not implemented.');
-  }
-  get currentTarget(): EventTarget | null {
-    throw new Error('Gettter not implemented.');
-  }
-  get defaultPrevented(): boolean {
-    throw new Error('Gettter not implemented.');
-  }
-  get eventPhase(): number {
-    throw new Error('Gettter not implemented.');
-  }
-  get isTrusted(): boolean {
-    throw new Error('Gettter not implemented.');
-  }
-  get returnValue(): boolean {
-    throw new Error('Gettter not implemented.');
-  }
-  get srcElement(): EventTarget | null {
-    throw new Error('Gettter not implemented.');
-  }
-  get target(): EventTarget | null {
-    throw new Error('Gettter not implemented.');
-  }
-  get timeStamp(): number {
-    throw new Error('Gettter not implemented.');
-  }
-  get type(): string {
-    throw new Error('Gettter not implemented.');
-  }
-  composedPath(): EventTarget[] {
-    throw new Error('Method not implemented.');
-  }
-  initEvent(
-    type: string,
-    bubbles?: boolean | undefined,
-    cancelable?: boolean | undefined,
-  ): void {
-    throw new Error('Method not implemented.');
-  }
-  stopImmediatePropagation(): void {
-    return;
-  }
-  stopPropagation(): void {
-    return;
-  }
-  NONE = 0 as const;
-  CAPTURING_PHASE = 1 as const;
-  AT_TARGET = 2 as const;
-  BUBBLING_PHASE = 3 as const;
-  preventDefault() {
-    return;
-  }
-}
-
-export class KeyboardEventMock extends EventMock implements KeyboardEvent {
-  altKey = false;
-  get charCode(): number {
-    throw new Error('Getter not implemented.');
-  }
-  get code(): string {
-    throw new Error('Getter not implemented.');
-  }
-  ctrlKey = false;
-  get isComposing(): boolean {
-    throw new Error('Getter not implemented.');
-  }
-  get key(): string {
-    throw new Error('Getter not implemented.');
-  }
-  get keyCode(): number {
-    throw new Error('Getter not implemented.');
-  }
-  get location(): number {
-    throw new Error('Getter not implemented.');
-  }
-  metaKey = false;
-  get repeat(): boolean {
-    throw new Error('Getter not implemented.');
-  }
-  shiftKey = false;
-  constructor(type: void | string) {
-    super();
-  }
-  getModifierState(keyArg: string): boolean {
-    throw new Error('Method not implemented.');
-  }
-  initKeyboardEvent(
-    typeArg: string,
-    bubblesArg?: boolean | undefined,
-    cancelableArg?: boolean | undefined,
-    viewArg?: Window | null | undefined,
-    keyArg?: string | undefined,
-    locationArg?: number | undefined,
-    ctrlKey?: boolean | undefined,
-    altKey?: boolean | undefined,
-    shiftKey?: boolean | undefined,
-    metaKey?: boolean | undefined,
-  ): void {
-    throw new Error('Method not implemented.');
-  }
-  DOM_KEY_LOCATION_STANDARD = 0 as const;
-  DOM_KEY_LOCATION_LEFT = 1 as const;
-  DOM_KEY_LOCATION_RIGHT = 2 as const;
-  DOM_KEY_LOCATION_NUMPAD = 3 as const;
-  get detail(): number {
-    throw new Error('Getter not implemented.');
-  }
-  get view(): Window | null {
-    throw new Error('Getter not implemented.');
-  }
-  get which(): number {
-    throw new Error('Getter not implemented.');
-  }
-  initUIEvent(
-    typeArg: string,
-    bubblesArg?: boolean | undefined,
-    cancelableArg?: boolean | undefined,
-    viewArg?: Window | null | undefined,
-    detailArg?: number | undefined,
-  ): void {
-    throw new Error('Method not implemented.');
-  }
-}
-
 export function tabKeyboardEvent() {
-  return new KeyboardEventMock('keydown');
+  return new KeyboardEvent('keydown', {key: 'Tab'});
 }
 
 export function shiftTabKeyboardEvent() {
-  const keyboardEvent = new KeyboardEventMock('keydown');
-  keyboardEvent.shiftKey = true;
-  return keyboardEvent;
+  return new KeyboardEvent('keydown', {key: 'Tab', shiftKey: true});
 }
 
 export function generatePermutations<T>(

@@ -51,29 +51,8 @@ test.describe('HTML', () => {
         class="PlaygroundEditorTheme__code"
         dir="auto"
         spellcheck="false"
-        data-gutter="*"
-        data-highlight-language="javascript"
-        data-language="javascript">
-        <span class="PlaygroundEditorTheme__tokenAttr" data-lexical-text="true">
-          const
-        </span>
-        <span data-lexical-text="true">x</span>
-        <span
-          class="PlaygroundEditorTheme__tokenOperator"
-          data-lexical-text="true">
-          =
-        </span>
-        <span data-lexical-text="true"></span>
-        <span
-          class="PlaygroundEditorTheme__tokenSelector"
-          data-lexical-text="true">
-          "hello world"
-        </span>
-        <span
-          class="PlaygroundEditorTheme__tokenPunctuation"
-          data-lexical-text="true">
-          ;
-        </span>
+        data-gutter="*">
+        <span data-lexical-text="true">const x = "hello world";</span>
       </code>
       <p class="PlaygroundEditorTheme__paragraph" dir="auto">
         <span data-lexical-text="true">Today</span>
@@ -83,7 +62,7 @@ test.describe('HTML', () => {
           data-lexical-decorator="true">
           <div class="dateTimePill bold italic">*</div>
         </span>
-        <br />
+        <br data-lexical-managed-linebreak="true" />
       </p>
     `;
     await await assertHTML(
@@ -192,31 +171,8 @@ test.describe('HTML', () => {
           class="PlaygroundEditorTheme__code"
           dir="auto"
           spellcheck="false"
-          data-gutter="*"
-          data-highlight-language="javascript"
-          data-language="javascript">
-          <span
-            class="PlaygroundEditorTheme__tokenAttr"
-            data-lexical-text="true">
-            const
-          </span>
-          <span data-lexical-text="true">x</span>
-          <span
-            class="PlaygroundEditorTheme__tokenOperator"
-            data-lexical-text="true">
-            =
-          </span>
-          <span data-lexical-text="true"></span>
-          <span
-            class="PlaygroundEditorTheme__tokenSelector"
-            data-lexical-text="true">
-            "hello world"
-          </span>
-          <span
-            class="PlaygroundEditorTheme__tokenPunctuation"
-            data-lexical-text="true">
-            ;
-          </span>
+          data-gutter="*">
+          <span data-lexical-text="true">const x = "hello world";</span>
         </code>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">Hello</span>

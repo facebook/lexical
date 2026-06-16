@@ -127,7 +127,7 @@ export function createDOMRange(
 export function createRectsFromDOMRange(
   editor: LexicalEditor,
   range: Range,
-): Array<ClientRect> {
+): ClientRect[] {
   const rootElement = editor.getRootElement();
 
   if (rootElement === null) {

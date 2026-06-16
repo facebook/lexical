@@ -32,19 +32,18 @@ export type UserState = {
   [key: string]: unknown;
 };
 export const CONNECTED_COMMAND: LexicalCommand<boolean> =
-  createCommand('CONNECTED_COMMAND');
-export const TOGGLE_CONNECT_COMMAND: LexicalCommand<boolean> = createCommand(
-  'TOGGLE_CONNECT_COMMAND',
-);
+  /* @__PURE__ */ createCommand('CONNECTED_COMMAND');
+export const TOGGLE_CONNECT_COMMAND: LexicalCommand<boolean> =
+  /* @__PURE__ */ createCommand('TOGGLE_CONNECT_COMMAND');
 
 export const DIFF_VERSIONS_COMMAND__EXPERIMENTAL: LexicalCommand<{
   // Starting snapshot if defined, otherwise compare since start of time.
   prevSnapshot?: Snapshot;
   // Ending snapshot if defined, otherwise compare against current state of the Yjs document.
   snapshot?: Snapshot;
-}> = createCommand('DIFF_VERSIONS_COMMAND');
+}> = /* @__PURE__ */ createCommand('DIFF_VERSIONS_COMMAND');
 export const CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL: LexicalCommand<void> =
-  createCommand('CLEAR_DIFF_VERSIONS_COMMAND');
+  /* @__PURE__ */ createCommand('CLEAR_DIFF_VERSIONS_COMMAND');
 export {$getYChangeState, renderSnapshot__EXPERIMENTAL} from './RenderSnapshot';
 
 export type ProviderAwareness = {
@@ -74,7 +73,7 @@ export type Operation = {
   };
   insert: string | Record<string, unknown>;
 };
-export type Delta = Array<Operation>;
+export type Delta = Operation[];
 export type YjsNode = Record<string, unknown>;
 export type YjsEvent = Record<string, unknown>;
 export type {Provider};
@@ -138,7 +137,9 @@ export function setLocalStateFocus(
   awareness.setLocalState(localState);
 }
 export {
+  $getAnchorAndFocusForUserState,
   getAnchorAndFocusCollabNodesForUserState,
+  removeCursorHighlightRule,
   syncCursorPositions,
   type SyncCursorPositionsFn,
 } from './SyncCursors';

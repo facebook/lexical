@@ -82,7 +82,7 @@ function getKeywordMatch(text: string) {
   };
 }
 
-export const KeywordsExtension = defineExtension({
+export const KeywordsExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/LexicalKeywords',
   nodes: () => [KeywordNode],
   register(editor) {

@@ -70,8 +70,8 @@ import {
   html,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
+import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {
   afterEach,
   assert,
@@ -250,7 +250,7 @@ describe('LexicalHistory tests', () => {
     let canRedo = true;
     let canUndo = true;
 
-    ReactTestUtils.act(() => {
+    await act(() => {
       reactRoot.render(<Test key="smth" />);
     });
 
@@ -272,9 +272,7 @@ describe('LexicalHistory tests', () => {
       COMMAND_PRIORITY_CRITICAL,
     );
 
-    await Promise.resolve().then();
-
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
     });
 
@@ -283,14 +281,11 @@ describe('LexicalHistory tests', () => {
   });
 
   test('LexicalHistory.Redo after Quote Node', async () => {
-    ReactTestUtils.act(() => {
+    await act(() => {
       reactRoot.render(<Test key="smth" />);
     });
 
-    // Wait for update to complete
-    await Promise.resolve().then();
-
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         const root = $getRoot();
         const paragraph1 = $createParagraphNodeWithText('AAA');
@@ -305,7 +300,7 @@ describe('LexicalHistory tests', () => {
 
     const initialJSONState = editor.getEditorState().toJSON();
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         const root = $getRoot();
         const selection = $createRangeSelection();
@@ -339,7 +334,7 @@ describe('LexicalHistory tests', () => {
       ).text,
     ).toBe('AAA');
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.dispatchCommand(UNDO_COMMAND, undefined);
       });
@@ -354,7 +349,7 @@ describe('LexicalHistory tests', () => {
     let canRedo = false;
     let canUndo = false;
 
-    ReactTestUtils.act(() => {
+    await act(() => {
       reactRoot.render(<Test key="smth" />);
     });
 
@@ -377,7 +372,7 @@ describe('LexicalHistory tests', () => {
     );
 
     // focus (needs the focus to initialize)
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       editor.focus();
     });
 
@@ -385,7 +380,7 @@ describe('LexicalHistory tests', () => {
     expect(canUndo).toBe(false);
 
     // change
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         const root = $getRoot();
         const paragraph = $createParagraphNodeWithText('foo');
@@ -396,7 +391,7 @@ describe('LexicalHistory tests', () => {
     expect(canUndo).toBe(true);
 
     // undo
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.dispatchCommand(UNDO_COMMAND, undefined);
       });
@@ -405,7 +400,7 @@ describe('LexicalHistory tests', () => {
     expect(canUndo).toBe(false);
 
     // redo
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.dispatchCommand(REDO_COMMAND, undefined);
       });
@@ -414,7 +409,7 @@ describe('LexicalHistory tests', () => {
     expect(canUndo).toBe(true);
 
     // undo
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         editor.dispatchCommand(UNDO_COMMAND, undefined);
       });
@@ -423,7 +418,7 @@ describe('LexicalHistory tests', () => {
     expect(canUndo).toBe(false);
 
     // change
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor.update(() => {
         const root = $getRoot();
         const paragraph = $createParagraphNodeWithText('foo');
@@ -786,7 +781,7 @@ describe('SharedHistoryExtension', () => {
           data-lexical-editor="true">
           <p dir="auto"><span data-lexical-text="true">Child editor</span></p>
         </div>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
     );
     editor.read(() => {
@@ -811,7 +806,7 @@ describe('SharedHistoryExtension', () => {
             <span data-lexical-text="true">Child editor. Updated!</span>
           </p>
         </div>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
     );
     expect(
@@ -844,7 +839,7 @@ describe('SharedHistoryExtension', () => {
           data-lexical-editor="true">
           <p dir="auto"><span data-lexical-text="true">Child editor</span></p>
         </div>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
     );
     editor.update(() => editor.dispatchCommand(UNDO_COMMAND, undefined), {

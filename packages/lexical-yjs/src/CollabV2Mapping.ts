@@ -6,8 +6,8 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {$isTextNode, type LexicalNode, NodeKey, type TextNode} from 'lexical';
-import invariant from 'shared/invariant';
 import {XmlElement, XmlText} from 'yjs';
 
 type SharedType = XmlElement | XmlText;
@@ -66,8 +66,8 @@ export class CollabV2Mapping {
 
   get(sharedType: XmlElement): LexicalNode | undefined;
   get(sharedType: XmlText): TextNode[] | undefined;
-  get(sharedType: SharedType): LexicalNode | Array<TextNode> | undefined;
-  get(sharedType: SharedType): LexicalNode | Array<TextNode> | undefined {
+  get(sharedType: SharedType): LexicalNode | TextNode[] | undefined;
+  get(sharedType: SharedType): LexicalNode | TextNode[] | undefined {
     const nodes = this._sharedTypeToNodeKeys.get(sharedType);
     if (nodes === undefined) {
       return undefined;
@@ -75,7 +75,7 @@ export class CollabV2Mapping {
     if (sharedType instanceof XmlText) {
       const arr = Array.from(
         nodes.map(nodeKey => this._nodeMap.get(nodeKey)!),
-      ) as Array<TextNode>;
+      ) as TextNode[];
       return arr.length > 0 ? arr : undefined;
     }
     return this._nodeMap.get(nodes[0])!;

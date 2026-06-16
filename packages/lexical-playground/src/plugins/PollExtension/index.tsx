@@ -1,0 +1,106 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import type {JSX} from 'react';
+
+import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
+import {$wrapNodeInElement} from '@lexical/utils';
+import {
+  $createParagraphNode,
+  $insertNodes,
+  $isRootOrShadowRoot,
+  COMMAND_PRIORITY_EDITOR,
+  configExtension,
+  createCommand,
+  defineExtension,
+  LexicalCommand,
+  LexicalEditor,
+} from 'lexical';
+import {useState} from 'react';
+
+import {
+  $createPollNode,
+  createPollOption,
+  PollNode,
+} from '../../nodes/PollNode';
+import Button from '../../ui/Button';
+import {DialogActions} from '../../ui/Dialog';
+import TextInput from '../../ui/TextInput';
+
+export const INSERT_POLL_COMMAND: LexicalCommand<string> =
+  /* @__PURE__ */ createCommand('INSERT_POLL_COMMAND');
+
+function $convertPollElement(el: HTMLElement) {
+  const question = el.getAttribute('data-lexical-poll-question');
+  const options = el.getAttribute('data-lexical-poll-options');
+  if (question === null || options === null) {
+    return null;
+  }
+  return $createPollNode(question, JSON.parse(options));
+}
+
+const PollImportRule = /* @__PURE__ */ defineImportRule({
+  $import: (_ctx, el, $next) => {
+    const node = $convertPollElement(el);
+    return node ? [node] : $next();
+  },
+  match: sel.tag('span').attr('data-lexical-poll-question', true),
+  name: '@lexical/playground/poll',
+});
+
+export const PollExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: [PollImportRule],
+    }),
+  ],
+  name: '@lexical/playground/Poll',
+  nodes: [PollNode],
+  register: editor =>
+    editor.registerCommand<string>(
+      INSERT_POLL_COMMAND,
+      payload => {
+        const pollNode = $createPollNode(payload, [
+          createPollOption(),
+          createPollOption(),
+        ]);
+        $insertNodes([pollNode]);
+        if ($isRootOrShadowRoot(pollNode.getParentOrThrow())) {
+          $wrapNodeInElement(pollNode, $createParagraphNode).selectEnd();
+        }
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+});
+
+export function InsertPollDialog({
+  activeEditor,
+  onClose,
+}: {
+  activeEditor: LexicalEditor;
+  onClose: () => void;
+}): JSX.Element {
+  const [question, setQuestion] = useState('');
+
+  const onClick = () => {
+    activeEditor.dispatchCommand(INSERT_POLL_COMMAND, question);
+    onClose();
+  };
+
+  return (
+    <>
+      <TextInput label="Question" onChange={setQuestion} value={question} />
+      <DialogActions>
+        <Button disabled={question.trim() === ''} onClick={onClick}>
+          Confirm
+        </Button>
+      </DialogActions>
+    </>
+  );
+}

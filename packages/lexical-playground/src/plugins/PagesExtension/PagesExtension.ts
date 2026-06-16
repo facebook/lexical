@@ -47,7 +47,7 @@ export interface PagesConfig {
   pageClass: string;
 }
 
-export const PagesExtension = defineExtension({
+export const PagesExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config) => {
     const getPageSetup = () => editor.getEditorState().read($getPageSetup);
 
@@ -60,7 +60,7 @@ export const PagesExtension = defineExtension({
       ),
     };
   },
-  config: safeCast<PagesConfig>({
+  config: /* @__PURE__ */ safeCast<PagesConfig>({
     disabled: false,
     pageClass: 'PlaygroundEditorTheme__page',
     pageContentClass: 'PlaygroundEditorTheme__pageContent',
@@ -354,7 +354,7 @@ export const PagesExtension = defineExtension({
           () => {
             const root = $getRoot();
             const children = root.getChildren();
-            const pages = [] as Array<PageNode | PageBreakNode>;
+            const pages = [] as (PageNode | PageBreakNode)[];
             for (const child of children) {
               if ($isPageNode(child) || $isPageBreakNode(child)) {
                 if ($isPageNode(child)) {

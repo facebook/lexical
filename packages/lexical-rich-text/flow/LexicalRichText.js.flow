@@ -23,7 +23,7 @@ import type {
 } from 'lexical';
 import {ElementNode} from 'lexical';
 
-declare export var DRAG_DROP_PASTE: LexicalCommand<Array<File>>;
+declare export var DRAG_DROP_PASTE: LexicalCommand<File[]>;
 declare export class QuoteNode extends ElementNode {
   static getType(): string;
   static clone(node: QuoteNode): QuoteNode;

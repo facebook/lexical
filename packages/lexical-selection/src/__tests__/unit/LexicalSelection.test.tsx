@@ -57,6 +57,7 @@ import {
   TextNode,
 } from 'lexical';
 import {
+  $assertNodeType,
   $assertRangeSelection,
   $createTestDecoratorNode,
   $createTestElementNode,
@@ -67,8 +68,8 @@ import {
   invariant,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
+import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {afterEach, beforeEach, describe, expect, it, test, vi} from 'vitest';
 
 import {
@@ -142,7 +143,7 @@ describe('LexicalSelection tests', () => {
   afterEach(async () => {
     // Ensure we are clearing out any React state and running effects with
     // act
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.unmount();
       await Promise.resolve().then();
     });
@@ -208,7 +209,7 @@ describe('LexicalSelection tests', () => {
       );
     }
 
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       reactRoot.render(<TestBase />);
       await Promise.resolve().then();
     });
@@ -225,14 +226,14 @@ describe('LexicalSelection tests', () => {
   }
 
   async function update(fn: () => void) {
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor!.update(fn);
     });
   }
 
   test('Expect initial output to be a block with no text.', () => {
     expect(container!.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="auto"><br></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
     );
   });
 
@@ -261,7 +262,7 @@ describe('LexicalSelection tests', () => {
       }
     });
 
-    // Move cursor between the two <br> nodes in the paragraph
+    // Move cursor between the two <br data-lexical-managed-linebreak="true"> nodes in the paragraph
     await update(() => {
       const paragraph = $getRoot().getFirstChildOrThrow();
       invariant($isElementNode(paragraph));
@@ -303,12 +304,12 @@ describe('LexicalSelection tests', () => {
       editor!,
     );
     expect(container!.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul class="editor-list-ul" dir="auto"><li value="1"><br></li></ul></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><ul class="editor-list-ul" dir="auto"><li value="1"><br data-lexical-managed-linebreak="true"></li></ul></div>',
     );
 
     await applySelectionInputs([deleteWordBackward(1)], update, editor!);
     expect(container!.innerHTML).toBe(
-      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="auto"><br></p></div>',
+      '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
     );
 
     await applySelectionInputs(
@@ -333,8 +334,8 @@ describe('LexicalSelection tests', () => {
             <span data-lexical-text="true">preceding paragraph</span>
           </p>
           <ul class="editor-list-ul" dir="auto">
-            <li value="1"><br /></li>
-            <li value="2"><br /></li>
+            <li value="1"><br data-lexical-managed-linebreak="true" /></li>
+            <li value="2"><br data-lexical-managed-linebreak="true" /></li>
           </ul>
         </div>
       `,
@@ -351,7 +352,7 @@ describe('LexicalSelection tests', () => {
             <span data-lexical-text="true">preceding paragraph</span>
           </p>
           <ul class="editor-list-ul" dir="auto">
-            <li value="1"><br /></li>
+            <li value="1"><br data-lexical-managed-linebreak="true" /></li>
           </ul>
         </div>
       `,
@@ -617,11 +618,11 @@ describe('LexicalSelection tests', () => {
     {
       expectedHTML:
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
-        '<p class="editor-paragraph" dir="auto"><br></p>' +
+        '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
         '<p class="editor-paragraph" dir="auto">' +
         '<strong class="editor-text-bold" data-lexical-text="true">Hello world</strong>' +
         '</p>' +
-        '<p class="editor-paragraph" dir="auto"><br></p>' +
+        '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
         '</div>',
       expectedSelection: {
         anchorOffset: 0,
@@ -641,14 +642,14 @@ describe('LexicalSelection tests', () => {
     {
       expectedHTML:
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
-        '<p class="editor-paragraph" dir="auto"><br></p>' +
+        '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
         '<p class="editor-paragraph" dir="auto">' +
         '<strong class="editor-text-bold" data-lexical-text="true">Hello</strong>' +
         '</p>' +
         '<p class="editor-paragraph" dir="auto">' +
         '<strong class="editor-text-bold" data-lexical-text="true">world</strong>' +
         '</p>' +
-        '<p class="editor-paragraph" dir="auto"><br></p>' +
+        '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
         '</div>',
       expectedSelection: {
         anchorOffset: 0,
@@ -697,12 +698,12 @@ describe('LexicalSelection tests', () => {
     {
       expectedHTML:
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
-        '<p class="editor-paragraph" dir="auto"><br></p>' +
+        '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
         '<p class="editor-paragraph" dir="auto">' +
         '<span data-lexical-text="true">Hello </span>' +
         '<strong class="editor-text-bold" data-lexical-text="true">world</strong>' +
         '</p>' +
-        '<p class="editor-paragraph" dir="auto"><br></p>' +
+        '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
         '</div>',
       expectedSelection: {
         anchorOffset: 0,
@@ -722,12 +723,12 @@ describe('LexicalSelection tests', () => {
     {
       expectedHTML:
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
-        '<p class="editor-paragraph" dir="auto"><br></p>' +
+        '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
         '<p class="editor-paragraph" dir="auto">' +
         '<strong class="editor-text-bold" data-lexical-text="true">Hello</strong>' +
         '<span data-lexical-text="true"> world</span>' +
         '</p>' +
-        '<p class="editor-paragraph" dir="auto"><br></p>' +
+        '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
         '</div>',
       expectedSelection: {
         anchorOffset: 0,
@@ -748,11 +749,11 @@ describe('LexicalSelection tests', () => {
     {
       expectedHTML:
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
-        '<p class="editor-paragraph" dir="auto"><br></p>' +
+        '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
         '<p class="editor-paragraph" dir="auto">' +
         '<strong class="editor-text-bold" data-lexical-text="true">Hello</strong><strong class="editor-text-bold" data-lexical-text="true"> world</strong>' +
         '</p>' +
-        '<p class="editor-paragraph" dir="auto"><br></p>' +
+        '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
         '</div>',
       expectedSelection: {
         anchorOffset: 2,
@@ -774,11 +775,11 @@ describe('LexicalSelection tests', () => {
     {
       expectedHTML:
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
-        '<p class="editor-paragraph" dir="auto"><br></p>' +
+        '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
         '<p class="editor-paragraph" dir="auto">' +
         '<strong class="editor-text-bold" data-lexical-text="true">Hello </strong><strong class="editor-text-bold" data-lexical-text="true">world</strong>' +
         '</p>' +
-        '<p class="editor-paragraph" dir="auto"><br></p>' +
+        '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
         '</div>',
       expectedSelection: {
         anchorOffset: 0,
@@ -800,11 +801,11 @@ describe('LexicalSelection tests', () => {
     {
       expectedHTML:
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
-        '<p class="editor-paragraph" dir="auto"><br></p>' +
+        '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
         '<p class="editor-paragraph" dir="auto">' +
         '<strong class="editor-text-bold" data-lexical-text="true">Hello</strong><span data-lexical-text="true"> world</span>' +
         '</p>' +
-        '<p class="editor-paragraph" dir="auto"><br></p>' +
+        '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
         '</div>',
       expectedSelection: {
         anchorOffset: 2,
@@ -826,11 +827,11 @@ describe('LexicalSelection tests', () => {
     {
       expectedHTML:
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true">' +
-        '<p class="editor-paragraph" dir="auto"><br></p>' +
+        '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
         '<p class="editor-paragraph" dir="auto">' +
         '<strong class="editor-text-bold" data-lexical-text="true">Hello </strong><strong class="editor-text-bold" data-lexical-text="true">beautiful</strong><strong class="editor-text-bold" data-lexical-text="true"> world</strong>' +
         '</p>' +
-        '<p class="editor-paragraph" dir="auto"><br></p>' +
+        '<p class="editor-paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>' +
         '</div>',
       expectedSelection: {
         anchorOffset: 0,
@@ -1031,8 +1032,8 @@ describe('LexicalSelection tests', () => {
     //   name: 'Inserting a paragraph',
     //   inputs: [insertParagraph()],
     //   expectedHTML:
-    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><span data-lexical-text="true"><br></span></p>' +
-    //     '<p class="editor-paragraph"><span data-lexical-text="true"><br></span></p></div>',
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><span data-lexical-text="true"><br data-lexical-managed-linebreak="true"></span></p>' +
+    //     '<p class="editor-paragraph"><span data-lexical-text="true"><br data-lexical-managed-linebreak="true"></span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [1, 0, 0],
     //     anchorOffset: 0,
@@ -1044,7 +1045,7 @@ describe('LexicalSelection tests', () => {
     //   name: 'Inserting a paragraph and then removing it',
     //   inputs: [insertParagraph(), deleteBackward(1)],
     //   expectedHTML:
-    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><span data-lexical-text="true"><br></span></p></div>',
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><span data-lexical-text="true"><br data-lexical-managed-linebreak="true"></span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [0, 0, 0],
     //     anchorOffset: 0,
@@ -1079,7 +1080,7 @@ describe('LexicalSelection tests', () => {
     //     deleteBackward(1),
     //   ],
     //   expectedHTML:
-    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><span data-lexical-text="true"><br></span></p></div>',
+    //     '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p class="editor-paragraph"><span data-lexical-text="true"><br data-lexical-managed-linebreak="true"></span></p></div>',
     //   expectedSelection: {
     //     anchorPath: [0, 0, 0],
     //     anchorOffset: 0,
@@ -1312,11 +1313,14 @@ describe('LexicalSelection tests', () => {
   });
 
   test('insert text one selected node element selection', async () => {
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor!.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>()!;
+        const paragraph = $assertNodeType(
+          root.getFirstChild(),
+          $isParagraphNode,
+        );
 
         const elementNode = $createTestElementNode();
         const text = $createTextNode('foo');
@@ -1336,11 +1340,14 @@ describe('LexicalSelection tests', () => {
   });
 
   test('getNodes resolves nested block nodes', async () => {
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor!.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>()!;
+        const paragraph = $assertNodeType(
+          root.getFirstChild(),
+          $isParagraphNode,
+        );
 
         const elementNode = $createTestElementNode();
         const text = $createTextNode();
@@ -1910,11 +1917,14 @@ describe('LexicalSelection tests', () => {
           // eslint-disable-next-line no-only-tests/no-only-tests
           const test_ = only === true ? test.only : test;
           test_(name, async () => {
-            await ReactTestUtils.act(async () => {
+            await act(async () => {
               await editor!.update(() => {
                 const root = $getRoot();
 
-                const paragraph = root.getFirstChild<ParagraphNode>()!;
+                const paragraph = $assertNodeType(
+                  root.getFirstChild(),
+                  $isParagraphNode,
+                );
                 const textNode = $createTextNode('foo');
                 // Note: line break can't be selected by the DOM
                 const linebreak = $createLineBreakNode();
@@ -1962,7 +1972,7 @@ describe('LexicalSelection tests', () => {
 
   describe('Selection correctly resolves to a sibling ElementNode when a node is removed', () => {
     test('', async () => {
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         await editor!.update(() => {
           const root = $getRoot();
 
@@ -1992,7 +2002,7 @@ describe('LexicalSelection tests', () => {
 
   describe('Selection correctly resolves to a sibling ElementNode when a selected node child is removed', () => {
     test('', async () => {
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         let paragraphNodeKey: string;
         await editor!.update(() => {
           const root = $getRoot();
@@ -2027,7 +2037,7 @@ describe('LexicalSelection tests', () => {
 
   describe('Selection correctly resolves to a sibling ElementNode that has multiple children with the correct offset when a node is removed', () => {
     test('', async () => {
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         await editor!.update(() => {
           // Arrange
           // Root
@@ -2078,11 +2088,14 @@ describe('LexicalSelection tests', () => {
   });
 
   test('isBackward', async () => {
-    await ReactTestUtils.act(async () => {
+    await act(async () => {
       await editor!.update(() => {
         const root = $getRoot();
 
-        const paragraph = root.getFirstChild<ParagraphNode>()!;
+        const paragraph = $assertNodeType(
+          root.getFirstChild(),
+          $isParagraphNode,
+        );
         const paragraphKey = paragraph.getKey();
         const textNode = $createTextNode('foo');
         const textNodeKey = textNode.getKey();
@@ -2203,11 +2216,14 @@ describe('LexicalSelection tests', () => {
       })
       .forEach(({name, fn, invertSelection}) => {
         it(name, async () => {
-          await ReactTestUtils.act(async () => {
+          await act(async () => {
             await editor!.update(() => {
               const root = $getRoot();
 
-              const paragraph = root.getFirstChild<ParagraphNode>()!;
+              const paragraph = $assertNodeType(
+                root.getFirstChild(),
+                $isParagraphNode,
+              );
               const textNode1 = $createTextNode('1');
               const textNode2 = $createTextNode('2');
               const decorator = $createTestDecoratorNode();
@@ -2333,7 +2349,7 @@ describe('LexicalSelection tests', () => {
     it('adjust offset for inline elements text formatting', async () => {
       await init();
 
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         await editor!.update(() => {
           const root = $getRoot();
 
@@ -2618,7 +2634,7 @@ describe('LexicalSelection tests', () => {
 
   describe('$patchStyle', () => {
     it('should patch the style with the new style object', async () => {
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         await editor!.update(() => {
           const root = $getRoot();
           const paragraph = $createParagraphNode();
@@ -2667,7 +2683,7 @@ describe('LexicalSelection tests', () => {
     });
 
     it('should patch the style with property function', async () => {
-      await ReactTestUtils.act(async () => {
+      await act(async () => {
         await editor!.update(() => {
           const currentColor = 'red';
           const nextColor = 'blue';

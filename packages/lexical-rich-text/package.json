@@ -7,30 +7,33 @@
     "rich-text"
   ],
   "license": "MIT",
-  "version": "0.44.0",
-  "main": "LexicalRichText.js",
-  "types": "index.d.ts",
+  "version": "0.45.0",
+  "main": "./dist/LexicalRichText.js",
+  "types": "./dist/typescript-too-old.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-rich-text"
   },
-  "module": "LexicalRichText.mjs",
+  "module": "./dist/LexicalRichText.mjs",
   "sideEffects": false,
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalRichText.dev.mjs",
-        "production": "./LexicalRichText.prod.mjs",
-        "node": "./LexicalRichText.node.mjs",
-        "default": "./LexicalRichText.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalRichText.dev.mjs",
+        "production": "./dist/LexicalRichText.prod.mjs",
+        "node": "./dist/LexicalRichText.node.mjs",
+        "default": "./dist/LexicalRichText.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalRichText.dev.js",
-        "production": "./LexicalRichText.prod.js",
-        "default": "./LexicalRichText.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalRichText.dev.js",
+        "production": "./dist/LexicalRichText.prod.js",
+        "default": "./dist/LexicalRichText.js"
       }
     }
   },
@@ -38,8 +41,37 @@
     "@lexical/clipboard": "workspace:*",
     "@lexical/dragon": "workspace:*",
     "@lexical/extension": "workspace:*",
+    "@lexical/html": "workspace:*",
     "@lexical/selection": "workspace:*",
     "@lexical/utils": "workspace:*",
     "lexical": "workspace:*"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ],
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/typescript-too-old.d.ts"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "typescript": ">=5.2"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   }
 }

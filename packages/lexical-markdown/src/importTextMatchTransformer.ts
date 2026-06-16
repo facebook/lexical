@@ -11,7 +11,7 @@ import {type TextNode} from 'lexical';
 
 export function findOutermostTextMatchTransformer(
   textNode_: TextNode,
-  textMatchTransformers: Array<TextMatchTransformer>,
+  textMatchTransformers: TextMatchTransformer[],
 ): {
   startIndex: number;
   endIndex: number;

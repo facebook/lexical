@@ -10,6 +10,7 @@ import type {Binding} from '.';
 import type {ElementNode, NodeKey, NodeMap} from 'lexical';
 import type {AbstractType, Map as YMap, XmlElement, XmlText} from 'yjs';
 
+import invariant from '@lexical/internal/invariant';
 import {
   $createChildrenArray,
   $getNodeByKey,
@@ -19,7 +20,6 @@ import {
   $isTextNode,
   removeFromParent,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabLineBreakNode} from './CollabLineBreakNode';
@@ -29,6 +29,7 @@ import {
   $getOrInitCollabNodeFromSharedType,
   $syncPropertiesFromYjs,
   createLexicalNodeFromCollabNode,
+  getNodeTypeFromSharedType,
   getPositionFromElementAndOffset,
   spliceString,
   syncPropertiesFromLexical,
@@ -38,12 +39,12 @@ type IntentionallyMarkedAsDirtyElement = boolean;
 
 export class CollabElementNode {
   _key: NodeKey;
-  _children: Array<
+  _children: (
     | CollabElementNode
     | CollabTextNode
     | CollabDecoratorNode
     | CollabLineBreakNode
-  >;
+  )[];
   _xmlText: XmlText;
   _type: string;
   _parent: null | CollabElementNode;
@@ -109,23 +110,23 @@ export class CollabElementNode {
     keysChanged: null | Set<string>,
   ): void {
     const lexicalNode = this.getNode();
-    invariant(
-      lexicalNode !== null,
-      'syncPropertiesFromYjs: could not find element node',
-    );
+    if (lexicalNode === null) {
+      // Concurrently removed from Lexical; nothing to sync.
+      return;
+    }
     $syncPropertiesFromYjs(binding, this._xmlText, lexicalNode, keysChanged);
   }
 
   applyChildrenYjsDelta(
     binding: Binding,
-    deltas: Array<{
+    deltas: {
       insert?: string | object | AbstractType<unknown>;
       delete?: number;
       retain?: number;
       attributes?: {
         [x: string]: unknown;
       };
-    }>,
+    }[],
   ): void {
     const children = this._children;
     let currIndex = 0;
@@ -211,7 +212,17 @@ export class CollabElementNode {
 
           currIndex += insertDelta.length;
         } else {
-          const sharedType = insertDelta;
+          const sharedType = insertDelta as
+            | XmlText
+            | YMap<unknown>
+            | XmlElement;
+          // A delta can reference a shared type that has already been deleted
+          // (e.g. while reconciling an undo against concurrent remote edits). A
+          // deleted type has no `__type` and must not be materialized into the
+          // collab tree; it carries no live content, so skip it entirely.
+          if (getNodeTypeFromSharedType(sharedType) === undefined) {
+            continue;
+          }
           const {node, nodeIndex, length} = getPositionFromElementAndOffset(
             this,
             currIndex,
@@ -219,7 +230,7 @@ export class CollabElementNode {
           );
           const collabNode = $getOrInitCollabNodeFromSharedType(
             binding,
-            sharedType as XmlText | YMap<unknown> | XmlElement,
+            sharedType,
             this,
           );
           if (
@@ -257,14 +268,16 @@ export class CollabElementNode {
   syncChildrenFromYjs(binding: Binding): void {
     // Now diff the children of the collab node with that of our existing Lexical node.
     const lexicalNode = this.getNode();
-    invariant(
-      lexicalNode !== null,
-      'syncChildrenFromYjs: could not find element node',
-    );
+    if (lexicalNode === null) {
+      // The Lexical node was concurrently removed (e.g. by a remote edit or undo)
+      // while we still have a pending change for it. There is nothing to reconcile
+      // into Lexical; this collab node will be cleaned up when its parent syncs.
+      return;
+    }
 
     const key = lexicalNode.__key;
     const prevLexicalChildrenKeys = $createChildrenArray(lexicalNode, null);
-    const nextLexicalChildrenKeys: Array<NodeKey> = [];
+    const nextLexicalChildrenKeys: NodeKey[] = [];
     const lexicalChildrenKeysLength = prevLexicalChildrenKeys.length;
     const collabChildren = this._children;
     const collabChildrenLength = collabChildren.length;
@@ -598,11 +611,9 @@ export class CollabElementNode {
     const child = children[index];
 
     if (child === undefined) {
-      invariant(
-        collabNode !== undefined,
-        'splice: could not find collab element node',
-      );
-      this.append(collabNode);
+      if (collabNode !== undefined) {
+        this.append(collabNode);
+      }
       return;
     }
 

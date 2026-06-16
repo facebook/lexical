@@ -6,6 +6,7 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
 import {
   $descendantsMatching,
   addClassNamesToElement,
@@ -33,12 +34,11 @@ import {
   setDOMUnmanaged,
   Spread,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
 import {$isTableCellNode, type TableCellNode} from './LexicalTableCellNode';
 import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
-import {$isTableRowNode, type TableRowNode} from './LexicalTableRowNode';
+import {$isTableRowNode} from './LexicalTableRowNode';
 import {
   $getNearestTableCellInTableFromDOMNode,
   getTable,
@@ -46,6 +46,8 @@ import {
   isHTMLTableElement,
 } from './LexicalTableSelectionHelpers';
 import {$computeTableMapSkipCellCheck} from './LexicalTableUtils';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
 
 function isHTMLDivElement(element: unknown): element is HTMLDivElement {
   return isHTMLElement(element) && element.nodeName === 'DIV';
@@ -599,8 +601,8 @@ export class TableNode extends ElementNode {
   }
 
   getColumnCount(): number {
-    const firstRow = this.getFirstChild<TableRowNode>();
-    if (!firstRow) {
+    const firstRow = this.getFirstChild();
+    if (!$isTableRowNode(firstRow)) {
       return 0;
     }
 

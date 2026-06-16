@@ -20,7 +20,6 @@ import {
   $isScrollableTablesActive,
   $isTableCellNode,
   $isTableNode,
-  TableNode,
 } from '@lexical/table';
 import {$dfs} from '@lexical/utils';
 import {
@@ -28,53 +27,22 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isParagraphNode,
   $isRangeSelection,
   $selectAll,
   $setSelection,
   CUT_COMMAND,
-  ParagraphNode,
 } from 'lexical';
 import {
-  DataTransferMock,
+  $assertNodeType,
   expectHtmlToBeEqual,
   html,
   initializeUnitTest,
   invariant,
   polyfillContentEditable,
 } from 'lexical/src/__tests__/utils';
-import {useState} from 'react';
-import {act} from 'shared/react-test-utils';
-import {beforeEach, describe, expect, type Mock, test, vi} from 'vitest';
-
-export class ClipboardDataMock {
-  getData: Mock<(type: string) => [string]>;
-  setData: Mock<() => [string, string]>;
-
-  constructor() {
-    this.getData = vi.fn();
-    this.setData = vi.fn();
-  }
-}
-
-export class ClipboardEventMock extends Event {
-  clipboardData: ClipboardDataMock;
-
-  constructor(type: string, options?: EventInit) {
-    super(type, options);
-    this.clipboardData = new ClipboardDataMock();
-  }
-}
-
-global.document.execCommand = function execCommandMock(
-  commandId: string,
-  showUI?: boolean,
-  value?: string,
-): boolean {
-  return true;
-};
-Object.defineProperty(window, 'ClipboardEvent', {
-  value: new ClipboardEventMock('cut'),
-});
+import {act, useState} from 'react';
+import {beforeEach, describe, expect, test} from 'vitest';
 
 const editorConfig = Object.freeze({
   namespace: '',
@@ -201,7 +169,9 @@ describe('LexicalTableNode tests', () => {
                     <colgroup><col /></colgroup>
                     <tr dir="auto">
                       <td dir="auto">
-                        <p dir="auto"><br /></p>
+                        <p dir="auto">
+                          <br data-lexical-managed-linebreak="true" />
+                        </p>
                       </td>
                     </tr>
                   </table>
@@ -216,7 +186,9 @@ describe('LexicalTableNode tests', () => {
                     <colgroup><col /></colgroup>
                     <tr dir="auto">
                       <td dir="auto">
-                        <p dir="auto"><br /></p>
+                        <p dir="auto">
+                          <br data-lexical-managed-linebreak="true" />
+                        </p>
                       </td>
                     </tr>
                   </table>
@@ -251,7 +223,9 @@ describe('LexicalTableNode tests', () => {
                     <colgroup><col /></colgroup>
                     <tr dir="auto">
                       <td dir="auto">
-                        <p dir="auto"><br /></p>
+                        <p dir="auto">
+                          <br data-lexical-managed-linebreak="true" />
+                        </p>
                       </td>
                     </tr>
                   </table>
@@ -266,7 +240,9 @@ describe('LexicalTableNode tests', () => {
                     <colgroup><col /></colgroup>
                     <tr dir="auto">
                       <td dir="auto">
-                        <p dir="auto"><br /></p>
+                        <p dir="auto">
+                          <br data-lexical-managed-linebreak="true" />
+                        </p>
                       </td>
                     </tr>
                   </table>
@@ -405,10 +381,10 @@ describe('LexicalTableNode tests', () => {
           test('Copy table from an external source', async () => {
             const {editor} = testEnv;
 
-            const dataTransfer = new DataTransferMock();
+            const dataTransfer = new DataTransfer();
             dataTransfer.setData(
               'text/html',
-              '<html><body><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-16a69100-7fff-6cb9-b829-cb1def16a58d"><div dir="ltr" style="margin-left:0pt;" align="left"><table style="border:none;border-collapse:collapse;table-layout:fixed"><colgroup><col style="width:100px"/><col style="width:200px"/></colgroup><tbody><tr style="height:22.015pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Hello there</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">General Kenobi!</span></p></td></tr><tr style="height:22.015pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Lexical is nice</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><br /></td></tr></tbody></table></div></b><!--EndFragment--></body></html>',
+              '<html><body><meta charset="utf-8"><b style="font-weight:normal;" id="docs-internal-guid-16a69100-7fff-6cb9-b829-cb1def16a58d"><div dir="ltr" style="margin-left:0pt;" align="left"><table style="border:none;border-collapse:collapse;table-layout:fixed"><colgroup><col style="width:100px"/><col style="width:200px"/></colgroup><tbody><tr style="height:22.015pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Hello there</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">General Kenobi!</span></p></td></tr><tr style="height:22.015pt"><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><p dir="ltr" style="line-height:1.2;margin-top:0pt;margin-bottom:0pt;"><span style="font-size:11pt;font-family:Arial,sans-serif;color:#000000;background-color:transparent;font-weight:400;font-style:normal;font-variant:normal;text-decoration:none;vertical-align:baseline;white-space:pre;white-space:pre-wrap;">Lexical is nice</span></p></td><td style="border-left:solid #000000 1pt;border-right:solid #000000 1pt;border-bottom:solid #000000 1pt;border-top:solid #000000 1pt;vertical-align:top;padding:5pt 5pt 5pt 5pt;overflow:hidden;overflow-wrap:break-word;"><br data-lexical-managed-linebreak="true"></td></tr></tbody></table></div></b><!--EndFragment--></body></html>',
             );
             await editor.update(() => {
               const selection = $getSelection();
@@ -419,7 +395,8 @@ describe('LexicalTableNode tests', () => {
               $insertDataTransferForRichText(dataTransfer, selection, editor);
             });
             // Make sure paragraph is inserted inside empty cells
-            const emptyCell = '<td dir="auto"><p dir="auto"><br></p></td>';
+            const emptyCell =
+              '<td dir="auto"><p dir="auto"><br data-lexical-managed-linebreak="true"></p></td>';
             expectReconciledTableHtmlToBeEqual(
               testEnv.innerHTML,
               html`
@@ -456,7 +433,7 @@ describe('LexicalTableNode tests', () => {
           test('Copy table with caption/tbody/thead/tfoot from an external source', async () => {
             const {editor} = testEnv;
 
-            const dataTransfer = new DataTransferMock();
+            const dataTransfer = new DataTransfer();
             dataTransfer.setData(
               'text/html',
               // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/thead
@@ -600,7 +577,7 @@ describe('LexicalTableNode tests', () => {
           test('Copy table with caption from an external source', async () => {
             const {editor} = testEnv;
 
-            const dataTransfer = new DataTransferMock();
+            const dataTransfer = new DataTransfer();
             dataTransfer.setData(
               'text/html',
               // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/caption
@@ -698,7 +675,9 @@ describe('LexicalTableNode tests', () => {
                   </colgroup>
                   <tr dir="auto" style="text-align: start">
                     <td dir="auto" style="background-color: rgb(240, 240, 240)">
-                      <p dir="auto" style="text-align: center"><br /></p>
+                      <p dir="auto" style="text-align: center">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                     <th dir="auto" style="background-color: rgb(230, 230, 230)">
                       <p dir="auto">
@@ -770,7 +749,7 @@ describe('LexicalTableNode tests', () => {
           test('Copy table from an external source like gdoc with formatting', async () => {
             const {editor} = testEnv;
 
-            const dataTransfer = new DataTransferMock();
+            const dataTransfer = new DataTransfer();
             dataTransfer.setData(
               'text/html',
               '<google-sheets-html-origin><style type="text/css"><!--td {border: 1px solid #cccccc;}br {mso-data-placement:same-cell;}--></style><table xmlns="http://www.w3.org/1999/xhtml" cellspacing="0" cellpadding="0" dir="ltr" border="1" style="table-layout:fixed;font-size:10pt;font-family:Arial;width:0px;border-collapse:collapse;border:none" data-sheets-root="1"><colgroup><col width="100"/><col width="189"/><col width="171"/></colgroup><tbody><tr style="height:21px;"><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;font-weight:bold;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;Surface&quot;}">Surface</td><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;font-style:italic;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;MWP_WORK_LS_COMPOSER&quot;}">MWP_WORK_LS_COMPOSER</td><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;text-decoration:underline;text-align:right;" data-sheets-value="{&quot;1&quot;:3,&quot;3&quot;:77349}">77349</td></tr><tr style="height:21px;"><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;Lexical&quot;}">Lexical</td><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;text-decoration:line-through;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;XDS_RICH_TEXT_AREA&quot;}">XDS_RICH_TEXT_AREA</td><td style="overflow:hidden;padding:2px 3px 2px 3px;vertical-align:bottom;" data-sheets-value="{&quot;1&quot;:2,&quot;2&quot;:&quot;sdvd sdfvsfs&quot;}" data-sheets-textstyleruns="{&quot;1&quot;:0}{&quot;1&quot;:5,&quot;2&quot;:{&quot;5&quot;:1}}"><span style="font-size:10pt;font-family:Arial;font-style:normal;">sdvd </span><span style="font-size:10pt;font-family:Arial;font-weight:bold;font-style:normal;">sdfvsfs</span></td></tr></tbody></table>',
@@ -837,27 +816,30 @@ describe('LexicalTableNode tests', () => {
 
             await editor.update(() => {
               const root = $getRoot();
-              const paragraph = root.getFirstChild<ParagraphNode>();
+              const paragraph = $assertNodeType(
+                root.getFirstChild(),
+                $isParagraphNode,
+              );
               const beforeText = $createTextNode('text before the table');
               const table = $createTableNodeWithDimensions(4, 4, true);
               const afterText = $createTextNode('text after the table');
 
-              paragraph?.append(beforeText);
-              paragraph?.append(table);
-              paragraph?.append(afterText);
+              paragraph.append(beforeText);
+              paragraph.append(table);
+              paragraph.append(afterText);
             });
             await editor.update(() => {
               editor.focus();
               $selectAll();
             });
             await editor.update(() => {
-              editor.dispatchCommand(CUT_COMMAND, {} as ClipboardEvent);
+              editor.dispatchCommand(CUT_COMMAND, new ClipboardEvent('cut'));
             });
 
             expectHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               `,
             );
           });
@@ -867,25 +849,28 @@ describe('LexicalTableNode tests', () => {
 
             await editor.update(() => {
               const root = $getRoot();
-              const paragraph = root.getFirstChild<ParagraphNode>();
+              const paragraph = $assertNodeType(
+                root.getFirstChild(),
+                $isParagraphNode,
+              );
               const beforeText = $createTextNode('text before the table');
               const table = $createTableNodeWithDimensions(4, 4, true);
 
-              paragraph?.append(beforeText);
-              paragraph?.append(table);
+              paragraph.append(beforeText);
+              paragraph.append(table);
             });
             await editor.update(() => {
               editor.focus();
               $selectAll();
             });
             await editor.update(() => {
-              editor.dispatchCommand(CUT_COMMAND, {} as ClipboardEvent);
+              editor.dispatchCommand(CUT_COMMAND, new ClipboardEvent('cut'));
             });
 
             expectHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               `,
             );
           });
@@ -895,25 +880,28 @@ describe('LexicalTableNode tests', () => {
 
             await editor.update(() => {
               const root = $getRoot();
-              const paragraph = root.getFirstChild<ParagraphNode>();
+              const paragraph = $assertNodeType(
+                root.getFirstChild(),
+                $isParagraphNode,
+              );
               const table = $createTableNodeWithDimensions(4, 4, true);
               const afterText = $createTextNode('text after the table');
 
-              paragraph?.append(table);
-              paragraph?.append(afterText);
+              paragraph.append(table);
+              paragraph.append(afterText);
             });
             await editor.update(() => {
               editor.focus();
               $selectAll();
             });
             await editor.update(() => {
-              editor.dispatchCommand(CUT_COMMAND, {} as ClipboardEvent);
+              editor.dispatchCommand(CUT_COMMAND, new ClipboardEvent('cut'));
             });
 
             expectHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               `,
             );
           });
@@ -928,25 +916,25 @@ describe('LexicalTableNode tests', () => {
             });
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              if (table) {
+              const table = root.getLastChild();
+              if ($isTableNode(table)) {
                 const DOMTable = $getElementForTableNode(editor, table);
                 if (DOMTable) {
-                  table
-                    ?.getCellNodeFromCords(0, 0, DOMTable)
-                    ?.getLastChild<ParagraphNode>()
-                    ?.append($createTextNode('some text'));
+                  $assertNodeType(
+                    table.getCellNodeFromCords(0, 0, DOMTable)?.getLastChild(),
+                    $isParagraphNode,
+                  ).append($createTextNode('some text'));
                   const selection = $createTableSelection();
                   selection.set(
                     table.__key,
-                    table?.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-                    table?.getCellNodeFromCords(3, 3, DOMTable)?.__key || '',
+                    table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
+                    table.getCellNodeFromCords(3, 3, DOMTable)?.__key || '',
                   );
                   $setSelection(selection);
-                  editor.dispatchCommand(CUT_COMMAND, {
-                    preventDefault: () => {},
-                    stopPropagation: () => {},
-                  } as ClipboardEvent);
+                  editor.dispatchCommand(
+                    CUT_COMMAND,
+                    new ClipboardEvent('cut'),
+                  );
                 }
               }
             });
@@ -954,7 +942,7 @@ describe('LexicalTableNode tests', () => {
             expectHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
               `,
             );
           });
@@ -969,25 +957,25 @@ describe('LexicalTableNode tests', () => {
             });
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              if (table) {
+              const table = root.getLastChild();
+              if ($isTableNode(table)) {
                 const DOMTable = $getElementForTableNode(editor, table);
                 if (DOMTable) {
-                  table
-                    ?.getCellNodeFromCords(0, 0, DOMTable)
-                    ?.getLastChild<ParagraphNode>()
-                    ?.append($createTextNode('some text'));
+                  $assertNodeType(
+                    table.getCellNodeFromCords(0, 0, DOMTable)?.getLastChild(),
+                    $isParagraphNode,
+                  ).append($createTextNode('some text'));
                   const selection = $createTableSelection();
                   selection.set(
                     table.__key,
-                    table?.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-                    table?.getCellNodeFromCords(2, 2, DOMTable)?.__key || '',
+                    table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
+                    table.getCellNodeFromCords(2, 2, DOMTable)?.__key || '',
                   );
                   $setSelection(selection);
-                  editor.dispatchCommand(CUT_COMMAND, {
-                    preventDefault: () => {},
-                    stopPropagation: () => {},
-                  } as ClipboardEvent);
+                  editor.dispatchCommand(
+                    CUT_COMMAND,
+                    new ClipboardEvent('cut'),
+                  );
                 }
               }
             });
@@ -995,7 +983,7 @@ describe('LexicalTableNode tests', () => {
             expectReconciledTableHtmlToBeEqual(
               testEnv.innerHTML,
               html`
-                <p dir="auto"><br /></p>
+                <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
                 <table class="test-table-class">
                   <colgroup>
                     <col />
@@ -1005,58 +993,90 @@ describe('LexicalTableNode tests', () => {
                   </colgroup>
                   <tr dir="auto">
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                   </tr>
                   <tr dir="auto">
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                   </tr>
                   <tr dir="auto">
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                   </tr>
                   <tr dir="auto">
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                   </tr>
                 </table>
@@ -1074,42 +1094,40 @@ describe('LexicalTableNode tests', () => {
             });
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              if (table) {
-                const DOMTable = $getElementForTableNode(editor, table);
-                if (DOMTable) {
-                  table
-                    ?.getCellNodeFromCords(0, 0, DOMTable)
-                    ?.getLastChild<ParagraphNode>()
-                    ?.append($createTextNode('1'));
-                  table
-                    ?.getCellNodeFromCords(1, 0, DOMTable)
-                    ?.getLastChild<ParagraphNode>()
-                    ?.append($createTextNode(''));
-                  table
-                    ?.getCellNodeFromCords(2, 0, DOMTable)
-                    ?.getLastChild<ParagraphNode>()
-                    ?.append($createTextNode('2'));
-                  table
-                    ?.getCellNodeFromCords(0, 1, DOMTable)
-                    ?.getLastChild<ParagraphNode>()
-                    ?.append($createTextNode('3'));
-                  table
-                    ?.getCellNodeFromCords(1, 1, DOMTable)
-                    ?.getLastChild<ParagraphNode>()
-                    ?.append($createTextNode('4'));
-                  table
-                    ?.getCellNodeFromCords(2, 1, DOMTable)
-                    ?.getLastChild<ParagraphNode>()
-                    ?.append($createTextNode(''));
-                  const selection = $createTableSelection();
-                  selection.set(
-                    table.__key,
-                    table?.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-                    table?.getCellNodeFromCords(2, 1, DOMTable)?.__key || '',
-                  );
-                  expect(selection.getTextContent()).toBe(`1\t\t2\n3\t4\t\n`);
-                }
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
+              const DOMTable = $getElementForTableNode(editor, table);
+              if (DOMTable) {
+                $assertNodeType(
+                  table.getCellNodeFromCords(0, 0, DOMTable)?.getLastChild(),
+                  $isParagraphNode,
+                ).append($createTextNode('1'));
+                $assertNodeType(
+                  table.getCellNodeFromCords(1, 0, DOMTable)?.getLastChild(),
+                  $isParagraphNode,
+                ).append($createTextNode(''));
+                $assertNodeType(
+                  table.getCellNodeFromCords(2, 0, DOMTable)?.getLastChild(),
+                  $isParagraphNode,
+                ).append($createTextNode('2'));
+                $assertNodeType(
+                  table.getCellNodeFromCords(0, 1, DOMTable)?.getLastChild(),
+                  $isParagraphNode,
+                ).append($createTextNode('3'));
+                $assertNodeType(
+                  table.getCellNodeFromCords(1, 1, DOMTable)?.getLastChild(),
+                  $isParagraphNode,
+                ).append($createTextNode('4'));
+                $assertNodeType(
+                  table.getCellNodeFromCords(2, 1, DOMTable)?.getLastChild(),
+                  $isParagraphNode,
+                ).append($createTextNode(''));
+                const selection = $createTableSelection();
+                selection.set(
+                  table.__key,
+                  table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
+                  table.getCellNodeFromCords(2, 1, DOMTable)?.__key || '',
+                );
+                expect(selection.getTextContent()).toBe(`1\t\t2\n3\t4\t\n`);
               }
             });
           });
@@ -1124,17 +1142,15 @@ describe('LexicalTableNode tests', () => {
             });
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              if (table) {
-                table.setRowStriping(true);
-              }
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
+              table.setRowStriping(true);
             });
 
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
               expectTableHtmlToBeEqual(
-                table!.createDOM(editorConfig).outerHTML,
+                table.createDOM(editorConfig).outerHTML,
                 html`
                   <table
                     class="${editorConfig.theme.table} ${editorConfig.theme
@@ -1153,17 +1169,15 @@ describe('LexicalTableNode tests', () => {
 
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              if (table) {
-                table.setRowStriping(false);
-              }
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
+              table.setRowStriping(false);
             });
 
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
               expectTableHtmlToBeEqual(
-                table!.createDOM(editorConfig).outerHTML,
+                table.createDOM(editorConfig).outerHTML,
                 html`
                   <table class="${editorConfig.theme.table}">
                     <colgroup>
@@ -1189,17 +1203,21 @@ describe('LexicalTableNode tests', () => {
               });
               await editor.update(() => {
                 const root = $getRoot();
-                const table = root.getLastChild<TableNode>();
-                if (table) {
-                  table.setFrozenColumns(1);
-                }
+                const table = $assertNodeType(
+                  root.getLastChild(),
+                  $isTableNode,
+                );
+                table.setFrozenColumns(1);
               });
 
               await editor.update(() => {
                 const root = $getRoot();
-                const table = root.getLastChild<TableNode>();
+                const table = $assertNodeType(
+                  root.getLastChild(),
+                  $isTableNode,
+                );
                 expectHtmlToBeEqual(
-                  table!.createDOM(editorConfig).outerHTML,
+                  table.createDOM(editorConfig).outerHTML,
                   html`
                     <div
                       class="${editorConfig.theme
@@ -1665,17 +1683,21 @@ describe('LexicalTableNode tests', () => {
 
               await editor.update(() => {
                 const root = $getRoot();
-                const table = root.getLastChild<TableNode>();
-                if (table) {
-                  table.setFrozenColumns(0);
-                }
+                const table = $assertNodeType(
+                  root.getLastChild(),
+                  $isTableNode,
+                );
+                table.setFrozenColumns(0);
               });
 
               await editor.update(() => {
                 const root = $getRoot();
-                const table = root.getLastChild<TableNode>();
+                const table = $assertNodeType(
+                  root.getLastChild(),
+                  $isTableNode,
+                );
                 expectHtmlToBeEqual(
-                  table!.createDOM(editorConfig).outerHTML,
+                  table.createDOM(editorConfig).outerHTML,
                   html`
                     <div class="${editorConfig.theme.tableScrollableWrapper}">
                       <table class="${editorConfig.theme.table}">
@@ -1703,17 +1725,15 @@ describe('LexicalTableNode tests', () => {
             });
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              if (table) {
-                table.setFormat('center');
-              }
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
+              table.setFormat('center');
             });
 
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
               expectTableHtmlToBeEqual(
-                table!.createDOM(editorConfig).outerHTML,
+                table.createDOM(editorConfig).outerHTML,
                 html`
                   <table
                     class="${editorConfig.theme.table} ${editorConfig.theme
@@ -1731,17 +1751,15 @@ describe('LexicalTableNode tests', () => {
 
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              if (table) {
-                table.setFormat('left');
-              }
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
+              table.setFormat('left');
             });
 
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
               expectTableHtmlToBeEqual(
-                table!.createDOM(editorConfig).outerHTML,
+                table.createDOM(editorConfig).outerHTML,
                 html`
                   <table class="${editorConfig.theme.table}">
                     <colgroup>
@@ -1768,15 +1786,15 @@ describe('LexicalTableNode tests', () => {
             // Set widths
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              table!.setColWidths([50, 50]);
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
+              table.setColWidths([50, 50]);
             });
 
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
               expectTableHtmlToBeEqual(
-                table!.createDOM(editorConfig).outerHTML,
+                table.createDOM(editorConfig).outerHTML,
                 html`
                   <table class="${editorConfig.theme.table}">
                     <colgroup>
@@ -1786,37 +1804,37 @@ describe('LexicalTableNode tests', () => {
                   </table>
                 `,
               );
-              const colWidths = table!.getColWidths();
+              const colWidths = table.getColWidths();
 
               // colwidths should be immutable in DEV
               expect(() => {
                 (colWidths as number[]).push(100);
               }).toThrow();
-              expect(table!.getColWidths()).toStrictEqual([50, 50]);
-              expect(table!.getColumnCount()).toBe(2);
+              expect(table.getColWidths()).toStrictEqual([50, 50]);
+              expect(table.getColumnCount()).toBe(2);
             });
 
             // Add a column
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
-              const DOMTable = $getElementForTableNode(editor, table!);
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
+              const DOMTable = $getElementForTableNode(editor, table);
               const selection = $createTableSelection();
               selection.set(
-                table!.__key,
-                table!.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-                table!.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
+                table.__key,
+                table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
+                table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
               );
               $setSelection(selection);
               $insertTableColumnAtSelection();
-              table!.setColWidths([50, 50, 100]);
+              table.setColWidths([50, 50, 100]);
             });
 
             await editor.update(() => {
               const root = $getRoot();
-              const table = root.getLastChild<TableNode>();
+              const table = $assertNodeType(root.getLastChild(), $isTableNode);
               expectTableHtmlToBeEqual(
-                table!.createDOM(editorConfig).outerHTML,
+                table.createDOM(editorConfig).outerHTML,
                 html`
                   <table class="${editorConfig.theme.table}">
                     <colgroup>
@@ -1827,8 +1845,8 @@ describe('LexicalTableNode tests', () => {
                   </table>
                 `,
               );
-              expect(table!.getColWidths()).toStrictEqual([50, 50, 100]);
-              expect(table!.getColumnCount()).toBe(3);
+              expect(table.getColWidths()).toStrictEqual([50, 50, 100]);
+              expect(table.getColumnCount()).toBe(3);
             });
           });
         },
@@ -1868,18 +1886,26 @@ describe('LexicalTableNode tests', () => {
                 </colgroup>
                 <tr dir="auto">
                   <th dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </th>
                   <th dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </th>
                 </tr>
                 <tr dir="auto">
                   <th dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </th>
                   <td dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </td>
                 </tr>
               </table>
@@ -1902,18 +1928,26 @@ describe('LexicalTableNode tests', () => {
                   </colgroup>
                   <tr dir="auto">
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                   </tr>
                   <tr dir="auto">
                     <th dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </th>
                     <td dir="auto">
-                      <p dir="auto"><br /></p>
+                      <p dir="auto">
+                        <br data-lexical-managed-linebreak="true" />
+                      </p>
                     </td>
                   </tr>
                 </table>
@@ -1936,18 +1970,26 @@ describe('LexicalTableNode tests', () => {
                 </colgroup>
                 <tr dir="auto">
                   <th dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </th>
                   <th dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </th>
                 </tr>
                 <tr dir="auto">
                   <th dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </th>
                   <td dir="auto">
-                    <p dir="auto"><br /></p>
+                    <p dir="auto">
+                      <br data-lexical-managed-linebreak="true" />
+                    </p>
                   </td>
                 </tr>
               </table>

@@ -8,6 +8,7 @@
 
 import {
   centerAlign,
+  clearFormatting,
   indent,
   moveToPrevWord,
   outdent,
@@ -28,7 +29,7 @@ import {
   selectFromBackgroundColorPicker,
   selectFromColorPicker,
   test,
-  waitForSelector,
+  waitForTypeaheadMenuOption,
 } from '../utils/index.mjs';
 
 test.describe('Clear All Formatting', () => {
@@ -104,86 +105,82 @@ test.describe('Clear All Formatting', () => {
     );
   });
 
-  test(
-    `Should preserve the default styling of hashtags and mentions`,
-    {
-      tag: '@flaky',
-    },
-    async ({page}) => {
-      await focusEditor(page);
+  test(`Should preserve the default styling of hashtags and mentions`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
 
-      await page.keyboard.type('#facebook testing');
-      await selectAll(page);
-      await toggleItalic(page);
-      await selectFromBackgroundColorPicker(page);
-      await selectFromColorPicker(page);
-      await selectFromAdditionalStylesDropdown(page, '.clear');
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span
-              class="PlaygroundEditorTheme__hashtag"
-              data-lexical-text="true">
-              #facebook
-            </span>
-            <span data-lexical-text="true">testing</span>
-          </p>
-        `,
-      );
+    await page.keyboard.type('#facebook testing');
+    await selectAll(page);
+    await toggleItalic(page);
+    await selectFromBackgroundColorPicker(page);
+    await selectFromColorPicker(page);
+    await selectFromAdditionalStylesDropdown(page, '.clear');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span class="PlaygroundEditorTheme__hashtag" data-lexical-text="true">
+            #facebook
+          </span>
+          <span data-lexical-text="true">testing</span>
+        </p>
+      `,
+    );
 
-      await clearEditor(page);
+    await clearEditor(page);
 
-      await page.keyboard.type('@Luke');
+    await page.keyboard.type('@Luke');
 
-      await waitForSelector(page, '#typeahead-menu ul li');
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">@Luke</span>
-          </p>
-        `,
-      );
+    // Wait until "Luke Skywalker" is the *highlighted* option before pressing
+    // Enter; see waitForTypeaheadMenuOption for why merely-present is racy.
+    await waitForTypeaheadMenuOption(page, 'Luke Skywalker');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">@Luke</span>
+        </p>
+      `,
+    );
 
-      await page.keyboard.press('Enter');
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span
-              class="mention"
-              spellcheck="false"
-              style="background-color: rgba(24, 119, 232, 0.2);"
-              data-lexical-text="true">
-              Luke Skywalker
-            </span>
-          </p>
-        `,
-      );
+    await page.keyboard.press('Enter');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span
+            class="mention"
+            spellcheck="false"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true">
+            Luke Skywalker
+          </span>
+        </p>
+      `,
+    );
 
-      await page.keyboard.type(' is testing');
-      await selectAll(page);
-      await toggleBold(page);
-      await selectFromColorPicker(page);
-      await selectFromAdditionalStylesDropdown(page, '.clear');
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span
-              class="mention"
-              spellcheck="false"
-              style="background-color: rgba(24, 119, 232, 0.2);"
-              data-lexical-text="true">
-              Luke Skywalker
-            </span>
-            <span data-lexical-text="true">is testing</span>
-          </p>
-        `,
-      );
-    },
-  );
+    await page.keyboard.type(' is testing');
+    await selectAll(page);
+    await toggleBold(page);
+    await selectFromColorPicker(page);
+    await selectFromAdditionalStylesDropdown(page, '.clear');
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span
+            class="mention"
+            spellcheck="false"
+            style="background-color: rgba(24, 119, 232, 0.2);"
+            data-lexical-text="true">
+            Luke Skywalker
+          </span>
+          <span data-lexical-text="true">is testing</span>
+        </p>
+      `,
+    );
+  });
 
   test(`Can clear left/center/right alignment when BIU formatting already applied`, async ({
     page,
@@ -271,6 +268,25 @@ test.describe('Clear All Formatting', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
           <span data-lexical-text="true">Hello World Test</span>
+        </p>
+      `,
+    );
+  });
+
+  test(`Can clear alignment and indent with a collapsed selection`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+
+    await page.keyboard.type('Hello World');
+    await rightAlign(page);
+    await indent(page);
+    await clearFormatting(page);
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto" style="">
+          <span data-lexical-text="true">Hello World</span>
         </p>
       `,
     );

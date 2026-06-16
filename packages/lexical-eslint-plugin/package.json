@@ -8,43 +8,72 @@
     "lexical",
     "editor"
   ],
-  "version": "0.44.0",
+  "version": "0.45.0",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/facebook/lexical.git",
     "directory": "packages/lexical-eslint-plugin"
   },
-  "main": "LexicalEslintPlugin.js",
-  "types": "index.d.ts",
+  "main": "./dist/LexicalEslintPlugin.js",
+  "types": "./dist/typescript-too-old.d.ts",
   "bugs": {
     "url": "https://github.com/facebook/lexical/issues"
   },
   "homepage": "https://lexical.dev/docs/packages/lexical-eslint-plugin",
   "sideEffects": false,
   "peerDependencies": {
-    "eslint": ">=7.31.0"
+    "eslint": ">=7.31.0",
+    "typescript": ">=5.2"
   },
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "import": {
-        "types": "./index.d.ts",
-        "development": "./LexicalEslintPlugin.dev.mjs",
-        "production": "./LexicalEslintPlugin.prod.mjs",
-        "node": "./LexicalEslintPlugin.node.mjs",
-        "default": "./LexicalEslintPlugin.mjs"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalEslintPlugin.dev.mjs",
+        "production": "./dist/LexicalEslintPlugin.prod.mjs",
+        "node": "./dist/LexicalEslintPlugin.node.mjs",
+        "default": "./dist/LexicalEslintPlugin.mjs"
       },
       "require": {
-        "types": "./index.d.ts",
-        "development": "./LexicalEslintPlugin.dev.js",
-        "production": "./LexicalEslintPlugin.prod.js",
-        "default": "./LexicalEslintPlugin.js"
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalEslintPlugin.dev.js",
+        "production": "./dist/LexicalEslintPlugin.prod.js",
+        "default": "./dist/LexicalEslintPlugin.js"
       }
     }
   },
   "devDependencies": {
     "@types/eslint": "^9.6.1",
-    "@types/estree": "^1.0.6"
+    "@types/estree": "^1.0.9"
   },
-  "module": "LexicalEslintPlugin.mjs"
+  "module": "./dist/LexicalEslintPlugin.mjs",
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ],
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/typescript-too-old.d.ts"
+      ]
+    }
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  }
 }

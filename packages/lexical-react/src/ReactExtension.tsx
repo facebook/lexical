@@ -13,6 +13,7 @@ import type {
 } from './shared/types';
 import type {LexicalComposerContextWithEditor} from '@lexical/react/LexicalComposerContext';
 
+import invariant from '@lexical/internal/invariant';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
@@ -21,7 +22,6 @@ import {
   defineExtension,
   shallowMergeConfig,
 } from 'lexical';
-import invariant from 'shared/invariant';
 
 import {buildEditorComponent} from './shared/buildEditorComponent';
 
@@ -72,7 +72,7 @@ const initialConfig: ReactConfig = {
  * location-dependent (e.g. floating UI that does not need to be mounted in
  * some specific location, or effects that return null).
  */
-export const ReactExtension = defineExtension({
+export const ReactExtension = /* @__PURE__ */ defineExtension({
   build(editor, config, state) {
     const providerPeer = state.getPeer<typeof ReactProviderExtension>(
       ReactProviderExtension.name,
@@ -106,7 +106,7 @@ export const ReactExtension = defineExtension({
   peerDependencies: [
     // We are not trying to avoid the import, just the direct dependency,
     // so using the extension directly is fine.
-    declarePeerDependency<typeof ReactProviderExtension>(
+    /* @__PURE__ */ declarePeerDependency<typeof ReactProviderExtension>(
       ReactProviderExtension.name,
     ),
   ],

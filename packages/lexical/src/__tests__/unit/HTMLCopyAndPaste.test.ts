@@ -14,11 +14,7 @@ import {
   $getSelection,
   $isRangeSelection,
 } from 'lexical';
-import {
-  DataTransferMock,
-  initializeUnitTest,
-  invariant,
-} from 'lexical/src/__tests__/utils';
+import {initializeUnitTest, invariant} from 'lexical/src/__tests__/utils';
 import {beforeEach, describe, expect, test} from 'vitest';
 
 describe('HTMLCopyAndPaste tests', () => {
@@ -41,7 +37,7 @@ describe('HTMLCopyAndPaste tests', () => {
           pastedHTML: `Hello!`,
         },
         {
-          expectedHTML: `<p dir="auto"><span data-lexical-text="true">Hello!</span></p><p dir="auto"><br></p>`,
+          expectedHTML: `<p dir="auto"><span data-lexical-text="true">Hello!</span></p><p dir="auto"><br data-lexical-managed-linebreak="true"></p>`,
           name: 'a paragraph element',
           pastedHTML: `<p>Hello!<p>`,
         },
@@ -125,7 +121,7 @@ describe('HTMLCopyAndPaste tests', () => {
         test(`HTML copy paste: ${testCase.name}`, async () => {
           const {editor} = testEnv;
 
-          const dataTransfer = new DataTransferMock();
+          const dataTransfer = new DataTransfer();
           dataTransfer.setData('text/html', testCase.pastedHTML);
           await editor.update(() => {
             const selection = $getSelection();
@@ -150,7 +146,7 @@ describe('HTMLCopyAndPaste tests', () => {
       test('iOS fix: Word predictions should be handled as plain text to maintain selection formatting', async () => {
         const {editor} = testEnv;
 
-        const dataTransfer = new DataTransferMock();
+        const dataTransfer = new DataTransfer();
 
         // we simulate choosing an iOS Safari `autocorrect` or `word prediction`
         // which pastes the word into the editor with both the `text/plain` and `text/html` data types

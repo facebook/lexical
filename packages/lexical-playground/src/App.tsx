@@ -14,7 +14,9 @@ import {
   ClickAfterLastBlockExtension,
   DecoratorTextExtension,
   HorizontalRuleExtension,
+  SelectBlockExtension,
   SelectionAlwaysOnDisplayExtension,
+  WatchEditableExtension,
 } from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
 import {HistoryExtension} from '@lexical/history';
@@ -37,6 +39,7 @@ import {
   $createQuoteNode,
   RichTextExtension,
 } from '@lexical/rich-text';
+import {TableExtension} from '@lexical/table';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -47,14 +50,17 @@ import {
 import {type JSX, useMemo} from 'react';
 
 import {isDevPlayground} from './appSettings';
-import {buildHTMLConfig} from './buildHTMLConfig';
 import {FlashMessageContext} from './context/FlashMessageContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
 import {ToolbarContext} from './context/ToolbarContext';
 import Editor from './Editor';
+import {registerSettingsSynchronization} from './hooks/useSynchronizeSettings';
 import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
+import {PlaygroundImportExtension} from './nodes/PlaygroundImportExtension';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
+import {PlaygroundDOMRenderExtension} from './PlaygroundDOMRenderExtension';
+import {AutocompleteExtension} from './plugins/AutocompleteExtension';
 import {PlaygroundAutoLinkExtension} from './plugins/AutoLinkExtension';
 import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
 import {CollapsibleExtension} from './plugins/CollapsibleExtension';
@@ -62,19 +68,25 @@ import {DateTimeExtension} from './plugins/DateTimeExtension';
 import DocsPlugin from './plugins/DocsPlugin';
 import {DragDropPasteExtension} from './plugins/DragDropPasteExtension';
 import {EmojisExtension} from './plugins/EmojisExtension';
+import {EquationsExtension} from './plugins/EquationsExtension';
+import {ExcalidrawExtension} from './plugins/ExcalidrawExtension';
 import {FigmaExtension} from './plugins/FigmaExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
+import {LayoutExtension} from './plugins/LayoutExtension/LayoutExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
 import {MaxLengthExtension} from './plugins/MaxLengthPlugin';
+import {MentionsExtension} from './plugins/MentionsExtension';
 import {PageBreakExtension} from './plugins/PageBreakExtension';
 import {PagesReactExtension} from './plugins/PagesReactExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
+import {PollExtension} from './plugins/PollExtension';
 import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import {TabFocusExtension} from './plugins/TabFocusExtension';
 import {TerseExportExtension} from './plugins/TerseExportExtension';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import {TwitterExtension} from './plugins/TwitterExtension';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
+import {VisibleNonPrintingExtension} from './plugins/VisibleNonPrintingExtension';
 import {YouTubeExtension} from './plugins/YouTubeExtension';
 import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
@@ -165,13 +177,18 @@ function $prepopulatedRichText() {
 }
 
 // These are only enabled for rich-text mode
-const PlaygroundRichTextExtension = defineExtension({
+const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    configExtension(RichTextExtension, {
+    /* @__PURE__ */ configExtension(RichTextExtension, {
       escapeFormatTriggers: {
         code: {arrow: true, click: true, enter: true, onlyAtBoundary: true},
       },
     }),
+    // Each node extension below registers its own DOM-import rules, so the
+    // rich-text importer set tracks this node set automatically (kept out of
+    // the always-on PlaygroundImportExtension so plain-text mode doesn't pull
+    // in RichTextExtension, which conflicts with PlainTextExtension).
+    TableExtension,
     ImagesExtension,
     HorizontalRuleExtension,
     PageBreakExtension,
@@ -181,20 +198,29 @@ const PlaygroundRichTextExtension = defineExtension({
     TabFocusExtension,
     CollapsibleExtension,
     CodeHighlightExtension,
-    configExtension(ListExtension, {shouldPreserveNumbering: false}),
+    /* @__PURE__ */ configExtension(ListExtension, {
+      shouldPreserveNumbering: false,
+    }),
     CheckListExtension,
     PlaygroundMarkdownShortcutsExtension,
     PageBreakExtension,
     PagesReactExtension,
+    PollExtension,
+    EquationsExtension,
+    LayoutExtension,
+    ExcalidrawExtension,
   ],
   name: '@lexical/playground/RichText',
 });
 
-const AppExtension = defineExtension({
+const AppExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     AutoFocusExtension,
     ClearEditorExtension,
     DecoratorTextExtension,
+    // Exposes editor.isEditable() as a signal; consumed by
+    // registerSettingsSynchronization to drive ClickableLinkExtension.
+    WatchEditableExtension,
     HistoryExtension,
     KeywordsExtension,
     HashtagExtension,
@@ -203,17 +229,31 @@ const AppExtension = defineExtension({
     SpecialTextExtension,
     DragDropPasteExtension,
     EmojisExtension,
-    configExtension(LinkExtension, {validateUrl}),
+    MentionsExtension,
+    /* @__PURE__ */ configExtension(LinkExtension, {validateUrl}),
     PlaygroundAutoLinkExtension,
     ClickableLinkExtension,
     SelectionAlwaysOnDisplayExtension,
+    /* @__PURE__ */ configExtension(SelectBlockExtension, {
+      cascadeSelection: true,
+    }),
     TerseExportExtension,
-    configExtension(ClickAfterLastBlockExtension, {
+    /* @__PURE__ */ configExtension(ClickAfterLastBlockExtension, {
       $shouldInsertAfter: node =>
         $defaultShouldInsertAfter(node) || $isCodeNode(node),
     }),
+    /* @__PURE__ */ configExtension(AutocompleteExtension, {disabled: true}),
+    /* @__PURE__ */ configExtension(VisibleNonPrintingExtension, {
+      disabled: true,
+    }),
+    // DOMImportExtension pipeline — `PlaygroundImportExtension` bundles
+    // the shared `CoreImportExtension` baseline, the playground-specific
+    // inline-style overlay and the `ClipboardDOMImportExtension` paste
+    // handler. Per-node import rules ride along with each node extension.
+    PlaygroundImportExtension,
+    // Replaces the legacy `buildHTMLConfig().export` overrides.
+    PlaygroundDOMRenderExtension,
   ],
-  html: buildHTMLConfig(),
   name: '@lexical/playground',
   namespace: 'Playground',
   nodes: PlaygroundNodes,
@@ -221,13 +261,29 @@ const AppExtension = defineExtension({
 });
 
 /**
- * This is not a recommended pattern, extensions should be as static as
- * possible, but this is a special case where we build fundamentally
- * different editor configurations based on the query string.
+ * The *only* settings that require tearing down and rebuilding the editor,
+ * because they change the set of extensions in use (and therefore the initial
+ * editor state). Building a dynamic extension from settings at all is an
+ * anti-pattern — extensions should be as static as possible — and is tolerated
+ * here only because the playground builds fundamentally different editors from
+ * the query string.
+ *
+ * IMPORTANT: Do NOT add a setting here unless changing it genuinely requires a
+ * different extension graph. Anything a live editor can react to through an
+ * extension's config signals — table behavior toggles, link attributes,
+ * character limits, autocomplete, etc. — MUST instead be synced with
+ * `useSyncExtensionSignal` in `Editor.tsx`. Adding such a setting here forces a
+ * full editor rebuild (discarding content, selection, and history) on every
+ * toggle, which is exactly the bug that moving the table settings out of here
+ * fixed.
  */
-function buildExtensionFromSettings(
-  settings: Record<'isCollab' | 'emptyEditor' | 'isRichText', boolean>,
-) {
+interface DynamicSettings {
+  isCollab: boolean;
+  emptyEditor: boolean;
+  isRichText: boolean;
+}
+
+function buildExtensionFromSettings(settings: DynamicSettings) {
   const {isCollab, emptyEditor, isRichText} = settings;
   return defineExtension({
     $initialEditorState: isCollab
@@ -237,10 +293,14 @@ function buildExtensionFromSettings(
         : $prepopulatedRichText,
     dependencies: [
       AppExtension,
-      configExtension(HistoryExtension, {disabled: isCollab}),
+      /* @__PURE__ */ configExtension(HistoryExtension, {disabled: isCollab}),
       isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
     ],
     name: '@lexical/playground/dynamic-config',
+    // Apply INITIAL_SETTINGS to the extension config signals synchronously as
+    // the editor is built (and wire the editable→clickable-link signal),
+    // before the React useSynchronizeSettings effect takes over live updates.
+    register: registerSettingsSynchronization,
   });
 }
 
@@ -249,6 +309,10 @@ function App(): JSX.Element {
     settings: {isCollab, emptyEditor, isRichText, measureTypingPerf},
   } = useSettings();
 
+  // Only the editor-recreating settings belong in this memo's deps. Table
+  // behavior toggles (and other live-reconfigurable settings) are applied
+  // reactively in Editor.tsx via useSyncExtensionSignal, so they must NOT
+  // appear here or they would rebuild the whole editor on every change.
   const app = useMemo(
     () => buildExtensionFromSettings({emptyEditor, isCollab, isRichText}),
     [emptyEditor, isCollab, isRichText],

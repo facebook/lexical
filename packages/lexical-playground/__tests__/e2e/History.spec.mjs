@@ -14,426 +14,428 @@ import {
   undo,
 } from '../keyboardShortcuts/index.mjs';
 import {
+  advanceHistoryClock,
   assertHTML,
   assertSelection,
   enableCompositionKeyEvents,
   focusEditor,
   html,
   initialize,
-  sleep,
   test,
 } from '../utils/index.mjs';
 
 test.describe('History', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
-  test(
-    `Can type two paragraphs of text and correctly undo and redo`,
-    {
-      tag: '@flaky',
-    },
-    async ({isRichText, page, isCollab}) => {
-      test.skip(isCollab);
-      await page.focus('div[contenteditable="true"]');
-      await page.keyboard.type('hello');
-      await sleep(1050); // default merge interval is 1000, add 50ms as overhead due to CI latency.
-      await page.keyboard.type(' world');
-      await page.keyboard.press('Enter');
-      await page.keyboard.type('hello world again');
-      await moveLeft(page, 6);
-      await page.keyboard.type(', again and');
+  test(`Can type two paragraphs of text and correctly undo and redo`, async ({
+    isRichText,
+    page,
+    isCollab,
+  }) => {
+    test.skip(isCollab);
+    await page.focus('div[contenteditable="true"]');
+    await page.keyboard.type('hello');
+    await advanceHistoryClock(page);
+    await page.keyboard.type(' world');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('hello world again');
+    await moveLeft(page, 6);
+    await page.keyboard.type(', again and');
 
-      if (isRichText) {
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world</span>
-            </p>
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world, again and again</span>
-            </p>
-          `,
-        );
-        await assertSelection(page, {
-          anchorOffset: 22,
-          anchorPath: [1, 0, 0],
-          focusOffset: 22,
-          focusPath: [1, 0, 0],
-        });
-      } else {
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world</span>
-              <br />
-              <span data-lexical-text="true">hello world, again and again</span>
-            </p>
-          `,
-        );
-        await assertSelection(page, {
-          anchorOffset: 22,
-          anchorPath: [0, 2, 0],
-          focusOffset: 22,
-          focusPath: [0, 2, 0],
-        });
-      }
-
-      await undo(page);
-
-      if (isRichText) {
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world</span>
-            </p>
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world again</span>
-            </p>
-          `,
-        );
-        await assertSelection(page, {
-          anchorOffset: 11,
-          anchorPath: [1, 0, 0],
-          focusOffset: 11,
-          focusPath: [1, 0, 0],
-        });
-      } else {
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world</span>
-              <br />
-              <span data-lexical-text="true">hello world again</span>
-            </p>
-          `,
-        );
-        await assertSelection(page, {
-          anchorOffset: 11,
-          anchorPath: [0, 2, 0],
-          focusOffset: 11,
-          focusPath: [0, 2, 0],
-        });
-      }
-
-      await undo(page);
-
-      if (isRichText) {
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world</span>
-            </p>
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <br />
-            </p>
-          `,
-        );
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [1],
-          focusOffset: 0,
-          focusPath: [1],
-        });
-      } else {
-        assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world</span>
-              <br />
-              <br />
-            </p>
-          `,
-        );
-        await assertSelection(page, {
-          anchorOffset: 2,
-          anchorPath: [0],
-          focusOffset: 2,
-          focusPath: [0],
-        });
-      }
-
-      await undo(page);
-
+    if (isRichText) {
       await assertHTML(
         page,
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
           </p>
-        `,
-      );
-      await assertSelection(page, {
-        anchorOffset: 11,
-        anchorPath: [0, 0, 0],
-        focusOffset: 11,
-        focusPath: [0, 0, 0],
-      });
-
-      await undo(page);
-
-      await assertHTML(
-        page,
-        html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">hello</span>
+            <span data-lexical-text="true">hello world, again and again</span>
           </p>
         `,
       );
       await assertSelection(page, {
-        anchorOffset: 5,
-        anchorPath: [0, 0, 0],
-        focusOffset: 5,
-        focusPath: [0, 0, 0],
+        anchorOffset: 22,
+        anchorPath: [1, 0, 0],
+        focusOffset: 22,
+        focusPath: [1, 0, 0],
       });
-
-      await undo(page);
-
+    } else {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world</span>
+            <br />
+            <span data-lexical-text="true">hello world, again and again</span>
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 22,
+        anchorPath: [0, 2, 0],
+        focusOffset: 22,
+        focusPath: [0, 2, 0],
+      });
+    }
+
+    await undo(page);
+
+    if (isRichText) {
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world again</span>
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 11,
+        anchorPath: [1, 0, 0],
+        focusOffset: 11,
+        focusPath: [1, 0, 0],
+      });
+    } else {
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world</span>
+            <br />
+            <span data-lexical-text="true">hello world again</span>
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 11,
+        anchorPath: [0, 2, 0],
+        focusOffset: 11,
+        focusPath: [0, 2, 0],
+      });
+    }
+
+    await undo(page);
+
+    if (isRichText) {
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         `,
       );
       await assertSelection(page, {
         anchorOffset: 0,
-        anchorPath: [0],
+        anchorPath: [1],
         focusOffset: 0,
-        focusPath: [0],
+        focusPath: [1],
       });
-
-      await redo(page);
-
-      await assertHTML(
+    } else {
+      assertHTML(
         page,
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span data-lexical-text="true">hello</span>
+            <span data-lexical-text="true">hello world</span>
+            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
       await assertSelection(page, {
-        anchorOffset: 5,
-        anchorPath: [0, 0, 0],
-        focusOffset: 5,
-        focusPath: [0, 0, 0],
+        anchorOffset: 2,
+        anchorPath: [0],
+        focusOffset: 2,
+        focusPath: [0],
       });
+    }
 
-      await redo(page);
+    await undo(page);
 
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">hello world</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 11,
+      anchorPath: [0, 0, 0],
+      focusOffset: 11,
+      focusPath: [0, 0, 0],
+    });
+
+    await undo(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">hello</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 5,
+      anchorPath: [0, 0, 0],
+      focusOffset: 5,
+      focusPath: [0, 0, 0],
+    });
+
+    await undo(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [0],
+      focusOffset: 0,
+      focusPath: [0],
+    });
+
+    await redo(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">hello</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 5,
+      anchorPath: [0, 0, 0],
+      focusOffset: 5,
+      focusPath: [0, 0, 0],
+    });
+
+    await redo(page);
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">hello world</span>
+        </p>
+      `,
+    );
+    await assertSelection(page, {
+      anchorOffset: 11,
+      anchorPath: [0, 0, 0],
+      focusOffset: 11,
+      focusPath: [0, 0, 0],
+    });
+
+    await redo(page);
+
+    if (isRichText) {
       await assertHTML(
         page,
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">hello world</span>
           </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [1],
+        focusOffset: 0,
+        focusPath: [1],
+      });
+    } else {
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world</span>
+            <br />
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 2,
+        anchorPath: [0],
+        focusOffset: 2,
+        focusPath: [0],
+      });
+    }
+
+    await redo(page);
+
+    if (isRichText) {
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world again</span>
+          </p>
         `,
       );
       await assertSelection(page, {
         anchorOffset: 11,
-        anchorPath: [0, 0, 0],
+        anchorPath: [1, 0, 0],
         focusOffset: 11,
-        focusPath: [0, 0, 0],
+        focusPath: [1, 0, 0],
       });
+    } else {
+      assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world</span>
+            <br />
+            <span data-lexical-text="true">hello world again</span>
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 11,
+        anchorPath: [0, 2, 0],
+        focusOffset: 11,
+        focusPath: [0, 2, 0],
+      });
+    }
 
-      await redo(page);
+    await redo(page);
 
-      if (isRichText) {
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world</span>
-            </p>
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-          `,
-        );
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [1],
-          focusOffset: 0,
-          focusPath: [1],
-        });
-      } else {
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world</span>
-              <br />
-              <br />
-            </p>
-          `,
-        );
-        await assertSelection(page, {
-          anchorOffset: 2,
-          anchorPath: [0],
-          focusOffset: 2,
-          focusPath: [0],
-        });
-      }
+    if (isRichText) {
+      assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world, again and again</span>
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 22,
+        anchorPath: [1, 0, 0],
+        focusOffset: 22,
+        focusPath: [1, 0, 0],
+      });
+    } else {
+      assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world</span>
+            <br />
+            <span data-lexical-text="true">hello world, again and again</span>
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 22,
+        anchorPath: [0, 2, 0],
+        focusOffset: 22,
+        focusPath: [0, 2, 0],
+      });
+    }
 
-      await redo(page);
+    await pressBackspace(page, 4);
 
-      if (isRichText) {
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world</span>
-            </p>
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world again</span>
-            </p>
-          `,
-        );
-        await assertSelection(page, {
-          anchorOffset: 11,
-          anchorPath: [1, 0, 0],
-          focusOffset: 11,
-          focusPath: [1, 0, 0],
-        });
-      } else {
-        assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world</span>
-              <br />
-              <span data-lexical-text="true">hello world again</span>
-            </p>
-          `,
-        );
-        await assertSelection(page, {
-          anchorOffset: 11,
-          anchorPath: [0, 2, 0],
-          focusOffset: 11,
-          focusPath: [0, 2, 0],
-        });
-      }
+    if (isRichText) {
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world, again again</span>
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 18,
+        anchorPath: [1, 0, 0],
+        focusOffset: 18,
+        focusPath: [1, 0, 0],
+      });
+    } else {
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world</span>
+            <br />
+            <span data-lexical-text="true">hello world, again again</span>
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 18,
+        anchorPath: [0, 2, 0],
+        focusOffset: 18,
+        focusPath: [0, 2, 0],
+      });
+    }
 
-      await redo(page);
+    await undo(page);
 
-      if (isRichText) {
-        assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world</span>
-            </p>
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world, again and again</span>
-            </p>
-          `,
-        );
-        await assertSelection(page, {
-          anchorOffset: 22,
-          anchorPath: [1, 0, 0],
-          focusOffset: 22,
-          focusPath: [1, 0, 0],
-        });
-      } else {
-        assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world</span>
-              <br />
-              <span data-lexical-text="true">hello world, again and again</span>
-            </p>
-          `,
-        );
-        await assertSelection(page, {
-          anchorOffset: 22,
-          anchorPath: [0, 2, 0],
-          focusOffset: 22,
-          focusPath: [0, 2, 0],
-        });
-      }
-
-      await pressBackspace(page, 4);
-
-      if (isRichText) {
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world</span>
-            </p>
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world, again again</span>
-            </p>
-          `,
-        );
-        await assertSelection(page, {
-          anchorOffset: 18,
-          anchorPath: [1, 0, 0],
-          focusOffset: 18,
-          focusPath: [1, 0, 0],
-        });
-      } else {
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world</span>
-              <br />
-              <span data-lexical-text="true">hello world, again again</span>
-            </p>
-          `,
-        );
-        await assertSelection(page, {
-          anchorOffset: 18,
-          anchorPath: [0, 2, 0],
-          focusOffset: 18,
-          focusPath: [0, 2, 0],
-        });
-      }
-
-      await undo(page);
-
-      if (isRichText) {
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world</span>
-            </p>
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world, again and again</span>
-            </p>
-          `,
-        );
-        await assertSelection(page, {
-          anchorOffset: 22,
-          anchorPath: [1, 0, 0],
-          focusOffset: 22,
-          focusPath: [1, 0, 0],
-        });
-      } else {
-        await assertHTML(
-          page,
-          html`
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-              <span data-lexical-text="true">hello world</span>
-              <br />
-              <span data-lexical-text="true">hello world, again and again</span>
-            </p>
-          `,
-        );
-        await assertSelection(page, {
-          anchorOffset: 22,
-          anchorPath: [0, 2, 0],
-          focusOffset: 22,
-          focusPath: [0, 2, 0],
-        });
-      }
-    },
-  );
+    if (isRichText) {
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world</span>
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world, again and again</span>
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 22,
+        anchorPath: [1, 0, 0],
+        focusOffset: 22,
+        focusPath: [1, 0, 0],
+      });
+    } else {
+      await assertHTML(
+        page,
+        html`
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <span data-lexical-text="true">hello world</span>
+            <br />
+            <span data-lexical-text="true">hello world, again and again</span>
+          </p>
+        `,
+      );
+      await assertSelection(page, {
+        anchorOffset: 22,
+        anchorPath: [0, 2, 0],
+        focusOffset: 22,
+        focusPath: [0, 2, 0],
+      });
+    }
+  });
 
   test('Can coalesce when switching inline styles (#1151)', async ({
     page,
@@ -485,7 +487,9 @@ test.describe('History', () => {
       </p>
     `;
     const step4HTML = html`
-      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <br data-lexical-managed-linebreak="true" />
+      </p>
     `;
 
     await assertHTML(page, step1HTML);
@@ -555,11 +559,11 @@ test.describe('History - IME', () => {
       text: 'すし',
     });
 
-    await sleep(1050); // default merge interval is 1000, add 50ms as overhead due to CI latency.
+    await advanceHistoryClock(page);
 
     await page.keyboard.type(' ');
 
-    await sleep(1050);
+    await advanceHistoryClock(page);
 
     // await page.keyboard.imeSetComposition('m', 1, 1);
     await client.send('Input.imeSetComposition', {
@@ -580,7 +584,7 @@ test.describe('History - IME', () => {
       text: 'もj',
     });
 
-    await sleep(1050);
+    await advanceHistoryClock(page);
 
     // await page.keyboard.imeSetComposition('もじ', 2, 2);
     await client.send('Input.imeSetComposition', {
@@ -677,7 +681,9 @@ test.describe('History - IME', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         `,
       );
     }
@@ -744,7 +750,7 @@ test.describe('History - IME', () => {
       text: 'a',
     });
 
-    await sleep(1050);
+    await advanceHistoryClock(page);
 
     await client.send('Input.imeSetComposition', {
       selectionStart: 1,
@@ -773,7 +779,9 @@ test.describe('History - IME', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -819,7 +827,9 @@ test.describe('History - IME', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -827,7 +837,7 @@ test.describe('History - IME', () => {
       text: 'a',
     });
 
-    await sleep(1050);
+    await advanceHistoryClock(page);
 
     await client.send('Input.imeSetComposition', {
       selectionStart: 2,
@@ -903,7 +913,7 @@ test.describe('History - IME', () => {
     await client.send('Input.insertText', {
       text: 'ab',
     });
-    await sleep(1050);
+    await advanceHistoryClock(page);
 
     await page.keyboard.down('Shift');
     await moveLeft(page, 1);

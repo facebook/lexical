@@ -1,0 +1,107 @@
+name: (call) Release
+on:
+  workflow_call:
+    inputs:
+      increment-version:
+        description: 'Run the version increment + tag/push stage'
+        required: false
+        default: false
+        type: boolean
+      publish:
+        description: 'Run the npm publish stage'
+        required: false
+        default: false
+        type: boolean
+      increment:
+        description: 'Version increment (prerelease/patch/minor); used when increment-version is true'
+        required: false
+        default: 'prerelease'
+        type: string
+      channel:
+        description: 'npm dist-tag channel (next/latest/nightly/dev)'
+        required: true
+        type: string
+      ref:
+        description: |
+          git ref to check out for the publish stage. When
+          increment-version runs in the same call, its newly created
+          tag-ref is used instead.
+        required: false
+        default: ''
+        type: string
+      dry-run:
+        description: 'Dry run mode'
+        required: false
+        default: false
+        type: boolean
+      ignore-previously-published:
+        description: "Ignore 'You cannot publish over the previously published version' errors"
+        required: false
+        default: false
+        type: boolean
+    outputs:
+      version:
+        description: 'New package.json version (only set when increment-version ran)'
+        value: ${{ jobs.increment-version.outputs.version }}
+      tag-ref:
+        description: 'New tag ref, e.g. "refs/tags/v0.45.0" (only set when increment-version ran)'
+        value: ${{ jobs.increment-version.outputs.tag-ref }}
+      latest-release:
+        description: 'Tag name of the most recent non-draft GitHub release before this run'
+        value: ${{ jobs.increment-version.outputs.latest-release }}
+
+permissions: {}
+
+jobs:
+  increment-version:
+    if: inputs.increment-version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.increment-version.outputs.version }}
+      tag-ref: ${{ steps.increment-version.outputs.tag-ref }}
+      latest-release: ${{ steps.latest.outputs.release }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: 24.x
+      - run: |
+          git config user.name "Lexical GitHub Actions Bot"
+          git config user.email "<>"
+      - id: latest
+        uses: ./.github/actions/get-latest-release
+      - id: increment-version
+        run: pnpm run increment-version
+        env:
+          INCREMENT: ${{ inputs.increment }}
+          CHANNEL: ${{ inputs.channel }}
+          LATEST_RELEASE: ${{ steps.latest.outputs.release }}
+          DRY_RUN: ${{ inputs.dry-run && '1' || '' }}
+
+  publish:
+    if: ${{ inputs.publish && !cancelled() && !failure() }}
+    needs: [increment-version]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required for npm trusted publishing (OIDC) — every `@lexical/*`
+      # package on npmjs.com is configured to trust this workflow file
+      # via the GitHub Actions OIDC `workflow_ref` claim.
+      id-token: write
+    env:
+      DRY_RUN_ARG: ${{ inputs.dry-run && '--dry-run' || '' }}
+      IGNORE_PREVIOUSLY_PUBLISHED_ARG: ${{ inputs.ignore-previously-published && '--ignore-previously-published' || '' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.increment-version.outputs.tag-ref || inputs.ref }}
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: 24.x
+          registry-url: 'https://registry.npmjs.org'
+      - run: pnpm run prepare-release
+      - run: node ./scripts/npm/release.mjs --non-interactive $DRY_RUN_ARG $IGNORE_PREVIOUSLY_PUBLISHED_ARG --channel='${{ inputs.channel }}'

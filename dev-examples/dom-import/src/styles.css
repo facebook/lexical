@@ -1,0 +1,379 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+body {
+  margin: 0;
+  background: #eee;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+}
+
+.App {
+  font-family: sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.App > h1 {
+  text-align: center;
+  font-size: 24px;
+  color: #333;
+}
+
+.App-blurb {
+  text-align: center;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.App-blurb code {
+  background: #f3f3f3;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 90%;
+}
+
+.editor-container {
+  border-radius: 10px 10px 0 0;
+  color: #000;
+  line-height: 20px;
+  font-weight: 400;
+  text-align: left;
+}
+
+.editor-inner {
+  background: #fff;
+  position: relative;
+  padding: 0;
+}
+
+.editor-input {
+  min-height: 300px;
+  font-size: 16px;
+  caret-color: #444;
+  position: relative;
+  tab-size: 1;
+  outline: 0;
+  padding: 15px 20px;
+}
+
+.editor-placeholder {
+  color: #999;
+  overflow: hidden;
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  font-size: 16px;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Text formatting */
+.editor-text-bold {
+  font-weight: bold;
+}
+.editor-text-italic {
+  font-style: italic;
+}
+.editor-text-underline {
+  text-decoration: underline;
+}
+.editor-text-strikethrough {
+  text-decoration: line-through;
+}
+.editor-text-underline-strikethrough {
+  text-decoration: underline line-through;
+}
+.editor-text-code {
+  background-color: rgb(240, 242, 245);
+  padding: 1px 0.25rem;
+  font-family: Menlo, Consolas, Monaco, monospace;
+  font-size: 94%;
+}
+
+.editor-link {
+  color: rgb(33, 111, 219);
+  text-decoration: none;
+}
+
+/* Block elements */
+.editor-paragraph {
+  margin: 0 0 8px 0;
+}
+.editor-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.editor-heading-h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.editor-heading-h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+.editor-heading-h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.editor-quote {
+  margin: 0 0 8px 0;
+  border-left: 4px solid #ccc;
+  padding-left: 16px;
+  color: #555;
+  font-style: italic;
+}
+
+.editor-list-ol,
+.editor-list-ul {
+  padding: 0;
+  margin: 0 0 8px 16px;
+}
+
+.editor-listitem {
+  margin: 4px 32px;
+}
+
+.editor-nested-listitem {
+  list-style-type: none;
+}
+
+.editor-list-check {
+  list-style: none;
+  padding-left: 0;
+}
+.editor-listitem-checked,
+.editor-listitem-unchecked {
+  position: relative;
+  padding-left: 24px;
+  list-style: none;
+}
+.editor-listitem-checked::before,
+.editor-listitem-unchecked::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  border: 1px solid #888;
+  border-radius: 3px;
+  background: #fff;
+}
+.editor-listitem-checked::before {
+  background: #2d72d2;
+  border-color: #2d72d2;
+}
+.editor-listitem-checked::after {
+  content: '✓';
+  position: absolute;
+  left: 2px;
+  top: 0;
+  color: white;
+  font-size: 14px;
+}
+.editor-listitem-checked {
+  text-decoration: line-through;
+  color: #888;
+}
+
+.editor-table {
+  border-collapse: collapse;
+  margin: 8px 0;
+  table-layout: fixed;
+  width: max-content;
+}
+.editor-table-cell,
+.editor-table-cell-header {
+  border: 1px solid #ccc;
+  padding: 6px 10px;
+  min-width: 80px;
+  vertical-align: top;
+}
+.editor-table-cell-header {
+  background: #f3f3f3;
+  font-weight: 600;
+}
+
+.editor-code {
+  background: rgb(240, 242, 245);
+  font-family: Menlo, Consolas, Monaco, monospace;
+  display: block;
+  padding: 8px 12px;
+  margin: 8px 0;
+  font-size: 13px;
+  border-radius: 4px;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* Shiki tokens — mapped from theme.codeHighlight in ExampleTheme.ts */
+.editor-token-comment {
+  color: slategray;
+}
+.editor-token-punctuation {
+  color: #999;
+}
+.editor-token-property {
+  color: #905;
+}
+.editor-token-selector {
+  color: #690;
+}
+.editor-token-operator {
+  color: #9a6e3a;
+}
+.editor-token-attr {
+  color: #07a;
+}
+.editor-token-variable {
+  color: #e90;
+}
+.editor-token-function {
+  color: #dd4a68;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  background: #fff;
+  padding: 6px 8px;
+  border-bottom: 1px solid #eee;
+  border-radius: 10px 10px 0 0;
+  vertical-align: middle;
+  gap: 2px;
+  align-items: center;
+}
+
+.toolbar-item {
+  border: 0;
+  background: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #444;
+  min-width: 28px;
+  text-align: center;
+}
+
+.toolbar-item:disabled {
+  cursor: not-allowed;
+  color: #ccc;
+}
+
+.toolbar-item.spaced {
+  margin-right: 2px;
+}
+
+.toolbar-item.active {
+  background-color: rgba(45, 114, 210, 0.15);
+  color: #2d72d2;
+}
+
+.toolbar-item:hover:not(:disabled):not(.active) {
+  background-color: #f3f3f3;
+}
+
+.toolbar .divider {
+  width: 1px;
+  background-color: #eee;
+  margin: 0 4px;
+  align-self: stretch;
+}
+
+/* Import-HTML dialog */
+.import-dialog {
+  border: none;
+  border-radius: 10px;
+  padding: 20px;
+  width: 600px;
+  max-width: 90vw;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.import-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.import-dialog h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.import-dialog p {
+  margin: 0 0 12px;
+  color: #555;
+  font-size: 14px;
+}
+
+.import-dialog code {
+  background: #f3f3f3;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.import-dialog textarea {
+  width: 100%;
+  font-family: Menlo, Consolas, Monaco, monospace;
+  font-size: 13px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.import-dialog-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.import-dialog-controls label {
+  font-size: 14px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.import-dialog-spacer {
+  flex: 1;
+}
+
+.import-dialog-controls button {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.import-dialog-controls button.primary {
+  background: #2d72d2;
+  border-color: #2d72d2;
+  color: white;
+}
+
+.import-dialog-controls button:hover:not(.primary) {
+  background: #f3f3f3;
+}

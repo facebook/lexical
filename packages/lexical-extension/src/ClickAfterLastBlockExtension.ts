@@ -130,9 +130,9 @@ function shouldClaimClick(
  *
  * Closes #8544.
  */
-export const ClickAfterLastBlockExtension = defineExtension({
+export const ClickAfterLastBlockExtension = /* @__PURE__ */ defineExtension({
   build: (_editor, config): ClickAfterLastBlockOutput => namedSignals(config),
-  config: safeCast<ClickAfterLastBlockConfig>({
+  config: /* @__PURE__ */ safeCast<ClickAfterLastBlockConfig>({
     $shouldInsertAfter: $defaultShouldInsertAfter,
     disabled: false,
   }),

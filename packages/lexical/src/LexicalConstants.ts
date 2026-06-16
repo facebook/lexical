@@ -13,12 +13,7 @@ import type {
   TextModeType,
 } from './nodes/LexicalTextNode';
 
-import {
-  IS_APPLE_WEBKIT,
-  IS_FIREFOX,
-  IS_IOS,
-  IS_SAFARI,
-} from 'shared/environment';
+import {IS_APPLE_WEBKIT, IS_FIREFOX, IS_IOS, IS_SAFARI} from './environment';
 
 // DOM
 export const DOM_ELEMENT_TYPE = 1;

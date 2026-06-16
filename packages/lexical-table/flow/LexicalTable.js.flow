@@ -94,7 +94,7 @@ export type TableMapValueType = {
   startRow: number,
   startColumn: number,
 };
-export type TableMapType = Array<Array<TableMapValueType>>;
+export type TableMapType = TableMapValueType[][];
 
 declare export class TableNode extends ElementNode {
   static getType(): string;
@@ -168,7 +168,7 @@ export type TableDOMCell = {
   y: number,
 };
 
-export type TableDOMRows = Array<Array<TableDOMCell>>;
+export type TableDOMRows = TableDOMCell[][];
 
 export type TableDOMTable = {
   cells: TableDOMRows,
@@ -380,18 +380,18 @@ declare export class TableSelection implements BaseSelection {
   set(tableKey: NodeKey, anchorCellKey: NodeKey, focusCellKey: NodeKey): void;
   clone(): TableSelection;
   getCharacterOffsets(): [number, number];
-  extract(): Array<LexicalNode>;
+  extract(): LexicalNode[];
   insertRawText(): void;
   insertText(): void;
   isCollapsed(): false;
   isBackward(): boolean;
   getShape(): TableSelectionShape;
-  getNodes(): Array<LexicalNode>;
+  getNodes(): LexicalNode[];
   getTextContent(): string;
-  insertNodes(nodes: Array<LexicalNode>): void;
+  insertNodes(nodes: LexicalNode[]): void;
   getStartEndPoints(): [PointType, PointType];
-  getCachedNodes(): null | Array<LexicalNode>;
-  setCachedNodes(nodes: null | Array<LexicalNode>): void;
+  getCachedNodes(): null | LexicalNode[];
+  setCachedNodes(nodes: null | LexicalNode[]): void;
 }
 
 declare export function $isTableSelection(

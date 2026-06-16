@@ -24,12 +24,14 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
-  ElementNode,
+  $isElementNode,
+  $isTextNode,
   ParagraphNode,
   RangeSelection,
   TextNode,
 } from 'lexical';
 import {
+  $assertNodeType,
   $createTestElementNode,
   initializeUnitTest,
   invariant,
@@ -122,7 +124,7 @@ describe('LexicalHeadingNode tests', () => {
         root.append(headingNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><br></h1></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><br data-lexical-managed-linebreak="true"></h1></div>',
       );
       await editor.update(() => {
         const selection = $getSelection() as RangeSelection;
@@ -131,7 +133,7 @@ describe('LexicalHeadingNode tests', () => {
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><br></h1><p dir="auto"><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><br data-lexical-managed-linebreak="true"></h1><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
       );
     });
 
@@ -155,7 +157,7 @@ describe('LexicalHeadingNode tests', () => {
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><span data-lexical-text="true">hello world</span></h1><h1 dir="auto"><br></h1></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><span data-lexical-text="true">hello world</span></h1><h1 dir="auto"><br data-lexical-managed-linebreak="true"></h1></div>',
       );
     });
 
@@ -181,7 +183,7 @@ describe('LexicalHeadingNode tests', () => {
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><span data-lexical-text="true">hello</span><strong data-lexical-text="true"> world</strong></h1><p dir="auto"><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><span data-lexical-text="true">hello</span><strong data-lexical-text="true"> world</strong></h1><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
       );
     });
 
@@ -196,11 +198,14 @@ describe('LexicalHeadingNode tests', () => {
         {discrete: true},
       );
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><br></h1></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><br data-lexical-managed-linebreak="true"></h1></div>',
       );
       await editor.update(
         () => {
-          const heading = $getRoot().getFirstChildOrThrow<HeadingNode>();
+          const heading = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isHeadingNode,
+          );
           expect(heading.getTag()).toBe('h1');
           heading.setTag('h2');
           expect(heading.getTag()).toBe('h2');
@@ -208,7 +213,7 @@ describe('LexicalHeadingNode tests', () => {
         {discrete: true},
       );
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h2 dir="auto"><br></h2></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h2 dir="auto"><br data-lexical-managed-linebreak="true"></h2></div>',
       );
     });
 
@@ -251,7 +256,7 @@ describe('LexicalHeadingNode tests', () => {
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h2 dir="auto"><span data-lexical-text="true">${text}</span></h2><p dir="auto"><br></p></div>`,
+        `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h2 dir="auto"><span data-lexical-text="true">${text}</span></h2><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>`,
       );
     });
   });
@@ -405,7 +410,7 @@ describe('Backspace at start of heading (#4359)', () => {
           );
           $getRoot().clear().append(heading);
           originalKey = heading.getKey();
-          heading.getFirstChildOrThrow<TextNode>().select(0, 0);
+          $assertNodeType(heading.getFirstChild(), $isTextNode).select(0, 0);
           heading.collapseAtStart();
         },
         {discrete: true},
@@ -438,7 +443,10 @@ describe('Backspace at start of heading (#4359)', () => {
         {discrete: true},
       );
       editor.read(() => {
-        const wrap = $getRoot().getFirstChildOrThrow<ElementNode>();
+        const wrap = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        );
         expect(wrap.getType()).toBe('test_block');
         const inner = wrap.getFirstChild();
         invariant($isHeadingNode(inner));

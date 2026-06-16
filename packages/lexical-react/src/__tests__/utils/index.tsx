@@ -22,8 +22,8 @@ import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {Provider, UserState} from '@lexical/yjs';
 import {LexicalEditor} from 'lexical';
 import * as React from 'react';
+import {act} from 'react';
 import {type Container, createRoot, type Root} from 'react-dom/client';
-import * as ReactTestUtils from 'shared/react-test-utils';
 import {expect} from 'vitest';
 import * as Y from 'yjs';
 
@@ -188,7 +188,7 @@ export class Client implements Provider {
 
     rootContainer.appendChild(container);
 
-    ReactTestUtils.act(() => {
+    act(() => {
       reactRoot.render(
         <LexicalCollaboration>
           <LexicalComposer
@@ -214,7 +214,7 @@ export class Client implements Provider {
   }
 
   stop() {
-    ReactTestUtils.act(() => {
+    act(() => {
       this._reactRoot!.render(null);
     });
 
@@ -307,7 +307,7 @@ export function createTestConnection(useCollabV2: boolean) {
 }
 
 export async function waitForReact(cb: () => void) {
-  await ReactTestUtils.act(async () => {
+  await act(async () => {
     cb();
     await Promise.resolve().then();
   });
@@ -317,7 +317,7 @@ export function createAndStartClients(
   connector: TestConnection,
   aContainer: HTMLDivElement,
   count: number,
-): Array<Client> {
+): Client[] {
   const result = [];
 
   for (let i = 0; i < count; ++i) {
@@ -330,25 +330,25 @@ export function createAndStartClients(
   return result;
 }
 
-export function disconnectClients(clients: Array<Client>) {
+export function disconnectClients(clients: Client[]) {
   for (let i = 0; i < clients.length; ++i) {
     clients[i].disconnect();
   }
 }
 
-export function connectClients(clients: Array<Client>) {
+export function connectClients(clients: Client[]) {
   for (let i = 0; i < clients.length; ++i) {
     clients[i].connect();
   }
 }
 
-export function stopClients(clients: Array<Client>) {
+export function stopClients(clients: Client[]) {
   for (let i = 0; i < clients.length; ++i) {
     clients[i].stop();
   }
 }
 
-export function testClientsForEquality(clients: Array<Client>) {
+export function testClientsForEquality(clients: Client[]) {
   for (let i = 1; i < clients.length; ++i) {
     expect(clients[0].getHTML()).toEqual(clients[i].getHTML());
     expect(clients[0].getDocJSON()).toEqual(clients[i].getDocJSON());

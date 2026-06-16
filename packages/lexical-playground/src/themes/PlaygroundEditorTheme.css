@@ -118,6 +118,7 @@
 .PlaygroundEditorTheme__textCode {
   background-color: rgb(240, 242, 245);
   padding: 1px 0.25rem;
+  --font-family: Menlo, Consolas, Monaco, monospace;
   font-family: Menlo, Consolas, Monaco, monospace;
   font-size: 94%;
 }
@@ -164,6 +165,7 @@
 .PlaygroundEditorTheme__code {
   background-color: rgb(240, 242, 245);
   font-family: Menlo, Consolas, Monaco, monospace;
+  --font-family: Menlo, Consolas, Monaco, monospace;
   display: block;
   line-height: 1.53;
   font-size: 13px;
@@ -739,4 +741,74 @@
     width: var(--page-width);
     min-height: var(--page-height);
   }
+}
+[data-lexical-visible-non-printing-linebreak]::before {
+  content: '↵';
+  color: #999;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  position: absolute;
+}
+[data-lexical-visible-non-printing-block] {
+  position: relative;
+}
+[data-lexical-visible-non-printing-block]::after {
+  content: '¶';
+  color: #999;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  font-size: var(--text-font-size, inherit);
+  font-weight: var(--text-font-weight, inherit);
+  font-family: var(--text-font-family, inherit);
+  text-decoration: none;
+  position: absolute;
+}
+[data-lexical-visible-non-printing-block]:has(br:only-child) {
+  font-size: var(--text-font-size, inherit);
+  font-weight: var(--text-font-weight, inherit);
+  font-family: var(--text-font-family, inherit);
+}
+[data-lexical-visible-non-printing-block]:has(br:last-child)::after {
+  bottom: 0;
+}
+[data-lexical-visible-non-printing-empty-root]
+  [data-lexical-visible-non-printing-block]::after {
+  content: '\200B';
+}
+[data-lexical-visible-non-printing-tab] {
+  position: relative;
+}
+[data-lexical-visible-non-printing-tab]::before {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 50%;
+  height: 8px;
+  transform: translateY(-50%);
+  /* Two-layer composition: fixed-size SVG arrowhead pinned to the right end,
+     plus a 1px stem that stretches across the rest of the tab whitespace.
+     Decouples the arrowhead shape from tab width so heading fonts (large tab
+     widths) and body fonts (small tab widths) both render a sane arrow. */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 8'%3E%3Cpath d='M0 0 L6 4 L0 8' fill='none' stroke='%23999' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      no-repeat right center / 6px 8px,
+    linear-gradient(#999, #999) no-repeat left center / calc(100% - 6px) 1px;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* Inline WOFF2 (~308 bytes) whose only glyph is a 120×120 unit square dot
+   centered at (130, 350) in a 1000 UPM space slot — maps U+0020 to a middle
+   dot for the VisibleNonPrintingExtension. Regenerate via
+   packages/lexical-playground/scripts/build-space-dot-font.py (requires
+   fonttools + brotli). */
+@font-face {
+  font-family: 'LexicalSpaceDot';
+  src: url('data:font/woff2;base64,d09GMgABAAAAAAFMAAoAAAAAAqQAAAEFAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAABmAANAo4TwE2AiQDBgsGAAQgBXgHJhsAAiAvCmwbtjU1FiYhthYrpIeZP0WUDdns/1FKf0mxBFuaQjicQUicrhqlCPGg0W2W9y1dXXVcQyQEwQiD/qtPR6qarErVtE5oiiLwZ2DZQ/6H47jBcUQBQcKB0aD7Io/jhLuN+fQIbnfU7qKeyosJRQxw2QbD6OM/+vAFkF96xwANHeu6YF0ZKCUY/zzJAqCBQrCMVUABsvzk9M3G8Xrmm8uz/2E7y9nZyfIO60AQXnvE07/p3n/g+9o3cg8hn1joGggzLUp50HwIACApPKholgU0AACUCwGxhIBmypIuNSMObVbYLDp//JnAb9cc+UrqG6VTjxHgpg2EYiENarkcHCTaCQA=')
+    format('woff2');
+  unicode-range: U+0020;
+  font-display: block;
 }

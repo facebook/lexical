@@ -52,11 +52,12 @@ async function checkHTMLExpectationsIncludingUndoRedo(
   await assertHTML(page, forwardHTML);
 }
 
-test.describe.parallel('Markdown', () => {
+test.describe('Markdown', () => {
   test.beforeEach(({isCollab, page}) => initialize({isCollab, page}));
   const triggersAndExpectations = [
     {
-      expectation: '<h1 class="PlaygroundEditorTheme__h1" dir="auto"><br></h1>',
+      expectation:
+        '<h1 class="PlaygroundEditorTheme__h1" dir="auto"><br data-lexical-managed-linebreak="true"></h1>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -64,7 +65,8 @@ test.describe.parallel('Markdown', () => {
       undoHTML: '', // H1.
     },
     {
-      expectation: '<h2 class="PlaygroundEditorTheme__h2" dir="auto"><br></h2>',
+      expectation:
+        '<h2 class="PlaygroundEditorTheme__h2" dir="auto"><br data-lexical-managed-linebreak="true"></h2>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -72,7 +74,8 @@ test.describe.parallel('Markdown', () => {
       undoHTML: '', // H2.
     },
     {
-      expectation: '<h3 class="PlaygroundEditorTheme__h3" dir="auto"><br></h3>',
+      expectation:
+        '<h3 class="PlaygroundEditorTheme__h3" dir="auto"><br data-lexical-managed-linebreak="true"></h3>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -80,7 +83,8 @@ test.describe.parallel('Markdown', () => {
       undoHTML: '', // H3.
     },
     {
-      expectation: '<h4 class="PlaygroundEditorTheme__h4" dir="auto"><br></h4>',
+      expectation:
+        '<h4 class="PlaygroundEditorTheme__h4" dir="auto"><br data-lexical-managed-linebreak="true"></h4>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -88,7 +92,8 @@ test.describe.parallel('Markdown', () => {
       undoHTML: '', // H4.
     },
     {
-      expectation: '<h5 class="PlaygroundEditorTheme__h5" dir="auto"><br></h5>',
+      expectation:
+        '<h5 class="PlaygroundEditorTheme__h5" dir="auto"><br data-lexical-managed-linebreak="true"></h5>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -96,7 +101,8 @@ test.describe.parallel('Markdown', () => {
       undoHTML: '', // H5.
     },
     {
-      expectation: '<h6 class="PlaygroundEditorTheme__h6" dir="auto"><br></h6>',
+      expectation:
+        '<h6 class="PlaygroundEditorTheme__h6" dir="auto"><br data-lexical-managed-linebreak="true"></h6>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -105,7 +111,7 @@ test.describe.parallel('Markdown', () => {
     },
     {
       expectation:
-        '<code class="PlaygroundEditorTheme__code" dir="auto" spellcheck="false" data-gutter="1" data-language="javascript" data-highlight-language="javascript"><br></code>',
+        '<code class="PlaygroundEditorTheme__code" dir="auto" spellcheck="false" data-gutter="1"><br data-lexical-managed-linebreak="true"></code>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -114,7 +120,7 @@ test.describe.parallel('Markdown', () => {
     },
     {
       expectation:
-        '<blockquote class="PlaygroundEditorTheme__quote" dir="auto"><br></blockquote>',
+        '<blockquote class="PlaygroundEditorTheme__quote" dir="auto"><br data-lexical-managed-linebreak="true"></blockquote>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -124,7 +130,7 @@ test.describe.parallel('Markdown', () => {
     },
     {
       expectation:
-        '<ul class="PlaygroundEditorTheme__ul" dir="auto"><li value="1" class="PlaygroundEditorTheme__listItem"><br></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul" dir="auto"><li value="1" class="PlaygroundEditorTheme__listItem"><br data-lexical-managed-linebreak="true"></li></ul>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -133,7 +139,7 @@ test.describe.parallel('Markdown', () => {
     },
     {
       expectation:
-        '<ul class="PlaygroundEditorTheme__ul" dir="auto"><li value="1" class="PlaygroundEditorTheme__listItem"><br></li></ul>',
+        '<ul class="PlaygroundEditorTheme__ul" dir="auto"><li value="1" class="PlaygroundEditorTheme__listItem"><br data-lexical-managed-linebreak="true"></li></ul>',
       importExpectation:
         '<ul class="PlaygroundEditorTheme__ul" dir="auto"><li class="PlaygroundEditorTheme__listItem" value="1"><span data-lexical-text="true">hello</span></li></ul>',
       isBlockTest: true,
@@ -143,7 +149,7 @@ test.describe.parallel('Markdown', () => {
     },
     {
       expectation:
-        '<ol start="321" class="PlaygroundEditorTheme__ol1" dir="auto"><li value="321" class="PlaygroundEditorTheme__listItem"><br></li></ol>',
+        '<ol start="321" class="PlaygroundEditorTheme__ol1" dir="auto"><li value="321" class="PlaygroundEditorTheme__listItem"><br data-lexical-managed-linebreak="true"></li></ol>',
       importExpectation:
         '<ol class="PlaygroundEditorTheme__ol1" start="321" dir="auto"><li class="PlaygroundEditorTheme__listItem" value="321"><span data-lexical-text="true">hello</span></li></ol>',
       isBlockTest: true,
@@ -153,7 +159,7 @@ test.describe.parallel('Markdown', () => {
     },
     {
       expectation:
-        '<hr class="PlaygroundEditorTheme__hr" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph" dir="auto"><br></p>',
+        '<hr class="PlaygroundEditorTheme__hr" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -162,7 +168,7 @@ test.describe.parallel('Markdown', () => {
     },
     {
       expectation:
-        '<hr class="PlaygroundEditorTheme__hr" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph" dir="auto"><br></p>',
+        '<hr class="PlaygroundEditorTheme__hr" data-lexical-decorator="true" contenteditable="false" /><p class="PlaygroundEditorTheme__paragraph" dir="auto"><br data-lexical-managed-linebreak="true"></p>',
       importExpectation: '',
       isBlockTest: true,
       markdownImport: '',
@@ -377,7 +383,7 @@ async function assertMarkdownImportExport(
   await assertHTML(page, expectedHTML);
 }
 
-test.describe.parallel('Markdown', () => {
+test.describe('Markdown', () => {
   test.beforeEach(({isCollab, isPlainText, page}) => {
     test.skip(isPlainText);
     return initialize({isCollab, page});
@@ -386,20 +392,20 @@ test.describe.parallel('Markdown', () => {
   const BASE_BLOCK_SHORTCUTS = [
     {
       html: html`
-        <h1 dir="auto"><br /></h1>
+        <h1 dir="auto"><br data-lexical-managed-linebreak="true" /></h1>
       `,
       text: '# ',
     },
     {
       html: html`
-        <h2 dir="auto"><br /></h2>
+        <h2 dir="auto"><br data-lexical-managed-linebreak="true" /></h2>
       `,
       text: '## ',
     },
     {
       html: html`
         <ol dir="auto">
-          <li value="1"><br /></li>
+          <li value="1"><br data-lexical-managed-linebreak="true" /></li>
         </ol>
       `,
       text: '1. ',
@@ -407,7 +413,7 @@ test.describe.parallel('Markdown', () => {
     {
       html: html`
         <ol dir="auto" start="25">
-          <li value="25"><br /></li>
+          <li value="25"><br data-lexical-managed-linebreak="true" /></li>
         </ol>
       `,
       text: '25. ',
@@ -417,7 +423,7 @@ test.describe.parallel('Markdown', () => {
         <ol dir="auto">
           <li value="1">
             <ol>
-              <li value="1"><br /></li>
+              <li value="1"><br data-lexical-managed-linebreak="true" /></li>
             </ol>
           </li>
         </ol>
@@ -427,7 +433,7 @@ test.describe.parallel('Markdown', () => {
     {
       html: html`
         <ul dir="auto">
-          <li value="1"><br /></li>
+          <li value="1"><br data-lexical-managed-linebreak="true" /></li>
         </ul>
       `,
       text: '- ',
@@ -437,7 +443,7 @@ test.describe.parallel('Markdown', () => {
         <ul dir="auto">
           <li value="1">
             <ul>
-              <li value="1"><br /></li>
+              <li value="1"><br data-lexical-managed-linebreak="true" /></li>
             </ul>
           </li>
         </ul>
@@ -447,7 +453,7 @@ test.describe.parallel('Markdown', () => {
     {
       html: html`
         <ul dir="auto">
-          <li value="1"><br /></li>
+          <li value="1"><br data-lexical-managed-linebreak="true" /></li>
         </ul>
       `,
       text: '* ',
@@ -457,7 +463,7 @@ test.describe.parallel('Markdown', () => {
         <ul dir="auto">
           <li value="1">
             <ul>
-              <li value="1"><br /></li>
+              <li value="1"><br data-lexical-managed-linebreak="true" /></li>
             </ul>
           </li>
         </ul>
@@ -469,7 +475,7 @@ test.describe.parallel('Markdown', () => {
         <ul dir="auto">
           <li value="1">
             <ul>
-              <li value="1"><br /></li>
+              <li value="1"><br data-lexical-managed-linebreak="true" /></li>
             </ul>
           </li>
         </ul>
@@ -484,7 +490,7 @@ test.describe.parallel('Markdown', () => {
               <li value="1">
                 <ul>
                   <li value="1">
-                    <br />
+                    <br data-lexical-managed-linebreak="true" />
                   </li>
                 </ul>
               </li>
@@ -500,7 +506,7 @@ test.describe.parallel('Markdown', () => {
           class="PlaygroundEditorTheme__hr"
           contenteditable="false"
           data-lexical-decorator="true" />
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       text: '--- ',
     },
@@ -510,7 +516,7 @@ test.describe.parallel('Markdown', () => {
           class="PlaygroundEditorTheme__hr"
           contenteditable="false"
           data-lexical-decorator="true" />
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       text: '*** ',
     },
@@ -932,7 +938,7 @@ test.describe.parallel('Markdown', () => {
                 style="height: inherit; max-width: 800px; width: inherit" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -998,7 +1004,7 @@ test.describe.parallel('Markdown', () => {
               src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
               width="0" />
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );

@@ -10,6 +10,7 @@ import type {LexicalNode, NodeKey} from '../LexicalNode';
 import devInvariant from '@lexical/internal/devInvariant';
 import invariant from '@lexical/internal/invariant';
 
+import {$getSlotHostKey} from '../LexicalSlot';
 import {$getRoot, $isRootOrShadowRoot} from '../LexicalUtils';
 import {$isElementNode, ElementNode} from '../nodes/LexicalElementNode';
 import {$isRootNode} from '../nodes/LexicalRootNode';
@@ -587,7 +588,14 @@ function $filterByMode<T extends ElementNode>(
   node: T | null,
   mode: RootMode = 'root',
 ): T | null {
-  return MODE_PREDICATE[mode](node) ? null : node;
+  if (node === null || MODE_PREDICATE[mode](node)) {
+    return null;
+  }
+  // A slotted node's up-link is __slotHost, not __parent, so getParent() (and
+  // thus getParentOrThrow()) returns null on it. It is a hard upward boundary
+  // in every mode — like the root — so caret walks must stop at it instead of
+  // trying to rewind past a parentless node.
+  return $getSlotHostKey(node) === null ? node : null;
 }
 
 abstract class AbstractSiblingCaret<

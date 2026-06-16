@@ -13,9 +13,9 @@
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/extension": "workspace:*",
-    "@lexical/utils": "workspace:*",
     "@lexical/html": "workspace:*",
     "@lexical/internal": "workspace:*",
+    "@lexical/utils": "workspace:*",
     "lexical": "workspace:*"
   },
   "repository": {

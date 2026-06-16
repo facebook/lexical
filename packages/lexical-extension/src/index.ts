@@ -58,6 +58,10 @@ export {
   type NamedSignalsOutput,
 } from './namedSignals';
 export {NestedEditorExtension} from './NestedEditorExtension';
+export {
+  type NodeSelectionDataSelectedConfig,
+  NodeSelectionDataSelectedExtension,
+} from './NodeSelectionDataSelectedExtension';
 export {NodeSelectionExtension} from './NodeSelectionExtension';
 export {
   type NormalizeInlineElementsConfig,

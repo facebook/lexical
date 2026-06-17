@@ -48,6 +48,7 @@ import {
   LexicalEditor,
   LexicalNode,
   PointCaret,
+  querySelectorAllDeep,
   RangeSelection,
   safeCast,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
@@ -215,8 +216,7 @@ function readDragMarker(dataTransfer: DataTransfer): LexicalDragMarker | null {
 }
 
 function findEditorRootByKey(key: string, doc: Document): HTMLElement | null {
-  const elements = doc.querySelectorAll('[data-lexical-editor="true"]');
-  for (const el of Array.from(elements)) {
+  for (const el of querySelectorAllDeep(doc, '[data-lexical-editor="true"]')) {
     const editor = (el as unknown as {__lexicalEditor?: {getKey: () => string}})
       .__lexicalEditor;
     if (editor && editor.getKey() === key) {

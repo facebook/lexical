@@ -360,6 +360,7 @@ export {
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   mountSlotContainer,
+  querySelectorAllDeep,
   removeFromParent,
   resetRandomKey,
   setDOMUnmanaged,

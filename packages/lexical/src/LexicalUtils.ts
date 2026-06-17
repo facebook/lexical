@@ -2008,6 +2008,27 @@ export function isDOMShadowRoot(node: unknown): node is ShadowRoot {
  *
  * @experimental Shape may change as shadow DOM support stabilizes.
  */
+/**
+ * Walks `root` and every open shadow root nested inside it, yielding each
+ * element that matches `selector`. `querySelectorAll` does not pierce
+ * shadow boundaries on its own; this descent does.
+ *
+ * @internal
+ */
+export function* querySelectorAllDeep(
+  root: Document | ShadowRoot,
+  selector: string,
+): Generator<Element> {
+  for (const el of root.querySelectorAll(selector)) {
+    yield el;
+  }
+  for (const el of root.querySelectorAll('*')) {
+    if (el.shadowRoot !== null) {
+      yield* querySelectorAllDeep(el.shadowRoot, selector);
+    }
+  }
+}
+
 export function getDOMShadowRoots(node: Node): ShadowRoot[] {
   const shadowRoots: ShadowRoot[] = [];
   let current: Node = node;
@@ -2121,22 +2142,66 @@ export function getComposedStaticRange(
  *
  * @experimental Shape may change as shadow DOM support stabilizes.
  */
+// Build a live DOM Range from a StaticRange's endpoints, in the container's
+// own document so iframe / shadow trees resolve to the right Range constructor.
+// Returns null when the container is detached or the endpoints reject (the
+// caller can fall back to `domSelection.getRangeAt(0)` in that case).
+function staticRangeToLiveRange(staticRange: StaticRange): Range | null {
+  const doc = staticRange.startContainer.ownerDocument;
+  if (doc === null) {
+    return null;
+  }
+  const range = doc.createRange();
+  try {
+    range.setStart(staticRange.startContainer, staticRange.startOffset);
+    range.setEnd(staticRange.endContainer, staticRange.endOffset);
+    return range;
+  } catch (_error) {
+    return null;
+  }
+}
+
+// Map a StaticRange + Selection.direction to anchor/focus pairs. Selection
+// returns boundaries in tree order, so a backward direction reverses the
+// pair before mapping (matching what Selection.anchorNode/focusNode would
+// have reported in the light DOM).
+function staticRangeToPoints(
+  staticRange: StaticRange,
+  direction: 'forward' | 'backward' | 'none' | undefined,
+): DOMSelectionBoundaryPoints {
+  const {startContainer, startOffset, endContainer, endOffset} = staticRange;
+  return direction === 'backward'
+    ? {
+        anchorNode: endContainer,
+        anchorOffset: endOffset,
+        direction,
+        focusNode: startContainer,
+        focusOffset: startOffset,
+      }
+    : {
+        anchorNode: startContainer,
+        anchorOffset: startOffset,
+        direction,
+        focusNode: endContainer,
+        focusOffset: endOffset,
+      };
+}
+
+function readDirection(
+  domSelection: Selection,
+): 'forward' | 'backward' | 'none' | undefined {
+  return domSelection.direction as undefined | 'forward' | 'backward' | 'none';
+}
+
 export function getDOMSelectionRange(
   domSelection: Selection,
   rootElement: HTMLElement | null,
 ): Range | null {
   const staticRange = getComposedStaticRange(domSelection, rootElement);
   if (staticRange !== null) {
-    const doc = staticRange.startContainer.ownerDocument;
-    if (doc !== null) {
-      const range = doc.createRange();
-      try {
-        range.setStart(staticRange.startContainer, staticRange.startOffset);
-        range.setEnd(staticRange.endContainer, staticRange.endOffset);
-        return range;
-      } catch (_error) {
-        // Fall through to the retargeted range.
-      }
+    const range = staticRangeToLiveRange(staticRange);
+    if (range !== null) {
+      return range;
     }
   }
   return domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null;
@@ -2184,27 +2249,7 @@ export function getDOMSelectionPoints(
   if (staticRange === null) {
     return domSelection as DOMSelectionBoundaryPoints;
   }
-  const {startContainer, startOffset, endContainer, endOffset} = staticRange;
-  const direction = domSelection.direction as
-    | undefined
-    | 'forward'
-    | 'backward'
-    | 'none';
-  return direction === 'backward'
-    ? {
-        anchorNode: endContainer,
-        anchorOffset: endOffset,
-        direction,
-        focusNode: startContainer,
-        focusOffset: startOffset,
-      }
-    : {
-        anchorNode: startContainer,
-        anchorOffset: startOffset,
-        direction,
-        focusNode: endContainer,
-        focusOffset: endOffset,
-      };
+  return staticRangeToPoints(staticRange, readDirection(domSelection));
 }
 
 /**
@@ -2230,44 +2275,13 @@ export function getDOMSelectionRangeAndPoints(
       range: domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null,
     };
   }
-  const {startContainer, startOffset, endContainer, endOffset} = staticRange;
-  let range: Range | null = null;
-  const doc = startContainer.ownerDocument;
-  if (doc !== null) {
-    const newRange = doc.createRange();
-    try {
-      newRange.setStart(startContainer, startOffset);
-      newRange.setEnd(endContainer, endOffset);
-      range = newRange;
-    } catch (_error) {
-      // Fall through to the retargeted range.
-    }
-  }
-  if (range === null) {
-    range = domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null;
-  }
-  const direction = domSelection.direction as
-    | undefined
-    | 'forward'
-    | 'backward'
-    | 'none';
-  const points: DOMSelectionBoundaryPoints =
-    direction === 'backward'
-      ? {
-          anchorNode: endContainer,
-          anchorOffset: endOffset,
-          direction,
-          focusNode: startContainer,
-          focusOffset: startOffset,
-        }
-      : {
-          anchorNode: startContainer,
-          anchorOffset: startOffset,
-          direction,
-          focusNode: endContainer,
-          focusOffset: endOffset,
-        };
-  return {points, range};
+  const range =
+    staticRangeToLiveRange(staticRange) ??
+    (domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null);
+  return {
+    points: staticRangeToPoints(staticRange, readDirection(domSelection)),
+    range,
+  };
 }
 
 /**

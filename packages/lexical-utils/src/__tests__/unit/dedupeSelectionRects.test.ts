@@ -80,4 +80,31 @@ describe('dedupeSelectionRects', () => {
     ]);
     expect(kept).toHaveLength(1);
   });
+
+  it('keeps horizontally disjoint rects on the same row (no false containment)', () => {
+    // Two inline boxes tiled on one line: neither contains the other.
+    const kept = dedupeSelectionRects([
+      rect(0, 0, 50, 18),
+      rect(100, 0, 50, 18),
+    ]);
+    expect(kept).toHaveLength(2);
+  });
+
+  it('does not clip a wide rect (e.g. trailing whitespace) against a disjoint narrower row', () => {
+    // A wide first row plus a narrower second row: different rows, neither contained.
+    const wideRow = rect(0, 0, 300, 18);
+    const narrowRow = rect(0, 22, 80, 18);
+    const kept = dedupeSelectionRects([wideRow, narrowRow]);
+    expect(kept).toHaveLength(2);
+    expect(kept.map(r => r.width).sort((a, b) => a - b)).toEqual([80, 300]);
+  });
+
+  it('keeps every row of a ragged multi-row selection (varying offsets, e.g. RTL)', () => {
+    const rows = [
+      rect(200, 0, 100, 18),
+      rect(150, 22, 150, 18),
+      rect(180, 44, 120, 18),
+    ];
+    expect(dedupeSelectionRects(rows)).toHaveLength(3);
+  });
 });

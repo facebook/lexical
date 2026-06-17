@@ -97,7 +97,7 @@ import {
   getComposedStaticRange,
   getDOMSelection,
   getDOMSelectionPoints,
-  getDOMSelectionRange,
+  getDOMSelectionRangeAndPoints,
   getElementByKeyOrThrow,
   getNearestEditorFromDOMNode,
   getNodeKeyFromDOMNode,
@@ -3483,13 +3483,16 @@ export function $updateDOMSelection(
     return;
   }
 
-  // Resolve the live DOM selection's boundary points through any enclosing
-  // DOM shadow roots; Selection.anchorNode/focusNode are retargeted to the
-  // shadow host, so the comparisons below read composed points instead. In
-  // the light DOM getDOMSelectionPoints returns `domSelection` itself (no
-  // Selection property reads happen here), so `currentPoints` aliases it and
-  // preserves the deferred reads described below.
-  const currentPoints = getDOMSelectionPoints(domSelection, rootElement);
+  // Resolve the live DOM selection's boundary points + range through any
+  // enclosing DOM shadow roots in one pass; Selection.anchorNode/focusNode
+  // are retargeted to the shadow host, so the comparisons below read
+  // composed points instead. In the light DOM getDOMSelectionPoints returns
+  // `domSelection` itself (no Selection property reads happen here), so
+  // `currentPoints` aliases it and preserves the deferred reads described
+  // below. The scroll-into-view branch reuses `currentRange` rather than
+  // re-running getComposedRanges.
+  const {points: currentPoints, range: currentRange} =
+    getDOMSelectionRangeAndPoints(domSelection, rootElement);
 
   if (!$isRangeSelection(nextSelection)) {
     // We don't remove selection if the prevSelection is null because
@@ -3628,6 +3631,12 @@ export function $updateDOMSelection(
   // to maintain cursor visibility. Firefox requires focus to be on the root element
   // for the cursor to be visible, especially after operations like drag that may
   // cause focus loss. This is critical for collapsed selections (cursor).
+  //
+  // Track focus across this branch so the scroll-into-view check below
+  // doesn't have to re-walk getRootNode for a third time: if we just
+  // restored focus to the root, the post-mutation active element *is* the
+  // root; otherwise it's whatever we read at entry.
+  let postMutationActiveElement: Element | null = activeElement;
   if (
     IS_FIREFOX &&
     nextSelection.isCollapsed() &&
@@ -3644,6 +3653,7 @@ export function $updateDOMSelection(
       // conditions where another update changes the selection before the rAF
       // callback executes.
       rootElement.focus({preventScroll: true});
+      postMutationActiveElement = rootElement;
     }
   }
 
@@ -3651,14 +3661,14 @@ export function $updateDOMSelection(
     !tags.has(SKIP_SCROLL_INTO_VIEW_TAG) &&
     nextSelection.isCollapsed() &&
     rootElement !== null &&
-    rootElement === getActiveElement(rootElement)
+    rootElement === postMutationActiveElement
   ) {
     const selectionTarget: null | Range | HTMLElement | Text =
       $isRangeSelection(nextSelection) &&
       nextSelection.anchor.type === 'element'
         ? (nextAnchorNode.childNodes[nextAnchorOffset] as HTMLElement | Text) ||
           null
-        : getDOMSelectionRange(domSelection, rootElement);
+        : currentRange;
     if (selectionTarget !== null) {
       let selectionRect: DOMRect;
       if (isDOMTextNode(selectionTarget)) {

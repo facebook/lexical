@@ -16,6 +16,14 @@ export {createEmptyHistoryState} from '@lexical/history';
 
 export type {HistoryState};
 
+/**
+ * Adds undo/redo support to the editor by tracking changes in a
+ * {@link HistoryState}. Pass `delay` to control how long (in milliseconds)
+ * consecutive changes are merged into a single history entry, or
+ * `externalHistoryState` to share a history stack across editors.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function HistoryPlugin({
   delay,
   externalHistoryState,

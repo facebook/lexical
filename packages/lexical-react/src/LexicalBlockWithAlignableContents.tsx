@@ -38,6 +38,15 @@ type Props = Readonly<{
   }>;
 }>;
 
+/**
+ * A wrapper component for the contents of a {@link DecoratorBlockNode} that
+ * keeps the block in sync with node selection and element alignment. It renders
+ * its `children` inside a container that reflects the node's `format`
+ * alignment, responds to `FORMAT_ELEMENT_COMMAND` to update that alignment, and
+ * toggles the node's selection when the container is clicked.
+ *
+ * @returns The element to render for the decorator block.
+ */
 export function BlockWithAlignableContents({
   children,
   format,

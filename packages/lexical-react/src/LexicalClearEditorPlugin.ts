@@ -17,6 +17,13 @@ type Props = Readonly<{
   onClear?: () => void;
 }>;
 
+/**
+ * Registers a handler for `CLEAR_EDITOR_COMMAND` that empties the editor and
+ * resets the selection. Provide `onClear` to run your own logic in place of the
+ * default clearing behavior.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function ClearEditorPlugin({onClear}: Props): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
   useLayoutEffect(

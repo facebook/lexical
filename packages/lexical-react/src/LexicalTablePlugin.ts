@@ -21,6 +21,9 @@ import {
 import {$fullReconcile} from 'lexical';
 import {useEffect, useState} from 'react';
 
+/**
+ * Props for the {@link TablePlugin} component.
+ */
 export interface TablePluginProps {
   /**
    * When `false` (default `true`), merged cell support (colspan and rowspan) will be disabled and all

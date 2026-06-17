@@ -569,6 +569,16 @@ function useDraggableBlockMenu(
   );
 }
 
+/**
+ * Renders a draggable handle and drop-target line that let users reorder
+ * top-level blocks by dragging. You supply the handle and target-line elements
+ * via `menuComponent`/`menuRef` and `targetLineComponent`/`targetLineRef`, an
+ * `anchorElem` to portal them into (defaults to `document.body`), and an
+ * `isOnMenu` predicate used to detect interactions with the handle.
+ *
+ * @experimental The API may change in a future release.
+ * @returns A portal containing the drag handle and target line.
+ */
 export function DraggableBlockPlugin_EXPERIMENTAL({
   anchorElem = document.body,
   menuRef,

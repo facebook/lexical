@@ -11,6 +11,13 @@ import {registerClickableLink} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 
+/**
+ * Makes {@link LinkNode}s clickable, navigating to the link's URL when it is
+ * clicked (opening it in a new tab when `newTab` is `true`, the default). Set
+ * `disabled` to temporarily turn the behavior off, for example while editing.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function ClickableLinkPlugin({
   newTab = true,
   disabled = false,

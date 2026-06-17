@@ -15,6 +15,12 @@ import {forwardRef, useCallback, useMemo, useState} from 'react';
 import {mergeRefs} from './mergeRefs';
 import useLayoutEffect from './useLayoutEffect';
 
+/**
+ * Props for the {@link ContentEditableElement} component. In addition to an
+ * `editor`, it accepts the standard `<div>` HTML attributes (except
+ * `placeholder`) plus camelCase `aria*` props that are applied to the editable
+ * element.
+ */
 export type ContentEditableElementProps = {
   editor: LexicalEditor;
   ariaActiveDescendant?: React.AriaAttributes['aria-activedescendant'];
@@ -123,4 +129,12 @@ function ContentEditableElementImpl(
   );
 }
 
+/**
+ * A lower-level building block for the editor's editable `<div>`. It binds the
+ * given `editor` to the rendered element via
+ * {@link LexicalEditor.setRootElement}, reflects the editor's editable state on
+ * the `contentEditable` attribute, and applies the provided ARIA and HTML
+ * attributes. Prefer {@link ContentEditable}, which reads the editor from
+ * context and adds placeholder support, unless you need this extra control.
+ */
 export const ContentEditableElement = forwardRef(ContentEditableElementImpl);

@@ -13,6 +13,13 @@ type Props = {
   defaultSelection?: 'rootStart' | 'rootEnd';
 };
 
+/**
+ * Focuses the editor when the component is mounted. Pass `defaultSelection`
+ * to control whether the selection is placed at the start (`'rootStart'`) or
+ * end (`'rootEnd'`) of the root when there is no existing selection to restore.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function AutoFocusPlugin({defaultSelection}: Props): null {
   const [editor] = useLexicalComposerContext();
 

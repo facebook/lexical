@@ -78,6 +78,7 @@ import {
   ValueOrUpdater,
 } from 'lexical';
 
+export {default as dedupeSelectionRects} from './dedupeSelectionRects';
 export {default as markSelection} from './markSelection';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
 export {default as selectionAlwaysOnDisplay} from './selectionAlwaysOnDisplay';

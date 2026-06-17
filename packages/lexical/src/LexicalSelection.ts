@@ -1443,6 +1443,15 @@ export class RangeSelection implements BaseSelection {
       // which matches the entry condition above. Seed a paragraph before the
       // non-element first child so the redirected selection lands in a block
       // and the recursion terminates.
+      //
+      // The seed paragraph is the redirect target only — if `nodes` carries
+      // inline content the recursion fills the paragraph in place, and if it
+      // carries block content the recursion's root/shadow-root branch
+      // (`splice` after `$wrapInlineNodes`) inserts the new blocks before the
+      // existing non-element first child while the seed sits at offset 0 as
+      // the new shadow-root first child. In either case the seed ends up
+      // hosting either the inserted content or an empty leading line, never
+      // a stranded paragraph next to the original non-element child.
       if (
         anchorNode.isShadowRoot() &&
         firstChild !== null &&
@@ -4096,14 +4105,14 @@ function $modifySelectionAroundDecoratorsAndBlocks(
  * @internal
  */
 export function $normalizeShadowRootChildrenInTree(node: LexicalNode): void {
-  // Both ElementNode and DecoratorNode can host slots — DecoratorNode is the
-  // typical "atomic" host shape (e.g. PullQuote, Card before its ElementNode
-  // conversion). Leaf nodes (TextNode etc.) are not slot hosts and have no
-  // children to walk, so they short-circuit here.
+  // Both ElementNode and DecoratorNode can host slots: DecoratorNode is the
+  // typical "atomic" host shape (PullQuote, etc.) where the host itself is
+  // leaf in the child-tree sense but still carries a `__slots` map whose
+  // values are normalized below. Leaf nodes (TextNode etc.) are neither —
+  // they short-circuit here.
   if (!$isElementNode(node) && !$isDecoratorNode(node)) {
     return;
   }
-  const slotMap = $getSlotMap(node);
   if ($isElementNode(node)) {
     if (node.isShadowRoot()) {
       for (const child of node.getChildren()) {
@@ -4123,7 +4132,9 @@ export function $normalizeShadowRootChildrenInTree(node: LexicalNode): void {
   // Walk slot values too — they are kept in `__slots` and are not reachable
   // through `getChildren()`. Slot values are themselves shadow roots in most
   // host shapes, so this is where the bulk of the normalization actually
-  // happens.
+  // happens. Read the slot map here (after the children walk above) so the
+  // leaf-element short-circuit doesn't pay for an empty map lookup.
+  const slotMap = $getSlotMap(node);
   if (slotMap.size > 0) {
     for (const slotKey of slotMap.values()) {
       const slotValue = $getNodeByKey<LexicalNode>(slotKey);

@@ -1691,6 +1691,14 @@ export class LexicalEditor {
     // that were parsed in from outside. Tagged with HISTORY_MERGE_TAG so
     // the normalize folds into the setEditorState history entry instead of
     // creating a separate undo step.
+    // Cost: ~1.4μs per node, linear (measured 0.3ms @ 207 nodes,
+    // 2.9ms @ 2007 nodes). Runs on every setEditorState once _slotsUsed
+    // latches — URL load, undo/redo, SSR hydration, test setup. Reactive
+    // listeners fire twice per setEditorState (the input commit + this
+    // follow-up); for large editors with collab adapters that swap state
+    // on every remote sync, a tighter gate (e.g. flagging parsed-from-JSON
+    // states only, or skipping when the input is a clone of the current
+    // state) is the natural next step.
     if (!this._updating && this._slotsUsed) {
       this.update(
         () => {

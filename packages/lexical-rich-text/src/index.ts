@@ -1081,10 +1081,15 @@ export function registerRichText(
     editor.registerCommand<KeyboardEvent>(
       KEY_DELETE_COMMAND,
       event => {
-        if ($isTargetWithinDecorator(event.target as HTMLElement)) {
-          return false;
-        }
         const selection = $getSelection();
+        // Same NodeSelection bypass as KEY_BACKSPACE_COMMAND above: a click
+        // that selected a block decorator is the user's "delete this node"
+        // gesture, even though the click target lives inside a decorator.
+        if (!$isNodeSelection(selection)) {
+          if ($isTargetWithinDecorator(event.target as HTMLElement)) {
+            return false;
+          }
+        }
         if (!($isRangeSelection(selection) || $isNodeSelection(selection))) {
           return false;
         }

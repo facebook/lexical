@@ -627,6 +627,14 @@ export function $generateJSONFromSelectedNodes<
   // NodeSelection participates here too — a click that selects a decorator
   // nested in a slot needs the same frame redirect, otherwise its export
   // pipeline silently produces an empty clipboard.
+  //
+  // NodeSelection.getNodes()[0] is the first node by insertion order (the
+  // internal _nodes Set's iteration order), not document order. For the
+  // common single-decorator case this is the only node and the frame is
+  // unambiguous. A multi-node NodeSelection that straddles a slot boundary
+  // is currently undefined — slots are shadow-isolated, so straddling is
+  // already invalid construction, and we pick the first inserted node's
+  // frame rather than asserting.
   const slotFrameAnchor = $isRangeSelection(selection)
     ? selection.anchor.getNode()
     : $isNodeSelection(selection)

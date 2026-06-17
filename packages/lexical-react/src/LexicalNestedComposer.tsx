@@ -95,6 +95,10 @@ const explicitNamespaceWarning = warnOnlyOnce(
  * decorator node) and passed as `initialEditor`; by default it inherits the
  * parent's theme, nodes, namespace, and editable state.
  *
+ * `LexicalNestedComposer` uses the legacy plugin pattern. To build a nested
+ * editor from extensions, create it with {@link NestedEditorExtension} and
+ * render it with {@link LexicalExtensionEditorComposer} instead.
+ *
  * @returns A context provider wrapping `children`.
  */
 export function LexicalNestedComposer({

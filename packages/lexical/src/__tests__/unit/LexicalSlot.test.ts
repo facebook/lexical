@@ -3328,3 +3328,202 @@ describe('named-slots: block slot values (virtual shadow root)', () => {
     });
   });
 });
+
+describe('named-slots: hydrate-time normalize (#8712)', () => {
+  // Regression for facebook/lexical#8712: parsed inputs (URL doc payloads,
+  // imported JSON, paste round-trips) can carry slot frames whose
+  // children violate `getTopLevelElement`'s invariant
+  // (`Children of root nodes must be elements or decorators`). Any
+  // subsequent block-ancestor walk throws — SELECT_ALL, Enter, indent,
+  // etc. The hydrate-time follow-up runs `$normalizeShadowRootChildrenInTree`
+  // after every `setEditorState`, wrapping any raw text the parsed state
+  // carried as a direct shadow-root slot child.
+  test('a slot value with a raw TextNode child gets a paragraph wrap on setEditorState', () => {
+    using editor = createSlotEditor();
+
+    // Hand-craft an invalid state: a host whose 'title' slot value is a
+    // TestShadowRootNode whose direct child is a TextNode. The in-editor
+    // mutation paths can no longer produce this shape, but external
+    // sources (raw URL doc state, hand-written JSON) might.
+    const invalidJSON = {
+      editorState: {
+        root: {
+          children: [
+            {
+              $slots: {
+                title: {
+                  children: [
+                    {
+                      detail: 0,
+                      format: 0,
+                      mode: 'normal',
+                      style: '',
+                      text: 'raw',
+                      type: 'text',
+                      version: 1,
+                    },
+                  ],
+                  direction: null,
+                  format: '',
+                  indent: 0,
+                  type: TestShadowRootNode.getType(),
+                  version: 1,
+                },
+              },
+              children: [],
+              direction: null,
+              format: '',
+              indent: 0,
+              textFormat: 0,
+              textStyle: '',
+              type: 'paragraph',
+              version: 1,
+            },
+          ],
+          direction: null,
+          format: '',
+          indent: 0,
+          type: 'root',
+          version: 1,
+        },
+      },
+    };
+
+    const parsedState = editor.parseEditorState(
+      JSON.stringify(invalidJSON.editorState),
+    );
+    editor.setEditorState(parsedState);
+
+    editor.read(() => {
+      const host = $assertNodeType(
+        $getRoot().getFirstChild(),
+        $isParagraphNode,
+      );
+      const slot = $assertNodeType($getSlot(host, 'title'), $isElementNode);
+      const children = slot.getChildren();
+      // Post-fix: the raw text is wrapped in a paragraph (the slot's only
+      // child is now a paragraph that holds the original text). Pre-fix
+      // the slot held the TextNode directly and any block-ancestor walk
+      // on the text would have thrown.
+      expect(children).toHaveLength(1);
+      const firstChild = $assertNodeType(children[0], $isParagraphNode);
+      expect(firstChild.getTextContent()).toBe('raw');
+    });
+  });
+});
+
+describe('named-slots: typing-path paragraph wrap (#8712)', () => {
+  // Regression for facebook/lexical#8712: the in-the-middle branch of
+  // $transferStartingElementPointToTextPoint used to wrap the new text in
+  // a paragraph only when the parent was a RootNode. A block-cursor caret
+  // before a non-paragraph child of a shadow-root slot frame dropped a
+  // raw TextNode as a direct shadow-root child, breaking the slot-frame
+  // invariant (`Children of root nodes must be elements or decorators`).
+  // The widening to $isRootOrShadowRoot in the in-the-middle branch wraps
+  // the new text the same way the last-offset branch already did.
+  test('element-mode caret before a decorator wraps the inserted text in a paragraph', () => {
+    using editor = createSlotEditor();
+    let slotKey = '';
+
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const slot = $createTestShadowRootNode();
+        slot.append($createTestDecoratorNode());
+        $getRoot().append(host);
+        $setSlot(host, 'title', slot);
+        slotKey = slot.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const slot = $getNodeByKey(slotKey);
+        assert(slot !== null && $isElementNode(slot));
+        // Element-mode caret at offset 0 — the placement node is the
+        // existing decorator (non-paragraph), the in-the-middle branch
+        // of $transferStartingElementPointToTextPoint.
+        slot.select(0, 0);
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        selection.insertText('typed');
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const slot = $getNodeByKey(slotKey);
+      assert(slot !== null && $isElementNode(slot));
+      const children = slot.getChildren();
+      // Post-fix: a paragraph is inserted before the decorator, holding
+      // the typed text. Pre-fix the typed text would have been a raw
+      // TextNode that the slot frame is not allowed to host directly.
+      const firstChild = $assertNodeType(children[0], $isParagraphNode);
+      expect(firstChild.getTextContent()).toBe('typed');
+    });
+  });
+});
+
+describe('named-slots: insertNodes redirect termination (#8712)', () => {
+  // Regression for facebook/lexical#8712: when the slot value's first child
+  // is a non-element (typically a block decorator like HorizontalRuleNode),
+  // `firstChild.selectStart()` resolves back to the slot value's own
+  // element-mode caret (no sibling, parent = the slot value root), which
+  // matches the entry condition and the branch re-enters itself forever
+  // (browser tab freeze). Seeding a paragraph before the non-element first
+  // child terminates the recursion.
+  test('seeds a paragraph when the slot value starts with a decorator', () => {
+    using editor = createSlotEditor();
+    let hostKey = '';
+    let slotKey = '';
+
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const slot = $createTestShadowRootNode();
+        slot.append($createTestDecoratorNode());
+        $getRoot().append(host);
+        $setSlot(host, 'title', slot);
+        hostKey = host.getKey();
+        slotKey = slot.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const slot = $getNodeByKey(slotKey);
+        assert(slot !== null && $isElementNode(slot));
+        // Element-mode caret at the slot value's offset 0 — the entry
+        // condition for the insertNodes slot-host redirect branch.
+        slot.select(0, 0);
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        // The actual insert: pre-fix this never returned, the editor.update
+        // would never commit. Post-fix the redirect lands in the seeded
+        // paragraph and the text gets inserted there.
+        selection.insertNodes([$createTextNode('inserted')]);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const slot = $getNodeByKey(slotKey);
+      assert(slot !== null && $isElementNode(slot));
+      const children = slot.getChildren();
+      // Slot now holds the seeded paragraph + original decorator. The
+      // exact ordering and host of the inserted text depends on the
+      // recursion's continuation (text node lands inside the seeded
+      // paragraph since `insertNodes` of an inline run picks a paragraph
+      // parent via $wrapInlineNodes); the regression we are pinning is
+      // that the call returns at all.
+      expect(children.length).toBeGreaterThanOrEqual(2);
+      // The slot value's text content holds the inserted text.
+      expect(slot.getTextContent()).toContain('inserted');
+      // Host is intact.
+      const host = $assertNodeType($getNodeByKey(hostKey), $isParagraphNode);
+      expect($getSlot(host, 'title')!.is(slot)).toBe(true);
+    });
+  });
+});

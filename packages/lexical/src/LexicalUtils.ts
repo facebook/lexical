@@ -2042,7 +2042,7 @@ export function getDOMShadowRoots(node: Node): ShadowRoot[] {
 export interface DOMSelectionBoundaryPoints {
   anchorNode: Node | null;
   anchorOffset: number;
-  direction?: string;
+  direction?: undefined | 'forward' | 'backward' | 'none';
   focusNode: Node | null;
   focusOffset: number;
 }
@@ -2182,10 +2182,14 @@ export function getDOMSelectionPoints(
 ): DOMSelectionBoundaryPoints {
   const staticRange = getComposedStaticRange(domSelection, rootElement);
   if (staticRange === null) {
-    return domSelection;
+    return domSelection as DOMSelectionBoundaryPoints;
   }
   const {startContainer, startOffset, endContainer, endOffset} = staticRange;
-  const direction = domSelection.direction;
+  const direction = domSelection.direction as
+    | undefined
+    | 'forward'
+    | 'backward'
+    | 'none';
   return direction === 'backward'
     ? {
         anchorNode: endContainer,
@@ -2222,7 +2226,7 @@ export function getDOMSelectionRangeAndPoints(
   const staticRange = getComposedStaticRange(domSelection, rootElement);
   if (staticRange === null) {
     return {
-      points: domSelection,
+      points: domSelection as DOMSelectionBoundaryPoints,
       range: domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null,
     };
   }
@@ -2242,7 +2246,11 @@ export function getDOMSelectionRangeAndPoints(
   if (range === null) {
     range = domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null;
   }
-  const direction = domSelection.direction;
+  const direction = domSelection.direction as
+    | undefined
+    | 'forward'
+    | 'backward'
+    | 'none';
   const points: DOMSelectionBoundaryPoints =
     direction === 'backward'
       ? {

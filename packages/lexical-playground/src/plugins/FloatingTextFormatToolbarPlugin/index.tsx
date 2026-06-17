@@ -142,14 +142,24 @@ function TextFormatFloatingToolbar({
     }
 
     const rootElement = editor.getRootElement();
+    const points =
+      nativeSelection !== null
+        ? getDOMSelectionPoints(nativeSelection, rootElement)
+        : null;
+    // Shadow-aware collapsed check: Selection.isCollapsed retargets to the
+    // shadow host (anchor === focus === host), so it falsely reports `true`
+    // even when the composed range spans real characters.
+    const pointsCollapsed =
+      points === null ||
+      (points.anchorNode === points.focusNode &&
+        points.anchorOffset === points.focusOffset);
     if (
       selection !== null &&
       nativeSelection !== null &&
-      !nativeSelection.isCollapsed &&
+      points !== null &&
+      !pointsCollapsed &&
       rootElement !== null &&
-      rootElement.contains(
-        getDOMSelectionPoints(nativeSelection, rootElement).anchorNode,
-      )
+      rootElement.contains(points.anchorNode)
     ) {
       const rangeRect = getDOMRangeRect(nativeSelection, rootElement);
 

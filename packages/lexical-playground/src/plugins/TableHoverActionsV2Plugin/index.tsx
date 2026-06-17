@@ -39,6 +39,7 @@ import {
   $getNearestNodeFromDOMNode,
   $getSiblingCaret,
   type EditorThemeClasses,
+  isDOMNode,
   isHTMLElement,
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';
@@ -250,10 +251,10 @@ function TableHoverActionsV2({
     const handleMouseMove = (event: MouseEvent) => {
       if (
         (floatingElemRef.current &&
-          event.target instanceof Node &&
+          isDOMNode(event.target) &&
           floatingElemRef.current.contains(event.target)) ||
         (leftFloatingElemRef.current &&
-          event.target instanceof Node &&
+          isDOMNode(event.target) &&
           leftFloatingElemRef.current.contains(event.target))
       ) {
         return;
@@ -261,10 +262,15 @@ function TableHoverActionsV2({
 
       const {tableElement, isOutside} = getTableFromMouseEvent(event, getTheme);
 
+      // Check ownership against the editor's root rather than anchorElem so
+      // a shadow-rooted editor whose anchorElem still defaults to document.body
+      // doesn't reject every cell (Element.contains stops at the shadow host).
+      const editorRoot = editor.getRootElement();
+
       if (
         isOutside ||
         tableElement == null ||
-        (anchorElem && !anchorElem.contains(tableElement))
+        (editorRoot !== null && !editorRoot.contains(tableElement))
       ) {
         setIsVisible(false);
         setIsLeftVisible(false);

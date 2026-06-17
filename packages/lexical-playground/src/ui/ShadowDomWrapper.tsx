@@ -8,6 +8,7 @@
 
 import './ShadowDomWrapper.css';
 
+import {objectKlassEquals} from '@lexical/utils';
 import {
   type JSX,
   type ReactNode,
@@ -19,8 +20,8 @@ import {createPortal} from 'react-dom';
 
 function isStyleNode(node: Node): node is HTMLStyleElement | HTMLLinkElement {
   return (
-    node instanceof HTMLStyleElement ||
-    (node instanceof HTMLLinkElement && node.rel === 'stylesheet')
+    objectKlassEquals(node, HTMLStyleElement) ||
+    (objectKlassEquals(node, HTMLLinkElement) && node.rel === 'stylesheet')
   );
 }
 

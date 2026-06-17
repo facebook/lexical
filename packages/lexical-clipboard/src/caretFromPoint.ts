@@ -24,12 +24,13 @@ export function caretFromPoint(
   // ignore it and return a retargeted result, so verify the offset node
   // actually landed inside one of the requested shadow roots before trusting
   // it; otherwise fall through to the legacy paths below.
+  const doc = (rootElement && rootElement.ownerDocument) || document;
   const shadowRoots = rootElement ? getDOMShadowRoots(rootElement) : [];
   if (
     shadowRoots.length > 0 &&
-    typeof document.caretPositionFromPoint === 'function'
+    typeof doc.caretPositionFromPoint === 'function'
   ) {
-    const caretPosition = document.caretPositionFromPoint(x, y, {shadowRoots});
+    const caretPosition = doc.caretPositionFromPoint(x, y, {shadowRoots});
     if (
       caretPosition !== null &&
       shadowRoots.some(root => root.contains(caretPosition.offsetNode))
@@ -37,13 +38,13 @@ export function caretFromPoint(
       return {node: caretPosition.offsetNode, offset: caretPosition.offset};
     }
   }
-  if (typeof document.caretRangeFromPoint === 'function') {
-    const range = document.caretRangeFromPoint(x, y);
+  if (typeof doc.caretRangeFromPoint === 'function') {
+    const range = doc.caretRangeFromPoint(x, y);
     return range === null
       ? null
       : {node: range.startContainer, offset: range.startOffset};
-  } else if (typeof document.caretPositionFromPoint === 'function') {
-    const caretPosition = document.caretPositionFromPoint(x, y);
+  } else if (typeof doc.caretPositionFromPoint === 'function') {
+    const caretPosition = doc.caretPositionFromPoint(x, y);
     return caretPosition === null
       ? null
       : {node: caretPosition.offsetNode, offset: caretPosition.offset};

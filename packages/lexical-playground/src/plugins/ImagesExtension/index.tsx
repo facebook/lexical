@@ -466,8 +466,7 @@ function getDragSelection(
   // shadowRoots option rather than the retargeted caretRangeFromPoint.
   const caret = caretFromPoint(event.clientX, event.clientY, rootElement);
   if (caret !== null) {
-    const ownerDocument = rootElement ? rootElement.ownerDocument : document;
-    const range = ownerDocument.createRange();
+    const range = (caret.node.ownerDocument ?? document).createRange();
     range.setStart(caret.node, caret.offset);
     range.collapse(true);
     return range;

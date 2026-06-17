@@ -11,6 +11,7 @@ import {
   $createParagraphNode,
   $getRoot,
   FORMAT_TEXT_COMMAND,
+  isHTMLElement,
   type TextFormatType,
 } from 'lexical';
 
@@ -106,7 +107,7 @@ document.addEventListener('lexical-selection-rect', event => {
       .composedPath()
       .find(
         (el): el is LexicalEditorElement =>
-          el instanceof HTMLElement && el.tagName === 'LEXICAL-EDITOR',
+          isHTMLElement(el) && el.tagName === 'LEXICAL-EDITOR',
       ) as LexicalEditorElement | undefined) ?? null;
   if (detail.rect === null) {
     // Every editor reports its own rect on every scroll, so a non-active

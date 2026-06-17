@@ -104,6 +104,7 @@ import {
   getWindow,
   INTERNAL_$isBlock,
   isDOMCapturingSelection,
+  isDOMTextNode,
   isHTMLElement,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
@@ -3633,7 +3634,9 @@ export function $updateDOMSelection(
     rootElement !== null &&
     !tags.has(SKIP_SELECTION_FOCUS_TAG)
   ) {
-    const focusedElement = getActiveElement(rootElement);
+    // Reuse the active element read at function entry — the branches above
+    // only mutate selection, not focus, so the value is still current.
+    const focusedElement = activeElement;
     if (focusedElement === null || !rootElement.contains(focusedElement)) {
       // Restore focus immediately to ensure cursor visibility.
       // Note: We rely on the normal selection update mechanism to ensure the
@@ -3658,8 +3661,8 @@ export function $updateDOMSelection(
         : getDOMSelectionRange(domSelection, rootElement);
     if (selectionTarget !== null) {
       let selectionRect: DOMRect;
-      if (selectionTarget instanceof Text) {
-        const range = document.createRange();
+      if (isDOMTextNode(selectionTarget)) {
+        const range = selectionTarget.ownerDocument.createRange();
         range.selectNode(selectionTarget);
         selectionRect = range.getBoundingClientRect();
       } else {

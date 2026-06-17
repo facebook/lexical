@@ -65,26 +65,46 @@ function $rangeFromPoints(
   return range;
 }
 
-function defaultOnReposition(domNodes: readonly HTMLElement[]): void {
-  for (const domNode of domNodes) {
-    const domNodeStyle = domNode.style;
+export interface MarkSelectionColors {
+  /**
+   * CSS color for the selection rect background. Defaults to the system
+   * `'Highlight'` color, which preserves the previous behavior.
+   */
+  background?: string;
+}
 
-    if (domNodeStyle.background !== 'Highlight') {
-      domNodeStyle.background = 'Highlight';
+/**
+ * Build the default `onReposition` styler used by {@link markSelection},
+ * optionally overriding the selection rect color. Exposed so a consumer that
+ * passes its own `onReposition` can reuse the default rect styling with a
+ * different color, instead of re-deriving the margin and padding offsets.
+ */
+export function createDefaultOnReposition(
+  colors?: MarkSelectionColors,
+): (domNodes: readonly HTMLElement[]) => void {
+  const background =
+    colors && colors.background != null ? colors.background : 'Highlight';
+  return domNodes => {
+    for (const domNode of domNodes) {
+      const domNodeStyle = domNode.style;
+
+      if (domNodeStyle.background !== background) {
+        domNodeStyle.background = background;
+      }
+      if (domNodeStyle.color !== 'HighlightText') {
+        domNodeStyle.color = 'HighlightText';
+      }
+      if (domNodeStyle.marginTop !== px(-1.5)) {
+        domNodeStyle.marginTop = px(-1.5);
+      }
+      if (domNodeStyle.paddingTop !== px(4)) {
+        domNodeStyle.paddingTop = px(4);
+      }
+      if (domNodeStyle.paddingBottom !== px(0)) {
+        domNodeStyle.paddingBottom = px(0);
+      }
     }
-    if (domNodeStyle.color !== 'HighlightText') {
-      domNodeStyle.color = 'HighlightText';
-    }
-    if (domNodeStyle.marginTop !== px(-1.5)) {
-      domNodeStyle.marginTop = px(-1.5);
-    }
-    if (domNodeStyle.paddingTop !== px(4)) {
-      domNodeStyle.paddingTop = px(4);
-    }
-    if (domNodeStyle.paddingBottom !== px(0)) {
-      domNodeStyle.paddingBottom = px(0);
-    }
-  }
+  };
 }
 
 /**
@@ -97,8 +117,10 @@ function defaultOnReposition(domNodes: readonly HTMLElement[]): void {
  */
 export default function markSelection(
   editor: LexicalEditor,
-  onReposition: (node: readonly HTMLElement[]) => void = defaultOnReposition,
+  onReposition?: (node: readonly HTMLElement[]) => void,
+  colors?: MarkSelectionColors,
 ): () => void {
+  const reposition = onReposition ?? createDefaultOnReposition(colors);
   let previousAnchorNode: null | TextNode | ElementNode = null;
   let previousAnchorNodeDOM: null | HTMLElement = null;
   let previousAnchorOffset: null | number = null;
@@ -154,11 +176,7 @@ export default function markSelection(
             currentEndNodeDOM,
           );
           removeRangeListener();
-          removeRangeListener = positionNodeOnRange(
-            editor,
-            range,
-            onReposition,
-          );
+          removeRangeListener = positionNodeOnRange(editor, range, reposition);
         }
         previousAnchorNode = currentStartNode;
         previousAnchorNodeDOM = currentStartNodeDOM;

@@ -78,7 +78,11 @@ import {
   ValueOrUpdater,
 } from 'lexical';
 
-export {default as markSelection} from './markSelection';
+export {
+  createDefaultOnReposition,
+  default as markSelection,
+  type MarkSelectionColors,
+} from './markSelection';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
 export {default as selectionAlwaysOnDisplay} from './selectionAlwaysOnDisplay';
 export {

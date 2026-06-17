@@ -1516,7 +1516,14 @@ function onDocumentSelectionChange(event: Event): void {
           domSelection,
           candidateRoot,
         ).anchorNode;
-        if (anchorNode !== null && candidateRoot.contains(anchorNode)) {
+        if (anchorNode === null) {
+          continue;
+        }
+        // Match only when this editor is the anchor's *nearest* editor.
+        // A nested editor mounted inside another editor's root would
+        // otherwise be eclipsed by the outer one — both contain the
+        // anchor, but only the nested editor actually owns it.
+        if (getNearestEditorFromDOMNode(anchorNode) === candidate) {
           nextActiveEditor = candidate;
           break;
         }

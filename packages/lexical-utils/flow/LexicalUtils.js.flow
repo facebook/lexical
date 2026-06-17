@@ -152,7 +152,6 @@ declare export function $splitNode(
   offset: number,
 ): [ElementNode | null, ElementNode];
 
-declare export function getParentElementCrossingShadow(element: Element): HTMLElement | null;
 declare export function calculateZoomLevel(element: Element | null, useManualZoom?: boolean): number;
 
 declare export function $isEditorIsNestedEditor(editor: LexicalEditor): boolean;

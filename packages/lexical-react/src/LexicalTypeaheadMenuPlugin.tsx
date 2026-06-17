@@ -15,7 +15,6 @@ import type {
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {getParentElementCrossingShadow} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
@@ -25,6 +24,7 @@ import {
   createCommand,
   getDOMSelection,
   getDOMSelectionPoints,
+  getParentElement,
   LexicalCommand,
   LexicalEditor,
   RangeSelection,
@@ -128,7 +128,7 @@ export function getScrollParent(
   }
   for (
     let parent: HTMLElement | null = element;
-    (parent = getParentElementCrossingShadow(parent));
+    (parent = getParentElement(parent));
   ) {
     style = getComputedStyle(parent);
     if (excludeStaticParent && style.position === 'static') {

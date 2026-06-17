@@ -335,6 +335,7 @@ export {
   getDOMTextNode,
   getEditorPropertyFromDOMNode,
   getNearestEditorFromDOMNode,
+  getParentElement,
   getRegisteredNode,
   getRegisteredNodeOrThrow,
   getRegisteredSubtypeMap,

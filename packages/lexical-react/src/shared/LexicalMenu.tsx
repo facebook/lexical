@@ -9,7 +9,7 @@
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {getParentElementCrossingShadow, mergeRegister} from '@lexical/utils';
+import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
@@ -18,6 +18,7 @@ import {
   CommandListenerPriority,
   createCommand,
   getDOMShadowRoots,
+  getParentElement,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_ENTER_COMMAND,
@@ -176,7 +177,7 @@ export function getScrollParent(
   }
   for (
     let parent: HTMLElement | null = element;
-    (parent = getParentElementCrossingShadow(parent));
+    (parent = getParentElement(parent));
   ) {
     style = getComputedStyle(parent);
     if (excludeStaticParent && style.position === 'static') {

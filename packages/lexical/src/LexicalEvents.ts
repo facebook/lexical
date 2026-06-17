@@ -1502,6 +1502,17 @@ function onDocumentSelectionChange(event: Event): void {
   // editor). Reading getComposedRanges through each editor's own shadow
   // roots gets the un-retargeted anchor regardless of which editor owns
   // it.
+  //
+  // Known scope-out: if an inner shadow editor sits inside a light-DOM
+  // outer editor, the outer candidate's getComposedRanges returns the
+  // empty array (no enclosing shadow roots), so its anchor read degrades
+  // to the retargeted Selection.anchorNode — which lands on a host node
+  // *inside* outer's tree, and outer wins attribution even though the
+  // inner editor owns the selectionchange. Neither this PR's demo nor its
+  // docs exercise that nesting shape, so the trade-off is accepted; a
+  // future use case can lift the candidate scan into the inner editor's
+  // shadow root instead.
+
   const ownerDocument = getDOMOwnerDocument(event.target);
   let nextActiveEditor: LexicalEditor | null = null;
   if (ownerDocument !== null) {

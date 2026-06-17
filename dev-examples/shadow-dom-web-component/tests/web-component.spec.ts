@@ -742,6 +742,24 @@ test('the form reset button drives formResetCallback on every editor', async ({
   await expect(editor(page, 'summary')).toHaveText('');
 });
 
+test('the form reset button re-syncs the readonly checkbox to the host', async ({
+  page,
+}) => {
+  await clearAndType(page, 'summary', 'baseline');
+  await page.locator('#summary-readonly').check();
+
+  // `reset` fires before the form's reset algorithm restores each element,
+  // so the page's helper defers one task before reading `checkbox.checked`
+  // and propagating the post-reset value back to the host. Without that
+  // defer the host would stay read-only after the reset.
+  await page.locator('button[type="reset"]').click();
+  await expect(page.locator('#summary-readonly')).not.toBeChecked();
+
+  await editor(page, 'summary').click();
+  await page.keyboard.type('resumed');
+  await expect(editor(page, 'summary')).toHaveText('resumed');
+});
+
 test('outerHTML / serialization carries the host element but not the shadow content by default', async ({
   page,
 }) => {

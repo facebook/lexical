@@ -154,6 +154,22 @@ for (const button of popover.querySelectorAll<HTMLButtonElement>(
   });
 }
 
+// Mirror a checkbox's state onto a target on every toggle, plus once after
+// a form reset. `reset` fires before the form restores each element, and a
+// microtask queued from the listener drains in the same step, so defer one
+// task to read the post-reset value.
+function bindCheckboxState(
+  checkbox: HTMLInputElement,
+  apply: (checked: boolean) => void,
+): void {
+  const propagate = () => apply(checkbox.checked);
+  checkbox.addEventListener('change', propagate);
+  const associatedForm = checkbox.form;
+  if (associatedForm !== null) {
+    associatedForm.addEventListener('reset', () => setTimeout(propagate, 0));
+  }
+}
+
 // Read-only toggle. Setting the standard `readonly` attribute on the host
 // is enough — the element observes the attribute and flips Lexical's
 // editable state to match. The form still submits the value, just like a
@@ -161,12 +177,12 @@ for (const button of popover.querySelectorAll<HTMLButtonElement>(
 const readonlyToggle =
   document.querySelector<HTMLInputElement>('#summary-readonly');
 if (readonlyToggle !== null) {
-  readonlyToggle.addEventListener('change', () => {
+  bindCheckboxState(readonlyToggle, checked => {
     const summary = document.querySelector<LexicalEditorElement>(
       'lexical-editor[name="summary"]',
     );
     if (summary !== null) {
-      summary.readOnly = readonlyToggle.checked;
+      summary.readOnly = checked;
     }
   });
 }
@@ -177,12 +193,12 @@ if (readonlyToggle !== null) {
 // boundary on its own, so no editor-side glue is needed.
 const inertToggle = document.querySelector<HTMLInputElement>('#summary-inert');
 if (inertToggle !== null) {
-  inertToggle.addEventListener('change', () => {
+  bindCheckboxState(inertToggle, checked => {
     const summary = document.querySelector<LexicalEditorElement>(
       'lexical-editor[name="summary"]',
     );
     if (summary !== null) {
-      if (inertToggle.checked) {
+      if (checked) {
         summary.setAttribute('inert', '');
       } else {
         summary.removeAttribute('inert');

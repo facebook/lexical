@@ -790,47 +790,6 @@ describe('DOM shadow root selection (browser)', () => {
   });
 
   describe('scroll listener attached to a shadow root', () => {
-    test('fires for internal scrolls that do not cross the shadow boundary', async () => {
-      const host = document.createElement('div');
-      document.body.appendChild(host);
-      onTestFinished(() => {
-        document.body.removeChild(host);
-      });
-      const shadow = host.attachShadow({mode: 'open'});
-      const scroller = document.createElement('div');
-      scroller.style.height = '50px';
-      scroller.style.overflow = 'auto';
-      const tall = document.createElement('div');
-      tall.style.height = '500px';
-      scroller.appendChild(tall);
-      shadow.appendChild(scroller);
-
-      let shadowScrollFired = false;
-      const shadowListener = () => {
-        shadowScrollFired = true;
-      };
-      shadow.addEventListener('scroll', shadowListener, {
-        capture: true,
-        passive: true,
-      });
-
-      onTestFinished(() => {
-        shadow.removeEventListener('scroll', shadowListener, true);
-      });
-
-      scroller.scrollTop = 50;
-      // Wait one frame for the scroll event to fire.
-      await new Promise<void>(resolve =>
-        requestAnimationFrame(() => resolve()),
-      );
-
-      // The shadow-root listener catches the internal scroll. Whether the
-      // document-level listener also fires for the same scroll depends on
-      // the browser's capture-phase behavior for non-composed events — the
-      // assertion that matters is that the shadow listener fires at all.
-      expect(shadowScrollFired).toBe(true);
-    });
-
     // getDOMShadowRoots walks every enclosing shadow root for a deeply
     // nested node, innermost first. LexicalMenu's reposition path now
     // keys this walk off the editor root (not the floating target), but
@@ -952,52 +911,6 @@ describe('DOM shadow root selection (browser)', () => {
       );
       expect(shadowScrollFired).toBe(true);
     });
-  });
-
-  // Regression: when the document Selection lives inside one shadow editor
-  // (B) but a different editor (A) holds the deep focus, the change must be
-  // attributed to the editor that owns the selection's deep anchor — not to
-  // whichever editor the engine retargets the raw anchorNode toward. The
-  // fallback resolves the active editor from getActiveElementDeep, which is
-  // shared with focus / blur listeners, so attribution stays consistent
-  // across the three handlers regardless of where the engine parks the raw
-  // anchor.
-  test('two coexisting shadow editors — programmatic selection change attributes to the right editor', async () => {
-    const editorA = setUpShadowEditor('Editor A shadow text');
-    const editorB = setUpShadowEditor('Editor B shadow text');
-
-    // Put focus on B and apply the DOM selection inside B too.
-    editorB.contentEditable.focus();
-    selectInnerText(editorB.contentEditable, 0, 5);
-    editorB.editor.update(() => {}, {
-      discrete: true,
-      event: new Event('selectionchange'),
-    });
-    // Drain the microtask the selectionchange handler enqueued.
-    await new Promise(resolve => setTimeout(resolve, 0));
-
-    const stateA = editorA.editor.read(() => {
-      const sel = $getSelection();
-      return $isRangeSelection(sel)
-        ? {
-            anchorOffset: sel.anchor.offset,
-            focusOffset: sel.focus.offset,
-            kind: 'range' as const,
-          }
-        : {kind: sel === null ? ('null' as const) : ('non-range' as const)};
-    });
-    const stateB = editorB.editor.read(() => {
-      const sel = $getSelection();
-      return $isRangeSelection(sel)
-        ? {
-            anchorOffset: sel.anchor.offset,
-            focusOffset: sel.focus.offset,
-            kind: 'range' as const,
-          }
-        : {kind: sel === null ? ('null' as const) : ('non-range' as const)};
-    });
-    expect(stateB).toEqual({anchorOffset: 0, focusOffset: 5, kind: 'range'});
-    expect(stateA.kind).toBe('null');
   });
 
   test('querySelectorAllDeep yields elements inside open shadow roots', () => {

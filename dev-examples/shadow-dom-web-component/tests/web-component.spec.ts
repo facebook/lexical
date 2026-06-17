@@ -760,6 +760,23 @@ test('the form reset button re-syncs the readonly checkbox to the host', async (
   await expect(editor(page, 'summary')).toHaveText('resumed');
 });
 
+test('the form reset button re-syncs the inert checkbox to the host', async ({
+  page,
+}) => {
+  await clearAndType(page, 'summary', 'baseline');
+  await page.locator('#summary-inert').check();
+
+  // Mirror of the readonly path through the same bindCheckboxState helper:
+  // form reset must release the inert attribute so the editor accepts
+  // input again. Without the defer the host stays inert after reset.
+  await page.locator('button[type="reset"]').click();
+  await expect(page.locator('#summary-inert')).not.toBeChecked();
+
+  await editor(page, 'summary').click();
+  await page.keyboard.type('resumed');
+  await expect(editor(page, 'summary')).toHaveText('resumed');
+});
+
 test('outerHTML / serialization carries the host element but not the shadow content by default', async ({
   page,
 }) => {

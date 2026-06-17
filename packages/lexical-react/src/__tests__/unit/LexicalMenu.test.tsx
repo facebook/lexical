@@ -6,6 +6,7 @@
  *
  */
 
+import * as ComposerContext from '@lexical/react/LexicalComposerContext';
 import {KEY_ENTER_COMMAND, LexicalEditor} from 'lexical';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
@@ -19,6 +20,7 @@ import {
   MenuOption,
   MenuRenderFn,
   MenuResolution,
+  useDynamicPositioning,
 } from '../../shared/LexicalMenu';
 
 // Mock the composer context to provide a test editor
@@ -469,5 +471,77 @@ describe('LexicalMenu', () => {
       // When resolution.match is undefined, matchingString should be ''
       expect(capturedMatchingString).toBe('');
     });
+  });
+});
+
+describe('useDynamicPositioning Comment 8 regression', () => {
+  it('registers a scroll listener on the editor root enclosing shadow root, not on the portaled target tree', async () => {
+    if (typeof document === 'undefined') {
+      // Node-only `bench` project has no DOM; this scenario is DOM-only.
+      return;
+    }
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    // Editor + scroll container live in an open shadow root, while the
+    // floating menu target is portaled into document.body. The pre-fix
+    // code keyed getDOMShadowRoots off the target — which sits in the
+    // light DOM — so the for-loop yielded zero shadow listeners. The fix
+    // keys off the editor root, so shadow.addEventListener('scroll', …)
+    // fires exactly once.
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const shadow = host.attachShadow({mode: 'open'});
+
+    const editorScroller = document.createElement('div');
+    editorScroller.style.height = '60px';
+    editorScroller.style.overflow = 'auto';
+    const editorRoot = document.createElement('div');
+    editorRoot.style.height = '400px';
+    editorRoot.contentEditable = 'true';
+    editorScroller.appendChild(editorRoot);
+    shadow.appendChild(editorScroller);
+
+    const shadowEditor = createTestEditor();
+    shadowEditor.setRootElement(editorRoot);
+
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+
+    vi.spyOn(ComposerContext, 'useLexicalComposerContext').mockReturnValue([
+      shadowEditor,
+      {},
+    ] as ReturnType<typeof ComposerContext.useLexicalComposerContext>);
+
+    const shadowAddSpy = vi.spyOn(shadow, 'addEventListener');
+
+    function Stub() {
+      useDynamicPositioning(createTestResolution(), target, () => {});
+      return null;
+    }
+
+    const stubContainer = document.createElement('div');
+    document.body.appendChild(stubContainer);
+    const stubRoot = createRoot(stubContainer);
+    await act(async () => {
+      stubRoot.render(<Stub />);
+    });
+
+    const scrollListenerCalls = shadowAddSpy.mock.calls.filter(
+      ([eventName]) => eventName === 'scroll',
+    );
+    expect(scrollListenerCalls.length).toBeGreaterThan(0);
+
+    await act(async () => {
+      stubRoot.unmount();
+    });
+    document.body.removeChild(stubContainer);
+    document.body.removeChild(host);
+    document.body.removeChild(target);
   });
 });

@@ -99,6 +99,7 @@ import {
   getDOMSelectionPoints,
   getDOMSelectionRange,
   getElementByKeyOrThrow,
+  getNearestEditorFromDOMNode,
   getNodeKeyFromDOMNode,
   getWindow,
   INTERNAL_$isBlock,
@@ -3589,9 +3590,19 @@ export function $updateDOMSelection(
     currentPoints.anchorNode === nextAnchorNode &&
     currentPoints.focusNode === nextFocusNode
   ) {
-    // If the root element does not have focus, ensure it has focus
+    // If the root element does not have focus, ensure it has focus — but
+    // not when the deep-focused element belongs to a different editor
+    // (e.g. the inner editor of a coexisting outer-editor / shadow-editor
+    // pair). Stealing focus there breaks the user's typing flow.
     if (activeElement === null || !rootElement.contains(activeElement)) {
-      if (!tags.has(SKIP_SELECTION_FOCUS_TAG)) {
+      const focusEditor =
+        activeElement !== null
+          ? getNearestEditorFromDOMNode(activeElement)
+          : null;
+      if (
+        (focusEditor === null || focusEditor === editor) &&
+        !tags.has(SKIP_SELECTION_FOCUS_TAG)
+      ) {
         rootElement.focus({
           preventScroll: true,
         });

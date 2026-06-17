@@ -905,4 +905,50 @@ describe('DOM shadow root selection (browser)', () => {
       expect(firedFor).toEqual([innerShadow]);
     });
   });
+
+  // Regression: when the document Selection lives inside one shadow editor
+  // (B) but a different editor (A) holds the deep focus, the change must be
+  // attributed to the editor that owns the selection's deep anchor — not to
+  // whichever editor the engine retargets the raw anchorNode toward. The
+  // fallback resolves the active editor from getActiveElementDeep, which is
+  // shared with focus / blur listeners, so attribution stays consistent
+  // across the three handlers regardless of where the engine parks the raw
+  // anchor.
+  test('two coexisting shadow editors — programmatic selection change attributes to the right editor', async () => {
+    const editorA = setUpShadowEditor('Editor A shadow text');
+    const editorB = setUpShadowEditor('Editor B shadow text');
+
+    // Put focus on B and apply the DOM selection inside B too.
+    editorB.contentEditable.focus();
+    selectInnerText(editorB.contentEditable, 0, 5);
+    editorB.editor.update(() => {}, {
+      discrete: true,
+      event: new Event('selectionchange'),
+    });
+    // Drain the microtask the selectionchange handler enqueued.
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    const stateA = editorA.editor.read(() => {
+      const sel = $getSelection();
+      return $isRangeSelection(sel)
+        ? {
+            anchorOffset: sel.anchor.offset,
+            focusOffset: sel.focus.offset,
+            kind: 'range' as const,
+          }
+        : {kind: sel === null ? ('null' as const) : ('non-range' as const)};
+    });
+    const stateB = editorB.editor.read(() => {
+      const sel = $getSelection();
+      return $isRangeSelection(sel)
+        ? {
+            anchorOffset: sel.anchor.offset,
+            focusOffset: sel.focus.offset,
+            kind: 'range' as const,
+          }
+        : {kind: sel === null ? ('null' as const) : ('non-range' as const)};
+    });
+    expect(stateB).toEqual({anchorOffset: 0, focusOffset: 5, kind: 'range'});
+    expect(stateA.kind).toBe('null');
+  });
 });

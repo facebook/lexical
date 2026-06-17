@@ -131,7 +131,6 @@ import {
   isDeleteWordForward,
   isDOMCapturingSelection,
   isDOMNode,
-  isDOMShadowRoot,
   isDOMTextNode,
   isEscape,
   isFirefoxClipboardEvents,
@@ -1487,28 +1486,19 @@ function onDocumentSelectionChange(event: Event): void {
   if (domSelection === null) {
     return;
   }
-  // In a shadow tree the document Selection's anchorNode is retargeted to
-  // the shadow host (outside any editor), so the direct lookup would always
-  // return null. Skip straight to the shadow fallback below in that case.
-  const rawAnchor = domSelection.anchorNode;
-  let nextActiveEditor: LexicalEditor | null =
-    rawAnchor !== null && !isDOMShadowRoot(rawAnchor.getRootNode())
-      ? getNearestEditorFromDOMNode(rawAnchor)
-      : null;
-  if (nextActiveEditor === null) {
-    // Resolve the real focused element by descending through the open shadow
-    // roots. Only fires when focus is actually inside a shadow tree, so
-    // light DOM behavior is unchanged.
-    const ownerDocument = getDOMOwnerDocument(event.target);
-    const activeElement =
-      ownerDocument !== null ? getActiveElementDeep(ownerDocument) : null;
-    if (
-      activeElement !== null &&
-      isDOMShadowRoot(activeElement.getRootNode())
-    ) {
-      nextActiveEditor = getNearestEditorFromDOMNode(activeElement);
-    }
-  }
+  // Resolve the active editor from the deep-focused element rather than
+  // from `domSelection.anchorNode`. In a shadow tree the engine retargets
+  // the Selection's anchor to a light-DOM ancestor (WebKit walks it all
+  // the way up to BODY or the nearest enclosing editable), which can
+  // collide with another editor's root element when an outer light-DOM
+  // editor contains a shadow host hosting an inner editor. The deep-
+  // focused element is the single source of truth shared with focus / blur
+  // listeners and is what actually receives keyboard input.
+  const ownerDocument = getDOMOwnerDocument(event.target);
+  const activeElement =
+    ownerDocument !== null ? getActiveElementDeep(ownerDocument) : null;
+  const nextActiveEditor: LexicalEditor | null =
+    activeElement !== null ? getNearestEditorFromDOMNode(activeElement) : null;
   if (nextActiveEditor === null) {
     return;
   }

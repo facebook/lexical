@@ -199,6 +199,13 @@ let handledSelectionCommandTimeoutId: null | ReturnType<typeof setTimeout> =
 // need to track the document each root element was originally registered on.
 const rootElementToDocument = new WeakMap<HTMLElement, Document>();
 const rootElementsRegistered = new WeakMap<Document, number>();
+// Every mounted editor registered for the shared `selectionchange`
+// listener, keyed by the document it was registered against. Allows
+// `onDocumentSelectionChange` to attribute the event to the editor whose
+// shadow-aware anchor actually changed, rather than guessing from
+// `Selection.anchorNode` (which the engine retargets up to a light-DOM
+// ancestor when the selection lives in a shadow tree).
+const editorsByDocument: WeakMap<Document, Set<LexicalEditor>> = new WeakMap();
 let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
 let isInsertLineBreak = false;
@@ -1486,19 +1493,47 @@ function onDocumentSelectionChange(event: Event): void {
   if (domSelection === null) {
     return;
   }
-  // Resolve the active editor from the deep-focused element rather than
-  // from `domSelection.anchorNode`. In a shadow tree the engine retargets
-  // the Selection's anchor to a light-DOM ancestor (WebKit walks it all
-  // the way up to BODY or the nearest enclosing editable), which can
-  // collide with another editor's root element when an outer light-DOM
-  // editor contains a shadow host hosting an inner editor. The deep-
-  // focused element is the single source of truth shared with focus / blur
-  // listeners and is what actually receives keyboard input.
+  // Ask each editor registered against this document for its shadow-aware
+  // anchor and pick the one whose root actually contains the answer.
+  // Selection.anchorNode is retargeted to a light-DOM ancestor for any
+  // selection inside a shadow tree, so trusting it directly attributes a
+  // shadow editor's change to whichever enclosing editor the engine
+  // walked up to (or drops the event when the host sits outside every
+  // editor). Reading getComposedRanges through each editor's own shadow
+  // roots gets the un-retargeted anchor regardless of which editor owns
+  // it.
   const ownerDocument = getDOMOwnerDocument(event.target);
-  const activeElement =
-    ownerDocument !== null ? getActiveElementDeep(ownerDocument) : null;
-  const nextActiveEditor: LexicalEditor | null =
-    activeElement !== null ? getNearestEditorFromDOMNode(activeElement) : null;
+  let nextActiveEditor: LexicalEditor | null = null;
+  if (ownerDocument !== null) {
+    const editorsForDoc = editorsByDocument.get(ownerDocument);
+    if (editorsForDoc !== undefined) {
+      for (const candidate of editorsForDoc) {
+        const candidateRoot = candidate._rootElement;
+        if (candidateRoot === null) {
+          continue;
+        }
+        const anchorNode = getDOMSelectionPoints(
+          domSelection,
+          candidateRoot,
+        ).anchorNode;
+        if (anchorNode !== null && candidateRoot.contains(anchorNode)) {
+          nextActiveEditor = candidate;
+          break;
+        }
+      }
+    }
+    // Fallback: the shadow-aware anchor sits outside every registered
+    // editor (a programmatic selection change that landed on a non-editor
+    // element, or a host the engine retargeted to). Use the deep-focused
+    // element so a user typing into an editor still gets an attribution.
+    if (nextActiveEditor === null) {
+      const activeElement = getActiveElementDeep(ownerDocument);
+      nextActiveEditor =
+        activeElement !== null
+          ? getNearestEditorFromDOMNode(activeElement)
+          : null;
+    }
+  }
   if (nextActiveEditor === null) {
     return;
   }
@@ -1579,6 +1614,13 @@ export function addRootElementEvents(
     doc.addEventListener('selectionchange', onDocumentSelectionChange);
   }
   rootElementsRegistered.set(doc, documentRootElementsCount + 1);
+
+  let editorsForDoc = editorsByDocument.get(doc);
+  if (editorsForDoc === undefined) {
+    editorsForDoc = new Set();
+    editorsByDocument.set(doc, editorsForDoc);
+  }
+  editorsForDoc.add(editor);
 
   // @ts-expect-error: internal field
   rootElement.__lexicalEditor = editor;
@@ -1704,6 +1746,10 @@ export function removeRootElementEvents(rootElement: HTMLElement): void {
 
   if (isLexicalEditor(editor)) {
     cleanActiveNestedEditorsMap(editor);
+    const editorsForDoc = editorsByDocument.get(doc);
+    if (editorsForDoc !== undefined) {
+      editorsForDoc.delete(editor);
+    }
     // @ts-expect-error: internal field
     rootElement.__lexicalEditor = null;
   } else if (editor) {

@@ -301,7 +301,15 @@ function $transferStartingElementPointToTextPoint(
   if ($isParagraphNode(placementNode)) {
     placementNode.splice(0, 0, [textNode]);
   } else if (placementNode !== null) {
-    const target = $isRootNode(element)
+    // root or shadow-root + element-mode anchor before a non-paragraph
+    // child (typically a sibling block decorator): wrap the new text in
+    // a paragraph so it stays a valid block-level child of the root or
+    // slot frame. The last-offset branch below already covers shadow
+    // roots; the in-the-middle case used to drop a raw text node next
+    // to the decorator, which leaves the text without a block ancestor
+    // and breaks every downstream getTopLevelElement / $findMatchingParent
+    // walk (Cmd+A, Enter, etc.).
+    const target = $isRootOrShadowRoot(element)
       ? $createParagraphNode().append(textNode)
       : textNode;
     placementNode.insertBefore(target);
@@ -1424,10 +1432,26 @@ export class RangeSelection implements BaseSelection {
       // block-shaped value (virtual shadow root around a single block) needs
       // no seeding: it IS the block, so the block-finding walk below lands
       // on it directly.
-      const firstChild = anchorNode.isShadowRoot()
+      let firstChild = anchorNode.isShadowRoot()
         ? (anchorNode.getFirstChild() ??
           anchorNode.append($createParagraphNode()).getFirstChild())
         : anchorNode.getFirstChild();
+      // A shadow-root slot whose first child is a non-element (typically a
+      // decorator like HorizontalRuleNode) would re-enter this same branch
+      // forever: `firstChild.selectStart()` resolves back to the slot value's
+      // own element-mode caret (no sibling, parent = the slot value root),
+      // which matches the entry condition above. Seed a paragraph before the
+      // non-element first child so the redirected selection lands in a block
+      // and the recursion terminates.
+      if (
+        anchorNode.isShadowRoot() &&
+        firstChild !== null &&
+        !$isElementNode(firstChild)
+      ) {
+        const seed = $createParagraphNode();
+        firstChild.insertBefore(seed);
+        firstChild = seed;
+      }
       if (firstChild !== null) {
         firstChild.selectStart();
         const redirected = $getSelection();
@@ -4055,4 +4079,57 @@ function $modifySelectionAroundDecoratorsAndBlocks(
   }
   $setPointFromCaret(selection.focus, focus);
   return checkForBlock || !isLineBoundary;
+}
+
+/**
+ * Walk a subtree and wrap any shadow-root child that is neither an
+ * ElementNode nor a DecoratorNode in a paragraph, so the slot-frame
+ * invariant set by `getTopLevelElement` continues to hold for external
+ * inputs (URL doc payloads, imported JSON, paste round-trips) that may
+ * carry shapes the in-editor mutation paths can no longer produce.
+ *
+ * The in-editor mutation paths (insertText, insertNodes, append/splice via
+ * the public API) are still guarded by the invariant — this helper only
+ * runs on external entry points like `setEditorState` where the parsed
+ * state can carry pre-existing invalid shapes.
+ *
+ * @internal
+ */
+export function $normalizeShadowRootChildrenInTree(node: LexicalNode): void {
+  // Both ElementNode and DecoratorNode can host slots — DecoratorNode is the
+  // typical "atomic" host shape (e.g. PullQuote, Card before its ElementNode
+  // conversion). Leaf nodes (TextNode etc.) are not slot hosts and have no
+  // children to walk, so they short-circuit here.
+  if (!$isElementNode(node) && !$isDecoratorNode(node)) {
+    return;
+  }
+  const slotMap = $getSlotMap(node);
+  if ($isElementNode(node)) {
+    if (node.isShadowRoot()) {
+      for (const child of node.getChildren()) {
+        if (!$isElementNode(child) && !$isDecoratorNode(child)) {
+          const para = $createParagraphNode();
+          child.insertBefore(para);
+          para.append(child);
+        }
+      }
+    }
+    // Walk normal children (only ElementNode has them — DecoratorNode is leaf
+    // in the child-tree sense, even when it hosts slots).
+    for (const child of node.getChildren()) {
+      $normalizeShadowRootChildrenInTree(child);
+    }
+  }
+  // Walk slot values too — they are kept in `__slots` and are not reachable
+  // through `getChildren()`. Slot values are themselves shadow roots in most
+  // host shapes, so this is where the bulk of the normalization actually
+  // happens.
+  if (slotMap.size > 0) {
+    for (const slotKey of slotMap.values()) {
+      const slotValue = $getNodeByKey<LexicalNode>(slotKey);
+      if (slotValue !== null) {
+        $normalizeShadowRootChildrenInTree(slotValue);
+      }
+    }
+  }
 }

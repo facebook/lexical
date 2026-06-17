@@ -41,6 +41,7 @@ import {GenMap} from './LexicalGenMap';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
+import {$normalizeShadowRootChildrenInTree} from './LexicalSelection';
 import {$isSlotHost} from './LexicalSlot';
 import {
   $commitPendingUpdates,
@@ -1680,6 +1681,23 @@ export class LexicalEditor {
     // with an already read-only state and selection
     if (!this._updating) {
       $commitPendingUpdates(this);
+    }
+
+    // hydrate-time normalize: external inputs (URL doc payloads, imported
+    // JSON, paste round-trips) may carry shadow-root slot frames whose
+    // children violate the `Children of root nodes must be elements or
+    // decorators` invariant set by `getTopLevelElement`. In-editor mutation
+    // paths still fail-fast on the invariant — this only catches shapes
+    // that were parsed in from outside. Tagged with HISTORY_MERGE_TAG so
+    // the normalize folds into the setEditorState history entry instead of
+    // creating a separate undo step.
+    if (!this._updating && this._slotsUsed) {
+      this.update(
+        () => {
+          $normalizeShadowRootChildrenInTree($getRoot());
+        },
+        {discrete: true, tag: HISTORY_MERGE_TAG},
+      );
     }
   }
 

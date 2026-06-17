@@ -15,6 +15,7 @@ import type {
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {getParentElementCrossingShadow} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
@@ -111,6 +112,8 @@ function isSelectionOnEntityBoundary(
 }
 
 // Got from https://stackoverflow.com/a/42543908/2013580
+// Walk crosses ShadowRoot→host so a shadow-mounted editor's scroll
+// parent is found in the enclosing light-DOM ancestor chain.
 export function getScrollParent(
   element: HTMLElement,
   includeHidden: boolean,
@@ -125,7 +128,7 @@ export function getScrollParent(
   }
   for (
     let parent: HTMLElement | null = element;
-    (parent = parent.parentElement);
+    (parent = getParentElementCrossingShadow(parent));
   ) {
     style = getComputedStyle(parent);
     if (excludeStaticParent && style.position === 'static') {

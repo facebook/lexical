@@ -1018,6 +1018,26 @@ function needsManualZoom(): boolean {
 }
 
 /**
+ * Walks up the DOM, crossing ShadowRoot boundaries into the host so a
+ * subtree mounted inside an open shadow root can still reach its
+ * enclosing light-DOM ancestors. Returns null at the top of the document
+ * (or when a closed shadow root blocks the hop).
+ */
+export function getParentElementCrossingShadow(
+  element: Element,
+): HTMLElement | null {
+  const direct = element.parentElement;
+  if (direct !== null) {
+    return direct;
+  }
+  const root = element.getRootNode();
+  if (root instanceof ShadowRoot && root.host instanceof HTMLElement) {
+    return root.host;
+  }
+  return null;
+}
+
+/**
  * Calculates the zoom level of an element as a result of using
  * css zoom property. For browsers that implement standardized CSS
  * zoom (Firefox, Chrome >= 128), this will always return 1.
@@ -1032,7 +1052,7 @@ export function calculateZoomLevel(
   if (needsManualZoom() || useManualZoom) {
     while (element) {
       zoom *= Number(window.getComputedStyle(element).getPropertyValue('zoom'));
-      element = element.parentElement;
+      element = getParentElementCrossingShadow(element);
     }
   }
   return zoom;

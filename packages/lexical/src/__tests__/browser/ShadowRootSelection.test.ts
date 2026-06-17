@@ -831,12 +831,13 @@ describe('DOM shadow root selection (browser)', () => {
       expect(shadowScrollFired).toBe(true);
     });
 
-    // LexicalMenu's reposition path registers a scroll listener on every
-    // enclosing shadow root via getDOMShadowRoots; when the menu's target
-    // lives in a nested shadow tree, the listener must catch scrolls in
-    // *both* the inner and the outer shadow roots so the floating menu
-    // repositions for either.
-    test('catches scrolls at every enclosing shadow root for a nested target', async () => {
+    // getDOMShadowRoots walks every enclosing shadow root for a deeply
+    // nested node, innermost first. LexicalMenu's reposition path now
+    // keys this walk off the editor root (not the floating target), but
+    // the walk semantics — listener attachment order, multi-level
+    // coverage — still need to hold whenever a caller passes a node
+    // sitting inside nested shadow trees.
+    test('catches scrolls at every enclosing shadow root for a nested node', async () => {
       const outerHost = document.createElement('div');
       document.body.appendChild(outerHost);
       onTestFinished(() => {
@@ -866,9 +867,10 @@ describe('DOM shadow root selection (browser)', () => {
       innerScroller.appendChild(innerTall);
       innerShadow.appendChild(innerScroller);
 
-      // Mirror LexicalMenu's reposition logic: walk every enclosing
-      // shadow root of the target via getDOMShadowRoots and attach a
-      // listener on each.
+      // Walk every enclosing shadow root via getDOMShadowRoots and attach a
+      // listener on each. (LexicalMenu's reposition path now walks from the
+      // editor root rather than the target, but the same multi-level walk
+      // semantics apply whichever node a caller hands in.)
       const enclosing = getDOMShadowRoots(target);
       expect(enclosing).toEqual([innerShadow, outerShadow]);
 
@@ -904,6 +906,51 @@ describe('DOM shadow root selection (browser)', () => {
         requestAnimationFrame(() => resolve()),
       );
       expect(firedFor).toEqual([innerShadow]);
+    });
+
+    // Comment 8 regression: editor + scroll container live in an open
+    // shadow root, floating menu portaled to document.body. Keying
+    // getDOMShadowRoots off the portaled target (the original bug)
+    // returns [] and registers no shadow listener, so internal scrolls
+    // never reposition the menu. The fix keys off the editor root.
+    test('keys the walk off the editor root when the target is portaled to light DOM', async () => {
+      const host = document.createElement('div');
+      document.body.appendChild(host);
+      onTestFinished(() => host.remove());
+      const shadow = host.attachShadow({mode: 'open'});
+
+      const editorScroller = document.createElement('div');
+      editorScroller.style.height = '60px';
+      editorScroller.style.overflow = 'auto';
+      const editorRoot = document.createElement('div');
+      editorRoot.style.height = '400px';
+      editorScroller.appendChild(editorRoot);
+      shadow.appendChild(editorScroller);
+
+      const target = document.createElement('div');
+      document.body.appendChild(target);
+      onTestFinished(() => target.remove());
+
+      // The original bug: walking from the portaled target sees nothing.
+      expect(getDOMShadowRoots(target)).toEqual([]);
+      // The fix: walking from the editor root reaches the shadow.
+      expect(getDOMShadowRoots(editorRoot)).toEqual([shadow]);
+
+      let shadowScrollFired = false;
+      const handler = () => {
+        shadowScrollFired = true;
+      };
+      shadow.addEventListener('scroll', handler, {
+        capture: true,
+        passive: true,
+      });
+      onTestFinished(() => shadow.removeEventListener('scroll', handler, true));
+
+      editorScroller.scrollTop = 50;
+      await new Promise<void>(resolve =>
+        requestAnimationFrame(() => resolve()),
+      );
+      expect(shadowScrollFired).toBe(true);
     });
   });
 

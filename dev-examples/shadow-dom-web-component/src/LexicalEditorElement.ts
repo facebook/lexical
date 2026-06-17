@@ -310,7 +310,7 @@ export class LexicalEditorElement extends HTMLElement {
    */
   private getPlainText(): string {
     return this.editor
-      ? this.editor.getEditorState().read(() => $getRoot().getTextContent())
+      ? this.editor.read(() => $getRoot().getTextContent())
       : '';
   }
 

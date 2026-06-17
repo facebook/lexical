@@ -1238,6 +1238,51 @@ declare export function $isElementDOMSlot(
 ): slot is ElementDOMSlot<HTMLElement>;
 declare export var DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig;
 
+// Flow's built-in DOM lib doesn't expose StaticRange yet; declare the
+// minimal shape we need for the shadow-aware selection helpers below.
+declare type StaticRange = {
+  +startContainer: Node,
+  +startOffset: number,
+  +endContainer: Node,
+  +endOffset: number,
+  +collapsed: boolean,
+};
+
+export type DOMSelectionBoundaryPoints = {
+  anchorNode: Node | null,
+  anchorOffset: number,
+  direction?: void | 'forward' | 'backward' | 'none',
+  focusNode: Node | null,
+  focusOffset: number,
+};
+declare export function isDOMShadowRoot(node: mixed): boolean;
+declare export function querySelectorAllDeep(
+  root: Document | ShadowRoot,
+  selector: string,
+): Generator<Element, void, void>;
+declare export function getDOMShadowRoots(node: Node): ShadowRoot[];
+declare export function getComposedStaticRange(
+  domSelection: Selection,
+  rootElement: HTMLElement | null,
+): StaticRange | null;
+declare export function getDOMSelectionRange(
+  domSelection: Selection,
+  rootElement: HTMLElement | null,
+): Range | null;
+declare export function getDOMSelectionPoints(
+  domSelection: Selection,
+  rootElement: HTMLElement | null,
+): DOMSelectionBoundaryPoints;
+declare export function getDOMSelectionRangeAndPoints(
+  domSelection: Selection,
+  rootElement: HTMLElement | null,
+): {points: DOMSelectionBoundaryPoints, range: Range | null};
+declare export function getActiveElement(node: Node): Element | null;
+declare export function getActiveElementDeep(
+  root: Document | ShadowRoot,
+): Element | null;
+declare export function getComposedEventTarget(event: Event): EventTarget | null;
+
 /**
  * LexicalNormalization
  */

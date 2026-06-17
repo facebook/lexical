@@ -2008,6 +2008,20 @@ export function isDOMShadowRoot(node: unknown): node is ShadowRoot {
  *
  * @experimental Shape may change as shadow DOM support stabilizes.
  */
+export function getDOMShadowRoots(node: Node): ShadowRoot[] {
+  const shadowRoots: ShadowRoot[] = [];
+  let current: Node = node;
+  for (;;) {
+    const root = current.getRootNode();
+    if (root === current || !isDOMShadowRoot(root)) {
+      break;
+    }
+    shadowRoots.push(root);
+    current = root.host;
+  }
+  return shadowRoots;
+}
+
 /**
  * Walks `root` and every open shadow root nested inside it, yielding each
  * element that matches `selector`. `querySelectorAll` does not pierce
@@ -2041,20 +2055,6 @@ export function getRootOwnerDocument(
   rootElement: HTMLElement | null,
 ): Document {
   return rootElement !== null ? rootElement.ownerDocument : document;
-}
-
-export function getDOMShadowRoots(node: Node): ShadowRoot[] {
-  const shadowRoots: ShadowRoot[] = [];
-  let current: Node = node;
-  for (;;) {
-    const root = current.getRootNode();
-    if (root === current || !isDOMShadowRoot(root)) {
-      break;
-    }
-    shadowRoots.push(root);
-    current = root.host;
-  }
-  return shadowRoots;
 }
 
 /**
@@ -2156,57 +2156,6 @@ export function getComposedStaticRange(
  *
  * @experimental Shape may change as shadow DOM support stabilizes.
  */
-// Build a live DOM Range from a StaticRange's endpoints, in the container's
-// own document so iframe / shadow trees resolve to the right Range constructor.
-// Returns null when the container is detached or the endpoints reject (the
-// caller can fall back to `domSelection.getRangeAt(0)` in that case).
-function staticRangeToLiveRange(staticRange: StaticRange): Range | null {
-  const doc = staticRange.startContainer.ownerDocument;
-  if (doc === null) {
-    return null;
-  }
-  const range = doc.createRange();
-  try {
-    range.setStart(staticRange.startContainer, staticRange.startOffset);
-    range.setEnd(staticRange.endContainer, staticRange.endOffset);
-    return range;
-  } catch (_error) {
-    return null;
-  }
-}
-
-// Map a StaticRange + Selection.direction to anchor/focus pairs. Selection
-// returns boundaries in tree order, so a backward direction reverses the
-// pair before mapping (matching what Selection.anchorNode/focusNode would
-// have reported in the light DOM).
-function staticRangeToPoints(
-  staticRange: StaticRange,
-  direction: 'forward' | 'backward' | 'none' | undefined,
-): DOMSelectionBoundaryPoints {
-  const {startContainer, startOffset, endContainer, endOffset} = staticRange;
-  return direction === 'backward'
-    ? {
-        anchorNode: endContainer,
-        anchorOffset: endOffset,
-        direction,
-        focusNode: startContainer,
-        focusOffset: startOffset,
-      }
-    : {
-        anchorNode: startContainer,
-        anchorOffset: startOffset,
-        direction,
-        focusNode: endContainer,
-        focusOffset: endOffset,
-      };
-}
-
-function readDirection(
-  domSelection: Selection,
-): 'forward' | 'backward' | 'none' | undefined {
-  return domSelection.direction as undefined | 'forward' | 'backward' | 'none';
-}
-
 export function getDOMSelectionRange(
   domSelection: Selection,
   rootElement: HTMLElement | null,
@@ -2296,6 +2245,57 @@ export function getDOMSelectionRangeAndPoints(
     points: staticRangeToPoints(staticRange, readDirection(domSelection)),
     range,
   };
+}
+
+// Build a live DOM Range from a StaticRange's endpoints, in the container's
+// own document so iframe / shadow trees resolve to the right Range constructor.
+// Returns null when the container is detached or the endpoints reject (the
+// caller can fall back to `domSelection.getRangeAt(0)` in that case).
+function staticRangeToLiveRange(staticRange: StaticRange): Range | null {
+  const doc = staticRange.startContainer.ownerDocument;
+  if (doc === null) {
+    return null;
+  }
+  const range = doc.createRange();
+  try {
+    range.setStart(staticRange.startContainer, staticRange.startOffset);
+    range.setEnd(staticRange.endContainer, staticRange.endOffset);
+    return range;
+  } catch (_error) {
+    return null;
+  }
+}
+
+// Map a StaticRange + Selection.direction to anchor/focus pairs. Selection
+// returns boundaries in tree order, so a backward direction reverses the
+// pair before mapping (matching what Selection.anchorNode/focusNode would
+// have reported in the light DOM).
+function staticRangeToPoints(
+  staticRange: StaticRange,
+  direction: 'forward' | 'backward' | 'none' | undefined,
+): DOMSelectionBoundaryPoints {
+  const {startContainer, startOffset, endContainer, endOffset} = staticRange;
+  return direction === 'backward'
+    ? {
+        anchorNode: endContainer,
+        anchorOffset: endOffset,
+        direction,
+        focusNode: startContainer,
+        focusOffset: startOffset,
+      }
+    : {
+        anchorNode: startContainer,
+        anchorOffset: startOffset,
+        direction,
+        focusNode: endContainer,
+        focusOffset: endOffset,
+      };
+}
+
+function readDirection(
+  domSelection: Selection,
+): 'forward' | 'backward' | 'none' | undefined {
+  return domSelection.direction as undefined | 'forward' | 'backward' | 'none';
 }
 
 /**

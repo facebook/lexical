@@ -23,6 +23,7 @@ import {
   getDOMShadowRoots,
   isDOMShadowRoot,
   type LexicalEditor,
+  querySelectorAllDeep,
 } from 'lexical';
 import {
   assert,
@@ -950,5 +951,41 @@ describe('DOM shadow root selection (browser)', () => {
     });
     expect(stateB).toEqual({anchorOffset: 0, focusOffset: 5, kind: 'range'});
     expect(stateA.kind).toBe('null');
+  });
+
+  test('querySelectorAllDeep yields elements inside open shadow roots', () => {
+    // Regression cover for findEditorRootByKey's silent move→copy degrade:
+    // a flat doc.querySelectorAll for [data-lexical-editor="true"] cannot see
+    // editors mounted inside a shadow tree, so the helper has to descend.
+    const host = document.createElement('div');
+    const shadow = host.attachShadow({mode: 'open'});
+    const target = document.createElement('div');
+    target.setAttribute('data-test-marker-shadow', 'true');
+    shadow.appendChild(target);
+    document.body.appendChild(host);
+    onTestFinished(() => host.remove());
+
+    const found = Array.from(
+      querySelectorAllDeep(document, '[data-test-marker-shadow]'),
+    );
+    expect(found).toEqual([target]);
+  });
+
+  test('querySelectorAllDeep descends through nested shadow roots', () => {
+    const outerHost = document.createElement('div');
+    const outerShadow = outerHost.attachShadow({mode: 'open'});
+    const innerHost = document.createElement('div');
+    const innerShadow = innerHost.attachShadow({mode: 'open'});
+    const target = document.createElement('div');
+    target.setAttribute('data-test-marker-shadow-deep', 'true');
+    innerShadow.appendChild(target);
+    outerShadow.appendChild(innerHost);
+    document.body.appendChild(outerHost);
+    onTestFinished(() => outerHost.remove());
+
+    const found = Array.from(
+      querySelectorAllDeep(document, '[data-test-marker-shadow-deep]'),
+    );
+    expect(found).toEqual([target]);
   });
 });

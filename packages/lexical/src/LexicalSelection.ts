@@ -1981,6 +1981,24 @@ export class RangeSelection implements BaseSelection {
             } else if ($isDecoratorNode(caret.origin)) {
               if (caret.origin.isIsolated()) {
                 // do nothing, shouldn't delete an isolated decorator
+              } else if ($getSlotNames(caret.origin).length > 0) {
+                // A slot-bearing decorator is removed only as a unit by an
+                // explicit host deletion, never silently via backspace —
+                // same policy as the merge-block branch below for
+                // ElementNode-as-host. When the anchor is an empty
+                // paragraph next to the host, drop the paragraph and
+                // select the host (matches the shadow-root ElementNode
+                // path at line 1951–1962 above); otherwise leave both in
+                // place.
+                if (
+                  $isElementNode(initialRange.anchor.origin) &&
+                  initialRange.anchor.origin.isEmpty()
+                ) {
+                  initialRange.anchor.origin.remove();
+                  const nodeSelection = $createNodeSelection();
+                  nodeSelection.add(caret.origin.getKey());
+                  $setSelection(nodeSelection);
+                }
               } else if (
                 state.type === 'merge-next-block' &&
                 (caret.origin.isKeyboardSelectable() ||

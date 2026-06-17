@@ -710,7 +710,7 @@ export async function copyToClipboard(
   element.style.top = '-1000px';
   element.append(windowDocument.createTextNode('#'));
   rootElement.append(element);
-  const range = new Range();
+  const range = windowDocument.createRange();
   range.setStart(element, 0);
   range.setEnd(element, 1);
   domSelection.removeAllRanges();

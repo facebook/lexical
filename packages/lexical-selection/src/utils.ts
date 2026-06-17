@@ -56,7 +56,12 @@ export function createDOMRange(
 ): Range | null {
   const anchorKey = anchorNode.getKey();
   const focusKey = focusNode.getKey();
-  const range = document.createRange();
+  // Resolve through the editor's own document so iframe / shadow-mounted
+  // editors don't end up with a Range bound to the wrong realm.
+  const editorRoot = editor.getRootElement();
+  const editorDocument =
+    editorRoot !== null ? editorRoot.ownerDocument : document;
+  const range = editorDocument.createRange();
   let anchorDOM: Node | Text | null = editor.getElementByKey(anchorKey);
   let focusDOM: Node | Text | null = editor.getElementByKey(focusKey);
   let anchorOffset = _anchorOffset;

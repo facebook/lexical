@@ -252,11 +252,14 @@ export function useDynamicPositioning(
       });
       // Scroll events are non-composed and do not cross shadow boundaries,
       // so the document-level listener above never sees scrolls inside an
-      // enclosing shadow tree. Register on every shadow root between the
-      // target and the document so internal scrolls at any depth reposition
-      // the floating menu. getDOMShadowRoots walks parent hosts and is
-      // empty in the light DOM.
-      const enclosingShadowRoots = getDOMShadowRoots(targetElement);
+      // enclosing shadow tree. Key off the editor root rather than the
+      // target — the target may be portaled into the light DOM while the
+      // editor (and its scroll container) live inside a shadow tree, and
+      // getDOMShadowRoots(target) would then return an empty list. Walk
+      // out of the editor's enclosing shadow roots instead so internal
+      // scrolls at any depth reposition the floating menu.
+      const shadowRootSource = rootElement ?? targetElement;
+      const enclosingShadowRoots = getDOMShadowRoots(shadowRootSource);
       for (const root of enclosingShadowRoots) {
         root.addEventListener('scroll', handleScroll, {
           capture: true,

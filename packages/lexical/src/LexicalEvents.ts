@@ -924,6 +924,23 @@ function $handleBeforeInput(event: InputEvent): boolean {
     case 'insertFromYank':
     case 'insertFromDrop':
     case 'insertReplacementText': {
+      // macOS/iOS dictation, autocorrect and spellcheck "Replace" revise an
+      // already-inserted word with an insertReplacementText event whose
+      // targetRange identifies exactly which text the OS intends to replace.
+      // The pre-switch applyDOMRange above only syncs the selection to the
+      // targetRange when the selection is collapsed, so a stale non-collapsed
+      // selection (e.g. left over from a prior composition step) would route
+      // the replacement to the wrong text — deleting the misunderstood word
+      // and leaving a gap instead of replacing it. The targetRange is
+      // authoritative for this input type, so apply it before inserting.
+      if (
+        inputType === 'insertReplacementText' &&
+        targetRange !== null &&
+        !targetRange.collapsed &&
+        !$isRootNode(selection.anchor.getNode())
+      ) {
+        selection.applyDOMRange(targetRange);
+      }
       dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, event);
       const textFromDataTransfer = event.dataTransfer
         ? event.dataTransfer.getData('text/plain')

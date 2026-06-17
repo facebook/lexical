@@ -1406,15 +1406,6 @@ export class RangeSelection implements BaseSelection {
     if (!this.isCollapsed()) {
       this.removeText();
     }
-    if (this.anchor.key === 'root') {
-      this.insertParagraph();
-      const selection = $getSelection();
-      invariant(
-        $isRangeSelection(selection),
-        'Expected RangeSelection after insertParagraph',
-      );
-      return selection.insertNodes(nodes);
-    }
     // @experimental named-slots. Anchor on a slot value root (e.g. after a
     // slot-scoped Cmd+A leaves the selection on the slot's element point)
     // has __parent === null, so the block-finding walk below would throw.
@@ -1446,6 +1437,25 @@ export class RangeSelection implements BaseSelection {
         );
         return redirected.insertNodes(nodes);
       }
+    }
+
+    // The anchor is an element point directly on a root or shadow root that is
+    // not a named-slot host (handled above). This includes the document root
+    // (e.g. an empty editor) and shadow roots that hold block-level children
+    // directly — for instance the block cursor between or after the children of
+    // a decorator-only container or the playground CollapsibleContentNode.
+    // Roots and shadow roots hold blocks (and shadow roots) directly, so splice
+    // the nodes in at the anchor offset: a block node (such as a pasted
+    // DecoratorNode) goes in as-is, while inline runs are wrapped in a block
+    // first since a root/shadow root cannot contain inline children.
+    if (this.anchor.type === 'element' && $isRootOrShadowRoot(anchorNode)) {
+      const blocksParent = $wrapInlineNodes(nodes);
+      const nodeToSelect = blocksParent.getLastDescendant();
+      anchorNode.splice(this.anchor.offset, 0, blocksParent.getChildren());
+      if (nodeToSelect !== null) {
+        nodeToSelect.selectEnd();
+      }
+      return;
     }
 
     const firstPoint = this.isBackward() ? this.focus : this.anchor;
@@ -1570,9 +1580,10 @@ export class RangeSelection implements BaseSelection {
    * @returns the newly inserted node.
    */
   insertParagraph(): ElementNode | null {
-    if (this.anchor.key === 'root') {
+    const anchorNode = this.anchor.getNode();
+    if (this.anchor.type === 'element' && $isRootOrShadowRoot(anchorNode)) {
       const paragraph = $createParagraphNode();
-      $getRoot().splice(this.anchor.offset, 0, [paragraph]);
+      anchorNode.splice(this.anchor.offset, 0, [paragraph]);
       paragraph.select();
       return paragraph;
     }

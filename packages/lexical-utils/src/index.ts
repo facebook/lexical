@@ -9,6 +9,7 @@
 import invariant from '@lexical/internal/invariant';
 import {$isAtNodeEnd} from '@lexical/selection';
 import {
+  $getSlotFrame,
   CAN_USE_BEFORE_INPUT,
   CAN_USE_DOM,
   IS_ANDROID,
@@ -40,11 +41,15 @@ import {
   $getRoot,
   $getSelection,
   $getSiblingCaret,
+  $getSlot,
+  $getSlotHost,
+  $getSlotNames,
   $getState,
   $isChildCaret,
   $isElementNode,
   $isRangeSelection,
   $isSiblingCaret,
+  $isSlotHost,
   $isTextPointCaret,
   $normalizeCaret,
   $removeTextFromCaretRange,
@@ -65,6 +70,7 @@ import {
   type NodeKey,
   type PasteCommandType,
   PointCaret,
+  type PointType,
   type RangeSelection,
   type SiblingCaret,
   SplitAtPointCaretNextOptions,
@@ -172,6 +178,11 @@ export interface DFSNode {
  * branch until you hit a dead-end (leaf) and backtracking to find the nearest branching path and repeat.
  * It will then return all the nodes found in the search in an array of objects.
  * Preorder traversal is used, meaning that nodes are listed in the order of when they are FIRST encountered.
+ *
+ * Children-only spine: named slot subtrees are skipped. Use {@link $dfsWithSlots}
+ * when you need to descend into slots (e.g. character counting, slot-aware
+ * content extraction).
+ *
  * @param startNode - The node to start the search (inclusive), if omitted, it will start at the root node.
  * @param endNode - The node to end the search (inclusive), if omitted, it will find all descendants of the startingNode. If endNode
  * is an ElementNode, it will stop before visiting any of its children.
@@ -213,6 +224,12 @@ export function $reverseDfs(
 /**
  * $dfs iterator (left to right). Tree traversal is done on the fly as new values are requested with O(1) memory.
  * Preorder traversal is used, meaning that nodes are iterated over in the order of when they are FIRST encountered.
+ *
+ * Children-only spine: named slot subtrees are skipped. Use {@link $dfsWithSlotsIterator}
+ * (or {@link $dfsWithSlots}) when you need to descend into slots — e.g. character
+ * counting, content extraction, or any cross-tree analysis where slotted content
+ * should be visited.
+ *
  * @param startNode - The node to start the search (inclusive), if omitted, it will start at the root node.
  * @param endNode - The node to end the search (inclusive), if omitted, it will find all descendants of the startingNode.
  * If endNode is an ElementNode, the iterator will end as soon as it reaches the endNode (no children will be visited).
@@ -223,6 +240,84 @@ export function $dfsIterator(
   endNode?: LexicalNode,
 ): IterableIterator<DFSNode> {
   return $dfsCaretIterator('next', startNode, endNode);
+}
+
+/**
+ * Like {@link $dfs}, but also descends into named slots. Slots are not on the
+ * linked-list spine, so each host's slot subtrees are emitted slots-first,
+ * right after the host node and before its linked-list children.
+ * @experimental
+ * @param startNode - The node to start the search (inclusive), defaults to the root node.
+ * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.
+ * Like {@link $dfs}, reaching endNode stops the traversal before visiting any of its
+ * children — including its slot subtrees. An endNode strictly inside a slot subtree
+ * is never reached (slot subtrees are spliced in whole), so it does not truncate
+ * the traversal.
+ * @returns An array of DFSNodes. It will always return at least 1 node (the start node).
+ */
+export function $dfsWithSlots(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): DFSNode[] {
+  return Array.from($dfsWithSlotsIterator(startNode, endNode));
+}
+
+/**
+ * Slot-aware {@link $dfsIterator}: a host's slot subtrees are emitted
+ * slots-first, right after the host node and before its linked-list children.
+ * The caret iterator drives the linked-list spine untouched.
+ * @experimental
+ * @param startNode - The node to start the search (inclusive), defaults to the root node.
+ * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.
+ * Like {@link $dfs}, reaching endNode stops the traversal before visiting any of its
+ * children — including its slot subtrees. An endNode strictly inside a slot subtree
+ * is never reached (slot subtrees are spliced in whole), so it does not truncate
+ * the traversal.
+ * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
+ */
+export function* $dfsWithSlotsIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): IterableIterator<DFSNode> {
+  for (const dfsNode of $dfsCaretIterator('next', startNode, endNode)) {
+    yield dfsNode;
+    const {node, depth} = dfsNode;
+    // endNode is an inclusive stop: none of its children are visited, so its
+    // slot subtrees must not be either.
+    if ($isSlotHost(node) && !node.is(endNode)) {
+      for (const name of $getSlotNames(node)) {
+        const slot = $getSlot(node, name);
+        if (slot !== null) {
+          yield* $dfsSubtreeIterator(slot, depth + 1);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Slots-first preorder traversal of a self-contained subtree (a slot node and
+ * everything it owns). Used to splice slot subtrees into $dfsWithSlotsIterator.
+ */
+function* $dfsSubtreeIterator(
+  node: LexicalNode,
+  depth: number,
+): IterableIterator<DFSNode> {
+  yield {depth, node};
+  const childDepth = depth + 1;
+  if ($isSlotHost(node)) {
+    for (const name of $getSlotNames(node)) {
+      const slot = $getSlot(node, name);
+      if (slot !== null) {
+        yield* $dfsSubtreeIterator(slot, childDepth);
+      }
+    }
+  }
+  if ($isElementNode(node)) {
+    for (const child of node.getChildren()) {
+      yield* $dfsSubtreeIterator(child, childDepth);
+    }
+  }
 }
 
 function $getEndCaret<D extends CaretDirection>(
@@ -295,7 +390,8 @@ export function $getDepth(node: null | LexicalNode): number {
   for (
     let innerNode = node;
     innerNode !== null;
-    innerNode = innerNode.getParent()
+    // A slotted node has no parent; climb its slot host instead.
+    innerNode = innerNode.getParent() ?? $getSlotHost(innerNode)
   ) {
     depth++;
   }
@@ -331,6 +427,107 @@ export function $reverseDfsIterator(
   endNode?: LexicalNode,
 ): IterableIterator<DFSNode> {
   return $dfsCaretIterator('previous', startNode, endNode);
+}
+
+/**
+ * Like {@link $reverseDfs}, but also descends into named slots. Mirror of
+ * {@link $dfsWithSlots}.
+ * @experimental
+ * @param startNode - The node to start the search (inclusive), defaults to the root node.
+ * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.
+ * Mirroring {@link $dfsWithSlots}, reaching endNode stops the traversal without
+ * emitting its slot subtrees. An endNode strictly inside a slot subtree is never
+ * reached (slot subtrees are spliced in whole), so it does not truncate the
+ * traversal.
+ * @returns An array of DFSNodes. It will always return at least 1 node (the start node).
+ */
+export function $reverseDfsWithSlots(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): DFSNode[] {
+  return Array.from($reverseDfsWithSlotsIterator(startNode, endNode));
+}
+
+/**
+ * Right-to-left mirror of {@link $dfsWithSlotsIterator}. Forward visits slots
+ * before children, so the mirror visits them last: a host's slot subtrees are
+ * emitted (in reverse slot order) only once its linked-list subtree is fully
+ * traversed. Because the caret spine streams nodes, "left the host subtree" is
+ * detected when a node at the host's depth or shallower arrives, flushing the
+ * host's pending slots. The caret iterator drives the spine untouched.
+ * @experimental
+ * @param startNode - The node to start the search (inclusive), defaults to the root node.
+ * @param endNode - The node to end the search (inclusive), defaults to all descendants of startNode.
+ * Mirroring {@link $dfsWithSlotsIterator}, reaching endNode stops the traversal
+ * without emitting its slot subtrees. An endNode strictly inside a slot subtree is
+ * never reached (slot subtrees are spliced in whole), so it does not truncate the
+ * traversal.
+ * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
+ */
+export function* $reverseDfsWithSlotsIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): IterableIterator<DFSNode> {
+  const pending: {depth: number; node: LexicalNode}[] = [];
+  for (const dfsNode of $dfsCaretIterator('previous', startNode, endNode)) {
+    while (
+      pending.length > 0 &&
+      dfsNode.depth <= pending[pending.length - 1].depth
+    ) {
+      const host = pending.pop()!;
+      yield* $reverseSlotsOf(host.node, host.depth + 1);
+    }
+    yield dfsNode;
+    const {node, depth} = dfsNode;
+    // endNode is an inclusive stop: mirror the forward iterator and leave its
+    // slot subtrees unvisited rather than flushing them after the stop.
+    if (
+      $isSlotHost(node) &&
+      $getSlotNames(node).length > 0 &&
+      !node.is(endNode)
+    ) {
+      pending.push({depth, node});
+    }
+  }
+  while (pending.length > 0) {
+    const host = pending.pop()!;
+    yield* $reverseSlotsOf(host.node, host.depth + 1);
+  }
+}
+
+/** Emit a host's slot subtrees in reverse slot order (mirror of slots-first). */
+function* $reverseSlotsOf(
+  host: LexicalNode,
+  childDepth: number,
+): IterableIterator<DFSNode> {
+  const names = $getSlotNames(host);
+  for (let i = names.length - 1; i >= 0; i--) {
+    const slot = $getSlot(host, names[i]);
+    if (slot !== null) {
+      yield* $reverseDfsSubtreeIterator(slot, childDepth);
+    }
+  }
+}
+
+/**
+ * Right-to-left slots-last preorder of a self-contained subtree: children in
+ * reverse order, then slots in reverse order. Mirror of $dfsSubtreeIterator.
+ */
+function* $reverseDfsSubtreeIterator(
+  node: LexicalNode,
+  depth: number,
+): IterableIterator<DFSNode> {
+  yield {depth, node};
+  const childDepth = depth + 1;
+  if ($isElementNode(node)) {
+    const children = node.getChildren();
+    for (let i = children.length - 1; i >= 0; i--) {
+      yield* $reverseDfsSubtreeIterator(children[i], childDepth);
+    }
+  }
+  if ($isSlotHost(node)) {
+    yield* $reverseSlotsOf(node, childDepth);
+  }
 }
 
 /**
@@ -401,6 +598,18 @@ export function $isBlockFullySelected(
       : selectionOrRange,
     'next',
   );
+  // A named-slot subtree is isolated from its host through a parentless
+  // up-link, so a range inside a slot can never cover a block outside that
+  // slot frame (and vice versa) — and the caret comparison below has no
+  // common ancestor to walk across the boundary. Different frames are
+  // never fully selected; the same frame compares safely within it.
+  const anchorFrame = $getSlotFrame(range.anchor.origin);
+  const blockFrame = $getSlotFrame(blockNode.getLatest());
+  if (
+    anchorFrame === null ? blockFrame !== null : !anchorFrame.is(blockFrame)
+  ) {
+    return false;
+  }
   const blockStart = $normalizeCaret($getChildCaret(blockNode, 'next'));
   const blockEnd = $getCaretInDirection(
     $normalizeCaret($getChildCaret(blockNode, 'previous')),
@@ -1071,40 +1280,39 @@ export function makeStateWrapper<K extends string, V>(
  * A paragraph is inserted if that the cursor is positioned at the beginning inside the container,
  * and the container itself is the first element in the document and has no preceding sibling
  *
+ * When a paragraph is inserted the selection is moved to it and, if the
+ * triggering keyboard event is provided, its default action is prevented so
+ * the browser does not additionally move the selection. Relying on the native
+ * caret movement is not portable: Chromium moves into the freshly inserted
+ * paragraph while Firefox leaves the caret inside the container.
+ *
  * @param $isContainerNode - Type guard identifying the container node type to escape from.
+ * @param event - The keyboard event that triggered the escape, if any. Its
+ *   default action is prevented when a paragraph is inserted.
  * @returns `true` if a paragraph was inserted, `false` otherwise.
  */
 export function $onEscapeUp(
   $isContainerNode: (node?: LexicalNode | null) => node is ElementNode,
+  event?: KeyboardEvent | null,
 ) {
   const selection = $getSelection();
-  if (
-    $isRangeSelection(selection) &&
-    selection.isCollapsed() &&
-    selection.anchor.offset === 0
-  ) {
+  if ($isRangeSelection(selection) && selection.isCollapsed()) {
     const containerNode = $findMatchingParent(
       selection.anchor.getNode(),
       $isContainerNode,
     );
-
     if (containerNode) {
       const parent = containerNode.getParent();
-      if (parent !== null && parent.getFirstChild() === containerNode) {
-        const firstDescendant =
-          containerNode.getFirstDescendant() ?? containerNode;
-        const anchorNode = selection.anchor.getNode();
-        if (
-          firstDescendant !== null &&
-          // the selection can be at the edge of the text
-          (anchorNode === firstDescendant ||
-            // or at the edge of the parent element
-            ($isElementNode(anchorNode) &&
-              anchorNode.getFirstDescendant() === firstDescendant))
-        ) {
-          containerNode.insertBefore($createParagraphNode()).selectEnd();
-          return true;
+      if (
+        parent !== null &&
+        parent.getFirstChild() === containerNode &&
+        $isAtStartOfNode(selection.anchor, containerNode)
+      ) {
+        containerNode.insertBefore($createParagraphNode()).selectEnd();
+        if (event) {
+          event.preventDefault();
         }
+        return true;
       }
     }
   }
@@ -1121,11 +1329,20 @@ export function $onEscapeUp(
  * A paragraph is inserted if that the cursor is positioned at the ending inside the container,
  * and the container itself is the last element in the document and has no next sibling
  *
+ * When a paragraph is inserted the selection is moved to it and, if the
+ * triggering keyboard event is provided, its default action is prevented so
+ * the browser does not additionally move the selection. Relying on the native
+ * caret movement is not portable: Chromium moves into the freshly inserted
+ * paragraph while Firefox leaves the caret inside the container.
+ *
  * @param $isContainerNode - Type guard identifying the container node type to escape from.
+ * @param event - The keyboard event that triggered the escape, if any. Its
+ *   default action is prevented when a paragraph is inserted.
  * @returns `true` if a paragraph was inserted, `false` otherwise.
  */
 export function $onEscapeDown(
   $isContainerNode: (node?: LexicalNode | null) => node is ElementNode,
+  event?: KeyboardEvent | null,
 ) {
   const selection = $getSelection();
   if ($isRangeSelection(selection) && selection.isCollapsed()) {
@@ -1133,27 +1350,56 @@ export function $onEscapeDown(
       selection.anchor.getNode(),
       $isContainerNode,
     );
-
     if (containerNode) {
       const parent = containerNode.getParent();
-      if (parent !== null && parent.getLastChild() === containerNode) {
-        const lastDescendant =
-          containerNode.getLastDescendant() ?? containerNode;
-        const anchorNode = selection.anchor.getNode();
-        if (
-          lastDescendant !== null &&
-          $isAtNodeEnd(selection.anchor) &&
-          // the selection can be at the edge of the text
-          (anchorNode === lastDescendant ||
-            // or at the edge of the parent element
-            ($isElementNode(anchorNode) &&
-              anchorNode.getLastDescendant() === lastDescendant))
-        ) {
-          containerNode.insertAfter($createParagraphNode()).selectEnd();
-          return true;
+      if (
+        parent !== null &&
+        parent.getLastChild() === containerNode &&
+        $isAtEndOfNode(selection.anchor, containerNode)
+      ) {
+        containerNode.insertAfter($createParagraphNode()).selectEnd();
+        if (event) {
+          event.preventDefault();
         }
+        return true;
       }
     }
   }
   return false;
+}
+
+/**
+ * Whether the collapsed `point` sits at the very start of `node`'s content —
+ * on its first descendant (or on the empty node itself) at offset 0. Shared by
+ * {@link $onEscapeUp} and slot-aware variants so the "at the leading edge of a
+ * container" test stays in one place.
+ */
+export function $isAtStartOfNode(point: PointType, node: ElementNode): boolean {
+  if (point.offset !== 0) {
+    return false;
+  }
+  const first = node.getFirstDescendant() ?? node;
+  const anchorNode = point.getNode();
+  return (
+    anchorNode === first ||
+    ($isElementNode(anchorNode) && anchorNode.getFirstDescendant() === first)
+  );
+}
+
+/**
+ * Whether the collapsed `point` sits at the very end of `node`'s content — on
+ * its last descendant (or on the empty node itself) at that node's end. Shared
+ * by {@link $onEscapeDown} and slot-aware variants so the "at the trailing edge
+ * of a container" test stays in one place.
+ */
+export function $isAtEndOfNode(point: PointType, node: ElementNode): boolean {
+  if (!$isAtNodeEnd(point)) {
+    return false;
+  }
+  const last = node.getLastDescendant() ?? node;
+  const anchorNode = point.getNode();
+  return (
+    anchorNode === last ||
+    ($isElementNode(anchorNode) && anchorNode.getLastDescendant() === last)
+  );
 }

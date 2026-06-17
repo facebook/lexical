@@ -86,7 +86,6 @@ import {createRoot, Root} from 'react-dom/client';
 import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';
-import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {
   $assertNodeType,
   $createTestDecoratorNode,
@@ -1041,7 +1040,7 @@ describe('LexicalEditor tests', () => {
               </ul>
             </li>
           </ul>
-          <p dir="auto"><br /></p>
+          <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
           <ul dir="auto">
             <li value="1">
               <ul>
@@ -1751,7 +1750,7 @@ describe('LexicalEditor tests', () => {
       expect(listener).toHaveBeenCalledTimes(1);
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto">' +
-          '<span data-lexical-decorator="true" contenteditable="false"><span>Hello world</span></span><br></p></div>',
+          '<span data-lexical-decorator="true" contenteditable="false"><span>Hello world</span></span><br data-lexical-managed-linebreak="true"></p></div>',
       );
     });
 
@@ -1793,7 +1792,7 @@ describe('LexicalEditor tests', () => {
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
       );
 
       await act(async () => {
@@ -1804,7 +1803,7 @@ describe('LexicalEditor tests', () => {
 
       expect(listener).toHaveBeenCalledTimes(5);
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
       );
 
       // Wait for update to complete
@@ -1825,6 +1824,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1841,6 +1842,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 0,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1921,6 +1924,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1937,6 +1942,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -2005,6 +2012,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -2021,6 +2030,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -3705,16 +3716,8 @@ describe('LexicalEditor tests', () => {
     vi.spyOn(ParagraphNode, 'importDOM');
 
     class CustomParagraphNode extends ParagraphNode {
-      static getType() {
-        return 'custom-paragraph';
-      }
-
-      static clone(node: CustomParagraphNode) {
-        return new CustomParagraphNode(node.__key);
-      }
-
-      static importJSON(serializedNode: SerializedParagraphNode) {
-        return new CustomParagraphNode().updateFromJSON(serializedNode);
+      $config() {
+        return this.config('custom-paragraph', {extends: ParagraphNode});
       }
     }
 

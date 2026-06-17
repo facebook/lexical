@@ -133,6 +133,12 @@ export async function initialize({
     !!shouldAllowHighlightingWithBrackets;
 
   appSettings.selectionAlwaysOnDisplay = !!selectionAlwaysOnDisplay;
+  // The playground app defaults `selectBlock` to true (see appSettings.ts),
+  // but the e2e harness pins it to false unless a spec opts in (e.g.
+  // SelectBlock.spec.mjs), so the rest of the suite keeps the legacy
+  // whole-document SELECT_ALL semantics that selectAll()/clearEditor() rely
+  // on. This setting is always written to the URL so the app default never
+  // leaks into an e2e run.
   appSettings.selectBlock = !!selectBlock;
 
   const urlParams = appSettingsToURLParams(appSettings);
@@ -225,7 +231,9 @@ async function exposeLexicalEditor(page, pageError = null) {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   }
@@ -281,7 +289,7 @@ export async function clickSelectors(page, selectors) {
 function removeSafariLinebreakImgHack(actualHtml) {
   return E2E_BROWSER === 'webkit'
     ? actualHtml.replaceAll(
-        /<img (?:[^>]+ )?data-lexical-linebreak="true"(?: [^>]+)?>/g,
+        /<img (?:[^>]+ )?data-lexical-managed-linebreak="true"(?: [^>]+)?>/g,
         '',
       )
     : actualHtml;
@@ -497,7 +505,8 @@ async function assertSelectionOnPageOrFrame(page, expected) {
         if (
           child &&
           child.nodeType === Node.ELEMENT_NODE &&
-          child.getAttribute('data-lexical-linebreak') === 'true'
+          child.nodeName === 'IMG' &&
+          child.getAttribute('data-lexical-managed-linebreak') === 'true'
         ) {
           return offset - 1;
         }

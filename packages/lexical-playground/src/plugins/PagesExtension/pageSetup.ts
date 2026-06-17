@@ -10,6 +10,7 @@ import {
   $getState,
   $setState,
   createState,
+  NodeStateVersion,
   StateValueOrUpdater,
 } from 'lexical';
 
@@ -74,9 +75,7 @@ export const pageSetupState = /* @__PURE__ */ createState('pageSetup', {
   },
 });
 
-export function $getPageSetup(
-  version: 'latest' | 'direct' = 'latest',
-): null | PageSetup {
+export function $getPageSetup(version?: NodeStateVersion): null | PageSetup {
   return $getState($getRoot(), pageSetupState, version);
 }
 

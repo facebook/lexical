@@ -36,9 +36,8 @@ import {
   RangeSelection,
   TextNode,
 } from 'lexical';
-import {beforeEach, describe, expect, test} from 'vitest';
+import {assert, beforeEach, describe, expect, test} from 'vitest';
 
-import {SerializedElementNode} from '../..';
 import {$internalCreateRangeSelection} from '../../LexicalSelection';
 import {
   $assertRangeSelection,
@@ -156,12 +155,11 @@ describe('LexicalSelection tests', () => {
             await insertText({container, editor, method: 'insertText'});
           });
 
-          // TODO: https://github.com/facebook/lexical/issues/4295
-          // test('Can insert text before a start-of-paragraph inline element, using insertNodes', async () => {
-          //   const {container, editor} = await setup('start-of-paragraph');
+          test('Can insert text before a start-of-paragraph inline element, using insertNodes', async () => {
+            const {container, editor} = await setup('start-of-paragraph');
 
-          //   await insertText({container, editor, method: 'insertNodes'});
-          // });
+            await insertText({container, editor, method: 'insertNodes'});
+          });
         });
 
         describe('Mid-paragraph inline elements', () => {
@@ -279,12 +277,11 @@ describe('LexicalSelection tests', () => {
             await insertText({container, editor, method: 'insertText'});
           });
 
-          // TODO: https://github.com/facebook/lexical/issues/4295
-          // test('Can insert text after a start-of-paragraph inline element, using insertNodes', async () => {
-          //   const {container, editor} = await setup('start-of-paragraph');
+          test('Can insert text after a start-of-paragraph inline element, using insertNodes', async () => {
+            const {container, editor} = await setup('start-of-paragraph');
 
-          //   await insertText({container, editor, method: 'insertNodes'});
-          // });
+            await insertText({container, editor, method: 'insertNodes'});
+          });
         });
 
         describe('Mid-paragraph inline elements', () => {
@@ -320,12 +317,11 @@ describe('LexicalSelection tests', () => {
             await insertText({container, editor, method: 'insertText'});
           });
 
-          // TODO: https://github.com/facebook/lexical/issues/4295
-          // test('Can insert text after a mid-paragraph inline element, using insertNodes', async () => {
-          //   const {container, editor} = await setup('mid-paragraph');
+          test('Can insert text after a mid-paragraph inline element, using insertNodes', async () => {
+            const {container, editor} = await setup('mid-paragraph');
 
-          //   await insertText({container, editor, method: 'insertNodes'});
-          // });
+            await insertText({container, editor, method: 'insertNodes'});
+          });
         });
 
         describe('End-of-paragraph inline elements', () => {
@@ -362,12 +358,11 @@ describe('LexicalSelection tests', () => {
             await insertText({container, editor, method: 'insertText'});
           });
 
-          // TODO: https://github.com/facebook/lexical/issues/4295
-          // test('Can insert text after an end-of-paragraph inline element, using insertNodes', async () => {
-          //   const {container, editor} = await setup('end-of-paragraph');
+          test('Can insert text after an end-of-paragraph inline element, using insertNodes', async () => {
+            const {container, editor} = await setup('end-of-paragraph');
 
-          //   await insertText({container, editor, method: 'insertNodes'});
-          // });
+            await insertText({container, editor, method: 'insertNodes'});
+          });
         });
       });
     });
@@ -845,14 +840,8 @@ describe('LexicalSelection tests', () => {
 describe('Regression tests for #6701', () => {
   test('insertNodes fails an invariant when there is no Block ancestor', async () => {
     class InlineElementNode extends ElementNode {
-      static clone(prevNode: InlineElementNode): InlineElementNode {
-        return new InlineElementNode(prevNode.__key);
-      }
-      static getType() {
-        return 'inline-element-node';
-      }
-      static importJSON(serializedNode: SerializedElementNode) {
-        return new InlineElementNode().updateFromJSON(serializedNode);
+      $config() {
+        return this.config('inline-element-node', {extends: ElementNode});
       }
       isInline() {
         return true;
@@ -1756,6 +1745,120 @@ describe('Regression #8098', () => {
           expect(selection).not.toBeNull();
           expect(selection!.format).toBe(0);
           expect(selection!.style).toBe('');
+        },
+        {discrete: true},
+      );
+    });
+  });
+});
+
+describe('$wrapInlineNodes regression', () => {
+  initializeUnitTest(testEnv => {
+    test('Wraps all inline nodes, preserving first linebreak if contain a block element', () => {
+      testEnv.editor.update(
+        () => {
+          $getRoot().clear();
+          const selection = $selectAll();
+
+          const inlineNodes = [
+            $createLineBreakNode(),
+            $createTextNode('p1'),
+            $createTextNode('p1').setFormat('bold'),
+          ];
+          selection.insertNodes([...inlineNodes, $createParagraphNode()]);
+
+          const children = $getRoot().getChildren();
+          expect(children).toHaveLength(2);
+          assert($isParagraphNode(children[0]));
+          expect(children[0].getChildren()).toEqual(inlineNodes);
+        },
+        {discrete: true},
+      );
+    });
+
+    test('Collapses a lone linebreak run into an empty paragraph at the end of a non-empty paragraph', () => {
+      testEnv.editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode().append(
+            $createTextNode('abc'),
+          );
+          root.append(paragraph);
+
+          paragraph
+            .selectEnd()
+            .insertNodes([
+              $createLineBreakNode(),
+              $createParagraphNode().append($createTextNode('x')),
+            ]);
+
+          const children = root.getChildren();
+          expect(children).toHaveLength(3);
+          assert($isParagraphNode(children[0]));
+          expect(children[0].getTextContent()).toBe('abc');
+          assert($isParagraphNode(children[1]));
+          expect(children[1].getChildrenSize()).toBe(0);
+          assert($isParagraphNode(children[2]));
+          expect(children[2].getTextContent()).toBe('x');
+        },
+        {discrete: true},
+      );
+    });
+
+    test('Preserves a linebreak followed by inline content when merging into a non-empty paragraph', () => {
+      testEnv.editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode().append(
+            $createTextNode('abc'),
+          );
+          root.append(paragraph);
+
+          paragraph
+            .selectEnd()
+            .insertNodes([
+              $createLineBreakNode(),
+              $createTextNode('tail'),
+              $createParagraphNode().append($createTextNode('x')),
+            ]);
+
+          const children = root.getChildren();
+          expect(children).toHaveLength(2);
+          assert($isParagraphNode(children[0]));
+          expect(
+            children[0].getChildren().map(child => child.getType()),
+          ).toEqual(['text', 'linebreak', 'text']);
+          expect(children[0].getTextContent()).toBe('abc\ntail');
+          assert($isParagraphNode(children[1]));
+          expect(children[1].getTextContent()).toBe('x');
+        },
+        {discrete: true},
+      );
+    });
+
+    test('Collapses a lone trailing linebreak after a block into an empty paragraph', () => {
+      testEnv.editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+
+          paragraph
+            .selectEnd()
+            .insertNodes([
+              $createParagraphNode().append($createTextNode('x')),
+              $createLineBreakNode(),
+            ]);
+
+          const children = root.getChildren();
+          expect(children).toHaveLength(2);
+          assert($isParagraphNode(children[0]));
+          expect(children[0].getTextContent()).toBe('x');
+          assert($isParagraphNode(children[1]));
+          expect(children[1].getChildrenSize()).toBe(0);
         },
         {discrete: true},
       );

@@ -21,7 +21,6 @@ import {
   insertCollapsible,
   insertDateTime,
   insertSampleImage,
-  IS_LINUX,
   pressInsertLinkButton,
   SAMPLE_IMAGE_URL,
   test,
@@ -44,8 +43,6 @@ async function setupMultiContent(page) {
 }
 
 test.describe('SelectBlock', () => {
-  test.skip(({browserName}) => browserName === 'firefox' && IS_LINUX);
-
   test.beforeEach(({isCollab, page}) =>
     initialize({isCollab, page, selectBlock: true}),
   );
@@ -443,7 +440,7 @@ test.describe('SelectBlock', () => {
                   src="${SAMPLE_IMAGE_URL}" />
               </div>
             </span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">my text</span>
@@ -470,7 +467,7 @@ test.describe('SelectBlock', () => {
                   src="${SAMPLE_IMAGE_URL}" />
               </div>
             </span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
         true,
@@ -564,7 +561,7 @@ test.describe('SelectBlock', () => {
                   src="${SAMPLE_IMAGE_URL}" />
               </div>
             </span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">my text</span>
@@ -614,7 +611,7 @@ test.describe('SelectBlock', () => {
                 <div class="image-resizer image-resizer-nw"></div>
               </div>
             </span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
         true,
@@ -720,7 +717,7 @@ test.describe('SelectBlock', () => {
                 <div class="image-resizer image-resizer-nw"></div>
               </div>
             </span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">my text</span>
@@ -758,7 +755,7 @@ test.describe('SelectBlock', () => {
                   src="${SAMPLE_IMAGE_URL}" />
               </div>
             </span>
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
         true,

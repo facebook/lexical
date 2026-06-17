@@ -65,6 +65,7 @@ import PlaygroundNodes from './nodes/PlaygroundNodes';
 import {PlaygroundDOMRenderExtension} from './PlaygroundDOMRenderExtension';
 import {AutocompleteExtension} from './plugins/AutocompleteExtension';
 import {PlaygroundAutoLinkExtension} from './plugins/AutoLinkExtension';
+import {CardExtension} from './plugins/CardExtension';
 import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
 import {CollapsibleExtension} from './plugins/CollapsibleExtension';
 import {DateTimeExtension} from './plugins/DateTimeExtension';
@@ -83,6 +84,8 @@ import {PageBreakExtension} from './plugins/PageBreakExtension';
 import {PagesReactExtension} from './plugins/PagesReactExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {PollExtension} from './plugins/PollExtension';
+import {PullQuoteExtension} from './plugins/PullQuoteExtension';
+import {ReactReviewExtension} from './plugins/ReviewExtension';
 import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import {TabFocusExtension} from './plugins/TabFocusExtension';
 import {TerseExportExtension} from './plugins/TerseExportExtension';
@@ -187,10 +190,12 @@ const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
         code: {arrow: true, click: true, enter: true, onlyAtBoundary: true},
       },
     }),
-    // Each node extension below registers its own DOM-import rules, so the
-    // rich-text importer set tracks this node set automatically (kept out of
-    // the always-on PlaygroundImportExtension so plain-text mode doesn't pull
-    // in RichTextExtension, which conflicts with PlainTextExtension).
+    // Each node extension below registers its own DOM-import rules — the
+    // framework nodes (rich-text, list, table, code) and the playground block
+    // hosts (Card, PullQuote, Review) alike — so the rich-text importer set
+    // tracks this node set automatically (kept out of the always-on
+    // PlaygroundImportExtension so plain-text mode doesn't pull in
+    // RichTextExtension, which conflicts with PlainTextExtension).
     TableExtension,
     ImagesExtension,
     HorizontalRuleExtension,
@@ -212,6 +217,9 @@ const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
     EquationsExtension,
     LayoutExtension,
     ExcalidrawExtension,
+    CardExtension,
+    ReactReviewExtension,
+    PullQuoteExtension,
   ],
   name: '@lexical/playground/RichText',
 });

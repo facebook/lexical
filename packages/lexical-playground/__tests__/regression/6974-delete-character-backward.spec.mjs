@@ -63,7 +63,7 @@ test.describe('Regression tests for #6974', () => {
             src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
             width="0" />
         </span>
-        <br />
+        <br data-lexical-managed-linebreak="true" />
       </p>
       <p dir="auto"><span data-lexical-text="true">test</span></p>
     `;

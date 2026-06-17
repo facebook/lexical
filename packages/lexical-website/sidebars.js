@@ -43,6 +43,7 @@ const sidebars = {
         'concepts/nodes',
         'concepts/node-replacement',
         'concepts/node-state',
+        'concepts/named-slots',
         'concepts/key-management',
         'concepts/node-cloning',
         'concepts/listeners',

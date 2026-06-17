@@ -56,6 +56,7 @@ import {
   LexicalEditor,
   LexicalEditorWithDispose,
   LexicalNode,
+  NODE_STATE_DIRECT,
   type NodeKey,
   REDO_COMMAND,
   SerializedElementNode,
@@ -96,15 +97,20 @@ class CustomTextNode extends TextNode {
   declare ['constructor']: KlassConstructor<typeof CustomTextNode>;
 
   __classes: Set<string>;
-  constructor(text: string, classes: Iterable<string>, key?: NodeKey) {
+  constructor(
+    text: string = '',
+    classes: Iterable<string> = [],
+    key?: NodeKey,
+  ) {
     super(text, key);
     this.__classes = new Set(classes);
   }
-  static getType(): 'custom-text' {
-    return 'custom-text';
+  $config() {
+    return this.config('custom-text', {extends: TextNode});
   }
-  static clone(node: CustomTextNode): CustomTextNode {
-    return new CustomTextNode(node.__text, node.__classes, node.__key);
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__classes = new Set(prevNode.__classes);
   }
   addClass(className: string): this {
     const self = this.getWritable();
@@ -124,8 +130,10 @@ class CustomTextNode extends TextNode {
   getClasses(): ReadonlySet<string> {
     return this.getLatest().__classes;
   }
-  static importJSON({text, classes}: SerializedCustomTextNode): CustomTextNode {
-    return $createCustomTextNode(text, classes);
+  updateFromJSON(serializedNode: SerializedCustomTextNode): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setClasses(serializedNode.classes);
   }
   exportJSON(): SerializedCustomTextNode {
     return {
@@ -190,8 +198,9 @@ const ChildEditorExtension = defineExtension({
           const prevNode = $getNodeByKey(key, prevEditorState);
           const curNode = $getNodeByKey(key, curEditorState);
           const prevEditor =
-            prevNode && $getState(prevNode, EditorKey, 'direct');
-          const curEditor = curNode && $getState(curNode, EditorKey, 'direct');
+            prevNode && $getState(prevNode, EditorKey, NODE_STATE_DIRECT);
+          const curEditor =
+            curNode && $getState(curNode, EditorKey, NODE_STATE_DIRECT);
           if (prevEditor && prevEditor !== curEditor) {
             prevEditor.setRootElement(null);
           }
@@ -781,7 +790,7 @@ describe('SharedHistoryExtension', () => {
           data-lexical-editor="true">
           <p dir="auto"><span data-lexical-text="true">Child editor</span></p>
         </div>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
     );
     editor.read(() => {
@@ -806,7 +815,7 @@ describe('SharedHistoryExtension', () => {
             <span data-lexical-text="true">Child editor. Updated!</span>
           </p>
         </div>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
     );
     expect(
@@ -839,7 +848,7 @@ describe('SharedHistoryExtension', () => {
           data-lexical-editor="true">
           <p dir="auto"><span data-lexical-text="true">Child editor</span></p>
         </div>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
     );
     editor.update(() => editor.dispatchCommand(UNDO_COMMAND, undefined), {

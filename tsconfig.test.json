@@ -220,6 +220,9 @@
       "@lexical/react/useLexicalRovingTabIndex": [
         "./packages/lexical-react/src/useLexicalRovingTabIndex.ts"
       ],
+      "@lexical/react/useLexicalSlotRef": [
+        "./packages/lexical-react/src/useLexicalSlotRef.ts"
+      ],
       "@lexical/react/useLexicalSubscription": [
         "./packages/lexical-react/src/useLexicalSubscription.tsx"
       ],

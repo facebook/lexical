@@ -42,11 +42,6 @@ declare export function indentList(): void;
 declare export function $insertList(
   listType: ListType,
 ): void;
-/** @deprecated use {@link $insertList} from an update or command listener */
-declare export function insertList(
-  editor: LexicalEditor,
-  listType: ListType,
-): void;
 declare export class ListItemNode extends ElementNode {
   append(...nodes: LexicalNode[]): this;
   replace<N extends LexicalNode>(replaceWithNode: N): N;
@@ -80,8 +75,6 @@ declare export class ListNode extends ElementNode {
   static importJSON(serializedNode: SerializedListNode): ListNode;
 }
 declare export function outdentList(): void;
-/** @deprecated use {@link $removeList} from an update or command listener */
-declare export function removeList(editor: LexicalEditor): void;
 declare export function $removeList(): void;
 
 declare export var INSERT_UNORDERED_LIST_COMMAND: LexicalCommand<void>;

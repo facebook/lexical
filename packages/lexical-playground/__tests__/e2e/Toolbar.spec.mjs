@@ -66,7 +66,7 @@ test.describe('Toolbar', () => {
                 src="${SAMPLE_IMAGE_URL}" />
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
       undefined,
@@ -105,7 +105,7 @@ test.describe('Toolbar', () => {
               </div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
       undefined,
@@ -114,7 +114,7 @@ test.describe('Toolbar', () => {
         ignoreInlineStyles: true,
       },
       actualHtml =>
-        // flaky fix: remove the extra <p dir="auto"><br /></p> that appears occasionally in CI runs
+        // flaky fix: remove the extra <p dir="auto"><br data-lexical-managed-linebreak="true" /></p> that appears occasionally in CI runs
         actualHtml.replace(
           html`
             <p dir="auto">
@@ -122,7 +122,7 @@ test.describe('Toolbar', () => {
                 Yellow flower in tilt shift lens
               </span>
             </p>
-            <p dir="auto"><br /></p>
+            <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
           `,
           html`
             <p dir="auto">
@@ -145,7 +145,7 @@ test.describe('Toolbar', () => {
     await assertHTML(
       page,
       html`
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {
@@ -162,7 +162,7 @@ test.describe('Toolbar', () => {
       page,
       html`
         <p dir="auto">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         <table dir="auto">
           <colgroup>
@@ -174,91 +174,91 @@ test.describe('Toolbar', () => {
           </colgroup>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
           <tr dir="auto">
             <th dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </th>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
             <td dir="auto">
-              <p dir="auto"><br /></p>
+              <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
             </td>
           </tr>
         </table>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
       undefined,
       {
@@ -303,7 +303,7 @@ test.describe('Toolbar', () => {
               <div class="image-resizer image-resizer-nw"></div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -342,7 +342,7 @@ test.describe('Toolbar', () => {
               <div class="image-resizer image-resizer-nw"></div>
             </div>
           </span>
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );

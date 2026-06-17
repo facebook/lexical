@@ -105,7 +105,7 @@ describe('@lexical/list tests', () => {
           data-lexical-editor="true">
           <ul dir="auto">
             <li value="1">
-              <br />
+              <br data-lexical-managed-linebreak="true" />
             </li>
           </ul>
         </div>
@@ -129,7 +129,7 @@ describe('@lexical/list tests', () => {
           style="user-select: text; white-space: pre-wrap; word-break: break-word;"
           data-lexical-editor="true">
           <p dir="auto">
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         </div>
         <div class="editor-placeholder">Enter some text...</div>
@@ -160,7 +160,7 @@ describe('@lexical/list tests', () => {
           data-lexical-editor="true">
           <ul dir="auto">
             <li value="1">
-              <br />
+              <br data-lexical-managed-linebreak="true" />
             </li>
           </ul>
         </div>
@@ -186,7 +186,7 @@ describe('@lexical/list tests', () => {
           <ul dir="auto">
             <li value="1">
               <ul>
-                <li value="1"><br /></li>
+                <li value="1"><br data-lexical-managed-linebreak="true" /></li>
               </ul>
             </li>
           </ul>
@@ -212,7 +212,7 @@ describe('@lexical/list tests', () => {
           data-lexical-editor="true">
           <ul dir="auto">
             <li value="1">
-              <br />
+              <br data-lexical-managed-linebreak="true" />
             </li>
           </ul>
         </div>
@@ -261,7 +261,7 @@ describe('@lexical/list tests', () => {
           <p
             dir="auto"
             style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         </div>
       `,

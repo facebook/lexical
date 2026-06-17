@@ -10,7 +10,7 @@ import type {LexicalNode} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isTableNode, TableNode} from '@lexical/table';
-import {$dfs, $findMatchingParent} from '@lexical/utils';
+import {$dfsWithSlots, $findMatchingParent} from '@lexical/utils';
 import {$getNodeByKey, $isRootOrShadowRoot, LexicalEditor} from 'lexical';
 import {useEffect} from 'react';
 
@@ -74,7 +74,9 @@ function $resizeDOMColWidthsToFit(
   if (!editorWindow) {
     return;
   }
-  const allNestedTables = $dfs(node)
+  // $dfsWithSlots (not $dfs) so nested tables sitting inside a slot host
+  // subtree are still discovered. Mirrors LexicalTablePluginHelpers's caller.
+  const allNestedTables = $dfsWithSlots(node)
     .map(n => n.node)
     .filter($isTableNode);
   for (const table of allNestedTables) {

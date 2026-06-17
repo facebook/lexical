@@ -11,6 +11,7 @@ import invariant from '@lexical/internal/invariant';
 import {$createLinkNode, LinkExtension} from '@lexical/link';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $create,
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
@@ -18,7 +19,6 @@ import {
   $isElementNode,
   $isTextNode,
   ElementNode,
-  type SerializedElementNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
@@ -28,19 +28,13 @@ import {describe, expect, test} from 'vitest';
 // reading `isInline()` against the next state (the flipped value) instead of
 // the previous one silently desyncs `RootNode.__cachedText`.
 class FlipInlineNode extends ElementNode {
-  __inline: boolean;
-  constructor(inline: boolean, key?: string) {
-    super(key);
-    this.__inline = inline;
+  __inline: boolean = false;
+  $config() {
+    return this.config('flip-inline', {extends: ElementNode});
   }
-  static getType(): string {
-    return 'flip-inline';
-  }
-  static clone(node: FlipInlineNode): FlipInlineNode {
-    return new FlipInlineNode(node.__inline, node.__key);
-  }
-  static importJSON(serializedNode: SerializedElementNode): FlipInlineNode {
-    return new FlipInlineNode(false).updateFromJSON(serializedNode);
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__inline = prevNode.__inline;
   }
   createDOM(): HTMLElement {
     return document.createElement(this.__inline ? 'span' : 'div');
@@ -185,7 +179,7 @@ describe('children fast path: cross-parent move and sibling text cache', () => {
       () => {
         const root = $getRoot().clear();
         const p = $createParagraphNode();
-        const e = new FlipInlineNode(false);
+        const e = $create(FlipInlineNode);
         e.append($createTextNode('e'));
         p.append(
           $createTextNode('a'),

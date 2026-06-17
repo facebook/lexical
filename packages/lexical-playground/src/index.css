@@ -662,6 +662,10 @@ i.sticky {
   mask-image: url(images/icons/sticky.svg);
 }
 
+i.star {
+  background-image: url(images/icons/star.svg);
+}
+
 i.mic {
   -webkit-mask-image: url(images/icons/mic.svg);
   mask-image: url(images/icons/mic.svg);

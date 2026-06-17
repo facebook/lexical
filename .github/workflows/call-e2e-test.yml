@@ -9,7 +9,7 @@ on:
       browser: {required: true, type: string}
       editor-mode: {required: true, type: string}
       prod: {required: false, type: boolean}
-      fail-on-cache-miss: {required: false, type: boolean, default: true}
+      fail-on-cache-miss: {required: false, type: boolean, default: false}
 
 permissions: {}
 

@@ -177,6 +177,12 @@ export type EditorDOMRenderConfig = {
     dom: HTMLElement,
     editor: LexicalEditor,
   ) => DOMSlotForNode<N>;
+  $getSlotTargetElement: <T extends LexicalNode>(
+    node: T,
+    slotName: string,
+    hostDom: HTMLElement,
+    editor: LexicalEditor,
+  ) => HTMLElement | null;
   /** @internal @experimental */
   $exportDOM: <T extends LexicalNode>(
     node: T,
@@ -296,8 +302,8 @@ declare export class LexicalEditor {
     maybeStringifiedEditorState: string | SerializedEditorState,
     updateFn?: () => void,
   ): EditorState;
-  read<V>(callbackFn: () => V, options?: EditorReadOptions): V;
-  readPending<V>(callbackFn: () => V): V;
+  read<V>(callbackFn: () => V): V;
+  read<V>(mode: EditorReadMode, callbackFn: () => V): V;
   update(updateFn: () => void, options?: EditorUpdateOptions): boolean;
   focus(callbackFn?: () => void, options?: EditorFocusOptions): void;
   blur(): void;
@@ -305,9 +311,7 @@ declare export class LexicalEditor {
   setEditable(editable: boolean): void;
   toJSON(): SerializedEditor;
 }
-type EditorReadOptions = {
-  pending?: boolean,
-};
+export type EditorReadMode = 'force-commit' | 'pending' | 'latest';
 export type EditorUpdateOptions = {
   onUpdate?: () => void,
   tag?: string | string[],
@@ -1051,6 +1055,10 @@ declare export function setDOMUnmanaged(
   options?: SetDOMUnmanagedOptions,
 ): void;
 declare export function isDOMUnmanaged(elementDOM: HTMLElement): boolean;
+declare export function $markSlotEditable(
+  element: HTMLElement,
+  editor?: LexicalEditor,
+): void;
 declare export function isDOMCapturingSelection(
   elementDOM: Node,
   editor: LexicalEditor,
@@ -1171,6 +1179,55 @@ declare export function $getDOMSlot<N extends LexicalNode>(
   dom: HTMLElement,
   editor?: LexicalEditor,
 ): DOMSlotForNode<N>;
+declare export function mountSlotContainer(
+  editor: LexicalEditor,
+  nodeKey: NodeKey,
+  slotName: string,
+  target: HTMLElement,
+): HTMLElement | null;
+declare export function unmountSlotContainer(
+  editor: LexicalEditor,
+  nodeKey: NodeKey,
+  container: HTMLElement,
+): void;
+export interface SlotHostNode {
+  __slots: null | Map<string, NodeKey>;
+}
+export interface SlotChildNode {
+  __slotHost: null | NodeKey;
+}
+declare export function $isSlotHost(
+  node: LexicalNode,
+): node is LexicalNode & SlotHostNode;
+declare export function $isSlotChild(
+  node: LexicalNode,
+): node is LexicalNode & SlotChildNode;
+declare export function $getSlotHost(
+  node: LexicalNode,
+): ElementNode | DecoratorNode<unknown> | null;
+declare export function $getSlotFrame(
+  node: LexicalNode,
+): LexicalNode | null;
+declare export function getDeclaredSlots(
+  klass: Class<LexicalNode>,
+): ReadonlyArray<string>;
+declare export function $getSlotNameWithinHost(
+  slotChild: LexicalNode,
+): string | null;
+declare export function $getSlotNames(node: LexicalNode): string[];
+declare export function $getSlot(
+  node: LexicalNode,
+  name: string,
+): LexicalNode | null;
+declare export function $setSlot<T extends LexicalNode & SlotHostNode>(
+  host: T,
+  name: string,
+  node: LexicalNode,
+): T;
+declare export function $removeSlot<T extends LexicalNode & SlotHostNode>(
+  host: T,
+  name: string,
+): T;
 declare export function $getDOMTextNode(
   node: TextNode,
   dom: HTMLElement,
@@ -1613,6 +1670,7 @@ export interface StaticNodeConfigValue<
   readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T;
   readonly importDOM?: DOMConversionMap;
   readonly stateConfigs?: ReadonlyArray<RequiredNodeStateConfig>;
+  readonly slots?: ReadonlyArray<string>;
   readonly extends?: Class<LexicalNode>;
 }
 
@@ -1678,11 +1736,13 @@ type CollectStateConfigs<Configs> = Configs extends [
 export type GetNodeStateConfig<T extends LexicalNode> = CollectStateConfigs<
   GetStaticNodeConfigs<T>
 >;
-
+export const NODE_STATE_LATEST = 'latest';
+export const NODE_STATE_DIRECT = 'direct';
+export type NodeStateVersion = typeof NODE_STATE_LATEST | typeof NODE_STATE_DIRECT;
 declare export function $getState<K extends string, V>(
   node: LexicalNode,
   stateConfig: StateConfig<K, V>,
-  version?: 'latest' | 'direct',
+  version?: NodeStateVersion,
 ): V;
 declare export function $getStateChange<T extends LexicalNode, K extends string, V>(
   node: T,
@@ -1744,6 +1804,9 @@ declare export function getStaticNodeConfig(cls: Class<LexicalNode>): {
   ownNodeType: void | string;
   ownNodeConfig: void | StaticNodeConfigValue<LexicalNode, string>;
 };
+declare export function getRegisteredSubtypeMap(
+  nodes: Iterable<Class<LexicalNode>>,
+): Map<string, Set<string>>;
 
 declare export function $isEditorState(x: unknown): x is EditorState;
 

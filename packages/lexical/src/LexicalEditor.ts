@@ -41,8 +41,10 @@ import {GenMap} from './LexicalGenMap';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
+import {$isSlotHost} from './LexicalSlot';
 import {
   $commitPendingUpdates,
+  $fullReconcile,
   internalGetActiveEditor,
   parseEditorState,
   triggerListeners,
@@ -136,6 +138,21 @@ export type EditorUpdateOptions = {
 export type EditorSetOptions = {
   tag?: string;
 };
+
+/**
+ * Controls which editor state {@link LexicalEditor.read} observes and whether
+ * pending updates are flushed before the read.
+ *
+ * - `'force-commit'` (the default) flushes any pending updates immediately
+ *   before the read, so it always observes a fully committed and reconciled
+ *   state.
+ * - `'pending'` reads the pending state if it exists, otherwise the committed
+ *   state, without flushing. This is safe to call when an update may already
+ *   be in progress at the cost of possibly observing an uncommitted state.
+ * - `'latest'` reads the latest committed state without flushing pending
+ *   updates, equivalent to `editor.getEditorState().read(callbackFn, {editor})`.
+ */
+export type EditorReadMode = 'force-commit' | 'pending' | 'latest';
 
 export interface EditorFocusOptions {
   /**
@@ -316,6 +333,29 @@ export interface EditorDOMRenderConfig {
     dom: HTMLElement,
     editor: LexicalEditor,
   ) => void;
+  /**
+   * @internal @experimental named-slots
+   *
+   * Where a named slot's container should attach, for hosts rendered
+   * entirely in-lexical (no chrome framework). The reconciler consults
+   * this whenever it creates or reconciles the slot's container,
+   * synchronously within the same commit: a non-null return attaches the
+   * container to that element (a no-op when it is already there, so
+   * returning `hostDom` reveals the slot in its default slots-first
+   * position) and reveals it. Returning null (the default) leaves the
+   * container as a hidden placeholder for explicit imperative mounting
+   * (`mountSlotContainer` / lexical-react's `useLexicalSlotRef`). The
+   * named-slot analog of `$getDOMSlot`'s control over where linked-list
+   * children render; the returned element should live within the host's
+   * own DOM so it is torn down with the host. Override per node type via
+   * `DOMRenderMatch.$getSlotTargetElement` (lexical-html).
+   */
+  $getSlotTargetElement: <T extends LexicalNode>(
+    node: T,
+    slotName: string,
+    hostDom: HTMLElement,
+    editor: LexicalEditor,
+  ) => HTMLElement | null;
   /** @internal @experimental */
   $updateDOM: <T extends LexicalNode>(
     nextNode: T,
@@ -793,6 +833,7 @@ export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig = {
     dom: HTMLElement,
     _editor: LexicalEditor,
   ): DOMSlotForNode<N> => node.getDOMSlot(dom) as DOMSlotForNode<N>,
+  $getSlotTargetElement: (_node, _slotName, _hostDom, _editor) => null,
   $shouldExclude: (node, _selection, _editor) =>
     $isElementNode(node) && node.excludeFromCopy('html'),
   $shouldInclude: (node, selection, _editor) =>
@@ -1031,6 +1072,17 @@ export class LexicalEditor {
   _editable: boolean;
   /** @internal */
   _blockCursorElement: null | HTMLDivElement;
+  /**
+   * @internal @experimental
+   *
+   * Latches to `true` the first time {@link $setSlot} runs in this
+   * editor. Gates the commit-time slot-containment clamp so editors that never
+   * use slots skip the per-update frame walk entirely. The latch persists for
+   * the lifetime of the editor instance — `resetEditor` and `setEditorState`
+   * do not clear it, so an editor that once used slots keeps paying the clamp
+   * cost even after switching to a slot-free state.
+   */
+  _slotsUsed: boolean;
   /** @internal */
   _createEditorArgs?: undefined | CreateEditorArgs;
 
@@ -1099,6 +1151,7 @@ export class LexicalEditor {
     this._headless = parentEditor !== null && parentEditor._headless;
     this._window = null;
     this._blockCursorElement = null;
+    this._slotsUsed = false;
   }
 
   /**
@@ -1600,6 +1653,24 @@ export class LexicalEditor {
     this._dirtyElements.set('root', false);
     this._compositionKey = null;
 
+    // `_slotsUsed` is normally latched by `$setSlot`, but `setEditorState`
+    // swaps in a parsed state without walking it. If the incoming state
+    // already contains slot nodes (e.g. SSR + hydration, cross-editor state
+    // transfer), latch on so the selection clamps still kick in on this
+    // editor.
+    if (!this._slotsUsed) {
+      for (const node of writableEditorState._nodeMap.values()) {
+        if (
+          $isSlotHost(node) &&
+          node.__slots !== null &&
+          node.__slots.size > 0
+        ) {
+          this._slotsUsed = true;
+          break;
+        }
+      }
+    }
+
     if (tag != null) {
       this._updateTags.add(tag);
     }
@@ -1635,28 +1706,36 @@ export class LexicalEditor {
    * Executes a read of the editor's state, with the
    * editor context available (useful for exporting and read-only DOM
    * operations). Much like update, but prevents any mutation of the
-   * editor's state. Any pending updates will be flushed immediately before
-   * the read.
+   * editor's state.
+   *
+   * When called with a single argument the `mode` defaults to
+   * `'force-commit'`, which flushes any pending updates immediately before the
+   * read so it always observes a fully committed and reconciled state. See
+   * {@link EditorReadMode} for the behavior of the other modes (`'pending'`
+   * and `'latest'`).
    * @param callbackFn - A function that has access to read-only editor state.
    */
-  read<T>(callbackFn: () => T): T {
-    $commitPendingUpdates(this);
-    return this.getEditorState().read(callbackFn, {editor: this});
-  }
-
+  read<T>(callbackFn: () => T): T;
   /**
-   * Executes a read of the editor's pending state if it exists, otherwise
-   * the committed state, with the editor context available. Unlike
-   * {@link LexicalEditor.read}, pending updates are not flushed before the
-   * read, so this is safe to call when an update may already be in
-   * progress (such as from another editor's command listener) at the cost
-   * of possibly observing a state that has not been committed yet.
+   * Executes a read of the editor's state in the given `mode`, with the editor
+   * context available. See {@link EditorReadMode} for the available modes.
+   * @param mode - Which editor state to read and whether to flush first.
    * @param callbackFn - A function that has access to read-only editor state.
    */
-  readPending<T>(callbackFn: () => T): T {
-    return (this._pendingEditorState || this._editorState).read(callbackFn, {
-      editor: this,
-    });
+  read<T>(mode: EditorReadMode, callbackFn: () => T): T;
+  read<T>(...args: [() => T] | [EditorReadMode, () => T]): T {
+    const [mode, callbackFn]: [EditorReadMode, () => T] =
+      args.length === 1 ? ['force-commit', args[0]] : args;
+    if (mode === 'force-commit') {
+      $commitPendingUpdates(this);
+    }
+    // 'pending' observes an in-progress or queued update without flushing it;
+    // 'force-commit' and 'latest' read the committed (reconciled) state.
+    const editorState =
+      mode === 'pending'
+        ? this._pendingEditorState || this._editorState
+        : this.getEditorState();
+    return editorState.read(callbackFn, {editor: this});
   }
 
   /**
@@ -1748,6 +1827,17 @@ export class LexicalEditor {
     if (this._editable !== editable) {
       this._editable = editable;
       triggerListeners('editable', this, true, editable);
+      // A named-slot island rendered inside a non-editable host carries an
+      // explicit `contentEditable` resolved from this editable state, so it
+      // does not follow the root's editability on its own. Re-render to push
+      // the toggle into those islands. A normal (non-discrete) update is safe
+      // whether `setEditable` is called standalone (it commits on a microtask)
+      // or from inside an update (it queues into that update's commit). Gated
+      // on `_slotsUsed` so an editor that never slots anything keeps the
+      // original no-reconcile behavior.
+      if (this._slotsUsed) {
+        this.update(() => $fullReconcile());
+      }
     }
   }
   /**

@@ -27,6 +27,7 @@ import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
 import prettier from '@prettier/sync';
 import {
+  $create,
   $isRangeSelection,
   createEditor,
   DecoratorNode,
@@ -164,18 +165,8 @@ export function initializeClipboard() {
 export type SerializedTestElementNode = SerializedElementNode;
 
 export class TestElementNode extends ElementNode {
-  static getType(): string {
-    return 'test_block';
-  }
-
-  static clone(node: TestElementNode) {
-    return new TestElementNode(node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedTestElementNode,
-  ): TestInlineElementNode {
-    return $createTestInlineElementNode().updateFromJSON(serializedNode);
+  $config() {
+    return this.config('test_block', {extends: ElementNode});
   }
 
   createDOM() {
@@ -191,37 +182,17 @@ export function $createTestElementNode(): TestElementNode {
   return new TestElementNode();
 }
 
-type SerializedTestTextNode = SerializedTextNode;
-
 export class TestTextNode extends TextNode {
-  static getType() {
-    return 'test_text';
-  }
-
-  static clone(node: TestTextNode): TestTextNode {
-    return new TestTextNode(node.__text, node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedTestTextNode): TestTextNode {
-    return new TestTextNode().updateFromJSON(serializedNode);
+  $config() {
+    return this.config('test_text', {extends: TextNode});
   }
 }
 
 export type SerializedTestInlineElementNode = SerializedElementNode;
 
 export class TestInlineElementNode extends ElementNode {
-  static getType(): string {
-    return 'test_inline_block';
-  }
-
-  static clone(node: TestInlineElementNode) {
-    return new TestInlineElementNode(node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedTestInlineElementNode,
-  ): TestInlineElementNode {
-    return $createTestInlineElementNode().updateFromJSON(serializedNode);
+  $config() {
+    return this.config('test_inline_block', {extends: ElementNode});
   }
 
   createDOM() {
@@ -248,18 +219,8 @@ export function $createTestInlineElementNode(): TestInlineElementNode {
 export type SerializedTestShadowRootNode = SerializedElementNode;
 
 export class TestShadowRootNode extends ElementNode {
-  static getType(): string {
-    return 'test_shadow_root';
-  }
-
-  static clone(node: TestShadowRootNode) {
-    return new TestElementNode(node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedTestShadowRootNode,
-  ): TestShadowRootNode {
-    return $createTestShadowRootNode().updateFromJSON(serializedNode);
+  $config() {
+    return this.config('test_shadow_root', {extends: ElementNode});
   }
 
   createDOM() {
@@ -279,21 +240,62 @@ export function $createTestShadowRootNode(): TestShadowRootNode {
   return new TestShadowRootNode();
 }
 
+export function $isTestShadowRootNode(
+  node: LexicalNode | null | undefined,
+): node is TestShadowRootNode {
+  return node instanceof TestShadowRootNode;
+}
+
+export type SerializedTestUpdateDOMTrueHostNode = SerializedElementNode;
+
+// Slot host that always reports updateDOM=true, so every host edit triggers
+// $createNode(key, null) + $destroyNode(key, null) — the host wrapper DOM is
+// recreated. Used to exercise the reuse path for slot subtree DOM across a
+// host wrapper recreate.
+export class TestUpdateDOMTrueHostNode extends ElementNode {
+  __toggle: number = 0;
+
+  $config() {
+    return this.config('test_update_dom_true_host', {extends: ElementNode});
+  }
+
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__toggle = prevNode.__toggle;
+  }
+
+  createDOM(): HTMLElement {
+    const div = document.createElement('div');
+    div.setAttribute('data-toggle', String(this.__toggle));
+    return div;
+  }
+
+  updateDOM(): boolean {
+    return true;
+  }
+
+  setToggle(toggle: number): this {
+    const self = this.getWritable();
+    self.__toggle = toggle;
+    return self;
+  }
+}
+
+export function $createTestUpdateDOMTrueHostNode(): TestUpdateDOMTrueHostNode {
+  return $create(TestUpdateDOMTrueHostNode);
+}
+
+export function $isTestUpdateDOMTrueHostNode(
+  node: LexicalNode | null | undefined,
+): node is TestUpdateDOMTrueHostNode {
+  return node instanceof TestUpdateDOMTrueHostNode;
+}
+
 export type SerializedTestSegmentedNode = SerializedTextNode;
 
 export class TestSegmentedNode extends TextNode {
-  static getType(): string {
-    return 'test_segmented';
-  }
-
-  static clone(node: TestSegmentedNode): TestSegmentedNode {
-    return new TestSegmentedNode(node.__text, node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedTestSegmentedNode,
-  ): TestSegmentedNode {
-    return $createTestSegmentedNode().updateFromJSON(serializedNode);
+  $config() {
+    return this.config('test_segmented', {extends: TextNode});
   }
 }
 
@@ -304,20 +306,8 @@ export function $createTestSegmentedNode(text: string = ''): TestSegmentedNode {
 export type SerializedTestExcludeFromCopyElementNode = SerializedElementNode;
 
 export class TestExcludeFromCopyElementNode extends ElementNode {
-  static getType(): string {
-    return 'test_exclude_from_copy_block';
-  }
-
-  static clone(node: TestExcludeFromCopyElementNode) {
-    return new TestExcludeFromCopyElementNode(node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedTestExcludeFromCopyElementNode,
-  ): TestExcludeFromCopyElementNode {
-    return $createTestExcludeFromCopyElementNode().updateFromJSON(
-      serializedNode,
-    );
+  $config() {
+    return this.config('test_exclude_from_copy_block', {extends: ElementNode});
   }
 
   createDOM() {
@@ -344,18 +334,9 @@ export type SerializedTestDecoratorNode = Spread<
 
 export class TestDecoratorNode extends DecoratorNode<JSX.Element> {
   __block: boolean = false;
-  static getType(): string {
-    return 'test_decorator';
-  }
 
-  static clone(node: TestDecoratorNode) {
-    return new TestDecoratorNode(node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedTestDecoratorNode,
-  ): TestDecoratorNode {
-    return $createTestDecoratorNode().updateFromJSON(serializedNode);
+  $config() {
+    return this.config('test_decorator', {extends: DecoratorNode});
   }
 
   static importDOM() {

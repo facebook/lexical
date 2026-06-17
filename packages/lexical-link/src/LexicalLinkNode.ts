@@ -283,8 +283,8 @@ export class LinkNode extends ElementNode {
     const focusNode = selection.focus.getNode();
 
     return (
-      this.isParentOf(anchorNode) &&
-      this.isParentOf(focusNode) &&
+      (this.is(anchorNode) || this.isParentOf(anchorNode)) &&
+      (this.is(focusNode) || this.isParentOf(focusNode)) &&
       selection.getTextContent().length > 0
     );
   }

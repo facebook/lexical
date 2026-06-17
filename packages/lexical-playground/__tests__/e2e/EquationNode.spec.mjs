@@ -80,7 +80,7 @@ test.describe('EquationNode', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           ${equationHtml(true)}
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -97,11 +97,11 @@ test.describe('EquationNode', () => {
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         ${equationHtml(false)}
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );

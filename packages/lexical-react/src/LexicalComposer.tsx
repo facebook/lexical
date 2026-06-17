@@ -112,7 +112,8 @@ type Props = React.PropsWithChildren<{
  * and {@link ContentEditable} inside it, and read the editor from descendants
  * with {@link useLexicalComposerContext}.
  *
- * For new editors built with the extension API, consider
+ * `LexicalComposer` uses the legacy plugin pattern and does not support the
+ * extension API. To build an editor from extensions, use
  * {@link LexicalExtensionComposer} instead; see the
  * [React extensions guide](https://lexical.dev/docs/extensions/react).
  *

@@ -18,8 +18,10 @@ import useLayoutEffect from './useLayoutEffect';
 /**
  * Props for the {@link ContentEditableElement} component. In addition to an
  * `editor`, it accepts the standard `<div>` HTML attributes (except
- * `placeholder`) plus camelCase `aria*` props that are applied to the editable
- * element.
+ * `placeholder`), including the hyphenated `aria-*` attributes, which are the
+ * preferred way to set ARIA properties. The camelCase `aria*` props (such as
+ * `ariaLabel`) are also accepted but are retained only for backwards
+ * compatibility.
  */
 export type ContentEditableElementProps = {
   editor: LexicalEditor;

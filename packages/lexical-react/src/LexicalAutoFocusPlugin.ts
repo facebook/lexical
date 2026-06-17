@@ -18,6 +18,9 @@ type Props = {
  * to control whether the selection is placed at the start (`'rootStart'`) or
  * end (`'rootEnd'`) of the root when there is no existing selection to restore.
  *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link AutoFocusExtension} instead.
+ *
  * @returns `null`, this plugin renders no DOM of its own.
  */
 export function AutoFocusPlugin({defaultSelection}: Props): null {

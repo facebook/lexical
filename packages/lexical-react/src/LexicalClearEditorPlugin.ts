@@ -22,6 +22,9 @@ type Props = Readonly<{
  * resets the selection. Provide `onClear` to run your own logic in place of the
  * default clearing behavior.
  *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link ClearEditorExtension} instead.
+ *
  * @returns `null`, this plugin renders no DOM of its own.
  */
 export function ClearEditorPlugin({onClear}: Props): JSX.Element | null {

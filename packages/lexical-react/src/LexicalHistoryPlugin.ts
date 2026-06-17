@@ -22,6 +22,9 @@ export type {HistoryState};
  * consecutive changes are merged into a single history entry, or
  * `externalHistoryState` to share a history stack across editors.
  *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link HistoryExtension} instead.
+ *
  * @returns `null`, this plugin renders no DOM of its own.
  */
 export function HistoryPlugin({

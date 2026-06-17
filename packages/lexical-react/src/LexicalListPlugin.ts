@@ -39,6 +39,9 @@ export interface ListPluginProps {
  * and transforms that create and maintain {@link ListNode} and
  * {@link ListItemNode} structures. The editor must have both nodes registered.
  *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link ListExtension} instead.
+ *
  * @returns `null`, this plugin renders no DOM of its own.
  */
 export function ListPlugin({

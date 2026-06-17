@@ -54,6 +54,9 @@ export interface TablePluginProps {
  * A plugin to enable all of the features of Lexical's TableNode.
  *
  * @param props - See type for documentation
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link TableExtension} instead.
+ *
  * @returns An element to render in your LexicalComposer
  */
 export function TablePlugin({

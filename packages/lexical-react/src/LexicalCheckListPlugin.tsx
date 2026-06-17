@@ -16,6 +16,9 @@ import {useEffect} from 'react';
  * `disableTakeFocusOnClick` to stop the editor from taking focus when a
  * checkbox is clicked.
  *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link CheckListExtension} instead.
+ *
  * @returns `null`, this plugin renders no DOM of its own.
  */
 export function CheckListPlugin({

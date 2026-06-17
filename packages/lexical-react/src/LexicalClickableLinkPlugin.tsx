@@ -16,6 +16,9 @@ import {useEffect} from 'react';
  * clicked (opening it in a new tab when `newTab` is `true`, the default). Set
  * `disabled` to temporarily turn the behavior off, for example while editing.
  *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link ClickableLinkExtension} instead.
+ *
  * @returns `null`, this plugin renders no DOM of its own.
  */
 export function ClickableLinkPlugin({

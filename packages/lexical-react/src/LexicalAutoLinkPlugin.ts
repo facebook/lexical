@@ -52,6 +52,9 @@ function useAutoLink(
  * particular ancestor nodes. The editor must have the {@link AutoLinkNode}
  * registered.
  *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link AutoLinkExtension} instead.
+ *
  * @returns `null`, this plugin renders no DOM of its own.
  */
 export function AutoLinkPlugin({

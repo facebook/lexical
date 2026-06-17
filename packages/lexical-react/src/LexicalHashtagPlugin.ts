@@ -17,6 +17,9 @@ import {useEffect} from 'react';
  * into {@link HashtagNode}s. The editor must have the {@link HashtagNode}
  * registered.
  *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link HashtagExtension} instead.
+ *
  * @returns `null`, this plugin renders no DOM of its own.
  */
 export function HashtagPlugin(): JSX.Element | null {

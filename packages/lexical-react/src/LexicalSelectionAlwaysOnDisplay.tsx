@@ -20,6 +20,9 @@ type Props = Readonly<{
  * outside the editor. Pass `onReposition` to be notified when the highlighted
  * range elements are recomputed.
  *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link SelectionAlwaysOnDisplayExtension} instead.
+ *
  * @returns `null`, this plugin renders no DOM of its own.
  */
 export function SelectionAlwaysOnDisplay({onReposition}: Props): null {

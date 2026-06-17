@@ -338,6 +338,7 @@ export {
   getRegisteredNode,
   getRegisteredNodeOrThrow,
   getRegisteredSubtypeMap,
+  getRootOwnerDocument,
   getStaticNodeConfig,
   getTextDirection,
   INTERNAL_$isBlock,

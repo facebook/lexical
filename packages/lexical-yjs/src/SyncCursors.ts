@@ -23,6 +23,7 @@ import {
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
+  getRootOwnerDocument,
   setDOMStyleObject,
 } from 'lexical';
 import {
@@ -79,9 +80,7 @@ const SUPPORTS_CSS_HIGHLIGHTS =
  */
 function getCursorHighlightSheet(binding: BaseBinding): CSSStyleSheet {
   if (binding.cursorHighlightSheet === null) {
-    const rootElement = binding.editor.getRootElement();
-    const ownerDocument =
-      rootElement !== null ? rootElement.ownerDocument : document;
+    const ownerDocument = getRootOwnerDocument(binding.editor.getRootElement());
     const view = ownerDocument.defaultView || window;
     const sheet = new view.CSSStyleSheet();
     ownerDocument.adoptedStyleSheets = [

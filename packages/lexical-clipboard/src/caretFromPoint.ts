@@ -6,7 +6,7 @@
  *
  */
 
-import {getDOMShadowRoots} from 'lexical';
+import {getDOMShadowRoots, getRootOwnerDocument} from 'lexical';
 
 /** @internal */
 export function caretFromPoint(
@@ -24,7 +24,7 @@ export function caretFromPoint(
   // ignore it and return a retargeted result, so verify the offset node
   // actually landed inside one of the requested shadow roots before trusting
   // it; otherwise fall through to the legacy paths below.
-  const doc = (rootElement && rootElement.ownerDocument) || document;
+  const doc = getRootOwnerDocument(rootElement);
   const shadowRoots = rootElement ? getDOMShadowRoots(rootElement) : [];
   if (
     shadowRoots.length > 0 &&

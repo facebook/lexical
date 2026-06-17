@@ -1261,6 +1261,7 @@ declare export function querySelectorAllDeep(
   selector: string,
 ): Generator<Element, void, void>;
 declare export function getDOMShadowRoots(node: Node): ShadowRoot[];
+declare export function getRootOwnerDocument(rootElement: HTMLElement | null): Document;
 declare export function getComposedStaticRange(
   domSelection: Selection,
   rootElement: HTMLElement | null,

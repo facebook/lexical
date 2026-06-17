@@ -24,6 +24,7 @@ import {
   DROP_COMMAND,
   getActiveElement,
   getActiveElementDeep,
+  getRootOwnerDocument,
   IS_FIREFOX,
   LexicalEditor,
 } from 'lexical';
@@ -493,7 +494,7 @@ function useDraggableBlockMenu(
           // into the light DOM or inside a shadow root (where
           // document.activeElement only reports the shadow host).
           const activeElement = getActiveElementDeep(
-            rootElement ? rootElement.ownerDocument : document,
+            getRootOwnerDocument(rootElement),
           );
           if (
             rootElement &&

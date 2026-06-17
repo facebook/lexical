@@ -2029,6 +2029,20 @@ export function* querySelectorAllDeep(
   }
 }
 
+/**
+ * Resolves the document that hosts an editor's root element, falling
+ * back to the global `document` when the editor isn't mounted. Use this
+ * over `editor.getRootElement()?.ownerDocument ?? document` so iframe /
+ * shadow-mounted editors land in the right realm.
+ *
+ * @internal
+ */
+export function getRootOwnerDocument(
+  rootElement: HTMLElement | null,
+): Document {
+  return rootElement !== null ? rootElement.ownerDocument : document;
+}
+
 export function getDOMShadowRoots(node: Node): ShadowRoot[] {
   const shadowRoots: ShadowRoot[] = [];
   let current: Node = node;

@@ -41,6 +41,7 @@ import {
   getDOMSelection,
   getDOMSelectionPoints,
   getDOMSelectionRangeAndPoints,
+  getRootOwnerDocument,
   KEY_ESCAPE_COMMAND,
   LexicalEditor,
   RangeSelection,
@@ -168,7 +169,7 @@ function FloatingLinkEditor({
     // getActiveElementDeep rather than document.activeElement, which reports
     // the shadow host when the editor (or the link input) is in a shadow root.
     const activeElement = getActiveElementDeep(
-      rootElement ? rootElement.ownerDocument : document,
+      getRootOwnerDocument(rootElement),
     );
 
     if (selection !== null && rootElement !== null && editor.isEditable()) {

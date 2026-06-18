@@ -801,12 +801,9 @@ export default function ToolbarPlugin({
   }, [editor, $updateToolbar, setActiveEditor]);
 
   useEffect(() => {
-    activeEditor.getEditorState().read(
-      () => {
-        $updateToolbar();
-      },
-      {editor: activeEditor},
-    );
+    activeEditor.read('latest', () => {
+      $updateToolbar();
+    });
   }, [activeEditor, $updateToolbar]);
 
   useEffect(() => {

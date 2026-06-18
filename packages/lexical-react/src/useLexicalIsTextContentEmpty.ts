@@ -25,9 +25,10 @@ export function useLexicalIsTextContentEmpty(
   trim?: boolean,
 ): boolean {
   const [isEmpty, setIsEmpty] = useState(
-    editor
-      .getEditorState()
-      .read($isRootTextContentEmptyCurry(editor.isComposing(), trim)),
+    editor.read(
+      'latest',
+      $isRootTextContentEmptyCurry(editor.isComposing(), trim),
+    ),
   );
 
   useLayoutEffect(() => {

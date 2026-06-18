@@ -89,7 +89,7 @@ export const IMEExtension = /* @__PURE__ */ defineExtension({
         composingTextNode.value = null;
         return;
       }
-      composingTextNode.value = editor.getEditorState().read(() => {
+      composingTextNode.value = editor.read('latest', () => {
         const node = $getNodeByKey(key);
         return $isTextNode(node) ? node : null;
       });

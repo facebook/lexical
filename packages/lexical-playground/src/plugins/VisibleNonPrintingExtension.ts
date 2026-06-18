@@ -211,9 +211,9 @@ export const VisibleNonPrintingExtension = /* @__PURE__ */ defineExtension({
         }
         nextRoot.setAttribute(VISIBLE_NON_PRINTING_ACTIVE_ATTR, 'true');
         const syncEmptyRootAttr = () => {
-          const showPlaceholder = editor
-            .getEditorState()
-            .read(() => $canShowPlaceholder(editor.isComposing()));
+          const showPlaceholder = editor.read('latest', () =>
+            $canShowPlaceholder(editor.isComposing()),
+          );
           nextRoot.toggleAttribute(
             VISIBLE_NON_PRINTING_EMPTY_ROOT_ATTR,
             showPlaceholder,

@@ -83,7 +83,7 @@ function tryToPositionRange(
 
 function getQueryTextForSearch(editor: LexicalEditor): string | null {
   let text = null;
-  editor.getEditorState().read(() => {
+  editor.read('latest', () => {
     const selection = $getSelection();
     if (!$isRangeSelection(selection)) {
       return;
@@ -100,7 +100,7 @@ function isSelectionOnEntityBoundary(
   if (offset !== 0) {
     return false;
   }
-  return editor.getEditorState().read(() => {
+  return editor.read('latest', () => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
@@ -303,7 +303,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
 
   useEffect(() => {
     const updateListener = () => {
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         // Check if editor is in read-only mode
         if (!editor.isEditable()) {
           closeTypeahead();

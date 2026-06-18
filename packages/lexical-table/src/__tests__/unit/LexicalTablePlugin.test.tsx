@@ -53,7 +53,7 @@ describe('LexicalTablePlugin', () => {
       {discrete: true},
     );
 
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const root = $getRoot();
       const table = root.getFirstChild();
 
@@ -95,7 +95,7 @@ describe('LexicalTablePlugin', () => {
       {discrete: true},
     );
 
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const root = $getRoot();
       const table = root.getFirstChild();
 

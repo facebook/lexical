@@ -189,7 +189,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
 
   const checkIfLinkNodeIsEmbeddable = useCallback(
     async (key: NodeKey) => {
-      const url = editor.getEditorState().read(function () {
+      const url = editor.read('latest', function () {
         const linkNode = $getNodeByKey(key);
         if ($isLinkNode(linkNode)) {
           return linkNode.getURL();
@@ -257,7 +257,7 @@ export function LexicalAutoEmbedPlugin<TEmbedConfig extends EmbedConfig>({
   const embedLinkViaActiveEmbedConfig = useCallback(
     async function () {
       if (activeEmbedConfig != null && nodeKey != null) {
-        const linkNode = editor.getEditorState().read(() => {
+        const linkNode = editor.read('latest', () => {
           const node = $getNodeByKey(nodeKey);
           if ($isLinkNode(node)) {
             return node;

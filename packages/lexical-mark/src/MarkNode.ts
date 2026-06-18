@@ -153,7 +153,7 @@ export class MarkNode extends ElementNode {
     return false;
   }
 
-  canBeEmpty(): boolean {
+  canBeEmpty(): false {
     return false;
   }
 

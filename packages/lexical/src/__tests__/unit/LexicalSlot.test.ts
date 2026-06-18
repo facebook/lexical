@@ -3335,9 +3335,10 @@ describe('named-slots: hydrate-time normalize (#8712)', () => {
   // children violate `getTopLevelElement`'s invariant
   // (`Children of root nodes must be elements or decorators`). Any
   // subsequent block-ancestor walk throws — SELECT_ALL, Enter, indent,
-  // etc. The hydrate-time follow-up runs `$normalizeShadowRootChildrenInTree`
-  // after every `setEditorState`, wrapping any raw text the parsed state
-  // carried as a direct shadow-root slot child.
+  // etc. The hydrate-time follow-up dirty-marks slot hosts so the
+  // existing dirty-node transform cycle picks them up and `ElementNode`'s
+  // `static transform()` runs `$normalizeShadowRootChildren`, wrapping any
+  // raw text the parsed state carried as a direct shadow-root slot child.
   test('a slot value with a raw TextNode child gets a paragraph wrap on setEditorState', () => {
     using editor = createSlotEditor();
 

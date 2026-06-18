@@ -41,7 +41,6 @@ import {GenMap} from './LexicalGenMap';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
-import {$normalizeShadowRootChildrenInTree} from './LexicalSelection';
 import {$isSlotHost} from './LexicalSlot';
 import {
   $commitPendingUpdates,
@@ -1688,21 +1687,21 @@ export class LexicalEditor {
     // children violate the `Children of root nodes must be elements or
     // decorators` invariant set by `getTopLevelElement`. In-editor mutation
     // paths still fail-fast on the invariant — this only catches shapes
-    // that were parsed in from outside. Tagged with HISTORY_MERGE_TAG so
-    // the normalize folds into the setEditorState history entry instead of
-    // creating a separate undo step.
-    // Cost: ~1.4μs per node, linear (measured 0.3ms @ 207 nodes,
-    // 2.9ms @ 2007 nodes). Runs on every setEditorState once _slotsUsed
-    // latches — URL load, undo/redo, SSR hydration, test setup. Reactive
-    // listeners fire twice per setEditorState (the input commit + this
-    // follow-up); for large editors with collab adapters that swap state
-    // on every remote sync, a tighter gate (e.g. flagging parsed-from-JSON
-    // states only, or skipping when the input is a clone of the current
-    // state) is the natural next step.
+    // that were parsed in from outside.
+    //
+    // Drives the existing dirty-node transform cycle: dirty-mark the slot
+    // hosts so `ElementNode.static transform()` (which calls
+    // `$normalizeShadowRootChildren`) picks them up. Tagged with
+    // HISTORY_MERGE_TAG so the normalize folds into the setEditorState
+    // history entry instead of creating a separate undo step.
     if (!this._updating && this._slotsUsed) {
       this.update(
         () => {
-          $normalizeShadowRootChildrenInTree($getRoot());
+          for (const node of this._editorState._nodeMap.values()) {
+            if ($isElementNode(node) && node.isShadowRoot()) {
+              node.getWritable();
+            }
+          }
         },
         {discrete: true, tag: HISTORY_MERGE_TAG},
       );

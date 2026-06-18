@@ -4109,56 +4109,28 @@ function $modifySelectionAroundDecoratorsAndBlocks(
 }
 
 /**
- * Walk a subtree and wrap any shadow-root child that is neither an
- * ElementNode nor a DecoratorNode in a paragraph, so the slot-frame
- * invariant set by `getTopLevelElement` continues to hold for external
- * inputs (URL doc payloads, imported JSON, paste round-trips) that may
- * carry shapes the in-editor mutation paths can no longer produce.
+ * Wrap any shadow-root child of `node` that is neither an ElementNode nor a
+ * DecoratorNode in a paragraph, so the slot-frame invariant set by
+ * `getTopLevelElement` continues to hold for external inputs (URL doc
+ * payloads, imported JSON, paste round-trips) that may carry shapes the
+ * in-editor mutation paths can no longer produce.
  *
- * The in-editor mutation paths (insertText, insertNodes, append/splice via
- * the public API) are still guarded by the invariant — this helper only
- * runs on external entry points like `setEditorState` where the parsed
- * state can carry pre-existing invalid shapes.
+ * Single-node helper: runs as the static `transform()` on ElementNode so
+ * the existing dirty-node transform cycle drives the normalization. The
+ * in-editor mutation paths (insertText, insertNodes, append/splice via the
+ * public API) still fail-fast on the invariant.
  *
  * @internal
  */
-export function $normalizeShadowRootChildrenInTree(node: LexicalNode): void {
-  // Both ElementNode and DecoratorNode can host slots: DecoratorNode is the
-  // typical "atomic" host shape (PullQuote, etc.) where the host itself is
-  // leaf in the child-tree sense but still carries a `__slots` map whose
-  // values are normalized below. Leaf nodes (TextNode etc.) are neither —
-  // they short-circuit here.
-  if (!$isElementNode(node) && !$isDecoratorNode(node)) {
+export function $normalizeShadowRootChildren(node: ElementNode): void {
+  if (!node.isShadowRoot()) {
     return;
   }
-  if ($isElementNode(node)) {
-    if (node.isShadowRoot()) {
-      for (const child of node.getChildren()) {
-        if (!$isElementNode(child) && !$isDecoratorNode(child)) {
-          const para = $createParagraphNode();
-          child.insertBefore(para);
-          para.append(child);
-        }
-      }
-    }
-    // Walk normal children (only ElementNode has them — DecoratorNode is leaf
-    // in the child-tree sense, even when it hosts slots).
-    for (const child of node.getChildren()) {
-      $normalizeShadowRootChildrenInTree(child);
-    }
-  }
-  // Walk slot values too — they are kept in `__slots` and are not reachable
-  // through `getChildren()`. Slot values are themselves shadow roots in most
-  // host shapes, so this is where the bulk of the normalization actually
-  // happens. Read the slot map here (after the children walk above) so the
-  // leaf-element short-circuit doesn't pay for an empty map lookup.
-  const slotMap = $getSlotMap(node);
-  if (slotMap.size > 0) {
-    for (const slotKey of slotMap.values()) {
-      const slotValue = $getNodeByKey<LexicalNode>(slotKey);
-      if (slotValue !== null) {
-        $normalizeShadowRootChildrenInTree(slotValue);
-      }
+  for (const child of node.getChildren()) {
+    if (!$isElementNode(child) && !$isDecoratorNode(child)) {
+      const para = $createParagraphNode();
+      child.insertBefore(para);
+      para.append(child);
     }
   }
 }

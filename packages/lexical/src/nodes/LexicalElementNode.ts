@@ -41,6 +41,7 @@ import {
   $getSelection,
   $internalMakeRangeSelection,
   $isRangeSelection,
+  $normalizeShadowRootChildren,
   moveSelectionPointToSibling,
 } from '../LexicalSelection';
 import {
@@ -946,6 +947,25 @@ export class ElementNode
 
       currentDOM = currentDOM.nextSibling;
     }
+  }
+
+  /**
+   * Built-in normalize for shadow-root ElementNodes: wraps any direct child
+   * that is neither an ElementNode nor a DecoratorNode in a paragraph, so
+   * the slot-frame invariant set by `getTopLevelElement` continues to hold
+   * for external inputs (URL doc payloads, imported JSON, paste round-trips)
+   * that may carry shapes the in-editor mutation paths can no longer
+   * produce. In-editor mutation paths still fail-fast on the invariant.
+   *
+   * Runs as a static transform so the existing dirty-node transform cycle
+   * drives it — typing paths cover their own dirty bookkeeping, hydrate
+   * paths (`setEditorState`) dirty-mark slot hosts so the cycle picks them
+   * up.
+   *
+   * Experimental — use at your own risk.
+   */
+  static transform(): (node: LexicalNode) => void {
+    return $normalizeShadowRootChildren as (node: LexicalNode) => void;
   }
 }
 

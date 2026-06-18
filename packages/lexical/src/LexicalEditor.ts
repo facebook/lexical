@@ -1653,35 +1653,38 @@ export class LexicalEditor {
     this._compositionKey = null;
     this._slotsUsed = this._slotsUsed || editorState._slotsUsed;
 
-    if (tag != null) {
-      this._updateTags.add(tag);
-    }
-
     // Only commit pending updates if not already in an editor.update
     // (e.g. dispatchCommand) otherwise this will cause a second commit
     // with an already read-only state and selection
-    updateEditorSync(this, () => {
-      if (editorState._parsed) {
-        for (const [key, node] of writableEditorState._nodeMap.entries()) {
-          // Mark all nodes as dirty with a freshly parsed EditorState
-          // hydrate-time normalize: external inputs (URL doc payloads, imported
-          // JSON, paste round-trips) may carry shadow-root slot frames whose
-          // children violate the `Children of root nodes must be elements or
-          // decorators` invariant set by `getTopLevelElement`. In-editor mutation
-          // paths still fail-fast on the invariant — this only catches shapes
-          // that were parsed in from outside.
-          //
-          // Drives the existing dirty-node transform cycle: dirty-mark the slot
-          // hosts so `ElementNode`'s `$config` `$transform` (which calls
-          // `$normalizeShadowRootChildren`) picks them up.
-          if ($isElementNode(node)) {
-            this._dirtyElements.set(key, true);
-          } else {
-            this._dirtyLeaves.add(key);
+    updateEditorSync(
+      this,
+      () => {
+        if (tag) {
+          this._updateTags.add(tag);
+        }
+        if (editorState._parsed) {
+          for (const [key, node] of writableEditorState._nodeMap.entries()) {
+            // Mark all nodes as dirty with a freshly parsed EditorState
+            // hydrate-time normalize: external inputs (URL doc payloads, imported
+            // JSON, paste round-trips) may carry shadow-root slot frames whose
+            // children violate the `Children of root nodes must be elements or
+            // decorators` invariant set by `getTopLevelElement`. In-editor mutation
+            // paths still fail-fast on the invariant — this only catches shapes
+            // that were parsed in from outside.
+            //
+            // Drives the existing dirty-node transform cycle: dirty-mark the slot
+            // hosts so `ElementNode`'s `$config` `$transform` (which calls
+            // `$normalizeShadowRootChildren`) picks them up.
+            if ($isElementNode(node)) {
+              this._dirtyElements.set(key, true);
+            } else {
+              this._dirtyLeaves.add(key);
+            }
           }
         }
-      }
-    });
+      },
+      {discrete: this._updating ? undefined : true},
+    );
   }
 
   /**

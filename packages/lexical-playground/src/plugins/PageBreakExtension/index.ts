@@ -35,7 +35,7 @@ const PageBreakImportRule = /* @__PURE__ */ defineImportRule({
 // by the generic `<figure>` rule from ImagesExtension.
 const PageBreakLegacyImportRule = /* @__PURE__ */ defineImportRule({
   $import: () => [$createPageBreakNode()],
-  match: sel.tag('figure').attr('type', PageBreakNode.getType()),
+  match: sel.tag('figure').attr('type', 'page-break'),
   name: '@lexical/playground/page-break-legacy',
 });
 

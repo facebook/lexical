@@ -487,8 +487,16 @@ export function $setSlot<T extends LexicalNode & SlotHostNode>(
   writableNode.__slotHost = writableSelf.__key;
   slots.set(name, writableNode.__key);
   $canonicalizeSlotOrder(writableSelf);
-  $getEditor()._slotsUsed = true;
+  $setSlotsUsed();
   return writableSelf;
+}
+
+function $setSlotsUsed() {
+  const editor = $getEditor();
+  editor._slotsUsed = true;
+  if (editor._pendingEditorState) {
+    editor._pendingEditorState._slotsUsed = true;
+  }
 }
 
 /**

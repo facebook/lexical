@@ -1,6 +1,6 @@
 {
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "js/ts.validate.enabled": false,
+  "js/ts.validate.enabled": true,
   "[javascript][typescript]": {
     "editor.codeActionsOnSave": [
       // Run ESLint fixers _before_ prettier to ensure the user doesn't need to do multiple saves

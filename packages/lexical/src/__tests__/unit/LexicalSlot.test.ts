@@ -3400,7 +3400,10 @@ describe('named-slots: hydrate-time normalize (#8712)', () => {
         $getRoot().getFirstChild(),
         $isParagraphNode,
       );
-      const slot = $assertNodeType($getSlot(host, 'title'), $isElementNode);
+      const slot = $assertNodeType(
+        $getSlot(host, 'title'),
+        $isTestShadowRootNode,
+      );
       const children = slot.getChildren();
       // Post-fix: the raw text is wrapped in a paragraph (the slot's only
       // child is now a paragraph that holds the original text). Pre-fix

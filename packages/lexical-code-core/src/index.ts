@@ -8,6 +8,11 @@
 
 export {CodeExtension, CodeImportExtension} from './CodeExtension';
 export {
+  type CodeGutterConfig,
+  CodeGutterExtension,
+  registerCodeGutter,
+} from './CodeGutter';
+export {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
   CodeHighlightNode,

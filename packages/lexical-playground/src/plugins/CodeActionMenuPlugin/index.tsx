@@ -24,6 +24,7 @@ import {createPortal} from 'react-dom';
 
 import {CopyButton} from './components/CopyButton';
 import {PrettierButton} from './components/PrettierButton';
+import {WordWrapButton} from './components/WordWrapButton';
 import {canBePrettier} from './formatCodeWithPrettier';
 import {useDebounce} from './utils';
 
@@ -154,6 +155,7 @@ function CodeActionMenuContainer({
         <div className="code-action-menu-container" style={{...position}}>
           <div className="code-highlight-language">{codeFriendlyName}</div>
           <CopyButton editor={editor} getCodeDOMNode={getCodeDOMNode} />
+          <WordWrapButton editor={editor} getCodeDOMNode={getCodeDOMNode} />
           {canBePrettier(normalizedLang) ? (
             <PrettierButton
               editor={editor}

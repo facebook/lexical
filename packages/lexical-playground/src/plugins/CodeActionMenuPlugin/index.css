@@ -15,6 +15,8 @@
   align-items: center;
   flex-direction: row;
   user-select: none;
+  background: #ffffff;
+  padding-left: 5px;
 }
 
 .code-action-menu-container .code-highlight-language {

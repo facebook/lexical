@@ -3641,7 +3641,22 @@ export function $updateDOMSelection(
       } else {
         selectionRect = selectionTarget.getBoundingClientRect();
       }
-      scrollIntoViewIfNeeded(editor, selectionRect, rootElement);
+      const selectionElement =
+        selectionTarget instanceof HTMLElement
+          ? selectionTarget
+          : selectionTarget instanceof Text
+            ? selectionTarget.parentElement
+            : selectionTarget instanceof Range
+              ? selectionTarget.startContainer instanceof HTMLElement
+                ? selectionTarget.startContainer
+                : selectionTarget.startContainer.parentElement
+              : null;
+      scrollIntoViewIfNeeded(
+        editor,
+        selectionRect,
+        rootElement,
+        selectionElement,
+      );
     }
   }
 

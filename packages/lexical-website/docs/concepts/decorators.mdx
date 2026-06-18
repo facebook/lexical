@@ -106,6 +106,14 @@ The command can then be dispatched from a toolbar, menu, or any other UI:
 editor.dispatchCommand(INSERT_VIDEO_COMMAND, videoID);
 ```
 
+For newer code, prefer putting the node registration and the behavior that
+goes with it in an [extension](/docs/extensions/intro) instead of spreading it
+across an editor config and separate plugins. React applications can mount that
+root extension with
+[`LexicalExtensionComposer`](/docs/api/modules/lexical_react_LexicalExtensionComposer#lexicalextensioncomposer).
+This keeps node registration, commands, transforms, mutation listeners, and
+framework decorators in one composable unit.
+
 ## State and serialization
 
 Store only serializable data on the node or in [NodeState](/docs/concepts/node-state).
@@ -147,10 +155,18 @@ export function $createVideoNode(videoID: string): VideoNode {
 }
 ```
 
+NodeState can hold richer serializable shapes as long as the state config
+knows how to parse them. Use a
+[`StateValueConfig`](/docs/api/modules/lexical#statevalueconfig) when a
+decorator needs structured data such as ids, dimensions, captions, or embed
+metadata.
+
 If the node needs to survive copy and paste outside Lexical, implement
-`exportDOM()` and `importDOM()` in addition to JSON serialization. For example,
-a video node may export an `iframe` or a `div` with a data attribute that your
-DOM import code can recognize later.
+`exportDOM()` in addition to JSON serialization. For importing HTML, prefer
+[`DOMImportExtension`](/docs/serialization/dom-import) for new code. Static
+`importDOM()` still works, but it shares the same import path as the extension
+pipeline and is expected to be deprecated eventually, so avoid mixing both
+approaches for the same import behavior.
 
 ## Rendering model
 
@@ -168,3 +184,19 @@ Keep editor data and UI state separate. The node should store the content that
 belongs in the editor state, while transient UI details such as hover state,
 loading state, or local component state should live inside the decorated
 component.
+
+Decorators do not have to be tied to a UI framework. A `DecoratorNode` can
+return `null` from `decorate()` and do its visible work in `createDOM()` and
+`updateDOM()`, or delegate behavior to extension hooks such as
+[`DOMRenderExtension`](/docs/serialization/dom-render) or a mutation listener.
+`HorizontalRuleNode` from `@lexical/extension` is an example of a decorator
+node whose behavior can be managed without rendering a React component from
+`decorate()`.
+
+Decorator nodes also combine well with
+[named slots](https://lexical.dev/docs/concepts/named-slots) when surrounding
+application UI needs to be mounted in predictable places around the editor. For
+advanced DOM ownership, `DOMSlot` and `ElementNode` patterns let an extension
+place arbitrary DOM inside or around lexical content while still letting
+Lexical manage the actual editor children. Use these patterns only when a plain
+`ElementNode`, framework decorator, or portal would not give enough control.

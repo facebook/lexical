@@ -157,7 +157,7 @@ export class MarkNode extends ElementNode {
     return false;
   }
 
-  isInline(): boolean {
+  isInline(): true {
     return true;
   }
 

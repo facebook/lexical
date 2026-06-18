@@ -8,7 +8,7 @@
 
 /* @import url('assets/styles/variables.css'); */
 
-[type='page-break'] {
+hr[data-lexical-page-break] {
   position: relative;
   display: block;
   width: calc(100% + var(--editor-input-padding, 28px) * 2);
@@ -23,7 +23,7 @@
   background-color: var(--editor-color-secondary, #eeeeee);
 }
 
-[type='page-break']::before {
+hr[data-lexical-page-break]::before {
   content: '';
 
   position: absolute;
@@ -38,7 +38,7 @@
   height: 16px;
 }
 
-[type='page-break']::after {
+hr[data-lexical-page-break]::after {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -55,16 +55,16 @@
   font-weight: 600;
 }
 
-.selected[type='page-break'] {
+hr[data-lexical-page-break].selected {
   border-color: var(--editor-color-primary, #4766cb);
 }
 
-.selected[type='page-break']::before {
+hr[data-lexical-page-break].selected::before {
   opacity: 1;
 }
 
 @media print {
-  [type='page-break'] {
+  hr[data-lexical-page-break] {
     visibility: hidden;
   }
 }

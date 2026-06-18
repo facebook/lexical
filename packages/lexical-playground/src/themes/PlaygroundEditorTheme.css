@@ -725,7 +725,7 @@
       var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom)
     );
   }
-  .PlaygroundEditorTheme__page + [type='page-break'] {
+  .PlaygroundEditorTheme__page + hr[data-lexical-page-break] {
     display: none;
   }
 }

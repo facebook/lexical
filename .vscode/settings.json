@@ -1,11 +1,12 @@
 {
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "javascript.validate.enable": false,
+  "js/ts.validate.enabled": false,
   "[javascript][typescript]": {
     "editor.codeActionsOnSave": [
       // Run ESLint fixers _before_ prettier to ensure the user doesn't need to do multiple saves
       "source.fixAll.eslint",
       "source.fixAll.format"
     ]
-  }
+  },
+  "js/ts.tsdk.path": "node_modules/typescript/lib"
 }

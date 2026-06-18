@@ -4107,30 +4107,3 @@ function $modifySelectionAroundDecoratorsAndBlocks(
   $setPointFromCaret(selection.focus, focus);
   return checkForBlock || !isLineBoundary;
 }
-
-/**
- * Wrap any shadow-root child of `node` that is neither an ElementNode nor a
- * DecoratorNode in a paragraph, so the slot-frame invariant set by
- * `getTopLevelElement` continues to hold for external inputs (URL doc
- * payloads, imported JSON, paste round-trips) that may carry shapes the
- * in-editor mutation paths can no longer produce.
- *
- * Single-node helper: runs as the static `transform()` on ElementNode so
- * the existing dirty-node transform cycle drives the normalization. The
- * in-editor mutation paths (insertText, insertNodes, append/splice via the
- * public API) still fail-fast on the invariant.
- *
- * @internal
- */
-export function $normalizeShadowRootChildren(node: ElementNode): void {
-  if (!node.isShadowRoot()) {
-    return;
-  }
-  for (const child of node.getChildren()) {
-    if (!$isElementNode(child) && !$isDecoratorNode(child)) {
-      const para = $createParagraphNode();
-      child.insertBefore(para);
-      para.append(child);
-    }
-  }
-}

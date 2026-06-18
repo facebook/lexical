@@ -3337,7 +3337,7 @@ describe('named-slots: hydrate-time normalize (#8712)', () => {
   // subsequent block-ancestor walk throws — SELECT_ALL, Enter, indent,
   // etc. The hydrate-time follow-up dirty-marks slot hosts so the
   // existing dirty-node transform cycle picks them up and `ElementNode`'s
-  // `static transform()` runs `$normalizeShadowRootChildren`, wrapping any
+  // `$transform` runs `$normalizeShadowRootChildren`, wrapping any
   // raw text the parsed state carried as a direct shadow-root slot child.
   test('a slot value with a raw TextNode child gets a paragraph wrap on setEditorState', () => {
     using editor = createSlotEditor();
@@ -3430,7 +3430,7 @@ describe('named-slots: typing-path paragraph wrap (#8712)', () => {
       () => {
         const host = $createParagraphNode();
         const slot = $createTestShadowRootNode();
-        slot.append($createTestDecoratorNode());
+        slot.append($createTestDecoratorNode().setIsInline(false));
         $getRoot().append(host);
         $setSlot(host, 'title', slot);
         slotKey = slot.getKey();
@@ -3483,7 +3483,7 @@ describe('named-slots: insertNodes redirect termination (#8712)', () => {
       () => {
         const host = $createParagraphNode();
         const slot = $createTestShadowRootNode();
-        slot.append($createTestDecoratorNode());
+        slot.append($createTestDecoratorNode().setIsInline(false));
         $getRoot().append(host);
         $setSlot(host, 'title', slot);
         hostKey = host.getKey();

@@ -27,7 +27,7 @@ import {
   invariant,
   TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 class IsolatedTestDecoratorNode extends TestDecoratorNode {
   $config() {
@@ -104,10 +104,20 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
       editor.read(() => {
         const children = $getRoot().getChildren();
         expect(children).toHaveLength(3);
-        invariant(
-          children[0] instanceof TestDecoratorNode,
-          'Expected leading TestDecoratorNode',
-        );
+        if (inline) {
+          assert(
+            $isParagraphNode(children[0]),
+            'Expected leading ParagraphNode wrapping inline TestDecoratorNode',
+          );
+          expect(
+            children[0].getChildren().map(n => n instanceof TestDecoratorNode),
+          ).toEqual([true]);
+        } else {
+          invariant(
+            children[0] instanceof TestDecoratorNode,
+            'Expected leading TestDecoratorNode',
+          );
+        }
         const paragraph = children[1];
         invariant(
           $isParagraphNode(paragraph),

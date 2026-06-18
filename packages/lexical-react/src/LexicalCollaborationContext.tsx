@@ -11,6 +11,11 @@ import type {Doc} from 'yjs';
 import devInvariant from '@lexical/internal/devInvariant';
 import {createContext, useContext, useMemo} from 'react';
 
+/**
+ * The value stored in the {@link CollaborationContext}: the local user's
+ * display `name` and cursor `color`, whether collaboration is currently active,
+ * and the map of Yjs documents shared by the editors under this provider.
+ */
 export type CollaborationContextType = {
   color: string;
   isCollabActive: boolean;
@@ -39,6 +44,11 @@ const entries = [
 
 const randomEntry = entries[Math.floor(Math.random() * entries.length)];
 
+/**
+ * The React context that holds the shared {@link CollaborationContextType} for
+ * collaborative editors. Provide it with {@link LexicalCollaboration} and read
+ * it with {@link useCollaborationContext}.
+ */
 export const CollaborationContext =
   createContext<CollaborationContextType | null>(null);
 
@@ -55,6 +65,14 @@ function newContext() {
 // a shared context across editors is likely to lead to bugs.
 const UNSAFE_GLOBAL_CONTEXT = newContext();
 
+/**
+ * A provider component that creates a fresh {@link CollaborationContextType}
+ * and makes it available to descendant editors via {@link CollaborationContext}.
+ * Wrap a group of editors that should share collaboration state in this
+ * component.
+ *
+ * @returns A context provider wrapping `children`.
+ */
 export function LexicalCollaboration({children}: {children: React.ReactNode}) {
   const collabContext = useMemo(() => newContext(), []);
 
@@ -65,6 +83,13 @@ export function LexicalCollaboration({children}: {children: React.ReactNode}) {
   );
 }
 
+/**
+ * Reads the current {@link CollaborationContextType} from the nearest
+ * {@link LexicalCollaboration} provider. Optionally pass `username` and `color`
+ * to set the local user's display name and cursor color.
+ *
+ * @returns The active collaboration context.
+ */
 export function useCollaborationContext(
   username?: string,
   color?: string,

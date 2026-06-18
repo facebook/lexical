@@ -8,6 +8,11 @@
 import type {LexicalComposerContextWithEditor} from '@lexical/react/LexicalComposerContext';
 import type {JSX} from 'react';
 
+/**
+ * Props for an `EditorChildrenComponent` (see {@link ReactConfig}): the composer
+ * `context`, the `contentEditable` element to render (or `null`), and any
+ * additional `children`.
+ */
 export interface EditorChildrenComponentProps {
   context: LexicalComposerContextWithEditor;
   contentEditable: null | JSX.Element;
@@ -18,6 +23,11 @@ export type EditorChildrenComponentType = (
   props: EditorChildrenComponentProps,
 ) => JSX.Element | null;
 
+/**
+ * Props passed to a decorator component registered through {@link ReactConfig}:
+ * the composer `context` (the `[editor, context]` tuple) for the editor the
+ * decorator is rendered in.
+ */
 export interface DecoratorComponentProps {
   context: LexicalComposerContextWithEditor;
 }
@@ -49,6 +59,12 @@ export type EditorComponentType = (
   props: Partial<EditorComponentProps>,
 ) => JSX.Element;
 
+/**
+ * Configuration for the {@link ReactExtension}, controlling how the editor is
+ * rendered in React: the root `contentEditable` element, the `ErrorBoundary`
+ * used for decorators, the `EditorChildrenComponent` that lays out the editor's
+ * children, and any additional `decorators` to render.
+ */
 export interface ReactConfig {
   /**
    * The default root element of the editor as JSX. Uses `<ContentEditable />`
@@ -80,6 +96,11 @@ export interface ReactConfig {
   decorators: readonly DecoratorComponentType[];
 }
 
+/**
+ * The output of the {@link ReactExtension}: the editor `Component` used to
+ * render the editor, and the composer `context` (equivalent to
+ * {@link useLexicalComposerContext}).
+ */
 export interface ReactOutputs {
   /**
    * The editor component, this can be used by Extensions that depend on this to

@@ -2742,12 +2742,11 @@ describe('named-slots: audit hardening (insertNodes, cycles, idempotent setSlot)
         const slotValue = $createTestShadowRootNode(); // no children
         $getRoot().append(host);
         $setSlot(host, 'title', slotValue);
-        slotValue.select();
-        const selection = $getSelection();
-        assert($isRangeSelection(selection));
-        selection.insertNodes([
-          $createParagraphNode().append($createTextNode('pasted')),
-        ]);
+        slotValue
+          .select()
+          .insertNodes([
+            $createParagraphNode().append($createTextNode('pasted')),
+          ]);
       },
       {discrete: true},
     );
@@ -3124,9 +3123,8 @@ describe('named-slots: block slot values (virtual shadow root)', () => {
         lineKey = line.getKey();
         const text = line.getFirstChild();
         assert(text !== null && $isTextNode(text));
-        text.select(5, 5);
-        const selection = $getSelection();
-        assert($isRangeSelection(selection));
+
+        const selection = text.select(5, 5);
         selection.insertText('!');
         selection.insertNodes([$createTextNode('?')]);
       },
@@ -3151,10 +3149,7 @@ describe('named-slots: block slot values (virtual shadow root)', () => {
         hostKey = host.getKey();
         const text = line.getFirstChild();
         assert(text !== null && $isTextNode(text));
-        text.select(2, 2);
-        const selection = $getSelection();
-        assert($isRangeSelection(selection));
-        expect(selection.insertParagraph()).toBe(null);
+        expect(text.select(2, 2).insertParagraph()).toBe(null);
       },
       {discrete: true},
     );
@@ -3177,10 +3172,7 @@ describe('named-slots: block slot values (virtual shadow root)', () => {
         lineKey = line.getKey();
         const text = line.getFirstChild();
         assert(text !== null && $isTextNode(text));
-        text.select(5, 5);
-        const selection = $getSelection();
-        assert($isRangeSelection(selection));
-        selection.insertNodes([
+        text.select(5, 5).insertNodes([
           $createParagraphNode().append(
             $createTextNode('A'),
             $createLineBreakNode(),
@@ -3215,12 +3207,11 @@ describe('named-slots: block slot values (virtual shadow root)', () => {
         const line = $createParagraphNode(); // empty single-line value
         $setSlot(host, 'title', line);
         lineKey = line.getKey();
-        line.select();
-        const selection = $getSelection();
-        assert($isRangeSelection(selection));
-        selection.insertNodes([
-          $createParagraphNode().append($createTextNode('pasted')),
-        ]);
+        line
+          .select()
+          .insertNodes([
+            $createParagraphNode().append($createTextNode('pasted')),
+          ]);
       },
       {discrete: true},
     );
@@ -3247,9 +3238,7 @@ describe('named-slots: block slot values (virtual shadow root)', () => {
         // getTopLevelElement stops at the slotted value
         expect(text.getTopLevelElement()!.is(line)).toBe(true);
         // $selectAll scopes to the value's contents
-        text.select(2, 2);
-        const selection = $getSelection();
-        assert($isRangeSelection(selection));
+        const selection = text.select(2, 2);
         const scoped = $selectAll(selection);
         // normalization may descend the element points into the text; the
         // scope is what matters: exactly the value's content, nothing outside
@@ -3311,10 +3300,7 @@ describe('named-slots: block slot values (virtual shadow root)', () => {
         assert(line !== null && $isParagraphNode(line));
         const text = line.getFirstChild();
         assert(text !== null && $isTextNode(text));
-        text.select(0, 0);
-        const selection = $getSelection();
-        assert($isRangeSelection(selection));
-        selection.deleteCharacter(true);
+        text.select(0, 0).deleteCharacter(true);
       },
       {discrete: true},
     );
@@ -3448,10 +3434,7 @@ describe('named-slots: typing-path paragraph wrap (#8712)', () => {
         // Element-mode caret at offset 0 — the placement node is the
         // existing decorator (non-paragraph), the in-the-middle branch
         // of $transferStartingElementPointToTextPoint.
-        slot.select(0, 0);
-        const selection = $getSelection();
-        assert($isRangeSelection(selection));
-        selection.insertText('typed');
+        slot.select(0, 0).insertText('typed');
       },
       {discrete: true},
     );
@@ -3501,13 +3484,10 @@ describe('named-slots: insertNodes redirect termination (#8712)', () => {
         assert(slot !== null && $isElementNode(slot));
         // Element-mode caret at the slot value's offset 0 — the entry
         // condition for the insertNodes slot-host redirect branch.
-        slot.select(0, 0);
-        const selection = $getSelection();
-        assert($isRangeSelection(selection));
         // The actual insert: pre-fix this never returned, the editor.update
         // would never commit. Post-fix the redirect lands in the seeded
         // paragraph and the text gets inserted there.
-        selection.insertNodes([$createTextNode('inserted')]);
+        slot.select(0, 0).insertNodes([$createTextNode('inserted')]);
       },
       {discrete: true},
     );

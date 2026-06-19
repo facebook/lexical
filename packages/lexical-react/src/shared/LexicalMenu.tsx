@@ -39,17 +39,34 @@ import ReactDOM from 'react-dom';
 
 import useLayoutEffect from './useLayoutEffect';
 
+/**
+ * Describes where a typeahead trigger matched the text before the cursor: the
+ * `leadOffset` where the match starts, the captured `matchingString` (the query
+ * after the trigger), and the `replaceableString` (the full matched text,
+ * including the trigger, that should be replaced when an option is selected).
+ */
 export type MenuTextMatch = {
   leadOffset: number;
   matchingString: string;
   replaceableString: string;
 };
 
+/**
+ * The position and match information for an open menu: a `getRect` function that
+ * returns the anchor rectangle the menu is positioned against, and the optional
+ * {@link MenuTextMatch} that opened it.
+ */
 export type MenuResolution = {
   match?: MenuTextMatch;
   getRect: () => DOMRect;
 };
 
+/**
+ * The base class for an item shown in a {@link LexicalTypeaheadMenuPlugin} or
+ * {@link LexicalNodeMenuPlugin} menu. Each option has a unique `key` and a `ref`
+ * to its rendered element (used for scrolling and keyboard navigation).
+ * Subclass it to attach your own data such as a label or callback.
+ */
 export class MenuOption {
   key: string;
   ref?: RefObject<HTMLElement | null>;
@@ -67,6 +84,13 @@ export class MenuOption {
   }
 }
 
+/**
+ * A render function for a menu's contents. It receives the anchor element ref,
+ * the current item props (selected index, options, and helpers to select or
+ * highlight an option), and the matching query string, and returns the menu
+ * element (or portal) to render, or `null` to render nothing. Provide one to
+ * fully customize a menu's appearance.
+ */
 export type MenuRenderFn<TOption extends MenuOption> = (
   anchorElementRef: RefObject<HTMLElement | null>,
   itemProps: {
@@ -202,6 +226,12 @@ function isTriggerVisibleInNearestScrollContainer(
   );
 }
 
+/**
+ * Keeps an open menu aligned with its trigger by calling `onReposition` on
+ * scroll, window resize, and target element resize while `resolution` is set.
+ * Optionally calls `onVisibilityChange` when the trigger enters or leaves its
+ * nearest scroll container's viewport.
+ */
 // Reposition the menu on scroll, window resize, and element resize.
 export function useDynamicPositioning(
   resolution: MenuResolution | null,
@@ -732,6 +762,12 @@ export function useMenuAnchorRef(
   return anchorElementRef;
 }
 
+/**
+ * Detects whether the text before the cursor should open a typeahead menu.
+ * Given the current `text` and `editor`, it returns a {@link MenuTextMatch}
+ * describing the match, or `null` if there is none. See
+ * {@link useBasicTypeaheadTriggerMatch} for a common implementation.
+ */
 export type TriggerFn = (
   text: string,
   editor: LexicalEditor,

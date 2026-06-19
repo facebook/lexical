@@ -13,6 +13,14 @@ import {HISTORY_MERGE_TAG} from 'lexical';
 
 import useLayoutEffect from './shared/useLayoutEffect';
 
+/**
+ * Calls `onChange` with the latest {@link EditorState} whenever the editor
+ * updates. By default, updates that only change the selection, and updates that
+ * are part of a history merge, are ignored; set `ignoreSelectionChange` or
+ * `ignoreHistoryMergeTagChange` to control that filtering.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function OnChangePlugin({
   ignoreHistoryMergeTagChange = true,
   ignoreSelectionChange = false,

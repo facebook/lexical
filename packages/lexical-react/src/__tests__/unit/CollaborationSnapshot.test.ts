@@ -52,7 +52,7 @@ describe('CollaborationSnapshot', () => {
     editor2 = client2.getEditor();
 
     const mutationListener: MutationListener = mutations => {
-      editor1.getEditorState().read(() => {
+      editor1.read('latest', () => {
         for (const [nodeKey, mutation] of mutations) {
           if (mutation === 'destroyed') {
             continue;

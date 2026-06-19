@@ -16,6 +16,18 @@ type Props = {
   attributes?: LinkAttributes;
 };
 
+/**
+ * Enables {@link LinkNode} support, registering the commands and transforms
+ * that toggle and normalize links. Pass `validateUrl` to restrict which URLs
+ * may be applied (which also enables automatic link creation when pasting a
+ * matching URL) and `attributes` to set defaults such as `target` or `rel`.
+ * The editor must have the {@link LinkNode} registered.
+ *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link LinkExtension} instead.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function LinkPlugin({validateUrl, attributes}: Props): null {
   const [editor] = useLexicalComposerContext();
 

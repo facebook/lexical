@@ -155,7 +155,7 @@ function TextFormatFloatingToolbar({
     const scrollerElem = anchorElem.parentElement;
 
     const update = () => {
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         $updateTextFormatFloatingToolbar();
       });
     };
@@ -174,7 +174,7 @@ function TextFormatFloatingToolbar({
   }, [editor, $updateTextFormatFloatingToolbar, anchorElem]);
 
   useEffect(() => {
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       $updateTextFormatFloatingToolbar();
     });
     return mergeRegister(
@@ -340,7 +340,7 @@ function useFloatingTextFormatToolbar(
   const [isCode, setIsCode] = useState(false);
 
   const updatePopup = useCallback(() => {
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       // Should not to pop up the floating toolbar when using IME input
       if (editor.isComposing()) {
         return;

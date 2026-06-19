@@ -162,7 +162,7 @@ describe('TableExtension', () => {
     );
 
     // Verify no nested table was created
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const root = $getRoot();
       const table = root.getFirstChild();
       assert($isTableNode(table), 'Expected table node');
@@ -205,7 +205,7 @@ describe('TableExtension', () => {
     );
 
     // Verify nested table was created
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const root = $getRoot();
       const table = root.getFirstChild();
       assert($isTableNode(table), 'Expected table node');
@@ -257,7 +257,7 @@ describe('TableExtension', () => {
       );
 
       // Verify no nested table was created
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const root = $getRoot();
         const table = root.getFirstChild();
         assert($isTableNode(table), 'Expected table node');
@@ -313,7 +313,7 @@ describe('TableExtension', () => {
       );
 
       // Verify a nested table was created
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const root = $getRoot();
         const table = root.getFirstChild();
         assert($isTableNode(table), 'Expected table node');
@@ -370,7 +370,7 @@ describe('TableExtension', () => {
       );
 
       // Verify the table was extended
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const root = $getRoot();
         const table = root.getFirstChild();
         assert($isTableNode(table), 'Expected table node');
@@ -415,7 +415,7 @@ describe('TableExtension', () => {
         {discrete: true},
       );
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const root = $getRoot();
         const table = $assertNodeType(root.getFirstChild(), $isTableNode);
         expect(table.getColWidths()).toBe(undefined);
@@ -437,7 +437,7 @@ describe('TableExtension', () => {
         {discrete: true},
       );
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const root = $getRoot();
         const table = $assertNodeType(root.getFirstChild(), $isTableNode);
         expect(table.getColWidths()).toEqual([10, 20, 20]);
@@ -459,7 +459,7 @@ describe('TableExtension', () => {
         {discrete: true},
       );
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const root = $getRoot();
         const table = $assertNodeType(root.getFirstChild(), $isTableNode);
         expect(table.getColWidths()).toEqual([10, 20]);
@@ -496,7 +496,7 @@ describe('TableExtension', () => {
       );
 
       // Verify TableSelection was created and all cells are selected
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
         assert(
           $isTableSelection(selection),
@@ -593,7 +593,7 @@ describe('TableExtension', () => {
       );
 
       // Verify TableSelection was created and all cells are selected
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
         assert(
           $isTableSelection(selection),
@@ -680,7 +680,7 @@ describe('TableExtension', () => {
       );
 
       // Verify RangeSelection was created (not TableSelection) since cursor is outside table
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
         assert(
           $isRangeSelection(selection),
@@ -723,7 +723,7 @@ describe('TableExtension', () => {
       );
 
       // Verify RangeSelection was created (not TableSelection) since there's paragraph after table
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
         assert(
           $isRangeSelection(selection),

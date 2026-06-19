@@ -14,6 +14,9 @@ import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 import {type AnyLexicalExtensionArgument, configExtension} from 'lexical';
 import {useEffect, useMemo} from 'react';
 
+/**
+ * Props for the {@link LexicalExtensionComposer} component.
+ */
 export interface LexicalExtensionComposerProps {
   /**
    * Your root extension, typically defined with {@link defineExtension}

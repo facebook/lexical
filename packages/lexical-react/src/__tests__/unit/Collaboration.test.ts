@@ -816,7 +816,7 @@ describe('Collaboration', () => {
         });
       });
 
-      let editor2State = client2.getEditorState().read(() => {
+      let editor2State = client2.getEditor().read('latest', () => {
         const paragraph = $assertNodeType(
           $getRoot().getFirstChild(),
           $isParagraphNode,
@@ -835,7 +835,7 @@ describe('Collaboration', () => {
         });
       });
 
-      editor2State = client2.getEditorState().read(() => {
+      editor2State = client2.getEditor().read('latest', () => {
         const paragraph = $assertNodeType(
           $getRoot().getFirstChild(),
           $isParagraphNode,

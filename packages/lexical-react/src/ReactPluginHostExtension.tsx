@@ -35,16 +35,34 @@ import {type Container, createRoot, type Root} from 'react-dom/client';
 
 export type {DecoratorComponentProps};
 
+/**
+ * Payload for {@link REACT_PLUGIN_HOST_MOUNT_ROOT_COMMAND}: the React DOM `root`
+ * that the plugin host renders into.
+ */
 export interface HostMountCommandArg {
   root: Root;
 }
 
+/**
+ * Payload for {@link REACT_PLUGIN_HOST_MOUNT_PLUGIN_COMMAND}, describing a piece
+ * of React content to mount into the plugin host: a unique `key`, the `element`
+ * to render (or `null` to unmount it), and an optional `domNode` to portal it
+ * into.
+ */
 export interface MountPluginCommandArg {
   key: string;
   element: JSX.Element | null;
   domNode?: Element | DocumentFragment | null;
 }
 
+/**
+ * Mounts the output `Component` of a {@link ReactExtension}-based extension into
+ * an editor's plugin host, rendering it with the given `props`. Use this to add
+ * UI for a specific extension to an editor that was not built with
+ * {@link LexicalExtensionComposer}. The editor must use
+ * {@link ReactPluginHostExtension} and its host must already be mounted with
+ * {@link mountReactPluginHost}.
+ */
 export function mountReactExtensionComponent<
   Extension extends AnyLexicalExtension,
 >(
@@ -72,6 +90,13 @@ export function mountReactExtensionComponent<
   });
 }
 
+/**
+ * Mounts an arbitrary React `Component` (rendered with `props`, or unmounted
+ * when `props` is `null`) into an editor's plugin host. Use this for legacy
+ * React plug-ins or any React content. The editor must use
+ * {@link ReactPluginHostExtension} with its host mounted via
+ * {@link mountReactPluginHost}.
+ */
 export function mountReactPluginComponent<
   P extends Record<never, never> = Record<never, never>,
 >(
@@ -88,6 +113,13 @@ export function mountReactPluginComponent<
   });
 }
 
+/**
+ * Mounts a React `element` (the lowest-level entry point) into an editor's
+ * plugin host. {@link mountReactExtensionComponent} and
+ * {@link mountReactPluginComponent} are built on top of this. The editor must
+ * use {@link ReactPluginHostExtension} with its host mounted via
+ * {@link mountReactPluginHost}.
+ */
 export function mountReactPluginElement(
   editor: LexicalEditor,
   opts: MountPluginCommandArg,
@@ -98,6 +130,13 @@ export function mountReactPluginElement(
   ).output.mountReactPlugin(opts);
 }
 
+/**
+ * Creates a React root in `container` and mounts the editor's React plugin host
+ * into it. Call this once before mounting any React content with
+ * {@link mountReactExtensionComponent}, {@link mountReactPluginComponent}, or
+ * {@link mountReactPluginElement} on an editor using
+ * {@link ReactPluginHostExtension}.
+ */
 export function mountReactPluginHost(
   editor: LexicalEditor,
   container: Container,
@@ -108,10 +147,21 @@ export function mountReactPluginHost(
   ).output.mountReactPluginHost(container);
 }
 
+/**
+ * Command dispatched by {@link mountReactPluginHost} to mount the React plugin
+ * host into a React root (see {@link HostMountCommandArg}). Handled by
+ * {@link ReactPluginHostExtension}.
+ */
 export const REACT_PLUGIN_HOST_MOUNT_ROOT_COMMAND =
   /* @__PURE__ */ createCommand<HostMountCommandArg>(
     'REACT_PLUGIN_HOST_MOUNT_ROOT_COMMAND',
   );
+/**
+ * Command dispatched by the mount helpers to add, update, or remove a piece of
+ * React content in the plugin host. Its payload is a
+ * {@link MountPluginCommandArg}, and it is handled by
+ * {@link ReactPluginHostExtension}.
+ */
 export const REACT_PLUGIN_HOST_MOUNT_PLUGIN_COMMAND =
   /* @__PURE__ */ createCommand<MountPluginCommandArg>(
     'REACT_PLUGIN_HOST_MOUNT_PLUGIN_COMMAND',

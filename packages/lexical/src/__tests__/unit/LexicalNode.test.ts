@@ -130,6 +130,8 @@ describe('LexicalNode tests', () => {
           expect(node.__parent).toBe(null);
         });
 
+        // Intentionally read without an active editor (no {editor} context)
+        // so that constructing a keyed node throws via getActiveEditor().
         await editor.getEditorState().read(() => {
           expect(() => new LexicalNode()).toThrow();
           expect(() => new LexicalNode('__custom_key__')).toThrow();
@@ -236,7 +238,7 @@ describe('LexicalNode tests', () => {
           node = new LexicalNode('__custom_key__');
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(node.isAttached()).toBe(false);
           expect(textNode.isAttached()).toBe(true);
           expect(paragraphNode.isAttached()).toBe(true);
@@ -253,7 +255,7 @@ describe('LexicalNode tests', () => {
           node = new LexicalNode('__custom_key__');
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(node.isSelected()).toBe(false);
           expect(textNode.isSelected()).toBe(false);
           expect(paragraphNode.isSelected()).toBe(false);
@@ -263,7 +265,7 @@ describe('LexicalNode tests', () => {
           textNode.select(0, 0);
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.isSelected()).toBe(true);
         });
 
@@ -273,7 +275,7 @@ describe('LexicalNode tests', () => {
       test('LexicalNode.isSelected(): selected text node', async () => {
         const {editor} = testEnv;
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(paragraphNode.isSelected()).toBe(false);
           expect(textNode.isSelected()).toBe(false);
         });
@@ -282,7 +284,7 @@ describe('LexicalNode tests', () => {
           textNode.select(0, 0);
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.isSelected()).toBe(true);
           expect(paragraphNode.isSelected()).toBe(false);
         });
@@ -539,7 +541,7 @@ describe('LexicalNode tests', () => {
           expect(node.getParent()).toBe(null);
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           const rootNode = $getRoot();
           expect(textNode.getParent()).toBe(paragraphNode);
           expect(paragraphNode.getParent()).toBe(rootNode);
@@ -555,7 +557,7 @@ describe('LexicalNode tests', () => {
           expect(() => node.getParentOrThrow()).toThrow();
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           const rootNode = $getRoot();
           expect(textNode.getParent()).toBe(paragraphNode);
           expect(paragraphNode.getParent()).toBe(rootNode);
@@ -571,7 +573,7 @@ describe('LexicalNode tests', () => {
           expect(node.getTopLevelElement()).toBe(null);
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.getTopLevelElement()).toBe(paragraphNode);
           expect(paragraphNode.getTopLevelElement()).toBe(paragraphNode);
         });
@@ -582,7 +584,7 @@ describe('LexicalNode tests', () => {
           $getRoot().append(node);
           expect(node.getTopLevelElement()).toBe(node);
         });
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           const elementNodes: ElementNode[] = [];
           const decoratorNodes: DecoratorNode<unknown>[] = [];
           for (const child of $getRoot().getChildren()) {
@@ -610,7 +612,7 @@ describe('LexicalNode tests', () => {
           expect(() => node.getTopLevelElementOrThrow()).toThrow();
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.getTopLevelElementOrThrow()).toBe(paragraphNode);
           expect(paragraphNode.getTopLevelElementOrThrow()).toBe(paragraphNode);
         });
@@ -635,7 +637,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           const rootNode = $getRoot();
           expect(textNode.getParents()).toEqual([paragraphNode, rootNode]);
           expect(paragraphNode.getParents()).toEqual([rootNode]);
@@ -657,7 +659,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(barTextNode.getPreviousSibling()).toEqual({
             ...textNode,
             __next: '3',
@@ -684,7 +686,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span><span data-lexical-text="true">baz</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(bazTextNode.getPreviousSiblings()).toEqual([
             {
               ...textNode,
@@ -720,7 +722,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(barTextNode.getNextSibling()).toEqual(null);
           expect(textNode.getNextSibling()).toEqual(barTextNode);
         });
@@ -744,7 +746,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span><span data-lexical-text="true">baz</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(bazTextNode.getNextSiblings()).toEqual([]);
           expect(barTextNode.getNextSiblings()).toEqual([bazTextNode]);
           expect(textNode.getNextSiblings()).toEqual([
@@ -792,7 +794,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">qux</span></p><p dir="auto"><span data-lexical-text="true">bar</span></p><p dir="auto"><span data-lexical-text="true">baz</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           const rootNode = $getRoot();
           expect(textNode.getCommonAncestor(rootNode)).toBe(rootNode);
           expect(quxTextNode.getCommonAncestor(rootNode)).toBe(rootNode);
@@ -825,7 +827,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span><span data-lexical-text="true">baz</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.isBefore(textNode)).toBe(false);
           expect(textNode.isBefore(barTextNode)).toBe(true);
           expect(textNode.isBefore(bazTextNode)).toBe(true);
@@ -839,7 +841,7 @@ describe('LexicalNode tests', () => {
       test('LexicalNode.isParentOf()', async () => {
         const {editor} = testEnv;
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           const rootNode = $getRoot();
           expect(rootNode.isParentOf(textNode)).toBe(true);
           expect(rootNode.isParentOf(paragraphNode)).toBe(true);
@@ -876,7 +878,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">bar</span><span data-lexical-text="true">baz</span></p><p dir="auto"><span data-lexical-text="true">qux</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.getNodesBetween(textNode)).toEqual([textNode]);
           expect(textNode.getNodesBetween(barTextNode)).toEqual([
             textNode,
@@ -912,7 +914,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">token</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.isToken()).toBe(false);
           expect(tokenTextNode.isToken()).toBe(true);
         });
@@ -932,7 +934,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">segmented</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.isSegmented()).toBe(false);
           expect(segmentedTextNode.isSegmented()).toBe(true);
         });
@@ -955,7 +957,7 @@ describe('LexicalNode tests', () => {
           '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><span data-lexical-text="true">foo</span><span data-lexical-text="true">directionless</span></p></div>',
         );
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.isDirectionless()).toBe(false);
           expect(directionlessTextNode.isDirectionless()).toBe(true);
         });
@@ -965,7 +967,7 @@ describe('LexicalNode tests', () => {
       test('LexicalNode.getLatest()', async () => {
         const {editor} = testEnv;
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.getLatest()).toBe(textNode);
         });
         expect(() => textNode.getLatest()).toThrow();
@@ -1001,7 +1003,7 @@ describe('LexicalNode tests', () => {
           expect(node.getTextContent()).toBe('');
         });
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.getTextContent()).toBe('foo');
         });
         expect(() => textNode.getTextContent()).toThrow();
@@ -1010,7 +1012,7 @@ describe('LexicalNode tests', () => {
       test('LexicalNode.getTextContentSize()', async () => {
         const {editor} = testEnv;
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(textNode.getTextContentSize()).toBe('foo'.length);
         });
         expect(() => textNode.getTextContentSize()).toThrow();
@@ -1046,7 +1048,7 @@ describe('LexicalNode tests', () => {
       test('LexicalNode.remove()', async () => {
         const {editor} = testEnv;
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           expect(() => textNode.remove()).toThrow();
         });
 
@@ -1072,7 +1074,7 @@ describe('LexicalNode tests', () => {
       test('LexicalNode.replace()', async () => {
         const {editor} = testEnv;
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           // @ts-expect-error
           expect(() => textNode.replace()).toThrow();
         });
@@ -1206,7 +1208,7 @@ describe('LexicalNode tests', () => {
       test('LexicalNode.insertAfter()', async () => {
         const {editor} = testEnv;
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           // @ts-expect-error
           expect(() => textNode.insertAfter()).toThrow();
         });
@@ -1366,7 +1368,7 @@ describe('LexicalNode tests', () => {
       test('LexicalNode.insertBefore()', async () => {
         const {editor} = testEnv;
 
-        await editor.getEditorState().read(() => {
+        await editor.read('latest', () => {
           // @ts-expect-error
           expect(() => textNode.insertBefore()).toThrow();
         });

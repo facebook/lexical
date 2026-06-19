@@ -883,11 +883,9 @@ describe('Markdown', () => {
         },
       );
 
-      expect(
-        editor
-          .getEditorState()
-          .read(() => $generateHtmlFromNodes(editor), {editor}),
-      ).toBe(html);
+      expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+        html,
+      );
     });
   }
 
@@ -929,15 +927,13 @@ describe('Markdown', () => {
       );
 
       expect(
-        editor
-          .getEditorState()
-          .read(() =>
-            $convertToMarkdownString(
-              [...(customTransformers || []), ...TRANSFORMERS],
-              undefined,
-              shouldPreserveNewLines,
-            ),
+        editor.read('latest', () =>
+          $convertToMarkdownString(
+            [...(customTransformers || []), ...TRANSFORMERS],
+            undefined,
+            shouldPreserveNewLines,
           ),
+        ),
       ).toBe(mdAfterExport ?? md);
     });
   }
@@ -983,7 +979,7 @@ describe('Markdown', () => {
         },
       );
 
-      expect(editor.getEditorState().read(() => $getSelection())).toBe(null);
+      expect(editor.read('latest', () => $getSelection())).toBe(null);
     });
   }
 
@@ -1111,9 +1107,7 @@ describe('Markdown', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
     ).toBe(markdown);
   });
 
@@ -1148,9 +1142,7 @@ describe('Markdown', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
     ).toBe(markdown);
   });
 
@@ -1173,9 +1165,9 @@ describe('Markdown', () => {
     );
 
     // Export should compute fence to be ```` (4 backticks) since content contains ```
-    const exported = editor
-      .getEditorState()
-      .read(() => $convertToMarkdownString(TRANSFORMERS));
+    const exported = editor.read('latest', () =>
+      $convertToMarkdownString(TRANSFORMERS),
+    );
 
     expect(exported).toBe(
       '````markdown\n```js\nconsole.log("hello");\n```\n````',
@@ -1198,7 +1190,7 @@ describe('Markdown', () => {
           ),
         {discrete: true},
       );
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const node = $getRoot().getFirstChild();
         expect(node).toBeInstanceOf(ListNode);
         const marker = node ? $getState(node, listMarkerState) : undefined;
@@ -1271,7 +1263,7 @@ describe('Markdown', () => {
         },
         {discrete: true},
       );
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const markdownString = $convertToMarkdownString(
           [...TRANSFORMERS],
           undefined,
@@ -1897,15 +1889,13 @@ bar`;
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString(
-            [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
-            undefined,
-            true,
-          ),
+      editor.read('latest', () =>
+        $convertToMarkdownString(
+          [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
+          undefined,
+          true,
         ),
+      ),
     ).toBe(md);
   });
 
@@ -1937,15 +1927,13 @@ bar`;
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString(
-            [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
-            undefined,
-            true,
-          ),
+      editor.read('latest', () =>
+        $convertToMarkdownString(
+          [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
+          undefined,
+          true,
         ),
+      ),
     ).toBe(md);
   });
 });
@@ -1980,14 +1968,12 @@ describe('markdown whitespace import (default mode)', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe(md);
   }
 
@@ -2009,7 +1995,7 @@ describe('markdown whitespace import (default mode)', () => {
       {discrete: true},
     );
 
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const block = $getRoot().getFirstChildOrThrow();
       assert($isElementNode(block), 'Expected an element block');
       const lineBreakNode = block
@@ -2028,14 +2014,12 @@ describe('markdown whitespace import (default mode)', () => {
     });
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe(md);
   }
 
@@ -2054,14 +2038,12 @@ describe('markdown whitespace import (default mode)', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe(md);
   });
 
@@ -2079,14 +2061,12 @@ describe('markdown whitespace import (default mode)', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe(md);
   });
 
@@ -2132,7 +2112,7 @@ describe('markdown whitespace import (default mode)', () => {
       {discrete: true},
     );
 
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const block = $getRoot().getFirstChildOrThrow();
       assert($isElementNode(block), 'Expected an element block');
       const lineBreakNode = block
@@ -2145,14 +2125,12 @@ describe('markdown whitespace import (default mode)', () => {
     });
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe(md);
   });
 
@@ -2206,14 +2184,12 @@ describe('markdown whitespace import (default mode)', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe('foo   \nbar');
   });
 
@@ -2258,9 +2234,7 @@ describe('markdown Safari compatibility (issue #8012)', () => {
     editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
       discrete: true,
     });
-    return editor
-      .getEditorState()
-      .read(() => $convertToMarkdownString(TRANSFORMERS));
+    return editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS));
   }
 
   it('does not throw when constructing markdown regex patterns', () => {
@@ -2290,9 +2264,9 @@ describe('markdown Safari compatibility (issue #8012)', () => {
       () => $convertFromMarkdownString('\\`not code\\`', TRANSFORMERS),
       {discrete: true},
     );
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('`not code`');
   });
 
@@ -2333,12 +2307,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('Hello World');
   });
 
@@ -2355,12 +2326,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('World');
   });
 
@@ -2385,12 +2353,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('Hello **Bold**');
   });
 
@@ -2412,12 +2377,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('');
   });
 
@@ -2434,12 +2396,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('Hello');
   });
 
@@ -2464,12 +2423,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('First paragraph\n\nSecond paragraph');
   });
 
@@ -2496,12 +2452,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('- Item 1\n- Item 2');
   });
 
@@ -2522,12 +2475,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('[link](https://example.com)');
   });
 
@@ -2557,12 +2507,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('- Item 2\n- It');
   });
 
@@ -2581,12 +2528,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('> Line 2');
   });
 
@@ -2618,12 +2562,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('    - Nested A');
   });
 });

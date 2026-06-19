@@ -24,20 +24,23 @@
  *     preventDefault to avoid the browser moving the caret to the prev line).
  */
 
-import {registerRichText} from '@lexical/rich-text';
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
-  $createRangeSelection,
   $createTextNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
-  $setSelection,
+  $isTextNode,
+  isDOMTextNode,
+  isHTMLElement,
   KEY_BACKSPACE_COMMAND,
   LexicalEditor,
+  LexicalEditorWithDispose,
 } from 'lexical';
-import {createTestEditor, invariant} from 'lexical/src/__tests__/utils';
-import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
+import {$assertNodeType, invariant} from 'lexical/src/__tests__/utils';
+import {assert, describe, expect, test, vi} from 'vitest';
 
 // `vi.mock` is hoisted above all imports, so LexicalEvents.ts /
 // LexicalConstants.ts observe IS_IOS=true and CAN_USE_BEFORE_INPUT=true.
@@ -84,56 +87,54 @@ function createKeyboardEvent(key: string): KeyboardEvent {
   });
 }
 
+function getFirstTextElement(editor: LexicalEditor): HTMLElement {
+  return editor.read('latest', () => {
+    const node = $assertNodeType($getRoot().getFirstDescendant(), $isTextNode);
+    const el = editor.getElementByKey(node.getKey());
+    assert(isHTMLElement(el));
+    return el;
+  });
+}
+
 /**
  * Replaces the editor content with a single paragraph containing `text`
  * and places a collapsed selection at `cursorOffset`. Returns the text node key.
  */
-async function setSingleTextNode(
-  editor: LexicalEditor,
+function editorWithTextNode(
   text: string,
-  cursorOffset: number,
-): Promise<string> {
-  let textKey = '';
-  await editor.update(() => {
-    const paragraph = $createParagraphNode();
-    const node = $createTextNode(text);
-    paragraph.append(node);
-    $getRoot().clear().append(paragraph);
-    textKey = node.getKey();
-
-    const sel = $createRangeSelection();
-    sel.anchor.set(textKey, cursorOffset, 'text');
-    sel.focus.set(textKey, cursorOffset, 'text');
-    $setSelection(sel);
+  cursorOffset: null | number,
+): LexicalEditorWithDispose {
+  return buildEditorFromExtensions({
+    $initialEditorState: () => {
+      const node = $createTextNode(text);
+      $getRoot().append($createParagraphNode().append(node));
+      if (cursorOffset !== null) {
+        node.select(cursorOffset, cursorOffset);
+      }
+    },
+    afterRegistration: editor => {
+      const container = document.createElement('div');
+      container.setAttribute('data-lexical-editor', 'true');
+      container.contentEditable = 'true';
+      document.body.appendChild(container);
+      editor.setRootElement(container);
+      return () => {
+        editor.setRootElement(null);
+        document.body.removeChild(container);
+      };
+    },
+    dependencies: [RichTextExtension],
+    name: '[test]',
   });
-  return textKey;
 }
 
 describe('iOS keyboard suggestion-bar fix — KEY_BACKSPACE_COMMAND pass-through', () => {
-  let container: HTMLDivElement;
-  let editor: LexicalEditor;
-
-  beforeEach(() => {
-    container = document.createElement('div');
-    container.setAttribute('data-lexical-editor', 'true');
-    container.contentEditable = 'true';
-    document.body.appendChild(container);
-    editor = createTestEditor();
-    registerRichText(editor);
-    editor.setRootElement(container);
-  });
-
-  afterEach(() => {
-    editor.setRootElement(null);
-    document.body.removeChild(container);
-  });
-
   // -------------------------------------------------------------------------
   // 1. KEY_BACKSPACE_COMMAND does NOT preventDefault on iOS
   // -------------------------------------------------------------------------
 
-  test('KEY_BACKSPACE_COMMAND returns false and does not call event.preventDefault() on iOS', async () => {
-    await setSingleTextNode(editor, 'hello', 5);
+  test('KEY_BACKSPACE_COMMAND returns false and does not call event.preventDefault() on iOS', () => {
+    using editor = editorWithTextNode('hello', 5);
 
     const event = createKeyboardEvent('Backspace');
     const handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
@@ -148,8 +149,8 @@ describe('iOS keyboard suggestion-bar fix — KEY_BACKSPACE_COMMAND pass-through
   // 2. Full Backspace flow: keydown → beforeinput still deletes correctly
   // -------------------------------------------------------------------------
 
-  test('deleteContentBackward beforeinput with collapsed targetRange deletes one character', async () => {
-    const textKey = await setSingleTextNode(editor, 'hello', 5);
+  test('deleteContentBackward beforeinput with collapsed targetRange deletes one character', () => {
+    using editor = editorWithTextNode('hello', 5);
 
     // Step 1: keydown Backspace (should not preventDefault).
     const keyEvent = createKeyboardEvent('Backspace');
@@ -158,8 +159,9 @@ describe('iOS keyboard suggestion-bar fix — KEY_BACKSPACE_COMMAND pass-through
 
     // Step 2: iOS fires beforeinput deleteContentBackward with a collapsed
     // targetRange (one character before the cursor).
-    const span = editor.getElementByKey(textKey)!;
-    const textNode = span.firstChild as Text;
+    const span = getFirstTextElement(editor);
+    const textNode = span.firstChild;
+    assert(isDOMTextNode(textNode));
     const targetRange = new StaticRange({
       endContainer: textNode,
       endOffset: 5,
@@ -170,14 +172,13 @@ describe('iOS keyboard suggestion-bar fix — KEY_BACKSPACE_COMMAND pass-through
       'deleteContentBackward',
       targetRange,
     );
-    container.dispatchEvent(beforeInputEvent);
-
-    await editor.read(() => {
-      expect($getRoot().getTextContent()).toBe('hell');
-    });
+    editor.getRootElement()!.dispatchEvent(beforeInputEvent);
+    expect(editor.read('force-commit', () => $getRoot().getTextContent())).toBe(
+      'hell',
+    );
   });
 
-  test('KEY_BACKSPACE_COMMAND does not preventDefault regardless of the language locale', async () => {
+  test('KEY_BACKSPACE_COMMAND does not preventDefault regardless of the language locale', () => {
     // Verify that the fix is not locale-gated: any iOS keyboard (not only
     // Korean) must skip event.preventDefault() on keydown.
     const originalLanguage = navigator.language;
@@ -185,9 +186,8 @@ describe('iOS keyboard suggestion-bar fix — KEY_BACKSPACE_COMMAND pass-through
       configurable: true,
       get: () => 'en-US',
     });
-
+    using editor = editorWithTextNode('hello', 5);
     try {
-      await setSingleTextNode(editor, 'hello', 5);
       const event = createKeyboardEvent('Backspace');
       const handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
       expect(handled).toBe(false);
@@ -206,8 +206,8 @@ describe('iOS keyboard suggestion-bar fix — KEY_BACKSPACE_COMMAND pass-through
   //    so we verify the ios=false branch in the separate non-iOS test below)
   // -------------------------------------------------------------------------
 
-  test('cursor at start of text does not delete (nothing to delete)', async () => {
-    await setSingleTextNode(editor, 'hello', 0);
+  test('cursor at start of text does not delete (nothing to delete)', () => {
+    using editor = editorWithTextNode('hello', 0);
 
     const keyEvent = createKeyboardEvent('Backspace');
     // On iOS the command passes through (false), deletion deferred to beforeinput.
@@ -215,19 +215,17 @@ describe('iOS keyboard suggestion-bar fix — KEY_BACKSPACE_COMMAND pass-through
     expect(handled).toBe(false);
 
     // No beforeinput fired — text must remain unchanged.
-    await editor.read(() => {
-      expect($getRoot().getTextContent()).toBe('hello');
-    });
+    expect(editor.read('force-commit', () => $getRoot().getTextContent())).toBe(
+      'hello',
+    );
   });
 
   // -------------------------------------------------------------------------
   // 4. Empty selection: KEY_BACKSPACE_COMMAND returns false (no selection)
   // -------------------------------------------------------------------------
 
-  test('returns false when there is no selection', async () => {
-    await editor.update(() => {
-      $setSelection(null);
-    });
+  test('returns false when there is no selection', () => {
+    using editor = editorWithTextNode('hello', null);
 
     const event = createKeyboardEvent('Backspace');
     const handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
@@ -238,8 +236,8 @@ describe('iOS keyboard suggestion-bar fix — KEY_BACKSPACE_COMMAND pass-through
   // 5. Integration: multiple Backspaces via beforeinput
   // -------------------------------------------------------------------------
 
-  test('repeated beforeinput deleteContentBackward events delete characters one by one', async () => {
-    const textKey = await setSingleTextNode(editor, 'abc', 3);
+  test('repeated beforeinput deleteContentBackward events delete characters one by one', () => {
+    using editor = editorWithTextNode('abc', 3);
 
     for (let i = 3; i > 0; i--) {
       editor.dispatchCommand(
@@ -247,16 +245,18 @@ describe('iOS keyboard suggestion-bar fix — KEY_BACKSPACE_COMMAND pass-through
         createKeyboardEvent('Backspace'),
       );
 
-      await editor.update(() => {
-        const sel = $getSelection();
-        invariant($isRangeSelection(sel), 'expected RangeSelection');
+      editor.read('force-commit', () => {
+        invariant(
+          $isRangeSelection($getSelection()),
+          'expected RangeSelection',
+        );
         // Advance the cursor position check inline — the beforeinput handler
         // will move the cursor, so just fire the event.
       });
 
-      const span = editor.getElementByKey(textKey)!;
+      const span = getFirstTextElement(editor);
       const textNode = span.firstChild;
-      if (textNode === null) {
+      if (!isDOMTextNode(textNode)) {
         // All text deleted — done.
         break;
       }
@@ -266,13 +266,13 @@ describe('iOS keyboard suggestion-bar fix — KEY_BACKSPACE_COMMAND pass-through
         startContainer: textNode,
         startOffset: i - 1,
       });
-      container.dispatchEvent(
-        createBeforeInputEvent('deleteContentBackward', targetRange),
-      );
+      editor
+        .getRootElement()!
+        .dispatchEvent(
+          createBeforeInputEvent('deleteContentBackward', targetRange),
+        );
     }
 
-    await editor.read(() => {
-      expect($getRoot().getTextContent()).toBe('');
-    });
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('');
   });
 });

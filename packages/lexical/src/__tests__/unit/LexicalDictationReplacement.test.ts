@@ -103,6 +103,27 @@ function createReplacementEvent(
   return event;
 }
 
+/**
+ * Build an `insertText` beforeinput event with `data` set and a targetRange —
+ * the shape WebKit uses when dictation rewrites already-inserted text (the word
+ * to revise comes from the targetRange, not the live selection).
+ */
+function createInsertTextEvent(
+  data: string,
+  targetRange: StaticRange | null,
+): InputEvent {
+  const event = new InputEvent('beforeinput', {
+    bubbles: true,
+    cancelable: true,
+    data,
+    inputType: 'insertText',
+  });
+  Object.defineProperty(event, 'getTargetRanges', {
+    value: () => (targetRange ? [targetRange] : []),
+  });
+  return event;
+}
+
 async function setSingleTextNode(
   editor: LexicalEditor,
   text: string,
@@ -211,6 +232,35 @@ describe('Dictation / autocorrect insertReplacementText', () => {
 
     const targetRange = createStaticRange(domText, 10, domText, 14);
     container.dispatchEvent(createReplacementEvent('best', targetRange));
+
+    await editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('this is a best');
+    });
+  });
+
+  // WebKit dictation rewrites already-inserted text by firing `insertText`
+  // (data set) with a targetRange pointing at the word to revise — not
+  // `insertReplacementText`. When a stale non-collapsed selection is in place,
+  // the pre-switch applyDOMRange is skipped (it only syncs collapsed
+  // selections) and the insertText branch routes the text to the stale
+  // selection instead of the OS-targeted word, deleting the wrong text. The
+  // targetRange is authoritative for this revision, so it must win.
+  test('insertText: revises the targeted word despite a stale non-collapsed selection', async () => {
+    const text = 'this is a test';
+    const textKey = await setSingleTextNode(editor, text, text.length);
+    const domText = getDOMTextNode(editor, textKey);
+
+    await editor.update(() => {
+      const sel = $createRangeSelection();
+      // Stale selection over "this" (offsets 0–4), unrelated to the revision.
+      sel.anchor.set(textKey, 0, 'text');
+      sel.focus.set(textKey, 4, 'text');
+      $setSelection(sel);
+    });
+
+    // The OS revises "test" (offsets 10–14) into "best" via insertText.
+    const targetRange = createStaticRange(domText, 10, domText, 14);
+    container.dispatchEvent(createInsertTextEvent('best', targetRange));
 
     await editor.read(() => {
       expect($getRoot().getTextContent()).toBe('this is a best');

@@ -9,6 +9,7 @@
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {mergeRegister} from '@lexical/utils';
@@ -31,7 +32,6 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {ErrorBoundary} from 'react-error-boundary';
 
 import EquationEditor from '../ui/EquationEditor';
 import KatexRenderer from '../ui/KatexRenderer';
@@ -285,13 +285,7 @@ export default function EquationComponent({
           ref={inputRef}
         />
       ) : (
-        <ErrorBoundary
-          onError={e =>
-            editor._onError(
-              e instanceof Error ? e : new Error(String(e), {cause: e}),
-            )
-          }
-          fallback={null}>
+        <LexicalErrorBoundary onError={e => editor._onError(e)} fallback={null}>
           <KatexRenderer
             equation={equationValue}
             inline={inline}
@@ -301,7 +295,7 @@ export default function EquationComponent({
               }
             }}
           />
-        </ErrorBoundary>
+        </LexicalErrorBoundary>
       )}
     </>
   );

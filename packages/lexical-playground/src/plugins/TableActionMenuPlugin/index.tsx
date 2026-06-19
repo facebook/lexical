@@ -91,7 +91,7 @@ function $selectLastDescendant(node: ElementNode): void {
 }
 
 function currentCellBackgroundColor(editor: LexicalEditor): null | string {
-  return editor.getEditorState().read(() => {
+  return editor.read('latest', () => {
     const selection = $getSelection();
     if ($isRangeSelection(selection) || $isTableSelection(selection)) {
       const [cell] = $getNodeTriplet(selection.anchor);
@@ -144,7 +144,7 @@ function TableActionMenu({
           nodeMutations.get(tableCellNode.getKey()) === 'updated';
 
         if (nodeUpdated) {
-          editor.getEditorState().read(() => {
+          editor.read('latest', () => {
             updateTableCellNode(tableCellNode.getLatest());
           });
           setBackgroundColor(currentCellBackgroundColor(editor) || '');
@@ -155,7 +155,7 @@ function TableActionMenu({
   }, [editor, tableCellNode]);
 
   useEffect(() => {
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const selection = $getSelection();
       // Merge cells
       if ($isTableSelection(selection)) {
@@ -863,7 +863,7 @@ function TableCellActionMenuContainer({
     let timeoutId: ReturnType<typeof setTimeout> | undefined = undefined;
     const callback = () => {
       timeoutId = undefined;
-      editor.getEditorState().read($moveMenu, {editor});
+      editor.read('latest', $moveMenu);
     };
     const delayedCallback = () => {
       if (timeoutId === undefined) {

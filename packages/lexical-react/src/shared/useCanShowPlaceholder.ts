@@ -17,9 +17,10 @@ import useLayoutEffect from './useLayoutEffect';
 function canShowPlaceholderFromCurrentEditorState(
   editor: LexicalEditor,
 ): boolean {
-  const currentCanShowPlaceholder = editor
-    .getEditorState()
-    .read($canShowPlaceholderCurry(editor.isComposing()));
+  const currentCanShowPlaceholder = editor.read(
+    'latest',
+    $canShowPlaceholderCurry(editor.isComposing()),
+  );
 
   return currentCanShowPlaceholder;
 }

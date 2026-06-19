@@ -35,7 +35,7 @@ describe('LexicalRootNode tests', () => {
 
     function expectRootTextContentToBe(text: string): void {
       const {editor} = testEnv;
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const root = $getRoot();
 
         expect(root.__cachedText).toBe(text);
@@ -127,7 +127,7 @@ describe('LexicalRootNode tests', () => {
       });
 
       expect(
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           return $getRoot().getTextContent();
         }),
       ).toBe('Hello world');

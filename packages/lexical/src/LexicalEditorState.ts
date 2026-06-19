@@ -48,11 +48,11 @@ export function editorStateHasDirtySelection(
 }
 
 export function cloneEditorState(current: EditorState): EditorState {
-  return new EditorState(cloneMap(current._nodeMap));
+  return new EditorState(cloneMap(current._nodeMap), null, current._slotsUsed);
 }
 
 export function createEmptyEditorState(): EditorState {
-  return new EditorState(new Map([['root', $createRootNode()]]));
+  return new EditorState(new Map([['root', $createRootNode()]]), null, false);
 }
 
 function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
@@ -131,12 +131,27 @@ export class EditorState {
   _selection: null | BaseSelection;
   _flushSync: boolean;
   _readOnly: boolean;
+  /**
+   * True if this EditorState was parsed without running transforms
+   */
+  _parsed: boolean;
+  /**
+   * True if this EditorState or the LexicalEditor that created it has
+   * ever used slots
+   */
+  _slotsUsed: boolean;
 
-  constructor(nodeMap: NodeMap, selection?: null | BaseSelection) {
+  constructor(
+    nodeMap: NodeMap,
+    selection: null | BaseSelection = null,
+    slotsUsed: boolean = false,
+  ) {
     this._nodeMap = nodeMap;
     this._selection = selection || null;
     this._flushSync = false;
     this._readOnly = false;
+    this._parsed = false;
+    this._slotsUsed = slotsUsed;
   }
 
   isEmpty(): boolean {
@@ -155,6 +170,7 @@ export class EditorState {
     const editorState = new EditorState(
       this._nodeMap,
       selection === undefined ? this._selection : selection,
+      this._slotsUsed,
     );
     editorState._readOnly = true;
 

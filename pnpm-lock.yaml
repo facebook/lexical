@@ -1070,9 +1070,6 @@ importers:
       react-dom:
         specifier: 19.2.5
         version: 19.2.5(react@19.2.5)
-      react-error-boundary:
-        specifier: ^6.1.1
-        version: 6.1.1(react@19.2.5)
       y-websocket:
         specifier: ^2.1.0
         version: 2.1.0(yjs@13.6.31)
@@ -1179,9 +1176,6 @@ importers:
       react-dom:
         specifier: 19.2.5
         version: 19.2.5(react@19.2.5)
-      react-error-boundary:
-        specifier: ^6.1.1
-        version: 6.1.1(react@19.2.5)
       typescript:
         specifier: '>=5.2'
         version: 6.0.3
@@ -10808,11 +10802,6 @@ packages:
 
   react-dom@19.2.5:
     resolution: {integrity: sha512-J5bAZz+DXMMwW/wV3xzKke59Af6CHY7G4uYLN1OvBcKEsWOs4pQExj86BBKamxl/Ik5bx9whOrvBlSDfWzgSag==}
-    peerDependencies:
-      react: 19.2.5
-
-  react-error-boundary@6.1.1:
-    resolution: {integrity: sha512-BrYwPOdXi5mqkk5lw+Uvt0ThHx32rCt3BkukS4X23A2AIWDPSGX6iaWTc0y9TU/mHDA/6qOSGel+B2ERkOvD1w==}
     peerDependencies:
       react: 19.2.5
 
@@ -24989,10 +24978,6 @@ snapshots:
     dependencies:
       react: 19.2.5
       scheduler: 0.27.0
-
-  react-error-boundary@6.1.1(react@19.2.5):
-    dependencies:
-      react: 19.2.5
 
   react-fast-compare@3.2.2: {}
 

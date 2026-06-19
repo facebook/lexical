@@ -30,6 +30,9 @@ import {
 import * as React from 'react';
 import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
 
+/**
+ * Props for the {@link LexicalNestedComposer} component.
+ */
 export interface LexicalNestedComposerProps {
   /**
    * Any children (e.g. plug-ins) for this editor. Note that the nested editor
@@ -84,6 +87,20 @@ const explicitNamespaceWarning = warnOnlyOnce(
   `LexicalNestedComposer initialEditor should explicitly initialize its namespace when the node configuration differs from the parentEditor. For backwards compatibility, the namespace will be initialized from parentEditor until v0.32.0, but this has always had incorrect copy/paste behavior when the configuration differed.\nYou can configure your editor's namespace with createEditor({namespace: 'nested-editor-namespace', nodes: [], parentEditor: $getEditor()}).`,
 );
 
+/**
+ * Provides a nested {@link LexicalEditor} (for example the editor that backs a
+ * node such as an image caption or table cell) to its `children` through React
+ * context, the same way {@link LexicalComposer} does for a top-level editor.
+ * The nested editor must be created ahead of time (typically inside the owning
+ * decorator node) and passed as `initialEditor`; by default it inherits the
+ * parent's theme, nodes, namespace, and editable state.
+ *
+ * `LexicalNestedComposer` uses the legacy plugin pattern. To build a nested
+ * editor from extensions, create it with {@link NestedEditorExtension} and
+ * render it with {@link LexicalExtensionEditorComposer} instead.
+ *
+ * @returns A context provider wrapping `children`.
+ */
 export function LexicalNestedComposer({
   initialEditor,
   children,

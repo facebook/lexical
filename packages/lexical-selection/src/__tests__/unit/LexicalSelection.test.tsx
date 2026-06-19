@@ -288,7 +288,7 @@ describe('LexicalSelection tests', () => {
 
     await applySelectionInputs([insertText('x')], update, editor!);
 
-    editor!.getEditorState().read(() => {
+    editor!.read('latest', () => {
       const xNode = $getRoot()
         .getAllTextNodes()
         .find(node => node.getTextContent() === 'x');
@@ -2026,7 +2026,7 @@ describe('LexicalSelection tests', () => {
 
           listNode.remove();
         });
-        await editor!.getEditorState().read(() => {
+        await editor!.read('latest', () => {
           const selection = $assertRangeSelection($getSelection());
           expect(selection.anchor.key).toBe(paragraphNodeKey);
           expect(selection.focus.key).toBe(paragraphNodeKey);

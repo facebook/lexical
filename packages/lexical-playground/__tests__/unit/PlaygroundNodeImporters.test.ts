@@ -190,6 +190,43 @@ describe('Playground node importers (DOMImportExtension round-trip)', () => {
     );
   });
 
+  // Older playground exports rendered the page break as
+  // `<figure type="page-break">`. ImagesExtension's generic `<figure>`
+  // rule would otherwise swallow the empty figure on import, so the
+  // legacy matcher in PageBreakExtension has to win — verify with
+  // ImagesExtension present in the same test pipeline.
+  it('PageBreakNode legacy <figure type="page-break"> import', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        dependencies: [
+          PlaygroundImportExtension,
+          ImagesExtension,
+          PageBreakExtension,
+        ],
+        name: '[test-legacy-page-break]',
+      }),
+    );
+    editor.update(
+      () => {
+        $getRoot().clear().select();
+        const dom = new DOMParser().parseFromString(
+          '<figure type="page-break"></figure>',
+          'text/html',
+        );
+        $insertNodes($generateNodesFromDOMViaExtension(dom));
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const node = $findFirst($isPageBreakNode);
+      assert(
+        $isPageBreakNode(node),
+        'expected a PageBreakNode from legacy <figure type="page-break">',
+      );
+    });
+  });
+
   it('TweetNode', () => {
     expectRoundTrip(
       TwitterExtension,

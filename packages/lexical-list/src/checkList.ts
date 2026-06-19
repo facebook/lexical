@@ -177,7 +177,7 @@ export function registerCheckList(
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_LEFT_COMMAND,
       event => {
-        return editor.getEditorState().read(() => {
+        return editor.read('latest', () => {
           const selection = $getSelection();
 
           if ($isRangeSelection(selection) && selection.isCollapsed()) {

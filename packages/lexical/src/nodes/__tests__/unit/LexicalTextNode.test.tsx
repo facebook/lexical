@@ -171,7 +171,7 @@ describe('LexicalTextNode tests', () => {
       });
 
       expect(
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           const root = $getRoot();
           return root.__cachedText;
         }),

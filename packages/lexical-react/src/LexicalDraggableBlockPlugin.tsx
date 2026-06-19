@@ -64,7 +64,7 @@ function getCurrentIndex(keysLength: number): number {
 }
 
 function getTopLevelNodeKeys(editor: LexicalEditor): string[] {
-  return editor.getEditorState().read(() => $getRoot().getChildrenKeys());
+  return editor.read('latest', () => $getRoot().getChildrenKeys());
 }
 
 function getCollapsedMargins(elem: HTMLElement): {
@@ -109,7 +109,7 @@ function getBlockElement(
 
   let blockElem: HTMLElement | null = null;
 
-  editor.getEditorState().read(() => {
+  editor.read('latest', () => {
     if (useEdgeAsDefault) {
       const [firstNode, lastNode] = [
         editor.getElementByKey(topLevelNodeKeys[0]),
@@ -582,6 +582,16 @@ function useDraggableBlockMenu(
   );
 }
 
+/**
+ * Renders a draggable handle and drop-target line that let users reorder
+ * top-level blocks by dragging. You supply the handle and target-line elements
+ * via `menuComponent`/`menuRef` and `targetLineComponent`/`targetLineRef`, an
+ * `anchorElem` to portal them into (defaults to `document.body`), and an
+ * `isOnMenu` predicate used to detect interactions with the handle.
+ *
+ * @experimental The API may change in a future release.
+ * @returns A portal containing the drag handle and target line.
+ */
 export function DraggableBlockPlugin_EXPERIMENTAL({
   anchorElem = document.body,
   menuRef,

@@ -236,7 +236,7 @@ function CommentInputBox({
   const author = useCollabAuthorName();
 
   const updateLocation = useCallback(() => {
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const selection = $getSelection();
 
       if ($isRangeSelection(selection)) {
@@ -329,7 +329,7 @@ function CommentInputBox({
 
   const submitComment = () => {
     if (canSubmit) {
-      let quote = editor.getEditorState().read(() => {
+      let quote = editor.read('latest', () => {
         const selection = selectionRef.current;
         return selection ? selection.getTextContent() : '';
       });
@@ -862,7 +862,7 @@ export default function CommentPlugin({
       editor.registerMutationListener(
         MarkNode,
         mutations => {
-          editor.getEditorState().read(() => {
+          editor.read('latest', () => {
             for (const [key, mutation] of mutations) {
               const node = $getNodeByKey(key);
               let ids: NodeKey[] = [];

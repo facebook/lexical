@@ -263,7 +263,7 @@ function FloatingLinkEditor({
   }, [editor, $updateLinkEditor, setIsLink, isLink]);
 
   useEffect(() => {
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       $updateLinkEditor();
     });
   }, [editor, $updateLinkEditor]);

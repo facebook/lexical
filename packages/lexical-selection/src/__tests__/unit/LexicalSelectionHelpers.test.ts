@@ -320,7 +320,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -396,7 +396,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -457,7 +457,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -523,7 +523,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -599,7 +599,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -675,7 +675,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -1189,7 +1189,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -1260,7 +1260,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -2677,7 +2677,7 @@ describe('insertNodes', () => {
       );
       selection.insertNodes([newHeading, $createLineBreakNode()]);
     });
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       expect(element.innerHTML).toBe(
         // the lone trailing LineBreakNode collapses to an empty paragraph,
         // rendered with only the managed linebreak

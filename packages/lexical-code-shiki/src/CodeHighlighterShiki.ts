@@ -379,7 +379,7 @@ export function registerHighlightingOnly(
       editor.registerMutationListener(
         CodeNode,
         mutations => {
-          editor.getEditorState().read(() => {
+          editor.read('latest', () => {
             for (const [key, type] of mutations) {
               if (type !== 'destroyed') {
                 const node = $getNodeByKey(key);

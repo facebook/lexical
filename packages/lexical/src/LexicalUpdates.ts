@@ -494,6 +494,7 @@ export function parseEditorState(
 
     // Make the editorState immutable
     editorState._readOnly = true;
+    editorState._parsed = true;
 
     if (__DEV__) {
       handleDEVOnlyPendingUpdateGuarantees(editorState);

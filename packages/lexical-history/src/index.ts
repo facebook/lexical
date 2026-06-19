@@ -57,6 +57,13 @@ export type HistoryStateEntry = {
   editor: LexicalEditor;
   editorState: EditorState;
 };
+/**
+ * The undo/redo history maintained by the history plugin: the `current` entry
+ * plus the `undoStack` and `redoStack` of previous and future
+ * {@link HistoryStateEntry}s. Create an empty one with
+ * {@link createEmptyHistoryState} and pass it to the history plugin to share
+ * history across editors.
+ */
 export type HistoryState = {
   current: null | HistoryStateEntry;
   redoStack: HistoryStateEntry[];

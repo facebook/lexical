@@ -269,7 +269,7 @@ export default function ImageComponent({
   const isInNodeSelection = useMemo(
     () =>
       isSelected &&
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
         return $isNodeSelection(selection) && selection.has(nodeKey);
       }),
@@ -352,7 +352,7 @@ export default function ImageComponent({
 
   const onRightClick = useCallback(
     (event: MouseEvent): void => {
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const latestSelection = $getSelection();
         const domElement = event.target as HTMLElement;
         if (

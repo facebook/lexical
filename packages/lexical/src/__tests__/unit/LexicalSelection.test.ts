@@ -23,7 +23,9 @@ import {
   $getCaretInDirection,
   $getRoot,
   $getSelection,
+  $isDecoratorNode,
   $isParagraphNode,
+  $isRangeSelection,
   $isTextNode,
   $selectAll,
   $setSelection,
@@ -43,6 +45,8 @@ import {
   $assertRangeSelection,
   $createTestDecoratorNode,
   $createTestInlineElementNode,
+  $createTestShadowRootNode,
+  $isTestShadowRootNode,
   initializeUnitTest,
   invariant,
 } from '../utils';
@@ -823,7 +827,7 @@ describe('LexicalSelection tests', () => {
             },
             {discrete: true},
           );
-          testEnv.editor.getEditorState().read(() => {
+          testEnv.editor.read('latest', () => {
             const allTextNodes = $getRoot().getAllTextNodes();
             // These should get merged in reconciliation
             expect(allTextNodes.map(node => node.getTextContent())).toEqual([
@@ -871,6 +875,229 @@ describe('Regression tests for #6701', () => {
     ).toThrow(
       /Expected node TextNode of type text to have a block ElementNode ancestor/,
     );
+  });
+});
+
+describe('Regression tests for #8707', () => {
+  // A shadow root that holds block-level children directly (e.g. a
+  // decorator-only container). Placing the caret adjacent to a block child
+  // shows the block cursor, whose RangeSelection is a collapsed element point
+  // on the shadow root itself. Inserting block-level content there (such as
+  // pasting a copied decorator) used to throw because a shadow root has no
+  // block ancestor to split. Roots and shadow roots hold blocks directly, so
+  // the block goes straight in at the anchor offset with no paragraph wrapper.
+  initializeUnitTest(testEnv => {
+    test('inserts a block decorator after the block cursor at the end of a shadow root', () => {
+      const {editor} = testEnv;
+      let shadowKey = '';
+      editor.update(
+        () => {
+          const shadow = $createTestShadowRootNode();
+          shadow.append($createTestDecoratorNode().setIsInline(false));
+          $getRoot().clear().append(shadow);
+          shadowKey = shadow.getKey();
+          // Block cursor: collapsed element point after the decorator.
+          shadow.select(1, 1);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection), 'Expected RangeSelection');
+          selection.insertNodes([
+            $createTestDecoratorNode().setIsInline(false),
+          ]);
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const root = $getRoot();
+        // The decorator landed in the same shadow root as the block cursor,
+        // not the outer document root.
+        expect(root.getChildrenSize()).toBe(1);
+        const shadow = root.getFirstChildOrThrow();
+        invariant($isTestShadowRootNode(shadow), 'Expected shadow root');
+        expect(shadow.getKey()).toBe(shadowKey);
+        const children = shadow.getChildren();
+        expect(children).toHaveLength(2);
+        expect(children.every($isDecoratorNode)).toBe(true);
+      });
+    });
+
+    test('inserts a block decorator before the block cursor at the start of a shadow root', () => {
+      const {editor} = testEnv;
+      let existingKey = '';
+      editor.update(
+        () => {
+          const shadow = $createTestShadowRootNode();
+          const existing = $createTestDecoratorNode().setIsInline(false);
+          shadow.append(existing);
+          $getRoot().clear().append(shadow);
+          existingKey = existing.getKey();
+          // Block cursor: collapsed element point before the decorator.
+          shadow.select(0, 0);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection), 'Expected RangeSelection');
+          selection.insertNodes([
+            $createTestDecoratorNode().setIsInline(false),
+          ]);
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const shadow = $getRoot().getFirstChildOrThrow();
+        invariant($isTestShadowRootNode(shadow), 'Expected shadow root');
+        const children = shadow.getChildren();
+        expect(children).toHaveLength(2);
+        expect(children.every($isDecoratorNode)).toBe(true);
+        // Inserted before the pre-existing decorator.
+        expect(children[1].getKey()).toBe(existingKey);
+      });
+    });
+
+    test('inserts a block decorator into an empty shadow root', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const shadow = $createTestShadowRootNode();
+          $getRoot().clear().append(shadow);
+          shadow.select(0, 0);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection), 'Expected RangeSelection');
+          selection.insertNodes([
+            $createTestDecoratorNode().setIsInline(false),
+          ]);
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const shadow = $getRoot().getFirstChildOrThrow();
+        invariant($isTestShadowRootNode(shadow), 'Expected shadow root');
+        const children = shadow.getChildren();
+        expect(children).toHaveLength(1);
+        expect($isDecoratorNode(children[0])).toBe(true);
+      });
+    });
+
+    test('inserts a block element at the block cursor inside a shadow root', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const shadow = $createTestShadowRootNode();
+          shadow.append($createTestDecoratorNode().setIsInline(false));
+          $getRoot().clear().append(shadow);
+          shadow.select(1, 1);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection), 'Expected RangeSelection');
+          selection.insertNodes([
+            $createParagraphNode().append($createTextNode('inserted')),
+          ]);
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const shadow = $getRoot().getFirstChildOrThrow();
+        invariant($isTestShadowRootNode(shadow), 'Expected shadow root');
+        const children = shadow.getChildren();
+        expect(children).toHaveLength(2);
+        expect($isDecoratorNode(children[0])).toBe(true);
+        expect($isParagraphNode(children[1])).toBe(true);
+        expect(children[1].getTextContent()).toBe('inserted');
+      });
+    });
+
+    test('insertParagraph at an element point on a shadow root seeds into that shadow root', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const shadow = $createTestShadowRootNode();
+          shadow.append($createTestDecoratorNode().setIsInline(false));
+          $getRoot().clear().append(shadow);
+          shadow.select(1, 1);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection), 'Expected RangeSelection');
+          const paragraph = selection.insertParagraph();
+          invariant(paragraph !== null, 'Expected a paragraph to be inserted');
+          expect(paragraph.getParent()!.is($getRoot().getFirstChild())).toBe(
+            true,
+          );
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const root = $getRoot();
+        expect(root.getChildrenSize()).toBe(1);
+        const shadow = root.getFirstChildOrThrow();
+        invariant($isTestShadowRootNode(shadow), 'Expected shadow root');
+        expect(shadow.getChildrenSize()).toBe(2);
+        expect($isParagraphNode(shadow.getLastChild())).toBe(true);
+      });
+    });
+
+    test('inserts a block decorator at a root element point without wrapping it in a paragraph', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append($createTextNode('existing')));
+          // Element point directly on the root, after the paragraph.
+          $getRoot().select(1, 1);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection), 'Expected RangeSelection');
+          selection.insertNodes([
+            $createTestDecoratorNode().setIsInline(false),
+          ]);
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        // The decorator is a direct child of root; no empty paragraph wrapper
+        // was created for it.
+        expect(children).toHaveLength(2);
+        expect($isParagraphNode(children[0])).toBe(true);
+        expect($isDecoratorNode(children[1])).toBe(true);
+      });
+    });
   });
 });
 

@@ -120,8 +120,8 @@ async function assertCardIntact(page, {title, body}) {
 }
 
 // Place the caret at the start of the block immediately after the card (the
-// trailing paragraph $insertNodeToNearestRoot leaves behind), for the
-// "backspace from after the card" deletion case.
+// trailing paragraph $insertNodeToNearestRoot leaves behind), to verify
+// Backspace from there leaves the host alone (#8712).
 async function selectStartAfterCard(page) {
   await evaluate(page, () => {
     const editor = window.lexicalEditor;
@@ -235,7 +235,7 @@ test.describe('Card slot deletion boundaries', () => {
     expect(await cardCount(page)).toBe(0);
   });
 
-  test('backspace from the block after an empty card deletes the card', async ({
+  test('backspace from the block after an empty card leaves the card alone (#8712)', async ({
     page,
   }) => {
     await focusEditor(page);
@@ -246,7 +246,12 @@ test.describe('Card slot deletion boundaries', () => {
     await page.keyboard.press('Backspace');
     await sleep(120);
 
-    expect(await cardCount(page)).toBe(0);
+    // Per #8712: the caret sits in the next block, not the host, so
+    // Backspace leaves the host alone — the trailing paragraph is dropped
+    // and the caret lands inside the card body. The inside-host escape
+    // gesture (caret at the start of the empty title) still removes the
+    // card; covered above.
+    expect(await cardCount(page)).toBe(1);
   });
 
   test('select-all + Backspace replaces a first-block card with a paragraph', async ({

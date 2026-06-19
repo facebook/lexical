@@ -544,31 +544,24 @@ export const AutocompleteExtension = /* @__PURE__ */ defineExtension({
       if (!isEditorFocused()) {
         return;
       }
-      editor.getEditorState().read(
-        () => {
-          const selection = $getSelection();
-          const [hasMatch, match] = $search(selection);
-          if (
-            !hasMatch ||
-            match !== lastMatch ||
-            !$isRangeSelection(selection)
-          ) {
-            return;
-          }
-          const node = selection.getNodes()[0];
-          if (!$isTextNode(node)) {
-            return;
-          }
-          activeTextNodeKey = node.getKey();
-          lastSuggestion = newSuggestion;
-          syncGhost(
-            editor,
-            activeTextNodeKey,
-            formatSuggestionText(newSuggestion),
-          );
-        },
-        {editor},
-      );
+      editor.read('latest', () => {
+        const selection = $getSelection();
+        const [hasMatch, match] = $search(selection);
+        if (!hasMatch || match !== lastMatch || !$isRangeSelection(selection)) {
+          return;
+        }
+        const node = selection.getNodes()[0];
+        if (!$isTextNode(node)) {
+          return;
+        }
+        activeTextNodeKey = node.getKey();
+        lastSuggestion = newSuggestion;
+        syncGhost(
+          editor,
+          activeTextNodeKey,
+          formatSuggestionText(newSuggestion),
+        );
+      });
     }
 
     function handleUpdate({

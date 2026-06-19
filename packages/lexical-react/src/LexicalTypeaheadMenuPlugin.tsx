@@ -35,6 +35,11 @@ import {useCallback, useEffect, useState} from 'react';
 import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
 import {startTransition} from './shared/reactPatches';
 
+/**
+ * The default set of punctuation characters (as a character-class fragment)
+ * that terminate a typeahead query. Used as the default `punctuation` option of
+ * {@link useBasicTypeaheadTriggerMatch}.
+ */
 export const PUNCTUATION =
   '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\-\\[\\]\\\\/!%\'"~=<>_:;';
 
@@ -82,7 +87,7 @@ function tryToPositionRange(
 
 function getQueryTextForSearch(editor: LexicalEditor): string | null {
   let text = null;
-  editor.getEditorState().read(() => {
+  editor.read('latest', () => {
     const selection = $getSelection();
     if (!$isRangeSelection(selection)) {
       return;
@@ -99,7 +104,7 @@ function isSelectionOnEntityBoundary(
   if (offset !== 0) {
     return false;
   }
-  return editor.getEditorState().read(() => {
+  return editor.read('latest', () => {
     const selection = $getSelection();
     if ($isRangeSelection(selection)) {
       const anchor = selection.anchor;
@@ -112,8 +117,16 @@ function isSelectionOnEntityBoundary(
 }
 
 // Got from https://stackoverflow.com/a/42543908/2013580
-// Walk crosses ShadowRoot→host so a shadow-mounted editor's scroll
-// parent is found in the enclosing light-DOM ancestor chain.
+/**
+ * Walks up from `element` and returns the nearest scrollable ancestor (or
+ * `document.body` if none is found), used to keep the active typeahead option
+ * scrolled into view. Set `includeHidden` to also treat `overflow: hidden`
+ * ancestors as scroll parents.
+ *
+ * The walk crosses ShadowRoot→host (via `getParentElement`) so a
+ * shadow-mounted editor's scroll parent is found in the enclosing light-DOM
+ * ancestor chain.
+ */
 export function getScrollParent(
   element: HTMLElement,
   includeHidden: boolean,
@@ -145,11 +158,25 @@ export function getScrollParent(
 
 export {useDynamicPositioning} from './shared/LexicalMenu';
 
+/**
+ * Command dispatched while the typeahead menu is open to scroll the option at
+ * the given `index` into view. The default menu renderer listens for it; custom
+ * {@link MenuRenderFn}s can handle it to implement their own scrolling.
+ */
 export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
   index: number;
   option: MenuOption;
 }> = /* @__PURE__ */ createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND');
 
+/**
+ * Builds a {@link TriggerFn} for the common case of a single-character
+ * `trigger` (such as `@` or `#`) followed by a query. The returned function
+ * matches when the trigger is preceded by whitespace or the start of the line
+ * and is followed by between `minLength` and `maxLength` non-`punctuation`
+ * characters (optionally allowing whitespace).
+ *
+ * @returns A memoized trigger function for {@link LexicalTypeaheadMenuPlugin}.
+ */
 export function useBasicTypeaheadTriggerMatch(
   trigger: string,
   {
@@ -198,6 +225,9 @@ export function useBasicTypeaheadTriggerMatch(
   );
 }
 
+/**
+ * Props for the {@link LexicalTypeaheadMenuPlugin} component.
+ */
 export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
   onQueryChange: (matchingString: string | null) => void;
   onSelectOption: (
@@ -218,6 +248,15 @@ export type TypeaheadMenuPluginProps<TOption extends MenuOption> = {
   ignoreEntityBoundary?: boolean;
 };
 
+/**
+ * Renders a floating menu (such as an `@`-mention or slash-command picker) while
+ * the text before the cursor matches `triggerFn`. As the user types, the
+ * current query is reported via `onQueryChange`; supply the `options` to show
+ * and an `onSelectOption` handler to apply the chosen option. Use
+ * {@link useBasicTypeaheadTriggerMatch} to build a simple `triggerFn`.
+ *
+ * @returns The floating menu element, or `null` when no query is active.
+ */
 export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
   options,
   onQueryChange,
@@ -272,7 +311,7 @@ export function LexicalTypeaheadMenuPlugin<TOption extends MenuOption>({
 
   useEffect(() => {
     const updateListener = () => {
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         // Check if editor is in read-only mode
         if (!editor.isEditable()) {
           closeTypeahead();

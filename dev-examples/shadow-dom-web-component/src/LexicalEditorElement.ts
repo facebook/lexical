@@ -310,7 +310,7 @@ export class LexicalEditorElement extends HTMLElement {
    */
   private getPlainText(): string {
     return this.editor
-      ? this.editor.read(() => $getRoot().getTextContent())
+      ? this.editor.read('latest', () => $getRoot().getTextContent())
       : '';
   }
 
@@ -643,7 +643,7 @@ export class LexicalEditorElement extends HTMLElement {
     // gives viewport coordinates the page can use directly. Collapsed (or no)
     // range -> rect is null.
     const dispatchSelectionRect = (): void => {
-      editor.read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
         let rect: DOMRectInit | null = null;
         if ($isRangeSelection(selection) && !selection.isCollapsed()) {

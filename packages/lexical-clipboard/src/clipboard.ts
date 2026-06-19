@@ -620,13 +620,28 @@ export function $generateJSONFromSelectedNodes<
 } {
   const nodes: SerializedNode[] = [];
   const root = $getRoot();
-  // A RangeSelection wholly inside a slot subtree never includes its host
-  // (slots are shadow-root isolated), so a root-children walk would miss the
+  // A selection wholly inside a slot subtree never includes its host (slots
+  // are shadow-root isolated), so a root-children walk would miss the
   // selected nodes entirely and export an empty payload (cut = data loss).
   // Walk the selection's slot frame instead; outside slots this is the root.
-  const slotFrame = $isRangeSelection(selection)
-    ? $getSlotFrame(selection.anchor.getNode())
-    : null;
+  // NodeSelection participates here too — a click that selects a decorator
+  // nested in a slot needs the same frame redirect, otherwise its export
+  // pipeline silently produces an empty clipboard.
+  //
+  // NodeSelection.getNodes()[0] is the first node by insertion order (the
+  // internal _nodes Set's iteration order), not document order. For the
+  // common single-decorator case this is the only node and the frame is
+  // unambiguous. A multi-node NodeSelection that straddles a slot boundary
+  // is currently undefined — slots are shadow-isolated, so straddling is
+  // already invalid construction, and we pick the first inserted node's
+  // frame rather than asserting.
+  const slotFrameAnchor = $isRangeSelection(selection)
+    ? selection.anchor.getNode()
+    : $isNodeSelection(selection)
+      ? (selection.getNodes()[0] ?? null)
+      : null;
+  const slotFrame =
+    slotFrameAnchor !== null ? $getSlotFrame(slotFrameAnchor) : null;
   const topLevelChildren = (
     $isElementNode(slotFrame) ? slotFrame : root
   ).getChildren();

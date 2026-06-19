@@ -11,9 +11,9 @@
 hr[data-lexical-page-break] {
   position: relative;
   display: block;
-  width: calc(100% + var(--editor-input-padding, 28px) * 2);
+  width: 100%;
   overflow: unset;
-  margin-left: calc(var(--editor-input-padding, 28px) * -1);
+  margin-left: 0;
   margin-top: var(--editor-input-padding, 28px);
   margin-bottom: var(--editor-input-padding, 28px);
 
@@ -21,6 +21,11 @@ hr[data-lexical-page-break] {
   border-top: 1px dashed var(--editor-color-secondary, #eeeeee);
   border-bottom: 1px dashed var(--editor-color-secondary, #eeeeee);
   background-color: var(--editor-color-secondary, #eeeeee);
+}
+
+.ContentEditable__root > hr[data-lexical-page-break] {
+  width: calc(100% + var(--editor-input-padding, 28px) * 2);
+  margin-left: calc(var(--editor-input-padding, 28px) * -1);
 }
 
 hr[data-lexical-page-break]::before {

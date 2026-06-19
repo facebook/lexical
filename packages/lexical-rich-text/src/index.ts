@@ -1047,10 +1047,18 @@ export function registerRichText(
     editor.registerCommand<KeyboardEvent>(
       KEY_BACKSPACE_COMMAND,
       event => {
-        if ($isTargetWithinDecorator(event.target as HTMLElement)) {
-          return false;
-        }
         const selection = $getSelection();
+        // A NodeSelection (e.g. a click that selected a block decorator) is
+        // the user's explicit "delete this node" gesture. The decorator
+        // pass-through below is meant to keep keystrokes flowing into an
+        // editable nested inside a decorator (image caption, etc.), but a
+        // NodeSelection is exactly the case where the user wants us to
+        // handle backspace ourselves.
+        if (!$isNodeSelection(selection)) {
+          if ($isTargetWithinDecorator(event.target as HTMLElement)) {
+            return false;
+          }
+        }
         if ($isRangeSelection(selection)) {
           if ($isSelectionCollapsedAtFrontOfIndentedBlock(selection)) {
             event.preventDefault();
@@ -1073,10 +1081,15 @@ export function registerRichText(
     editor.registerCommand<KeyboardEvent>(
       KEY_DELETE_COMMAND,
       event => {
-        if ($isTargetWithinDecorator(event.target as HTMLElement)) {
-          return false;
-        }
         const selection = $getSelection();
+        // Same NodeSelection bypass as KEY_BACKSPACE_COMMAND above: a click
+        // that selected a block decorator is the user's "delete this node"
+        // gesture, even though the click target lives inside a decorator.
+        if (!$isNodeSelection(selection)) {
+          if ($isTargetWithinDecorator(event.target as HTMLElement)) {
+            return false;
+          }
+        }
         if (!($isRangeSelection(selection) || $isNodeSelection(selection))) {
           return false;
         }

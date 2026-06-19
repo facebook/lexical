@@ -301,7 +301,15 @@ function $transferStartingElementPointToTextPoint(
   if ($isParagraphNode(placementNode)) {
     placementNode.splice(0, 0, [textNode]);
   } else if (placementNode !== null) {
-    const target = $isRootNode(element)
+    // root or shadow-root + element-mode anchor before a non-paragraph
+    // child (typically a sibling block decorator): wrap the new text in
+    // a paragraph so it stays a valid block-level child of the root or
+    // slot frame. The last-offset branch below already covers shadow
+    // roots; the in-the-middle case used to drop a raw text node next
+    // to the decorator, which leaves the text without a block ancestor
+    // and breaks every downstream getTopLevelElement / $findMatchingParent
+    // walk (Cmd+A, Enter, etc.).
+    const target = $isRootOrShadowRoot(element)
       ? $createParagraphNode().append(textNode)
       : textNode;
     placementNode.insertBefore(target);
@@ -1424,10 +1432,35 @@ export class RangeSelection implements BaseSelection {
       // block-shaped value (virtual shadow root around a single block) needs
       // no seeding: it IS the block, so the block-finding walk below lands
       // on it directly.
-      const firstChild = anchorNode.isShadowRoot()
+      let firstChild = anchorNode.isShadowRoot()
         ? (anchorNode.getFirstChild() ??
           anchorNode.append($createParagraphNode()).getFirstChild())
         : anchorNode.getFirstChild();
+      // A shadow-root slot whose first child is a non-element (typically a
+      // decorator like HorizontalRuleNode) would re-enter this same branch
+      // forever: `firstChild.selectStart()` resolves back to the slot value's
+      // own element-mode caret (no sibling, parent = the slot value root),
+      // which matches the entry condition above. Seed a paragraph before the
+      // non-element first child so the redirected selection lands in a block
+      // and the recursion terminates.
+      //
+      // The seed paragraph is the redirect target only — if `nodes` carries
+      // inline content the recursion fills the paragraph in place, and if it
+      // carries block content the recursion's root/shadow-root branch
+      // (`splice` after `$wrapInlineNodes`) inserts the new blocks before the
+      // existing non-element first child while the seed sits at offset 0 as
+      // the new shadow-root first child. In either case the seed ends up
+      // hosting either the inserted content or an empty leading line, never
+      // a stranded paragraph next to the original non-element child.
+      if (
+        anchorNode.isShadowRoot() &&
+        firstChild !== null &&
+        !$isElementNode(firstChild)
+      ) {
+        const seed = $createParagraphNode();
+        firstChild.insertBefore(seed);
+        firstChild = seed;
+      }
       if (firstChild !== null) {
         firstChild.selectStart();
         const redirected = $getSelection();
@@ -1948,6 +1981,24 @@ export class RangeSelection implements BaseSelection {
             } else if ($isDecoratorNode(caret.origin)) {
               if (caret.origin.isIsolated()) {
                 // do nothing, shouldn't delete an isolated decorator
+              } else if ($getSlotNames(caret.origin).length > 0) {
+                // A slot-bearing decorator is removed only as a unit by an
+                // explicit host deletion, never silently via backspace —
+                // same policy as the merge-block branch below for
+                // ElementNode-as-host. When the anchor is an empty
+                // paragraph next to the host, drop the paragraph and
+                // select the host (matches the shadow-root ElementNode
+                // path at line 1951–1962 above); otherwise leave both in
+                // place.
+                if (
+                  $isElementNode(initialRange.anchor.origin) &&
+                  initialRange.anchor.origin.isEmpty()
+                ) {
+                  initialRange.anchor.origin.remove();
+                  const nodeSelection = $createNodeSelection();
+                  nodeSelection.add(caret.origin.getKey());
+                  $setSelection(nodeSelection);
+                }
               } else if (
                 state.type === 'merge-next-block' &&
                 (caret.origin.isKeyboardSelectable() ||

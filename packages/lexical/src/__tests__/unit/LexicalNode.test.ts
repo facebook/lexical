@@ -86,6 +86,24 @@ class InlineDecoratorNode extends DecoratorNode<string> {
   }
 }
 
+class BlockDecoratorNode extends DecoratorNode<string> {
+  $config() {
+    return this.config('block-decorator', {extends: DecoratorNode});
+  }
+
+  createDOM(): HTMLElement {
+    return document.createElement('div');
+  }
+
+  isInline(): false {
+    return false;
+  }
+
+  decorate() {
+    return 'block-decorator';
+  }
+}
+
 describe('LexicalNode tests', () => {
   beforeAll(() => {
     // Give the abstract base a concrete type for `new LexicalNode()` tests, but
@@ -579,7 +597,7 @@ describe('LexicalNode tests', () => {
         });
         expect(() => textNode.getTopLevelElement()).toThrow();
         await editor.update(() => {
-          const node = new InlineDecoratorNode();
+          const node = new BlockDecoratorNode();
           expect(node.getTopLevelElement()).toBe(null);
           $getRoot().append(node);
           expect(node.getTopLevelElement()).toBe(node);
@@ -1607,7 +1625,7 @@ describe('LexicalNode tests', () => {
     },
     {
       namespace: '',
-      nodes: [LexicalNode, TestNode, InlineDecoratorNode],
+      nodes: [LexicalNode, TestNode, InlineDecoratorNode, BlockDecoratorNode],
       theme: {},
     },
   );

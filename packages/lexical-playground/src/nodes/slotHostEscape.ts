@@ -23,7 +23,6 @@ import {
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
-  $isRootOrShadowRoot,
   COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_LOW,
   isModifierMatch,
@@ -346,13 +345,15 @@ function $reanchorRangeBeforeHost<T extends LexicalNode>(
  *   paragraph rather than only clearing its contents (see
  *   {@link $reanchorRangeBeforeHost}) — on both Backspace and forward Delete.
  * - On Backspace, a collapsed caret at the start of an *empty* host's first
- *   region (the Card's `title` slot, the Review's body), or at the start of the
- *   block immediately after an *empty* host, deletes the host — the analog of
- *   backspacing an empty block away.
+ *   region (the Card's `title` slot, the Review's body) escapes the host by
+ *   deleting it — the analog of backspacing an empty block away.
  *
  * A non-empty host is otherwise left to the default handler, so the slots'
  * shadow-root boundary still protects their content (backspace at a non-empty
- * slot start stays a no-op).
+ * slot start stays a no-op). Backspace at the start of a block *after* an
+ * empty host is also left alone: the user's caret is in the next block, so
+ * silently deleting the previous host crosses a node boundary the user did
+ * not point at (issue #8712).
  */
 export function registerSlotHostBackspace<T extends LexicalNode>(
   editor: LexicalEditor,
@@ -373,44 +374,21 @@ export function registerSlotHostBackspace<T extends LexicalNode>(
         }
         const anchor = selection.anchor;
         const inner = $findSlotHost(anchor.getNode(), $isHost);
-        if (inner !== null) {
-          // Inside the host: only delete from the start of its first region.
-          const first = $orderedRegions(editor, inner)[0];
-          if (
-            first !== undefined &&
-            $isElementNode(first.startNode) &&
-            $isAtStartOfNode(anchor, first.startNode) &&
-            $isEmpty(inner)
-          ) {
-            $deleteEmptyHost(inner);
-            if (event) {
-              event.preventDefault();
-            }
-            return true;
-          }
+        if (inner === null) {
+          // Caret is outside the host. Let the default handler take it; we
+          // do not silently delete the previous empty host, which would
+          // cross a node boundary the user did not point at.
           return false;
         }
-        // Outside the host: delete when the caret is at the start of the block
-        // immediately after an empty host.
-        let block: LexicalNode | null = anchor.getNode();
-        while (block !== null) {
-          const parent: LexicalNode | null = block.getParent();
-          if (parent !== null && $isRootOrShadowRoot(parent)) {
-            break;
-          }
-          block = parent;
-        }
-        if (block === null || !$isElementNode(block)) {
-          return false;
-        }
-        const prev = block.getPreviousSibling();
+        // Inside the host: only delete from the start of its first region.
+        const first = $orderedRegions(editor, inner)[0];
         if (
-          $isHost(prev) &&
-          $isEmpty(prev) &&
-          $isAtStartOfNode(anchor, block)
+          first !== undefined &&
+          $isElementNode(first.startNode) &&
+          $isAtStartOfNode(anchor, first.startNode) &&
+          $isEmpty(inner)
         ) {
-          prev.remove();
-          block.selectStart();
+          $deleteEmptyHost(inner);
           if (event) {
             event.preventDefault();
           }

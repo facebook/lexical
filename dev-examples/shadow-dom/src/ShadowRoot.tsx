@@ -9,8 +9,8 @@
 import {
   type JSX,
   type ReactNode,
-  useLayoutEffect,
-  useRef,
+  type RefCallback,
+  useCallback,
   useState,
 } from 'react';
 import {createPortal} from 'react-dom';
@@ -35,15 +35,14 @@ export default function ShadowRoot({
   children: ReactNode;
   styleSheet?: string;
 }): JSX.Element {
-  const hostRef = useRef<HTMLDivElement | null>(null);
   const [shadowRoot, setShadowRoot] = useState<ShadowRoot | null>(null);
-
-  useLayoutEffect(() => {
-    const host = hostRef.current;
-    if (host !== null && shadowRoot === null) {
-      setShadowRoot(host.shadowRoot ?? host.attachShadow({mode: 'open'}));
-    }
-  }, [shadowRoot]);
+  const hostRef = useCallback<RefCallback<HTMLElement>>(
+    host =>
+      setShadowRoot(
+        host ? (host.shadowRoot ?? host.attachShadow({mode: 'open'})) : null,
+      ),
+    [],
+  );
 
   return (
     <div ref={hostRef} className="shadow-host">

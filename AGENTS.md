@@ -190,11 +190,13 @@ When adding/modifying APIs, types must be maintained for both systems.
 ## Important Development Notes
 
 ### Reconciliation and Updates
-- `editor.read()` flushes pending updates first, then provides consistent reconciled state
+- `editor.read(...)`  or `editor.read('force-commit', ...)` flushes pending updates first, then provides consistent reconciled state
+- `editor.read('pending', ...)` reads the pending state (like `editor.update(...)`, but read-only)
+- `editor.read('latest', ...)` reads the latest consistent reconciled state
 - Inside `editor.update()`, you see pending state (transforms/reconciliation not yet run)
-- `editor.getEditorState().read()` always uses latest reconciled state
-- Updates can be nested: `editor.update(() => editor.update(...))` is allowed
-- Do NOT nest reads in updates or vice versa (except read at end of update, which flushes)
+- `editor.getEditorState().read()` always uses latest reconciled state, but prefer `editor.read('latest', ...)` in new code
+- Updates can be nested: `editor.update(() => editor.update(...))` is allowed but strongly discouraged
+- Do NOT nest updates in reads, or use a force-commit in an update
 
 ### Node References
 Always access node properties/methods within read/update context. Nodes automatically resolve to their latest version via their key. Don't store node references across update boundaries.

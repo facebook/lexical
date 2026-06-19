@@ -16,6 +16,13 @@ import {
   type OutputComponentExtension,
 } from 'lexical';
 
+/**
+ * Returns the resolved {@link LexicalExtensionDependency} for `extension` from
+ * the current editor (read from the composer context), giving access to its
+ * config and output. The editor must include this extension.
+ *
+ * @returns The extension's dependency record.
+ */
 export function useExtensionDependency<Extension extends AnyLexicalExtension>(
   extension: Extension,
 ): LexicalExtensionDependency<Extension> {
@@ -25,12 +32,27 @@ export function useExtensionDependency<Extension extends AnyLexicalExtension>(
   );
 }
 
+/**
+ * Like {@link useExtensionDependency}, but returns `undefined` instead of
+ * throwing when `extension` is not present on the current editor. Useful for
+ * optionally integrating with an extension that may or may not be configured.
+ *
+ * @returns The extension's dependency record, or `undefined` if absent.
+ */
 export function useOptionalExtensionDependency<
   Extension extends AnyLexicalExtension,
 >(extension: Extension): undefined | LexicalExtensionDependency<Extension> {
   return usePeerExtensionDependency<typeof extension>(extension.name);
 }
 
+/**
+ * Returns the {@link LexicalExtensionDependency} for a peer extension looked up
+ * by `extensionName`, or `undefined` if no extension with that name is present
+ * on the current editor. Use this when you only have the peer extension's name
+ * (for example to avoid a hard dependency on its module).
+ *
+ * @returns The peer extension's dependency record, or `undefined` if absent.
+ */
 export function usePeerExtensionDependency<
   Extension extends AnyLexicalExtension,
 >(

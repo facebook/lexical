@@ -34,7 +34,7 @@ export class CollapsibleContentNode extends ElementNode {
     const dom = document.createElement('div');
     dom.classList.add('Collapsible__content');
     if (IS_CHROME || IS_FIREFOX) {
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const containerNode = this.getParentOrThrow();
         if (!$isCollapsibleContainerNode(containerNode)) {
           throw new Error(

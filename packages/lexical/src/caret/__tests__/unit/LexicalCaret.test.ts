@@ -844,7 +844,7 @@ describe('LexicalCaret', () => {
             {discrete: true},
           );
           // Reconciliation has happened
-          testEnv.editor.getEditorState().read(() => {
+          testEnv.editor.read('latest', () => {
             const allTextNodes = $getRoot().getAllTextNodes();
             // These should get merged in reconciliation
             expect(allTextNodes.map(node => node.getTextContent())).toEqual([
@@ -1682,7 +1682,7 @@ describe('LexicalCaret', () => {
             },
             {discrete: true},
           );
-          testEnv.editor.getEditorState().read(() => {
+          testEnv.editor.read('latest', () => {
             const allTextNodes = $getRoot().getAllTextNodes();
             // These should get merged in reconciliation
             expect(allTextNodes.map(node => node.getTextContent())).toEqual([

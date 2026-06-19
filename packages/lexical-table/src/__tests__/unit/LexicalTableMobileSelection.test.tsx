@@ -127,7 +127,7 @@ describe('LexicalTableMobileSelection', () => {
         pointerType: 'mouse',
       });
 
-      await testEnv.editor.getEditorState().read(() => {
+      await testEnv.editor.read('latest', () => {
         // For mouse events, anchor should still be set (existing behavior)
         // This test mainly ensures no errors occur
         expect(true).toBe(true); // This test mainly ensures no errors occur
@@ -153,7 +153,7 @@ describe('LexicalTableMobileSelection', () => {
         pointerType: 'touch',
       });
 
-      await testEnv.editor.getEditorState().read(() => {
+      await testEnv.editor.read('latest', () => {
         const selection = $getSelection();
         // Should remain a range selection, not become a table selection
         expect($isRangeSelection(selection)).toBe(true);
@@ -190,7 +190,7 @@ describe('LexicalTableMobileSelection', () => {
         pointerType: 'touch',
       });
 
-      await testEnv.editor.getEditorState().read(() => {
+      await testEnv.editor.read('latest', () => {
         const selection = $getSelection();
         // Should remain a range selection, not become a table selection
         expect($isRangeSelection(selection)).toBe(true);
@@ -231,7 +231,7 @@ describe('LexicalTableMobileSelection', () => {
       // Note: This test verifies that intentional drag operations still work
       // The actual table selection creation depends on the internal state management
       // which is complex to fully simulate in a unit test
-      await testEnv.editor.getEditorState().read(() => {
+      await testEnv.editor.read('latest', () => {
         // For now, we just verify no errors occur
         // In a real implementation, you might need more sophisticated simulation
         expect(true).toBe(true);
@@ -263,7 +263,7 @@ describe('LexicalTableMobileSelection', () => {
         pointerType: 'touch',
       });
 
-      await testEnv.editor.getEditorState().read(() => {
+      await testEnv.editor.read('latest', () => {
         // Should handle mixed input gracefully without errors
         expect(true).toBe(true);
       });
@@ -308,7 +308,7 @@ describe('LexicalTableMobileSelection', () => {
         pointerType: 'mouse',
       });
 
-      await testEnv.editor.getEditorState().read(() => {
+      await testEnv.editor.read('latest', () => {
         const selection = $getSelection();
         // After mouse re-enters with buttons: 0, selection should be cleaned up
         // and should not be a table selection (drag was interrupted)

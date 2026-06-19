@@ -202,7 +202,7 @@ describe('LexicalCodeNode tests', () => {
         $getSelection()!.insertText('foo');
       });
       expect(
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           return $getNodeByKey(tabKey) !== null;
         }),
       );

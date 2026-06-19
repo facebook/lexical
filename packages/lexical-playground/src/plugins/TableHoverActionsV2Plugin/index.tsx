@@ -378,13 +378,10 @@ function TableHoverActionsV2({
       setCanReorder(false);
       return;
     }
-    editor.getEditorState().read(
-      () => {
-        const tableNode = $getNearestNodeFromDOMNode(hoveredTable);
-        setCanReorder($isTableNode(tableNode) && $isSimpleTable(tableNode));
-      },
-      {editor},
-    );
+    editor.read('latest', () => {
+      const tableNode = $getNearestNodeFromDOMNode(hoveredTable);
+      setCanReorder($isTableNode(tableNode) && $isSimpleTable(tableNode));
+    });
   }, [editor, hoveredTable]);
 
   useEffect(() => {

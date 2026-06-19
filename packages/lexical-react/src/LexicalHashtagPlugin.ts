@@ -12,6 +12,16 @@ import {HashtagNode, registerLexicalHashtag} from '@lexical/hashtag';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 
+/**
+ * Enables hashtag support by transforming runs of text that begin with `#`
+ * into {@link HashtagNode}s. The editor must have the {@link HashtagNode}
+ * registered.
+ *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link HashtagExtension} instead.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function HashtagPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 

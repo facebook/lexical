@@ -128,7 +128,7 @@ export default function TableFitNestedTablePlugin(): null {
 
   useEffect(() => {
     return editor.registerMutationListener(TableNode, nodeMutations => {
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const modifiedTables = new Set<TableNode>();
         for (const [nodeKey, mutation] of nodeMutations) {
           if (mutation === 'created' || mutation === 'updated') {

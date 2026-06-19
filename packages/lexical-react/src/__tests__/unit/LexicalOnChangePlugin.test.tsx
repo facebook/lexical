@@ -145,4 +145,44 @@ describe('LexicalOnChangePlugin', () => {
     expect(tags).toBeInstanceOf(Set);
     expect(tags.has(FOCUS_TAG)).toBe(true);
   });
+
+  it('ignoreFocusChange={true} suppresses onChange when editor.focus() is called', async () => {
+    const {editor, onChange} = await renderWithOnChange(true);
+
+    const rootElement = document.createElement('div');
+    rootElement.contentEditable = 'true';
+    container!.appendChild(rootElement);
+
+    await act(async () => {
+      editor.setRootElement(rootElement);
+    });
+
+    onChange.mockClear();
+
+    await act(async () => {
+      editor.focus();
+    });
+
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('ignoreFocusChange={false} calls onChange when editor.focus() is called', async () => {
+    const {editor, onChange} = await renderWithOnChange(false);
+
+    const rootElement = document.createElement('div');
+    rootElement.contentEditable = 'true';
+    container!.appendChild(rootElement);
+
+    await act(async () => {
+      editor.setRootElement(rootElement);
+    });
+
+    onChange.mockClear();
+
+    await act(async () => {
+      editor.focus();
+    });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
 });

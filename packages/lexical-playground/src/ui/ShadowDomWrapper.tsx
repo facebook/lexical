@@ -12,8 +12,8 @@ import {objectKlassEquals} from '@lexical/utils';
 import {
   type JSX,
   type ReactNode,
-  useLayoutEffect,
-  useRef,
+  type RefCallback,
+  useCallback,
   useState,
 } from 'react';
 import {createPortal} from 'react-dom';
@@ -152,18 +152,14 @@ export default function ShadowDomWrapper({
 }: {
   children: ReactNode;
 }): JSX.Element {
-  const hostRef = useRef<HTMLDivElement | null>(null);
   const [shadowRoot, setShadowRoot] = useState<ShadowRoot | null>(null);
-
-  useLayoutEffect(() => {
-    const host = hostRef.current;
-    if (host === null) {
-      return;
+  const hostRef = useCallback<RefCallback<HTMLElement>>(host => {
+    if (host) {
+      const root = host.shadowRoot ?? host.attachShadow({mode: 'open'});
+      const disposeStyles = adoptDocumentStyles(root);
+      setShadowRoot(root);
+      return disposeStyles;
     }
-    const root = host.shadowRoot ?? host.attachShadow({mode: 'open'});
-    const disposeStyles = adoptDocumentStyles(root);
-    setShadowRoot(root);
-    return disposeStyles;
   }, []);
 
   return (

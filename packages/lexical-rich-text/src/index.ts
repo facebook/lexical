@@ -1064,9 +1064,13 @@ export function registerRichText(
             event.preventDefault();
             return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
           }
-          // Exception handling for iOS native behavior instead of Lexical's behavior when using Korean on iOS devices.
-          // more details - https://github.com/facebook/lexical/issues/5841
-          if (IS_IOS && navigator.language === 'ko-KR') {
+          // On iOS, blocking the keydown event's default prevents the system
+          // keyboard from updating its autocomplete/autocorrect suggestion bar
+          // after Backspace. Returning false here skips event.preventDefault()
+          // on keydown; the beforeinput deleteContentBackward handler still runs
+          // and performs the deletion, so editing behavior is unchanged.
+          // See https://github.com/facebook/lexical/issues/5841
+          if (IS_IOS && CAN_USE_BEFORE_INPUT) {
             return false;
           }
         } else if (!$isNodeSelection(selection)) {

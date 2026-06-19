@@ -20,6 +20,12 @@ import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
 
 export {ContentEditableElement, type ContentEditableElementProps};
 
+/**
+ * Props for the {@link ContentEditable} component. These are the
+ * {@link ContentEditableElementProps} (minus `editor`, which is read from
+ * context) plus an optional `placeholder`; when a `placeholder` is provided an
+ * `aria-placeholder` string is also required for accessibility.
+ */
 export type ContentEditableProps = Omit<ContentEditableElementProps, 'editor'> &
   (
     | {
@@ -34,6 +40,13 @@ export type ContentEditableProps = Omit<ContentEditableElementProps, 'editor'> &
       }
   );
 
+/**
+ * The editable surface of a Lexical editor: the `contentEditable` element that
+ * users type into. Render it inside a {@link LexicalComposer} (it reads the
+ * editor from context) and pass it to {@link RichTextPlugin} or
+ * {@link PlainTextPlugin}. An optional `placeholder` is shown while the editor
+ * is empty. The `ref` is forwarded to the underlying `<div>`.
+ */
 export const ContentEditable = forwardRef(ContentEditableImpl);
 
 function ContentEditableImpl(

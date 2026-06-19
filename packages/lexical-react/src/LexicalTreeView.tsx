@@ -24,6 +24,10 @@ import {useEffect, useState} from 'react';
  * the Lexical editor's state and enables debugging features like time travel
  * and custom tree node rendering.
  *
+ * When building an editor with the extension API, configure
+ * {@link TreeViewExtension} to render this debugging view wired to the editor
+ * instead of rendering `TreeView` directly.
+ *
  * @param {Object} props - The properties passed to the TreeView component.
  * @param {LexicalEditor} props.editor - The Lexical editor instance to be visualized and debugged.
  * @param {string} [props.treeTypeButtonClassName] - Custom class name for the tree type toggle button.

@@ -194,15 +194,13 @@ export function $trimTextContentFromAnchor(
     } else {
       const key = currentNode.getKey();
       // See if we can just revert it to what was in the last editor state
-      const prevTextContent: string | null = editor
-        .getEditorState()
-        .read(() => {
-          const prevNode = $getNodeByKey(key);
-          if ($isTextNode(prevNode) && prevNode.isSimpleText()) {
-            return prevNode.getTextContent();
-          }
-          return null;
-        });
+      const prevTextContent: string | null = editor.read('latest', () => {
+        const prevNode = $getNodeByKey(key);
+        if ($isTextNode(prevNode) && prevNode.isSimpleText()) {
+          return prevNode.getTextContent();
+        }
+        return null;
+      });
       const offset = currentNodeSize - remaining;
       const slicedText = text.slice(0, offset);
       if (prevTextContent !== null && prevTextContent !== text) {

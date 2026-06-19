@@ -147,7 +147,8 @@ export type EditorSetOptions = {
  *   state.
  * - `'pending'` reads the pending state if it exists, otherwise the committed
  *   state, without flushing. This is safe to call when an update may already
- *   be in progress at the cost of possibly observing an uncommitted state.
+ *   be in progress at the cost of possibly observing an uncommitted state
+ *   before node transforms, DOM reconciliation, etc. have run.
  * - `'latest'` reads the latest committed state without flushing pending
  *   updates, equivalent to `editor.getEditorState().read(callbackFn, {editor})`.
  */

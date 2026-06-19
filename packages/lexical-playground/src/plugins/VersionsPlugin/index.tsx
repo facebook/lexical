@@ -145,7 +145,7 @@ export function VersionsPlugin({id}: {id: string}) {
           userToColor.set(user, color);
           return color;
         };
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           for (const [nodeKey, mutation] of nodes.entries()) {
             if (mutation === 'destroyed') {
               continue;

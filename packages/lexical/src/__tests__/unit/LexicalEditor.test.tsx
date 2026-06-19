@@ -695,9 +695,9 @@ describe('LexicalEditor tests', () => {
 
     await Promise.resolve().then();
 
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Sync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
     // Calculate an expected update listener paylaod
@@ -1809,7 +1809,7 @@ describe('LexicalEditor tests', () => {
       // Wait for update to complete
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const root = $getRoot();
         const paragraph = root.getFirstChild()!;
         expect(root).toEqual({
@@ -3354,9 +3354,9 @@ describe('LexicalEditor tests', () => {
       },
     );
 
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Sync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
     // Calculate an expected update listener paylaod
@@ -3385,9 +3385,9 @@ describe('LexicalEditor tests', () => {
       },
     );
 
-    const textContent = headless
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = headless.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Async update\n\nSync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
   });
@@ -3416,9 +3416,9 @@ describe('LexicalEditor tests', () => {
         discrete: true,
       },
     );
-    const textContent = headless
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = headless.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Async update\n\nSync update');
   });
 
@@ -3442,9 +3442,9 @@ describe('LexicalEditor tests', () => {
       );
     });
 
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Async update\n\nSync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
   });
@@ -3617,7 +3617,7 @@ describe('LexicalEditor tests', () => {
         expect(text.getTextContent()).toBe('123');
       });
 
-      await newEditor.getEditorState().read(() => {
+      await newEditor.read('latest', () => {
         expect(mockTransform).toHaveBeenCalledTimes(0);
       });
 
@@ -3665,7 +3665,7 @@ describe('LexicalEditor tests', () => {
         expect(text.getTextContent()).toBe('123');
       });
 
-      await newEditor.getEditorState().read(() => {
+      await newEditor.read('latest', () => {
         expect(mockTransform).toHaveBeenCalledTimes(1);
       });
 

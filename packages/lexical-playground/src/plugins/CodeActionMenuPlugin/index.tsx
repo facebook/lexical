@@ -116,7 +116,7 @@ function CodeActionMenuContainer({
     return editor.registerMutationListener(
       CodeNode,
       mutations => {
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           for (const [key, type] of mutations) {
             switch (type) {
               case 'created':

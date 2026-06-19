@@ -9,6 +9,9 @@ import {getExtensionDependencyFromEditor} from '@lexical/extension';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {LexicalEditorWithDispose} from 'lexical';
 
+/**
+ * Props for the {@link LexicalExtensionEditorComposer} component.
+ */
 export interface LexicalExtensionEditorComposerProps {
   /**
    * Your root extension, typically defined with {@link defineExtension}.

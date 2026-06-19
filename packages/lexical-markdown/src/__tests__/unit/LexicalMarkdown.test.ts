@@ -425,6 +425,27 @@ describe('Markdown', () => {
       md: '`$a` `$b`',
     },
     {
+      // Inline code containing a backtick must use a longer fence (CommonMark
+      // code spans) and pad with spaces so it round-trips losslessly.
+      html: '<p><span style="white-space: pre-wrap;">Here: </span><code spellcheck="false" style="white-space: pre-wrap;"><span>a`b</span></code></p>',
+      md: 'Here: `` a`b ``',
+    },
+    {
+      // Two consecutive backticks in the content bump the fence to three.
+      html: '<p><span style="white-space: pre-wrap;">Code: </span><code spellcheck="false" style="white-space: pre-wrap;"><span>a``b</span></code></p>',
+      md: 'Code: ``` a``b ```',
+    },
+    {
+      // Content beginning with a backtick is padded so the fence stays distinct.
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>`x</span></code></p>',
+      md: '`` `x ``',
+    },
+    {
+      // The code fence must remain the innermost wrapping, inside bold.
+      html: '<p><b><code spellcheck="false" style="white-space: pre-wrap;"><strong>a`b</strong></code></b></p>',
+      md: '**`` a`b ``**',
+    },
+    {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">Hello</span></a><span style="white-space: pre-wrap;"> world</span></p>',
       md: '[Hello](https://lexical.dev) world',
     },
@@ -2277,6 +2298,68 @@ describe('markdown Safari compatibility (issue #8012)', () => {
 
   it('does not apply emphasis formatting inside a code span', () => {
     expect(roundtrip('`**not bold**`')).toBe('`**not bold**`');
+  });
+});
+
+describe('inline code with backticks (CommonMark code spans)', () => {
+  function createTestEditor() {
+    return createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+  }
+
+  function roundtrip(md: string): string {
+    const editor = createTestEditor();
+    editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+      discrete: true,
+    });
+    return editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS));
+  }
+
+  function exportCodeSpan(content: string): string {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode(content);
+        text.toggleFormat('code');
+        paragraph.append(text);
+        $getRoot().append(paragraph);
+      },
+      {discrete: true},
+    );
+    return editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS));
+  }
+
+  it('round-trips code spans whose content contains backticks', () => {
+    expect(roundtrip('Here: `` a`b ``')).toBe('Here: `` a`b ``');
+    expect(roundtrip('Code: ``` a``b ```')).toBe('Code: ``` a``b ```');
+    expect(roundtrip('`` `x ``')).toBe('`` `x ``');
+  });
+
+  it('exports a content-derived fence longer than any backtick run', () => {
+    expect(exportCodeSpan('block code')).toBe('`block code`');
+    expect(exportCodeSpan('a`b')).toBe('`` a`b ``');
+    expect(exportCodeSpan('a``b')).toBe('``` a``b ```');
+    expect(exportCodeSpan('`x')).toBe('`` `x ``');
+  });
+
+  it('normalizes a redundant inline fence to the minimal valid fence', () => {
+    // Both a single- and triple-backtick inline fence with backtick-free
+    // content normalize to a single backtick on export.
+    expect(roundtrip('a `block code` b')).toBe('a `block code` b');
+    expect(roundtrip('a ```block code``` b')).toBe('a `block code` b');
+  });
+
+  it('keeps the code fence innermost when combined with bold', () => {
+    expect(roundtrip('**`` a`b ``**')).toBe('**`` a`b ``**');
   });
 });
 

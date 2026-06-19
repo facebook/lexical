@@ -6,6 +6,9 @@
  *
  */
 
+import type {LexicalEditor} from 'lexical';
+
+import {createRectsFromDOMRange} from '@lexical/selection';
 import {dedupeSelectionRects} from '@lexical/utils';
 import {describe, expect, it} from 'vitest';
 
@@ -106,5 +109,80 @@ describe('dedupeSelectionRects', () => {
       rect(180, 44, 120, 18),
     ];
     expect(dedupeSelectionRects(rows)).toHaveLength(3);
+  });
+});
+
+// The consumer pipeline in positionNodeOnRange is
+// `dedupeSelectionRects(createRectsFromDOMRange(editor, range))`.
+// createRectsFromDOMRange already runs its own dedupe — single-pass and
+// adjacent-only: it sorts by top (3px tolerance) then left, drops a rect only when
+// it overlaps the immediately-preceding KEPT rect, and drops rects spanning the
+// full editor width. So the common #7106 block-width spurious rect is removed
+// before dedupe; what can still reach dedupe is a same-row CONTAINED pair whose
+// inner rect carries a sub-pixel-smaller top (as overlapping inline content
+// produces), which the asymmetric filter lets through. These tests run the REAL
+// createRectsFromDOMRange against a faked root + range to characterize that.
+type Rect = ReturnType<typeof rect>;
+
+function fakeEditorWithRoot(rootWidth: number): LexicalEditor {
+  const root = document.createElement('div');
+  root.style.paddingLeft = '0px';
+  root.style.paddingRight = '0px';
+  root.getBoundingClientRect = () => ({width: rootWidth}) as DOMRect;
+  return {getRootElement: () => root} as unknown as LexicalEditor;
+}
+
+function createRects(editor: LexicalEditor, rects: Rect[]): Rect[] {
+  // .slice() so createRectsFromDOMRange's in-place sort/splice cannot mutate input.
+  const range = {getClientRects: () => rects.slice()} as unknown as Range;
+  return createRectsFromDOMRange(editor, range) as unknown as Rect[];
+}
+
+const widths = (rects: Rect[]): number[] =>
+  rects.map(r => r.width).sort((a, b) => a - b);
+
+describe('dedupeSelectionRects + createRectsFromDOMRange', () => {
+  // A narrower text rect and a wider rect on the same visual row, the wider carrying
+  // a sub-pixel-smaller top (wider.top 90.0 vs text.top 90.5) — the split overlapping
+  // inline content produces. They group within createRectsFromDOMRange's 3px row
+  // tolerance, but its overlap test is asymmetric — it drops the current rect only
+  // when `prevRect.top <= cur.top` — so with the text rect kept first (the larger
+  // top) the wider rect is NOT dropped, and both reach dedupe. (The full-block-width
+  // #7106 rect would instead be dropped upstream by selectionSpansElement.)
+  const text = (): Rect => rect(128, 90.5, 368, 18);
+  const wider = (): Rect => rect(128, 90.0, 900, 18); // ≠ editor width (1200): not dropped as full-width
+
+  it('createRectsFromDOMRange leaves the contained pair (its adjacent-only pass does not catch it)', () => {
+    const editor = fakeEditorWithRoot(1200);
+    expect(widths(createRects(editor, [text(), wider()]))).toEqual([368, 900]);
+  });
+
+  it('dedupeSelectionRects collapses that survivor pair to the text-hugging rect', () => {
+    const editor = fakeEditorWithRoot(1200);
+    expect(
+      widths(dedupeSelectionRects(createRects(editor, [text(), wider()]))),
+    ).toEqual([368]);
+  });
+
+  it('dedupeSelectionRects is order-independent where createRectsFromDOMRange is not', () => {
+    const editor = fakeEditorWithRoot(1200);
+    // createRectsFromDOMRange keeps whichever rect streams first → order-dependent.
+    expect(widths(createRects(editor, [text(), wider()]))).not.toEqual(
+      widths(createRects(editor, [wider(), text()])),
+    );
+    // dedupeSelectionRects always keeps the smaller → same result either way.
+    expect(widths(dedupeSelectionRects([text(), wider()]))).toEqual([368]);
+    expect(widths(dedupeSelectionRects([wider(), text()]))).toEqual([368]);
+  });
+
+  it('keeps the smaller (text) rect by design — keeping the wider one re-introduces the #7106 extra-area paint', () => {
+    // The pair is geometrically ambiguous: a spurious wide rect containing the real
+    // text rect is indistinguishable from a (hypothetical) real wide rect containing
+    // a redundant sub-fragment. A single dedupe must pick one; keeping the smaller
+    // resolves toward the reproduced bug (#7106) — never the wider rect.
+    const editor = fakeEditorWithRoot(1200);
+    const kept = dedupeSelectionRects(createRects(editor, [text(), wider()]));
+    expect(kept).toHaveLength(1);
+    expect(kept[0].width).toBe(368);
   });
 });

@@ -12,7 +12,6 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  LexicalEditor,
   TextNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
@@ -28,7 +27,7 @@ import {describe, expect, test} from 'vitest';
 const PARSED_TEXT = 'hello {{name}}';
 const TRANSFORMED_TEXT = 'VARIABLE';
 
-function buildEditor(onTransform?: (node: TextNode) => void): LexicalEditor {
+function buildEditor(onTransform?: (node: TextNode) => void) {
   const editor = buildEditorFromExtensions({
     dependencies: [RichTextExtension],
     name: 'issue-7876-repro',

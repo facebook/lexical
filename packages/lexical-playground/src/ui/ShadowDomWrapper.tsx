@@ -52,15 +52,19 @@ function adoptDocumentStyles(shadowRoot: ShadowRoot): () => void {
       return null;
     }
     try {
+      // CSSStyleSheet.replaceSync drops @import rules with a console warning
+      // in Chrome. The host document already resolves them (the shadow tree
+      // inherits the result through cascade for properties like font-family),
+      // so strip them up front to keep the migration silent.
       return Array.from(sheet.cssRules)
         .map(rule => rule.cssText)
+        .filter(text => !text.startsWith('@import'))
         .join('\n');
     } catch {
       // SecurityError on cross-origin <link rel="stylesheet">. The shadow
       // tree skips it: playground has no cross-origin sheets today, and a
       // future addition surfaces via the dev warning below.
       if (import.meta.env?.DEV) {
-         
         console.warn(
           '[ShadowDomWrapper] skipping unreadable stylesheet (likely cross-origin):',
           source,

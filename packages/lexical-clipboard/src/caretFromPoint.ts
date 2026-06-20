@@ -6,7 +6,25 @@
  *
  */
 
-import {getDOMShadowRoots, getRootOwnerDocument} from 'lexical';
+import {
+  getDOMShadowRoots,
+  getParentElement,
+  getRootOwnerDocument,
+} from 'lexical';
+
+// True when `node` is `rootElement` or a composed descendant of it, walking
+// across shadow boundaries via getParentElement. A point retargeted to the
+// shadow host resolves to an ancestor of rootElement, so it fails this check
+// (the host is above rootElement, never below it).
+function isWithinComposedTree(node: Node | null, rootElement: HTMLElement) {
+  for (let current: Node | null = node; current !== null; ) {
+    if (current === rootElement) {
+      return true;
+    }
+    current = getParentElement(current);
+  }
+  return false;
+}
 
 /** @internal */
 export function caretFromPoint(
@@ -22,18 +40,20 @@ export function caretFromPoint(
   // caretPositionFromPoint with the shadowRoots option, which returns the
   // un-retargeted node. Browsers that don't implement the option silently
   // ignore it and return a retargeted result, so verify the offset node
-  // actually landed inside one of the requested shadow roots before trusting
-  // it; otherwise fall through to the legacy paths below.
+  // actually resolved inside the editor's composed tree (covering slotted and
+  // nested-shadow content, not only the enclosing roots) before trusting it;
+  // otherwise fall through to the legacy paths below.
   const doc = getRootOwnerDocument(rootElement);
   const shadowRoots = rootElement ? getDOMShadowRoots(rootElement) : [];
   if (
+    rootElement !== null &&
     shadowRoots.length > 0 &&
     typeof doc.caretPositionFromPoint === 'function'
   ) {
     const caretPosition = doc.caretPositionFromPoint(x, y, {shadowRoots});
     if (
       caretPosition !== null &&
-      shadowRoots.some(root => root.contains(caretPosition.offsetNode))
+      isWithinComposedTree(caretPosition.offsetNode, rootElement)
     ) {
       return {node: caretPosition.offsetNode, offset: caretPosition.offset};
     }

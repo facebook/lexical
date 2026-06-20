@@ -1532,9 +1532,15 @@ export function getElementByKeyOrThrow(
 export function getParentElement(node: Node): HTMLElement | null {
   const parentElement =
     (node as HTMLSlotElement).assignedSlot || node.parentElement;
-  return isDocumentFragment(parentElement)
-    ? ((parentElement as unknown as ShadowRoot).host as HTMLElement)
-    : parentElement;
+  if (parentElement !== null) {
+    return parentElement;
+  }
+  // node.parentElement is null when the parent is a ShadowRoot (a
+  // DocumentFragment, not an Element). Cross the shadow boundary to the host so
+  // ancestor walks (getScrollParent, calculateZoomLevel) continue into the
+  // enclosing light-DOM tree instead of stopping at the boundary.
+  const parentNode = node.parentNode;
+  return isDOMShadowRoot(parentNode) ? (parentNode.host as HTMLElement) : null;
 }
 
 export function getDOMOwnerDocument(

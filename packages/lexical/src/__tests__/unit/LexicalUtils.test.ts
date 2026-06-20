@@ -20,6 +20,7 @@ import {
   $setState,
   createEditor,
   createState,
+  getParentElement,
   getRegisteredSubtypeMap,
   IS_APPLE,
   isSelectionWithinEditor,
@@ -30,7 +31,15 @@ import {
   TabNode,
   TextNode,
 } from 'lexical';
-import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  onTestFinished,
+  test,
+  vi,
+} from 'vitest';
 
 import {
   $setCompositionKey,
@@ -1099,5 +1108,50 @@ describe('$updateTextNodeFromDOMContent', () => {
     editor.read(() => {
       expect(textNode.getLatest().getTextContent()).toBe('ツ');
     });
+  });
+});
+
+describe('getParentElement', () => {
+  test('crosses ShadowRoot to host when parentElement is null', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    onTestFinished(() => host.remove());
+    const shadow = host.attachShadow({mode: 'open'});
+    const child = document.createElement('span');
+    shadow.appendChild(child);
+
+    expect(getParentElement(child)).toBe(host);
+  });
+
+  test('returns the light-DOM parentElement when present', () => {
+    const parent = document.createElement('div');
+    const child = document.createElement('span');
+    parent.appendChild(child);
+    document.body.appendChild(parent);
+    onTestFinished(() => parent.remove());
+
+    expect(getParentElement(child)).toBe(parent);
+  });
+
+  test('crosses one ShadowRoot per call for nested shadow trees', () => {
+    const outerHost = document.createElement('div');
+    document.body.appendChild(outerHost);
+    onTestFinished(() => outerHost.remove());
+    const outerShadow = outerHost.attachShadow({mode: 'open'});
+    const innerHost = document.createElement('div');
+    outerShadow.appendChild(innerHost);
+    const innerShadow = innerHost.attachShadow({mode: 'open'});
+    const grandchild = document.createElement('span');
+    innerShadow.appendChild(grandchild);
+
+    // First call crosses the inner shadow boundary up to its host.
+    expect(getParentElement(grandchild)).toBe(innerHost);
+    // A second call from the inner host crosses the outer shadow boundary.
+    expect(getParentElement(innerHost)).toBe(outerHost);
+  });
+
+  test('returns null for a detached node with no parent', () => {
+    const orphan = document.createElement('span');
+    expect(getParentElement(orphan)).toBeNull();
   });
 });

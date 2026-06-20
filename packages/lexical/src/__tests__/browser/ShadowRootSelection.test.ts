@@ -14,6 +14,7 @@ import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  COMMAND_PRIORITY_LOW,
   getActiveElement,
   getActiveElementDeep,
   getComposedEventTarget,
@@ -24,6 +25,8 @@ import {
   isDOMShadowRoot,
   type LexicalEditor,
   querySelectorAllDeep,
+  SELECTION_CHANGE_COMMAND,
+  setDOMUnmanaged,
 } from 'lexical';
 import {
   assert,
@@ -971,6 +974,100 @@ describe('DOM shadow root selection (browser)', () => {
       expect(getActiveElement(document)).toBe(outerHost);
       // Deep descends through both shadow boundaries to the input itself.
       expect(getActiveElementDeep(document)).toBe(input);
+    });
+  });
+
+  describe('selectionchange attribution under nesting', () => {
+    test('attributes to the inner shadow-mounted editor over its light-DOM parent', async () => {
+      // Outer editor in the light DOM; inner editor inside an open shadow root
+      // nested in the outer host. Without the shadow-mounted-first ordering in
+      // onDocumentSelectionChange, the outer editor's getNearestEditorFromDOMNode
+      // walk would reach the inner host first and the outer editor would win
+      // attribution — even though the selection actually lives in the inner.
+      const outerHost = document.createElement('div');
+      outerHost.contentEditable = 'true';
+      document.body.appendChild(outerHost);
+
+      const outerEditor = buildEditorFromExtensions(
+        defineExtension({
+          $initialEditorState: () => $prepopulate('Outer light DOM'),
+          name: 'shadow-attribution-outer',
+          onError: error => {
+            throw error;
+          },
+        }),
+      );
+      outerEditor.setRootElement(outerHost);
+
+      const innerHost = document.createElement('div');
+      outerHost.appendChild(innerHost);
+      // Mark the inner host as unmanaged so the outer editor's reconciler
+      // leaves the nested subtree alone.
+      setDOMUnmanaged(innerHost);
+      const innerShadow = innerHost.attachShadow({mode: 'open'});
+      const innerContentEditable = document.createElement('div');
+      innerContentEditable.contentEditable = 'true';
+      innerShadow.appendChild(innerContentEditable);
+
+      const innerEditor = buildEditorFromExtensions(
+        defineExtension({
+          $initialEditorState: () => $prepopulate('Inner shadow root'),
+          name: 'shadow-attribution-inner',
+          onError: error => {
+            throw error;
+          },
+        }),
+      );
+      innerEditor.setRootElement(innerContentEditable);
+
+      onTestFinished(() => {
+        innerEditor.setRootElement(null);
+        outerEditor.setRootElement(null);
+        outerHost.remove();
+      });
+
+      // SELECTION_CHANGE_COMMAND fires only on the editor that
+      // onDocumentSelectionChange picked as nextActiveEditor — the cleanest
+      // observable signal of attribution.
+      let outerHits = 0;
+      let innerHits = 0;
+      const cleanupOuter = outerEditor.registerCommand(
+        SELECTION_CHANGE_COMMAND,
+        () => {
+          outerHits += 1;
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      );
+      const cleanupInner = innerEditor.registerCommand(
+        SELECTION_CHANGE_COMMAND,
+        () => {
+          innerHits += 1;
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      );
+      onTestFinished(() => {
+        cleanupInner();
+        cleanupOuter();
+      });
+
+      // Drop the caret inside the inner editor's text node and dispatch a
+      // synthetic selectionchange — Selection.setBaseAndExtent across shadow
+      // boundaries is the supported platform path here.
+      const innerTextNode = getInnerTextNode(innerContentEditable);
+      const selection = innerContentEditable.ownerDocument.getSelection();
+      assert(selection !== null);
+      selection.setBaseAndExtent(innerTextNode, 0, innerTextNode, 0);
+      document.dispatchEvent(new Event('selectionchange'));
+
+      // Drain multiple microtask ticks: the deferred selectionchange handler
+      // may dispatch SELECTION_CHANGE_COMMAND through another microtask.
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(innerHits).toBeGreaterThan(0);
+      expect(outerHits).toBe(0);
     });
   });
 });

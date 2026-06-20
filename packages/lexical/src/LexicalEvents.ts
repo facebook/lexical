@@ -132,6 +132,7 @@ import {
   isDeleteWordForward,
   isDOMCapturingSelection,
   isDOMNode,
+  isDOMShadowRoot,
   isDOMTextNode,
   isEscape,
   isFirefoxClipboardEvents,
@@ -1510,22 +1511,36 @@ function onDocumentSelectionChange(event: Event): void {
   // roots gets the un-retargeted anchor regardless of which editor owns
   // it.
   //
-  // Known scope-out: if an inner shadow editor sits inside a light-DOM
-  // outer editor, the outer candidate's getComposedRanges returns the
-  // empty array (no enclosing shadow roots), so its anchor read degrades
-  // to the retargeted Selection.anchorNode — which lands on a host node
-  // *inside* outer's tree, and outer wins attribution even though the
-  // inner editor owns the selectionchange. Neither this PR's demo nor its
-  // docs exercise that nesting shape, so the trade-off is accepted; a
-  // future use case can lift the candidate scan into the inner editor's
-  // shadow root instead.
+  // Nested case (inner shadow editor inside a light-DOM outer editor):
+  // visit shadow-mounted candidates first. The inner editor's anchor read
+  // resolves through its own shadow root and matches its candidate; the
+  // outer editor's degraded read (empty composed range → retargeted host
+  // landing inside outer's tree) never wins because we have already broken
+  // out of the loop.
 
   const ownerDocument = getDOMOwnerDocument(event.target);
   let nextActiveEditor: LexicalEditor | null = null;
   if (ownerDocument !== null) {
     const editorsForDoc = editorsByDocument.get(ownerDocument);
     if (editorsForDoc !== undefined) {
-      for (const candidate of editorsForDoc) {
+      // Try shadow-mounted candidates first: their getDOMSelectionPoints
+      // call resolves the un-retargeted anchor through their own shadow
+      // root, so an inner shadow editor inside a light-DOM outer editor
+      // wins attribution before the outer candidate sees the host-retargeted
+      // anchor that lands inside outer's tree.
+      const sorted = Array.from(editorsForDoc).sort((a, b) => {
+        const aShadow =
+          a._rootElement !== null &&
+          isDOMShadowRoot(a._rootElement.getRootNode());
+        const bShadow =
+          b._rootElement !== null &&
+          isDOMShadowRoot(b._rootElement.getRootNode());
+        if (aShadow === bShadow) {
+          return 0;
+        }
+        return aShadow ? -1 : 1;
+      });
+      for (const candidate of sorted) {
         const candidateRoot = candidate._rootElement;
         if (candidateRoot === null) {
           continue;

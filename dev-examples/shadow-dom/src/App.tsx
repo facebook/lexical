@@ -16,9 +16,11 @@ import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $create,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  DecoratorNode,
   defineExtension,
 } from 'lexical';
 import {type JSX} from 'react';
@@ -28,9 +30,10 @@ import ExampleTheme from './ExampleTheme';
 import ShadowRoot from './ShadowRoot';
 import Toolbar from './Toolbar';
 
-const placeholder = 'Type here — this editor lives inside a shadow root…';
+const innerPlaceholder =
+  'Inner editor (shadow root) — type here. The outer editor lives in the light DOM.';
 
-function $prepopulate(): void {
+function $prepopulateInner(): void {
   const root = $getRoot();
   if (root.getFirstChild() !== null) {
     return;
@@ -38,16 +41,14 @@ function $prepopulate(): void {
   root.append(
     $createParagraphNode().append(
       $createTextNode(
-        'Select some words and press Bold in the toolbar above (it lives ' +
-          'in the light DOM, outside this shadow root). Try arrow keys, ' +
-          'word selection (Alt/Ctrl+Shift+Arrow), and word deletion too.',
+        'Inner editor lives inside a shadow root, nested in the outer editor.',
       ),
     ),
   );
 }
 
-const editorExtension = defineExtension({
-  $initialEditorState: $prepopulate,
+const innerExtension = defineExtension({
+  $initialEditorState: $prepopulateInner,
   dependencies: [
     RichTextExtension,
     ListExtension,
@@ -56,29 +57,108 @@ const editorExtension = defineExtension({
     AutoFocusExtension,
     TabIndentationExtension,
   ],
-  name: '@lexical/examples/shadow-dom',
-  namespace: 'Shadow DOM Demo',
+  name: '@lexical/examples/shadow-dom-inner',
+  namespace: 'Shadow DOM Demo Inner',
+  theme: ExampleTheme,
+});
+
+function NestedEditorView(): JSX.Element {
+  return (
+    <LexicalExtensionComposer extension={innerExtension} contentEditable={null}>
+      <ShadowRoot styleSheet={editorStyleSheet}>
+        <div className="editor-inner">
+          <ContentEditable
+            className="editor-input"
+            aria-placeholder={innerPlaceholder}
+            placeholder={
+              <div className="editor-placeholder">{innerPlaceholder}</div>
+            }
+          />
+        </div>
+      </ShadowRoot>
+    </LexicalExtensionComposer>
+  );
+}
+
+// A DecoratorNode that hosts the inner shadow-mounted editor as its React
+// subtree. Mounting through a decorator gives the inner editor a real
+// place in the outer editor's Lexical tree — exercising the nested
+// attribution path in `onDocumentSelectionChange`.
+export class NestedEditorNode extends DecoratorNode<JSX.Element> {
+  $config() {
+    return this.config('nested-editor', {extends: DecoratorNode});
+  }
+
+  createDOM(): HTMLElement {
+    const dom = document.createElement('div');
+    dom.className = 'nested-editor-host';
+    return dom;
+  }
+
+  updateDOM(): boolean {
+    return false;
+  }
+
+  decorate(): JSX.Element {
+    return <NestedEditorView />;
+  }
+}
+
+function $createNestedEditorNode(): NestedEditorNode {
+  return $create(NestedEditorNode);
+}
+
+const outerPlaceholder =
+  'Outer editor (light DOM) — type here. The inner editor below lives inside a shadow root.';
+
+function $prepopulateOuter(): void {
+  const root = $getRoot();
+  if (root.getFirstChild() !== null) {
+    return;
+  }
+  root.append(
+    $createParagraphNode().append(
+      $createTextNode(
+        'Outer editor lives in the light DOM. The inner editor below sits inside a shadow root, nested in this outer tree.',
+      ),
+    ),
+  );
+  root.append($createNestedEditorNode());
+  root.append(
+    $createParagraphNode().append(
+      $createTextNode('Type here too — selections should attribute correctly.'),
+    ),
+  );
+}
+
+const outerExtension = defineExtension({
+  $initialEditorState: $prepopulateOuter,
+  dependencies: [
+    RichTextExtension,
+    HistoryExtension,
+    AutoFocusExtension,
+    TabIndentationExtension,
+  ],
+  name: '@lexical/examples/shadow-dom-outer',
+  namespace: 'Shadow DOM Demo Outer',
+  nodes: [NestedEditorNode],
   theme: ExampleTheme,
 });
 
 export default function App(): JSX.Element {
   return (
-    <LexicalExtensionComposer
-      extension={editorExtension}
-      contentEditable={null}>
+    <LexicalExtensionComposer extension={outerExtension} contentEditable={null}>
       <div className="editor-container">
         <Toolbar />
-        <ShadowRoot styleSheet={editorStyleSheet}>
-          <div className="editor-inner">
-            <ContentEditable
-              className="editor-input"
-              aria-placeholder={placeholder}
-              placeholder={
-                <div className="editor-placeholder">{placeholder}</div>
-              }
-            />
-          </div>
-        </ShadowRoot>
+        <div className="editor-inner">
+          <ContentEditable
+            className="editor-input"
+            aria-placeholder={outerPlaceholder}
+            placeholder={
+              <div className="editor-placeholder">{outerPlaceholder}</div>
+            }
+          />
+        </div>
       </div>
     </LexicalExtensionComposer>
   );

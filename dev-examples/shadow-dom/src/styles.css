@@ -48,10 +48,53 @@ body {
 }
 
 .editor-container {
+  position: relative;
   border-radius: 10px;
-  border: 1px solid #ddd;
+  border: 2px solid #3b82f6;
   background: #fff;
-  overflow: hidden;
+  overflow: visible;
+}
+
+.editor-container::before {
+  content: 'OUTER · light DOM';
+  position: absolute;
+  top: -10px;
+  left: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #1e40af;
+  background: #eff6ff;
+  border: 1px solid #3b82f6;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.nested-editor-host {
+  position: relative;
+  margin: 24px 12px 12px;
+  padding-top: 14px;
+  border-radius: 10px;
+  border: 2px solid #a855f7;
+  background: #faf5ff;
+  overflow: visible;
+}
+
+.nested-editor-host::before {
+  content: 'INNER · shadow root';
+  position: absolute;
+  top: -10px;
+  left: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #6b21a8;
+  background: #faf5ff;
+  border: 1px solid #a855f7;
+  border-radius: 999px;
+  pointer-events: none;
 }
 
 .toolbar {
@@ -87,4 +130,19 @@ body {
 
 .shadow-host {
   display: block;
+}
+
+.editor-container .editor-input {
+  padding: 16px 20px;
+  outline: none;
+  min-height: 80px;
+}
+
+.editor-container > .editor-inner > .editor-input {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.nested-editor-host > * {
+  margin: 0;
 }

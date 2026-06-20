@@ -1,11 +1,14 @@
 # Lexical Shadow DOM Example
 
-A minimal [Vite](https://vitejs.dev/) + React app that renders a Lexical
-rich-text editor **inside an open DOM `ShadowRoot`**, and a formatting toolbar
-**outside** it in the light DOM.
+A minimal [Vite](https://vitejs.dev/) + React app that demonstrates Lexical
+across a Shadow DOM boundary in a *nested* shape:
 
-It demonstrates that Lexical works across a shadow boundary using platform APIs
-only — no emulation of browser selection facilities:
+- An **outer editor** lives in the light DOM, with a `LexicalExtensionComposer`
+  registering Rich Text, History, and Tab Indentation.
+- An **inner editor** is mounted inside an open `ShadowRoot`, nested in the
+  outer editor's tree via a `DecoratorNode` (`NestedEditorNode`).
+
+The nesting exercises Lexical's platform-only shadow support:
 
 - **Reading selection** uses
   [`Selection.getComposedRanges`](https://developer.mozilla.org/docs/Web/API/Selection/getComposedRanges)
@@ -18,20 +21,29 @@ only — no emulation of browser selection facilities:
 - **Writing selection** uses the native `Selection.setBaseAndExtent`, and
   keyboard navigation / word + line deletion use the native `Selection.modify`,
   both of which operate on shadow-tree nodes directly.
+- **Selection-change attribution** prefers the shadow-mounted candidate first
+  when a `selectionchange` fires under a nested layout — so the inner editor
+  wins attribution over its light-DOM parent.
 
 ## How it works
 
 [`ShadowRoot.tsx`](./src/ShadowRoot.tsx) attaches an open shadow root to a host
 `<div>` with `Element.attachShadow`, then portals its children (including the
-Lexical `contentEditable`) into the shadow tree with `createPortal`. React
-context flows across the portal, so the editor is built exactly as it would be
-in the light DOM — only its DOM lives behind the shadow boundary. The editor's
-CSS is injected as a `<style>` element inside the shadow root, since shadow
-trees do not inherit the document's stylesheets.
+inner editor's `contentEditable`) into the shadow tree with `createPortal`.
+React context flows across the portal, so the inner editor is built exactly as
+it would be in the light DOM — only its DOM lives behind the shadow boundary.
+The inner editor's CSS is injected as a `<style>` element inside the shadow
+root, since shadow trees do not inherit the document's stylesheets.
+
+The `NestedEditorNode` in [`App.tsx`](./src/App.tsx) is a `DecoratorNode` whose
+host sits in the outer editor's tree. Its `decorate()` returns a React subtree
+that hosts the inner editor's `LexicalExtensionComposer` plus its shadow root —
+so the inner editor lives at a real position inside the outer editor's
+document.
 
 The toolbar in [`Toolbar.tsx`](./src/Toolbar.tsx) lives in the light DOM and
-dispatches commands (`FORMAT_TEXT_COMMAND`, undo/redo) that act on the editor's
-selection inside the shadow tree.
+dispatches commands (`FORMAT_TEXT_COMMAND`, undo/redo) that act on the *outer*
+editor's selection.
 
 ## Running
 
@@ -44,16 +56,18 @@ pnpm -C dev-examples/shadow-dom dev
 
 Then open the printed URL. Try:
 
-- Typing, then selecting words with `Alt`/`Ctrl` + `Shift` + arrow keys.
-- Pressing **Bold** / **Italic** / **Underline** in the (light-DOM) toolbar.
-- Word and line deletion with `Alt`/`Ctrl` + `Backspace`/`Delete`.
+- Typing in either editor — outer (light DOM) or inner (shadow root).
+- Selecting words in the outer editor with `Alt`/`Ctrl` + `Shift` + arrow keys
+  and pressing **Bold** / **Italic** / **Underline** in the toolbar.
+- Word and line deletion with `Alt`/`Ctrl` + `Backspace`/`Delete` in either
+  editor.
 
 ## Tests
 
 [Playwright](https://playwright.dev/) tests in [`tests/`](./tests) cover
-rendering into the shadow root, typing, formatting a shadow-DOM selection from
-the light-DOM toolbar, and word deletion. They start the dev server
-automatically:
+rendering both editors, typing across the shadow boundary, formatting an outer
+selection via the light-DOM toolbar, and word deletion in the inner editor.
+They start the dev server automatically:
 
 ```sh
 pnpm -C dev-examples/shadow-dom exec playwright install chromium

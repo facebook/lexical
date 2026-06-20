@@ -559,7 +559,14 @@ test.describe('Shadow DOM', () => {
       if (marker === null) {
         return false;
       }
-      marker.textContent = '.f10-probe { color: rgb(9, 9, 9); }';
+      // Mimic Vite HMR's in-place CSS text replace: mutate the existing
+      // Text child's data so a characterData mutation fires (assigning
+      // textContent would replace the child node and only fire childList).
+      if (marker.firstChild instanceof Text) {
+        marker.firstChild.data = '.f10-probe { color: rgb(9, 9, 9); }';
+      } else {
+        marker.textContent = '.f10-probe { color: rgb(9, 9, 9); }';
+      }
       await new Promise(resolve => requestAnimationFrame(resolve));
       const host = document.querySelector('[data-test-id="shadow-dom-host"]');
       const sheets =

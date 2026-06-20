@@ -3724,18 +3724,23 @@ export function $updateDOMSelection(
     rootElement !== null &&
     !tags.has(SKIP_SELECTION_FOCUS_TAG)
   ) {
-    // Shallow active element is sufficient here: rootElement.contains() does
-    // not cross shadow boundaries, so a host-retargeted result gives the same
-    // containment outcome as the deep variant used at the gate above.
+    // Shallow active element for the containment check: rootElement.contains()
+    // does not cross shadow boundaries, so a host-retargeted result gives the
+    // correct containment outcome (and avoids a false "outside" when focus is
+    // in a nested decorator shadow inside this editor).
     const focusedElement = getActiveElement(rootElement);
     if (focusedElement === null || !rootElement.contains(focusedElement)) {
       // Don't steal focus when the active element belongs to a *different*
       // editor (e.g. the inner editor of a coexisting outer-editor /
-      // shadow-editor pair). Stealing focus there breaks the user's typing
-      // flow — same guard as the dedup focus-restore block above.
+      // shadow-editor pair). Resolve the *deep* focused element for this
+      // attribution: a shallow read returns the other editor's shadow host,
+      // which getNearestEditorFromDOMNode can't map back to that editor, so
+      // the guard would otherwise wrongly steal focus from a shadow-mounted
+      // sibling.
+      const deepFocusedElement = getActiveElementDeep(rootElement.ownerDocument);
       const focusEditor =
-        focusedElement !== null
-          ? getNearestEditorFromDOMNode(focusedElement)
+        deepFocusedElement !== null
+          ? getNearestEditorFromDOMNode(deepFocusedElement)
           : null;
       if (focusEditor === null || focusEditor === editor) {
         // Restore focus immediately to ensure cursor visibility.

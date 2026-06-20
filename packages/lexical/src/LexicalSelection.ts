@@ -97,7 +97,6 @@ import {
   getComposedStaticRange,
   getDOMSelection,
   getDOMSelectionPoints,
-  getDOMSelectionRangeAndPoints,
   getElementByKeyOrThrow,
   getNearestEditorFromDOMNode,
   getNodeKeyFromDOMNode,
@@ -3545,16 +3544,25 @@ export function $updateDOMSelection(
     return;
   }
 
-  // Resolve the live DOM selection's boundary points + range through any
-  // enclosing DOM shadow roots in one pass; Selection.anchorNode/focusNode
-  // are retargeted to the shadow host, so the comparisons below read
-  // composed points instead. In the light DOM getDOMSelectionPoints returns
-  // `domSelection` itself (no Selection property reads happen here), so
-  // `currentPoints` aliases it and preserves the deferred reads described
-  // below. The scroll-into-view branch reuses `currentRange` rather than
-  // re-running getComposedRanges.
-  const {points: currentPoints, range: currentRange} =
-    getDOMSelectionRangeAndPoints(domSelection, rootElement);
+  // Resolve the live DOM selection's boundary points through any enclosing
+  // DOM shadow roots; Selection.anchorNode/focusNode are retargeted to the
+  // shadow host, so the comparisons below read composed points instead. In
+  // the light DOM getDOMSelectionPoints returns `domSelection` itself (no
+  // Selection property reads happen here), so `currentPoints` aliases it
+  // and preserves the deferred reads described below. The matching live
+  // Range is computed lazily in `getCurrentRange()` so the scroll-into-view
+  // fallback below is the only path that pays `getRangeAt(0)`'s layout
+  // flush — `getDOMSelectionRangeAndPoints()` (the public helper) still
+  // returns both eagerly for external callers.
+  const currentPoints = getDOMSelectionPoints(domSelection, rootElement);
+  let currentRangeCache: Range | null | undefined;
+  const getCurrentRange = (): Range | null => {
+    if (currentRangeCache === undefined) {
+      currentRangeCache =
+        domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null;
+    }
+    return currentRangeCache;
+  };
 
   if (!$isRangeSelection(nextSelection)) {
     // We don't remove selection if the prevSelection is null because
@@ -3693,29 +3701,30 @@ export function $updateDOMSelection(
   // to maintain cursor visibility. Firefox requires focus to be on the root element
   // for the cursor to be visible, especially after operations like drag that may
   // cause focus loss. This is critical for collapsed selections (cursor).
-  //
-  // Track focus across this branch so the scroll-into-view check below
-  // doesn't have to re-walk getRootNode for a third time: if we just
-  // restored focus to the root, the post-mutation active element *is* the
-  // root; otherwise it's whatever we read at entry.
-  let postMutationActiveElement: Element | null = activeElement;
   if (
     IS_FIREFOX &&
     nextSelection.isCollapsed() &&
     rootElement !== null &&
     !tags.has(SKIP_SELECTION_FOCUS_TAG)
   ) {
-    // Reuse the active element read at function entry — the branches above
-    // only mutate selection, not focus, so the value is still current.
-    const focusedElement = activeElement;
+    const focusedElement = getActiveElement(rootElement);
     if (focusedElement === null || !rootElement.contains(focusedElement)) {
-      // Restore focus immediately to ensure cursor visibility.
-      // Note: We rely on the normal selection update mechanism to ensure the
-      // cursor is visible. Using requestAnimationFrame here could cause race
-      // conditions where another update changes the selection before the rAF
-      // callback executes.
-      rootElement.focus({preventScroll: true});
-      postMutationActiveElement = rootElement;
+      // Don't steal focus when the active element belongs to a *different*
+      // editor (e.g. the inner editor of a coexisting outer-editor /
+      // shadow-editor pair). Stealing focus there breaks the user's typing
+      // flow — same guard as the dedup focus-restore block above.
+      const focusEditor =
+        focusedElement !== null
+          ? getNearestEditorFromDOMNode(focusedElement)
+          : null;
+      if (focusEditor === null || focusEditor === editor) {
+        // Restore focus immediately to ensure cursor visibility.
+        // Note: We rely on the normal selection update mechanism to ensure the
+        // cursor is visible. Using requestAnimationFrame here could cause race
+        // conditions where another update changes the selection before the rAF
+        // callback executes.
+        rootElement.focus({preventScroll: true});
+      }
     }
   }
 
@@ -3723,14 +3732,17 @@ export function $updateDOMSelection(
     !tags.has(SKIP_SCROLL_INTO_VIEW_TAG) &&
     nextSelection.isCollapsed() &&
     rootElement !== null &&
-    rootElement === postMutationActiveElement
+    // Re-read the active element rather than a value cached before the focus
+    // restore / selection mutation above, which can become stale (e.g. when
+    // setting the DOM selection focuses the contentEditable as a side effect).
+    rootElement === getActiveElement(rootElement)
   ) {
     const selectionTarget: null | Range | HTMLElement | Text =
       $isRangeSelection(nextSelection) &&
       nextSelection.anchor.type === 'element'
         ? (nextAnchorNode.childNodes[nextAnchorOffset] as HTMLElement | Text) ||
           null
-        : currentRange;
+        : getCurrentRange();
     if (selectionTarget !== null) {
       let selectionRect: DOMRect;
       if (isDOMTextNode(selectionTarget)) {

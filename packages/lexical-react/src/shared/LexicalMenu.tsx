@@ -18,7 +18,6 @@ import {
   CommandListenerPriority,
   createCommand,
   getDOMShadowRoots,
-  getParentElement,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_ENTER_COMMAND,
@@ -39,6 +38,7 @@ import {
 } from 'react';
 import ReactDOM from 'react-dom';
 
+import {getScrollParent} from './getScrollParent';
 import useLayoutEffect from './useLayoutEffect';
 
 /**
@@ -182,38 +182,6 @@ function $splitNodeContainingQuery(match: MenuTextMatch): TextNode | null {
   }
 
   return newNode;
-}
-
-// Got from https://stackoverflow.com/a/42543908/2013580
-// Walk crosses ShadowRoot→host so a shadow-mounted editor's scroll
-// parent is found in the enclosing light-DOM ancestor chain.
-export function getScrollParent(
-  element: HTMLElement,
-  includeHidden: boolean,
-): HTMLElement | HTMLBodyElement {
-  let style = getComputedStyle(element);
-  const excludeStaticParent = style.position === 'absolute';
-  const overflowRegex = includeHidden
-    ? /(auto|scroll|hidden)/
-    : /(auto|scroll)/;
-  if (style.position === 'fixed') {
-    return document.body;
-  }
-  for (
-    let parent: HTMLElement | null = element;
-    (parent = getParentElement(parent));
-  ) {
-    style = getComputedStyle(parent);
-    if (excludeStaticParent && style.position === 'static') {
-      continue;
-    }
-    if (
-      overflowRegex.test(style.overflow + style.overflowY + style.overflowX)
-    ) {
-      return parent;
-    }
-  }
-  return document.body;
 }
 
 function isTriggerVisibleInNearestScrollContainer(

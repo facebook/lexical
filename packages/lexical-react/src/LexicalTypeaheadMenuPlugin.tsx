@@ -24,7 +24,6 @@ import {
   createCommand,
   getDOMSelection,
   getDOMSelectionPoints,
-  getParentElement,
   LexicalCommand,
   LexicalEditor,
   RangeSelection,
@@ -116,46 +115,7 @@ function isSelectionOnEntityBoundary(
   });
 }
 
-// Got from https://stackoverflow.com/a/42543908/2013580
-/**
- * Walks up from `element` and returns the nearest scrollable ancestor (or
- * `document.body` if none is found), used to keep the active typeahead option
- * scrolled into view. Set `includeHidden` to also treat `overflow: hidden`
- * ancestors as scroll parents.
- *
- * The walk crosses ShadowRoot→host (via `getParentElement`) so a
- * shadow-mounted editor's scroll parent is found in the enclosing light-DOM
- * ancestor chain.
- */
-export function getScrollParent(
-  element: HTMLElement,
-  includeHidden: boolean,
-): HTMLElement | HTMLBodyElement {
-  let style = getComputedStyle(element);
-  const excludeStaticParent = style.position === 'absolute';
-  const overflowRegex = includeHidden
-    ? /(auto|scroll|hidden)/
-    : /(auto|scroll)/;
-  if (style.position === 'fixed') {
-    return document.body;
-  }
-  for (
-    let parent: HTMLElement | null = element;
-    (parent = getParentElement(parent));
-  ) {
-    style = getComputedStyle(parent);
-    if (excludeStaticParent && style.position === 'static') {
-      continue;
-    }
-    if (
-      overflowRegex.test(style.overflow + style.overflowY + style.overflowX)
-    ) {
-      return parent;
-    }
-  }
-  return document.body;
-}
-
+export {getScrollParent} from './shared/getScrollParent';
 export {useDynamicPositioning} from './shared/LexicalMenu';
 
 /**

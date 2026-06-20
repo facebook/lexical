@@ -511,6 +511,73 @@ test.describe('Shadow DOM', () => {
       .textContent();
     expect((text ?? '').length).toBeGreaterThanOrEqual(1000);
   });
+
+  test('populates shadowRoot.adoptedStyleSheets with document stylesheets', async ({
+    page,
+  }) => {
+    await expect(page.locator('[data-test-id="shadow-dom-host"]')).toHaveCount(
+      1,
+    );
+    const adoptedCount = await page.evaluate(() => {
+      const host = document.querySelector('[data-test-id="shadow-dom-host"]');
+      if (host === null || host.shadowRoot === null) {
+        return -1;
+      }
+      return host.shadowRoot.adoptedStyleSheets.length;
+    });
+    expect(adoptedCount).toBeGreaterThan(0);
+  });
+
+  test('characterData update on a <style> refreshes adoptedStyleSheets', async ({
+    page,
+  }) => {
+    await expect(page.locator('[data-test-id="shadow-dom-host"]')).toHaveCount(
+      1,
+    );
+
+    const initial = await page.evaluate(async () => {
+      const marker = document.createElement('style');
+      marker.id = 'f10-test-style';
+      marker.textContent = '.f10-probe { color: rgb(1, 2, 3); }';
+      document.head.appendChild(marker);
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      const host = document.querySelector('[data-test-id="shadow-dom-host"]');
+      const sheets =
+        host && host.shadowRoot
+          ? Array.from(host.shadowRoot.adoptedStyleSheets)
+          : [];
+      return sheets.some(sheet =>
+        Array.from(sheet.cssRules).some(r =>
+          r.cssText.includes('color: rgb(1, 2, 3)'),
+        ),
+      );
+    });
+    expect(initial).toBe(true);
+
+    const updated = await page.evaluate(async () => {
+      const marker = document.getElementById('f10-test-style');
+      if (marker === null) {
+        return false;
+      }
+      marker.textContent = '.f10-probe { color: rgb(9, 9, 9); }';
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      const host = document.querySelector('[data-test-id="shadow-dom-host"]');
+      const sheets =
+        host && host.shadowRoot
+          ? Array.from(host.shadowRoot.adoptedStyleSheets)
+          : [];
+      return sheets.some(sheet =>
+        Array.from(sheet.cssRules).some(r =>
+          r.cssText.includes('color: rgb(9, 9, 9)'),
+        ),
+      );
+    });
+    expect(updated).toBe(true);
+
+    await page.evaluate(() => {
+      document.getElementById('f10-test-style')?.remove();
+    });
+  });
 });
 
 test.describe('Shadow DOM (collab)', () => {

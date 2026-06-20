@@ -42,13 +42,16 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
   defineExtension,
+  findAllLexicalElementsDeep,
   getDOMSelection,
   getDOMSelectionPoints,
+  getEditorPropertyFromDOMNode,
+  isHTMLElement,
+  isLexicalEditor,
   isSelectionWithinEditor,
   LexicalEditor,
   LexicalNode,
   PointCaret,
-  querySelectorAllDeep,
   RangeSelection,
   safeCast,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
@@ -216,11 +219,14 @@ function readDragMarker(dataTransfer: DataTransfer): LexicalDragMarker | null {
 }
 
 function findEditorRootByKey(key: string, doc: Document): HTMLElement | null {
-  for (const el of querySelectorAllDeep(doc, '[data-lexical-editor="true"]')) {
-    const editor = (el as unknown as {__lexicalEditor?: {getKey: () => string}})
-      .__lexicalEditor;
-    if (editor && editor.getKey() === key) {
-      return el as HTMLElement;
+  for (const el of findAllLexicalElementsDeep(doc)) {
+    const editor = getEditorPropertyFromDOMNode(el);
+    if (
+      isLexicalEditor(editor) &&
+      editor.getKey() === key &&
+      isHTMLElement(el)
+    ) {
+      return el;
     }
   }
   return null;

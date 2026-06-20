@@ -342,7 +342,16 @@ function TableHoverActionsV2({
       setIsVisible(false);
       setIsLeftVisible(false);
     };
-  }, [anchorElem, getTheme, isEditable, leftRefs, refs, update, updateLeft]);
+  }, [
+    editor,
+    anchorElem,
+    getTheme,
+    isEditable,
+    leftRefs,
+    refs,
+    update,
+    updateLeft,
+  ]);
 
   useEffect(() => {
     const handleMouseLeave = (event: MouseEvent) => {

@@ -2035,16 +2035,19 @@ export function getDOMShadowRoots(node: Node): ShadowRoot[] {
  *
  * @internal
  */
-export function* querySelectorAllDeep(
-  root: Document | ShadowRoot,
-  selector: string,
+export function* findAllLexicalElementsDeep(
+  initialRoot: Document | ShadowRoot,
 ): Generator<Element> {
-  for (const el of root.querySelectorAll(selector)) {
-    yield el;
-  }
-  for (const el of root.querySelectorAll('*')) {
-    if (el.shadowRoot !== null) {
-      yield* querySelectorAllDeep(el.shadowRoot, selector);
+  const roots = [initialRoot];
+  let root;
+  while ((root = roots.pop())) {
+    yield* root.querySelectorAll('[data-lexical-editor="true"]');
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+    let el;
+    while ((el = walker.nextNode() as null | Element)) {
+      if (el.shadowRoot) {
+        roots.push(el.shadowRoot);
+      }
     }
   }
 }

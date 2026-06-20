@@ -15,6 +15,7 @@ import {
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
+  findAllLexicalElementsDeep,
   getActiveElement,
   getActiveElementDeep,
   getComposedEventTarget,
@@ -24,7 +25,6 @@ import {
   getDOMShadowRoots,
   isDOMShadowRoot,
   type LexicalEditor,
-  querySelectorAllDeep,
   SELECTION_CHANGE_COMMAND,
   setDOMUnmanaged,
 } from 'lexical';
@@ -916,39 +916,35 @@ describe('DOM shadow root selection (browser)', () => {
     });
   });
 
-  test('querySelectorAllDeep yields elements inside open shadow roots', () => {
+  test('findAllLexicalElementsDeep yields elements inside open shadow roots', () => {
     // Regression cover for findEditorRootByKey's silent move→copy degrade:
     // a flat doc.querySelectorAll for [data-lexical-editor="true"] cannot see
     // editors mounted inside a shadow tree, so the helper has to descend.
     const host = document.createElement('div');
     const shadow = host.attachShadow({mode: 'open'});
     const target = document.createElement('div');
-    target.setAttribute('data-test-marker-shadow', 'true');
+    target.setAttribute('data-lexical-editor', 'true');
     shadow.appendChild(target);
     document.body.appendChild(host);
     onTestFinished(() => host.remove());
 
-    const found = Array.from(
-      querySelectorAllDeep(document, '[data-test-marker-shadow]'),
-    );
+    const found = Array.from(findAllLexicalElementsDeep(document));
     expect(found).toEqual([target]);
   });
 
-  test('querySelectorAllDeep descends through nested shadow roots', () => {
+  test('findAllLexicalElementsDeep descends through nested shadow roots', () => {
     const outerHost = document.createElement('div');
     const outerShadow = outerHost.attachShadow({mode: 'open'});
     const innerHost = document.createElement('div');
     const innerShadow = innerHost.attachShadow({mode: 'open'});
     const target = document.createElement('div');
-    target.setAttribute('data-test-marker-shadow-deep', 'true');
+    target.setAttribute('data-lexical-editor', 'true');
     innerShadow.appendChild(target);
     outerShadow.appendChild(innerHost);
     document.body.appendChild(outerHost);
     onTestFinished(() => outerHost.remove());
 
-    const found = Array.from(
-      querySelectorAllDeep(document, '[data-test-marker-shadow-deep]'),
-    );
+    const found = Array.from(findAllLexicalElementsDeep(document));
     expect(found).toEqual([target]);
   });
 

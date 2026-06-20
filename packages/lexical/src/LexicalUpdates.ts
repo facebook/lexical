@@ -55,6 +55,7 @@ import {$isSlotHost, $setSlot} from './LexicalSlot';
 import {
   $getCompositionKey,
   $updateDOMBlockCursorElement,
+  findAllLexicalElementsDeep,
   getDOMSelection,
   getEditorPropertyFromDOMNode,
   getEditorStateTextContent,
@@ -62,7 +63,6 @@ import {
   getRegisteredNodeOrThrow,
   getWindow,
   isLexicalEditor,
-  querySelectorAllDeep,
   removeDOMBlockCursorElement,
   scheduleMicroTask,
   setPendingNodeToClone,
@@ -175,7 +175,7 @@ function collectBuildInformation(): string {
   const incompatibleEditors = new Set<string>();
   const thisVersion = LexicalEditor.version;
   if (typeof window !== 'undefined') {
-    for (const node of querySelectorAllDeep(document, '[contenteditable]')) {
+    for (const node of findAllLexicalElementsDeep(document)) {
       const editor = getEditorPropertyFromDOMNode(node);
       if (isLexicalEditor(editor)) {
         compatibleEditors++;

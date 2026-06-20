@@ -345,7 +345,7 @@ function useDraggableBlockMenu(
         zoomLevel,
       );
     }
-  }, [anchorElem, draggableBlockElem, menuRef]);
+  }, [editor, anchorElem, draggableBlockElem, menuRef]);
 
   useEffect(() => {
     function onDragover(event: DragEvent): boolean {

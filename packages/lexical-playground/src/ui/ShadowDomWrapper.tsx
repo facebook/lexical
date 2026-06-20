@@ -39,9 +39,18 @@ function isStyleNode(node: Node): node is HTMLStyleElement | HTMLLinkElement {
  */
 function adoptDocumentStyles(shadowRoot: ShadowRoot): () => void {
   const adopted = new Map<HTMLStyleElement | HTMLLinkElement, CSSStyleSheet>();
+  // Membership changes (add/remove) set this; the actual adoptedStyleSheets
+  // assignment is deferred until the current batch (initial scan, observer
+  // callback, or vite:afterUpdate) finishes, so a HMR pass that touches many
+  // sheets pays one array allocation instead of one per mutation.
+  let adoptedDirty = false;
 
-  const syncAdoptedList = (): void => {
+  const flushAdoptedList = (): void => {
+    if (!adoptedDirty) {
+      return;
+    }
     shadowRoot.adoptedStyleSheets = Array.from(adopted.values());
+    adoptedDirty = false;
   };
 
   const readSheetText = (
@@ -58,7 +67,7 @@ function adoptDocumentStyles(shadowRoot: ShadowRoot): () => void {
       // so strip them up front to keep the migration silent.
       return Array.from(sheet.cssRules)
         .map(rule => rule.cssText)
-        .filter(text => !text.startsWith('@import'))
+        .filter(text => !text.toLowerCase().startsWith('@import'))
         .join('\n');
     } catch {
       // SecurityError on cross-origin <link rel="stylesheet">. The shadow
@@ -85,12 +94,15 @@ function adoptDocumentStyles(shadowRoot: ShadowRoot): () => void {
     const sheet = new CSSStyleSheet();
     sheet.replaceSync(text);
     adopted.set(source, sheet);
-    syncAdoptedList();
+    adoptedDirty = true;
   };
 
   const removeSource = (source: Node): void => {
-    if (adopted.delete(source as HTMLStyleElement)) {
-      syncAdoptedList();
+    if (!isStyleNode(source)) {
+      return;
+    }
+    if (adopted.delete(source)) {
+      adoptedDirty = true;
     }
   };
 
@@ -116,6 +128,7 @@ function adoptDocumentStyles(shadowRoot: ShadowRoot): () => void {
   >('style, link[rel="stylesheet"]')) {
     addSource(node);
   }
+  flushAdoptedList();
 
   const observer = new MutationObserver(mutations => {
     for (const mutation of mutations) {
@@ -140,6 +153,7 @@ function adoptDocumentStyles(shadowRoot: ShadowRoot): () => void {
         }
       }
     }
+    flushAdoptedList();
   });
   observer.observe(document.head, {
     characterData: true,
@@ -148,18 +162,36 @@ function adoptDocumentStyles(shadowRoot: ShadowRoot): () => void {
   });
 
   const resyncFromHead = (): void => {
-    for (const source of Array.from(adopted.keys())) {
-      if (!document.head.contains(source)) {
-        removeSource(source);
-      } else {
-        refreshSource(source);
-      }
-    }
+    // Rebuild `adopted` in document.head iteration order so the cascade
+    // order in the shadow tree matches the host document. Reusing existing
+    // CSSStyleSheet instances keeps `replaceSync` work to refresh-only for
+    // sources we already adopted.
+    const next = new Map<HTMLStyleElement | HTMLLinkElement, CSSStyleSheet>();
     for (const source of document.head.querySelectorAll<
       HTMLStyleElement | HTMLLinkElement
     >('style, link[rel="stylesheet"]')) {
-      addSource(source);
+      const text = readSheetText(source);
+      const existing = adopted.get(source);
+      if (existing !== undefined) {
+        // Keep an already-adopted sheet even when this read returned null
+        // (cross-origin or sheet still loading) — dropping it would lose
+        // styles we successfully cloned earlier.
+        if (text !== null) {
+          existing.replaceSync(text);
+        }
+        next.set(source, existing);
+      } else if (text !== null) {
+        const sheet = new CSSStyleSheet();
+        sheet.replaceSync(text);
+        next.set(source, sheet);
+      }
     }
+    adopted.clear();
+    for (const [source, sheet] of next) {
+      adopted.set(source, sheet);
+    }
+    adoptedDirty = true;
+    flushAdoptedList();
   };
   const hot = import.meta.hot;
   if (hot) {

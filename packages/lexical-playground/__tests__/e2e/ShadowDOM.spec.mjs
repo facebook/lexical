@@ -518,14 +518,48 @@ test.describe('Shadow DOM', () => {
     await expect(page.locator('[data-test-id="shadow-dom-host"]')).toHaveCount(
       1,
     );
-    const adoptedCount = await page.evaluate(() => {
+    const probe = await page.evaluate(() => {
       const host = document.querySelector('[data-test-id="shadow-dom-host"]');
       if (host === null || host.shadowRoot === null) {
-        return -1;
+        return null;
       }
-      return host.shadowRoot.adoptedStyleSheets.length;
+      const sheets = Array.from(host.shadowRoot.adoptedStyleSheets);
+      const lightSheetCount = Array.from(document.styleSheets).filter(s => {
+        try {
+          return s.cssRules.length > 0;
+        } catch {
+          return false;
+        }
+      }).length;
+      const hasContentEditableRule = sheets.some(sheet =>
+        Array.from(sheet.cssRules).some(rule =>
+          rule.cssText.includes('.ContentEditable__root'),
+        ),
+      );
+      const noImportRules = sheets.every(sheet =>
+        Array.from(sheet.cssRules).every(
+          rule => !/^@import/i.test(rule.cssText),
+        ),
+      );
+      return {
+        adoptedCount: sheets.length,
+        hasContentEditableRule,
+        lightSheetCount,
+        noImportRules,
+      };
     });
-    expect(adoptedCount).toBeGreaterThan(0);
+    expect(probe).not.toBeNull();
+    // Adopted count should match the readable light-DOM sheet count: every
+    // readable sheet (skipping the cross-origin ones we don't have today)
+    // gets adopted, none are dropped on the floor.
+    expect(probe.adoptedCount).toBe(probe.lightSheetCount);
+    // The editor's own stylesheet must reach the shadow tree — a regression
+    // that adopts the wrong sheets (or none) would silently pass the
+    // count-only check.
+    expect(probe.hasContentEditableRule).toBe(true);
+    // @import rules are stripped before replaceSync so Chrome's "not allowed
+    // here" warning never fires.
+    expect(probe.noImportRules).toBe(true);
   });
 
   test('characterData update on a <style> refreshes adoptedStyleSheets', async ({

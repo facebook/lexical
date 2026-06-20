@@ -948,4 +948,29 @@ describe('DOM shadow root selection (browser)', () => {
     );
     expect(found).toEqual([target]);
   });
+
+  describe('getActiveElementDeep through nested shadow roots', () => {
+    test('descends to the focused element while the shallow read stops at the host', () => {
+      // Two-level shadow nesting with a focused <input> at the bottom. This is
+      // the shape `$updateDOMSelection`'s gate needs to identify so a foreign
+      // input inside a decorator's nested shadow root isn't mis-attributed to
+      // the outer editor under a collaboration update.
+      const outerHost = document.createElement('div');
+      document.body.appendChild(outerHost);
+      const outerShadow = outerHost.attachShadow({mode: 'open'});
+      const innerHost = document.createElement('div');
+      outerShadow.appendChild(innerHost);
+      const innerShadow = innerHost.attachShadow({mode: 'open'});
+      const input = document.createElement('input');
+      innerShadow.appendChild(input);
+      onTestFinished(() => outerHost.remove());
+
+      input.focus();
+
+      // Shallow retargets to the outermost shadow host.
+      expect(getActiveElement(document)).toBe(outerHost);
+      // Deep descends through both shadow boundaries to the input itself.
+      expect(getActiveElementDeep(document)).toBe(input);
+    });
+  });
 });

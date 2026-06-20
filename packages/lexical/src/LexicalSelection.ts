@@ -94,6 +94,7 @@ import {
   $setCompositionKey,
   doesContainSurrogatePair,
   getActiveElement,
+  getActiveElementDeep,
   getComposedStaticRange,
   getDOMSelection,
   getDOMSelectionPoints,
@@ -103,6 +104,8 @@ import {
   getWindow,
   INTERNAL_$isBlock,
   isDOMCapturingSelection,
+  isDOMDocumentNode,
+  isDOMShadowRoot,
   isDOMTextNode,
   isHTMLElement,
   isSelectionCapturedInDecoratorInput,
@@ -3532,7 +3535,16 @@ export function $updateDOMSelection(
   tags: Set<string>,
   rootElement: HTMLElement,
 ): void {
-  const activeElement = getActiveElement(rootElement);
+  // Use the deep variant so a decorator-input focused inside a nested
+  // ShadowRoot (e.g. a web-component decorator surface) is detected here as
+  // well as in `isSelectionCapturedInDecoratorInput`. Without it, the single-
+  // level `getActiveElement` returns the outer shadow host and mis-attributes
+  // the owning editor in nested-shadow setups.
+  const rootForActive = rootElement.getRootNode();
+  const activeElement =
+    isDOMDocumentNode(rootForActive) || isDOMShadowRoot(rootForActive)
+      ? getActiveElementDeep(rootForActive)
+      : null;
 
   // TODO: make this not hard-coded, and add another config option
   // that makes this configurable.
@@ -3707,6 +3719,9 @@ export function $updateDOMSelection(
     rootElement !== null &&
     !tags.has(SKIP_SELECTION_FOCUS_TAG)
   ) {
+    // Shallow active element is sufficient here: rootElement.contains() does
+    // not cross shadow boundaries, so a host-retargeted result gives the same
+    // containment outcome as the deep variant used at the gate above.
     const focusedElement = getActiveElement(rootElement);
     if (focusedElement === null || !rootElement.contains(focusedElement)) {
       // Don't steal focus when the active element belongs to a *different*
@@ -3735,6 +3750,8 @@ export function $updateDOMSelection(
     // Re-read the active element rather than a value cached before the focus
     // restore / selection mutation above, which can become stale (e.g. when
     // setting the DOM selection focuses the contentEditable as a side effect).
+    // Shallow is sufficient here for the same reason as the Firefox branch
+    // above: the equality check doesn't cross the shadow boundary.
     rootElement === getActiveElement(rootElement)
   ) {
     const selectionTarget: null | Range | HTMLElement | Text =

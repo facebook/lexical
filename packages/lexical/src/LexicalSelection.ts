@@ -98,6 +98,7 @@ import {
   getComposedStaticRange,
   getDOMSelection,
   getDOMSelectionPoints,
+  getDOMSelectionRange,
   getElementByKeyOrThrow,
   getNearestEditorFromDOMNode,
   getNodeKeyFromDOMNode,
@@ -3570,8 +3571,12 @@ export function $updateDOMSelection(
   let currentRangeCache: Range | null | undefined;
   const getCurrentRange = (): Range | null => {
     if (currentRangeCache === undefined) {
-      currentRangeCache =
-        domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null;
+      // Resolve through any enclosing shadow roots: getRangeAt(0) alone is
+      // retargeted to the shadow host inside a shadow tree, so the
+      // scroll-into-view rect below would measure the host instead of the
+      // caret. getDOMSelectionRange falls back to getRangeAt(0) in the light
+      // DOM.
+      currentRangeCache = getDOMSelectionRange(domSelection, rootElement);
     }
     return currentRangeCache;
   };

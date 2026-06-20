@@ -56,6 +56,7 @@ export {
   $getCaretInDirection,
   $getCaretRangeInDirection,
   $getChildCaretAtIndex,
+  $insertNodeToNearestRootAtCaret,
   $isExtendableTextPointCaret,
   $normalizeCaret,
   $removeTextFromCaretRange,

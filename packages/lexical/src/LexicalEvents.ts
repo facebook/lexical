@@ -1524,43 +1524,59 @@ function onDocumentSelectionChange(event: Event): void {
   if (ownerDocument !== null) {
     const editorsForDoc = editorsByDocument.get(ownerDocument);
     if (editorsForDoc !== undefined) {
-      // Try shadow-mounted candidates first: their getDOMSelectionPoints
-      // call resolves the un-retargeted anchor through their own shadow
-      // root, so an inner shadow editor inside a light-DOM outer editor
-      // wins attribution before the outer candidate sees the host-retargeted
-      // anchor that lands inside outer's tree.
-      const sorted = Array.from(editorsForDoc).sort((a, b) => {
-        const aShadow =
-          a._rootElement !== null &&
-          isDOMShadowRoot(a._rootElement.getRootNode());
-        const bShadow =
-          b._rootElement !== null &&
-          isDOMShadowRoot(b._rootElement.getRootNode());
-        if (aShadow === bShadow) {
-          return 0;
-        }
-        return aShadow ? -1 : 1;
-      });
-      for (const candidate of sorted) {
-        const candidateRoot = candidate._rootElement;
-        if (candidateRoot === null) {
-          continue;
-        }
-        const anchorNode = getDOMSelectionPoints(
-          domSelection,
-          candidateRoot,
-        ).anchorNode;
-        if (anchorNode === null) {
-          continue;
-        }
-        // Match only when this editor is the anchor's *nearest* editor.
-        // A nested editor mounted inside another editor's root would
-        // otherwise be eclipsed by the outer one — both contain the
-        // anchor, but only the nested editor actually owns it.
-        if (getNearestEditorFromDOMNode(anchorNode) === candidate) {
-          nextActiveEditor = candidate;
-          resolvedAnchorNode = anchorNode;
+      let hasShadow = false;
+      for (const ed of editorsForDoc) {
+        if (
+          ed._rootElement !== null &&
+          isDOMShadowRoot(ed._rootElement.getRootNode())
+        ) {
+          hasShadow = true;
           break;
+        }
+      }
+      if (!hasShadow) {
+        const anchorNode = domSelection.anchorNode;
+        if (anchorNode !== null) {
+          nextActiveEditor = getNearestEditorFromDOMNode(anchorNode);
+          if (nextActiveEditor !== null) {
+            resolvedAnchorNode = anchorNode;
+          }
+        }
+      } else {
+        // Try shadow-mounted candidates first: their getDOMSelectionPoints
+        // call resolves the un-retargeted anchor through their own shadow
+        // root, so an inner shadow editor inside a light-DOM outer editor
+        // wins attribution before the outer candidate sees the host-retargeted
+        // anchor that lands inside outer's tree.
+        const sorted = Array.from(editorsForDoc).sort((a, b) => {
+          const aShadow =
+            a._rootElement !== null &&
+            isDOMShadowRoot(a._rootElement.getRootNode());
+          const bShadow =
+            b._rootElement !== null &&
+            isDOMShadowRoot(b._rootElement.getRootNode());
+          if (aShadow === bShadow) {
+            return 0;
+          }
+          return aShadow ? -1 : 1;
+        });
+        for (const candidate of sorted) {
+          const candidateRoot = candidate._rootElement;
+          if (candidateRoot === null) {
+            continue;
+          }
+          const anchorNode = getDOMSelectionPoints(
+            domSelection,
+            candidateRoot,
+          ).anchorNode;
+          if (anchorNode === null) {
+            continue;
+          }
+          if (getNearestEditorFromDOMNode(anchorNode) === candidate) {
+            nextActiveEditor = candidate;
+            resolvedAnchorNode = anchorNode;
+            break;
+          }
         }
       }
     }

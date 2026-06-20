@@ -110,6 +110,7 @@ import {
   doesContainSurrogatePair,
   getActiveElementDeep,
   getAnchorTextFromDOM,
+  getComposedEventTarget,
   getDOMOwnerDocument,
   getDOMSelection,
   getDOMSelectionFromTarget,
@@ -565,7 +566,10 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
 
 function onPointerDown(event: PointerEvent, editor: LexicalEditor) {
   // TODO implement text drag & drop
-  const target = event.target;
+  // Resolve to the composed target so a pointerdown inside a decorator's
+  // open shadow root reports the real internal element rather than the
+  // outer shadow host the engine retargets to.
+  const target = getComposedEventTarget(event);
   const pointerType = event.pointerType;
   if (
     isDOMNode(target) &&
@@ -1099,9 +1103,12 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
 
 function $handleInput(event: InputEvent): boolean {
   const editor = getActiveEditor();
+  // Use the composed target so a beforeinput coming from inside a
+  // decorator's nested shadow root resolves to the real internal element.
+  const composedTarget = getComposedEventTarget(event);
   if (
-    isHTMLElement(event.target) &&
-    isDOMCapturingSelection(event.target, editor)
+    isHTMLElement(composedTarget) &&
+    isDOMCapturingSelection(composedTarget, editor)
   ) {
     return true;
   }

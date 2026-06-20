@@ -143,7 +143,7 @@ describe('LexicalNodeHelpers tests', () => {
 
       test('DFS node order', async () => {
         const editor: LexicalEditor = testEnv.editor;
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           const expectedNodes = expectedKeys.map(({depth, node: nodeKey}) => ({
             depth,
             node: $getNodeByKey(nodeKey)!.getLatest(),
@@ -165,7 +165,7 @@ describe('LexicalNodeHelpers tests', () => {
 
       test('Reverse DFS node order', async () => {
         const editor: LexicalEditor = testEnv.editor;
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           const expectedNodes = reverseExpectedKeys.map(
             ({depth, node: nodeKey}) => ({
               depth,

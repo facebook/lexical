@@ -14,6 +14,17 @@ type Props = Readonly<{
   onReposition?: (node: readonly HTMLElement[]) => void;
 }>;
 
+/**
+ * Keeps the visual selection highlight on display even when the editor loses
+ * focus, which is useful when interacting with toolbars or other controls
+ * outside the editor. Pass `onReposition` to be notified when the highlighted
+ * range elements are recomputed.
+ *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link SelectionAlwaysOnDisplayExtension} instead.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function SelectionAlwaysOnDisplay({onReposition}: Props): null {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {

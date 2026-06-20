@@ -26,8 +26,12 @@ import {
   $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
+  $getSlot,
+  $getSlotFrame,
+  $getSlotNames,
   $getTextPointCaret,
   $isElementNode,
+  $isNodeSelection,
   $isRangeSelection,
   $isTextNode,
   $isTextPointCaret,
@@ -449,6 +453,12 @@ function $updateSelectionOnInsert(selection: BaseSelection): void {
 
 export interface BaseSerializedNode {
   children?: BaseSerializedNode[];
+  /**
+   * Named slot subtrees keyed by slot name; present on serialized hosts.
+   * Mirrors {@link SerializedLexicalNode.$slots}.
+   * @experimental named-slots
+   */
+  $slots?: Record<string, BaseSerializedNode>;
   type: string;
   version: number;
 }
@@ -505,11 +515,23 @@ function $appendNodesToJSON(
     shouldInclude = false;
   }
 
+  // An element host in a NodeSelection (e.g. a Card promoted whole-host by a
+  // chrome click) recurses into its children with a null selection so the
+  // whole subtree serializes even when none of the children are in the outer
+  // selection themselves — the old shell-only output made cut silently lossy.
+  // Only a whole-host NodeSelection promotes: a partial RangeSelection that
+  // happens to contain the host must keep slicing/excluding per child, or a
+  // drag into the host's interior would over-export unselected content.
+  const childSelection =
+    shouldInclude && $isNodeSelection(selection) && $isElementNode(currentNode)
+      ? null
+      : selection;
+
   for (let i = 0; i < children.length; i++) {
     const childNode = children[i];
     const shouldIncludeChild = $appendNodesToJSON(
       editor,
-      selection,
+      childSelection,
       childNode,
       serializedNode.children,
     );
@@ -521,6 +543,49 @@ function $appendNodesToJSON(
       currentNode.extractWithChild(childNode, selection, 'clone')
     ) {
       shouldInclude = true;
+    }
+  }
+
+  // Slots are shadow-root isolated, so they can't be partially selected by a
+  // RangeSelection — when the host is included, each slot subtree is copied
+  // whole. Pass a null selection to deep-export the slot regardless of the
+  // outer selection, mirroring the EditorState slot serialization. Gate on the
+  // same condition as the push below (and as the HTML exporter): only emit
+  // slots for a host that is itself emitted, so a host outside the selection
+  // is never walked — its slots must not influence (or break) this export.
+  if (shouldInclude && !shouldExclude) {
+    const slotNames = $getSlotNames(target);
+    if (slotNames.length > 0) {
+      const serializedSlots: Record<string, BaseSerializedNode> = {};
+      for (const name of slotNames) {
+        const slotNode = $getSlot(target, name);
+        invariant(
+          slotNode !== null,
+          'LexicalNode: Node %s has slot "%s" but it resolved to no node during export.',
+          target.constructor.name,
+          name,
+        );
+        const slotArray: BaseSerializedNode[] = [];
+        $appendNodesToJSON(editor, null, slotNode, slotArray);
+        // A whole-slot export must serialize to exactly the slot node. A slot
+        // value that overrides excludeFromCopy would otherwise make
+        // $appendNodesToJSON splice up its children (or emit nothing), leaving
+        // a dangling/undefined slot entry that breaks on paste.
+        invariant(
+          slotArray.length === 1 && slotArray[0].type === slotNode.getType(),
+          'LexicalNode: slot "%s" on %s did not serialize to exactly the slot value node (got %s of type %s); a slot value must not be excluded from copy.',
+          name,
+          target.constructor.name,
+          String(slotArray.length),
+          String(slotArray.length > 0 ? slotArray[0].type : 'none'),
+        );
+        serializedSlots[name] = slotArray[0];
+      }
+      (
+        serializedNode as BaseSerializedNode & {
+          $slots?: Record<string, BaseSerializedNode>;
+        }
+      ).$slots = serializedSlots;
     }
   }
 
@@ -555,7 +620,31 @@ export function $generateJSONFromSelectedNodes<
 } {
   const nodes: SerializedNode[] = [];
   const root = $getRoot();
-  const topLevelChildren = root.getChildren();
+  // A selection wholly inside a slot subtree never includes its host (slots
+  // are shadow-root isolated), so a root-children walk would miss the
+  // selected nodes entirely and export an empty payload (cut = data loss).
+  // Walk the selection's slot frame instead; outside slots this is the root.
+  // NodeSelection participates here too — a click that selects a decorator
+  // nested in a slot needs the same frame redirect, otherwise its export
+  // pipeline silently produces an empty clipboard.
+  //
+  // NodeSelection.getNodes()[0] is the first node by insertion order (the
+  // internal _nodes Set's iteration order), not document order. For the
+  // common single-decorator case this is the only node and the frame is
+  // unambiguous. A multi-node NodeSelection that straddles a slot boundary
+  // is currently undefined — slots are shadow-isolated, so straddling is
+  // already invalid construction, and we pick the first inserted node's
+  // frame rather than asserting.
+  const slotFrameAnchor = $isRangeSelection(selection)
+    ? selection.anchor.getNode()
+    : $isNodeSelection(selection)
+      ? (selection.getNodes()[0] ?? null)
+      : null;
+  const slotFrame =
+    slotFrameAnchor !== null ? $getSlotFrame(slotFrameAnchor) : null;
+  const topLevelChildren = (
+    $isElementNode(slotFrame) ? slotFrame : root
+  ).getChildren();
   for (let i = 0; i < topLevelChildren.length; i++) {
     const topLevelNode = topLevelChildren[i];
     $appendNodesToJSON(editor, selection, topLevelNode, nodes);

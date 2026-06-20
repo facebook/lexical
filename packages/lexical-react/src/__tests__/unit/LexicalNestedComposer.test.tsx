@@ -28,7 +28,6 @@ import {
   EditorConfig,
   getRegisteredNode,
   LexicalEditor,
-  SerializedLexicalNode,
   TextNode,
 } from 'lexical';
 import {
@@ -53,14 +52,8 @@ expect.extend(toHaveNoViolations);
 class ReactDecoratorNode extends DecoratorNode<React.ReactNode> {
   __decorate?: (node: this) => React.ReactNode;
   __inline?: boolean;
-  static getType() {
-    return 'react-decorator';
-  }
-  static clone(node: ReactDecoratorNode): ReactDecoratorNode {
-    return new ReactDecoratorNode(node.__key);
-  }
-  static importJSON(json: SerializedLexicalNode): ReactDecoratorNode {
-    throw new Error('not implemented');
+  $config() {
+    return this.config('react-decorator', {extends: DecoratorNode});
   }
   createDOM(_config: EditorConfig, editor: LexicalEditor): HTMLElement {
     return (editor._window || window).document.createElement(

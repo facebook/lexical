@@ -133,6 +133,12 @@ export async function initialize({
     !!shouldAllowHighlightingWithBrackets;
 
   appSettings.selectionAlwaysOnDisplay = !!selectionAlwaysOnDisplay;
+  // The playground app defaults `selectBlock` to true (see appSettings.ts),
+  // but the e2e harness pins it to false unless a spec opts in (e.g.
+  // SelectBlock.spec.mjs), so the rest of the suite keeps the legacy
+  // whole-document SELECT_ALL semantics that selectAll()/clearEditor() rely
+  // on. This setting is always written to the URL so the app default never
+  // leaks into an e2e run.
   appSettings.selectBlock = !!selectBlock;
 
   const urlParams = appSettingsToURLParams(appSettings);

@@ -249,7 +249,7 @@ function setupCaretOnEmptyFinalLine(client: TestClient): string {
 function readAnchor(
   editor: LexicalEditor,
 ): {key: string; offset: number; type: 'element' | 'text'} | null {
-  return editor.getEditorState().read(() => {
+  return editor.read('latest', () => {
     const selection = $getSelection();
     if (!$isRangeSelection(selection)) {
       return null;
@@ -297,9 +297,10 @@ describe('SyncCursors out-of-range relative position (PR #8652)', () => {
     // public binding-level API. Before the fix this collapsed to offset 0 (the
     // start of the paragraph); after the fix it resolves to the element end
     // (the number of children == 2).
-    const {anchorKey, anchorOffset, focusKey, focusOffset} = local.editor
-      .getEditorState()
-      .read(() => $getAnchorAndFocusForUserState(local.binding, userState!));
+    const {anchorKey, anchorOffset, focusKey, focusOffset} = local.editor.read(
+      'latest',
+      () => $getAnchorAndFocusForUserState(local.binding, userState!),
+    );
 
     expect(anchorKey).toBe(paragraphKey);
     expect(focusKey).toBe(paragraphKey);
@@ -333,7 +334,7 @@ describe('SyncCursors out-of-range relative position (PR #8652)', () => {
 
     // The remote edit must have arrived.
     expect(
-      local.editor.getEditorState().read(() => $getRoot().getChildrenSize()),
+      local.editor.read('latest', () => $getRoot().getChildrenSize()),
     ).toBe(2);
 
     // The local caret must remain on the empty final line. Before the fix it

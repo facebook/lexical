@@ -10,6 +10,8 @@ import {$isBlockFullySelected, mergeRegister} from '@lexical/utils';
 import {
   $getRoot,
   $getSelection,
+  $getSlotFrame,
+  $getSlotHost,
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
@@ -79,11 +81,11 @@ export const SelectBlockExtension = /* @__PURE__ */ defineExtension({
                 if (!stores.cascadeSelection.peek()) {
                   return false;
                 }
-                // readPending() reflects an update in progress or queued
+                // read('pending') reflects an update in progress or queued
                 // in the nested editor (such as its initial state) without
                 // flushing it, which would not be safe if its update is
                 // still in progress
-                const isAllSelected = triggerEditor.readPending(() => {
+                const isAllSelected = triggerEditor.read('pending', () => {
                   const nestedSelection = $getSelection();
                   return (
                     $isRangeSelection(nestedSelection) &&
@@ -130,17 +132,40 @@ export const SelectBlockExtension = /* @__PURE__ */ defineExtension({
                 return false;
               }
 
-              const blockNode = selection.anchor.getNode().getTopLevelElement();
+              const anchorNode = selection.anchor.getNode();
+              const blockNode = anchorNode.getTopLevelElement();
               if (
                 blockNode &&
                 // A selection that crosses block boundaries expands to the
-                // whole document instead of shrinking to the anchor's block
+                // next enclosing scope instead of shrinking to the anchor's
+                // block
                 blockNode.is(selection.focus.getNode().getTopLevelElement()) &&
                 // an empty block is fully selected by its caret
                 !$isBlockFullySelected(blockNode, selection)
               ) {
                 blockNode.select(0, blockNode.getChildrenSize());
-              } else if (!$isBlockFullySelected($getRoot(), selection)) {
+                return true;
+              }
+              // Named slots are isolated sub-scopes between the block and
+              // the document: expand to the innermost enclosing slot frame
+              // that is not yet fully selected before escalating to the
+              // whole document, walking outward through nested frames. A
+              // frame whose single block is already fully selected counts
+              // as fully selected itself, so a one-block slot escalates
+              // straight to the next scope with no dead press.
+              let frame = $getSlotFrame(anchorNode);
+              while (frame !== null) {
+                if (
+                  $isElementNode(frame) &&
+                  !$isBlockFullySelected(frame, selection)
+                ) {
+                  frame.select(0, frame.getChildrenSize());
+                  return true;
+                }
+                const host = $getSlotHost(frame);
+                frame = host === null ? null : $getSlotFrame(host);
+              }
+              if (!$isBlockFullySelected($getRoot(), selection)) {
                 // don't trigger selectAll if the document is already
                 // fully selected
                 $selectAll();

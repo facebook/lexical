@@ -49,7 +49,7 @@ export interface PagesConfig {
 
 export const PagesExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config) => {
-    const getPageSetup = () => editor.getEditorState().read($getPageSetup);
+    const getPageSetup = () => editor.read('latest', $getPageSetup);
 
     return {
       ...namedSignals({disabled: config.disabled}),
@@ -287,7 +287,7 @@ export const PagesExtension = /* @__PURE__ */ defineExtension({
       // the corresponding CSS custom properties to the root element, or removes
       // them when paged mode is disabled.
       const updatePageDimensions = () => {
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           const pageSetup = $getPageSetup();
           const rootElement = editor.getRootElement();
           if (!rootElement) return;
@@ -699,7 +699,7 @@ export const PagesExtension = /* @__PURE__ */ defineExtension({
               RootNode,
               (_mutations, {prevEditorState}) => {
                 const change = $getStateChange(
-                  editor.getEditorState().read($getRoot),
+                  editor.read('latest', $getRoot),
                   prevEditorState.read($getRoot),
                   pageSetupState,
                 );

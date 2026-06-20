@@ -15,6 +15,14 @@ import {useEffect, useRef} from 'react';
 
 const capturedEvents = new Set<string>(['mouseenter', 'mouseleave']);
 
+/**
+ * Attaches a DOM event listener to the editor's root element and invokes
+ * `eventListener` whenever an event of `eventType` targets a node that is (or
+ * is contained by) an instance of `nodeType`. The listener receives the DOM
+ * event, the editor, and the matching node's {@link NodeKey}.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function NodeEventPlugin({
   nodeType,
   eventType,

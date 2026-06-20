@@ -151,9 +151,7 @@ const thirdPartyExternals = [
   // inlined by Rollup.
   'shiki',
   '@shikijs',
-  ...(isWWW
-    ? [':server-only-hack:.*']
-    : ['react-error-boundary', '@floating-ui/react']),
+  ...(isWWW ? [':server-only-hack:.*'] : ['@floating-ui/react']),
 ];
 const thirdPartyExternalsRegExp = new RegExp(
   `^(${thirdPartyExternals.join('|')})(\\/|$)`,

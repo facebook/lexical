@@ -794,6 +794,25 @@ export const INLINE_CODE: TextFormatTransformer = {
   type: 'text-format',
 };
 
+// Computes a CommonMark-compliant fence and padded content for an inline code
+// span: https://spec.commonmark.org/#code-spans
+export function getCodeSpanDelimiter(content: string): {
+  fence: string;
+  padded: string;
+} {
+  const backtickRuns = content.match(/`+/g);
+  const longestRun = backtickRuns
+    ? Math.max(...backtickRuns.map(run => run.length))
+    : 0;
+  const fence = '`'.repeat(longestRun + 1);
+  const needsPadding =
+    content.length === 0 ||
+    content.includes('`') ||
+    (/^\s/.test(content) && /\s$/.test(content));
+  const padded = needsPadding ? ` ${content} ` : content;
+  return {fence, padded};
+}
+
 export const HIGHLIGHT: TextFormatTransformer = {
   format: ['highlight'],
   tag: '==',

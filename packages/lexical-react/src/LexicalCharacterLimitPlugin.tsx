@@ -52,6 +52,16 @@ function DefaultRenderer({remainingCharacters}: {remainingCharacters: number}) {
   );
 }
 
+/**
+ * Tracks the length of the editor's text content against `maxLength` and
+ * renders the number of remaining characters, marking any overflowing text so
+ * it can be styled. Length is measured in either `'UTF-8'` or `'UTF-16'`
+ * (default) code units via the `charset` prop, and the display can be
+ * customized with the `renderer` prop.
+ *
+ * @returns The element produced by `renderer` (by default a `<span>` showing
+ * the number of remaining characters).
+ */
 export function CharacterLimitPlugin({
   charset = 'UTF-16',
   maxLength = CHARACTER_LIMIT,

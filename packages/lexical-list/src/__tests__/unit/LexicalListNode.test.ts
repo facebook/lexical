@@ -497,11 +497,8 @@ describe('LexicalListNode subclassing tests ($config)', () => {
       });
   }
   class ListNodeSubclass extends ListNode {
-    static getType() {
-      return 'list-subclass';
-    }
-    static clone(node: ListNodeSubclass) {
-      return new ListNodeSubclass(node.__listType, node.__start, node.__key);
+    $config() {
+      return this.config('list-subclass', {extends: ListNode});
     }
   }
   describe('ListNode as-is', () =>

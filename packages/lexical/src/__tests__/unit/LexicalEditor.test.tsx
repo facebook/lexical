@@ -86,7 +86,6 @@ import {createRoot, Root} from 'react-dom/client';
 import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';
-import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {
   $assertNodeType,
   $createTestDecoratorNode,
@@ -696,9 +695,9 @@ describe('LexicalEditor tests', () => {
 
     await Promise.resolve().then();
 
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Sync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
     // Calculate an expected update listener paylaod
@@ -1810,7 +1809,7 @@ describe('LexicalEditor tests', () => {
       // Wait for update to complete
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const root = $getRoot();
         const paragraph = root.getFirstChild()!;
         expect(root).toEqual({
@@ -1825,6 +1824,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1841,6 +1842,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 0,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1921,6 +1924,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1937,6 +1942,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -2005,6 +2012,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -2021,6 +2030,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -3343,9 +3354,9 @@ describe('LexicalEditor tests', () => {
       },
     );
 
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Sync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
     // Calculate an expected update listener paylaod
@@ -3374,9 +3385,9 @@ describe('LexicalEditor tests', () => {
       },
     );
 
-    const textContent = headless
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = headless.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Async update\n\nSync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
   });
@@ -3405,9 +3416,9 @@ describe('LexicalEditor tests', () => {
         discrete: true,
       },
     );
-    const textContent = headless
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = headless.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Async update\n\nSync update');
   });
 
@@ -3431,9 +3442,9 @@ describe('LexicalEditor tests', () => {
       );
     });
 
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Async update\n\nSync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
   });
@@ -3606,7 +3617,7 @@ describe('LexicalEditor tests', () => {
         expect(text.getTextContent()).toBe('123');
       });
 
-      await newEditor.getEditorState().read(() => {
+      await newEditor.read('latest', () => {
         expect(mockTransform).toHaveBeenCalledTimes(0);
       });
 
@@ -3654,7 +3665,7 @@ describe('LexicalEditor tests', () => {
         expect(text.getTextContent()).toBe('123');
       });
 
-      await newEditor.getEditorState().read(() => {
+      await newEditor.read('latest', () => {
         expect(mockTransform).toHaveBeenCalledTimes(1);
       });
 
@@ -3705,16 +3716,8 @@ describe('LexicalEditor tests', () => {
     vi.spyOn(ParagraphNode, 'importDOM');
 
     class CustomParagraphNode extends ParagraphNode {
-      static getType() {
-        return 'custom-paragraph';
-      }
-
-      static clone(node: CustomParagraphNode) {
-        return new CustomParagraphNode(node.__key);
-      }
-
-      static importJSON(serializedNode: SerializedParagraphNode) {
-        return new CustomParagraphNode().updateFromJSON(serializedNode);
+      $config() {
+        return this.config('custom-paragraph', {extends: ParagraphNode});
       }
     }
 

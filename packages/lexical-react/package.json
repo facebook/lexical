@@ -28,8 +28,7 @@
     "@lexical/text": "workspace:*",
     "@lexical/utils": "workspace:*",
     "@lexical/yjs": "workspace:*",
-    "lexical": "workspace:*",
-    "react-error-boundary": "^6.1.1"
+    "lexical": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=17.x",
@@ -1813,6 +1812,42 @@
         "development": "./dist/useLexicalNodeSelection.dev.js",
         "production": "./dist/useLexicalNodeSelection.prod.js",
         "default": "./dist/useLexicalNodeSelection.js"
+      }
+    },
+    "./useLexicalSlotRef": {
+      "source": "./src/useLexicalSlotRef.ts",
+      "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalSlotRef.d.ts",
+        "development": "./dist/useLexicalSlotRef.dev.mjs",
+        "production": "./dist/useLexicalSlotRef.prod.mjs",
+        "node": "./dist/useLexicalSlotRef.node.mjs",
+        "default": "./dist/useLexicalSlotRef.mjs"
+      },
+      "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalSlotRef.d.ts",
+        "development": "./dist/useLexicalSlotRef.dev.js",
+        "production": "./dist/useLexicalSlotRef.prod.js",
+        "default": "./dist/useLexicalSlotRef.js"
+      }
+    },
+    "./useLexicalSlotRef.js": {
+      "source": "./src/useLexicalSlotRef.ts",
+      "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalSlotRef.d.ts",
+        "development": "./dist/useLexicalSlotRef.dev.mjs",
+        "production": "./dist/useLexicalSlotRef.prod.mjs",
+        "node": "./dist/useLexicalSlotRef.node.mjs",
+        "default": "./dist/useLexicalSlotRef.mjs"
+      },
+      "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/useLexicalSlotRef.d.ts",
+        "development": "./dist/useLexicalSlotRef.dev.js",
+        "production": "./dist/useLexicalSlotRef.prod.js",
+        "default": "./dist/useLexicalSlotRef.js"
       }
     },
     "./useLexicalSubscription": {

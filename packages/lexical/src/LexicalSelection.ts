@@ -64,6 +64,14 @@ import {getIsProcessingMutations} from './LexicalMutations';
 import {insertRangeAfter, LexicalNode} from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
+  $getSlot,
+  $getSlotFrame,
+  $getSlotHost,
+  $getSlotHostKey,
+  $getSlotMap,
+  $getSlotNames,
+} from './LexicalSlot';
+import {
   getActiveEditor,
   getActiveEditorState,
   isCurrentlyReadOnlyMode,
@@ -293,7 +301,15 @@ function $transferStartingElementPointToTextPoint(
   if ($isParagraphNode(placementNode)) {
     placementNode.splice(0, 0, [textNode]);
   } else if (placementNode !== null) {
-    const target = $isRootNode(element)
+    // root or shadow-root + element-mode anchor before a non-paragraph
+    // child (typically a sibling block decorator): wrap the new text in
+    // a paragraph so it stays a valid block-level child of the root or
+    // slot frame. The last-offset branch below already covers shadow
+    // roots; the in-the-middle case used to drop a raw text node next
+    // to the decorator, which leaves the text without a block ancestor
+    // and breaks every downstream getTopLevelElement / $findMatchingParent
+    // walk (Cmd+A, Enter, etc.).
+    const target = $isRootOrShadowRoot(element)
       ? $createParagraphNode().append(textNode)
       : textNode;
     placementNode.insertBefore(target);
@@ -420,8 +436,17 @@ export class NodeSelection implements BaseSelection {
   }
 
   insertNodes(nodes: LexicalNode[]) {
-    const selectedNodes = this.getNodes();
+    // Slotted nodes are fixed parts of their host with no parent, so they
+    // can't be inserted around or removed (see $removeNode's slot guard).
+    // Skip them; if nothing tree-resident is selected there's nowhere to
+    // anchor the insertion.
+    const selectedNodes = this.getNodes().filter(
+      node => $getSlotHostKey(node) === null,
+    );
     const selectedNodesLength = selectedNodes.length;
+    if (selectedNodesLength === 0) {
+      return;
+    }
     const lastSelectedNode = selectedNodes[selectedNodesLength - 1];
     let selectionAtEnd: RangeSelection;
     // Insert nodes
@@ -472,7 +497,11 @@ export class NodeSelection implements BaseSelection {
    * location of the first node.
    */
   deleteNodes(): void {
-    const nodes = this.getNodes();
+    // Slotted nodes are fixed parts of their host; skip them so we neither
+    // build a caret from a parentless node nor hit $removeNode's slot guard.
+    const nodes = this.getNodes().filter(
+      node => $getSlotHostKey(node) === null,
+    );
     if (($getSelection() || $getPreviousSelection()) === this && nodes[0]) {
       const firstCaret = $getSiblingCaret(nodes[0], 'next');
       $setSelectionFromCaretRange($getCaretRange(firstCaret, firstCaret));
@@ -629,7 +658,21 @@ export class RangeSelection implements BaseSelection {
         if (!prevWasElement) {
           textContent += '\n';
         }
-        if (node.isEmpty()) {
+        // Slots are isolated shadow roots, so getNodes() never descends into
+        // them; append their text here (slots-first, mirroring
+        // ElementNode.getTextContent) so a selection enclosing the host
+        // carries its slot content.
+        let slotText = '';
+        for (const slotName of $getSlotNames(node)) {
+          const slot = $getSlot(node, slotName);
+          if (slot !== null) {
+            slotText += slot.getTextContent();
+          }
+        }
+        if (slotText !== '') {
+          textContent += slotText;
+          prevWasElement = false;
+        } else if (node.isEmpty()) {
           prevWasElement = false;
         } else {
           prevWasElement = true;
@@ -1371,14 +1414,81 @@ export class RangeSelection implements BaseSelection {
     if (!this.isCollapsed()) {
       this.removeText();
     }
-    if (this.anchor.key === 'root') {
-      this.insertParagraph();
-      const selection = $getSelection();
-      invariant(
-        $isRangeSelection(selection),
-        'Expected RangeSelection after insertParagraph',
-      );
-      return selection.insertNodes(nodes);
+    // @experimental named-slots. Anchor on a slot value root (e.g. after a
+    // slot-scoped Cmd+A leaves the selection on the slot's element point)
+    // has __parent === null, so the block-finding walk below would throw.
+    // Redirect into the slot subtree by collapsing the selection at the
+    // slot's first child and re-running insertNodes.
+    const anchorNode = this.anchor.getNode();
+    if (
+      this.anchor.type === 'element' &&
+      $isElementNode(anchorNode) &&
+      $getSlotHostKey(anchorNode) !== null
+    ) {
+      // A container (shadow-root) value redirects into its first child; an
+      // empty one has no child to redirect into (its caret target is the
+      // reconciler's terminating <br>), so seed a paragraph first —
+      // insertNodes removes the seed again when block content replaces it. A
+      // block-shaped value (virtual shadow root around a single block) needs
+      // no seeding: it IS the block, so the block-finding walk below lands
+      // on it directly.
+      let firstChild = anchorNode.isShadowRoot()
+        ? (anchorNode.getFirstChild() ??
+          anchorNode.append($createParagraphNode()).getFirstChild())
+        : anchorNode.getFirstChild();
+      // A shadow-root slot whose first child is a non-element (typically a
+      // decorator like HorizontalRuleNode) would re-enter this same branch
+      // forever: `firstChild.selectStart()` resolves back to the slot value's
+      // own element-mode caret (no sibling, parent = the slot value root),
+      // which matches the entry condition above. Seed a paragraph before the
+      // non-element first child so the redirected selection lands in a block
+      // and the recursion terminates.
+      //
+      // The seed paragraph is the redirect target only — if `nodes` carries
+      // inline content the recursion fills the paragraph in place, and if it
+      // carries block content the recursion's root/shadow-root branch
+      // (`splice` after `$wrapInlineNodes`) inserts the new blocks before the
+      // existing non-element first child while the seed sits at offset 0 as
+      // the new shadow-root first child. In either case the seed ends up
+      // hosting either the inserted content or an empty leading line, never
+      // a stranded paragraph next to the original non-element child.
+      if (
+        anchorNode.isShadowRoot() &&
+        firstChild !== null &&
+        !$isElementNode(firstChild)
+      ) {
+        const seed = $createParagraphNode();
+        firstChild.insertBefore(seed);
+        firstChild = seed;
+      }
+      if (firstChild !== null) {
+        firstChild.selectStart();
+        const redirected = $getSelection();
+        invariant(
+          $isRangeSelection(redirected),
+          'Expected RangeSelection after redirecting into slot subtree',
+        );
+        return redirected.insertNodes(nodes);
+      }
+    }
+
+    // The anchor is an element point directly on a root or shadow root that is
+    // not a named-slot host (handled above). This includes the document root
+    // (e.g. an empty editor) and shadow roots that hold block-level children
+    // directly — for instance the block cursor between or after the children of
+    // a decorator-only container or the playground CollapsibleContentNode.
+    // Roots and shadow roots hold blocks (and shadow roots) directly, so splice
+    // the nodes in at the anchor offset: a block node (such as a pasted
+    // DecoratorNode) goes in as-is, while inline runs are wrapped in a block
+    // first since a root/shadow root cannot contain inline children.
+    if (this.anchor.type === 'element' && $isRootOrShadowRoot(anchorNode)) {
+      const blocksParent = $wrapInlineNodes(nodes);
+      const nodeToSelect = blocksParent.getLastDescendant();
+      anchorNode.splice(this.anchor.offset, 0, blocksParent.getChildren());
+      if (nodeToSelect !== null) {
+        nodeToSelect.selectEnd();
+      }
+      return;
     }
 
     const firstPoint = this.isBackward() ? this.focus : this.anchor;
@@ -1413,6 +1523,25 @@ export class RangeSelection implements BaseSelection {
       const index = $removeTextAndSplitBlock(this);
       firstBlock.splice(index, 0, nodes);
       last.selectEnd();
+      return;
+    }
+
+    // CASE 3a: the target block IS a slot value. Its virtual shadow root
+    // holds exactly one block, so block-level content cannot become its
+    // sibling; mirror pasting into an <input> instead — block structure
+    // flattens to its inline content on the single line (line breaks are
+    // stripped like the input value sanitization strips newlines, and
+    // block-only decorators are dropped, having no single-line form).
+    if ($isElementNode(firstBlock) && $getSlotHostKey(firstBlock) !== null) {
+      const index = $removeTextAndSplitBlock(this);
+      const inlineNodes = $extractInlineFromBlocks(nodes);
+      firstBlock.splice(index, 0, inlineNodes);
+      const lastInserted = inlineNodes[inlineNodes.length - 1];
+      if (lastInserted !== undefined) {
+        lastInserted.selectEnd();
+      } else {
+        firstBlock.select(index, index);
+      }
       return;
     }
 
@@ -1484,14 +1613,22 @@ export class RangeSelection implements BaseSelection {
    * @returns the newly inserted node.
    */
   insertParagraph(): ElementNode | null {
-    if (this.anchor.key === 'root') {
+    const anchorNode = this.anchor.getNode();
+    if (this.anchor.type === 'element' && $isRootOrShadowRoot(anchorNode)) {
       const paragraph = $createParagraphNode();
-      $getRoot().splice(this.anchor.offset, 0, [paragraph]);
+      anchorNode.splice(this.anchor.offset, 0, [paragraph]);
       paragraph.select();
       return paragraph;
     }
     const index = $removeTextAndSplitBlock(this);
     const block = $findMatchingParent(this.anchor.getNode(), INTERNAL_$isBlock);
+    if (block !== null && $getSlotHostKey(block) !== null) {
+      // The block IS the slot value: its virtual shadow root holds exactly
+      // one block, so there is no position for a sibling paragraph. Mirrors
+      // Enter in a single-line input — a no-op (hosts may map it to focus
+      // movement).
+      return null;
+    }
     invariant(
       $isElementNode(block),
       'Expected ancestor to be a block ElementNode',
@@ -1844,6 +1981,24 @@ export class RangeSelection implements BaseSelection {
             } else if ($isDecoratorNode(caret.origin)) {
               if (caret.origin.isIsolated()) {
                 // do nothing, shouldn't delete an isolated decorator
+              } else if ($getSlotNames(caret.origin).length > 0) {
+                // A slot-bearing decorator is removed only as a unit by an
+                // explicit host deletion, never silently via backspace —
+                // same policy as the merge-block branch below for
+                // ElementNode-as-host. When the anchor is an empty
+                // paragraph next to the host, drop the paragraph and
+                // select the host (matches the shadow-root ElementNode
+                // path at line 1951–1962 above); otherwise leave both in
+                // place.
+                if (
+                  $isElementNode(initialRange.anchor.origin) &&
+                  initialRange.anchor.origin.isEmpty()
+                ) {
+                  initialRange.anchor.origin.remove();
+                  const nodeSelection = $createNodeSelection();
+                  nodeSelection.add(caret.origin.getKey());
+                  $setSelection(nodeSelection);
+                }
               } else if (
                 state.type === 'merge-next-block' &&
                 (caret.origin.isKeyboardSelectable() ||
@@ -1873,6 +2028,14 @@ export class RangeSelection implements BaseSelection {
           // `block` is the anchor-side block; `caret.origin` is the
           // adjacent (previous-direction) block we descended into.
           const {caret, block} = state;
+          // The cross-block merge below removes `block` (it merges into the
+          // adjacent block). If `block` owns slots, that removal would discard
+          // them, since slots are not children and are not carried over. Leave
+          // the caret in place instead: a slot-bearing host is removed only as
+          // a unit by an explicit host deletion, never silently via backspace.
+          if ($getSlotNames(block).length > 0) {
+            return;
+          }
           // Empty adjacent block at the same nesting level: remove it
           // instead of merging, so the current block's type (e.g.
           // heading) survives. Limiting to a shared parent leaves
@@ -1898,6 +2061,23 @@ export class RangeSelection implements BaseSelection {
             ),
           );
           return this.removeText();
+        }
+        // No text lies in the deletion direction and nothing in scope was
+        // found to delete, so the caret sits at a slot edge. A slot value is
+        // nested within its host's DOM, so the boundary lives only in the
+        // model: the native modify('extend') below would cross it and select
+        // into the host. Stop when that edge is a slot value — the slot link
+        // is a virtual shadow root, so this applies whether or not the value
+        // is itself a shadow root; an ordinary (non-slotted) shadow root
+        // keeps the native behavior.
+        for (let node: LexicalNode | null = anchor.getNode(); node !== null; ) {
+          if ($getSlotHostKey(node) !== null) {
+            return;
+          }
+          if ($isElementNode(node) && node.isShadowRoot()) {
+            break;
+          }
+          node = node.getParent();
         }
       }
 
@@ -1966,6 +2146,27 @@ export class RangeSelection implements BaseSelection {
    * @param isBackward whether or not the selection is backwards.
    */
   deleteLine(isBackward: boolean): void {
+    // A decorator-host slot's DOM is relocated out of document order (the
+    // host's React decorate() mounts the slot container wherever it wants),
+    // so a deletion that starts inside one cannot be expressed by the
+    // native range the browser hands us: forward delete at a slot edge
+    // extends backward over the whole line, and the lineboundary extend
+    // below resolves in the wrong direction too. Element-host slots
+    // (e.g. a Card title) keep document order so the native path is
+    // fine there. Narrow to the decorator-host case and defer to
+    // deleteCharacter, which clamps at the slot boundary while still
+    // handling in-slot character and paragraph deletion.
+    const anchorSlotFrame = $getPointSlotFrame(this.anchor);
+    if (
+      anchorSlotFrame !== null &&
+      $isDecoratorNode($getSlotHost(anchorSlotFrame))
+    ) {
+      if (!this.isCollapsed()) {
+        this.focus.set(this.anchor.key, this.anchor.offset, this.anchor.type);
+      }
+      this.deleteCharacter(isBackward);
+      return;
+    }
     if (this.isCollapsed()) {
       this.modify('extend', isBackward, 'lineboundary');
     }
@@ -2461,7 +2662,14 @@ function $internalResolveSelectionPoint(
           );
         }
       } else {
-        const index = resolvedElement.getIndexWithinParent();
+        // A slot value is parentless — it links up to its host via
+        // `__slotHost` and behaves like a shadow root. Anchor the caret
+        // adjacent to the host (a normal child of its parent), since the slot
+        // value itself has no parent to anchor in. Non-slotted leaves anchor
+        // in their own parent as before.
+        const slotHost = $getSlotHost(resolvedElement);
+        const anchorNode = slotHost !== null ? slotHost : resolvedElement;
+        const index = anchorNode.getIndexWithinParent();
         // For wrap patterns (slot exposes an inner content element via
         // `withElement`) defer to `slot.resolveLeafPosition` so the
         // wrap's structure determines "before vs after". For bare leaf
@@ -2479,7 +2687,7 @@ function $internalResolveSelectionPoint(
           }
         }
         resolvedOffset = position === 'before' ? index : index + 1;
-        resolvedElement = resolvedElement.getParentOrThrow();
+        resolvedElement = anchorNode.getParentOrThrow();
       }
       if ($isElementNode(resolvedElement)) {
         return [
@@ -2587,6 +2795,173 @@ function $normalizeSelectionPointsForBoundaries(
   }
 }
 
+// @experimental named-slots. The innermost slot-root ancestor of a point
+// (a node whose up-pointer is __slotHost, not __parent), or null when the
+// point is not inside any slot. Walking via getParent() naturally stops at a
+// slot root because a slotted node's __parent is null. Non-slot trees have
+// __slotHost === null everywhere, so this always returns null there.
+function $getPointSlotFrame(point: PointType): LexicalNode | null {
+  const node = $getNodeByKey(point.key);
+  return node === null ? null : $getSlotFrame(node);
+}
+
+// @experimental named-slots. Content order (slots-first) of a slot-straddling
+// pair, computed from the model alone. The caret comparison ($comparePoint…)
+// throws across a slot boundary (a slotted node has no common ancestor through
+// __parent), so each side that sits in a slot is reduced to its host — a
+// main-tree node — and the hosts are compared with the linked-list isBefore.
+// A slotted point sorts at its host's leading edge (slots-first). Only called
+// for a confirmed straddle (the frames differ).
+function $slotStraddleFocusAfterAnchor(
+  anchorPoint: PointType,
+  focusPoint: PointType,
+  anchorFrame: LexicalNode | null,
+  focusFrame: LexicalNode | null,
+): boolean {
+  if (anchorFrame !== null && focusFrame !== null) {
+    const anchorHost = $getSlotHost(anchorFrame);
+    const focusHost = $getSlotHost(focusFrame);
+    if (anchorHost !== null && anchorHost.is(focusHost)) {
+      // Two slots of the same host: slot-map iteration is insertion order,
+      // which is the order the reconciler renders them (content order).
+      for (const slotKey of $getSlotMap(anchorHost).values()) {
+        if (slotKey === anchorFrame.getKey()) {
+          return true;
+        }
+        if (slotKey === focusFrame.getKey()) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return anchorHost !== null && focusHost !== null
+      ? anchorHost.isBefore(focusHost)
+      : true;
+  }
+  if (anchorFrame !== null) {
+    const anchorHost = $getSlotHost(anchorFrame);
+    const focusNode = $getNodeByKey(focusPoint.key);
+    if (anchorHost === null || focusNode === null) {
+      return true;
+    }
+    // Focus within the host's regular children sits after the slot content.
+    if (anchorHost.is(focusNode) || anchorHost.isParentOf(focusNode)) {
+      return true;
+    }
+    return anchorHost.isBefore(focusNode);
+  }
+  const focusHost = $getSlotHost(focusFrame as LexicalNode);
+  const anchorNode = $getNodeByKey(anchorPoint.key);
+  if (focusHost === null || anchorNode === null) {
+    return false;
+  }
+  // Anchor within the host's regular children sits after the slot (focus).
+  if (focusHost.is(anchorNode) || focusHost.isParentOf(anchorNode)) {
+    return false;
+  }
+  return anchorNode.isBefore(focusHost);
+}
+
+// @experimental named-slots. Slots are shadow-root-isolated: a RangeSelection
+// must not straddle a slot boundary. When the anchor and focus are in
+// different frames, clamp the focus into the anchor's frame (anchor-frame
+// rule), keeping keyboard/mouse/programmatic results consistent. The direction
+// is resolved lazily (resolveFocusAfterAnchor) only on an actual straddle,
+// because the DOM-read and programmatic callers determine it differently (DOM
+// order vs the model comparator) and the model comparator is invalid until a
+// straddle is confirmed. Returns true when it mutated the focus point. No-op
+// (returns false) when both points share a frame — including the all-null case
+// in non-slot trees, so behavior there is unchanged.
+function $clampSelectionPointsToSlotFrame(
+  anchorPoint: PointType,
+  focusPoint: PointType,
+  resolveFocusAfterAnchor: (
+    anchorFrame: LexicalNode | null,
+    focusFrame: LexicalNode | null,
+  ) => boolean,
+): boolean {
+  const anchorFrame = $getPointSlotFrame(anchorPoint);
+  const focusFrame = $getPointSlotFrame(focusPoint);
+  if (
+    anchorFrame === focusFrame ||
+    (anchorFrame !== null && focusFrame !== null && anchorFrame.is(focusFrame))
+  ) {
+    return false;
+  }
+  const focusAfterAnchor = resolveFocusAfterAnchor(anchorFrame, focusFrame);
+  if (anchorFrame !== null) {
+    // Anchor sits inside a slot: pull the focus to that slot's edge (the far
+    // edge in the drag direction), leaving a contained partial selection.
+    // Slot→slot drags hit this same branch — no host escalation.
+    if ($isElementNode(anchorFrame)) {
+      focusPoint.set(
+        anchorFrame.getKey(),
+        focusAfterAnchor ? anchorFrame.getChildrenSize() : 0,
+        'element',
+      );
+    } else {
+      focusPoint.set(
+        anchorFrame.getKey(),
+        focusAfterAnchor ? anchorFrame.getTextContentSize() : 0,
+        'text',
+      );
+    }
+    return true;
+  }
+  // Anchor sits outside, focus inside a slot: push the focus past the host
+  // that owns the slot so the host is wholly contained.
+  const host = $getSlotHost(focusFrame as LexicalNode);
+  if (host === null) {
+    return false;
+  }
+  const hostParent = host.getParent();
+  if (hostParent === null) {
+    return false;
+  }
+  const hostIndex = host.getIndexWithinParent();
+  focusPoint.set(
+    hostParent.getKey(),
+    focusAfterAnchor ? hostIndex + 1 : hostIndex,
+    'element',
+  );
+  return true;
+}
+
+/**
+ * Programmatic counterpart of the DOM-read clamp: applied when a
+ * RangeSelection is committed via $setSelection so an API-built selection
+ * cannot straddle a slot boundary either. Direction comes from the model
+ * comparator (slots-first content order), not the caret system — a
+ * straddling pair has no common ancestor through __parent, so the caret
+ * comparison would throw (that integration is the deferred caret-slot work),
+ * and not from the DOM either, since $setSelection also runs in headless
+ * mode where there is no DOM. Marks the selection dirty when it mutates a
+ * point. No-op for non-slot trees (both frames null), evaluated before any
+ * direction work, so non-slot and headless callers are unaffected.
+ *
+ * @experimental named-slots
+ * @internal
+ */
+export function $clampRangeSelectionToSlotFrame(
+  selection: RangeSelection,
+): boolean {
+  const clamped = $clampSelectionPointsToSlotFrame(
+    selection.anchor,
+    selection.focus,
+    (anchorFrame, focusFrame) =>
+      $slotStraddleFocusAfterAnchor(
+        selection.anchor,
+        selection.focus,
+        anchorFrame,
+        focusFrame,
+      ),
+  );
+  if (clamped) {
+    selection.dirty = true;
+  }
+  return clamped;
+}
+
 function $internalResolveSelectionPoints(
   anchorDOM: null | Node,
   anchorOffset: number,
@@ -2640,6 +3015,23 @@ function $internalResolveSelectionPoints(
     }
   }
 
+  // @experimental named-slots. Clamp a slot-straddling drag into the
+  // anchor's frame before normalization cleans up the resulting edge points.
+  // The DOM order of the resolved nodes gives the drag direction (slot DOM is
+  // slots-first, so DOM order matches content order). Gated on `_slotsUsed`
+  // so editors that never slot anything skip the walk, mirroring the
+  // commit-time and `$setSelection` clamps.
+  const slotClamped =
+    editor._slotsUsed &&
+    $clampSelectionPointsToSlotFrame(
+      resolvedAnchorPoint,
+      resolvedFocusPoint,
+      () =>
+        (anchorDOM.compareDocumentPosition(focusDOM) &
+          Node.DOCUMENT_POSITION_FOLLOWING) !==
+        0,
+    );
+
   // Handle normalization of selection when it is at the boundaries.
   $normalizeSelectionPointsForBoundaries(
     resolvedAnchorPoint,
@@ -2647,7 +3039,11 @@ function $internalResolveSelectionPoints(
     lastSelection,
   );
 
-  return [resolvedAnchorPoint, resolvedFocusPoint, anchorDirty || focusDirty];
+  return [
+    resolvedAnchorPoint,
+    resolvedFocusPoint,
+    anchorDirty || focusDirty || slotClamped,
+  ];
 }
 
 export function $isBlockElementNode(
@@ -3376,6 +3772,28 @@ export function $getTextContent(): string {
   return selection.getTextContent();
 }
 
+// @experimental named-slots. Inline projection of a pasted node list for a
+// block-shaped slot value (insertNodes CASE 3a): inline nodes pass through,
+// non-inline elements contribute their inline content recursively, line
+// breaks are stripped (the <input> value-sanitization analogy for newlines),
+// and non-inline decorators are dropped.
+function $extractInlineFromBlocks(nodes: LexicalNode[]): LexicalNode[] {
+  const inlineNodes: LexicalNode[] = [];
+  for (const node of nodes) {
+    if ($isLineBreakNode(node)) {
+      continue;
+    }
+    if (($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline()) {
+      if ($isElementNode(node)) {
+        inlineNodes.push(...$extractInlineFromBlocks(node.getChildren()));
+      }
+      continue;
+    }
+    inlineNodes.push(node);
+  }
+  return inlineNodes;
+}
+
 function $removeTextAndSplitBlock(selection: RangeSelection): number {
   let selection_ = selection;
   if (!selection.isCollapsed()) {
@@ -3397,7 +3815,12 @@ function $removeTextAndSplitBlock(selection: RangeSelection): number {
   let node = anchor.getNode();
   let offset = anchor.offset;
 
-  while (!INTERNAL_$isBlock(node)) {
+  // A slotted node is the virtual scope root (its parent is null), so the
+  // split walk must stop there even when it is not INTERNAL_$isBlock itself
+  // (e.g. a container-shaped slot value with element children) — otherwise
+  // $splitNodeAtPoint's parentless fallback would append a stray paragraph
+  // to the document root.
+  while (!INTERNAL_$isBlock(node) && $getSlotHostKey(node) === null) {
     const prevNode = node;
     [node, offset] = $splitNodeAtPoint(node, offset);
     if (prevNode.is(node)) {

@@ -77,9 +77,9 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM(): HTMLElement {
-    const el = document.createElement('figure');
+    const el = document.createElement('hr');
     el.style.pageBreakAfter = 'always';
-    el.setAttribute('type', this.getType());
+    el.setAttribute('data-lexical-page-break', 'true');
     return el;
   }
 

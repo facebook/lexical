@@ -26,10 +26,15 @@ import {
   $createTextNode,
   $getRoot,
   $isElementNode,
+  $setSlot,
   isHTMLElement,
   ParagraphNode,
   RangeSelection,
 } from 'lexical';
+import {
+  $createTestShadowRootNode,
+  TestShadowRootNode,
+} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, test} from 'vitest';
 
 describe('HTML', () => {
@@ -89,11 +94,9 @@ describe('HTML', () => {
         discrete: true,
       });
 
-      expect(
-        editor
-          .getEditorState()
-          .read(() => $generateHtmlFromNodes(editor), {editor}),
-      ).toBe(html);
+      expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+        html,
+      );
     });
   }
 
@@ -423,5 +426,31 @@ describe('HTML', () => {
     ])('$name', ({html, expected}) => {
       expect(importAndGetDirection(html)).toBe(expected);
     });
+  });
+
+  test('[Lexical -> HTML]: slots are not auto-serialized to HTML', () => {
+    const editor = createHeadlessEditor({
+      namespace: 'slot',
+      nodes: [TestShadowRootNode],
+    });
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const slot = $createTestShadowRootNode().append(
+          $createParagraphNode().append($createTextNode('SLOTTEXT')),
+        );
+        $getRoot().append(host);
+        $setSlot(host, 'title', slot);
+      },
+      {discrete: true},
+    );
+    let html = '';
+    editor.read(() => {
+      html = $generateHtmlFromNodes(editor);
+    });
+    // Like NodeState, slots live in a separate channel and are NOT auto-
+    // exported to HTML; a host opts in from its own exportDOM via
+    // $appendNodeToHTML (see CardNode in the playground). JSON stays automatic.
+    expect(html).not.toContain('SLOTTEXT');
   });
 });

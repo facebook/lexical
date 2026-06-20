@@ -20,13 +20,21 @@ import {
   $isNodeSelection,
   $isParagraphNode,
   $isRangeSelection,
+  $setSlot,
   LexicalEditor,
   NodeKey,
 } from 'lexical';
-import {$assertNodeType, initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {
+  $assertNodeType,
+  $createTestDecoratorNode,
+  initializeUnitTest,
+} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
 
-import {$mergePrevious} from '../../shared/useCharacterLimit';
+import {
+  $mergePrevious,
+  $wrapOverflowedNodes,
+} from '../../shared/useCharacterLimit';
 
 describe('LexicalNodeHelpers tests', () => {
   initializeUnitTest(
@@ -201,6 +209,48 @@ describe('LexicalNodeHelpers tests', () => {
             expect(selection.anchor.offset).toBe(0);
             expect(selection.focus.key).toBe(text3Key);
             expect(selection.focus.offset).toBe(1);
+          });
+        });
+      });
+
+      describe('$wrapOverflowedNodes', () => {
+        // A text-bearing non-inline decorator slotted into a host is skipped
+        // by the wrap loop (replacing it with an OverflowNode would throw),
+        // but its text is part of the root text content that funds `offset`
+        // — the budget must advance past it or every later wrap boundary
+        // lands late by the decorator's size.
+        it('advances the budget past a slotted decorator so the wrap boundary is exact', async () => {
+          const editor: LexicalEditor = testEnv.editor;
+          let hostKey: NodeKey;
+
+          await editor.update(() => {
+            const host = $createParagraphNode();
+            hostKey = host.getKey();
+            host.append($createTextNode('12345'));
+            $getRoot().append(host);
+            // TestDecoratorNode.getTextContent() === 'Hello world' (11
+            // chars); slots-first dfs counts it ahead of the host's text.
+            $setSlot(
+              host,
+              'media',
+              $createTestDecoratorNode().setIsInline(false),
+            );
+          });
+
+          await editor.update(() => {
+            // Budget: 11 (slotted decorator) + 2 ('12') = 13; '345' is over.
+            $wrapOverflowedNodes(13);
+          });
+
+          editor.read(() => {
+            const host = $assertNodeType(
+              $getNodeByKey(hostKey),
+              $isParagraphNode,
+            );
+            const [kept, overflow] = host.getChildren();
+            expect(kept.getTextContent()).toBe('12');
+            $assertNodeType(overflow, $isOverflowNode);
+            expect(overflow.getTextContent()).toBe('345');
           });
         });
       });

@@ -61,7 +61,7 @@ Which is later handled in [`registerList`](https://github.com/facebook/lexical/b
 editor.registerCommand(
   INSERT_UNORDERED_LIST_COMMAND,
   () => {
-    insertList(editor, 'ul');
+    $insertList('ul');
     return true;
   },
   COMMAND_PRIORITY_LOW,
@@ -73,8 +73,8 @@ editor.registerCommand(
 You can register a command from anywhere you have access to the `editor` object, but it's important that you remember to clean up the listener with its remove listener callback when it's no longer needed.
 
 The command listener will always be called from an `editor.update`, so you may use dollar functions. You should not use
-`editor.update` (and *never* call `editor.read`) synchronously from within a command listener. It is safe to call
-`editor.getEditorState().read` if you need to read the previous state after updates have already been made.
+`editor.update` (and *never* call `editor.read(...)` or `editor.read('force-commit', ...)`) synchronously from within a command listener. It is safe to call
+`editor.read('latest', ...)` or `editor.getEditorState().read` if you need to read the previous state after updates have already been made.
 
 ```js
 const removeListener = editor.registerCommand(

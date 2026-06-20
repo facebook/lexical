@@ -524,11 +524,11 @@ export class LexicalEditorElement extends HTMLElement {
       shadow.removeChild(shadow.firstChild);
     }
 
-    const style = document.createElement('style');
+    const style = this.ownerDocument.createElement('style');
     style.textContent = STYLE_SHEET;
     shadow.appendChild(style);
 
-    const toolbar = document.createElement('div');
+    const toolbar = this.ownerDocument.createElement('div');
     toolbar.className = 'toolbar';
     // Expose the toolbar through the [CSS Shadow Parts]
     // (https://developer.mozilla.org/docs/Web/CSS/::part) API so the
@@ -542,13 +542,15 @@ export class LexicalEditorElement extends HTMLElement {
     // toolbar row. Slotted nodes stay in the light DOM — their events bubble
     // out to page-level listeners — but they render visually inside the
     // shadow root alongside our built-in toolbar buttons.
-    const toolbarSpacer = document.createElement('span');
+    const toolbarSpacer = this.ownerDocument.createElement('span');
     toolbarSpacer.className = 'toolbar-spacer';
-    const toolbarSlot = document.createElement('slot');
+    const toolbarSlot = this.ownerDocument.createElement('slot');
     toolbarSlot.name = 'toolbar-extra';
 
     const contentEditable =
-      prerendered !== null ? prerendered : document.createElement('div');
+      prerendered !== null
+        ? prerendered
+        : this.ownerDocument.createElement('div');
     contentEditable.className = 'content';
     contentEditable.contentEditable = 'true';
     // Surface the editor to assistive tech the same way a built-in
@@ -612,7 +614,7 @@ export class LexicalEditorElement extends HTMLElement {
 
     const formatButtons = new Map<TextFormatType, HTMLButtonElement>();
     const addButton = (label: string, onClick: () => void) => {
-      const button = document.createElement('button');
+      const button = this.ownerDocument.createElement('button');
       button.type = 'button';
       button.textContent = label;
       // Keep focus (and therefore selection) in the editor when clicked.

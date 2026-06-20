@@ -18,6 +18,7 @@ import {
   CommandListenerPriority,
   createCommand,
   getDOMShadowRoots,
+  isDOMShadowRoot,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_ENTER_COMMAND,
@@ -105,7 +106,9 @@ export type MenuRenderFn<TOption extends MenuOption> = (
 ) => ReactPortal | JSX.Element | null;
 
 const scrollIntoViewIfNeeded = (target: HTMLElement) => {
-  const typeaheadContainerNode = document.getElementById('typeahead-menu');
+  const typeaheadContainerNode = target.closest(
+    '#typeahead-menu',
+  ) as HTMLElement | null;
   if (!typeaheadContainerNode) {
     return;
   }
@@ -628,20 +631,38 @@ function setContainerDivAttributes(
   containerDiv.style.position = 'absolute';
 }
 
+function resolveMenuParent(
+  editor: LexicalEditor,
+): HTMLElement | ShadowRoot | undefined {
+  if (!CAN_USE_DOM) {
+    return undefined;
+  }
+  const rootElement = editor.getRootElement();
+  if (rootElement !== null) {
+    const root = rootElement.getRootNode();
+    if (isDOMShadowRoot(root)) {
+      return root as ShadowRoot;
+    }
+  }
+  return document.body;
+}
+
 export function useMenuAnchorRef(
   resolution: MenuResolution | null,
   setResolution: (r: MenuResolution | null) => void,
   className?: string,
-  parent: HTMLElement | undefined = CAN_USE_DOM ? document.body : undefined,
+  parent?: HTMLElement,
   shouldIncludePageYOffset__EXPERIMENTAL: boolean = true,
 ): RefObject<HTMLElement | null> {
   const [editor] = useLexicalComposerContext();
+  const resolvedParent: HTMLElement | ShadowRoot | undefined =
+    parent ?? resolveMenuParent(editor);
   const initialAnchorElement = CAN_USE_DOM
     ? document.createElement('div')
     : null;
   const anchorElementRef = useRef<HTMLElement | null>(initialAnchorElement);
   const positionMenu = useCallback(() => {
-    if (anchorElementRef.current === null || parent === undefined) {
+    if (anchorElementRef.current === null || resolvedParent === undefined) {
       return;
     }
     anchorElementRef.current.style.top = anchorElementRef.current.style.bottom;
@@ -690,7 +711,7 @@ export function useMenuAnchorRef(
 
       if (!containerDiv.isConnected) {
         setContainerDivAttributes(containerDiv, className);
-        parent.append(containerDiv);
+        resolvedParent.append(containerDiv);
       }
       containerDiv.setAttribute('id', 'typeahead-menu');
       rootElement.setAttribute('aria-controls', 'typeahead-menu');
@@ -700,7 +721,7 @@ export function useMenuAnchorRef(
     resolution,
     shouldIncludePageYOffset__EXPERIMENTAL,
     className,
-    parent,
+    resolvedParent,
   ]);
 
   useEffect(() => {
@@ -745,8 +766,8 @@ export function useMenuAnchorRef(
     initialAnchorElement === anchorElementRef.current
   ) {
     setContainerDivAttributes(initialAnchorElement, className);
-    if (parent != null) {
-      parent.append(initialAnchorElement);
+    if (resolvedParent != null) {
+      resolvedParent.append(initialAnchorElement);
     }
   }
 

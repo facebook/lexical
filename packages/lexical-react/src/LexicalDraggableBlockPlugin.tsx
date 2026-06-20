@@ -336,10 +336,7 @@ function useDraggableBlockMenu(
   }, [scrollerElem, anchorElem, editor, isOnMenu, setDraggableBlockElem]);
 
   useEffect(() => {
-    const zoomLevel = calculateZoomLevel(
-      document.getElementsByClassName('ContentEditable__root')[0],
-      true,
-    );
+    const zoomLevel = calculateZoomLevel(editor.getRootElement(), true);
     if (menuRef.current) {
       setMenuPosition(
         draggableBlockElem,

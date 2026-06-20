@@ -1520,6 +1520,7 @@ function onDocumentSelectionChange(event: Event): void {
 
   const ownerDocument = getDOMOwnerDocument(event.target);
   let nextActiveEditor: LexicalEditor | null = null;
+  let resolvedAnchorNode: Node | null = null;
   if (ownerDocument !== null) {
     const editorsForDoc = editorsByDocument.get(ownerDocument);
     if (editorsForDoc !== undefined) {
@@ -1558,6 +1559,7 @@ function onDocumentSelectionChange(event: Event): void {
         // anchor, but only the nested editor actually owns it.
         if (getNearestEditorFromDOMNode(anchorNode) === candidate) {
           nextActiveEditor = candidate;
+          resolvedAnchorNode = anchorNode;
           break;
         }
       }
@@ -1582,10 +1584,10 @@ function onDocumentSelectionChange(event: Event): void {
     isSelectionChangeFromMouseDown = false;
     updateEditorSync(nextActiveEditor, () => {
       const lastSelection = $getPreviousSelection();
-      const domAnchorNode = getDOMSelectionPoints(
-        domSelection,
-        nextActiveEditor._rootElement,
-      ).anchorNode;
+      const domAnchorNode =
+        resolvedAnchorNode ??
+        getDOMSelectionPoints(domSelection, nextActiveEditor._rootElement)
+          .anchorNode;
       if (isHTMLElement(domAnchorNode) || isDOMTextNode(domAnchorNode)) {
         // If the user is attempting to click selection back onto text, then
         // we should attempt create a range selection.

@@ -14,12 +14,16 @@ import {describe, expect, it, onTestFinished} from 'vitest';
 
 /**
  * Characterizes the documented KNOWN LIMITATION of dedupeSelectionRects' keep-smaller
- * rule (see its docstring): for OVERLAPPING inline content it can drop a wide rect
- * that covers real selected text, under-painting the glyphs it uniquely covered.
- * Uses real browser layout (Chromium + WebKit) and the real createRectsFromDOMRange +
- * dedupeSelectionRects — the root is a real, laid-out element so getBoundingClientRect
- * / getComputedStyle are real; only `editor` is a getRootElement shim, which is all the
- * helper reads off it.
+ * rule (see its docstring): for OVERLAPPING inline content it can drop a wider rect
+ * that covers real selected area, under-painting the part it uniquely covered.
+ *
+ * Uses real browser layout (Chromium / Firefox / WebKit) and the real
+ * createRectsFromDOMRange + dedupeSelectionRects. The construction uses
+ * explicit-width inline boxes and a fixed sub-pixel transform so the geometry is
+ * identical across platforms (no dependence on font glyph metrics), and the
+ * assertions are structural (no hard-coded pixel thresholds): the root is a real,
+ * laid-out element so getBoundingClientRect / getComputedStyle are real; only
+ * `editor` is a getRootElement shim, which is all the helper reads off it.
  */
 
 type Rect = {
@@ -41,7 +45,7 @@ function setupRoot(): HTMLDivElement {
   root.style.width = `${ROOT_WIDTH}px`;
   root.style.padding = '0px';
   root.style.margin = '0px';
-  root.style.font = '16px/1.5 monospace';
+  root.style.font = '16px/1 monospace';
   document.body.style.margin = '0px';
   document.body.appendChild(root);
   return root;
@@ -60,8 +64,7 @@ const toRect = (r: DOMRect | Rect): Rect => ({
   width: r.width,
 });
 
-// Containment predicate matching dedupeSelectionRects (1px tolerance), used only to
-// assert the survivors really are contained; the dedupe itself uses the REAL function.
+// Containment predicate matching dedupeSelectionRects (1px tolerance).
 function contains(a: Rect, b: Rect): boolean {
   return (
     b.left >= a.left - 1 &&
@@ -71,22 +74,36 @@ function contains(a: Rect, b: Rect): boolean {
   );
 }
 
+const sameRect = (a: Rect, b: Rect): boolean =>
+  Math.abs(a.left - b.left) < 1 &&
+  Math.abs(a.right - b.right) < 1 &&
+  Math.abs(a.top - b.top) < 1 &&
+  Math.abs(a.bottom - b.bottom) < 1;
+
 function selectAll(root: HTMLElement): Range {
   const r = document.createRange();
   r.selectNodeContents(root);
   return r;
 }
 
-describe('dedupeSelectionRects under-paints real text for overlapping inline content', () => {
-  it('drops the wide text-run rect that uniquely covers selected glyphs', () => {
+describe('dedupeSelectionRects under-paints real content for overlapping inline boxes', () => {
+  it('drops the wider rect that uniquely covers part of the selection', () => {
     const root = setupRoot();
     onTestFinished(() => root.remove());
 
-    // "aaaaaaaaaa" then an inline-block pulled back 70px over it and raised 0.5px via
-    // vertical-align (a plain CSS sub-pixel offset — no transform needed), then "cccc".
-    // The negative margin makes content overlap; the raise defeats the asymmetric guard
-    // so the overlapped rects all survive createRectsFromDOMRange.
-    root.innerHTML = `<p style="margin:0">aaaaaaaaaa<span style="display:inline-block;width:10px;height:18px;margin-left:-70px;vertical-align:0.5px;background:rgba(255,0,0,.4)">N</span>cccc</p>`;
+    // A wide run of text, then an inline box pulled back over it with a negative
+    // margin so it overlaps the run, and raised 0.5px (vertical-align) so its top
+    // sits a hair above the text run's. The selection's client rects follow the
+    // glyphs, so the text run is a genuinely wide rect; the raise defeats
+    // createRectsFromDOMRange's asymmetric overlap guard (`prevRect.top <= cur.top`),
+    // so the wide text rect AND the contained box rect both survive; keep-smaller
+    // then drops the wide one. (The box stands in for any overlapping inline content,
+    // e.g. a baseline-shifted inline decorator.) Assertions are structural — no
+    // pixel thresholds — so they hold whatever the monospace glyph width is.
+    root.innerHTML =
+      `<p style="margin:0">aaaaaaaaaaaaaaaa` +
+      `<span style="display:inline-block;width:12px;height:18px;margin-left:-100px;vertical-align:0.5px;background:rgba(255,0,0,.4)">N</span>` +
+      `</p>`;
     void root.offsetHeight;
 
     const range = selectAll(root);
@@ -94,39 +111,50 @@ describe('dedupeSelectionRects under-paints real text for overlapping inline con
       createRectsFromDOMRange(editorFor(root), range) as unknown as DOMRect[]
     ).map(toRect);
 
-    // createRectsFromDOMRange keeps the wide real-text run AND narrower contained rects.
-    const wide = survivors.find(r => r.left <= 2 && r.width > 90);
+    // createRectsFromDOMRange leaves a same-row contained pair: a wider rect that
+    // strictly contains a narrower survivor.
+    let wide: Rect | undefined;
+    let narrow: Rect | undefined;
+    for (const a of survivors) {
+      for (const b of survivors) {
+        if (
+          a !== b &&
+          contains(a, b) &&
+          a.width > b.width + 2 &&
+          !contains(b, a)
+        ) {
+          wide = a;
+          narrow = b;
+        }
+      }
+    }
     expect(
-      wide,
-      'wide text-run rect survived createRectsFromDOMRange',
+      wide && narrow,
+      'createRectsFromDOMRange left a same-row contained pair (wider ⊇ narrower)',
     ).toBeTruthy();
-    const contained = survivors.filter(
-      r => r !== wide && wide != null && contains(wide, r),
-    );
-    expect(
-      contained.length,
-      'narrower rects are contained in the wide text rect, on the same row',
-    ).toBeGreaterThan(0);
+    if (!wide || !narrow) return;
 
-    // The REAL dedupeSelectionRects then drops the wide text-run rect (keep-smaller)...
+    // dedupeSelectionRects drops the wider rect (keep-smaller)...
     const deduped = dedupeSelectionRects(survivors);
     expect(
-      deduped.every(r => r.width < 90),
-      'the wide text-run rect was dropped by keep-smaller dedupe',
-    ).toBe(true);
+      deduped.some(r => sameRect(r, wide as Rect)),
+      'the wider rect was dropped by keep-smaller dedupe',
+    ).toBe(false);
 
-    // ...leaving BOTH edges of the run uncovered: the leading glyphs before the
-    // pulled-back box (left 0..~26) and the trailing glyphs past it (right ~74..96)
-    // get no rect at all → real selected text goes unpainted on both sides.
-    const leftmostCovered = Math.min(...deduped.map(r => r.left));
-    const rightmostCovered = Math.max(...deduped.map(r => r.right));
+    // ...and nothing left covers the wide rect's left edge, so the area it uniquely
+    // covered (left of the pulled-back box) goes unpainted — the under-paint.
+    const probeX = wide.left + 1;
+    const probeY = wide.top + wide.height / 2;
+    const covered = deduped.some(
+      r =>
+        r.left <= probeX &&
+        r.right >= probeX &&
+        r.top <= probeY &&
+        r.bottom >= probeY,
+    );
     expect(
-      leftmostCovered,
-      'leading glyphs at the line start are left uncovered (under-paint)',
-    ).toBeGreaterThan(18);
-    expect(
-      rightmostCovered,
-      'trailing glyphs at the line end are left uncovered (under-paint)',
-    ).toBeLessThan(90);
+      covered,
+      'the wide rect left edge is left unpainted after dedupe',
+    ).toBe(false);
   });
 });

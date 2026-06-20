@@ -23,7 +23,7 @@ import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
-import {eventFiles, mergeRegister, objectKlassEquals} from '@lexical/utils';
+import {eventFiles, objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
   $getSlotFrame,
@@ -52,6 +52,7 @@ import {
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
+  mergeRegister,
   PASTE_COMMAND,
   PASTE_TAG,
   REMOVE_TEXT_COMMAND,

@@ -5,9 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-import type {GetStaticNodeOwnConfig} from '../../LexicalNode';
-
 import {
   buildEditorFromExtensions,
   type LexicalEditorWithDispose,
@@ -17,7 +14,9 @@ import {
   $create,
   $createLineBreakNode,
   $createNodeSelection,
+  $createParagraphNode,
   $createRangeSelection,
+  $createTextNode,
   $getChildCaret,
   $getDOMSlot,
   $getNearestRootOrShadowRoot,
@@ -50,10 +49,9 @@ import {
 } from 'lexical';
 import {afterEach, assert, describe, expect, expectTypeOf, test} from 'vitest';
 
+import {type GetStaticNodeOwnConfig} from '../../LexicalNode';
 import {$internalCreateRangeSelection} from '../../LexicalSelection';
 import {$getSlotContainer} from '../../LexicalUtils';
-import {$createParagraphNode} from '../../nodes/LexicalParagraphNode';
-import {$createTextNode} from '../../nodes/LexicalTextNode';
 import {
   $assertNodeType,
   $createTestDecoratorNode,

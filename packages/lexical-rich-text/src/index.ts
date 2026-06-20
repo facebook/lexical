@@ -42,13 +42,9 @@ import {
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
 import {
-  $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
   $handleIndentAndOutdent,
-  addClassNamesToElement,
   eventFiles,
-  isHTMLElement,
-  mergeRegister,
   objectKlassEquals,
 } from '@lexical/utils';
 import {
@@ -57,6 +53,7 @@ import {
   $createParagraphNode,
   $createRangeSelection,
   $createTabNode,
+  $findMatchingParent,
   $getAdjacentNode,
   $getNearestNodeFromDOMNode,
   $getRoot,
@@ -75,6 +72,7 @@ import {
   $setDirectionFromDOM,
   $setFormatFromDOM,
   $setSelection,
+  addClassNamesToElement,
   CAN_USE_BEFORE_INPUT,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
@@ -100,6 +98,7 @@ import {
   IS_IOS,
   IS_SAFARI,
   isDOMNode,
+  isHTMLElement,
   isSelectionCapturedInDecoratorInput,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -111,6 +110,7 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
+  mergeRegister,
   MOVE_TO_END,
   MOVE_TO_START,
   OUTDENT_CONTENT_COMMAND,

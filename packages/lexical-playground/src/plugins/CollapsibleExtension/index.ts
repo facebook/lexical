@@ -14,13 +14,10 @@ import {
   DOMImportExtension,
   sel,
 } from '@lexical/html';
-import {
-  $findMatchingParent,
-  $insertNodeToNearestRoot,
-  mergeRegister,
-} from '@lexical/utils';
+import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   $createParagraphNode,
+  $findMatchingParent,
   $getSelection,
   $isInlineElementOrDecoratorNode,
   $isLineBreakNode,
@@ -37,6 +34,7 @@ import {
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
   type LexicalNode,
+  mergeRegister,
 } from 'lexical';
 
 import {

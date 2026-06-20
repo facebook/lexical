@@ -22,7 +22,6 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalExtensionEditorComposer} from '@lexical/react/LexicalExtensionEditorComposer';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getRoot,
@@ -38,6 +37,7 @@ import {
   DRAGSTART_COMMAND,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
+  mergeRegister,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';

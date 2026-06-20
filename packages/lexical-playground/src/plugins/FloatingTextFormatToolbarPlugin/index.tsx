@@ -14,7 +14,6 @@ import {useMergeRefs} from '@floating-ui/react';
 import {$isCodeHighlightNode} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isParagraphNode,
@@ -24,6 +23,7 @@ import {
   FORMAT_TEXT_COMMAND,
   getDOMSelection,
   LexicalEditor,
+  mergeRegister,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';

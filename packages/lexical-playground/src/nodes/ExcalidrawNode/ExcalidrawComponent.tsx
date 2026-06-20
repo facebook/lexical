@@ -14,12 +14,12 @@ import type {JSX} from 'react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   isDOMNode,
+  mergeRegister,
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';

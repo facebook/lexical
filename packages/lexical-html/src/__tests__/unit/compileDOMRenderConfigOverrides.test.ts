@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {domOverride} from '@lexical/html';
 import {$isLineBreakNode, isHTMLElement, TextNode} from 'lexical';
 import {describe, expect, test} from 'vitest';

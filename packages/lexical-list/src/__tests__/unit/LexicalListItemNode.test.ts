@@ -5,8 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {$generateNodesFromDOM} from '@lexical/html';
+import {
+  $createListItemNode,
+  $createListNode,
+  $handleListInsertParagraph,
+  $isListItemNode,
+  $isListNode,
+  ListItemNode,
+  ListNode,
+} from '@lexical/list';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -31,15 +39,7 @@ import {
 } from 'lexical/src/__tests__/utils';
 import {assert, beforeEach, describe, expect, it, test} from 'vitest';
 
-import {
-  $createListItemNode,
-  $createListNode,
-  $isListItemNode,
-  $isListNode,
-  ListItemNode,
-  ListNode,
-} from '../..';
-import {$handleIndent, $handleListInsertParagraph} from '../../formatList';
+import {$handleIndent} from '../../formatList';
 
 const editorConfig = Object.freeze({
   namespace: '',

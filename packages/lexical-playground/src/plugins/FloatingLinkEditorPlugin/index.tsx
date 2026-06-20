@@ -25,8 +25,8 @@ import {
   TOGGLE_LINK_COMMAND,
 } from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
+  $findMatchingParent,
   $getSelection,
   $isDecoratorNode,
   $isLineBreakNode,
@@ -40,6 +40,7 @@ import {
   getDOMSelection,
   KEY_ESCAPE_COMMAND,
   LexicalEditor,
+  mergeRegister,
   RangeSelection,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';

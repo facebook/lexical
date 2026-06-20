@@ -11,7 +11,7 @@ import type {Klass, TextNode} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {registerLexicalTextEntity} from '@lexical/text';
-import {mergeRegister} from '@lexical/utils';
+import {mergeRegister} from 'lexical';
 import {useEffect} from 'react';
 
 /**

@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {$createCodeNode, CodeNode} from '@lexical/code-core';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
@@ -17,6 +16,21 @@ import {
   ListItemNode,
   ListNode,
 } from '@lexical/list';
+import {
+  $convertFromMarkdownString,
+  $convertSelectionToMarkdownString,
+  $convertToMarkdownString,
+  CHECK_LIST,
+  CODE,
+  ElementTransformer,
+  HEADING,
+  LINK,
+  MultilineElementTransformer,
+  registerMarkdownShortcuts,
+  TextMatchTransformer,
+  Transformer,
+  TRANSFORMERS,
+} from '@lexical/markdown';
 import {$createQuoteNode, HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   $addUpdateTag,
@@ -45,25 +59,10 @@ import {
 import {assert, describe, expect, it} from 'vitest';
 
 import {
-  $convertFromMarkdownString,
-  $convertSelectionToMarkdownString,
-  $convertToMarkdownString,
-  LINK,
-  registerMarkdownShortcuts,
-  TextMatchTransformer,
-  Transformer,
-} from '../..';
-import {
-  CHECK_LIST,
-  CODE,
-  ElementTransformer,
   hardLineBreakState,
-  HEADING,
   listMarkerState,
-  MultilineElementTransformer,
   normalizeMarkdown,
   parseMarkdownHardLineBreak,
-  TRANSFORMERS,
 } from '../../MarkdownTransformers';
 
 const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {

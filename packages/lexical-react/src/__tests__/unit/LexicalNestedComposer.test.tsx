@@ -12,7 +12,6 @@ import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
-import {mergeRegister} from '@lexical/utils';
 import {axe, toHaveNoViolations} from 'jest-axe';
 import {
   $applyNodeReplacement,
@@ -28,6 +27,7 @@ import {
   EditorConfig,
   getRegisteredNode,
   LexicalEditor,
+  mergeRegister,
   TextNode,
 } from 'lexical';
 import {

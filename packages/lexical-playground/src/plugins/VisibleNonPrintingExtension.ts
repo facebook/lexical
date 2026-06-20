@@ -18,8 +18,8 @@ import {
 import {ListItemNode} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {$canShowPlaceholder} from '@lexical/text';
-import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
+  $findMatchingParent,
   $isTabNode,
   configExtension,
   defineExtension,
@@ -27,6 +27,7 @@ import {
   getStyleObjectFromCSS,
   isHTMLElement,
   LineBreakNode,
+  mergeRegister,
   ParagraphNode,
   safeCast,
   TabNode,

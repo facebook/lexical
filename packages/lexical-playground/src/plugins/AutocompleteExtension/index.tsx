@@ -15,7 +15,6 @@ import {
   watchedSignal,
 } from '@lexical/extension';
 import {$isAtNodeEnd} from '@lexical/selection';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -33,6 +32,7 @@ import {
   KEY_ARROW_RIGHT_COMMAND,
   KEY_TAB_COMMAND,
   type LexicalEditor,
+  mergeRegister,
   type NodeKey,
   safeCast,
   setDOMUnmanaged,

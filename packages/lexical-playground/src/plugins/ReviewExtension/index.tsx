@@ -24,7 +24,6 @@ import {
   useSignalValue,
 } from '@lexical/react/useExtensionSignalValue';
 import {useLexicalSlotRef} from '@lexical/react/useLexicalSlotRef';
-import {mergeRegister} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getNodeByKey,
@@ -35,6 +34,7 @@ import {
   configExtension,
   createCommand,
   defineExtension,
+  mergeRegister,
   NODE_STATE_DIRECT,
 } from 'lexical';
 import {useCallback, useState} from 'react';

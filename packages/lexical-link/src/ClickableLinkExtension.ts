@@ -7,8 +7,8 @@
  */
 
 import {namedSignals, NamedSignalsOutput} from '@lexical/extension';
-import {$findMatchingParent, isHTMLAnchorElement} from '@lexical/utils';
 import {
+  $findMatchingParent,
   $getNearestNodeFromDOMNode,
   $getSelection,
   $isElementNode,
@@ -16,6 +16,7 @@ import {
   defineExtension,
   getNearestEditorFromDOMNode,
   isDOMNode,
+  isHTMLAnchorElement,
   LexicalEditor,
   safeCast,
 } from 'lexical';

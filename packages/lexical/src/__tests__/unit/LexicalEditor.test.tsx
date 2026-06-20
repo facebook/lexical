@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import type {JSX} from 'react';
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';

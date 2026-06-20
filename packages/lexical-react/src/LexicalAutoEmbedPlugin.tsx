@@ -19,7 +19,6 @@ import {
   MenuOption,
   type MenuRenderFn,
 } from '@lexical/react/LexicalNodeMenuPlugin';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -28,6 +27,7 @@ import {
   createCommand,
   LexicalCommand,
   LexicalEditor,
+  mergeRegister,
   NodeKey,
   PASTE_TAG,
   TextNode,

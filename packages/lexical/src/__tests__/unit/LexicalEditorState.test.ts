@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
   $createParagraphNode,
   $createTextNode,
@@ -14,12 +13,13 @@ import {
   $isParagraphNode,
   $isTextNode,
   ParagraphNode,
+  RootNode,
   TextNode,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
 
 import {EditorState} from '../../LexicalEditorState';
-import {$createRootNode, RootNode} from '../../nodes/LexicalRootNode';
+import {$createRootNode} from '../../nodes/LexicalRootNode';
 import {initializeUnitTest} from '../utils';
 
 describe('LexicalEditorState tests', () => {

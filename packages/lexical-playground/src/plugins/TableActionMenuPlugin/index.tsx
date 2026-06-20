@@ -33,7 +33,6 @@ import {
   TableObserver,
   TableSelection,
 } from '@lexical/table';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isElementNode,
@@ -43,6 +42,7 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   getDOMSelection,
   isDOMNode,
+  mergeRegister,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';

@@ -349,9 +349,12 @@ function $runTextFormatTransformers(
     nextSelection.focus.set(closeNode.__key, newOffset, 'text');
 
     // Apply formatting to selected text
+    const extractedNodes = nextSelection.extract();
     for (const format of matcher.format) {
-      if (!nextSelection.hasFormat(format)) {
-        nextSelection.formatText(format);
+      for (const node of extractedNodes) {
+        if ($isTextNode(node) && !node.hasFormat(format)) {
+          node.toggleFormat(format);
+        }
       }
     }
 

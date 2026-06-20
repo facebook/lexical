@@ -33,6 +33,7 @@ import {
   HISTORY_PUSH_TAG,
   KEY_ENTER_COMMAND,
   mergeRegister,
+  TEXT_TYPE_TO_FORMAT,
 } from 'lexical';
 
 import {canContainTransformableMarkdown} from './importTextTransformers';
@@ -349,13 +350,8 @@ function $runTextFormatTransformers(
     nextSelection.focus.set(closeNode.__key, newOffset, 'text');
 
     // Apply formatting to selected text
-    const extractedNodes = nextSelection.extract();
     for (const format of matcher.format) {
-      for (const node of extractedNodes) {
-        if ($isTextNode(node) && !node.hasFormat(format)) {
-          node.toggleFormat(format);
-        }
-      }
+      nextSelection.formatText(format, TEXT_TYPE_TO_FORMAT[format]);
     }
 
     // Collapse selection up to the focus point

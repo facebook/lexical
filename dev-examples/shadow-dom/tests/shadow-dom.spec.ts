@@ -70,11 +70,14 @@ test('formats an outer selection from the light-DOM toolbar', async ({
   page,
 }) => {
   await page.goto('/');
-  await clearAndType(page, outerEditor(page), 'hello world');
+  // Target the last outer-editor paragraph by text content — Playwright
+  // pierces shadow roots, so p:last-of-type would hit the inner editor.
+  const targetP = outerEditor(page).locator('p', {hasText: 'Type here too'});
+  await targetP.click();
+  await page.keyboard.press('Home');
+  await page.keyboard.press('Shift+End');
+  await page.keyboard.type('hello world');
 
-  // Select the trailing word ("world") and bold it via the toolbar. The
-  // toolbar dispatches commands to the outer editor (its parent composer), so
-  // the bold applies in the light-DOM tree.
   for (let i = 0; i < 5; i++) {
     await page.keyboard.press('Shift+ArrowLeft');
   }
@@ -88,6 +91,8 @@ test('deletes by word in the inner shadow editor', async ({page}) => {
   await clearAndType(page, innerEditor(page), 'hello world');
   // Backwards word deletion uses native Selection.modify, reading the result
   // via getComposedRanges inside the shadow root.
-  await page.keyboard.press('ControlOrMeta+Backspace');
+  // Ctrl+Backspace on Linux/Windows, Alt+Backspace on macOS.
+  const isMac = process.platform === 'darwin';
+  await page.keyboard.press(isMac ? 'Alt+Backspace' : 'Control+Backspace');
   await expect(innerEditor(page)).toHaveText('hello ');
 });

@@ -38,52 +38,101 @@ function isStyleNode(node: Node): node is HTMLStyleElement | HTMLLinkElement {
  * any added later.
  */
 function adoptDocumentStyles(shadowRoot: ShadowRoot): () => void {
-  // Track original → clone so a removed light-DOM stylesheet also drops its
-  // mirrored copy from the shadow root, instead of leaking under HMR churn.
-  const clones = new Map<Node, Node>();
-  for (const node of document.head.querySelectorAll(
-    'style, link[rel="stylesheet"]',
-  )) {
-    const clone = node.cloneNode(true);
-    clones.set(node, clone);
-    shadowRoot.appendChild(clone);
+  const adopted = new Map<HTMLStyleElement | HTMLLinkElement, CSSStyleSheet>();
+
+  const syncAdoptedList = (): void => {
+    shadowRoot.adoptedStyleSheets = Array.from(adopted.values());
+  };
+
+  const readSheetText = (
+    source: HTMLStyleElement | HTMLLinkElement,
+  ): string | null => {
+    const sheet = source.sheet;
+    if (sheet === null) {
+      return null;
+    }
+    try {
+      return Array.from(sheet.cssRules)
+        .map(rule => rule.cssText)
+        .join('\n');
+    } catch {
+      // SecurityError on cross-origin <link rel="stylesheet">. The shadow
+      // tree skips it: playground has no cross-origin sheets today, and a
+      // future addition surfaces via the dev warning below.
+      if (import.meta.env?.DEV) {
+         
+        console.warn(
+          '[ShadowDomWrapper] skipping unreadable stylesheet (likely cross-origin):',
+          source,
+        );
+      }
+      return null;
+    }
+  };
+
+  const addSource = (source: HTMLStyleElement | HTMLLinkElement): void => {
+    if (adopted.has(source)) {
+      return;
+    }
+    const text = readSheetText(source);
+    if (text === null) {
+      return;
+    }
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(text);
+    adopted.set(source, sheet);
+    syncAdoptedList();
+  };
+
+  const removeSource = (source: Node): void => {
+    if (adopted.delete(source as HTMLStyleElement)) {
+      syncAdoptedList();
+    }
+  };
+
+  const refreshSource = (source: Node): void => {
+    if (!isStyleNode(source)) {
+      return;
+    }
+    const sheet = adopted.get(source);
+    if (sheet === undefined) {
+      // Source wasn't adopted (unreadable at mount); retry now in case the
+      // sheet finished loading.
+      addSource(source);
+      return;
+    }
+    const text = readSheetText(source);
+    if (text !== null) {
+      sheet.replaceSync(text);
+    }
+  };
+
+  for (const node of document.head.querySelectorAll<
+    HTMLStyleElement | HTMLLinkElement
+  >('style, link[rel="stylesheet"]')) {
+    addSource(node);
   }
 
   const observer = new MutationObserver(mutations => {
     for (const mutation of mutations) {
       if (mutation.type === 'characterData') {
-        // Vite HMR replaces the style's text content in place rather than
-        // swapping in a new <style> node, so the childList branch below
-        // never sees it. Walk up to the enclosing style/link and mirror
-        // the new contents onto the clone so the shadow root stays in
-        // sync.
         let node: Node | null = mutation.target;
         while (node !== null && !isStyleNode(node)) {
           node = node.parentNode;
         }
         if (node !== null) {
-          const clone = clones.get(node);
-          if (clone !== undefined) {
-            clone.textContent = node.textContent;
-          }
+          refreshSource(node);
         }
         continue;
       }
       for (const node of mutation.addedNodes) {
         if (isStyleNode(node)) {
-          const clone = node.cloneNode(true);
-          clones.set(node, clone);
-          shadowRoot.appendChild(clone);
+          addSource(node);
         }
       }
       for (const node of mutation.removedNodes) {
-        const clone = clones.get(node);
-        if (clone !== undefined) {
-          // Use clone.remove() rather than shadowRoot.removeChild(clone)
-          // so a clone that was already detached by an upstream HMR pass
-          // is a no-op instead of throwing NotFoundError.
-          (clone as ChildNode).remove();
-          clones.delete(node);
+        if (isStyleNode(node)) {
+          removeSource(node);
         }
       }
     }
@@ -94,29 +143,18 @@ function adoptDocumentStyles(shadowRoot: ShadowRoot): () => void {
     subtree: true,
   });
 
-  // Vite HMR fallback: Chrome / Safari sometimes update CSS through
-  // CSSOM (style.sheet.replaceSync / insertRule) rather than the DOM, so
-  // the MutationObserver above never fires. The vite:afterUpdate event
-  // does fire on every HMR pass, so reconcile clones against document.head
-  // verbatim then. No-ops in production builds (import.meta.hot is
-  // undefined).
   const resyncFromHead = (): void => {
-    for (const [source, clone] of clones) {
+    for (const source of Array.from(adopted.keys())) {
       if (!document.head.contains(source)) {
-        (clone as ChildNode).remove();
-        clones.delete(source);
-      } else if (clone.textContent !== source.textContent) {
-        clone.textContent = source.textContent;
+        removeSource(source);
+      } else {
+        refreshSource(source);
       }
     }
-    for (const source of document.head.querySelectorAll(
-      'style, link[rel="stylesheet"]',
-    )) {
-      if (!clones.has(source)) {
-        const clone = source.cloneNode(true);
-        clones.set(source, clone);
-        shadowRoot.appendChild(clone);
-      }
+    for (const source of document.head.querySelectorAll<
+      HTMLStyleElement | HTMLLinkElement
+    >('style, link[rel="stylesheet"]')) {
+      addSource(source);
     }
   };
   const hot = import.meta.hot;
@@ -129,14 +167,8 @@ function adoptDocumentStyles(shadowRoot: ShadowRoot): () => void {
     if (hot) {
       hot.off('vite:afterUpdate', resyncFromHead);
     }
-    // Drop the mirrored stylesheets too: React 18 StrictMode runs the mount
-    // effect twice, and a browser-attached shadow root can't be detached, so
-    // the second mount would re-scan document.head on top of the first batch
-    // and leak duplicate <style>/<link> clones (also during Vite HMR).
-    for (const clone of clones.values()) {
-      (clone as ChildNode).remove();
-    }
-    clones.clear();
+    shadowRoot.adoptedStyleSheets = [];
+    adopted.clear();
   };
 }
 

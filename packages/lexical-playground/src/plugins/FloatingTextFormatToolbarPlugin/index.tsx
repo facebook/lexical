@@ -22,6 +22,10 @@ import {
   COMMAND_PRIORITY_LOW,
   FORMAT_TEXT_COMMAND,
   getDOMSelection,
+  getDOMSelectionPoints,
+  getParentElement,
+  isDOMDocumentNode,
+  isDOMShadowRoot,
   LexicalEditor,
   mergeRegister,
   SELECTION_CHANGE_COMMAND,
@@ -93,7 +97,13 @@ function TextFormatFloatingToolbar({
       if (popupCharStylesEditorRef.current.style.pointerEvents !== 'none') {
         const x = e.clientX;
         const y = e.clientY;
-        const elementUnderMouse = document.elementFromPoint(x, y);
+        // Guard the root narrowing so a detached popup (its getRootNode
+        // returns the popup itself) doesn't throw on elementFromPoint.
+        const popupRoot = popupCharStylesEditorRef.current.getRootNode();
+        const elementUnderMouse =
+          isDOMDocumentNode(popupRoot) || isDOMShadowRoot(popupRoot)
+            ? popupRoot.elementFromPoint(x, y)
+            : null;
 
         if (!popupCharStylesEditorRef.current.contains(elementUnderMouse)) {
           // Mouse is not over the target element => not a normal click, but probably a drag
@@ -133,12 +143,24 @@ function TextFormatFloatingToolbar({
     }
 
     const rootElement = editor.getRootElement();
+    const points =
+      nativeSelection !== null
+        ? getDOMSelectionPoints(nativeSelection, rootElement)
+        : null;
+    // Shadow-aware collapsed check: Selection.isCollapsed retargets to the
+    // shadow host (anchor === focus === host), so it falsely reports `true`
+    // even when the composed range spans real characters.
+    const pointsCollapsed =
+      points === null ||
+      (points.anchorNode === points.focusNode &&
+        points.anchorOffset === points.focusOffset);
     if (
       selection !== null &&
       nativeSelection !== null &&
-      !nativeSelection.isCollapsed &&
+      points !== null &&
+      !pointsCollapsed &&
       rootElement !== null &&
-      rootElement.contains(nativeSelection.anchorNode)
+      rootElement.contains(points.anchorNode)
     ) {
       const rangeRect = getDOMRangeRect(nativeSelection, rootElement);
 
@@ -152,7 +174,7 @@ function TextFormatFloatingToolbar({
   }, [editor, anchorElem, isLink]);
 
   useEffect(() => {
-    const scrollerElem = anchorElem.parentElement;
+    const scrollerElem = getParentElement(anchorElem);
 
     const update = () => {
       editor.read('latest', () => {
@@ -353,7 +375,9 @@ function useFloatingTextFormatToolbar(
         nativeSelection !== null &&
         (!$isRangeSelection(selection) ||
           rootElement === null ||
-          !rootElement.contains(nativeSelection.anchorNode))
+          !rootElement.contains(
+            getDOMSelectionPoints(nativeSelection, rootElement).anchorNode,
+          ))
       ) {
         setIsText(false);
         return;

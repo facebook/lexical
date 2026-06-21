@@ -35,6 +35,7 @@ import {
   COMMAND_PRIORITY_LOW,
   createCommand,
   DRAGSTART_COMMAND,
+  getActiveElement,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
   mergeRegister,
@@ -292,7 +293,9 @@ export default function ImageComponent({
           return true;
         } else if (
           buttonElem !== null &&
-          buttonElem !== document.activeElement
+          // getActiveElement rather than document.activeElement, which reports
+          // the shadow host when the editor is in a shadow root.
+          buttonElem !== getActiveElement(buttonElem)
         ) {
           event.preventDefault();
           buttonElem.focus();

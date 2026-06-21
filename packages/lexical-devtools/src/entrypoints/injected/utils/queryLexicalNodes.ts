@@ -5,11 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {findAllLexicalElementsDeep} from 'lexical';
+
 import {LexicalHTMLElement} from '../../../types';
 import {isLexicalNode} from '../../../utils/isLexicalNode';
 
 export default function queryLexicalNodes(): LexicalHTMLElement[] {
-  return Array.from(
-    document.querySelectorAll('div[data-lexical-editor]'),
-  ).filter(isLexicalNode);
+  const out: LexicalHTMLElement[] = [];
+  for (const el of findAllLexicalElementsDeep(document)) {
+    if (isLexicalNode(el)) {
+      out.push(el);
+    }
+  }
+  return out;
 }

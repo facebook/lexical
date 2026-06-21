@@ -12,6 +12,7 @@ import {
   $getSlotFrame,
   CAN_USE_BEFORE_INPUT,
   CAN_USE_DOM,
+  getParentElement,
   IS_ANDROID,
   IS_ANDROID_CHROME,
   IS_APPLE,
@@ -969,9 +970,13 @@ export function calculateZoomLevel(
 ): number {
   let zoom = 1;
   if (needsManualZoom() || useManualZoom) {
+    // Read styles from the element's own realm so an iframe-mounted editor's
+    // zoom isn't computed through the top-level window (cross-realm
+    // getComputedStyle can return an empty zoom).
+    const win = (element && element.ownerDocument.defaultView) || window;
     while (element) {
-      zoom *= Number(window.getComputedStyle(element).getPropertyValue('zoom'));
-      element = element.parentElement;
+      zoom *= Number(win.getComputedStyle(element).getPropertyValue('zoom'));
+      element = getParentElement(element);
     }
   }
   return zoom;

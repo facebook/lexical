@@ -74,3 +74,9 @@ If you're using React, we've wrapped approach #2 up into a simple LexicalCompose
     />
 </LexicalComposer>
 ```
+
+If the editor lives inside a shadow root or an iframe, see
+[Shadow DOM and iframes](./shadow-dom.md) for the helper to read
+`event.target` through the shadow boundary — the browser retargets it to the
+shadow host on listeners attached above the boundary, so a plain
+`event.target` won't match a node inside the editor.

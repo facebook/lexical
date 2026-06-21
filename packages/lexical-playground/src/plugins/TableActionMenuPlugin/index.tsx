@@ -40,7 +40,10 @@ import {
   $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
+  getActiveElementDeep,
   getDOMSelection,
+  getDOMSelectionPoints,
+  getRootOwnerDocument,
   isDOMNode,
   mergeRegister,
   SELECTION_CHANGE_COMMAND,
@@ -734,7 +737,12 @@ function TableCellActionMenuContainer({
     const menu = menuButtonRef.current;
     const selection = $getSelection();
     const nativeSelection = getDOMSelection(editor._window);
-    const activeElement = document.activeElement;
+    // getActiveElementDeep rather than document.activeElement, which reports
+    // the shadow host (not the focused element) when the editor is in a
+    // shadow root.
+    const activeElement = getActiveElementDeep(
+      getRootOwnerDocument(editor.getRootElement()),
+    );
     function disable() {
       if (menu) {
         menu.classList.remove('table-cell-action-button-container--active');
@@ -755,7 +763,9 @@ function TableCellActionMenuContainer({
       $isRangeSelection(selection) &&
       rootElement !== null &&
       nativeSelection !== null &&
-      rootElement.contains(nativeSelection.anchorNode)
+      rootElement.contains(
+        getDOMSelectionPoints(nativeSelection, rootElement).anchorNode,
+      )
     ) {
       const tableCellNodeFromSelection = $getTableCellNodeFromLexicalNode(
         selection.anchor.getNode(),

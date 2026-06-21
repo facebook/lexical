@@ -53,6 +53,7 @@ const sidebars = {
         'concepts/read-only',
         'concepts/history',
         'concepts/dom-events',
+        'concepts/shadow-dom',
         'concepts/traversals',
         'concepts/updates',
       ],

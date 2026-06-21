@@ -73,10 +73,15 @@ import {
   FOCUS_COMMAND,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  getComposedEventTarget,
   getDOMSelection,
+  getDOMSelectionPoints,
+  getDOMSelectionRange,
   INSERT_PARAGRAPH_COMMAND,
   IS_FIREFOX,
+  isDOMDocumentNode,
   isDOMNode,
+  isDOMShadowRoot,
   isHTMLElement,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -200,7 +205,9 @@ export function registerTableWindowHandlers(
     }
 
     const pointerDownCallback = (event: PointerEvent) => {
-      const target = event.target;
+      // Listener is on editorWindow; the composed target is needed so the
+      // rootElement.contains check below sees the shadow-internal target.
+      const target = getComposedEventTarget(event);
       if (
         event.button !== 0 ||
         !isDOMNode(target) ||
@@ -280,17 +287,25 @@ function $handleTableClick(
         editorWindow.removeEventListener('pointermove', onPointerMove);
         return;
       }
-      if (!isDOMNode(moveEvent.target)) {
+      const moveTarget = getComposedEventTarget(moveEvent);
+      if (!isDOMNode(moveTarget)) {
         return;
       }
       let focusCell: null | TableDOMCell = null;
       // In firefox the moveEvent.target may be captured so we must always
       // consult the coordinates #7245
-      const override = !(IS_FIREFOX || tableElement.contains(moveEvent.target));
+      const override = !(IS_FIREFOX || tableElement.contains(moveTarget));
       if (override) {
-        focusCell = getDOMCellInTableFromTarget(tableElement, moveEvent.target);
+        focusCell = getDOMCellInTableFromTarget(tableElement, moveTarget);
       } else {
-        for (const el of document.elementsFromPoint(
+        // Resolve via the table's own root so elementsFromPoint isn't
+        // retargeted; narrow with the type guards rather than casting so the
+        // detached-table case (Node) falls through to no hit-test.
+        const tableRoot = tableElement.getRootNode();
+        if (!isDOMDocumentNode(tableRoot) && !isDOMShadowRoot(tableRoot)) {
+          return;
+        }
+        for (const el of tableRoot.elementsFromPoint(
           moveEvent.clientX,
           moveEvent.clientY,
         )) {
@@ -402,8 +417,9 @@ export function applyTableHandlers(
   );
 
   const onTripleClick = (event: MouseEvent) => {
-    if (event.detail >= 3 && isDOMNode(event.target)) {
-      const targetCell = getDOMCellFromTarget(event.target);
+    const target = getComposedEventTarget(event);
+    if (event.detail >= 3 && isDOMNode(target)) {
+      const targetCell = getDOMCellFromTarget(target);
       if (targetCell !== null) {
         event.preventDefault();
       }
@@ -1084,11 +1100,14 @@ function $fixTableSelectionForSelectedTable(
   const tableNode = $getTableNodeByKeyOrThrow(selection.tableKey);
   // if selection goes outside of the table we need to change it to Range selection
   const domSelection = getDOMSelection(editorWindow);
-  if (domSelection && domSelection.anchorNode && domSelection.focusNode) {
-    const focusNode = $getNearestNodeFromDOMNode(domSelection.focusNode);
+  const points =
+    domSelection &&
+    getDOMSelectionPoints(domSelection, editor.getRootElement());
+  if (domSelection && points && points.anchorNode && points.focusNode) {
+    const focusNode = $getNearestNodeFromDOMNode(points.focusNode);
     const isFocusOutside = focusNode && !tableNode.isParentOf(focusNode);
 
-    const anchorNode = $getNearestNodeFromDOMNode(domSelection.anchorNode);
+    const anchorNode = $getNearestNodeFromDOMNode(points.anchorNode);
     const isAnchorInside = anchorNode && tableNode.isParentOf(anchorNode);
 
     if (isFocusOutside && isAnchorInside && domSelection.rangeCount > 0) {
@@ -2160,7 +2179,15 @@ function $handleArrowKey(
           return false;
         }
 
-        const range = domSelection.getRangeAt(0);
+        // getDOMSelectionRange rather than getRangeAt(0), which is retargeted
+        // to the shadow host when the editor is in a shadow tree
+        const range = getDOMSelectionRange(
+          domSelection,
+          editor.getRootElement(),
+        );
+        if (range === null) {
+          return false;
+        }
         edgeSelectionRect = range.getBoundingClientRect();
       }
 
@@ -2330,7 +2357,10 @@ function $getTableEdgeCursorPosition(
   if (!domSelection) {
     return undefined;
   }
-  const domAnchorNode = domSelection.anchorNode;
+  const domAnchorNode = getDOMSelectionPoints(
+    domSelection,
+    editor.getRootElement(),
+  ).anchorNode;
   const tableNodeParentDOM = editor.getElementByKey(tableNodeParent.getKey());
   const tableElement = getTableElement(
     tableNode,

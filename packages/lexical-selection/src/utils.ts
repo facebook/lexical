@@ -11,6 +11,7 @@ import {
   $getEditor,
   $isRootNode,
   $isTextNode,
+  getRootOwnerDocument,
   getStyleObjectFromCSS,
 } from 'lexical';
 
@@ -56,7 +57,9 @@ export function createDOMRange(
 ): Range | null {
   const anchorKey = anchorNode.getKey();
   const focusKey = focusNode.getKey();
-  const range = document.createRange();
+  // Resolve through the editor's own document so iframe / shadow-mounted
+  // editors don't end up with a Range bound to the wrong realm.
+  const range = getRootOwnerDocument(editor.getRootElement()).createRange();
   let anchorDOM: Node | Text | null = editor.getElementByKey(anchorKey);
   let focusDOM: Node | Text | null = editor.getElementByKey(focusKey);
   let anchorOffset = _anchorOffset;

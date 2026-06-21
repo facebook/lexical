@@ -8,6 +8,7 @@
 
 import type {JSX} from 'react';
 
+import {caretFromPoint} from '@lexical/clipboard';
 import {
   $generateNodesFromDOM,
   defineImportRule,
@@ -399,7 +400,7 @@ function $onDrop(event: DragEvent, editor: LexicalEditor): boolean {
   );
   event.preventDefault();
   if (canDropImage(event)) {
-    const range = getDragSelection(event);
+    const range = getDragSelection(event, editor.getRootElement());
     node.remove();
     const rangeSelection = $createRangeSelection();
     if (range !== null && range !== undefined) {
@@ -454,17 +455,26 @@ function canDropImage(event: DragEvent): boolean {
   );
 }
 
-function getDragSelection(event: DragEvent): Range | null | undefined {
-  let range;
+function getDragSelection(
+  event: DragEvent,
+  rootElement: HTMLElement | null,
+): Range | null | undefined {
   const domSelection = getDOMSelectionFromTarget(event.target);
-  if (document.caretRangeFromPoint) {
-    range = document.caretRangeFromPoint(event.clientX, event.clientY);
+  // Pass rootElement so caretFromPoint uses caretPositionFromPoint's
+  // shadowRoots option rather than the retargeted caretRangeFromPoint.
+  const caret = caretFromPoint(event.clientX, event.clientY, rootElement);
+  if (caret !== null) {
+    const range = (caret.node.ownerDocument ?? document).createRange();
+    range.setStart(caret.node, caret.offset);
+    range.collapse(true);
+    return range;
   } else if (event.rangeParent && domSelection !== null) {
     domSelection.collapse(event.rangeParent, event.rangeOffset || 0);
-    range = domSelection.getRangeAt(0);
-  } else {
-    throw Error(`Cannot get the selection when dragging`);
+    return domSelection.getRangeAt(0);
   }
-
-  return range;
+  // The pre-shadow code returned the caretRangeFromPoint result directly,
+  // which could be null when the cursor was over a gap with no text node.
+  // The caller ($onDrop above) is written to accept null/undefined here,
+  // so preserve the original silent fall-through rather than throwing.
+  return null;
 }

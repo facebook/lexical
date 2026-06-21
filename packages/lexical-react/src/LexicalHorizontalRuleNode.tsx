@@ -22,6 +22,7 @@ import {
   addClassNamesToElement,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
+  getComposedEventTarget,
   mergeRegister,
   removeClassNamesFromElement,
 } from 'lexical';
@@ -46,7 +47,7 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
         (event: MouseEvent) => {
           const hrElem = editor.getElementByKey(nodeKey);
 
-          if (event.target === hrElem) {
+          if (getComposedEventTarget(event) === hrElem) {
             if (!event.shiftKey) {
               clearSelection();
             }

@@ -16,6 +16,8 @@ import {
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
   createCommand,
+  getDOMShadowRoots,
+  isDOMShadowRoot,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_ENTER_COMMAND,
@@ -37,6 +39,7 @@ import {
 } from 'react';
 import ReactDOM from 'react-dom';
 
+import {getScrollParent} from './getScrollParent';
 import useLayoutEffect from './useLayoutEffect';
 
 /**
@@ -103,7 +106,9 @@ export type MenuRenderFn<TOption extends MenuOption> = (
 ) => ReactPortal | JSX.Element | null;
 
 const scrollIntoViewIfNeeded = (target: HTMLElement) => {
-  const typeaheadContainerNode = document.getElementById('typeahead-menu');
+  const typeaheadContainerNode = target.closest(
+    '#typeahead-menu',
+  ) as HTMLElement | null;
   if (!typeaheadContainerNode) {
     return;
   }
@@ -182,36 +187,6 @@ function $splitNodeContainingQuery(match: MenuTextMatch): TextNode | null {
   return newNode;
 }
 
-// Got from https://stackoverflow.com/a/42543908/2013580
-export function getScrollParent(
-  element: HTMLElement,
-  includeHidden: boolean,
-): HTMLElement | HTMLBodyElement {
-  let style = getComputedStyle(element);
-  const excludeStaticParent = style.position === 'absolute';
-  const overflowRegex = includeHidden
-    ? /(auto|scroll|hidden)/
-    : /(auto|scroll)/;
-  if (style.position === 'fixed') {
-    return document.body;
-  }
-  for (
-    let parent: HTMLElement | null = element;
-    (parent = parent.parentElement);
-  ) {
-    style = getComputedStyle(parent);
-    if (excludeStaticParent && style.position === 'static') {
-      continue;
-    }
-    if (
-      overflowRegex.test(style.overflow + style.overflowY + style.overflowX)
-    ) {
-      return parent;
-    }
-  }
-  return document.body;
-}
-
 function isTriggerVisibleInNearestScrollContainer(
   targetElement: HTMLElement,
   containerElement: HTMLElement,
@@ -277,11 +252,30 @@ export function useDynamicPositioning(
         capture: true,
         passive: true,
       });
+      // Scroll events are non-composed and do not cross shadow boundaries,
+      // so the document-level listener above never sees scrolls inside an
+      // enclosing shadow tree. Key off the editor root rather than the
+      // target — the target may be portaled into the light DOM while the
+      // editor (and its scroll container) live inside a shadow tree, and
+      // getDOMShadowRoots(target) would then return an empty list. Walk
+      // out of the editor's enclosing shadow roots instead so internal
+      // scrolls at any depth reposition the floating menu.
+      const shadowRootSource = rootElement ?? targetElement;
+      const enclosingShadowRoots = getDOMShadowRoots(shadowRootSource);
+      for (const root of enclosingShadowRoots) {
+        root.addEventListener('scroll', handleScroll, {
+          capture: true,
+          passive: true,
+        });
+      }
       resizeObserver.observe(targetElement);
       return () => {
         resizeObserver.unobserve(targetElement);
         window.removeEventListener('resize', onReposition);
         document.removeEventListener('scroll', handleScroll, true);
+        for (const root of enclosingShadowRoots) {
+          root.removeEventListener('scroll', handleScroll, true);
+        }
       };
     }
   }, [targetElement, editor, onVisibilityChange, onReposition, resolution]);
@@ -637,20 +631,38 @@ function setContainerDivAttributes(
   containerDiv.style.position = 'absolute';
 }
 
+function resolveMenuParent(
+  editor: LexicalEditor,
+): HTMLElement | ShadowRoot | undefined {
+  if (!CAN_USE_DOM) {
+    return undefined;
+  }
+  const rootElement = editor.getRootElement();
+  if (rootElement !== null) {
+    const root = rootElement.getRootNode();
+    if (isDOMShadowRoot(root)) {
+      return root as ShadowRoot;
+    }
+  }
+  return document.body;
+}
+
 export function useMenuAnchorRef(
   resolution: MenuResolution | null,
   setResolution: (r: MenuResolution | null) => void,
   className?: string,
-  parent: HTMLElement | undefined = CAN_USE_DOM ? document.body : undefined,
+  parent?: HTMLElement,
   shouldIncludePageYOffset__EXPERIMENTAL: boolean = true,
 ): RefObject<HTMLElement | null> {
   const [editor] = useLexicalComposerContext();
+  const resolvedParent: HTMLElement | ShadowRoot | undefined =
+    parent ?? resolveMenuParent(editor);
   const initialAnchorElement = CAN_USE_DOM
     ? document.createElement('div')
     : null;
   const anchorElementRef = useRef<HTMLElement | null>(initialAnchorElement);
   const positionMenu = useCallback(() => {
-    if (anchorElementRef.current === null || parent === undefined) {
+    if (anchorElementRef.current === null || resolvedParent === undefined) {
       return;
     }
     anchorElementRef.current.style.top = anchorElementRef.current.style.bottom;
@@ -699,7 +711,7 @@ export function useMenuAnchorRef(
 
       if (!containerDiv.isConnected) {
         setContainerDivAttributes(containerDiv, className);
-        parent.append(containerDiv);
+        resolvedParent.append(containerDiv);
       }
       containerDiv.setAttribute('id', 'typeahead-menu');
       rootElement.setAttribute('aria-controls', 'typeahead-menu');
@@ -709,7 +721,7 @@ export function useMenuAnchorRef(
     resolution,
     shouldIncludePageYOffset__EXPERIMENTAL,
     className,
-    parent,
+    resolvedParent,
   ]);
 
   useEffect(() => {
@@ -754,8 +766,8 @@ export function useMenuAnchorRef(
     initialAnchorElement === anchorElementRef.current
   ) {
     setContainerDivAttributes(initialAnchorElement, className);
-    if (parent != null) {
-      parent.append(initialAnchorElement);
+    if (resolvedParent != null) {
+      resolvedParent.append(initialAnchorElement);
     }
   }
 

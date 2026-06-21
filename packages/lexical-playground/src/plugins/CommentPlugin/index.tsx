@@ -50,7 +50,9 @@ import {
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_NORMAL,
   createCommand,
+  getActiveElementDeep,
   getDOMSelection,
+  getRootOwnerDocument,
   KEY_ESCAPE_COMMAND,
   mergeRegister,
 } from 'lexical';
@@ -581,7 +583,12 @@ function CommentsPanelList({
               markNodeKeys !== undefined &&
               (activeIDs === null || activeIDs.indexOf(id) === -1)
             ) {
-              const activeElement = document.activeElement;
+              // getActiveElementDeep rather than document.activeElement so the
+              // focused element is resolved through any shadow roots when
+              // restoring focus after the selection moves below.
+              const activeElement = getActiveElementDeep(
+                getRootOwnerDocument(editor.getRootElement()),
+              );
               // Move selection to the start of the mark, so that we
               // update the UI with the selected thread.
               editor.update(

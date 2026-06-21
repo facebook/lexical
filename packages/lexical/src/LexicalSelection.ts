@@ -94,12 +94,21 @@ import {
   $isTokenOrTab,
   $setCompositionKey,
   doesContainSurrogatePair,
+  getActiveElement,
+  getActiveElementDeep,
+  getComposedStaticRange,
   getDOMSelection,
+  getDOMSelectionPoints,
+  getDOMSelectionRange,
   getElementByKeyOrThrow,
+  getNearestEditorFromDOMNode,
   getNodeKeyFromDOMNode,
   getWindow,
   INTERNAL_$isBlock,
   isDOMCapturingSelection,
+  isDOMDocumentNode,
+  isDOMShadowRoot,
+  isDOMTextNode,
   isHTMLElement,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
@@ -1863,7 +1872,13 @@ export class RangeSelection implements BaseSelection {
     );
     // Guard against no ranges
     if (domSelection.rangeCount > 0) {
-      const range = domSelection.getRangeAt(0);
+      // Inside a DOM shadow root getRangeAt(0) is retargeted to the host;
+      // read the composed StaticRange (real nodes) where available.
+      const composedRange = getComposedStaticRange(
+        domSelection,
+        editor._rootElement,
+      );
+      const range = composedRange || domSelection.getRangeAt(0);
       // Apply the DOM selection to our Lexical selection.
       const anchorNode = this.anchor.getNode();
       const root = $isRootNode(anchorNode)
@@ -1906,11 +1921,16 @@ export class RangeSelection implements BaseSelection {
 
         // Because a range works on start and end, we might need to flip
         // the anchor and focus points to match what the DOM has, not what
-        // the range has specifically.
-        if (
-          domSelection.anchorNode !== range.startContainer ||
-          domSelection.anchorOffset !== range.startOffset
-        ) {
+        // the range has specifically. Inside a shadow root anchorNode is
+        // retargeted to the host, so use the standard Selection.direction.
+        // If a future engine ships getComposedRanges without direction
+        // this falls through to forward; backward fidelity is the known
+        // limitation documented on getDOMSelectionPoints.
+        const anchorIsAtRangeStart = composedRange
+          ? domSelection.direction !== 'backward'
+          : domSelection.anchorNode === range.startContainer &&
+            domSelection.anchorOffset === range.startOffset;
+        if (!anchorIsAtRangeStart) {
           $swapPoints(this);
         }
       }
@@ -3210,10 +3230,11 @@ export function $internalCreateRangeSelection(
     if (domSelection === null) {
       return null;
     }
-    anchorDOM = domSelection.anchorNode;
-    focusDOM = domSelection.focusNode;
-    anchorOffset = domSelection.anchorOffset;
-    focusOffset = domSelection.focusOffset;
+    const points = getDOMSelectionPoints(domSelection, editor._rootElement);
+    anchorDOM = points.anchorNode;
+    focusDOM = points.focusNode;
+    anchorOffset = points.anchorOffset;
+    focusOffset = points.focusOffset;
     if (
       (isSelectionChange || eventType === undefined) &&
       $isRangeSelection(lastSelection) &&
@@ -3569,17 +3590,45 @@ export function $updateDOMSelection(
   tags: Set<string>,
   rootElement: HTMLElement,
 ): void {
-  const activeElement = document.activeElement;
+  const rootForActive = rootElement.getRootNode();
+  const activeElement =
+    isDOMDocumentNode(rootForActive) || isDOMShadowRoot(rootForActive)
+      ? getActiveElementDeep(rootForActive)
+      : null;
 
   // TODO: make this not hard-coded, and add another config option
   // that makes this configurable.
   if (
     (tags.has(COLLABORATION_TAG) && activeElement !== rootElement) ||
     (activeElement !== null &&
-      isSelectionCapturedInDecoratorInput(activeElement))
+      isSelectionCapturedInDecoratorInput(activeElement, activeElement))
   ) {
     return;
   }
+
+  // Resolve the live DOM selection's boundary points through any enclosing
+  // DOM shadow roots; Selection.anchorNode/focusNode are retargeted to the
+  // shadow host, so the comparisons below read composed points instead. In
+  // the light DOM getDOMSelectionPoints returns `domSelection` itself (no
+  // Selection property reads happen here), so `currentPoints` aliases it
+  // and preserves the deferred reads described below. The matching live
+  // Range is computed lazily in `getCurrentRange()` so the scroll-into-view
+  // fallback below is the only path that pays `getRangeAt(0)`'s layout
+  // flush — `getDOMSelectionRangeAndPoints()` (the public helper) still
+  // returns both eagerly for external callers.
+  const currentPoints = getDOMSelectionPoints(domSelection, rootElement);
+  let currentRangeCache: Range | null | undefined;
+  const getCurrentRange = (): Range | null => {
+    if (currentRangeCache === undefined) {
+      // Resolve through any enclosing shadow roots: getRangeAt(0) alone is
+      // retargeted to the shadow host inside a shadow tree, so the
+      // scroll-into-view rect below would measure the host instead of the
+      // caret. getDOMSelectionRange falls back to getRangeAt(0) in the light
+      // DOM.
+      currentRangeCache = getDOMSelectionRange(domSelection, rootElement);
+    }
+    return currentRangeCache;
+  };
 
   if (!$isRangeSelection(nextSelection)) {
     // We don't remove selection if the prevSelection is null because
@@ -3590,8 +3639,8 @@ export function $updateDOMSelection(
       prevSelection !== null &&
       isSelectionWithinEditor(
         editor,
-        domSelection.anchorNode,
-        domSelection.focusNode,
+        currentPoints.anchorNode,
+        currentPoints.focusNode,
       )
     ) {
       domSelection.removeAllRanges();
@@ -3676,14 +3725,24 @@ export function $updateDOMSelection(
   // sometimes be problematic around scrolling.
   if (
     !(domSelection.type === 'Range' && isCollapsed) && // Badly interpreted range selection when collapsed - #1482
-    domSelection.anchorOffset === nextAnchorOffset &&
-    domSelection.focusOffset === nextFocusOffset &&
-    domSelection.anchorNode === nextAnchorNode &&
-    domSelection.focusNode === nextFocusNode
+    currentPoints.anchorOffset === nextAnchorOffset &&
+    currentPoints.focusOffset === nextFocusOffset &&
+    currentPoints.anchorNode === nextAnchorNode &&
+    currentPoints.focusNode === nextFocusNode
   ) {
-    // If the root element does not have focus, ensure it has focus
+    // If the root element does not have focus, ensure it has focus — but
+    // not when the deep-focused element belongs to a different editor
+    // (e.g. the inner editor of a coexisting outer-editor / shadow-editor
+    // pair). Stealing focus there breaks the user's typing flow.
     if (activeElement === null || !rootElement.contains(activeElement)) {
-      if (!tags.has(SKIP_SELECTION_FOCUS_TAG)) {
+      const focusEditor =
+        activeElement !== null
+          ? getNearestEditorFromDOMNode(activeElement)
+          : null;
+      if (
+        (focusEditor === null || focusEditor === editor) &&
+        !tags.has(SKIP_SELECTION_FOCUS_TAG)
+      ) {
         rootElement.focus({
           preventScroll: true,
         });
@@ -3712,35 +3771,60 @@ export function $updateDOMSelection(
     IS_FIREFOX &&
     nextSelection.isCollapsed() &&
     rootElement !== null &&
-    !tags.has(SKIP_SELECTION_FOCUS_TAG) &&
-    (document.activeElement === null ||
-      !rootElement.contains(document.activeElement))
+    !tags.has(SKIP_SELECTION_FOCUS_TAG)
   ) {
-    // Restore focus immediately to ensure cursor visibility
-    rootElement.focus({preventScroll: true});
-    // Note: We rely on the normal selection update mechanism to ensure the cursor
-    // is visible. Using requestAnimationFrame here could cause race conditions where
-    // another update changes the selection before the rAF callback executes.
+    // Shallow active element for the containment check: rootElement.contains()
+    // does not cross shadow boundaries, so a host-retargeted result gives the
+    // correct containment outcome (and avoids a false "outside" when focus is
+    // in a nested decorator shadow inside this editor).
+    const focusedElement = getActiveElement(rootElement);
+    if (focusedElement === null || !rootElement.contains(focusedElement)) {
+      // Don't steal focus when the active element belongs to a *different*
+      // editor (e.g. the inner editor of a coexisting outer-editor /
+      // shadow-editor pair). Resolve the *deep* focused element for this
+      // attribution: a shallow read returns the other editor's shadow host,
+      // which getNearestEditorFromDOMNode can't map back to that editor, so
+      // the guard would otherwise wrongly steal focus from a shadow-mounted
+      // sibling.
+      const deepFocusedElement = getActiveElementDeep(
+        rootElement.ownerDocument,
+      );
+      const focusEditor =
+        deepFocusedElement !== null
+          ? getNearestEditorFromDOMNode(deepFocusedElement)
+          : null;
+      if (focusEditor === null || focusEditor === editor) {
+        // Restore focus immediately to ensure cursor visibility.
+        // Note: We rely on the normal selection update mechanism to ensure the
+        // cursor is visible. Using requestAnimationFrame here could cause race
+        // conditions where another update changes the selection before the rAF
+        // callback executes.
+        rootElement.focus({preventScroll: true});
+      }
+    }
   }
 
   if (
     !tags.has(SKIP_SCROLL_INTO_VIEW_TAG) &&
     nextSelection.isCollapsed() &&
     rootElement !== null &&
-    rootElement === document.activeElement
+    // Re-read the active element rather than a value cached before the focus
+    // restore / selection mutation above, which can become stale (e.g. when
+    // setting the DOM selection focuses the contentEditable as a side effect).
+    // Shallow is sufficient here for the same reason as the Firefox branch
+    // above: the equality check doesn't cross the shadow boundary.
+    rootElement === getActiveElement(rootElement)
   ) {
     const selectionTarget: null | Range | HTMLElement | Text =
       $isRangeSelection(nextSelection) &&
       nextSelection.anchor.type === 'element'
         ? (nextAnchorNode.childNodes[nextAnchorOffset] as HTMLElement | Text) ||
           null
-        : domSelection.rangeCount > 0
-          ? domSelection.getRangeAt(0)
-          : null;
+        : getCurrentRange();
     if (selectionTarget !== null) {
       let selectionRect: DOMRect;
-      if (selectionTarget instanceof Text) {
-        const range = document.createRange();
+      if (isDOMTextNode(selectionTarget)) {
+        const range = selectionTarget.ownerDocument.createRange();
         range.selectNode(selectionTarget);
         selectionRect = range.getBoundingClientRect();
       } else {

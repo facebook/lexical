@@ -6,8 +6,8 @@
  *
  */
 
-type RectLike = Pick<
-  ClientRect,
+export type RectLike = Pick<
+  DOMRect,
   'left' | 'top' | 'right' | 'bottom' | 'width' | 'height'
 >;
 
@@ -44,8 +44,8 @@ type RectLike = Pick<
  * spurious-wider (#7106) rect, so keeping it would re-introduce the extra-area
  * paint. See the under-paint characterization browser test.
  *
- * Typed on the structural subset of `ClientRect` it reads, so it accepts a live
- * `DOMRectList` from `getClientRects()` as well as the `ClientRect[]` returned by
+ * Typed on the structural subset of `DOMRect` it reads, so it accepts a live
+ * `DOMRectList` from `getClientRects()` as well as the `DOMRect[]` returned by
  * `createRectsFromDOMRange`, and is unit-testable without a DOM.
  */
 export default function dedupeSelectionRects<Rect extends RectLike>(

@@ -125,9 +125,9 @@ export function createDOMRange(
  * @returns The selectionRects as an array.
  */
 export function createRectsFromDOMRange(
-  editor: LexicalEditor,
+  editor: Pick<LexicalEditor, 'getRootElement'>,
   range: Range,
-): ClientRect[] {
+): DOMRect[] {
   const rootElement = editor.getRootElement();
 
   if (rootElement === null) {

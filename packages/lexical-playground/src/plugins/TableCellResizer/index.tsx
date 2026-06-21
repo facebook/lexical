@@ -56,7 +56,7 @@ const ACTIVE_RESIZER_COLOR = '#76b6ff';
 function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   const targetRef = useRef<HTMLElement | null>(null);
   const resizerRef = useRef<HTMLDivElement | null>(null);
-  const tableRectRef = useRef<ClientRect | null>(null);
+  const tableRectRef = useRef<DOMRect | null>(null);
   const [hasTable, setHasTable] = useState(false);
 
   const pointerStartPosRef = useRef<PointerPosition | null>(null);

@@ -23,14 +23,14 @@ import {useEffect, useLayoutEffect, useRef} from 'react';
 import {createWebsocketProvider} from '../collaboration';
 import {$isStickyNode} from './StickyNode';
 
-type Positioning = {
+interface Positioning {
   isDragging: boolean;
   offsetX: number;
   offsetY: number;
-  rootElementRect: null | ClientRect;
+  rootElementRect: null | DOMRect;
   x: number;
   y: number;
-};
+}
 
 function positionSticky(
   stickyElem: HTMLElement,

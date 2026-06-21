@@ -33,6 +33,10 @@ import {
 } from '@lexical/list';
 import {PlainTextExtension} from '@lexical/plain-text';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
+import {
+  CollaborationPlugin,
+  CollaborationPluginV2__EXPERIMENTAL,
+} from '@lexical/react/LexicalCollaborationPlugin';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {
   $createHeadingNode,
@@ -48,8 +52,13 @@ import {
   defineExtension,
 } from 'lexical';
 import {type JSX, useMemo} from 'react';
+import {Doc} from 'yjs';
 
 import {isDevPlayground} from './appSettings';
+import {
+  createWebsocketProvider,
+  createWebsocketProviderWithDoc,
+} from './collaboration';
 import {FlashMessageContext} from './context/FlashMessageContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
 import {ToolbarContext} from './context/ToolbarContext';
@@ -89,6 +98,7 @@ import {TerseExportExtension} from './plugins/TerseExportExtension';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import {TwitterExtension} from './plugins/TwitterExtension';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
+import {VersionsPlugin} from './plugins/VersionsPlugin';
 import {VisibleNonPrintingExtension} from './plugins/VisibleNonPrintingExtension';
 import {YouTubeExtension} from './plugins/YouTubeExtension';
 import Settings from './Settings';
@@ -99,6 +109,12 @@ import {validateUrl} from './utils/url';
 console.warn(
   'If you are profiling the playground app, please ensure you turn off the debug view. You can disable it by pressing on the settings control in the bottom-left of your screen and toggling the debug view setting.',
 );
+
+const COLLAB_DOC_ID = 'main';
+
+const skipCollaborationInit =
+  // @ts-expect-error
+  window.parent != null && window.parent.frames.right === window;
 
 function $prepopulatedRichText() {
   const root = $getRoot();
@@ -317,6 +333,7 @@ function App(): JSX.Element {
   const {
     settings: {
       isCollab,
+      useCollabV2,
       emptyEditor,
       isRichText,
       isShadowDOM,
@@ -342,6 +359,21 @@ function App(): JSX.Element {
               <img src={logo} alt="Lexical Logo" />
             </a>
           </header>
+          {isRichText && isCollab ? (
+            useCollabV2 ? (
+              <CollabV2
+                id={COLLAB_DOC_ID}
+                shouldBootstrap={!skipCollaborationInit}
+              />
+            ) : (
+              <CollaborationPlugin
+                id={COLLAB_DOC_ID}
+                providerFactory={createWebsocketProvider}
+                shouldBootstrap={!skipCollaborationInit}
+                selectionHighlight={true}
+              />
+            )
+          ) : null}
           {isShadowDOM ? (
             <ShadowDomWrapper>
               <div className="editor-shell">
@@ -362,6 +394,34 @@ function App(): JSX.Element {
         </ToolbarContext>
       </LexicalExtensionComposer>
     </LexicalCollaboration>
+  );
+}
+
+function CollabV2({
+  id,
+  shouldBootstrap,
+}: {
+  id: string;
+  shouldBootstrap: boolean;
+}) {
+  // VersionsPlugin needs GC disabled.
+  const doc = useMemo(() => new Doc({gc: false}), []);
+
+  const provider = useMemo(() => {
+    return createWebsocketProviderWithDoc('main', doc);
+  }, [doc]);
+
+  return (
+    <>
+      <CollaborationPluginV2__EXPERIMENTAL
+        id={id}
+        doc={doc}
+        provider={provider}
+        __shouldBootstrapUnsafe={shouldBootstrap}
+        selectionHighlight={true}
+      />
+      <VersionsPlugin id={id} />
+    </>
   );
 }
 

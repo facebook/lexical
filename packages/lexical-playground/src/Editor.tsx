@@ -9,20 +9,12 @@
 import type {JSX} from 'react';
 
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
-import {
-  CollaborationPlugin,
-  CollaborationPluginV2__EXPERIMENTAL,
-} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {CAN_USE_DOM} from '@lexical/utils';
-import {useEffect, useMemo, useState} from 'react';
-import {Doc} from 'yjs';
+import {useEffect, useState} from 'react';
 
-import {
-  createWebsocketProvider,
-  createWebsocketProviderWithDoc,
-} from './collaboration';
+import {createWebsocketProvider} from './collaboration';
 import {useSettings} from './context/SettingsContext';
 import {useSynchronizeSettings} from './hooks/useSynchronizeSettings';
 import ActionsPlugin from './plugins/ActionsPlugin';
@@ -47,14 +39,7 @@ import TableOfContentsPlugin from './plugins/TableOfContentsPlugin';
 import TableScrollShadowPlugin from './plugins/TableScrollShadowPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
-import {VersionsPlugin} from './plugins/VersionsPlugin';
 import ContentEditable from './ui/ContentEditable';
-
-const COLLAB_DOC_ID = 'main';
-
-const skipCollaborationInit =
-  // @ts-expect-error
-  window.parent != null && window.parent.frames.right === window;
 
 export default function Editor(): JSX.Element {
   const {
@@ -143,24 +128,6 @@ export default function Editor(): JSX.Element {
         )}
         {isRichText ? (
           <>
-            {isCollab ? (
-              useCollabV2 ? (
-                <>
-                  <CollabV2
-                    id={COLLAB_DOC_ID}
-                    shouldBootstrap={!skipCollaborationInit}
-                  />
-                  <VersionsPlugin id={COLLAB_DOC_ID} />
-                </>
-              ) : (
-                <CollaborationPlugin
-                  id={COLLAB_DOC_ID}
-                  providerFactory={createWebsocketProvider}
-                  shouldBootstrap={!skipCollaborationInit}
-                  selectionHighlight={true}
-                />
-              )
-            ) : null}
             <div className="editor-scroller">
               <div className="editor" ref={onRef}>
                 <ContentEditable placeholder={placeholder} />
@@ -214,30 +181,5 @@ export default function Editor(): JSX.Element {
       </div>
       {showTreeView && <TreeViewPlugin />}
     </>
-  );
-}
-
-function CollabV2({
-  id,
-  shouldBootstrap,
-}: {
-  id: string;
-  shouldBootstrap: boolean;
-}) {
-  // VersionsPlugin needs GC disabled.
-  const doc = useMemo(() => new Doc({gc: false}), []);
-
-  const provider = useMemo(() => {
-    return createWebsocketProviderWithDoc('main', doc);
-  }, [doc]);
-
-  return (
-    <CollaborationPluginV2__EXPERIMENTAL
-      id={id}
-      doc={doc}
-      provider={provider}
-      __shouldBootstrapUnsafe={shouldBootstrap}
-      selectionHighlight={true}
-    />
   );
 }

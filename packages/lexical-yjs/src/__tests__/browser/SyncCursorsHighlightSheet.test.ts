@@ -27,17 +27,21 @@ function makeBinding(rootElement: HTMLElement): CursorHighlightSheetBinding {
 describe('getCursorHighlightSheet', () => {
   const created: HTMLElement[] = [];
   let documentSheets: readonly CSSStyleSheet[];
+  let adoptedStyleSheets: CSSStyleSheet[];
 
   beforeEach(() => {
-    documentSheets = document.adoptedStyleSheets;
+    // eslint-disable-next-line compat/compat
+    adoptedStyleSheets = document.adoptedStyleSheets;
+    documentSheets = [...adoptedStyleSheets];
   });
   afterEach(() => {
     // Restore the document's sheets and detach anything these tests created so
     // adoptions don't leak across tests sharing the page.
-    document.adoptedStyleSheets = documentSheets;
-    for (const el of created.splice(0)) {
+    let el: undefined | HTMLElement;
+    while ((el = created.pop())) {
       el.remove();
     }
+    adoptedStyleSheets.splice(0, adoptedStyleSheets.length, ...documentSheets);
   });
 
   test('adopts the sheet into the document for a light-DOM editor', () => {
@@ -46,7 +50,7 @@ describe('getCursorHighlightSheet', () => {
     created.push(root);
 
     const sheet = getCursorHighlightSheet(makeBinding(root));
-    expect(document.adoptedStyleSheets).toContain(sheet);
+    expect(adoptedStyleSheets).toContain(sheet);
   });
 
   test('re-homes the cached sheet when the editor root moves into a shadow root', () => {
@@ -56,7 +60,7 @@ describe('getCursorHighlightSheet', () => {
     const binding = makeBinding(root);
 
     const sheet = getCursorHighlightSheet(binding);
-    expect(document.adoptedStyleSheets).toContain(sheet);
+    expect(adoptedStyleSheets).toContain(sheet);
 
     // Shadow-DOM toggle: move the same root into an open shadow root without
     // recreating the binding. The cached sheet must follow it into the shadow
@@ -83,8 +87,6 @@ describe('getCursorHighlightSheet', () => {
     getCursorHighlightSheet(binding);
     getCursorHighlightSheet(binding);
 
-    expect(
-      document.adoptedStyleSheets.filter((s) => s === sheet).length,
-    ).toBe(1);
+    expect(adoptedStyleSheets.filter(s => s === sheet).length).toBe(1);
   });
 });

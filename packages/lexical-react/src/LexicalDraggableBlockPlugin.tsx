@@ -24,6 +24,7 @@ import {
   DROP_COMMAND,
   getActiveElement,
   getActiveElementDeep,
+  getComposedEventTarget,
   getRootOwnerDocument,
   IS_FIREFOX,
   LexicalEditor,
@@ -303,7 +304,7 @@ function useDraggableBlockMenu(
 
   useEffect(() => {
     function onMouseMove(event: MouseEvent) {
-      const target = event.target;
+      const target = getComposedEventTarget(event);
       if (!isHTMLElement(target)) {
         setDraggableBlockElem(null);
         return;

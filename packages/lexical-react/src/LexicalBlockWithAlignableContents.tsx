@@ -24,6 +24,7 @@ import {
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   FORMAT_ELEMENT_COMMAND,
+  getComposedEventTarget,
 } from 'lexical';
 import * as React from 'react';
 import {ReactNode, useEffect, useRef} from 'react';
@@ -96,7 +97,7 @@ export function BlockWithAlignableContents({
       editor.registerCommand<MouseEvent>(
         CLICK_COMMAND,
         event => {
-          if (event.target === ref.current) {
+          if (getComposedEventTarget(event) === ref.current) {
             event.preventDefault();
             if (!event.shiftKey) {
               clearSelection();

@@ -77,20 +77,50 @@ const SUPPORTS_CSS_HIGHLIGHTS =
   'highlights' in CSS;
 
 /**
- * Resolve the per-binding stylesheet that hosts `::highlight(...)` rules.
+ * The subset of a binding that {@link getCursorHighlightSheet} reads. Declared
+ * structurally so callers pass a full binding and tests pass a lightweight stub,
+ * neither needing a cast.
+ *
+ * @internal
  */
-function getCursorHighlightSheet(binding: BaseBinding): CSSStyleSheet {
-  if (binding.cursorHighlightSheet === null) {
-    const rootElement = binding.editor.getRootElement();
-    const ownerDocument = getRootOwnerDocument(rootElement);
+export interface CursorHighlightSheetBinding {
+  cursorHighlightSheet: CSSStyleSheet | null;
+  editor: {getRootElement: () => HTMLElement | null};
+}
+
+/**
+ * Resolve the per-binding stylesheet that hosts `::highlight(...)` rules,
+ * re-adopting it into the editor's current tree scope (document or shadow
+ * root) on every call.
+ *
+ * The editor root can move between the light DOM and a shadow root (a
+ * shadow-DOM toggle) without recreating the binding, and `::highlight()` rules
+ * only apply in the tree scope that owns the highlighted ranges, so the sheet
+ * is re-homed each call. A leftover adoption in a previously-used scope is
+ * harmless: shadow encapsulation means a rule there cannot match ranges in the
+ * new scope.
+ *
+ * @internal Exported for tests; not part of the package's public API.
+ */
+export function getCursorHighlightSheet(
+  binding: CursorHighlightSheetBinding,
+): CSSStyleSheet {
+  const rootElement = binding.editor.getRootElement();
+  const ownerDocument = getRootOwnerDocument(rootElement);
+  let sheet = binding.cursorHighlightSheet;
+  if (sheet === null) {
     const view = ownerDocument.defaultView || window;
-    const sheet = new view.CSSStyleSheet();
-    const root = rootElement !== null ? rootElement.getRootNode() : null;
-    const target = isDOMShadowRoot(root) ? root : ownerDocument;
-    target.adoptedStyleSheets = [...target.adoptedStyleSheets, sheet];
+    sheet = new view.CSSStyleSheet();
     binding.cursorHighlightSheet = sheet;
   }
-  return binding.cursorHighlightSheet;
+  const root = rootElement !== null ? rootElement.getRootNode() : null;
+  const target: Document | ShadowRoot = isDOMShadowRoot(root)
+    ? root
+    : ownerDocument;
+  if (!target.adoptedStyleSheets.includes(sheet)) {
+    target.adoptedStyleSheets = [...target.adoptedStyleSheets, sheet];
+  }
+  return sheet;
 }
 
 function addCursorHighlightRule(

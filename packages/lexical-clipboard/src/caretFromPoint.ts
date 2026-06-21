@@ -10,6 +10,7 @@ import {
   getDOMShadowRoots,
   getParentElement,
   getRootOwnerDocument,
+  isDOMShadowRoot,
 } from 'lexical';
 
 // True when `node` is `rootElement` or a composed descendant of it, walking
@@ -26,6 +27,38 @@ function isWithinComposedTree(node: Node | null, rootElement: HTMLElement) {
   return false;
 }
 
+// Find the closest caret position at (x, y) by walking text nodes
+// under `container` and measuring each offset via a collapsed Range.
+// Linear scan — not a hot path (runs once per drag-drop).
+function findTextOffsetAtPoint(
+  x: number,
+  y: number,
+  container: Node,
+  doc: Document,
+): {node: Node; offset: number} | null {
+  const walker = doc.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  let bestNode: Node | null = null;
+  let bestOffset = 0;
+  let bestDist = Infinity;
+  const range = doc.createRange();
+  let textNode: Node | null;
+  while ((textNode = walker.nextNode()) !== null) {
+    const len = textNode.textContent!.length;
+    for (let i = 0; i <= len; i++) {
+      range.setStart(textNode, i);
+      range.collapse(true);
+      const rect = range.getBoundingClientRect();
+      const dist = Math.hypot(x - rect.left, y - (rect.top + rect.height / 2));
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestNode = textNode;
+        bestOffset = i;
+      }
+    }
+  }
+  return bestNode !== null ? {node: bestNode, offset: bestOffset} : null;
+}
+
 /** @internal */
 export function caretFromPoint(
   x: number,
@@ -35,32 +68,12 @@ export function caretFromPoint(
   offset: number;
   node: Node;
 } {
-  // When the editor lives in a DOM shadow tree, a point over shadow content is
-  // retargeted to the shadow host by caretRangeFromPoint. Prefer
-  // caretPositionFromPoint with the shadowRoots option, which returns the
-  // un-retargeted node. Browsers that don't implement the option silently
-  // ignore it and return a retargeted result, so verify the offset node
-  // actually resolved inside the editor's composed tree (covering slotted and
-  // nested-shadow content, not only the enclosing roots) before trusting it;
-  // otherwise fall through to the legacy paths below.
   const doc = getRootOwnerDocument(rootElement);
   const shadowRoots = rootElement ? getDOMShadowRoots(rootElement) : [];
-  // When caretPositionFromPoint supports the shadowRoots option (Chrome 128+,
-  // Firefox 125+), it returns the un-retargeted node directly. If it resolved
-  // inside the editor's composed tree, trust it and return early. If it didn't
-  // (point was outside the editor), reject the fallback paths too — they'll
-  // only return retargeted (wrong) results for the same coordinates.
-  //
-  // When caretPositionFromPoint is unavailable (Safari), the fallback paths
-  // are the best we have — accept their result even if retargeted, because
-  // returning null would break drag-drop and click-to-place entirely.
-  let triedShadowAwarePath = false;
-  if (
-    rootElement !== null &&
-    shadowRoots.length > 0 &&
-    typeof doc.caretPositionFromPoint === 'function'
-  ) {
-    triedShadowAwarePath = true;
+  const hasShadow = rootElement !== null && shadowRoots.length > 0;
+  // caretPositionFromPoint with {shadowRoots} (Chrome 128+, Firefox 125+)
+  // returns the un-retargeted node inside the shadow tree directly.
+  if (hasShadow && typeof doc.caretPositionFromPoint === 'function') {
     const caretPosition = doc.caretPositionFromPoint(x, y, {shadowRoots});
     if (
       caretPosition !== null &&
@@ -69,15 +82,29 @@ export function caretFromPoint(
       return {node: caretPosition.offsetNode, offset: caretPosition.offset};
     }
   }
+  // Shadow fallback: caretRangeFromPoint retargets shadow-internal nodes
+  // to the shadow host. Use shadowRoot.elementFromPoint to find the
+  // correct element, then walk its text nodes to find the offset.
+  // Also reached when caretPositionFromPoint exists but silently ignored
+  // the {shadowRoots} option (older Chrome/Firefox).
+  if (hasShadow) {
+    const rootNode = rootElement.getRootNode();
+    if (isDOMShadowRoot(rootNode)) {
+      const element = rootNode.elementFromPoint(x, y);
+      if (element !== null && rootElement.contains(element)) {
+        const result = findTextOffsetAtPoint(x, y, element, doc);
+        if (result !== null) {
+          return result;
+        }
+        return {node: element, offset: 0};
+      }
+      return null;
+    }
+  }
+  // Non-shadow path.
   if (typeof doc.caretRangeFromPoint === 'function') {
     const range = doc.caretRangeFromPoint(x, y);
     if (range === null) {
-      return null;
-    }
-    if (
-      triedShadowAwarePath &&
-      !isWithinComposedTree(range.startContainer, rootElement!)
-    ) {
       return null;
     }
     return {node: range.startContainer, offset: range.startOffset};
@@ -86,14 +113,7 @@ export function caretFromPoint(
     if (caretPosition === null) {
       return null;
     }
-    if (
-      triedShadowAwarePath &&
-      !isWithinComposedTree(caretPosition.offsetNode, rootElement!)
-    ) {
-      return null;
-    }
     return {node: caretPosition.offsetNode, offset: caretPosition.offset};
   }
-  // Gracefully handle IE
   return null;
 }

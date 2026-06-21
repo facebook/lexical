@@ -6,6 +6,7 @@
  *
  */
 
+import {caretFromPoint} from '@lexical/clipboard';
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {registerRichText} from '@lexical/rich-text';
 import {
@@ -1064,6 +1065,35 @@ describe('DOM shadow root selection (browser)', () => {
 
       expect(innerHits).toBeGreaterThan(0);
       expect(outerHits).toBe(0);
+    });
+  });
+
+  describe('caretFromPoint shadow fallback', () => {
+    test('resolves a text node and offset inside the shadow tree', () => {
+      const {contentEditable} = setUpShadowEditor('Hello world');
+      const textNode = getInnerTextNode(contentEditable);
+      // Place a collapsed range at offset 5 ("Hello|") to get its coordinates.
+      const range = document.createRange();
+      range.setStart(textNode, 5);
+      range.collapse(true);
+      const rect = range.getBoundingClientRect();
+      // caretFromPoint should resolve back to the same text node near offset 5.
+      const result = caretFromPoint(
+        rect.left,
+        rect.top + rect.height / 2,
+        contentEditable,
+      );
+      expect(result).not.toBeNull();
+      expect(result!.node).toBe(textNode);
+      expect(result!.offset).toBeGreaterThanOrEqual(4);
+      expect(result!.offset).toBeLessThanOrEqual(6);
+    });
+
+    test('returns null for coordinates outside the editor', () => {
+      const {contentEditable} = setUpShadowEditor('Hello');
+      // Coordinates far outside the editor.
+      const result = caretFromPoint(-9999, -9999, contentEditable);
+      expect(result).toBeNull();
     });
   });
 });

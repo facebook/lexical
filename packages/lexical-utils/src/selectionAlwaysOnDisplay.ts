@@ -8,11 +8,12 @@
 
 import {LexicalEditor} from 'lexical';
 
-import markSelection from './markSelection';
+import markSelection, {type MarkSelectionColors} from './markSelection';
 
 export default function selectionAlwaysOnDisplay(
   editor: LexicalEditor,
   onReposition?: (node: readonly HTMLElement[]) => void,
+  colors?: MarkSelectionColors,
 ): () => void {
   let removeSelectionMark: (() => void) | null = null;
 
@@ -33,7 +34,7 @@ export default function selectionAlwaysOnDisplay(
       }
     } else {
       if (removeSelectionMark === null) {
-        removeSelectionMark = markSelection(editor, onReposition);
+        removeSelectionMark = markSelection(editor, onReposition, colors);
       }
     }
   };

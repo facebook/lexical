@@ -86,9 +86,16 @@ declare export function $findMatchingParent(
   findFn: (LexicalNode) => boolean,
 ): LexicalNode | null;
 declare export function mergeRegister(...func: (() => void)[]): () => void;
+export type MarkSelectionColors = {
+  background?: string,
+};
+declare export function createDefaultOnReposition(
+  colors?: MarkSelectionColors,
+): (nodes: HTMLElement[]) => void;
 declare export function markSelection(
   editor: LexicalEditor,
   onReposition?: (node: HTMLElement[]) => void,
+  colors?: MarkSelectionColors,
 ): () => void;
 declare export function positionNodeOnRange(
   editor: LexicalEditor,
@@ -98,6 +105,7 @@ declare export function positionNodeOnRange(
 declare export function selectionAlwaysOnDisplay(
   editor: LexicalEditor,
   onReposition?: (node: HTMLElement[]) => void,
+  colors?: MarkSelectionColors,
 ): () => void;
 declare export function $getNearestBlockElementAncestorOrThrow(
   startNode: LexicalNode,

@@ -6,7 +6,10 @@
  *
  */
 
-import {selectionAlwaysOnDisplay} from '@lexical/utils';
+import {
+  type MarkSelectionColors,
+  selectionAlwaysOnDisplay,
+} from '@lexical/utils';
 import {defineExtension, safeCast} from 'lexical';
 
 import {namedSignals} from './namedSignals';
@@ -15,6 +18,7 @@ import {effect} from './signals';
 export interface SelectionAlwaysOnDisplayConfig {
   disabled: boolean;
   onReposition: undefined | ((node: readonly HTMLElement[]) => void);
+  colors: undefined | MarkSelectionColors;
 }
 
 /**
@@ -25,6 +29,7 @@ export const SelectionAlwaysOnDisplayExtension =
   /* @__PURE__ */ defineExtension({
     build: (editor, config, state) => namedSignals(config),
     config: /* @__PURE__ */ safeCast<SelectionAlwaysOnDisplayConfig>({
+      colors: undefined,
       disabled: false,
       onReposition: undefined,
     }),
@@ -33,7 +38,11 @@ export const SelectionAlwaysOnDisplayExtension =
       const stores = state.getOutput();
       return effect(() => {
         if (!stores.disabled.value) {
-          return selectionAlwaysOnDisplay(editor, stores.onReposition.value);
+          return selectionAlwaysOnDisplay(
+            editor,
+            stores.onReposition.value,
+            stores.colors.value,
+          );
         }
       });
     },

@@ -6,10 +6,7 @@
  *
  */
 
-import {
-  addClassNamesToElement,
-  removeClassNamesFromElement,
-} from '@lexical/utils';
+import {addClassNamesToElement, removeClassNamesFromElement} from 'lexical';
 import {describe, expect, test} from 'vitest';
 
 describe('LexicalElementHelpers tests', () => {

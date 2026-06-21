@@ -15,7 +15,7 @@ import {
   TreeView as TreeViewCore,
   useLexicalCommandsLog,
 } from '@lexical/devtools-core';
-import {mergeRegister} from '@lexical/utils';
+import {mergeRegister} from 'lexical';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
 

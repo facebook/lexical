@@ -7,16 +7,12 @@
  */
 
 import invariant from '@lexical/internal/invariant';
-import {
-  $descendantsMatching,
-  addClassNamesToElement,
-  isHTMLElement,
-  removeClassNamesFromElement,
-} from '@lexical/utils';
+import {$descendantsMatching} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getEditor,
   $getNearestNodeFromDOMNode,
+  addClassNamesToElement,
   BaseSelection,
   DOMConversionMap,
   DOMConversionOutput,
@@ -25,10 +21,12 @@ import {
   ElementDOMSlot,
   type ElementFormatType,
   ElementNode,
+  isHTMLElement,
   LexicalEditor,
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
+  removeClassNamesFromElement,
   SerializedElementNode,
   setDOMStyleFromCSS,
   setDOMUnmanaged,

@@ -8,10 +8,6 @@
 
 import invariant from '@lexical/internal/invariant';
 import {
-  addClassNamesToElement,
-  removeClassNamesFromElement,
-} from '@lexical/utils';
-import {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -22,10 +18,12 @@ import {
   $isParagraphNode,
   $isRootNode,
   $setSelection,
+  addClassNamesToElement,
   getDOMSelection,
   INSERT_PARAGRAPH_COMMAND,
   type LexicalEditor,
   type NodeKey,
+  removeClassNamesFromElement,
   SELECTION_CHANGE_COMMAND,
   type TextFormatType,
 } from 'lexical';

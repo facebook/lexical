@@ -5,13 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import invariant from '@lexical/internal/invariant';
 import {
   $create,
   $createLineBreakNode,
+  $createParagraphNode,
   $createRangeSelection,
   $createTabNode,
+  $createTextNode,
   $getNodeByKey,
   $getNodeByKeyOrThrow,
   $getRoot,
@@ -44,8 +45,6 @@ import {
 } from 'vitest';
 
 import {LexicalNode} from '../../LexicalNode';
-import {$createParagraphNode} from '../../nodes/LexicalParagraphNode';
-import {$createTextNode} from '../../nodes/LexicalTextNode';
 import {
   $createTestElementNode,
   $createTestInlineElementNode,

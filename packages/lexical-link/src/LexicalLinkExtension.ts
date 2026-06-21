@@ -8,7 +8,7 @@
 
 import {effect, namedSignals, NamedSignalsOutput} from '@lexical/extension';
 import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
-import {mergeRegister, objectKlassEquals} from '@lexical/utils';
+import {objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
   $isElementNode,
@@ -19,6 +19,7 @@ import {
   configExtension,
   defineExtension,
   LexicalEditor,
+  mergeRegister,
   PASTE_COMMAND,
   shallowMergeConfig,
 } from 'lexical';

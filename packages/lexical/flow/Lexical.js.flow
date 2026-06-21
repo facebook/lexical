@@ -1551,6 +1551,11 @@ declare export function $splitAtPointCaretNext(
   pointCaret: PointCaret<'next'>,
   options?: SplitAtPointCaretNextOptions,
 ): null | NodeCaret<'next'>;
+declare export function $insertNodeToNearestRootAtCaret<T: LexicalNode>(
+  node: T,
+  caret: PointCaret<CaretDirection>,
+  options?: SplitAtPointCaretNextOptions,
+): NodeCaret<CaretDirection>;
 
 /**
  * LexicalUpdateTags

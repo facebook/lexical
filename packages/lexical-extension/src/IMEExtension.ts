@@ -6,7 +6,6 @@
  *
  */
 
-import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -17,6 +16,7 @@ import {
   COMPOSITION_START_TAG,
   defineExtension,
   type LexicalEditor,
+  mergeRegister,
   type NodeKey,
   type TextNode,
 } from 'lexical';

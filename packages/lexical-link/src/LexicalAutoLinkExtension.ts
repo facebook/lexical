@@ -8,7 +8,6 @@
 
 import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
-import {mergeRegister} from '@lexical/utils';
 import {
   $createTextNode,
   $getSelection,
@@ -19,6 +18,7 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   defineExtension,
+  mergeRegister,
   shallowMergeConfig,
   TextNode,
 } from 'lexical';

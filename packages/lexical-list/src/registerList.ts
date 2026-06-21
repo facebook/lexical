@@ -8,9 +8,9 @@
 
 import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
 
-import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
   $createParagraphNode,
+  $findMatchingParent,
   $getNodeByKey,
   $getSelection,
   $isDecoratorNode,
@@ -21,6 +21,7 @@ import {
   createCommand,
   INSERT_PARAGRAPH_COMMAND,
   KEY_BACKSPACE_COMMAND,
+  mergeRegister,
   TextNode,
 } from 'lexical';
 

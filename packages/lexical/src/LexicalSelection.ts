@@ -28,6 +28,7 @@ import {
   $getChildCaret,
   $getSiblingCaret,
   $getTextNodeOffset,
+  $insertNodeToNearestRootAtCaret,
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
@@ -1533,6 +1534,59 @@ export class RangeSelection implements BaseSelection {
     // stripped like the input value sanitization strips newlines, and
     // block-only decorators are dropped, having no single-line form).
     if ($isElementNode(firstBlock) && $getSlotHostKey(firstBlock) !== null) {
+      const index = $removeTextAndSplitBlock(this);
+      const inlineNodes = $extractInlineFromBlocks(nodes);
+      firstBlock.splice(index, 0, inlineNodes);
+      const lastInserted = inlineNodes[inlineNodes.length - 1];
+      if (lastInserted !== undefined) {
+        lastInserted.selectEnd();
+      } else {
+        firstBlock.select(index, index);
+      }
+      return;
+    }
+
+    // CASE 3b: there is non-inline content but no block ancestor to insert it
+    // relative to. The element point on a root/shadow root is handled above, so
+    // this is a malformed document where an inline-only element directly holds
+    // a block child (e.g. a HorizontalRuleNode inside a CollapsibleTitleNode,
+    // see #8713) or a non-inline element that reports canBeEmpty() === false.
+    // A non-inline node must never become the child of an inline-only element,
+    // so enforce the document structure rules with
+    // $insertNodeToNearestRootAtCaret, which splits the ancestor chain up to
+    // the nearest node that may contain non-inline children (a root or shadow
+    // root) and inserts the blocks there. Lists are unaffected: a list item is
+    // always a block ancestor, so they fall through to CASE 3 and keep their
+    // existing (ListItemNode-aware) paste behavior.
+    if (firstBlock === null) {
+      const blocksParent = $wrapInlineNodes(nodes);
+      const nodeToSelect = blocksParent.getLastDescendant();
+      // Split the ancestor chain up to the nearest root or shadow root and
+      // insert each block there.
+      let caret: PointCaret<'next'> = $caretFromPoint(this.anchor, 'next');
+      for (const block of blocksParent.getChildren()) {
+        caret = $insertNodeToNearestRootAtCaret(block, caret);
+      }
+      if (nodeToSelect !== null) {
+        nodeToSelect.selectEnd();
+      }
+      return;
+    }
+
+    // CASE 3c: the target block exists but its parent is not a root or shadow
+    // root — the only elements that may contain non-inline children — and the
+    // block does not relocate itself to a valid parent (it is not
+    // parent-required, unlike a ListItemNode, whose insertAfter escapes the
+    // list). Inserting the blocks as siblings here would nest them in an
+    // inline-only element, e.g. a HorizontalRuleNode pasted into the
+    // ParagraphNode of a CollapsibleTitleNode (see #8724). Mirror CASE 3a and
+    // flatten the incoming nodes to their inline content, dropping the
+    // block-level parts that have no inline form.
+    if (
+      $isElementNode(firstBlock) &&
+      !firstBlock.isParentRequired() &&
+      !$isRootOrShadowRoot(firstBlock.getParentOrThrow())
+    ) {
       const index = $removeTextAndSplitBlock(this);
       const inlineNodes = $extractInlineFromBlocks(nodes);
       firstBlock.splice(index, 0, inlineNodes);

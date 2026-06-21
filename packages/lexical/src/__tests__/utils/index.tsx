@@ -30,15 +30,19 @@ import {
   $create,
   $isRangeSelection,
   createEditor,
+  CreateEditorArgs,
   DecoratorNode,
   EditorState,
   EditorThemeClasses,
   ElementNode,
+  HTMLConfig,
   Klass,
   LexicalEditor,
   LexicalNode,
+  LexicalNodeReplacement,
   LexicalUpdateJSON,
   RangeSelection,
+  resetRandomKey,
   SerializedElementNode,
   SerializedLexicalNode,
   SerializedTextNode,
@@ -49,13 +53,6 @@ import * as React from 'react';
 import {act, createRef} from 'react';
 import {createRoot} from 'react-dom/client';
 import {afterEach, assert, beforeEach, expect} from 'vitest';
-
-import {
-  CreateEditorArgs,
-  HTMLConfig,
-  LexicalNodeReplacement,
-} from '../../LexicalEditor';
-import {resetRandomKey} from '../../LexicalUtils';
 
 const prettierConfig = prettier.resolveConfig(__filename);
 

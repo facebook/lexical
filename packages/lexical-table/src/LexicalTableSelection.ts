@@ -7,9 +7,9 @@
  */
 
 import invariant from '@lexical/internal/invariant';
-import {$findMatchingParent} from '@lexical/utils';
 import {
   $createPoint,
+  $findMatchingParent,
   $getNodeByKey,
   $getSelection,
   $isElementNode,

@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
+import {} from '@lexical/extension';
 import {describe, expect, it} from 'vitest';
 
 import {deepThemeMergeInPlace} from '../../deepThemeMergeInPlace';

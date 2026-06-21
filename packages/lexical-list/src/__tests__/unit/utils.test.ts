@@ -5,12 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {
+  $createListItemNode,
+  $createListNode,
+  $getListDepth,
+} from '@lexical/list';
 import {$createParagraphNode, $getRoot} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
-import {$createListItemNode, $createListNode} from '../..';
-import {$getListDepth, $getTopListNode, $isLastItemInList} from '../../utils';
+import {$getTopListNode, $isLastItemInList} from '../../utils';
 
 describe('Lexical List Utils tests', () => {
   initializeUnitTest(testEnv => {

@@ -23,10 +23,11 @@ import {
   getTableElement,
   TableNode,
 } from '@lexical/table';
-import {calculateZoomLevel, mergeRegister} from '@lexical/utils';
+import {calculateZoomLevel} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
   isHTMLElement,
+  mergeRegister,
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
 import * as React from 'react';

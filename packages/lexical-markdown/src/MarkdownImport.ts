@@ -16,11 +16,11 @@ import type {
 
 import {$isListItemNode, $isListNode, ListItemNode} from '@lexical/list';
 import {$isQuoteNode} from '@lexical/rich-text';
-import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createTabNode,
   $createTextNode,
+  $findMatchingParent,
   $getRoot,
   $getSelection,
   $isElementNode,

@@ -24,16 +24,12 @@ import type {
 
 import invariant from '@lexical/internal/invariant';
 import {
-  $insertNodeToNearestRootAtCaret,
-  addClassNamesToElement,
-  removeClassNamesFromElement,
-} from '@lexical/utils';
-import {
   $applyNodeReplacement,
   $copyNode,
   $createParagraphNode,
   $getSelection,
   $getSiblingCaret,
+  $insertNodeToNearestRootAtCaret,
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
@@ -41,12 +37,14 @@ import {
   $rewindSiblingCaret,
   $setDirectionFromDOM,
   $setFormatFromDOM,
+  addClassNamesToElement,
   buildImportMap,
   ElementNode,
   getStyleObjectFromCSS,
   isHTMLElement,
   LexicalEditor,
   normalizeClassNames,
+  removeClassNamesFromElement,
   setDOMStyleFromCSS,
 } from 'lexical';
 

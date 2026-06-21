@@ -17,7 +17,6 @@ import type {
 import type {LexicalEditor} from 'lexical';
 import type {JSX} from 'react';
 
-import {mergeRegister} from '@lexical/utils';
 import {
   CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
   CONNECTED_COMMAND,
@@ -46,6 +45,7 @@ import {
   COMMAND_PRIORITY_EDITOR,
   FOCUS_COMMAND,
   HISTORY_MERGE_TAG,
+  mergeRegister,
   REDO_COMMAND,
   SKIP_COLLAB_TAG,
   UNDO_COMMAND,

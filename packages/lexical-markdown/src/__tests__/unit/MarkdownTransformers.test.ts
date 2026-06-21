@@ -244,6 +244,63 @@ describe('CODE_SPAN_PRECEDENCE', () => {
   });
 });
 
+describe('WRAPPING_PRESERVES_FORMAT', () => {
+  test('**...** around already-bold text preserves bold', () => {
+    // https://github.com/facebook/lexical/issues/8727
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    editor.update(
+      () => {
+        const textNode = $createTextNode('**bold*').toggleFormat('bold');
+        $getRoot()
+          .selectEnd()
+          .insertNodes([$createParagraphNode().append(textNode)]);
+        textNode.selectEnd().setFormat(textNode.getFormat());
+      },
+      {discrete: true},
+    );
+    typeMarkdown(editor, '*');
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const children = paragraph.getChildren();
+      expect(children).toHaveLength(1);
+      const textNode = children[0];
+      assert($isTextNode(textNode), 'Child must be a TextNode');
+      expect(textNode.getTextContent()).toBe('bold');
+      expect(textNode.hasFormat('bold')).toBe(true);
+    });
+  });
+
+  test('**...** around mixed-format text formats every wrapped node bold', () => {
+    // https://github.com/facebook/lexical/issues/8727
+    using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
+    editor.update(
+      () => {
+        const plainNode = $createTextNode('**foo');
+        const boldNode = $createTextNode('bar*');
+        boldNode.toggleFormat('bold');
+        $getRoot()
+          .selectEnd()
+          .insertNodes([
+            $createParagraphNode().append(plainNode).append(boldNode),
+          ]);
+        boldNode.selectEnd().setFormat(boldNode.getFormat());
+      },
+      {discrete: true},
+    );
+    typeMarkdown(editor, '*');
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      expect(paragraph.getTextContent()).toBe('foobar');
+      const textNodes = paragraph
+        .getChildren()
+        .filter(node => $isTextNode(node));
+      expect(textNodes.every(node => node.hasFormat('bold'))).toBe(true);
+    });
+  });
+});
+
 describe('HISTORY', () => {
   test('undo after markdown format transform preserves typed markdown text', () => {
     using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);

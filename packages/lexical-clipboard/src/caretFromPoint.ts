@@ -27,36 +27,64 @@ function isWithinComposedTree(node: Node | null, rootElement: HTMLElement) {
   return false;
 }
 
-// Find the closest caret position at (x, y) by walking text nodes
-// under `container` and measuring each offset via a collapsed Range.
-// Linear scan — not a hot path (runs once per drag-drop).
+// Find the closest caret position at (x, y) by walking text nodes under
+// `container`. Two-phase: pick the nearest text node via getClientRects(),
+// then scan offsets within that single node. Vertical-first comparison
+// prevents cross-line mispicks on wrapped spans and RTL/bidi text.
+// Not a hot path (runs once per drag-drop).
 function findTextOffsetAtPoint(
   x: number,
   y: number,
   container: Node,
   doc: Document,
 ): {node: Node; offset: number} | null {
-  const walker = doc.createTreeWalker(container, NodeFilter.SHOW_TEXT);
-  let bestNode: Node | null = null;
-  let bestOffset = 0;
-  let bestDist = Infinity;
   const range = doc.createRange();
-  let textNode: Node | null;
-  while ((textNode = walker.nextNode()) !== null) {
-    const len = textNode.textContent!.length;
-    for (let i = 0; i <= len; i++) {
-      range.setStart(textNode, i);
-      range.collapse(true);
-      const rect = range.getBoundingClientRect();
-      const dist = Math.hypot(x - rect.left, y - (rect.top + rect.height / 2));
-      if (dist < bestDist) {
-        bestDist = dist;
-        bestNode = textNode;
-        bestOffset = i;
+
+  const vDist = (r: DOMRect) =>
+    y < r.top ? r.top - y : y > r.bottom ? y - r.bottom : 0;
+  const hDist = (r: DOMRect) =>
+    x < r.left ? r.left - x : x > r.right ? x - r.right : 0;
+
+  // Phase 1: pick the nearest text node via one getClientRects() per node
+  // (each returns its per-line fragments) so phase 2 scans a single node.
+  const walker = doc.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  let bestNode: Text | null = null;
+  let bestV = Infinity;
+  let bestH = Infinity;
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    range.selectNodeContents(n);
+    for (const r of range.getClientRects()) {
+      const v = vDist(r);
+      const h = hDist(r);
+      if (v < bestV || (v === bestV && h < bestH)) {
+        bestV = v;
+        bestH = h;
+        bestNode = n as Text;
       }
     }
   }
-  return bestNode !== null ? {node: bestNode, offset: bestOffset} : null;
+  if (bestNode === null) {
+    return null;
+  }
+
+  // Phase 2: closest caret offset within that node, vertical-first again
+  // (so LTR and RTL both land on the right line).
+  let bestOffset = 0;
+  let offV = Infinity;
+  let offH = Infinity;
+  for (let i = 0; i <= bestNode.length; i++) {
+    range.setStart(bestNode, i);
+    range.collapse(true);
+    const r = range.getBoundingClientRect();
+    const v = vDist(r);
+    const h = Math.abs(x - r.left);
+    if (v < offV || (v === offV && h < offH)) {
+      offV = v;
+      offH = h;
+      bestOffset = i;
+    }
+  }
+  return {node: bestNode, offset: bestOffset};
 }
 
 /** @internal */
@@ -93,7 +121,9 @@ export function caretFromPoint(
       const element = rootNode.elementFromPoint(x, y);
       if (element !== null && rootElement.contains(element)) {
         const result = findTextOffsetAtPoint(x, y, element, doc);
-        return result !== null ? result : {node: element, offset: 0};
+        if (result !== null) {
+          return result;
+        }
       }
       // The point missed the editor's shadow content (gutter/padding, slotted
       // content, or a sibling outside rootElement). Fall through to the legacy

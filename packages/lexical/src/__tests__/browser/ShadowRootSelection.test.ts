@@ -1096,5 +1096,82 @@ describe('DOM shadow root selection (browser)', () => {
       const result = caretFromPoint(-9999, -9999, contentEditable);
       expect(result).toBeNull();
     });
+
+    test('vertical-first comparison picks the correct line on a wrapped span', () => {
+      // Single text node forced to wrap via break-all into 2 lines with
+      // unequal widths (6 chars in a ~5-char-wide container: line 1 = 5
+      // chars full width, line 2 = 1 char).  Drop at (x = right edge of
+      // line 1, y = line 2 midpoint).  Euclidean distance (Math.hypot)
+      // picks line 1's right-end caret (~18 px away); vertical-first
+      // correctly picks line 2.
+      const {contentEditable} = setUpShadowEditor('AAAAAA');
+      contentEditable.style.width = '55px';
+      contentEditable.style.wordBreak = 'break-all';
+      contentEditable.style.font = '16px monospace';
+
+      const textNode = getInnerTextNode(contentEditable);
+      const originalCaretPos = document.caretPositionFromPoint;
+      document.caretPositionFromPoint =
+        undefined as unknown as typeof document.caretPositionFromPoint;
+      onTestFinished(() => {
+        document.caretPositionFromPoint = originalCaretPos;
+      });
+
+      const rects = (() => {
+        const r = document.createRange();
+        r.selectNodeContents(textNode);
+        return Array.from(r.getClientRects());
+      })();
+      assert(rects.length >= 2, 'text must wrap into at least 2 lines');
+      const firstLineRect = rects[0];
+      const secondLineRect = rects[1];
+      assert(
+        firstLineRect.width > secondLineRect.width,
+        'line 1 must be wider than line 2 for the mispick scenario',
+      );
+      // Drop at right edge of line 1, vertically on line 2.
+      const dropX = firstLineRect.right - 2;
+      const dropY = secondLineRect.top + secondLineRect.height / 2;
+
+      const result = caretFromPoint(dropX, dropY, contentEditable);
+      expect(result).not.toBeNull();
+      expect(result!.node).toBe(textNode);
+      // The resolved offset must be on the second line.
+      const verifyRange = document.createRange();
+      verifyRange.setStart(result!.node, result!.offset);
+      verifyRange.collapse(true);
+      const caretRect = verifyRange.getBoundingClientRect();
+      expect(caretRect.top).toBeGreaterThanOrEqual(secondLineRect.top - 1);
+    });
+
+    test('falls through to caretRangeFromPoint when element has no text nodes', () => {
+      const {contentEditable} = setUpShadowEditor('Hello');
+      // Stub caretPositionFromPoint to force the fallback path.
+      const originalCaretPos = document.caretPositionFromPoint;
+      document.caretPositionFromPoint =
+        undefined as unknown as typeof document.caretPositionFromPoint;
+      onTestFinished(() => {
+        document.caretPositionFromPoint = originalCaretPos;
+      });
+
+      // Insert an empty div inside the shadow editor so elementFromPoint
+      // hits an element with no text children.
+      const emptyDiv = document.createElement('div');
+      emptyDiv.style.height = '20px';
+      emptyDiv.style.width = '100px';
+      contentEditable.prepend(emptyDiv);
+
+      const rect = emptyDiv.getBoundingClientRect();
+      const result = caretFromPoint(
+        rect.left + 5,
+        rect.top + 5,
+        contentEditable,
+      );
+      // findTextOffsetAtPoint returns null (no text in emptyDiv), so
+      // caretFromPoint falls through to caretRangeFromPoint.  The
+      // important invariant: no silent snap to {emptyDiv, 0}.
+      expect(result).not.toBeNull();
+      expect(result!.node).not.toBe(emptyDiv);
+    });
   });
 });

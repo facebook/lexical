@@ -3737,7 +3737,9 @@ export function $updateDOMSelection(
       // which getNearestEditorFromDOMNode can't map back to that editor, so
       // the guard would otherwise wrongly steal focus from a shadow-mounted
       // sibling.
-      const deepFocusedElement = getActiveElementDeep(rootElement.ownerDocument);
+      const deepFocusedElement = getActiveElementDeep(
+        rootElement.ownerDocument,
+      );
       const focusEditor =
         deepFocusedElement !== null
           ? getNearestEditorFromDOMNode(deepFocusedElement)

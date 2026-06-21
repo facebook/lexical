@@ -425,6 +425,27 @@ describe('Markdown', () => {
       md: '`$a` `$b`',
     },
     {
+      // Inline code containing a backtick must use a longer fence (CommonMark
+      // code spans) and pad with spaces so it round-trips losslessly.
+      html: '<p><span style="white-space: pre-wrap;">Here: </span><code spellcheck="false" style="white-space: pre-wrap;"><span>a`b</span></code></p>',
+      md: 'Here: `` a`b ``',
+    },
+    {
+      // Two consecutive backticks in the content bump the fence to three.
+      html: '<p><span style="white-space: pre-wrap;">Code: </span><code spellcheck="false" style="white-space: pre-wrap;"><span>a``b</span></code></p>',
+      md: 'Code: ``` a``b ```',
+    },
+    {
+      // Content beginning with a backtick is padded so the fence stays distinct.
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>`x</span></code></p>',
+      md: '`` `x ``',
+    },
+    {
+      // The code fence must remain the innermost wrapping, inside bold.
+      html: '<p><b><code spellcheck="false" style="white-space: pre-wrap;"><strong>a`b</strong></code></b></p>',
+      md: '**`` a`b ``**',
+    },
+    {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">Hello</span></a><span style="white-space: pre-wrap;"> world</span></p>',
       md: '[Hello](https://lexical.dev) world',
     },
@@ -883,11 +904,9 @@ describe('Markdown', () => {
         },
       );
 
-      expect(
-        editor
-          .getEditorState()
-          .read(() => $generateHtmlFromNodes(editor), {editor}),
-      ).toBe(html);
+      expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+        html,
+      );
     });
   }
 
@@ -929,15 +948,13 @@ describe('Markdown', () => {
       );
 
       expect(
-        editor
-          .getEditorState()
-          .read(() =>
-            $convertToMarkdownString(
-              [...(customTransformers || []), ...TRANSFORMERS],
-              undefined,
-              shouldPreserveNewLines,
-            ),
+        editor.read('latest', () =>
+          $convertToMarkdownString(
+            [...(customTransformers || []), ...TRANSFORMERS],
+            undefined,
+            shouldPreserveNewLines,
           ),
+        ),
       ).toBe(mdAfterExport ?? md);
     });
   }
@@ -983,7 +1000,7 @@ describe('Markdown', () => {
         },
       );
 
-      expect(editor.getEditorState().read(() => $getSelection())).toBe(null);
+      expect(editor.read('latest', () => $getSelection())).toBe(null);
     });
   }
 
@@ -1111,9 +1128,7 @@ describe('Markdown', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
     ).toBe(markdown);
   });
 
@@ -1148,9 +1163,7 @@ describe('Markdown', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
     ).toBe(markdown);
   });
 
@@ -1173,9 +1186,9 @@ describe('Markdown', () => {
     );
 
     // Export should compute fence to be ```` (4 backticks) since content contains ```
-    const exported = editor
-      .getEditorState()
-      .read(() => $convertToMarkdownString(TRANSFORMERS));
+    const exported = editor.read('latest', () =>
+      $convertToMarkdownString(TRANSFORMERS),
+    );
 
     expect(exported).toBe(
       '````markdown\n```js\nconsole.log("hello");\n```\n````',
@@ -1198,7 +1211,7 @@ describe('Markdown', () => {
           ),
         {discrete: true},
       );
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const node = $getRoot().getFirstChild();
         expect(node).toBeInstanceOf(ListNode);
         const marker = node ? $getState(node, listMarkerState) : undefined;
@@ -1271,7 +1284,7 @@ describe('Markdown', () => {
         },
         {discrete: true},
       );
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const markdownString = $convertToMarkdownString(
           [...TRANSFORMERS],
           undefined,
@@ -1897,15 +1910,13 @@ bar`;
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString(
-            [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
-            undefined,
-            true,
-          ),
+      editor.read('latest', () =>
+        $convertToMarkdownString(
+          [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
+          undefined,
+          true,
         ),
+      ),
     ).toBe(md);
   });
 
@@ -1937,15 +1948,13 @@ bar`;
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString(
-            [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
-            undefined,
-            true,
-          ),
+      editor.read('latest', () =>
+        $convertToMarkdownString(
+          [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
+          undefined,
+          true,
         ),
+      ),
     ).toBe(md);
   });
 });
@@ -1980,14 +1989,12 @@ describe('markdown whitespace import (default mode)', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe(md);
   }
 
@@ -2009,7 +2016,7 @@ describe('markdown whitespace import (default mode)', () => {
       {discrete: true},
     );
 
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const block = $getRoot().getFirstChildOrThrow();
       assert($isElementNode(block), 'Expected an element block');
       const lineBreakNode = block
@@ -2028,14 +2035,12 @@ describe('markdown whitespace import (default mode)', () => {
     });
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe(md);
   }
 
@@ -2054,14 +2059,12 @@ describe('markdown whitespace import (default mode)', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe(md);
   });
 
@@ -2079,14 +2082,12 @@ describe('markdown whitespace import (default mode)', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe(md);
   });
 
@@ -2132,7 +2133,7 @@ describe('markdown whitespace import (default mode)', () => {
       {discrete: true},
     );
 
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const block = $getRoot().getFirstChildOrThrow();
       assert($isElementNode(block), 'Expected an element block');
       const lineBreakNode = block
@@ -2145,14 +2146,12 @@ describe('markdown whitespace import (default mode)', () => {
     });
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe(md);
   });
 
@@ -2206,14 +2205,12 @@ describe('markdown whitespace import (default mode)', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe('foo   \nbar');
   });
 
@@ -2258,9 +2255,7 @@ describe('markdown Safari compatibility (issue #8012)', () => {
     editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
       discrete: true,
     });
-    return editor
-      .getEditorState()
-      .read(() => $convertToMarkdownString(TRANSFORMERS));
+    return editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS));
   }
 
   it('does not throw when constructing markdown regex patterns', () => {
@@ -2290,9 +2285,9 @@ describe('markdown Safari compatibility (issue #8012)', () => {
       () => $convertFromMarkdownString('\\`not code\\`', TRANSFORMERS),
       {discrete: true},
     );
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('`not code`');
   });
 
@@ -2303,6 +2298,68 @@ describe('markdown Safari compatibility (issue #8012)', () => {
 
   it('does not apply emphasis formatting inside a code span', () => {
     expect(roundtrip('`**not bold**`')).toBe('`**not bold**`');
+  });
+});
+
+describe('inline code with backticks (CommonMark code spans)', () => {
+  function createTestEditor() {
+    return createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+  }
+
+  function roundtrip(md: string): string {
+    const editor = createTestEditor();
+    editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+      discrete: true,
+    });
+    return editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS));
+  }
+
+  function exportCodeSpan(content: string): string {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode(content);
+        text.toggleFormat('code');
+        paragraph.append(text);
+        $getRoot().append(paragraph);
+      },
+      {discrete: true},
+    );
+    return editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS));
+  }
+
+  it('round-trips code spans whose content contains backticks', () => {
+    expect(roundtrip('Here: `` a`b ``')).toBe('Here: `` a`b ``');
+    expect(roundtrip('Code: ``` a``b ```')).toBe('Code: ``` a``b ```');
+    expect(roundtrip('`` `x ``')).toBe('`` `x ``');
+  });
+
+  it('exports a content-derived fence longer than any backtick run', () => {
+    expect(exportCodeSpan('block code')).toBe('`block code`');
+    expect(exportCodeSpan('a`b')).toBe('`` a`b ``');
+    expect(exportCodeSpan('a``b')).toBe('``` a``b ```');
+    expect(exportCodeSpan('`x')).toBe('`` `x ``');
+  });
+
+  it('normalizes a redundant inline fence to the minimal valid fence', () => {
+    // Both a single- and triple-backtick inline fence with backtick-free
+    // content normalize to a single backtick on export.
+    expect(roundtrip('a `block code` b')).toBe('a `block code` b');
+    expect(roundtrip('a ```block code``` b')).toBe('a `block code` b');
+  });
+
+  it('keeps the code fence innermost when combined with bold', () => {
+    expect(roundtrip('**`` a`b ``**')).toBe('**`` a`b ``**');
   });
 });
 
@@ -2333,12 +2390,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('Hello World');
   });
 
@@ -2355,12 +2409,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('World');
   });
 
@@ -2385,12 +2436,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('Hello **Bold**');
   });
 
@@ -2412,12 +2460,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('');
   });
 
@@ -2434,12 +2479,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('Hello');
   });
 
@@ -2464,12 +2506,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('First paragraph\n\nSecond paragraph');
   });
 
@@ -2496,12 +2535,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('- Item 1\n- Item 2');
   });
 
@@ -2522,12 +2558,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('[link](https://example.com)');
   });
 
@@ -2557,12 +2590,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('- Item 2\n- It');
   });
 
@@ -2581,12 +2611,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('> Line 2');
   });
 
@@ -2618,12 +2645,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('    - Nested A');
   });
 });

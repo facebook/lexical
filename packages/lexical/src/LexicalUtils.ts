@@ -2666,7 +2666,7 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
     | StaticNodeConfigValue<LexicalNode, string | symbol>;
 } {
   const nodeConfigRecord =
-    PROTOTYPE_CONFIG_METHOD in klass.prototype
+    klass.prototype != null && PROTOTYPE_CONFIG_METHOD in klass.prototype
       ? klass.prototype[PROTOTYPE_CONFIG_METHOD]()
       : undefined;
   const isAbstract = isAbstractNodeClass(klass);

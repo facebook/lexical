@@ -27,7 +27,7 @@ import {useCallback, useEffect, useState} from 'react';
  */
 
 function isNodeSelected(editor: LexicalEditor, key: NodeKey): boolean {
-  return editor.getEditorState().read(() => {
+  return editor.read('latest', () => {
     const node = $getNodeByKey(key);
 
     if (node === null) {

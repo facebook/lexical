@@ -145,11 +145,11 @@ export class MarkNode extends ElementNode {
     return markNode;
   }
 
-  canInsertTextBefore(): false {
+  canInsertTextBefore(): boolean {
     return false;
   }
 
-  canInsertTextAfter(): false {
+  canInsertTextAfter(): boolean {
     return false;
   }
 

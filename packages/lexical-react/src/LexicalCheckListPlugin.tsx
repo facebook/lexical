@@ -10,6 +10,17 @@ import {registerCheckList} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 
+/**
+ * Enables check list support, wiring up the keyboard and pointer interactions
+ * that toggle the checked state of check list items. Pass
+ * `disableTakeFocusOnClick` to stop the editor from taking focus when a
+ * checkbox is clicked.
+ *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link CheckListExtension} instead.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function CheckListPlugin({
   disableTakeFocusOnClick = false,
 }: {

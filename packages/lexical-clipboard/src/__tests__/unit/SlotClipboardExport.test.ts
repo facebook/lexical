@@ -15,6 +15,7 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {
   $create,
+  $createNodeSelection,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -336,6 +337,58 @@ describe('slot clipboard export', () => {
       expect(html).toContain('Bo');
       expect(html).not.toContain('Body');
       expect(html).not.toContain('UNSELECTED');
+    });
+  });
+
+  // Regression for facebook/lexical#8712: the slot-frame redirect that lets
+  // a selection inside a slot subtree export through its frame (instead of
+  // root, which is shadow-isolated from the slot) only ran for
+  // RangeSelection. A NodeSelection on a node nested inside a slot
+  // resolved to a null frame, the root-children walk missed the selected
+  // node, and the export produced `{nodes: []}` — empty clipboard, cut =
+  // silent data loss. Now anchors the frame redirect on the first selected
+  // node when the selection is a NodeSelection.
+  test('a NodeSelection on a node inside a slot exports the node, not an empty list', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[slot-node-selection]',
+        nodes: [PlainShadowRootNode],
+      }),
+    );
+    let innerParaKey = '';
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        const slot = $createPlainShadowRootNode();
+        const innerPara = $createParagraphNode().append(
+          $createTextNode('SlotNodeTarget'),
+        );
+        slot.append(innerPara);
+        $setSlot(host, 'media', slot);
+        $getRoot().append(host);
+        innerParaKey = innerPara.getKey();
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        const innerPara = $getNodeByKey(innerParaKey);
+        assert(innerPara !== null);
+        const nodeSelection = $createNodeSelection();
+        nodeSelection.add(innerPara.getKey());
+        $setSelection(nodeSelection);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const selection = $getSelection();
+      const json = $generateJSONFromSelectedNodes(editor, selection);
+      // Pre-fix: nodes.length === 0 and the cut path silently dropped the
+      // selected node. Post-fix: the redirected walk through the slot's
+      // frame finds the selected paragraph.
+      expect(json.nodes.length).toBeGreaterThan(0);
+      expect(JSON.stringify(json.nodes)).toContain('SlotNodeTarget');
     });
   });
 

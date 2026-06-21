@@ -73,6 +73,13 @@ function $defaultCanIndent(node: ElementNode) {
   return node.canIndent();
 }
 
+/**
+ * Registers a `KEY_TAB_COMMAND` handler that makes Tab and Shift+Tab indent and
+ * outdent block elements (and otherwise insert a tab). Pass `maxIndent` to cap
+ * the indent depth and `$canIndent` to control which elements may be indented.
+ *
+ * @returns A cleanup function that unregisters the handler.
+ */
 export function registerTabIndentation(
   editor: LexicalEditor,
   maxIndent?: number | ReadonlySignal<null | number>,

@@ -9,6 +9,7 @@
 
 export type LexicalErrorBoundaryProps = Readonly<{
   children: React.Node,
+  fallback?: React.Node,
   onError: (error: Error) => void,
 }>;
 

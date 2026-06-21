@@ -55,6 +55,15 @@ type CollaborationPluginProps = {
   selectionHighlight?: boolean;
 };
 
+/**
+ * Connects the editor to a Yjs document for real-time collaboration, syncing
+ * editor state and rendering remote users' cursors and selections. Provide a
+ * `providerFactory` that creates the Yjs {@link Provider} for the given
+ * document `id`. Must be used within a {@link LexicalCollaboration} provider.
+ *
+ * @returns The element that renders collaborators' cursors (or an empty
+ * fragment until the provider and binding are initialized).
+ */
 export function CollaborationPlugin({
   id,
   providerFactory,
@@ -226,6 +235,15 @@ type CollaborationPluginV2Props = {
   selectionHighlight?: boolean;
 };
 
+/**
+ * A variant of {@link CollaborationPlugin} that takes an already-created Yjs
+ * `doc` and {@link Provider} directly instead of a provider factory, giving the
+ * application full control over their lifecycle. Must be used within a
+ * {@link LexicalCollaboration} provider.
+ *
+ * @experimental The API may change in a future release.
+ * @returns The element that renders collaborators' cursors.
+ */
 export function CollaborationPluginV2__EXPERIMENTAL({
   id,
   doc,

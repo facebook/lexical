@@ -41,7 +41,6 @@ import {GenMap} from './LexicalGenMap';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
 import {LexicalNode} from './LexicalNode';
 import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
-import {$isSlotHost} from './LexicalSlot';
 import {
   $commitPendingUpdates,
   $fullReconcile,
@@ -148,7 +147,8 @@ export type EditorSetOptions = {
  *   state.
  * - `'pending'` reads the pending state if it exists, otherwise the committed
  *   state, without flushing. This is safe to call when an update may already
- *   be in progress at the cost of possibly observing an uncommitted state.
+ *   be in progress at the cost of possibly observing an uncommitted state
+ *   before node transforms, DOM reconciliation, etc. have run.
  * - `'latest'` reads the latest committed state without flushing pending
  *   updates, equivalent to `editor.getEditorState().read(callbackFn, {editor})`.
  */
@@ -1652,35 +1652,40 @@ export class LexicalEditor {
     this._dirtyType = FULL_RECONCILE;
     this._dirtyElements.set('root', false);
     this._compositionKey = null;
-
-    // `_slotsUsed` is normally latched by `$setSlot`, but `setEditorState`
-    // swaps in a parsed state without walking it. If the incoming state
-    // already contains slot nodes (e.g. SSR + hydration, cross-editor state
-    // transfer), latch on so the selection clamps still kick in on this
-    // editor.
-    if (!this._slotsUsed) {
-      for (const node of writableEditorState._nodeMap.values()) {
-        if (
-          $isSlotHost(node) &&
-          node.__slots !== null &&
-          node.__slots.size > 0
-        ) {
-          this._slotsUsed = true;
-          break;
-        }
-      }
-    }
-
-    if (tag != null) {
-      this._updateTags.add(tag);
-    }
+    this._slotsUsed = this._slotsUsed || editorState._slotsUsed;
 
     // Only commit pending updates if not already in an editor.update
     // (e.g. dispatchCommand) otherwise this will cause a second commit
     // with an already read-only state and selection
-    if (!this._updating) {
-      $commitPendingUpdates(this);
-    }
+    updateEditorSync(
+      this,
+      () => {
+        if (tag) {
+          this._updateTags.add(tag);
+        }
+        if (editorState._parsed) {
+          for (const [key, node] of writableEditorState._nodeMap.entries()) {
+            // Mark all nodes as dirty with a freshly parsed EditorState
+            // hydrate-time normalize: external inputs (URL doc payloads, imported
+            // JSON, paste round-trips) may carry shadow-root slot frames whose
+            // children violate the `Children of root nodes must be elements or
+            // decorators` invariant set by `getTopLevelElement`. In-editor mutation
+            // paths still fail-fast on the invariant — this only catches shapes
+            // that were parsed in from outside.
+            //
+            // Drives the existing dirty-node transform cycle: dirty-mark the slot
+            // hosts so `ElementNode`'s `$config` `$transform` (which calls
+            // `$normalizeShadowRootChildren`) picks them up.
+            if ($isElementNode(node)) {
+              this._dirtyElements.set(key, true);
+            } else {
+              this._dirtyLeaves.add(key);
+            }
+          }
+        }
+      },
+      {discrete: this._updating ? undefined : true},
+    );
   }
 
   /**

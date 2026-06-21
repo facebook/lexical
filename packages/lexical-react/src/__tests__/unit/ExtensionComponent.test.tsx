@@ -17,8 +17,8 @@ import {
 } from '@lexical/react/useExtensionComponent';
 import {defineExtension, type LexicalExtensionDependency} from 'lexical';
 import * as React from 'react';
+import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
-import {act} from 'react-dom/test-utils';
 import {assertType, describe, expect, it} from 'vitest';
 
 interface RequiredProps {

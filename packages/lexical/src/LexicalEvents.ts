@@ -201,14 +201,24 @@ let handledSelectionCommandTimeoutId: null | ReturnType<typeof setTimeout> =
 // Node can be moved between documents (for example using createPortal), so we
 // need to track the document each root element was originally registered on.
 const rootElementToDocument = new WeakMap<HTMLElement, Document>();
-const rootElementsRegistered = new WeakMap<Document, number>();
-// Every mounted editor registered for the shared `selectionchange`
-// listener, keyed by the document it was registered against. Allows
-// `onDocumentSelectionChange` to attribute the event to the editor whose
-// shadow-aware anchor actually changed, rather than guessing from
-// `Selection.anchorNode` (which the engine retargets up to a light-DOM
-// ancestor when the selection lives in a shadow tree).
-const editorsByDocument: WeakMap<Document, Set<LexicalEditor>> = new WeakMap();
+// Per-document state for the shared `selectionchange` listener, keyed by the
+// document each root element was registered against:
+// - `rootElementCount` gates the single listener (attached while > 0).
+// - `editors` is the candidate set `onDocumentSelectionChange` attributes the
+//   event to, using each editor's shadow-aware anchor rather than guessing from
+//   `Selection.anchorNode` (retargeted to a light-DOM ancestor inside a shadow
+//   tree).
+// - `hasShadowEditor` caches whether any editor here is shadow-mounted
+//   (`undefined` = needs recompute), so the handler avoids an O(editors)
+//   `getRootNode()` scan per selectionchange. Invalidated whenever the editor
+//   set changes — which, via setRootElement, is where an editor's root (and
+//   thus its shadow-mounted status) is rebound.
+interface DocumentRegistration {
+  editors: Set<LexicalEditor>;
+  hasShadowEditor: boolean | undefined;
+  rootElementCount: number;
+}
+const documentRegistrations = new WeakMap<Document, DocumentRegistration>();
 let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
 let isInsertLineBreak = false;
@@ -1534,17 +1544,22 @@ function onDocumentSelectionChange(event: Event): void {
   let nextActiveEditor: LexicalEditor | null = null;
   let resolvedAnchorNode: Node | null = null;
   if (ownerDocument !== null) {
-    const editorsForDoc = editorsByDocument.get(ownerDocument);
-    if (editorsForDoc !== undefined) {
-      let hasShadow = false;
-      for (const ed of editorsForDoc) {
-        if (
-          ed._rootElement !== null &&
-          isDOMShadowRoot(ed._rootElement.getRootNode())
-        ) {
-          hasShadow = true;
-          break;
+    const registration = documentRegistrations.get(ownerDocument);
+    if (registration !== undefined) {
+      const editorsForDoc = registration.editors;
+      let hasShadow = registration.hasShadowEditor;
+      if (hasShadow === undefined) {
+        hasShadow = false;
+        for (const ed of editorsForDoc) {
+          if (
+            ed._rootElement !== null &&
+            isDOMShadowRoot(ed._rootElement.getRootNode())
+          ) {
+            hasShadow = true;
+            break;
+          }
         }
+        registration.hasShadowEditor = hasShadow;
       }
       if (!hasShadow) {
         const anchorNode = domSelection.anchorNode;
@@ -1686,18 +1701,21 @@ export function addRootElementEvents(
   // between all editor instances.
   const doc = rootElement.ownerDocument;
   rootElementToDocument.set(rootElement, doc);
-  const documentRootElementsCount = rootElementsRegistered.get(doc) ?? 0;
-  if (documentRootElementsCount < 1) {
+  let registration = documentRegistrations.get(doc);
+  if (registration === undefined) {
+    registration = {
+      editors: new Set(),
+      hasShadowEditor: undefined,
+      rootElementCount: 0,
+    };
+    documentRegistrations.set(doc, registration);
+  }
+  if (registration.rootElementCount < 1) {
     doc.addEventListener('selectionchange', onDocumentSelectionChange);
   }
-  rootElementsRegistered.set(doc, documentRootElementsCount + 1);
-
-  let editorsForDoc = editorsByDocument.get(doc);
-  if (editorsForDoc === undefined) {
-    editorsForDoc = new Set();
-    editorsByDocument.set(doc, editorsForDoc);
-  }
-  editorsForDoc.add(editor);
+  registration.rootElementCount += 1;
+  registration.editors.add(editor);
+  registration.hasShadowEditor = undefined;
 
   // @ts-expect-error: internal field
   rootElement.__lexicalEditor = editor;
@@ -1802,8 +1820,8 @@ export function removeRootElementEvents(rootElement: HTMLElement): void {
     return;
   }
 
-  const documentRootElementsCount = rootElementsRegistered.get(doc);
-  if (documentRootElementsCount === undefined) {
+  const registration = documentRegistrations.get(doc);
+  if (registration === undefined) {
     // This can happen if setRootElement() failed
     rootElementNotRegisteredWarning();
     return;
@@ -1811,10 +1829,10 @@ export function removeRootElementEvents(rootElement: HTMLElement): void {
 
   // We only want to have a single global selectionchange event handler, shared
   // between all editor instances.
-  const newCount = documentRootElementsCount - 1;
+  const newCount = registration.rootElementCount - 1;
   invariant(newCount >= 0, 'Root element count less than 0');
   rootElementToDocument.delete(rootElement);
-  rootElementsRegistered.set(doc, newCount);
+  registration.rootElementCount = newCount;
   if (newCount === 0) {
     doc.removeEventListener('selectionchange', onDocumentSelectionChange);
   }
@@ -1823,10 +1841,8 @@ export function removeRootElementEvents(rootElement: HTMLElement): void {
 
   if (isLexicalEditor(editor)) {
     cleanActiveNestedEditorsMap(editor);
-    const editorsForDoc = editorsByDocument.get(doc);
-    if (editorsForDoc !== undefined) {
-      editorsForDoc.delete(editor);
-    }
+    registration.editors.delete(editor);
+    registration.hasShadowEditor = undefined;
     // @ts-expect-error: internal field
     rootElement.__lexicalEditor = null;
   } else if (editor) {

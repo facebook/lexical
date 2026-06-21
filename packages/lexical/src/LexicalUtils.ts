@@ -2291,7 +2291,10 @@ function staticRangeToLiveRange(staticRange: StaticRange): Range | null {
 // Map a StaticRange + Selection.direction to anchor/focus pairs. Selection
 // returns boundaries in tree order, so a backward direction reverses the
 // pair before mapping (matching what Selection.anchorNode/focusNode would
-// have reported in the light DOM).
+// have reported in the light DOM). 'none' and undefined map to forward
+// (anchor=start): a 'none' selection is directionless (e.g. created via
+// Selection.addRange), which the spec pins to anchor=start/focus=end, so the
+// forward mapping is correct — only directional APIs ever report 'backward'.
 function staticRangeToPoints(
   staticRange: StaticRange,
   direction: 'forward' | 'backward' | 'none' | undefined,

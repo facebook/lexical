@@ -39,6 +39,7 @@ import {
   $getNearestNodeFromDOMNode,
   $getSiblingCaret,
   type EditorThemeClasses,
+  getComposedEventTarget,
   isDOMNode,
   isHTMLElement,
 } from 'lexical';
@@ -53,19 +54,19 @@ const SIDE_INDICATOR_SIZE_PX = 18;
 const TOP_BUTTON_OVERHANG = INDICATOR_SIZE_PX / 2;
 const LEFT_BUTTON_OVERHANG = SIDE_INDICATOR_SIZE_PX / 2;
 
-function getTableFromMouseEvent(
-  event: MouseEvent,
+function getTableFromTarget(
+  target: EventTarget | null,
   getTheme: () => EditorThemeClasses | null | undefined,
 ): {
   isOutside: boolean;
   tableElement: HTMLTableElement | null;
 } {
-  if (!isHTMLElement(event.target)) {
+  if (!isHTMLElement(target)) {
     return {isOutside: true, tableElement: null};
   }
 
   const cellSelector = `td${getThemeSelector(getTheme, 'tableCell')}, th${getThemeSelector(getTheme, 'tableCell')}`;
-  const cell = event.target.closest<HTMLTableCellElement>(cellSelector);
+  const cell = target.closest<HTMLTableCellElement>(cellSelector);
   const tableElement = cell?.closest<HTMLTableElement>('table') ?? null;
 
   return {
@@ -249,18 +250,19 @@ function TableHoverActionsV2({
     }
 
     const handleMouseMove = (event: MouseEvent) => {
+      const target = getComposedEventTarget(event);
       if (
         (floatingElemRef.current &&
-          isDOMNode(event.target) &&
-          floatingElemRef.current.contains(event.target)) ||
+          isDOMNode(target) &&
+          floatingElemRef.current.contains(target)) ||
         (leftFloatingElemRef.current &&
-          isDOMNode(event.target) &&
-          leftFloatingElemRef.current.contains(event.target))
+          isDOMNode(target) &&
+          leftFloatingElemRef.current.contains(target))
       ) {
         return;
       }
 
-      const {tableElement, isOutside} = getTableFromMouseEvent(event, getTheme);
+      const {tableElement, isOutside} = getTableFromTarget(target, getTheme);
 
       // Check ownership against the editor's root rather than anchorElem so
       // a shadow-rooted editor whose anchorElem still defaults to document.body
@@ -281,8 +283,8 @@ function TableHoverActionsV2({
       }
 
       const cellSelector = `td${getThemeSelector(getTheme, 'tableCell')}, th${getThemeSelector(getTheme, 'tableCell')}`;
-      const hoveredCell = isHTMLElement(event.target)
-        ? event.target.closest<HTMLTableCellElement>(cellSelector)
+      const hoveredCell = isHTMLElement(target)
+        ? target.closest<HTMLTableCellElement>(cellSelector)
         : null;
 
       if (!hoveredCell) {

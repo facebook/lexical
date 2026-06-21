@@ -250,16 +250,11 @@ describe('WRAPPING_PRESERVES_FORMAT', () => {
     using editor = buildEditorFromExtensions([MarkdownShortcutTestExtension]);
     editor.update(
       () => {
-        const textNode = $createTextNode('**bold*');
-        textNode.toggleFormat('bold');
+        const textNode = $createTextNode('**bold*').toggleFormat('bold');
         $getRoot()
           .selectEnd()
           .insertNodes([$createParagraphNode().append(textNode)]);
-        textNode.select(7, 7);
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          selection.setFormat(textNode.getFormat());
-        }
+        textNode.selectEnd().setFormat(textNode.getFormat());
       },
       {discrete: true},
     );
@@ -289,11 +284,7 @@ describe('WRAPPING_PRESERVES_FORMAT', () => {
           .insertNodes([
             $createParagraphNode().append(plainNode).append(boldNode),
           ]);
-        boldNode.select(4, 4);
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          selection.setFormat(boldNode.getFormat());
-        }
+        boldNode.selectEnd().setFormat(boldNode.getFormat());
       },
       {discrete: true},
     );

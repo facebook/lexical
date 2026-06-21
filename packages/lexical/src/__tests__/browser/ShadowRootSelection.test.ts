@@ -1098,14 +1098,13 @@ describe('DOM shadow root selection (browser)', () => {
     });
 
     test('vertical-first comparison picks the correct line on a wrapped span', () => {
-      // Single text node forced to wrap via break-all into 2 lines with
-      // unequal widths (6 chars in a ~5-char-wide container: line 1 = 5
-      // chars full width, line 2 = 1 char).  Drop at (x = right edge of
-      // line 1, y = line 2 midpoint).  Euclidean distance (Math.hypot)
-      // picks line 1's right-end caret (~18 px away); vertical-first
+      // Single text node forced to wrap via break-all into 2+ lines with
+      // unequal widths (7 chars in a narrow container).  Drop at (x =
+      // right edge of line 1, y = line 2 midpoint).  Euclidean distance
+      // (Math.hypot) picks line 1's right-end caret; vertical-first
       // correctly picks line 2.
-      const {contentEditable} = setUpShadowEditor('AAAAAA');
-      contentEditable.style.width = '55px';
+      const {contentEditable} = setUpShadowEditor('AAAAAAA');
+      contentEditable.style.width = '40px';
       contentEditable.style.wordBreak = 'break-all';
       contentEditable.style.font = '16px monospace';
 

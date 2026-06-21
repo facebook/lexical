@@ -1154,4 +1154,20 @@ describe('getParentElement', () => {
     const orphan = document.createElement('span');
     expect(getParentElement(orphan)).toBeNull();
   });
+
+  test('returns parent element for a text node inside a shadow tree', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    onTestFinished(() => host.remove());
+    const shadow = host.attachShadow({mode: 'open'});
+    const span = document.createElement('span');
+    shadow.appendChild(span);
+    const text = document.createTextNode('hello');
+    span.appendChild(text);
+
+    // Text node's parentElement is the span (no boundary crossed yet).
+    expect(getParentElement(text)).toBe(span);
+    // From the span, the next call crosses the shadow boundary to the host.
+    expect(getParentElement(span)).toBe(host);
+  });
 });

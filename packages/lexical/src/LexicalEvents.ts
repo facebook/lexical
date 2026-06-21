@@ -1560,19 +1560,12 @@ function onDocumentSelectionChange(event: Event): void {
         // root, so an inner shadow editor inside a light-DOM outer editor
         // wins attribution before the outer candidate sees the host-retargeted
         // anchor that lands inside outer's tree.
-        const sorted = Array.from(editorsForDoc).sort((a, b) => {
-          const aShadow =
-            a._rootElement !== null &&
-            isDOMShadowRoot(a._rootElement.getRootNode());
-          const bShadow =
-            b._rootElement !== null &&
-            isDOMShadowRoot(b._rootElement.getRootNode());
-          if (aShadow === bShadow) {
-            return 0;
-          }
-          return aShadow ? -1 : 1;
-        });
-        for (const candidate of sorted) {
+        //
+        // Single pass with deferred light-DOM fallback avoids Array.from +
+        // sort and the redundant getRootNode calls the comparator needed.
+        let deferredLightEditor: LexicalEditor | null = null;
+        let deferredLightAnchor: Node | null = null;
+        for (const candidate of editorsForDoc) {
           const candidateRoot = candidate._rootElement;
           if (candidateRoot === null) {
             continue;
@@ -1584,11 +1577,22 @@ function onDocumentSelectionChange(event: Event): void {
           if (anchorNode === null) {
             continue;
           }
-          if (getNearestEditorFromDOMNode(anchorNode) === candidate) {
+          if (getNearestEditorFromDOMNode(anchorNode) !== candidate) {
+            continue;
+          }
+          if (isDOMShadowRoot(candidateRoot.getRootNode())) {
             nextActiveEditor = candidate;
             resolvedAnchorNode = anchorNode;
             break;
           }
+          if (deferredLightEditor === null) {
+            deferredLightEditor = candidate;
+            deferredLightAnchor = anchorNode;
+          }
+        }
+        if (nextActiveEditor === null && deferredLightEditor !== null) {
+          nextActiveEditor = deferredLightEditor;
+          resolvedAnchorNode = deferredLightAnchor;
         }
       }
     }

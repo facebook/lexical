@@ -13,7 +13,15 @@ import * as React from 'react';
 import {act} from 'react';
 import ReactDOM from 'react-dom';
 import {createRoot, Root} from 'react-dom/client';
-import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  onTestFinished,
+  vi,
+} from 'vitest';
 
 import {
   LexicalMenu,
@@ -496,6 +504,7 @@ describe('useDynamicPositioning Comment 8 regression', () => {
     // fires exactly once.
     const host = document.createElement('div');
     document.body.appendChild(host);
+    onTestFinished(() => host.remove());
     const shadow = host.attachShadow({mode: 'open'});
 
     const editorScroller = document.createElement('div');
@@ -512,6 +521,7 @@ describe('useDynamicPositioning Comment 8 regression', () => {
 
     const target = document.createElement('div');
     document.body.appendChild(target);
+    onTestFinished(() => target.remove());
 
     vi.spyOn(ComposerContext, 'useLexicalComposerContext').mockReturnValue([
       shadowEditor,
@@ -528,6 +538,12 @@ describe('useDynamicPositioning Comment 8 regression', () => {
     const stubContainer = document.createElement('div');
     document.body.appendChild(stubContainer);
     const stubRoot = createRoot(stubContainer);
+    onTestFinished(async () => {
+      await act(async () => {
+        stubRoot.unmount();
+      });
+      stubContainer.remove();
+    });
     await act(async () => {
       stubRoot.render(<Stub />);
     });
@@ -536,12 +552,5 @@ describe('useDynamicPositioning Comment 8 regression', () => {
       ([eventName]) => eventName === 'scroll',
     );
     expect(scrollListenerCalls.length).toBeGreaterThan(0);
-
-    await act(async () => {
-      stubRoot.unmount();
-    });
-    document.body.removeChild(stubContainer);
-    document.body.removeChild(host);
-    document.body.removeChild(target);
   });
 });

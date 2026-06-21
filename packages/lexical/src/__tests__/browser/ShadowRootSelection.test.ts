@@ -173,47 +173,47 @@ describe('DOM shadow root selection (browser)', () => {
     expect(getDOMShadowRoots(host)).toEqual([]);
   });
 
-  test('getDOMSelectionPoints resolves a retargeted shadow selection', () => {
-    const {contentEditable, host} = setUpShadowEditor();
-    if (!SUPPORTS_COMPOSED_RANGES) {
-      return;
-    }
-    const {domSelection, textNode} = selectInnerText(contentEditable, 1, 4);
+  test.skipIf(!SUPPORTS_COMPOSED_RANGES)(
+    'getDOMSelectionPoints resolves a retargeted shadow selection',
+    () => {
+      const {contentEditable, host} = setUpShadowEditor();
+      const {domSelection, textNode} = selectInnerText(contentEditable, 1, 4);
 
-    const points = getDOMSelectionPoints(domSelection, contentEditable);
-    expect(points.direction).toBe('forward');
-    expect(points.anchorNode).toBe(textNode);
-    expect(points.anchorOffset).toBe(1);
-    expect(points.focusNode).toBe(textNode);
-    expect(points.focusOffset).toBe(4);
+      const points = getDOMSelectionPoints(domSelection, contentEditable);
+      expect(points.direction).toBe('forward');
+      expect(points.anchorNode).toBe(textNode);
+      expect(points.anchorOffset).toBe(1);
+      expect(points.focusNode).toBe(textNode);
+      expect(points.focusOffset).toBe(4);
 
-    // The composed StaticRange is in tree order.
-    const staticRange = getComposedStaticRange(domSelection, contentEditable);
-    expect(staticRange!.startContainer).toBe(textNode);
-    expect(staticRange!.startOffset).toBe(1);
-    expect(staticRange!.endOffset).toBe(4);
+      // The composed StaticRange is in tree order.
+      const staticRange = getComposedStaticRange(domSelection, contentEditable);
+      expect(staticRange!.startContainer).toBe(textNode);
+      expect(staticRange!.startOffset).toBe(1);
+      expect(staticRange!.endOffset).toBe(4);
 
-    // host is unused beyond proving the selection is inside its shadow tree.
-    expect(host.shadowRoot!.contains(textNode)).toBe(true);
-  });
+      // host is unused beyond proving the selection is inside its shadow tree.
+      expect(host.shadowRoot!.contains(textNode)).toBe(true);
+    },
+  );
 
-  test('getDOMSelectionPoints honors backward selections', () => {
-    const {contentEditable} = setUpShadowEditor();
-    if (!SUPPORTS_COMPOSED_RANGES) {
-      return;
-    }
-    const textNode = getInnerTextNode(contentEditable);
-    const domSelection = getDOMSelection(window)!;
-    domSelection.removeAllRanges();
-    // setBaseAndExtent with base after extent makes a backward selection.
-    domSelection.setBaseAndExtent(textNode, 5, textNode, 2);
+  test.skipIf(!SUPPORTS_COMPOSED_RANGES)(
+    'getDOMSelectionPoints honors backward selections',
+    () => {
+      const {contentEditable} = setUpShadowEditor();
+      const textNode = getInnerTextNode(contentEditable);
+      const domSelection = getDOMSelection(window)!;
+      domSelection.removeAllRanges();
+      // setBaseAndExtent with base after extent makes a backward selection.
+      domSelection.setBaseAndExtent(textNode, 5, textNode, 2);
 
-    const points = getDOMSelectionPoints(domSelection, contentEditable);
-    // anchor is the base (5), focus is the extent (2).
-    expect(points.direction).toBe('backward');
-    expect(points.anchorOffset).toBe(5);
-    expect(points.focusOffset).toBe(2);
-  });
+      const points = getDOMSelectionPoints(domSelection, contentEditable);
+      // anchor is the base (5), focus is the extent (2).
+      expect(points.direction).toBe('backward');
+      expect(points.anchorOffset).toBe(5);
+      expect(points.focusOffset).toBe(2);
+    },
+  );
 
   test('falls back to the Selection itself in the light DOM', () => {
     const light = document.createElement('div');
@@ -251,204 +251,205 @@ describe('DOM shadow root selection (browser)', () => {
     expect(getActiveElementDeep(document)).toBe(contentEditable);
   });
 
-  test('the reconciler writes selection onto the shadow inner nodes', () => {
-    const {contentEditable, editor, shadow} = setUpShadowEditor();
-    if (!SUPPORTS_COMPOSED_RANGES) {
-      return;
-    }
-    contentEditable.focus();
-    editor.update(
-      () => {
-        $getRoot().getAllTextNodes()[0].select(0, 5);
-      },
-      {discrete: true},
-    );
+  test.skipIf(!SUPPORTS_COMPOSED_RANGES)(
+    'the reconciler writes selection onto the shadow inner nodes',
+    () => {
+      const {contentEditable, editor, shadow} = setUpShadowEditor();
+      contentEditable.focus();
+      editor.update(
+        () => {
+          $getRoot().getAllTextNodes()[0].select(0, 5);
+        },
+        {discrete: true},
+      );
 
-    const textNode = getInnerTextNode(contentEditable);
-    const domSelection = getDOMSelection(window)!;
-    const points = getDOMSelectionPoints(domSelection, contentEditable);
-    expect(points.anchorNode).toBe(textNode);
-    expect(points.anchorOffset).toBe(0);
-    expect(points.focusNode).toBe(textNode);
-    expect(points.focusOffset).toBe(5);
-    // Focus landed inside the shadow tree.
-    expect(shadow.activeElement).toBe(contentEditable);
-  });
+      const textNode = getInnerTextNode(contentEditable);
+      const domSelection = getDOMSelection(window)!;
+      const points = getDOMSelectionPoints(domSelection, contentEditable);
+      expect(points.anchorNode).toBe(textNode);
+      expect(points.anchorOffset).toBe(0);
+      expect(points.focusNode).toBe(textNode);
+      expect(points.focusOffset).toBe(5);
+      // Focus landed inside the shadow tree.
+      expect(shadow.activeElement).toBe(contentEditable);
+    },
+  );
 
-  test('reading the DOM selection resolves shadow nodes into the model', () => {
-    const {contentEditable, editor} = setUpShadowEditor();
-    if (!SUPPORTS_COMPOSED_RANGES) {
-      return;
-    }
-    contentEditable.focus();
-    selectInnerText(contentEditable, 2, 7);
+  test.skipIf(!SUPPORTS_COMPOSED_RANGES)(
+    'reading the DOM selection resolves shadow nodes into the model',
+    () => {
+      const {contentEditable, editor} = setUpShadowEditor();
+      contentEditable.focus();
+      selectInnerText(contentEditable, 2, 7);
 
-    // This is the same DOM->model read that the document 'selectionchange'
-    // handler performs internally ($internalCreateSelection); passing the event
-    // option drives it deterministically without depending on the asynchronous
-    // native selectionchange dispatch.
-    editor.update(() => {}, {
-      discrete: true,
-      event: new Event('selectionchange'),
-    });
+      // This is the same DOM->model read that the document 'selectionchange'
+      // handler performs internally ($internalCreateSelection); passing the event
+      // option drives it deterministically without depending on the asynchronous
+      // native selectionchange dispatch.
+      editor.update(() => {}, {
+        discrete: true,
+        event: new Event('selectionchange'),
+      });
 
-    editor.read(() => {
-      const selection = $getSelection();
-      assert($isRangeSelection(selection));
-      expect(selection.anchor.offset).toBe(2);
-      expect(selection.focus.offset).toBe(7);
-      expect(selection.getTextContent()).toBe('llo w');
-    });
-  });
+      editor.read(() => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        expect(selection.anchor.offset).toBe(2);
+        expect(selection.focus.offset).toBe(7);
+        expect(selection.getTextContent()).toBe('llo w');
+      });
+    },
+  );
 
-  test('RangeSelection.modify uses native modify() inside a shadow root', () => {
-    const {contentEditable, editor} = setUpShadowEditor();
-    if (!SUPPORTS_COMPOSED_RANGES) {
-      return;
-    }
-    contentEditable.focus();
+  test.skipIf(!SUPPORTS_COMPOSED_RANGES)(
+    'RangeSelection.modify uses native modify() inside a shadow root',
+    () => {
+      const {contentEditable, editor} = setUpShadowEditor();
+      contentEditable.focus();
 
-    // Character granularity is deterministic across browsers.
-    editor.update(
-      () => {
-        $getRoot()
-          .getAllTextNodes()[0]
-          .select(0, 0)
-          .modify('extend', false, 'character');
-      },
-      {discrete: true},
-    );
-    editor.read(() => {
-      const selection = $getSelection();
-      assert($isRangeSelection(selection));
-      expect(selection.getTextContent()).toBe('H');
-    });
+      // Character granularity is deterministic across browsers.
+      editor.update(
+        () => {
+          $getRoot()
+            .getAllTextNodes()[0]
+            .select(0, 0)
+            .modify('extend', false, 'character');
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        expect(selection.getTextContent()).toBe('H');
+      });
 
-    // Word granularity should at least cover the first word.
-    editor.update(
-      () => {
-        $getRoot()
-          .getAllTextNodes()[0]
-          .select(0, 0)
-          .modify('extend', false, 'word');
-      },
-      {discrete: true},
-    );
-    editor.read(() => {
-      const selection = $getSelection();
-      assert($isRangeSelection(selection));
-      expect(selection.getTextContent().startsWith('Hello')).toBe(true);
-      expect(selection.isCollapsed()).toBe(false);
-    });
-  });
+      // Word granularity should at least cover the first word.
+      editor.update(
+        () => {
+          $getRoot()
+            .getAllTextNodes()[0]
+            .select(0, 0)
+            .modify('extend', false, 'word');
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        expect(selection.getTextContent().startsWith('Hello')).toBe(true);
+        expect(selection.isCollapsed()).toBe(false);
+      });
+    },
+  );
 
   // IME composition through a shadow root: the $onCompositionEndImpl path
   // reads selection through getDOMSelectionPoints to find the textnode under
   // the caret. Without the shadow-aware read, a composed CJK character would
   // land on the retargeted shadow host rather than the textnode and be
   // silently dropped.
-  test('composition end commits the composed character inside a shadow root', () => {
-    if (!SUPPORTS_COMPOSED_RANGES || !IS_CHROMIUM_LIKE) {
-      return;
-    }
-    const {contentEditable, editor} = setUpShadowEditor('Hi');
-    contentEditable.focus();
+  test.skipIf(!SUPPORTS_COMPOSED_RANGES || !IS_CHROMIUM_LIKE)(
+    'composition end commits the composed character inside a shadow root',
+    () => {
+      const {contentEditable, editor} = setUpShadowEditor('Hi');
+      contentEditable.focus();
 
-    const textNode = getInnerTextNode(contentEditable);
-    // Place the caret at the end of "Hi" inside the shadow tree.
-    getDOMSelection(window)!.setBaseAndExtent(textNode, 2, textNode, 2);
-    editor.update(() => {}, {
-      discrete: true,
-      event: new Event('selectionchange'),
-    });
+      const textNode = getInnerTextNode(contentEditable);
+      // Place the caret at the end of "Hi" inside the shadow tree.
+      getDOMSelection(window)!.setBaseAndExtent(textNode, 2, textNode, 2);
+      editor.update(() => {}, {
+        discrete: true,
+        event: new Event('selectionchange'),
+      });
 
-    contentEditable.dispatchEvent(
-      new CompositionEvent('compositionstart', {
-        bubbles: true,
-        composed: true,
-        data: '',
-      }),
-    );
-    expect(editor.isComposing()).toBe(true);
+      contentEditable.dispatchEvent(
+        new CompositionEvent('compositionstart', {
+          bubbles: true,
+          composed: true,
+          data: '',
+        }),
+      );
+      expect(editor.isComposing()).toBe(true);
 
-    // Simulate the IME writing the composed character into the DOM textnode.
-    textNode.nodeValue = 'Hi가';
-    getDOMSelection(window)!.setBaseAndExtent(textNode, 3, textNode, 3);
+      // Simulate the IME writing the composed character into the DOM textnode.
+      textNode.nodeValue = 'Hi가';
+      getDOMSelection(window)!.setBaseAndExtent(textNode, 3, textNode, 3);
 
-    contentEditable.dispatchEvent(
-      new CompositionEvent('compositionend', {
-        bubbles: true,
-        composed: true,
-        data: '가',
-      }),
-    );
+      contentEditable.dispatchEvent(
+        new CompositionEvent('compositionend', {
+          bubbles: true,
+          composed: true,
+          data: '가',
+        }),
+      );
 
-    expect(editor.isComposing()).toBe(false);
-    expect(editor.read(() => $getRoot().getTextContent())).toBe('Hi가');
-  });
+      expect(editor.isComposing()).toBe(false);
+      expect(editor.read(() => $getRoot().getTextContent())).toBe('Hi가');
+    },
+  );
 
   // Regression test for #2119 and #8125: an editor hosted in a web
   // component's shadow root must accept real keyboard input (key events,
   // beforeinput, mutation handling) — previously characters never appeared
   // because the retargeted DOM selection could not be resolved.
-  test('real keyboard input works in a web component shadow root', async () => {
-    if (!SUPPORTS_COMPOSED_RANGES) {
-      return;
-    }
-    if (customElements.get('test-lexical-host') === undefined) {
-      customElements.define(
-        'test-lexical-host',
-        class extends HTMLElement {
-          connectedCallback() {
-            const shadow = this.shadowRoot ?? this.attachShadow({mode: 'open'});
-            const contentEditable = document.createElement('div');
-            contentEditable.contentEditable = 'true';
-            shadow.appendChild(contentEditable);
-          }
-        },
+  test.skipIf(!SUPPORTS_COMPOSED_RANGES)(
+    'real keyboard input works in a web component shadow root',
+    async () => {
+      if (customElements.get('test-lexical-host') === undefined) {
+        customElements.define(
+          'test-lexical-host',
+          class extends HTMLElement {
+            connectedCallback() {
+              const shadow =
+                this.shadowRoot ?? this.attachShadow({mode: 'open'});
+              const contentEditable = document.createElement('div');
+              contentEditable.contentEditable = 'true';
+              shadow.appendChild(contentEditable);
+            }
+          },
+        );
+      }
+      const host = document.createElement('test-lexical-host');
+      document.body.appendChild(host);
+      const contentEditable = host.shadowRoot!.firstElementChild as HTMLElement;
+      const editor = buildEditorFromExtensions(
+        defineExtension({
+          $initialEditorState: () => $prepopulate('Hi'),
+          name: 'web-component',
+          onError: error => {
+            throw error;
+          },
+        }),
       );
-    }
-    const host = document.createElement('test-lexical-host');
-    document.body.appendChild(host);
-    const contentEditable = host.shadowRoot!.firstElementChild as HTMLElement;
-    const editor = buildEditorFromExtensions(
-      defineExtension({
-        $initialEditorState: () => $prepopulate('Hi'),
-        name: 'web-component',
-        onError: error => {
-          throw error;
-        },
-      }),
-    );
-    // Command handlers for backspace/delete/etc.; insertion of plain typed
-    // text is otherwise handled by the mutation observer path.
-    const removeRichText = registerRichText(editor);
-    editor.setRootElement(contentEditable);
-    onTestFinished(() => {
-      removeRichText();
-      editor.setRootElement(null);
-      document.body.removeChild(host);
-    });
+      // Command handlers for backspace/delete/etc.; insertion of plain typed
+      // text is otherwise handled by the mutation observer path.
+      const removeRichText = registerRichText(editor);
+      editor.setRootElement(contentEditable);
+      onTestFinished(() => {
+        removeRichText();
+        editor.setRootElement(null);
+        document.body.removeChild(host);
+      });
 
-    // Place the caret at the end of "Hi" with the native selection, and sync
-    // it into the editor the same way the selectionchange handler would.
-    contentEditable.focus();
-    const textNode = getInnerTextNode(contentEditable);
-    getDOMSelection(window)!.setBaseAndExtent(textNode, 2, textNode, 2);
-    editor.update(() => {}, {
-      discrete: true,
-      event: new Event('selectionchange'),
-    });
+      // Place the caret at the end of "Hi" with the native selection, and sync
+      // it into the editor the same way the selectionchange handler would.
+      contentEditable.focus();
+      const textNode = getInnerTextNode(contentEditable);
+      getDOMSelection(window)!.setBaseAndExtent(textNode, 2, textNode, 2);
+      editor.update(() => {}, {
+        discrete: true,
+        event: new Event('selectionchange'),
+      });
 
-    await userEvent.keyboard('abc');
+      await userEvent.keyboard('abc');
 
-    expect(editor.read(() => $getRoot().getTextContent())).toBe('Hiabc');
+      expect(editor.read(() => $getRoot().getTextContent())).toBe('Hiabc');
 
-    // Backspace exercises the deletion path through the same selection
-    // resolution machinery.
-    await userEvent.keyboard('{Backspace}');
-    expect(editor.read(() => $getRoot().getTextContent())).toBe('Hiab');
-  });
+      // Backspace exercises the deletion path through the same selection
+      // resolution machinery.
+      await userEvent.keyboard('{Backspace}');
+      expect(editor.read(() => $getRoot().getTextContent())).toBe('Hiab');
+    },
+  );
 
   // An editor whose root element lives in a (same-origin) iframe document is a
   // separate, but related, case: its selection is not retargeted (so no
@@ -509,133 +510,133 @@ describe('DOM shadow root selection (browser)', () => {
     });
   });
 
-  test('resolves selection for a shadow-mounted editor inside an iframe', () => {
-    if (!SUPPORTS_COMPOSED_RANGES) {
-      return;
-    }
-    // iframe + shadow combined: the editor's contentEditable lives in a
-    // shadow tree inside an iframe document, so the helpers must walk both
-    // boundaries — Node.getRootNode through the shadow root + the
-    // iframe's own document for active element / selection reads.
-    const iframe = document.createElement('iframe');
-    document.body.appendChild(iframe);
-    const iframeDoc = iframe.contentDocument!;
-    const host = iframeDoc.createElement('div');
-    iframeDoc.body.appendChild(host);
-    const shadow = host.attachShadow({mode: 'open'});
-    const contentEditable = iframeDoc.createElement('div');
-    contentEditable.contentEditable = 'true';
-    shadow.appendChild(contentEditable);
+  test.skipIf(!SUPPORTS_COMPOSED_RANGES)(
+    'resolves selection for a shadow-mounted editor inside an iframe',
+    () => {
+      // iframe + shadow combined: the editor's contentEditable lives in a
+      // shadow tree inside an iframe document, so the helpers must walk both
+      // boundaries — Node.getRootNode through the shadow root + the
+      // iframe's own document for active element / selection reads.
+      const iframe = document.createElement('iframe');
+      document.body.appendChild(iframe);
+      const iframeDoc = iframe.contentDocument!;
+      const host = iframeDoc.createElement('div');
+      iframeDoc.body.appendChild(host);
+      const shadow = host.attachShadow({mode: 'open'});
+      const contentEditable = iframeDoc.createElement('div');
+      contentEditable.contentEditable = 'true';
+      shadow.appendChild(contentEditable);
 
-    const editor = buildEditorFromExtensions(
-      defineExtension({
-        $initialEditorState: () => $prepopulate('Hello world'),
-        name: 'iframe-shadow',
-        onError: error => {
-          throw error;
+      const editor = buildEditorFromExtensions(
+        defineExtension({
+          $initialEditorState: () => $prepopulate('Hello world'),
+          name: 'iframe-shadow',
+          onError: error => {
+            throw error;
+          },
+        }),
+      );
+      editor.setRootElement(contentEditable);
+      onTestFinished(() => {
+        editor.setRootElement(null);
+        document.body.removeChild(iframe);
+      });
+
+      // getDOMShadowRoots walks the shadow boundary inside the iframe.
+      expect(getDOMShadowRoots(contentEditable)).toEqual([shadow]);
+      // getActiveElement resolves through both boundaries: shadow root +
+      // iframe document.
+      contentEditable.focus();
+      expect(getActiveElement(contentEditable)).toBe(shadow.activeElement);
+
+      // Composed selection read from the iframe's window resolves the
+      // shadow-internal textnode rather than the retargeted host.
+      const textNode = contentEditable.querySelector(
+        '[data-lexical-text="true"]',
+      )!.firstChild as Text;
+      const iframeSelection = iframe.contentWindow!.getSelection()!;
+      iframeSelection.setBaseAndExtent(textNode, 0, textNode, 5);
+      const points = getDOMSelectionPoints(iframeSelection, contentEditable);
+      expect(points.anchorNode).toBe(textNode);
+      expect(points.anchorOffset).toBe(0);
+      expect(points.focusOffset).toBe(5);
+    },
+  );
+
+  test.skipIf(!SUPPORTS_COMPOSED_RANGES)(
+    'Selection.direction defaults to forward when absent',
+    () => {
+      // Firefox before 124 ships `Selection.getComposedRanges` without
+      // `Selection.direction`; the helpers must treat the missing field as
+      // "not backward" so the StaticRange's start/end map onto anchor/focus
+      // in tree order rather than getting silently swapped.
+      const {contentEditable} = setUpShadowEditor();
+      const {domSelection, textNode} = selectInnerText(contentEditable, 1, 4);
+      const original = Object.getOwnPropertyDescriptor(
+        Selection.prototype,
+        'direction',
+      );
+      Object.defineProperty(Selection.prototype, 'direction', {
+        configurable: true,
+        get() {
+          return undefined;
         },
-      }),
-    );
-    editor.setRootElement(contentEditable);
-    onTestFinished(() => {
-      editor.setRootElement(null);
-      document.body.removeChild(iframe);
-    });
+      });
+      onTestFinished(() => {
+        if (original) {
+          Object.defineProperty(Selection.prototype, 'direction', original);
+        } else {
+          delete (Selection.prototype as unknown as {direction?: unknown})
+            .direction;
+        }
+      });
+      const points = getDOMSelectionPoints(domSelection, contentEditable);
+      // direction is undefined; anchor/focus default to the StaticRange's tree
+      // order (forward) since the engine can't report the actual direction.
+      expect(points.direction).toBeUndefined();
+      expect(points.anchorNode).toBe(textNode);
+      expect(points.anchorOffset).toBe(1);
+      expect(points.focusOffset).toBe(4);
+    },
+  );
 
-    // getDOMShadowRoots walks the shadow boundary inside the iframe.
-    expect(getDOMShadowRoots(contentEditable)).toEqual([shadow]);
-    // getActiveElement resolves through both boundaries: shadow root +
-    // iframe document.
-    contentEditable.focus();
-    expect(getActiveElement(contentEditable)).toBe(shadow.activeElement);
-
-    // Composed selection read from the iframe's window resolves the
-    // shadow-internal textnode rather than the retargeted host.
-    const textNode = contentEditable.querySelector(
-      '[data-lexical-text="true"]',
-    )!.firstChild as Text;
-    const iframeSelection = iframe.contentWindow!.getSelection()!;
-    iframeSelection.setBaseAndExtent(textNode, 0, textNode, 5);
-    const points = getDOMSelectionPoints(iframeSelection, contentEditable);
-    expect(points.anchorNode).toBe(textNode);
-    expect(points.anchorOffset).toBe(0);
-    expect(points.focusOffset).toBe(5);
-  });
-
-  test('Selection.direction defaults to forward when absent', () => {
-    // Firefox before 124 ships `Selection.getComposedRanges` without
-    // `Selection.direction`; the helpers must treat the missing field as
-    // "not backward" so the StaticRange's start/end map onto anchor/focus
-    // in tree order rather than getting silently swapped.
-    const {contentEditable} = setUpShadowEditor();
-    if (!SUPPORTS_COMPOSED_RANGES) {
-      return;
-    }
-    const {domSelection, textNode} = selectInnerText(contentEditable, 1, 4);
-    const original = Object.getOwnPropertyDescriptor(
-      Selection.prototype,
-      'direction',
-    );
-    Object.defineProperty(Selection.prototype, 'direction', {
-      configurable: true,
-      get() {
-        return undefined;
-      },
-    });
-    onTestFinished(() => {
-      if (original) {
-        Object.defineProperty(Selection.prototype, 'direction', original);
-      } else {
-        delete (Selection.prototype as unknown as {direction?: unknown})
-          .direction;
-      }
-    });
-    const points = getDOMSelectionPoints(domSelection, contentEditable);
-    // direction is undefined; anchor/focus default to the StaticRange's tree
-    // order (forward) since the engine can't report the actual direction.
-    expect(points.direction).toBeUndefined();
-    expect(points.anchorNode).toBe(textNode);
-    expect(points.anchorOffset).toBe(1);
-    expect(points.focusOffset).toBe(4);
-  });
-
-  test('Selection.direction absent + backward selection signals unknown direction', () => {
-    // If a future engine ships getComposedRanges without Selection.direction
-    // (no current shipping configuration matches), the helper can't tell a
-    // backward selection from a forward one — anchor/focus default to tree
-    // order and the undefined direction is the explicit signal to callers.
-    const {contentEditable} = setUpShadowEditor();
-    if (!SUPPORTS_COMPOSED_RANGES) {
-      return;
-    }
-    const textNode = getInnerTextNode(contentEditable);
-    const domSelection = getDOMSelection(window)!;
-    domSelection.removeAllRanges();
-    domSelection.setBaseAndExtent(textNode, 5, textNode, 2);
-    const original = Object.getOwnPropertyDescriptor(
-      Selection.prototype,
-      'direction',
-    );
-    Object.defineProperty(Selection.prototype, 'direction', {
-      configurable: true,
-      get() {
-        return undefined;
-      },
-    });
-    onTestFinished(() => {
-      if (original) {
-        Object.defineProperty(Selection.prototype, 'direction', original);
-      } else {
-        delete (Selection.prototype as unknown as {direction?: unknown})
-          .direction;
-      }
-    });
-    const points = getDOMSelectionPoints(domSelection, contentEditable);
-    expect(points.direction).toBeUndefined();
-    expect(points.anchorNode).toBe(textNode);
-    expect(points.anchorOffset).toBe(2);
-    expect(points.focusOffset).toBe(5);
-  });
+  test.skipIf(!SUPPORTS_COMPOSED_RANGES)(
+    'Selection.direction absent + backward selection signals unknown direction',
+    () => {
+      // If a future engine ships getComposedRanges without Selection.direction
+      // (no current shipping configuration matches), the helper can't tell a
+      // backward selection from a forward one — anchor/focus default to tree
+      // order and the undefined direction is the explicit signal to callers.
+      const {contentEditable} = setUpShadowEditor();
+      const textNode = getInnerTextNode(contentEditable);
+      const domSelection = getDOMSelection(window)!;
+      domSelection.removeAllRanges();
+      domSelection.setBaseAndExtent(textNode, 5, textNode, 2);
+      const original = Object.getOwnPropertyDescriptor(
+        Selection.prototype,
+        'direction',
+      );
+      Object.defineProperty(Selection.prototype, 'direction', {
+        configurable: true,
+        get() {
+          return undefined;
+        },
+      });
+      onTestFinished(() => {
+        if (original) {
+          Object.defineProperty(Selection.prototype, 'direction', original);
+        } else {
+          delete (Selection.prototype as unknown as {direction?: unknown})
+            .direction;
+        }
+      });
+      const points = getDOMSelectionPoints(domSelection, contentEditable);
+      expect(points.direction).toBeUndefined();
+      expect(points.anchorNode).toBe(textNode);
+      expect(points.anchorOffset).toBe(2);
+      expect(points.focusOffset).toBe(5);
+    },
+  );
 
   describe('getComposedEventTarget', () => {
     test('returns the composed-path target inside a shadow root', () => {

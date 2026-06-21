@@ -2048,8 +2048,12 @@ export function* findAllLexicalElementsDeep(
   let root;
   while ((root = roots.pop())) {
     yield* root.querySelectorAll('[data-lexical-editor="true"]');
-    const doc =
-      root instanceof Document ? root : (root.ownerDocument ?? document);
+    // Resolve the owning document by nodeType, not `instanceof Document`:
+    // a Document from another realm (e.g. an iframe) is not an instance of
+    // this realm's Document constructor, so `instanceof` would misclassify it
+    // and fall back to the global `document`. A ShadowRoot's ownerDocument is
+    // always its (realm-correct) Document.
+    const doc = isDOMDocumentNode(root) ? root : root.ownerDocument;
     const walker = doc.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
     let el;
     while ((el = walker.nextNode() as null | Element)) {

@@ -467,6 +467,9 @@ test.describe('Shadow DOM', () => {
     // `drop` dispatched at the shadow-internal contentEditable.
     await page.evaluate(() => {
       const ce = window.__findShadowEditor(document);
+      const rect = ce.getBoundingClientRect();
+      const clientX = Math.round(rect.left + rect.width / 2);
+      const clientY = Math.round(rect.top + rect.height / 2);
       const bytes = Uint8Array.from(
         atob(
           'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
@@ -481,6 +484,8 @@ test.describe('Shadow DOM', () => {
           new DragEvent(type, {
             bubbles: true,
             cancelable: true,
+            clientX,
+            clientY,
             composed: true,
             dataTransfer: dt,
           }),

@@ -25,7 +25,6 @@ import {
   $getRoot,
   $getSelection,
   $isParagraphNode,
-  $isRangeSelection,
   $isTextNode,
   $setSelection,
 } from 'lexical';
@@ -175,15 +174,13 @@ describe('table selection', () => {
             const root = $getRoot();
             const paragraph = $createParagraphNode();
             root.clear().append(paragraph, tableNode);
-            paragraph.select();
-
-            const selection = $getSelection();
-            if (!$isRangeSelection(selection)) {
-              throw new Error('Expected range selection');
-            }
+            const selection = paragraph.select();
             selection.deleteCharacter(false);
 
             expect(root.getChildren()).toEqual([tableNode]);
+            expect(selection.anchor.key).toBe(
+              tableNode.getAllTextNodes()[0].getKey(),
+            );
           },
           {discrete: true},
         );

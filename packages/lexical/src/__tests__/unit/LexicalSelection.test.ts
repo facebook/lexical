@@ -44,6 +44,7 @@ import {
   $assertRangeSelection,
   $createTestDecoratorNode,
   $createTestInlineElementNode,
+  $createTestShadowRootNode,
   initializeUnitTest,
   invariant,
 } from '../utils';
@@ -54,6 +55,26 @@ function mapLatest<T extends LexicalNode>(nodes: T[]): T[] {
 
 describe('LexicalSelection tests', () => {
   initializeUnitTest(testEnv => {
+    describe('deleteCharacter', () => {
+      test('forward delete removes an empty paragraph before a shadow root', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            const paragraph = $createParagraphNode();
+            const shadowRoot = $createTestShadowRootNode();
+            root.clear().append(paragraph, shadowRoot);
+
+            const selection = paragraph.select();
+            selection.deleteCharacter(false);
+
+            expect(root.getChildren()).toEqual([shadowRoot]);
+            expect(selection.anchor.key).toBe(shadowRoot.getKey());
+          },
+          {discrete: true},
+        );
+      });
+    });
+
     describe('Inserting text either side of inline elements', () => {
       const setup = async (
         mode: 'start-of-paragraph' | 'mid-paragraph' | 'end-of-paragraph',

@@ -11,6 +11,7 @@ import {
   $insertDataTransferForRichText,
   setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
+import {$createLinkNode} from '@lexical/link';
 import {$patchStyleText} from '@lexical/selection';
 import {
   $createParagraphNode,
@@ -170,18 +171,47 @@ describe('HTMLCopyAndPaste tests', () => {
             $getClipboardDataFromSelection(),
           );
 
-          target.select(0, target.getChildrenSize());
-
-          const selection = $getSelection();
-          invariant(
-            $isRangeSelection(selection),
-            'isRangeSelection(selection)',
-          );
+          const selection = target.select(0, target.getChildrenSize());
           $insertDataTransferForRichText(dataTransfer, selection, editor);
         });
 
         expect(testEnv.innerHTML).toBe(
           '<p dir="auto" style="text-align: center;"><span data-lexical-text="true">Centered</span></p><p dir="auto" style="text-align: center;"><span data-lexical-text="true">Centered</span></p>',
+        );
+      });
+
+      test('preserves paragraph alignment when selected text contains inline elements', async () => {
+        const {editor} = testEnv;
+        const dataTransfer = new DataTransfer();
+
+        await editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const source = $createParagraphNode()
+            .setFormat('center')
+            .append(
+              $createTextNode('Hello '),
+              $createLinkNode('https://lexical.dev').append(
+                $createTextNode('world'),
+              ),
+            );
+          const target = $createParagraphNode().append(
+            $createTextNode('Target'),
+          );
+          root.append(source, target);
+          source.select(0, source.getChildrenSize());
+
+          setLexicalClipboardDataTransfer(
+            dataTransfer,
+            $getClipboardDataFromSelection(),
+          );
+
+          const selection = target.select(0, target.getChildrenSize());
+          $insertDataTransferForRichText(dataTransfer, selection, editor);
+        });
+
+        expect(testEnv.innerHTML).toBe(
+          '<p dir="auto" style="text-align: center;"><span data-lexical-text="true">Hello </span><a href="https://lexical.dev"><span data-lexical-text="true">world</span></a></p><p dir="auto" style="text-align: center;"><span data-lexical-text="true">Hello </span><a href="https://lexical.dev"><span data-lexical-text="true">world</span></a></p>',
         );
       });
 

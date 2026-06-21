@@ -498,7 +498,10 @@ function $shouldIncludeElementWithSelectedChildren(
     return false;
   }
   const selectedTextContent = selectedNodes
-    .filter(selectedNode => node.isParentOf(selectedNode))
+    .filter(
+      selectedNode =>
+        !$isElementNode(selectedNode) && node.isParentOf(selectedNode),
+    )
     .map(selectedNode => {
       if ($isTextNode(selectedNode)) {
         return $sliceSelectedTextNodeContent(

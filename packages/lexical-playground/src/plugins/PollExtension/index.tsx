@@ -95,7 +95,12 @@ export function InsertPollDialog({
 
   return (
     <>
-      <TextInput label="Question" onChange={setQuestion} value={question} />
+      <TextInput
+        autoFocus={true}
+        label="Question"
+        onChange={setQuestion}
+        value={question}
+      />
       <DialogActions>
         <Button disabled={question.trim() === ''} onClick={onClick}>
           Confirm

@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-
 import {createRectsFromDOMRange} from '@lexical/selection';
 import {dedupeSelectionRects} from '@lexical/utils';
 import {describe, expect, it, onTestFinished} from 'vitest';
@@ -26,15 +24,6 @@ import {describe, expect, it, onTestFinished} from 'vitest';
  * `editor` is a getRootElement shim, which is all the helper reads off it.
  */
 
-type Rect = {
-  left: number;
-  top: number;
-  right: number;
-  bottom: number;
-  width: number;
-  height: number;
-};
-
 const ROOT_WIDTH = 600;
 
 function setupRoot(): HTMLDivElement {
@@ -51,21 +40,8 @@ function setupRoot(): HTMLDivElement {
   return root;
 }
 
-function editorFor(root: HTMLElement): LexicalEditor {
-  return {getRootElement: () => root} as unknown as LexicalEditor;
-}
-
-const toRect = (r: DOMRect | Rect): Rect => ({
-  bottom: r.bottom,
-  height: r.height,
-  left: r.left,
-  right: r.right,
-  top: r.top,
-  width: r.width,
-});
-
 // Containment predicate matching dedupeSelectionRects (1px tolerance).
-function contains(a: Rect, b: Rect): boolean {
+function contains(a: DOMRect, b: DOMRect): boolean {
   return (
     b.left >= a.left - 1 &&
     b.top >= a.top - 1 &&
@@ -74,7 +50,7 @@ function contains(a: Rect, b: Rect): boolean {
   );
 }
 
-const sameRect = (a: Rect, b: Rect): boolean =>
+const sameRect = (a: DOMRect, b: DOMRect): boolean =>
   Math.abs(a.left - b.left) < 1 &&
   Math.abs(a.right - b.right) < 1 &&
   Math.abs(a.top - b.top) < 1 &&
@@ -107,14 +83,15 @@ describe('dedupeSelectionRects under-paints real content for overlapping inline 
     void root.offsetHeight;
 
     const range = selectAll(root);
-    const survivors = (
-      createRectsFromDOMRange(editorFor(root), range) as unknown as DOMRect[]
-    ).map(toRect);
+    const survivors = createRectsFromDOMRange(
+      {getRootElement: () => root},
+      range,
+    );
 
     // createRectsFromDOMRange leaves a same-row contained pair: a wider rect that
     // strictly contains a narrower survivor.
-    let wide: Rect | undefined;
-    let narrow: Rect | undefined;
+    let wide: DOMRect | undefined;
+    let narrow: DOMRect | undefined;
     for (const a of survivors) {
       for (const b of survivors) {
         if (
@@ -137,7 +114,7 @@ describe('dedupeSelectionRects under-paints real content for overlapping inline 
     // dedupeSelectionRects drops the wider rect (keep-smaller)...
     const deduped = dedupeSelectionRects(survivors);
     expect(
-      deduped.some(r => sameRect(r, wide as Rect)),
+      deduped.some(r => sameRect(r, wide)),
       'the wider rect was dropped by keep-smaller dedupe',
     ).toBe(false);
 

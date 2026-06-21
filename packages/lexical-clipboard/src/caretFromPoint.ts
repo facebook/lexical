@@ -93,12 +93,12 @@ export function caretFromPoint(
       const element = rootNode.elementFromPoint(x, y);
       if (element !== null && rootElement.contains(element)) {
         const result = findTextOffsetAtPoint(x, y, element, doc);
-        if (result !== null) {
-          return result;
-        }
-        return {node: element, offset: 0};
+        return result !== null ? result : {node: element, offset: 0};
       }
-      return null;
+      // The point missed the editor's shadow content (gutter/padding, slotted
+      // content, or a sibling outside rootElement). Fall through to the legacy
+      // caretRangeFromPoint path for a best-effort (host-level) caret rather
+      // than dropping the interaction entirely.
     }
   }
   // Non-shadow path.

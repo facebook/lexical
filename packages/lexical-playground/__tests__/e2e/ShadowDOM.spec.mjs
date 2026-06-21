@@ -465,14 +465,8 @@ test.describe('Shadow DOM', () => {
     // Synthesize an OS-style file drag and drop: a `DataTransfer`
     // carrying an `image/png` file, then `dragenter` / `dragover` /
     // `drop` dispatched at the shadow-internal contentEditable.
-    // clientX/clientY must point inside the editor so caretFromPoint
-    // resolves a node within the composed tree (not retargeted to the
-    // shadow host at coordinates outside the editor bounds).
     await page.evaluate(() => {
       const ce = window.__findShadowEditor(document);
-      const rect = ce.getBoundingClientRect();
-      const clientX = rect.left + rect.width / 2;
-      const clientY = rect.top + rect.height / 2;
       const bytes = Uint8Array.from(
         atob(
           'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
@@ -487,8 +481,6 @@ test.describe('Shadow DOM', () => {
           new DragEvent(type, {
             bubbles: true,
             cancelable: true,
-            clientX,
-            clientY,
             composed: true,
             dataTransfer: dt,
           }),

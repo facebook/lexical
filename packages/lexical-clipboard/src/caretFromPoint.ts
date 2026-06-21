@@ -45,11 +45,22 @@ export function caretFromPoint(
   // otherwise fall through to the legacy paths below.
   const doc = getRootOwnerDocument(rootElement);
   const shadowRoots = rootElement ? getDOMShadowRoots(rootElement) : [];
+  // When caretPositionFromPoint supports the shadowRoots option (Chrome 128+,
+  // Firefox 125+), it returns the un-retargeted node directly. If it resolved
+  // inside the editor's composed tree, trust it and return early. If it didn't
+  // (point was outside the editor), reject the fallback paths too — they'll
+  // only return retargeted (wrong) results for the same coordinates.
+  //
+  // When caretPositionFromPoint is unavailable (Safari), the fallback paths
+  // are the best we have — accept their result even if retargeted, because
+  // returning null would break drag-drop and click-to-place entirely.
+  let triedShadowAwarePath = false;
   if (
     rootElement !== null &&
     shadowRoots.length > 0 &&
     typeof doc.caretPositionFromPoint === 'function'
   ) {
+    triedShadowAwarePath = true;
     const caretPosition = doc.caretPositionFromPoint(x, y, {shadowRoots});
     if (
       caretPosition !== null &&
@@ -64,9 +75,8 @@ export function caretFromPoint(
       return null;
     }
     if (
-      rootElement !== null &&
-      shadowRoots.length > 0 &&
-      !isWithinComposedTree(range.startContainer, rootElement)
+      triedShadowAwarePath &&
+      !isWithinComposedTree(range.startContainer, rootElement!)
     ) {
       return null;
     }
@@ -77,9 +87,8 @@ export function caretFromPoint(
       return null;
     }
     if (
-      rootElement !== null &&
-      shadowRoots.length > 0 &&
-      !isWithinComposedTree(caretPosition.offsetNode, rootElement)
+      triedShadowAwarePath &&
+      !isWithinComposedTree(caretPosition.offsetNode, rootElement!)
     ) {
       return null;
     }

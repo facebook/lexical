@@ -9,8 +9,7 @@
 import type {Klass, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$findMatchingParent} from '@lexical/utils';
-import {$getNearestNodeFromDOMNode} from 'lexical';
+import {$findMatchingParent, $getNearestNodeFromDOMNode} from 'lexical';
 import {useEffect, useRef} from 'react';
 
 const capturedEvents = new Set<string>(['mouseenter', 'mouseleave']);

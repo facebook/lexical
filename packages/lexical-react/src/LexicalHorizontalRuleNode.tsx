@@ -18,15 +18,13 @@ import {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {
-  addClassNamesToElement,
-  mergeRegister,
-  removeClassNamesFromElement,
-} from '@lexical/utils';
-import {
   $applyNodeReplacement,
+  addClassNamesToElement,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   getComposedEventTarget,
+  mergeRegister,
+  removeClassNamesFromElement,
 } from 'lexical';
 import * as React from 'react';
 import {useEffect} from 'react';

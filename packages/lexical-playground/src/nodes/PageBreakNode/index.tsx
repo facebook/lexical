@@ -12,12 +12,12 @@ import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {mergeRegister} from '@lexical/utils';
 import {
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   DecoratorNode,
   LexicalNode,
+  mergeRegister,
   NodeKey,
   SerializedLexicalNode,
 } from 'lexical';

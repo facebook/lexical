@@ -37,18 +37,14 @@ import {
   copyToClipboard,
 } from '@lexical/clipboard';
 import invariant from '@lexical/internal/invariant';
-import {
-  $findMatchingParent,
-  addClassNamesToElement,
-  objectKlassEquals,
-  removeClassNamesFromElement,
-} from '@lexical/utils';
+import {objectKlassEquals} from '@lexical/utils';
 import {
   $caretFromPoint,
   $createParagraphNode,
   $createRangeSelectionFromDom,
   $createTextNode,
   $extendCaretToRange,
+  $findMatchingParent,
   $getAdjacentChildCaret,
   $getChildCaret,
   $getNearestNodeFromDOMNode,
@@ -67,6 +63,7 @@ import {
   $normalizeCaret,
   $setPointFromCaret,
   $setSelection,
+  addClassNamesToElement,
   COMMAND_PRIORITY_HIGH,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   CUT_COMMAND,
@@ -94,6 +91,7 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
+  removeClassNamesFromElement,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 

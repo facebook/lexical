@@ -18,10 +18,12 @@ import type {
 } from 'lexical';
 
 import {
+  $applyNodeReplacement,
+  $isRangeSelection,
   addClassNamesToElement,
+  ElementNode,
   removeClassNamesFromElement,
-} from '@lexical/utils';
-import {$applyNodeReplacement, $isRangeSelection, ElementNode} from 'lexical';
+} from 'lexical';
 
 export type SerializedMarkNode = Spread<
   {

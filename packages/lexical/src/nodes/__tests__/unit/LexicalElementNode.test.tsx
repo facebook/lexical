@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
   $applyNodeReplacement,
   $createParagraphNode,
@@ -15,9 +14,11 @@ import {
   $isElementNode,
   $isRangeSelection,
   createEditor,
+  ElementDOMSlot,
   ElementNode,
   LexicalEditor,
   LexicalNode,
+  SerializedElementNode,
   TextNode,
 } from 'lexical';
 import * as React from 'react';
@@ -38,8 +39,7 @@ import {
   $createTestElementNode,
   createTestEditor,
 } from '../../../__tests__/utils';
-import {ElementDOMSlot, indexPath} from '../../../LexicalDOMSlot';
-import {SerializedElementNode} from '../../LexicalElementNode';
+import {indexPath} from '../../../LexicalDOMSlot';
 
 describe('LexicalElementNode tests', () => {
   let container: HTMLElement;

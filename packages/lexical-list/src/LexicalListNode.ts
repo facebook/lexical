@@ -7,26 +7,24 @@
  */
 
 import {
-  addClassNamesToElement,
-  isHTMLElement,
-  removeClassNamesFromElement,
-} from '@lexical/utils';
-import {
   $applyNodeReplacement,
   $createTextNode,
   $isElementNode,
   $setDirectionFromDOM,
+  addClassNamesToElement,
   buildImportMap,
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   EditorThemeClasses,
   ElementNode,
+  isHTMLElement,
   LexicalEditor,
   LexicalNode,
   LexicalUpdateJSON,
   NodeKey,
   normalizeClassNames,
+  removeClassNamesFromElement,
   SerializedElementNode,
   Spread,
 } from 'lexical';

@@ -33,7 +33,6 @@ import {
   TableObserver,
   TableSelection,
 } from '@lexical/table';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isElementNode,
@@ -46,6 +45,7 @@ import {
   getDOMSelectionPoints,
   getRootOwnerDocument,
   isDOMNode,
+  mergeRegister,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';

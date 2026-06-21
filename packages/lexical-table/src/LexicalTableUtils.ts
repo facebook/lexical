@@ -10,10 +10,10 @@ import type {TableMapType, TableMapValueType} from './LexicalTableSelection';
 import type {ElementNode, PointType} from 'lexical';
 
 import invariant from '@lexical/internal/invariant';
-import {$findMatchingParent} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createTextNode,
+  $findMatchingParent,
   $getSelection,
   $isParagraphNode,
   $isRangeSelection,

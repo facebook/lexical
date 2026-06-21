@@ -39,7 +39,7 @@ import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {$isRootTextContentEmpty, $rootTextContent} from '@lexical/text';
-import {mergeRegister, registerNestedElementResolver} from '@lexical/utils';
+import {registerNestedElementResolver} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -54,6 +54,7 @@ import {
   getDOMSelection,
   getRootOwnerDocument,
   KEY_ESCAPE_COMMAND,
+  mergeRegister,
 } from 'lexical';
 import * as React from 'react';
 import {

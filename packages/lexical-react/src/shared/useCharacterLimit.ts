@@ -15,13 +15,9 @@ import {
   OverflowNode,
 } from '@lexical/overflow';
 import {$rootTextContent} from '@lexical/text';
+import {$dfsWithSlots, $unwrapNode} from '@lexical/utils';
 import {
-  $dfsWithSlots,
   $findMatchingParent,
-  $unwrapNode,
-  mergeRegister,
-} from '@lexical/utils';
-import {
   $getSelection,
   $getSlotHost,
   $isElementNode,
@@ -32,6 +28,7 @@ import {
   COMMAND_PRIORITY_LOW,
   DELETE_CHARACTER_COMMAND,
   HISTORY_MERGE_TAG,
+  mergeRegister,
 } from 'lexical';
 import {useEffect} from 'react';
 

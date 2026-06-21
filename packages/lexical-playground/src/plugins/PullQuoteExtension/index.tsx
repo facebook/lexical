@@ -15,7 +15,6 @@ import {
   DOMImportExtension,
   sel,
 } from '@lexical/html';
-import {mergeRegister} from '@lexical/utils';
 import {
   $createNodeSelection,
   $createParagraphNode,
@@ -33,6 +32,7 @@ import {
   defineExtension,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
+  mergeRegister,
 } from 'lexical';
 
 import {registerHostChromeSelection} from '../../nodes/hostChromeSelection';

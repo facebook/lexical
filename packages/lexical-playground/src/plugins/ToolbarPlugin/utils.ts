@@ -22,7 +22,6 @@ import {
 import {$patchStyleText, $setBlocksType} from '@lexical/selection';
 import {$isTableSelection} from '@lexical/table';
 import {
-  $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
   $isBlockFullySelected,
 } from '@lexical/utils';
@@ -30,6 +29,7 @@ import {
   $addUpdateTag,
   $createParagraphNode,
   $createRangeSelection,
+  $findMatchingParent,
   $getSelection,
   $isBlockElementNode,
   $isLineBreakNode,

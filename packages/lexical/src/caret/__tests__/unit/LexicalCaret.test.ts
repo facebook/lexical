@@ -21,6 +21,7 @@ import {
 } from '@lexical/table';
 import {
   $caretRangeFromSelection,
+  $comparePointCaretNext,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -60,7 +61,6 @@ import {
   initializeUnitTest,
   invariant,
 } from '../../../__tests__/utils';
-import {$comparePointCaretNext} from '../../LexicalCaret';
 
 const DIRECTIONS = ['next', 'previous'] as const;
 const BIASES = ['inside', 'outside'] as const;

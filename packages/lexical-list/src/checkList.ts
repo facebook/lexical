@@ -10,14 +10,10 @@ import type {ListItemNode} from './LexicalListItemNode';
 import type {ElementNode, LexicalCommand, LexicalEditor} from 'lexical';
 
 import {Signal} from '@lexical/extension';
-import {
-  $findMatchingParent,
-  calculateZoomLevel,
-  isHTMLElement,
-  mergeRegister,
-} from '@lexical/utils';
+import {calculateZoomLevel} from '@lexical/utils';
 import {
   $addUpdateTag,
+  $findMatchingParent,
   $getNearestNodeFromDOMNode,
   $getSelection,
   $isElementNode,
@@ -26,11 +22,13 @@ import {
   createCommand,
   getActiveElement,
   getNearestEditorFromDOMNode,
+  isHTMLElement,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
+  mergeRegister,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SELECTION_FOCUS_TAG,
 } from 'lexical';

@@ -9,7 +9,6 @@
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
@@ -26,6 +25,7 @@ import {
   KEY_TAB_COMMAND,
   LexicalCommand,
   LexicalEditor,
+  mergeRegister,
   TextNode,
 } from 'lexical';
 import {

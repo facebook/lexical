@@ -10,7 +10,7 @@ import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {eventFiles} from '@lexical/rich-text';
-import {calculateZoomLevel, isHTMLElement, mergeRegister} from '@lexical/utils';
+import {calculateZoomLevel} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
@@ -28,7 +28,9 @@ import {
   getParentElement,
   getRootOwnerDocument,
   IS_FIREFOX,
+  isHTMLElement,
   LexicalEditor,
+  mergeRegister,
 } from 'lexical';
 import {
   DragEvent as ReactDragEvent,

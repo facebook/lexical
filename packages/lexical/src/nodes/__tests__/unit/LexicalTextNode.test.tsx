@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
   $createParagraphNode,
   $createTextNode,
@@ -20,6 +19,14 @@ import {
   $isTextNode,
   $setState,
   createState,
+  IS_BOLD,
+  IS_CODE,
+  IS_HIGHLIGHT,
+  IS_ITALIC,
+  IS_STRIKETHROUGH,
+  IS_SUBSCRIPT,
+  IS_SUPERSCRIPT,
+  IS_UNDERLINE,
   LexicalEditor,
   TextFormatType,
   TextModeType,
@@ -36,16 +43,8 @@ import {
   createTestEditor,
 } from '../../../__tests__/utils';
 import {
-  IS_BOLD,
   IS_CAPITALIZE,
-  IS_CODE,
-  IS_HIGHLIGHT,
-  IS_ITALIC,
   IS_LOWERCASE,
-  IS_STRIKETHROUGH,
-  IS_SUBSCRIPT,
-  IS_SUPERSCRIPT,
-  IS_UNDERLINE,
   IS_UPPERCASE,
 } from '../../../LexicalConstants';
 import {

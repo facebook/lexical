@@ -17,7 +17,6 @@ import {
   Signal,
   signal,
 } from '@lexical/extension';
-import {mergeRegister} from '@lexical/utils';
 import {
   $isRangeSelection,
   $isRootNode,
@@ -35,6 +34,7 @@ import {
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,
+  mergeRegister,
   PASTE_TAG,
   REDO_COMMAND,
   safeCast,

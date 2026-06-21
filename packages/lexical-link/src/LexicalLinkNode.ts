@@ -24,17 +24,13 @@ import type {
 
 import invariant from '@lexical/internal/invariant';
 import {
-  $findMatchingParent,
-  $insertNodeToNearestRootAtCaret,
-  addClassNamesToElement,
-  isHTMLAnchorElement,
-} from '@lexical/utils';
-import {
   $applyNodeReplacement,
   $caretFromPoint,
   $copyNode,
+  $findMatchingParent,
   $getChildCaret,
   $getSelection,
+  $insertNodeToNearestRootAtCaret,
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
@@ -44,8 +40,10 @@ import {
   $rewindSiblingCaret,
   $setPointFromCaret,
   $setSelection,
+  addClassNamesToElement,
   createCommand,
   ElementNode,
+  isHTMLAnchorElement,
   Spread,
 } from 'lexical';
 

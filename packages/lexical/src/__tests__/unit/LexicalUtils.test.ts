@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
   $applyNodeReplacement,
   $copyNode,
@@ -17,12 +16,15 @@ import {
   $isTokenOrSegmented,
   $nodesOfType,
   $onUpdate,
+  $setCompositionKey,
   $setState,
   createEditor,
   createState,
   getParentElement,
   getRegisteredSubtypeMap,
+  getTextDirection,
   IS_APPLE,
+  isExactShortcutMatch,
   isSelectionWithinEditor,
   LineBreakNode,
   ParagraphNode,
@@ -42,14 +44,11 @@ import {
 } from 'vitest';
 
 import {
-  $setCompositionKey,
   $updateTextNodeFromDOMContent,
   emptyFunction,
   generateRandomKey,
   getCachedTypeToNodeMap,
-  getTextDirection,
   isArray,
-  isExactShortcutMatch,
   isMoveToEnd,
   isMoveToStart,
   scheduleMicroTask,

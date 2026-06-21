@@ -12,10 +12,7 @@ import type {JSX} from 'react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {
-  $getNearestBlockElementAncestorOrThrow,
-  mergeRegister,
-} from '@lexical/utils';
+import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -25,6 +22,7 @@ import {
   COMMAND_PRIORITY_LOW,
   FORMAT_ELEMENT_COMMAND,
   getComposedEventTarget,
+  mergeRegister,
 } from 'lexical';
 import * as React from 'react';
 import {ReactNode, useEffect, useRef} from 'react';

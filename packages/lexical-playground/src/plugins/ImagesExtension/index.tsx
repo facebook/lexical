@@ -21,14 +21,11 @@ import {
   LinkNode,
   TOGGLE_LINK_COMMAND,
 } from '@lexical/link';
-import {
-  $findMatchingParent,
-  $wrapNodeInElement,
-  mergeRegister,
-} from '@lexical/utils';
+import {$wrapNodeInElement} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createRangeSelection,
+  $findMatchingParent,
   $getSelection,
   $insertNodes,
   $isNodeSelection,
@@ -48,6 +45,7 @@ import {
   isHTMLElement,
   LexicalCommand,
   LexicalEditor,
+  mergeRegister,
   SKIP_DOM_SELECTION_TAG,
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';

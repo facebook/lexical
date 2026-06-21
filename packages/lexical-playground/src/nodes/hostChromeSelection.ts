@@ -8,7 +8,6 @@
 
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
-import {mergeRegister} from '@lexical/utils';
 import {
   $createNodeSelection,
   $getNearestNodeFromDOMNode,
@@ -18,6 +17,7 @@ import {
   getActiveElement,
   getDOMSelection,
   isHTMLElement,
+  mergeRegister,
 } from 'lexical';
 
 /**

@@ -10,14 +10,13 @@ import {NamedSignalsOutput, Signal, signal} from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
 import {
   $dfsWithSlots,
-  $findMatchingParent,
   $insertFirst,
   $insertNodeToNearestRoot,
   $unwrapAndFilterDescendants,
-  mergeRegister,
 } from '@lexical/utils';
 import {
   $createParagraphNode,
+  $findMatchingParent,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getRoot,
@@ -34,6 +33,7 @@ import {
   ElementNode,
   isDOMNode,
   LexicalEditor,
+  mergeRegister,
   NodeKey,
   RangeSelection,
   SELECT_ALL_COMMAND,

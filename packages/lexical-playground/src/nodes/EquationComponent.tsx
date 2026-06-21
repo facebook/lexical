@@ -12,7 +12,6 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {mergeRegister} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getNodeByKey,
@@ -27,6 +26,7 @@ import {
   getActiveElement,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
+  mergeRegister,
   NodeKey,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';

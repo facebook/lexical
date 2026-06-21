@@ -358,7 +358,10 @@ function useDraggableBlockMenu(
       if (isFileTransfer) {
         return false;
       }
-      const {pageY, target} = event;
+      const pageY = event.pageY;
+      // Composed target so the zoom level is read from the real element rather
+      // than the shadow host when the editor is in a shadow tree.
+      const target = getComposedEventTarget(event);
       if (!isHTMLElement(target)) {
         return false;
       }
@@ -386,7 +389,10 @@ function useDraggableBlockMenu(
       if (isFileTransfer) {
         return false;
       }
-      const {target, dataTransfer, pageY} = event;
+      const {dataTransfer, pageY} = event;
+      // Composed target so the zoom level is read from the real element rather
+      // than the shadow host when the editor is in a shadow tree.
+      const target = getComposedEventTarget(event);
       const dragData =
         dataTransfer != null ? dataTransfer.getData(DRAG_DATA_FORMAT) : '';
       const draggedNode = $getNodeByKey(dragData);

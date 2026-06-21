@@ -24,6 +24,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   getRootOwnerDocument,
+  isDOMShadowRoot,
   setDOMStyleObject,
 } from 'lexical';
 import {
@@ -80,13 +81,13 @@ const SUPPORTS_CSS_HIGHLIGHTS =
  */
 function getCursorHighlightSheet(binding: BaseBinding): CSSStyleSheet {
   if (binding.cursorHighlightSheet === null) {
-    const ownerDocument = getRootOwnerDocument(binding.editor.getRootElement());
+    const rootElement = binding.editor.getRootElement();
+    const ownerDocument = getRootOwnerDocument(rootElement);
     const view = ownerDocument.defaultView || window;
     const sheet = new view.CSSStyleSheet();
-    ownerDocument.adoptedStyleSheets = [
-      ...ownerDocument.adoptedStyleSheets,
-      sheet,
-    ];
+    const root = rootElement !== null ? rootElement.getRootNode() : null;
+    const target = isDOMShadowRoot(root) ? root : ownerDocument;
+    target.adoptedStyleSheets = [...target.adoptedStyleSheets, sheet];
     binding.cursorHighlightSheet = sheet;
   }
   return binding.cursorHighlightSheet;

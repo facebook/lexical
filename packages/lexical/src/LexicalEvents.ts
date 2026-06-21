@@ -108,6 +108,7 @@ import {
   $updateTextNodeFromDOMContent,
   dispatchCommand,
   doesContainSurrogatePair,
+  type DOMSelectionBoundaryPoints,
   getActiveElementDeep,
   getAnchorTextFromDOM,
   getComposedEventTarget,
@@ -235,16 +236,22 @@ function $shouldPreventDefaultAndInsertText(
   text: string,
   timeStamp: number,
   isBeforeInput: boolean,
+  cachedDOMSelectionPoints?: DOMSelectionBoundaryPoints | null,
 ): boolean {
   const anchor = selection.anchor;
   const focus = selection.focus;
   const anchorNode = anchor.getNode();
   const editor = getActiveEditor();
-  const domSelection = getDOMSelection(getWindow(editor));
-  const domSelectionPoints =
-    domSelection !== null
-      ? getDOMSelectionPoints(domSelection, editor._rootElement)
-      : null;
+  let domSelectionPoints: DOMSelectionBoundaryPoints | null;
+  if (cachedDOMSelectionPoints !== undefined) {
+    domSelectionPoints = cachedDOMSelectionPoints;
+  } else {
+    const domSelection = getDOMSelection(getWindow(editor));
+    domSelectionPoints =
+      domSelection !== null
+        ? getDOMSelectionPoints(domSelection, editor._rootElement)
+        : null;
+  }
   const domAnchorNode =
     domSelectionPoints !== null ? domSelectionPoints.anchorNode : null;
   const anchorKey = anchor.key;
@@ -1117,78 +1124,83 @@ function $handleInput(event: InputEvent): boolean {
   const data = event.data;
   const targetRange = getTargetRange(event);
 
-  if (
-    data != null &&
-    $isRangeSelection(selection) &&
-    $shouldPreventDefaultAndInsertText(
-      selection,
-      targetRange,
-      data,
-      event.timeStamp,
-      false,
-    )
-  ) {
-    // Given we're over-riding the default behavior, we will need
-    // to ensure to disable composition before dispatching the
-    // insertText command for when changing the sequence for FF.
-    if (isFirefoxEndingComposition) {
-      $onCompositionEndImpl(editor, data);
-      isFirefoxEndingComposition = false;
-    }
-    const anchor = selection.anchor;
-    const anchorNode = anchor.getNode();
+  let handled = false;
+  if (data != null && $isRangeSelection(selection)) {
     const domSelection = getDOMSelection(getWindow(editor));
-    if (domSelection === null) {
-      return true;
-    }
-    const domSelectionPoints = getDOMSelectionPoints(
-      domSelection,
-      editor._rootElement,
-    );
-    const isBackward = selection.isBackward();
-    const startOffset = isBackward
-      ? selection.anchor.offset
-      : selection.focus.offset;
-    const endOffset = isBackward
-      ? selection.focus.offset
-      : selection.anchor.offset;
-    // If the content is the same as inserted, then don't dispatch an insertion.
-    // Given onInput doesn't take the current selection (it uses the previous)
-    // we can compare that against what the DOM currently says.
+    const domSelectionPoints =
+      domSelection !== null
+        ? getDOMSelectionPoints(domSelection, editor._rootElement)
+        : null;
+
     if (
-      !CAN_USE_BEFORE_INPUT ||
-      selection.isCollapsed() ||
-      !$isTextNode(anchorNode) ||
-      domSelectionPoints.anchorNode === null ||
-      anchorNode.getTextContent().slice(0, startOffset) +
-        data +
-        anchorNode.getTextContent().slice(startOffset + endOffset) !==
-        getAnchorTextFromDOM(domSelectionPoints.anchorNode)
+      $shouldPreventDefaultAndInsertText(
+        selection,
+        targetRange,
+        data,
+        event.timeStamp,
+        false,
+        domSelectionPoints,
+      )
     ) {
-      dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
-    }
+      handled = true;
+      // Given we're over-riding the default behavior, we will need
+      // to ensure to disable composition before dispatching the
+      // insertText command for when changing the sequence for FF.
+      if (isFirefoxEndingComposition) {
+        $onCompositionEndImpl(editor, data);
+        isFirefoxEndingComposition = false;
+      }
+      const anchor = selection.anchor;
+      const anchorNode = anchor.getNode();
+      if (domSelection === null || domSelectionPoints === null) {
+        return true;
+      }
+      const isBackward = selection.isBackward();
+      const startOffset = isBackward
+        ? selection.anchor.offset
+        : selection.focus.offset;
+      const endOffset = isBackward
+        ? selection.focus.offset
+        : selection.anchor.offset;
+      // If the content is the same as inserted, then don't dispatch an insertion.
+      // Given onInput doesn't take the current selection (it uses the previous)
+      // we can compare that against what the DOM currently says.
+      if (
+        !CAN_USE_BEFORE_INPUT ||
+        selection.isCollapsed() ||
+        !$isTextNode(anchorNode) ||
+        domSelectionPoints.anchorNode === null ||
+        anchorNode.getTextContent().slice(0, startOffset) +
+          data +
+          anchorNode.getTextContent().slice(startOffset + endOffset) !==
+          getAnchorTextFromDOM(domSelectionPoints.anchorNode)
+      ) {
+        dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, data);
+      }
 
-    const textLength = data.length;
+      const textLength = data.length;
 
-    // Another hack for FF, as it's possible that the IME is still
-    // open, even though compositionend has already fired (sigh).
-    if (
-      IS_FIREFOX &&
-      textLength > 1 &&
-      event.inputType === 'insertCompositionText' &&
-      !editor.isComposing()
-    ) {
-      selection.anchor.offset -= textLength;
-      selection._cachedNodes = null;
-      selection._cachedIsBackward = null;
-    }
+      // Another hack for FF, as it's possible that the IME is still
+      // open, even though compositionend has already fired (sigh).
+      if (
+        IS_FIREFOX &&
+        textLength > 1 &&
+        event.inputType === 'insertCompositionText' &&
+        !editor.isComposing()
+      ) {
+        selection.anchor.offset -= textLength;
+        selection._cachedNodes = null;
+        selection._cachedIsBackward = null;
+      }
 
-    // This ensures consistency on Android.
-    if (IS_ANDROID_CHROME && editor.isComposing()) {
-      lastKeyDownTimeStamp = 0;
-      $setCompositionKey(null);
+      // This ensures consistency on Android.
+      if (IS_ANDROID_CHROME && editor.isComposing()) {
+        lastKeyDownTimeStamp = 0;
+        $setCompositionKey(null);
+      }
     }
-  } else {
+  }
+  if (!handled) {
     const characterData = data !== null ? data : undefined;
     $updateSelectedTextFromDOM(false, editor, characterData);
 

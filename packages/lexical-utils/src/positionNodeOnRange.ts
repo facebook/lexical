@@ -10,6 +10,7 @@ import invariant from '@lexical/internal/invariant';
 import {createRectsFromDOMRange} from '@lexical/selection';
 import {isHTMLElement, type LexicalEditor} from 'lexical';
 
+import dedupeSelectionRects from './dedupeSelectionRects';
 import px from './px';
 
 const mutationObserverConfig = {
@@ -52,7 +53,7 @@ export default function mlcPositionNodeOnRange(
     invariant(parentDOMNode !== null, 'Unexpected null parentDOMNode');
     const {left: parentLeft, top: parentTop} =
       parentDOMNode.getBoundingClientRect();
-    const rects = createRectsFromDOMRange(editor, range);
+    const rects = dedupeSelectionRects(createRectsFromDOMRange(editor, range));
     if (!wrapperNode.isConnected) {
       prependDOMNode(parentDOMNode, wrapperNode);
     }

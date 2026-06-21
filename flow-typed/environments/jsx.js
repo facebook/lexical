@@ -1,5 +1,5 @@
-// flow-typed signature: e51684b7f9618ccda34e09816ddb01da
-// flow-typed version: bb4cb83b7a/jsx/flow_>=v0.261.x
+// flow-typed signature: 4e0586c675a57bbe33b81cc8cedd32ba
+// flow-typed version: 284fb57107/jsx/flow_>=v0.261.x
 
 // https://www.w3.org/TR/uievents-key/#keys-modifier
 type ModifierKey =
@@ -27,7 +27,7 @@ declare class SyntheticEvent<+T: EventTarget = EventTarget, +E: Event = Event> {
   isDefaultPrevented(): boolean;
   isPropagationStopped(): boolean;
   isTrusted: boolean;
-  nativeEvent: E;
+  +nativeEvent: E;
   persist(): void;
   preventDefault(): void;
   stopPropagation(): void;

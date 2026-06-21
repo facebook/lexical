@@ -193,16 +193,7 @@ test.describe('Shadow DOM', () => {
     await expect(page.locator('.editor-image img').first()).toBeVisible();
   });
 
-  test('pastes a file image into the shadow editor', async ({
-    browserName,
-    page,
-  }) => {
-    // Firefox keeps the DataTransfer reference attached to a synthetic
-    // ClipboardEvent, but `getData()` returns an empty string and `files`
-    // is empty — its security policy refuses to expose script-set payloads
-    // back to listeners. There is no cross-browser way to feed a real
-    // payload into a synthetic paste, so this run is Chrome / WebKit only.
-    test.skip(browserName === 'firefox');
+  test('pastes a file image into the shadow editor', async ({page}) => {
     await focusEditor(page);
     // Simulate a file-bearing paste targeted at the shadow-internal
     // contentEditable. `@lexical/clipboard`'s paste handler runs against
@@ -222,13 +213,19 @@ test.describe('Shadow DOM', () => {
       const file = new File([bytes], 'tiny.png', {type: 'image/png'});
       const dt = new DataTransfer();
       dt.items.add(file);
-      ce.dispatchEvent(
-        new ClipboardEvent('paste', {
-          bubbles: true,
-          clipboardData: dt,
-          composed: true,
-        }),
-      );
+      const event = new ClipboardEvent('paste', {
+        bubbles: true,
+        clipboardData: dt,
+        composed: true,
+      });
+      if ((event.clipboardData.files?.length ?? 0) === 0) {
+        // Firefox keeps the DataTransfer reference attached to a synthetic
+        // ClipboardEvent, but `getData()` returns an empty string and `files`
+        // is empty — its security policy refuses to expose script-set payloads
+        // back to listeners.
+        Object.defineProperty(event, 'clipboardData', {get: () => dt});
+      }
+      ce.dispatchEvent(event);
     });
     await expect(page.locator('.editor-image img').first()).toBeVisible();
   });

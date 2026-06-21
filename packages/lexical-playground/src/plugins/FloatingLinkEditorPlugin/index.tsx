@@ -41,6 +41,7 @@ import {
   getDOMSelection,
   getDOMSelectionPoints,
   getDOMSelectionRangeAndPoints,
+  getParentElement,
   getRootOwnerDocument,
   KEY_ESCAPE_COMMAND,
   LexicalEditor,
@@ -110,7 +111,7 @@ function FloatingLinkEditor({
     null,
   );
 
-  const scrollerElem = anchorElem.parentElement;
+  const scrollerElem = getParentElement(anchorElem);
 
   const {refs, floatingStyles} = useFloating({
     middleware: [

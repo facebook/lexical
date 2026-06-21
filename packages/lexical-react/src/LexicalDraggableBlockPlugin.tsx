@@ -25,6 +25,7 @@ import {
   getActiveElement,
   getActiveElementDeep,
   getComposedEventTarget,
+  getParentElement,
   getRootOwnerDocument,
   IS_FIREFOX,
   LexicalEditor,
@@ -286,7 +287,7 @@ function useDraggableBlockMenu(
   isOnMenu: (element: HTMLElement) => boolean,
   onElementChanged?: (element: HTMLElement | null) => void,
 ): JSX.Element {
-  const scrollerElem = anchorElem.parentElement;
+  const scrollerElem = getParentElement(anchorElem);
 
   const isDraggingBlockRef = useRef<boolean>(false);
   const [draggableBlockElem, setDraggableBlockElemState] =

@@ -419,8 +419,9 @@ export function applyTableHandlers(
   );
 
   const onTripleClick = (event: MouseEvent) => {
-    if (event.detail >= 3 && isDOMNode(event.target)) {
-      const targetCell = getDOMCellFromTarget(event.target);
+    const target = getComposedEventTarget(event);
+    if (event.detail >= 3 && isDOMNode(target)) {
+      const targetCell = getDOMCellFromTarget(target);
       if (targetCell !== null) {
         event.preventDefault();
       }

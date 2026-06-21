@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {getDOMSelection, getDOMSelectionRange} from 'lexical';
+import {getDOMSelection, getDOMSelectionRange, getParentElement} from 'lexical';
 
 const VERTICAL_GAP = 10;
 const HORIZONTAL_OFFSET = 5;
@@ -18,7 +18,7 @@ export function setFloatingElemPosition(
   verticalGap: number = VERTICAL_GAP,
   horizontalOffset: number = HORIZONTAL_OFFSET,
 ): void {
-  const scrollerElem = anchorElem.parentElement;
+  const scrollerElem = getParentElement(anchorElem);
 
   if (targetRect === null || !scrollerElem) {
     floatingElem.style.opacity = '0';

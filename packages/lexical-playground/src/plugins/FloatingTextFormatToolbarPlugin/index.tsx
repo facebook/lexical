@@ -24,6 +24,7 @@ import {
   FORMAT_TEXT_COMMAND,
   getDOMSelection,
   getDOMSelectionPoints,
+  getParentElement,
   isDOMDocumentNode,
   isDOMShadowRoot,
   LexicalEditor,
@@ -173,7 +174,7 @@ function TextFormatFloatingToolbar({
   }, [editor, anchorElem, isLink]);
 
   useEffect(() => {
-    const scrollerElem = anchorElem.parentElement;
+    const scrollerElem = getParentElement(anchorElem);
 
     const update = () => {
       editor.read('latest', () => {

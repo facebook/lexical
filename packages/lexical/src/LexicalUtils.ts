@@ -2014,16 +2014,22 @@ export function isDOMShadowRoot(node: unknown): node is ShadowRoot {
  *
  * @experimental Shape may change as shadow DOM support stabilizes.
  */
+const EMPTY_SHADOW_ROOTS: ShadowRoot[] = [];
+
 export function getDOMShadowRoots(node: Node): ShadowRoot[] {
-  const shadowRoots: ShadowRoot[] = [];
-  let current: Node = node;
+  const root = node.getRootNode();
+  if (root === node || !isDOMShadowRoot(root)) {
+    return EMPTY_SHADOW_ROOTS;
+  }
+  const shadowRoots: ShadowRoot[] = [root];
+  let current: Node = root.host;
   for (;;) {
-    const root = current.getRootNode();
-    if (root === current || !isDOMShadowRoot(root)) {
+    const nextRoot = current.getRootNode();
+    if (nextRoot === current || !isDOMShadowRoot(nextRoot)) {
       break;
     }
-    shadowRoots.push(root);
-    current = root.host;
+    shadowRoots.push(nextRoot);
+    current = nextRoot.host;
   }
   return shadowRoots;
 }
@@ -2042,7 +2048,9 @@ export function* findAllLexicalElementsDeep(
   let root;
   while ((root = roots.pop())) {
     yield* root.querySelectorAll('[data-lexical-editor="true"]');
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+    const doc =
+      root instanceof Document ? root : (root.ownerDocument ?? document);
+    const walker = doc.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
     let el;
     while ((el = walker.nextNode() as null | Element)) {
       if (el.shadowRoot) {
@@ -2376,13 +2384,19 @@ export function getActiveElementDeep(
  * @experimental Shape may change as shadow DOM support stabilizes.
  */
 export function getComposedEventTarget(event: Event): EventTarget | null {
-  if (typeof event.composedPath === 'function') {
+  const target = event.target;
+  if (
+    target !== null &&
+    isHTMLElement(target) &&
+    target.shadowRoot !== null &&
+    typeof event.composedPath === 'function'
+  ) {
     const path = event.composedPath();
     if (path.length > 0) {
       return path[0];
     }
   }
-  return event.target;
+  return target;
 }
 
 export function $splitNode(

@@ -62,6 +62,7 @@ import {
   getCachedTypeToNodeMap,
   getDefaultView,
   getDOMSelection,
+  getParentElement,
   getRegisteredNode,
   getStaticNodeConfig,
   hasOwnStaticMethod,
@@ -1564,7 +1565,7 @@ export class LexicalEditor {
           nextRootElement.classList.add(...classNames);
         }
         if (__DEV__) {
-          const nextRootElementParent = nextRootElement.parentElement;
+          const nextRootElementParent = getParentElement(nextRootElement);
           if (
             nextRootElementParent != null &&
             ['flex', 'inline-flex'].includes(

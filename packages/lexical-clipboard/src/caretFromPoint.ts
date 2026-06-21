@@ -60,14 +60,30 @@ export function caretFromPoint(
   }
   if (typeof doc.caretRangeFromPoint === 'function') {
     const range = doc.caretRangeFromPoint(x, y);
-    return range === null
-      ? null
-      : {node: range.startContainer, offset: range.startOffset};
+    if (range === null) {
+      return null;
+    }
+    if (
+      rootElement !== null &&
+      shadowRoots.length > 0 &&
+      !isWithinComposedTree(range.startContainer, rootElement)
+    ) {
+      return null;
+    }
+    return {node: range.startContainer, offset: range.startOffset};
   } else if (typeof doc.caretPositionFromPoint === 'function') {
     const caretPosition = doc.caretPositionFromPoint(x, y);
-    return caretPosition === null
-      ? null
-      : {node: caretPosition.offsetNode, offset: caretPosition.offset};
+    if (caretPosition === null) {
+      return null;
+    }
+    if (
+      rootElement !== null &&
+      shadowRoots.length > 0 &&
+      !isWithinComposedTree(caretPosition.offsetNode, rootElement)
+    ) {
+      return null;
+    }
+    return {node: caretPosition.offsetNode, offset: caretPosition.offset};
   }
   // Gracefully handle IE
   return null;

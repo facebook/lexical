@@ -1548,7 +1548,10 @@ function onDocumentSelectionChange(event: Event): void {
       }
       if (!hasShadow) {
         const anchorNode = domSelection.anchorNode;
-        if (anchorNode !== null) {
+        if (
+          anchorNode !== null &&
+          !(isHTMLElement(anchorNode) && anchorNode.shadowRoot !== null)
+        ) {
           nextActiveEditor = getNearestEditorFromDOMNode(anchorNode);
           if (nextActiveEditor !== null) {
             resolvedAnchorNode = anchorNode;

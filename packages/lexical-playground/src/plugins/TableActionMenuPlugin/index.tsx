@@ -44,6 +44,7 @@ import {
   getActiveElementDeep,
   getDOMSelection,
   getDOMSelectionPoints,
+  getRootOwnerDocument,
   isDOMNode,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -739,9 +740,8 @@ function TableCellActionMenuContainer({
     // getActiveElementDeep rather than document.activeElement, which reports
     // the shadow host (not the focused element) when the editor is in a
     // shadow root.
-    const rootNode = editor.getRootElement();
     const activeElement = getActiveElementDeep(
-      rootNode ? rootNode.ownerDocument : document,
+      getRootOwnerDocument(editor.getRootElement()),
     );
     function disable() {
       if (menu) {

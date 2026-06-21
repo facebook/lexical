@@ -167,18 +167,19 @@ export const scheduleMicroTask: (fn: () => void) => void =
         Promise.resolve().then(fn);
       };
 
-export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
-  // Resolve the focused element through any shadow trees; document.activeElement
-  // reports the outermost shadow host, hiding an input focused inside an open
-  // shadow root (e.g. when the editor or a decorator lives in a web component).
-  // Use getActiveElementDeep (not getActiveElement) because the decorator
-  // input itself can attach a nested shadow root — e.g. a web component used
-  // as the decorator's editable surface — and only the descent finds it.
-  const root = anchorDOM.getRootNode();
+export function isSelectionCapturedInDecoratorInput(
+  anchorDOM: Node,
+  preResolvedActiveElement?: Element | null,
+): boolean {
   const activeElement =
-    isDOMDocumentNode(root) || isDOMShadowRoot(root)
-      ? getActiveElementDeep(root)
-      : null;
+    preResolvedActiveElement !== undefined
+      ? preResolvedActiveElement
+      : (() => {
+          const root = anchorDOM.getRootNode();
+          return isDOMDocumentNode(root) || isDOMShadowRoot(root)
+            ? getActiveElementDeep(root)
+            : null;
+        })();
 
   if (!isHTMLElement(activeElement)) {
     return false;

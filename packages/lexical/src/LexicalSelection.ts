@@ -3536,11 +3536,6 @@ export function $updateDOMSelection(
   tags: Set<string>,
   rootElement: HTMLElement,
 ): void {
-  // Use the deep variant so a decorator-input focused inside a nested
-  // ShadowRoot (e.g. a web-component decorator surface) is detected here as
-  // well as in `isSelectionCapturedInDecoratorInput`. Without it, the single-
-  // level `getActiveElement` returns the outer shadow host and mis-attributes
-  // the owning editor in nested-shadow setups.
   const rootForActive = rootElement.getRootNode();
   const activeElement =
     isDOMDocumentNode(rootForActive) || isDOMShadowRoot(rootForActive)
@@ -3552,7 +3547,7 @@ export function $updateDOMSelection(
   if (
     (tags.has(COLLABORATION_TAG) && activeElement !== rootElement) ||
     (activeElement !== null &&
-      isSelectionCapturedInDecoratorInput(activeElement))
+      isSelectionCapturedInDecoratorInput(activeElement, activeElement))
   ) {
     return;
   }

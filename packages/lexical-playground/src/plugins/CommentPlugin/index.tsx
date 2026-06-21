@@ -52,6 +52,7 @@ import {
   createCommand,
   getActiveElementDeep,
   getDOMSelection,
+  getRootOwnerDocument,
   KEY_ESCAPE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
@@ -584,7 +585,9 @@ function CommentsPanelList({
               // getActiveElementDeep rather than document.activeElement so the
               // focused element is resolved through any shadow roots when
               // restoring focus after the selection moves below.
-              const activeElement = getActiveElementDeep(document);
+              const activeElement = getActiveElementDeep(
+                getRootOwnerDocument(editor.getRootElement()),
+              );
               // Move selection to the start of the mark, so that we
               // update the UI with the selected thread.
               editor.update(

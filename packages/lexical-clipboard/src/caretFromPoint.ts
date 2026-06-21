@@ -120,10 +120,13 @@ export function caretFromPoint(
     if (isDOMShadowRoot(rootNode)) {
       const element = rootNode.elementFromPoint(x, y);
       if (element !== null && rootElement.contains(element)) {
+        // `element` is inside the editor. If findTextOffsetAtPoint can't
+        // resolve an offset (no text under the hit element — e.g. an empty
+        // paragraph or a decorator/image block), an in-editor caret at
+        // element/0 is a better drop target than the host-retargeted legacy
+        // result below, which resolves outside rootElement.
         const result = findTextOffsetAtPoint(x, y, element, doc);
-        if (result !== null) {
-          return result;
-        }
+        return result !== null ? result : {node: element, offset: 0};
       }
       // The point missed the editor's shadow content (gutter/padding, slotted
       // content, or a sibling outside rootElement). Fall through to the legacy

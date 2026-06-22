@@ -2495,9 +2495,23 @@ describe('LexicalEditor tests', () => {
       }
     }
     expect(() =>
-      createEditor({nodes: [FakeLexicalNode as Klass<LexicalNode>]}),
-    ).toThrowError(
-      /FakeLexicalNode \(type fake-node\) does not subclass LexicalNode from the lexical package used by this editor/,
+      // @ts-expect-error
+      createEditor({nodes: [FakeLexicalNode]}),
+    ).toThrow(
+      /nodes\[0\] FakeLexicalNode \(type fake-node\) is not a constructor that subclasses LexicalNode from the lexical package used by this editor/,
+    );
+  });
+  it('rejects creating an editor with invalid LexicalNode parent class (no getType)', async () => {
+    class FakeLexicalNode {}
+    // @ts-expect-error
+    expect(() => createEditor({nodes: [FakeLexicalNode]})).toThrow(
+      /nodes\[0\] FakeLexicalNode is not a constructor that subclasses LexicalNode from the lexical package used by this editor/,
+    );
+  });
+  it('rejects creating an editor with invalid LexicalNode parent class (undefined)', async () => {
+    // @ts-expect-error
+    expect(() => createEditor({nodes: [undefined]})).toThrow(
+      /nodes\[0\] undefined is not a constructor that subclasses LexicalNode from the lexical package used by this editor/,
     );
   });
   it('mutation listener on newly initialized editor', async () => {

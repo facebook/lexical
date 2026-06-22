@@ -3094,13 +3094,25 @@ function isAbstractNodeClass(klass: Klass<LexicalNode>): boolean {
   );
 }
 
-/** @internal */
-export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
+export interface OwnStaticNodeConfig {
   ownNodeType: undefined | string;
   ownNodeConfig:
     | undefined
     | StaticNodeConfigValue<LexicalNode, string | symbol>;
-} {
+}
+const STATIC_NODE_CONFIG_CACHE = new WeakMap<
+  Klass<LexicalNode>,
+  OwnStaticNodeConfig
+>();
+
+/** @internal */
+export function getStaticNodeConfig(
+  klass: Klass<LexicalNode>,
+): OwnStaticNodeConfig {
+  const cache = STATIC_NODE_CONFIG_CACHE.get(klass);
+  if (cache) {
+    return cache;
+  }
   const nodeConfigRecord =
     klass.prototype != null && PROTOTYPE_CONFIG_METHOD in klass.prototype
       ? klass.prototype[PROTOTYPE_CONFIG_METHOD]()
@@ -3183,7 +3195,9 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
       }
     }
   }
-  return {ownNodeConfig, ownNodeType};
+  const result = {ownNodeConfig, ownNodeType};
+  STATIC_NODE_CONFIG_CACHE.set(klass, result);
+  return result;
 }
 
 /**

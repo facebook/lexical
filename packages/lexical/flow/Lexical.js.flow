@@ -1808,6 +1808,10 @@ export type SharedNodeState = {
   sharedConfigMap: SharedConfigMap;
   flatKeys: Set<string>;
 };
+export type OwnStaticNodeConfig = {
+  ownNodeType: void | string;
+  ownNodeConfig: void | StaticNodeConfigValue<LexicalNode, string>;
+};
 declare export class NodeState<T extends LexicalNode> {
   readonly node: LexicalNode;
   readonly knownState: KnownStateMap;
@@ -1849,10 +1853,7 @@ declare export function createState<K extends string, V>(
   valueConfig: StateValueConfig<V>,
 ): StateConfig<K, V>;
 declare export function $create<T>(cls: Class<T>): T;
-declare export function getStaticNodeConfig(cls: Class<LexicalNode>): {
-  ownNodeType: void | string;
-  ownNodeConfig: void | StaticNodeConfigValue<LexicalNode, string>;
-};
+declare export function getStaticNodeConfig(cls: Class<LexicalNode>): OwnStaticNodeConfig;
 declare export function getRegisteredSubtypeMap(
   nodes: Iterable<Class<LexicalNode>>,
 ): Map<string, Set<string>>;

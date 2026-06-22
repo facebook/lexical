@@ -115,8 +115,9 @@ function isSelectionOnEntityBoundary(
   });
 }
 
-export {getScrollParent} from './shared/getScrollParent';
+/** @deprecated Moved to `@lexical/utils`. Import `getScrollParent` from there. */
 export {useDynamicPositioning} from './shared/LexicalMenu';
+export {getScrollParent} from '@lexical/utils';
 
 /**
  * Command dispatched while the typeahead menu is open to scroll the option at

@@ -15,6 +15,7 @@ import type {
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {getScrollParent as getScrollParent_} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
@@ -115,9 +116,9 @@ function isSelectionOnEntityBoundary(
   });
 }
 
-/** @deprecated Moved to `@lexical/utils`. Import `getScrollParent` from there. */
 export {useDynamicPositioning} from './shared/LexicalMenu';
-export {getScrollParent} from '@lexical/utils';
+/** @deprecated Moved to `@lexical/utils`. Import `getScrollParent` from there. */
+export const getScrollParent = getScrollParent_;
 
 /**
  * Command dispatched while the typeahead menu is open to scroll the option at

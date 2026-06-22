@@ -18,14 +18,16 @@ import type {
 } from 'lexical';
 
 import {
+  $applyNodeReplacement,
+  $isRangeSelection,
   addClassNamesToElement,
+  ElementNode,
   removeClassNamesFromElement,
-} from '@lexical/utils';
-import {$applyNodeReplacement, $isRangeSelection, ElementNode} from 'lexical';
+} from 'lexical';
 
 export type SerializedMarkNode = Spread<
   {
-    ids: Array<string>;
+    ids: string[];
   },
   SerializedElementNode
 >;
@@ -110,7 +112,7 @@ export class MarkNode extends ElementNode {
     return this.getIDs().includes(id);
   }
 
-  getIDs(): Array<string> {
+  getIDs(): string[] {
     return Array.from(this.getLatest().__ids);
   }
 
@@ -145,11 +147,11 @@ export class MarkNode extends ElementNode {
     return markNode;
   }
 
-  canInsertTextBefore(): false {
+  canInsertTextBefore(): boolean {
     return false;
   }
 
-  canInsertTextAfter(): false {
+  canInsertTextAfter(): boolean {
     return false;
   }
 

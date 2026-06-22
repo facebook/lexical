@@ -39,7 +39,7 @@ import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {$isRootTextContentEmpty, $rootTextContent} from '@lexical/text';
-import {mergeRegister, registerNestedElementResolver} from '@lexical/utils';
+import {registerNestedElementResolver} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -50,8 +50,11 @@ import {
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_NORMAL,
   createCommand,
+  getActiveElementDeep,
   getDOMSelection,
+  getRootOwnerDocument,
   KEY_ESCAPE_COMMAND,
+  mergeRegister,
 } from 'lexical';
 import * as React from 'react';
 import {
@@ -235,7 +238,7 @@ function CommentInputBox({
   const author = useCollabAuthorName();
 
   const updateLocation = useCallback(() => {
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const selection = $getSelection();
 
       if ($isRangeSelection(selection)) {
@@ -266,7 +269,7 @@ function CommentInputBox({
           }px`;
           const selectionRectsLength = selectionRects.length;
           const {container} = selectionState;
-          const elements: Array<HTMLSpanElement> = selectionState.elements;
+          const elements: HTMLSpanElement[] = selectionState.elements;
           const elementsLength = elements.length;
 
           for (let i = 0; i < selectionRectsLength; i++) {
@@ -328,7 +331,7 @@ function CommentInputBox({
 
   const submitComment = () => {
     if (canSubmit) {
-      let quote = editor.getEditorState().read(() => {
+      let quote = editor.read('latest', () => {
         const selection = selectionRef.current;
         return selection ? selection.getTextContent() : '';
       });
@@ -531,7 +534,7 @@ function CommentsPanelList({
   submitAddComment,
   markNodeMap,
 }: {
-  activeIDs: Array<string>;
+  activeIDs: string[];
   comments: Comments;
   deleteCommentOrThread: (
     commentOrThread: Comment | Thread,
@@ -580,7 +583,12 @@ function CommentsPanelList({
               markNodeKeys !== undefined &&
               (activeIDs === null || activeIDs.indexOf(id) === -1)
             ) {
-              const activeElement = document.activeElement;
+              // getActiveElementDeep rather than document.activeElement so the
+              // focused element is resolved through any shadow roots when
+              // restoring focus after the selection moves below.
+              const activeElement = getActiveElementDeep(
+                getRootOwnerDocument(editor.getRootElement()),
+              );
               // Move selection to the start of the mark, so that we
               // update the UI with the selected thread.
               editor.update(
@@ -673,7 +681,7 @@ function CommentsPanel({
   submitAddComment,
   markNodeMap,
 }: {
-  activeIDs: Array<string>;
+  activeIDs: string[];
   comments: Comments;
   deleteCommentOrThread: (
     commentOrThread: Comment | Thread,
@@ -727,7 +735,7 @@ export default function CommentPlugin({
     return new Map();
   }, []);
   const [activeAnchorKey, setActiveAnchorKey] = useState<NodeKey | null>();
-  const [activeIDs, setActiveIDs] = useState<Array<string>>([]);
+  const [activeIDs, setActiveIDs] = useState<string[]>([]);
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const {yjsDocMap} = collabContext;
@@ -813,7 +821,7 @@ export default function CommentPlugin({
   );
 
   useEffect(() => {
-    const changedElems: Array<HTMLElement> = [];
+    const changedElems: HTMLElement[] = [];
     for (let i = 0; i < activeIDs.length; i++) {
       const id = activeIDs[i];
       const keys = markNodeMap.get(id);
@@ -838,7 +846,7 @@ export default function CommentPlugin({
   }, [activeIDs, editor, markNodeMap]);
 
   useEffect(() => {
-    const markNodeKeysToIDs: Map<NodeKey, Array<string>> = new Map();
+    const markNodeKeysToIDs: Map<NodeKey, string[]> = new Map();
 
     return mergeRegister(
       registerNestedElementResolver<MarkNode>(
@@ -858,7 +866,7 @@ export default function CommentPlugin({
       editor.registerMutationListener(
         MarkNode,
         mutations => {
-          editor.getEditorState().read(() => {
+          editor.read('latest', () => {
             for (const [key, mutation] of mutations) {
               const node = $getNodeByKey(key);
               let ids: NodeKey[] = [];

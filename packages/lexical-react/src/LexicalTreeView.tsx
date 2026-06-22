@@ -15,7 +15,7 @@ import {
   TreeView as TreeViewCore,
   useLexicalCommandsLog,
 } from '@lexical/devtools-core';
-import {mergeRegister} from '@lexical/utils';
+import {mergeRegister} from 'lexical';
 import * as React from 'react';
 import {useEffect, useState} from 'react';
 
@@ -23,6 +23,10 @@ import {useEffect, useState} from 'react';
  * TreeView is a React component that provides a visual representation of
  * the Lexical editor's state and enables debugging features like time travel
  * and custom tree node rendering.
+ *
+ * When building an editor with the extension API, configure
+ * {@link TreeViewExtension} to render this debugging view wired to the editor
+ * instead of rendering `TreeView` directly.
  *
  * @param {Object} props - The properties passed to the TreeView component.
  * @param {LexicalEditor} props.editor - The Lexical editor instance to be visualized and debugged.

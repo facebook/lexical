@@ -7,12 +7,23 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {getActiveElement} from 'lexical';
 import {useEffect} from 'react';
 
 type Props = {
   defaultSelection?: 'rootStart' | 'rootEnd';
 };
 
+/**
+ * Focuses the editor when the component is mounted. Pass `defaultSelection`
+ * to control whether the selection is placed at the start (`'rootStart'`) or
+ * end (`'rootEnd'`) of the root when there is no existing selection to restore.
+ *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link AutoFocusExtension} instead.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function AutoFocusPlugin({defaultSelection}: Props): null {
   const [editor] = useLexicalComposerContext();
 
@@ -23,8 +34,11 @@ export function AutoFocusPlugin({defaultSelection}: Props): null {
         // trigger a re-focus on the element. So in the case this occurs, we'll need to correct it.
         // Normally this is fine, Selection API !== Focus API, but fore the intents of the naming
         // of this plugin, which should preserve focus too.
-        const activeElement = document.activeElement;
         const rootElement = editor.getRootElement() as HTMLDivElement;
+        // getActiveElement rather than document.activeElement, which reports
+        // the shadow host when the editor is in a shadow root.
+        const activeElement =
+          rootElement !== null ? getActiveElement(rootElement) : null;
         if (
           rootElement !== null &&
           (activeElement === null || !rootElement.contains(activeElement))

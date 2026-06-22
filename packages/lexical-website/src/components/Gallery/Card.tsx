@@ -24,7 +24,7 @@ function getCardImage(item: Example) {
   );
 }
 
-function CardTagChips({tags}: {tags: Array<string>}) {
+function CardTagChips({tags}: {tags: string[]}) {
   return (
     <ul className={clsx('clean-list', styles.cardTags)}>
       {tags.map(tagKey => {

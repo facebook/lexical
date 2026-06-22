@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
 import {$createLinkNode, LinkExtension} from '@lexical/link';
@@ -326,7 +325,7 @@ describe('LexicalReconciler', () => {
         });
 
         const decorateSpy = vi.spyOn(TestDecoratorNode.prototype, 'decorate');
-        const events: Array<{klass: string; mutation: NodeMutation}> = [];
+        const events: {klass: string; mutation: NodeMutation}[] = [];
         const recordMutations =
           (klass: string) => (nodes: Map<string, NodeMutation>) => {
             for (const m of nodes.values()) {
@@ -533,7 +532,7 @@ describe('LexicalReconciler', () => {
     // TableNode that wrap their keyed DOM in a scrollable container.
     class BlockWrapperElementNode extends ElementNode {
       $config() {
-        return this.config('audit_block_wrapper', {});
+        return this.config('audit_block_wrapper', {extends: ElementNode});
       }
       createDOM(): HTMLElement {
         const el = document.createElement('div');
@@ -1529,11 +1528,8 @@ describe('LexicalReconciler', () => {
     // up a later dirty sibling's format instead.
     test('AUDIT-4: $bubbleChildFirstText misses cache on elements with wrapping DOM', () => {
       class WrapperElementNode extends ElementNode {
-        static getType(): string {
-          return 'audit_wrapper';
-        }
-        static clone(node: WrapperElementNode): WrapperElementNode {
-          return new WrapperElementNode(node.__key);
+        $config() {
+          return this.config('audit_wrapper', {extends: ElementNode});
         }
         createDOM(): HTMLElement {
           const el = document.createElement('main');
@@ -1552,9 +1548,6 @@ describe('LexicalReconciler', () => {
           return true;
         }
         exportJSON(): SerializedElementNode {
-          throw new Error('Not implemented');
-        }
-        static importJSON(): WrapperElementNode {
           throw new Error('Not implemented');
         }
       }

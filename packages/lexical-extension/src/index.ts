@@ -58,6 +58,10 @@ export {
   type NamedSignalsOutput,
 } from './namedSignals';
 export {NestedEditorExtension} from './NestedEditorExtension';
+export {
+  type NodeSelectionDataSelectedConfig,
+  NodeSelectionDataSelectedExtension,
+} from './NodeSelectionDataSelectedExtension';
 export {NodeSelectionExtension} from './NodeSelectionExtension';
 export {
   type NormalizeInlineElementsConfig,
@@ -68,6 +72,14 @@ export {
   NormalizeTripleClickSelectionExtension,
   type NormalizeTripleClickSelectionOutput,
 } from './NormalizeTripleClickSelectionExtension';
+export {
+  type PreventSelectAllConfig,
+  PreventSelectAllExtension,
+} from './PreventSelectAllExtension';
+export {
+  type SelectBlockConfig,
+  SelectBlockExtension,
+} from './SelectBlockExtension';
 export {SelectionAlwaysOnDisplayExtension} from './SelectionAlwaysOnDisplayExtension';
 export {
   batch,

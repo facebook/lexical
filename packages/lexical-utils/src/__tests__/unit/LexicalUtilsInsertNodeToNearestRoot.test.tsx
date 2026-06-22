@@ -9,6 +9,7 @@
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   $createRangeSelection,
   $getRoot,
@@ -20,8 +21,6 @@ import {
   createTestEditor,
 } from 'lexical/src/__tests__/utils';
 import {beforeEach, describe, expect, it} from 'vitest';
-
-import {$insertNodeToNearestRoot} from '../..';
 
 describe('LexicalUtils#insertNodeToNearestRoot', () => {
   let editor: LexicalEditor;
@@ -36,14 +35,14 @@ describe('LexicalUtils#insertNodeToNearestRoot', () => {
     editor._headless = true;
   });
 
-  const testCases: Array<{
+  const testCases: {
     _: string;
     expectedHtml: string;
     initialHtml: string;
-    selectionPath: Array<number>;
+    selectionPath: number[];
     selectionOffset: number;
     only?: boolean;
-  }> = [
+  }[] = [
     {
       _: 'insert into paragraph in between two text nodes',
       expectedHtml:

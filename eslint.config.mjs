@@ -354,6 +354,7 @@ export default [
           isSafeDollarFunction: '$createRootNode',
         }),
       ],
+      '@typescript-eslint/array-type': [ERROR, {default: 'array'}],
       '@typescript-eslint/ban-ts-comment': OFF,
       '@typescript-eslint/no-this-alias': OFF,
       '@typescript-eslint/no-unused-vars': [

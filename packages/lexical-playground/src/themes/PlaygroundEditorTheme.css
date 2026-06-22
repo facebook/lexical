@@ -725,7 +725,7 @@
       var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom)
     );
   }
-  .PlaygroundEditorTheme__page + [type='page-break'] {
+  .PlaygroundEditorTheme__page + hr[data-lexical-page-break] {
     display: none;
   }
 }
@@ -811,4 +811,206 @@
     format('woff2');
   unicode-range: U+0020;
   font-display: block;
+}
+.lexical-card-node {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.04);
+  margin: 12px 0;
+  padding: 16px 20px;
+}
+.lexical-card-node[data-selected='true'] {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+.lexical-pullquote-node {
+  border-left: 4px solid #2563eb;
+  background: #f8fafc;
+  border-radius: 4px;
+  margin: 12px 0;
+  padding: 16px 20px;
+}
+.lexical-pullquote-node[data-selected='true'] {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+.lexical-pullquote-body {
+  outline: none;
+  font-style: italic;
+  font-size: 18px;
+  color: #1f2937;
+  line-height: 1.5;
+}
+.lexical-pullquote-attribution {
+  outline: none;
+  margin-top: 8px;
+  color: #4b5563;
+  font-size: 14px;
+  text-align: right;
+}
+.lexical-pullquote-attribution::before {
+  content: '— ';
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* Review — an ElementNode whose React chrome goes beyond static presentation:
+   an interactive star-rating widget (click/hover to set, persisted via
+   NodeState) sits above the editable islands — the testimonial prose
+   (getDOMSlot children) and the `author` slot container. */
+.lexical-review-node {
+  background: #fafaf9;
+  border: 1px solid #e7e5e4;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+.lexical-review-chrome {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 18px;
+}
+.lexical-review-stars {
+  display: flex;
+  gap: 2px;
+}
+.lexical-review-star {
+  background: none;
+  border: none;
+  color: #d6d3d1;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  padding: 0;
+}
+.lexical-review-star-on {
+  color: #f59e0b;
+}
+.lexical-review-children {
+  font-style: italic;
+  line-height: 1.6;
+  outline: none;
+}
+.lexical-review-author [data-lexical-slot='author'] {
+  align-items: baseline;
+  display: flex;
+  outline: none;
+}
+.lexical-review-author [data-lexical-slot='author'] > * {
+  color: #57534e;
+  /* Fill the row beside the permanent '— ' prefix so the editable line (and
+     its empty-state placeholder overlay) does not collapse to zero width. */
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 0;
+}
+/* Permanent '— ' prefix before the author, always shown (like the PullQuote
+   attribution) rather than only as part of the empty-field placeholder. Flex on
+   the slot container keeps it inline with the author paragraph; an empty
+   paragraph's <br> would otherwise drop a block-container ::before to its own
+   line. */
+.lexical-review-author [data-lexical-slot='author']::before {
+  content: '— ';
+  color: #57534e;
+  font-size: 14px;
+  font-weight: 600;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* CSS placeholders for the empty author / prose fields, same idiom as the
+   Card: shown only while a field holds just its empty-paragraph <br>, hidden
+   the moment the user types, so the model seeds no placeholder TextNodes. The
+   author placeholder is just 'Author' now — the '— ' prefix above is
+   permanent. */
+.lexical-review-author [data-lexical-slot='author'] > p:has(br:only-child),
+.lexical-review-children > p:only-of-type:has(br:only-child) {
+  position: relative;
+}
+.lexical-review-author
+  [data-lexical-slot='author']
+  > p:has(br:only-child)::before {
+  content: 'Author';
+}
+.lexical-review-children > p:only-of-type:has(br:only-child)::before {
+  content: 'Write a review…';
+}
+.lexical-review-author
+  [data-lexical-slot='author']
+  > p:has(br:only-child)::before,
+.lexical-review-children > p:only-of-type:has(br:only-child)::before {
+  color: #a8a29e;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Title slot — a header field: large, bold editable text with a thin
+   separator below. The title's editable paragraph reads as header content,
+   not a separately-bordered box. The container renders hidden until
+   CardExtension mounts it in place. */
+.lexical-card-node [data-lexical-slot='title'] {
+  border-bottom: 1px solid #d1d5db;
+  outline: none;
+  padding-bottom: 4px;
+}
+.lexical-card-node [data-lexical-slot='title'] > * {
+  font-size: 20px;
+  font-weight: 600;
+}
+/* Body children (regular ElementNode children, not a named slot) sit
+   directly inside the card with spacing only — no separate panel chrome,
+   since they're the card's content area. The :not([data-lexical-slot])
+   guard keeps the title slot's own wrapper out of this selector. */
+.lexical-card-node > *:not([data-lexical-slot]) {
+  line-height: 1.6;
+  margin-top: 12px;
+}
+/* CSS placeholders for the empty title / body fields. Shown only while a
+   field holds just its empty-paragraph <br> (the codebase's
+   :has(br:only-child) idiom), hidden the moment the user types, so the model
+   seeds no placeholder TextNodes. Absolutely positioned and pointer-inert so
+   they overlay the empty line without shifting the caret or blocking clicks. */
+.lexical-card-node [data-lexical-slot='title'] > p:has(br:only-child),
+.lexical-card-node > p:only-of-type:has(br:only-child) {
+  position: relative;
+}
+.lexical-card-node [data-lexical-slot='title'] > p:has(br:only-child)::before {
+  content: 'Title';
+}
+.lexical-card-node > p:only-of-type:has(br:only-child)::before {
+  content: 'Body';
+}
+.lexical-card-node [data-lexical-slot='title'] > p:has(br:only-child)::before,
+.lexical-card-node > p:only-of-type:has(br:only-child)::before {
+  color: #9ca3af;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* Caret-slot focus indicator. The active slot gets an orange accent (the
+   card's existing chrome family) so it visibly differs from the blue
+   `data-selected` ring used for the whole-card NodeSelection — orange
+   reads as "cursor is inside this region", blue reads as "the whole
+   card is selected and Backspace will remove it". We deliberately stay
+   off `content` / `display` so the per-update attribute write doesn't
+   trigger a layout reflow on the same frame as a forward-delete
+   keystroke. */
+.lexical-card-node[data-current-slot='title'] [data-lexical-slot='title'] {
+  border-bottom-color: #fb923c;
+}
+.lexical-card-node[data-current-slot='body'] {
+  border-color: #fb923c;
+  box-shadow:
+    0 0 0 1px rgba(251, 146, 60, 0.25),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.04);
 }

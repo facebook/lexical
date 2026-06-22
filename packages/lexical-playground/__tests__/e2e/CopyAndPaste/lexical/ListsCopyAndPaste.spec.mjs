@@ -100,7 +100,9 @@ test.describe('Lists CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         `,
       );
       await assertSelection(page, {
@@ -219,7 +221,7 @@ test.describe('Lists CopyAndPaste', () => {
               <span data-lexical-text="true">one</span>
             </li>
             <li class="PlaygroundEditorTheme__listItem" value="2">
-              <br />
+              <br data-lexical-managed-linebreak="true" />
             </li>
             <li class="PlaygroundEditorTheme__listItem" value="3">
               <span data-lexical-text="true">two</span>
@@ -350,7 +352,9 @@ test.describe('Lists CopyAndPaste', () => {
             <li class="PlaygroundEditorTheme__listItem" value="2">
               <span data-lexical-text="true">two</span>
             </li>
-            <li class="PlaygroundEditorTheme__listItem" value="3"><br /></li>
+            <li class="PlaygroundEditorTheme__listItem" value="3">
+              <br data-lexical-managed-linebreak="true" />
+            </li>
             <li class="PlaygroundEditorTheme__listItem" value="4">
               <span data-lexical-text="true">five</span>
             </li>

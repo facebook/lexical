@@ -17,7 +17,6 @@ import type {
 import type {LexicalEditor} from 'lexical';
 import type {JSX} from 'react';
 
-import {mergeRegister} from '@lexical/utils';
 import {
   CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
   CONNECTED_COMMAND,
@@ -45,7 +44,9 @@ import {
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   FOCUS_COMMAND,
+  getActiveElement,
   HISTORY_MERGE_TAG,
+  mergeRegister,
   REDO_COMMAND,
   SKIP_COLLAB_TAG,
   UNDO_COMMAND,
@@ -72,7 +73,7 @@ const COLLAB_UNDO_MANAGER = Symbol.for('@lexical/yjs/UndoManager');
 type OnYjsTreeChanges = (
   // The below `any` type is taken directly from the vendor types for YJS.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  events: Array<YEvent<any>>,
+  events: YEvent<any>[],
   transaction: Transaction,
 ) => void;
 
@@ -298,6 +299,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
         prevEditorState,
         editorState,
         dirtyElements,
+        dirtyLeaves,
         normalizedNodes,
         tags,
       }) => {
@@ -308,6 +310,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
             prevEditorState,
             editorState,
             dirtyElements,
+            dirtyLeaves,
             normalizedNodes,
             tags,
           );
@@ -366,11 +369,14 @@ function useProvider(
       }
     };
 
+    const rootElement = editor.getRootElement();
     initLocalState(
       provider,
       name,
       color,
-      document.activeElement === editor.getRootElement(),
+      // getActiveElement rather than document.activeElement, which reports the
+      // shadow host when the editor is in a shadow root.
+      rootElement !== null && getActiveElement(rootElement) === rootElement,
       awarenessData || {},
     );
 

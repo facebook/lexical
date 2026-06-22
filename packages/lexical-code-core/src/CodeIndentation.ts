@@ -515,22 +515,22 @@ export function registerCodeIndentation(
       ? [
           editor.registerCommand(
             KEY_ARROW_DOWN_COMMAND,
-            event => (event.altKey ? false : $onEscapeDown($isCodeNode)),
+            event => (event.altKey ? false : $onEscapeDown($isCodeNode, event)),
             COMMAND_PRIORITY_LOW,
           ),
           editor.registerCommand(
             KEY_ARROW_RIGHT_COMMAND,
-            () => $onEscapeDown($isCodeNode),
+            event => $onEscapeDown($isCodeNode, event),
             COMMAND_PRIORITY_LOW,
           ),
           editor.registerCommand(
             KEY_ARROW_UP_COMMAND,
-            event => (event.altKey ? false : $onEscapeUp($isCodeNode)),
+            event => (event.altKey ? false : $onEscapeUp($isCodeNode, event)),
             COMMAND_PRIORITY_LOW,
           ),
           editor.registerCommand(
             KEY_ARROW_LEFT_COMMAND,
-            () => $onEscapeUp($isCodeNode),
+            event => $onEscapeUp($isCodeNode, event),
             COMMAND_PRIORITY_LOW,
           ),
         ]

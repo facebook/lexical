@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
   $applyNodeReplacement,
   $copyNode,
@@ -17,26 +16,41 @@ import {
   $isTokenOrSegmented,
   $nodesOfType,
   $onUpdate,
+  $setCompositionKey,
   $setState,
   createEditor,
   createState,
+  ElementNode,
+  getParentElement,
+  getRegisteredSubtypeMap,
+  getTextDirection,
   IS_APPLE,
+  isExactShortcutMatch,
   isSelectionWithinEditor,
+  LineBreakNode,
   ParagraphNode,
   resetRandomKey,
-  SerializedParagraphNode,
   SerializedTextNode,
+  TabNode,
   TextNode,
 } from 'lexical';
-import {describe, expect, test, vi} from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  onTestFinished,
+  test,
+  vi,
+} from 'vitest';
 
 import {
+  $updateTextNodeFromDOMContent,
   emptyFunction,
   generateRandomKey,
   getCachedTypeToNodeMap,
-  getTextDirection,
+  getStaticNodeConfig,
   isArray,
-  isExactShortcutMatch,
   isMoveToEnd,
   isMoveToStart,
   scheduleMicroTask,
@@ -113,6 +127,56 @@ describe('LexicalUtils tests', () => {
     test('isArray()', () => {
       expect(isArray).toBeInstanceOf(Function);
       expect(isArray).toBe(Array.isArray);
+    });
+
+    describe('getStaticNodeConfig()', () => {
+      test('derives the type and config from $config()', () => {
+        class StaticConfigNode extends TextNode {
+          $config() {
+            return this.config('static-config-node', {extends: TextNode});
+          }
+        }
+
+        const {ownNodeConfig, ownNodeType} =
+          getStaticNodeConfig(StaticConfigNode);
+
+        expect(ownNodeType).toBe('static-config-node');
+        expect(ownNodeConfig).toMatchObject({
+          extends: TextNode,
+          type: 'static-config-node',
+        });
+        expect(StaticConfigNode.getType()).toBe('static-config-node');
+      });
+
+      test('caches the result for a node class', () => {
+        const $config = vi.fn(function (this: TextNode) {
+          return this.config('cached-static-config-node', {
+            extends: TextNode,
+          });
+        });
+        class CachedStaticConfigNode extends TextNode {
+          $config() {
+            return $config.call(this);
+          }
+        }
+
+        const first = getStaticNodeConfig(CachedStaticConfigNode);
+        const second = getStaticNodeConfig(CachedStaticConfigNode);
+
+        expect(first).toBe(second);
+        expect($config).toHaveBeenCalledTimes(1);
+      });
+
+      test('resolves symbol-keyed config for abstract node classes', () => {
+        const {ownNodeConfig, ownNodeType} = getStaticNodeConfig(ElementNode);
+
+        expect(ownNodeType).toBe(undefined);
+        expect(ownNodeConfig).toMatchObject({
+          // LexicalNode
+          extends: ElementNode.prototype.constructor.prototype,
+        });
+        expect(ownNodeConfig?.$transform).toBeInstanceOf(Function);
+      });
     });
 
     test('isSelectionWithinEditor()', async () => {
@@ -391,7 +455,7 @@ describe('LexicalUtils tests', () => {
         rootNode.append(paragraphNode);
       });
 
-      await editor.getEditorState().read(() => {
+      await editor.read('latest', () => {
         expect($getNodeByKey('1')).toBe(paragraphNode);
         expect($getNodeByKey('2')).toBe(textNode);
         expect($getNodeByKey('3')).toBe(null);
@@ -421,7 +485,7 @@ describe('LexicalUtils tests', () => {
           expect.arrayContaining(paragraphKeys),
         );
       });
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const currentParagraphKeys = $paragraphKeys();
         expect(currentParagraphKeys).toHaveLength(paragraphKeys.length);
         expect(currentParagraphKeys).toEqual(
@@ -872,16 +936,8 @@ describe('$copyNode', () => {
   });
   class ExtendedParagraphNode extends ParagraphNode {
     __string: string = 'default';
-    static getType() {
-      return 'extended-paragraph';
-    }
-    static clone(node: ExtendedParagraphNode): ExtendedParagraphNode {
-      return new ExtendedParagraphNode(node.getKey());
-    }
-    static importJSON(
-      serializedNode: SerializedParagraphNode,
-    ): ExtendedParagraphNode {
-      throw new Error('Not implemented');
+    $config() {
+      return this.config('extended-paragraph', {extends: ParagraphNode});
     }
     afterCloneFrom(prevNode: this): void {
       super.afterCloneFrom(prevNode);
@@ -965,5 +1021,204 @@ describe('$copyNode', () => {
       expect(initialParagraph.__string).toBe('not-aliased');
       expect(copiedParagraph.__string).toBe('non-default');
     });
+  });
+});
+
+describe('getRegisteredSubtypeMap', () => {
+  const toObject = (map: Map<string, Set<string>>) =>
+    Object.fromEntries(
+      [...map].map(([type, subtypes]) => [type, [...subtypes].sort()]),
+    );
+
+  test('maps each type to itself and its registered subclass types', () => {
+    expect(
+      toObject(
+        getRegisteredSubtypeMap([
+          TextNode,
+          TabNode,
+          ParagraphNode,
+          LineBreakNode,
+        ]),
+      ),
+    ).toEqual({
+      linebreak: ['linebreak'],
+      paragraph: ['paragraph'],
+      tab: ['tab'],
+      text: ['tab', 'text'],
+    });
+  });
+
+  test('expands a $config subclass under its base type', () => {
+    class TextNodeA extends TextNode {
+      $config() {
+        return this.config('text-a', {extends: TextNode});
+      }
+    }
+    expect(toObject(getRegisteredSubtypeMap([TextNode, TextNodeA]))).toEqual({
+      text: ['text', 'text-a'],
+      'text-a': ['text-a'],
+    });
+  });
+
+  test('omits an unregistered base type even when a subclass is registered', () => {
+    class TextNodeA extends TextNode {
+      $config() {
+        return this.config('text-a', {extends: TextNode});
+      }
+    }
+    const map = getRegisteredSubtypeMap([TextNodeA]);
+    expect(map.has('text')).toBe(false);
+    expect([...map.get('text-a')!].sort()).toEqual(['text-a']);
+  });
+});
+
+describe('$updateTextNodeFromDOMContent', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function createEditorWithTextNode(initialText: string) {
+    const editor = createEditor({
+      namespace: 'test',
+      nodes: [ParagraphNode, TextNode],
+      onError(error) {
+        throw error;
+      },
+    });
+
+    let textNode!: TextNode;
+    editor.update(
+      () => {
+        textNode = $createTextNode(initialText).toggleUnmergeable();
+        $getRoot().append($createParagraphNode().append(textNode));
+      },
+      {discrete: true},
+    );
+
+    return {editor, textNode};
+  }
+
+  test('removes delayed composition text node if it stays empty', () => {
+    const {editor, textNode} = createEditorWithTextNode('ツ');
+
+    editor.update(
+      () => {
+        $setCompositionKey(textNode.getKey());
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        $updateTextNodeFromDOMContent(textNode.getLatest(), '', 0, 0, false);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      expect(textNode.getLatest().getTextContent()).toBe('');
+    });
+
+    vi.runOnlyPendingTimers();
+
+    editor.read(() => {
+      expect(() => textNode.getLatest()).toThrow();
+    });
+  });
+
+  test('does not remove delayed composition text node if IME repopulates it', () => {
+    const {editor, textNode} = createEditorWithTextNode('ツ');
+
+    editor.update(
+      () => {
+        $setCompositionKey(textNode.getKey());
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        $updateTextNodeFromDOMContent(textNode.getLatest(), '', 0, 0, false);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        $updateTextNodeFromDOMContent(textNode.getLatest(), 'ツ', 1, 1, false);
+      },
+      {discrete: true},
+    );
+
+    vi.runOnlyPendingTimers();
+
+    editor.read(() => {
+      expect(textNode.getLatest().getTextContent()).toBe('ツ');
+    });
+  });
+});
+
+describe('getParentElement', () => {
+  test('crosses ShadowRoot to host when parentElement is null', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    onTestFinished(() => host.remove());
+    const shadow = host.attachShadow({mode: 'open'});
+    const child = document.createElement('span');
+    shadow.appendChild(child);
+
+    expect(getParentElement(child)).toBe(host);
+  });
+
+  test('returns the light-DOM parentElement when present', () => {
+    const parent = document.createElement('div');
+    const child = document.createElement('span');
+    parent.appendChild(child);
+    document.body.appendChild(parent);
+    onTestFinished(() => parent.remove());
+
+    expect(getParentElement(child)).toBe(parent);
+  });
+
+  test('crosses one ShadowRoot per call for nested shadow trees', () => {
+    const outerHost = document.createElement('div');
+    document.body.appendChild(outerHost);
+    onTestFinished(() => outerHost.remove());
+    const outerShadow = outerHost.attachShadow({mode: 'open'});
+    const innerHost = document.createElement('div');
+    outerShadow.appendChild(innerHost);
+    const innerShadow = innerHost.attachShadow({mode: 'open'});
+    const grandchild = document.createElement('span');
+    innerShadow.appendChild(grandchild);
+
+    // First call crosses the inner shadow boundary up to its host.
+    expect(getParentElement(grandchild)).toBe(innerHost);
+    // A second call from the inner host crosses the outer shadow boundary.
+    expect(getParentElement(innerHost)).toBe(outerHost);
+  });
+
+  test('returns null for a detached node with no parent', () => {
+    const orphan = document.createElement('span');
+    expect(getParentElement(orphan)).toBeNull();
+  });
+
+  test('returns parent element for a text node inside a shadow tree', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    onTestFinished(() => host.remove());
+    const shadow = host.attachShadow({mode: 'open'});
+    const span = document.createElement('span');
+    shadow.appendChild(span);
+    const text = document.createTextNode('hello');
+    span.appendChild(text);
+
+    // Text node's parentElement is the span (no boundary crossed yet).
+    expect(getParentElement(text)).toBe(span);
+    // From the span, the next call crosses the shadow boundary to the host.
+    expect(getParentElement(span)).toBe(host);
   });
 });

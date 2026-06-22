@@ -92,26 +92,23 @@ function shouldClaimClick(
   if (event.target !== rootElement) {
     return false;
   }
-  return editor.getEditorState().read(
-    () => {
-      const lastChild = $getRoot().getLastChild();
-      if (lastChild === null) {
-        return false;
-      }
-      const lastChildDOM = editor.getElementByKey(lastChild.getKey());
-      if (lastChildDOM === null) {
-        return false;
-      }
-      // Exclusive lower edge — clicks at exactly the bottom pixel fall
-      // through to native handling, which is what users expect when
-      // they click on a block's visible bottom border.
-      if (event.clientY <= lastChildDOM.getBoundingClientRect().bottom) {
-        return false;
-      }
-      return $shouldInsertAfter(lastChild);
-    },
-    {editor},
-  );
+  return editor.read('latest', () => {
+    const lastChild = $getRoot().getLastChild();
+    if (lastChild === null) {
+      return false;
+    }
+    const lastChildDOM = editor.getElementByKey(lastChild.getKey());
+    if (lastChildDOM === null) {
+      return false;
+    }
+    // Exclusive lower edge — clicks at exactly the bottom pixel fall
+    // through to native handling, which is what users expect when
+    // they click on a block's visible bottom border.
+    if (event.clientY <= lastChildDOM.getBoundingClientRect().bottom) {
+      return false;
+    }
+    return $shouldInsertAfter(lastChild);
+  });
 }
 
 /**

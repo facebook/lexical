@@ -43,8 +43,17 @@ import {EditorStateExtension} from './EditorStateExtension';
 import {NodeSelectionExtension} from './NodeSelectionExtension';
 import {batch, effect, ReadonlySignal, Signal, signal} from './signals';
 
+/**
+ * The serialized form of a {@link HorizontalRuleNode}. It has no extra fields
+ * beyond the base serialized node.
+ */
 export type SerializedHorizontalRuleNode = SerializedLexicalNode;
 
+/**
+ * Command that inserts a {@link HorizontalRuleNode} at the current selection.
+ * Dispatch it with
+ * `editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined)`.
+ */
 export const INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void> =
   /* @__PURE__ */ createCommand('INSERT_HORIZONTAL_RULE_COMMAND');
 
@@ -103,6 +112,9 @@ export function $createHorizontalRuleNode(): HorizontalRuleNode {
   return $create(HorizontalRuleNode);
 }
 
+/**
+ * @returns `true` if `node` is a {@link HorizontalRuleNode}, narrowing its type.
+ */
 export function $isHorizontalRuleNode(
   node: LexicalNode | null | undefined,
 ): node is HorizontalRuleNode {

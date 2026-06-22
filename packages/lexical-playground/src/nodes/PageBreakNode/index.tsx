@@ -12,12 +12,12 @@ import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {mergeRegister} from '@lexical/utils';
 import {
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   DecoratorNode,
   LexicalNode,
+  mergeRegister,
   NodeKey,
   SerializedLexicalNode,
 } from 'lexical';
@@ -77,9 +77,9 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM(): HTMLElement {
-    const el = document.createElement('figure');
+    const el = document.createElement('hr');
     el.style.pageBreakAfter = 'always';
-    el.setAttribute('type', this.getType());
+    el.setAttribute('data-lexical-page-break', 'true');
     return el;
   }
 

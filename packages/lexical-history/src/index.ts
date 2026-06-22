@@ -17,7 +17,6 @@ import {
   Signal,
   signal,
 } from '@lexical/extension';
-import {mergeRegister} from '@lexical/utils';
 import {
   $isRangeSelection,
   $isRootNode,
@@ -35,6 +34,7 @@ import {
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,
+  mergeRegister,
   PASTE_TAG,
   REDO_COMMAND,
   safeCast,
@@ -57,10 +57,17 @@ export type HistoryStateEntry = {
   editor: LexicalEditor;
   editorState: EditorState;
 };
+/**
+ * The undo/redo history maintained by the history plugin: the `current` entry
+ * plus the `undoStack` and `redoStack` of previous and future
+ * {@link HistoryStateEntry}s. Create an empty one with
+ * {@link createEmptyHistoryState} and pass it to the history plugin to share
+ * history across editors.
+ */
 export type HistoryState = {
   current: null | HistoryStateEntry;
-  redoStack: Array<HistoryStateEntry>;
-  undoStack: Array<HistoryStateEntry>;
+  redoStack: HistoryStateEntry[];
+  undoStack: HistoryStateEntry[];
 };
 
 type IntentionallyMarkedAsDirtyElement = boolean;
@@ -69,7 +76,7 @@ function getDirtyNodes(
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
-): Array<LexicalNode> {
+): LexicalNode[] {
   const nodeMap = editorState._nodeMap;
   const nodes = [];
 

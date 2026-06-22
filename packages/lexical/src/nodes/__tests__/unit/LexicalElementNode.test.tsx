@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
   $applyNodeReplacement,
   $createParagraphNode,
@@ -15,9 +14,11 @@ import {
   $isElementNode,
   $isRangeSelection,
   createEditor,
+  ElementDOMSlot,
   ElementNode,
   LexicalEditor,
   LexicalNode,
+  SerializedElementNode,
   TextNode,
 } from 'lexical';
 import * as React from 'react';
@@ -38,8 +39,7 @@ import {
   $createTestElementNode,
   createTestEditor,
 } from '../../../__tests__/utils';
-import {ElementDOMSlot, indexPath} from '../../../LexicalDOMSlot';
-import {SerializedElementNode} from '../../LexicalElementNode';
+import {indexPath} from '../../../LexicalDOMSlot';
 
 describe('LexicalElementNode tests', () => {
   let container: HTMLElement;
@@ -363,13 +363,13 @@ describe('LexicalElementNode tests', () => {
       });
     });
 
-    const BASE_INSERTIONS: Array<{
+    const BASE_INSERTIONS: {
       deleteCount: number;
       deleteOnly: boolean | null | undefined;
       expectedText: string;
       name: string;
       start: number;
-    }> = [
+    }[] = [
       // Do nothing
       {
         deleteCount: 0,
@@ -478,7 +478,7 @@ describe('LexicalElementNode tests', () => {
 
     let nodes: Record<string, LexicalNode> = {};
 
-    const NESTED_ELEMENTS_TESTS: Array<{
+    const NESTED_ELEMENTS_TESTS: {
       deleteCount: number;
       deleteOnly?: boolean;
       expectedSelection: () => {
@@ -496,7 +496,7 @@ describe('LexicalElementNode tests', () => {
       expectedText: string;
       name: string;
       start: number;
-    }> = [
+    }[] = [
       {
         deleteCount: 0,
         deleteOnly: true,
@@ -798,7 +798,7 @@ describe('getDOMSlot tests', () => {
       {discrete: true},
     );
     expect(container.innerHTML).toBe(
-      `<main dir="auto"><section><br></section></main>`,
+      `<main dir="auto"><section><br data-lexical-managed-linebreak="true"></section></main>`,
     );
   });
 

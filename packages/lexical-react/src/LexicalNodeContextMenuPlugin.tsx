@@ -40,6 +40,12 @@ class MenuOption {
   }
 }
 
+/**
+ * A selectable item in a {@link NodeContextMenuPlugin}. It pairs a `title` (and
+ * optional `icon`/`disabled` state) with a `$onSelect` callback that runs in an
+ * editor update when chosen, and an optional `$showOn` predicate that decides,
+ * per node, whether the item is shown for the right-clicked node.
+ */
 class NodeContextMenuOption extends MenuOption {
   type: string;
   title: string;
@@ -69,6 +75,11 @@ class NodeContextMenuOption extends MenuOption {
   }
 }
 
+/**
+ * A non-interactive divider between groups of {@link NodeContextMenuOption}s in
+ * a {@link NodeContextMenuPlugin}. Like menu options, it accepts an optional
+ * `$showOn` predicate to control when it is displayed.
+ */
 class NodeContextMenuSeparator extends MenuOption {
   type: string;
   $showOn?: (node: LexicalNode) => boolean;
@@ -137,6 +148,16 @@ interface Props {
   items: ContextMenuType[];
 }
 
+/**
+ * Renders a custom context menu (replacing the browser's) when the user
+ * right-clicks inside the editor. Pass the `items` to display as
+ * {@link NodeContextMenuOption}s and {@link NodeContextMenuSeparator}s; each
+ * item's optional `$showOn` predicate is evaluated against the node nearest the
+ * click so the menu can adapt to its target. Supports keyboard navigation and
+ * type-ahead.
+ *
+ * @returns A portal containing the floating context menu while it is open.
+ */
 const NodeContextMenuPlugin = forwardRef<
   HTMLButtonElement,
   Props & React.HTMLProps<HTMLButtonElement>
@@ -145,8 +166,8 @@ const NodeContextMenuPlugin = forwardRef<
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const listItemsRef = useRef<Array<HTMLButtonElement | null>>([]);
-  const listContentRef = useRef<Array<string | null>>([]);
+  const listItemsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  const listContentRef = useRef<(string | null)[]>([]);
 
   const {refs, floatingStyles, context} = useFloating({
     middleware: [

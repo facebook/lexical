@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {$createCodeNode, CodeNode} from '@lexical/code-core';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
@@ -17,6 +16,21 @@ import {
   ListItemNode,
   ListNode,
 } from '@lexical/list';
+import {
+  $convertFromMarkdownString,
+  $convertSelectionToMarkdownString,
+  $convertToMarkdownString,
+  CHECK_LIST,
+  CODE,
+  ElementTransformer,
+  HEADING,
+  LINK,
+  MultilineElementTransformer,
+  registerMarkdownShortcuts,
+  TextMatchTransformer,
+  Transformer,
+  TRANSFORMERS,
+} from '@lexical/markdown';
 import {$createQuoteNode, HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
   $addUpdateTag,
@@ -45,25 +59,10 @@ import {
 import {assert, describe, expect, it} from 'vitest';
 
 import {
-  $convertFromMarkdownString,
-  $convertSelectionToMarkdownString,
-  $convertToMarkdownString,
-  LINK,
-  registerMarkdownShortcuts,
-  TextMatchTransformer,
-  Transformer,
-} from '../..';
-import {
-  CHECK_LIST,
-  CODE,
-  ElementTransformer,
   hardLineBreakState,
-  HEADING,
   listMarkerState,
-  MultilineElementTransformer,
   normalizeMarkdown,
   parseMarkdownHardLineBreak,
-  TRANSFORMERS,
 } from '../../MarkdownTransformers';
 
 const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
@@ -272,7 +271,7 @@ export const CANCELED_HEADING_REPLACE_EXAMPLE: ElementTransformer = {
 };
 
 describe('Markdown', () => {
-  type Input = Array<{
+  type Input = {
     html: string;
     md: string;
     skipExport?: true;
@@ -281,7 +280,7 @@ describe('Markdown', () => {
     shouldMergeAdjacentLines?: true | false;
     customTransformers?: Transformer[];
     mdAfterExport?: string;
-  }>;
+  }[];
 
   const URL = 'https://lexical.dev';
 
@@ -416,6 +415,34 @@ describe('Markdown', () => {
     {
       html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>$$hello</span></code></p>',
       md: '`$$hello`',
+    },
+    {
+      // Code spans bind tighter than text-match transformers, so the $...$
+      // (HIGHLIGHT_TEXT_MATCH_IMPORT) must not consume across the code spans.
+      // https://github.com/facebook/lexical/issues/8687
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>$a</span></code><span style="white-space: pre-wrap;"> </span><code spellcheck="false" style="white-space: pre-wrap;"><span>$b</span></code></p>',
+      md: '`$a` `$b`',
+    },
+    {
+      // Inline code containing a backtick must use a longer fence (CommonMark
+      // code spans) and pad with spaces so it round-trips losslessly.
+      html: '<p><span style="white-space: pre-wrap;">Here: </span><code spellcheck="false" style="white-space: pre-wrap;"><span>a`b</span></code></p>',
+      md: 'Here: `` a`b ``',
+    },
+    {
+      // Two consecutive backticks in the content bump the fence to three.
+      html: '<p><span style="white-space: pre-wrap;">Code: </span><code spellcheck="false" style="white-space: pre-wrap;"><span>a``b</span></code></p>',
+      md: 'Code: ``` a``b ```',
+    },
+    {
+      // Content beginning with a backtick is padded so the fence stays distinct.
+      html: '<p><code spellcheck="false" style="white-space: pre-wrap;"><span>`x</span></code></p>',
+      md: '`` `x ``',
+    },
+    {
+      // The code fence must remain the innermost wrapping, inside bold.
+      html: '<p><b><code spellcheck="false" style="white-space: pre-wrap;"><strong>a`b</strong></code></b></p>',
+      md: '**`` a`b ``**',
     },
     {
       html: '<p><a href="https://lexical.dev"><span style="white-space: pre-wrap;">Hello</span></a><span style="white-space: pre-wrap;"> world</span></p>',
@@ -876,11 +903,9 @@ describe('Markdown', () => {
         },
       );
 
-      expect(
-        editor
-          .getEditorState()
-          .read(() => $generateHtmlFromNodes(editor), {editor}),
-      ).toBe(html);
+      expect(editor.read('latest', () => $generateHtmlFromNodes(editor))).toBe(
+        html,
+      );
     });
   }
 
@@ -922,15 +947,13 @@ describe('Markdown', () => {
       );
 
       expect(
-        editor
-          .getEditorState()
-          .read(() =>
-            $convertToMarkdownString(
-              [...(customTransformers || []), ...TRANSFORMERS],
-              undefined,
-              shouldPreserveNewLines,
-            ),
+        editor.read('latest', () =>
+          $convertToMarkdownString(
+            [...(customTransformers || []), ...TRANSFORMERS],
+            undefined,
+            shouldPreserveNewLines,
           ),
+        ),
       ).toBe(mdAfterExport ?? md);
     });
   }
@@ -976,7 +999,7 @@ describe('Markdown', () => {
         },
       );
 
-      expect(editor.getEditorState().read(() => $getSelection())).toBe(null);
+      expect(editor.read('latest', () => $getSelection())).toBe(null);
     });
   }
 
@@ -1104,9 +1127,7 @@ describe('Markdown', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
     ).toBe(markdown);
   });
 
@@ -1141,9 +1162,7 @@ describe('Markdown', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() => $convertToMarkdownString(TRANSFORMERS)),
+      editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS)),
     ).toBe(markdown);
   });
 
@@ -1166,9 +1185,9 @@ describe('Markdown', () => {
     );
 
     // Export should compute fence to be ```` (4 backticks) since content contains ```
-    const exported = editor
-      .getEditorState()
-      .read(() => $convertToMarkdownString(TRANSFORMERS));
+    const exported = editor.read('latest', () =>
+      $convertToMarkdownString(TRANSFORMERS),
+    );
 
     expect(exported).toBe(
       '````markdown\n```js\nconsole.log("hello");\n```\n````',
@@ -1191,7 +1210,7 @@ describe('Markdown', () => {
           ),
         {discrete: true},
       );
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const node = $getRoot().getFirstChild();
         expect(node).toBeInstanceOf(ListNode);
         const marker = node ? $getState(node, listMarkerState) : undefined;
@@ -1264,7 +1283,7 @@ describe('Markdown', () => {
         },
         {discrete: true},
       );
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const markdownString = $convertToMarkdownString(
           [...TRANSFORMERS],
           undefined,
@@ -1890,15 +1909,13 @@ bar`;
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString(
-            [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
-            undefined,
-            true,
-          ),
+      editor.read('latest', () =>
+        $convertToMarkdownString(
+          [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
+          undefined,
+          true,
         ),
+      ),
     ).toBe(md);
   });
 
@@ -1930,15 +1947,13 @@ bar`;
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString(
-            [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
-            undefined,
-            true,
-          ),
+      editor.read('latest', () =>
+        $convertToMarkdownString(
+          [...TRANSFORMERS, HIGHLIGHT_TEXT_MATCH_IMPORT],
+          undefined,
+          true,
         ),
+      ),
     ).toBe(md);
   });
 });
@@ -1973,14 +1988,12 @@ describe('markdown whitespace import (default mode)', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe(md);
   }
 
@@ -2002,7 +2015,7 @@ describe('markdown whitespace import (default mode)', () => {
       {discrete: true},
     );
 
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const block = $getRoot().getFirstChildOrThrow();
       assert($isElementNode(block), 'Expected an element block');
       const lineBreakNode = block
@@ -2021,14 +2034,12 @@ describe('markdown whitespace import (default mode)', () => {
     });
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe(md);
   }
 
@@ -2047,14 +2058,12 @@ describe('markdown whitespace import (default mode)', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe(md);
   });
 
@@ -2072,14 +2081,12 @@ describe('markdown whitespace import (default mode)', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe(md);
   });
 
@@ -2125,7 +2132,7 @@ describe('markdown whitespace import (default mode)', () => {
       {discrete: true},
     );
 
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const block = $getRoot().getFirstChildOrThrow();
       assert($isElementNode(block), 'Expected an element block');
       const lineBreakNode = block
@@ -2138,14 +2145,12 @@ describe('markdown whitespace import (default mode)', () => {
     });
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe(md);
   });
 
@@ -2199,14 +2204,12 @@ describe('markdown whitespace import (default mode)', () => {
     );
 
     expect(
-      editor
-        .getEditorState()
-        .read(() =>
-          $convertToMarkdownString([
-            ...TRANSFORMERS,
-            HIGHLIGHT_TEXT_MATCH_IMPORT,
-          ]),
-        ),
+      editor.read('latest', () =>
+        $convertToMarkdownString([
+          ...TRANSFORMERS,
+          HIGHLIGHT_TEXT_MATCH_IMPORT,
+        ]),
+      ),
     ).toBe('foo   \nbar');
   });
 
@@ -2251,9 +2254,7 @@ describe('markdown Safari compatibility (issue #8012)', () => {
     editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
       discrete: true,
     });
-    return editor
-      .getEditorState()
-      .read(() => $convertToMarkdownString(TRANSFORMERS));
+    return editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS));
   }
 
   it('does not throw when constructing markdown regex patterns', () => {
@@ -2283,9 +2284,9 @@ describe('markdown Safari compatibility (issue #8012)', () => {
       () => $convertFromMarkdownString('\\`not code\\`', TRANSFORMERS),
       {discrete: true},
     );
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('`not code`');
   });
 
@@ -2296,6 +2297,68 @@ describe('markdown Safari compatibility (issue #8012)', () => {
 
   it('does not apply emphasis formatting inside a code span', () => {
     expect(roundtrip('`**not bold**`')).toBe('`**not bold**`');
+  });
+});
+
+describe('inline code with backticks (CommonMark code spans)', () => {
+  function createTestEditor() {
+    return createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+  }
+
+  function roundtrip(md: string): string {
+    const editor = createTestEditor();
+    editor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+      discrete: true,
+    });
+    return editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS));
+  }
+
+  function exportCodeSpan(content: string): string {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode(content);
+        text.toggleFormat('code');
+        paragraph.append(text);
+        $getRoot().append(paragraph);
+      },
+      {discrete: true},
+    );
+    return editor.read('latest', () => $convertToMarkdownString(TRANSFORMERS));
+  }
+
+  it('round-trips code spans whose content contains backticks', () => {
+    expect(roundtrip('Here: `` a`b ``')).toBe('Here: `` a`b ``');
+    expect(roundtrip('Code: ``` a``b ```')).toBe('Code: ``` a``b ```');
+    expect(roundtrip('`` `x ``')).toBe('`` `x ``');
+  });
+
+  it('exports a content-derived fence longer than any backtick run', () => {
+    expect(exportCodeSpan('block code')).toBe('`block code`');
+    expect(exportCodeSpan('a`b')).toBe('`` a`b ``');
+    expect(exportCodeSpan('a``b')).toBe('``` a``b ```');
+    expect(exportCodeSpan('`x')).toBe('`` `x ``');
+  });
+
+  it('normalizes a redundant inline fence to the minimal valid fence', () => {
+    // Both a single- and triple-backtick inline fence with backtick-free
+    // content normalize to a single backtick on export.
+    expect(roundtrip('a `block code` b')).toBe('a `block code` b');
+    expect(roundtrip('a ```block code``` b')).toBe('a `block code` b');
+  });
+
+  it('keeps the code fence innermost when combined with bold', () => {
+    expect(roundtrip('**`` a`b ``**')).toBe('**`` a`b ``**');
   });
 });
 
@@ -2326,12 +2389,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('Hello World');
   });
 
@@ -2348,12 +2408,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('World');
   });
 
@@ -2378,12 +2435,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('Hello **Bold**');
   });
 
@@ -2405,12 +2459,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('');
   });
 
@@ -2427,12 +2478,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('Hello');
   });
 
@@ -2457,12 +2505,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('First paragraph\n\nSecond paragraph');
   });
 
@@ -2489,12 +2534,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('- Item 1\n- Item 2');
   });
 
@@ -2515,12 +2557,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('[link](https://example.com)');
   });
 
@@ -2550,12 +2589,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('- Item 2\n- It');
   });
 
@@ -2574,12 +2610,9 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('> Line 2');
   });
 
@@ -2611,12 +2644,159 @@ describe('$convertSelectionToMarkdownString', () => {
       },
       {discrete: true},
     );
-    const result = editor
-      .getEditorState()
-      .read(
-        () => $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
-        {editor},
-      );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
     expect(result).toBe('    - Nested A');
+  });
+});
+
+describe('Ordered list start adjustment (#8677)', () => {
+  const baseNodes = [
+    HeadingNode,
+    ListNode,
+    ListItemNode,
+    QuoteNode,
+    CodeNode,
+    LinkNode,
+  ];
+
+  it('updates list start when typed marker precedes an existing ordered list', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        const list = $createListNode('number', 2).append(
+          $createListItemNode().append($createTextNode('A')),
+          $createListItemNode().append($createTextNode('B')),
+        );
+        root.append(paragraph, list);
+        paragraph.selectEnd().insertText('1.');
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText(' ');
+        }
+      },
+      {discrete: true},
+    );
+
+    expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+      '<ol><li value="1"></li><li value="2"><span style="white-space: pre-wrap;">A</span></li><li value="3"><span style="white-space: pre-wrap;">B</span></li></ol>',
+    );
+  });
+
+  it('respects an arbitrary typed start number', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        const list = $createListNode('number', 2).append(
+          $createListItemNode().append($createTextNode('A')),
+        );
+        root.append(paragraph, list);
+        paragraph.selectEnd().insertText('7.');
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText(' ');
+        }
+      },
+      {discrete: true},
+    );
+
+    expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+      '<ol start="7"><li value="7"></li><li value="8"><span style="white-space: pre-wrap;">A</span></li></ol>',
+    );
+  });
+
+  it('does not change start when typed marker follows an existing ordered list', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const list = $createListNode('number', 2).append(
+          $createListItemNode().append($createTextNode('A')),
+        );
+        const paragraph = $createParagraphNode();
+        root.append(list, paragraph);
+        paragraph.selectEnd().insertText('9.');
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText(' ');
+        }
+      },
+      {discrete: true},
+    );
+
+    // Branch (2) of listReplace: paragraph after the list is appended as the
+    // trailing item and the list start stays at 2. The typed "9." is
+    // overwritten by updateChildrenListItemValue.
+    expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+      '<ol start="2"><li value="2"><span style="white-space: pre-wrap;">A</span></li><li value="3"></li></ol>',
+    );
+  });
+
+  it('creates a fresh ordered list when the next sibling is a different list type', () => {
+    const editor = createHeadlessEditor({nodes: baseNodes});
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        const bullets = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('A')),
+        );
+        root.append(paragraph, bullets);
+        paragraph.selectEnd().insertText('5.');
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertText(' ');
+        }
+      },
+      {discrete: true},
+    );
+
+    // Adjacent list is a different type, so listReplace falls through to the
+    // branch that creates a fresh ordered list with the typed start. The
+    // existing bullet list stays intact.
+    expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+      '<ol start="5"><li value="5"></li></ol><ul><li value="1"><span style="white-space: pre-wrap;">A</span></li></ul>',
+    );
   });
 });

@@ -18,6 +18,9 @@ import {useEffect} from 'react';
 
 import {useList} from './shared/useList';
 
+/**
+ * Props for the {@link ListPlugin} component.
+ */
 export interface ListPluginProps {
   /**
    * When `true`, enforces strict indentation rules for list items, ensuring consistent structure.
@@ -31,6 +34,16 @@ export interface ListPluginProps {
   shouldPreserveNumbering?: boolean;
 }
 
+/**
+ * Enables ordered, unordered, and check list support, registering the commands
+ * and transforms that create and maintain {@link ListNode} and
+ * {@link ListItemNode} structures. The editor must have both nodes registered.
+ *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link ListExtension} instead.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function ListPlugin({
   hasStrictIndent = false,
   shouldPreserveNumbering = false,

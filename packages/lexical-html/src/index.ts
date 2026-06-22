@@ -26,8 +26,11 @@ import {
   $getEditor,
   $getEditorDOMRenderConfig,
   $getRoot,
+  $getSlotFrame,
   $isBlockElementNode,
   $isElementNode,
+  $isNodeSelection,
+  $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
@@ -146,14 +149,14 @@ const IGNORE_TAGS = new Set(['STYLE', 'SCRIPT']);
 export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document | ParentNode,
-): Array<LexicalNode> {
+): LexicalNode[] {
   $inlineStylesFromStyleSheetsDOM(dom);
 
   const elements = isDOMDocumentNode(dom)
     ? dom.body.childNodes
     : dom.childNodes;
-  const lexicalNodes: Array<LexicalNode> = [];
-  const allArtificialNodes: Array<ArtificialNode__DO_NOT_USE> = [];
+  const lexicalNodes: LexicalNode[] = [];
+  const allArtificialNodes: ArtificialNode__DO_NOT_USE[] = [];
   for (const element of elements) {
     if (!IGNORE_TAGS.has(element.nodeName)) {
       const lexicalNode = $createNodesFromDOM(
@@ -191,8 +194,18 @@ export function $generateDOMFromNodes<T extends HTMLElement | DocumentFragment>(
     const root = $getRoot();
     const domConfig = $getSessionDOMRenderConfig(editor);
 
+    // A RangeSelection wholly inside a slot subtree never includes its host
+    // (slots are shadow-root isolated), so a root-children walk would miss
+    // the selected nodes entirely and export an empty payload. Walk the
+    // selection's slot frame instead; outside slots this is the root.
+    const slotFrame = $isRangeSelection(selection)
+      ? $getSlotFrame(selection.anchor.getNode())
+      : null;
     const parentElementAppend = container.append.bind(container);
-    for (const topLevelNode of root.getChildren()) {
+    for (const topLevelNode of ($isElementNode(slotFrame)
+      ? slotFrame
+      : root
+    ).getChildren()) {
       $appendNodesToHTML(
         editor,
         topLevelNode,
@@ -293,13 +306,25 @@ function $appendNodesToHTML(
       ? target.getChildren()
       : [];
 
+  // Mirrors the clipboard JSON path: an element host in a NodeSelection
+  // (e.g. a Card promoted whole-host from a chrome click) recurses into its
+  // children with a null selection so the whole subtree serializes even when
+  // none of the children are in the outer selection themselves — the old
+  // shell-only output made cut silently lossy. Only a whole-host
+  // NodeSelection promotes: a partial RangeSelection that happens to contain
+  // the host must keep slicing/excluding per child, or a drag into the
+  // host's interior would over-export unselected content.
+  const childSelection =
+    shouldInclude && $isNodeSelection(selection) && $isElementNode(currentNode)
+      ? null
+      : selection;
   const fragmentAppend = fragment.append.bind(fragment);
   for (const childNode of children) {
     const shouldIncludeChild = $appendNodesToHTML(
       editor,
       childNode,
       fragmentAppend,
-      selection,
+      childSelection,
       domConfig,
     );
 
@@ -345,6 +370,34 @@ function $appendNodesToHTML(
   return shouldInclude;
 }
 
+/**
+ * Serialize a single node (and its subtree) into `parentElement`, the same way
+ * the top-level HTML exporter serializes the nodes it walks. Slots are not part
+ * of any node's child list and — like {@link LexicalNode.exportJSON} vs
+ * `exportDOM` for NodeState — are intentionally NOT auto-serialized to HTML;
+ * a host node opts in by calling this from its own `exportDOM`, e.g. to render
+ * each slot value into a `data-lexical-slot` wrapper.
+ *
+ * @experimental
+ */
+export function $appendNodeToHTML(
+  editor: LexicalEditor,
+  node: LexicalNode,
+  parentElement: HTMLElement | DocumentFragment,
+  selection: BaseSelection | null = null,
+): boolean {
+  return $appendNodesToHTML(
+    editor,
+    node,
+    parentElement.append.bind(parentElement),
+    selection,
+    // Resolve through the session so disabledForSession / export-only
+    // overrides apply to slot subtrees the same way they apply to the
+    // sibling content the outer exporter walks.
+    $getSessionDOMRenderConfig(editor),
+  );
+}
+
 function getConversionFunction(
   domNode: Node,
   editor: LexicalEditor,
@@ -376,12 +429,12 @@ function getConversionFunction(
 function $createNodesFromDOM(
   node: Node,
   editor: LexicalEditor,
-  allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
+  allArtificialNodes: ArtificialNode__DO_NOT_USE[],
   hasBlockAncestorLexicalNode: boolean,
   forChildMap: Map<string, DOMChildConversion> = new Map(),
   parentLexicalNode?: LexicalNode | null | undefined,
-): Array<LexicalNode> {
-  const lexicalNodes: Array<LexicalNode> = [];
+): LexicalNode[] {
+  const lexicalNodes: LexicalNode[] = [];
 
   if (IGNORE_TAGS.has(node.nodeName)) {
     return lexicalNodes;
@@ -498,13 +551,13 @@ function $createNodesFromDOM(
 
 function wrapContinuousInlines(
   domNode: Node,
-  nodes: Array<LexicalNode>,
+  nodes: LexicalNode[],
   createWrapperFn: () => ElementNode,
-): Array<LexicalNode> {
+): LexicalNode[] {
   const textAlign = (domNode as HTMLElement).style
     .textAlign as ElementFormatType;
-  const out: Array<LexicalNode> = [];
-  let continuousInlines: Array<LexicalNode> = [];
+  const out: LexicalNode[] = [];
+  let continuousInlines: LexicalNode[] = [];
   // wrap contiguous inline child nodes in para
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
@@ -531,7 +584,7 @@ function wrapContinuousInlines(
 }
 
 function $unwrapArtificialNodes(
-  allArtificialNodes: Array<ArtificialNode__DO_NOT_USE>,
+  allArtificialNodes: ArtificialNode__DO_NOT_USE[],
 ) {
   // Replace artificial node with its children, inserting a linebreak
   // between adjacent artificial nodes

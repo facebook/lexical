@@ -33,6 +33,7 @@ import {
   HISTORY_PUSH_TAG,
   KEY_ENTER_COMMAND,
   mergeRegister,
+  TEXT_TYPE_TO_FORMAT,
 } from 'lexical';
 
 import {canContainTransformableMarkdown} from './importTextTransformers';
@@ -43,7 +44,7 @@ function runElementTransformers(
   parentNode: ElementNode,
   anchorNode: TextNode,
   anchorOffset: number,
-  elementTransformers: ReadonlyArray<ElementTransformer>,
+  elementTransformers: readonly ElementTransformer[],
   triggerOnEnter?: boolean,
 ): boolean {
   const grandParentNode = parentNode.getParent();
@@ -97,7 +98,7 @@ function runMultilineElementTransformers(
   parentNode: ElementNode,
   anchorNode: TextNode,
   anchorOffset: number,
-  elementTransformers: ReadonlyArray<MultilineElementTransformer>,
+  elementTransformers: readonly MultilineElementTransformer[],
   triggerOnEnter?: boolean,
 ): boolean {
   const grandParentNode = parentNode.getParent();
@@ -162,7 +163,7 @@ function runMultilineElementTransformers(
 function runTextMatchTransformers(
   anchorNode: TextNode,
   anchorOffset: number,
-  transformersByTrigger: Readonly<Record<string, Array<TextMatchTransformer>>>,
+  transformersByTrigger: Readonly<Record<string, TextMatchTransformer[]>>,
 ): boolean {
   let textContent = anchorNode.getTextContent();
   const lastChar = textContent[anchorOffset - 1];
@@ -210,7 +211,7 @@ function $runTextFormatTransformers(
   anchorNode: TextNode,
   anchorOffset: number,
   textFormatTransformers: Readonly<
-    Record<string, ReadonlyArray<TextFormatTransformer>>
+    Record<string, readonly TextFormatTransformer[]>
   >,
 ): boolean {
   const textContent = anchorNode.getTextContent();
@@ -350,9 +351,7 @@ function $runTextFormatTransformers(
 
     // Apply formatting to selected text
     for (const format of matcher.format) {
-      if (!nextSelection.hasFormat(format)) {
-        nextSelection.formatText(format);
-      }
+      nextSelection.formatText(format, TEXT_TYPE_TO_FORMAT[format]);
     }
 
     // Collapse selection up to the focus point
@@ -435,7 +434,7 @@ function isEqualSubString(
 
 export function registerMarkdownShortcuts(
   editor: LexicalEditor,
-  transformers: Array<Transformer> = TRANSFORMERS,
+  transformers: Transformer[] = TRANSFORMERS,
 ): () => void {
   const byType = transformersByType(transformers);
   const elementTransformersForEnter = byType.element.filter(

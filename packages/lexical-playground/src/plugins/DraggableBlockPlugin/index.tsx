@@ -19,6 +19,7 @@ import {
   $getNodeByKey,
   $isParagraphNode,
   $isTextNode,
+  getComposedEventTarget,
 } from 'lexical';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import * as ReactDOM from 'react-dom';
@@ -104,7 +105,7 @@ export default function DraggableBlockPlugin({
       return;
     }
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node | null;
+      const target = getComposedEventTarget(event) as Node | null;
       if (
         (pickerRef.current && pickerRef.current.contains(target)) ||
         (menuRef.current && menuRef.current.contains(target))

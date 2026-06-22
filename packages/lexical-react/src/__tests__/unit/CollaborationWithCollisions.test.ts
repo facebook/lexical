@@ -29,7 +29,7 @@ import {
   waitForReact,
 } from '../utils';
 
-const $insertParagraph = (...children: Array<string | LexicalNode>) => {
+const $insertParagraph = (...children: (string | LexicalNode)[]) => {
   const root = $getRoot();
   const paragraph = $createParagraphNode();
   const nodes = children.map(child => {
@@ -46,9 +46,9 @@ const $createSelectionByPath = ({
   focusOffset,
 }: {
   anchorOffset: number;
-  anchorPath: Array<number>;
+  anchorPath: number[];
   focusOffset: number;
-  focusPath: Array<number>;
+  focusPath: number[];
 }): BaseSelection => {
   const selection = $createRangeSelection();
   const root = $getRoot();
@@ -86,9 +86,9 @@ const $replaceTextByPath = ({
   text = '',
 }: {
   anchorOffset: number;
-  anchorPath: Array<number>;
+  anchorPath: number[];
   focusOffset: number;
-  focusPath: Array<number>;
+  focusPath: number[];
   text: string | null | undefined;
 }) => {
   const selection = $createSelectionByPath({
@@ -113,12 +113,12 @@ describe('CollaborationWithCollisions', () => {
     container = null;
   });
 
-  const SIMPLE_TEXT_COLLISION_TESTS: Array<{
-    clients: Array<() => void>;
+  const SIMPLE_TEXT_COLLISION_TESTS: {
+    clients: (() => void)[];
     expectedHTML: string | null | undefined;
     init: () => void;
     name: string;
-  }> = [
+  }[] = [
     {
       clients: [
         () => {

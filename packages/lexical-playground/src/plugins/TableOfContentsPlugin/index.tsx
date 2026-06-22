@@ -47,14 +47,14 @@ function isHeadingBelowTheTopOfThePage(element: HTMLElement): boolean {
 function TableOfContentsList({
   tableOfContents,
 }: {
-  tableOfContents: Array<TableOfContentsEntry>;
+  tableOfContents: TableOfContentsEntry[];
 }): JSX.Element {
   const [selectedKey, setSelectedKey] = useState('');
   const selectedIndex = useRef(0);
   const [editor] = useLexicalComposerContext();
 
   function scrollToNode(key: NodeKey, currIndex: number) {
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const domElement = editor.getElementByKey(key);
       if (domElement !== null) {
         domElement.scrollIntoView({behavior: 'smooth', block: 'center'});

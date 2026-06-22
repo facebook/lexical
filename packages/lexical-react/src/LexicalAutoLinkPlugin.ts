@@ -23,9 +23,9 @@ export {
 
 function useAutoLink(
   editor: LexicalEditor,
-  matchers: Array<LinkMatcher>,
+  matchers: LinkMatcher[],
   onChange?: ChangeHandler,
-  excludeParents?: Array<(parent: ElementNode) => boolean>,
+  excludeParents?: ((parent: ElementNode) => boolean)[],
 ): void {
   useEffect(() => {
     if (!editor.hasNodes([AutoLinkNode])) {
@@ -44,14 +44,27 @@ function useAutoLink(
   }, [editor, matchers, onChange, excludeParents]);
 }
 
+/**
+ * Automatically converts text that matches one of the provided `matchers` into
+ * {@link AutoLinkNode}s as the user types, and reverts them back to plain text
+ * when they no longer match. Provide `onChange` to react to links being
+ * created, updated, or removed, and `excludeParents` to skip matching inside
+ * particular ancestor nodes. The editor must have the {@link AutoLinkNode}
+ * registered.
+ *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link AutoLinkExtension} instead.
+ *
+ * @returns `null`, this plugin renders no DOM of its own.
+ */
 export function AutoLinkPlugin({
   matchers,
   onChange,
   excludeParents,
 }: {
-  matchers: Array<LinkMatcher>;
+  matchers: LinkMatcher[];
   onChange?: ChangeHandler;
-  excludeParents?: Array<(parent: ElementNode) => boolean>;
+  excludeParents?: ((parent: ElementNode) => boolean)[];
 }): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
 

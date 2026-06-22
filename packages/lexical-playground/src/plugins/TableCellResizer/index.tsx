@@ -23,10 +23,11 @@ import {
   getTableElement,
   TableNode,
 } from '@lexical/table';
-import {calculateZoomLevel, mergeRegister} from '@lexical/utils';
+import {calculateZoomLevel} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
   isHTMLElement,
+  mergeRegister,
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
 import * as React from 'react';
@@ -56,7 +57,7 @@ const ACTIVE_RESIZER_COLOR = '#76b6ff';
 function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   const targetRef = useRef<HTMLElement | null>(null);
   const resizerRef = useRef<HTMLDivElement | null>(null);
-  const tableRectRef = useRef<ClientRect | null>(null);
+  const tableRectRef = useRef<DOMRect | null>(null);
   const [hasTable, setHasTable] = useState(false);
 
   const pointerStartPosRef = useRef<PointerPosition | null>(null);
@@ -134,30 +135,27 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
         const cell = getDOMCellFromTarget(target);
 
         if (cell && activeCell !== cell) {
-          editor.getEditorState().read(
-            () => {
-              const tableCellNode = $getNearestNodeFromDOMNode(cell.elem);
-              if (!tableCellNode) {
-                throw new Error('TableCellResizer: Table cell node not found.');
-              }
+          editor.read('latest', () => {
+            const tableCellNode = $getNearestNodeFromDOMNode(cell.elem);
+            if (!tableCellNode) {
+              throw new Error('TableCellResizer: Table cell node not found.');
+            }
 
-              const tableNode =
-                $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-              const tableElement = getTableElement(
-                tableNode,
-                editor.getElementByKey(tableNode.getKey()),
-              );
+            const tableNode =
+              $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
+            const tableElement = getTableElement(
+              tableNode,
+              editor.getElementByKey(tableNode.getKey()),
+            );
 
-              if (!tableElement) {
-                throw new Error('TableCellResizer: Table element not found.');
-              }
+            if (!tableElement) {
+              throw new Error('TableCellResizer: Table element not found.');
+            }
 
-              targetRef.current = target;
-              tableRectRef.current = tableElement.getBoundingClientRect();
-              updateActiveCell(cell);
-            },
-            {editor},
-          );
+            targetRef.current = target;
+            tableRectRef.current = tableElement.getBoundingClientRect();
+            updateActiveCell(cell);
+          });
         } else if (cell == null) {
           resetState();
         }

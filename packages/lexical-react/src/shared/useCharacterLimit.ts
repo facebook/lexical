@@ -15,14 +15,11 @@ import {
   OverflowNode,
 } from '@lexical/overflow';
 import {$rootTextContent} from '@lexical/text';
+import {$dfsWithSlots, $unwrapNode} from '@lexical/utils';
 import {
-  $dfs,
   $findMatchingParent,
-  $unwrapNode,
-  mergeRegister,
-} from '@lexical/utils';
-import {
   $getSelection,
+  $getSlotHost,
   $isElementNode,
   $isLeafNode,
   $isRangeSelection,
@@ -31,6 +28,7 @@ import {
   COMMAND_PRIORITY_LOW,
   DELETE_CHARACTER_COMMAND,
   HISTORY_MERGE_TAG,
+  mergeRegister,
 } from 'lexical';
 import {useEffect} from 'react';
 
@@ -62,7 +60,7 @@ export function useCharacterLimit(
   }, [editor]);
 
   useEffect(() => {
-    let text = editor.getEditorState().read($rootTextContent, {editor});
+    let text = editor.read('latest', $rootTextContent);
     let lastComputedTextLength = 0;
 
     return mergeRegister(
@@ -170,16 +168,30 @@ function findOffset(
   return offsetUtf16;
 }
 
-function $wrapOverflowedNodes(offset: number): void {
-  const dfsNodes = $dfs();
+export function $wrapOverflowedNodes(offset: number): void {
+  // $dfsWithSlots (not $dfs) so slot-bearing hosts contribute their slot
+  // subtree text to the character count and overflow wrapping. Without this
+  // a slot-host (e.g. Card with title/body) would report 0 characters and
+  // overflow logic would never wrap slotted content.
+  const dfsNodes = $dfsWithSlots();
   const dfsNodesLength = dfsNodes.length;
   let accumulatedLength = 0;
 
   for (let i = 0; i < dfsNodesLength; i += 1) {
     const {node} = dfsNodes[i];
 
+    // Slot value roots (a non-inline DecoratorNode slotted into a host) are
+    // leaf nodes with __parent === null; wrapping them in OverflowNode would
+    // call node.replace() and throw, so they stay out of the wrap loop. Their
+    // text still funds `offset` (root text content folds slotted decorator
+    // text in via getSlotsTextContent), so the budget is advanced for them
+    // below. Element slot values need no special case: their interior is
+    // counted leaf-by-leaf like any other subtree.
+    const isSlotValueLeaf = $isLeafNode(node) && $getSlotHost(node) !== null;
     const needsOverflowParent =
-      $isLeafNode(node) && !$findMatchingParent(node, $isOverflowNode);
+      $isLeafNode(node) &&
+      !isSlotValueLeaf &&
+      !$findMatchingParent(node, $isOverflowNode);
 
     if ($isOverflowNode(node)) {
       const previousLength = accumulatedLength;
@@ -222,6 +234,10 @@ function $wrapOverflowedNodes(offset: number): void {
           $unwrapNode(node);
         }
       }
+    } else if (isSlotValueLeaf) {
+      // Skipped by the wrap loop, but its text is part of the offset budget;
+      // without this the wrap boundary lands late by the decorator's size.
+      accumulatedLength += node.getTextContentSize();
     } else if (needsOverflowParent) {
       const previousAccumulatedLength = accumulatedLength;
       accumulatedLength += node.getTextContentSize();

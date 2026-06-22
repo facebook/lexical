@@ -26,6 +26,7 @@ import {
   type PointType,
   type RangeSelection,
 } from '../LexicalSelection';
+import {$getSlotNames} from '../LexicalSlot';
 import {
   $copyNode,
   $getNodeByKeyOrThrow,
@@ -34,6 +35,7 @@ import {
   INTERNAL_$isBlock,
 } from '../LexicalUtils';
 import {$isElementNode, type ElementNode} from '../nodes/LexicalElementNode';
+import {$createParagraphNode} from '../nodes/LexicalParagraphNode';
 import {
   $createTextNode,
   $isTextNode,
@@ -435,6 +437,13 @@ function $getBlockMergeTargets(
       focusElements,
       node => seenStart.has(node.getKey()) && INTERNAL_$isBlock(node),
     );
+  // A merge removes focusBlock with remove(true), which discards any slots it
+  // owns (slots are not children, so they are not spliced onto anchorBlock).
+  // Refuse to merge away a slot-bearing host so its slots can only be removed
+  // as a unit by an explicit host deletion, never silently via backspace.
+  if (focusBlock && $getSlotNames(focusBlock).length > 0) {
+    return null;
+  }
   return anchorBlock && focusBlock ? [anchorBlock, focusBlock] : null;
 }
 
@@ -736,4 +745,69 @@ export function $splitAtPointCaretNext(
     }
   }
   return parentCaret;
+}
+
+/**
+ * If the insertion caret is the root/shadow root node (see {@link $isRootOrShadowRoot}),
+ * the node will be inserted there, otherwise the parent nodes will be split according to the
+ * given options.
+ * @param node - The node to be inserted
+ * @param caret - The location to insert or split from
+ * @returns The node after its insertion
+ */
+export function $insertNodeToNearestRootAtCaret<
+  T extends LexicalNode,
+  D extends CaretDirection,
+>(
+  node: T,
+  caret: PointCaret<D>,
+  options?: SplitAtPointCaretNextOptions,
+): NodeCaret<D> {
+  let insertCaret: PointCaret<'next'> = $getCaretInDirection(caret, 'next');
+  // Normalize boundary cases for TextPointCaret
+  if ($isTextPointCaret(insertCaret)) {
+    if (insertCaret.offset === 0) {
+      insertCaret = $getSiblingCaret(
+        insertCaret.origin,
+        'previous',
+      ).getFlipped();
+    } else if (insertCaret.offset === insertCaret.origin.getTextContentSize()) {
+      insertCaret = $getSiblingCaret(insertCaret.origin, 'next');
+    }
+  }
+  // Make sure we have a distinct node as the origin
+  if (insertCaret.origin.is(node)) {
+    invariant(
+      $isSiblingCaret(insertCaret),
+      '$insertNodeToNearestRootAtCaret node %s of type %s can not be inserted into itself',
+      node.getKey(),
+      node.getType(),
+    );
+    insertCaret = $rewindSiblingCaret(insertCaret);
+  }
+  // Handle split boundary conditions where node is being inserted adjacent to itself
+  if (
+    node.is(insertCaret.getNodeAtCaret()) ||
+    node.is(insertCaret.getFlipped().getNodeAtCaret())
+  ) {
+    node.remove(true);
+  }
+  for (
+    let nextCaret: null | PointCaret<'next'> = insertCaret;
+    nextCaret;
+    nextCaret = $splitAtPointCaretNext(nextCaret, options)
+  ) {
+    insertCaret = nextCaret;
+  }
+  invariant(
+    !$isTextPointCaret(insertCaret),
+    '$insertNodeToNearestRootAtCaret: An unattached TextNode can not be split',
+  );
+  insertCaret.insert(
+    node.isInline() ? $createParagraphNode().append(node) : node,
+  );
+  return $getCaretInDirection(
+    $getSiblingCaret(node.getLatest(), 'next'),
+    caret.direction,
+  );
 }

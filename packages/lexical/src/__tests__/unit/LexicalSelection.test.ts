@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
@@ -23,7 +22,9 @@ import {
   $getCaretInDirection,
   $getRoot,
   $getSelection,
+  $isDecoratorNode,
   $isParagraphNode,
+  $isRangeSelection,
   $isTextNode,
   $selectAll,
   $setSelection,
@@ -36,14 +37,15 @@ import {
   RangeSelection,
   TextNode,
 } from 'lexical';
-import {beforeEach, describe, expect, test} from 'vitest';
+import {assert, beforeEach, describe, expect, test} from 'vitest';
 
-import {SerializedElementNode} from '../..';
 import {$internalCreateRangeSelection} from '../../LexicalSelection';
 import {
   $assertRangeSelection,
   $createTestDecoratorNode,
   $createTestInlineElementNode,
+  $createTestShadowRootNode,
+  $isTestShadowRootNode,
   initializeUnitTest,
   invariant,
 } from '../utils';
@@ -156,12 +158,11 @@ describe('LexicalSelection tests', () => {
             await insertText({container, editor, method: 'insertText'});
           });
 
-          // TODO: https://github.com/facebook/lexical/issues/4295
-          // test('Can insert text before a start-of-paragraph inline element, using insertNodes', async () => {
-          //   const {container, editor} = await setup('start-of-paragraph');
+          test('Can insert text before a start-of-paragraph inline element, using insertNodes', async () => {
+            const {container, editor} = await setup('start-of-paragraph');
 
-          //   await insertText({container, editor, method: 'insertNodes'});
-          // });
+            await insertText({container, editor, method: 'insertNodes'});
+          });
         });
 
         describe('Mid-paragraph inline elements', () => {
@@ -279,12 +280,11 @@ describe('LexicalSelection tests', () => {
             await insertText({container, editor, method: 'insertText'});
           });
 
-          // TODO: https://github.com/facebook/lexical/issues/4295
-          // test('Can insert text after a start-of-paragraph inline element, using insertNodes', async () => {
-          //   const {container, editor} = await setup('start-of-paragraph');
+          test('Can insert text after a start-of-paragraph inline element, using insertNodes', async () => {
+            const {container, editor} = await setup('start-of-paragraph');
 
-          //   await insertText({container, editor, method: 'insertNodes'});
-          // });
+            await insertText({container, editor, method: 'insertNodes'});
+          });
         });
 
         describe('Mid-paragraph inline elements', () => {
@@ -320,12 +320,11 @@ describe('LexicalSelection tests', () => {
             await insertText({container, editor, method: 'insertText'});
           });
 
-          // TODO: https://github.com/facebook/lexical/issues/4295
-          // test('Can insert text after a mid-paragraph inline element, using insertNodes', async () => {
-          //   const {container, editor} = await setup('mid-paragraph');
+          test('Can insert text after a mid-paragraph inline element, using insertNodes', async () => {
+            const {container, editor} = await setup('mid-paragraph');
 
-          //   await insertText({container, editor, method: 'insertNodes'});
-          // });
+            await insertText({container, editor, method: 'insertNodes'});
+          });
         });
 
         describe('End-of-paragraph inline elements', () => {
@@ -362,12 +361,11 @@ describe('LexicalSelection tests', () => {
             await insertText({container, editor, method: 'insertText'});
           });
 
-          // TODO: https://github.com/facebook/lexical/issues/4295
-          // test('Can insert text after an end-of-paragraph inline element, using insertNodes', async () => {
-          //   const {container, editor} = await setup('end-of-paragraph');
+          test('Can insert text after an end-of-paragraph inline element, using insertNodes', async () => {
+            const {container, editor} = await setup('end-of-paragraph');
 
-          //   await insertText({container, editor, method: 'insertNodes'});
-          // });
+            await insertText({container, editor, method: 'insertNodes'});
+          });
         });
       });
     });
@@ -828,7 +826,7 @@ describe('LexicalSelection tests', () => {
             },
             {discrete: true},
           );
-          testEnv.editor.getEditorState().read(() => {
+          testEnv.editor.read('latest', () => {
             const allTextNodes = $getRoot().getAllTextNodes();
             // These should get merged in reconciliation
             expect(allTextNodes.map(node => node.getTextContent())).toEqual([
@@ -845,14 +843,8 @@ describe('LexicalSelection tests', () => {
 describe('Regression tests for #6701', () => {
   test('insertNodes fails an invariant when there is no Block ancestor', async () => {
     class InlineElementNode extends ElementNode {
-      static clone(prevNode: InlineElementNode): InlineElementNode {
-        return new InlineElementNode(prevNode.__key);
-      }
-      static getType() {
-        return 'inline-element-node';
-      }
-      static importJSON(serializedNode: SerializedElementNode) {
-        return new InlineElementNode().updateFromJSON(serializedNode);
+      $config() {
+        return this.config('inline-element-node', {extends: ElementNode});
       }
       isInline() {
         return true;
@@ -882,6 +874,229 @@ describe('Regression tests for #6701', () => {
     ).toThrow(
       /Expected node TextNode of type text to have a block ElementNode ancestor/,
     );
+  });
+});
+
+describe('Regression tests for #8707', () => {
+  // A shadow root that holds block-level children directly (e.g. a
+  // decorator-only container). Placing the caret adjacent to a block child
+  // shows the block cursor, whose RangeSelection is a collapsed element point
+  // on the shadow root itself. Inserting block-level content there (such as
+  // pasting a copied decorator) used to throw because a shadow root has no
+  // block ancestor to split. Roots and shadow roots hold blocks directly, so
+  // the block goes straight in at the anchor offset with no paragraph wrapper.
+  initializeUnitTest(testEnv => {
+    test('inserts a block decorator after the block cursor at the end of a shadow root', () => {
+      const {editor} = testEnv;
+      let shadowKey = '';
+      editor.update(
+        () => {
+          const shadow = $createTestShadowRootNode();
+          shadow.append($createTestDecoratorNode().setIsInline(false));
+          $getRoot().clear().append(shadow);
+          shadowKey = shadow.getKey();
+          // Block cursor: collapsed element point after the decorator.
+          shadow.select(1, 1);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection), 'Expected RangeSelection');
+          selection.insertNodes([
+            $createTestDecoratorNode().setIsInline(false),
+          ]);
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const root = $getRoot();
+        // The decorator landed in the same shadow root as the block cursor,
+        // not the outer document root.
+        expect(root.getChildrenSize()).toBe(1);
+        const shadow = root.getFirstChildOrThrow();
+        invariant($isTestShadowRootNode(shadow), 'Expected shadow root');
+        expect(shadow.getKey()).toBe(shadowKey);
+        const children = shadow.getChildren();
+        expect(children).toHaveLength(2);
+        expect(children.every($isDecoratorNode)).toBe(true);
+      });
+    });
+
+    test('inserts a block decorator before the block cursor at the start of a shadow root', () => {
+      const {editor} = testEnv;
+      let existingKey = '';
+      editor.update(
+        () => {
+          const shadow = $createTestShadowRootNode();
+          const existing = $createTestDecoratorNode().setIsInline(false);
+          shadow.append(existing);
+          $getRoot().clear().append(shadow);
+          existingKey = existing.getKey();
+          // Block cursor: collapsed element point before the decorator.
+          shadow.select(0, 0);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection), 'Expected RangeSelection');
+          selection.insertNodes([
+            $createTestDecoratorNode().setIsInline(false),
+          ]);
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const shadow = $getRoot().getFirstChildOrThrow();
+        invariant($isTestShadowRootNode(shadow), 'Expected shadow root');
+        const children = shadow.getChildren();
+        expect(children).toHaveLength(2);
+        expect(children.every($isDecoratorNode)).toBe(true);
+        // Inserted before the pre-existing decorator.
+        expect(children[1].getKey()).toBe(existingKey);
+      });
+    });
+
+    test('inserts a block decorator into an empty shadow root', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const shadow = $createTestShadowRootNode();
+          $getRoot().clear().append(shadow);
+          shadow.select(0, 0);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection), 'Expected RangeSelection');
+          selection.insertNodes([
+            $createTestDecoratorNode().setIsInline(false),
+          ]);
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const shadow = $getRoot().getFirstChildOrThrow();
+        invariant($isTestShadowRootNode(shadow), 'Expected shadow root');
+        const children = shadow.getChildren();
+        expect(children).toHaveLength(1);
+        expect($isDecoratorNode(children[0])).toBe(true);
+      });
+    });
+
+    test('inserts a block element at the block cursor inside a shadow root', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const shadow = $createTestShadowRootNode();
+          shadow.append($createTestDecoratorNode().setIsInline(false));
+          $getRoot().clear().append(shadow);
+          shadow.select(1, 1);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection), 'Expected RangeSelection');
+          selection.insertNodes([
+            $createParagraphNode().append($createTextNode('inserted')),
+          ]);
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const shadow = $getRoot().getFirstChildOrThrow();
+        invariant($isTestShadowRootNode(shadow), 'Expected shadow root');
+        const children = shadow.getChildren();
+        expect(children).toHaveLength(2);
+        expect($isDecoratorNode(children[0])).toBe(true);
+        expect($isParagraphNode(children[1])).toBe(true);
+        expect(children[1].getTextContent()).toBe('inserted');
+      });
+    });
+
+    test('insertParagraph at an element point on a shadow root seeds into that shadow root', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const shadow = $createTestShadowRootNode();
+          shadow.append($createTestDecoratorNode().setIsInline(false));
+          $getRoot().clear().append(shadow);
+          shadow.select(1, 1);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection), 'Expected RangeSelection');
+          const paragraph = selection.insertParagraph();
+          invariant(paragraph !== null, 'Expected a paragraph to be inserted');
+          expect(paragraph.getParent()!.is($getRoot().getFirstChild())).toBe(
+            true,
+          );
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const root = $getRoot();
+        expect(root.getChildrenSize()).toBe(1);
+        const shadow = root.getFirstChildOrThrow();
+        invariant($isTestShadowRootNode(shadow), 'Expected shadow root');
+        expect(shadow.getChildrenSize()).toBe(2);
+        expect($isParagraphNode(shadow.getLastChild())).toBe(true);
+      });
+    });
+
+    test('inserts a block decorator at a root element point without wrapping it in a paragraph', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append($createTextNode('existing')));
+          // Element point directly on the root, after the paragraph.
+          $getRoot().select(1, 1);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          invariant($isRangeSelection(selection), 'Expected RangeSelection');
+          selection.insertNodes([
+            $createTestDecoratorNode().setIsInline(false),
+          ]);
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        // The decorator is a direct child of root; no empty paragraph wrapper
+        // was created for it.
+        expect(children).toHaveLength(2);
+        expect($isParagraphNode(children[0])).toBe(true);
+        expect($isDecoratorNode(children[1])).toBe(true);
+      });
+    });
   });
 });
 
@@ -1756,6 +1971,120 @@ describe('Regression #8098', () => {
           expect(selection).not.toBeNull();
           expect(selection!.format).toBe(0);
           expect(selection!.style).toBe('');
+        },
+        {discrete: true},
+      );
+    });
+  });
+});
+
+describe('$wrapInlineNodes regression', () => {
+  initializeUnitTest(testEnv => {
+    test('Wraps all inline nodes, preserving first linebreak if contain a block element', () => {
+      testEnv.editor.update(
+        () => {
+          $getRoot().clear();
+          const selection = $selectAll();
+
+          const inlineNodes = [
+            $createLineBreakNode(),
+            $createTextNode('p1'),
+            $createTextNode('p1').setFormat('bold'),
+          ];
+          selection.insertNodes([...inlineNodes, $createParagraphNode()]);
+
+          const children = $getRoot().getChildren();
+          expect(children).toHaveLength(2);
+          assert($isParagraphNode(children[0]));
+          expect(children[0].getChildren()).toEqual(inlineNodes);
+        },
+        {discrete: true},
+      );
+    });
+
+    test('Collapses a lone linebreak run into an empty paragraph at the end of a non-empty paragraph', () => {
+      testEnv.editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode().append(
+            $createTextNode('abc'),
+          );
+          root.append(paragraph);
+
+          paragraph
+            .selectEnd()
+            .insertNodes([
+              $createLineBreakNode(),
+              $createParagraphNode().append($createTextNode('x')),
+            ]);
+
+          const children = root.getChildren();
+          expect(children).toHaveLength(3);
+          assert($isParagraphNode(children[0]));
+          expect(children[0].getTextContent()).toBe('abc');
+          assert($isParagraphNode(children[1]));
+          expect(children[1].getChildrenSize()).toBe(0);
+          assert($isParagraphNode(children[2]));
+          expect(children[2].getTextContent()).toBe('x');
+        },
+        {discrete: true},
+      );
+    });
+
+    test('Preserves a linebreak followed by inline content when merging into a non-empty paragraph', () => {
+      testEnv.editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode().append(
+            $createTextNode('abc'),
+          );
+          root.append(paragraph);
+
+          paragraph
+            .selectEnd()
+            .insertNodes([
+              $createLineBreakNode(),
+              $createTextNode('tail'),
+              $createParagraphNode().append($createTextNode('x')),
+            ]);
+
+          const children = root.getChildren();
+          expect(children).toHaveLength(2);
+          assert($isParagraphNode(children[0]));
+          expect(
+            children[0].getChildren().map(child => child.getType()),
+          ).toEqual(['text', 'linebreak', 'text']);
+          expect(children[0].getTextContent()).toBe('abc\ntail');
+          assert($isParagraphNode(children[1]));
+          expect(children[1].getTextContent()).toBe('x');
+        },
+        {discrete: true},
+      );
+    });
+
+    test('Collapses a lone trailing linebreak after a block into an empty paragraph', () => {
+      testEnv.editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          root.append(paragraph);
+
+          paragraph
+            .selectEnd()
+            .insertNodes([
+              $createParagraphNode().append($createTextNode('x')),
+              $createLineBreakNode(),
+            ]);
+
+          const children = root.getChildren();
+          expect(children).toHaveLength(2);
+          assert($isParagraphNode(children[0]));
+          expect(children[0].getTextContent()).toBe('x');
+          assert($isParagraphNode(children[1]));
+          expect(children[1].getChildrenSize()).toBe(0);
         },
         {discrete: true},
       );

@@ -13,7 +13,6 @@ import {
   $insertNodeToNearestRoot,
   $onEscapeDown,
   $onEscapeUp,
-  mergeRegister,
 } from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -27,6 +26,7 @@ import {
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
+  mergeRegister,
 } from 'lexical';
 
 import {
@@ -106,23 +106,23 @@ export const LayoutExtension = /* @__PURE__ */ defineExtension({
       // work even if a trailing paragraph is accidentally deleted.
       editor.registerCommand(
         KEY_ARROW_DOWN_COMMAND,
-        () => $onEscapeDown($isLayoutContainerNode),
+        event => $onEscapeDown($isLayoutContainerNode, event),
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_ARROW_RIGHT_COMMAND,
-        () => $onEscapeDown($isLayoutContainerNode),
+        event => $onEscapeDown($isLayoutContainerNode, event),
         COMMAND_PRIORITY_LOW,
       ),
       // Inverse: leading paragraph escape on up/left.
       editor.registerCommand(
         KEY_ARROW_UP_COMMAND,
-        () => $onEscapeUp($isLayoutContainerNode),
+        event => $onEscapeUp($isLayoutContainerNode, event),
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(
         KEY_ARROW_LEFT_COMMAND,
-        () => $onEscapeUp($isLayoutContainerNode),
+        event => $onEscapeUp($isLayoutContainerNode, event),
         COMMAND_PRIORITY_LOW,
       ),
       editor.registerCommand(

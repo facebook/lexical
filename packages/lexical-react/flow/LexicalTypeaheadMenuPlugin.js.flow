@@ -38,7 +38,7 @@ export type MenuRenderFn<TOption> = (
     selectedIndex: number | null,
     selectOptionAndCleanUp: (option: TOption) => void,
     setHighlightedIndex: (index: number) => void,
-    options: Array<TOption>,
+    options: TOption[],
   },
   matchingString: string,
 ) => React$Portal | React.MixedElement | null;
@@ -53,7 +53,7 @@ declare export function getScrollParent(
   includeHidden: boolean,
 ): HTMLElement | HTMLBodyElement;
 
-declare export function useBasicTypeaheadTriggerMatch(
+declare export hook useBasicTypeaheadTriggerMatch(
   trigger: string,
   options: {minLength?: number, maxLength?: number},
 ): TriggerFn;
@@ -66,7 +66,7 @@ export type TypeaheadMenuPluginProps<TOption> = {
     closeMenu: () => void,
     matchingString: string,
   ) => void,
-  options: Array<TOption>,
+  options: TOption[],
   triggerFn: TriggerFn,
   menuRenderFn?: MenuRenderFn<TOption>,
   onOpen?: (resolution: MenuResolution) => void,

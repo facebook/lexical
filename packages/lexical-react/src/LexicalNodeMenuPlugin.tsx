@@ -23,6 +23,9 @@ import {useCallback, useEffect, useState} from 'react';
 import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
 import {startTransition} from './shared/reactPatches';
 
+/**
+ * Props for the {@link LexicalNodeMenuPlugin} component.
+ */
 export type NodeMenuPluginProps<TOption extends MenuOption> = {
   onSelectOption: (
     option: TOption,
@@ -30,7 +33,7 @@ export type NodeMenuPluginProps<TOption extends MenuOption> = {
     closeMenu: () => void,
     matchingString: string,
   ) => void;
-  options: Array<TOption>;
+  options: TOption[];
   nodeKey: NodeKey | null;
   menuRenderFn?: MenuRenderFn<TOption>;
   onClose?: () => void;
@@ -40,6 +43,15 @@ export type NodeMenuPluginProps<TOption extends MenuOption> = {
   parent?: HTMLElement;
 };
 
+/**
+ * Renders a floating menu anchored to a specific node (identified by
+ * `nodeKey`), for example to offer actions on a just-inserted node. It is the
+ * node-anchored counterpart to {@link LexicalTypeaheadMenuPlugin}: provide the
+ * `options` to show and an `onSelectOption` handler, and the menu opens while
+ * `nodeKey` refers to a node and closes when it becomes `null`.
+ *
+ * @returns The floating menu element, or `null` when the menu is closed.
+ */
 export function LexicalNodeMenuPlugin<TOption extends MenuOption>({
   options,
   nodeKey,

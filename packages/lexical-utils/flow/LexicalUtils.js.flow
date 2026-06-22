@@ -13,6 +13,8 @@ import type {
   ElementNode,
   NodeCaret,
   CaretDirection,
+  CaretRange,
+  RangeSelection,
   SiblingCaret,
   RootMode,
   SplitAtPointCaretNextOptions,
@@ -20,22 +22,26 @@ import type {
   StateConfig,
   ValueOrUpdater
 } from 'lexical';
+declare export function $isBlockFullySelected(
+  blockNode: ElementNode,
+  selectionOrRange: RangeSelection | CaretRange<CaretDirection>,
+): boolean;
 declare export function addClassNamesToElement(
   element: HTMLElement,
-  ...classNames: Array<typeof undefined | boolean | null | string>
+  ...classNames: (typeof undefined | boolean | null | string)[]
 ): void;
 declare export function removeClassNamesFromElement(
   element: HTMLElement,
-  ...classNames: Array<typeof undefined | boolean | null | string>
+  ...classNames: (typeof undefined | boolean | null | string)[]
 ): void;
 declare export function isMimeType(
   file: File,
-  acceptableMimeTypes: Array<string>,
+  acceptableMimeTypes: string[],
 ): boolean;
 declare export function mediaFileReader(
-  files: Array<File>,
-  acceptableMimeTypes: Array<string>,
-): Promise<Array<Readonly<{file: File, result: string}>>>;
+  files: File[],
+  acceptableMimeTypes: string[],
+): Promise<Readonly<{file: File, result: string}>[]>;
 export type DFSNode = Readonly<{
   depth: number,
   node: LexicalNode,
@@ -43,12 +49,20 @@ export type DFSNode = Readonly<{
 declare export function $dfs(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
-): Array<DFSNode>;
+): DFSNode[];
 type DFSIterator = {
   next: () => IteratorResult<DFSNode, void>;
   @@iterator: () => DFSIterator;
 };
 declare export function $dfsIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): DFSIterator;
+declare export function $dfsWithSlots(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): DFSNode[];
+declare export function $dfsWithSlotsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
 ): DFSIterator;
@@ -71,19 +85,22 @@ declare export function $findMatchingParent(
   startingNode: LexicalNode,
   findFn: (LexicalNode) => boolean,
 ): LexicalNode | null;
-declare export function mergeRegister(...func: Array<() => void>): () => void;
+declare export function mergeRegister(...func: (() => void)[]): () => void;
+declare export function dedupeSelectionRects(
+  rects: Iterable<ClientRect>,
+): ClientRect[];
 declare export function markSelection(
   editor: LexicalEditor,
-  onReposition?: (node: Array<HTMLElement>) => void,
+  onReposition?: (node: HTMLElement[]) => void,
 ): () => void;
 declare export function positionNodeOnRange(
   editor: LexicalEditor,
   range: Range,
-  onReposition: (node: Array<HTMLElement>) => void,
+  onReposition: (node: HTMLElement[]) => void,
 ): () => void;
 declare export function selectionAlwaysOnDisplay(
   editor: LexicalEditor,
-  onReposition?: (node: Array<HTMLElement>) => void,
+  onReposition?: (node: HTMLElement[]) => void,
 ): () => void;
 declare export function $getNearestBlockElementAncestorOrThrow(
   startNode: LexicalNode,
@@ -123,9 +140,9 @@ declare export function objectKlassEquals<T>(
 ): boolean;
 
 declare export function $filter<T>(
-  nodes: Array<LexicalNode>,
+  nodes: LexicalNode[],
   filterFn: (node: LexicalNode) => null | T,
-): Array<T>;
+): T[];
 
 declare export function $handleIndentAndOutdent(
   indentOrOutdent: (block: ElementNode) => void,
@@ -160,12 +177,22 @@ declare export function $getAdjacentCaret<D extends CaretDirection>(
 declare export function $reverseDfs(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
-): Array<DFSNode>;
+): DFSNode[];
 
 declare export function $reverseDfsIterator(
   startNode?: LexicalNode,
   endNode?: LexicalNode,
 ): Iterable<DFSNode>;
+
+declare export function $reverseDfsWithSlots(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): DFSNode[];
+
+declare export function $reverseDfsWithSlotsIterator(
+  startNode?: LexicalNode,
+  endNode?: LexicalNode,
+): DFSIterator;
 
 declare export function $descendantsMatching<T extends LexicalNode>(
   children: LexicalNode[],
@@ -228,3 +255,8 @@ export type StateConfigWrapper<K extends string, V> = {
 declare export function makeStateWrapper<K extends string, V>(
   stateConfig: StateConfig<K, V>,
 ): StateConfigWrapper<K, V>;
+
+declare export function getScrollParent(
+  element: HTMLElement,
+  includeHidden: boolean,
+): HTMLElement | HTMLBodyElement;

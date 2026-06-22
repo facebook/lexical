@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {$createLinkNode, LinkExtension} from '@lexical/link';
 import {RichTextExtension} from '@lexical/rich-text';
@@ -70,7 +69,7 @@ function seedTwoParas(editor: LexicalEditor): void {
   );
 }
 
-const OPS: Array<(rng: () => number) => void> = [
+const OPS: ((rng: () => number) => void)[] = [
   // move a child from one paragraph to the end of the other
   rng => {
     const paras = $getRoot().getChildren();

@@ -37,7 +37,7 @@ if (!Selection.prototype.modify) {
     /[\s.,\\/#!$%^&*;:{}=\-`~()\uD800-\uDBFF\uDC00-\uDFFF\u3000-\u303F]/u;
 
   const pushSegment = function (
-    segments: Array<Segment>,
+    segments: Segment[],
     index: number,
     str: string,
     isWordLike: boolean,
@@ -49,7 +49,7 @@ if (!Selection.prototype.modify) {
     });
   };
 
-  const getWordsFromString = function (string: string): Array<Segment> {
+  const getWordsFromString = function (string: string): Segment[] {
     const segments: Segment[] = [];
     let wordString = '';
     let nonWordString = '';

@@ -9,9 +9,9 @@
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {mergeRegister} from '@lexical/utils';
 import {
   $createParagraphNode,
   $getNodeByKey,
@@ -23,14 +23,15 @@ import {
   CLICK_COMMAND,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
+  getActiveElement,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
+  mergeRegister,
   NodeKey,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {ErrorBoundary} from 'react-error-boundary';
 
 import EquationEditor from '../ui/EquationEditor';
 import KatexRenderer from '../ui/KatexRenderer';
@@ -234,8 +235,12 @@ export default function EquationComponent({
         editor.registerCommand(
           SELECTION_CHANGE_COMMAND,
           payload => {
-            const activeElement = document.activeElement;
             const inputElem = inputRef.current;
+            // getActiveElement rather than document.activeElement, which
+            // reports the shadow host when the editor is in a shadow root.
+            const activeElement = inputElem
+              ? getActiveElement(inputElem)
+              : null;
             if (inputElem !== activeElement) {
               onHide();
             }
@@ -246,8 +251,10 @@ export default function EquationComponent({
         editor.registerCommand(
           KEY_ESCAPE_COMMAND,
           payload => {
-            const activeElement = document.activeElement;
             const inputElem = inputRef.current;
+            const activeElement = inputElem
+              ? getActiveElement(inputElem)
+              : null;
             if (inputElem === activeElement) {
               onHide(true);
               return true;
@@ -278,13 +285,7 @@ export default function EquationComponent({
           ref={inputRef}
         />
       ) : (
-        <ErrorBoundary
-          onError={e =>
-            editor._onError(
-              e instanceof Error ? e : new Error(String(e), {cause: e}),
-            )
-          }
-          fallback={null}>
+        <LexicalErrorBoundary onError={e => editor._onError(e)} fallback={null}>
           <KatexRenderer
             equation={equationValue}
             inline={inline}
@@ -294,7 +295,7 @@ export default function EquationComponent({
               }
             }}
           />
-        </ErrorBoundary>
+        </LexicalErrorBoundary>
       )}
     </>
   );

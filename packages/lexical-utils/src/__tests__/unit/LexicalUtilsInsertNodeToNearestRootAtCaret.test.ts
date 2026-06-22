@@ -15,13 +15,12 @@ import {
   $getRoot,
   $getSiblingCaret,
   $getTextPointCaret,
+  $insertNodeToNearestRootAtCaret,
   $isElementNode,
   LexicalNode,
   SplitAtPointCaretNextOptions,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
-
-import {$insertNodeToNearestRootAtCaret} from '../..';
 
 function $serialize(node: LexicalNode): string {
   if (!$isElementNode(node)) {

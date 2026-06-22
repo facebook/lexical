@@ -38,6 +38,7 @@ import {useCallback, useMemo, useState} from 'react';
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
 import {EmbedConfigs} from '../AutoEmbedPlugin';
+import {INSERT_CARD_COMMAND} from '../CardExtension';
 import {INSERT_COLLAPSIBLE_COMMAND} from '../CollapsibleExtension';
 import {INSERT_DATETIME_COMMAND} from '../DateTimeExtension';
 import {InsertEquationDialog} from '../EquationsExtension';
@@ -46,6 +47,8 @@ import {INSERT_IMAGE_COMMAND, InsertImageDialog} from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutExtension/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
 import {InsertPollDialog} from '../PollExtension';
+import {INSERT_PULLQUOTE_COMMAND} from '../PullQuoteExtension';
+import {INSERT_REVIEW_COMMAND} from '../ReviewExtension';
 import {InsertTableDialog} from '../TablePlugin';
 
 export class ComponentPickerOption extends MenuOption {
@@ -54,7 +57,7 @@ export class ComponentPickerOption extends MenuOption {
   // Icon for display
   icon?: JSX.Element;
   // For extra searching.
-  keywords: Array<string>;
+  keywords: string[];
   // TBD
   keyboardShortcut?: string;
   // What happens when you select this option?
@@ -64,7 +67,7 @@ export class ComponentPickerOption extends MenuOption {
     title: string,
     options: {
       icon?: JSX.Element;
-      keywords?: Array<string>;
+      keywords?: string[];
       keyboardShortcut?: string;
       onSelect: (queryString: string) => void;
     },
@@ -113,7 +116,7 @@ export function ComponentPickerMenuItem({
 }
 
 export function getDynamicOptions(editor: LexicalEditor, queryString: string) {
-  const options: Array<ComponentPickerOption> = [];
+  const options: ComponentPickerOption[] = [];
 
   if (queryString == null) {
     return options;
@@ -331,6 +334,22 @@ export function getBaseOptions(editor: LexicalEditor, showModal: ShowModal) {
       keywords: ['collapse', 'collapsible', 'toggle'],
       onSelect: () =>
         editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined),
+    }),
+    new ComponentPickerOption('Card', {
+      icon: <i className="icon caret-right" />,
+      keywords: ['card', 'slot', 'named slots'],
+      onSelect: () => editor.dispatchCommand(INSERT_CARD_COMMAND, undefined),
+    }),
+    new ComponentPickerOption('Pull Quote', {
+      icon: <i className="icon quote" />,
+      keywords: ['pull quote', 'quote', 'attribution', 'cite', 'slot'],
+      onSelect: () =>
+        editor.dispatchCommand(INSERT_PULLQUOTE_COMMAND, undefined),
+    }),
+    new ComponentPickerOption('Review', {
+      icon: <i className="icon star" />,
+      keywords: ['review', 'testimonial', 'rating', 'stars', 'react', 'slot'],
+      onSelect: () => editor.dispatchCommand(INSERT_REVIEW_COMMAND, undefined),
     }),
     new ComponentPickerOption('Columns Layout', {
       icon: <i className="icon columns" />,

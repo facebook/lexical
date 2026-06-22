@@ -18,8 +18,8 @@ import {
 import {ListItemNode} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {$canShowPlaceholder} from '@lexical/text';
-import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
+  $findMatchingParent,
   $isTabNode,
   configExtension,
   defineExtension,
@@ -27,6 +27,7 @@ import {
   getStyleObjectFromCSS,
   isHTMLElement,
   LineBreakNode,
+  mergeRegister,
   ParagraphNode,
   safeCast,
   TabNode,
@@ -211,9 +212,9 @@ export const VisibleNonPrintingExtension = /* @__PURE__ */ defineExtension({
         }
         nextRoot.setAttribute(VISIBLE_NON_PRINTING_ACTIVE_ATTR, 'true');
         const syncEmptyRootAttr = () => {
-          const showPlaceholder = editor
-            .getEditorState()
-            .read(() => $canShowPlaceholder(editor.isComposing()));
+          const showPlaceholder = editor.read('latest', () =>
+            $canShowPlaceholder(editor.isComposing()),
+          );
           nextRoot.toggleAttribute(
             VISIBLE_NON_PRINTING_EMPTY_ROOT_ATTR,
             showPlaceholder,

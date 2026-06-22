@@ -47,7 +47,9 @@ test.describe('CopyAndPaste', () => {
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Copy + pasting?</span>
           </p>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Sounds good!</span>
           </p>
@@ -88,27 +90,20 @@ test.describe('CopyAndPaste', () => {
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Copy + pasting?</span>
           </p>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">Sounds good!</span>
           </p>
         `,
       );
-      if (browserName === 'firefox' && IS_LINUX) {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [],
-          focusOffset: 3,
-          focusPath: [],
-        });
-      } else {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [0, 0, 0],
-          focusOffset: 12,
-          focusPath: [2, 0, 0],
-        });
-      }
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0, 0, 0],
+        focusOffset: 12,
+        focusPath: [2, 0, 0],
+      });
     } else {
       await assertHTML(
         page,
@@ -121,21 +116,13 @@ test.describe('CopyAndPaste', () => {
           </p>
         `,
       );
-      if (browserName === 'firefox' && IS_LINUX) {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [],
-          focusOffset: 1,
-          focusPath: [],
-        });
-      } else {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [0, 0, 0],
-          focusOffset: 12,
-          focusPath: [0, 3, 0],
-        });
-      }
+
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0, 0, 0],
+        focusOffset: 12,
+        focusPath: [0, 3, 0],
+      });
     }
 
     // Copy all the text
@@ -148,7 +135,9 @@ test.describe('CopyAndPaste', () => {
             <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Copy + pasting?</span>
             </p>
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <br data-lexical-managed-linebreak="true" />
+            </p>
             <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Sounds good!</span>
             </p>
@@ -178,11 +167,15 @@ test.describe('CopyAndPaste', () => {
             <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Copy + pasting?</span>
             </p>
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <br data-lexical-managed-linebreak="true" />
+            </p>
             <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Sounds good!Copy + pasting?</span>
             </p>
-            <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <br data-lexical-managed-linebreak="true" />
+            </p>
             <p class="PlaygroundEditorTheme__paragraph" dir="auto">
               <span data-lexical-text="true">Sounds good!</span>
             </p>
@@ -396,37 +389,19 @@ test.describe('CopyAndPaste', () => {
     await selectAll(page);
 
     if (isRichText) {
-      if (browserName === 'firefox' && IS_LINUX) {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [],
-          focusOffset: 2,
-          focusPath: [],
-        });
-      } else {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [0, 0, 0],
-          focusOffset: 4,
-          focusPath: [1, 5, 0],
-        });
-      }
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0, 0, 0],
+        focusOffset: 4,
+        focusPath: [1, 5, 0],
+      });
     } else {
-      if (browserName === 'firefox' && IS_LINUX) {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [],
-          focusOffset: 1,
-          focusPath: [],
-        });
-      } else {
-        await assertSelection(page, {
-          anchorOffset: 0,
-          anchorPath: [0, 0, 0],
-          focusOffset: 4,
-          focusPath: [0, 12, 0],
-        });
-      }
+      await assertSelection(page, {
+        anchorOffset: 0,
+        anchorPath: [0, 0, 0],
+        focusOffset: 4,
+        focusPath: [0, 12, 0],
+      });
     }
 
     await withExclusiveClipboardAccess(async () => {
@@ -682,53 +657,28 @@ test.describe('CopyAndPaste', () => {
       await selectAll(page);
 
       if (isRichText) {
-        if (browserName === 'firefox' && IS_LINUX) {
-          await assertSelection(page, {
-            anchorOffset: 0,
-            anchorPath: [],
-            focusOffset: 2,
-            focusPath: [],
-          });
-        } else {
-          if (browserName === 'firefox' && IS_LINUX) {
-            await assertSelection(page, {
-              anchorOffset: 0,
-              anchorPath: [0, 0, 0],
-              focusOffset: 3,
-              focusPath: [1, 5, 0],
-            });
-          } else {
-            await assertSelection(page, {
-              anchorOffset: 0,
-              anchorPath: [0, 0, 0],
-              focusOffset: 4,
-              focusPath: [1, 5, 0],
-            });
-          }
-        }
+        await assertSelection(page, {
+          anchorOffset: 0,
+          anchorPath: [0, 0, 0],
+          focusOffset: 4,
+          focusPath: [1, 5, 0],
+        });
       } else {
-        if (browserName === 'firefox' && IS_LINUX) {
-          await assertSelection(page, {
-            anchorOffset: 0,
-            anchorPath: [],
-            focusOffset: 1,
-            focusPath: [],
-          });
-        } else {
-          await assertSelection(page, {
-            anchorOffset: 0,
-            anchorPath: [0, 0, 0],
-            focusOffset: 4,
-            focusPath: [0, 12, 0],
-          });
-        }
+        await assertSelection(page, {
+          anchorOffset: 0,
+          anchorPath: [0, 0, 0],
+          focusOffset: 4,
+          focusPath: [0, 12, 0],
+        });
       }
 
       await page.keyboard.press('Delete');
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         `,
       );
       await assertSelection(page, {
@@ -836,7 +786,9 @@ test.describe('CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
           <div contenteditable="false" data-lexical-decorator="true">
             <div class="PlaygroundEditorTheme__embedBlock">
               <iframe
@@ -988,7 +940,9 @@ test.describe('CopyAndPaste', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         `,
       );
 

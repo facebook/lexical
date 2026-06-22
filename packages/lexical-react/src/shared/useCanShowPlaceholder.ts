@@ -9,7 +9,7 @@
 import type {LexicalEditor} from 'lexical';
 
 import {$canShowPlaceholderCurry} from '@lexical/text';
-import {mergeRegister} from '@lexical/utils';
+import {mergeRegister} from 'lexical';
 import {useState} from 'react';
 
 import useLayoutEffect from './useLayoutEffect';
@@ -17,9 +17,10 @@ import useLayoutEffect from './useLayoutEffect';
 function canShowPlaceholderFromCurrentEditorState(
   editor: LexicalEditor,
 ): boolean {
-  const currentCanShowPlaceholder = editor
-    .getEditorState()
-    .read($canShowPlaceholderCurry(editor.isComposing()));
+  const currentCanShowPlaceholder = editor.read(
+    'latest',
+    $canShowPlaceholderCurry(editor.isComposing()),
+  );
 
   return currentCanShowPlaceholder;
 }

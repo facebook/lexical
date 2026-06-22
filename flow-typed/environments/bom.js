@@ -1,5 +1,5 @@
-// flow-typed signature: 09630545c584c3b212588a2390c257d0
-// flow-typed version: baae4b8bcc/bom/flow_>=v0.261.x
+// flow-typed signature: b6e924fee0c3aabc47b3e089cc9ff0a7
+// flow-typed version: 74bef415fd/bom/flow_>=v0.261.x
 
 /* BOM */
 
@@ -37,6 +37,9 @@ declare interface Crypto {
     T: Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | BigInt64Array | BigUint64Array
   >(typedArray: T) => T;
   randomUUID: () => string;
+  subtle: {
+    digest(algorithm: string, data: Uint8Array): Promise<ArrayBuffer>
+  },
 }
 declare var crypto: Crypto;
 
@@ -826,6 +829,7 @@ declare class SharedWorker extends EventTarget {
 declare function importScripts(...urls: Array<string | TrustedScriptURL>): void;
 
 declare class WorkerGlobalScope extends EventTarget {
+    // $FlowExpectedError[incompatible-variance]
     self: this;
     location: WorkerLocation;
     navigator: WorkerNavigator;

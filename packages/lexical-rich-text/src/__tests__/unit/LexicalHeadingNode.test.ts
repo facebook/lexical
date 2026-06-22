@@ -124,7 +124,7 @@ describe('LexicalHeadingNode tests', () => {
         root.append(headingNode);
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><br></h1></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><br data-lexical-managed-linebreak="true"></h1></div>',
       );
       await editor.update(() => {
         const selection = $getSelection() as RangeSelection;
@@ -133,7 +133,7 @@ describe('LexicalHeadingNode tests', () => {
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><br></h1><p dir="auto"><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><br data-lexical-managed-linebreak="true"></h1><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
       );
     });
 
@@ -157,7 +157,7 @@ describe('LexicalHeadingNode tests', () => {
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><span data-lexical-text="true">hello world</span></h1><h1 dir="auto"><br></h1></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><span data-lexical-text="true">hello world</span></h1><h1 dir="auto"><br data-lexical-managed-linebreak="true"></h1></div>',
       );
     });
 
@@ -183,7 +183,7 @@ describe('LexicalHeadingNode tests', () => {
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><span data-lexical-text="true">hello</span><strong data-lexical-text="true"> world</strong></h1><p dir="auto"><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><span data-lexical-text="true">hello</span><strong data-lexical-text="true"> world</strong></h1><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
       );
     });
 
@@ -198,7 +198,7 @@ describe('LexicalHeadingNode tests', () => {
         {discrete: true},
       );
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><br></h1></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h1 dir="auto"><br data-lexical-managed-linebreak="true"></h1></div>',
       );
       await editor.update(
         () => {
@@ -213,7 +213,7 @@ describe('LexicalHeadingNode tests', () => {
         {discrete: true},
       );
       expect(testEnv.outerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h2 dir="auto"><br></h2></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h2 dir="auto"><br data-lexical-managed-linebreak="true"></h2></div>',
       );
     });
 
@@ -256,7 +256,7 @@ describe('LexicalHeadingNode tests', () => {
         expect(result.getDirection()).toEqual(headingNode.getDirection());
       });
       expect(testEnv.outerHTML).toBe(
-        `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h2 dir="auto"><span data-lexical-text="true">${text}</span></h2><p dir="auto"><br></p></div>`,
+        `<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><h2 dir="auto"><span data-lexical-text="true">${text}</span></h2><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>`,
       );
     });
   });

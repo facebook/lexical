@@ -24,17 +24,13 @@ import type {
 
 import invariant from '@lexical/internal/invariant';
 import {
-  $findMatchingParent,
-  $insertNodeToNearestRootAtCaret,
-  addClassNamesToElement,
-  isHTMLAnchorElement,
-} from '@lexical/utils';
-import {
   $applyNodeReplacement,
   $caretFromPoint,
   $copyNode,
+  $findMatchingParent,
   $getChildCaret,
   $getSelection,
+  $insertNodeToNearestRootAtCaret,
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
@@ -44,8 +40,10 @@ import {
   $rewindSiblingCaret,
   $setPointFromCaret,
   $setSelection,
+  addClassNamesToElement,
   createCommand,
   ElementNode,
+  isHTMLAnchorElement,
   Spread,
 } from 'lexical';
 
@@ -283,8 +281,8 @@ export class LinkNode extends ElementNode {
     const focusNode = selection.focus.getNode();
 
     return (
-      this.isParentOf(anchorNode) &&
-      this.isParentOf(focusNode) &&
+      (this.is(anchorNode) || this.isParentOf(anchorNode)) &&
+      (this.is(focusNode) || this.isParentOf(focusNode)) &&
       selection.getTextContent().length > 0
     );
   }

@@ -9,7 +9,7 @@
 import type {ElementNode, LexicalNode, Spread} from 'lexical';
 
 import invariant from '@lexical/internal/invariant';
-import {$findMatchingParent} from '@lexical/utils';
+import {$findMatchingParent} from 'lexical';
 
 import {$isListItemNode, $isListNode, ListItemNode, ListNode} from './';
 
@@ -100,9 +100,9 @@ export function $isLastItemInList(listItem: ListItemNode): boolean {
  * @returns An array containing all nodes of type ListItemNode found.
  */
 // This should probably be $getAllChildrenOfType
-export function $getAllListItems(node: ListNode): Array<ListItemNode> {
-  let listItemNodes: Array<ListItemNode> = [];
-  const listChildren: Array<ListItemNode> = node
+export function $getAllListItems(node: ListNode): ListItemNode[] {
+  let listItemNodes: ListItemNode[] = [];
+  const listChildren: ListItemNode[] = node
     .getChildren()
     .filter($isListItemNode);
 

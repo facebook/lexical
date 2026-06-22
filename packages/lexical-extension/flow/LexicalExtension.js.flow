@@ -182,6 +182,12 @@ declare export var NodeSelectionExtension: LexicalExtension<ExtensionConfigBase,
   watchNodeKey: (key: NodeKey) => ReadonlySignal<boolean>;
 }, void>;
 
+export type NodeSelectionDataSelectedConfig = {
+  nodes: Class<LexicalNode>[];
+  attribute: string;
+}
+declare export var NodeSelectionDataSelectedExtension: LexicalExtension<NodeSelectionDataSelectedConfig, "@lexical/extension/NodeSelectionDataSelected", void, {matchTypes: Set<string>}>;
+
 export type TabIndentationConfig = {
   disabled: boolean;
   maxIndent: null | number;

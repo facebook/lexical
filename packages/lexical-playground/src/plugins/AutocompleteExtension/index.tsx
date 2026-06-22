@@ -15,7 +15,6 @@ import {
   watchedSignal,
 } from '@lexical/extension';
 import {$isAtNodeEnd} from '@lexical/selection';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -29,10 +28,12 @@ import {
   COMPOSITION_START_COMMAND,
   defineExtension,
   type EditorState,
+  getActiveElement,
   isHTMLElement,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_TAB_COMMAND,
   type LexicalEditor,
+  mergeRegister,
   type NodeKey,
   safeCast,
   setDOMUnmanaged,
@@ -397,7 +398,10 @@ export const AutocompleteExtension = /* @__PURE__ */ defineExtension({
     // extension registration.
     function isEditorFocused(): boolean {
       const rootElem = editor.getRootElement();
-      const active = rootElem && rootElem.ownerDocument.activeElement;
+      // getActiveElement rather than ownerDocument.activeElement, which reports
+      // the shadow host (not contained in rootElem) when the editor is in a
+      // shadow root.
+      const active = rootElem ? getActiveElement(rootElem) : null;
       return rootElem != null && active != null && rootElem.contains(active);
     }
 
@@ -540,31 +544,24 @@ export const AutocompleteExtension = /* @__PURE__ */ defineExtension({
       if (!isEditorFocused()) {
         return;
       }
-      editor.getEditorState().read(
-        () => {
-          const selection = $getSelection();
-          const [hasMatch, match] = $search(selection);
-          if (
-            !hasMatch ||
-            match !== lastMatch ||
-            !$isRangeSelection(selection)
-          ) {
-            return;
-          }
-          const node = selection.getNodes()[0];
-          if (!$isTextNode(node)) {
-            return;
-          }
-          activeTextNodeKey = node.getKey();
-          lastSuggestion = newSuggestion;
-          syncGhost(
-            editor,
-            activeTextNodeKey,
-            formatSuggestionText(newSuggestion),
-          );
-        },
-        {editor},
-      );
+      editor.read('latest', () => {
+        const selection = $getSelection();
+        const [hasMatch, match] = $search(selection);
+        if (!hasMatch || match !== lastMatch || !$isRangeSelection(selection)) {
+          return;
+        }
+        const node = selection.getNodes()[0];
+        if (!$isTextNode(node)) {
+          return;
+        }
+        activeTextNodeKey = node.getKey();
+        lastSuggestion = newSuggestion;
+        syncGhost(
+          editor,
+          activeTextNodeKey,
+          formatSuggestionText(newSuggestion),
+        );
+      });
     }
 
     function handleUpdate({

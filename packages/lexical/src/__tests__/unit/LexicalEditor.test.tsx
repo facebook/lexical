@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import type {JSX} from 'react';
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
@@ -86,7 +85,6 @@ import {createRoot, Root} from 'react-dom/client';
 import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';
-import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {
   $assertNodeType,
   $createTestDecoratorNode,
@@ -193,7 +191,7 @@ describe('LexicalEditor tests', () => {
   function useLexicalEditor(
     rootElementRef: React.RefObject<null | HTMLDivElement>,
     onError?: (error: Error) => void,
-    nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
+    nodes?: readonly (Klass<LexicalNode> | LexicalNodeReplacement)[],
     onWarn?: (error: Error) => void,
   ) {
     const editor = useMemo(
@@ -230,7 +228,7 @@ describe('LexicalEditor tests', () => {
 
   function init(
     onError?: (error: Error) => void,
-    nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
+    nodes?: readonly (Klass<LexicalNode> | LexicalNodeReplacement)[],
     onWarn?: (error: Error) => void,
   ) {
     const ref = createRef<HTMLDivElement>();
@@ -539,7 +537,7 @@ describe('LexicalEditor tests', () => {
     init();
     const onUpdate = vi.fn();
 
-    let log: Array<string> = [];
+    let log: string[] = [];
 
     editor.registerUpdateListener(onUpdate);
     editor.update(() => {
@@ -696,9 +694,9 @@ describe('LexicalEditor tests', () => {
 
     await Promise.resolve().then();
 
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Sync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
     // Calculate an expected update listener paylaod
@@ -1041,7 +1039,7 @@ describe('LexicalEditor tests', () => {
               </ul>
             </li>
           </ul>
-          <p dir="auto"><br /></p>
+          <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
           <ul dir="auto">
             <li value="1">
               <ul>
@@ -1096,7 +1094,7 @@ describe('LexicalEditor tests', () => {
         const root = $getRoot();
         const paragraph0 = $createParagraphNode();
         const paragraph1 = $createParagraphNode();
-        const textNodes: Array<LexicalNode> = [];
+        const textNodes: LexicalNode[] = [];
 
         for (let i = 0; i < 6; i++) {
           const node = $createTextNode(String(i)).toggleUnmergeable();
@@ -1320,6 +1318,147 @@ describe('LexicalEditor tests', () => {
     expect(errorListener).toHaveBeenCalledTimes(0);
 
     unregister();
+
+    // editor should still be usable after the cascade is cut
+    editor.update(
+      () => {
+        $getRoot().markDirty();
+      },
+      {discrete: true},
+    );
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+    expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('does not trip the recursion guard on bounded re-enqueueing across separate actions', async () => {
+    // Regression test for over-firing (#8635): a listener that re-enqueues a
+    // bounded amount of work per commit must not accumulate cascade budget
+    // across many independent user actions. The enqueued no-op never produces
+    // a commit, so the queue is never observed empty by
+    // $triggerEnqueuedUpdates and, before the fix, _cascadeCount leaked +1 per
+    // action and falsely tripped after ~100 ordinary keystrokes.
+    const errorListener = vi.fn();
+    const warnListener = vi.fn();
+    init(errorListener, undefined, warnListener);
+
+    const unregister = editor.registerUpdateListener(() => {
+      editor.update(() => {
+        // bounded: a single no-op update per commit
+      });
+    });
+
+    for (let i = 0; i < 150; i++) {
+      editor.update(() => {
+        $getRoot().markDirty();
+      });
+      // Each action yields to the event loop, like real typing, which lets
+      // the macrotask budget reset run between actions.
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+    unregister();
+
+    expect(warnListener).toHaveBeenCalledTimes(0);
+    expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('does not trip the recursion guard on a fast input burst driven by commands', async () => {
+    // Rapid input (key repeat, synthetic events) can deliver many commands
+    // without the event loop running the macrotask budget reset in between.
+    // Each dispatched command is a fresh external action, so it resets the
+    // cascade budget directly (see triggerCommandListeners).
+    const errorListener = vi.fn();
+    const warnListener = vi.fn();
+    init(errorListener, undefined, warnListener);
+
+    const BURST_COMMAND = createCommand<void>('BURST_COMMAND');
+    const unregisterCommand = editor.registerCommand(
+      BURST_COMMAND,
+      () => {
+        editor.update(() => {
+          $getRoot().markDirty();
+        });
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    );
+    const unregisterUpdate = editor.registerUpdateListener(() => {
+      editor.update(() => {
+        // bounded: a single no-op update per commit
+      });
+    });
+
+    for (let i = 0; i < 150; i++) {
+      editor.dispatchCommand(BURST_COMMAND, undefined);
+      // Yield only microtasks: commits flush, but the macrotask budget reset
+      // never gets a chance to run within the burst.
+      for (let j = 0; j < 4; j++) {
+        await Promise.resolve();
+      }
+    }
+    unregisterUpdate();
+    unregisterCommand();
+
+    expect(warnListener).toHaveBeenCalledTimes(0);
+    expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('still detects a runaway cascade that dispatches commands from a mutation listener', async () => {
+    // Mutation listeners run during $commitPendingUpdates with
+    // editor._updating === false. A runaway loop whose every cycle also
+    // dispatches a command from one must not reset its own cascade budget and
+    // escape detection: commands dispatched mid-commit are update machinery,
+    // not fresh external actions (see isCommittingPendingUpdates).
+    const errorListener = vi.fn();
+    const warnListener = vi.fn();
+    init(errorListener, undefined, warnListener);
+
+    const NOOP_COMMAND = createCommand<void>('NOOP_COMMAND');
+    let textKey = '';
+    editor.update(
+      () => {
+        const text = $createTextNode('a');
+        $getRoot().clear().append($createParagraphNode().append(text));
+        textKey = text.getKey();
+      },
+      {discrete: true},
+    );
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    const unregisterMutation = editor.registerMutationListener(TextNode, () => {
+      editor.dispatchCommand(NOOP_COMMAND, undefined);
+    });
+    // Unbounded: flips the text content again on every commit, forever.
+    const unregisterUpdate = editor.registerUpdateListener(() => {
+      editor.update(() => {
+        const text = $getNodeByKey<TextNode>(textKey);
+        if (text !== null) {
+          text.setTextContent(text.getTextContent() === 'a' ? 'b' : 'a');
+        }
+      });
+    });
+
+    editor.update(() => {
+      const text = $getNodeByKey<TextNode>(textKey);
+      if (text !== null) {
+        text.setTextContent('b');
+      }
+    });
+    // Drain only microtasks: the runaway never yields to the event loop, so
+    // the macrotask budget reset cannot save it either.
+    for (let i = 0; i < 800 && warnListener.mock.calls.length === 0; i++) {
+      await Promise.resolve();
+    }
+    unregisterUpdate();
+    unregisterMutation();
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(warnListener).toHaveBeenCalledTimes(1);
+    expect(warnListener.mock.calls[0][0].message).toMatch(
+      /endlessly enqueueing/,
+    );
+    expect(errorListener).toHaveBeenCalledTimes(0);
 
     // editor should still be usable after the cascade is cut
     editor.update(
@@ -1610,7 +1749,7 @@ describe('LexicalEditor tests', () => {
       expect(listener).toHaveBeenCalledTimes(1);
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto">' +
-          '<span data-lexical-decorator="true" contenteditable="false"><span>Hello world</span></span><br></p></div>',
+          '<span data-lexical-decorator="true" contenteditable="false"><span>Hello world</span></span><br data-lexical-managed-linebreak="true"></p></div>',
       );
     });
 
@@ -1652,7 +1791,7 @@ describe('LexicalEditor tests', () => {
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
       );
 
       await act(async () => {
@@ -1663,13 +1802,13 @@ describe('LexicalEditor tests', () => {
 
       expect(listener).toHaveBeenCalledTimes(5);
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
       );
 
       // Wait for update to complete
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const root = $getRoot();
         const paragraph = root.getFirstChild()!;
         expect(root).toEqual({
@@ -1684,6 +1823,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1700,6 +1841,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 0,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1780,6 +1923,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1796,6 +1941,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1864,6 +2011,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1880,6 +2029,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -2344,9 +2495,23 @@ describe('LexicalEditor tests', () => {
       }
     }
     expect(() =>
-      createEditor({nodes: [FakeLexicalNode as Klass<LexicalNode>]}),
-    ).toThrowError(
-      /FakeLexicalNode \(type fake-node\) does not subclass LexicalNode from the lexical package used by this editor/,
+      // @ts-expect-error
+      createEditor({nodes: [FakeLexicalNode]}),
+    ).toThrow(
+      /nodes\[0\] FakeLexicalNode \(type fake-node\) is not a constructor that subclasses LexicalNode from the lexical package used by this editor/,
+    );
+  });
+  it('rejects creating an editor with invalid LexicalNode parent class (no getType)', async () => {
+    class FakeLexicalNode {}
+    // @ts-expect-error
+    expect(() => createEditor({nodes: [FakeLexicalNode]})).toThrow(
+      /nodes\[0\] FakeLexicalNode is not a constructor that subclasses LexicalNode from the lexical package used by this editor/,
+    );
+  });
+  it('rejects creating an editor with invalid LexicalNode parent class (undefined)', async () => {
+    // @ts-expect-error
+    expect(() => createEditor({nodes: [undefined]})).toThrow(
+      /nodes\[0\] undefined is not a constructor that subclasses LexicalNode from the lexical package used by this editor/,
     );
   });
   it('mutation listener on newly initialized editor', async () => {
@@ -2595,7 +2760,7 @@ describe('LexicalEditor tests', () => {
 
   it('does not leak a no-op update tag into the next update', () => {
     init();
-    const observedTags: Array<Array<string>> = [];
+    const observedTags: string[][] = [];
     const unregister = editor.registerUpdateListener(({tags}) => {
       observedTags.push([...tags]);
     });
@@ -2648,7 +2813,7 @@ describe('LexicalEditor tests', () => {
       {discrete: true},
     );
 
-    const observed: Array<{content: string; tags: Array<string>}> = [];
+    const observed: {content: string; tags: string[]}[] = [];
     const unregister = editor.registerUpdateListener(({editorState, tags}) => {
       observed.push({
         content: editorState.read(() => $getRoot().getTextContent()),
@@ -3250,9 +3415,9 @@ describe('LexicalEditor tests', () => {
       },
     );
 
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Sync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
     // Calculate an expected update listener paylaod
@@ -3281,9 +3446,9 @@ describe('LexicalEditor tests', () => {
       },
     );
 
-    const textContent = headless
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = headless.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Async update\n\nSync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
   });
@@ -3312,9 +3477,9 @@ describe('LexicalEditor tests', () => {
         discrete: true,
       },
     );
-    const textContent = headless
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = headless.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Async update\n\nSync update');
   });
 
@@ -3338,9 +3503,9 @@ describe('LexicalEditor tests', () => {
       );
     });
 
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Async update\n\nSync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
   });
@@ -3513,7 +3678,7 @@ describe('LexicalEditor tests', () => {
         expect(text.getTextContent()).toBe('123');
       });
 
-      await newEditor.getEditorState().read(() => {
+      await newEditor.read('latest', () => {
         expect(mockTransform).toHaveBeenCalledTimes(0);
       });
 
@@ -3561,7 +3726,7 @@ describe('LexicalEditor tests', () => {
         expect(text.getTextContent()).toBe('123');
       });
 
-      await newEditor.getEditorState().read(() => {
+      await newEditor.read('latest', () => {
         expect(mockTransform).toHaveBeenCalledTimes(1);
       });
 
@@ -3612,16 +3777,8 @@ describe('LexicalEditor tests', () => {
     vi.spyOn(ParagraphNode, 'importDOM');
 
     class CustomParagraphNode extends ParagraphNode {
-      static getType() {
-        return 'custom-paragraph';
-      }
-
-      static clone(node: CustomParagraphNode) {
-        return new CustomParagraphNode(node.__key);
-      }
-
-      static importJSON(serializedNode: SerializedParagraphNode) {
-        return new CustomParagraphNode().updateFromJSON(serializedNode);
+      $config() {
+        return this.config('custom-paragraph', {extends: ParagraphNode});
       }
     }
 

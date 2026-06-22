@@ -14,7 +14,6 @@ import './PollNode.css';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -22,6 +21,7 @@ import {
   BaseSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
+  mergeRegister,
   NodeKey,
 } from 'lexical';
 import {useEffect, useMemo, useRef, useState} from 'react';
@@ -94,8 +94,7 @@ function PollOptionComponent({
           onChange={e => {
             const target = e.target;
             const value = target.value;
-            const selectionStart = target.selectionStart;
-            const selectionEnd = target.selectionEnd;
+            const {selectionStart, selectionEnd} = target;
             withPollNode(
               node => {
                 node.setOptionText(option, value);

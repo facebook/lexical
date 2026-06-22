@@ -18,6 +18,10 @@ import type {JSX} from 'react';
 
 import {DecoratorNode} from 'lexical';
 
+/**
+ * The serialized form of a {@link DecoratorBlockNode}: the base serialized node
+ * data plus the block's element `format` (alignment).
+ */
 export type SerializedDecoratorBlockNode = Spread<
   {
     format: ElementFormatType;
@@ -25,6 +29,13 @@ export type SerializedDecoratorBlockNode = Spread<
   SerializedLexicalNode
 >;
 
+/**
+ * A base class for block-level {@link DecoratorNode}s (decorator nodes rendered
+ * on their own line rather than inline). It stores an {@link ElementFormatType}
+ * alignment, is not indentable, and renders into a `<div>`. Extend it for custom
+ * block embeds such as images, videos, or tweets, typically pairing it with
+ * {@link BlockWithAlignableContents} to handle selection and alignment.
+ */
 export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
   __format: ElementFormatType;
 
@@ -80,6 +91,9 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
   }
 }
 
+/**
+ * @returns `true` if `node` is a {@link DecoratorBlockNode}, narrowing its type.
+ */
 export function $isDecoratorBlockNode(
   node: LexicalNode | null | undefined,
 ): node is DecoratorBlockNode {

@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
   buildEditorFromExtensions,
   defineExtension,
@@ -318,7 +317,7 @@ describe('ElementDOMSlot integration: leading decoration (slot.after)', () => {
 
   class LeadingDecorElementNode extends ElementNode {
     $config() {
-      return this.config('leading-decor', {});
+      return this.config('leading-decor', {extends: ElementNode});
     }
     createDOM() {
       const el = document.createElement('div');
@@ -525,7 +524,7 @@ describe('ElementDOMSlot integration: trailing decoration (slot.before)', () => 
 
   class TrailingDecorElementNode extends ElementNode {
     $config() {
-      return this.config('trailing-decor', {});
+      return this.config('trailing-decor', {extends: ElementNode});
     }
     createDOM() {
       const el = document.createElement('div');
@@ -674,7 +673,7 @@ describe('ElementDOMSlot block cursor handling', () => {
   // `getDOMSlot().withElement(...)`, so the keyed DOM is a wrapper.
   class InnerWrapElementNode extends ElementNode {
     $config() {
-      return this.config('inner-wrap', {});
+      return this.config('inner-wrap', {extends: ElementNode});
     }
     createDOM(): HTMLElement {
       const el = document.createElement('div');

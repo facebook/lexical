@@ -10,6 +10,8 @@ import type {
   DOMExportOutput,
   NodeKey,
   SerializedLexicalNode,
+  SlotChildNode,
+  SlotHostNode,
 } from '../LexicalNode';
 import type {
   BaseSelection,
@@ -17,6 +19,7 @@ import type {
   RangeSelection,
 } from '../LexicalSelection';
 import type {
+  BaseStaticNodeConfig,
   KlassConstructor,
   LexicalEditor,
   LexicalUpdateJSON,
@@ -41,13 +44,20 @@ import {
   $isRangeSelection,
   moveSelectionPointToSibling,
 } from '../LexicalSelection';
+import {
+  $errorOnSlotCycleChild,
+  $getSlot,
+  $getSlotNames,
+  $getSlotsTextContent,
+  $getSlotsTextContentSize,
+} from '../LexicalSlot';
 import {errorOnReadOnly, getActiveEditor} from '../LexicalUpdates';
 import {
   $getDOMSlot,
   $getNodeByKey,
   $isRootOrShadowRoot,
+  $removeFromParent,
   isHTMLElement,
-  removeFromParent,
   toggleTextFormatType,
 } from '../LexicalUtils';
 
@@ -55,7 +65,7 @@ export type SerializedElementNode<
   T extends SerializedLexicalNode = SerializedLexicalNode,
 > = Spread<
   {
-    children: Array<T>;
+    children: T[];
     direction: 'ltr' | 'rtl' | null;
     format: ElementFormatType;
     indent: number;
@@ -74,6 +84,33 @@ export type ElementFormatType =
   | 'justify'
   | '';
 
+/**
+ * Wrap any shadow-root child of `node` that is neither an ElementNode nor a
+ * DecoratorNode in a paragraph, so the slot-frame invariant set by
+ * `getTopLevelElement` continues to hold for external inputs (URL doc
+ * payloads, imported JSON, paste round-trips) that may carry shapes the
+ * in-editor mutation paths can no longer produce.
+ *
+ * Single-node helper: runs as the `$config` `$transform` on ElementNode so
+ * the existing dirty-node transform cycle drives the normalization. The
+ * in-editor mutation paths (insertText, insertNodes, append/splice via the
+ * public API) still fail-fast on the invariant.
+ *
+ * @internal
+ */
+function $normalizeShadowRootChildren(node: ElementNode): void {
+  if ($isRootOrShadowRoot(node)) {
+    let block: ElementNode | null = null;
+    for (const child of node.getChildren()) {
+      block = child.isInline()
+        ? (block || child.replace(child.createParentElementNode())).append(
+            child,
+          )
+        : null;
+    }
+  }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface ElementNode {
   getTopLevelElement(): ElementNode | null;
@@ -82,7 +119,10 @@ export interface ElementNode {
 
 /** @noInheritDoc */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class ElementNode extends LexicalNode {
+export class ElementNode
+  extends LexicalNode
+  implements SlotHostNode, SlotChildNode
+{
   /** @internal */
   declare ['constructor']: KlassConstructor<typeof ElementNode>;
   /** @internal */
@@ -103,6 +143,32 @@ export class ElementNode extends LexicalNode {
   __textFormat: number;
   /** @internal */
   __textStyle: string;
+  /** @internal */
+  __slotHost: null | NodeKey;
+  /** @internal */
+  __slots: null | Map<string, NodeKey>;
+
+  // Specific type information is discarded for backwards compatibility,
+  // there is nothing meaninful to gain from requiring `{extends: ElementNode}`
+  // with the current shape here (just a `$transform`)
+  $config(): BaseStaticNodeConfig {
+    return this.config(Symbol.for('ElementNode'), {
+      /*
+       * Built-in normalize for shadow-root ElementNodes: wraps any direct child
+       * that is neither an ElementNode nor a DecoratorNode in a paragraph, so
+       * the slot-frame invariant set by `getTopLevelElement` continues to hold
+       * for external inputs (URL doc payloads, imported JSON, paste round-trips)
+       * that may carry shapes the in-editor mutation paths can no longer
+       * produce. In-editor mutation paths still fail-fast on the invariant.
+       *
+       * Runs as a static transform so the existing dirty-node transform cycle
+       * drives it — typing paths cover their own dirty bookkeeping, hydrate
+       * paths (`setEditorState`) dirty-mark slot hosts so the cycle picks them
+       * up.
+       */
+      $transform: $normalizeShadowRootChildren,
+    });
+  }
 
   constructor(key?: NodeKey) {
     super(key);
@@ -115,6 +181,8 @@ export class ElementNode extends LexicalNode {
     this.__dir = null;
     this.__textFormat = 0;
     this.__textStyle = '';
+    this.__slotHost = null;
+    this.__slots = null;
   }
 
   afterCloneFrom(prevNode: this) {
@@ -123,6 +191,18 @@ export class ElementNode extends LexicalNode {
       this.__first = prevNode.__first;
       this.__last = prevNode.__last;
       this.__size = prevNode.__size;
+      this.__slotHost = prevNode.__slotHost;
+      invariant(
+        this.__slotHost === null || this.__parent === null,
+        'ElementNode: node %s is both slotted into host %s and a child of parent %s; __slotHost and __parent are mutually exclusive',
+        this.__key,
+        String(this.__slotHost),
+        String(this.__parent),
+      );
+      // Copy-on-write: share the map across versions; the LexicalSlot
+      // mutators clone it on a version's first write (owner ledger), so a
+      // host cloned for any non-slot change pays no per-version Map copy.
+      this.__slots = prevNode.__slots;
     }
     this.__indent = prevNode.__indent;
     this.__format = prevNode.__format;
@@ -151,16 +231,16 @@ export class ElementNode extends LexicalNode {
   /**
    * Returns the children of this node, in document order.
    */
-  getChildren(): Array<LexicalNode>;
+  getChildren(): LexicalNode[];
   /**
    * @deprecated The type parameter is an unchecked and unsafe cast,
-   * equivalent to `element.getChildren() as Array<T>`, and will be
+   * equivalent to `element.getChildren() as T[]`, and will be
    * removed in a future release. Call this method without a type argument
    * and narrow the results with a type guard instead.
    */
-  getChildren<T extends LexicalNode>(): Array<T>;
-  getChildren(): Array<LexicalNode> {
-    const children: Array<LexicalNode> = [];
+  getChildren<T extends LexicalNode>(): T[];
+  getChildren(): LexicalNode[] {
+    const children: LexicalNode[] = [];
     let child = this.getFirstChild();
     while (child !== null) {
       children.push(child);
@@ -168,8 +248,8 @@ export class ElementNode extends LexicalNode {
     }
     return children;
   }
-  getChildrenKeys(): Array<NodeKey> {
-    const children: Array<NodeKey> = [];
+  getChildrenKeys(): NodeKey[] {
+    const children: NodeKey[] = [];
     let child = this.getFirstChild();
     while (child !== null) {
       children.push(child.__key);
@@ -182,7 +262,10 @@ export class ElementNode extends LexicalNode {
     return self.__size;
   }
   isEmpty(): boolean {
-    return this.getChildrenSize() === 0;
+    // A host that holds content only in its slots is not empty: otherwise
+    // $removeNode would cascade-prune it once its last child is gone and orphan
+    // the slot subtrees.
+    return this.getChildrenSize() === 0 && $getSlotNames(this).length === 0;
   }
   isDirty(): boolean {
     const editor = getActiveEditor();
@@ -194,9 +277,21 @@ export class ElementNode extends LexicalNode {
     const parentLastChild = this.getParentOrThrow().getLastChild();
     return parentLastChild !== null && parentLastChild.is(self);
   }
-  getAllTextNodes(): Array<TextNode> {
-    const textNodes = [];
-    let child = this.getFirstChild();
+  getAllTextNodes(): TextNode[] {
+    const textNodes: TextNode[] = [];
+    // Slots are read slots-first, ahead of the linked-list children, to match
+    // getTextContent. This is a content read; descendant navigation
+    // (getFirstDescendant / getLastDescendant) stays children-only so slots
+    // never leak into selection placement. A slot value is always a non-inline
+    // element or decorator (setSlot enforces this), so only element slots
+    // contribute text nodes.
+    for (const name of $getSlotNames(this)) {
+      const slot = $getSlot(this, name);
+      if ($isElementNode(slot)) {
+        textNodes.push(...slot.getAllTextNodes());
+      }
+    }
+    let child: LexicalNode | null = this.getFirstChild();
     while (child !== null) {
       if ($isTextNode(child)) {
         textNodes.push(child);
@@ -212,6 +307,9 @@ export class ElementNode extends LexicalNode {
   /**
    * Returns the deepest first descendant of this node,
    * or null if it has no children.
+   *
+   * Descendant navigation is children-only by design: it feeds selectStart /
+   * selectEnd and selection, which must not see slots (slots are isolated).
    */
   getFirstDescendant(): null | LexicalNode;
   /**
@@ -395,7 +493,8 @@ export class ElementNode extends LexicalNode {
     return null;
   }
   getTextContent(): string {
-    let textContent = '';
+    // Slots are read slots-first, ahead of the linked-list children.
+    let textContent = $getSlotsTextContent(this);
     const children = this.getChildren();
     const childrenLength = children.length;
     for (let i = 0; i < childrenLength; i++) {
@@ -413,7 +512,8 @@ export class ElementNode extends LexicalNode {
     return textContent;
   }
   getTextContentSize(): number {
-    let textContentSize = 0;
+    // Slots are counted slots-first, ahead of the linked-list children.
+    let textContentSize = $getSlotsTextContentSize(this);
     const children = this.getChildren();
     const childrenLength = children.length;
     for (let i = 0; i < childrenLength; i++) {
@@ -562,7 +662,7 @@ export class ElementNode extends LexicalNode {
   splice(
     start: number,
     deleteCount: number,
-    nodesToInsert: Array<LexicalNode>,
+    nodesToInsert: LexicalNode[],
   ): this {
     invariant(
       !$isEphemeral(this),
@@ -579,6 +679,11 @@ export class ElementNode extends LexicalNode {
       String(deleteCount),
       String(oldSize),
     );
+    // Before any mutation: a child insertion must not close a cycle through a
+    // slot up-link (the reverse direction of $setSlot's cycle invariant).
+    for (const nodeToInsert of nodesToInsert) {
+      $errorOnSlotCycleChild(writableSelf, nodeToInsert);
+    }
     const writableSelfKey = writableSelf.__key;
     const nodesToInsertKeys = [];
     const nodesToRemoveKeys = [];
@@ -609,7 +714,7 @@ export class ElementNode extends LexicalNode {
         const nextSibling = nodeToDelete.getNextSibling();
         const nodeKeyToDelete = nodeToDelete.__key;
         const writableNodeToDelete = nodeToDelete.getWritable();
-        removeFromParent(writableNodeToDelete);
+        $removeFromParent(writableNodeToDelete);
         nodesToRemoveKeys.push(nodeKeyToDelete);
         nodeToDelete = nextSibling;
       }
@@ -624,7 +729,7 @@ export class ElementNode extends LexicalNode {
       if (writableNodeToInsert.__parent === writableSelfKey) {
         newSize--;
       }
-      removeFromParent(writableNodeToInsert);
+      $removeFromParent(writableNodeToInsert);
       const nodeKeyToInsert = nodeToInsert.__key;
       if (prevNode === null) {
         writableSelf.__first = nodeKeyToInsert;

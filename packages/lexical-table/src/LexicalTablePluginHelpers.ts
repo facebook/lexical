@@ -9,15 +9,14 @@
 import {NamedSignalsOutput, Signal, signal} from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
 import {
-  $dfs,
-  $findMatchingParent,
+  $dfsWithSlots,
   $insertFirst,
   $insertNodeToNearestRoot,
   $unwrapAndFilterDescendants,
-  mergeRegister,
 } from '@lexical/utils';
 import {
   $createParagraphNode,
+  $findMatchingParent,
   $getNearestNodeFromDOMNode,
   $getPreviousSelection,
   $getRoot,
@@ -34,6 +33,7 @@ import {
   ElementNode,
   isDOMNode,
   LexicalEditor,
+  mergeRegister,
   NodeKey,
   RangeSelection,
   SELECT_ALL_COMMAND,
@@ -353,40 +353,31 @@ export function registerTableSelectionObserver(
     editor.registerMutationListener(
       TableNode,
       nodeMutations => {
-        editor.getEditorState().read(
-          () => {
-            for (const [nodeKey, mutation] of nodeMutations) {
-              const tableSelection = tableObservers.observers.get(nodeKey);
-              if (mutation === 'created' || mutation === 'updated') {
-                const {tableNode, tableElement} =
-                  $getTableAndElementByKey(nodeKey);
-                if (tableSelection === undefined) {
-                  initializeTableNode(tableNode, nodeKey, tableElement);
-                } else if (tableElement !== tableSelection[1]) {
-                  // The update created a new DOM node, destroy the existing TableObserver
-                  tableSelection[0].removeListeners();
-                  tableObservers.observers.delete(nodeKey);
-                  initializeTableNode(tableNode, nodeKey, tableElement);
-                }
-              } else if (mutation === 'destroyed') {
-                if (tableSelection !== undefined) {
-                  tableSelection[0].removeListeners();
-                  tableObservers.observers.delete(nodeKey);
-                }
+        editor.read('latest', () => {
+          for (const [nodeKey, mutation] of nodeMutations) {
+            const tableSelection = tableObservers.observers.get(nodeKey);
+            if (mutation === 'created' || mutation === 'updated') {
+              const {tableNode, tableElement} =
+                $getTableAndElementByKey(nodeKey);
+              if (tableSelection === undefined) {
+                initializeTableNode(tableNode, nodeKey, tableElement);
+              } else if (tableElement !== tableSelection[1]) {
+                // The update created a new DOM node, destroy the existing TableObserver
+                tableObservers.removeObserver(nodeKey);
+                initializeTableNode(tableNode, nodeKey, tableElement);
               }
+            } else if (mutation === 'destroyed') {
+              tableObservers.removeObserver(nodeKey);
             }
-          },
-          {editor},
-        );
+          }
+        });
       },
       {skipInitialization: false},
     ),
     () => {
       // Hook might be called multiple times so cleaning up tables listeners as well,
       // as it'll be reinitialized during recurring call
-      for (const [, [tableSelection]] of tableObservers.observers) {
-        tableSelection.removeListeners();
-      }
+      tableObservers.removeAllObservers();
     },
   );
 }
@@ -455,7 +446,7 @@ function $tableSelectionInsertClipboardNodesCommand(
   const {nodes, selection} = selectionPayload;
 
   const hasTables = nodes.some(
-    n => $isTableNode(n) || $dfs(n).some(d => $isTableNode(d.node)),
+    n => $isTableNode(n) || $dfsWithSlots(n).some(d => $isTableNode(d.node)),
   );
   if (!hasTables) {
     // Not pasting a table - no special handling required.

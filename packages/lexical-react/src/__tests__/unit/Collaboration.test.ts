@@ -54,7 +54,9 @@ describe('Collaboration', () => {
     // Wait for clients to render the initial content
     await Promise.resolve().then();
 
-    expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+    expect(client1.getHTML()).toEqual(
+      '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+    );
     expect(client1.getHTML()).toEqual(client2.getHTML());
     expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
   }
@@ -153,7 +155,9 @@ describe('Collaboration', () => {
         expect(client1.getHTML()).toEqual(
           '<p dir="auto"><span data-lexical-text="true">Hello world</span></p>',
         );
-        expect(client2.getHTML()).toEqual('<p dir="auto"><br></p>');
+        expect(client2.getHTML()).toEqual(
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+        );
 
         // Insert some a text node on client 1
         await waitForReact(() => {
@@ -287,7 +291,9 @@ describe('Collaboration', () => {
           });
         });
 
-        expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+        );
         expect(client2.getHTML()).toEqual(
           '<p dir="auto"><span data-lexical-text="true">Hello world</span></p>',
         );
@@ -310,7 +316,9 @@ describe('Collaboration', () => {
           });
         });
 
-        expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+        );
         expect(client2.getHTML()).toEqual(
           '<p dir="auto"><span data-lexical-text="true">Hello worldHello world</span></p>',
         );
@@ -331,7 +339,9 @@ describe('Collaboration', () => {
           // fallback maps. For now though, if a user clears all text nodes from an element
           // and another user inserts some text into the same element at the same time, the
           // deletion will take precedence on conflicts.
-          expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+          expect(client1.getHTML()).toEqual(
+            '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+          );
         }
         expect(client1.getHTML()).toEqual(client2.getHTML());
         expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
@@ -471,7 +481,9 @@ describe('Collaboration', () => {
 
         // We expect the safety check in syncYjsChangesToLexical to
         // insert a new paragraph node and prevent the document from being empty
-        expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+        );
         expect(client1.getHTML()).toEqual(client2.getHTML());
         expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
 
@@ -488,7 +500,7 @@ describe('Collaboration', () => {
         });
 
         expect(client1.getHTML()).toEqual(
-          '<p dir="auto"><br></p><p dir="auto"><span data-lexical-text="true">Hello world</span></p>',
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p><p dir="auto"><span data-lexical-text="true">Hello world</span></p>',
         );
         expect(client1.getHTML()).toEqual(client2.getHTML());
         expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
@@ -521,7 +533,9 @@ describe('Collaboration', () => {
         // Yjs→Lexical recovery guard and mask the missing Lexical→Yjs guard
         client1.start(container!);
         await Promise.resolve().then();
-        expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+        );
 
         await waitForReact(() => {
           client1.update(() => {
@@ -548,7 +562,9 @@ describe('Collaboration', () => {
 
         // client1's own Lexical view should recover (the fix schedules
         // $ensureEditorNotEmpty in a tag-free update that also syncs back to Yjs)
-        expect(client1.getHTML()).toEqual('<p dir="auto"><br></p>');
+        expect(client1.getHTML()).toEqual(
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+        );
 
         // client2 cold-starts and applies all queued Yjs updates from client1.
         // Regression assertion: without the fix, client2 receives only the clear
@@ -557,7 +573,9 @@ describe('Collaboration', () => {
         client2.start(container!);
         await Promise.resolve().then();
 
-        expect(client2.getHTML()).toEqual('<p dir="auto"><br></p>');
+        expect(client2.getHTML()).toEqual(
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
+        );
         expect(client1.getHTML()).toEqual(client2.getHTML());
         expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
 
@@ -571,7 +589,7 @@ describe('Collaboration', () => {
         });
 
         expect(client1.getHTML()).toEqual(
-          '<p dir="auto"><br></p><p dir="auto"><span data-lexical-text="true">World</span></p>',
+          '<p dir="auto"><br data-lexical-managed-linebreak="true"></p><p dir="auto"><span data-lexical-text="true">World</span></p>',
         );
         expect(client1.getHTML()).toEqual(client2.getHTML());
         expect(client1.getDocJSON()).toEqual(client2.getDocJSON());
@@ -798,7 +816,7 @@ describe('Collaboration', () => {
         });
       });
 
-      let editor2State = client2.getEditorState().read(() => {
+      let editor2State = client2.getEditor().read('latest', () => {
         const paragraph = $assertNodeType(
           $getRoot().getFirstChild(),
           $isParagraphNode,
@@ -817,7 +835,7 @@ describe('Collaboration', () => {
         });
       });
 
-      editor2State = client2.getEditorState().read(() => {
+      editor2State = client2.getEditor().read('latest', () => {
         const paragraph = $assertNodeType(
           $getRoot().getFirstChild(),
           $isParagraphNode,

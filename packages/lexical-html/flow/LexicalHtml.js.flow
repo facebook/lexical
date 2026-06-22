@@ -81,6 +81,13 @@ export type DOMRenderMatch<T extends LexicalNode> = {
     $next: () => DOMSlotForNode<T>,
     editor: LexicalEditor,
   ) => DOMSlotForNode<T>,
+  readonly $getSlotTargetElement?: (
+    node: T,
+    slotName: string,
+    hostDom: HTMLElement,
+    $next: () => HTMLElement | null,
+    editor: LexicalEditor,
+  ) => HTMLElement | null,
   readonly $createDOM?: (
     node: T,
     $next: () => HTMLElement,
@@ -178,7 +185,7 @@ declare export function $withRenderContext(
 declare export function $generateNodesFromDOM(
   editor: LexicalEditor,
   dom: Document,
-): Array<LexicalNode>;
+): LexicalNode[];
 
 declare export function $generateDOMFromNodes<
   T extends HTMLElement | DocumentFragment,
@@ -196,4 +203,11 @@ declare export function $generateHtmlFromNodes(
   editor: LexicalEditor,
   selection?: BaseSelection | null,
 ): string;
+
+declare export function $appendNodeToHTML(
+  editor: LexicalEditor,
+  node: LexicalNode,
+  parentElement: HTMLElement | DocumentFragment,
+  selection?: BaseSelection | null,
+): boolean;
 

@@ -23,9 +23,10 @@ import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
-import {mergeRegister, objectKlassEquals} from '@lexical/utils';
+import {eventFiles, objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
+  $getSlotFrame,
   $isRangeSelection,
   $selectAll,
   CAN_USE_BEFORE_INPUT,
@@ -38,6 +39,7 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
@@ -50,6 +52,7 @@ import {
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
+  mergeRegister,
   PASTE_COMMAND,
   PASTE_TAG,
   REMOVE_TEXT_COMMAND,
@@ -299,9 +302,13 @@ export function registerPlainText(editor: LexicalEditor): () => void {
           return false;
         }
 
-        // Exception handling for iOS native behavior instead of Lexical's behavior when using Korean on iOS devices.
-        // more details - https://github.com/facebook/lexical/issues/5841
-        if (IS_IOS && navigator.language === 'ko-KR') {
+        // On iOS, blocking the keydown event's default prevents the system
+        // keyboard from updating its autocomplete/autocorrect suggestion bar
+        // after Backspace. Returning false here skips event.preventDefault()
+        // on keydown; the beforeinput deleteContentBackward handler still runs
+        // and performs the deletion, so editing behavior is unchanged.
+        // See https://github.com/facebook/lexical/issues/5841
+        if (IS_IOS && CAN_USE_BEFORE_INPUT) {
           return false;
         }
 
@@ -358,8 +365,19 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     editor.registerCommand(
       SELECT_ALL_COMMAND,
       () => {
-        $selectAll();
-
+        // Scope SELECT_ALL only when the caret is inside a named-slot frame:
+        // slots are shadow-root isolated, so a whole-document select-all
+        // would escape the slot and let a single keystroke replace the host.
+        // Every other context (including TableCell shadow roots) keeps the
+        // legacy whole-document behavior; block/document scoping elsewhere
+        // is provided by the opt-in SelectBlockExtension.
+        const selection = $getSelection();
+        $selectAll(
+          $isRangeSelection(selection) &&
+            $getSlotFrame(selection.anchor.getNode()) !== null
+            ? selection
+            : null,
+        );
         return true;
       },
       COMMAND_PRIORITY_EDITOR,
@@ -409,6 +427,20 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     editor.registerCommand<DragEvent>(
       DROP_COMMAND,
       event => $handlePlainTextDrop(event, editor),
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<DragEvent>(
+      DRAGOVER_COMMAND,
+      event => {
+        const [isFileTransfer] = eventFiles(event);
+        if (isFileTransfer) {
+          return false;
+        }
+        // contenteditable is not a native drop target; preventDefault() is
+        // required on dragover to allow the drop event to fire in Firefox.
+        event.preventDefault();
+        return true;
+      },
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand<DragEvent>(

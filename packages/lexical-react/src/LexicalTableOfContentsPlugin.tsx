@@ -23,6 +23,10 @@ import {
 } from 'lexical';
 import {useEffect, useState} from 'react';
 
+/**
+ * A single entry in the table of contents, as a tuple of the heading node's
+ * {@link NodeKey}, its text content, and its heading tag (for example `'h1'`).
+ */
 export type TableOfContentsEntry = [
   key: NodeKey,
   text: string,
@@ -36,13 +40,13 @@ function toEntry(heading: HeadingNode): TableOfContentsEntry {
 function $insertHeadingIntoTableOfContents(
   prevHeading: HeadingNode | null,
   newHeading: HeadingNode | null,
-  currentTableOfContents: Array<TableOfContentsEntry>,
-): Array<TableOfContentsEntry> {
+  currentTableOfContents: TableOfContentsEntry[],
+): TableOfContentsEntry[] {
   if (newHeading === null) {
     return currentTableOfContents;
   }
   const newEntry: TableOfContentsEntry = toEntry(newHeading);
-  let newTableOfContents: Array<TableOfContentsEntry> = [];
+  let newTableOfContents: TableOfContentsEntry[] = [];
   if (prevHeading === null) {
     // check if key already exists
     if (
@@ -73,8 +77,8 @@ function $insertHeadingIntoTableOfContents(
 
 function $deleteHeadingFromTableOfContents(
   key: NodeKey,
-  currentTableOfContents: Array<TableOfContentsEntry>,
-): Array<TableOfContentsEntry> {
+  currentTableOfContents: TableOfContentsEntry[],
+): TableOfContentsEntry[] {
   const newTableOfContents = [];
   for (const heading of currentTableOfContents) {
     if (heading[0] !== key) {
@@ -86,9 +90,9 @@ function $deleteHeadingFromTableOfContents(
 
 function $updateHeadingInTableOfContents(
   heading: HeadingNode,
-  currentTableOfContents: Array<TableOfContentsEntry>,
-): Array<TableOfContentsEntry> {
-  const newTableOfContents: Array<TableOfContentsEntry> = [];
+  currentTableOfContents: TableOfContentsEntry[],
+): TableOfContentsEntry[] {
+  const newTableOfContents: TableOfContentsEntry[] = [];
   for (const oldHeading of currentTableOfContents) {
     if (oldHeading[0] === heading.getKey()) {
       newTableOfContents.push(toEntry(heading));
@@ -106,9 +110,9 @@ function $updateHeadingInTableOfContents(
 function $updateHeadingPosition(
   prevHeading: HeadingNode | null,
   heading: HeadingNode,
-  currentTableOfContents: Array<TableOfContentsEntry>,
-): Array<TableOfContentsEntry> {
-  const newTableOfContents: Array<TableOfContentsEntry> = [];
+  currentTableOfContents: TableOfContentsEntry[],
+): TableOfContentsEntry[] {
+  const newTableOfContents: TableOfContentsEntry[] = [];
   const newEntry: TableOfContentsEntry = toEntry(heading);
 
   if (!prevHeading) {
@@ -137,20 +141,29 @@ function $getPreviousHeading(node: HeadingNode): HeadingNode | null {
 
 type Props = {
   children: (
-    values: Array<TableOfContentsEntry>,
+    values: TableOfContentsEntry[],
     editor: LexicalEditor,
   ) => JSX.Element;
 };
 
+/**
+ * Tracks every {@link HeadingNode} in the editor and keeps an ordered list of
+ * {@link TableOfContentsEntry}s in sync as headings are added, removed, edited,
+ * or moved. It is a render-prop component: `children` receives the current
+ * entries and the editor and returns the element used to render the table of
+ * contents.
+ *
+ * @returns The element returned by the `children` render prop.
+ */
 export function TableOfContentsPlugin({children}: Props): JSX.Element {
   const [tableOfContents, setTableOfContents] = useState<
-    Array<TableOfContentsEntry>
+    TableOfContentsEntry[]
   >([]);
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     // Set table of contents initial state
-    let currentTableOfContents: Array<TableOfContentsEntry> = [];
-    editor.getEditorState().read(() => {
+    let currentTableOfContents: TableOfContentsEntry[] = [];
+    editor.read('latest', () => {
       const updateCurrentTableOfContents = (node: ElementNode) => {
         for (const child of node.getChildren()) {
           if ($isHeadingNode(child)) {
@@ -204,7 +217,7 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
     const removeHeaderMutationListener = editor.registerMutationListener(
       HeadingNode,
       (mutatedNodes: Map<string, NodeMutation>) => {
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           for (const [nodeKey, mutation] of mutatedNodes) {
             if (mutation === 'created') {
               const newHeading = $getNodeByKey(nodeKey);
@@ -244,7 +257,7 @@ export function TableOfContentsPlugin({children}: Props): JSX.Element {
     const removeTextNodeMutationListener = editor.registerMutationListener(
       TextNode,
       (mutatedNodes: Map<string, NodeMutation>) => {
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           for (const [nodeKey, mutation] of mutatedNodes) {
             if (mutation === 'updated') {
               const currNode = $getNodeByKey(nodeKey);

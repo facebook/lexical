@@ -35,7 +35,7 @@ declare export function $getLexicalContent(
 
 declare export function $insertGeneratedNodes(
   editor: LexicalEditor,
-  nodes: Array<LexicalNode>,
+  nodes: LexicalNode[],
   selection: BaseSelection,
 ): void;
 /*
@@ -68,7 +68,7 @@ declare export function $writeDragSourceToDataTransfer(
 ): void;
 
 interface BaseSerializedNode {
-  children?: Array<BaseSerializedNode>;
+  children?: BaseSerializedNode[];
   type: string;
   version: number;
 }
@@ -80,12 +80,12 @@ declare export function $generateJSONFromSelectedNodes<
   selection: BaseSelection | null,
 ): {
   namespace: string,
-  nodes: Array<SerializedNode>,
+  nodes: SerializedNode[],
 };
 
 declare export function $generateNodesFromSerializedNodes(
-  serializedNodes: Array<BaseSerializedNode>,
-): Array<LexicalNode>;
+  serializedNodes: BaseSerializedNode[],
+): LexicalNode[];
 
 declare export function copyToClipboard(
   editor: LexicalEditor,
@@ -94,4 +94,5 @@ declare export function copyToClipboard(
 declare export function caretFromPoint(
   x: number,
   y: number,
+  rootElement?: ?HTMLElement,
 ): null | {offset: number, node: Node};

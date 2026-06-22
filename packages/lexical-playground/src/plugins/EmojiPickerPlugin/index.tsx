@@ -23,13 +23,13 @@ import {useCallback, useEffect, useMemo, useState} from 'react';
 class EmojiOption extends MenuOption {
   title: string;
   emoji: string;
-  keywords: Array<string>;
+  keywords: string[];
 
   constructor(
     title: string,
     emoji: string,
     options: {
-      keywords?: Array<string>;
+      keywords?: string[];
     },
   ) {
     super(title);
@@ -43,8 +43,8 @@ type Emoji = {
   emoji: string;
   description: string;
   category: string;
-  aliases: Array<string>;
-  tags: Array<string>;
+  aliases: string[];
+  tags: string[];
   unicode_version: string;
   ios_version: string;
   skin_tones?: boolean;
@@ -55,7 +55,7 @@ const MAX_EMOJI_SUGGESTION_COUNT = 10;
 export default function EmojiPickerPlugin() {
   const [editor] = useLexicalComposerContext();
   const [queryString, setQueryString] = useState<string | null>(null);
-  const [emojis, setEmojis] = useState<Array<Emoji>>([]);
+  const [emojis, setEmojis] = useState<Emoji[]>([]);
 
   useEffect(() => {
     import('../../utils/emoji-list').then(file => setEmojis(file.default));
@@ -81,7 +81,7 @@ export default function EmojiPickerPlugin() {
     punctuation: '\\.,\\+\\*\\?\\$\\@\\|#{}\\(\\)\\^\\[\\]\\\\/!%\'"~=<>:;', // allow _ and -
   });
 
-  const options: Array<EmojiOption> = useMemo(() => {
+  const options: EmojiOption[] = useMemo(() => {
     return emojiOptions
       .filter((option: EmojiOption) => {
         return queryString != null

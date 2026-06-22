@@ -22,13 +22,14 @@ import {
 import {$patchStyleText, $setBlocksType} from '@lexical/selection';
 import {$isTableSelection} from '@lexical/table';
 import {
-  $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
+  $isBlockFullySelected,
 } from '@lexical/utils';
 import {
   $addUpdateTag,
   $createParagraphNode,
   $createRangeSelection,
+  $findMatchingParent,
   $getSelection,
   $isBlockElementNode,
   $isLineBreakNode,
@@ -39,6 +40,7 @@ import {
   ElementNode,
   LexicalEditor,
   LexicalNode,
+  NodeKey,
   RangeSelection,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SELECTION_FOCUS_TAG,
@@ -335,6 +337,15 @@ export const formatCode = (editor: LexicalEditor, blockType: string) => {
   }
 };
 
+function $clearBlockFormat(block: ElementNode): void {
+  if (block.getFormat() !== 0) {
+    block.setFormat('');
+  }
+  if (block.getIndent() !== 0) {
+    block.setIndent(0);
+  }
+}
+
 export const clearFormatting = (
   editor: LexicalEditor,
   skipRefocus: boolean = false,
@@ -350,7 +361,31 @@ export const clearFormatting = (
       const extractedNodes = selection.extract();
 
       if (anchor.key === focus.key && anchor.offset === focus.offset) {
+        $clearBlockFormat(
+          $getNearestBlockElementAncestorOrThrow(anchor.getNode()),
+        );
         return;
+      }
+
+      // Determine which blocks are fully selected before making any
+      // changes, since the mutations below (such as replacing a
+      // HeadingNode with a ParagraphNode) would detach nodes that the
+      // selection's carets may refer to
+      const postExtractSelection = $getSelection();
+      let fullySelectedBlocks: null | Set<NodeKey> = null;
+      if ($isRangeSelection(postExtractSelection)) {
+        fullySelectedBlocks = new Set();
+        for (const node of extractedNodes) {
+          if ($isTextNode(node)) {
+            const block = $getNearestBlockElementAncestorOrThrow(node);
+            if (
+              !fullySelectedBlocks.has(block.getKey()) &&
+              $isBlockFullySelected(block, postExtractSelection)
+            ) {
+              fullySelectedBlocks.add(block.getKey());
+            }
+          }
+        }
       }
 
       extractedNodes.forEach(node => {
@@ -363,11 +398,11 @@ export const clearFormatting = (
           }
           const nearestBlockElement =
             $getNearestBlockElementAncestorOrThrow(node);
-          if (nearestBlockElement.getFormat() !== 0) {
-            nearestBlockElement.setFormat('');
-          }
-          if (nearestBlockElement.getIndent() !== 0) {
-            nearestBlockElement.setIndent(0);
+          if (
+            fullySelectedBlocks === null ||
+            fullySelectedBlocks.has(nearestBlockElement.getKey())
+          ) {
+            $clearBlockFormat(nearestBlockElement);
           }
         } else if ($isHeadingNode(node) || $isQuoteNode(node)) {
           node.replace($createParagraphNode(), true);

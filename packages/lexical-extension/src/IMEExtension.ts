@@ -6,7 +6,6 @@
  *
  */
 
-import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -17,6 +16,7 @@ import {
   COMPOSITION_START_TAG,
   defineExtension,
   type LexicalEditor,
+  mergeRegister,
   type NodeKey,
   type TextNode,
 } from 'lexical';
@@ -89,7 +89,7 @@ export const IMEExtension = /* @__PURE__ */ defineExtension({
         composingTextNode.value = null;
         return;
       }
-      composingTextNode.value = editor.getEditorState().read(() => {
+      composingTextNode.value = editor.read('latest', () => {
         const node = $getNodeByKey(key);
         return $isTextNode(node) ? node : null;
       });

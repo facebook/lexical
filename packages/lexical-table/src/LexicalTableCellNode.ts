@@ -20,13 +20,13 @@ import type {
   Spread,
 } from 'lexical';
 
-import {addClassNamesToElement} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $createParagraphNode,
   $isInlineElementOrDecoratorNode,
   $isLineBreakNode,
   $isTextNode,
+  addClassNamesToElement,
   ElementNode,
   isHTMLElement,
 } from 'lexical';

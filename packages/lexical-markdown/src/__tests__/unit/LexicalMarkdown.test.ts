@@ -1711,6 +1711,33 @@ E3
 `);
   });
 
+  it('keeps fence-like lines that carry an info string as code content', () => {
+    const markdown = `
+\`\`\`ts
+const a = 1
+\`\`\`js
+const b = 2
+\`\`\`
+
+After
+`;
+    // The inner ```js carries an info string, so it is part of the code block's
+    // content. The block stays open until the bare ``` fence, and nothing after
+    // it is merged into the fence-like content lines.
+    expect(normalizeMarkdown(markdown, true)).toBe(markdown);
+  });
+
+  it('does not close a longer fence on a shorter inner fence', () => {
+    const markdown = `
+\`\`\`\`
+\`\`\`
+inner
+\`\`\`
+\`\`\`\`
+`;
+    expect(normalizeMarkdown(markdown, true)).toBe(markdown);
+  });
+
   it('tables', () => {
     const markdown = `
 | a | b |
@@ -1877,6 +1904,17 @@ E3
   it('preserves leading whitespace on content lines', () => {
     const md = '   foo\n\nbar';
     expect(normalizeMarkdown(md, false)).toBe('   foo\n\nbar');
+  });
+
+  it('preserves indented fenced code blocks nested inside tags', () => {
+    const markdown = `
+<Banner>
+\`\`\`ts
+  indent 1;
+\`\`\`
+</Banner>
+`;
+    expect(normalizeMarkdown(markdown, false)).toBe(markdown);
   });
 });
 

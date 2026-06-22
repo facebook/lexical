@@ -8,7 +8,6 @@
 
 import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
-  BaseStaticNodeConfig,
   DOMExportOutput,
   EditorConfig,
   ElementNode,
@@ -20,7 +19,7 @@ import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
 import {domOnBeforeMatch, setDomHiddenUntilFound} from './CollapsibleUtils';
 
 export class CollapsibleContentNode extends ElementNode {
-  $config(): BaseStaticNodeConfig {
+  $config() {
     return this.config('collapsible-content', {extends: ElementNode});
   }
 

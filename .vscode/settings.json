@@ -1,12 +1,22 @@
 {
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "js/ts.validate.enabled": true,
-  "[javascript][typescript]": {
-    "editor.codeActionsOnSave": [
-      // Run ESLint fixers _before_ prettier to ensure the user doesn't need to do multiple saves
-      "source.fixAll.eslint",
-      "source.fixAll.format"
-    ]
+
+  // Disable vscode's typescript support for all javascript,
+  // otherwise flow files will be a mess of typescript syntax errors.
+  // The flow extension forces this configuration because it does not
+  // give flow files a distinct language id from javascript and
+  // javascriptreact. The validation also can't be toggled separately
+  // for javascript and javascriptreact.
+  "[javascript]": {
+    "js/ts.validate.enabled": false
   },
+
+  "[javascript][typescript][typescriptreact]": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "editor.formatOnSave": true
+  },
+
   "js/ts.tsdk.path": "node_modules/typescript/lib"
 }

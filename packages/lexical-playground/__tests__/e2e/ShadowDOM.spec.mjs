@@ -503,10 +503,10 @@ test.describe('Shadow DOM', () => {
     const t0 = Date.now();
     await page.keyboard.type('a'.repeat(1000), {delay: 0});
     const elapsed = Date.now() - t0;
-    // 30s is loose enough for CI Firefox (which has hit ~12s on
+    // 60s is loose enough for CI Firefox (which has hit ~40s on
     // shared runners) but tight enough to still flag a real regression
     // — locally this run is around 1–2s.
-    expect(elapsed).toBeLessThan(30_000);
+    expect(elapsed).toBeLessThan(60_000);
     const text = await page
       .locator('div[contenteditable="true"]')
       .first()

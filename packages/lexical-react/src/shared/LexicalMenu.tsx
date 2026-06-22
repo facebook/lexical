@@ -9,6 +9,7 @@
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {getScrollParent} from '@lexical/utils';
 import {
   $getSelection,
   $isRangeSelection,
@@ -39,7 +40,6 @@ import {
 } from 'react';
 import ReactDOM from 'react-dom';
 
-import {getScrollParent} from './getScrollParent';
 import useLayoutEffect from './useLayoutEffect';
 
 /**

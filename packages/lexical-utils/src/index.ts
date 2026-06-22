@@ -1347,3 +1347,5 @@ export function $isAtEndOfNode(point: PointType, node: ElementNode): boolean {
     ($isElementNode(anchorNode) && anchorNode.getLastDescendant() === last)
   );
 }
+
+export {getScrollParent} from './getScrollParent';

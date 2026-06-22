@@ -255,3 +255,8 @@ export type StateConfigWrapper<K extends string, V> = {
 declare export function makeStateWrapper<K extends string, V>(
   stateConfig: StateConfig<K, V>,
 ): StateConfigWrapper<K, V>;
+
+declare export function getScrollParent(
+  element: HTMLElement,
+  includeHidden: boolean,
+): HTMLElement | HTMLBodyElement;

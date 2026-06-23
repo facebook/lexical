@@ -743,7 +743,6 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
 
   // We let the browser do its own thing for composition.
   if (
-    shouldIgnoreInputFromCapturedSelection(event, editor) ||
     inputType === 'deleteCompositionText' ||
     // If we're pasting in FF, we shouldn't get this event
     // as the `paste` event should have triggered, unless the
@@ -757,31 +756,12 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
     return;
   }
 
-  dispatchCommand(editor, BEFORE_INPUT_COMMAND, event);
-}
-
-function shouldIgnoreInputFromCapturedSelection(
-  event: InputEvent,
-  editor: LexicalEditor,
-): boolean {
-  const composedTarget = getComposedEventTarget(event);
-  if (
-    isHTMLElement(composedTarget) &&
-    isDOMCapturingSelection(composedTarget, editor)
-  ) {
-    return true;
-  }
-
-  const rootElement = editor.getRootElement();
-  const activeElement =
-    rootElement !== null
-      ? getActiveElementDeep(rootElement.ownerDocument)
-      : null;
-  return (
-    activeElement !== null &&
-    rootElement !== null &&
-    rootElement.contains(activeElement) &&
-    isDOMCapturingSelection(activeElement, editor)
+  updateEditorSync(
+    editor,
+    () => {
+      dispatchCommand(editor, BEFORE_INPUT_COMMAND, event);
+    },
+    {event},
   );
 }
 
@@ -1135,20 +1115,27 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
   // We don't want the onInput to bubble, in the case of nested editors.
   event.stopPropagation();
   clearHandledSelectionCommandInsertText();
-  if (!shouldIgnoreInputFromCapturedSelection(event, editor)) {
-    updateEditorSync(
-      editor,
-      () => {
-        editor.dispatchCommand(INPUT_COMMAND, event);
-      },
-      {event},
-    );
-  }
+  updateEditorSync(
+    editor,
+    () => {
+      editor.dispatchCommand(INPUT_COMMAND, event);
+    },
+    {event},
+  );
   unprocessedBeforeInputData = null;
 }
 
 function $handleInput(event: InputEvent): boolean {
   const editor = getActiveEditor();
+  // Use the composed target so a beforeinput coming from inside a
+  // decorator's nested shadow root resolves to the real internal element.
+  const composedTarget = getComposedEventTarget(event);
+  if (
+    isHTMLElement(composedTarget) &&
+    isDOMCapturingSelection(composedTarget, editor)
+  ) {
+    return true;
+  }
   const selection = $getSelection();
   const data = event.data;
   const targetRange = getTargetRange(event);

@@ -194,11 +194,10 @@ export function isSelectionCapturedInDecoratorInput(
   const nodeName = activeElement.nodeName;
 
   return (
-    $isDecoratorNode($getNearestNodeFromDOMNode(anchorDOM)) &&
-    (nodeName === 'INPUT' ||
-      nodeName === 'TEXTAREA' ||
-      (activeElement.contentEditable === 'true' &&
-        getEditorPropertyFromDOMNode(activeElement) == null))
+    nodeName === 'INPUT' ||
+    nodeName === 'TEXTAREA' ||
+    (activeElement.contentEditable === 'true' &&
+      getEditorPropertyFromDOMNode(activeElement) == null)
   );
 }
 

@@ -1302,10 +1302,7 @@ function $handleCompositionEnd(event: CompositionEvent): boolean {
   return true;
 }
 
-function $onCompositionEndImpl(
-  editor: LexicalEditor,
-  data?: string,
-): boolean {
+function $onCompositionEndImpl(editor: LexicalEditor, data?: string): boolean {
   const compositionKey = editor._compositionKey;
   $setCompositionKey(null);
 
@@ -1375,8 +1372,12 @@ function $onCompositionEndImpl(
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
           const textLen = node.getTextContentSize();
-          selection.anchor.set(compositionKey, textLen, 'text');
-          selection.focus.set(compositionKey, textLen, 'text');
+          const offset =
+            selection.anchor.key === compositionKey
+              ? selection.anchor.offset
+              : textLen;
+          selection.anchor.set(compositionKey, offset, 'text');
+          selection.focus.set(compositionKey, offset, 'text');
           selection.insertText(data);
         }
       }

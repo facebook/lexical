@@ -52,27 +52,27 @@ import {gfmTaskListItem} from 'micromark-extension-gfm-task-list-item';
 import {compileMdast} from './compile';
 import {
   $exportCode,
+  $exportHeading,
   $exportLineBreak,
   $exportList,
   $importBlockquote,
   $importBreak,
   $importCode,
+  $importEmphasis,
   $importHeading,
   $importLink,
   $importList,
   $importListItem,
   $importParagraph,
-  exportHeading,
+  $importStrong,
   exportLink,
   exportParagraph,
   exportQuote,
   exportTab,
   exportText,
   importDelete,
-  importEmphasis,
   importHtml,
   importInlineCode,
-  importStrong,
   importText,
 } from './handlers';
 import {createMdastExport} from './MdastExport';
@@ -135,8 +135,8 @@ const CORE_IMPORT_RULES: readonly MdastImportRule[] = [
   {$import: importText, type: 'text'},
   {$import: importHtml, type: 'html'},
   {$import: importInlineCode, type: 'inlineCode'},
-  {$import: importEmphasis, type: 'emphasis'},
-  {$import: importStrong, type: 'strong'},
+  {$import: $importEmphasis, type: 'emphasis'},
+  {$import: $importStrong, type: 'strong'},
   {$import: $importBreak, type: 'break'},
 ];
 const CORE_EXPORT_RULES: readonly MdastExportRule[] = [
@@ -236,7 +236,7 @@ export const MdastRichTextExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     /* @__PURE__ */ configExtension(MdastExtension, {
       exportRules: [
-        {$export: exportHeading, type: 'heading'},
+        {$export: $exportHeading, type: 'heading'},
         {$export: exportQuote, type: 'quote'},
       ],
       importRules: [

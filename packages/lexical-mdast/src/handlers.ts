@@ -53,7 +53,26 @@ import {
   TEXT_TYPE_TO_FORMAT,
 } from 'lexical';
 
-import {codeFenceState, hardLineBreakState, listMarkerState} from './state';
+import {
+  codeFenceState,
+  emphasisMarkerState,
+  hardLineBreakState,
+  listMarkerState,
+  orderedMarkerState,
+  setextState,
+  strongMarkerState,
+} from './state';
+
+/** Reads the first source character of `node` (an inline delimiter, if any). */
+function inlineMarker(
+  ctx: Parameters<MdastImportHandler>[1],
+  node: {position?: {start: {offset?: number}}},
+): string | undefined {
+  if (!ctx.source || !node.position || node.position.start.offset == null) {
+    return undefined;
+  }
+  return ctx.source[node.position.start.offset];
+}
 
 const FORMAT_BOLD = TEXT_TYPE_TO_FORMAT.bold;
 const FORMAT_ITALIC = TEXT_TYPE_TO_FORMAT.italic;
@@ -75,6 +94,16 @@ export const $importParagraph: MdastImportHandler<Paragraph> = (node, ctx) => {
 
 export const $importHeading: MdastImportHandler<Heading> = (node, ctx) => {
   const heading = $createHeadingNode(`h${node.depth}` as HeadingTagType);
+  // A level 1/2 heading with no leading `#` was written in setext style.
+  if (ctx.source && node.position && (node.depth === 1 || node.depth === 2)) {
+    const offset = node.position.start.offset;
+    if (
+      offset != null &&
+      !/^\s{0,3}#/.test(ctx.source.slice(offset, offset + 8))
+    ) {
+      $setState(heading, setextState, true);
+    }
+  }
   heading.append(...ctx.importChildren(node));
   return heading;
 };
@@ -117,18 +146,25 @@ export const $importList: MdastImportHandler<List> = (node, ctx) => {
   const listType = $listTypeFromMdast(node);
   const start = node.ordered && node.start != null ? node.start : 1;
   const list = $createListNode(listType, start);
-  // Preserve the literal bullet character (`-`, `*`, `+`) for unordered and
-  // check lists so export can reproduce it.
-  if (listType !== 'number' && ctx.source) {
-    const firstItem = node.children[0];
-    const offset =
-      firstItem && firstItem.position
-        ? firstItem.position.start.offset
-        : undefined;
-    const match =
-      offset == null ? null : ctx.source.slice(offset).match(/^\s*([-*+])/);
-    if (match) {
-      $setState(list, listMarkerState, match[1]);
+  // Preserve the literal marker the list used so export can reproduce it. Only
+  // non-default markers are stored, to keep the serialized state minimal.
+  const firstItem = node.children[0];
+  const itemOffset =
+    ctx.source && firstItem && firstItem.position
+      ? firstItem.position.start.offset
+      : undefined;
+  if (itemOffset != null) {
+    const rest = ctx.source.slice(itemOffset);
+    if (listType === 'number') {
+      const match = rest.match(/^\s*\d+([.)])/);
+      if (match && match[1] === ')') {
+        $setState(list, orderedMarkerState, ')');
+      }
+    } else {
+      const match = rest.match(/^\s*([-*+])/);
+      if (match && match[1] !== '-') {
+        $setState(list, listMarkerState, match[1]);
+      }
     }
   }
   for (const child of node.children) {
@@ -170,7 +206,7 @@ export const $importCode: MdastImportHandler<Code> = (node, ctx) => {
       offset == null
         ? null
         : ctx.source.slice(offset).match(/^[ \t]*(`{3,}|~{3,})/);
-    if (match) {
+    if (match && match[1] !== '```') {
       $setState(code, codeFenceState, match[1]);
     }
   }
@@ -189,11 +225,31 @@ export const importHtml: MdastImportHandler<Html> = (node, ctx) =>
 export const importInlineCode: MdastImportHandler<InlineCode> = (node, ctx) =>
   ctx.createText(node.value, ctx.format | FORMAT_CODE);
 
-export const importEmphasis: MdastImportHandler<Emphasis> = (node, ctx) =>
-  ctx.importChildren(node, FORMAT_ITALIC);
+export const $importEmphasis: MdastImportHandler<Emphasis> = (node, ctx) => {
+  const children = ctx.importChildren(node, FORMAT_ITALIC);
+  // Record an underscore marker (`_em_`); `*` is the default and isn't stored.
+  if (inlineMarker(ctx, node) === '_') {
+    for (const child of children) {
+      if ($isTextNode(child)) {
+        $setState(child, emphasisMarkerState, '_');
+      }
+    }
+  }
+  return children;
+};
 
-export const importStrong: MdastImportHandler<Strong> = (node, ctx) =>
-  ctx.importChildren(node, FORMAT_BOLD);
+export const $importStrong: MdastImportHandler<Strong> = (node, ctx) => {
+  const children = ctx.importChildren(node, FORMAT_BOLD);
+  // Record an underscore marker (`__b__`); `*` is the default and isn't stored.
+  if (inlineMarker(ctx, node) === '_') {
+    for (const child of children) {
+      if ($isTextNode(child)) {
+        $setState(child, strongMarkerState, '_');
+      }
+    }
+  }
+  return children;
+};
 
 export const importDelete: MdastImportHandler = (node, ctx) =>
   ctx.importChildren(node as Strong, FORMAT_STRIKETHROUGH);
@@ -236,7 +292,7 @@ export const exportParagraph: MdastExportHandler = (node, ctx) => {
   };
 };
 
-export const exportHeading: MdastExportHandler = (node, ctx) => {
+export const $exportHeading: MdastExportHandler = (node, ctx) => {
   if (!$isHeadingNode(node)) {
     return null;
   }
@@ -246,9 +302,10 @@ export const exportHeading: MdastExportHandler = (node, ctx) => {
   ) as Heading['depth'];
   return {
     children: ctx.exportInline(node) as PhrasingContent[],
+    data: {mdastSetext: $getState(node, setextState)},
     depth,
     type: 'heading',
-  };
+  } as Heading;
 };
 
 export const exportQuote: MdastExportHandler = (node, ctx) => {
@@ -298,12 +355,15 @@ function $exportListNode(
     start: listType === 'number' ? node.getStart() : undefined,
     type: 'list',
   };
-  // Preserve the bullet character for unordered/check lists; read back by the
-  // exporter's to-markdown wrapper.
-  if (listType !== 'number') {
-    (list as List & {data?: {mdastBullet?: string}}).data = {
-      mdastBullet: $getState(node, listMarkerState),
-    };
+  // Preserve the marker the list used; read back by the exporter's to-markdown
+  // wrapper.
+  const listData = list as List & {
+    data?: {mdastBullet?: string; mdastBulletOrdered?: string};
+  };
+  if (listType === 'number') {
+    listData.data = {mdastBulletOrdered: $getState(node, orderedMarkerState)};
+  } else {
+    listData.data = {mdastBullet: $getState(node, listMarkerState)};
   }
   let previousItem: ListItem | null = null;
   for (const child of node.getChildren()) {
@@ -348,6 +408,9 @@ export const $exportList: MdastExportHandler = (node, ctx) => {
 /**
  * Wraps a plain string in the mdast phrasing nodes implied by a Lexical text
  * format bitmask (code span innermost, then emphasis, strong, strikethrough).
+ * The emphasis/strong *delimiter* (`*` vs `_`) is a document-level to-markdown
+ * option (see the exporter) rather than per-node, because mixing delimiters in
+ * one document desyncs to-markdown's character escaping.
  */
 export function phrasingFromFormattedText(
   value: string,

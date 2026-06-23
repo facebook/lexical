@@ -132,10 +132,17 @@ describe('@lexical/mdast import/export', () => {
     const cases: [string, string][] = [
       ['star bullets', '* one\n* two'],
       ['plus bullets', '+ one\n+ two'],
+      ['ordered list with ) delimiter', '1) one\n2) two'],
       ['tilde code fence', '~~~\ncode\n~~~'],
       ['tilde fence with language', '~~~js\nconst x = 1;\n~~~'],
       ['backslash hard break', 'line one\\\nline two'],
       ['two-space hard break', 'line one  \nline two'],
+      ['underscore italic', '_em_'],
+      ['underscore bold', '__strong__'],
+      ['underscore bold italic', '___both___'],
+      ['underscore emphasis throughout', '_a_ and __b__ and _c_'],
+      ['setext h1', 'Title\n====='],
+      ['setext h2', 'Title\n-----'],
     ];
     for (const [name, markdown] of cases) {
       it(name, () => {
@@ -146,6 +153,13 @@ describe('@lexical/mdast import/export', () => {
     it('keeps distinct bullet styles on different lists', () => {
       const markdown = '* a\n* b\n\n1. c\n\n- d\n- e';
       expect(importExport(markdown)).toBe(markdown);
+    });
+
+    it('normalizes mixed emphasis markers to the document delimiter', () => {
+      // Emphasis/strong delimiters are document-level, so the first one wins.
+      expect(importExport('_a_ and *b*')).toBe('_a_ and _b_');
+      const out = importExport('_a_ and *b*');
+      expect(importExport(out)).toBe(out); // and is stable
     });
   });
 

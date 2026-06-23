@@ -22,6 +22,39 @@ export const listMarkerState = /* @__PURE__ */ createState('mdastListMarker', {
   resetOnCopyNode: true,
 });
 
+/** The delimiter (`.` or `)`) an ordered `ListNode` used. */
+export const orderedMarkerState = /* @__PURE__ */ createState(
+  'mdastOrderedMarker',
+  {
+    parse: (v): '.' | ')' => (v === ')' ? ')' : '.'),
+    resetOnCopyNode: true,
+  },
+);
+
+/** The marker (`*` or `_`) an italic run used (`*em*` vs `_em_`). */
+export const emphasisMarkerState = /* @__PURE__ */ createState(
+  'mdastEmphasisMarker',
+  {
+    parse: (v): '*' | '_' => (v === '_' ? '_' : '*'),
+    resetOnCopyNode: true,
+  },
+);
+
+/** The marker (`*` or `_`) a bold run used (`**b**` vs `__b__`). */
+export const strongMarkerState = /* @__PURE__ */ createState(
+  'mdastStrongMarker',
+  {
+    parse: (v): '*' | '_' => (v === '_' ? '_' : '*'),
+    resetOnCopyNode: true,
+  },
+);
+
+/** Whether a (level 1/2) `HeadingNode` was written in setext style. */
+export const setextState = /* @__PURE__ */ createState('mdastSetext', {
+  parse: (v): boolean => v === true,
+  resetOnCopyNode: true,
+});
+
 /** The fence a `CodeNode` used (e.g. ```` ``` ````, ````` ```` `````, `~~~`). */
 export const codeFenceState = /* @__PURE__ */ createState('mdastCodeFence', {
   parse: (v): string =>

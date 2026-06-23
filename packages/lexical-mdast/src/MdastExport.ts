@@ -11,6 +11,7 @@ import type {ElementNode, LexicalNode} from 'lexical';
 import type {
   Break,
   Code,
+  Heading,
   List,
   Paragraph,
   PhrasingContent,
@@ -18,10 +19,17 @@ import type {
 } from 'mdast';
 import type {Options as ToMarkdownExtension} from 'mdast-util-to-markdown';
 
-import {$getRoot, $isElementNode, $isLineBreakNode, $isTextNode} from 'lexical';
+import {
+  $getRoot,
+  $getState,
+  $isElementNode,
+  $isLineBreakNode,
+  $isTextNode,
+} from 'lexical';
 import {defaultHandlers, toMarkdown} from 'mdast-util-to-markdown';
 
 import {phrasingFromFormattedText, TEXT_FORMAT_MASK} from './handlers';
+import {emphasisMarkerState, strongMarkerState} from './state';
 
 /** Reads a string field off an mdast node's `data`, if present. */
 function dataField(node: {data?: unknown}, key: string): string | undefined {
@@ -65,12 +73,33 @@ const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
         state.options.fences = previousFences;
       }
     },
+    heading(node: Heading, parent, state, info) {
+      // `data.mdastSetext` is a boolean, so read it directly.
+      const data = node.data as {mdastSetext?: boolean} | undefined;
+      const previous = state.options.setext;
+      state.options.setext = data ? data.mdastSetext === true : false;
+      try {
+        return defaultHandlers.heading(node, parent, state, info);
+      } finally {
+        state.options.setext = previous;
+      }
+    },
     list(node: List, parent, state, info) {
+      if (node.ordered) {
+        const ordered = dataField(node, 'mdastBulletOrdered');
+        if (ordered !== ')') {
+          return defaultHandlers.list(node, parent, state, info);
+        }
+        const previousOrdered = state.options.bulletOrdered;
+        state.options.bulletOrdered = ')';
+        try {
+          return defaultHandlers.list(node, parent, state, info);
+        } finally {
+          state.options.bulletOrdered = previousOrdered;
+        }
+      }
       const bullet = dataField(node, 'mdastBullet');
-      if (
-        node.ordered ||
-        (bullet !== '-' && bullet !== '*' && bullet !== '+')
-      ) {
+      if (bullet !== '-' && bullet !== '*' && bullet !== '+') {
         return defaultHandlers.list(node, parent, state, info);
       }
       const previous = state.options.bullet;
@@ -86,6 +115,40 @@ const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
     },
   },
 };
+
+/**
+ * Picks the document-level emphasis and strong delimiters from the first
+ * italic / bold text node that recorded a non-default (`_`) marker, scanning
+ * the tree rooted at `node`. Mixing delimiters within one document is not
+ * supported by to-markdown's escaping, so a single choice is made per
+ * document.
+ */
+function $dominantInlineMarkers(node: ElementNode): {
+  emphasis: '*' | '_';
+  strong: '*' | '_';
+} {
+  let emphasis: '*' | '_' = '*';
+  let strong: '*' | '_' = '*';
+  let emphasisFound = false;
+  let strongFound = false;
+  const visit = (element: ElementNode): void => {
+    for (const child of element.getChildren()) {
+      if (!emphasisFound && $isTextNode(child) && child.hasFormat('italic')) {
+        emphasis = $getState(child, emphasisMarkerState);
+        emphasisFound = true;
+      }
+      if (!strongFound && $isTextNode(child) && child.hasFormat('bold')) {
+        strong = $getState(child, strongMarkerState);
+        strongFound = true;
+      }
+      if ((!emphasisFound || !strongFound) && $isElementNode(child)) {
+        visit(child);
+      }
+    }
+  };
+  visit(node);
+  return {emphasis, strong};
+}
 
 function $isBlockNode(node: LexicalNode): boolean {
   return $isElementNode(node) && !node.isInline();
@@ -239,13 +302,17 @@ export function createMdastExport(
         children.push(mdastNode as RootContent);
       }
     }
+    // Emphasis/strong delimiters are document-level (see $dominantInlineMarkers).
+    const {emphasis, strong} = $dominantInlineMarkers(root);
     const out = toMarkdown(
       {children, type: 'root'},
       {
         bullet: '-',
+        emphasis,
         // SYNTAX_TO_MARKDOWN runs last so its handlers win, reproducing the
         // per-node marker/fence/break captured on import.
         extensions: [...compiled.toMarkdownExtensions, SYNTAX_TO_MARKDOWN],
+        strong,
       },
     );
     // toMarkdown always appends a trailing newline; drop it so callers get the

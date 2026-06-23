@@ -171,7 +171,7 @@ describe('HTMLCopyAndPaste tests', () => {
             $getClipboardDataFromSelection(),
           );
 
-          const selection = target.select(0, target.getChildrenSize());
+          const selection = target.select(0);
           $insertDataTransferForRichText(dataTransfer, selection, editor);
         });
 
@@ -206,7 +206,7 @@ describe('HTMLCopyAndPaste tests', () => {
             $getClipboardDataFromSelection(),
           );
 
-          const selection = target.select(0, target.getChildrenSize());
+          const selection = target.select(0);
           $insertDataTransferForRichText(dataTransfer, selection, editor);
         });
 

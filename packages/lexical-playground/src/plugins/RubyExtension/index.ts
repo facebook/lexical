@@ -24,6 +24,7 @@ import {
   defineExtension,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
+  KEY_BACKSPACE_COMMAND,
   LexicalNode,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -78,28 +79,44 @@ function $unwrapRubiesInSelection(): boolean {
   return found;
 }
 
-function $skipRubyOnArrow(isBackward: boolean): boolean {
+function $skipRubyOnArrow(isBackward: boolean, isShift: boolean): boolean {
   const selection = $getSelection();
-  if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+  if (!$isRangeSelection(selection)) {
     return false;
   }
-  const {anchor} = selection;
-  if (anchor.type !== 'text') {
+  if (!isShift && !selection.isCollapsed()) {
     return false;
   }
-  const node = anchor.getNode();
+  const point = isShift ? selection.focus : selection.anchor;
+  if (point.type !== 'text') {
+    return false;
+  }
+  const node = point.getNode();
 
   let ruby: LexicalNode | null = null;
 
   if ($isRubyNode(node) && !node.isComposing()) {
+    if (isShift) {
+      const sibling = !isBackward
+        ? node.getNextSibling()
+        : node.getPreviousSibling();
+      if ($isTextNode(sibling) && !$isRubyNode(sibling)) {
+        const offset = !isBackward
+          ? Math.min(1, sibling.getTextContentSize())
+          : Math.max(0, sibling.getTextContentSize() - 1);
+        selection.focus.set(sibling.getKey(), offset, 'text');
+        return true;
+      }
+      return false;
+    }
     ruby = node;
   } else if (!$isRubyNode(node)) {
-    if (isBackward && anchor.offset === 0) {
+    if (isBackward && point.offset === 0) {
       const prev = node.getPreviousSibling();
       if ($isRubyNode(prev)) {
         ruby = prev;
       }
-    } else if (!isBackward && anchor.offset === node.getTextContentSize()) {
+    } else if (!isBackward && point.offset === node.getTextContentSize()) {
       const next = node.getNextSibling();
       if ($isRubyNode(next)) {
         ruby = next;
@@ -123,8 +140,12 @@ function $skipRubyOnArrow(isBackward: boolean): boolean {
 
   if (next !== null && $isTextNode(next) && !$isRubyNode(next)) {
     const offset = isBackward ? next.getTextContentSize() : 0;
-    selection.anchor.set(next.getKey(), offset, 'text');
-    selection.focus.set(next.getKey(), offset, 'text');
+    if (isShift) {
+      selection.focus.set(next.getKey(), offset, 'text');
+    } else {
+      selection.anchor.set(next.getKey(), offset, 'text');
+      selection.focus.set(next.getKey(), offset, 'text');
+    }
     return true;
   }
 
@@ -171,22 +192,112 @@ export const RubyExtension = /* @__PURE__  */ defineExtension({
   name: '@lexical/playground/Ruby',
   nodes: [RubyNode],
   register: editor => {
+    let composingRubyInner: HTMLElement | null = null;
+
+    function checkCompositionInRuby() {
+      if (composingRubyInner) {
+        return;
+      }
+      const sel = window.getSelection();
+      if (!sel || !sel.anchorNode) {
+        return;
+      }
+      let el: HTMLElement | null = sel.anchorNode.parentElement;
+      while (el && !el.dataset.rubyAnnotation) {
+        if (el.hasAttribute('data-lexical-key')) {
+          break;
+        }
+        el = el.parentElement;
+      }
+      if (el && el.dataset.rubyAnnotation) {
+        el.classList.add('PlaygroundEditorTheme__ruby--composing');
+        composingRubyInner = el;
+      }
+    }
+
+    function onCompositionEnd() {
+      if (composingRubyInner) {
+        composingRubyInner.classList.remove(
+          'PlaygroundEditorTheme__ruby--composing',
+        );
+        composingRubyInner = null;
+      }
+    }
+
     return mergeRegister(
+      editor.registerRootListener((rootElement, prevRootElement) => {
+        if (prevRootElement) {
+          prevRootElement.removeEventListener(
+            'compositionstart',
+            checkCompositionInRuby,
+            true,
+          );
+          prevRootElement.removeEventListener(
+            'compositionupdate',
+            checkCompositionInRuby,
+            true,
+          );
+          prevRootElement.removeEventListener(
+            'compositionend',
+            onCompositionEnd,
+            true,
+          );
+        }
+        if (rootElement) {
+          rootElement.addEventListener(
+            'compositionstart',
+            checkCompositionInRuby,
+            true,
+          );
+          rootElement.addEventListener(
+            'compositionupdate',
+            checkCompositionInRuby,
+            true,
+          );
+          rootElement.addEventListener(
+            'compositionend',
+            onCompositionEnd,
+            true,
+          );
+        }
+      }),
+      editor.registerCommand(
+        KEY_BACKSPACE_COMMAND,
+        event => {
+          if (editor.isComposing()) {
+            return false;
+          }
+          const selection = $getSelection();
+          if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+            return false;
+          }
+          const {anchor} = selection;
+          if (anchor.type !== 'text') {
+            return false;
+          }
+          const node = anchor.getNode();
+          if (anchor.offset === 0) {
+            const prev = node.getPreviousSibling();
+            if ($isRubyNode(prev)) {
+              prev.remove();
+              event.preventDefault();
+              return true;
+            }
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_HIGH,
+      ),
       editor.registerCommand(
         KEY_ARROW_LEFT_COMMAND,
         event => {
-          if (
-            event.shiftKey ||
-            event.metaKey ||
-            event.ctrlKey ||
-            event.altKey
-          ) {
+          if (event.metaKey || event.ctrlKey || event.altKey) {
             return false;
           }
           if (editor.isComposing()) {
             return false;
           }
-          const handled = $skipRubyOnArrow(true);
+          const handled = $skipRubyOnArrow(true, event.shiftKey);
           if (handled) {
             event.preventDefault();
           }
@@ -197,18 +308,13 @@ export const RubyExtension = /* @__PURE__  */ defineExtension({
       editor.registerCommand(
         KEY_ARROW_RIGHT_COMMAND,
         event => {
-          if (
-            event.shiftKey ||
-            event.metaKey ||
-            event.ctrlKey ||
-            event.altKey
-          ) {
+          if (event.metaKey || event.ctrlKey || event.altKey) {
             return false;
           }
           if (editor.isComposing()) {
             return false;
           }
-          const handled = $skipRubyOnArrow(false);
+          const handled = $skipRubyOnArrow(false, event.shiftKey);
           if (handled) {
             event.preventDefault();
           }

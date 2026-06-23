@@ -167,7 +167,7 @@ export const scheduleMicroTask: (fn: () => void) => void =
         Promise.resolve().then(fn);
       };
 
-export function isSelectionCapturedInDecoratorInput(
+export function $isSelectionCapturedInDecoratorInput(
   anchorDOM: Node,
   preResolvedActiveElement?: Element | null,
 ): boolean {
@@ -191,15 +191,19 @@ export function isSelectionCapturedInDecoratorInput(
   if (activeElement.hasAttribute('data-lexical-slot')) {
     return false;
   }
+  const nearestNode = $getNearestNodeFromDOMNode(activeElement);
   const nodeName = activeElement.nodeName;
-
   return (
-    nodeName === 'INPUT' ||
-    nodeName === 'TEXTAREA' ||
-    (activeElement.contentEditable === 'true' &&
-      getEditorPropertyFromDOMNode(activeElement) == null)
+    $isLexicalNode(nearestNode) &&
+    (nodeName === 'INPUT' ||
+      nodeName === 'TEXTAREA' ||
+      (activeElement.contentEditable === 'true' &&
+        getEditorPropertyFromDOMNode(activeElement) == null))
   );
 }
+/** @deprecated renamed to {@link $isSelectionCapturedInDecoratorInput} by @lexical/eslint-plugin rules-of-lexical */
+export const isSelectionCapturedInDecoratorInput =
+  $isSelectionCapturedInDecoratorInput;
 
 export function isSelectionWithinEditor(
   editor: LexicalEditor,
@@ -207,19 +211,27 @@ export function isSelectionWithinEditor(
   focusDOM: null | Node,
 ): boolean {
   const rootElement = editor.getRootElement();
+  if (!rootElement) {
+    return false;
+  }
   try {
-    return (
-      rootElement !== null &&
-      rootElement.contains(anchorDOM) &&
-      rootElement.contains(focusDOM) &&
-      // Ignore if selection is within nested editor
-      anchorDOM !== null &&
-      !isSelectionCapturedInDecoratorInput(anchorDOM) &&
-      getNearestEditorFromDOMNode(anchorDOM) === editor
-    );
+    if (
+      !anchorDOM ||
+      !rootElement.contains(anchorDOM) ||
+      !rootElement.contains(focusDOM)
+    ) {
+      return false;
+    }
   } catch (_error) {
     return false;
   }
+  return (
+    getNearestEditorFromDOMNode(anchorDOM) === editor &&
+    editor.read(
+      'latest',
+      () => !$isSelectionCapturedInDecoratorInput(anchorDOM),
+    )
+  );
 }
 
 /**
@@ -2995,10 +3007,16 @@ export function isDOMUnmanaged(elementDom: Node & LexicalPrivateDOM): boolean {
  * @experimental
  */
 export function $markSlotEditable(
-  element: HTMLElement,
+  element: HTMLElement & {__lexicalEditor?: undefined | LexicalEditor},
   editor: LexicalEditor = $getEditor(),
 ): void {
-  element.contentEditable = editor.isEditable() ? 'true' : 'false';
+  const editable = editor.isEditable();
+  element.contentEditable = editable ? 'true' : 'false';
+  if (editable) {
+    element.__lexicalEditor = editor;
+  } else {
+    delete element.__lexicalEditor;
+  }
 }
 
 /**

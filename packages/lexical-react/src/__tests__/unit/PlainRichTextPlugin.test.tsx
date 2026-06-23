@@ -112,7 +112,7 @@ describe('LexicalNodeHelpers tests', () => {
         reactRoot.render(<App />);
       });
 
-      const text = editor!.getEditorState().read($rootTextContent);
+      const text = editor!.read('latest', $rootTextContent);
       expect(text).toBe('foo');
     });
   }
@@ -165,7 +165,7 @@ describe('LexicalNodeHelpers tests', () => {
 
       await editor!.focus();
 
-      await editor!.getEditorState().read(() => {
+      await editor!.read('latest', () => {
         expect($rootTextContent()).toBe('foo');
 
         const selection = $getSelection();

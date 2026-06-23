@@ -7,6 +7,7 @@
  */
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
+import {$dfsWithSlots, $reverseDfsWithSlots} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -25,8 +26,6 @@ import {
   TestShadowRootNode,
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
-
-import {$dfsWithSlots, $reverseDfsWithSlots} from '../..';
 
 // Slots-first preorder traversal: the shape a slot-aware $dfs must produce.
 function* $slotAwareDfs(

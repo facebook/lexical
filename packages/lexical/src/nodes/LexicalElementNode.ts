@@ -19,6 +19,7 @@ import type {
   RangeSelection,
 } from '../LexicalSelection';
 import type {
+  BaseStaticNodeConfig,
   KlassConstructor,
   LexicalEditor,
   LexicalUpdateJSON,
@@ -83,6 +84,33 @@ export type ElementFormatType =
   | 'justify'
   | '';
 
+/**
+ * Wrap any shadow-root child of `node` that is neither an ElementNode nor a
+ * DecoratorNode in a paragraph, so the slot-frame invariant set by
+ * `getTopLevelElement` continues to hold for external inputs (URL doc
+ * payloads, imported JSON, paste round-trips) that may carry shapes the
+ * in-editor mutation paths can no longer produce.
+ *
+ * Single-node helper: runs as the `$config` `$transform` on ElementNode so
+ * the existing dirty-node transform cycle drives the normalization. The
+ * in-editor mutation paths (insertText, insertNodes, append/splice via the
+ * public API) still fail-fast on the invariant.
+ *
+ * @internal
+ */
+function $normalizeShadowRootChildren(node: ElementNode): void {
+  if ($isRootOrShadowRoot(node)) {
+    let block: ElementNode | null = null;
+    for (const child of node.getChildren()) {
+      block = child.isInline()
+        ? (block || child.replace(child.createParentElementNode())).append(
+            child,
+          )
+        : null;
+    }
+  }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface ElementNode {
   getTopLevelElement(): ElementNode | null;
@@ -119,6 +147,28 @@ export class ElementNode
   __slotHost: null | NodeKey;
   /** @internal */
   __slots: null | Map<string, NodeKey>;
+
+  // Specific type information is discarded for backwards compatibility,
+  // there is nothing meaninful to gain from requiring `{extends: ElementNode}`
+  // with the current shape here (just a `$transform`)
+  $config(): BaseStaticNodeConfig {
+    return this.config(Symbol.for('ElementNode'), {
+      /*
+       * Built-in normalize for shadow-root ElementNodes: wraps any direct child
+       * that is neither an ElementNode nor a DecoratorNode in a paragraph, so
+       * the slot-frame invariant set by `getTopLevelElement` continues to hold
+       * for external inputs (URL doc payloads, imported JSON, paste round-trips)
+       * that may carry shapes the in-editor mutation paths can no longer
+       * produce. In-editor mutation paths still fail-fast on the invariant.
+       *
+       * Runs as a static transform so the existing dirty-node transform cycle
+       * drives it — typing paths cover their own dirty bookkeeping, hydrate
+       * paths (`setEditorState`) dirty-mark slot hosts so the cycle picks them
+       * up.
+       */
+      $transform: $normalizeShadowRootChildren,
+    });
+  }
 
   constructor(key?: NodeKey) {
     super(key);

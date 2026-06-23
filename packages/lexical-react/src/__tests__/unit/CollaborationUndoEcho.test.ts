@@ -233,9 +233,10 @@ function persistedParagraphCount(peer: Peer): number {
     },
     {discrete: true},
   );
-  return editor
-    .getEditorState()
-    .read(() => $getRoot().getChildren().filter($isElementNode).length);
+  return editor.read(
+    'latest',
+    () => $getRoot().getChildren().filter($isElementNode).length,
+  );
 }
 
 describe('Collaborative undo empty-paragraph echo (#8651)', () => {
@@ -250,7 +251,7 @@ describe('Collaborative undo empty-paragraph echo (#8651)', () => {
     const undoB = createUndoManager(B.binding, B.binding.root.getSharedType());
 
     const firstText = (peer: Peer) =>
-      peer.editor.getEditorState().read(() => {
+      peer.editor.read('latest', () => {
         const p = $getRoot().getFirstChild();
         const t = $isElementNode(p) ? p.getFirstChild() : null;
         return $isTextNode(t) ? t : null;

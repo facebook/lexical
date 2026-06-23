@@ -8,10 +8,6 @@
 
 import invariant from '@lexical/internal/invariant';
 import {
-  addClassNamesToElement,
-  removeClassNamesFromElement,
-} from '@lexical/utils';
-import {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
@@ -22,10 +18,12 @@ import {
   $isParagraphNode,
   $isRootNode,
   $setSelection,
+  addClassNamesToElement,
   getDOMSelection,
   INSERT_PARAGRAPH_COMMAND,
   type LexicalEditor,
   type NodeKey,
+  removeClassNamesFromElement,
   SELECTION_CHANGE_COMMAND,
   type TextFormatType,
 } from 'lexical';
@@ -283,48 +281,42 @@ export class TableObserver {
 
   trackTable() {
     const observer = new MutationObserver(records => {
-      this.editor.getEditorState().read(
-        () => {
-          let gridNeedsRedraw = false;
+      this.editor.read('latest', () => {
+        let gridNeedsRedraw = false;
 
-          for (let i = 0; i < records.length; i++) {
-            const record = records[i];
-            const target = record.target;
-            const nodeName = target.nodeName;
+        for (let i = 0; i < records.length; i++) {
+          const record = records[i];
+          const target = record.target;
+          const nodeName = target.nodeName;
 
-            if (
-              nodeName === 'TABLE' ||
-              nodeName === 'TBODY' ||
-              nodeName === 'THEAD' ||
-              nodeName === 'TR'
-            ) {
-              gridNeedsRedraw = true;
-              break;
-            }
+          if (
+            nodeName === 'TABLE' ||
+            nodeName === 'TBODY' ||
+            nodeName === 'THEAD' ||
+            nodeName === 'TR'
+          ) {
+            gridNeedsRedraw = true;
+            break;
           }
+        }
 
-          if (!gridNeedsRedraw) {
-            return;
-          }
+        if (!gridNeedsRedraw) {
+          return;
+        }
 
-          const {tableNode, tableElement} = this.$lookup();
-          this.table = getTable(tableNode, tableElement);
-        },
-        {editor: this.editor},
-      );
-    });
-    this.editor.getEditorState().read(
-      () => {
         const {tableNode, tableElement} = this.$lookup();
         this.table = getTable(tableNode, tableElement);
-        observer.observe(tableElement, {
-          attributes: true,
-          childList: true,
-          subtree: true,
-        });
-      },
-      {editor: this.editor},
-    );
+      });
+    });
+    this.editor.read('latest', () => {
+      const {tableNode, tableElement} = this.$lookup();
+      this.table = getTable(tableNode, tableElement);
+      observer.observe(tableElement, {
+        attributes: true,
+        childList: true,
+        subtree: true,
+      });
+    });
   }
 
   $clearHighlight(setEmptySelection: boolean = true): void {

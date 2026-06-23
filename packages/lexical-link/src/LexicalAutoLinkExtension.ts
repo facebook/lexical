@@ -8,7 +8,6 @@
 
 import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
-import {mergeRegister} from '@lexical/utils';
 import {
   $createTextNode,
   $getSelection,
@@ -19,6 +18,7 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   defineExtension,
+  mergeRegister,
   shallowMergeConfig,
   TextNode,
 } from 'lexical';
@@ -33,6 +33,11 @@ import {
   TOGGLE_LINK_COMMAND,
 } from './LexicalLinkNode';
 
+/**
+ * A callback invoked when the auto-link plugin creates, updates, or removes an
+ * automatic link. It receives the new `url` and the `prevUrl`; either may be
+ * `null` when a link is added or removed.
+ */
 export type ChangeHandler = (
   url: string | null,
   prevUrl: string | null,
@@ -46,8 +51,20 @@ export interface LinkMatcherResult {
   url: string;
 }
 
+/**
+ * A function that inspects a piece of `text` and returns a
+ * {@link LinkMatcherResult} for the first URL it recognizes, or `null` if none
+ * is found. Used by the auto-link plugin to detect links as the user types.
+ */
 export type LinkMatcher = (text: string) => LinkMatcherResult | null;
 
+/**
+ * Builds a {@link LinkMatcher} from a regular expression. The matched text is
+ * used as the link URL, optionally rewritten by `urlTransformer` (for example
+ * to prepend a protocol). Pass the result to the auto-link plugin's `matchers`.
+ *
+ * @returns A matcher that reports the first match of `regExp` in the text.
+ */
 export function createLinkMatcherWithRegExp(
   regExp: RegExp,
   urlTransformer: (text: string) => string = text => text,

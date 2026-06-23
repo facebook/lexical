@@ -10,26 +10,25 @@ import type {ListItemNode} from './LexicalListItemNode';
 import type {ElementNode, LexicalCommand, LexicalEditor} from 'lexical';
 
 import {Signal} from '@lexical/extension';
-import {
-  $findMatchingParent,
-  calculateZoomLevel,
-  isHTMLElement,
-  mergeRegister,
-} from '@lexical/utils';
+import {calculateZoomLevel} from '@lexical/utils';
 import {
   $addUpdateTag,
+  $findMatchingParent,
   $getNearestNodeFromDOMNode,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
   createCommand,
+  getActiveElement,
   getNearestEditorFromDOMNode,
+  isHTMLElement,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
+  mergeRegister,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SELECTION_FOCUS_TAG,
 } from 'lexical';
@@ -136,7 +135,7 @@ export function registerCheckList(
     editor.registerCommand<KeyboardEvent>(
       KEY_ESCAPE_COMMAND,
       () => {
-        const activeItem = getActiveCheckListItem();
+        const activeItem = getActiveCheckListItem(editor);
 
         if (activeItem != null) {
           const rootElement = editor.getRootElement();
@@ -155,7 +154,7 @@ export function registerCheckList(
     editor.registerCommand<KeyboardEvent>(
       KEY_SPACE_COMMAND,
       event => {
-        const activeItem = getActiveCheckListItem();
+        const activeItem = getActiveCheckListItem(editor);
 
         if (activeItem != null && editor.isEditable()) {
           editor.update(() => {
@@ -176,7 +175,7 @@ export function registerCheckList(
     editor.registerCommand<KeyboardEvent>(
       KEY_ARROW_LEFT_COMMAND,
       event => {
-        return editor.getEditorState().read(() => {
+        return editor.read('latest', () => {
           const selection = $getSelection();
 
           if ($isRangeSelection(selection) && selection.isCollapsed()) {
@@ -198,7 +197,13 @@ export function registerCheckList(
                 ) {
                   const domNode = editor.getElementByKey(elementNode.__key);
 
-                  if (domNode != null && document.activeElement !== domNode) {
+                  // getActiveElement rather than document.activeElement, which
+                  // reports the shadow host in a shadow root (so this would
+                  // otherwise always re-focus and swallow the arrow key).
+                  if (
+                    domNode != null &&
+                    getActiveElement(domNode) !== domNode
+                  ) {
                     domNode.focus();
                     event.preventDefault();
                     return true;
@@ -386,8 +391,12 @@ function handleSelectDefaults(
   });
 }
 
-function getActiveCheckListItem(): HTMLElement | null {
-  const activeElement = document.activeElement;
+function getActiveCheckListItem(editor: LexicalEditor): HTMLElement | null {
+  // getActiveElement scoped to the editor's root rather than
+  // document.activeElement, which reports the shadow host when the editor is
+  // in a shadow root (so the focused <li> would otherwise be invisible here).
+  const rootElement = editor.getRootElement();
+  const activeElement = rootElement ? getActiveElement(rootElement) : null;
 
   return isHTMLElement(activeElement) &&
     activeElement.tagName === 'LI' &&
@@ -438,7 +447,7 @@ function handleArrowUpOrDown(
   editor: LexicalEditor,
   backward: boolean,
 ) {
-  const activeItem = getActiveCheckListItem();
+  const activeItem = getActiveCheckListItem(editor);
 
   if (activeItem != null) {
     editor.update(() => {

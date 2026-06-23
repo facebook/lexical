@@ -167,8 +167,19 @@ export const scheduleMicroTask: (fn: () => void) => void =
         Promise.resolve().then(fn);
       };
 
-export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
-  const activeElement = document.activeElement;
+export function isSelectionCapturedInDecoratorInput(
+  anchorDOM: Node,
+  preResolvedActiveElement?: Element | null,
+): boolean {
+  const activeElement =
+    preResolvedActiveElement !== undefined
+      ? preResolvedActiveElement
+      : (() => {
+          const root = anchorDOM.getRootNode();
+          return isDOMDocumentNode(root) || isDOMShadowRoot(root)
+            ? getActiveElementDeep(root)
+            : null;
+        })();
 
   if (!isHTMLElement(activeElement)) {
     return false;
@@ -815,8 +826,9 @@ export function $updateSelectedTextFromDOM(
   if (domSelection === null) {
     return;
   }
-  const anchorNode = domSelection.anchorNode;
-  let {anchorOffset, focusOffset} = domSelection;
+  const points = getDOMSelectionPoints(domSelection, editor._rootElement);
+  const anchorNode = points.anchorNode;
+  let {anchorOffset, focusOffset} = points;
   if (anchorNode !== null) {
     let textContent = getAnchorTextFromDOM(anchorNode);
     const node = $getNearestNodeFromDOMNode(anchorNode);
@@ -1521,9 +1533,15 @@ export function getElementByKeyOrThrow(
 export function getParentElement(node: Node): HTMLElement | null {
   const parentElement =
     (node as HTMLSlotElement).assignedSlot || node.parentElement;
-  return isDocumentFragment(parentElement)
-    ? ((parentElement as unknown as ShadowRoot).host as HTMLElement)
-    : parentElement;
+  if (parentElement !== null) {
+    return parentElement;
+  }
+  // node.parentElement is null when the parent is a ShadowRoot (a
+  // DocumentFragment, not an Element). Cross the shadow boundary to the host so
+  // ancestor walks (getScrollParent, calculateZoomLevel) continue into the
+  // enclosing light-DOM tree instead of stopping at the boundary.
+  const parentNode = node.parentNode;
+  return isDOMShadowRoot(parentNode) ? (parentNode.host as HTMLElement) : null;
 }
 
 export function getDOMOwnerDocument(
@@ -1893,7 +1911,9 @@ export function $updateDOMBlockCursorElement(
     $isRangeSelection(nextSelection) &&
     nextSelection.isCollapsed() &&
     nextSelection.anchor.type === 'element' &&
-    rootElement.contains(document.activeElement)
+    // getActiveElement rather than document.activeElement, which reports the
+    // shadow host (outside rootElement) when the editor is in a shadow root
+    rootElement.contains(getActiveElement(rootElement))
   ) {
     const anchor = nextSelection.anchor;
     const elementNode = anchor.getNode();
@@ -1969,6 +1989,422 @@ export function getDOMSelectionFromTarget(
 ): null | Selection {
   const defaultView = getDefaultView(eventTarget);
   return defaultView ? defaultView.getSelection() : null;
+}
+
+/**
+ * @param node A value that may be a DOM ShadowRoot.
+ * @returns True if node is a DOM ShadowRoot (an open or closed shadow tree
+ *   root), false otherwise. A ShadowRoot is a DocumentFragment with a host.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function isDOMShadowRoot(node: unknown): node is ShadowRoot {
+  return isDocumentFragment(node) && 'host' in node;
+}
+
+/**
+ * Collects the DOM ShadowRoots between `node` and its document, innermost
+ * first. Returns an empty array when `node` is in the light DOM (its root is
+ * the Document) or is detached.
+ *
+ * Uses the standard {@link https://developer.mozilla.org/docs/Web/API/Node/getRootNode | Node.getRootNode}
+ * and `ShadowRoot.host` platform APIs to walk out of any nested shadow trees.
+ *
+ * @param node The DOM node to start from (typically the editor root element).
+ * @returns The enclosing ShadowRoots, innermost first.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+const EMPTY_SHADOW_ROOTS: ShadowRoot[] = [];
+
+export function getDOMShadowRoots(node: Node): ShadowRoot[] {
+  const root = node.getRootNode();
+  if (root === node || !isDOMShadowRoot(root)) {
+    return EMPTY_SHADOW_ROOTS;
+  }
+  const shadowRoots: ShadowRoot[] = [root];
+  let current: Node = root.host;
+  for (;;) {
+    const nextRoot = current.getRootNode();
+    if (nextRoot === current || !isDOMShadowRoot(nextRoot)) {
+      break;
+    }
+    shadowRoots.push(nextRoot);
+    current = nextRoot.host;
+  }
+  return shadowRoots;
+}
+
+/**
+ * Walks `root` and every open shadow root nested inside it, yielding each
+ * element that matches `selector`. `querySelectorAll` does not pierce
+ * shadow boundaries on its own; this descent does.
+ *
+ * @internal
+ */
+export function* findAllLexicalElementsDeep(
+  initialRoot: Document | ShadowRoot,
+): Generator<Element> {
+  const roots = [initialRoot];
+  let root;
+  while ((root = roots.pop())) {
+    yield* root.querySelectorAll('[data-lexical-editor="true"]');
+    // Resolve the owning document by nodeType, not `instanceof Document`:
+    // a Document from another realm (e.g. an iframe) is not an instance of
+    // this realm's Document constructor, so `instanceof` would misclassify it
+    // and fall back to the global `document`. A ShadowRoot's ownerDocument is
+    // always its (realm-correct) Document.
+    const doc = isDOMDocumentNode(root) ? root : root.ownerDocument;
+    const walker = doc.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+    let el;
+    while ((el = walker.nextNode() as null | Element)) {
+      if (el.shadowRoot) {
+        roots.push(el.shadowRoot);
+      }
+    }
+  }
+}
+
+/**
+ * Resolves the document that hosts an editor's root element, falling
+ * back to the global `document` when the editor isn't mounted. Use this
+ * over `editor.getRootElement()?.ownerDocument ?? document` so iframe /
+ * shadow-mounted editors land in the right realm.
+ *
+ * @internal
+ */
+export function getRootOwnerDocument(
+  rootElement: HTMLElement | null,
+): Document {
+  return rootElement !== null ? rootElement.ownerDocument : document;
+}
+
+/**
+ * A subset of `Selection` covering the four boundary-point fields Lexical
+ * reads plus `direction`. Designed so a `Selection` instance can be returned
+ * where a `DOMSelectionBoundaryPoints` is expected (see {@link getDOMSelectionPoints}).
+ *
+ * `direction` is the standard
+ * {@link https://developer.mozilla.org/docs/Web/API/Selection/direction | Selection.direction}
+ * pass-through: `'forward'` / `'backward'` / `'none'` when the engine
+ * implements it, or `undefined` when a future engine ships
+ * `getComposedRanges` without `direction` (no current shipping
+ * configuration matches — every engine that ships the former also ships
+ * the latter). In the undefined case anchor/focus default to the composed
+ * StaticRange's tree order; callers needing strict backward fidelity
+ * inside a shadow root should check `direction !== undefined`.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export interface DOMSelectionBoundaryPoints {
+  anchorNode: Node | null;
+  anchorOffset: number;
+  direction?: undefined | 'forward' | 'backward' | 'none';
+  focusNode: Node | null;
+  focusOffset: number;
+}
+
+/**
+ * Resolves a DOM Selection's range through any DOM ShadowRoots enclosing
+ * `rootElement`, using the standard
+ * {@link https://developer.mozilla.org/docs/Web/API/Selection/getComposedRanges | Selection.getComposedRanges}
+ * platform API.
+ *
+ * When a selection is inside a shadow tree the browser retargets
+ * `Selection.getRangeAt`/`anchorNode`/`focusNode` to the shadow host, which
+ * hides the real nodes Lexical needs to resolve. Passing the enclosing shadow
+ * roots to `getComposedRanges` returns the un-retargeted boundary points as a
+ * {@link https://developer.mozilla.org/docs/Web/API/StaticRange | StaticRange}
+ * (in tree order, i.e. start before end).
+ *
+ * @returns The composed StaticRange, or `null` when `rootElement` is in the
+ *   light DOM, the platform does not implement `getComposedRanges`, or there
+ *   is no selection.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function getComposedStaticRange(
+  domSelection: Selection,
+  rootElement: HTMLElement | null,
+): StaticRange | null {
+  if (
+    rootElement === null ||
+    typeof domSelection.getComposedRanges !== 'function'
+  ) {
+    return null;
+  }
+  const shadowRoots = getDOMShadowRoots(rootElement);
+  if (shadowRoots.length === 0) {
+    return null;
+  }
+  // Prefer the standard dictionary form (Chrome, modern WebKit, Firefox);
+  // fall back to the legacy variadic form shipped by Safari 17–18.1. A
+  // browser that doesn't understand the dictionary may return an empty array
+  // rather than throwing, so check the result on each attempt before
+  // degrading.
+  const getComposedRanges = domSelection.getComposedRanges as (
+    ...args: unknown[]
+  ) => StaticRange[];
+  try {
+    const dictRange = getComposedRanges.call(domSelection, {shadowRoots})[0];
+    if (dictRange !== undefined) {
+      return dictRange;
+    }
+  } catch (_error) {
+    // Try the legacy variadic form.
+  }
+  try {
+    const variadicRange = getComposedRanges.apply(domSelection, shadowRoots)[0];
+    if (variadicRange !== undefined) {
+      return variadicRange;
+    }
+  } catch (_error) {
+    // Both forms failed — degrade.
+  }
+  return null;
+}
+
+/**
+ * Returns a live DOM Range for the Selection, resolved through any DOM
+ * ShadowRoots enclosing `rootElement`. Inside a shadow tree
+ * `Selection.getRangeAt(0)` is retargeted to the shadow host, so this builds a
+ * Range from the composed boundary points instead (see
+ * {@link getComposedStaticRange}); in the light DOM it returns
+ * `getRangeAt(0)` unchanged. Use this instead of `getRangeAt(0)` when the
+ * Range is needed for layout (e.g. `getBoundingClientRect`), which a
+ * StaticRange cannot provide.
+ *
+ * @returns A live Range, or null when the selection has no ranges.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function getDOMSelectionRange(
+  domSelection: Selection,
+  rootElement: HTMLElement | null,
+): Range | null {
+  const staticRange = getComposedStaticRange(domSelection, rootElement);
+  if (staticRange !== null) {
+    const range = staticRangeToLiveRange(staticRange);
+    if (range !== null) {
+      return range;
+    }
+  }
+  return domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null;
+}
+
+/**
+ * Resolves a DOM Selection's anchor/focus boundary points through any DOM
+ * ShadowRoots enclosing `rootElement`. Inside a shadow tree the boundary
+ * points come from {@link getComposedStaticRange} mapped back onto
+ * anchor/focus with the standard
+ * {@link https://developer.mozilla.org/docs/Web/API/Selection/direction | Selection.direction};
+ * in the light DOM (or when `getComposedRanges` is unavailable) the Selection's
+ * own anchorNode/focusNode are already correct, so the Selection is returned
+ * as-is (it satisfies {@link DOMSelectionBoundaryPoints}).
+ *
+ * Use this instead of reading `Selection.anchorNode`/`focusNode` directly,
+ * which are retargeted to the shadow host inside a shadow tree.
+ *
+ * @remarks
+ * The two return paths have different read semantics:
+ * - light DOM: the return aliases `domSelection`, so subsequent reads
+ *   reflect any post-call selection changes. The aliasing is intentional;
+ *   each `Selection` property read forces a synchronous style/layout
+ *   recalculation, so `$updateDOMSelection` defers these reads until they
+ *   are actually needed.
+ * - shadow DOM: the return is a snapshot taken at call time, including
+ *   `direction`. If a future engine ships `getComposedRanges` without
+ *   `Selection.direction` (no current shipping configuration matches),
+ *   the snapshot's `direction` is `undefined` and anchor/focus default
+ *   to the StaticRange's tree order — a backward selection will appear
+ *   forward.
+ *
+ * Read the four points immediately after the call, or compare identity
+ * via `points === domSelection` to detect when the return aliases
+ * `domSelection`, rather than caching the returned reference across
+ * selection mutations.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function getDOMSelectionPoints(
+  domSelection: Selection,
+  rootElement: HTMLElement | null,
+): DOMSelectionBoundaryPoints {
+  const staticRange = getComposedStaticRange(domSelection, rootElement);
+  if (staticRange === null) {
+    return domSelection as DOMSelectionBoundaryPoints;
+  }
+  return staticRangeToPoints(staticRange, readDirection(domSelection));
+}
+
+/**
+ * Resolves the live DOM Range (for layout reads like `getBoundingClientRect`)
+ * and the anchor/focus boundary points in one pass, sharing a single
+ * {@link getComposedStaticRange} read rather than computing it twice as a
+ * call to {@link getDOMSelectionRange} followed by {@link getDOMSelectionPoints}
+ * would. Use this at sites that need both shapes from the same selection.
+ *
+ * @returns The composed Range plus the boundary points; the Range is null
+ *   when the selection has no ranges.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function getDOMSelectionRangeAndPoints(
+  domSelection: Selection,
+  rootElement: HTMLElement | null,
+): {points: DOMSelectionBoundaryPoints; range: Range | null} {
+  const staticRange = getComposedStaticRange(domSelection, rootElement);
+  if (staticRange === null) {
+    return {
+      points: domSelection as DOMSelectionBoundaryPoints,
+      range: domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null,
+    };
+  }
+  const range =
+    staticRangeToLiveRange(staticRange) ??
+    (domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null);
+  return {
+    points: staticRangeToPoints(staticRange, readDirection(domSelection)),
+    range,
+  };
+}
+
+// Build a live DOM Range from a StaticRange's endpoints, in the container's
+// own document so iframe / shadow trees resolve to the right Range constructor.
+// Returns null when the container is detached or the endpoints reject (the
+// caller can fall back to `domSelection.getRangeAt(0)` in that case).
+function staticRangeToLiveRange(staticRange: StaticRange): Range | null {
+  const doc = staticRange.startContainer.ownerDocument;
+  if (doc === null) {
+    return null;
+  }
+  const range = doc.createRange();
+  try {
+    range.setStart(staticRange.startContainer, staticRange.startOffset);
+    range.setEnd(staticRange.endContainer, staticRange.endOffset);
+    return range;
+  } catch (_error) {
+    return null;
+  }
+}
+
+// Map a StaticRange + Selection.direction to anchor/focus pairs. Selection
+// returns boundaries in tree order, so a backward direction reverses the
+// pair before mapping (matching what Selection.anchorNode/focusNode would
+// have reported in the light DOM). 'none' and undefined map to forward
+// (anchor=start): a 'none' selection is directionless (e.g. created via
+// Selection.addRange), which the spec pins to anchor=start/focus=end, so the
+// forward mapping is correct — only directional APIs ever report 'backward'.
+function staticRangeToPoints(
+  staticRange: StaticRange,
+  direction: 'forward' | 'backward' | 'none' | undefined,
+): DOMSelectionBoundaryPoints {
+  const {startContainer, startOffset, endContainer, endOffset} = staticRange;
+  return direction === 'backward'
+    ? {
+        anchorNode: endContainer,
+        anchorOffset: endOffset,
+        direction,
+        focusNode: startContainer,
+        focusOffset: startOffset,
+      }
+    : {
+        anchorNode: startContainer,
+        anchorOffset: startOffset,
+        direction,
+        focusNode: endContainer,
+        focusOffset: endOffset,
+      };
+}
+
+function readDirection(
+  domSelection: Selection,
+): 'forward' | 'backward' | 'none' | undefined {
+  return domSelection.direction as undefined | 'forward' | 'backward' | 'none';
+}
+
+/**
+ * Returns the focused element within the same Document or ShadowRoot as
+ * `node`, using the standard `DocumentOrShadowRoot.activeElement`.
+ *
+ * Unlike `document.activeElement` — which is retargeted to the outermost
+ * shadow host when focus is inside a shadow tree — this returns the focused
+ * element within `node`'s own tree (e.g. the editor's contentEditable when it
+ * lives inside a shadow root).
+ *
+ * @param node A node whose tree's active element is wanted.
+ * @returns The active element, or null.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function getActiveElement(node: Node): Element | null {
+  const root = node.getRootNode();
+  return isDOMDocumentNode(root) || isDOMShadowRoot(root)
+    ? root.activeElement
+    : null;
+}
+
+/**
+ * Descends from `root.activeElement` through nested open ShadowRoots to the
+ * deepest focused element. `document.activeElement` only reports the outermost
+ * shadow host; this walks into the shadow trees via `ShadowRoot.activeElement`
+ * to find the element that actually has focus.
+ *
+ * @param root The Document or ShadowRoot to start from.
+ * @returns The deepest active element, or null.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function getActiveElementDeep(
+  root: Document | ShadowRoot,
+): Element | null {
+  let active: Element | null = root.activeElement;
+  while (active !== null && active.shadowRoot !== null) {
+    const inner = active.shadowRoot.activeElement;
+    if (inner === null) {
+      break;
+    }
+    active = inner;
+  }
+  return active;
+}
+
+/**
+ * Returns the un-retargeted event target — the real element the user
+ * interacted with — for events observed by a listener above an enclosing
+ * DOM shadow root. `Event.target` is retargeted to the outermost shadow
+ * host in that case, hiding the actual element; `composedPath()[0]`
+ * returns the original target for `composed: true` events (most
+ * user-agent UI events: click, mousedown, pointerdown, focusin, etc.).
+ * Falls back to `event.target` when `composedPath` is unavailable or
+ * returns an empty array (e.g. the event has already finished
+ * dispatching).
+ *
+ * Pairs with the shadow-aware helpers above
+ * ({@link getDOMSelectionPoints}, {@link getActiveElement}) for the
+ * event side of the shadow boundary — useful when an
+ * `Element.contains(target)` check needs to test against an editor root
+ * inside a shadow tree.
+ *
+ * @param event The dispatched event.
+ * @returns The un-retargeted target, or null when the event has none.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function getComposedEventTarget(event: Event): EventTarget | null {
+  const target = event.target;
+  if (
+    target !== null &&
+    isHTMLElement(target) &&
+    target.shadowRoot !== null &&
+    typeof event.composedPath === 'function'
+  ) {
+    const path = event.composedPath();
+    if (path.length > 0) {
+      return path[0];
+    }
+  }
+  return target;
 }
 
 export function $splitNode(
@@ -2658,15 +3094,27 @@ function isAbstractNodeClass(klass: Klass<LexicalNode>): boolean {
   );
 }
 
-/** @internal */
-export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
+export interface OwnStaticNodeConfig {
   ownNodeType: undefined | string;
   ownNodeConfig:
     | undefined
     | StaticNodeConfigValue<LexicalNode, string | symbol>;
-} {
+}
+const STATIC_NODE_CONFIG_CACHE = new WeakMap<
+  Klass<LexicalNode>,
+  OwnStaticNodeConfig
+>();
+
+/** @internal */
+export function getStaticNodeConfig(
+  klass: Klass<LexicalNode>,
+): OwnStaticNodeConfig {
+  const cache = STATIC_NODE_CONFIG_CACHE.get(klass);
+  if (cache) {
+    return cache;
+  }
   const nodeConfigRecord =
-    PROTOTYPE_CONFIG_METHOD in klass.prototype
+    klass.prototype != null && PROTOTYPE_CONFIG_METHOD in klass.prototype
       ? klass.prototype[PROTOTYPE_CONFIG_METHOD]()
       : undefined;
   const isAbstract = isAbstractNodeClass(klass);
@@ -2747,7 +3195,9 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
       }
     }
   }
-  return {ownNodeConfig, ownNodeType};
+  const result = {ownNodeConfig, ownNodeType};
+  STATIC_NODE_CONFIG_CACHE.set(klass, result);
+  return result;
 }
 
 /**

@@ -10,7 +10,7 @@ import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {eventFiles} from '@lexical/rich-text';
-import {calculateZoomLevel, isHTMLElement, mergeRegister} from '@lexical/utils';
+import {calculateZoomLevel} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
@@ -22,8 +22,15 @@ import {
   COMMAND_PRIORITY_LOW,
   DRAGOVER_COMMAND,
   DROP_COMMAND,
+  getActiveElement,
+  getActiveElementDeep,
+  getComposedEventTarget,
+  getParentElement,
+  getRootOwnerDocument,
   IS_FIREFOX,
+  isHTMLElement,
   LexicalEditor,
+  mergeRegister,
 } from 'lexical';
 import {
   DragEvent as ReactDragEvent,
@@ -61,7 +68,7 @@ function getCurrentIndex(keysLength: number): number {
 }
 
 function getTopLevelNodeKeys(editor: LexicalEditor): string[] {
-  return editor.getEditorState().read(() => $getRoot().getChildrenKeys());
+  return editor.read('latest', () => $getRoot().getChildrenKeys());
 }
 
 function getCollapsedMargins(elem: HTMLElement): {
@@ -106,7 +113,7 @@ function getBlockElement(
 
   let blockElem: HTMLElement | null = null;
 
-  editor.getEditorState().read(() => {
+  editor.read('latest', () => {
     if (useEdgeAsDefault) {
       const [firstNode, lastNode] = [
         editor.getElementByKey(topLevelNodeKeys[0]),
@@ -282,7 +289,7 @@ function useDraggableBlockMenu(
   isOnMenu: (element: HTMLElement) => boolean,
   onElementChanged?: (element: HTMLElement | null) => void,
 ): JSX.Element {
-  const scrollerElem = anchorElem.parentElement;
+  const scrollerElem = getParentElement(anchorElem);
 
   const isDraggingBlockRef = useRef<boolean>(false);
   const [draggableBlockElem, setDraggableBlockElemState] =
@@ -300,7 +307,7 @@ function useDraggableBlockMenu(
 
   useEffect(() => {
     function onMouseMove(event: MouseEvent) {
-      const target = event.target;
+      const target = getComposedEventTarget(event);
       if (!isHTMLElement(target)) {
         setDraggableBlockElem(null);
         return;
@@ -333,10 +340,7 @@ function useDraggableBlockMenu(
   }, [scrollerElem, anchorElem, editor, isOnMenu, setDraggableBlockElem]);
 
   useEffect(() => {
-    const zoomLevel = calculateZoomLevel(
-      document.getElementsByClassName('ContentEditable__root')[0],
-      true,
-    );
+    const zoomLevel = calculateZoomLevel(editor.getRootElement(), true);
     if (menuRef.current) {
       setMenuPosition(
         draggableBlockElem,
@@ -345,7 +349,7 @@ function useDraggableBlockMenu(
         zoomLevel,
       );
     }
-  }, [anchorElem, draggableBlockElem, menuRef]);
+  }, [editor, anchorElem, draggableBlockElem, menuRef]);
 
   useEffect(() => {
     function onDragover(event: DragEvent): boolean {
@@ -356,7 +360,10 @@ function useDraggableBlockMenu(
       if (isFileTransfer) {
         return false;
       }
-      const {pageY, target} = event;
+      const pageY = event.pageY;
+      // Composed target so the zoom level is read from the real element rather
+      // than the shadow host when the editor is in a shadow tree.
+      const target = getComposedEventTarget(event);
       if (!isHTMLElement(target)) {
         return false;
       }
@@ -384,7 +391,10 @@ function useDraggableBlockMenu(
       if (isFileTransfer) {
         return false;
       }
-      const {target, dataTransfer, pageY} = event;
+      const {dataTransfer, pageY} = event;
+      // Composed target so the zoom level is read from the real element rather
+      // than the shadow host when the editor is in a shadow tree.
+      const target = getComposedEventTarget(event);
       const dragData =
         dataTransfer != null ? dataTransfer.getData(DRAG_DATA_FORMAT) : '';
       const draggedNode = $getNodeByKey(dragData);
@@ -487,7 +497,12 @@ function useDraggableBlockMenu(
         BLUR_COMMAND,
         () => {
           const rootElement = editor.getRootElement();
-          const activeElement = document.activeElement;
+          // getActiveElementDeep so the menu is found whether it is portaled
+          // into the light DOM or inside a shadow root (where
+          // document.activeElement only reports the shadow host).
+          const activeElement = getActiveElementDeep(
+            getRootOwnerDocument(rootElement),
+          );
           if (
             rootElement &&
             isHTMLElement(activeElement) &&
@@ -532,7 +547,12 @@ function useDraggableBlockMenu(
     // and to ensure selection is properly maintained during drag.
     if (IS_FIREFOX) {
       const rootElement = editor.getRootElement();
-      if (rootElement !== null && document.activeElement !== rootElement) {
+      // getActiveElement rather than document.activeElement, which reports the
+      // shadow host when the editor is in a shadow root.
+      if (
+        rootElement !== null &&
+        getActiveElement(rootElement) !== rootElement
+      ) {
         // Restore focus synchronously - don't use requestAnimationFrame as blur already happened
         // and we need immediate focus restoration to maintain cursor visibility
         rootElement.focus({preventScroll: true});
@@ -569,6 +589,16 @@ function useDraggableBlockMenu(
   );
 }
 
+/**
+ * Renders a draggable handle and drop-target line that let users reorder
+ * top-level blocks by dragging. You supply the handle and target-line elements
+ * via `menuComponent`/`menuRef` and `targetLineComponent`/`targetLineRef`, an
+ * `anchorElem` to portal them into (defaults to `document.body`), and an
+ * `isOnMenu` predicate used to detect interactions with the handle.
+ *
+ * @experimental The API may change in a future release.
+ * @returns A portal containing the drag handle and target line.
+ */
 export function DraggableBlockPlugin_EXPERIMENTAL({
   anchorElem = document.body,
   menuRef,

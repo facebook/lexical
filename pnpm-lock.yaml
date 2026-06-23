@@ -361,6 +361,106 @@ importers:
         specifier: 4.61.0
         version: 4.61.0
 
+  dev-examples/shadow-dom:
+    dependencies:
+      '@lexical/extension':
+        specifier: workspace:*
+        version: link:../../packages/lexical-extension
+      '@lexical/history':
+        specifier: workspace:*
+        version: link:../../packages/lexical-history
+      '@lexical/link':
+        specifier: workspace:*
+        version: link:../../packages/lexical-link
+      '@lexical/list':
+        specifier: workspace:*
+        version: link:../../packages/lexical-list
+      '@lexical/react':
+        specifier: workspace:*
+        version: link:../../packages/lexical-react
+      '@lexical/rich-text':
+        specifier: workspace:*
+        version: link:../../packages/lexical-rich-text
+      lexical:
+        specifier: workspace:*
+        version: link:../../packages/lexical
+      react:
+        specifier: 19.2.5
+        version: 19.2.5
+      react-dom:
+        specifier: 19.2.5
+        version: 19.2.5(react@19.2.5)
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.60.0
+        version: 1.60.0
+      '@types/react':
+        specifier: ^19.1.2
+        version: 19.2.16
+      '@types/react-dom':
+        specifier: ^19.1.2
+        version: 19.2.3(@types/react@19.2.16)
+      '@vitejs/plugin-react':
+        specifier: ^6.0.2
+        version: 6.0.2(vite@8.0.16(@types/node@25.9.1)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.0))
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vite:
+        specifier: ^8.0.16
+        version: 8.0.16(@types/node@25.9.1)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.0)
+    optionalDependencies:
+      '@rollup/rollup-darwin-arm64':
+        specifier: 4.61.0
+        version: 4.61.0
+      '@rollup/rollup-linux-x64-gnu':
+        specifier: 4.61.0
+        version: 4.61.0
+      '@rollup/rollup-win32-x64-msvc':
+        specifier: 4.61.0
+        version: 4.61.0
+      '@rollup/wasm-node':
+        specifier: 4.61.0
+        version: 4.61.0
+
+  dev-examples/shadow-dom-web-component:
+    dependencies:
+      '@lexical/extension':
+        specifier: workspace:*
+        version: link:../../packages/lexical-extension
+      '@lexical/history':
+        specifier: workspace:*
+        version: link:../../packages/lexical-history
+      '@lexical/rich-text':
+        specifier: workspace:*
+        version: link:../../packages/lexical-rich-text
+      lexical:
+        specifier: workspace:*
+        version: link:../../packages/lexical
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.60.0
+        version: 1.60.0
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vite:
+        specifier: ^8.0.16
+        version: 8.0.16(@types/node@25.9.1)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.0)
+    optionalDependencies:
+      '@rollup/rollup-darwin-arm64':
+        specifier: 4.61.0
+        version: 4.61.0
+      '@rollup/rollup-linux-x64-gnu':
+        specifier: 4.61.0
+        version: 4.61.0
+      '@rollup/rollup-win32-x64-msvc':
+        specifier: 4.61.0
+        version: 4.61.0
+      '@rollup/wasm-node':
+        specifier: 4.61.0
+        version: 4.61.0
+
   packages/lexical:
     dependencies:
       '@lexical/internal':
@@ -982,9 +1082,6 @@ importers:
       react-dom:
         specifier: 19.2.5
         version: 19.2.5(react@19.2.5)
-      react-error-boundary:
-        specifier: ^6.1.1
-        version: 6.1.1(react@19.2.5)
       y-websocket:
         specifier: ^2.1.0
         version: 2.1.0(yjs@13.6.31)
@@ -1094,9 +1191,6 @@ importers:
       react-dom:
         specifier: 19.2.5
         version: 19.2.5(react@19.2.5)
-      react-error-boundary:
-        specifier: ^6.1.1
-        version: 6.1.1(react@19.2.5)
       typescript:
         specifier: '>=5.2'
         version: 6.0.3
@@ -10726,11 +10820,6 @@ packages:
     peerDependencies:
       react: 19.2.5
 
-  react-error-boundary@6.1.1:
-    resolution: {integrity: sha512-BrYwPOdXi5mqkk5lw+Uvt0ThHx32rCt3BkukS4X23A2AIWDPSGX6iaWTc0y9TU/mHDA/6qOSGel+B2ERkOvD1w==}
-    peerDependencies:
-      react: 19.2.5
-
   react-fast-compare@3.2.2:
     resolution: {integrity: sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ==}
 
@@ -14685,7 +14774,7 @@ snapshots:
     dependencies:
       '@docusaurus/types': 3.10.1(@swc/core@1.15.24(@swc/helpers@0.5.21))(clean-css@5.3.3)(cssnano@6.1.2(postcss@8.5.15))(esbuild@0.27.7)(html-minifier-terser@7.2.0)(postcss@8.5.15)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       '@types/history': 4.7.11
-      '@types/react': 19.2.15
+      '@types/react': 19.2.16
       '@types/react-router-config': 5.0.11
       '@types/react-router-dom': 5.3.3
       react: 19.2.5
@@ -14712,7 +14801,7 @@ snapshots:
     dependencies:
       '@docusaurus/types': 3.10.1(clean-css@5.3.3)(cssnano@6.1.2(postcss@8.5.15))(esbuild@0.27.7)(html-minifier-terser@7.2.0)(postcss@8.5.15)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       '@types/history': 4.7.11
-      '@types/react': 19.2.15
+      '@types/react': 19.2.16
       '@types/react-router-config': 5.0.11
       '@types/react-router-dom': 5.3.3
       react: 19.2.5
@@ -15297,7 +15386,7 @@ snapshots:
       '@docusaurus/utils': 3.10.1(@swc/core@1.15.24(@swc/helpers@0.5.21))(clean-css@5.3.3)(cssnano@6.1.2(postcss@8.5.15))(esbuild@0.27.7)(html-minifier-terser@7.2.0)(postcss@8.5.15)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       '@docusaurus/utils-common': 3.10.1(@swc/core@1.15.24(@swc/helpers@0.5.21))(clean-css@5.3.3)(cssnano@6.1.2(postcss@8.5.15))(esbuild@0.27.7)(html-minifier-terser@7.2.0)(postcss@8.5.15)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       '@types/history': 4.7.11
-      '@types/react': 19.2.15
+      '@types/react': 19.2.16
       '@types/react-router-config': 5.0.11
       clsx: 2.1.1
       parse-numeric-range: 1.3.0
@@ -15330,7 +15419,7 @@ snapshots:
       '@docusaurus/utils': 3.10.1(clean-css@5.3.3)(cssnano@6.1.2(postcss@8.5.15))(esbuild@0.27.7)(html-minifier-terser@7.2.0)(postcss@8.5.15)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       '@docusaurus/utils-common': 3.10.1(clean-css@5.3.3)(cssnano@6.1.2(postcss@8.5.15))(esbuild@0.27.7)(html-minifier-terser@7.2.0)(postcss@8.5.15)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       '@types/history': 4.7.11
-      '@types/react': 19.2.15
+      '@types/react': 19.2.16
       '@types/react-router-config': 5.0.11
       clsx: 2.1.1
       parse-numeric-range: 1.3.0
@@ -18101,18 +18190,17 @@ snapshots:
   '@types/react-dom@19.2.3(@types/react@19.2.16)':
     dependencies:
       '@types/react': 19.2.16
-    optional: true
 
   '@types/react-router-config@5.0.11':
     dependencies:
       '@types/history': 4.7.11
-      '@types/react': 19.2.15
+      '@types/react': 19.2.16
       '@types/react-router': 5.1.20
 
   '@types/react-router-dom@5.3.3':
     dependencies:
       '@types/history': 4.7.11
-      '@types/react': 19.2.15
+      '@types/react': 19.2.16
       '@types/react-router': 5.1.20
 
   '@types/react-router@5.1.20':
@@ -24905,10 +24993,6 @@ snapshots:
     dependencies:
       react: 19.2.5
       scheduler: 0.27.0
-
-  react-error-boundary@6.1.1(react@19.2.5):
-    dependencies:
-      react: 19.2.5
 
   react-fast-compare@3.2.2: {}
 

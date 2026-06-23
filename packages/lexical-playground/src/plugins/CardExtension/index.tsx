@@ -17,7 +17,6 @@ import {
   DOMRenderExtension,
   sel,
 } from '@lexical/html';
-import {mergeRegister} from '@lexical/utils';
 import {
   $createNodeSelection,
   $createParagraphNode,
@@ -41,6 +40,7 @@ import {
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_TAB_COMMAND,
+  mergeRegister,
 } from 'lexical';
 
 import {registerHostChromeSelection} from '../../nodes/hostChromeSelection';

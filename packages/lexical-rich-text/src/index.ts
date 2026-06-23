@@ -42,13 +42,9 @@ import {
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
 import {
-  $findMatchingParent,
   $getNearestBlockElementAncestorOrThrow,
   $handleIndentAndOutdent,
-  addClassNamesToElement,
   eventFiles,
-  isHTMLElement,
-  mergeRegister,
   objectKlassEquals,
 } from '@lexical/utils';
 import {
@@ -57,6 +53,7 @@ import {
   $createParagraphNode,
   $createRangeSelection,
   $createTabNode,
+  $findMatchingParent,
   $getAdjacentNode,
   $getNearestNodeFromDOMNode,
   $getRoot,
@@ -75,6 +72,7 @@ import {
   $setDirectionFromDOM,
   $setFormatFromDOM,
   $setSelection,
+  addClassNamesToElement,
   CAN_USE_BEFORE_INPUT,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
@@ -100,6 +98,7 @@ import {
   IS_IOS,
   IS_SAFARI,
   isDOMNode,
+  isHTMLElement,
   isSelectionCapturedInDecoratorInput,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -111,6 +110,7 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
+  mergeRegister,
   MOVE_TO_END,
   MOVE_TO_START,
   OUTDENT_CONTENT_COMMAND,
@@ -1047,18 +1047,30 @@ export function registerRichText(
     editor.registerCommand<KeyboardEvent>(
       KEY_BACKSPACE_COMMAND,
       event => {
-        if ($isTargetWithinDecorator(event.target as HTMLElement)) {
-          return false;
-        }
         const selection = $getSelection();
+        // A NodeSelection (e.g. a click that selected a block decorator) is
+        // the user's explicit "delete this node" gesture. The decorator
+        // pass-through below is meant to keep keystrokes flowing into an
+        // editable nested inside a decorator (image caption, etc.), but a
+        // NodeSelection is exactly the case where the user wants us to
+        // handle backspace ourselves.
+        if (!$isNodeSelection(selection)) {
+          if ($isTargetWithinDecorator(event.target as HTMLElement)) {
+            return false;
+          }
+        }
         if ($isRangeSelection(selection)) {
           if ($isSelectionCollapsedAtFrontOfIndentedBlock(selection)) {
             event.preventDefault();
             return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
           }
-          // Exception handling for iOS native behavior instead of Lexical's behavior when using Korean on iOS devices.
-          // more details - https://github.com/facebook/lexical/issues/5841
-          if (IS_IOS && navigator.language === 'ko-KR') {
+          // On iOS, blocking the keydown event's default prevents the system
+          // keyboard from updating its autocomplete/autocorrect suggestion bar
+          // after Backspace. Returning false here skips event.preventDefault()
+          // on keydown; the beforeinput deleteContentBackward handler still runs
+          // and performs the deletion, so editing behavior is unchanged.
+          // See https://github.com/facebook/lexical/issues/5841
+          if (IS_IOS && CAN_USE_BEFORE_INPUT) {
             return false;
           }
         } else if (!$isNodeSelection(selection)) {
@@ -1073,10 +1085,15 @@ export function registerRichText(
     editor.registerCommand<KeyboardEvent>(
       KEY_DELETE_COMMAND,
       event => {
-        if ($isTargetWithinDecorator(event.target as HTMLElement)) {
-          return false;
-        }
         const selection = $getSelection();
+        // Same NodeSelection bypass as KEY_BACKSPACE_COMMAND above: a click
+        // that selected a block decorator is the user's "delete this node"
+        // gesture, even though the click target lives inside a decorator.
+        if (!$isNodeSelection(selection)) {
+          if ($isTargetWithinDecorator(event.target as HTMLElement)) {
+            return false;
+          }
+        }
         if (!($isRangeSelection(selection) || $isNodeSelection(selection))) {
           return false;
         }
@@ -1159,7 +1176,7 @@ export function registerRichText(
         if (files.length > 0) {
           const x = event.clientX;
           const y = event.clientY;
-          const eventRange = caretFromPoint(x, y);
+          const eventRange = caretFromPoint(x, y, editor.getRootElement());
           if (eventRange !== null) {
             const {offset: domOffset, node: domNode} = eventRange;
             const node = $getNearestNodeFromDOMNode(domNode);

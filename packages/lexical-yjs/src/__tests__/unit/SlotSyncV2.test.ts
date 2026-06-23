@@ -5,13 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
-import type {Provider} from '../../index';
-
 import {
   buildEditorFromExtensions,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
+import {
+  createBindingV2__EXPERIMENTAL,
+  type Provider,
+  syncLexicalUpdateToYjsV2__EXPERIMENTAL,
+} from '@lexical/yjs';
 import {
   $create,
   $createParagraphNode,
@@ -46,8 +48,6 @@ import {
   XmlText,
 } from 'yjs';
 
-import {createBindingV2__EXPERIMENTAL} from '../../Bindings';
-import {syncLexicalUpdateToYjsV2__EXPERIMENTAL} from '../../SyncEditorStates';
 import {$createOrUpdateNodeFromYElement, $updateYFragment} from '../../SyncV2';
 import {SLOTS_ATTR_KEY} from '../../Utils';
 

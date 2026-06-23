@@ -9,7 +9,6 @@ import './index.css';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getYChangeState,
   CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
@@ -21,6 +20,7 @@ import {
   COMMAND_PRIORITY_EDITOR,
   createCommand,
   LexicalCommand,
+  mergeRegister,
   TextNode,
 } from 'lexical';
 import _ from 'lodash';
@@ -145,7 +145,7 @@ export function VersionsPlugin({id}: {id: string}) {
           userToColor.set(user, color);
           return color;
         };
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           for (const [nodeKey, mutation] of nodes.entries()) {
             if (mutation === 'destroyed') {
               continue;

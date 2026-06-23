@@ -7,6 +7,7 @@
  */
 
 import {$createCodeNode, CodeExtension} from '@lexical/code';
+import {$createCodeHighlightNode, $isCodeNode} from '@lexical/code-core';
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
@@ -17,9 +18,6 @@ import {
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
-
-import {$createCodeHighlightNode} from '../../CodeHighlightNode';
-import {$isCodeNode} from '../../CodeNode';
 
 describe('CodeExtension', () => {
   it('should not escape code block when content has consecutive blank lines (paste scenario)', () => {

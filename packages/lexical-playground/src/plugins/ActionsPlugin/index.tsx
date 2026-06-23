@@ -30,7 +30,6 @@ import {
 } from '@lexical/markdown';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
 import {CONNECTED_COMMAND, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
 import {
   $createParagraphNode,
@@ -40,6 +39,7 @@ import {
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  mergeRegister,
   RootNode,
 } from 'lexical';
 import {
@@ -250,7 +250,7 @@ export default function ActionsPlugin({
 
   useEffect(() => {
     return editor.registerUpdateListener(() => {
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const root = $getRoot();
         const children = root.getChildren();
 

@@ -6,6 +6,7 @@
  *
  */
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import {registerListStrictIndentTransform} from '@lexical/list';
 import {$getRoot} from 'lexical';
 import {
   expectHtmlToBeEqual,
@@ -13,8 +14,6 @@ import {
   initializeUnitTest,
 } from 'lexical/src/__tests__/utils';
 import {beforeEach, describe, test} from 'vitest';
-
-import {registerListStrictIndentTransform} from '../../index';
 
 describe('Lexical List StrictIndentTransform tests', () => {
   initializeUnitTest(testEnv => {

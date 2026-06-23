@@ -33,14 +33,13 @@ import {
 } from '@lexical/selection';
 import {$isTableNode, $isTableSelection} from '@lexical/table';
 import {
-  $findMatchingParent,
   $getNearestNodeOfType,
   $isEditorIsNestedEditor,
   IS_APPLE,
-  mergeRegister,
 } from '@lexical/utils';
 import {
   $addUpdateTag,
+  $findMatchingParent,
   $getNodeByKey,
   $getRoot,
   $getSelection,
@@ -60,6 +59,7 @@ import {
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
+  mergeRegister,
   NodeKey,
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
@@ -807,12 +807,9 @@ export default function ToolbarPlugin({
   }, [editor, $updateToolbar, setActiveEditor]);
 
   useEffect(() => {
-    activeEditor.getEditorState().read(
-      () => {
-        $updateToolbar();
-      },
-      {editor: activeEditor},
-    );
+    activeEditor.read('latest', () => {
+      $updateToolbar();
+    });
   }, [activeEditor, $updateToolbar]);
 
   useEffect(() => {

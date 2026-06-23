@@ -1,0 +1,17 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+/*
+ * The host establishes the shadow tree but should not introduce any layout of
+ * its own; the editor inside the shadow root participates in the
+ * .editor-shell layout as if it were rendered directly.
+ */
+.shadow-dom-host {
+  display: block;
+  width: 100%;
+}

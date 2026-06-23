@@ -7,8 +7,8 @@
  */
 
 import {namedSignals, NamedSignalsOutput} from '@lexical/extension';
-import {$findMatchingParent, isHTMLAnchorElement} from '@lexical/utils';
 import {
+  $findMatchingParent,
   $getNearestNodeFromDOMNode,
   $getSelection,
   $isElementNode,
@@ -16,6 +16,7 @@ import {
   defineExtension,
   getNearestEditorFromDOMNode,
   isDOMNode,
+  isHTMLAnchorElement,
   LexicalEditor,
   safeCast,
 } from 'lexical';
@@ -86,7 +87,7 @@ export function registerClickableLink(
     }
 
     // Allow user to select link text without following url
-    const selection = editor.getEditorState().read($getSelection, {editor});
+    const selection = editor.read('latest', $getSelection);
     if ($isRangeSelection(selection) && !selection.isCollapsed()) {
       event.preventDefault();
       return;

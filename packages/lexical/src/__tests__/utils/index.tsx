@@ -30,15 +30,19 @@ import {
   $create,
   $isRangeSelection,
   createEditor,
+  CreateEditorArgs,
   DecoratorNode,
   EditorState,
   EditorThemeClasses,
   ElementNode,
+  HTMLConfig,
   Klass,
   LexicalEditor,
   LexicalNode,
+  LexicalNodeReplacement,
   LexicalUpdateJSON,
   RangeSelection,
+  resetRandomKey,
   SerializedElementNode,
   SerializedLexicalNode,
   SerializedTextNode,
@@ -48,14 +52,7 @@ import {
 import * as React from 'react';
 import {act, createRef} from 'react';
 import {createRoot} from 'react-dom/client';
-import {afterEach, beforeEach, expect} from 'vitest';
-
-import {
-  CreateEditorArgs,
-  HTMLConfig,
-  LexicalNodeReplacement,
-} from '../../LexicalEditor';
-import {resetRandomKey} from '../../LexicalUtils';
+import {afterEach, assert, beforeEach, expect} from 'vitest';
 
 const prettierConfig = prettier.resolveConfig(__filename);
 
@@ -513,12 +510,13 @@ export function $assertRangeSelection(selection: unknown): RangeSelection {
  */
 export function $assertNodeType<T extends LexicalNode>(
   node: LexicalNode | null | undefined,
-  guard: (value: LexicalNode | null) => value is T,
+  $guard: (value: LexicalNode | null) => value is T,
 ): T {
   const resolved = node ?? null;
-  if (!guard(resolved)) {
-    throw new Error(`Expected node to match type guard, got ${node}`);
-  }
+  assert(
+    $guard(resolved),
+    `Expected node to match type guard ${$guard.name}, got ${node ? node.constructor.name : null}`,
+  );
   return resolved;
 }
 

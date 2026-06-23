@@ -5,11 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
   buildEditorFromExtensions,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
+import {
+  createBinding,
+  createUndoManager,
+  type Provider,
+  syncLexicalUpdateToYjs,
+  syncYjsChangesToLexical,
+} from '@lexical/yjs';
 import {
   $create,
   $createParagraphNode,
@@ -47,14 +53,8 @@ import {
   type YEvent,
 } from 'yjs';
 
-import {createBinding} from '../../Bindings';
 import {CollabDecoratorNode} from '../../CollabDecoratorNode';
 import {CollabElementNode} from '../../CollabElementNode';
-import {createUndoManager, type Provider} from '../../index';
-import {
-  syncLexicalUpdateToYjs,
-  syncYjsChangesToLexical,
-} from '../../SyncEditorStates';
 import {SLOTS_ATTR_KEY} from '../../Utils';
 
 // V1 (stable, CollabElementNode): serialize a lexical tree with a named slot

@@ -54,6 +54,7 @@ const sidebars = {
         'concepts/history',
         'concepts/dom-events',
         'concepts/keyboard-accessibility',
+        'concepts/shadow-dom',
         'concepts/traversals',
         'concepts/updates',
       ],

@@ -29,8 +29,7 @@
     "@lexical/text": "workspace:*",
     "@lexical/utils": "workspace:*",
     "@lexical/yjs": "workspace:*",
-    "lexical": "workspace:*",
-    "react-error-boundary": "^6.1.1"
+    "lexical": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=17.x",

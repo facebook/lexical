@@ -22,7 +22,6 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalExtensionEditorComposer} from '@lexical/react/LexicalExtensionEditorComposer';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getRoot,
@@ -36,8 +35,10 @@ import {
   COMMAND_PRIORITY_LOW,
   createCommand,
   DRAGSTART_COMMAND,
+  getActiveElement,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
+  mergeRegister,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
@@ -268,7 +269,7 @@ export default function ImageComponent({
   const isInNodeSelection = useMemo(
     () =>
       isSelected &&
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
         return $isNodeSelection(selection) && selection.has(nodeKey);
       }),
@@ -292,7 +293,9 @@ export default function ImageComponent({
           return true;
         } else if (
           buttonElem !== null &&
-          buttonElem !== document.activeElement
+          // getActiveElement rather than document.activeElement, which reports
+          // the shadow host when the editor is in a shadow root.
+          buttonElem !== getActiveElement(buttonElem)
         ) {
           event.preventDefault();
           buttonElem.focus();
@@ -349,7 +352,7 @@ export default function ImageComponent({
 
   const onRightClick = useCallback(
     (event: MouseEvent): void => {
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const latestSelection = $getSelection();
         const domElement = event.target as HTMLElement;
         if (

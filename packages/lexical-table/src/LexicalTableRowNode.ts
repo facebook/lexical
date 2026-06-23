@@ -8,9 +8,10 @@
 
 import type {BaseSelection, LexicalUpdateJSON, Spread} from 'lexical';
 
-import {$descendantsMatching, addClassNamesToElement} from '@lexical/utils';
+import {$descendantsMatching} from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  addClassNamesToElement,
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,

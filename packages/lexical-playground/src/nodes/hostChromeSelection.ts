@@ -8,15 +8,16 @@
 
 import type {LexicalEditor, LexicalNode} from 'lexical';
 
-import {mergeRegister} from '@lexical/utils';
 import {
   $createNodeSelection,
   $getNearestNodeFromDOMNode,
   $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_BEFORE_EDITOR,
+  getActiveElement,
   getDOMSelection,
   isHTMLElement,
+  mergeRegister,
 } from 'lexical';
 
 /**
@@ -78,7 +79,7 @@ export function registerHostChromeSelection<T extends LexicalNode>(
     if (editor.read(() => $resolveChromeTarget(target) !== null)) {
       event.preventDefault();
       const root = editor.getRootElement();
-      if (root !== null && root !== document.activeElement) {
+      if (root !== null && root !== getActiveElement(root)) {
         root.focus({preventScroll: true});
         const domSelection = getDOMSelection(root.ownerDocument.defaultView);
         if (domSelection !== null) {

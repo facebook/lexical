@@ -7,8 +7,7 @@
  */
 
 import {registerLexicalTextEntity} from '@lexical/text';
-import {mergeRegister} from '@lexical/utils';
-import {defineExtension, LexicalEditor} from 'lexical';
+import {defineExtension, LexicalEditor, mergeRegister} from 'lexical';
 
 import {$createHashtagNode, HashtagNode} from './LexicalHashtagNode';
 

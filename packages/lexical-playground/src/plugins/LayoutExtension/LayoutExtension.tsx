@@ -13,7 +13,6 @@ import {
   $insertNodeToNearestRoot,
   $onEscapeDown,
   $onEscapeUp,
-  mergeRegister,
 } from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -27,6 +26,7 @@ import {
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
+  mergeRegister,
 } from 'lexical';
 
 import {

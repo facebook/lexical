@@ -8,11 +8,11 @@
 
 import {effect, namedSignals} from '@lexical/extension';
 import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
-import {mergeRegister} from '@lexical/utils';
 import {
   $fullReconcile,
   configExtension,
   defineExtension,
+  mergeRegister,
   safeCast,
 } from 'lexical';
 

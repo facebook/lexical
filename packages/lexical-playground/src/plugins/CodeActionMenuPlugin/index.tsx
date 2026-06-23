@@ -17,7 +17,11 @@ import {
   normalizeCodeLanguage,
 } from '@lexical/code-prism';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getNearestNodeFromDOMNode, isHTMLElement} from 'lexical';
+import {
+  $getNearestNodeFromDOMNode,
+  getComposedEventTarget,
+  isHTMLElement,
+} from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
@@ -116,7 +120,7 @@ function CodeActionMenuContainer({
     return editor.registerMutationListener(
       CodeNode,
       mutations => {
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           for (const [key, type] of mutations) {
             switch (type) {
               case 'created':
@@ -171,7 +175,7 @@ function getMouseInfo(event: MouseEvent): {
   codeDOMNode: HTMLElement | null;
   isOutside: boolean;
 } {
-  const target = event.target;
+  const target = getComposedEventTarget(event);
 
   if (isHTMLElement(target)) {
     const codeDOMNode = target.closest<HTMLElement>(

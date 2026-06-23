@@ -28,6 +28,7 @@ import {
   $getChildCaret,
   $getSiblingCaret,
   $getTextNodeOffset,
+  $insertNodeToNearestRootAtCaret,
   $isChildCaret,
   $isDecoratorNode,
   $isElementNode,
@@ -93,12 +94,21 @@ import {
   $isTokenOrTab,
   $setCompositionKey,
   doesContainSurrogatePair,
+  getActiveElement,
+  getActiveElementDeep,
+  getComposedStaticRange,
   getDOMSelection,
+  getDOMSelectionPoints,
+  getDOMSelectionRange,
   getElementByKeyOrThrow,
+  getNearestEditorFromDOMNode,
   getNodeKeyFromDOMNode,
   getWindow,
   INTERNAL_$isBlock,
   isDOMCapturingSelection,
+  isDOMDocumentNode,
+  isDOMShadowRoot,
+  isDOMTextNode,
   isHTMLElement,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
@@ -301,7 +311,15 @@ function $transferStartingElementPointToTextPoint(
   if ($isParagraphNode(placementNode)) {
     placementNode.splice(0, 0, [textNode]);
   } else if (placementNode !== null) {
-    const target = $isRootNode(element)
+    // root or shadow-root + element-mode anchor before a non-paragraph
+    // child (typically a sibling block decorator): wrap the new text in
+    // a paragraph so it stays a valid block-level child of the root or
+    // slot frame. The last-offset branch below already covers shadow
+    // roots; the in-the-middle case used to drop a raw text node next
+    // to the decorator, which leaves the text without a block ancestor
+    // and breaks every downstream getTopLevelElement / $findMatchingParent
+    // walk (Cmd+A, Enter, etc.).
+    const target = $isRootOrShadowRoot(element)
       ? $createParagraphNode().append(textNode)
       : textNode;
     placementNode.insertBefore(target);
@@ -1406,15 +1424,6 @@ export class RangeSelection implements BaseSelection {
     if (!this.isCollapsed()) {
       this.removeText();
     }
-    if (this.anchor.key === 'root') {
-      this.insertParagraph();
-      const selection = $getSelection();
-      invariant(
-        $isRangeSelection(selection),
-        'Expected RangeSelection after insertParagraph',
-      );
-      return selection.insertNodes(nodes);
-    }
     // @experimental named-slots. Anchor on a slot value root (e.g. after a
     // slot-scoped Cmd+A leaves the selection on the slot's element point)
     // has __parent === null, so the block-finding walk below would throw.
@@ -1433,10 +1442,35 @@ export class RangeSelection implements BaseSelection {
       // block-shaped value (virtual shadow root around a single block) needs
       // no seeding: it IS the block, so the block-finding walk below lands
       // on it directly.
-      const firstChild = anchorNode.isShadowRoot()
+      let firstChild = anchorNode.isShadowRoot()
         ? (anchorNode.getFirstChild() ??
           anchorNode.append($createParagraphNode()).getFirstChild())
         : anchorNode.getFirstChild();
+      // A shadow-root slot whose first child is a non-element (typically a
+      // decorator like HorizontalRuleNode) would re-enter this same branch
+      // forever: `firstChild.selectStart()` resolves back to the slot value's
+      // own element-mode caret (no sibling, parent = the slot value root),
+      // which matches the entry condition above. Seed a paragraph before the
+      // non-element first child so the redirected selection lands in a block
+      // and the recursion terminates.
+      //
+      // The seed paragraph is the redirect target only — if `nodes` carries
+      // inline content the recursion fills the paragraph in place, and if it
+      // carries block content the recursion's root/shadow-root branch
+      // (`splice` after `$wrapInlineNodes`) inserts the new blocks before the
+      // existing non-element first child while the seed sits at offset 0 as
+      // the new shadow-root first child. In either case the seed ends up
+      // hosting either the inserted content or an empty leading line, never
+      // a stranded paragraph next to the original non-element child.
+      if (
+        anchorNode.isShadowRoot() &&
+        firstChild !== null &&
+        !$isElementNode(firstChild)
+      ) {
+        const seed = $createParagraphNode();
+        firstChild.insertBefore(seed);
+        firstChild = seed;
+      }
       if (firstChild !== null) {
         firstChild.selectStart();
         const redirected = $getSelection();
@@ -1446,6 +1480,25 @@ export class RangeSelection implements BaseSelection {
         );
         return redirected.insertNodes(nodes);
       }
+    }
+
+    // The anchor is an element point directly on a root or shadow root that is
+    // not a named-slot host (handled above). This includes the document root
+    // (e.g. an empty editor) and shadow roots that hold block-level children
+    // directly — for instance the block cursor between or after the children of
+    // a decorator-only container or the playground CollapsibleContentNode.
+    // Roots and shadow roots hold blocks (and shadow roots) directly, so splice
+    // the nodes in at the anchor offset: a block node (such as a pasted
+    // DecoratorNode) goes in as-is, while inline runs are wrapped in a block
+    // first since a root/shadow root cannot contain inline children.
+    if (this.anchor.type === 'element' && $isRootOrShadowRoot(anchorNode)) {
+      const blocksParent = $wrapInlineNodes(nodes);
+      const nodeToSelect = blocksParent.getLastDescendant();
+      anchorNode.splice(this.anchor.offset, 0, blocksParent.getChildren());
+      if (nodeToSelect !== null) {
+        nodeToSelect.selectEnd();
+      }
+      return;
     }
 
     const firstPoint = this.isBackward() ? this.focus : this.anchor;
@@ -1490,6 +1543,59 @@ export class RangeSelection implements BaseSelection {
     // stripped like the input value sanitization strips newlines, and
     // block-only decorators are dropped, having no single-line form).
     if ($isElementNode(firstBlock) && $getSlotHostKey(firstBlock) !== null) {
+      const index = $removeTextAndSplitBlock(this);
+      const inlineNodes = $extractInlineFromBlocks(nodes);
+      firstBlock.splice(index, 0, inlineNodes);
+      const lastInserted = inlineNodes[inlineNodes.length - 1];
+      if (lastInserted !== undefined) {
+        lastInserted.selectEnd();
+      } else {
+        firstBlock.select(index, index);
+      }
+      return;
+    }
+
+    // CASE 3b: there is non-inline content but no block ancestor to insert it
+    // relative to. The element point on a root/shadow root is handled above, so
+    // this is a malformed document where an inline-only element directly holds
+    // a block child (e.g. a HorizontalRuleNode inside a CollapsibleTitleNode,
+    // see #8713) or a non-inline element that reports canBeEmpty() === false.
+    // A non-inline node must never become the child of an inline-only element,
+    // so enforce the document structure rules with
+    // $insertNodeToNearestRootAtCaret, which splits the ancestor chain up to
+    // the nearest node that may contain non-inline children (a root or shadow
+    // root) and inserts the blocks there. Lists are unaffected: a list item is
+    // always a block ancestor, so they fall through to CASE 3 and keep their
+    // existing (ListItemNode-aware) paste behavior.
+    if (firstBlock === null) {
+      const blocksParent = $wrapInlineNodes(nodes);
+      const nodeToSelect = blocksParent.getLastDescendant();
+      // Split the ancestor chain up to the nearest root or shadow root and
+      // insert each block there.
+      let caret: PointCaret<'next'> = $caretFromPoint(this.anchor, 'next');
+      for (const block of blocksParent.getChildren()) {
+        caret = $insertNodeToNearestRootAtCaret(block, caret);
+      }
+      if (nodeToSelect !== null) {
+        nodeToSelect.selectEnd();
+      }
+      return;
+    }
+
+    // CASE 3c: the target block exists but its parent is not a root or shadow
+    // root — the only elements that may contain non-inline children — and the
+    // block does not relocate itself to a valid parent (it is not
+    // parent-required, unlike a ListItemNode, whose insertAfter escapes the
+    // list). Inserting the blocks as siblings here would nest them in an
+    // inline-only element, e.g. a HorizontalRuleNode pasted into the
+    // ParagraphNode of a CollapsibleTitleNode (see #8724). Mirror CASE 3a and
+    // flatten the incoming nodes to their inline content, dropping the
+    // block-level parts that have no inline form.
+    if (
+      $isElementNode(firstBlock) &&
+      !firstBlock.isParentRequired() &&
+      !$isRootOrShadowRoot(firstBlock.getParentOrThrow())
+    ) {
       const index = $removeTextAndSplitBlock(this);
       const inlineNodes = $extractInlineFromBlocks(nodes);
       firstBlock.splice(index, 0, inlineNodes);
@@ -1570,9 +1676,10 @@ export class RangeSelection implements BaseSelection {
    * @returns the newly inserted node.
    */
   insertParagraph(): ElementNode | null {
-    if (this.anchor.key === 'root') {
+    const anchorNode = this.anchor.getNode();
+    if (this.anchor.type === 'element' && $isRootOrShadowRoot(anchorNode)) {
       const paragraph = $createParagraphNode();
-      $getRoot().splice(this.anchor.offset, 0, [paragraph]);
+      anchorNode.splice(this.anchor.offset, 0, [paragraph]);
       paragraph.select();
       return paragraph;
     }
@@ -1765,7 +1872,13 @@ export class RangeSelection implements BaseSelection {
     );
     // Guard against no ranges
     if (domSelection.rangeCount > 0) {
-      const range = domSelection.getRangeAt(0);
+      // Inside a DOM shadow root getRangeAt(0) is retargeted to the host;
+      // read the composed StaticRange (real nodes) where available.
+      const composedRange = getComposedStaticRange(
+        domSelection,
+        editor._rootElement,
+      );
+      const range = composedRange || domSelection.getRangeAt(0);
       // Apply the DOM selection to our Lexical selection.
       const anchorNode = this.anchor.getNode();
       const root = $isRootNode(anchorNode)
@@ -1808,11 +1921,16 @@ export class RangeSelection implements BaseSelection {
 
         // Because a range works on start and end, we might need to flip
         // the anchor and focus points to match what the DOM has, not what
-        // the range has specifically.
-        if (
-          domSelection.anchorNode !== range.startContainer ||
-          domSelection.anchorOffset !== range.startOffset
-        ) {
+        // the range has specifically. Inside a shadow root anchorNode is
+        // retargeted to the host, so use the standard Selection.direction.
+        // If a future engine ships getComposedRanges without direction
+        // this falls through to forward; backward fidelity is the known
+        // limitation documented on getDOMSelectionPoints.
+        const anchorIsAtRangeStart = composedRange
+          ? domSelection.direction !== 'backward'
+          : domSelection.anchorNode === range.startContainer &&
+            domSelection.anchorOffset === range.startOffset;
+        if (!anchorIsAtRangeStart) {
           $swapPoints(this);
         }
       }
@@ -1937,6 +2055,24 @@ export class RangeSelection implements BaseSelection {
             } else if ($isDecoratorNode(caret.origin)) {
               if (caret.origin.isIsolated()) {
                 // do nothing, shouldn't delete an isolated decorator
+              } else if ($getSlotNames(caret.origin).length > 0) {
+                // A slot-bearing decorator is removed only as a unit by an
+                // explicit host deletion, never silently via backspace —
+                // same policy as the merge-block branch below for
+                // ElementNode-as-host. When the anchor is an empty
+                // paragraph next to the host, drop the paragraph and
+                // select the host (matches the shadow-root ElementNode
+                // path at line 1951–1962 above); otherwise leave both in
+                // place.
+                if (
+                  $isElementNode(initialRange.anchor.origin) &&
+                  initialRange.anchor.origin.isEmpty()
+                ) {
+                  initialRange.anchor.origin.remove();
+                  const nodeSelection = $createNodeSelection();
+                  nodeSelection.add(caret.origin.getKey());
+                  $setSelection(nodeSelection);
+                }
               } else if (
                 state.type === 'merge-next-block' &&
                 (caret.origin.isKeyboardSelectable() ||
@@ -3094,10 +3230,11 @@ export function $internalCreateRangeSelection(
     if (domSelection === null) {
       return null;
     }
-    anchorDOM = domSelection.anchorNode;
-    focusDOM = domSelection.focusNode;
-    anchorOffset = domSelection.anchorOffset;
-    focusOffset = domSelection.focusOffset;
+    const points = getDOMSelectionPoints(domSelection, editor._rootElement);
+    anchorDOM = points.anchorNode;
+    focusDOM = points.focusNode;
+    anchorOffset = points.anchorOffset;
+    focusOffset = points.focusOffset;
     if (
       (isSelectionChange || eventType === undefined) &&
       $isRangeSelection(lastSelection) &&
@@ -3453,17 +3590,45 @@ export function $updateDOMSelection(
   tags: Set<string>,
   rootElement: HTMLElement,
 ): void {
-  const activeElement = document.activeElement;
+  const rootForActive = rootElement.getRootNode();
+  const activeElement =
+    isDOMDocumentNode(rootForActive) || isDOMShadowRoot(rootForActive)
+      ? getActiveElementDeep(rootForActive)
+      : null;
 
   // TODO: make this not hard-coded, and add another config option
   // that makes this configurable.
   if (
     (tags.has(COLLABORATION_TAG) && activeElement !== rootElement) ||
     (activeElement !== null &&
-      isSelectionCapturedInDecoratorInput(activeElement))
+      isSelectionCapturedInDecoratorInput(activeElement, activeElement))
   ) {
     return;
   }
+
+  // Resolve the live DOM selection's boundary points through any enclosing
+  // DOM shadow roots; Selection.anchorNode/focusNode are retargeted to the
+  // shadow host, so the comparisons below read composed points instead. In
+  // the light DOM getDOMSelectionPoints returns `domSelection` itself (no
+  // Selection property reads happen here), so `currentPoints` aliases it
+  // and preserves the deferred reads described below. The matching live
+  // Range is computed lazily in `getCurrentRange()` so the scroll-into-view
+  // fallback below is the only path that pays `getRangeAt(0)`'s layout
+  // flush — `getDOMSelectionRangeAndPoints()` (the public helper) still
+  // returns both eagerly for external callers.
+  const currentPoints = getDOMSelectionPoints(domSelection, rootElement);
+  let currentRangeCache: Range | null | undefined;
+  const getCurrentRange = (): Range | null => {
+    if (currentRangeCache === undefined) {
+      // Resolve through any enclosing shadow roots: getRangeAt(0) alone is
+      // retargeted to the shadow host inside a shadow tree, so the
+      // scroll-into-view rect below would measure the host instead of the
+      // caret. getDOMSelectionRange falls back to getRangeAt(0) in the light
+      // DOM.
+      currentRangeCache = getDOMSelectionRange(domSelection, rootElement);
+    }
+    return currentRangeCache;
+  };
 
   if (!$isRangeSelection(nextSelection)) {
     // We don't remove selection if the prevSelection is null because
@@ -3474,8 +3639,8 @@ export function $updateDOMSelection(
       prevSelection !== null &&
       isSelectionWithinEditor(
         editor,
-        domSelection.anchorNode,
-        domSelection.focusNode,
+        currentPoints.anchorNode,
+        currentPoints.focusNode,
       )
     ) {
       domSelection.removeAllRanges();
@@ -3560,14 +3725,24 @@ export function $updateDOMSelection(
   // sometimes be problematic around scrolling.
   if (
     !(domSelection.type === 'Range' && isCollapsed) && // Badly interpreted range selection when collapsed - #1482
-    domSelection.anchorOffset === nextAnchorOffset &&
-    domSelection.focusOffset === nextFocusOffset &&
-    domSelection.anchorNode === nextAnchorNode &&
-    domSelection.focusNode === nextFocusNode
+    currentPoints.anchorOffset === nextAnchorOffset &&
+    currentPoints.focusOffset === nextFocusOffset &&
+    currentPoints.anchorNode === nextAnchorNode &&
+    currentPoints.focusNode === nextFocusNode
   ) {
-    // If the root element does not have focus, ensure it has focus
+    // If the root element does not have focus, ensure it has focus — but
+    // not when the deep-focused element belongs to a different editor
+    // (e.g. the inner editor of a coexisting outer-editor / shadow-editor
+    // pair). Stealing focus there breaks the user's typing flow.
     if (activeElement === null || !rootElement.contains(activeElement)) {
-      if (!tags.has(SKIP_SELECTION_FOCUS_TAG)) {
+      const focusEditor =
+        activeElement !== null
+          ? getNearestEditorFromDOMNode(activeElement)
+          : null;
+      if (
+        (focusEditor === null || focusEditor === editor) &&
+        !tags.has(SKIP_SELECTION_FOCUS_TAG)
+      ) {
         rootElement.focus({
           preventScroll: true,
         });
@@ -3596,35 +3771,60 @@ export function $updateDOMSelection(
     IS_FIREFOX &&
     nextSelection.isCollapsed() &&
     rootElement !== null &&
-    !tags.has(SKIP_SELECTION_FOCUS_TAG) &&
-    (document.activeElement === null ||
-      !rootElement.contains(document.activeElement))
+    !tags.has(SKIP_SELECTION_FOCUS_TAG)
   ) {
-    // Restore focus immediately to ensure cursor visibility
-    rootElement.focus({preventScroll: true});
-    // Note: We rely on the normal selection update mechanism to ensure the cursor
-    // is visible. Using requestAnimationFrame here could cause race conditions where
-    // another update changes the selection before the rAF callback executes.
+    // Shallow active element for the containment check: rootElement.contains()
+    // does not cross shadow boundaries, so a host-retargeted result gives the
+    // correct containment outcome (and avoids a false "outside" when focus is
+    // in a nested decorator shadow inside this editor).
+    const focusedElement = getActiveElement(rootElement);
+    if (focusedElement === null || !rootElement.contains(focusedElement)) {
+      // Don't steal focus when the active element belongs to a *different*
+      // editor (e.g. the inner editor of a coexisting outer-editor /
+      // shadow-editor pair). Resolve the *deep* focused element for this
+      // attribution: a shallow read returns the other editor's shadow host,
+      // which getNearestEditorFromDOMNode can't map back to that editor, so
+      // the guard would otherwise wrongly steal focus from a shadow-mounted
+      // sibling.
+      const deepFocusedElement = getActiveElementDeep(
+        rootElement.ownerDocument,
+      );
+      const focusEditor =
+        deepFocusedElement !== null
+          ? getNearestEditorFromDOMNode(deepFocusedElement)
+          : null;
+      if (focusEditor === null || focusEditor === editor) {
+        // Restore focus immediately to ensure cursor visibility.
+        // Note: We rely on the normal selection update mechanism to ensure the
+        // cursor is visible. Using requestAnimationFrame here could cause race
+        // conditions where another update changes the selection before the rAF
+        // callback executes.
+        rootElement.focus({preventScroll: true});
+      }
+    }
   }
 
   if (
     !tags.has(SKIP_SCROLL_INTO_VIEW_TAG) &&
     nextSelection.isCollapsed() &&
     rootElement !== null &&
-    rootElement === document.activeElement
+    // Re-read the active element rather than a value cached before the focus
+    // restore / selection mutation above, which can become stale (e.g. when
+    // setting the DOM selection focuses the contentEditable as a side effect).
+    // Shallow is sufficient here for the same reason as the Firefox branch
+    // above: the equality check doesn't cross the shadow boundary.
+    rootElement === getActiveElement(rootElement)
   ) {
     const selectionTarget: null | Range | HTMLElement | Text =
       $isRangeSelection(nextSelection) &&
       nextSelection.anchor.type === 'element'
         ? (nextAnchorNode.childNodes[nextAnchorOffset] as HTMLElement | Text) ||
           null
-        : domSelection.rangeCount > 0
-          ? domSelection.getRangeAt(0)
-          : null;
+        : getCurrentRange();
     if (selectionTarget !== null) {
       let selectionRect: DOMRect;
-      if (selectionTarget instanceof Text) {
-        const range = document.createRange();
+      if (isDOMTextNode(selectionTarget)) {
+        const range = selectionTarget.ownerDocument.createRange();
         range.selectNode(selectionTarget);
         selectionRect = range.getBoundingClientRect();
       } else {

@@ -12,10 +12,7 @@ import type {JSX} from 'react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {
-  $getNearestBlockElementAncestorOrThrow,
-  mergeRegister,
-} from '@lexical/utils';
+import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -24,6 +21,8 @@ import {
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   FORMAT_ELEMENT_COMMAND,
+  getComposedEventTarget,
+  mergeRegister,
 } from 'lexical';
 import * as React from 'react';
 import {ReactNode, useEffect, useRef} from 'react';
@@ -38,6 +37,15 @@ type Props = Readonly<{
   }>;
 }>;
 
+/**
+ * A wrapper component for the contents of a {@link DecoratorBlockNode} that
+ * keeps the block in sync with node selection and element alignment. It renders
+ * its `children` inside a container that reflects the node's `format`
+ * alignment, responds to `FORMAT_ELEMENT_COMMAND` to update that alignment, and
+ * toggles the node's selection when the container is clicked.
+ *
+ * @returns The element to render for the decorator block.
+ */
 export function BlockWithAlignableContents({
   children,
   format,
@@ -87,7 +95,7 @@ export function BlockWithAlignableContents({
       editor.registerCommand<MouseEvent>(
         CLICK_COMMAND,
         event => {
-          if (event.target === ref.current) {
+          if (getComposedEventTarget(event) === ref.current) {
             event.preventDefault();
             if (!event.shiftKey) {
               clearSelection();

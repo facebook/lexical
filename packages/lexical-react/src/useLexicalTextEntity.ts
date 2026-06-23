@@ -11,9 +11,16 @@ import type {Klass, TextNode} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {registerLexicalTextEntity} from '@lexical/text';
-import {mergeRegister} from '@lexical/utils';
+import {mergeRegister} from 'lexical';
 import {useEffect} from 'react';
 
+/**
+ * Registers a text entity on the current editor: text matched by `getMatch` is
+ * automatically wrapped in instances of `targetNode` (created via `createNode`)
+ * and unwrapped when it no longer matches. This is the React wrapper around
+ * `registerLexicalTextEntity` and is the basis for features such as hashtags
+ * and mentions.
+ */
 export function useLexicalTextEntity<T extends TextNode>(
   getMatch: (text: string) => null | EntityMatch,
   targetNode: Klass<T>,

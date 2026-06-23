@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
   $applyNodeReplacement,
   $copyNode,
@@ -17,11 +16,16 @@ import {
   $isTokenOrSegmented,
   $nodesOfType,
   $onUpdate,
+  $setCompositionKey,
   $setState,
   createEditor,
   createState,
+  ElementNode,
+  getParentElement,
   getRegisteredSubtypeMap,
+  getTextDirection,
   IS_APPLE,
+  isExactShortcutMatch,
   isSelectionWithinEditor,
   LineBreakNode,
   ParagraphNode,
@@ -30,17 +34,23 @@ import {
   TabNode,
   TextNode,
 } from 'lexical';
-import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  onTestFinished,
+  test,
+  vi,
+} from 'vitest';
 
 import {
-  $setCompositionKey,
   $updateTextNodeFromDOMContent,
   emptyFunction,
   generateRandomKey,
   getCachedTypeToNodeMap,
-  getTextDirection,
+  getStaticNodeConfig,
   isArray,
-  isExactShortcutMatch,
   isMoveToEnd,
   isMoveToStart,
   scheduleMicroTask,
@@ -117,6 +127,56 @@ describe('LexicalUtils tests', () => {
     test('isArray()', () => {
       expect(isArray).toBeInstanceOf(Function);
       expect(isArray).toBe(Array.isArray);
+    });
+
+    describe('getStaticNodeConfig()', () => {
+      test('derives the type and config from $config()', () => {
+        class StaticConfigNode extends TextNode {
+          $config() {
+            return this.config('static-config-node', {extends: TextNode});
+          }
+        }
+
+        const {ownNodeConfig, ownNodeType} =
+          getStaticNodeConfig(StaticConfigNode);
+
+        expect(ownNodeType).toBe('static-config-node');
+        expect(ownNodeConfig).toMatchObject({
+          extends: TextNode,
+          type: 'static-config-node',
+        });
+        expect(StaticConfigNode.getType()).toBe('static-config-node');
+      });
+
+      test('caches the result for a node class', () => {
+        const $config = vi.fn(function (this: TextNode) {
+          return this.config('cached-static-config-node', {
+            extends: TextNode,
+          });
+        });
+        class CachedStaticConfigNode extends TextNode {
+          $config() {
+            return $config.call(this);
+          }
+        }
+
+        const first = getStaticNodeConfig(CachedStaticConfigNode);
+        const second = getStaticNodeConfig(CachedStaticConfigNode);
+
+        expect(first).toBe(second);
+        expect($config).toHaveBeenCalledTimes(1);
+      });
+
+      test('resolves symbol-keyed config for abstract node classes', () => {
+        const {ownNodeConfig, ownNodeType} = getStaticNodeConfig(ElementNode);
+
+        expect(ownNodeType).toBe(undefined);
+        expect(ownNodeConfig).toMatchObject({
+          // LexicalNode
+          extends: ElementNode.prototype.constructor.prototype,
+        });
+        expect(ownNodeConfig?.$transform).toBeInstanceOf(Function);
+      });
     });
 
     test('isSelectionWithinEditor()', async () => {
@@ -395,7 +455,7 @@ describe('LexicalUtils tests', () => {
         rootNode.append(paragraphNode);
       });
 
-      await editor.getEditorState().read(() => {
+      await editor.read('latest', () => {
         expect($getNodeByKey('1')).toBe(paragraphNode);
         expect($getNodeByKey('2')).toBe(textNode);
         expect($getNodeByKey('3')).toBe(null);
@@ -425,7 +485,7 @@ describe('LexicalUtils tests', () => {
           expect.arrayContaining(paragraphKeys),
         );
       });
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const currentParagraphKeys = $paragraphKeys();
         expect(currentParagraphKeys).toHaveLength(paragraphKeys.length);
         expect(currentParagraphKeys).toEqual(
@@ -1099,5 +1159,66 @@ describe('$updateTextNodeFromDOMContent', () => {
     editor.read(() => {
       expect(textNode.getLatest().getTextContent()).toBe('ツ');
     });
+  });
+});
+
+describe('getParentElement', () => {
+  test('crosses ShadowRoot to host when parentElement is null', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    onTestFinished(() => host.remove());
+    const shadow = host.attachShadow({mode: 'open'});
+    const child = document.createElement('span');
+    shadow.appendChild(child);
+
+    expect(getParentElement(child)).toBe(host);
+  });
+
+  test('returns the light-DOM parentElement when present', () => {
+    const parent = document.createElement('div');
+    const child = document.createElement('span');
+    parent.appendChild(child);
+    document.body.appendChild(parent);
+    onTestFinished(() => parent.remove());
+
+    expect(getParentElement(child)).toBe(parent);
+  });
+
+  test('crosses one ShadowRoot per call for nested shadow trees', () => {
+    const outerHost = document.createElement('div');
+    document.body.appendChild(outerHost);
+    onTestFinished(() => outerHost.remove());
+    const outerShadow = outerHost.attachShadow({mode: 'open'});
+    const innerHost = document.createElement('div');
+    outerShadow.appendChild(innerHost);
+    const innerShadow = innerHost.attachShadow({mode: 'open'});
+    const grandchild = document.createElement('span');
+    innerShadow.appendChild(grandchild);
+
+    // First call crosses the inner shadow boundary up to its host.
+    expect(getParentElement(grandchild)).toBe(innerHost);
+    // A second call from the inner host crosses the outer shadow boundary.
+    expect(getParentElement(innerHost)).toBe(outerHost);
+  });
+
+  test('returns null for a detached node with no parent', () => {
+    const orphan = document.createElement('span');
+    expect(getParentElement(orphan)).toBeNull();
+  });
+
+  test('returns parent element for a text node inside a shadow tree', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    onTestFinished(() => host.remove());
+    const shadow = host.attachShadow({mode: 'open'});
+    const span = document.createElement('span');
+    shadow.appendChild(span);
+    const text = document.createTextNode('hello');
+    span.appendChild(text);
+
+    // Text node's parentElement is the span (no boundary crossed yet).
+    expect(getParentElement(text)).toBe(span);
+    // From the span, the next call crosses the shadow boundary to the host.
+    expect(getParentElement(span)).toBe(host);
   });
 });

@@ -6,7 +6,7 @@
  *
  */
 
-import {LexicalEditor} from 'lexical';
+import {getDOMSelectionPoints, LexicalEditor} from 'lexical';
 
 import markSelection from './markSelection';
 
@@ -17,9 +17,23 @@ export default function selectionAlwaysOnDisplay(
   let removeSelectionMark: (() => void) | null = null;
 
   const onSelectionChange = () => {
-    const domSelection = getSelection();
-    const domAnchorNode = domSelection && domSelection.anchorNode;
     const editorRootElement = editor.getRootElement();
+    // Read the selection from the editor's own document/window so iframe-
+    // mounted editors don't fall back to the global one. The selectionchange
+    // listener below is registered on rootElement.ownerDocument, so this
+    // matches the event's source.
+    const targetWindow =
+      editorRootElement !== null
+        ? editorRootElement.ownerDocument.defaultView
+        : null;
+    const domSelection =
+      targetWindow !== null ? targetWindow.getSelection() : null;
+    // Shadow-aware anchor so the contains() check below isn't fooled by the
+    // retargeted host.
+    const domAnchorNode =
+      domSelection !== null
+        ? getDOMSelectionPoints(domSelection, editorRootElement).anchorNode
+        : null;
 
     const isSelectionInsideEditor =
       domAnchorNode !== null &&

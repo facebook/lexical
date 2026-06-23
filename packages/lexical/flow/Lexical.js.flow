@@ -725,6 +725,11 @@ declare export function $createNodeSelection(): NodeSelection;
 declare export function $isRangeSelection(
   x: ?unknown,
 ): x is RangeSelection;
+declare export function $formatText(
+  selection: RangeSelection | NodeSelection,
+  formatType: TextFormatType,
+  alignWithFormat?: number | null,
+): void;
 declare export function $getSelection(): null | BaseSelection;
 declare export function $getPreviousSelection(): null | BaseSelection;
 declare export function $insertNodes(nodes: LexicalNode[]): void;

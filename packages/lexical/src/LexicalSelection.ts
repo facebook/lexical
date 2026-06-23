@@ -1270,144 +1270,7 @@ export class RangeSelection implements BaseSelection {
     formatType: TextFormatType,
     alignWithFormat: number | null = null,
   ): void {
-    if (this.isCollapsed()) {
-      this.toggleFormat(formatType);
-      // When changing format, we should stop composition
-      $setCompositionKey(null);
-      return;
-    }
-
-    const selectedNodes = this.getNodes();
-    const selectedTextNodes: TextNode[] = [];
-    for (const selectedNode of selectedNodes) {
-      if ($isTextNode(selectedNode)) {
-        selectedTextNodes.push(selectedNode);
-      }
-    }
-    const applyFormatToElements = (alignWith: number | null) => {
-      selectedNodes.forEach(node => {
-        if ($isElementNode(node)) {
-          const newFormat = node.getFormatFlags(formatType, alignWith);
-          node.setTextFormat(newFormat);
-        }
-      });
-    };
-
-    const selectedTextNodesLength = selectedTextNodes.length;
-    if (selectedTextNodesLength === 0) {
-      this.toggleFormat(formatType);
-      // When changing format, we should stop composition
-      $setCompositionKey(null);
-      applyFormatToElements(alignWithFormat);
-      return;
-    }
-
-    const anchor = this.anchor;
-    const focus = this.focus;
-    const isBackward = this.isBackward();
-    const startPoint = isBackward ? focus : anchor;
-    const endPoint = isBackward ? anchor : focus;
-
-    let firstIndex = 0;
-    let firstNode = selectedTextNodes[0];
-    let startOffset = startPoint.type === 'element' ? 0 : startPoint.offset;
-
-    // In case selection started at the end of text node use next text node
-    if (
-      startPoint.type === 'text' &&
-      startOffset === firstNode.getTextContentSize()
-    ) {
-      firstIndex = 1;
-      firstNode = selectedTextNodes[1];
-      startOffset = 0;
-    }
-
-    if (firstNode == null) {
-      return;
-    }
-
-    const firstNextFormat = firstNode.getFormatFlags(
-      formatType,
-      alignWithFormat,
-    );
-    applyFormatToElements(firstNextFormat);
-
-    const lastIndex = selectedTextNodesLength - 1;
-    let lastNode = selectedTextNodes[lastIndex];
-    const endOffset =
-      endPoint.type === 'text'
-        ? endPoint.offset
-        : lastNode.getTextContentSize();
-
-    // Single node selected
-    if (firstNode.is(lastNode)) {
-      // No actual text is selected, so do nothing.
-      if (startOffset === endOffset) {
-        return;
-      }
-      // The entire node is selected or it is token, so just format it
-      if (
-        $isTokenOrSegmented(firstNode) ||
-        (startOffset === 0 && endOffset === firstNode.getTextContentSize())
-      ) {
-        firstNode.setFormat(firstNextFormat);
-      } else {
-        // Node is partially selected, so split it into two nodes
-        // add style the selected one.
-        const splitNodes = firstNode.splitText(startOffset, endOffset);
-        const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-        replacement.setFormat(firstNextFormat);
-
-        // Update selection only if starts/ends on text node
-        if (startPoint.type === 'text') {
-          startPoint.set(replacement.__key, 0, 'text');
-        }
-        if (endPoint.type === 'text') {
-          endPoint.set(replacement.__key, endOffset - startOffset, 'text');
-        }
-      }
-
-      this.format = firstNextFormat;
-
-      return;
-    }
-    // Multiple nodes selected
-    // The entire first node isn't selected, so split it
-    if (startOffset !== 0 && !$isTokenOrSegmented(firstNode)) {
-      [, firstNode] = firstNode.splitText(startOffset);
-      startOffset = 0;
-    }
-    firstNode.setFormat(firstNextFormat);
-
-    const lastNextFormat = lastNode.getFormatFlags(formatType, firstNextFormat);
-    // If the offset is 0, it means no actual characters are selected,
-    // so we skip formatting the last node altogether.
-    if (endOffset > 0) {
-      if (
-        endOffset !== lastNode.getTextContentSize() &&
-        !$isTokenOrSegmented(lastNode)
-      ) {
-        [lastNode] = lastNode.splitText(endOffset);
-      }
-      lastNode.setFormat(lastNextFormat);
-    }
-
-    // Process all text nodes in between
-    for (let i = firstIndex + 1; i < lastIndex; i++) {
-      const textNode = selectedTextNodes[i];
-      const nextFormat = textNode.getFormatFlags(formatType, lastNextFormat);
-      textNode.setFormat(nextFormat);
-    }
-
-    // Update selection only if starts/ends on text node
-    if (startPoint.type === 'text') {
-      startPoint.set(firstNode.__key, startOffset, 'text');
-    }
-    if (endPoint.type === 'text') {
-      endPoint.set(lastNode.__key, endOffset, 'text');
-    }
-
-    this.format = firstNextFormat | lastNextFormat;
+    $formatText(this, formatType, alignWithFormat);
   }
 
   /**
@@ -2303,6 +2166,196 @@ export class RangeSelection implements BaseSelection {
 
 export function $isNodeSelection(x: unknown): x is NodeSelection {
   return x instanceof NodeSelection;
+}
+
+type InlineFormattableNode = LexicalNode & {
+  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
+  setFormat(format: number): unknown;
+};
+
+function $isInlineFormattableNode(
+  node: LexicalNode,
+): node is InlineFormattableNode {
+  return (
+    !$isTextNode(node) &&
+    !$isElementNode(node) &&
+    typeof (node as InlineFormattableNode).getFormatFlags === 'function' &&
+    typeof (node as InlineFormattableNode).setFormat === 'function'
+  );
+}
+
+/**
+ * Applies the provided format to TextNodes and inline formattable nodes
+ * (e.g. DecoratorTextNode) in the selection, splitting or merging TextNodes
+ * as necessary and aligning all formattable nodes to the same target format.
+ *
+ * For RangeSelection the target format is determined by the first TextNode in
+ * the selection (same semantics as the previous RangeSelection.formatText).
+ * For NodeSelection each node is toggled independently since there is no
+ * TextNode to use as an alignment reference.
+ *
+ * @param selection - the selection whose nodes should be formatted.
+ * @param formatType - the format type to apply.
+ * @param alignWithFormat - optional 32-bit bitmask to align with (RangeSelection only).
+ */
+export function $formatText(
+  selection: RangeSelection | NodeSelection,
+  formatType: TextFormatType,
+  alignWithFormat: number | null = null,
+): void {
+  if ($isNodeSelection(selection)) {
+    for (const node of selection.getNodes()) {
+      if ($isTextNode(node) || $isInlineFormattableNode(node)) {
+        node.setFormat(node.getFormatFlags(formatType, null));
+      }
+    }
+    return;
+  }
+
+  if (selection.isCollapsed()) {
+    selection.toggleFormat(formatType);
+    // When changing format, we should stop composition
+    $setCompositionKey(null);
+    return;
+  }
+
+  const selectedNodes = selection.getNodes();
+  const selectedTextNodes: TextNode[] = [];
+  for (const selectedNode of selectedNodes) {
+    if ($isTextNode(selectedNode)) {
+      selectedTextNodes.push(selectedNode);
+    }
+  }
+
+  const applyFormatToElements = (alignWith: number | null) => {
+    for (const node of selectedNodes) {
+      if ($isElementNode(node)) {
+        const newFormat = node.getFormatFlags(formatType, alignWith);
+        node.setTextFormat(newFormat);
+      }
+    }
+  };
+
+  const applyFormatToInlineNodes = (alignWith: number | null) => {
+    for (const node of selectedNodes) {
+      if ($isInlineFormattableNode(node)) {
+        node.setFormat(node.getFormatFlags(formatType, alignWith));
+      }
+    }
+  };
+
+  const selectedTextNodesLength = selectedTextNodes.length;
+  if (selectedTextNodesLength === 0) {
+    selection.toggleFormat(formatType);
+    // When changing format, we should stop composition
+    $setCompositionKey(null);
+    applyFormatToElements(alignWithFormat);
+    applyFormatToInlineNodes(alignWithFormat);
+    return;
+  }
+
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const isBackward = selection.isBackward();
+  const startPoint = isBackward ? focus : anchor;
+  const endPoint = isBackward ? anchor : focus;
+
+  let firstIndex = 0;
+  let firstNode = selectedTextNodes[0];
+  let startOffset = startPoint.type === 'element' ? 0 : startPoint.offset;
+
+  // In case selection started at the end of text node use next text node
+  if (
+    startPoint.type === 'text' &&
+    startOffset === firstNode.getTextContentSize()
+  ) {
+    firstIndex = 1;
+    firstNode = selectedTextNodes[1];
+    startOffset = 0;
+  }
+
+  if (firstNode == null) {
+    return;
+  }
+
+  const firstNextFormat = firstNode.getFormatFlags(formatType, alignWithFormat);
+  applyFormatToElements(firstNextFormat);
+  applyFormatToInlineNodes(firstNextFormat);
+
+  const lastIndex = selectedTextNodesLength - 1;
+  let lastNode = selectedTextNodes[lastIndex];
+  const endOffset =
+    endPoint.type === 'text' ? endPoint.offset : lastNode.getTextContentSize();
+
+  // Single node selected
+  if (firstNode.is(lastNode)) {
+    // No actual text is selected, so do nothing.
+    if (startOffset === endOffset) {
+      return;
+    }
+    // The entire node is selected or it is token, so just format it
+    if (
+      $isTokenOrSegmented(firstNode) ||
+      (startOffset === 0 && endOffset === firstNode.getTextContentSize())
+    ) {
+      firstNode.setFormat(firstNextFormat);
+    } else {
+      // Node is partially selected, so split it into two nodes
+      // and style the selected one.
+      const splitNodes = firstNode.splitText(startOffset, endOffset);
+      const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
+      replacement.setFormat(firstNextFormat);
+
+      // Update selection only if starts/ends on text node
+      if (startPoint.type === 'text') {
+        startPoint.set(replacement.__key, 0, 'text');
+      }
+      if (endPoint.type === 'text') {
+        endPoint.set(replacement.__key, endOffset - startOffset, 'text');
+      }
+    }
+
+    selection.format = firstNextFormat;
+    return;
+  }
+
+  // Multiple nodes selected
+  // The entire first node isn't selected, so split it
+  if (startOffset !== 0 && !$isTokenOrSegmented(firstNode)) {
+    [, firstNode] = firstNode.splitText(startOffset);
+    startOffset = 0;
+  }
+  firstNode.setFormat(firstNextFormat);
+
+  const lastNextFormat = lastNode.getFormatFlags(formatType, firstNextFormat);
+  // If the offset is 0, it means no actual characters are selected,
+  // so we skip formatting the last node altogether.
+  if (endOffset > 0) {
+    if (
+      endOffset !== lastNode.getTextContentSize() &&
+      !$isTokenOrSegmented(lastNode)
+    ) {
+      [lastNode] = lastNode.splitText(endOffset);
+    }
+    lastNode.setFormat(lastNextFormat);
+  }
+
+  // Process all text nodes in between
+  for (let i = firstIndex + 1; i < lastIndex; i++) {
+    const textNode = selectedTextNodes[i];
+    const nextFormat = textNode.getFormatFlags(formatType, lastNextFormat);
+    textNode.setFormat(nextFormat);
+  }
+
+  // Update selection only if starts/ends on text node
+  if (startPoint.type === 'text') {
+    startPoint.set(firstNode.__key, startOffset, 'text');
+  }
+  if (endPoint.type === 'text') {
+    endPoint.set(lastNode.__key, endOffset, 'text');
+  }
+
+  selection.format = firstNextFormat | lastNextFormat;
 }
 
 function getCharacterOffset(point: PointType): number {

@@ -16,6 +16,7 @@ import type {
 } from 'lexical';
 
 import {
+  $formatText,
   $getSelection,
   $getState,
   $isNodeSelection,
@@ -200,14 +201,10 @@ export const DecoratorTextExtension = /* @__PURE__ */ defineExtension({
       FORMAT_TEXT_COMMAND,
       formatType => {
         const selection = $getSelection();
-        if ($isNodeSelection(selection) || $isRangeSelection(selection)) {
-          for (const node of selection.getNodes()) {
-            if ($isDecoratorTextNode(node)) {
-              node.toggleFormat(formatType);
-            }
-          }
+        if ($isRangeSelection(selection) || $isNodeSelection(selection)) {
+          $formatText(selection, formatType);
+          return true;
         }
-
         return false;
       },
       COMMAND_PRIORITY_LOW,

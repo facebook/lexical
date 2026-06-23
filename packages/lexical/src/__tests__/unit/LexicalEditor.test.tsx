@@ -2861,7 +2861,7 @@ describe('LexicalEditor tests', () => {
       {discrete: true},
     );
 
-    const events: Array<string> = [];
+    const events: string[] = [];
     editor.update(
       () => {
         events.push('update start');

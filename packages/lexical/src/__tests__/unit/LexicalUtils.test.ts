@@ -130,6 +130,56 @@ describe('LexicalUtils tests', () => {
       expect(isArray).toBe(Array.isArray);
     });
 
+    describe('getStaticNodeConfig()', () => {
+      test('derives the type and config from $config()', () => {
+        class StaticConfigNode extends TextNode {
+          $config() {
+            return this.config('static-config-node', {extends: TextNode});
+          }
+        }
+
+        const {ownNodeConfig, ownNodeType} =
+          getStaticNodeConfig(StaticConfigNode);
+
+        expect(ownNodeType).toBe('static-config-node');
+        expect(ownNodeConfig).toMatchObject({
+          extends: TextNode,
+          type: 'static-config-node',
+        });
+        expect(StaticConfigNode.getType()).toBe('static-config-node');
+      });
+
+      test('caches the result for a node class', () => {
+        const $config = vi.fn(function (this: TextNode) {
+          return this.config('cached-static-config-node', {
+            extends: TextNode,
+          });
+        });
+        class CachedStaticConfigNode extends TextNode {
+          $config() {
+            return $config.call(this);
+          }
+        }
+
+        const first = getStaticNodeConfig(CachedStaticConfigNode);
+        const second = getStaticNodeConfig(CachedStaticConfigNode);
+
+        expect(first).toBe(second);
+        expect($config).toHaveBeenCalledTimes(1);
+      });
+
+      test('resolves symbol-keyed config for abstract node classes', () => {
+        const {ownNodeConfig, ownNodeType} = getStaticNodeConfig(ElementNode);
+
+        expect(ownNodeType).toBe(undefined);
+        expect(ownNodeConfig).toMatchObject({
+          // LexicalNode
+          extends: ElementNode.prototype.constructor.prototype,
+        });
+        expect(ownNodeConfig?.$transform).toBeInstanceOf(Function);
+      });
+    });
+
     test('isSelectionWithinEditor()', async () => {
       const {editor} = testEnv;
       let textNode: TextNode;

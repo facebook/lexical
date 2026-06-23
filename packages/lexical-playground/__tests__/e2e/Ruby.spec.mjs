@@ -45,7 +45,7 @@ async function getRubyNodes(page) {
       for (const [, node] of editor.getEditorState()._nodeMap) {
         if (node.getType() === 'ruby') {
           result.push({
-            annotation: node.__annotation,
+            annotation: node.getAnnotation(),
             text: node.__text,
           });
         }

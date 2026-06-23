@@ -19,7 +19,6 @@ import {
   addClassNamesToElement,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
-  type DOMConversionMap,
   type DOMConversionOutput,
   getComposedEventTarget,
   mergeRegister,
@@ -82,27 +81,19 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
  * @deprecated A pure Lexical implementation is available in `@lexical/extension` as HorizontalRuleExtension
  */
 export class HorizontalRuleNode extends BaseHorizontalRuleNode {
-  static getType(): string {
-    return 'horizontalrule';
-  }
-
-  static clone(node: HorizontalRuleNode): HorizontalRuleNode {
-    return new HorizontalRuleNode(node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedHorizontalRuleNode,
-  ): HorizontalRuleNode {
-    return $createHorizontalRuleNode().updateFromJSON(serializedNode);
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      hr: () => ({
-        conversion: $convertHorizontalRuleElement,
-        priority: 0,
-      }),
-    };
+  $config() {
+    // `extends` is left to the runtime default (the prototype parent,
+    // BaseHorizontalRuleNode) so this deprecated subclass infers a `$config()`
+    // shape compatible with the base node it reuses the 'horizontalrule' type
+    // from.
+    return this.config('horizontalrule', {
+      importDOM: {
+        hr: () => ({
+          conversion: $convertHorizontalRuleElement,
+          priority: 0,
+        }),
+      },
+    });
   }
 
   decorate(): JSX.Element {

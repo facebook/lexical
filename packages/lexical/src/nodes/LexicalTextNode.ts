@@ -38,7 +38,6 @@ import {
   TEXT_TYPE_TO_MODE,
 } from '../LexicalConstants';
 import {
-  type DOMConversionMap,
   type DOMConversionOutput,
   type DOMExportOutput,
   LexicalNode,
@@ -341,12 +340,59 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
     return true;
   }
 
-  static getType(): string {
-    return 'text';
-  }
-
-  static clone(node: TextNode): TextNode {
-    return new TextNode(node.__text, node.__key);
+  $config() {
+    return this.config('text', {
+      importDOM: {
+        '#text': () => ({
+          conversion: $convertTextDOMNode,
+          priority: 0,
+        }),
+        b: () => ({
+          conversion: convertBringAttentionToElement,
+          priority: 0,
+        }),
+        code: () => ({
+          conversion: convertTextFormatElement,
+          priority: 0,
+        }),
+        em: () => ({
+          conversion: convertTextFormatElement,
+          priority: 0,
+        }),
+        i: () => ({
+          conversion: convertTextFormatElement,
+          priority: 0,
+        }),
+        mark: () => ({
+          conversion: convertTextFormatElement,
+          priority: 0,
+        }),
+        s: () => ({
+          conversion: convertTextFormatElement,
+          priority: 0,
+        }),
+        span: () => ({
+          conversion: convertSpanElement,
+          priority: 0,
+        }),
+        strong: () => ({
+          conversion: convertTextFormatElement,
+          priority: 0,
+        }),
+        sub: () => ({
+          conversion: convertTextFormatElement,
+          priority: 0,
+        }),
+        sup: () => ({
+          conversion: convertTextFormatElement,
+          priority: 0,
+        }),
+        u: () => ({
+          conversion: convertTextFormatElement,
+          priority: 0,
+        }),
+      },
+    });
   }
 
   afterCloneFrom(prevNode: this): void {
@@ -605,63 +651,6 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
       setDOMStyleFromCSS(dom.style, nextStyle, prevStyle);
     }
     return false;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      '#text': () => ({
-        conversion: $convertTextDOMNode,
-        priority: 0,
-      }),
-      b: () => ({
-        conversion: convertBringAttentionToElement,
-        priority: 0,
-      }),
-      code: () => ({
-        conversion: convertTextFormatElement,
-        priority: 0,
-      }),
-      em: () => ({
-        conversion: convertTextFormatElement,
-        priority: 0,
-      }),
-      i: () => ({
-        conversion: convertTextFormatElement,
-        priority: 0,
-      }),
-      mark: () => ({
-        conversion: convertTextFormatElement,
-        priority: 0,
-      }),
-      s: () => ({
-        conversion: convertTextFormatElement,
-        priority: 0,
-      }),
-      span: () => ({
-        conversion: convertSpanElement,
-        priority: 0,
-      }),
-      strong: () => ({
-        conversion: convertTextFormatElement,
-        priority: 0,
-      }),
-      sub: () => ({
-        conversion: convertTextFormatElement,
-        priority: 0,
-      }),
-      sup: () => ({
-        conversion: convertTextFormatElement,
-        priority: 0,
-      }),
-      u: () => ({
-        conversion: convertTextFormatElement,
-        priority: 0,
-      }),
-    };
-  }
-
-  static importJSON(serializedNode: SerializedTextNode): TextNode {
-    return $createTextNode().updateFromJSON(serializedNode);
   }
 
   updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedTextNode>): this {

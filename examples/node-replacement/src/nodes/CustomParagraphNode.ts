@@ -5,22 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {
-  $applyNodeReplacement,
-  type EditorConfig,
-  ParagraphNode,
-  type SerializedParagraphNode,
-} from 'lexical';
+import {$applyNodeReplacement, type EditorConfig, ParagraphNode} from 'lexical';
 
 export class CustomParagraphNode extends ParagraphNode {
-  static getType() {
-    return 'custom-paragraph';
-  }
-  static clone(node: CustomParagraphNode): CustomParagraphNode {
-    return new CustomParagraphNode(node.__key);
-  }
-  static importJSON(json: SerializedParagraphNode): CustomParagraphNode {
-    return $createCustomParagraphNode().updateFromJSON(json);
+  $config() {
+    return this.config('custom-paragraph', {extends: ParagraphNode});
   }
   createDOM(config: EditorConfig) {
     const el = super.createDOM(config);

@@ -278,10 +278,8 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
       () => {
         const node = $getNodeByKey(keys.ruby1Key);
         assert($isRubyNode(node));
-        if ($isRubyNode(node)) {
-          expect(node.isComposing()).toBe(true);
-          expect(node.isToken()).toBe(true);
-        }
+        expect(node.isComposing()).toBe(true);
+        expect(node.isToken()).toBe(true);
       },
       {discrete: true},
     );
@@ -291,143 +289,97 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
   // -- Arrow key: skip contiguous ruby group --
 
-  test('left arrow from after rubies skips all rubies to prev text end', () => {
-    const keys = setupRubyParagraph(editor);
+  test.for([
+    [
+      'left from after rubies',
+      'postKey',
+      0,
+      KEY_ARROW_LEFT_COMMAND,
+      'ArrowLeft',
+      'preKey',
+      1,
+    ],
+    [
+      'left from inside ruby1 end',
+      'ruby1Key',
+      1,
+      KEY_ARROW_LEFT_COMMAND,
+      'ArrowLeft',
+      'preKey',
+      1,
+    ],
+    [
+      'left from inside ruby2 start',
+      'ruby2Key',
+      0,
+      KEY_ARROW_LEFT_COMMAND,
+      'ArrowLeft',
+      'preKey',
+      1,
+    ],
+    [
+      'right from before rubies',
+      'preKey',
+      1,
+      KEY_ARROW_RIGHT_COMMAND,
+      'ArrowRight',
+      'postKey',
+      0,
+    ],
+    [
+      'right from inside ruby2 start',
+      'ruby2Key',
+      0,
+      KEY_ARROW_RIGHT_COMMAND,
+      'ArrowRight',
+      'postKey',
+      0,
+    ],
+    [
+      'right from inside ruby1 end',
+      'ruby1Key',
+      1,
+      KEY_ARROW_RIGHT_COMMAND,
+      'ArrowRight',
+      'postKey',
+      0,
+    ],
+  ] as const)(
+    '%s',
+    ([
+      _desc,
+      startKeyField,
+      startOffset,
+      command,
+      keyName,
+      expectedKeyField,
+      expectedOffset,
+    ]) => {
+      const keys = setupRubyParagraph(editor);
 
-    let result: {key: string; offset: number} | null = null;
-    editor.update(
-      () => {
-        ($getNodeByKey(keys.postKey) as TextNode).select(0, 0);
-      },
-      {discrete: true},
-    );
+      let result: {key: string; offset: number} | null = null;
+      editor.update(
+        () => {
+          ($getNodeByKey(keys[startKeyField]) as TextNode).select(
+            startOffset,
+            startOffset,
+          );
+          const event = new KeyboardEvent('keydown', {key: keyName});
+          editor.dispatchCommand(command, event);
+          const after = $getSelection();
+          result = $isRangeSelection(after)
+            ? {key: after.anchor.key, offset: after.anchor.offset}
+            : null;
+        },
+        {discrete: true},
+      );
 
-    editor.update(
-      () => {
-        const event = new KeyboardEvent('keydown', {key: 'ArrowLeft'});
-        editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
-        const after = $getSelection();
-        result = $isRangeSelection(after)
-          ? {key: after.anchor.key, offset: after.anchor.offset}
-          : null;
-      },
-      {discrete: true},
-    );
-
-    expect(result).toEqual({key: keys.preKey, offset: 1});
-  });
-
-  test('left arrow from inside ruby group also skips to prev text end', () => {
-    const keys = setupRubyParagraph(editor);
-
-    let result: {key: string; offset: number} | null = null;
-    editor.update(
-      () => {
-        ($getNodeByKey(keys.ruby1Key) as TextNode).select(1, 1);
-      },
-      {discrete: true},
-    );
-
-    editor.update(
-      () => {
-        const event = new KeyboardEvent('keydown', {key: 'ArrowLeft'});
-        editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
-        const after = $getSelection();
-        result = $isRangeSelection(after)
-          ? {key: after.anchor.key, offset: after.anchor.offset}
-          : null;
-      },
-      {discrete: true},
-    );
-
-    expect(result).toEqual({key: keys.preKey, offset: 1});
-  });
-
-  test('right arrow from before rubies skips all rubies to next text start', () => {
-    const keys = setupRubyParagraph(editor);
-
-    let result: {key: string; offset: number} | null = null;
-    editor.update(
-      () => {
-        ($getNodeByKey(keys.preKey) as TextNode).select(1, 1);
-      },
-      {discrete: true},
-    );
-
-    editor.update(
-      () => {
-        const event = new KeyboardEvent('keydown', {key: 'ArrowRight'});
-        editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
-        const after = $getSelection();
-        result = $isRangeSelection(after)
-          ? {key: after.anchor.key, offset: after.anchor.offset}
-          : null;
-      },
-      {discrete: true},
-    );
-
-    expect(result).toEqual({key: keys.postKey, offset: 0});
-  });
-
-  test('right arrow from inside ruby group also skips to next text start', () => {
-    const keys = setupRubyParagraph(editor);
-
-    let result: {key: string; offset: number} | null = null;
-    editor.update(
-      () => {
-        ($getNodeByKey(keys.ruby2Key) as TextNode).select(0, 0);
-        const event = new KeyboardEvent('keydown', {key: 'ArrowRight'});
-        editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
-        const after = $getSelection();
-        result = $isRangeSelection(after)
-          ? {key: after.anchor.key, offset: after.anchor.offset}
-          : null;
-      },
-      {discrete: true},
-    );
-
-    expect(result).toEqual({key: keys.postKey, offset: 0});
-  });
-
-  test('left from inside ruby group skips all contiguous rubies', () => {
-    const keys = setupRubyParagraph(editor);
-
-    let result: {key: string; offset: number} | null = null;
-    editor.update(
-      () => {
-        ($getNodeByKey(keys.ruby2Key) as TextNode).select(0, 0);
-        const event = new KeyboardEvent('keydown', {key: 'ArrowLeft'});
-        editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
-        const after = $getSelection();
-        result = $isRangeSelection(after)
-          ? {key: after.anchor.key, offset: after.anchor.offset}
-          : null;
-      },
-      {discrete: true},
-    );
-
-    expect(result).toEqual({key: keys.preKey, offset: 1});
-  });
-
-  test('right from inside ruby group skips all contiguous rubies', () => {
-    const keys = setupRubyParagraph(editor);
-
-    let result: {key: string; offset: number} | null = null;
-    editor.update(
-      () => {
-        ($getNodeByKey(keys.ruby1Key) as TextNode).select(1, 1);
-        const event = new KeyboardEvent('keydown', {key: 'ArrowRight'});
-        editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
-        const after = $getSelection();
-        result = $isRangeSelection(after)
-          ? {key: after.anchor.key, offset: after.anchor.offset}
-          : null;
-      },
-      {discrete: true},
-    );
-
-    expect(result).toEqual({key: keys.postKey, offset: 0});
-  });
+      expect(result).toEqual({
+        key: keys[expectedKeyField],
+        offset: expectedOffset,
+      });
+    },
+  );
 
   // -- Composition end: token redirect via $onCompositionEndImpl --
 
@@ -493,123 +445,63 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
   // -- Edge case: ruby as first/last/only child in paragraph --
 
-  test('COMPOSITION_END on paragraph-first ruby at end inserts after', () => {
-    let rubyKey = '';
-    editor.update(
-      () => {
-        const ruby = $createRubyNode('漢', 'かん');
-        const post = $createTextNode('後');
-        const paragraph = $createParagraphNode();
-        paragraph.append(ruby, post);
-        $getRoot().clear().append(paragraph);
-        rubyKey = ruby.getKey();
-      },
-      {discrete: true},
-    );
+  test.for([
+    ['paragraph-first ruby at end', ['ruby', 'post'], 1, '漢あ後'],
+    ['paragraph-first ruby at start', ['ruby', 'post'], 0, 'あ漢後'],
+    ['solo ruby at end', ['ruby'], 1, '漢あ'],
+    ['solo ruby at start', ['ruby'], 0, 'あ漢'],
+  ] as const)(
+    'COMPOSITION_END on %s',
+    ([_desc, childrenSpec, selectionOffset, expectedText]) => {
+      let rubyKey = '';
+      editor.update(
+        () => {
+          const ruby = $createRubyNode('漢', 'かん');
+          const paragraph = $createParagraphNode();
+          const children = childrenSpec.map(c =>
+            c === 'ruby' ? ruby : $createTextNode('後'),
+          );
+          paragraph.append(...children);
+          $getRoot().clear().append(paragraph);
+          rubyKey = ruby.getKey();
+        },
+        {discrete: true},
+      );
 
-    editor.update(
-      () => {
-        ($getNodeByKey(rubyKey) as TextNode).select(1, 1);
-        $setCompositionKey(rubyKey);
-      },
-      {discrete: true},
-    );
+      if (selectionOffset > 0) {
+        editor.update(
+          () => {
+            ($getNodeByKey(rubyKey) as TextNode).select(
+              selectionOffset,
+              selectionOffset,
+            );
+            $setCompositionKey(rubyKey);
+          },
+          {discrete: true},
+        );
 
-    editor.update(
-      () => {
-        const event = new CompositionEvent('compositionend', {data: 'あ'});
-        editor.dispatchCommand(COMPOSITION_END_COMMAND, event);
-      },
-      {discrete: true},
-    );
+        editor.update(
+          () => {
+            const event = new CompositionEvent('compositionend', {data: 'あ'});
+            editor.dispatchCommand(COMPOSITION_END_COMMAND, event);
+          },
+          {discrete: true},
+        );
+      } else {
+        editor.update(
+          () => {
+            ($getNodeByKey(rubyKey) as TextNode).select(0, 0);
+            $setCompositionKey(rubyKey);
+            const event = new CompositionEvent('compositionend', {data: 'あ'});
+            editor.dispatchCommand(COMPOSITION_END_COMMAND, event);
+          },
+          {discrete: true},
+        );
+      }
 
-    expect(editor.read(() => $getRoot().getTextContent())).toBe('漢あ後');
-  });
-
-  test('COMPOSITION_END on paragraph-first ruby at start creates TextNode before', () => {
-    let rubyKey = '';
-    editor.update(
-      () => {
-        const ruby = $createRubyNode('漢', 'かん');
-        const post = $createTextNode('後');
-        const paragraph = $createParagraphNode();
-        paragraph.append(ruby, post);
-        $getRoot().clear().append(paragraph);
-        rubyKey = ruby.getKey();
-      },
-      {discrete: true},
-    );
-
-    editor.update(
-      () => {
-        ($getNodeByKey(rubyKey) as TextNode).select(0, 0);
-        $setCompositionKey(rubyKey);
-        const event = new CompositionEvent('compositionend', {data: 'あ'});
-        editor.dispatchCommand(COMPOSITION_END_COMMAND, event);
-      },
-      {discrete: true},
-    );
-
-    expect(editor.read(() => $getRoot().getTextContent())).toBe('あ漢後');
-  });
-
-  test('COMPOSITION_END on solo ruby at end creates TextNode after', () => {
-    let rubyKey = '';
-    editor.update(
-      () => {
-        const ruby = $createRubyNode('漢', 'かん');
-        const paragraph = $createParagraphNode();
-        paragraph.append(ruby);
-        $getRoot().clear().append(paragraph);
-        rubyKey = ruby.getKey();
-      },
-      {discrete: true},
-    );
-
-    editor.update(
-      () => {
-        ($getNodeByKey(rubyKey) as TextNode).select(1, 1);
-        $setCompositionKey(rubyKey);
-      },
-      {discrete: true},
-    );
-
-    editor.update(
-      () => {
-        const event = new CompositionEvent('compositionend', {data: 'あ'});
-        editor.dispatchCommand(COMPOSITION_END_COMMAND, event);
-      },
-      {discrete: true},
-    );
-
-    expect(editor.read(() => $getRoot().getTextContent())).toBe('漢あ');
-  });
-
-  test('COMPOSITION_END on solo ruby at start creates TextNode before', () => {
-    let rubyKey = '';
-    editor.update(
-      () => {
-        const ruby = $createRubyNode('漢', 'かん');
-        const paragraph = $createParagraphNode();
-        paragraph.append(ruby);
-        $getRoot().clear().append(paragraph);
-        rubyKey = ruby.getKey();
-      },
-      {discrete: true},
-    );
-
-    editor.update(
-      () => {
-        ($getNodeByKey(rubyKey) as TextNode).select(0, 0);
-        $setCompositionKey(rubyKey);
-        const event = new CompositionEvent('compositionend', {data: 'あ'});
-        editor.dispatchCommand(COMPOSITION_END_COMMAND, event);
-      },
-      {discrete: true},
-    );
-
-    expect(editor.read(() => $getRoot().getTextContent())).toBe('あ漢');
-  });
+      expect(editor.read(() => $getRoot().getTextContent())).toBe(expectedText);
+    },
+  );
 
   // -- Verify state integrity after composition --
 

@@ -36,6 +36,7 @@ import {LayoutItemNode} from './LayoutItemNode';
 import {MentionNode} from './MentionNode';
 import {PageBreakNode} from './PageBreakNode';
 import {PollNode} from './PollNode';
+import {RubyNode} from './RubyNode';
 import {SlotContainerNode} from './SlotContainerNode';
 import {SpecialTextNode} from './SpecialTextNode';
 import {StickyNode} from './StickyNode';
@@ -81,6 +82,7 @@ const PlaygroundNodes: Klass<LexicalNode>[] = [
   SlotContainerNode,
   ReviewNode,
   PullQuoteNode,
+  RubyNode,
 ];
 
 export default PlaygroundNodes;

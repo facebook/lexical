@@ -1221,8 +1221,17 @@ function $handleInput(event: InputEvent): boolean {
       hadOrphanedCompositionEvents = true;
     }
 
+    const inputAnchorNode = selection.anchor.getNode();
+    const isCompositionOnToken =
+      event.inputType === 'insertCompositionText' &&
+      !isFirefoxEndingComposition &&
+      editor.isComposing() &&
+      $isTextNode(inputAnchorNode) &&
+      $isTokenOrSegmented(inputAnchorNode);
+
     if (
       !isOrphanedCompositionEnd &&
+      !isCompositionOnToken &&
       $shouldPreventDefaultAndInsertText(
         selection,
         targetRange,
@@ -1353,6 +1362,10 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
         CONTROLLED_TEXT_INSERTION_COMMAND,
         COMPOSITION_START_CHAR,
       );
+      const updatedSelection = $getSelection();
+      if ($isRangeSelection(updatedSelection)) {
+        $setCompositionKey(updatedSelection.anchor.key);
+      }
     }
   }
 

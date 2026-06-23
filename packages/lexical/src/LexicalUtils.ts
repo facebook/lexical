@@ -936,7 +936,7 @@ export function $updateTextNodeFromDOMContent(
       const nodeKey = node.getKey();
 
       if (
-        node.isToken() ||
+        (node.isToken() && !isComposing) ||
         (compositionKey !== null &&
           nodeKey === compositionKey &&
           !isComposing) ||

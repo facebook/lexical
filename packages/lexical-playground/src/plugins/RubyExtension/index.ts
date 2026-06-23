@@ -97,14 +97,28 @@ function $skipRubyOnArrow(isBackward: boolean, isShift: boolean): boolean {
 
   if ($isRubyNode(node) && !node.isComposing()) {
     if (isShift) {
-      const sibling = !isBackward
-        ? node.getNextSibling()
-        : node.getPreviousSibling();
-      if ($isTextNode(sibling) && !$isRubyNode(sibling)) {
+      // Walk through all consecutive rubies to the far-side text node.
+      // Use offsets that normalization won't pull back onto the ruby group.
+      let edge: LexicalNode = node;
+      const walk = !isBackward
+        ? (n: LexicalNode) => n.getNextSibling()
+        : (n: LexicalNode) => n.getPreviousSibling();
+      let sib = walk(edge);
+      while ($isRubyNode(sib)) {
+        edge = sib;
+        sib = walk(edge);
+      }
+      if (sib !== null && $isTextNode(sib) && !$isRubyNode(sib)) {
         const offset = !isBackward
-          ? Math.min(1, sibling.getTextContentSize())
-          : Math.max(0, sibling.getTextContentSize() - 1);
-        selection.focus.set(sibling.getKey(), offset, 'text');
+          ? Math.min(1, sib.getTextContentSize())
+          : sib.getTextContentSize();
+        selection.focus.set(sib.getKey(), offset, 'text');
+        return true;
+      }
+      const parent = edge.getParent();
+      if (parent !== null) {
+        const offset = isBackward ? 0 : parent.getChildrenSize();
+        selection.focus.set(parent.getKey(), offset, 'element');
         return true;
       }
       return false;
@@ -147,6 +161,20 @@ function $skipRubyOnArrow(isBackward: boolean, isShift: boolean): boolean {
       selection.focus.set(next.getKey(), offset, 'text');
     }
     return true;
+  }
+
+  if (next === null) {
+    const parent = edge.getParent();
+    if (parent !== null) {
+      const offset = isBackward ? 0 : parent.getChildrenSize();
+      if (isShift) {
+        selection.focus.set(parent.getKey(), offset, 'element');
+      } else {
+        selection.anchor.set(parent.getKey(), offset, 'element');
+        selection.focus.set(parent.getKey(), offset, 'element');
+      }
+      return true;
+    }
   }
 
   return false;

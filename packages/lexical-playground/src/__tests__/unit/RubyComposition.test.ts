@@ -30,6 +30,7 @@ import {
   $isRangeSelection,
   $setCompositionKey,
   $setSelection,
+  COMPOSITION_END_COMMAND,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -290,7 +291,8 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     );
 
     const rubyDom = editor.getElementByKey(keys.ruby1Key)!;
-    const domText = rubyDom.firstChild as Text;
+    const innerSpan = rubyDom.firstElementChild!;
+    const domText = innerSpan.firstChild as Text;
     const NBSP = ' ';
     expect(domText.nodeValue).toBe('漢' + NBSP);
 
@@ -467,5 +469,57 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     );
 
     expect(result).toEqual({key: keys.postKey, offset: 0});
+  });
+
+  // -- Composition end: token redirect via $onCompositionEndImpl --
+
+  test('COMPOSITION_END on ruby redirects text to next TextNode', () => {
+    const keys = setupRubyParagraph(editor);
+
+    editor.update(
+      () => {
+        const sel = $createRangeSelection();
+        sel.anchor.set(keys.ruby2Key, 1, 'text');
+        sel.focus.set(keys.ruby2Key, 1, 'text');
+        $setSelection(sel);
+        $setCompositionKey(keys.ruby2Key);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const event = new CompositionEvent('compositionend', {data: 'あ'});
+        editor.dispatchCommand(COMPOSITION_END_COMMAND, event);
+      },
+      {discrete: true},
+    );
+
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('前漢字あ後');
+  });
+
+  test('COMPOSITION_END between adjacent rubies creates new TextNode', () => {
+    const keys = setupRubyParagraph(editor);
+
+    editor.update(
+      () => {
+        const sel = $createRangeSelection();
+        sel.anchor.set(keys.ruby1Key, 1, 'text');
+        sel.focus.set(keys.ruby1Key, 1, 'text');
+        $setSelection(sel);
+        $setCompositionKey(keys.ruby1Key);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const event = new CompositionEvent('compositionend', {data: 'の'});
+        editor.dispatchCommand(COMPOSITION_END_COMMAND, event);
+      },
+      {discrete: true},
+    );
+
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('前漢の字後');
   });
 });

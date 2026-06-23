@@ -89,6 +89,7 @@ const theme: EditorThemeClasses = {
   markOverlap: 'PlaygroundEditorTheme__markOverlap',
   paragraph: 'PlaygroundEditorTheme__paragraph',
   quote: 'PlaygroundEditorTheme__quote',
+  ruby: 'PlaygroundEditorTheme__ruby',
   specialText: 'PlaygroundEditorTheme__specialText',
   tab: 'PlaygroundEditorTheme__tabNode',
   table: 'PlaygroundEditorTheme__table',

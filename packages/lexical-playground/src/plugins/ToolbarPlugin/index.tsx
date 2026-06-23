@@ -77,6 +77,7 @@ import {
 } from '../../context/ToolbarContext';
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
+import {$isRubyNode, $toggleRuby} from '../../nodes/RubyNode';
 import {$createStickyNode} from '../../nodes/StickyNode';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import DropdownColorPicker from '../../ui/DropdownColorPicker';
@@ -891,6 +892,28 @@ export default function ToolbarPlugin({
     }
   }, [activeEditor, setIsLinkEditMode, toolbarState.isLink]);
 
+  const insertRuby = useCallback(() => {
+    let hasRuby = false;
+    activeEditor.read(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        hasRuby = selection.getNodes().some(n => $isRubyNode(n));
+      }
+    });
+    if (hasRuby) {
+      activeEditor.update(() => {
+        $toggleRuby(null);
+      });
+    } else {
+      const annotation = window.prompt('Ruby annotation (e.g. かん):');
+      if (annotation) {
+        activeEditor.update(() => {
+          $toggleRuby(annotation);
+        });
+      }
+    }
+  }, [activeEditor]);
+
   const onCodeLanguageSelect = useCallback(
     (value: string | null) => {
       activeEditor.update(() => {
@@ -1141,6 +1164,17 @@ export default function ToolbarPlugin({
             title={`Insert link (${SHORTCUTS.INSERT_LINK})`}
             type="button">
             <i className="format link" />
+          </button>
+          <button
+            disabled={!isEditable}
+            onClick={insertRuby}
+            className="toolbar-item spaced"
+            aria-label="Insert ruby annotation"
+            title="Insert ruby annotation"
+            type="button">
+            <span className="text" style={{fontSize: '14px', fontWeight: 600}}>
+              ルビ
+            </span>
           </button>
           <DropdownColorPicker
             disabled={!isEditable}

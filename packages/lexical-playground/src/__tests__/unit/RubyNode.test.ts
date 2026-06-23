@@ -10,15 +10,14 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {registerRichText, RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
-  $createRangeSelection,
   $createTextNode,
+  $getNodeByKey,
   $getRoot,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
   $setCompositionKey,
-  $setSelection,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   ElementNode,
   KEY_ARROW_LEFT_COMMAND,
@@ -257,10 +256,7 @@ describe('RubyNode', () => {
           const paragraph = $createParagraphNode().append(text);
           $getRoot().clear().append(paragraph);
 
-          const sel = $createRangeSelection();
-          sel.anchor.set(text.getKey(), 0, 'text');
-          sel.focus.set(text.getKey(), 2, 'text');
-          $setSelection(sel);
+          text.select(0, 2);
 
           $toggleRuby('かんじ');
         },
@@ -290,10 +286,7 @@ describe('RubyNode', () => {
           const paragraph = $createParagraphNode().append(ruby);
           $getRoot().clear().append(paragraph);
 
-          const sel = $createRangeSelection();
-          sel.anchor.set(ruby.getKey(), 0, 'text');
-          sel.focus.set(ruby.getKey(), 2, 'text');
-          $setSelection(sel);
+          ruby.select(0, 2);
 
           $toggleRuby(null);
         },
@@ -322,10 +315,7 @@ describe('RubyNode', () => {
           const paragraph = $createParagraphNode().append(text);
           $getRoot().clear().append(paragraph);
 
-          const sel = $createRangeSelection();
-          sel.anchor.set(text.getKey(), 1, 'text');
-          sel.focus.set(text.getKey(), 1, 'text');
-          $setSelection(sel);
+          text.select(1, 1);
 
           $toggleRuby('かんじ');
         },
@@ -382,10 +372,8 @@ describe('RubyNode', () => {
       // Select the ruby + part of post text
       editor.update(
         () => {
-          const sel = $createRangeSelection();
-          sel.anchor.set(rubyKey, 0, 'text');
+          const sel = ($getNodeByKey(rubyKey) as RubyNode).select(0, 0);
           sel.focus.set(postKey, 1, 'text');
-          $setSelection(sel);
         },
         {discrete: true},
       );
@@ -427,10 +415,7 @@ describe('RubyNode', () => {
 
       editor.update(
         () => {
-          const sel = $createRangeSelection();
-          sel.anchor.set(rubyKey, 0, 'text');
-          sel.focus.set(rubyKey, 0, 'text');
-          $setSelection(sel);
+          ($getNodeByKey(rubyKey) as RubyNode).select(0, 0);
         },
         {discrete: true},
       );
@@ -520,10 +505,7 @@ describe('RubyExtension Shift+arrow skip', () => {
     extEditor.update(
       () => {
         const {hello} = $setupParagraph();
-        const sel = $createRangeSelection();
-        sel.anchor.set(hello.getKey(), 5, 'text');
-        sel.focus.set(hello.getKey(), 5, 'text');
-        $setSelection(sel);
+        hello.select(5, 5);
       },
       {discrete: true},
     );
@@ -558,10 +540,7 @@ describe('RubyExtension Shift+arrow skip', () => {
     extEditor.update(
       () => {
         const {world} = $setupParagraph();
-        const sel = $createRangeSelection();
-        sel.anchor.set(world.getKey(), 0, 'text');
-        sel.focus.set(world.getKey(), 0, 'text');
-        $setSelection(sel);
+        world.select(0, 0);
       },
       {discrete: true},
     );
@@ -592,10 +571,7 @@ describe('RubyExtension Shift+arrow skip', () => {
     extEditor.update(
       () => {
         const {hello} = $setupParagraph();
-        const sel = $createRangeSelection();
-        sel.anchor.set(hello.getKey(), 3, 'text');
-        sel.focus.set(hello.getKey(), 5, 'text');
-        $setSelection(sel);
+        hello.select(3, 5);
       },
       {discrete: true},
     );
@@ -666,10 +642,7 @@ describe('RubyExtension Shift+arrow — consecutive rubies', () => {
     extEditor.update(
       () => {
         const {pre} = $setupConsecutiveRubies();
-        const sel = $createRangeSelection();
-        sel.anchor.set(pre.getKey(), 1, 'text');
-        sel.focus.set(pre.getKey(), 1, 'text');
-        $setSelection(sel);
+        pre.select(1, 1);
       },
       {discrete: true},
     );
@@ -699,10 +672,7 @@ describe('RubyExtension Shift+arrow — consecutive rubies', () => {
     extEditor.update(
       () => {
         const {post} = $setupConsecutiveRubies();
-        const sel = $createRangeSelection();
-        sel.anchor.set(post.getKey(), 0, 'text');
-        sel.focus.set(post.getKey(), 0, 'text');
-        $setSelection(sel);
+        post.select(0, 0);
       },
       {discrete: true},
     );
@@ -732,10 +702,7 @@ describe('RubyExtension Shift+arrow — consecutive rubies', () => {
     extEditor.update(
       () => {
         const {pre} = $setupConsecutiveRubies();
-        const sel = $createRangeSelection();
-        sel.anchor.set(pre.getKey(), 0, 'text');
-        sel.focus.set(pre.getKey(), 1, 'text');
-        $setSelection(sel);
+        pre.select(0, 1);
       },
       {discrete: true},
     );
@@ -765,10 +732,7 @@ describe('RubyExtension Shift+arrow — consecutive rubies', () => {
     extEditor.update(
       () => {
         const {post} = $setupConsecutiveRubies();
-        const sel = $createRangeSelection();
-        sel.anchor.set(post.getKey(), 1, 'text');
-        sel.focus.set(post.getKey(), 0, 'text');
-        $setSelection(sel);
+        post.select(1, 0);
       },
       {discrete: true},
     );
@@ -841,10 +805,8 @@ describe('RubyExtension Shift+arrow — focus on RubyNode (Safari)', () => {
     extEditor.update(
       () => {
         const {pre, ruby1} = $setupConsecutiveRubies();
-        const sel = $createRangeSelection();
-        sel.anchor.set(pre.getKey(), 0, 'text');
+        const sel = pre.select(0, 0);
         sel.focus.set(ruby1.getKey(), 0, 'text');
-        $setSelection(sel);
       },
       {discrete: true},
     );
@@ -875,10 +837,8 @@ describe('RubyExtension Shift+arrow — focus on RubyNode (Safari)', () => {
     extEditor.update(
       () => {
         const {ruby2, post} = $setupConsecutiveRubies();
-        const sel = $createRangeSelection();
-        sel.anchor.set(post.getKey(), 1, 'text');
+        const sel = post.select(1, 1);
         sel.focus.set(ruby2.getKey(), 1, 'text');
-        $setSelection(sel);
       },
       {discrete: true},
     );
@@ -907,10 +867,8 @@ describe('RubyExtension Shift+arrow — focus on RubyNode (Safari)', () => {
     extEditor.update(
       () => {
         const {pre, ruby1} = $setupConsecutiveRubies();
-        const sel = $createRangeSelection();
-        sel.anchor.set(pre.getKey(), 0, 'text');
+        const sel = pre.select(0, 0);
         sel.focus.set(ruby1.getKey(), 1, 'text');
-        $setSelection(sel);
       },
       {discrete: true},
     );
@@ -937,10 +895,8 @@ describe('RubyExtension Shift+arrow — focus on RubyNode (Safari)', () => {
     extEditor.update(
       () => {
         const {pre, ruby1} = $setupConsecutiveRubies();
-        const sel = $createRangeSelection();
-        sel.anchor.set(pre.getKey(), 0, 'text');
+        const sel = pre.select(0, 0);
         sel.focus.set(ruby1.getKey(), 0, 'text');
-        $setSelection(sel);
         $setCompositionKey(ruby1.getKey());
       },
       {discrete: true},
@@ -998,10 +954,7 @@ describe('RubyExtension arrow — line boundary', () => {
         p.append(ruby, post);
         $getRoot().clear().append(p);
 
-        const sel = $createRangeSelection();
-        sel.anchor.set(post.getKey(), 0, 'text');
-        sel.focus.set(post.getKey(), 0, 'text');
-        $setSelection(sel);
+        post.select(0, 0);
       },
       {discrete: true},
     );
@@ -1033,10 +986,7 @@ describe('RubyExtension arrow — line boundary', () => {
         p.append(pre, ruby);
         $getRoot().clear().append(p);
 
-        const sel = $createRangeSelection();
-        sel.anchor.set(pre.getKey(), 1, 'text');
-        sel.focus.set(pre.getKey(), 1, 'text');
-        $setSelection(sel);
+        pre.select(1, 1);
       },
       {discrete: true},
     );
@@ -1067,10 +1017,7 @@ describe('RubyExtension arrow — line boundary', () => {
         p.append(ruby, post);
         $getRoot().clear().append(p);
 
-        const sel = $createRangeSelection();
-        sel.anchor.set(post.getKey(), 0, 'text');
-        sel.focus.set(post.getKey(), 0, 'text');
-        $setSelection(sel);
+        post.select(0, 0);
       },
       {discrete: true},
     );
@@ -1105,10 +1052,7 @@ describe('RubyExtension arrow — line boundary', () => {
         p.append(pre, ruby);
         $getRoot().clear().append(p);
 
-        const sel = $createRangeSelection();
-        sel.anchor.set(pre.getKey(), 1, 'text');
-        sel.focus.set(pre.getKey(), 1, 'text');
-        $setSelection(sel);
+        pre.select(1, 1);
       },
       {discrete: true},
     );
@@ -1141,10 +1085,8 @@ describe('RubyExtension arrow — line boundary', () => {
         p.append(pre, ruby);
         $getRoot().clear().append(p);
 
-        const sel = $createRangeSelection();
-        sel.anchor.set(pre.getKey(), 0, 'text');
+        const sel = pre.select(0, 0);
         sel.focus.set(ruby.getKey(), 0, 'text');
-        $setSelection(sel);
       },
       {discrete: true},
     );
@@ -1178,10 +1120,8 @@ describe('RubyExtension arrow — line boundary', () => {
         p.append(ruby, post);
         $getRoot().clear().append(p);
 
-        const sel = $createRangeSelection();
-        sel.anchor.set(post.getKey(), 1, 'text');
+        const sel = post.select(1, 1);
         sel.focus.set(ruby.getKey(), 1, 'text');
-        $setSelection(sel);
       },
       {discrete: true},
     );
@@ -1249,10 +1189,7 @@ describe('RubyExtension backspace', () => {
         p.append(pre, ruby, post);
         $getRoot().clear().append(p);
 
-        const sel = $createRangeSelection();
-        sel.anchor.set(post.getKey(), 0, 'text');
-        sel.focus.set(post.getKey(), 0, 'text');
-        $setSelection(sel);
+        post.select(0, 0);
 
         const event = new KeyboardEvent('keydown', {key: 'Backspace'});
         handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
@@ -1287,10 +1224,7 @@ describe('RubyExtension backspace', () => {
         p.append(ruby, post);
         $getRoot().clear().append(p);
 
-        const sel = $createRangeSelection();
-        sel.anchor.set(post.getKey(), 1, 'text');
-        sel.focus.set(post.getKey(), 1, 'text');
-        $setSelection(sel);
+        post.select(1, 1);
 
         const event = new KeyboardEvent('keydown', {key: 'Backspace'});
         handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
@@ -1312,10 +1246,7 @@ describe('RubyExtension backspace', () => {
         p.append(ruby, post);
         $getRoot().clear().append(p);
 
-        const sel = $createRangeSelection();
-        sel.anchor.set(post.getKey(), 0, 'text');
-        sel.focus.set(post.getKey(), 1, 'text');
-        $setSelection(sel);
+        post.select(0, 1);
 
         const event = new KeyboardEvent('keydown', {key: 'Backspace'});
         handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
@@ -1337,10 +1268,7 @@ describe('RubyExtension backspace', () => {
         p.append(pre, post);
         $getRoot().clear().append(p);
 
-        const sel = $createRangeSelection();
-        sel.anchor.set(post.getKey(), 0, 'text');
-        sel.focus.set(post.getKey(), 0, 'text');
-        $setSelection(sel);
+        post.select(0, 0);
 
         const event = new KeyboardEvent('keydown', {key: 'Backspace'});
         handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
@@ -1390,10 +1318,7 @@ describe('RubyExtension arrow — guard conditions', () => {
         p.append(pre, ruby, post);
         $getRoot().clear().append(p);
 
-        const sel = $createRangeSelection();
-        sel.anchor.set(post.getKey(), 0, 'text');
-        sel.focus.set(post.getKey(), 0, 'text');
-        $setSelection(sel);
+        post.select(0, 0);
       },
       {discrete: true},
     );
@@ -1439,10 +1364,7 @@ describe('RubyExtension arrow — guard conditions', () => {
         p.append(pre, ruby, post);
         $getRoot().clear().append(p);
 
-        const sel = $createRangeSelection();
-        sel.anchor.set(pre.getKey(), 0, 'text');
-        sel.focus.set(pre.getKey(), 1, 'text');
-        $setSelection(sel);
+        pre.select(0, 1);
       },
       {discrete: true},
     );
@@ -1461,10 +1383,7 @@ describe('RubyExtension arrow — guard conditions', () => {
         p.append(pre, ruby);
         $getRoot().clear().append(p);
 
-        const sel = $createRangeSelection();
-        sel.anchor.set(pre.getKey(), 1, 'text');
-        sel.focus.set(pre.getKey(), 1, 'text');
-        $setSelection(sel);
+        pre.select(1, 1);
       },
       {discrete: true},
     );

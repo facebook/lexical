@@ -11,18 +11,20 @@ import type {
   DOMSlot,
   EditorConfig,
   LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
   SerializedTextNode,
   Spread,
+  StateValueOrUpdater,
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {
-  $applyNodeReplacement,
   $createTextNode,
   $getSelection,
+  $getState,
   $isRangeSelection,
+  $setState,
+  createState,
+  StateConfigValue,
   TextNode,
 } from 'lexical';
 
@@ -33,34 +35,32 @@ export type SerializedRubyNode = Spread<
   SerializedTextNode
 >;
 
+const annotationState = /* @__PURE__ */ createState('annotation', {
+  parse: v => (typeof v === 'string' ? v : ''),
+});
+
 /** @noInheritDoc */
 export class RubyNode extends TextNode {
-  /** @internal */
-  __annotation: string;
-
-  static getType(): string {
-    return 'ruby';
+  $config() {
+    return this.config('ruby', {
+      extends: TextNode,
+      stateConfigs: [{flat: true, stateConfig: annotationState}],
+    });
   }
 
-  static clone(node: RubyNode): RubyNode {
-    return new RubyNode(node.__text, node.__annotation, node.__key);
-  }
-
-  constructor(text: string, annotation: string, key?: NodeKey) {
+  constructor(text: string = '', key?: import('lexical').NodeKey) {
     super(text, key);
-    this.__annotation = annotation;
     this.__mode = 1; // token
   }
 
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
-    this.__annotation = prevNode.__annotation;
     this.__mode = 1; // token
   }
 
   createDOM(config: EditorConfig): HTMLElement {
     const inner = super.createDOM(config);
-    inner.dataset.rubyAnnotation = this.__annotation;
+    inner.dataset.rubyAnnotation = this.getAnnotation();
     addClassNamesToElement(
       inner,
       config.theme.ruby || 'PlaygroundEditorTheme__ruby',
@@ -80,10 +80,10 @@ export class RubyNode extends TextNode {
 
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     const updated = super.updateDOM(prevNode, dom, config);
-    if (prevNode.__annotation !== this.__annotation) {
+    if (prevNode.getAnnotation() !== this.getAnnotation()) {
       const inner = dom.firstElementChild as HTMLElement;
       if (inner) {
-        inner.dataset.rubyAnnotation = this.__annotation;
+        inner.dataset.rubyAnnotation = this.getAnnotation();
       }
     }
     return updated;
@@ -93,39 +93,19 @@ export class RubyNode extends TextNode {
     const ruby = document.createElement('ruby');
     ruby.textContent = this.getTextContent();
     const rt = document.createElement('rt');
-    rt.textContent = this.__annotation;
+    rt.textContent = this.getAnnotation();
     ruby.appendChild(rt);
     return {element: ruby};
   }
 
-  static importJSON(serializedNode: SerializedRubyNode): RubyNode {
-    return $createRubyNode(
-      serializedNode.text,
-      serializedNode.annotation,
-    ).updateFromJSON(serializedNode);
+  getAnnotation(): StateConfigValue<typeof annotationState> {
+    return $getState(this, annotationState);
   }
 
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedRubyNode>): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setAnnotation(serializedNode.annotation);
-  }
-
-  exportJSON(): SerializedRubyNode {
-    return {
-      ...super.exportJSON(),
-      annotation: this.getAnnotation(),
-    };
-  }
-
-  getAnnotation(): string {
-    return this.getLatest().__annotation;
-  }
-
-  setAnnotation(annotation: string): this {
-    const writable = this.getWritable();
-    writable.__annotation = annotation;
-    return writable;
+  setAnnotation(
+    valueOrUpdater: StateValueOrUpdater<typeof annotationState>,
+  ): this {
+    return $setState(this, annotationState, valueOrUpdater);
   }
 
   isInline(): true {
@@ -142,7 +122,7 @@ export class RubyNode extends TextNode {
 }
 
 export function $createRubyNode(text: string, annotation: string): RubyNode {
-  return $applyNodeReplacement(new RubyNode(text, annotation));
+  return new RubyNode(text).setAnnotation(annotation);
 }
 
 export function $isRubyNode(

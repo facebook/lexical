@@ -89,53 +89,42 @@ function $skipRubyOnArrow(isBackward: boolean): boolean {
   }
   const node = anchor.getNode();
 
-  let rubyToSkip: LexicalNode | null = null;
+  let ruby: LexicalNode | null = null;
 
   if ($isRubyNode(node) && !node.isComposing()) {
-    const len = node.getTextContentSize();
-    if (isBackward) {
-      // 漢|字 사이에서 ← : offset 0이고 앞이 루비면 앞 루비를 건너뜀
-      if (anchor.offset === 0) {
-        const prev = node.getPreviousSibling();
-        rubyToSkip = $isRubyNode(prev) ? prev : node;
-      } else {
-        rubyToSkip = node;
-      }
-    } else {
-      // 漢|字 사이에서 → : offset=len이고 뒤가 루비면 뒤 루비를 건너뜀
-      if (anchor.offset === len) {
-        const next = node.getNextSibling();
-        rubyToSkip = $isRubyNode(next) ? next : node;
-      } else {
-        rubyToSkip = node;
-      }
-    }
+    ruby = node;
   } else if (!$isRubyNode(node)) {
     if (isBackward && anchor.offset === 0) {
       const prev = node.getPreviousSibling();
       if ($isRubyNode(prev)) {
-        rubyToSkip = prev;
+        ruby = prev;
       }
     } else if (!isBackward && anchor.offset === node.getTextContentSize()) {
       const next = node.getNextSibling();
       if ($isRubyNode(next)) {
-        rubyToSkip = next;
+        ruby = next;
       }
     }
   }
 
-  if (rubyToSkip === null) {
+  if (ruby === null) {
     return false;
   }
 
-  const target: LexicalNode | null = isBackward
-    ? rubyToSkip.getPreviousSibling()
-    : rubyToSkip.getNextSibling();
+  let edge: LexicalNode = ruby;
+  const getSibling = isBackward
+    ? (n: LexicalNode) => n.getPreviousSibling()
+    : (n: LexicalNode) => n.getNextSibling();
+  let next = getSibling(edge);
+  while ($isRubyNode(next)) {
+    edge = next;
+    next = getSibling(edge);
+  }
 
-  if ($isTextNode(target)) {
-    const offset = isBackward ? target.getTextContentSize() : 0;
-    selection.anchor.set(target.getKey(), offset, 'text');
-    selection.focus.set(target.getKey(), offset, 'text');
+  if (next !== null && $isTextNode(next) && !$isRubyNode(next)) {
+    const offset = isBackward ? next.getTextContentSize() : 0;
+    selection.anchor.set(next.getKey(), offset, 'text');
+    selection.focus.set(next.getKey(), offset, 'text');
     return true;
   }
 
@@ -197,7 +186,11 @@ export const RubyExtension = /* @__PURE__  */ defineExtension({
           if (editor.isComposing()) {
             return false;
           }
-          return $skipRubyOnArrow(true);
+          const handled = $skipRubyOnArrow(true);
+          if (handled) {
+            event.preventDefault();
+          }
+          return handled;
         },
         COMMAND_PRIORITY_HIGH,
       ),
@@ -215,7 +208,11 @@ export const RubyExtension = /* @__PURE__  */ defineExtension({
           if (editor.isComposing()) {
             return false;
           }
-          return $skipRubyOnArrow(false);
+          const handled = $skipRubyOnArrow(false);
+          if (handled) {
+            event.preventDefault();
+          }
+          return handled;
         },
         COMMAND_PRIORITY_HIGH,
       ),

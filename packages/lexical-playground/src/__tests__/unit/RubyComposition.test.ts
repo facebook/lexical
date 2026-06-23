@@ -474,4 +474,169 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
     expect(editor.read(() => $getRoot().getTextContent())).toBe('前漢の字後');
   });
+
+  test('COMPOSITION_END at offset 0 redirects to prev TextNode', () => {
+    const keys = setupRubyParagraph(editor);
+
+    editor.update(
+      () => {
+        ($getNodeByKey(keys.ruby1Key) as TextNode).select(0, 0);
+        $setCompositionKey(keys.ruby1Key);
+        const event = new CompositionEvent('compositionend', {data: 'あ'});
+        editor.dispatchCommand(COMPOSITION_END_COMMAND, event);
+      },
+      {discrete: true},
+    );
+
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('前あ漢字後');
+  });
+
+  // -- Edge case: ruby as first/last/only child in paragraph --
+
+  test('COMPOSITION_END on paragraph-first ruby at end inserts after', () => {
+    let rubyKey = '';
+    editor.update(
+      () => {
+        const ruby = $createRubyNode('漢', 'かん');
+        const post = $createTextNode('後');
+        const paragraph = $createParagraphNode();
+        paragraph.append(ruby, post);
+        $getRoot().clear().append(paragraph);
+        rubyKey = ruby.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        ($getNodeByKey(rubyKey) as TextNode).select(1, 1);
+        $setCompositionKey(rubyKey);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const event = new CompositionEvent('compositionend', {data: 'あ'});
+        editor.dispatchCommand(COMPOSITION_END_COMMAND, event);
+      },
+      {discrete: true},
+    );
+
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('漢あ後');
+  });
+
+  test('COMPOSITION_END on paragraph-first ruby at start creates TextNode before', () => {
+    let rubyKey = '';
+    editor.update(
+      () => {
+        const ruby = $createRubyNode('漢', 'かん');
+        const post = $createTextNode('後');
+        const paragraph = $createParagraphNode();
+        paragraph.append(ruby, post);
+        $getRoot().clear().append(paragraph);
+        rubyKey = ruby.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        ($getNodeByKey(rubyKey) as TextNode).select(0, 0);
+        $setCompositionKey(rubyKey);
+        const event = new CompositionEvent('compositionend', {data: 'あ'});
+        editor.dispatchCommand(COMPOSITION_END_COMMAND, event);
+      },
+      {discrete: true},
+    );
+
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('あ漢後');
+  });
+
+  test('COMPOSITION_END on solo ruby at end creates TextNode after', () => {
+    let rubyKey = '';
+    editor.update(
+      () => {
+        const ruby = $createRubyNode('漢', 'かん');
+        const paragraph = $createParagraphNode();
+        paragraph.append(ruby);
+        $getRoot().clear().append(paragraph);
+        rubyKey = ruby.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        ($getNodeByKey(rubyKey) as TextNode).select(1, 1);
+        $setCompositionKey(rubyKey);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const event = new CompositionEvent('compositionend', {data: 'あ'});
+        editor.dispatchCommand(COMPOSITION_END_COMMAND, event);
+      },
+      {discrete: true},
+    );
+
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('漢あ');
+  });
+
+  test('COMPOSITION_END on solo ruby at start creates TextNode before', () => {
+    let rubyKey = '';
+    editor.update(
+      () => {
+        const ruby = $createRubyNode('漢', 'かん');
+        const paragraph = $createParagraphNode();
+        paragraph.append(ruby);
+        $getRoot().clear().append(paragraph);
+        rubyKey = ruby.getKey();
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        ($getNodeByKey(rubyKey) as TextNode).select(0, 0);
+        $setCompositionKey(rubyKey);
+        const event = new CompositionEvent('compositionend', {data: 'あ'});
+        editor.dispatchCommand(COMPOSITION_END_COMMAND, event);
+      },
+      {discrete: true},
+    );
+
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('あ漢');
+  });
+
+  // -- Verify state integrity after composition --
+
+  test('ruby text content is preserved after COMPOSITION_END redirect', () => {
+    const keys = setupRubyParagraph(editor);
+
+    editor.update(
+      () => {
+        ($getNodeByKey(keys.ruby2Key) as TextNode).select(1, 1);
+        $setCompositionKey(keys.ruby2Key);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const event = new CompositionEvent('compositionend', {data: 'あ'});
+        editor.dispatchCommand(COMPOSITION_END_COMMAND, event);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const ruby2 = $getNodeByKey(keys.ruby2Key);
+      assert($isRubyNode(ruby2));
+      expect(ruby2.getTextContent()).toBe('字');
+      expect(ruby2.getAnnotation()).toBe('じ');
+    });
+  });
 });

@@ -879,6 +879,11 @@ export function $updateTextNodeFromDOMContent(
 
   if (node.isAttached() && (compositionEnd || !node.isDirty())) {
     const isComposing = node.isComposing();
+
+    if (node.isToken() && isComposing) {
+      return;
+    }
+
     let normalizedTextContent = textContent;
 
     if (isComposing || compositionEnd) {

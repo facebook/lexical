@@ -1738,6 +1738,36 @@ inner
     expect(normalizeMarkdown(markdown, true)).toBe(markdown);
   });
 
+  it('closes a shorter opening fence with a longer closing fence', () => {
+    // Per CommonMark a closing fence may be longer than the opening fence:
+    // https://spec.commonmark.org/0.31.2/#code-fences
+    const markdown = `\`\`\`
+line one
+line two
+\`\`\`\`
+after one
+after two`;
+    // The 4-backtick line closes the 3-backtick block, so the lines inside the
+    // block stay verbatim while the prose after the closing fence is merged.
+    expect(normalizeMarkdown(markdown, true)).toBe(`\`\`\`
+line one
+line two
+\`\`\`\`
+after one after two`);
+  });
+
+  it('keeps content unmerged in an unclosed code block', () => {
+    // Per CommonMark a fenced code block is also closed by the end of the
+    // document, even without a closing fence:
+    // https://spec.commonmark.org/0.31.2/#code-fences
+    const markdown = `\`\`\`
+line one
+line two`;
+    // Without a closing fence everything after the opening fence is code
+    // content, so the lines must stay verbatim instead of being merged as prose.
+    expect(normalizeMarkdown(markdown, true)).toBe(markdown);
+  });
+
   it('tables', () => {
     const markdown = `
 | a | b |

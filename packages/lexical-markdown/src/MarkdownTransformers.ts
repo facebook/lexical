@@ -968,7 +968,6 @@ export function normalizeMarkdown(
   shouldMergeAdjacentLines = false,
 ): string {
   const lines = input.split('\n');
-  let inCodeBlock = false;
   let codeBlockFenceLength = 0;
   const sanitizedLines: string[] = [];
 
@@ -987,11 +986,10 @@ export function normalizeMarkdown(
       continue;
     }
 
-    if (!inCodeBlock) {
+    if (codeBlockFenceLength === 0) {
       // An opening fence may carry an info string (e.g. ```ts)
       const openMatch = line.match(CODE_START_REGEX);
       if (openMatch) {
-        inCodeBlock = true;
         codeBlockFenceLength = openMatch[1].trim().length;
         sanitizedLines.push(line);
         continue;
@@ -1004,7 +1002,6 @@ export function normalizeMarkdown(
         CODE_END_REGEX.test(line) &&
         line.trim().length >= codeBlockFenceLength
       ) {
-        inCodeBlock = false;
         codeBlockFenceLength = 0;
         sanitizedLines.push(line);
         continue;

@@ -31,6 +31,8 @@ import {
   $setCompositionKey,
   $setSelection,
   CONTROLLED_TEXT_INSERTION_COMMAND,
+  KEY_ARROW_LEFT_COMMAND,
+  KEY_ARROW_RIGHT_COMMAND,
   LexicalEditor,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -307,5 +309,94 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     );
 
     expect(domText.nodeValue).toBe('漢か' + NBSP);
+  });
+
+  // -- Arrow key: skip over ruby nodes atomically --
+
+  test('left arrow from after last ruby skips all rubies to prev TextNode', () => {
+    const keys = setupRubyParagraph(editor);
+
+    let result: {key: string; offset: number} | null = null;
+    editor.update(
+      () => {
+        const sel = $createRangeSelection();
+        sel.anchor.set(keys.postKey, 0, 'text');
+        sel.focus.set(keys.postKey, 0, 'text');
+        $setSelection(sel);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const event = new KeyboardEvent('keydown', {key: 'ArrowLeft'});
+        editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
+        const after = $getSelection();
+        result = $isRangeSelection(after)
+          ? {key: after.anchor.key, offset: after.anchor.offset}
+          : null;
+      },
+      {discrete: true},
+    );
+
+    expect(result).toEqual({key: keys.preKey, offset: 1});
+  });
+
+  test('right arrow from before first ruby skips all rubies to next TextNode', () => {
+    const keys = setupRubyParagraph(editor);
+
+    let result: {key: string; offset: number} | null = null;
+    editor.update(
+      () => {
+        const sel = $createRangeSelection();
+        sel.anchor.set(keys.preKey, 1, 'text');
+        sel.focus.set(keys.preKey, 1, 'text');
+        $setSelection(sel);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const event = new KeyboardEvent('keydown', {key: 'ArrowRight'});
+        editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
+        const after = $getSelection();
+        result = $isRangeSelection(after)
+          ? {key: after.anchor.key, offset: after.anchor.offset}
+          : null;
+      },
+      {discrete: true},
+    );
+
+    expect(result).toEqual({key: keys.postKey, offset: 0});
+  });
+
+  test('right arrow between adjacent rubies skips to next TextNode', () => {
+    const keys = setupRubyParagraph(editor);
+
+    let result: {key: string; offset: number} | null = null;
+    editor.update(
+      () => {
+        const sel = $createRangeSelection();
+        sel.anchor.set(keys.ruby1Key, 1, 'text');
+        sel.focus.set(keys.ruby1Key, 1, 'text');
+        $setSelection(sel);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const event = new KeyboardEvent('keydown', {key: 'ArrowRight'});
+        editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
+        const after = $getSelection();
+        result = $isRangeSelection(after)
+          ? {key: after.anchor.key, offset: after.anchor.offset}
+          : null;
+      },
+      {discrete: true},
+    );
+
+    expect(result).toEqual({key: keys.postKey, offset: 0});
   });
 });

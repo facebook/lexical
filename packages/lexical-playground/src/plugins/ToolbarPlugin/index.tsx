@@ -569,11 +569,13 @@ export default function ToolbarPlugin({
   activeEditor,
   setActiveEditor,
   setIsLinkEditMode,
+  setIsRubyEditMode,
 }: {
   editor: LexicalEditor;
   activeEditor: LexicalEditor;
   setActiveEditor: Dispatch<LexicalEditor>;
   setIsLinkEditMode: Dispatch<boolean>;
+  setIsRubyEditMode: Dispatch<boolean>;
 }): JSX.Element {
   const [selectedElementKey, setSelectedElementKey] = useState<NodeKey | null>(
     null,
@@ -898,25 +900,22 @@ export default function ToolbarPlugin({
 
   const insertRuby = useCallback(() => {
     let hasRuby = false;
+    let hasSelection = false;
     activeEditor.read(() => {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
         hasRuby = selection.getNodes().some(n => $isRubyNode(n));
+        hasSelection = !selection.isCollapsed();
       }
     });
     if (hasRuby) {
       activeEditor.update(() => {
         $toggleRuby(null);
       });
-    } else {
-      const annotation = window.prompt('Ruby annotation (e.g. かん):');
-      if (annotation) {
-        activeEditor.update(() => {
-          $toggleRuby(annotation);
-        });
-      }
+    } else if (hasSelection) {
+      setIsRubyEditMode(true);
     }
-  }, [activeEditor]);
+  }, [activeEditor, setIsRubyEditMode]);
 
   const onCodeLanguageSelect = useCallback(
     (value: string | null) => {
@@ -1180,9 +1179,7 @@ export default function ToolbarPlugin({
             aria-label="Insert ruby annotation"
             title="Insert ruby annotation"
             type="button">
-            <span className="text" style={{fontSize: '14px', fontWeight: 600}}>
-              ルビ
-            </span>
+            <i className="format ruby" />
           </button>
           <DropdownColorPicker
             disabled={!isEditable}

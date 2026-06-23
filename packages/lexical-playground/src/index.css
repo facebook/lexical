@@ -505,6 +505,10 @@ i.add-comment {
   mask-image: url(images/icons/chat-left-text.svg);
 }
 
+i.ruby {
+  background-image: url(images/icons/ruby.svg);
+}
+
 i.horizontal-rule {
   -webkit-mask-image: url(images/icons/horizontal-rule.svg);
   mask-image: url(images/icons/horizontal-rule.svg);

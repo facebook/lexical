@@ -6,70 +6,43 @@
  *
  */
 
-import type {MdastTransformer} from './types';
-import type {ElementNode} from 'lexical';
-import type {Root} from 'mdast';
+// `@lexical/mdast` is configured exclusively through the Lexical extension
+// system. Each feature extension ships the nodes it needs and contributes its
+// import/export rules (and micromark/mdast extensions) to the core
+// `MdastExtension` registry — mirroring how `@lexical/html`'s feature
+// extensions contribute to `DOMImportExtension`.
+//
+// - Add `MdastCommonMarkExtension` (or individual feature extensions) for
+//   import/export, and `MdastShortcutsExtension` for streaming shortcuts.
+// - Read the Markdown API from the editor with
+//   `$getExtensionOutput(MdastExtension)`, or via the
+//   `$convert*ViaExtension` shorthands.
 
-import {createMdastExport} from './MdastExport';
-import {createMdastImport} from './MdastImport';
-import {TRANSFORMERS} from './MdastTransformers';
-
-/**
- * Parses `markdown` with micromark/mdast and replaces the contents of the
- * editor root (or `node`) with the resulting Lexical nodes.
- *
- * @param markdown - the Markdown source to import.
- * @param transformers - the transformer set controlling which constructs are
- *   recognized and how they map to Lexical nodes. Defaults to
- *   {@link TRANSFORMERS} (CommonMark + GFM strikethrough/task-lists/autolinks).
- * @param node - an optional element to import into instead of the root.
- * @param tree - an optional pre-parsed mdast `Root`, bypassing the string parse.
- */
-export function $convertFromMarkdownString(
-  markdown: string,
-  transformers: readonly MdastTransformer[] = TRANSFORMERS,
-  node?: ElementNode,
-  tree?: Root,
-): void {
-  createMdastImport(transformers)(markdown, node, tree);
-}
-
-/**
- * Serializes the editor root (or `node`) to a Markdown string via mdast.
- */
-export function $convertToMarkdownString(
-  transformers: readonly MdastTransformer[] = TRANSFORMERS,
-  node?: ElementNode,
-): string {
-  return createMdastExport(transformers)(node);
-}
-
-export {compileTransformers} from './compile';
-export {createMdastExport} from './MdastExport';
-export type {MdastConfig, MdastShortcutsConfig} from './MdastExtension';
-export {MdastExtension, MdastShortcutsExtension} from './MdastExtension';
-export type {MdastImportOptions} from './MdastImport';
-export {createMdastImport} from './MdastImport';
-export type {MdastShortcutsOptions} from './MdastShortcuts';
-export {registerMarkdownShortcuts} from './MdastShortcuts';
-export type {MdastBlockMatch} from './MdastStream';
-export {MarkdownStreamScanner} from './MdastStream';
-export {TABLE_TRANSFORMER} from './MdastTableTransformer';
-export {
-  AUTOLINK_TRANSFORMER,
-  COMMONMARK_TRANSFORMER,
-  phrasingFromFormattedText,
-  STRIKETHROUGH_TRANSFORMER,
-  TASK_LIST_TRANSFORMER,
-  TRANSFORMERS,
-} from './MdastTransformers';
 export type {
-  CompiledMdastTransformers,
+  MdastConfig,
+  MdastExtensionOutput,
+  MdastShortcutsConfig,
+} from './MdastExtension';
+export {
+  $convertFromMarkdownStringViaExtension,
+  $convertToMarkdownStringViaExtension,
+  MdastCodeExtension,
+  MdastCommonMarkExtension,
+  MdastExtension,
+  MdastLinkExtension,
+  MdastListExtension,
+  MdastRichTextExtension,
+  MdastShortcutsExtension,
+  MdastStrikethroughExtension,
+} from './MdastExtension';
+export {MdastTableExtension} from './MdastTableExtension';
+export type {
   MdastExportContext,
   MdastExportHandler,
+  MdastExportRule,
   MdastImportContext,
   MdastImportHandler,
+  MdastImportRule,
   MdastNode,
   MdastParent,
-  MdastTransformer,
 } from './types';

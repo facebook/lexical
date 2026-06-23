@@ -6,30 +6,35 @@
  *
  */
 
-import {CodeNode} from '@lexical/code-core';
-import {createHeadlessEditor} from '@lexical/headless';
-import {LinkNode} from '@lexical/link';
-import {ListItemNode, ListNode} from '@lexical/list';
-import {HeadingNode, QuoteNode} from '@lexical/rich-text';
+import type {CodeNode} from '@lexical/code-core';
+import type {LinkNode} from '@lexical/link';
+import type {ListNode} from '@lexical/list';
+import type {HeadingNode} from '@lexical/rich-text';
+
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $createParagraphNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
   $isTextNode,
+  defineExtension,
   type ElementNode,
   KEY_ENTER_COMMAND,
   type LexicalEditor,
 } from 'lexical';
-import {beforeEach, describe, expect, it} from 'vitest';
+import {beforeEach, describe, expect, it, onTestFinished} from 'vitest';
 
-import {registerMarkdownShortcuts} from '../../index';
+import {MdastShortcutsExtension} from '../../index';
 
 function createEditor(): LexicalEditor {
-  const editor = createHeadlessEditor({
-    nodes: [HeadingNode, QuoteNode, ListNode, ListItemNode, CodeNode, LinkNode],
-  });
-  registerMarkdownShortcuts(editor);
+  const editor = buildEditorFromExtensions(
+    defineExtension({
+      dependencies: [MdastShortcutsExtension],
+      name: '[root]',
+    }),
+  );
+  onTestFinished(() => editor.dispose());
   editor.update(
     () => {
       const root = $getRoot();

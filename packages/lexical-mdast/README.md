@@ -8,43 +8,82 @@ An alternative to `@lexical/markdown` that is built on the
 
 Where `@lexical/markdown` ships its own regular-expression based parser, this
 package delegates Markdown parsing and serialization to `micromark` and
-`mdast-util-*`. That means:
+`mdast-util-*`. That means **CommonMark + GFM compliance** comes from the same
+parser used by `remark`, and Markdown **shortcuts** are recognized by feeding
+keystrokes back through that same parser — there is no second grammar to keep
+in sync.
 
-- **CommonMark + GFM compliance** comes from the same battle-tested parser used
-  by `remark`, including tables, task lists, strikethrough and autolinks.
-- **Extensions compose.** A `MdastTransformer` bundles the micromark syntax
-  extension, the `mdast-util` extension, and the Lexical node mapping in one
-  object, so adding a Markdown feature is a single dependency away.
-- **Streaming shortcuts.** `registerMarkdownShortcuts` feeds keystrokes into
-  micromark's incremental tokenizer to recognize Markdown shortcuts as you
-  type, using the exact same grammar as the full-document importer.
+## Configured through extensions
+
+`@lexical/mdast` is set up **exclusively** through the Lexical extension
+system, modelled on `@lexical/html`'s `DOMImportExtension`. Each feature
+extension ships the nodes it needs and contributes its import/export rules (and
+the micromark/mdast extensions that tokenize them) to the core
+`MdastExtension` registry:
+
+| Extension | Ships | Adds |
+| --- | --- | --- |
+| `MdastRichTextExtension` | `HeadingNode`, `QuoteNode` | headings, block quotes |
+| `MdastListExtension` | `ListNode`, `ListItemNode` | ordered/unordered/task lists |
+| `MdastCodeExtension` | `CodeNode` | fenced & indented code |
+| `MdastLinkExtension` | `LinkNode` | links, GFM autolinks |
+| `MdastStrikethroughExtension` | – | GFM `~~strikethrough~~` |
+| `MdastTableExtension` | `TableNode`, … | GFM tables |
+| `MdastCommonMarkExtension` | – | bundle of the five above (no tables) |
+| `MdastShortcutsExtension` | – | streaming keyboard shortcuts |
 
 ## Usage
 
 ```ts
 import {
-  $convertFromMarkdownString,
-  $convertToMarkdownString,
-  registerMarkdownShortcuts,
+  $convertFromMarkdownStringViaExtension,
+  $convertToMarkdownStringViaExtension,
+  MdastShortcutsExtension,
+  MdastTableExtension,
 } from '@lexical/mdast';
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {defineExtension} from 'lexical';
 
+const editor = buildEditorFromExtensions(
+  defineExtension({
+    // MdastShortcutsExtension pulls in MdastCommonMarkExtension; add
+    // MdastTableExtension for GFM tables.
+    dependencies: [MdastShortcutsExtension, MdastTableExtension],
+    name: '[root]',
+  }),
+);
+
+// Import / export run inside the editor; both are `$`-functions.
 editor.update(() => {
-  $convertFromMarkdownString('# Hello *world*');
+  $convertFromMarkdownStringViaExtension('# Hello *world*');
 });
-
-const markdown = editor.read(() => $convertToMarkdownString());
-
-const unregister = registerMarkdownShortcuts(editor);
+const markdown = editor.read(() => $convertToMarkdownStringViaExtension());
 ```
 
-Or, the recommended extension-first wiring:
+The same API is available from the editor as
+`$getExtensionOutput(MdastExtension).$convertFromMarkdownString(...)` /
+`.$convertToMarkdownString(...)`.
+
+### Custom mappings
+
+Because extensions are the unit of configuration, you add or override behavior
+by contributing rules to `MdastExtension` from your own extension:
 
 ```ts
-import {MdastExtension, MdastShortcutsExtension} from '@lexical/mdast';
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {MdastExtension} from '@lexical/mdast';
+import {configExtension, defineExtension} from 'lexical';
 
-const editor = buildEditorFromExtensions({
-  name: 'editor',
-  dependencies: [MdastExtension, MdastShortcutsExtension],
+export const MyMdastExtension = defineExtension({
+  name: 'my-mdast',
+  nodes: [MyNode],
+  dependencies: [
+    configExtension(MdastExtension, {
+      importRules: [{type: 'myMdastType', $import: $importMyNode}],
+      exportRules: [{type: 'my-node', $export: $exportMyNode}],
+      micromarkExtensions: [myMicromarkExtension()],
+      mdastExtensions: [myMdastExtension()],
+      toMarkdownExtensions: [myToMarkdownExtension()],
+    }),
+  ],
 });
 ```

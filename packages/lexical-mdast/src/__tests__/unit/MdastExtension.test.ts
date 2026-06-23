@@ -6,7 +6,10 @@
  *
  */
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  $getExtensionOutput,
+  buildEditorFromExtensions,
+} from '@lexical/extension';
 import {ListNode} from '@lexical/list';
 import {HeadingNode} from '@lexical/rich-text';
 import {
@@ -19,41 +22,67 @@ import {
 import {describe, expect, it, onTestFinished} from 'vitest';
 
 import {
-  $convertFromMarkdownString,
-  $convertToMarkdownString,
+  $convertFromMarkdownStringViaExtension,
+  $convertToMarkdownStringViaExtension,
+  MdastCommonMarkExtension,
   MdastExtension,
   MdastShortcutsExtension,
 } from '../../index';
 
-function buildEditor() {
-  const editor = buildEditorFromExtensions(
-    defineExtension({
-      dependencies: [MdastExtension, MdastShortcutsExtension],
-      name: '[root]',
-    }),
-  );
+function buildEditor(dependencies: Parameters<typeof defineExtension>[0]) {
+  const editor = buildEditorFromExtensions(dependencies);
   onTestFinished(() => editor.dispose());
   return editor;
 }
 
 describe('@lexical/mdast extensions', () => {
-  it('registers the nodes needed to import/export markdown', () => {
-    const editor = buildEditor();
+  it('feature extensions ship the nodes their rules need', () => {
+    const editor = buildEditor(
+      defineExtension({
+        dependencies: [MdastCommonMarkExtension],
+        name: '[root]',
+      }),
+    );
     expect(editor.hasNode(HeadingNode)).toBe(true);
     expect(editor.hasNode(ListNode)).toBe(true);
 
     editor.update(
       () => {
-        $convertFromMarkdownString('# Title\n\n- a\n- b');
+        $convertFromMarkdownStringViaExtension('# Title\n\n- a\n- b');
       },
       {discrete: true},
     );
-    const out = editor.read(() => $convertToMarkdownString());
+    const out = editor.read(() => $convertToMarkdownStringViaExtension());
     expect(out).toBe('# Title\n\n- a\n- b');
   });
 
+  it('exposes the Markdown API through MdastExtension output', () => {
+    const editor = buildEditor(
+      defineExtension({
+        dependencies: [MdastCommonMarkExtension],
+        name: '[root]',
+      }),
+    );
+    editor.update(
+      () => {
+        $getExtensionOutput(MdastExtension).$convertFromMarkdownString('## Hi');
+      },
+      {discrete: true},
+    );
+    expect(
+      editor.read(() =>
+        $getExtensionOutput(MdastExtension).$convertToMarkdownString(),
+      ),
+    ).toBe('## Hi');
+  });
+
   it('wires up streaming shortcuts via MdastShortcutsExtension', () => {
-    const editor = buildEditor();
+    const editor = buildEditor(
+      defineExtension({
+        dependencies: [MdastShortcutsExtension],
+        name: '[root]',
+      }),
+    );
     editor.update(
       () => {
         const paragraph = $createParagraphNode();

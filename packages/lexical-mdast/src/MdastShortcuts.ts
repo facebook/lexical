@@ -7,7 +7,7 @@
  */
 
 import type {MdastBlockMatch} from './MdastStream';
-import type {MdastNode, MdastTransformer} from './types';
+import type {CompiledMdast, MdastNode} from './types';
 import type {ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
 import type {ElementNode, LexicalEditor, LexicalNode, TextNode} from 'lexical';
@@ -39,7 +39,6 @@ import {
 } from 'lexical';
 
 import {MarkdownStreamScanner} from './MdastStream';
-import {TRANSFORMERS} from './MdastTransformers';
 
 /** Characters that can close an inline construct and so warrant a re-scan. */
 const INLINE_TRIGGERS = new Set<string>(['*', '_', '`', '~', ')']);
@@ -242,26 +241,26 @@ function $isShortcutParagraph(
   );
 }
 
-export interface MdastShortcutsOptions {
-  transformers?: readonly MdastTransformer[];
-}
-
 /**
- * Registers streaming Markdown shortcuts on `editor`. As the user types, the
- * current line/inline buffer is fed back through micromark (the same parser as
- * full-document import) and recognized constructs are transformed in place:
+ * Registers streaming Markdown shortcuts on `editor` from the
+ * {@link CompiledMdast} registry. As the user types, the current line/inline
+ * buffer is fed back through micromark (the same parser as full-document
+ * import) and recognized constructs are transformed in place:
  *
  * - Block markers (`# `, `> `, `- `, `1. `, `- [ ] `) convert the paragraph
  *   into the matching Lexical block as soon as the trailing space is typed.
  * - Fenced code (`` ```lang ``) converts on <kbd>Enter</kbd>.
  * - Inline constructs (`*em*`, `**strong**`, `` `code` ``, `~~del~~`,
  *   `[text](url)`) convert when their closing delimiter is typed.
+ *
+ * Wired up by {@link MdastShortcutsExtension}; this is an internal helper, not
+ * part of the package's public API.
  */
 export function registerMarkdownShortcuts(
   editor: LexicalEditor,
-  transformers: readonly MdastTransformer[] = TRANSFORMERS,
+  compiled: CompiledMdast,
 ): () => void {
-  const scanner = new MarkdownStreamScanner(transformers);
+  const scanner = new MarkdownStreamScanner(compiled);
 
   return mergeRegister(
     editor.registerUpdateListener(

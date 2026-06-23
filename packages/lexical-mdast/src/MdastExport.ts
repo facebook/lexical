@@ -6,26 +6,20 @@
  *
  */
 
-import type {
-  CompiledMdastTransformers,
-  MdastExportContext,
-  MdastNode,
-  MdastTransformer,
-} from './types';
+import type {CompiledMdast, MdastExportContext, MdastNode} from './types';
 import type {ElementNode, LexicalNode} from 'lexical';
 import type {Paragraph, PhrasingContent, RootContent} from 'mdast';
 
 import {$getRoot, $isElementNode, $isLineBreakNode, $isTextNode} from 'lexical';
 import {toMarkdown} from 'mdast-util-to-markdown';
 
-import {compileTransformers} from './compile';
-import {phrasingFromFormattedText, TEXT_FORMAT_MASK} from './MdastTransformers';
+import {phrasingFromFormattedText, TEXT_FORMAT_MASK} from './handlers';
 
 function $isBlockNode(node: LexicalNode): boolean {
   return $isElementNode(node) && !node.isInline();
 }
 
-function createNodeExporter(compiled: CompiledMdastTransformers) {
+function createNodeExporter(compiled: CompiledMdast) {
   const {exportHandlers} = compiled;
 
   const context: MdastExportContext = {
@@ -161,9 +155,8 @@ function createNodeExporter(compiled: CompiledMdastTransformers) {
  * supplied element (or the editor root) into a Markdown string.
  */
 export function createMdastExport(
-  transformers: readonly MdastTransformer[],
+  compiled: CompiledMdast,
 ): (node?: ElementNode) => string {
-  const compiled = compileTransformers(transformers);
   const {$dispatch} = createNodeExporter(compiled);
 
   return node => {

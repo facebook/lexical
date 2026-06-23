@@ -6,12 +6,7 @@
  *
  */
 
-import type {
-  CompiledMdastTransformers,
-  LexicalNode,
-  MdastNode,
-  MdastTransformer,
-} from './types';
+import type {CompiledMdast, LexicalNode, MdastNode} from './types';
 import type {
   Blockquote,
   Code,
@@ -24,7 +19,6 @@ import type {
 
 import {fromMarkdown} from 'mdast-util-from-markdown';
 
-import {compileTransformers} from './compile';
 import {createNodeImporter} from './MdastImport';
 
 /** mdast inline types that this engine can turn into a markdown shortcut. */
@@ -79,14 +73,15 @@ function contentStartOffset(node: AnyMdastNode, line: string): number {
  * grammar — and the same enabled extensions — as full-document import. There
  * is no second, divergent set of regular expressions to keep in sync.
  *
- * It is exported as public API so hosts can build their own shortcut-style
- * affordances on top of the same incremental parser.
+ * It is constructed from the {@link CompiledMdast} registry assembled by
+ * {@link MdastExtension}, so it stays in lock-step with whatever feature
+ * extensions are enabled.
  */
 export class MarkdownStreamScanner {
-  private readonly compiled: CompiledMdastTransformers;
+  private readonly compiled: CompiledMdast;
 
-  constructor(transformers: readonly MdastTransformer[]) {
-    this.compiled = compileTransformers(transformers);
+  constructor(compiled: CompiledMdast) {
+    this.compiled = compiled;
   }
 
   private parse(value: string) {

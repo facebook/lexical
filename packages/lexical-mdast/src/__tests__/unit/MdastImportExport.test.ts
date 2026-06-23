@@ -6,51 +6,45 @@
  *
  */
 
-import {CodeNode} from '@lexical/code-core';
-import {createHeadlessEditor} from '@lexical/headless';
+import type {HeadingNode} from '@lexical/rich-text';
+import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
+
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {LinkNode} from '@lexical/link';
-import {ListItemNode, ListNode} from '@lexical/list';
-import {HeadingNode, QuoteNode} from '@lexical/rich-text';
-import {TableCellNode, TableNode, TableRowNode} from '@lexical/table';
-import {$getRoot, type ElementNode, type TextNode} from 'lexical';
-import {describe, expect, it} from 'vitest';
+import {ListNode} from '@lexical/list';
+import {TableNode} from '@lexical/table';
+import {$getRoot, defineExtension} from 'lexical';
+import {describe, expect, it, onTestFinished} from 'vitest';
 
 import {
-  $convertFromMarkdownString,
-  $convertToMarkdownString,
-  TABLE_TRANSFORMER,
-  TRANSFORMERS,
+  $convertFromMarkdownStringViaExtension,
+  $convertToMarkdownStringViaExtension,
+  MdastCommonMarkExtension,
+  MdastTableExtension,
 } from '../../index';
 
-function createEditor() {
-  return createHeadlessEditor({
-    nodes: [
-      HeadingNode,
-      QuoteNode,
-      ListNode,
-      ListItemNode,
-      CodeNode,
-      LinkNode,
-      TableNode,
-      TableRowNode,
-      TableCellNode,
-    ],
-  });
+function createEditor(withTable = false): LexicalEditor {
+  const editor = buildEditorFromExtensions(
+    defineExtension({
+      dependencies: withTable
+        ? [MdastCommonMarkExtension, MdastTableExtension]
+        : [MdastCommonMarkExtension],
+      name: '[root]',
+    }),
+  );
+  onTestFinished(() => editor.dispose());
+  return editor;
 }
 
-function importExport(markdown: string, transformers = TRANSFORMERS): string {
-  const editor = createEditor();
-  let output = '';
+function importExport(markdown: string, withTable = false): string {
+  const editor = createEditor(withTable);
   editor.update(
     () => {
-      $convertFromMarkdownString(markdown, transformers);
+      $convertFromMarkdownStringViaExtension(markdown);
     },
     {discrete: true},
   );
-  editor.read(() => {
-    output = $convertToMarkdownString(transformers);
-  });
-  return output;
+  return editor.read(() => $convertToMarkdownStringViaExtension());
 }
 
 describe('@lexical/mdast import/export', () => {
@@ -97,7 +91,7 @@ describe('@lexical/mdast import/export', () => {
     const editor = createEditor();
     editor.update(
       () => {
-        $convertFromMarkdownString('# Hello *world*');
+        $convertFromMarkdownStringViaExtension('# Hello *world*');
       },
       {discrete: true},
     );
@@ -117,7 +111,7 @@ describe('@lexical/mdast import/export', () => {
     const editor = createEditor();
     editor.update(
       () => {
-        $convertFromMarkdownString('- a\n- b\n  - b1\n  - b2\n- c');
+        $convertFromMarkdownStringViaExtension('- a\n- b\n  - b1\n  - b2\n- c');
       },
       {discrete: true},
     );
@@ -138,7 +132,7 @@ describe('@lexical/mdast import/export', () => {
     const editor = createEditor();
     editor.update(
       () => {
-        $convertFromMarkdownString('see https://lexical.dev today');
+        $convertFromMarkdownStringViaExtension('see https://lexical.dev today');
       },
       {discrete: true},
     );
@@ -173,9 +167,7 @@ describe('@lexical/mdast import/export', () => {
     expect(twice).toBe(once);
   });
 
-  describe('with the table transformer', () => {
-    const transformers = [...TRANSFORMERS, TABLE_TRANSFORMER];
-
+  describe('with MdastTableExtension', () => {
     it('round-trips a GFM table', () => {
       const markdown = [
         '| a | b |',
@@ -183,20 +175,19 @@ describe('@lexical/mdast import/export', () => {
         '| 1 | 2 |',
         '| 3 | 4 |',
       ].join('\n');
-      const out = importExport(markdown, transformers);
+      const out = importExport(markdown, true);
       // Re-import to confirm the structure is stable.
-      expect(importExport(out, transformers)).toBe(out);
+      expect(importExport(out, true)).toBe(out);
       expect(out).toContain('| a | b |');
       expect(out).toContain('| 1 | 2 |');
     });
 
     it('imports a table into @lexical/table nodes', () => {
-      const editor = createEditor();
+      const editor = createEditor(true);
       editor.update(
         () => {
-          $convertFromMarkdownString(
+          $convertFromMarkdownStringViaExtension(
             '| h1 | h2 |\n| - | - |\n| a | b |',
-            transformers,
           );
         },
         {discrete: true},

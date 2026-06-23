@@ -6,13 +6,10 @@
  *
  */
 
-import type {
-  MdastExportHandler,
-  MdastImportHandler,
-  MdastTransformer,
-} from './types';
+import type {MdastExportHandler, MdastImportHandler} from './types';
 import type {Table, TableCell, TableRow} from 'mdast';
 
+import {configExtension} from '@lexical/extension';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -25,9 +22,11 @@ import {
   TableNode,
   TableRowNode,
 } from '@lexical/table';
-import {$createParagraphNode, $isElementNode} from 'lexical';
+import {$createParagraphNode, $isElementNode, defineExtension} from 'lexical';
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
+
+import {MdastExtension} from './MdastExtension';
 
 const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   const table = $createTableNode();
@@ -77,17 +76,35 @@ const exportTable: MdastExportHandler = (node, ctx) => {
 };
 
 /**
- * GFM tables, mapped to `@lexical/table` nodes. This is opt-in (not part of the
- * default {@link TRANSFORMERS}) because it requires the `@lexical/table` nodes
- * to be registered on the editor. The first table row is treated as the header
- * row in both directions.
+ * GFM tables, mapped to `@lexical/table` nodes. Opt-in (not part of
+ * {@link MdastCommonMarkExtension}) because it pulls in the `@lexical/table`
+ * nodes it ships. The first table row is treated as the header row in both
+ * directions.
+ *
+ * @example
+ * ```ts
+ * import {MdastShortcutsExtension, MdastTableExtension} from '@lexical/mdast';
+ * import {buildEditorFromExtensions} from '@lexical/extension';
+ * import {defineExtension} from 'lexical';
+ *
+ * const editor = buildEditorFromExtensions(
+ *   defineExtension({
+ *     dependencies: [MdastShortcutsExtension, MdastTableExtension],
+ *     name: '[root]',
+ *   }),
+ * );
+ * ```
  */
-export const TABLE_TRANSFORMER: MdastTransformer = {
-  dependencies: [TableNode, TableRowNode, TableCellNode],
-  exportHandlers: {table: exportTable},
-  importHandlers: {table: $importTable},
-  mdastExtensions: [gfmTableFromMarkdown()],
-  micromarkExtensions: [gfmTable()],
-  name: '@lexical/mdast/gfm-table',
-  toMarkdownExtensions: [gfmTableToMarkdown()],
-};
+export const MdastTableExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [
+    /* @__PURE__ */ configExtension(MdastExtension, {
+      exportRules: [{$export: exportTable, type: 'table'}],
+      importRules: [{$import: $importTable, type: 'table'}],
+      mdastExtensions: [gfmTableFromMarkdown()],
+      micromarkExtensions: [gfmTable()],
+      toMarkdownExtensions: [gfmTableToMarkdown()],
+    }),
+  ],
+  name: '@lexical/mdast/Table',
+  nodes: [TableNode, TableRowNode, TableCellNode],
+});

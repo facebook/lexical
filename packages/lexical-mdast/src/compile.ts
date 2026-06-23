@@ -6,65 +6,37 @@
  *
  */
 
-import type {
-  CompiledMdastTransformers,
-  Klass,
-  LexicalNode,
-  MdastTransformer,
-} from './types';
+import type {MdastConfig} from './MdastExtension';
+import type {CompiledMdast} from './types';
 
 /**
- * Flattens a list of {@link MdastTransformer}s into the extension arrays and
- * indexed handler maps used by the importer, exporter, and shortcut engine.
- *
- * Later transformers win for a given mdast/Lexical node type, which lets a
- * caller override a default handler by appending their own transformer.
+ * Compiles the raw contribution arrays held in {@link MdastConfig} into the
+ * indexed registry used at runtime. Rules earlier in the arrays win for a
+ * given node `type`; since {@link MdastExtension}'s `mergeConfig` prepends the
+ * rules contributed by extensions merged later (closer to the editor root),
+ * those higher-priority rules take precedence — mirroring the dispatch order
+ * of `@lexical/html`'s `DOMImportExtension`.
  */
-export function compileTransformers(
-  transformers: readonly MdastTransformer[],
-): CompiledMdastTransformers {
-  const importHandlers: CompiledMdastTransformers['importHandlers'] = new Map();
-  const exportHandlers: CompiledMdastTransformers['exportHandlers'] = new Map();
-  const micromarkExtensions: CompiledMdastTransformers['micromarkExtensions'] =
-    [];
-  const mdastExtensions: CompiledMdastTransformers['mdastExtensions'] = [];
-  const toMarkdownExtensions: CompiledMdastTransformers['toMarkdownExtensions'] =
-    [];
-  const dependencySet = new Set<Klass<LexicalNode>>();
+export function compileMdast(config: MdastConfig): CompiledMdast {
+  const importHandlers: CompiledMdast['importHandlers'] = new Map();
+  const exportHandlers: CompiledMdast['exportHandlers'] = new Map();
 
-  for (const transformer of transformers) {
-    if (transformer.micromarkExtensions) {
-      micromarkExtensions.push(...transformer.micromarkExtensions);
+  for (const rule of config.importRules) {
+    if (!importHandlers.has(rule.type)) {
+      importHandlers.set(rule.type, rule.$import);
     }
-    if (transformer.mdastExtensions) {
-      mdastExtensions.push(...transformer.mdastExtensions);
-    }
-    if (transformer.toMarkdownExtensions) {
-      toMarkdownExtensions.push(...transformer.toMarkdownExtensions);
-    }
-    if (transformer.dependencies) {
-      for (const dependency of transformer.dependencies) {
-        dependencySet.add(dependency);
-      }
-    }
-    if (transformer.importHandlers) {
-      for (const type of Object.keys(transformer.importHandlers)) {
-        importHandlers.set(type, transformer.importHandlers[type]);
-      }
-    }
-    if (transformer.exportHandlers) {
-      for (const type of Object.keys(transformer.exportHandlers)) {
-        exportHandlers.set(type, transformer.exportHandlers[type]);
-      }
+  }
+  for (const rule of config.exportRules) {
+    if (!exportHandlers.has(rule.type)) {
+      exportHandlers.set(rule.type, rule.$export);
     }
   }
 
   return {
-    dependencies: [...dependencySet],
     exportHandlers,
     importHandlers,
-    mdastExtensions,
-    micromarkExtensions,
-    toMarkdownExtensions,
+    mdastExtensions: [...config.mdastExtensions],
+    micromarkExtensions: [...config.micromarkExtensions],
+    toMarkdownExtensions: [...config.toMarkdownExtensions],
   };
 }

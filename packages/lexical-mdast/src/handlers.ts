@@ -6,12 +6,8 @@
  *
  */
 
-import type {
-  MdastExportHandler,
-  MdastImportHandler,
-  MdastTransformer,
-} from './types';
-import type {ListType} from '@lexical/list';
+import type {MdastExportHandler, MdastImportHandler} from './types';
+import type {ListItemNode, ListNode, ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
 import type {LexicalNode} from 'lexical';
 import type {
@@ -37,16 +33,12 @@ import {
   $createListNode,
   $isListItemNode,
   $isListNode,
-  ListItemNode,
-  ListNode,
 } from '@lexical/list';
 import {
   $createHeadingNode,
   $createQuoteNode,
   $isHeadingNode,
   $isQuoteNode,
-  HeadingNode,
-  QuoteNode,
 } from '@lexical/rich-text';
 import {
   $createLineBreakNode,
@@ -57,44 +49,35 @@ import {
   $isTextNode,
   TEXT_TYPE_TO_FORMAT,
 } from 'lexical';
-import {
-  gfmAutolinkLiteralFromMarkdown,
-  gfmAutolinkLiteralToMarkdown,
-} from 'mdast-util-gfm-autolink-literal';
-import {
-  gfmStrikethroughFromMarkdown,
-  gfmStrikethroughToMarkdown,
-} from 'mdast-util-gfm-strikethrough';
-import {
-  gfmTaskListItemFromMarkdown,
-  gfmTaskListItemToMarkdown,
-} from 'mdast-util-gfm-task-list-item';
-import {gfmAutolinkLiteral} from 'micromark-extension-gfm-autolink-literal';
-import {gfmStrikethrough} from 'micromark-extension-gfm-strikethrough';
-import {gfmTaskListItem} from 'micromark-extension-gfm-task-list-item';
 
 const FORMAT_BOLD = TEXT_TYPE_TO_FORMAT.bold;
 const FORMAT_ITALIC = TEXT_TYPE_TO_FORMAT.italic;
 const FORMAT_STRIKETHROUGH = TEXT_TYPE_TO_FORMAT.strikethrough;
 const FORMAT_CODE = TEXT_TYPE_TO_FORMAT.code;
 
+export const TEXT_FORMAT_MASK =
+  FORMAT_BOLD | FORMAT_ITALIC | FORMAT_STRIKETHROUGH | FORMAT_CODE;
+
 /* -------------------------------------------------------------------------- *
  * Import handlers: mdast node -> Lexical node(s)                              *
  * -------------------------------------------------------------------------- */
 
-const $importParagraph: MdastImportHandler<Paragraph> = (node, ctx) => {
+export const $importParagraph: MdastImportHandler<Paragraph> = (node, ctx) => {
   const paragraph = $createParagraphNode();
   paragraph.append(...ctx.importChildren(node));
   return paragraph;
 };
 
-const $importHeading: MdastImportHandler<Heading> = (node, ctx) => {
+export const $importHeading: MdastImportHandler<Heading> = (node, ctx) => {
   const heading = $createHeadingNode(`h${node.depth}` as HeadingTagType);
   heading.append(...ctx.importChildren(node));
   return heading;
 };
 
-const $importBlockquote: MdastImportHandler<Blockquote> = (node, ctx) => {
+export const $importBlockquote: MdastImportHandler<Blockquote> = (
+  node,
+  ctx,
+) => {
   const quote = $createQuoteNode();
   const children: LexicalNode[] = [];
   for (const child of node.children) {
@@ -125,7 +108,7 @@ function $listTypeFromMdast(node: List): ListType {
   return 'bullet';
 }
 
-const $importList: MdastImportHandler<List> = (node, ctx) => {
+export const $importList: MdastImportHandler<List> = (node, ctx) => {
   const listType = $listTypeFromMdast(node);
   const start = node.ordered && node.start != null ? node.start : 1;
   const list = $createListNode(listType, start);
@@ -135,7 +118,7 @@ const $importList: MdastImportHandler<List> = (node, ctx) => {
   return list;
 };
 
-const $importListItem: MdastImportHandler<ListItem> = (node, ctx) => {
+export const $importListItem: MdastImportHandler<ListItem> = (node, ctx) => {
   const item = $createListItemNode(
     typeof node.checked === 'boolean' ? node.checked : undefined,
   );
@@ -159,7 +142,7 @@ const $importListItem: MdastImportHandler<ListItem> = (node, ctx) => {
   return [item, ...extraItems];
 };
 
-const $importCode: MdastImportHandler<Code> = node => {
+export const $importCode: MdastImportHandler<Code> = node => {
   const code = $createCodeNode(node.lang || undefined);
   if (node.value) {
     code.append($createTextNode(node.value));
@@ -167,27 +150,27 @@ const $importCode: MdastImportHandler<Code> = node => {
   return code;
 };
 
-const importText: MdastImportHandler<MdastText> = (node, ctx) =>
+export const importText: MdastImportHandler<MdastText> = (node, ctx) =>
   ctx.createText(node.value);
 
-const importHtml: MdastImportHandler<Html> = (node, ctx) =>
+export const importHtml: MdastImportHandler<Html> = (node, ctx) =>
   ctx.createText(node.value);
 
-const importInlineCode: MdastImportHandler<InlineCode> = (node, ctx) =>
+export const importInlineCode: MdastImportHandler<InlineCode> = (node, ctx) =>
   ctx.createText(node.value, ctx.format | FORMAT_CODE);
 
-const importEmphasis: MdastImportHandler<Emphasis> = (node, ctx) =>
+export const importEmphasis: MdastImportHandler<Emphasis> = (node, ctx) =>
   ctx.importChildren(node, FORMAT_ITALIC);
 
-const importStrong: MdastImportHandler<Strong> = (node, ctx) =>
+export const importStrong: MdastImportHandler<Strong> = (node, ctx) =>
   ctx.importChildren(node, FORMAT_BOLD);
 
-const importDelete: MdastImportHandler = (node, ctx) =>
+export const importDelete: MdastImportHandler = (node, ctx) =>
   ctx.importChildren(node as Strong, FORMAT_STRIKETHROUGH);
 
-const $importBreak: MdastImportHandler = () => [$createLineBreakNode()];
+export const $importBreak: MdastImportHandler = () => [$createLineBreakNode()];
 
-const $importLink: MdastImportHandler<Link> = (node, ctx) => {
+export const $importLink: MdastImportHandler<Link> = (node, ctx) => {
   const link = $createLinkNode(node.url, {
     title: node.title == null ? undefined : node.title,
   });
@@ -199,7 +182,7 @@ const $importLink: MdastImportHandler<Link> = (node, ctx) => {
  * Export handlers: Lexical node -> mdast node(s)                             *
  * -------------------------------------------------------------------------- */
 
-const exportParagraph: MdastExportHandler = (node, ctx) => {
+export const exportParagraph: MdastExportHandler = (node, ctx) => {
   if (!$isParagraphNode(node)) {
     return null;
   }
@@ -209,7 +192,7 @@ const exportParagraph: MdastExportHandler = (node, ctx) => {
   };
 };
 
-const exportHeading: MdastExportHandler = (node, ctx) => {
+export const exportHeading: MdastExportHandler = (node, ctx) => {
   if (!$isHeadingNode(node)) {
     return null;
   }
@@ -224,7 +207,7 @@ const exportHeading: MdastExportHandler = (node, ctx) => {
   };
 };
 
-const exportQuote: MdastExportHandler = (node, ctx) => {
+export const exportQuote: MdastExportHandler = (node, ctx) => {
   if (!$isQuoteNode(node)) {
     return null;
   }
@@ -234,7 +217,7 @@ const exportQuote: MdastExportHandler = (node, ctx) => {
   };
 };
 
-const exportCode: MdastExportHandler = node => {
+export const exportCode: MdastExportHandler = node => {
   if (!$isCodeNode(node)) {
     return null;
   }
@@ -245,7 +228,7 @@ const exportCode: MdastExportHandler = node => {
   };
 };
 
-const exportLink: MdastExportHandler = (node, ctx) => {
+export const exportLink: MdastExportHandler = (node, ctx) => {
   if (!$isLinkNode(node) || $isAutoLinkNode(node)) {
     return null;
   }
@@ -302,7 +285,7 @@ function $exportListNode(
   return list;
 }
 
-const $exportList: MdastExportHandler = (node, ctx) => {
+export const $exportList: MdastExportHandler = (node, ctx) => {
   if (!$isListNode(node)) {
     return null;
   }
@@ -313,7 +296,7 @@ const $exportList: MdastExportHandler = (node, ctx) => {
  * Wraps a plain string in the mdast phrasing nodes implied by a Lexical text
  * format bitmask (code span innermost, then emphasis, strong, strikethrough).
  */
-function phrasingFromFormattedText(
+export function phrasingFromFormattedText(
   value: string,
   format: number,
 ): PhrasingContent {
@@ -331,10 +314,7 @@ function phrasingFromFormattedText(
   return content;
 }
 
-const TEXT_FORMAT_MASK =
-  FORMAT_BOLD | FORMAT_ITALIC | FORMAT_STRIKETHROUGH | FORMAT_CODE;
-
-const exportText: MdastExportHandler = node => {
+export const exportText: MdastExportHandler = node => {
   if (!$isTextNode(node)) {
     return null;
   }
@@ -344,98 +324,8 @@ const exportText: MdastExportHandler = node => {
   );
 };
 
-const exportLineBreak: MdastExportHandler = node =>
+export const exportLineBreak: MdastExportHandler = node =>
   $isLineBreakNode(node) ? {type: 'break'} : null;
 
-const exportTab: MdastExportHandler = node =>
+export const exportTab: MdastExportHandler = node =>
   node.getType() === 'tab' ? {type: 'text', value: '\t'} : null;
-
-/* -------------------------------------------------------------------------- *
- * Transformer bundles                                                         *
- * -------------------------------------------------------------------------- */
-
-/**
- * CommonMark block + inline constructs that map onto Lexical's core and
- * feature nodes (paragraph, headings, block quote, lists, code, links, ...).
- * Requires no micromark extensions — `mdast-util-from-markdown` handles
- * CommonMark out of the box.
- */
-export const COMMONMARK_TRANSFORMER: MdastTransformer = {
-  dependencies: [HeadingNode, QuoteNode, ListNode, ListItemNode],
-  exportHandlers: {
-    code: exportCode,
-    heading: exportHeading,
-    linebreak: exportLineBreak,
-    link: exportLink,
-    list: $exportList,
-    paragraph: exportParagraph,
-    quote: exportQuote,
-    tab: exportTab,
-    text: exportText,
-  },
-  importHandlers: {
-    blockquote: $importBlockquote,
-    break: $importBreak,
-    code: $importCode,
-    emphasis: importEmphasis,
-    heading: $importHeading,
-    html: importHtml,
-    inlineCode: importInlineCode,
-    link: $importLink,
-    list: $importList,
-    listItem: $importListItem,
-    paragraph: $importParagraph,
-    strong: importStrong,
-    text: importText,
-  },
-  name: '@lexical/mdast/commonmark',
-};
-
-/**
- * GFM `~~strikethrough~~`, mapped to Lexical's `strikethrough` text format.
- */
-export const STRIKETHROUGH_TRANSFORMER: MdastTransformer = {
-  importHandlers: {delete: importDelete},
-  mdastExtensions: [gfmStrikethroughFromMarkdown()],
-  micromarkExtensions: [gfmStrikethrough()],
-  name: '@lexical/mdast/gfm-strikethrough',
-  toMarkdownExtensions: [gfmStrikethroughToMarkdown()],
-  // `delete` exports are produced by the core text handler's bitmask wrapping.
-};
-
-/**
- * GFM task list items (`- [x]`), mapped to Lexical check lists. The list type
- * and per-item `checked` state are handled by the CommonMark list handlers,
- * so this transformer only wires up the parser/serializer extension.
- */
-export const TASK_LIST_TRANSFORMER: MdastTransformer = {
-  mdastExtensions: [gfmTaskListItemFromMarkdown()],
-  micromarkExtensions: [gfmTaskListItem()],
-  name: '@lexical/mdast/gfm-task-list',
-  toMarkdownExtensions: [gfmTaskListItemToMarkdown()],
-};
-
-/**
- * GFM literal autolinks (bare URLs become links on import).
- */
-export const AUTOLINK_TRANSFORMER: MdastTransformer = {
-  mdastExtensions: [gfmAutolinkLiteralFromMarkdown()],
-  micromarkExtensions: [gfmAutolinkLiteral()],
-  name: '@lexical/mdast/gfm-autolink',
-  toMarkdownExtensions: [gfmAutolinkLiteralToMarkdown()],
-};
-
-/**
- * The default transformer set: CommonMark plus the lightweight GFM features
- * (strikethrough, task lists, autolinks) that map onto existing Lexical nodes
- * without pulling in additional node packages. Add {@link TABLE_TRANSFORMER}
- * for GFM tables.
- */
-export const TRANSFORMERS: MdastTransformer[] = [
-  COMMONMARK_TRANSFORMER,
-  STRIKETHROUGH_TRANSFORMER,
-  TASK_LIST_TRANSFORMER,
-  AUTOLINK_TRANSFORMER,
-];
-
-export {phrasingFromFormattedText, TEXT_FORMAT_MASK};

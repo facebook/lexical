@@ -10,7 +10,6 @@
 import type {
   ElementNode,
   ExtensionConfigBase,
-  LexicalEditor,
   LexicalExtension,
   LexicalNode,
   TextNode,
@@ -44,96 +43,85 @@ export type MdastExportHandler = (
   context: MdastExportContext,
 ) => MdastNode | Array<MdastNode> | null;
 
-export type MdastTransformer = {
-  name: string,
-  micromarkExtensions?: $ReadOnlyArray<mixed>,
-  mdastExtensions?: $ReadOnlyArray<mixed>,
-  toMarkdownExtensions?: $ReadOnlyArray<mixed>,
-  dependencies?: $ReadOnlyArray<Class<LexicalNode>>,
-  importHandlers?: {+[string]: MdastImportHandler},
-  exportHandlers?: {+[string]: MdastExportHandler},
+export type MdastImportRule = {type: string, $import: MdastImportHandler};
+export type MdastExportRule = {type: string, $export: MdastExportHandler};
+
+export type MdastConfig = {
+  importRules: $ReadOnlyArray<MdastImportRule>,
+  exportRules: $ReadOnlyArray<MdastExportRule>,
+  micromarkExtensions: $ReadOnlyArray<mixed>,
+  mdastExtensions: $ReadOnlyArray<mixed>,
+  toMarkdownExtensions: $ReadOnlyArray<mixed>,
 };
 
-export type CompiledMdastTransformers = {
-  micromarkExtensions: Array<mixed>,
-  mdastExtensions: Array<mixed>,
-  toMarkdownExtensions: Array<mixed>,
-  importHandlers: Map<string, MdastImportHandler>,
-  exportHandlers: Map<string, MdastExportHandler>,
-  dependencies: Array<Class<LexicalNode>>,
+export type MdastShortcutsConfig = {disabled: boolean};
+
+export type MdastExtensionOutput = {
+  $convertFromMarkdownString(
+    markdown: string,
+    node?: ElementNode,
+    tree?: mixed,
+  ): void,
+  $convertToMarkdownString(node?: ElementNode): string,
+  +registry: mixed,
 };
 
-export type MdastBlockMatch = {
-  kind: 'heading' | 'blockquote' | 'list' | 'code',
-  node: MdastNode,
-  markerLength: number,
-};
-
-export type MdastImportOptions = {tree?: mixed};
-export type MdastShortcutsOptions = {
-  transformers?: $ReadOnlyArray<MdastTransformer>,
-};
-
-declare export function $convertFromMarkdownString(
+declare export function $convertFromMarkdownStringViaExtension(
   markdown: string,
-  transformers?: $ReadOnlyArray<MdastTransformer>,
   node?: ElementNode,
   tree?: mixed,
 ): void;
 
-declare export function $convertToMarkdownString(
-  transformers?: $ReadOnlyArray<MdastTransformer>,
+declare export function $convertToMarkdownStringViaExtension(
   node?: ElementNode,
 ): string;
-
-declare export function compileTransformers(
-  transformers: $ReadOnlyArray<MdastTransformer>,
-): CompiledMdastTransformers;
-
-declare export function createMdastImport(
-  transformers: $ReadOnlyArray<MdastTransformer>,
-): (markdown: string, node?: ElementNode, tree?: mixed) => void;
-
-declare export function createMdastExport(
-  transformers: $ReadOnlyArray<MdastTransformer>,
-): (node?: ElementNode) => string;
-
-declare export function registerMarkdownShortcuts(
-  editor: LexicalEditor,
-  transformers?: $ReadOnlyArray<MdastTransformer>,
-): () => void;
-
-declare export function phrasingFromFormattedText(
-  value: string,
-  format: number,
-): MdastNode;
-
-declare export class MarkdownStreamScanner {
-  constructor(transformers: $ReadOnlyArray<MdastTransformer>): void;
-  importInline(node: MdastNode): Array<LexicalNode>;
-  scanBlock(line: string): MdastBlockMatch | null;
-  scanInline(value: string): MdastNode | null;
-}
-
-declare export var COMMONMARK_TRANSFORMER: MdastTransformer;
-declare export var STRIKETHROUGH_TRANSFORMER: MdastTransformer;
-declare export var TASK_LIST_TRANSFORMER: MdastTransformer;
-declare export var AUTOLINK_TRANSFORMER: MdastTransformer;
-declare export var TABLE_TRANSFORMER: MdastTransformer;
-declare export var TRANSFORMERS: Array<MdastTransformer>;
-
-export type MdastConfig = {
-  transformers: $ReadOnlyArray<MdastTransformer>,
-};
-export type MdastShortcutsConfig = {
-  disabled: boolean,
-  transformers: $ReadOnlyArray<MdastTransformer>,
-};
 
 declare export var MdastExtension: LexicalExtension<
   MdastConfig,
   '@lexical/mdast/Mdast',
-  NamedSignalsOutput<MdastConfig>,
+  MdastExtensionOutput,
+  void,
+>;
+declare export var MdastRichTextExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/RichText',
+  void,
+  void,
+>;
+declare export var MdastListExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/List',
+  void,
+  void,
+>;
+declare export var MdastCodeExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/Code',
+  void,
+  void,
+>;
+declare export var MdastLinkExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/Link',
+  void,
+  void,
+>;
+declare export var MdastStrikethroughExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/Strikethrough',
+  void,
+  void,
+>;
+declare export var MdastCommonMarkExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/CommonMark',
+  void,
+  void,
+>;
+declare export var MdastTableExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/Table',
+  void,
   void,
 >;
 declare export var MdastShortcutsExtension: LexicalExtension<

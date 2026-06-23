@@ -7,11 +7,10 @@
  */
 
 import type {
-  CompiledMdastTransformers,
+  CompiledMdast,
   MdastImportContext,
   MdastNode,
   MdastParent,
-  MdastTransformer,
 } from './types';
 import type {ElementNode, LexicalNode} from 'lexical';
 import type {Root} from 'mdast';
@@ -25,8 +24,6 @@ import {
   $isElementNode,
 } from 'lexical';
 import {fromMarkdown} from 'mdast-util-from-markdown';
-
-import {compileTransformers} from './compile';
 
 /**
  * Splits `value` on `\n` into a run of `TextNode`s separated by
@@ -64,7 +61,7 @@ function $isBlockNode(node: LexicalNode): boolean {
  * Exported so the streaming shortcut engine can reuse the exact same mdast ->
  * Lexical mapping when materializing an inline construct it detected.
  */
-export function createNodeImporter(compiled: CompiledMdastTransformers) {
+export function createNodeImporter(compiled: CompiledMdast) {
   const {importHandlers} = compiled;
 
   function makeContext(format: number): MdastImportContext {
@@ -110,23 +107,14 @@ export function createNodeImporter(compiled: CompiledMdastTransformers) {
   return {$importChildren, $importNode};
 }
 
-export interface MdastImportOptions {
-  /**
-   * When `true`, no `mdast-util-from-markdown` parse is attempted on the
-   * incoming string; the caller has already produced an mdast `Root`.
-   */
-  tree?: Root;
-}
-
 /**
  * Creates a reusable importer that converts a Markdown string (or a pre-parsed
  * mdast `Root`) into Lexical nodes appended to the root (or a supplied
  * element).
  */
 export function createMdastImport(
-  transformers: readonly MdastTransformer[],
+  compiled: CompiledMdast,
 ): (markdown: string, node?: ElementNode, tree?: Root) => void {
-  const compiled = compileTransformers(transformers);
   const {$importNode} = createNodeImporter(compiled);
 
   return (markdown, node, tree) => {

@@ -6,7 +6,7 @@
  *
  */
 
-import type {ElementNode, Klass, LexicalNode, TextNode} from 'lexical';
+import type {ElementNode, LexicalNode, TextNode} from 'lexical';
 import type {Nodes as MdastNode, Parent as MdastParent} from 'mdast';
 import type {Extension as FromMarkdownExtension} from 'mdast-util-from-markdown';
 import type {Options as ToMarkdownExtension} from 'mdast-util-to-markdown';
@@ -51,8 +51,7 @@ export interface MdastImportContext {
 
 /**
  * Converts an mdast node of a particular `type` into one or more Lexical
- * nodes. Returning `null` defers to the next registered handler (and
- * ultimately to the fallback handler).
+ * nodes. Returning `null` defers to the next registered handler.
  */
 export type MdastImportHandler<T extends MdastNode = MdastNode> = (
   node: T,
@@ -66,8 +65,7 @@ export type MdastImportHandler<T extends MdastNode = MdastNode> = (
 export interface MdastExportContext {
   /**
    * Convert the children of `node` into mdast nodes by dispatching each child
-   * through the registered export handlers. The returned list mixes block and
-   * inline content; handlers are responsible for placing it in a valid spot.
+   * through the registered export handlers.
    */
   exportChildren(node: ElementNode): MdastNode[];
   /**
@@ -94,48 +92,37 @@ export type MdastExportHandler<T extends LexicalNode = LexicalNode> = (
 ) => MdastNode | MdastNode[] | null;
 
 /**
- * A `MdastTransformer` is the unit of composition for this package. It bundles
- * the three layers needed to round-trip a Markdown feature:
- *
- * 1. the micromark syntax extension(s) that tokenize it,
- * 2. the `mdast-util-from-markdown` / `mdast-util-to-markdown` extension(s)
- *    that map those tokens to and from the mdast tree, and
- * 3. the Lexical node mapping (`importHandlers` / `exportHandlers`).
- *
- * Bundling all three together means enabling a Markdown feature (GFM tables,
- * footnotes, directives, ...) is a single entry in a transformer list.
+ * A single import mapping: which mdast node `type` it handles and how. The
+ * unit an extension contributes (alongside the micromark/mdast extensions that
+ * tokenize the construct) to {@link MdastExtension}'s `importRules` config.
  */
-export interface MdastTransformer {
-  /** A stable identifier, useful for debugging and de-duplication. */
-  name: string;
-  /** micromark syntax extensions (the tokenizer layer). */
-  micromarkExtensions?: readonly MicromarkExtension[];
-  /** `mdast-util-from-markdown` extensions (tokens -> mdast). */
-  mdastExtensions?: readonly FromMarkdownExtension[];
-  /** `mdast-util-to-markdown` extensions (mdast -> Markdown string). */
-  toMarkdownExtensions?: readonly ToMarkdownExtension[];
-  /** Lexical node classes required by the import/export handlers. */
-  dependencies?: readonly Klass<LexicalNode>[];
-  /** mdast node `type` -> handler, used while importing. */
+export interface MdastImportRule {
+  /** The mdast node `type` this rule handles (e.g. `'heading'`). */
+  type: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  importHandlers?: Readonly<Record<string, MdastImportHandler<any>>>;
-  /** Lexical node `getType()` -> handler, used while exporting. */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  exportHandlers?: Readonly<Record<string, MdastExportHandler<any>>>;
+  $import: MdastImportHandler<any>;
 }
 
 /**
- * The compiled form of a list of {@link MdastTransformer}s, with the micromark
- * / mdast extensions flattened and the handler lookups indexed. Produced by
- * `compileTransformers`.
+ * A single export mapping: which Lexical node `getType()` it handles and how.
  */
-export interface CompiledMdastTransformers {
+export interface MdastExportRule {
+  /** The Lexical node `getType()` this rule handles (e.g. `'heading'`). */
+  type: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  $export: MdastExportHandler<any>;
+}
+
+/**
+ * The compiled registry produced from {@link MdastConfig} at editor build
+ * time and consumed by the importer, exporter, and shortcut scanner.
+ */
+export interface CompiledMdast {
+  importHandlers: Map<string, MdastImportHandler>;
+  exportHandlers: Map<string, MdastExportHandler>;
   micromarkExtensions: MicromarkExtension[];
   mdastExtensions: FromMarkdownExtension[];
   toMarkdownExtensions: ToMarkdownExtension[];
-  importHandlers: Map<string, MdastImportHandler>;
-  exportHandlers: Map<string, MdastExportHandler>;
-  dependencies: Klass<LexicalNode>[];
 }
 
-export type {ElementNode, Klass, LexicalNode, TextNode};
+export type {ElementNode, LexicalNode, TextNode};

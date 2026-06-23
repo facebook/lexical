@@ -8,6 +8,7 @@
 
 import type {
   DOMExportOutput,
+  DOMSlot,
   EditorConfig,
   LexicalNode,
   LexicalUpdateJSON,
@@ -58,19 +59,32 @@ export class RubyNode extends TextNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = super.createDOM(config);
-    dom.dataset.rubyAnnotation = this.__annotation;
+    const inner = super.createDOM(config);
+    inner.dataset.rubyAnnotation = this.__annotation;
     addClassNamesToElement(
-      dom,
+      inner,
       config.theme.ruby || 'PlaygroundEditorTheme__ruby',
     );
-    return dom;
+    const wrapper = document.createElement('span');
+    wrapper.appendChild(inner);
+    return wrapper;
+  }
+
+  getDOMSlot(dom: HTMLElement): DOMSlot<HTMLElement> {
+    const inner = dom.firstElementChild as HTMLElement | null;
+    if (inner) {
+      return super.getDOMSlot(dom).withElement(inner);
+    }
+    return super.getDOMSlot(dom);
   }
 
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     const updated = super.updateDOM(prevNode, dom, config);
     if (prevNode.__annotation !== this.__annotation) {
-      dom.dataset.rubyAnnotation = this.__annotation;
+      const inner = dom.firstElementChild as HTMLElement;
+      if (inner) {
+        inner.dataset.rubyAnnotation = this.__annotation;
+      }
     }
     return updated;
   }

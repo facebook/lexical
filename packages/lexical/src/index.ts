@@ -364,6 +364,7 @@ export {
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   mountSlotContainer,
+  type OwnStaticNodeConfig,
   removeFromParent,
   resetRandomKey,
   setDOMUnmanaged,

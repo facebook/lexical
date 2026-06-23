@@ -884,11 +884,32 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       let replace: RegisteredNode['replace'] = null;
       let replaceWithKlass: RegisteredNode['replaceWithKlass'] = null;
 
-      if (typeof klass !== 'function') {
+      if (klass && typeof klass === 'object') {
         const options = klass;
         klass = options.replace;
         replace = options.with;
         replaceWithKlass = options.withKlass || null;
+      }
+      if (
+        typeof klass !== 'function' ||
+        !klass.prototype ||
+        !(klass === LexicalNode || klass.prototype instanceof LexicalNode)
+      ) {
+        let version = '<unknown>';
+        try {
+          version = JSON.parse(LEXICAL_VERSION);
+        } catch {
+          //
+        }
+        invariant(
+          false,
+          'createEditor: nodes[%s] %s is not a constructor that subclasses LexicalNode from the lexical package used by this editor (%s)',
+          String(i - nodes.length + (config.nodes ? config.nodes.length : 0)),
+          typeof klass === 'function'
+            ? `${klass.name}${typeof klass.getType === 'function' ? ` (type ${String(klass.getType())})` : ''}`
+            : String(klass),
+          String(version),
+        );
       }
       // For the side-effect of filling in the static methods
       void getStaticNodeConfig(klass);

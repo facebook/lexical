@@ -3095,6 +3095,7 @@ function isAbstractNodeClass(klass: Klass<LexicalNode>): boolean {
 }
 
 export interface OwnStaticNodeConfig {
+  klass: Klass<LexicalNode>;
   ownNodeType: undefined | string;
   ownNodeConfig:
     | undefined
@@ -3195,9 +3196,29 @@ export function getStaticNodeConfig(
       }
     }
   }
-  const result = {ownNodeConfig, ownNodeType};
+  const result = {klass, ownNodeConfig, ownNodeType};
   STATIC_NODE_CONFIG_CACHE.set(klass, result);
   return result;
+}
+
+/**
+ * Collect all configuration for this class and its superclasses
+ *
+ * @internal
+ */
+export function* iterStaticNodeConfigChain(
+  klass: Klass<LexicalNode>,
+): Iterable<OwnStaticNodeConfig> {
+  for (
+    let current: null | Klass<LexicalNode> = klass;
+    current && (current === LexicalNode || $isLexicalNode(current.prototype));
+  ) {
+    const config = getStaticNodeConfig(current);
+    yield config;
+    current =
+      (config.ownNodeConfig && config.ownNodeConfig.extends) ||
+      getSuperclassOf(current);
+  }
 }
 
 /**
@@ -3225,12 +3246,7 @@ export function getRegisteredSubtypeMap(
     }
   }
   for (const [type, klass] of klassByType) {
-    for (
-      let current: Klass<LexicalNode> = klass;
-      $isLexicalNode(current.prototype);
-      current = Object.getPrototypeOf(current)
-    ) {
-      const {ownNodeType} = getStaticNodeConfig(current);
+    for (const {ownNodeType} of iterStaticNodeConfigChain(klass)) {
       const bucket = ownNodeType && subtypes.get(ownNodeType);
       if (bucket) {
         bucket.add(type);
@@ -3319,4 +3335,22 @@ export function $createChildrenArray(
     nodeKey = node.__next;
   }
   return children;
+}
+
+/**
+ * Look up the superclass of this class, prefer
+ * {@link iterStaticNodeConfigChain} when implementing loops.
+ *
+ * @internal
+ */
+export function getSuperclassOf(
+  klass: Klass<LexicalNode>,
+): null | Klass<LexicalNode> {
+  const viaStatic = Object.getPrototypeOf(klass);
+  if (typeof viaStatic === 'function' && viaStatic !== Function.prototype) {
+    return viaStatic; // healthy static chain
+  }
+  // static link severed by the loose transform — use the instance chain
+  const parentProto = klass.prototype && Object.getPrototypeOf(klass.prototype);
+  return parentProto ? parentProto.constructor : null;
 }

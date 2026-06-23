@@ -363,6 +363,7 @@ export {
   isModifierMatch,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
+  iterStaticNodeConfigChain,
   mountSlotContainer,
   type OwnStaticNodeConfig,
   removeFromParent,

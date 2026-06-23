@@ -53,6 +53,7 @@ import {
   isArray,
   isMoveToEnd,
   isMoveToStart,
+  iterStaticNodeConfigChain,
   scheduleMicroTask,
   scrollIntoViewIfNeeded,
 } from '../../LexicalUtils';
@@ -127,56 +128,6 @@ describe('LexicalUtils tests', () => {
     test('isArray()', () => {
       expect(isArray).toBeInstanceOf(Function);
       expect(isArray).toBe(Array.isArray);
-    });
-
-    describe('getStaticNodeConfig()', () => {
-      test('derives the type and config from $config()', () => {
-        class StaticConfigNode extends TextNode {
-          $config() {
-            return this.config('static-config-node', {extends: TextNode});
-          }
-        }
-
-        const {ownNodeConfig, ownNodeType} =
-          getStaticNodeConfig(StaticConfigNode);
-
-        expect(ownNodeType).toBe('static-config-node');
-        expect(ownNodeConfig).toMatchObject({
-          extends: TextNode,
-          type: 'static-config-node',
-        });
-        expect(StaticConfigNode.getType()).toBe('static-config-node');
-      });
-
-      test('caches the result for a node class', () => {
-        const $config = vi.fn(function (this: TextNode) {
-          return this.config('cached-static-config-node', {
-            extends: TextNode,
-          });
-        });
-        class CachedStaticConfigNode extends TextNode {
-          $config() {
-            return $config.call(this);
-          }
-        }
-
-        const first = getStaticNodeConfig(CachedStaticConfigNode);
-        const second = getStaticNodeConfig(CachedStaticConfigNode);
-
-        expect(first).toBe(second);
-        expect($config).toHaveBeenCalledTimes(1);
-      });
-
-      test('resolves symbol-keyed config for abstract node classes', () => {
-        const {ownNodeConfig, ownNodeType} = getStaticNodeConfig(ElementNode);
-
-        expect(ownNodeType).toBe(undefined);
-        expect(ownNodeConfig).toMatchObject({
-          // LexicalNode
-          extends: ElementNode.prototype.constructor.prototype,
-        });
-        expect(ownNodeConfig?.$transform).toBeInstanceOf(Function);
-      });
     });
 
     test('isSelectionWithinEditor()', async () => {
@@ -1220,5 +1171,108 @@ describe('getParentElement', () => {
     expect(getParentElement(text)).toBe(span);
     // From the span, the next call crosses the shadow boundary to the host.
     expect(getParentElement(span)).toBe(host);
+  });
+  describe('getStaticNodeConfig()', () => {
+    test('derives the type and config from $config()', () => {
+      class StaticConfigNode extends TextNode {
+        $config() {
+          return this.config('static-config-node', {extends: TextNode});
+        }
+      }
+
+      const {ownNodeConfig, ownNodeType} =
+        getStaticNodeConfig(StaticConfigNode);
+
+      expect(ownNodeType).toBe('static-config-node');
+      expect(ownNodeConfig).toMatchObject({
+        extends: TextNode,
+        type: 'static-config-node',
+      });
+      expect(StaticConfigNode.getType()).toBe('static-config-node');
+    });
+
+    test('caches the result for a node class', () => {
+      const $config = vi.fn(function (this: TextNode) {
+        return this.config('cached-static-config-node', {
+          extends: TextNode,
+        });
+      });
+      class CachedStaticConfigNode extends TextNode {
+        $config() {
+          return $config.call(this);
+        }
+      }
+
+      const first = getStaticNodeConfig(CachedStaticConfigNode);
+      const second = getStaticNodeConfig(CachedStaticConfigNode);
+
+      expect(first).toBe(second);
+      expect($config).toHaveBeenCalledTimes(1);
+    });
+
+    test('resolves symbol-keyed config for abstract node classes', () => {
+      const {ownNodeConfig, ownNodeType} = getStaticNodeConfig(ElementNode);
+
+      expect(ownNodeType).toBe(undefined);
+      expect(ownNodeConfig).toMatchObject({
+        // LexicalNode
+        extends: ElementNode.prototype.constructor.prototype,
+      });
+      expect(ownNodeConfig?.$transform).toBeInstanceOf(Function);
+    });
+  });
+  describe('iterStaticNodeConfigChain', () => {
+    test('handles a loose transform', () => {
+      // These are from babel's loose class transform without the setPrototypeOf for the static chain
+      // https://github.com/babel/babel/blob/main/packages/babel-helpers/src/helpers/inheritsLoose.ts
+      function inheritsLoose(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+        subClass: Function,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+        superClass: Function,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ): any {
+        subClass.prototype = Object.create(superClass.prototype);
+        subClass.prototype.constructor = subClass;
+        return subClass;
+      }
+      const LooseClassNode = inheritsLoose(
+        function LooseClassNode_() {},
+        Object.getPrototypeOf(ElementNode),
+      );
+      LooseClassNode.prototype.$config = function () {
+        return this.config(Symbol.for('LooseClassNode'), {
+          $transform: () => {},
+        });
+      };
+      const LooseSubclassNode = inheritsLoose(
+        function LooseSubclassNode_() {},
+        LooseClassNode,
+      );
+      LooseSubclassNode.getType = () => 'loose';
+      const looseChain = Array.from(
+        iterStaticNodeConfigChain(LooseSubclassNode),
+      );
+      expect(looseChain.map(cfg => cfg.klass)).toEqual([
+        LooseSubclassNode,
+        LooseClassNode,
+        Object.getPrototypeOf(ElementNode),
+      ]);
+      expect(looseChain).toHaveLength(3);
+      expect(Object.getPrototypeOf(LooseSubclassNode)).not.toBe(LooseClassNode);
+      expect(looseChain[0].ownNodeType).toBe('loose');
+      expect(looseChain[0].ownNodeConfig).toBe(undefined);
+      expect(looseChain[1].ownNodeConfig).not.toBe(undefined);
+    });
+    test('handles a class transform', () => {
+      const paragraphChain = Array.from(
+        iterStaticNodeConfigChain(ParagraphNode),
+      );
+      expect(paragraphChain.map(cfg => cfg.klass)).toEqual([
+        ParagraphNode,
+        ElementNode,
+        Object.getPrototypeOf(ElementNode),
+      ]);
+    });
   });
 });

@@ -38,11 +38,8 @@ declare export class LinkNode extends ElementNode {
   __target: null | string;
   __rel: null | string;
   __title: null | string;
-  static getType(): string;
-  static clone(node: LinkNode): LinkNode;
-  constructor(url: string, attributes?: LinkAttributes, key?: NodeKey): void;
+  constructor(url?: string, attributes?: LinkAttributes, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
-  static importDOM(): DOMConversionMap | null;
   exportJSON(): SerializedLinkNode;
   getURL(): string;
   setURL(url: string): void;
@@ -74,9 +71,6 @@ export type SerializedAutoLinkNode = {
   ...
 };
 declare export class AutoLinkNode extends LinkNode {
-  static getType(): string;
-  // $FlowFixMe[incompatible-type] clone method inheritance
-  static clone(node: AutoLinkNode): AutoLinkNode;
   insertNewAfter(
     selection: RangeSelection,
     restoreSelection?: boolean,

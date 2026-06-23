@@ -8,7 +8,6 @@
 
 import type {
   BaseSelection,
-  DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
   LexicalCommand,
@@ -85,16 +84,16 @@ export class LinkNode extends ElementNode {
   /** @internal */
   __title: null | string;
 
-  static getType(): string {
-    return 'link';
-  }
-
-  static clone(node: LinkNode): LinkNode {
-    return new LinkNode(
-      node.__url,
-      {rel: node.__rel, target: node.__target, title: node.__title},
-      node.__key,
-    );
+  $config() {
+    return this.config('link', {
+      extends: ElementNode,
+      importDOM: {
+        a: () => ({
+          conversion: $convertAnchorElement,
+          priority: 1,
+        }),
+      },
+    });
   }
 
   constructor(
@@ -155,19 +154,6 @@ export class LinkNode extends ElementNode {
   ): boolean {
     this.updateLinkDOM(prevNode, anchor, config);
     return false;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      a: (node: Node) => ({
-        conversion: $convertAnchorElement,
-        priority: 1,
-      }),
-    };
-  }
-
-  static importJSON(serializedNode: SerializedLinkNode): LinkNode {
-    return $createLinkNode().updateFromJSON(serializedNode);
   }
 
   updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedLinkNode>): this {
@@ -492,21 +478,8 @@ export class AutoLinkNode extends LinkNode {
     this.__isUnlinked = prevNode.__isUnlinked;
   }
 
-  static getType(): string {
-    return 'autolink';
-  }
-
-  static clone(node: AutoLinkNode): AutoLinkNode {
-    return new AutoLinkNode(
-      node.__url,
-      {
-        isUnlinked: node.__isUnlinked,
-        rel: node.__rel,
-        target: node.__target,
-        title: node.__title,
-      },
-      node.__key,
-    );
+  $config() {
+    return this.config('autolink', {extends: LinkNode});
   }
 
   shouldMergeAdjacentLink(_otherLink: LinkNode): boolean {
@@ -542,21 +515,12 @@ export class AutoLinkNode extends LinkNode {
     );
   }
 
-  static importJSON(serializedNode: SerializedAutoLinkNode): AutoLinkNode {
-    return $createAutoLinkNode().updateFromJSON(serializedNode);
-  }
-
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedAutoLinkNode>,
   ): this {
     return super
       .updateFromJSON(serializedNode)
       .setIsUnlinked(serializedNode.isUnlinked || false);
-  }
-
-  static importDOM(): null {
-    // TODO: Should link node should handle the import over autolink?
-    return null;
   }
 
   exportJSON(): SerializedAutoLinkNode {

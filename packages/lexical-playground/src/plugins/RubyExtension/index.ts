@@ -22,6 +22,9 @@ import {
   configExtension,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   defineExtension,
+  KEY_ARROW_LEFT_COMMAND,
+  KEY_ARROW_RIGHT_COMMAND,
+  LexicalNode,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 
@@ -75,6 +78,56 @@ function $unwrapRubiesInSelection(): boolean {
   return found;
 }
 
+function $skipRubyOnArrow(isBackward: boolean): boolean {
+  const selection = $getSelection();
+  if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+    return false;
+  }
+  const {anchor} = selection;
+  if (anchor.type !== 'text') {
+    return false;
+  }
+  const node = anchor.getNode();
+
+  let rubyToSkip: LexicalNode | null = null;
+
+  if ($isRubyNode(node) && !node.isComposing()) {
+    rubyToSkip = node;
+  } else if (!$isRubyNode(node)) {
+    if (isBackward && anchor.offset === 0) {
+      const prev = node.getPreviousSibling();
+      if ($isRubyNode(prev)) {
+        rubyToSkip = prev;
+      }
+    } else if (!isBackward && anchor.offset === node.getTextContentSize()) {
+      const next = node.getNextSibling();
+      if ($isRubyNode(next)) {
+        rubyToSkip = next;
+      }
+    }
+  }
+
+  if (rubyToSkip === null) {
+    return false;
+  }
+
+  let target: LexicalNode | null = isBackward
+    ? rubyToSkip.getPreviousSibling()
+    : rubyToSkip.getNextSibling();
+  while (target != null && $isRubyNode(target)) {
+    target = isBackward ? target.getPreviousSibling() : target.getNextSibling();
+  }
+
+  if ($isTextNode(target) && !$isRubyNode(target)) {
+    const offset = isBackward ? target.getTextContentSize() : 0;
+    selection.anchor.set(target.getKey(), offset, 'text');
+    selection.focus.set(target.getKey(), offset, 'text');
+    return true;
+  }
+
+  return false;
+}
+
 function $nudgeOffRuby(): boolean {
   const selection = $getSelection();
   if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
@@ -116,6 +169,42 @@ export const RubyExtension = /* @__PURE__  */ defineExtension({
   nodes: [RubyNode],
   register: editor => {
     return mergeRegister(
+      editor.registerCommand(
+        KEY_ARROW_LEFT_COMMAND,
+        event => {
+          if (
+            event.shiftKey ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.altKey
+          ) {
+            return false;
+          }
+          if (editor.isComposing()) {
+            return false;
+          }
+          return $skipRubyOnArrow(true);
+        },
+        COMMAND_PRIORITY_HIGH,
+      ),
+      editor.registerCommand(
+        KEY_ARROW_RIGHT_COMMAND,
+        event => {
+          if (
+            event.shiftKey ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.altKey
+          ) {
+            return false;
+          }
+          if (editor.isComposing()) {
+            return false;
+          }
+          return $skipRubyOnArrow(false);
+        },
+        COMMAND_PRIORITY_HIGH,
+      ),
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
         () => $nudgeOffRuby(),

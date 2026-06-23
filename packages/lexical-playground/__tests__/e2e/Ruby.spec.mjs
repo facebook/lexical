@@ -29,10 +29,11 @@ import {
 } from '../utils/index.mjs';
 
 async function insertRubyViaToolbar(page, annotation) {
-  const dialogPromise = page.waitForEvent('dialog');
   await click(page, 'button[aria-label="Insert ruby annotation"]');
-  const dialog = await dialogPromise;
-  await dialog.accept(annotation);
+  const input = page.locator('.ruby-editor .ruby-input');
+  await input.waitFor({state: 'visible', timeout: 1000});
+  await input.fill(annotation);
+  await input.press('Enter');
   await sleep(50);
 }
 
@@ -443,11 +444,11 @@ test.describe('Ruby', () => {
 
     await page.keyboard.type('Hello');
 
-    const dialogPromise = page.waitForEvent('dialog');
     await click(page, 'button[aria-label="Insert ruby annotation"]');
-    const dialog = await dialogPromise;
-    await dialog.accept('test');
     await sleep(50);
+
+    const floatingEditor = page.locator('.ruby-editor .ruby-input');
+    await expect(floatingEditor).not.toBeVisible();
 
     const rubies = await getRubyNodes(page);
     expect(rubies).toHaveLength(0);

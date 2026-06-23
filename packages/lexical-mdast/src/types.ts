@@ -33,6 +33,13 @@ export interface MdastImportContext {
    */
   readonly format: number;
   /**
+   * The original Markdown source being imported, or `''` when importing a
+   * pre-parsed mdast tree. Handlers slice this by `node.position` to recover
+   * the literal syntax (list marker, code fence, hard-break style) for
+   * round-trip preservation.
+   */
+  readonly source: string;
+  /**
    * Convert every child of `parent` into Lexical nodes, optionally layering an
    * additional text-format bitmask on top of the current {@link format}.
    */

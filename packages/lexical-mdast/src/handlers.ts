@@ -12,6 +12,7 @@ import type {HeadingTagType} from '@lexical/rich-text';
 import type {LexicalNode} from 'lexical';
 import type {
   Blockquote,
+  Break,
   Code,
   Emphasis,
   Heading,
@@ -44,11 +45,15 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
+  $getState,
   $isLineBreakNode,
   $isParagraphNode,
   $isTextNode,
+  $setState,
   TEXT_TYPE_TO_FORMAT,
 } from 'lexical';
+
+import {codeFenceState, hardLineBreakState, listMarkerState} from './state';
 
 const FORMAT_BOLD = TEXT_TYPE_TO_FORMAT.bold;
 const FORMAT_ITALIC = TEXT_TYPE_TO_FORMAT.italic;
@@ -112,6 +117,20 @@ export const $importList: MdastImportHandler<List> = (node, ctx) => {
   const listType = $listTypeFromMdast(node);
   const start = node.ordered && node.start != null ? node.start : 1;
   const list = $createListNode(listType, start);
+  // Preserve the literal bullet character (`-`, `*`, `+`) for unordered and
+  // check lists so export can reproduce it.
+  if (listType !== 'number' && ctx.source) {
+    const firstItem = node.children[0];
+    const offset =
+      firstItem && firstItem.position
+        ? firstItem.position.start.offset
+        : undefined;
+    const match =
+      offset == null ? null : ctx.source.slice(offset).match(/^\s*([-*+])/);
+    if (match) {
+      $setState(list, listMarkerState, match[1]);
+    }
+  }
   for (const child of node.children) {
     list.append(...ctx.importNode(child));
   }
@@ -142,8 +161,19 @@ export const $importListItem: MdastImportHandler<ListItem> = (node, ctx) => {
   return [item, ...extraItems];
 };
 
-export const $importCode: MdastImportHandler<Code> = node => {
+export const $importCode: MdastImportHandler<Code> = (node, ctx) => {
   const code = $createCodeNode(node.lang || undefined);
+  // Preserve the literal fence (e.g. ``` vs ~~~ vs ````) for round-tripping.
+  if (ctx.source && node.position) {
+    const offset = node.position.start.offset;
+    const match =
+      offset == null
+        ? null
+        : ctx.source.slice(offset).match(/^[ \t]*(`{3,}|~{3,})/);
+    if (match) {
+      $setState(code, codeFenceState, match[1]);
+    }
+  }
   if (node.value) {
     code.append($createTextNode(node.value));
   }
@@ -168,7 +198,21 @@ export const importStrong: MdastImportHandler<Strong> = (node, ctx) =>
 export const importDelete: MdastImportHandler = (node, ctx) =>
   ctx.importChildren(node as Strong, FORMAT_STRIKETHROUGH);
 
-export const $importBreak: MdastImportHandler = () => [$createLineBreakNode()];
+export const $importBreak: MdastImportHandler<Break> = (node, ctx) => {
+  const lineBreak = $createLineBreakNode();
+  // Preserve whether the hard break was written as `\` or as trailing spaces.
+  if (ctx.source && node.position) {
+    const {start, end} = node.position;
+    if (start.offset != null && end.offset != null) {
+      const raw = ctx.source.slice(start.offset, end.offset).replace(/\n$/, '');
+      const marker = raw === '\\' ? '\\' : /^ {2,}$/.test(raw) ? raw : '';
+      if (marker) {
+        $setState(lineBreak, hardLineBreakState, marker);
+      }
+    }
+  }
+  return [lineBreak];
+};
 
 export const $importLink: MdastImportHandler<Link> = (node, ctx) => {
   const link = $createLinkNode(node.url, {
@@ -217,15 +261,17 @@ export const exportQuote: MdastExportHandler = (node, ctx) => {
   };
 };
 
-export const exportCode: MdastExportHandler = node => {
+export const $exportCode: MdastExportHandler = node => {
   if (!$isCodeNode(node)) {
     return null;
   }
+  // `data.mdastFence` is read back by the exporter's to-markdown wrapper.
   return {
+    data: {mdastFence: $getState(node, codeFenceState)},
     lang: node.getLanguage() || null,
     type: 'code',
     value: node.getTextContent(),
-  };
+  } as Code;
 };
 
 export const exportLink: MdastExportHandler = (node, ctx) => {
@@ -252,6 +298,13 @@ function $exportListNode(
     start: listType === 'number' ? node.getStart() : undefined,
     type: 'list',
   };
+  // Preserve the bullet character for unordered/check lists; read back by the
+  // exporter's to-markdown wrapper.
+  if (listType !== 'number') {
+    (list as List & {data?: {mdastBullet?: string}}).data = {
+      mdastBullet: $getState(node, listMarkerState),
+    };
+  }
   let previousItem: ListItem | null = null;
   for (const child of node.getChildren()) {
     if (!$isListItemNode(child)) {
@@ -324,8 +377,13 @@ export const exportText: MdastExportHandler = node => {
   );
 };
 
-export const exportLineBreak: MdastExportHandler = node =>
-  $isLineBreakNode(node) ? {type: 'break'} : null;
+export const $exportLineBreak: MdastExportHandler = node =>
+  $isLineBreakNode(node)
+    ? ({
+        data: {mdastBreak: $getState(node, hardLineBreakState)},
+        type: 'break',
+      } as Break)
+    : null;
 
 export const exportTab: MdastExportHandler = node =>
   node.getType() === 'tab' ? {type: 'text', value: '\t'} : null;

@@ -51,6 +51,8 @@ import {gfmTaskListItem} from 'micromark-extension-gfm-task-list-item';
 
 import {compileMdast} from './compile';
 import {
+  $exportCode,
+  $exportLineBreak,
   $exportList,
   $importBlockquote,
   $importBreak,
@@ -60,9 +62,7 @@ import {
   $importList,
   $importListItem,
   $importParagraph,
-  exportCode,
   exportHeading,
-  exportLineBreak,
   exportLink,
   exportParagraph,
   exportQuote,
@@ -142,7 +142,7 @@ const CORE_IMPORT_RULES: readonly MdastImportRule[] = [
 const CORE_EXPORT_RULES: readonly MdastExportRule[] = [
   {$export: exportParagraph, type: 'paragraph'},
   {$export: exportText, type: 'text'},
-  {$export: exportLineBreak, type: 'linebreak'},
+  {$export: $exportLineBreak, type: 'linebreak'},
   {$export: exportTab, type: 'tab'},
 ];
 
@@ -276,7 +276,7 @@ export const MdastListExtension = /* @__PURE__ */ defineExtension({
 export const MdastCodeExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     /* @__PURE__ */ configExtension(MdastExtension, {
-      exportRules: [{$export: exportCode, type: 'code'}],
+      exportRules: [{$export: $exportCode, type: 'code'}],
       importRules: [{$import: $importCode, type: 'code'}],
     }),
   ],

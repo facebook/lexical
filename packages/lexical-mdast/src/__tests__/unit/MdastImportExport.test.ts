@@ -128,6 +128,27 @@ describe('@lexical/mdast import/export', () => {
     expect(importExport('first\n\nsecond')).toBe('first\n\nsecond');
   });
 
+  describe('preserves the original Markdown syntax', () => {
+    const cases: [string, string][] = [
+      ['star bullets', '* one\n* two'],
+      ['plus bullets', '+ one\n+ two'],
+      ['tilde code fence', '~~~\ncode\n~~~'],
+      ['tilde fence with language', '~~~js\nconst x = 1;\n~~~'],
+      ['backslash hard break', 'line one\\\nline two'],
+      ['two-space hard break', 'line one  \nline two'],
+    ];
+    for (const [name, markdown] of cases) {
+      it(name, () => {
+        expect(importExport(markdown)).toBe(markdown);
+      });
+    }
+
+    it('keeps distinct bullet styles on different lists', () => {
+      const markdown = '* a\n* b\n\n1. c\n\n- d\n- e';
+      expect(importExport(markdown)).toBe(markdown);
+    });
+  });
+
   it('imports an autolink literal (gfm) as a link', () => {
     const editor = createEditor();
     editor.update(

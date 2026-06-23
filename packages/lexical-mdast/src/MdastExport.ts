@@ -8,12 +8,84 @@
 
 import type {CompiledMdast, MdastExportContext, MdastNode} from './types';
 import type {ElementNode, LexicalNode} from 'lexical';
-import type {Paragraph, PhrasingContent, RootContent} from 'mdast';
+import type {
+  Break,
+  Code,
+  List,
+  Paragraph,
+  PhrasingContent,
+  RootContent,
+} from 'mdast';
+import type {Options as ToMarkdownExtension} from 'mdast-util-to-markdown';
 
 import {$getRoot, $isElementNode, $isLineBreakNode, $isTextNode} from 'lexical';
-import {toMarkdown} from 'mdast-util-to-markdown';
+import {defaultHandlers, toMarkdown} from 'mdast-util-to-markdown';
 
 import {phrasingFromFormattedText, TEXT_FORMAT_MASK} from './handlers';
+
+/** Reads a string field off an mdast node's `data`, if present. */
+function dataField(node: {data?: unknown}, key: string): string | undefined {
+  const data = node.data as Record<string, unknown> | undefined;
+  const value = data ? data[key] : undefined;
+  return typeof value === 'string' ? value : undefined;
+}
+
+/**
+ * A to-markdown extension whose handlers reproduce the literal Markdown syntax
+ * captured on import (and stored on the Lexical nodes), by temporarily
+ * steering the default handlers with per-node options. Delegating to the
+ * defaults keeps all the indentation / nesting / disambiguation behavior
+ * intact while still honoring each node's original marker/fence.
+ */
+const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
+  handlers: {
+    break(node: Break, parent, state, info) {
+      const marker = dataField(node, 'mdastBreak');
+      if (marker === '\\') {
+        return '\\\n';
+      }
+      if (typeof marker === 'string' && /^ {2,}$/.test(marker)) {
+        return `${marker}\n`;
+      }
+      return defaultHandlers.break(node, parent, state, info);
+    },
+    code(node: Code, parent, state, info) {
+      const fence = dataField(node, 'mdastFence');
+      if (!fence) {
+        return defaultHandlers.code(node, parent, state, info);
+      }
+      const previous = state.options.fence;
+      const previousFences = state.options.fences;
+      state.options.fence = fence[0] === '~' ? '~' : '`';
+      state.options.fences = true;
+      try {
+        return defaultHandlers.code(node, parent, state, info);
+      } finally {
+        state.options.fence = previous;
+        state.options.fences = previousFences;
+      }
+    },
+    list(node: List, parent, state, info) {
+      const bullet = dataField(node, 'mdastBullet');
+      if (
+        node.ordered ||
+        (bullet !== '-' && bullet !== '*' && bullet !== '+')
+      ) {
+        return defaultHandlers.list(node, parent, state, info);
+      }
+      const previous = state.options.bullet;
+      const previousOther = state.options.bulletOther;
+      state.options.bullet = bullet;
+      state.options.bulletOther = bullet === '-' ? '*' : '-';
+      try {
+        return defaultHandlers.list(node, parent, state, info);
+      } finally {
+        state.options.bullet = previous;
+        state.options.bulletOther = previousOther;
+      }
+    },
+  },
+};
 
 function $isBlockNode(node: LexicalNode): boolean {
   return $isElementNode(node) && !node.isInline();
@@ -171,7 +243,9 @@ export function createMdastExport(
       {children, type: 'root'},
       {
         bullet: '-',
-        extensions: compiled.toMarkdownExtensions,
+        // SYNTAX_TO_MARKDOWN runs last so its handlers win, reproducing the
+        // per-node marker/fence/break captured on import.
+        extensions: [...compiled.toMarkdownExtensions, SYNTAX_TO_MARKDOWN],
       },
     );
     // toMarkdown always appends a trailing newline; drop it so callers get the

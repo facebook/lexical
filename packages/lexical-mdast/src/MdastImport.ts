@@ -61,7 +61,7 @@ function $isBlockNode(node: LexicalNode): boolean {
  * Exported so the streaming shortcut engine can reuse the exact same mdast ->
  * Lexical mapping when materializing an inline construct it detected.
  */
-export function createNodeImporter(compiled: CompiledMdast) {
+export function createNodeImporter(compiled: CompiledMdast, source = '') {
   const {importHandlers} = compiled;
 
   function makeContext(format: number): MdastImportContext {
@@ -72,6 +72,7 @@ export function createNodeImporter(compiled: CompiledMdast) {
       importChildren: (parent, extra) =>
         $importChildren(parent, format | (extra || 0)),
       importNode: (node, extra) => $importNode(node, format | (extra || 0)),
+      source,
     };
   }
 
@@ -115,8 +116,6 @@ export function createNodeImporter(compiled: CompiledMdast) {
 export function createMdastImport(
   compiled: CompiledMdast,
 ): (markdown: string, node?: ElementNode, tree?: Root) => void {
-  const {$importNode} = createNodeImporter(compiled);
-
   return (markdown, node, tree) => {
     const root = node || $getRoot();
     root.clear();
@@ -127,6 +126,9 @@ export function createMdastImport(
         extensions: compiled.micromarkExtensions,
         mdastExtensions: compiled.mdastExtensions,
       });
+    // When importing a pre-parsed tree we have no original source string to
+    // recover literal syntax from, so syntax-preservation is skipped.
+    const {$importNode} = createNodeImporter(compiled, tree ? '' : markdown);
 
     // Top-level mdast children should produce block-level Lexical nodes. Any
     // stray inline content (e.g. from a fallback) is wrapped in a paragraph so

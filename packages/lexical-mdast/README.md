@@ -13,6 +13,11 @@ parser used by `remark`, and Markdown **shortcuts** are recognized by feeding
 keystrokes back through that same parser — there is no second grammar to keep
 in sync.
 
+Like `@lexical/markdown`, the original syntax of a construct is preserved on
+the Lexical nodes (the bullet character of a list, a code block's fence, and a
+hard line break's style), so re-serializing produces **minimally different**
+Markdown — `* a`/`+ b` bullets and `~~~` fences round-trip unchanged.
+
 ## Configured through extensions
 
 `@lexical/mdast` is set up **exclusively** through the Lexical extension

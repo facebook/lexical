@@ -96,7 +96,7 @@ export class MarkdownStreamScanner {
    * import handlers as the full-document importer.
    */
   importInline(node: MdastNode): LexicalNode[] {
-    const {$importNode} = createNodeImporter(this.compiled);
+    const {$importNode} = createNodeImporter(this.compiled, '');
     return $importNode(node, 0);
   }
 

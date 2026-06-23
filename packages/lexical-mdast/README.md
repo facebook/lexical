@@ -36,8 +36,8 @@ the micromark/mdast extensions that tokenize them) to the core
 
 ```ts
 import {
-  $convertFromMarkdownStringViaExtension,
-  $convertToMarkdownStringViaExtension,
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
   MdastShortcutsExtension,
   MdastTableExtension,
 } from '@lexical/mdast';
@@ -55,9 +55,9 @@ const editor = buildEditorFromExtensions(
 
 // Import / export run inside the editor; both are `$`-functions.
 editor.update(() => {
-  $convertFromMarkdownStringViaExtension('# Hello *world*');
+  $convertFromMarkdownString('# Hello *world*');
 });
-const markdown = editor.read(() => $convertToMarkdownStringViaExtension());
+const markdown = editor.read(() => $convertToMarkdownString());
 ```
 
 The same API is available from the editor as

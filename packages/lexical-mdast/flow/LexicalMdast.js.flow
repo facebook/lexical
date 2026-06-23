@@ -66,13 +66,13 @@ export type MdastExtensionOutput = {
   +registry: mixed,
 };
 
-declare export function $convertFromMarkdownStringViaExtension(
+declare export function $convertFromMarkdownString(
   markdown: string,
   node?: ElementNode,
   tree?: mixed,
 ): void;
 
-declare export function $convertToMarkdownStringViaExtension(
+declare export function $convertToMarkdownString(
   node?: ElementNode,
 ): string;
 

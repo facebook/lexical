@@ -102,8 +102,8 @@ export interface MdastConfig {
 /**
  * The runtime API exposed by {@link MdastExtension}. Obtain it inside a
  * read/update with `$getExtensionOutput(MdastExtension)`, or use the
- * {@link $convertFromMarkdownStringViaExtension} /
- * {@link $convertToMarkdownStringViaExtension} shorthands.
+ * {@link $convertFromMarkdownString} /
+ * {@link $convertToMarkdownString} shorthands.
  */
 export interface MdastExtensionOutput {
   /**
@@ -159,7 +159,7 @@ const CORE_EXPORT_RULES: readonly MdastExportRule[] = [
  *
  * @example
  * ```ts
- * import {$convertFromMarkdownStringViaExtension, MdastCommonMarkExtension}
+ * import {$convertFromMarkdownString, MdastCommonMarkExtension}
  *   from '@lexical/mdast';
  * import {buildEditorFromExtensions} from '@lexical/extension';
  * import {defineExtension} from 'lexical';
@@ -167,7 +167,7 @@ const CORE_EXPORT_RULES: readonly MdastExportRule[] = [
  * const editor = buildEditorFromExtensions(
  *   defineExtension({dependencies: [MdastCommonMarkExtension], name: '[root]'}),
  * );
- * editor.update(() => $convertFromMarkdownStringViaExtension('# Hi'));
+ * editor.update(() => $convertFromMarkdownString('# Hi'));
  * ```
  */
 export const MdastExtension = /* @__PURE__ */ defineExtension<
@@ -372,7 +372,7 @@ export const MdastShortcutsExtension = /* @__PURE__ */ defineExtension({
  * Must be called inside an `editor.update()`. Throws if the editor was not
  * built with {@link MdastExtension} (or an extension that depends on it).
  */
-export function $convertFromMarkdownStringViaExtension(
+export function $convertFromMarkdownString(
   markdown: string,
   node?: ElementNode,
   tree?: Root,
@@ -388,8 +388,6 @@ export function $convertFromMarkdownStringViaExtension(
  * Shorthand for `$getExtensionOutput(MdastExtension).$convertToMarkdownString`.
  * Must be called inside an `editor.read()` or `editor.update()`.
  */
-export function $convertToMarkdownStringViaExtension(
-  node?: ElementNode,
-): string {
+export function $convertToMarkdownString(node?: ElementNode): string {
   return $getExtensionOutput(MdastExtension).$convertToMarkdownString(node);
 }

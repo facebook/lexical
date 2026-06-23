@@ -22,8 +22,8 @@ import {
 import {describe, expect, it, onTestFinished} from 'vitest';
 
 import {
-  $convertFromMarkdownStringViaExtension,
-  $convertToMarkdownStringViaExtension,
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
   MdastCommonMarkExtension,
   MdastExtension,
   MdastShortcutsExtension,
@@ -48,11 +48,11 @@ describe('@lexical/mdast extensions', () => {
 
     editor.update(
       () => {
-        $convertFromMarkdownStringViaExtension('# Title\n\n- a\n- b');
+        $convertFromMarkdownString('# Title\n\n- a\n- b');
       },
       {discrete: true},
     );
-    const out = editor.read(() => $convertToMarkdownStringViaExtension());
+    const out = editor.read(() => $convertToMarkdownString());
     expect(out).toBe('# Title\n\n- a\n- b');
   });
 

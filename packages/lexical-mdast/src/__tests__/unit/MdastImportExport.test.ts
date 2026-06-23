@@ -17,8 +17,8 @@ import {$getRoot, defineExtension} from 'lexical';
 import {describe, expect, it, onTestFinished} from 'vitest';
 
 import {
-  $convertFromMarkdownStringViaExtension,
-  $convertToMarkdownStringViaExtension,
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
   MdastCommonMarkExtension,
   MdastTableExtension,
 } from '../../index';
@@ -40,11 +40,11 @@ function importExport(markdown: string, withTable = false): string {
   const editor = createEditor(withTable);
   editor.update(
     () => {
-      $convertFromMarkdownStringViaExtension(markdown);
+      $convertFromMarkdownString(markdown);
     },
     {discrete: true},
   );
-  return editor.read(() => $convertToMarkdownStringViaExtension());
+  return editor.read(() => $convertToMarkdownString());
 }
 
 describe('@lexical/mdast import/export', () => {
@@ -91,7 +91,7 @@ describe('@lexical/mdast import/export', () => {
     const editor = createEditor();
     editor.update(
       () => {
-        $convertFromMarkdownStringViaExtension('# Hello *world*');
+        $convertFromMarkdownString('# Hello *world*');
       },
       {discrete: true},
     );
@@ -111,7 +111,7 @@ describe('@lexical/mdast import/export', () => {
     const editor = createEditor();
     editor.update(
       () => {
-        $convertFromMarkdownStringViaExtension('- a\n- b\n  - b1\n  - b2\n- c');
+        $convertFromMarkdownString('- a\n- b\n  - b1\n  - b2\n- c');
       },
       {discrete: true},
     );
@@ -132,7 +132,7 @@ describe('@lexical/mdast import/export', () => {
     const editor = createEditor();
     editor.update(
       () => {
-        $convertFromMarkdownStringViaExtension('see https://lexical.dev today');
+        $convertFromMarkdownString('see https://lexical.dev today');
       },
       {discrete: true},
     );
@@ -186,9 +186,7 @@ describe('@lexical/mdast import/export', () => {
       const editor = createEditor(true);
       editor.update(
         () => {
-          $convertFromMarkdownStringViaExtension(
-            '| h1 | h2 |\n| - | - |\n| a | b |',
-          );
+          $convertFromMarkdownString('| h1 | h2 |\n| - | - |\n| a | b |');
         },
         {discrete: true},
       );

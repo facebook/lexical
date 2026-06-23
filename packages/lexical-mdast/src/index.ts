@@ -16,7 +16,7 @@
 //   import/export, and `MdastShortcutsExtension` for streaming shortcuts.
 // - Read the Markdown API from the editor with
 //   `$getExtensionOutput(MdastExtension)`, or via the
-//   `$convert*ViaExtension` shorthands.
+//   `$convert*` shorthands.
 
 export type {
   MdastConfig,
@@ -24,8 +24,8 @@ export type {
   MdastShortcutsConfig,
 } from './MdastExtension';
 export {
-  $convertFromMarkdownStringViaExtension,
-  $convertToMarkdownStringViaExtension,
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
   MdastCodeExtension,
   MdastCommonMarkExtension,
   MdastExtension,

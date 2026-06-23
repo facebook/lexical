@@ -311,9 +311,9 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     expect(domText.nodeValue).toBe('漢か' + NBSP);
   });
 
-  // -- Arrow key: skip over ruby nodes atomically --
+  // -- Arrow key: skip one ruby at a time --
 
-  test('left arrow from after last ruby skips all rubies to prev TextNode', () => {
+  test('left arrow from after ruby2 skips one ruby to ruby1 end', () => {
     const keys = setupRubyParagraph(editor);
 
     let result: {key: string; offset: number} | null = null;
@@ -339,10 +339,39 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
       {discrete: true},
     );
 
+    expect(result).toEqual({key: keys.ruby1Key, offset: 1});
+  });
+
+  test('left arrow again from between rubies reaches prev TextNode', () => {
+    const keys = setupRubyParagraph(editor);
+
+    let result: {key: string; offset: number} | null = null;
+    editor.update(
+      () => {
+        const sel = $createRangeSelection();
+        sel.anchor.set(keys.ruby1Key, 1, 'text');
+        sel.focus.set(keys.ruby1Key, 1, 'text');
+        $setSelection(sel);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const event = new KeyboardEvent('keydown', {key: 'ArrowLeft'});
+        editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
+        const after = $getSelection();
+        result = $isRangeSelection(after)
+          ? {key: after.anchor.key, offset: after.anchor.offset}
+          : null;
+      },
+      {discrete: true},
+    );
+
     expect(result).toEqual({key: keys.preKey, offset: 1});
   });
 
-  test('right arrow from before first ruby skips all rubies to next TextNode', () => {
+  test('right arrow from before ruby1 skips one ruby to ruby2 start', () => {
     const keys = setupRubyParagraph(editor);
 
     let result: {key: string; offset: number} | null = null;
@@ -368,18 +397,18 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
       {discrete: true},
     );
 
-    expect(result).toEqual({key: keys.postKey, offset: 0});
+    expect(result).toEqual({key: keys.ruby2Key, offset: 0});
   });
 
-  test('right arrow between adjacent rubies skips to next TextNode', () => {
+  test('right arrow again from between rubies reaches next TextNode', () => {
     const keys = setupRubyParagraph(editor);
 
     let result: {key: string; offset: number} | null = null;
     editor.update(
       () => {
         const sel = $createRangeSelection();
-        sel.anchor.set(keys.ruby1Key, 1, 'text');
-        sel.focus.set(keys.ruby1Key, 1, 'text');
+        sel.anchor.set(keys.ruby2Key, 0, 'text');
+        sel.focus.set(keys.ruby2Key, 0, 'text');
         $setSelection(sel);
       },
       {discrete: true},
@@ -398,5 +427,59 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     );
 
     expect(result).toEqual({key: keys.postKey, offset: 0});
+  });
+
+  test('between-rubies left and right do not get stuck', () => {
+    const keys = setupRubyParagraph(editor);
+
+    let resultLeft: {key: string; offset: number} | null = null;
+    let resultRight: {key: string; offset: number} | null = null;
+
+    // 字 offset 0 에서 ← → 漢 끝이 아닌 前 끝으로 가야 함
+    editor.update(
+      () => {
+        const sel = $createRangeSelection();
+        sel.anchor.set(keys.ruby2Key, 0, 'text');
+        sel.focus.set(keys.ruby2Key, 0, 'text');
+        $setSelection(sel);
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        const event = new KeyboardEvent('keydown', {key: 'ArrowLeft'});
+        editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
+        const after = $getSelection();
+        resultLeft = $isRangeSelection(after)
+          ? {key: after.anchor.key, offset: after.anchor.offset}
+          : null;
+      },
+      {discrete: true},
+    );
+
+    // 漢 end 에서 → → 字 start 가 아닌 後 start 로 가야 함
+    editor.update(
+      () => {
+        const sel = $createRangeSelection();
+        sel.anchor.set(keys.ruby1Key, 1, 'text');
+        sel.focus.set(keys.ruby1Key, 1, 'text');
+        $setSelection(sel);
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        const event = new KeyboardEvent('keydown', {key: 'ArrowRight'});
+        editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
+        const after = $getSelection();
+        resultRight = $isRangeSelection(after)
+          ? {key: after.anchor.key, offset: after.anchor.offset}
+          : null;
+      },
+      {discrete: true},
+    );
+
+    expect(resultLeft).toEqual({key: keys.preKey, offset: 1});
+    expect(resultRight).toEqual({key: keys.postKey, offset: 0});
   });
 });

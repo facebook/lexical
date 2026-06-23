@@ -92,7 +92,24 @@ function $skipRubyOnArrow(isBackward: boolean): boolean {
   let rubyToSkip: LexicalNode | null = null;
 
   if ($isRubyNode(node) && !node.isComposing()) {
-    rubyToSkip = node;
+    const len = node.getTextContentSize();
+    if (isBackward) {
+      // 漢|字 사이에서 ← : offset 0이고 앞이 루비면 앞 루비를 건너뜀
+      if (anchor.offset === 0) {
+        const prev = node.getPreviousSibling();
+        rubyToSkip = $isRubyNode(prev) ? prev : node;
+      } else {
+        rubyToSkip = node;
+      }
+    } else {
+      // 漢|字 사이에서 → : offset=len이고 뒤가 루비면 뒤 루비를 건너뜀
+      if (anchor.offset === len) {
+        const next = node.getNextSibling();
+        rubyToSkip = $isRubyNode(next) ? next : node;
+      } else {
+        rubyToSkip = node;
+      }
+    }
   } else if (!$isRubyNode(node)) {
     if (isBackward && anchor.offset === 0) {
       const prev = node.getPreviousSibling();
@@ -111,14 +128,11 @@ function $skipRubyOnArrow(isBackward: boolean): boolean {
     return false;
   }
 
-  let target: LexicalNode | null = isBackward
+  const target: LexicalNode | null = isBackward
     ? rubyToSkip.getPreviousSibling()
     : rubyToSkip.getNextSibling();
-  while (target != null && $isRubyNode(target)) {
-    target = isBackward ? target.getPreviousSibling() : target.getNextSibling();
-  }
 
-  if ($isTextNode(target) && !$isRubyNode(target)) {
+  if ($isTextNode(target)) {
     const offset = isBackward ? target.getTextContentSize() : 0;
     selection.anchor.set(target.getKey(), offset, 'text');
     selection.focus.set(target.getKey(), offset, 'text');

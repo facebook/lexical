@@ -470,6 +470,10 @@ i.link {
   background-image: url(images/icons/link.svg);
 }
 
+i.ruby {
+  background-image: url(images/icons/ruby.svg);
+}
+
 i.horizontal-rule {
   background-image: url(images/icons/horizontal-rule.svg);
 }

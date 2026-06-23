@@ -22,22 +22,22 @@
 import {registerRichText} from '@lexical/rich-text';
 import {
   $createParagraphNode,
-  $createRangeSelection,
   $createTextNode,
   $getNodeByKey,
   $getRoot,
   $getSelection,
   $isRangeSelection,
   $setCompositionKey,
-  $setSelection,
   COMPOSITION_END_COMMAND,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   LexicalEditor,
   SELECTION_CHANGE_COMMAND,
+  TextNode,
 } from 'lexical';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
+import assert from 'node:assert';
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 
 import {$createRubyNode, $isRubyNode, RubyNode} from '../../nodes/RubyNode';
@@ -123,10 +123,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(keys.ruby2Key, 1, 'text');
-        sel.focus.set(keys.ruby2Key, 1, 'text');
-        $setSelection(sel);
+        ($getNodeByKey(keys.ruby2Key) as TextNode).select(1, 1);
         $getSelection()!.insertText('あ');
       },
       {discrete: true},
@@ -140,10 +137,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(keys.ruby1Key, 0, 'text');
-        sel.focus.set(keys.ruby1Key, 0, 'text');
-        $setSelection(sel);
+        ($getNodeByKey(keys.ruby1Key) as TextNode).select(0, 0);
         $getSelection()!.insertText('か');
       },
       {discrete: true},
@@ -157,10 +151,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(keys.ruby1Key, 1, 'text');
-        sel.focus.set(keys.ruby1Key, 1, 'text');
-        $setSelection(sel);
+        ($getNodeByKey(keys.ruby1Key) as TextNode).select(1, 1);
         $getSelection()!.insertText('の');
       },
       {discrete: true},
@@ -176,10 +167,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(keys.ruby2Key, 1, 'text');
-        sel.focus.set(keys.ruby2Key, 1, 'text');
-        $setSelection(sel);
+        ($getNodeByKey(keys.ruby2Key) as TextNode).select(1, 1);
       },
       {discrete: true},
     );
@@ -194,10 +182,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(keys.ruby1Key, 0, 'text');
-        sel.focus.set(keys.ruby1Key, 0, 'text');
-        $setSelection(sel);
+        ($getNodeByKey(keys.ruby1Key) as TextNode).select(0, 0);
       },
       {discrete: true},
     );
@@ -215,10 +200,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     let anchorKey: string | null = null;
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(keys.ruby1Key, 0, 'text');
-        sel.focus.set(keys.ruby1Key, 0, 'text');
-        $setSelection(sel);
+        ($getNodeByKey(keys.ruby1Key) as TextNode).select(0, 0);
         $setCompositionKey(keys.ruby1Key);
 
         editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
@@ -238,10 +220,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     let anchorKey: string | null = null;
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(keys.ruby1Key, 0, 'text');
-        sel.focus.set(keys.ruby1Key, 0, 'text');
-        $setSelection(sel);
+        ($getNodeByKey(keys.ruby1Key) as TextNode).select(0, 0);
 
         editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
 
@@ -260,10 +239,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     let result: {key: string; offset: number} | null = null;
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(keys.ruby2Key, 1, 'text');
-        sel.focus.set(keys.ruby2Key, 1, 'text');
-        $setSelection(sel);
+        ($getNodeByKey(keys.ruby2Key) as TextNode).select(1, 1);
 
         editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
 
@@ -301,7 +277,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     editor.update(
       () => {
         const node = $getNodeByKey(keys.ruby1Key);
-        expect($isRubyNode(node)).toBe(true);
+        assert($isRubyNode(node));
         if ($isRubyNode(node)) {
           expect(node.isComposing()).toBe(true);
           expect(node.isToken()).toBe(true);
@@ -321,10 +297,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     let result: {key: string; offset: number} | null = null;
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(keys.postKey, 0, 'text');
-        sel.focus.set(keys.postKey, 0, 'text');
-        $setSelection(sel);
+        ($getNodeByKey(keys.postKey) as TextNode).select(0, 0);
       },
       {discrete: true},
     );
@@ -350,10 +323,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     let result: {key: string; offset: number} | null = null;
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(keys.ruby1Key, 1, 'text');
-        sel.focus.set(keys.ruby1Key, 1, 'text');
-        $setSelection(sel);
+        ($getNodeByKey(keys.ruby1Key) as TextNode).select(1, 1);
       },
       {discrete: true},
     );
@@ -379,10 +349,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     let result: {key: string; offset: number} | null = null;
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(keys.preKey, 1, 'text');
-        sel.focus.set(keys.preKey, 1, 'text');
-        $setSelection(sel);
+        ($getNodeByKey(keys.preKey) as TextNode).select(1, 1);
       },
       {discrete: true},
     );
@@ -408,10 +375,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     let result: {key: string; offset: number} | null = null;
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(keys.ruby2Key, 0, 'text');
-        sel.focus.set(keys.ruby2Key, 0, 'text');
-        $setSelection(sel);
+        ($getNodeByKey(keys.ruby2Key) as TextNode).select(0, 0);
         const event = new KeyboardEvent('keydown', {key: 'ArrowRight'});
         editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
         const after = $getSelection();
@@ -431,10 +395,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     let result: {key: string; offset: number} | null = null;
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(keys.ruby2Key, 0, 'text');
-        sel.focus.set(keys.ruby2Key, 0, 'text');
-        $setSelection(sel);
+        ($getNodeByKey(keys.ruby2Key) as TextNode).select(0, 0);
         const event = new KeyboardEvent('keydown', {key: 'ArrowLeft'});
         editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
         const after = $getSelection();
@@ -454,10 +415,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     let result: {key: string; offset: number} | null = null;
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(keys.ruby1Key, 1, 'text');
-        sel.focus.set(keys.ruby1Key, 1, 'text');
-        $setSelection(sel);
+        ($getNodeByKey(keys.ruby1Key) as TextNode).select(1, 1);
         const event = new KeyboardEvent('keydown', {key: 'ArrowRight'});
         editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
         const after = $getSelection();
@@ -478,10 +436,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(keys.ruby2Key, 1, 'text');
-        sel.focus.set(keys.ruby2Key, 1, 'text');
-        $setSelection(sel);
+        ($getNodeByKey(keys.ruby2Key) as TextNode).select(1, 1);
         $setCompositionKey(keys.ruby2Key);
       },
       {discrete: true},
@@ -503,10 +458,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
     editor.update(
       () => {
-        const sel = $createRangeSelection();
-        sel.anchor.set(keys.ruby1Key, 1, 'text');
-        sel.focus.set(keys.ruby1Key, 1, 'text');
-        $setSelection(sel);
+        ($getNodeByKey(keys.ruby1Key) as TextNode).select(1, 1);
         $setCompositionKey(keys.ruby1Key);
       },
       {discrete: true},

@@ -928,6 +928,75 @@ importers:
         specifier: '>=5.2'
         version: 6.0.3
 
+  packages/lexical-mdast:
+    dependencies:
+      '@lexical/code-core':
+        specifier: workspace:*
+        version: link:../lexical-code-core
+      '@lexical/extension':
+        specifier: workspace:*
+        version: link:../lexical-extension
+      '@lexical/link':
+        specifier: workspace:*
+        version: link:../lexical-link
+      '@lexical/list':
+        specifier: workspace:*
+        version: link:../lexical-list
+      '@lexical/rich-text':
+        specifier: workspace:*
+        version: link:../lexical-rich-text
+      '@lexical/table':
+        specifier: workspace:*
+        version: link:../lexical-table
+      '@lexical/utils':
+        specifier: workspace:*
+        version: link:../lexical-utils
+      '@types/mdast':
+        specifier: ^4.0.4
+        version: 4.0.4
+      lexical:
+        specifier: workspace:*
+        version: link:../lexical
+      mdast-util-from-markdown:
+        specifier: ^2.0.3
+        version: 2.0.3
+      mdast-util-gfm-autolink-literal:
+        specifier: ^2.0.1
+        version: 2.0.1
+      mdast-util-gfm-strikethrough:
+        specifier: ^2.0.0
+        version: 2.0.0
+      mdast-util-gfm-table:
+        specifier: ^2.0.0
+        version: 2.0.0
+      mdast-util-gfm-task-list-item:
+        specifier: ^2.0.0
+        version: 2.0.0
+      mdast-util-to-markdown:
+        specifier: ^2.1.2
+        version: 2.1.2
+      mdast-util-to-string:
+        specifier: ^4.0.0
+        version: 4.0.0
+      micromark-extension-gfm-autolink-literal:
+        specifier: ^2.1.0
+        version: 2.1.0
+      micromark-extension-gfm-strikethrough:
+        specifier: ^2.1.0
+        version: 2.1.0
+      micromark-extension-gfm-table:
+        specifier: ^2.1.1
+        version: 2.1.1
+      micromark-extension-gfm-task-list-item:
+        specifier: ^2.1.0
+        version: 2.1.0
+      micromark-util-types:
+        specifier: ^2.0.2
+        version: 2.0.2
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
+
   packages/lexical-offset:
     dependencies:
       '@lexical/internal':

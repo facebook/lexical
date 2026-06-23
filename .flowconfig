@@ -50,6 +50,7 @@ module.name_mapper='^@lexical/link$' -> '<PROJECT_ROOT>/packages/lexical-link/fl
 module.name_mapper='^@lexical/list$' -> '<PROJECT_ROOT>/packages/lexical-list/flow/LexicalList.js.flow'
 module.name_mapper='^@lexical/mark$' -> '<PROJECT_ROOT>/packages/lexical-mark/flow/LexicalMark.js.flow'
 module.name_mapper='^@lexical/markdown$' -> '<PROJECT_ROOT>/packages/lexical-markdown/flow/LexicalMarkdown.js.flow'
+module.name_mapper='^@lexical/mdast$' -> '<PROJECT_ROOT>/packages/lexical-mdast/flow/LexicalMdast.js.flow'
 module.name_mapper='^@lexical/offset$' -> '<PROJECT_ROOT>/packages/lexical-offset/flow/LexicalOffset.js.flow'
 module.name_mapper='^@lexical/overflow$' -> '<PROJECT_ROOT>/packages/lexical-overflow/flow/LexicalOverflow.js.flow'
 module.name_mapper='^@lexical/plain-text$' -> '<PROJECT_ROOT>/packages/lexical-plain-text/flow/LexicalPlainText.js.flow'

@@ -1,0 +1,146 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+import type {
+  ElementNode,
+  ExtensionConfigBase,
+  LexicalEditor,
+  LexicalExtension,
+  LexicalNode,
+  TextNode,
+} from 'lexical';
+import type {NamedSignalsOutput} from '@lexical/extension';
+
+// mdast / micromark structures are not Flow-typed; treat them opaquely.
+export type MdastNode = mixed;
+export type MdastParent = mixed;
+
+export type MdastImportContext = {
+  +format: number,
+  importChildren(parent: MdastParent, format?: number): Array<LexicalNode>,
+  importNode(node: MdastNode, format?: number): Array<LexicalNode>,
+  createText(value: string, format?: number): Array<LexicalNode>,
+};
+
+export type MdastExportContext = {
+  exportChildren(node: ElementNode): Array<MdastNode>,
+  exportInline(node: ElementNode): Array<MdastNode>,
+  exportBlocks(node: ElementNode): Array<MdastNode>,
+};
+
+export type MdastImportHandler = (
+  node: MdastNode,
+  context: MdastImportContext,
+) => LexicalNode | Array<LexicalNode> | null;
+
+export type MdastExportHandler = (
+  node: LexicalNode,
+  context: MdastExportContext,
+) => MdastNode | Array<MdastNode> | null;
+
+export type MdastTransformer = {
+  name: string,
+  micromarkExtensions?: $ReadOnlyArray<mixed>,
+  mdastExtensions?: $ReadOnlyArray<mixed>,
+  toMarkdownExtensions?: $ReadOnlyArray<mixed>,
+  dependencies?: $ReadOnlyArray<Class<LexicalNode>>,
+  importHandlers?: {+[string]: MdastImportHandler},
+  exportHandlers?: {+[string]: MdastExportHandler},
+};
+
+export type CompiledMdastTransformers = {
+  micromarkExtensions: Array<mixed>,
+  mdastExtensions: Array<mixed>,
+  toMarkdownExtensions: Array<mixed>,
+  importHandlers: Map<string, MdastImportHandler>,
+  exportHandlers: Map<string, MdastExportHandler>,
+  dependencies: Array<Class<LexicalNode>>,
+};
+
+export type MdastBlockMatch = {
+  kind: 'heading' | 'blockquote' | 'list' | 'code',
+  node: MdastNode,
+  markerLength: number,
+};
+
+export type MdastImportOptions = {tree?: mixed};
+export type MdastShortcutsOptions = {
+  transformers?: $ReadOnlyArray<MdastTransformer>,
+};
+
+declare export function $convertFromMarkdownString(
+  markdown: string,
+  transformers?: $ReadOnlyArray<MdastTransformer>,
+  node?: ElementNode,
+  tree?: mixed,
+): void;
+
+declare export function $convertToMarkdownString(
+  transformers?: $ReadOnlyArray<MdastTransformer>,
+  node?: ElementNode,
+): string;
+
+declare export function compileTransformers(
+  transformers: $ReadOnlyArray<MdastTransformer>,
+): CompiledMdastTransformers;
+
+declare export function createMdastImport(
+  transformers: $ReadOnlyArray<MdastTransformer>,
+): (markdown: string, node?: ElementNode, tree?: mixed) => void;
+
+declare export function createMdastExport(
+  transformers: $ReadOnlyArray<MdastTransformer>,
+): (node?: ElementNode) => string;
+
+declare export function registerMarkdownShortcuts(
+  editor: LexicalEditor,
+  transformers?: $ReadOnlyArray<MdastTransformer>,
+): () => void;
+
+declare export function phrasingFromFormattedText(
+  value: string,
+  format: number,
+): MdastNode;
+
+declare export class MarkdownStreamScanner {
+  constructor(transformers: $ReadOnlyArray<MdastTransformer>): void;
+  importInline(node: MdastNode): Array<LexicalNode>;
+  scanBlock(line: string): MdastBlockMatch | null;
+  scanInline(value: string): MdastNode | null;
+}
+
+declare export var COMMONMARK_TRANSFORMER: MdastTransformer;
+declare export var STRIKETHROUGH_TRANSFORMER: MdastTransformer;
+declare export var TASK_LIST_TRANSFORMER: MdastTransformer;
+declare export var AUTOLINK_TRANSFORMER: MdastTransformer;
+declare export var TABLE_TRANSFORMER: MdastTransformer;
+declare export var TRANSFORMERS: Array<MdastTransformer>;
+
+export type MdastConfig = {
+  transformers: $ReadOnlyArray<MdastTransformer>,
+};
+export type MdastShortcutsConfig = {
+  disabled: boolean,
+  transformers: $ReadOnlyArray<MdastTransformer>,
+};
+
+declare export var MdastExtension: LexicalExtension<
+  MdastConfig,
+  '@lexical/mdast/Mdast',
+  NamedSignalsOutput<MdastConfig>,
+  void,
+>;
+declare export var MdastShortcutsExtension: LexicalExtension<
+  MdastShortcutsConfig,
+  '@lexical/mdast/Shortcuts',
+  NamedSignalsOutput<MdastShortcutsConfig>,
+  void,
+>;
+
+export type {ElementNode, ExtensionConfigBase, LexicalNode, TextNode};

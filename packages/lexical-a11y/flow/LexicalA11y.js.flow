@@ -20,7 +20,7 @@ export type AriaLiveRegionHandle = {
 };
 
 export type AriaLiveRegionRef = {
-  +current: AriaLiveRegionHandle,
+  current: AriaLiveRegionHandle,
 };
 
 declare export function registerAriaLiveRegion(

@@ -7,8 +7,10 @@
  * @flow strict
  */
 
+export type FocusTrapInitialFocus = 'firstFocusable' | 'container';
+
 declare export hook useLexicalFocusTrap(
   containerRef: {current: HTMLElement | null, ...},
   isActive: boolean,
-  initialFocus?: 'firstFocusable' | 'container',
+  initialFocus?: FocusTrapInitialFocus,
 ): void;

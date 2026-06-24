@@ -25,6 +25,7 @@ import {
   CLICK_COMMAND,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
+  getDOMSelection,
   getParentElement,
   KEY_ESCAPE_COMMAND,
   LexicalEditor,
@@ -138,7 +139,7 @@ function FloatingRubyEditor({
         setAnnotation('');
         setRubyNodeKey(null);
 
-        const nativeSelection = window.getSelection();
+        const nativeSelection = getDOMSelection(editor._window);
         if (nativeSelection !== null && nativeSelection.rangeCount > 0) {
           const range = nativeSelection.getRangeAt(0);
           refs.setPositionReference(range);
@@ -180,7 +181,7 @@ function FloatingRubyEditor({
               setAnnotation('');
               setRubyNodeKey(null);
 
-              const nativeSelection = window.getSelection();
+              const nativeSelection = getDOMSelection(editor._window);
               if (nativeSelection !== null && nativeSelection.rangeCount > 0) {
                 const range = nativeSelection.getRangeAt(0);
                 refs.setPositionReference(range);

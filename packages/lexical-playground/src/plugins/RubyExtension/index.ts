@@ -22,6 +22,7 @@ import {
   configExtension,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   defineExtension,
+  getDOMSelection,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_BACKSPACE_COMMAND,
@@ -226,7 +227,7 @@ export const RubyExtension = /* @__PURE__  */ defineExtension({
       if (composingRubyInner) {
         return;
       }
-      const domSelection = window.getSelection();
+      const domSelection = getDOMSelection(editor._window);
       if (!domSelection || !domSelection.anchorNode) {
         return;
       }

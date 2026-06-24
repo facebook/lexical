@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-declare export function useFocusTrap(
+declare export hook useLexicalFocusTrap(
   containerRef: {current: HTMLElement | null, ...},
   isActive: boolean,
   initialFocus?: 'firstFocusable' | 'container',

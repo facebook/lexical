@@ -19,6 +19,10 @@ export type AriaLiveRegionHandle = {
   dispose: () => void,
 };
 
+export type AriaLiveRegionRef = {
+  +current: AriaLiveRegionHandle,
+};
+
 declare export function registerAriaLiveRegion(
   options?: AriaLiveRegionOptions,
 ): AriaLiveRegionHandle;
@@ -27,6 +31,7 @@ export type FocusTrapInitialFocus = 'firstFocusable' | 'container';
 
 export type FocusTrapOptions = {
   initialFocus?: FocusTrapInitialFocus,
+  allowOutside?: (target: HTMLElement) => boolean,
 };
 
 declare export function registerFocusTrap(
@@ -88,7 +93,7 @@ export type AriaLiveRegionExtensionConfig = {
 declare export var AriaLiveRegionExtension: LexicalExtension<
   AriaLiveRegionExtensionConfig,
   '@lexical/a11y/AriaLiveRegion',
-  AriaLiveRegionHandle,
+  AriaLiveRegionRef,
   void,
 >;
 

@@ -21,6 +21,7 @@
   "sideEffects": false,
   "dependencies": {
     "@lexical/extension": "workspace:*",
+    "@lexical/utils": "workspace:*",
     "lexical": "workspace:*"
   },
   "peerDependencies": {

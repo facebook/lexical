@@ -7,6 +7,7 @@
  */
 
 import {effect, namedSignals} from '@lexical/extension';
+import {mergeRegister} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_LOW,
   defineExtension,
@@ -149,6 +150,14 @@ export interface FocusTrapOptions {
    *   announce the dialog label before any control.
    */
   initialFocus?: FocusTrapInitialFocus;
+  /**
+   * Predicate that exempts an element from the pull-back. When it
+   * returns `true` for `event.target`, the focusin handler lets focus
+   * stay outside the container. Useful for portaled panels (e.g.
+   * autocomplete popups) that live outside the trap container yet
+   * logically belong to it.
+   */
+  allowOutside?: (target: HTMLElement) => boolean;
 }
 
 /**
@@ -185,11 +194,11 @@ export function registerFocusTrap(
     : null;
 
   const focusable = getFocusableElements(container);
-  if (initialFocus === 'container' && container.tabIndex >= -1) {
+  if (initialFocus === 'container' && container.hasAttribute('tabindex')) {
     container.focus();
   } else if (focusable.length > 0) {
     focusable[0].focus();
-  } else if (container.tabIndex >= -1) {
+  } else if (container.hasAttribute('tabindex')) {
     container.focus();
   }
 
@@ -232,10 +241,13 @@ export function registerFocusTrap(
     if (!isHTMLElement(event.target) || container.contains(event.target)) {
       return;
     }
+    if (options.allowOutside != null && options.allowOutside(event.target)) {
+      return;
+    }
     const currentFocusable = getFocusableElements(container);
     if (currentFocusable.length > 0) {
       currentFocusable[0].focus();
-    } else if (container.tabIndex >= -1) {
+    } else if (container.hasAttribute('tabindex')) {
       container.focus();
     }
   };
@@ -375,6 +387,10 @@ export function registerRovingTabIndex(
   container.addEventListener('keydown', handler);
   return () => {
     container.removeEventListener('keydown', handler);
+    const items = getItems();
+    items.forEach(item => {
+      item.tabIndex = 0;
+    });
   };
 }
 
@@ -418,7 +434,9 @@ export function registerFocusManager(
       if (!event.altKey || event.key !== 'F10') {
         return false;
       }
-      const firstItem = toolbar.querySelector<HTMLElement>(selector);
+      const firstItem =
+        toolbar.querySelector<HTMLElement>('[tabindex="0"]') ??
+        toolbar.querySelector<HTMLElement>(selector);
       if (firstItem === null) {
         return false;
       }
@@ -432,6 +450,19 @@ export function registerFocusManager(
   const handler = (event: KeyboardEvent) => {
     if (event.key !== 'Escape') {
       return;
+    }
+    if (isHTMLElement(event.target)) {
+      const items = toolbar.querySelectorAll<HTMLElement>(selector);
+      let isRovingItem = false;
+      for (const item of items) {
+        if (item === event.target || item.contains(event.target)) {
+          isRovingItem = true;
+          break;
+        }
+      }
+      if (!isRovingItem) {
+        return;
+      }
     }
     const rootElement = editor.getRootElement();
     if (rootElement === null) {
@@ -450,10 +481,9 @@ export function registerFocusManager(
   };
   toolbar.addEventListener('keydown', handler);
 
-  return () => {
-    removeCommand();
+  return mergeRegister(removeCommand, () => {
     toolbar.removeEventListener('keydown', handler);
-  };
+  });
 }
 
 export interface HistoryAnnounceOptions {
@@ -497,10 +527,7 @@ export function registerHistoryAnnounce(
     },
     COMMAND_PRIORITY_LOW,
   );
-  return () => {
-    removeUndo();
-    removeRedo();
-  };
+  return mergeRegister(removeUndo, removeRedo);
 }
 
 export interface EditorModeAnnounceOptions {

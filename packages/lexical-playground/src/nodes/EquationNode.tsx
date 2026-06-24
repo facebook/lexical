@@ -91,6 +91,8 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
       throwOnError: false,
       trust: false,
     });
+    element.setAttribute('role', 'math');
+    element.setAttribute('aria-label', `Equation: ${this.__equation}`);
     return {element};
   }
 

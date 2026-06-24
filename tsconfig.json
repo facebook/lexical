@@ -113,9 +113,6 @@
       "@lexical/react/LexicalDraggableBlockPlugin": [
         "./packages/lexical-react/src/LexicalDraggableBlockPlugin.tsx"
       ],
-      "@lexical/react/LexicalEditorModeAnnouncePlugin": [
-        "./packages/lexical-react/src/LexicalEditorModeAnnouncePlugin.ts"
-      ],
       "@lexical/react/LexicalEditorRefPlugin": [
         "./packages/lexical-react/src/LexicalEditorRefPlugin.tsx"
       ],
@@ -130,9 +127,6 @@
       ],
       "@lexical/react/LexicalHashtagPlugin": [
         "./packages/lexical-react/src/LexicalHashtagPlugin.ts"
-      ],
-      "@lexical/react/LexicalHistoryAnnouncePlugin": [
-        "./packages/lexical-react/src/LexicalHistoryAnnouncePlugin.ts"
       ],
       "@lexical/react/LexicalHistoryPlugin": [
         "./packages/lexical-react/src/LexicalHistoryPlugin.ts"

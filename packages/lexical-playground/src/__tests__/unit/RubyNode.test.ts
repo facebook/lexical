@@ -167,7 +167,7 @@ describe('RubyNode', () => {
   // -----------------------------------------------------------------------
 
   describe('exportDOM', () => {
-    test('produces <ruby>text<rp>(<rp><rt>annotation</rt><rp>)</rp></ruby>', () => {
+    test('produces <ruby>text<rt>annotation</rt></ruby>', () => {
       editor.update(
         () => {
           const ruby = $createRubyNode('漢字', 'かんじ');
@@ -184,14 +184,11 @@ describe('RubyNode', () => {
         expect(element).not.toBeNull();
         const el = element as HTMLElement;
         expect(el.tagName).toBe('RUBY');
-        expect(el.childNodes.length).toBe(4);
-        expect(el.childNodes[0].textContent).toBe('漢字');
-        expect((el.childNodes[1] as HTMLElement).tagName).toBe('RP');
-        expect(el.childNodes[1].textContent).toBe('(');
-        expect((el.childNodes[2] as HTMLElement).tagName).toBe('RT');
-        expect(el.childNodes[2].textContent).toBe('かんじ');
-        expect((el.childNodes[3] as HTMLElement).tagName).toBe('RP');
-        expect(el.childNodes[3].textContent).toBe(')');
+        expect(el.childNodes.length).toBe(2);
+        expect(el.firstChild!.textContent).toBe('漢字');
+        const rt = el.lastChild as HTMLElement;
+        expect(rt.tagName).toBe('RT');
+        expect(rt.textContent).toBe('かんじ');
       });
     });
   });

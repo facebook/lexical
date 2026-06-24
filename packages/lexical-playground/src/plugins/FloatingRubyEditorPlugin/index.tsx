@@ -19,7 +19,6 @@ import {
 } from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
-  $createTextNode,
   $getNodeByKey,
   $getSelection,
   $isRangeSelection,
@@ -165,7 +164,9 @@ function FloatingRubyEditor({
             });
             return false;
           }
-          setIsRubyClick(false);
+          if (isRubyClick) {
+            setIsRubyClick(false);
+          }
           return false;
         },
         COMMAND_PRIORITY_HIGH,
@@ -266,17 +267,7 @@ function FloatingRubyEditor({
 
   const handleDelete = () => {
     editor.update(() => {
-      if (rubyNodeKey) {
-        const node = $getNodeByKey(rubyNodeKey);
-        if ($isRubyNode(node)) {
-          const text = $createTextNode(node.getTextContent());
-          text.setFormat(node.getFormat());
-          text.setStyle(node.getStyle());
-          node.replace(text);
-        }
-      } else {
-        $toggleRuby(null);
-      }
+      $toggleRuby(null);
     });
     setIsRubyClick(false);
     setIsRubyEditMode(false);

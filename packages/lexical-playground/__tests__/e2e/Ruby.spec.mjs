@@ -409,7 +409,9 @@ test.describe('Ruby', () => {
     await withExclusiveClipboardAccess(async () => {
       const clipboard = await copyToClipboard(page);
 
-      await page.keyboard.press('End');
+      // Collapse selection to end before Enter (webkit keeps selection
+      // active after End, so ArrowRight is used to collapse first).
+      await page.keyboard.press('ArrowRight');
       await page.keyboard.press('Enter');
       await pasteFromClipboard(page, clipboard);
     });
@@ -468,8 +470,23 @@ test.describe('Ruby', () => {
     await focusEditor(page);
 
     await page.keyboard.type('AB');
-    await page.keyboard.press('Home');
-    await selectCharacters(page, 'right', 1);
+    await evaluate(page, () => {
+      window.lexicalEditor.update(
+        () => {
+          const root = window.lexicalEditor
+            .getEditorState()
+            ._nodeMap.get('root');
+          for (const node of root.getAllTextNodes()) {
+            if (node.getTextContent() === 'AB') {
+              node.select(0, 1);
+              return;
+            }
+          }
+        },
+        {discrete: true},
+      );
+    });
+    await sleep(50);
     await insertRubyViaToolbar(page, 'えい');
 
     await selectNodeText(page, 'B');
@@ -728,8 +745,23 @@ test.describe('Ruby — line boundary navigation', () => {
 
     // "AB" → select "A" → ruby → ruby("A","えい") + "B"
     await page.keyboard.type('AB');
-    await page.keyboard.press('Home');
-    await selectCharacters(page, 'right', 1);
+    await evaluate(page, () => {
+      window.lexicalEditor.update(
+        () => {
+          const root = window.lexicalEditor
+            .getEditorState()
+            ._nodeMap.get('root');
+          for (const node of root.getAllTextNodes()) {
+            if (node.getTextContent() === 'AB') {
+              node.select(0, 1);
+              return;
+            }
+          }
+        },
+        {discrete: true},
+      );
+    });
+    await sleep(50);
     await insertRubyViaToolbar(page, 'えい');
 
     // Place caret at "B":0 (right after ruby)
@@ -787,8 +819,23 @@ test.describe('Ruby — line boundary navigation', () => {
 
     // "AB" → select "A" → ruby → ruby("A","えい") + "B"
     await page.keyboard.type('AB');
-    await page.keyboard.press('Home');
-    await selectCharacters(page, 'right', 1);
+    await evaluate(page, () => {
+      window.lexicalEditor.update(
+        () => {
+          const root = window.lexicalEditor
+            .getEditorState()
+            ._nodeMap.get('root');
+          for (const node of root.getAllTextNodes()) {
+            if (node.getTextContent() === 'AB') {
+              node.select(0, 1);
+              return;
+            }
+          }
+        },
+        {discrete: true},
+      );
+    });
+    await sleep(50);
     await insertRubyViaToolbar(page, 'えい');
 
     // Place caret at "B":0

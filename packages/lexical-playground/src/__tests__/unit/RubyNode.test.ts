@@ -69,53 +69,57 @@ describe('RubyNode', () => {
 
   describe('$createRubyNode', () => {
     test('creates node with correct text and annotation', () => {
-      let result: {
-        annotation: string;
-        isToken: boolean;
-        text: string;
-        type: string;
-      } | null = null;
       editor.update(
         () => {
-          const node = $createRubyNode('漢', 'かん');
-          result = {
-            annotation: node.getAnnotation(),
-            isToken: node.isToken(),
-            text: node.getTextContent(),
-            type: node.getType(),
-          };
+          const ruby = $createRubyNode('漢', 'かん');
+          $getRoot().clear().append($createParagraphNode().append(ruby));
         },
         {discrete: true},
       );
 
-      expect(result!.type).toBe('ruby');
-      expect(result!.text).toBe('漢');
-      expect(result!.annotation).toBe('かん');
-      expect(result!.isToken).toBe(true);
+      const result = editor.read(() => {
+        const ruby = $getFirstParagraph().getChildAtIndex(0)!;
+        return {
+          annotation: (ruby as RubyNode).getAnnotation(),
+          isToken: $isTextNode(ruby) && ruby.isToken(),
+          text: ruby.getTextContent(),
+          type: ruby.getType(),
+        };
+      });
+
+      expect(result.type).toBe('ruby');
+      expect(result.text).toBe('漢');
+      expect(result.annotation).toBe('かん');
+      expect(result.isToken).toBe(true);
     });
   });
 
   describe('$isRubyNode', () => {
     test('returns true for RubyNode', () => {
-      let result = false;
       editor.update(
         () => {
-          const node = $createRubyNode('字', 'じ');
-          result = $isRubyNode(node);
+          const ruby = $createRubyNode('字', 'じ');
+          $getRoot().clear().append($createParagraphNode().append(ruby));
         },
         {discrete: true},
+      );
+      const result = editor.read(() =>
+        $isRubyNode($getFirstParagraph().getChildAtIndex(0)),
       );
       expect(result).toBe(true);
     });
 
     test('returns false for TextNode', () => {
-      let result = true;
       editor.update(
         () => {
-          const node = $createTextNode('hello');
-          result = $isRubyNode(node);
+          $getRoot()
+            .clear()
+            .append($createParagraphNode().append($createTextNode('hello')));
         },
         {discrete: true},
+      );
+      const result = editor.read(() =>
+        $isRubyNode($getFirstParagraph().getChildAtIndex(0)),
       );
       expect(result).toBe(false);
     });
@@ -437,26 +441,32 @@ describe('RubyNode', () => {
 
   describe('token mode', () => {
     test('canInsertTextBefore returns false', () => {
-      let result = true;
       editor.update(
         () => {
-          const node = $createRubyNode('漢', 'かん');
-          result = node.canInsertTextBefore();
+          const ruby = $createRubyNode('漢', 'かん');
+          $getRoot().clear().append($createParagraphNode().append(ruby));
         },
         {discrete: true},
       );
+      const result = editor.read(() => {
+        const ruby = $getFirstParagraph().getChildAtIndex(0)!;
+        return $isTextNode(ruby) ? ruby.canInsertTextBefore() : null;
+      });
       expect(result).toBe(false);
     });
 
     test('canInsertTextAfter returns false', () => {
-      let result = true;
       editor.update(
         () => {
-          const node = $createRubyNode('漢', 'かん');
-          result = node.canInsertTextAfter();
+          const ruby = $createRubyNode('漢', 'かん');
+          $getRoot().clear().append($createParagraphNode().append(ruby));
         },
         {discrete: true},
       );
+      const result = editor.read(() => {
+        const ruby = $getFirstParagraph().getChildAtIndex(0)!;
+        return $isTextNode(ruby) ? ruby.canInsertTextAfter() : null;
+      });
       expect(result).toBe(false);
     });
   });
@@ -497,11 +507,6 @@ describe('RubyExtension Shift+arrow skip', () => {
   }
 
   test('Shift+Right from collapsed cursor at text end jumps past ruby', () => {
-    let anchorKey = '';
-    let anchorOffset = -1;
-    let focusKey = '';
-    let focusOffset = -1;
-
     extEditor.update(
       () => {
         const {hello} = $setupParagraph();
@@ -516,27 +521,27 @@ describe('RubyExtension Shift+arrow skip', () => {
     });
     const handled = extEditor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
 
-    extEditor.read(() => {
+    const result = extEditor.read(() => {
       const sel = $getSelection();
       if ($isRangeSelection(sel)) {
-        anchorKey = sel.anchor.getNode().getTextContent();
-        anchorOffset = sel.anchor.offset;
-        focusKey = sel.focus.getNode().getTextContent();
-        focusOffset = sel.focus.offset;
+        return {
+          anchorKey: sel.anchor.getNode().getTextContent(),
+          anchorOffset: sel.anchor.offset,
+          focusKey: sel.focus.getNode().getTextContent(),
+          focusOffset: sel.focus.offset,
+        };
       }
+      return null;
     });
 
     expect(handled).toBe(true);
-    expect(anchorKey).toBe('hello');
-    expect(anchorOffset).toBe(5);
-    expect(focusKey).toBe('world');
-    expect(focusOffset).toBe(0);
+    expect(result!.anchorKey).toBe('hello');
+    expect(result!.anchorOffset).toBe(5);
+    expect(result!.focusKey).toBe('world');
+    expect(result!.focusOffset).toBe(0);
   });
 
   test('Shift+Left from collapsed cursor at text start jumps past ruby', () => {
-    let focusKey = '';
-    let focusOffset = -1;
-
     extEditor.update(
       () => {
         const {world} = $setupParagraph();
@@ -551,23 +556,23 @@ describe('RubyExtension Shift+arrow skip', () => {
     });
     const handled = extEditor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
 
-    extEditor.read(() => {
+    const result = extEditor.read(() => {
       const sel = $getSelection();
       if ($isRangeSelection(sel)) {
-        focusKey = sel.focus.getNode().getTextContent();
-        focusOffset = sel.focus.offset;
+        return {
+          focusKey: sel.focus.getNode().getTextContent(),
+          focusOffset: sel.focus.offset,
+        };
       }
+      return null;
     });
 
     expect(handled).toBe(true);
-    expect(focusKey).toBe('hello');
-    expect(focusOffset).toBe(5);
+    expect(result!.focusKey).toBe('hello');
+    expect(result!.focusOffset).toBe(5);
   });
 
   test('Shift+Right extends existing selection past ruby', () => {
-    let focusKey = '';
-    let focusOffset = -1;
-
     extEditor.update(
       () => {
         const {hello} = $setupParagraph();
@@ -582,16 +587,19 @@ describe('RubyExtension Shift+arrow skip', () => {
     });
     extEditor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
 
-    extEditor.read(() => {
+    const result = extEditor.read(() => {
       const sel = $getSelection();
       if ($isRangeSelection(sel)) {
-        focusKey = sel.focus.getNode().getTextContent();
-        focusOffset = sel.focus.offset;
+        return {
+          focusKey: sel.focus.getNode().getTextContent(),
+          focusOffset: sel.focus.offset,
+        };
       }
+      return null;
     });
 
-    expect(focusKey).toBe('world');
-    expect(focusOffset).toBe(0);
+    expect(result!.focusKey).toBe('world');
+    expect(result!.focusOffset).toBe(0);
   });
 });
 
@@ -636,9 +644,6 @@ describe('RubyExtension Shift+arrow — consecutive rubies', () => {
   }
 
   test('Shift+Right from text end skips consecutive rubies to next text', () => {
-    let focusKey = '';
-    let focusOffset = -1;
-
     extEditor.update(
       () => {
         const {pre} = $setupConsecutiveRubies();
@@ -647,28 +652,23 @@ describe('RubyExtension Shift+arrow — consecutive rubies', () => {
       {discrete: true},
     );
 
-    const event = new KeyboardEvent('keydown', {
-      key: 'ArrowRight',
-      shiftKey: true,
-    });
-    extEditor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
+    extEditor.dispatchCommand(
+      KEY_ARROW_RIGHT_COMMAND,
+      new KeyboardEvent('keydown', {key: 'ArrowRight', shiftKey: true}),
+    );
 
-    extEditor.read(() => {
+    const result = extEditor.read(() => {
       const sel = $getSelection();
-      if ($isRangeSelection(sel)) {
-        focusKey = sel.focus.getNode().getTextContent();
-        focusOffset = sel.focus.offset;
-      }
+      return $isRangeSelection(sel)
+        ? {key: sel.focus.getNode().getTextContent(), offset: sel.focus.offset}
+        : null;
     });
 
-    expect(focusKey).toBe('後');
-    expect(focusOffset).toBe(0);
+    expect(result!.key).toBe('後');
+    expect(result!.offset).toBe(0);
   });
 
   test('Shift+Left from text start skips consecutive rubies to prev text', () => {
-    let focusKey = '';
-    let focusOffset = -1;
-
     extEditor.update(
       () => {
         const {post} = $setupConsecutiveRubies();
@@ -677,28 +677,23 @@ describe('RubyExtension Shift+arrow — consecutive rubies', () => {
       {discrete: true},
     );
 
-    const event = new KeyboardEvent('keydown', {
-      key: 'ArrowLeft',
-      shiftKey: true,
-    });
-    extEditor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
+    extEditor.dispatchCommand(
+      KEY_ARROW_LEFT_COMMAND,
+      new KeyboardEvent('keydown', {key: 'ArrowLeft', shiftKey: true}),
+    );
 
-    extEditor.read(() => {
+    const result = extEditor.read(() => {
       const sel = $getSelection();
-      if ($isRangeSelection(sel)) {
-        focusKey = sel.focus.getNode().getTextContent();
-        focusOffset = sel.focus.offset;
-      }
+      return $isRangeSelection(sel)
+        ? {key: sel.focus.getNode().getTextContent(), offset: sel.focus.offset}
+        : null;
     });
 
-    expect(focusKey).toBe('前');
-    expect(focusOffset).toBe(1);
+    expect(result!.key).toBe('前');
+    expect(result!.offset).toBe(1);
   });
 
   test('Shift+Right extends existing forward selection past consecutive rubies', () => {
-    let focusKey = '';
-    let focusOffset = -1;
-
     extEditor.update(
       () => {
         const {pre} = $setupConsecutiveRubies();
@@ -707,28 +702,23 @@ describe('RubyExtension Shift+arrow — consecutive rubies', () => {
       {discrete: true},
     );
 
-    const event = new KeyboardEvent('keydown', {
-      key: 'ArrowRight',
-      shiftKey: true,
-    });
-    extEditor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
+    extEditor.dispatchCommand(
+      KEY_ARROW_RIGHT_COMMAND,
+      new KeyboardEvent('keydown', {key: 'ArrowRight', shiftKey: true}),
+    );
 
-    extEditor.read(() => {
+    const result = extEditor.read(() => {
       const sel = $getSelection();
-      if ($isRangeSelection(sel)) {
-        focusKey = sel.focus.getNode().getTextContent();
-        focusOffset = sel.focus.offset;
-      }
+      return $isRangeSelection(sel)
+        ? {key: sel.focus.getNode().getTextContent(), offset: sel.focus.offset}
+        : null;
     });
 
-    expect(focusKey).toBe('後');
-    expect(focusOffset).toBe(0);
+    expect(result!.key).toBe('後');
+    expect(result!.offset).toBe(0);
   });
 
   test('Shift+Left extends existing backward selection past consecutive rubies', () => {
-    let focusKey = '';
-    let focusOffset = -1;
-
     extEditor.update(
       () => {
         const {post} = $setupConsecutiveRubies();
@@ -737,22 +727,20 @@ describe('RubyExtension Shift+arrow — consecutive rubies', () => {
       {discrete: true},
     );
 
-    const event = new KeyboardEvent('keydown', {
-      key: 'ArrowLeft',
-      shiftKey: true,
-    });
-    extEditor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
+    extEditor.dispatchCommand(
+      KEY_ARROW_LEFT_COMMAND,
+      new KeyboardEvent('keydown', {key: 'ArrowLeft', shiftKey: true}),
+    );
 
-    extEditor.read(() => {
+    const result = extEditor.read(() => {
       const sel = $getSelection();
-      if ($isRangeSelection(sel)) {
-        focusKey = sel.focus.getNode().getTextContent();
-        focusOffset = sel.focus.offset;
-      }
+      return $isRangeSelection(sel)
+        ? {key: sel.focus.getNode().getTextContent(), offset: sel.focus.offset}
+        : null;
     });
 
-    expect(focusKey).toBe('前');
-    expect(focusOffset).toBe(1);
+    expect(result!.key).toBe('前');
+    expect(result!.offset).toBe(1);
   });
 });
 
@@ -799,9 +787,6 @@ describe('RubyExtension Shift+arrow — focus on RubyNode (Safari)', () => {
   }
 
   test('Shift+Right with focus on first ruby walks forward past all rubies', () => {
-    let focusKey = '';
-    let focusOffset = -1;
-
     extEditor.update(
       () => {
         const {pre, ruby1} = $setupConsecutiveRubies();
@@ -811,29 +796,24 @@ describe('RubyExtension Shift+arrow — focus on RubyNode (Safari)', () => {
       {discrete: true},
     );
 
-    const event = new KeyboardEvent('keydown', {
-      key: 'ArrowRight',
-      shiftKey: true,
-    });
-    extEditor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
+    extEditor.dispatchCommand(
+      KEY_ARROW_RIGHT_COMMAND,
+      new KeyboardEvent('keydown', {key: 'ArrowRight', shiftKey: true}),
+    );
 
-    extEditor.read(() => {
+    const result = extEditor.read(() => {
       const sel = $getSelection();
-      if ($isRangeSelection(sel)) {
-        focusKey = sel.focus.getNode().getTextContent();
-        focusOffset = sel.focus.offset;
-      }
+      return $isRangeSelection(sel)
+        ? {key: sel.focus.getNode().getTextContent(), offset: sel.focus.offset}
+        : null;
     });
 
-    expect(focusKey).toBe('後');
-    expect(focusOffset).toBeGreaterThanOrEqual(0);
-    expect(focusOffset).toBeLessThanOrEqual(1);
+    expect(result!.key).toBe('後');
+    expect(result!.offset).toBeGreaterThanOrEqual(0);
+    expect(result!.offset).toBeLessThanOrEqual(1);
   });
 
   test('Shift+Left with focus on last ruby walks backward past all rubies', () => {
-    let focusKey = '';
-    let focusOffset = -1;
-
     extEditor.update(
       () => {
         const {ruby2, post} = $setupConsecutiveRubies();
@@ -843,27 +823,23 @@ describe('RubyExtension Shift+arrow — focus on RubyNode (Safari)', () => {
       {discrete: true},
     );
 
-    const event = new KeyboardEvent('keydown', {
-      key: 'ArrowLeft',
-      shiftKey: true,
-    });
-    extEditor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
+    extEditor.dispatchCommand(
+      KEY_ARROW_LEFT_COMMAND,
+      new KeyboardEvent('keydown', {key: 'ArrowLeft', shiftKey: true}),
+    );
 
-    extEditor.read(() => {
+    const result = extEditor.read(() => {
       const sel = $getSelection();
-      if ($isRangeSelection(sel)) {
-        focusKey = sel.focus.getNode().getTextContent();
-        focusOffset = sel.focus.offset;
-      }
+      return $isRangeSelection(sel)
+        ? {key: sel.focus.getNode().getTextContent(), offset: sel.focus.offset}
+        : null;
     });
 
-    expect(focusKey).toBe('前');
-    expect(focusOffset).toBe(1);
+    expect(result!.key).toBe('前');
+    expect(result!.offset).toBe(1);
   });
 
   test('Shift+Right from ruby uses safe offset (≥1) to avoid normalization bounce', () => {
-    let focusOffset = -1;
-
     extEditor.update(
       () => {
         const {pre, ruby1} = $setupConsecutiveRubies();
@@ -873,20 +849,16 @@ describe('RubyExtension Shift+arrow — focus on RubyNode (Safari)', () => {
       {discrete: true},
     );
 
-    const event = new KeyboardEvent('keydown', {
-      key: 'ArrowRight',
-      shiftKey: true,
-    });
-    extEditor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
+    extEditor.dispatchCommand(
+      KEY_ARROW_RIGHT_COMMAND,
+      new KeyboardEvent('keydown', {key: 'ArrowRight', shiftKey: true}),
+    );
 
-    extEditor.read(() => {
+    const focusOffset = extEditor.read(() => {
       const sel = $getSelection();
-      if ($isRangeSelection(sel)) {
-        focusOffset = sel.focus.offset;
-      }
+      return $isRangeSelection(sel) ? sel.focus.offset : -1;
     });
 
-    // Math.min(1, textContentSize) — offset must be ≥1 for normalization safety
     expect(focusOffset).toBeGreaterThanOrEqual(0);
     expect(focusOffset).toBeLessThanOrEqual(1);
   });
@@ -943,9 +915,6 @@ describe('RubyExtension arrow — line boundary', () => {
   });
 
   test('Left from text:0 when ruby is first child moves to parent element', () => {
-    let anchorType = '';
-    let anchorOffset = -1;
-
     extEditor.update(
       () => {
         const p = $createParagraphNode();
@@ -953,31 +922,29 @@ describe('RubyExtension arrow — line boundary', () => {
         const post = $createTextNode('後');
         p.append(ruby, post);
         $getRoot().clear().append(p);
-
         post.select(0, 0);
       },
       {discrete: true},
     );
 
-    const event = new KeyboardEvent('keydown', {key: 'ArrowLeft'});
-    const handled = extEditor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
+    const handled = extEditor.dispatchCommand(
+      KEY_ARROW_LEFT_COMMAND,
+      new KeyboardEvent('keydown', {key: 'ArrowLeft'}),
+    );
 
-    extEditor.read(() => {
+    const result = extEditor.read(() => {
       const sel = $getSelection();
-      if ($isRangeSelection(sel)) {
-        anchorType = sel.anchor.type;
-        anchorOffset = sel.anchor.offset;
-      }
+      return $isRangeSelection(sel)
+        ? {offset: sel.anchor.offset, type: sel.anchor.type}
+        : null;
     });
 
     expect(handled).toBe(true);
-    expect(anchorType).toBe('element');
-    expect(anchorOffset).toBe(0);
+    expect(result!.type).toBe('element');
+    expect(result!.offset).toBe(0);
   });
 
   test('Right from text end when ruby is last child moves to parent element', () => {
-    let anchorType = '';
-
     extEditor.update(
       () => {
         const p = $createParagraphNode();
@@ -985,20 +952,19 @@ describe('RubyExtension arrow — line boundary', () => {
         const ruby = $createRubyNode('漢', 'かん');
         p.append(pre, ruby);
         $getRoot().clear().append(p);
-
         pre.select(1, 1);
       },
       {discrete: true},
     );
 
-    const event = new KeyboardEvent('keydown', {key: 'ArrowRight'});
-    const handled = extEditor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
+    const handled = extEditor.dispatchCommand(
+      KEY_ARROW_RIGHT_COMMAND,
+      new KeyboardEvent('keydown', {key: 'ArrowRight'}),
+    );
 
-    extEditor.read(() => {
+    const anchorType = extEditor.read(() => {
       const sel = $getSelection();
-      if ($isRangeSelection(sel)) {
-        anchorType = sel.anchor.type;
-      }
+      return $isRangeSelection(sel) ? sel.anchor.type : '';
     });
 
     expect(handled).toBe(true);
@@ -1006,9 +972,6 @@ describe('RubyExtension arrow — line boundary', () => {
   });
 
   test('Shift+Left at paragraph start (ruby first) moves focus to parent:0', () => {
-    let focusType = '';
-    let focusOffset = -1;
-
     extEditor.update(
       () => {
         const p = $createParagraphNode();
@@ -1016,34 +979,29 @@ describe('RubyExtension arrow — line boundary', () => {
         const post = $createTextNode('後');
         p.append(ruby, post);
         $getRoot().clear().append(p);
-
         post.select(0, 0);
       },
       {discrete: true},
     );
 
-    const event = new KeyboardEvent('keydown', {
-      key: 'ArrowLeft',
-      shiftKey: true,
-    });
-    const handled = extEditor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
+    const handled = extEditor.dispatchCommand(
+      KEY_ARROW_LEFT_COMMAND,
+      new KeyboardEvent('keydown', {key: 'ArrowLeft', shiftKey: true}),
+    );
 
-    extEditor.read(() => {
+    const result = extEditor.read(() => {
       const sel = $getSelection();
-      if ($isRangeSelection(sel)) {
-        focusType = sel.focus.type;
-        focusOffset = sel.focus.offset;
-      }
+      return $isRangeSelection(sel)
+        ? {offset: sel.focus.offset, type: sel.focus.type}
+        : null;
     });
 
     expect(handled).toBe(true);
-    expect(focusType).toBe('element');
-    expect(focusOffset).toBe(0);
+    expect(result!.type).toBe('element');
+    expect(result!.offset).toBe(0);
   });
 
   test('Shift+Right at paragraph end (ruby last) moves focus to parent:childrenSize', () => {
-    let focusType = '';
-
     extEditor.update(
       () => {
         const p = $createParagraphNode();
@@ -1051,23 +1009,19 @@ describe('RubyExtension arrow — line boundary', () => {
         const ruby = $createRubyNode('漢', 'かん');
         p.append(pre, ruby);
         $getRoot().clear().append(p);
-
         pre.select(1, 1);
       },
       {discrete: true},
     );
 
-    const event = new KeyboardEvent('keydown', {
-      key: 'ArrowRight',
-      shiftKey: true,
-    });
-    const handled = extEditor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
+    const handled = extEditor.dispatchCommand(
+      KEY_ARROW_RIGHT_COMMAND,
+      new KeyboardEvent('keydown', {key: 'ArrowRight', shiftKey: true}),
+    );
 
-    extEditor.read(() => {
+    const focusType = extEditor.read(() => {
       const sel = $getSelection();
-      if ($isRangeSelection(sel)) {
-        focusType = sel.focus.type;
-      }
+      return $isRangeSelection(sel) ? sel.focus.type : '';
     });
 
     expect(handled).toBe(true);
@@ -1075,8 +1029,6 @@ describe('RubyExtension arrow — line boundary', () => {
   });
 
   test('Shift+Right when focus is on ruby and ruby is last child goes to parent', () => {
-    let focusType = '';
-
     extEditor.update(
       () => {
         const p = $createParagraphNode();
@@ -1084,24 +1036,20 @@ describe('RubyExtension arrow — line boundary', () => {
         const ruby = $createRubyNode('漢', 'かん');
         p.append(pre, ruby);
         $getRoot().clear().append(p);
-
         const sel = pre.select(0, 0);
         sel.focus.set(ruby.getKey(), 0, 'text');
       },
       {discrete: true},
     );
 
-    const event = new KeyboardEvent('keydown', {
-      key: 'ArrowRight',
-      shiftKey: true,
-    });
-    const handled = extEditor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
+    const handled = extEditor.dispatchCommand(
+      KEY_ARROW_RIGHT_COMMAND,
+      new KeyboardEvent('keydown', {key: 'ArrowRight', shiftKey: true}),
+    );
 
-    extEditor.read(() => {
+    const focusType = extEditor.read(() => {
       const sel = $getSelection();
-      if ($isRangeSelection(sel)) {
-        focusType = sel.focus.type;
-      }
+      return $isRangeSelection(sel) ? sel.focus.type : '';
     });
 
     expect(handled).toBe(true);
@@ -1109,9 +1057,6 @@ describe('RubyExtension arrow — line boundary', () => {
   });
 
   test('Shift+Left when focus is on ruby and ruby is first child goes to parent:0', () => {
-    let focusType = '';
-    let focusOffset = -1;
-
     extEditor.update(
       () => {
         const p = $createParagraphNode();
@@ -1119,30 +1064,27 @@ describe('RubyExtension arrow — line boundary', () => {
         const post = $createTextNode('後');
         p.append(ruby, post);
         $getRoot().clear().append(p);
-
         const sel = post.select(1, 1);
         sel.focus.set(ruby.getKey(), 1, 'text');
       },
       {discrete: true},
     );
 
-    const event = new KeyboardEvent('keydown', {
-      key: 'ArrowLeft',
-      shiftKey: true,
-    });
-    const handled = extEditor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
+    const handled = extEditor.dispatchCommand(
+      KEY_ARROW_LEFT_COMMAND,
+      new KeyboardEvent('keydown', {key: 'ArrowLeft', shiftKey: true}),
+    );
 
-    extEditor.read(() => {
+    const result = extEditor.read(() => {
       const sel = $getSelection();
-      if ($isRangeSelection(sel)) {
-        focusType = sel.focus.type;
-        focusOffset = sel.focus.offset;
-      }
+      return $isRangeSelection(sel)
+        ? {offset: sel.focus.offset, type: sel.focus.type}
+        : null;
     });
 
     expect(handled).toBe(true);
-    expect(focusType).toBe('element');
-    expect(focusOffset).toBe(0);
+    expect(result!.type).toBe('element');
+    expect(result!.offset).toBe(0);
   });
 });
 
@@ -1324,33 +1266,17 @@ describe('RubyExtension arrow — guard conditions', () => {
     );
   }
 
-  test('Arrow+Meta does not skip ruby', () => {
+  test.for([
+    {label: 'Meta', modifier: {metaKey: true}},
+    {label: 'Ctrl', modifier: {ctrlKey: true}},
+    {label: 'Alt', modifier: {altKey: true}},
+  ])('Arrow+$label does not skip ruby', ({modifier}) => {
     setupAtRubyBoundary();
     const event = new KeyboardEvent('keydown', {
       key: 'ArrowLeft',
-      metaKey: true,
+      ...modifier,
     });
     const handled = extEditor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
-    expect(handled).toBe(false);
-  });
-
-  test('Arrow+Ctrl does not skip ruby', () => {
-    setupAtRubyBoundary();
-    const event = new KeyboardEvent('keydown', {
-      ctrlKey: true,
-      key: 'ArrowLeft',
-    });
-    const handled = extEditor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
-    expect(handled).toBe(false);
-  });
-
-  test('Arrow+Alt does not skip ruby', () => {
-    setupAtRubyBoundary();
-    const event = new KeyboardEvent('keydown', {
-      altKey: true,
-      key: 'ArrowRight',
-    });
-    const handled = extEditor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
     expect(handled).toBe(false);
   });
 

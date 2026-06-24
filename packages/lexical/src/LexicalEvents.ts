@@ -738,6 +738,47 @@ export function registerDefaultCommandHandlers(editor: LexicalEditor) {
   );
 }
 
+/**
+ * Returns true when a `beforeinput` / `input` event belongs to a native
+ * control (e.g. an `<input>` or `<textarea>`, or any other subtree marked with
+ * `setDOMUnmanaged({captureSelection: true})`) inside a decorator whose
+ * selection is owned by the browser rather than managed by Lexical. Turning
+ * such an event into a Lexical command would insert text into the editor
+ * instead of the focused control.
+ *
+ * Two signals are checked because Firefox 152 changed how it dispatches
+ * `beforeinput` for these controls (#8738): the event is retargeted off of the
+ * focused control, so its composed target no longer points at it. The deep
+ * active element still does, and is used as a fallback.
+ */
+function isInputEventTargetingCapturedSelection(
+  event: InputEvent,
+  editor: LexicalEditor,
+): boolean {
+  // Use the composed target so an event coming from inside a decorator's
+  // nested shadow root resolves to the real internal element.
+  const composedTarget = getComposedEventTarget(event);
+  if (
+    isHTMLElement(composedTarget) &&
+    isDOMCapturingSelection(composedTarget, editor)
+  ) {
+    return true;
+  }
+  // Firefox 152 retargets the event off of the focused control, so fall back
+  // to the deep active element (getActiveElementDeep crosses shadow roots) to
+  // detect that a captured decorator control still owns the selection.
+  const rootElement = editor.getRootElement();
+  if (rootElement === null) {
+    return false;
+  }
+  const activeElement = getActiveElementDeep(rootElement.ownerDocument);
+  return (
+    activeElement !== null &&
+    rootElement.contains(activeElement) &&
+    isDOMCapturingSelection(activeElement, editor)
+  );
+}
+
 function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
   const inputType = event.inputType;
 
@@ -756,10 +797,17 @@ function onBeforeInput(event: InputEvent, editor: LexicalEditor): void {
     return;
   }
 
+  // Always run the update so the editor selection stays in sync with the DOM
+  // (the {event} option recomputes it). Only skip dispatching the command when
+  // a native control inside a decorator owns this event: processing it would
+  // insert text into the editor rather than the control. Firefox 152 started
+  // dispatching these to the editor root (#8738).
   updateEditorSync(
     editor,
     () => {
-      dispatchCommand(editor, BEFORE_INPUT_COMMAND, event);
+      if (!isInputEventTargetingCapturedSelection(event, editor)) {
+        dispatchCommand(editor, BEFORE_INPUT_COMMAND, event);
+      }
     },
     {event},
   );
@@ -1115,10 +1163,17 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
   // We don't want the onInput to bubble, in the case of nested editors.
   event.stopPropagation();
   clearHandledSelectionCommandInsertText();
+  // Always run the update so the editor selection stays in sync with the DOM
+  // (the {event} option recomputes it). Only skip dispatching the command when
+  // a native control inside a decorator owns this event: processing it would
+  // insert text into the editor rather than the control. Firefox 152 started
+  // dispatching these to the editor root (#8738). This mirrors onBeforeInput.
   updateEditorSync(
     editor,
     () => {
-      editor.dispatchCommand(INPUT_COMMAND, event);
+      if (!isInputEventTargetingCapturedSelection(event, editor)) {
+        editor.dispatchCommand(INPUT_COMMAND, event);
+      }
     },
     {event},
   );
@@ -1127,15 +1182,6 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
 
 function $handleInput(event: InputEvent): boolean {
   const editor = getActiveEditor();
-  // Use the composed target so a beforeinput coming from inside a
-  // decorator's nested shadow root resolves to the real internal element.
-  const composedTarget = getComposedEventTarget(event);
-  if (
-    isHTMLElement(composedTarget) &&
-    isDOMCapturingSelection(composedTarget, editor)
-  ) {
-    return true;
-  }
   const selection = $getSelection();
   const data = event.data;
   const targetRange = getTargetRange(event);

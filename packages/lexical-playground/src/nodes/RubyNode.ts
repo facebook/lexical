@@ -92,9 +92,15 @@ export class RubyNode extends TextNode {
   exportDOM(): DOMExportOutput {
     const ruby = document.createElement('ruby');
     ruby.textContent = this.getTextContent();
+    const rpOpen = document.createElement('rp');
+    rpOpen.textContent = '(';
+    ruby.appendChild(rpOpen);
     const rt = document.createElement('rt');
     rt.textContent = this.getAnnotation();
     ruby.appendChild(rt);
+    const rpClose = document.createElement('rp');
+    rpClose.textContent = ')';
+    ruby.appendChild(rpClose);
     return {element: ruby};
   }
 
@@ -142,6 +148,8 @@ export function $toggleRuby(annotation: string | null): void {
     for (const node of nodes) {
       if ($isRubyNode(node)) {
         const text = $createTextNode(node.getTextContent());
+        text.setFormat(node.getFormat());
+        text.setStyle(node.getStyle());
         node.replace(text);
       }
     }

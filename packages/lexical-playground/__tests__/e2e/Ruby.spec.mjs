@@ -35,6 +35,8 @@ async function insertRubyViaToolbar(page, annotation) {
   await input.fill(annotation);
   await input.press('Enter');
   await sleep(50);
+  await focusEditor(page);
+  await sleep(50);
 }
 
 async function getRubyNodes(page) {
@@ -137,10 +139,10 @@ test.describe('Ruby', () => {
       }
       const wrapper = inner.parentElement;
       return {
-        innerHasDataLexicalText:
-          inner.getAttribute('data-lexical-text') === 'true',
         innerTagName: inner.tagName,
         innerText: inner.textContent,
+        wrapperHasDataLexicalText:
+          wrapper.getAttribute('data-lexical-text') === 'true',
         wrapperTagName: wrapper.tagName,
       };
     });
@@ -148,7 +150,7 @@ test.describe('Ruby', () => {
     expect(structure).not.toBeNull();
     expect(structure.wrapperTagName).toBe('SPAN');
     expect(structure.innerTagName).toBe('SPAN');
-    expect(structure.innerHasDataLexicalText).toBe(true);
+    expect(structure.wrapperHasDataLexicalText).toBe(true);
     expect(structure.innerText).toBe('漢');
   });
 

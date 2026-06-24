@@ -525,7 +525,9 @@ test.describe('Ruby', () => {
       return result;
     });
 
-    expect(exportedHTML).toBe('<ruby>漢<rt>かん</rt></ruby>');
+    expect(exportedHTML).toBe(
+      '<ruby>漢<rp>(</rp><rt>かん</rt><rp>)</rp></ruby>',
+    );
   });
 
   test('Ruby node with collapsed selection is a no-op', async ({

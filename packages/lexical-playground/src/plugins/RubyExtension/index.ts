@@ -74,6 +74,8 @@ function $unwrapRubiesInSelection(): boolean {
     if ($isRubyNode(node)) {
       found = true;
       const text = $createTextNode(node.getTextContent());
+      text.setFormat(node.getFormat());
+      text.setStyle(node.getStyle());
       node.replace(text);
     }
   }

@@ -2249,17 +2249,21 @@ export class RangeSelection implements BaseSelection {
       // use the deleteCharacter operation to handle all of the logic associated
       // with navigating through the parent element
       this.deleteCharacter(isBackward);
-    } else if (
-      this.getNodes().some(node => $isDecoratorNode(node) && !node.isInline())
-    ) {
-      // The lineboundary extend overreached past a block-level
-      // decorator (e.g. a page-break or horizontal-rule).
-      // Collapse back and let deleteCharacter handle the boundary
-      // — it already knows how to stop at decorators.
-      this.focus.set(this.anchor.key, this.anchor.offset, this.anchor.type);
-      this.deleteCharacter(isBackward);
     } else {
-      this.removeText();
+      const anchorBlock = $findMatchingParent(
+        this.anchor.getNode(),
+        INTERNAL_$isBlock,
+      );
+      const focusBlock = $findMatchingParent(
+        this.focus.getNode(),
+        INTERNAL_$isBlock,
+      );
+      if (anchorBlock !== focusBlock) {
+        this.focus.set(this.anchor.key, this.anchor.offset, this.anchor.type);
+        this.deleteCharacter(isBackward);
+      } else {
+        this.removeText();
+      }
     }
   }
 

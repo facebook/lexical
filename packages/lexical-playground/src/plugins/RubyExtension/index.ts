@@ -74,6 +74,8 @@ function $unwrapRubiesInSelection(): boolean {
     if ($isRubyNode(node)) {
       found = true;
       const text = $createTextNode(node.getTextContent());
+      text.setFormat(node.getFormat());
+      text.setStyle(node.getStyle());
       node.replace(text);
     }
   }
@@ -198,16 +200,35 @@ function $nudgeOffRuby(): boolean {
     return false;
   }
   const len = node.getTextContentSize();
-  if (anchor.offset === len || anchor.offset === 0) {
-    const isEnd = anchor.offset === len;
-    const sibling = isEnd ? node.getNextSibling() : node.getPreviousSibling();
-    if ($isTextNode(sibling) && !$isRubyNode(sibling)) {
-      const offset = isEnd ? 0 : sibling.getTextContentSize();
-      selection.anchor.set(sibling.getKey(), offset, 'text');
-      selection.focus.set(sibling.getKey(), offset, 'text');
-      return false;
-    }
+  const isEnd = anchor.offset >= len / 2;
+
+  let edge: LexicalNode = node;
+  const getSibling = isEnd
+    ? (n: LexicalNode) => n.getNextSibling()
+    : (n: LexicalNode) => n.getPreviousSibling();
+  let next = getSibling(edge);
+  while ($isRubyNode(next)) {
+    edge = next;
+    next = getSibling(edge);
   }
+
+  if (next !== null && $isTextNode(next) && !$isRubyNode(next)) {
+    const offset = isEnd ? 0 : next.getTextContentSize();
+    selection.anchor.set(next.getKey(), offset, 'text');
+    selection.focus.set(next.getKey(), offset, 'text');
+    return false;
+  }
+
+  const parent = edge.getParent();
+  if (parent !== null) {
+    const offset = isEnd
+      ? edge.getIndexWithinParent() + 1
+      : edge.getIndexWithinParent();
+    selection.anchor.set(parent.getKey(), offset, 'element');
+    selection.focus.set(parent.getKey(), offset, 'element');
+    return false;
+  }
+
   return false;
 }
 

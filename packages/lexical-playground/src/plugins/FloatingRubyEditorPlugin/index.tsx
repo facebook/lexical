@@ -241,9 +241,7 @@ function FloatingRubyEditor({
   }, [editorRef, setIsRubyEditMode, isVisible]);
 
   const handleSubmit = (
-    event:
-      | React.KeyboardEvent<HTMLInputElement>
-      | React.MouseEvent<HTMLElement>,
+    event: React.KeyboardEvent<HTMLElement> | React.MouseEvent<HTMLElement>,
   ) => {
     event.preventDefault();
     if (!annotation.trim()) {
@@ -315,6 +313,7 @@ function FloatingRubyEditor({
             className="ruby-input"
             value={annotation}
             placeholder="annotation"
+            aria-label="Ruby annotation"
             onChange={event => setAnnotation(event.target.value)}
             onKeyDown={handleKeyDown}
           />
@@ -322,16 +321,29 @@ function FloatingRubyEditor({
             className="ruby-confirm button"
             role="button"
             tabIndex={0}
+            aria-label="Confirm"
             onMouseDown={preventDefault}
             onClick={handleSubmit}
+            onKeyDown={event => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                handleSubmit(event);
+              }
+            }}
           />
           {rubyNodeKey !== null && (
             <div
               className="ruby-trash button"
               role="button"
               tabIndex={0}
+              aria-label="Delete ruby"
               onMouseDown={preventDefault}
               onClick={handleDelete}
+              onKeyDown={event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  handleDelete();
+                }
+              }}
             />
           )}
         </>

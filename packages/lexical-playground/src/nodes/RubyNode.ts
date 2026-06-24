@@ -22,6 +22,7 @@ import {
   $getSelection,
   $getState,
   $isRangeSelection,
+  $isTextNode,
   $setState,
   createState,
   StateConfigValue,
@@ -66,6 +67,11 @@ export class RubyNode extends TextNode {
       config.theme.ruby || 'PlaygroundEditorTheme__ruby',
     );
     const wrapper = document.createElement('span');
+    wrapper.setAttribute('role', 'group');
+    wrapper.setAttribute(
+      'aria-label',
+      `${this.getTextContent()} (${this.getAnnotation()})`,
+    );
     wrapper.appendChild(inner);
     return wrapper;
   }
@@ -80,11 +86,18 @@ export class RubyNode extends TextNode {
 
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     const updated = super.updateDOM(prevNode, dom, config);
-    if (prevNode.getAnnotation() !== this.getAnnotation()) {
+    if (
+      prevNode.getAnnotation() !== this.getAnnotation() ||
+      prevNode.getTextContent() !== this.getTextContent()
+    ) {
       const inner = dom.firstElementChild as HTMLElement;
       if (inner) {
         inner.dataset.rubyAnnotation = this.getAnnotation();
       }
+      dom.setAttribute(
+        'aria-label',
+        `${this.getTextContent()} (${this.getAnnotation()})`,
+      );
     }
     return updated;
   }
@@ -160,7 +173,13 @@ export function $toggleRuby(annotation: string | null): void {
     return;
   }
 
+  const nodes = selection.getNodes();
+  const firstTextNode = nodes.find($isTextNode);
   const text = selection.getTextContent();
   const rubyNode = $createRubyNode(text, annotation);
+  if (firstTextNode) {
+    rubyNode.setFormat(firstTextNode.getFormat());
+    rubyNode.setStyle(firstTextNode.getStyle());
+  }
   selection.insertNodes([rubyNode]);
 }

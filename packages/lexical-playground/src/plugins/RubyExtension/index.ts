@@ -226,11 +226,11 @@ export const RubyExtension = /* @__PURE__  */ defineExtension({
       if (composingRubyInner) {
         return;
       }
-      const sel = window.getSelection();
-      if (!sel || !sel.anchorNode) {
+      const domSelection = window.getSelection();
+      if (!domSelection || !domSelection.anchorNode) {
         return;
       }
-      let el: HTMLElement | null = sel.anchorNode.parentElement;
+      let el: HTMLElement | null = domSelection.anchorNode.parentElement;
       while (el && !el.dataset.rubyAnnotation) {
         if (el.hasAttribute('data-lexical-key')) {
           break;

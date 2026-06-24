@@ -261,6 +261,7 @@ function FloatingRubyEditor({
     });
     setIsRubyClick(false);
     setIsRubyEditMode(false);
+    editor.focus();
   };
 
   const handleDelete = () => {
@@ -269,6 +270,7 @@ function FloatingRubyEditor({
     });
     setIsRubyClick(false);
     setIsRubyEditMode(false);
+    editor.focus();
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {

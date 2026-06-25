@@ -90,6 +90,7 @@ import {
   $hasAncestor,
   $isInlineElementOrDecoratorNode,
   $isRootOrShadowRoot,
+  $isSelectionCapturedInDecoratorInput,
   $isTokenOrSegmented,
   $isTokenOrTab,
   $setCompositionKey,
@@ -110,7 +111,6 @@ import {
   isDOMShadowRoot,
   isDOMTextNode,
   isHTMLElement,
-  isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   removeDOMBlockCursorElement,
   scrollIntoViewIfNeeded,
@@ -3601,7 +3601,7 @@ export function $updateDOMSelection(
   if (
     (tags.has(COLLABORATION_TAG) && activeElement !== rootElement) ||
     (activeElement !== null &&
-      isSelectionCapturedInDecoratorInput(activeElement, activeElement))
+      $isSelectionCapturedInDecoratorInput(activeElement, activeElement))
   ) {
     return;
   }

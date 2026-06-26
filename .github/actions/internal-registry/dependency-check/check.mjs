@@ -149,7 +149,7 @@ function parseYarn(text) {
 }
 
 async function fetchPackument(name, attempt = 0) {
-  const url = `${REGISTRY}/${name.replace('/', '%2F')}`;
+  const url = `${REGISTRY}/${name.replace(/\//g, '%2F')}`;
   try {
     const res = await fetch(url, {
       headers: {Accept: 'application/json', Authorization: `Bearer ${TOKEN}`},

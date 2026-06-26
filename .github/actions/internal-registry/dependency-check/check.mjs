@@ -6,44 +6,23 @@
  *
  */
 
-// Internal npm registry availability gate.
-//
-// Every third-party (name, version) pinned in the lockfile must be fetchable
-// from Meta's internal npm registry (registry.facebook.net) *right now*. The
-// internal registry withholds newly published third-party versions for a short
-// window, so a freshly published version is absent from the metadata it serves
-// even though it exists on public npm. A frozen install inside Meta would then
-// fail on that version, even though it installs fine in public GitHub CI. This
-// catches that gap before code lands.
-//
-// It checks metadata membership (is the version listed?), not tarball
-// reachability: the withholding happens at the metadata layer, and third-party
-// tarballs are not gated, so a tarball probe would give a false green. It is
-// also window-agnostic — it just asks "is this version served?", so it needs no
-// knowledge of the withholding window's length.
-//
-// Lockfiles: pnpm, npm, and yarn are supported, auto-detected by filename. An
-// unrecognized format (or one that parses to zero packages) fails loudly rather
-// than silently passing — a format mismatch must never look like "all clear".
-//
-// Auth: a short-lived bearer token in $REGISTRY_TOKEN (minted from this CI job's
-// GitHub OIDC identity by the surrounding action). We talk to the registry over
-// fetch() with an explicit Authorization header and deliberately do NOT write
-// .npmrc.
+// Checks that every dependency version pinned in the lockfile is available from
+// the configured registry, and fails if any pinned version is not served.
+// Supports pnpm, npm and yarn lockfiles (auto-detected by filename); an
+// unrecognized lockfile fails rather than passing silently. Auth is a
+// short-lived token in $REGISTRY_TOKEN.
 
 import {readFile} from 'node:fs/promises';
 
 const REGISTRY = (
-  process.env.REGISTRY_URL ?? 'https://registry.facebook.net'
+  process.env.REGISTRY_URL ?? 'https://registry.x2p.facebook.net'
 ).replace(/\/$/, '');
 const LOCKFILE = process.env.LOCKFILE ?? 'pnpm-lock.yaml';
 const CONCURRENCY = Number(process.env.CHECK_CONCURRENCY ?? 20);
 const TOKEN = process.env.REGISTRY_TOKEN;
 
 if (!TOKEN) {
-  console.error(
-    '::error::REGISTRY_TOKEN is not set — the OIDC token-exchange step must run first.',
-  );
+  console.error('::error::REGISTRY_TOKEN is not set.');
   process.exit(1);
 }
 
@@ -57,8 +36,6 @@ function add(byName, name, version) {
   byName.get(name).add(version);
 }
 
-// Dispatch on the lockfile name. Deliberately bounded to the three mainstream
-// ecosystems; anything else throws (handled below as a hard failure).
 function parsePinned(lockfilePath, text) {
   const base = lockfilePath.split('/').pop();
   if (base === 'pnpm-lock.yaml') {
@@ -75,8 +52,8 @@ function parsePinned(lockfilePath, text) {
   );
 }
 
-// pnpm v9: `packages:` section, keys are bare `name@version` (peer-dep suffixes
-// live in `snapshots:`). Workspace packages link locally and don't appear here.
+// pnpm v9: `packages:` keys are bare `name@version` (peer suffixes live in
+// `snapshots:`). Workspace packages link locally and don't appear here.
 function parsePnpm(text) {
   const lines = text.split('\n');
   const start = lines.indexOf('packages:');
@@ -92,7 +69,7 @@ function parsePnpm(text) {
     if (!/^\s/.test(line)) {
       break;
     }
-    const m = line.match(/^  (?:'([^']+)'|([^'\s][^:]*?)):\s*$/);
+    const m = line.match(/^ {2}(?:'([^']+)'|([^'\s][^:]*?)):\s*$/);
     if (!m) {
       continue;
     }
@@ -106,9 +83,8 @@ function parsePnpm(text) {
   return byName;
 }
 
-// npm v2/v3: `packages` map keyed by node_modules paths, each with `version`.
-// Falls back to the v1 nested `dependencies` tree. Only registry-resolved
-// entries are checked (skip workspace links and git/file/tarball specs).
+// npm v2/v3: `packages` map keyed by node_modules paths; falls back to the v1
+// nested `dependencies` tree. Only registry-resolved entries are checked.
 function parseNpm(text) {
   const json = JSON.parse(text);
   const byName = new Map();
@@ -144,8 +120,7 @@ function parseNpm(text) {
 }
 
 // yarn classic + berry: a descriptor line lists comma-separated specifiers, then
-// an indented `version "x"` (classic) or `version: x` (berry). The resolved
-// version is that field; the name is the specifier minus its range.
+// an indented `version "x"` / `version: x`. Name is the specifier minus range.
 function parseYarn(text) {
   const byName = new Map();
   let pending = null;
@@ -177,7 +152,7 @@ async function fetchPackument(name, attempt = 0) {
   const url = `${REGISTRY}/${name.replace('/', '%2F')}`;
   try {
     const res = await fetch(url, {
-      headers: {Authorization: `Bearer ${TOKEN}`, Accept: 'application/json'},
+      headers: {Accept: 'application/json', Authorization: `Bearer ${TOKEN}`},
     });
     if (res.status >= 500 && attempt < 1) {
       return fetchPackument(name, attempt + 1);
@@ -201,21 +176,19 @@ try {
 }
 const names = [...byName.keys()];
 
-// Fail closed: a recognized lockfile with real content must yield packages. Zero
-// means the format/version drifted from what we parse — never treat that as OK.
+// A recognized lockfile with content must yield packages; zero means the format
+// drifted from what we parse, so fail rather than pass silently.
 if (names.length === 0) {
-  console.error(
-    `::error::Parsed 0 packages from ${LOCKFILE} — unrecognized or unexpected lockfile format/version. Refusing to pass.`,
-  );
+  console.error(`::error::Parsed 0 packages from ${LOCKFILE}.`);
   process.exit(4);
 }
 
 const totalVersions = names.reduce((n, k) => n + byName.get(k).size, 0);
-console.log(
-  `Checking ${totalVersions} pinned version(s) across ${names.length} package(s) from ${LOCKFILE} against ${REGISTRY} …`,
+console.warn(
+  `Checking ${totalVersions} version(s) across ${names.length} package(s) against ${REGISTRY} …`,
 );
 
-const missing = []; // {name, version, reason}
+const missing = [];
 const authErrors = [];
 const otherErrors = [];
 
@@ -223,7 +196,7 @@ let idx = 0;
 async function worker() {
   while (idx < names.length) {
     if (authErrors.length) {
-      return; // someone already hit an auth wall; stop early
+      return;
     }
     const name = names[idx++];
     try {
@@ -234,30 +207,22 @@ async function worker() {
       }
       if (res.status === 404) {
         for (const v of byName.get(name)) {
-          missing.push({
-            name,
-            version: v,
-            reason: 'package not found on the registry',
-          });
+          missing.push({name, version: v});
         }
         continue;
       }
       if (!res.ok) {
-        otherErrors.push({name, detail: `HTTP ${res.status}`});
+        otherErrors.push({detail: `HTTP ${res.status}`, name});
         continue;
       }
       const served = (await res.json()).versions ?? {};
       for (const v of byName.get(name)) {
         if (!(v in served)) {
-          missing.push({
-            name,
-            version: v,
-            reason: 'absent from registry metadata (withheld/unavailable)',
-          });
+          missing.push({name, version: v});
         }
       }
     } catch (e) {
-      otherErrors.push({name, detail: String(e)});
+      otherErrors.push({detail: String(e), name});
     }
   }
 }
@@ -266,19 +231,18 @@ await Promise.all(
   Array.from({length: Math.min(CONCURRENCY, names.length)}, worker),
 );
 
-// Auth failure is a misconfiguration, not a dependency problem — say so.
+// Auth failure is a setup problem, not a dependency problem.
 if (authErrors.length) {
   console.error(
-    `::error::The registry returned ${authErrors[0].status} for ${authErrors[0].name} — this CI identity is not authorized to read. ` +
-      `Confirm the registry read-auth onboarding for this repo (D109850078) is deployed. This is NOT a dependency problem.`,
+    `::error::Registry returned ${authErrors[0].status} (not authorized) — check the CI registry credentials.`,
   );
   process.exit(2);
 }
 
-// Network/5xx errors are a gate, so fail closed rather than pass silently.
+// Network errors fail closed rather than passing silently.
 if (otherErrors.length) {
   console.error(
-    `::error::Could not verify ${otherErrors.length} package(s) against the registry (failing closed):`,
+    `::error::Could not reach the registry for ${otherErrors.length} package(s):`,
   );
   for (const e of otherErrors.slice(0, 30)) {
     console.error(`  - ${e.name}: ${e.detail}`);
@@ -288,21 +252,15 @@ if (otherErrors.length) {
 
 if (missing.length) {
   console.error(
-    `::error::${missing.length} pinned version(s) are not served by the internal registry (${REGISTRY}). A frozen install inside Meta would fail on these:`,
+    `::error::${missing.length} pinned version(s) are not available from the registry:`,
   );
   for (const m of missing.slice(0, 100)) {
-    console.error(`  - ${m.name}@${m.version}  — ${m.reason}`);
+    console.error(`  - ${m.name}@${m.version}`);
   }
   if (missing.length > 100) {
     console.error(`  … and ${missing.length - 100} more`);
   }
-  console.error(
-    'A recently-published third-party version is most likely being withheld for the usual window and becomes available once it ages out; ' +
-      'an older missing version may be unavailable/blocked. Options: wait out the window, pin an available version, or request an allowlist entry.',
-  );
   process.exit(1);
 }
 
-console.log(
-  `OK — all ${totalVersions} pinned version(s) are served by the internal registry.`,
-);
+console.warn(`OK — all ${totalVersions} pinned version(s) are available.`);

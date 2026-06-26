@@ -1,13 +1,10 @@
 name: Internal registry dependency check
 description: >-
-  Assert every third-party version pinned in the lockfile is currently served by
-  Meta's internal npm registry (registry.facebook.net), so a frozen install
-  inside Meta won't fail on a withheld/unavailable version. Authenticates with a
-  short-lived token minted from the job's GitHub OIDC identity (no static
-  secret). The calling job must grant `permissions: id-token: write` and have
-  checked out the repo being checked. Works in trusted contexts (push,
-  workflow_dispatch, merge_group, same-repo PRs); fork PRs can't mint OIDC, so
-  they pass with a notice and should be enforced via a required merge_group run.
+  Checks that every dependency version pinned in the lockfile is available from
+  the configured registry. Authenticates with a short-lived token minted from
+  the job's GitHub OIDC identity. The calling job must grant
+  `permissions: id-token: write` and check out the repo. Fork PRs can't mint
+  OIDC and are skipped with a notice; enforce via a required merge_group run.
 
 inputs:
   lockfile:
@@ -17,9 +14,9 @@ inputs:
     required: false
     default: pnpm-lock.yaml
   registry-url:
-    description: Internal npm registry base URL.
+    description: Registry base URL.
     required: false
-    default: https://registry.facebook.net
+    default: https://registry.x2p.facebook.net
   node-version:
     description: Node version used to run the check.
     required: false
@@ -31,7 +28,7 @@ runs:
     - uses: actions/setup-node@v6
       with:
         node-version: ${{ inputs.node-version }}
-    - name: Check dependencies are available in the internal npm registry
+    - name: Check dependencies are available in the registry
       shell: bash
       env:
         REGISTRY_URL: ${{ inputs.registry-url }}
@@ -53,9 +50,7 @@ runs:
           "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=meta_jwt_access_token" \
           | python3 -c "import sys,json;print(json.load(sys.stdin)['value'])")
 
-        # 2) Exchange it for a short-lived registry bearer token. "metaccio" is
-        #    the registry's service audience — the value the exchange mints the
-        #    JWT for and the registry validates as the token's `aud`.
+        # 2) Exchange it for a short-lived registry token.
         TOKEN=$(curl -sS --max-time 25 -H "Accept: application/jwt" \
           --data-urlencode "id_token=$ID" \
           --data-urlencode "peer=metaccio" \

@@ -11,7 +11,7 @@
     "crdt"
   ],
   "license": "MIT",
-  "version": "0.45.0",
+  "version": "0.46.0",
   "main": "./dist/LexicalYjs.js",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {

@@ -14,6 +14,12 @@ on:
 
 permissions:
   contents: write
+  # Required because this workflow calls call-release.yml, whose `publish`
+  # job requests `id-token: write` for npm trusted publishing (OIDC). GitHub
+  # validates a reusable workflow's permission requests against the caller
+  # statically — even though this workflow never sets `publish: true`, the
+  # caller must still grant every permission the nested jobs declare.
+  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}

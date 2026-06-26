@@ -309,6 +309,7 @@ export {
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,
+  $isSelectionCapturedInDecoratorInput,
   $isTokenOrSegmented,
   $isTokenOrTab,
   $markSlotEditable,

@@ -1356,7 +1356,12 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
       !selection.isCollapsed() ||
       (!IS_ANDROID_CHROME &&
         (node.getFormat() !== selection.format ||
-          ($isTextNode(node) && node.getStyle() !== selection.style)))
+          ($isTextNode(node) && node.getStyle() !== selection.style))) ||
+      ($isTextNode(node) &&
+        ($isTokenOrSegmented(node) ||
+          (anchor.offset === 0 && !node.canInsertTextBefore()) ||
+          (anchor.offset === node.getTextContentSize() &&
+            !node.canInsertTextAfter())))
     ) {
       // We insert a zero width character, ready for the composition
       // to get inserted into the new node we create. If

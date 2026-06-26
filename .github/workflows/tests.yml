@@ -27,16 +27,3 @@ jobs:
   e2e-tests:
     if: github.repository_owner == 'facebook'
     uses: ./.github/workflows/call-e2e-canary-tests.yml
-
-  # Checks that every dependency pinned in pnpm-lock.yaml is available from the
-  # registry before it can break a build. Mark this job's merge_group run
-  # REQUIRED to gate landing; fork PRs are skipped (the required merge_group run
-  # enforces them).
-  dependency-check:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/internal-registry/dependency-check

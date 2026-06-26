@@ -2223,7 +2223,7 @@ export function $formatText(
 
   const applyFormatToInlineNodes = (alignWith: number | null) => {
     for (const node of selectedNodes) {
-      if ($isInlineFormattable(node)) {
+      if (!$isTextNode(node) && $isInlineFormattable(node)) {
         node.setFormat(node.getFormatFlags(formatType, alignWith));
       }
     }

@@ -1246,11 +1246,11 @@ declare export var DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig;
 // Flow's built-in DOM lib doesn't expose StaticRange yet; declare the
 // minimal shape we need for the shadow-aware selection helpers below.
 declare type StaticRange = {
-  +startContainer: Node,
-  +startOffset: number,
-  +endContainer: Node,
-  +endOffset: number,
-  +collapsed: boolean,
+  readonly startContainer: Node,
+  readonly startOffset: number,
+  readonly endContainer: Node,
+  readonly endOffset: number,
+  readonly collapsed: boolean,
 };
 
 export type DOMSelectionBoundaryPoints = {
@@ -1260,7 +1260,7 @@ export type DOMSelectionBoundaryPoints = {
   focusNode: Node | null,
   focusOffset: number,
 };
-declare export function isDOMShadowRoot(node: mixed): boolean;
+declare export function isDOMShadowRoot(node: unknown): boolean;
 declare export function findAllLexicalElementsDeep(root: Document | ShadowRoot): Generator<Element, void, void>;
 declare export function getDOMShadowRoots(node: Node): ShadowRoot[];
 declare export function getParentElement(node: Node): HTMLElement | null;
@@ -1600,7 +1600,7 @@ declare export function $splitAtPointCaretNext(
   pointCaret: PointCaret<'next'>,
   options?: SplitAtPointCaretNextOptions,
 ): null | NodeCaret<'next'>;
-declare export function $insertNodeToNearestRootAtCaret<T: LexicalNode>(
+declare export function $insertNodeToNearestRootAtCaret<T extends LexicalNode>(
   node: T,
   caret: PointCaret<CaretDirection>,
   options?: SplitAtPointCaretNextOptions,

@@ -968,7 +968,7 @@ export function normalizeMarkdown(
   shouldMergeAdjacentLines = false,
 ): string {
   const lines = input.split('\n');
-  let inCodeBlock = false;
+  let codeBlockFenceLength = 0;
   const sanitizedLines: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
@@ -986,15 +986,27 @@ export function normalizeMarkdown(
       continue;
     }
 
-    // Detect the start or end of a code block
-    if (CODE_START_REGEX.test(line) || CODE_END_REGEX.test(line)) {
-      inCodeBlock = !inCodeBlock;
-      sanitizedLines.push(line);
-      continue;
-    }
-
-    // If we are inside a code block, keep the line unchanged
-    if (inCodeBlock) {
+    if (codeBlockFenceLength === 0) {
+      // An opening fence may carry an info string (e.g. ```ts)
+      const openMatch = line.match(CODE_START_REGEX);
+      if (openMatch) {
+        codeBlockFenceLength = openMatch[1].trim().length;
+        sanitizedLines.push(line);
+        continue;
+      }
+    } else {
+      // A code block is closed only by a bare fence (no info string) that is at
+      // least as long as the opening fence. Fence-like lines that carry an info
+      // string (e.g. a nested ```ts) are part of the code block's content.
+      if (
+        CODE_END_REGEX.test(line) &&
+        line.trim().length >= codeBlockFenceLength
+      ) {
+        codeBlockFenceLength = 0;
+        sanitizedLines.push(line);
+        continue;
+      }
+      // Inside a code block, keep the line unchanged
       sanitizedLines.push(rawLine);
       continue;
     }

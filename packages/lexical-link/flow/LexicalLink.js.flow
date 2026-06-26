@@ -104,19 +104,17 @@ export type ClickableLinkConfig = {
   disabled: boolean;
 }
 
-type AddEventListenerOptions = Exclude<EventListenerOptionsOrUseCapture, boolean>;
-
 declare export function registerClickableLink(
   editor: LexicalEditor,
   stores: NamedSignalsOutput<ClickableLinkConfig>,
-  eventOptions?: Pick<AddEventListenerOptions, 'signal'>,
+  eventOptions?: {signal?: AbortSignal, ...},
 ): () => void;
 
 declare export var ClickableLinkExtension: LexicalExtension<ClickableLinkConfig, "@lexical/link/ClickableLink", NamedSignalsOutput<ClickableLinkConfig>, void>;
 declare export function registerClickableLink(
   editor: LexicalEditor,
   stores: NamedSignalsOutput<ClickableLinkConfig>,
-  eventOptions?: Pick<AddEventListenerOptions, 'signal'>,
+  eventOptions?: {signal?: AbortSignal, ...},
 ): () => void;
 
 export type AutoLinkConfig = {

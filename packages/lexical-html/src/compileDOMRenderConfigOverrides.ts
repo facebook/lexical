@@ -13,6 +13,7 @@ import {
   type EditorDOMRenderConfig,
   getRegisteredSubtypeMap,
   InitialEditorConfig,
+  iterStaticNodeConfigChain,
   Klass,
   LexicalEditor,
   type LexicalNode,
@@ -319,12 +320,8 @@ function sortedOverrides(
   const depthOf = (klass: Klass<LexicalNode>): number => {
     let depth = depths.get(klass);
     if (depth === undefined) {
-      depth = 0;
-      for (
-        let k: Klass<LexicalNode> = klass;
-        $isLexicalNode(k.prototype);
-        k = Object.getPrototypeOf(k)
-      ) {
+      depth = -1;
+      for (const _ of iterStaticNodeConfigChain(klass)) {
         depth++;
       }
       depths.set(klass, depth);

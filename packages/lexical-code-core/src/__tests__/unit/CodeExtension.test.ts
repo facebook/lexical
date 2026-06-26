@@ -12,8 +12,10 @@ import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createLineBreakNode,
+  $createTabNode,
   $getRoot,
   $isElementNode,
+  $isTabNode,
   KEY_ENTER_COMMAND,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
@@ -132,6 +134,34 @@ describe('CodeExtension', () => {
       },
       {discrete: true},
     );
+  });
+
+  it('should strip format from TabNode inside CodeNode', () => {
+    const ext = defineExtension({
+      $initialEditorState: () => {
+        const codeNode = $createCodeNode('javascript');
+        codeNode.append($createCodeHighlightNode('x'), $createTabNode());
+        $getRoot().append(codeNode);
+      },
+      dependencies: [CodeExtension, RichTextExtension],
+      name: '[tab-format]',
+    });
+    using editor = buildEditorFromExtensions(ext);
+    editor.update(
+      () => {
+        const codeNode = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isCodeNode,
+        );
+        $assertNodeType(codeNode.getLastChild(), $isTabNode).setFormat(1);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const codeNode = $assertNodeType($getRoot().getFirstChild(), $isCodeNode);
+      const tab = $assertNodeType(codeNode.getLastChild(), $isTabNode);
+      expect(tab.getFormat()).toBe(0);
+    });
   });
 
   it('should not escape code block on Enter when cursor is not at the end', () => {

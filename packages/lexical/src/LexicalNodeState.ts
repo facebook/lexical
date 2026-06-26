@@ -26,7 +26,10 @@ import {
 } from '.';
 import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
 import {errorOnReadOnly} from './LexicalUpdates';
-import {getRegisteredNodeOrThrow, getStaticNodeConfig} from './LexicalUtils';
+import {
+  getRegisteredNodeOrThrow,
+  iterStaticNodeConfigChain,
+} from './LexicalUtils';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
 
@@ -509,13 +512,9 @@ export function createSharedNodeState(
 ): SharedNodeState {
   const sharedConfigMap = new Map<string, AnyStateConfig>();
   const flatKeys = new Set<string>();
-  for (
-    let klass =
-      typeof nodeConfig === 'function' ? nodeConfig : nodeConfig.replace;
-    klass.prototype && klass.prototype.getType !== undefined;
-    klass = Object.getPrototypeOf(klass)
-  ) {
-    const {ownNodeConfig} = getStaticNodeConfig(klass);
+  for (const {ownNodeConfig} of iterStaticNodeConfigChain(
+    typeof nodeConfig === 'function' ? nodeConfig : nodeConfig.replace,
+  )) {
     if (ownNodeConfig && ownNodeConfig.stateConfigs) {
       for (const requiredStateConfig of ownNodeConfig.stateConfigs) {
         let stateConfig: AnyStateConfig;

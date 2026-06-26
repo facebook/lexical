@@ -15,7 +15,7 @@
 import {readFile} from 'node:fs/promises';
 
 const REGISTRY = (
-  process.env.REGISTRY_URL ?? 'https://registry.x2p.facebook.net'
+  process.env.REGISTRY_URL ?? 'https://registry.facebook.net'
 ).replace(/\/$/, '');
 const LOCKFILE = process.env.LOCKFILE ?? 'pnpm-lock.yaml';
 const CONCURRENCY = Number(process.env.CHECK_CONCURRENCY ?? 20);

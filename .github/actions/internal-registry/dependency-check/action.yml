@@ -16,7 +16,7 @@ inputs:
   registry-url:
     description: Registry base URL.
     required: false
-    default: https://registry.x2p.facebook.net
+    default: https://registry.facebook.net
   node-version:
     description: Node version used to run the check.
     required: false

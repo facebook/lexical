@@ -11,7 +11,7 @@ import type {JSX} from 'react';
 import './index.css';
 
 import {useMergeRefs} from '@floating-ui/react';
-import {$isCodeHighlightNode} from '@lexical/code';
+import {$isCodeNode} from '@lexical/code';
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -410,7 +410,7 @@ function useFloatingTextFormatToolbar(
       }
 
       if (
-        !$isCodeHighlightNode(selection.anchor.getNode()) &&
+        !$isCodeNode(selection.anchor.getNode().getParent()) &&
         selection.getTextContent() !== ''
       ) {
         setIsText($isTextNode(node) || $isParagraphNode(node));

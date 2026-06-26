@@ -810,7 +810,7 @@ declare export class TextNode extends LexicalNode {
   static importJSON(serializedTextNode: SerializedTextNode): TextNode;
   exportJSON(): SerializedTextNode;
 }
-declare export interface InlineFormattable {
+export interface InlineFormattable {
   +__isInlineFormattable: true;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
   setFormat(format: number): mixed;

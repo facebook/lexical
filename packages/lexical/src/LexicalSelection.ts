@@ -519,6 +519,12 @@ export class NodeSelection implements BaseSelection {
     for (const node of nodes) {
       node.remove();
     }
+    const root = $getRoot();
+    if (root.isEmpty()) {
+      const paragraph = $createParagraphNode();
+      root.append(paragraph);
+      paragraph.select();
+    }
   }
 }
 
@@ -2209,6 +2215,12 @@ export class RangeSelection implements BaseSelection {
         anchorNode.getPreviousSibling() === null
       ) {
         $collapseAtStart(this, anchorNode);
+      }
+      const root = $getRoot();
+      if (root.isEmpty()) {
+        const paragraph = $createParagraphNode();
+        root.append(paragraph);
+        paragraph.select();
       }
     }
   }

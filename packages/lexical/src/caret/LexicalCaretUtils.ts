@@ -36,6 +36,7 @@ import {
 } from '../LexicalUtils';
 import {$isElementNode, type ElementNode} from '../nodes/LexicalElementNode';
 import {$createParagraphNode} from '../nodes/LexicalParagraphNode';
+import {$isRootNode} from '../nodes/LexicalRootNode';
 import {
   $createTextNode,
   $isTextNode,
@@ -353,6 +354,60 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
       const element = parent;
       parent = parent.getParent();
       element.remove(true);
+    }
+  } else if (focusCandidate) {
+    let focusBlock: ElementNode | null = null;
+    if ($isChildCaret(focusCandidate)) {
+      const origin = focusCandidate.origin;
+      if (INTERNAL_$isBlock(origin)) {
+        focusBlock = origin;
+      } else {
+        const child = focusCandidate.getNodeAtCaret();
+        if (child && $isElementNode(child) && INTERNAL_$isBlock(child)) {
+          focusBlock = child;
+        }
+      }
+    } else {
+      const parent = focusCandidate.getParentAtCaret();
+      if (parent && INTERNAL_$isBlock(parent)) {
+        focusBlock = parent;
+      }
+    }
+    const focusBlockParent = focusBlock && focusBlock.getParent();
+    let topmostShadowRoot: ElementNode | null = null;
+    if (focusBlock) {
+      let walk: ElementNode | null = focusBlock.getParent();
+      while (walk && !$isRootNode(walk)) {
+        if ($isRootOrShadowRoot(walk)) {
+          topmostShadowRoot = walk;
+        }
+        walk = walk.getParent();
+      }
+    }
+    if (
+      focusBlock &&
+      focusBlockParent &&
+      !$isRootNode(focusBlockParent) &&
+      focusBlock.isEmpty() &&
+      seenStart.has(focusBlock.getKey()) &&
+      $getSlotNames(focusBlock).length === 0 &&
+      (!topmostShadowRoot || seenStart.has(topmostShadowRoot.getKey()))
+    ) {
+      focusBlock.remove(true);
+      let parent: ElementNode | null = focusBlockParent;
+      while (parent && !$isRootNode(parent) && parent.isEmpty()) {
+        const grandparent: ElementNode | null = parent.getParent();
+        if (
+          grandparent &&
+          $isRootNode(grandparent) &&
+          grandparent.getChildrenSize() <= 1
+        ) {
+          break;
+        }
+        const element = parent;
+        parent = grandparent;
+        element.remove(true);
+      }
     }
   }
 

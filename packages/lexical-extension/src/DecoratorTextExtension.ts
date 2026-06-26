@@ -7,6 +7,8 @@
  */
 
 import type {
+  EditorConfig,
+  LexicalEditor,
   LexicalNode,
   SerializedLexicalNode,
   Spread,
@@ -76,12 +78,8 @@ export class DecoratorTextNode extends DecoratorNode<unknown> {
     return true;
   }
 
-  createDOM(): HTMLElement {
+  createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
     return document.createElement('span');
-  }
-
-  updateDOM(): false {
-    return false;
   }
 }
 

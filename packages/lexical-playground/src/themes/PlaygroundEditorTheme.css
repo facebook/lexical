@@ -295,7 +295,7 @@
 .PlaygroundEditorTheme__tableSelection *::selection {
   background-color: transparent;
 }
-.PlaygroundEditorTheme__tableSelected {
+[contenteditable]:focus-within .PlaygroundEditorTheme__tableSelected {
   outline: 2px solid rgb(60, 132, 244);
 }
 .PlaygroundEditorTheme__tableCell {
@@ -331,7 +331,8 @@
 .PlaygroundEditorTheme__tableCellSelected {
   caret-color: transparent;
 }
-.PlaygroundEditorTheme__tableCellSelected::after {
+[contenteditable]:focus-within
+  .PlaygroundEditorTheme__tableCellSelected::after {
   position: absolute;
   left: 0;
   right: 0;

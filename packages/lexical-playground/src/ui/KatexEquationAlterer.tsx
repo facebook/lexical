@@ -58,6 +58,7 @@ export default function KatexEquationAlterer({
               setEquation(event.target.value);
             }}
             value={equation}
+            autoFocus={true}
             className="KatexEquationAlterer_textArea"
             data-test-id="equation-input"
           />
@@ -67,6 +68,7 @@ export default function KatexEquationAlterer({
               setEquation(event.target.value);
             }}
             value={equation}
+            autoFocus={true}
             className="KatexEquationAlterer_textArea"
             data-test-id="equation-input"
           />

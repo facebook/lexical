@@ -2839,6 +2839,54 @@ describe('LexicalEditor tests', () => {
     expect(historicCommit!.tags).toContain('historic-tag');
   });
 
+  it('defers onUpdate callbacks when setEditorState commits inside an update', async () => {
+    init();
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('historic'));
+        $getRoot().append(paragraph);
+      },
+      {discrete: true},
+    );
+    const historicState = editor.getEditorState();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('current'));
+        root.append(paragraph);
+      },
+      {discrete: true},
+    );
+
+    const events: string[] = [];
+    editor.update(
+      () => {
+        events.push('update start');
+        editor.setEditorState(historicState);
+        events.push('update end');
+      },
+      {
+        onUpdate: () => {
+          events.push('onUpdate');
+        },
+      },
+    );
+    events.push('after update');
+
+    expect(events).toEqual(['update start', 'update end', 'after update']);
+
+    await Promise.resolve();
+    expect(events).toEqual([
+      'update start',
+      'update end',
+      'after update',
+      'onUpdate',
+    ]);
+  });
+
   it('mutation listeners does not trigger when other node types are mutated', async () => {
     init();
 

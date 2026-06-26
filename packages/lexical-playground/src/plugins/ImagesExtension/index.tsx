@@ -155,6 +155,7 @@ export function InsertImageUriDialogBody({
   return (
     <>
       <TextInput
+        autoFocus={true}
         label="Image URL"
         placeholder="i.e. https://source.unsplash.com/random"
         onChange={setSrc}

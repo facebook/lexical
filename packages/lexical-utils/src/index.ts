@@ -814,10 +814,10 @@ export function $insertNodeIntoLeaf(node: LexicalNode): void {
  * @param createElementNode - Creates a new lexical element to wrap the to-be-wrapped node and returns it.
  * @returns A new lexical element with the previous node appended within (as a child, including its children).
  */
-export function $wrapNodeInElement(
+export function $wrapNodeInElement<T extends ElementNode>(
   node: LexicalNode,
-  createElementNode: () => ElementNode,
-): ElementNode {
+  createElementNode: () => T,
+): T {
   const elementNode = createElementNode();
   node.replace(elementNode);
   elementNode.append(node);

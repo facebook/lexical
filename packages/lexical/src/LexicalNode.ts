@@ -75,6 +75,7 @@ import {
   errorOnInsertTextNodeOnRoot,
   getRegisteredNode,
   getStaticNodeConfig,
+  getSuperclassOf,
   internalMarkNodeAsDirty,
 } from './LexicalUtils';
 
@@ -804,8 +805,7 @@ export class LexicalNode {
     type: string | symbol,
     config: AnyStaticNodeConfigValue,
   ): BaseStaticNodeConfig {
-    const parentKlass =
-      config.extends || Object.getPrototypeOf(this.constructor);
+    const parentKlass = config.extends || getSuperclassOf(this.constructor);
     Object.assign(config, {extends: parentKlass});
     // A concrete node records its string `type`; an abstract base class is
     // keyed by a well-known symbol (e.g. Symbol.for('ElementNode')) and has no

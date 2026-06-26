@@ -20,6 +20,7 @@ type Props = Readonly<{
   placeholder?: string;
   value: string;
   type?: HTMLInputTypeAttribute;
+  autoFocus?: boolean;
 }>;
 
 export default function TextInput({
@@ -29,6 +30,7 @@ export default function TextInput({
   placeholder = '',
   'data-test-id': dataTestId,
   type = 'text',
+  autoFocus,
 }: Props): JSX.Element {
   return (
     <div className="Input__wrapper">
@@ -36,6 +38,7 @@ export default function TextInput({
       <input
         type={type}
         className="Input__input"
+        autoFocus={autoFocus}
         placeholder={placeholder}
         value={value}
         onChange={e => {

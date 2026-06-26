@@ -204,6 +204,7 @@ export function AutoEmbedDialog({
           className="Input__input"
           placeholder={embedConfig.exampleUrl}
           value={text}
+          autoFocus={true}
           data-test-id={`${embedConfig.type}-embed-modal-url`}
           onChange={e => {
             const {value} = e.target;

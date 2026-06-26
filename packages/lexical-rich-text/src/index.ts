@@ -65,6 +65,7 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
+  $isSelectionCapturedInDecoratorInput,
   $isTextNode,
   $normalizeSelection__EXPERIMENTAL,
   $selectAll,
@@ -98,7 +99,6 @@ import {
   IS_SAFARI,
   isDOMNode,
   isHTMLElement,
-  isSelectionCapturedInDecoratorInput,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
@@ -1260,7 +1260,7 @@ export function registerRichText(
         // if inputs then paste within the input ignore creating a new node on paste event
         if (
           isDOMNode(event.target) &&
-          isSelectionCapturedInDecoratorInput(event.target)
+          $isSelectionCapturedInDecoratorInput(event.target)
         ) {
           return false;
         }

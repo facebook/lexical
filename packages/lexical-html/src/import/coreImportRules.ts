@@ -27,6 +27,7 @@ import {
   IS_SUBSCRIPT,
   IS_SUPERSCRIPT,
   IS_UNDERLINE,
+  isAppleInterchangeNewline,
   isBlockDomNode,
   isDOMTextNode,
   isLastChildInBlockNode,
@@ -453,7 +454,8 @@ const LineBreakRule = /* @__PURE__ */ defineImportRule({
   // would otherwise survive as a LineBreakNode and tack an extra blank
   // line onto the imported content.
   $import: (_ctx, el) =>
-    isOnlyChildInBlockNode(el) || isLastChildInBlockNode(el)
+    isOnlyChildInBlockNode(el) ||
+    (isAppleInterchangeNewline(el) && isLastChildInBlockNode(el))
       ? []
       : [$createLineBreakNode()],
   match: sel.tag('br'),

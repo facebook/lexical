@@ -19,6 +19,7 @@ import {
   $applyNodeReplacement,
   isBlockDomNode,
   isDOMTextNode,
+  isHTMLElement,
 } from '../LexicalUtils';
 
 export type SerializedLineBreakNode = SerializedLexicalNode;
@@ -58,7 +59,10 @@ export class LineBreakNode extends LexicalNode {
   static importDOM(): DOMConversionMap | null {
     return {
       br: (node: Node) => {
-        if (isOnlyChildInBlockNode(node) || isLastChildInBlockNode(node)) {
+        if (
+          isOnlyChildInBlockNode(node) ||
+          (isAppleInterchangeNewline(node) && isLastChildInBlockNode(node))
+        ) {
           return null;
         }
         return {
@@ -149,6 +153,14 @@ export function isLastChildInBlockNode(node: Node): boolean {
     }
   }
   return false;
+}
+
+export function isAppleInterchangeNewline(node: Node): boolean {
+  return (
+    node.nodeName === 'BR' &&
+    isHTMLElement(node) &&
+    node.getAttribute('class') === 'Apple-interchange-newline'
+  );
 }
 
 function isWhitespaceDomTextNode(node: Node): boolean {

@@ -1014,3 +1014,25 @@
     0 2px 8px rgba(0, 0, 0, 0.08),
     0 4px 16px rgba(0, 0, 0, 0.04);
 }
+.PlaygroundEditorTheme__ruby {
+  position: relative;
+  display: inline-block;
+  line-height: 1.3;
+  vertical-align: baseline;
+}
+.PlaygroundEditorTheme__ruby::after {
+  content: attr(data-ruby-annotation);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -0.75em;
+  font-size: 0.5em;
+  line-height: 1;
+  color: #888;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+.PlaygroundEditorTheme__ruby--composing::after {
+  display: none;
+}

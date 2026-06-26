@@ -77,6 +77,7 @@ import {
 } from '../../context/ToolbarContext';
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';
+import {$isRubyNode, $toggleRuby} from '../../nodes/RubyNode';
 import {$createStickyNode} from '../../nodes/StickyNode';
 import DropDown, {DropDownItem} from '../../ui/DropDown';
 import DropdownColorPicker from '../../ui/DropdownColorPicker';
@@ -567,11 +568,13 @@ export default function ToolbarPlugin({
   activeEditor,
   setActiveEditor,
   setIsLinkEditMode,
+  setIsRubyEditMode,
 }: {
   editor: LexicalEditor;
   activeEditor: LexicalEditor;
   setActiveEditor: Dispatch<LexicalEditor>;
   setIsLinkEditMode: Dispatch<boolean>;
+  setIsRubyEditMode: Dispatch<boolean>;
 }): JSX.Element {
   const [selectedElementKey, setSelectedElementKey] = useState<NodeKey | null>(
     null,
@@ -891,6 +894,25 @@ export default function ToolbarPlugin({
     }
   }, [activeEditor, setIsLinkEditMode, toolbarState.isLink]);
 
+  const insertRuby = useCallback(() => {
+    let hasRuby = false;
+    let hasSelection = false;
+    activeEditor.read(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        hasRuby = selection.getNodes().some(n => $isRubyNode(n));
+        hasSelection = !selection.isCollapsed();
+      }
+    });
+    if (hasRuby) {
+      activeEditor.update(() => {
+        $toggleRuby(null);
+      });
+    } else if (hasSelection) {
+      setIsRubyEditMode(true);
+    }
+  }, [activeEditor, setIsRubyEditMode]);
+
   const onCodeLanguageSelect = useCallback(
     (value: string | null) => {
       activeEditor.update(() => {
@@ -1141,6 +1163,15 @@ export default function ToolbarPlugin({
             title={`Insert link (${SHORTCUTS.INSERT_LINK})`}
             type="button">
             <i className="format link" />
+          </button>
+          <button
+            disabled={!isEditable}
+            onClick={insertRuby}
+            className="toolbar-item spaced"
+            aria-label="Insert ruby annotation"
+            title="Insert ruby annotation"
+            type="button">
+            <i className="format ruby" />
           </button>
           <DropdownColorPicker
             disabled={!isEditable}

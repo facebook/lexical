@@ -1,0 +1,79 @@
+.ruby-editor {
+  display: flex;
+  align-items: center;
+  z-index: 10;
+  max-width: 360px;
+  width: 100%;
+  background-color: #fff;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  transition: opacity 0.5s;
+  will-change: transform;
+  padding: 4px 8px;
+  gap: 6px;
+}
+
+.ruby-editor .ruby-base-text {
+  font-size: 14px;
+  color: #555;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  flex-shrink: 0;
+}
+
+.ruby-editor .ruby-input {
+  flex: 1;
+  font-size: 14px;
+  color: rgb(5, 5, 5);
+  border: none;
+  outline: none;
+  padding: 8px;
+  min-width: 80px;
+  border-radius: 4px;
+  background-color: #f5f5f5;
+}
+
+.ruby-editor .ruby-input:focus {
+  background-color: #eef;
+}
+
+.ruby-editor .ruby-input::placeholder {
+  color: #aaa;
+}
+
+.ruby-editor .button {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+.ruby-editor .button.hovered {
+  background-color: #eee;
+}
+
+.ruby-editor .button i {
+  background-size: contain;
+  display: inline-block;
+  height: 20px;
+  width: 20px;
+  vertical-align: -0.25em;
+}
+
+.ruby-editor .ruby-confirm {
+  background-image: url(../../images/icons/success-alt.svg);
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.ruby-editor .ruby-trash {
+  background-image: url(../../images/icons/trash.svg);
+  background-size: contain;
+  background-repeat: no-repeat;
+}

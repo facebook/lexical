@@ -27,6 +27,7 @@ import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
 import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
 import {ExcalidrawPlugin} from './plugins/ExcalidrawExtension';
 import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
+import FloatingRubyEditorPlugin from './plugins/FloatingRubyEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
 import {MentionsPlugin} from './plugins/MentionsExtension';
 import ShortcutsPlugin from './plugins/ShortcutsPlugin';
@@ -72,6 +73,7 @@ export default function Editor(): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const [activeEditor, setActiveEditor] = useState(editor);
   const [isLinkEditMode, setIsLinkEditMode] = useState<boolean>(false);
+  const [isRubyEditMode, setIsRubyEditMode] = useState<boolean>(false);
 
   const onRef = (_floatingAnchorElem: HTMLDivElement) => {
     if (_floatingAnchorElem !== null) {
@@ -104,6 +106,7 @@ export default function Editor(): JSX.Element {
           activeEditor={activeEditor}
           setActiveEditor={setActiveEditor}
           setIsLinkEditMode={setIsLinkEditMode}
+          setIsRubyEditMode={setIsRubyEditMode}
         />
       )}
       {isRichText && (
@@ -145,6 +148,11 @@ export default function Editor(): JSX.Element {
                   isLinkEditMode={isLinkEditMode}
                   setIsLinkEditMode={setIsLinkEditMode}
                 />
+                <FloatingRubyEditorPlugin
+                  anchorElem={floatingAnchorElem}
+                  isRubyEditMode={isRubyEditMode}
+                  setIsRubyEditMode={setIsRubyEditMode}
+                />
                 <TableCellActionMenuPlugin
                   anchorElem={floatingAnchorElem}
                   cellMerge={true}
@@ -159,6 +167,7 @@ export default function Editor(): JSX.Element {
                 <FloatingTextFormatToolbarPlugin
                   anchorElem={floatingAnchorElem}
                   setIsLinkEditMode={setIsLinkEditMode}
+                  isRubyEditMode={isRubyEditMode}
                 />
               </>
             )}

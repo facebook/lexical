@@ -13,6 +13,7 @@ import {
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $create,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -35,7 +36,7 @@ describe('DecoratorTextExtension FORMAT_TEXT_COMMAND', () => {
         const paragraph = $createParagraphNode();
         $getRoot().append(paragraph);
 
-        const decorator = new DecoratorTextNode();
+        const decorator = $create(DecoratorTextNode);
         // decorator starts not-bold (format = 0)
         const text = $createTextNode('hello');
         text.setFormat(BOLD); // TextNode starts bold
@@ -70,7 +71,7 @@ describe('DecoratorTextExtension FORMAT_TEXT_COMMAND', () => {
         const paragraph = $createParagraphNode();
         $getRoot().append(paragraph);
 
-        const decorator = new DecoratorTextNode();
+        const decorator = $create(DecoratorTextNode);
         decorator.setFormat(BOLD); // DecoratorTextNode starts bold
         const text = $createTextNode('hello');
         // TextNode starts not-bold (format = 0)
@@ -105,7 +106,7 @@ describe('DecoratorTextExtension FORMAT_TEXT_COMMAND', () => {
         const paragraph = $createParagraphNode();
         $getRoot().append(paragraph);
 
-        const decorator = new DecoratorTextNode();
+        const decorator = $create(DecoratorTextNode);
         decorator.setFormat(BOLD);
         const text = $createTextNode('hello');
         text.setFormat(BOLD);

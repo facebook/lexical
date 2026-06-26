@@ -117,6 +117,7 @@ import {
   toggleTextFormatType,
 } from './LexicalUtils';
 import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
+import {$isInlineFormattable} from './nodes/LexicalTextNode';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
 
@@ -2168,22 +2169,6 @@ export function $isNodeSelection(x: unknown): x is NodeSelection {
   return x instanceof NodeSelection;
 }
 
-type InlineFormattableNode = LexicalNode & {
-  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
-  setFormat(format: number): unknown;
-};
-
-function $isInlineFormattableNode(
-  node: LexicalNode,
-): node is InlineFormattableNode {
-  return (
-    !$isTextNode(node) &&
-    !$isElementNode(node) &&
-    typeof (node as InlineFormattableNode).getFormatFlags === 'function' &&
-    typeof (node as InlineFormattableNode).setFormat === 'function'
-  );
-}
-
 /**
  * Applies the provided format to TextNodes and inline formattable nodes
  * (e.g. DecoratorTextNode) in the selection, splitting or merging TextNodes
@@ -2205,7 +2190,7 @@ export function $formatText(
 ): void {
   if ($isNodeSelection(selection)) {
     for (const node of selection.getNodes()) {
-      if ($isTextNode(node) || $isInlineFormattableNode(node)) {
+      if ($isTextNode(node) || $isInlineFormattable(node)) {
         node.setFormat(node.getFormatFlags(formatType, null));
       }
     }
@@ -2238,7 +2223,7 @@ export function $formatText(
 
   const applyFormatToInlineNodes = (alignWith: number | null) => {
     for (const node of selectedNodes) {
-      if ($isInlineFormattableNode(node)) {
+      if ($isInlineFormattable(node)) {
         node.setFormat(node.getFormatFlags(formatType, alignWith));
       }
     }

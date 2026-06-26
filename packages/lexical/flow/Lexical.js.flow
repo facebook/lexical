@@ -810,6 +810,14 @@ declare export class TextNode extends LexicalNode {
   static importJSON(serializedTextNode: SerializedTextNode): TextNode;
   exportJSON(): SerializedTextNode;
 }
+declare export interface InlineFormattable {
+  +__isInlineFormattable: true;
+  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
+  setFormat(format: number): mixed;
+}
+declare export function $isInlineFormattable(
+  node: ?LexicalNode,
+): node is LexicalNode & InlineFormattable;
 declare export function $createTextNode(text?: string): TextNode;
 declare export function $isTextNode(
   node: ?LexicalNode,

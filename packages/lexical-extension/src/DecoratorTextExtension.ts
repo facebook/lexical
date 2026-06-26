@@ -8,6 +8,7 @@
 
 import type {
   EditorConfig,
+  InlineFormattable,
   LexicalEditor,
   LexicalNode,
   SerializedLexicalNode,
@@ -44,7 +45,15 @@ const formatState = /* @__PURE__ */ createState('format', {
   parse: value => (typeof value === 'number' ? value : 0),
 });
 
-export class DecoratorTextNode extends DecoratorNode<unknown> {
+export class DecoratorTextNode
+  extends DecoratorNode<unknown>
+  implements InlineFormattable
+{
+  /** @internal */
+  get __isInlineFormattable(): true {
+    return true;
+  }
+
   $config() {
     return this.config('decorator-text', {
       extends: DecoratorNode,

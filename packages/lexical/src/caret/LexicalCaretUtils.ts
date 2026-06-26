@@ -356,34 +356,11 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
       element.remove(true);
     }
   } else if (focusCandidate) {
-    let focusBlock: ElementNode | null = null;
-    if ($isChildCaret(focusCandidate)) {
-      const origin = focusCandidate.origin;
-      if (INTERNAL_$isBlock(origin)) {
-        focusBlock = origin;
-      } else {
-        const child = focusCandidate.getNodeAtCaret();
-        if (child && $isElementNode(child) && INTERNAL_$isBlock(child)) {
-          focusBlock = child;
-        }
-      }
-    } else {
-      const parent = focusCandidate.getParentAtCaret();
-      if (parent && INTERNAL_$isBlock(parent)) {
-        focusBlock = parent;
-      }
-    }
+    const focusBlock = $getBlockFromCaret(focusCandidate);
     const focusBlockParent = focusBlock && focusBlock.getParent();
-    let topmostShadowRoot: ElementNode | null = null;
-    if (focusBlock) {
-      let walk: ElementNode | null = focusBlock.getParent();
-      while (walk && !$isRootNode(walk)) {
-        if ($isRootOrShadowRoot(walk)) {
-          topmostShadowRoot = walk;
-        }
-        walk = walk.getParent();
-      }
-    }
+    const topmostShadowRoot = focusBlock
+      ? $getTopmostShadowRoot(focusBlock)
+      : null;
     if (
       focusBlock &&
       focusBlockParent &&
@@ -430,6 +407,39 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     '$removeTextFromCaretRange: selection was lost, could not find a new anchor given candidates with keys: %s',
     JSON.stringify(anchorCandidates.map(n => n.origin.__key)),
   );
+}
+
+function $getBlockFromCaret(
+  caret: PointCaret<CaretDirection>,
+): ElementNode | null {
+  if ($isChildCaret(caret)) {
+    const origin = caret.origin;
+    if (INTERNAL_$isBlock(origin)) {
+      return origin;
+    }
+    const child = caret.getNodeAtCaret();
+    if (child && $isElementNode(child) && INTERNAL_$isBlock(child)) {
+      return child;
+    }
+  } else {
+    const parent = caret.getParentAtCaret();
+    if (parent && INTERNAL_$isBlock(parent)) {
+      return parent;
+    }
+  }
+  return null;
+}
+
+function $getTopmostShadowRoot(node: ElementNode): ElementNode | null {
+  let topmostShadowRoot: ElementNode | null = null;
+  let walk: ElementNode | null = node.getParent();
+  while (walk && !$isRootNode(walk)) {
+    if ($isRootOrShadowRoot(walk)) {
+      topmostShadowRoot = walk;
+    }
+    walk = walk.getParent();
+  }
+  return topmostShadowRoot;
 }
 
 /**

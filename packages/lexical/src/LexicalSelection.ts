@@ -519,12 +519,16 @@ export class NodeSelection implements BaseSelection {
     for (const node of nodes) {
       node.remove();
     }
-    const root = $getRoot();
-    if (root.isEmpty()) {
-      const paragraph = $createParagraphNode();
-      root.append(paragraph);
-      paragraph.select();
-    }
+    $ensureRootHasParagraph();
+  }
+}
+
+function $ensureRootHasParagraph(): void {
+  const root = $getRoot();
+  if (root.isEmpty()) {
+    const paragraph = $createParagraphNode();
+    root.append(paragraph);
+    paragraph.select();
   }
 }
 
@@ -2216,12 +2220,7 @@ export class RangeSelection implements BaseSelection {
       ) {
         $collapseAtStart(this, anchorNode);
       }
-      const root = $getRoot();
-      if (root.isEmpty()) {
-        const paragraph = $createParagraphNode();
-        root.append(paragraph);
-        paragraph.select();
-      }
+      $ensureRootHasParagraph();
     }
   }
 

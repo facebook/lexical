@@ -27,3 +27,19 @@ jobs:
   e2e-tests:
     if: github.repository_owner == 'facebook'
     uses: ./.github/workflows/call-e2e-canary-tests.yml
+
+  # Assert every third-party dependency pinned in pnpm-lock.yaml is fetchable
+  # from Meta's internal npm registry. Newly published versions are withheld
+  # there for a short window, so a frozen install inside Meta can fail on a
+  # just-published version even though it installs fine from public npm. Mark
+  # this job's merge_group run REQUIRED so it blocks landing; fork PRs can't mint
+  # the registry identity and pass with a notice (the required merge-queue run
+  # enforces them).
+  dependency-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/internal-registry/dependency-check

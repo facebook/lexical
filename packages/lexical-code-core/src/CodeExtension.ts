@@ -14,6 +14,8 @@ import {
   configExtension,
   defineExtension,
   KEY_ENTER_COMMAND,
+  mergeRegister,
+  TabNode,
 } from 'lexical';
 
 import {CodeHighlightNode} from './CodeHighlightNode';
@@ -21,7 +23,7 @@ import {
   $installVscodeCodePasteOverlay,
   CodeImportRules,
 } from './CodeImportExtension';
-import {$exitCodeNodeOnEnter, CodeNode} from './CodeNode';
+import {$exitCodeNodeOnEnter, $isCodeNode, CodeNode} from './CodeNode';
 
 /**
  * Add code blocks to the editor (syntax highlighting provided separately)
@@ -40,17 +42,24 @@ export const CodeExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/code',
   nodes: () => [CodeNode, CodeHighlightNode],
   register(editor) {
-    return editor.registerCommand<KeyboardEvent>(
-      KEY_ENTER_COMMAND,
-      event => {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection) && $exitCodeNodeOnEnter(selection)) {
-          event.preventDefault();
-          return true;
+    return mergeRegister(
+      editor.registerCommand<KeyboardEvent>(
+        KEY_ENTER_COMMAND,
+        event => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection) && $exitCodeNodeOnEnter(selection)) {
+            event.preventDefault();
+            return true;
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerNodeTransform(TabNode, node => {
+        if (node.getFormat() !== 0 && $isCodeNode(node.getParent())) {
+          node.setFormat(0);
         }
-        return false;
-      },
-      COMMAND_PRIORITY_LOW,
+      }),
     );
   },
 });

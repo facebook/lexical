@@ -3407,5 +3407,128 @@ describe('LexicalSelection tests', () => {
         `<h1 dir="auto" style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px));"><span data-lexical-text="true">1.1</span></h1>`,
       );
     });
+
+    test('Backward selection: focus at block end is skipped', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2 = $createTextNode('text 2');
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            $createParagraphNode().append(text2),
+          );
+
+          const selection = text1
+            .select()
+            .setTextNodeRange(text2, 0, text1, text1.getTextContentSize());
+
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isParagraphNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
+        expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Backward selection: non-zero focus offset converts both blocks', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2 = $createTextNode('text 2');
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            $createParagraphNode().append(text2),
+          );
+
+          const selection = text1
+            .select()
+            .setTextNodeRange(text2, 1, text1, text1.getTextContentSize() - 1);
+
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
+        expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Backward selection spanning multiple blocks skips only focus block', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2 = $createTextNode('text 2');
+          const text3 = $createTextNode('text 3');
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            $createParagraphNode().append(text2),
+            $createParagraphNode().append(text3),
+          );
+
+          const selection = text1
+            .select()
+            .setTextNodeRange(
+              text3,
+              text3.getTextContentSize(),
+              text1,
+              text1.getTextContentSize(),
+            );
+
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isParagraphNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
+        expect($isHeadingNode(rootChildren[2])).toBe(true);
+        expect(rootChildren.length).toBe(3);
+      });
+    });
+
+    test('Backward selection: focus at block end with element point is skipped', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2 = $createTextNode('text 2');
+          const paragraph2 = $createParagraphNode().append(text2);
+          $getRoot().append($createParagraphNode().append(text1), paragraph2);
+
+          const selection = $createRangeSelection();
+          $setSelection(selection);
+          $setAnchorPoint({
+            key: text2.getKey(),
+            offset: 0,
+            type: 'text',
+          });
+          $setFocusPoint({
+            key: paragraph2.getKey(),
+            offset: 0,
+            type: 'element',
+          });
+
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isParagraphNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
+        expect(rootChildren.length).toBe(2);
+      });
+    });
   });
 });

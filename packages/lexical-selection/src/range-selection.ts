@@ -77,6 +77,31 @@ function $isPointAtBlockStart(point: Point, block: ElementNode): boolean {
   return true;
 }
 
+function $isPointAtBlockEnd(point: Point, block: ElementNode): boolean {
+  let node: LexicalNode = point.getNode();
+  if ($isElementNode(node)) {
+    if (node.isEmpty()) {
+      return false;
+    }
+    if (point.offset !== node.getChildrenSize()) {
+      return false;
+    }
+  } else if (point.offset !== node.getTextContentSize()) {
+    return false;
+  }
+  while (!node.is(block)) {
+    if (node.getNextSibling() !== null) {
+      return false;
+    }
+    const parent = node.getParent();
+    if (parent === null) {
+      return false;
+    }
+    node = parent;
+  }
+  return true;
+}
+
 /**
  * Converts all nodes in the selection that are of one block type to another.
  * @param selection - The selected blocks to be converted.
@@ -98,29 +123,44 @@ export function $setBlocksType<T extends ElementNode>(
   // expand it here
   const anchorAndFocus = selection.getStartEndPoints();
   let skipFocusAtBlockStart = false;
+  let skipFocusAtBlockEnd = false;
   let focusBlock: ElementNode | DecoratorNode<unknown> | null = null;
   const blockMap = new Map<NodeKey, ElementNode>();
   if (anchorAndFocus) {
     const [anchor, focus] = anchorAndFocus;
+
     const anchorBlock = $findMatchingParent(
       anchor.getNode(),
       INTERNAL_$isBlock,
     );
     focusBlock = $findMatchingParent(focus.getNode(), INTERNAL_$isBlock);
     skipFocusAtBlockStart =
+      !selection.isBackward() &&
       $isElementNode(focusBlock) &&
       !focusBlock.is(anchorBlock) &&
       $isPointAtBlockStart(focus, focusBlock);
+    skipFocusAtBlockEnd =
+      selection.isBackward() &&
+      $isElementNode(focusBlock) &&
+      !focusBlock.is(anchorBlock) &&
+      $isPointAtBlockEnd(focus, focusBlock);
     if ($isElementNode(anchorBlock)) {
       blockMap.set(anchorBlock.getKey(), anchorBlock);
     }
-    if ($isElementNode(focusBlock) && !skipFocusAtBlockStart) {
+    if (
+      $isElementNode(focusBlock) &&
+      !skipFocusAtBlockStart &&
+      !skipFocusAtBlockEnd
+    ) {
       blockMap.set(focusBlock.getKey(), focusBlock);
     }
   }
   for (const node of selection.getNodes()) {
     if ($isElementNode(node) && INTERNAL_$isBlock(node)) {
-      if (skipFocusAtBlockStart && node.is(focusBlock)) {
+      if (
+        (skipFocusAtBlockStart || skipFocusAtBlockEnd) &&
+        node.is(focusBlock)
+      ) {
         continue;
       }
       blockMap.set(node.getKey(), node);

@@ -7,6 +7,7 @@
  */
 
 import type {
+  CaretDirection,
   CommandPayloadType,
   DOMConversionMap,
   DOMConversionOutput,
@@ -49,12 +50,15 @@ import {
 } from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $caretFromPoint,
   $comparePointCaretNext,
   $createParagraphNode,
   $createRangeSelection,
   $createTabNode,
   $findMatchingParent,
   $getAdjacentNode,
+  $getChildCaret,
+  $getChildCaretAtIndex,
   $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
@@ -72,6 +76,7 @@ import {
   $selectAll,
   $setDirectionFromDOM,
   $setFormatFromDOM,
+  $setPointFromCaret,
   $setSelection,
   addClassNamesToElement,
   CAN_USE_BEFORE_INPUT,
@@ -661,20 +666,20 @@ function $needsBlockCursorBeside(node: LexicalNode): boolean {
 
 function $tryEnterFromBlockCursor(
   selection: RangeSelection,
-  isForward: boolean,
+  direction: CaretDirection,
 ): boolean {
   if (!selection.isCollapsed() || selection.anchor.type !== 'element') {
     return false;
   }
   const parent = selection.anchor.getNode();
-  const offset = selection.anchor.offset;
-  const child = isForward
-    ? parent.getChildAtIndex(offset)
-    : offset > 0
-      ? parent.getChildAtIndex(offset - 1)
-      : null;
+  const caret = $getChildCaretAtIndex(
+    parent,
+    selection.anchor.offset,
+    direction,
+  );
+  const child = caret.getNodeAtCaret();
   if ($isElementNode(child) && !child.isInline() && child.isShadowRoot()) {
-    if (isForward) {
+    if (direction === 'next') {
       child.selectStart();
     } else {
       child.selectEnd();
@@ -686,117 +691,122 @@ function $tryEnterFromBlockCursor(
 
 function $tryBlockCursorShadowRootNavigation(
   selection: RangeSelection,
-  isBackward: boolean,
+  direction: CaretDirection,
 ): boolean {
   return (
-    $tryExitShadowRootToBlockCursor(selection, isBackward) ||
-    $tryEnterFromBlockCursor(selection, !isBackward)
+    $tryExitShadowRootToBlockCursor(selection, direction) ||
+    $tryEnterFromBlockCursor(selection, direction)
   );
 }
 
 function $tryExitShadowRootToBlockCursor(
   selection: RangeSelection,
-  isBackward: boolean,
+  direction: CaretDirection,
 ): boolean {
   if (!selection.isCollapsed()) {
     return false;
   }
-  const focus = selection.focus;
-  const focusNode = focus.getNode();
+  const focusCaret = $caretFromPoint(selection.focus, direction);
+  // Walk up from focus to find the nearest shadow root ancestor.
+  const caret = focusCaret.getSiblingCaret();
   let shadowRoot: ElementNode | null = null;
-  let current: LexicalNode | null = $isElementNode(focusNode)
-    ? focusNode
-    : focusNode.getParent();
-  while (current !== null) {
-    if ($isElementNode(current) && current.isShadowRoot()) {
-      shadowRoot = current;
+  for (
+    let parent = caret.getParentCaret();
+    parent !== null;
+    parent = parent.getParentCaret()
+  ) {
+    const parentNode = parent.origin;
+    if ($isElementNode(parentNode) && parentNode.isShadowRoot()) {
+      shadowRoot = parentNode;
       break;
     }
-    current = current.getParent();
   }
   if (shadowRoot === null) {
     return false;
   }
-  if (isBackward) {
-    if (focus.offset !== 0) {
-      return false;
+  // Check that the focus is at the edge of the shadow root in the given
+  // direction. Walk from the shadow root's child-caret toward the deepest
+  // first/last descendant and verify the focus sits there.
+  let edgeCaret = $getChildCaret(shadowRoot, direction);
+  let atEdge = false;
+  while (true) {
+    const adj = edgeCaret.getAdjacentCaret();
+    if (adj === null) {
+      // Empty element — focus must be this element at offset 0 / childrenSize
+      atEdge = selection.focus.key === edgeCaret.origin.__key;
+      break;
     }
-    let walk: LexicalNode | null = shadowRoot;
-    let atEdge = false;
-    while (walk !== null) {
-      if (focus.key === walk.__key) {
-        atEdge = true;
-        break;
+    if (adj.origin.__key === selection.focus.key) {
+      if ($isTextNode(adj.origin)) {
+        const edgeOffset =
+          direction === 'next' ? adj.origin.getTextContentSize() : 0;
+        atEdge = selection.focus.offset === edgeOffset;
+      } else {
+        atEdge =
+          selection.focus.offset ===
+          (direction === 'next'
+            ? $isElementNode(adj.origin)
+              ? adj.origin.getChildrenSize()
+              : 0
+            : 0);
       }
-      walk = $isElementNode(walk) ? walk.getFirstChild() : null;
+      break;
     }
-    if (!atEdge) {
-      return false;
+    const childCaret = adj.getChildCaret();
+    if (childCaret === null) {
+      break;
     }
-  } else {
-    let walk: LexicalNode | null = shadowRoot;
-    let atEdge = false;
-    while (walk !== null) {
-      if (focus.key === walk.__key) {
-        if ($isTextNode(walk)) {
-          atEdge = focus.offset === walk.getTextContentSize();
-        } else if ($isElementNode(walk)) {
-          atEdge = focus.offset === walk.getChildrenSize();
-        }
-        break;
-      }
-      walk = $isElementNode(walk) ? walk.getLastChild() : null;
-    }
-    if (!atEdge) {
-      return false;
-    }
+    edgeCaret = childCaret;
   }
-  let sr: ElementNode | null = shadowRoot;
+  if (!atEdge) {
+    return false;
+  }
+  // Walk outward from the shadow root through nested shadow roots until
+  // we find a sibling that needs a block cursor beside it.
+  let sr = $getSiblingCaret(shadowRoot, direction);
   while (sr !== null) {
-    const sibling = isBackward ? sr.getPreviousSibling() : sr.getNextSibling();
+    const sibling = sr.getAdjacentCaret();
     if (sibling !== null) {
-      if (!$needsBlockCursorBeside(sibling)) {
+      if (!$needsBlockCursorBeside(sibling.origin)) {
         return false;
       }
-      const parent = sr.getParentOrThrow();
-      const offset = isBackward
-        ? sr.getIndexWithinParent()
-        : sr.getIndexWithinParent() + 1;
-      parent.select(offset, offset);
+      $setPointFromCaret(selection.anchor, sr);
+      $setPointFromCaret(selection.focus, sr);
       return true;
     }
-    const parentNode: ElementNode | null = sr.getParent();
+    const parentCaret = sr.getParentCaret();
     if (
-      parentNode !== null &&
-      $isElementNode(parentNode) &&
-      parentNode.isShadowRoot()
+      parentCaret !== null &&
+      $isElementNode(parentCaret.origin) &&
+      parentCaret.origin.isShadowRoot()
     ) {
-      const atEdge = isBackward
-        ? parentNode.getFirstChild() === sr
-        : parentNode.getLastChild() === sr;
-      if (atEdge) {
-        sr = parentNode;
-        continue;
-      }
+      sr = parentCaret;
+      continue;
     }
     return false;
   }
   return false;
 }
 
-function $exitNodeSelectionToward(node: LexicalNode, isForward: boolean): void {
-  const sibling = isForward ? node.getNextSibling() : node.getPreviousSibling();
+function $exitNodeSelectionToward(
+  node: LexicalNode,
+  direction: CaretDirection,
+): void {
+  const caret = $getSiblingCaret(node, direction);
+  const sibling = caret.getAdjacentCaret();
   if (
-    $isElementNode(sibling) &&
-    !sibling.isInline() &&
-    sibling.isShadowRoot()
+    sibling !== null &&
+    $isElementNode(sibling.origin) &&
+    !sibling.origin.isInline() &&
+    sibling.origin.isShadowRoot()
   ) {
     const parent = node.getParentOrThrow();
-    const offset = isForward
-      ? sibling.getIndexWithinParent()
-      : node.getIndexWithinParent();
+    const offset =
+      direction === 'next'
+        ? sibling.origin.getIndexWithinParent()
+        : node.getIndexWithinParent();
     parent.select(offset, offset);
-  } else if (isForward) {
+  } else if (direction === 'next') {
     node.selectNext(0, 0);
   } else {
     node.selectPrevious();
@@ -1074,13 +1084,13 @@ export function registerRichText(
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
             event.preventDefault();
-            $exitNodeSelectionToward(nodes[0], false);
+            $exitNodeSelectionToward(nodes[0], 'previous');
             return true;
           }
         } else if ($isRangeSelection(selection)) {
           if (
             !event.shiftKey &&
-            $tryBlockCursorShadowRootNavigation(selection, true)
+            $tryBlockCursorShadowRootNavigation(selection, 'previous')
           ) {
             event.preventDefault();
             return true;
@@ -1111,7 +1121,7 @@ export function registerRichText(
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
             event.preventDefault();
-            $exitNodeSelectionToward(nodes[0], true);
+            $exitNodeSelectionToward(nodes[0], 'next');
             return true;
           }
         } else if ($isRangeSelection(selection)) {
@@ -1121,7 +1131,7 @@ export function registerRichText(
           }
           if (
             !event.shiftKey &&
-            $tryBlockCursorShadowRootNavigation(selection, false)
+            $tryBlockCursorShadowRootNavigation(selection, 'next')
           ) {
             event.preventDefault();
             return true;
@@ -1152,7 +1162,10 @@ export function registerRichText(
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
             event.preventDefault();
-            $exitNodeSelectionToward(nodes[0], $isParentRTL(nodes[0]));
+            $exitNodeSelectionToward(
+              nodes[0],
+              $isParentRTL(nodes[0]) ? 'next' : 'previous',
+            );
             return true;
           }
         }
@@ -1163,7 +1176,7 @@ export function registerRichText(
           !event.shiftKey &&
           $tryBlockCursorShadowRootNavigation(
             selection,
-            !$isParentRTL(selection.anchor.getNode()),
+            $isParentRTL(selection.anchor.getNode()) ? 'next' : 'previous',
           )
         ) {
           event.preventDefault();
@@ -1197,7 +1210,10 @@ export function registerRichText(
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
             event.preventDefault();
-            $exitNodeSelectionToward(nodes[0], !$isParentRTL(nodes[0]));
+            $exitNodeSelectionToward(
+              nodes[0],
+              $isParentRTL(nodes[0]) ? 'previous' : 'next',
+            );
             return true;
           }
         }
@@ -1208,7 +1224,7 @@ export function registerRichText(
           !event.shiftKey &&
           $tryBlockCursorShadowRootNavigation(
             selection,
-            $isParentRTL(selection.anchor.getNode()),
+            $isParentRTL(selection.anchor.getNode()) ? 'previous' : 'next',
           )
         ) {
           event.preventDefault();

@@ -167,6 +167,7 @@ export class ElementNode
        * up.
        */
       $transform: $normalizeShadowRootChildren,
+      extends: LexicalNode,
     });
   }
 

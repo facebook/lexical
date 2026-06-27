@@ -20,7 +20,7 @@ import type {ElementNode} from './nodes/LexicalElementNode';
 import invariant from '@lexical/internal/invariant';
 
 import {$getEditor, $getNodeByKey, $isDecoratorNode, $isElementNode} from '.';
-import {$removeFromParent, getStaticNodeConfig} from './LexicalUtils';
+import {$removeFromParent, iterStaticNodeConfigChain} from './LexicalUtils';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
 
@@ -261,12 +261,7 @@ export function getDeclaredSlots(klass: Klass<LexicalNode>): readonly string[] {
   // Walk the class hierarchy without a runtime LexicalNode import (a
   // module-initialization cycle): past the base class the chain reaches
   // Function.prototype, whose own `prototype` is undefined, ending the loop.
-  for (
-    let current: Klass<LexicalNode> = klass;
-    current != null && current.prototype != null;
-    current = Object.getPrototypeOf(current)
-  ) {
-    const {ownNodeConfig} = getStaticNodeConfig(current);
+  for (const {ownNodeConfig} of iterStaticNodeConfigChain(klass)) {
     const declared = ownNodeConfig && ownNodeConfig.slots;
     if (declared) {
       return declared;

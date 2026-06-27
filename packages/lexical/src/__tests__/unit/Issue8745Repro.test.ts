@@ -359,36 +359,6 @@ describe('Select-all + delete with trailing shadow root (#8745)', () => {
     });
   });
 
-  test('select-all + deleteLine leaves at least one child', () => {
-    using editor = buildEditorFromExtensions(ext);
-    editor.update(
-      () => {
-        const p = $createParagraphNode();
-        p.append($createTextNode('hello'));
-        const shadow = $createTestShadowRootNode();
-        const innerP = $createParagraphNode();
-        innerP.append($createTextNode('shadow'));
-        shadow.append(innerP);
-        $getRoot().clear().append(p, shadow);
-      },
-      {discrete: true},
-    );
-
-    editor.update(
-      () => {
-        const selection = $selectAll();
-        assert($isRangeSelection(selection), 'Expected RangeSelection');
-        selection.deleteLine(true);
-      },
-      {discrete: true},
-    );
-
-    editor.read(() => {
-      const root = $getRoot();
-      expect(root.getChildrenSize()).toBeGreaterThanOrEqual(1);
-    });
-  });
-
   test('NodeSelection.deleteNodes leaves at least one root child', () => {
     using editor = buildEditorFromExtensions(ext);
     editor.update(

@@ -2250,7 +2250,20 @@ export class RangeSelection implements BaseSelection {
       // with navigating through the parent element
       this.deleteCharacter(isBackward);
     } else {
-      this.removeText();
+      const anchorBlock = $findMatchingParent(
+        this.anchor.getNode(),
+        INTERNAL_$isBlock,
+      );
+      const focusBlock = $findMatchingParent(
+        this.focus.getNode(),
+        INTERNAL_$isBlock,
+      );
+      if (anchorBlock !== focusBlock) {
+        this.focus.set(this.anchor.key, this.anchor.offset, this.anchor.type);
+        this.deleteCharacter(isBackward);
+      } else {
+        this.removeText();
+      }
     }
   }
 

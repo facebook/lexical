@@ -63,7 +63,7 @@ jobs:
       tag-ref: ${{ steps.increment-version.outputs.tag-ref }}
       latest-release: ${{ steps.latest.outputs.release }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-pnpm
@@ -96,7 +96,7 @@ jobs:
       DRY_RUN_ARG: ${{ inputs.dry-run && '--dry-run' || '' }}
       IGNORE_PREVIOUSLY_PUBLISHED_ARG: ${{ inputs.ignore-previously-published && '--ignore-previously-published' || '' }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.increment-version.outputs.tag-ref || inputs.ref }}
       - uses: ./.github/actions/setup-pnpm

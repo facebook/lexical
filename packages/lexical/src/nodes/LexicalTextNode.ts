@@ -310,7 +310,9 @@ export interface InlineFormattable {
   /** @internal */
   readonly __isInlineFormattable: true;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
+  hasFormat(type: TextFormatType): boolean;
   setFormat(format: number): unknown;
+  toggleFormat(type: TextFormatType): unknown;
 }
 
 export function $isInlineFormattable(
@@ -1425,7 +1427,7 @@ function applyTextFormatFromStyle(
   const verticalAlign = style.verticalAlign;
 
   return (lexicalNode: LexicalNode) => {
-    if (!$isTextNode(lexicalNode)) {
+    if (!$isTextNode(lexicalNode) && !$isInlineFormattable(lexicalNode)) {
       return lexicalNode;
     }
     if (hasBoldFontWeight && !lexicalNode.hasFormat('bold')) {

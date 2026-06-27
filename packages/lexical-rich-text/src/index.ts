@@ -54,6 +54,7 @@ import {
   $createRangeSelection,
   $createTabNode,
   $findMatchingParent,
+  $formatText,
   $getAdjacentNode,
   $getNearestNodeFromDOMNode,
   $getRoot,
@@ -812,10 +813,10 @@ export function registerRichText(
       FORMAT_TEXT_COMMAND,
       format => {
         const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
+        if (!$isRangeSelection(selection) && !$isNodeSelection(selection)) {
           return false;
         }
-        selection.formatText(format);
+        $formatText(selection, format);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

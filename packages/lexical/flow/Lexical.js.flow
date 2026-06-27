@@ -813,7 +813,9 @@ declare export class TextNode extends LexicalNode {
 export interface InlineFormattable {
   +__isInlineFormattable: true;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
+  hasFormat(type: TextFormatType): boolean;
   setFormat(format: number): mixed;
+  toggleFormat(type: TextFormatType): mixed;
 }
 declare export function $isInlineFormattable(
   node: ?LexicalNode,

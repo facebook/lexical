@@ -16,6 +16,7 @@ import {
   $getSelection,
   $isElementNode,
   $isRangeSelection,
+  $isTextNode,
   $setSelection,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
@@ -81,110 +82,38 @@ function createDecoratorShadowRootEditor() {
 }
 
 describe('$exitNodeSelectionToward — decorator → block cursor beside shadow root (#8736)', () => {
-  test('ArrowDown from decorator[0] lands at block cursor before shadow root', () => {
-    using editor = createDecoratorShadowRootEditor();
+  test.for([
+    {command: KEY_ARROW_DOWN_COMMAND, index: 0, key: 'ArrowDown', offset: 1},
+    {command: KEY_ARROW_RIGHT_COMMAND, index: 0, key: 'ArrowRight', offset: 1},
+    {command: KEY_ARROW_UP_COMMAND, index: 2, key: 'ArrowUp', offset: 2},
+    {command: KEY_ARROW_LEFT_COMMAND, index: 2, key: 'ArrowLeft', offset: 2},
+  ] as const)(
+    '$key from decorator[$index] lands at block cursor (offset $offset)',
+    ({key, command, index, offset}) => {
+      using editor = createDecoratorShadowRootEditor();
 
-    editor.update(
-      () => {
-        const decorator = $getRoot().getChildAtIndex(0)!;
-        const ns = $createNodeSelection();
-        ns.add(decorator.getKey());
-        $setSelection(ns);
-      },
-      {discrete: true},
-    );
+      editor.update(
+        () => {
+          const decorator = $getRoot().getChildAtIndex(index)!;
+          const ns = $createNodeSelection();
+          ns.add(decorator.getKey());
+          $setSelection(ns);
+        },
+        {discrete: true},
+      );
 
-    editor.dispatchCommand(KEY_ARROW_DOWN_COMMAND, makeArrowEvent('ArrowDown'));
+      editor.dispatchCommand(command, makeArrowEvent(key));
 
-    editor.read(() => {
-      const s = $getSelection();
-      assert($isRangeSelection(s));
-      expect(s.isCollapsed()).toBe(true);
-      expect(s.anchor.type).toBe('element');
-      expect(s.anchor.key).toBe($getRoot().getKey());
-      // offset 1 = between decorator[0] and shadowRoot
-      expect(s.anchor.offset).toBe(1);
-    });
-  });
-
-  test('ArrowRight from decorator[0] lands at block cursor before shadow root', () => {
-    using editor = createDecoratorShadowRootEditor();
-
-    editor.update(
-      () => {
-        const decorator = $getRoot().getChildAtIndex(0)!;
-        const ns = $createNodeSelection();
-        ns.add(decorator.getKey());
-        $setSelection(ns);
-      },
-      {discrete: true},
-    );
-
-    editor.dispatchCommand(
-      KEY_ARROW_RIGHT_COMMAND,
-      makeArrowEvent('ArrowRight'),
-    );
-
-    editor.read(() => {
-      const s = $getSelection();
-      assert($isRangeSelection(s));
-      expect(s.isCollapsed()).toBe(true);
-      expect(s.anchor.type).toBe('element');
-      expect(s.anchor.key).toBe($getRoot().getKey());
-      expect(s.anchor.offset).toBe(1);
-    });
-  });
-
-  test('ArrowUp from decorator[2] lands at block cursor after shadow root', () => {
-    using editor = createDecoratorShadowRootEditor();
-
-    editor.update(
-      () => {
-        const decorator = $getRoot().getChildAtIndex(2)!;
-        const ns = $createNodeSelection();
-        ns.add(decorator.getKey());
-        $setSelection(ns);
-      },
-      {discrete: true},
-    );
-
-    editor.dispatchCommand(KEY_ARROW_UP_COMMAND, makeArrowEvent('ArrowUp'));
-
-    editor.read(() => {
-      const s = $getSelection();
-      assert($isRangeSelection(s));
-      expect(s.isCollapsed()).toBe(true);
-      expect(s.anchor.type).toBe('element');
-      expect(s.anchor.key).toBe($getRoot().getKey());
-      // offset 2 = between shadowRoot and decorator[2]
-      expect(s.anchor.offset).toBe(2);
-    });
-  });
-
-  test('ArrowLeft from decorator[2] lands at block cursor after shadow root', () => {
-    using editor = createDecoratorShadowRootEditor();
-
-    editor.update(
-      () => {
-        const decorator = $getRoot().getChildAtIndex(2)!;
-        const ns = $createNodeSelection();
-        ns.add(decorator.getKey());
-        $setSelection(ns);
-      },
-      {discrete: true},
-    );
-
-    editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, makeArrowEvent('ArrowLeft'));
-
-    editor.read(() => {
-      const s = $getSelection();
-      assert($isRangeSelection(s));
-      expect(s.isCollapsed()).toBe(true);
-      expect(s.anchor.type).toBe('element');
-      expect(s.anchor.key).toBe($getRoot().getKey());
-      expect(s.anchor.offset).toBe(2);
-    });
-  });
+      editor.read(() => {
+        const s = $getSelection();
+        assert($isRangeSelection(s));
+        expect(s.isCollapsed()).toBe(true);
+        expect(s.anchor.type).toBe('element');
+        expect(s.anchor.key).toBe($getRoot().getKey());
+        expect(s.anchor.offset).toBe(offset);
+      });
+    },
+  );
 });
 
 describe('$tryEnterFromBlockCursor — block cursor → enter shadow root (#8736)', () => {
@@ -285,7 +214,7 @@ describe('$tryExitShadowRootToBlockCursor — shadow root → block cursor (#873
         const paragraph = shadow.getFirstChild()!;
         assert($isElementNode(paragraph));
         const text = paragraph.getFirstChild()!;
-        // Place at end of text "inside"
+        assert($isTextNode(text));
         text.select(6, 6);
       },
       {discrete: true},
@@ -387,6 +316,7 @@ describe('nested shadow root exit (#8736)', () => {
         const paragraph = inner.getFirstChild()!;
         assert($isElementNode(paragraph));
         const text = paragraph.getFirstChild()!;
+        assert($isTextNode(text));
         text.select(6, 6);
       },
       {discrete: true},
@@ -512,6 +442,7 @@ describe('full round-trip: decorator → block cursor → shadow root → block 
         const paragraph = shadow.getFirstChild()!;
         assert($isElementNode(paragraph));
         const text = paragraph.getFirstChild()!;
+        assert($isTextNode(text));
         text.select(6, 6);
       },
       {discrete: true},

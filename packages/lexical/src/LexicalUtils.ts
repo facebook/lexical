@@ -1891,6 +1891,7 @@ function createBlockCursorElement(editorConfig: EditorConfig): HTMLDivElement {
   return element;
 }
 
+// Keep in sync with $needsBlockCursorBeside in @lexical/rich-text
 function needsBlockCursor(node: null | LexicalNode): boolean {
   if (node === null || node.isInline()) {
     return false;

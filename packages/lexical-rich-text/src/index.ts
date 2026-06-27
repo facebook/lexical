@@ -641,6 +641,7 @@ const DEFAULT_ESCAPE_FORMAT_TRIGGERS: EscapeFormatTriggerConfig = {
   uppercase: {enter: true, space: true, tab: true},
 };
 
+// Keep in sync with needsBlockCursor in LexicalUtils.ts
 function $needsBlockCursorBeside(node: LexicalNode): boolean {
   if (node.isInline()) {
     return false;
@@ -672,7 +673,7 @@ function $tryEnterFromBlockCursor(
     : offset > 0
       ? parent.getChildAtIndex(offset - 1)
       : null;
-  if ($isElementNode(child) && child.isShadowRoot() && !child.isInline()) {
+  if ($isElementNode(child) && !child.isInline() && child.isShadowRoot()) {
     if (isForward) {
       child.selectStart();
     } else {
@@ -681,6 +682,16 @@ function $tryEnterFromBlockCursor(
     return true;
   }
   return false;
+}
+
+function $tryBlockCursorShadowRootNavigation(
+  selection: RangeSelection,
+  isBackward: boolean,
+): boolean {
+  return (
+    $tryExitShadowRootToBlockCursor(selection, isBackward) ||
+    $tryEnterFromBlockCursor(selection, !isBackward)
+  );
 }
 
 function $tryExitShadowRootToBlockCursor(
@@ -777,8 +788,8 @@ function $exitNodeSelectionToward(node: LexicalNode, isForward: boolean): void {
   const sibling = isForward ? node.getNextSibling() : node.getPreviousSibling();
   if (
     $isElementNode(sibling) &&
-    sibling.isShadowRoot() &&
-    !sibling.isInline()
+    !sibling.isInline() &&
+    sibling.isShadowRoot()
   ) {
     const parent = node.getParentOrThrow();
     const offset = isForward
@@ -1067,6 +1078,13 @@ export function registerRichText(
             return true;
           }
         } else if ($isRangeSelection(selection)) {
+          if (
+            !event.shiftKey &&
+            $tryBlockCursorShadowRootNavigation(selection, true)
+          ) {
+            event.preventDefault();
+            return true;
+          }
           const possibleNode = $getAdjacentNode(selection.focus, true);
           if (
             !event.shiftKey &&
@@ -1098,6 +1116,13 @@ export function registerRichText(
           }
         } else if ($isRangeSelection(selection)) {
           if ($isSelectionAtEndOfRoot(selection)) {
+            event.preventDefault();
+            return true;
+          }
+          if (
+            !event.shiftKey &&
+            $tryBlockCursorShadowRootNavigation(selection, false)
+          ) {
             event.preventDefault();
             return true;
           }
@@ -1136,14 +1161,10 @@ export function registerRichText(
         }
         if (
           !event.shiftKey &&
-          ($tryExitShadowRootToBlockCursor(
+          $tryBlockCursorShadowRootNavigation(
             selection,
             !$isParentRTL(selection.anchor.getNode()),
-          ) ||
-            $tryEnterFromBlockCursor(
-              selection,
-              $isParentRTL(selection.anchor.getNode()),
-            ))
+          )
         ) {
           event.preventDefault();
           return true;
@@ -1185,14 +1206,10 @@ export function registerRichText(
         }
         if (
           !event.shiftKey &&
-          ($tryExitShadowRootToBlockCursor(
+          $tryBlockCursorShadowRootNavigation(
             selection,
             $isParentRTL(selection.anchor.getNode()),
-          ) ||
-            $tryEnterFromBlockCursor(
-              selection,
-              !$isParentRTL(selection.anchor.getNode()),
-            ))
+          )
         ) {
           event.preventDefault();
           return true;

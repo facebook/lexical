@@ -708,16 +708,17 @@ function $tryExitShadowRootToBlockCursor(
   }
   const focusCaret = $caretFromPoint(selection.focus, direction);
   // Walk up from focus to find the nearest shadow root ancestor.
+  // Start from the focus node itself (caret.origin) since it may be a
+  // shadow root (e.g. LayoutItem with element-type selection).
   const caret = focusCaret.getSiblingCaret();
   let shadowRoot: ElementNode | null = null;
   for (
-    let parent = caret.getParentCaret();
-    parent !== null;
-    parent = parent.getParentCaret()
+    let walk = caret as typeof caret | null;
+    walk !== null;
+    walk = walk.getParentCaret()
   ) {
-    const parentNode = parent.origin;
-    if ($isElementNode(parentNode) && parentNode.isShadowRoot()) {
-      shadowRoot = parentNode;
+    if ($isElementNode(walk.origin) && walk.origin.isShadowRoot()) {
+      shadowRoot = walk.origin;
       break;
     }
   }
@@ -725,38 +726,43 @@ function $tryExitShadowRootToBlockCursor(
     return false;
   }
   // Check that the focus is at the edge of the shadow root in the given
-  // direction. Walk from the shadow root's child-caret toward the deepest
-  // first/last descendant and verify the focus sits there.
-  let edgeCaret = $getChildCaret(shadowRoot, direction);
+  // direction. If focus is the shadow root itself, check the offset directly.
+  // Otherwise walk toward the deepest first/last descendant.
   let atEdge = false;
-  while (true) {
-    const adj = edgeCaret.getAdjacentCaret();
-    if (adj === null) {
-      // Empty element — focus must be this element at offset 0 / childrenSize
-      atEdge = selection.focus.key === edgeCaret.origin.__key;
-      break;
-    }
-    if (adj.origin.__key === selection.focus.key) {
-      if ($isTextNode(adj.origin)) {
-        const edgeOffset =
-          direction === 'next' ? adj.origin.getTextContentSize() : 0;
-        atEdge = selection.focus.offset === edgeOffset;
-      } else {
-        atEdge =
-          selection.focus.offset ===
-          (direction === 'next'
-            ? $isElementNode(adj.origin)
-              ? adj.origin.getChildrenSize()
-              : 0
-            : 0);
+  if (selection.focus.key === shadowRoot.__key) {
+    atEdge =
+      selection.focus.offset ===
+      (direction === 'next' ? shadowRoot.getChildrenSize() : 0);
+  } else {
+    let edgeCaret = $getChildCaret(shadowRoot, direction);
+    while (true) {
+      const adj = edgeCaret.getAdjacentCaret();
+      if (adj === null) {
+        atEdge = selection.focus.key === edgeCaret.origin.__key;
+        break;
       }
-      break;
+      if (adj.origin.__key === selection.focus.key) {
+        if ($isTextNode(adj.origin)) {
+          const edgeOffset =
+            direction === 'next' ? adj.origin.getTextContentSize() : 0;
+          atEdge = selection.focus.offset === edgeOffset;
+        } else {
+          atEdge =
+            selection.focus.offset ===
+            (direction === 'next'
+              ? $isElementNode(adj.origin)
+                ? adj.origin.getChildrenSize()
+                : 0
+              : 0);
+        }
+        break;
+      }
+      const childCaret = adj.getChildCaret();
+      if (childCaret === null) {
+        break;
+      }
+      edgeCaret = childCaret;
     }
-    const childCaret = adj.getChildCaret();
-    if (childCaret === null) {
-      break;
-    }
-    edgeCaret = childCaret;
   }
   if (!atEdge) {
     return false;

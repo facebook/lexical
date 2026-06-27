@@ -148,6 +148,58 @@ describe('$tryEnterFromBlockCursor — block cursor → enter shadow root (#8736
     });
   });
 
+  test('ArrowDown from block cursor before shadow root enters at selectStart', () => {
+    using editor = createDecoratorShadowRootEditor();
+
+    editor.update(
+      () => {
+        $getRoot().select(1, 1);
+      },
+      {discrete: true},
+    );
+
+    editor.dispatchCommand(KEY_ARROW_DOWN_COMMAND, makeArrowEvent('ArrowDown'));
+
+    editor.read(() => {
+      const s = $getSelection();
+      assert($isRangeSelection(s));
+      expect(s.isCollapsed()).toBe(true);
+      const shadow = $getRoot().getChildAtIndex(1)!;
+      assert($isElementNode(shadow));
+      const paragraph = shadow.getFirstChild()!;
+      assert($isElementNode(paragraph));
+      const text = paragraph.getFirstChild()!;
+      expect(s.anchor.key).toBe(text.getKey());
+      expect(s.anchor.offset).toBe(0);
+    });
+  });
+
+  test('ArrowUp from block cursor after shadow root enters at selectEnd', () => {
+    using editor = createDecoratorShadowRootEditor();
+
+    editor.update(
+      () => {
+        $getRoot().select(2, 2);
+      },
+      {discrete: true},
+    );
+
+    editor.dispatchCommand(KEY_ARROW_UP_COMMAND, makeArrowEvent('ArrowUp'));
+
+    editor.read(() => {
+      const s = $getSelection();
+      assert($isRangeSelection(s));
+      expect(s.isCollapsed()).toBe(true);
+      const shadow = $getRoot().getChildAtIndex(1)!;
+      assert($isElementNode(shadow));
+      const paragraph = shadow.getFirstChild()!;
+      assert($isElementNode(paragraph));
+      const text = paragraph.getFirstChild()!;
+      expect(s.anchor.key).toBe(text.getKey());
+      expect(s.anchor.offset).toBe(6); // "inside".length
+    });
+  });
+
   test('ArrowLeft from block cursor after shadow root enters at selectEnd', () => {
     using editor = createDecoratorShadowRootEditor();
 
@@ -201,6 +253,60 @@ describe('$tryExitShadowRootToBlockCursor — shadow root → block cursor (#873
       expect(s.anchor.type).toBe('element');
       expect(s.anchor.key).toBe($getRoot().getKey());
       expect(s.anchor.offset).toBe(1);
+    });
+  });
+
+  test('ArrowUp at start of shadow root exits to block cursor before it', () => {
+    using editor = createDecoratorShadowRootEditor();
+
+    editor.update(
+      () => {
+        const shadow = $getRoot().getChildAtIndex(1)!;
+        assert($isElementNode(shadow));
+        const paragraph = shadow.getFirstChild()!;
+        assert($isElementNode(paragraph));
+        paragraph.select(0, 0);
+      },
+      {discrete: true},
+    );
+
+    editor.dispatchCommand(KEY_ARROW_UP_COMMAND, makeArrowEvent('ArrowUp'));
+
+    editor.read(() => {
+      const s = $getSelection();
+      assert($isRangeSelection(s));
+      expect(s.isCollapsed()).toBe(true);
+      expect(s.anchor.type).toBe('element');
+      expect(s.anchor.key).toBe($getRoot().getKey());
+      expect(s.anchor.offset).toBe(1);
+    });
+  });
+
+  test('ArrowDown at end of shadow root exits to block cursor after it', () => {
+    using editor = createDecoratorShadowRootEditor();
+
+    editor.update(
+      () => {
+        const shadow = $getRoot().getChildAtIndex(1)!;
+        assert($isElementNode(shadow));
+        const paragraph = shadow.getFirstChild()!;
+        assert($isElementNode(paragraph));
+        const text = paragraph.getFirstChild()!;
+        assert($isTextNode(text));
+        text.select(6, 6);
+      },
+      {discrete: true},
+    );
+
+    editor.dispatchCommand(KEY_ARROW_DOWN_COMMAND, makeArrowEvent('ArrowDown'));
+
+    editor.read(() => {
+      const s = $getSelection();
+      assert($isRangeSelection(s));
+      expect(s.isCollapsed()).toBe(true);
+      expect(s.anchor.type).toBe('element');
+      expect(s.anchor.key).toBe($getRoot().getKey());
+      expect(s.anchor.offset).toBe(2);
     });
   });
 

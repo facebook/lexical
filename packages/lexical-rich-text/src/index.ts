@@ -641,6 +641,157 @@ const DEFAULT_ESCAPE_FORMAT_TRIGGERS: EscapeFormatTriggerConfig = {
   uppercase: {enter: true, space: true, tab: true},
 };
 
+function $needsBlockCursorBeside(node: LexicalNode): boolean {
+  if (node.isInline()) {
+    return false;
+  }
+  if ($isDecoratorNode(node)) {
+    return true;
+  }
+  if ($isElementNode(node)) {
+    if (node.isShadowRoot()) {
+      const parent = node.getParent();
+      return !($isElementNode(parent) && parent.isShadowRoot());
+    }
+    return !node.canBeEmpty();
+  }
+  return false;
+}
+
+function $tryEnterFromBlockCursor(
+  selection: RangeSelection,
+  isForward: boolean,
+): boolean {
+  if (!selection.isCollapsed() || selection.anchor.type !== 'element') {
+    return false;
+  }
+  const parent = selection.anchor.getNode();
+  const offset = selection.anchor.offset;
+  const child = isForward
+    ? parent.getChildAtIndex(offset)
+    : offset > 0
+      ? parent.getChildAtIndex(offset - 1)
+      : null;
+  if ($isElementNode(child) && child.isShadowRoot() && !child.isInline()) {
+    if (isForward) {
+      child.selectStart();
+    } else {
+      child.selectEnd();
+    }
+    return true;
+  }
+  return false;
+}
+
+function $tryExitShadowRootToBlockCursor(
+  selection: RangeSelection,
+  isBackward: boolean,
+): boolean {
+  if (!selection.isCollapsed()) {
+    return false;
+  }
+  const focus = selection.focus;
+  const focusNode = focus.getNode();
+  let shadowRoot: ElementNode | null = null;
+  let current: LexicalNode | null = $isElementNode(focusNode)
+    ? focusNode
+    : focusNode.getParent();
+  while (current !== null) {
+    if ($isElementNode(current) && current.isShadowRoot()) {
+      shadowRoot = current;
+      break;
+    }
+    current = current.getParent();
+  }
+  if (shadowRoot === null) {
+    return false;
+  }
+  if (isBackward) {
+    if (focus.offset !== 0) {
+      return false;
+    }
+    let walk: LexicalNode | null = shadowRoot;
+    let atEdge = false;
+    while (walk !== null) {
+      if (focus.key === walk.__key) {
+        atEdge = true;
+        break;
+      }
+      walk = $isElementNode(walk) ? walk.getFirstChild() : null;
+    }
+    if (!atEdge) {
+      return false;
+    }
+  } else {
+    let walk: LexicalNode | null = shadowRoot;
+    let atEdge = false;
+    while (walk !== null) {
+      if (focus.key === walk.__key) {
+        if ($isTextNode(walk)) {
+          atEdge = focus.offset === walk.getTextContentSize();
+        } else if ($isElementNode(walk)) {
+          atEdge = focus.offset === walk.getChildrenSize();
+        }
+        break;
+      }
+      walk = $isElementNode(walk) ? walk.getLastChild() : null;
+    }
+    if (!atEdge) {
+      return false;
+    }
+  }
+  let sr: ElementNode | null = shadowRoot;
+  while (sr !== null) {
+    const sibling = isBackward ? sr.getPreviousSibling() : sr.getNextSibling();
+    if (sibling !== null) {
+      if (!$needsBlockCursorBeside(sibling)) {
+        return false;
+      }
+      const parent = sr.getParentOrThrow();
+      const offset = isBackward
+        ? sr.getIndexWithinParent()
+        : sr.getIndexWithinParent() + 1;
+      parent.select(offset, offset);
+      return true;
+    }
+    const parentNode: ElementNode | null = sr.getParent();
+    if (
+      parentNode !== null &&
+      $isElementNode(parentNode) &&
+      parentNode.isShadowRoot()
+    ) {
+      const atEdge = isBackward
+        ? parentNode.getFirstChild() === sr
+        : parentNode.getLastChild() === sr;
+      if (atEdge) {
+        sr = parentNode;
+        continue;
+      }
+    }
+    return false;
+  }
+  return false;
+}
+
+function $exitNodeSelectionToward(node: LexicalNode, isForward: boolean): void {
+  const sibling = isForward ? node.getNextSibling() : node.getPreviousSibling();
+  if (
+    $isElementNode(sibling) &&
+    sibling.isShadowRoot() &&
+    !sibling.isInline()
+  ) {
+    const parent = node.getParentOrThrow();
+    const offset = isForward
+      ? sibling.getIndexWithinParent()
+      : node.getIndexWithinParent();
+    parent.select(offset, offset);
+  } else if (isForward) {
+    node.selectNext(0, 0);
+  } else {
+    node.selectPrevious();
+  }
+}
+
 /**
  * Collapse a NodeSelection to a caret at the surrounding block's edge for
  * MOVE_TO_START / MOVE_TO_END. Picks the document-order first node for
@@ -912,7 +1063,7 @@ export function registerRichText(
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
             event.preventDefault();
-            nodes[0].selectPrevious();
+            $exitNodeSelectionToward(nodes[0], false);
             return true;
           }
         } else if ($isRangeSelection(selection)) {
@@ -942,7 +1093,7 @@ export function registerRichText(
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
             event.preventDefault();
-            nodes[0].selectNext(0, 0);
+            $exitNodeSelectionToward(nodes[0], true);
             return true;
           }
         } else if ($isRangeSelection(selection)) {
@@ -976,16 +1127,26 @@ export function registerRichText(
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
             event.preventDefault();
-            if ($isParentRTL(nodes[0])) {
-              nodes[0].selectNext(0, 0);
-            } else {
-              nodes[0].selectPrevious();
-            }
+            $exitNodeSelectionToward(nodes[0], $isParentRTL(nodes[0]));
             return true;
           }
         }
         if (!$isRangeSelection(selection)) {
           return false;
+        }
+        if (
+          !event.shiftKey &&
+          ($tryExitShadowRootToBlockCursor(
+            selection,
+            !$isParentRTL(selection.anchor.getNode()),
+          ) ||
+            $tryEnterFromBlockCursor(
+              selection,
+              $isParentRTL(selection.anchor.getNode()),
+            ))
+        ) {
+          event.preventDefault();
+          return true;
         }
         if (!event.shiftKey) {
           $escapeFormatsForTrigger(
@@ -1015,16 +1176,26 @@ export function registerRichText(
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
             event.preventDefault();
-            if ($isParentRTL(nodes[0])) {
-              nodes[0].selectPrevious();
-            } else {
-              nodes[0].selectNext(0, 0);
-            }
+            $exitNodeSelectionToward(nodes[0], !$isParentRTL(nodes[0]));
             return true;
           }
         }
         if (!$isRangeSelection(selection)) {
           return false;
+        }
+        if (
+          !event.shiftKey &&
+          ($tryExitShadowRootToBlockCursor(
+            selection,
+            $isParentRTL(selection.anchor.getNode()),
+          ) ||
+            $tryEnterFromBlockCursor(
+              selection,
+              !$isParentRTL(selection.anchor.getNode()),
+            ))
+        ) {
+          event.preventDefault();
+          return true;
         }
         if (!event.shiftKey) {
           $escapeFormatsForTrigger(

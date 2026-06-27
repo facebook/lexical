@@ -1892,10 +1892,20 @@ function createBlockCursorElement(editorConfig: EditorConfig): HTMLDivElement {
 }
 
 function needsBlockCursor(node: null | LexicalNode): boolean {
-  return (
-    ($isDecoratorNode(node) || ($isElementNode(node) && !node.canBeEmpty())) &&
-    !node.isInline()
-  );
+  if (node === null || node.isInline()) {
+    return false;
+  }
+  if ($isDecoratorNode(node)) {
+    return true;
+  }
+  if ($isElementNode(node)) {
+    if (node.isShadowRoot()) {
+      const parent = node.getParent();
+      return !($isElementNode(parent) && parent.isShadowRoot());
+    }
+    return !node.canBeEmpty();
+  }
+  return false;
 }
 
 export function removeDOMBlockCursorElement(

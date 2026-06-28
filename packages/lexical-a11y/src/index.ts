@@ -138,6 +138,21 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
   );
 }
 
+function containsComposed(container: Node, target: Node): boolean {
+  let current: Node | null = target;
+  while (current !== null) {
+    if (current === container) {
+      return true;
+    }
+    if (current instanceof ShadowRoot) {
+      current = current.host;
+    } else {
+      current = current.parentNode;
+    }
+  }
+  return false;
+}
+
 export type FocusTrapInitialFocus = 'firstFocusable' | 'container';
 
 export interface FocusTrapOptions {
@@ -220,7 +235,7 @@ function registerFocusTrap(
     const last = currentFocusable[currentFocusable.length - 1];
     const active = getActiveElementDeep(doc);
     const activeIndex =
-      isHTMLElement(active) && container.contains(active)
+      isHTMLElement(active) && containsComposed(container, active)
         ? currentFocusable.indexOf(active)
         : -1;
     if (event.shiftKey) {
@@ -238,7 +253,7 @@ function registerFocusTrap(
   // Safari), pull it back to the first focusable inside.
   const focusinHandler = (event: FocusEvent) => {
     const target = getComposedEventTarget(event);
-    if (!isHTMLElement(target) || container.contains(target)) {
+    if (!isHTMLElement(target) || containsComposed(container, target)) {
       return;
     }
     if (options.allowOutside != null && options.allowOutside(target)) {
@@ -261,7 +276,7 @@ function registerFocusTrap(
     if (
       previouslyFocused !== null &&
       typeof previouslyFocused.focus === 'function' &&
-      doc.contains(previouslyFocused)
+      containsComposed(doc, previouslyFocused)
     ) {
       previouslyFocused.focus();
     }
@@ -451,7 +466,7 @@ function registerFocusManager(
       const items = toolbar.querySelectorAll<HTMLElement>(selector);
       let isRovingItem = false;
       for (const item of items) {
-        if (item === target || item.contains(target)) {
+        if (item === target || containsComposed(item, target)) {
           isRovingItem = true;
           break;
         }

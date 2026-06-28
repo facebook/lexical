@@ -55,10 +55,12 @@ import {
   $createParagraphNode,
   $createRangeSelection,
   $createTabNode,
+  $extendCaretToRange,
   $findMatchingParent,
   $getAdjacentNode,
+  $getCaretRange,
   $getChildCaret,
-  $getChildCaretAtIndex,
+  $getCollapsedCaretRange,
   $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
@@ -71,13 +73,17 @@ import {
   $isRangeSelection,
   $isRootNode,
   $isSelectionCapturedInDecoratorInput,
+  $isShadowRootNode,
+  $isSiblingCaret,
   $isTextNode,
+  $needsBlockCursorBeside,
+  $normalizeCaret,
   $normalizeSelection__EXPERIMENTAL,
   $selectAll,
   $setDirectionFromDOM,
   $setFormatFromDOM,
-  $setPointFromCaret,
   $setSelection,
+  $setSelectionFromCaretRange,
   addClassNamesToElement,
   CAN_USE_BEFORE_INPUT,
   CLICK_COMMAND,
@@ -646,24 +652,6 @@ const DEFAULT_ESCAPE_FORMAT_TRIGGERS: EscapeFormatTriggerConfig = {
   uppercase: {enter: true, space: true, tab: true},
 };
 
-// Keep in sync with needsBlockCursor in LexicalUtils.ts
-function $needsBlockCursorBeside(node: LexicalNode): boolean {
-  if (node.isInline()) {
-    return false;
-  }
-  if ($isDecoratorNode(node)) {
-    return true;
-  }
-  if ($isElementNode(node)) {
-    if (node.isShadowRoot()) {
-      const parent = node.getParent();
-      return !($isElementNode(parent) && parent.isShadowRoot());
-    }
-    return !node.canBeEmpty();
-  }
-  return false;
-}
-
 function $tryEnterFromBlockCursor(
   selection: RangeSelection,
   direction: CaretDirection,
@@ -671,19 +659,14 @@ function $tryEnterFromBlockCursor(
   if (!selection.isCollapsed() || selection.anchor.type !== 'element') {
     return false;
   }
-  const parent = selection.anchor.getNode();
-  const caret = $getChildCaretAtIndex(
-    parent,
-    selection.anchor.offset,
-    direction,
-  );
+  const caret = $caretFromPoint(selection.anchor, direction);
   const child = caret.getNodeAtCaret();
-  if ($isElementNode(child) && !child.isInline() && child.isShadowRoot()) {
-    if (direction === 'next') {
-      child.selectStart();
-    } else {
-      child.selectEnd();
-    }
+  if ($isShadowRootNode(child) && !child.isInline()) {
+    $setSelectionFromCaretRange(
+      $getCollapsedCaretRange(
+        $normalizeCaret($getChildCaret(child, direction)),
+      ),
+    );
     return true;
   }
   return false;
@@ -708,88 +691,63 @@ function $tryExitShadowRootToBlockCursor(
   }
   const focusCaret = $caretFromPoint(selection.focus, direction);
   // Walk up from focus to find the nearest shadow root ancestor.
-  // Start from the focus node itself (caret.origin) since it may be a
+  // Start from the focus node itself since it may be a
   // shadow root (e.g. LayoutItem with element-type selection).
-  const caret = focusCaret.getSiblingCaret();
-  let shadowRoot: ElementNode | null = null;
-  for (
-    let walk = caret as typeof caret | null;
-    walk !== null;
-    walk = walk.getParentCaret()
-  ) {
-    if ($isElementNode(walk.origin) && walk.origin.isShadowRoot()) {
-      shadowRoot = walk.origin;
-      break;
-    }
-  }
-  if (shadowRoot === null) {
+  const shadowRoot = $findMatchingParent(focusCaret.origin, $isShadowRootNode);
+  if (!shadowRoot) {
     return false;
   }
   // Check that the focus is at the edge of the shadow root in the given
   // direction. If focus is the shadow root itself, check the offset directly.
   // Otherwise walk toward the deepest first/last descendant.
-  let atEdge = false;
-  if (selection.focus.key === shadowRoot.__key) {
-    atEdge =
-      selection.focus.offset ===
-      (direction === 'next' ? shadowRoot.getChildrenSize() : 0);
-  } else {
-    let edgeCaret = $getChildCaret(shadowRoot, direction);
-    while (true) {
-      const adj = edgeCaret.getAdjacentCaret();
-      if (adj === null) {
-        atEdge = selection.focus.key === edgeCaret.origin.__key;
-        break;
-      }
-      if (adj.origin.__key === selection.focus.key) {
-        if ($isTextNode(adj.origin)) {
-          const edgeOffset =
-            direction === 'next' ? adj.origin.getTextContentSize() : 0;
-          atEdge = selection.focus.offset === edgeOffset;
-        } else {
-          atEdge =
-            selection.focus.offset ===
-            (direction === 'next'
-              ? $isElementNode(adj.origin)
-                ? adj.origin.getChildrenSize()
-                : 0
-              : 0);
-        }
-        break;
-      }
-      const childCaret = adj.getChildCaret();
-      if (childCaret === null) {
-        break;
-      }
-      edgeCaret = childCaret;
-    }
-  }
-  if (!atEdge) {
+  const textRange = $getCaretRange(
+    focusCaret,
+    $getSiblingCaret(shadowRoot, direction),
+  );
+  // If there's text we're not at the edge
+  if (
+    textRange
+      .getTextSlices()
+      .some(slice => slice && slice.getTextContentSize() > 0)
+  ) {
     return false;
+  }
+  // Normalize the anchor in case it started with a ChildCaret
+  const range = $getCaretRange(
+    textRange.anchor.getSiblingCaret(),
+    textRange.focus,
+  );
+  // When traversing from the edge to the root we expect to see only parent nodes
+  // as sibling carets
+  let prevOrigin = range.anchor.origin;
+  for (const caret of range) {
+    if (!($isSiblingCaret(caret) && caret.origin.is(prevOrigin.getParent()))) {
+      return false;
+    }
+    prevOrigin = caret.origin;
   }
   // Walk outward from the shadow root through nested shadow roots until
   // we find a sibling that needs a block cursor beside it.
-  let sr = $getSiblingCaret(shadowRoot, direction);
-  while (sr !== null) {
-    const sibling = sr.getAdjacentCaret();
-    if (sibling !== null) {
-      if (!$needsBlockCursorBeside(sibling.origin)) {
-        return false;
+  let prevShadow = shadowRoot;
+  for (const caret of $extendCaretToRange(
+    $getSiblingCaret(shadowRoot, direction),
+  )) {
+    // A caret whose origin is the parent of the current level is the "leave"
+    // step walking outward; only keep going while those parents are shadow
+    // roots. Any other origin is the adjacent sibling at this level.
+    if (caret.origin.is(prevShadow.getParent())) {
+      if (!$isShadowRootNode(caret.origin)) {
+        break;
       }
-      $setPointFromCaret(selection.anchor, sr);
-      $setPointFromCaret(selection.focus, sr);
-      return true;
-    }
-    const parentCaret = sr.getParentCaret();
-    if (
-      parentCaret !== null &&
-      $isElementNode(parentCaret.origin) &&
-      parentCaret.origin.isShadowRoot()
-    ) {
-      sr = parentCaret;
+      prevShadow = caret.origin;
       continue;
     }
-    return false;
+    if ($needsBlockCursorBeside(caret.origin)) {
+      const sr = $getSiblingCaret(prevShadow, direction);
+      $setSelectionFromCaretRange($getCaretRange(sr, sr));
+      return true;
+    }
+    break;
   }
   return false;
 }
@@ -806,12 +764,7 @@ function $exitNodeSelectionToward(
     !sibling.origin.isInline() &&
     sibling.origin.isShadowRoot()
   ) {
-    const parent = node.getParentOrThrow();
-    const offset =
-      direction === 'next'
-        ? sibling.origin.getIndexWithinParent()
-        : node.getIndexWithinParent();
-    parent.select(offset, offset);
+    $setSelectionFromCaretRange($getCollapsedCaretRange(caret));
   } else if (direction === 'next') {
     node.selectNext(0, 0);
   } else {

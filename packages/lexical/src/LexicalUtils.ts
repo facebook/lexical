@@ -1897,9 +1897,15 @@ function createBlockCursorElement(editorConfig: EditorConfig): HTMLDivElement {
   return element;
 }
 
-// Keep in sync with $needsBlockCursorBeside in @lexical/rich-text
-function needsBlockCursor(node: null | LexicalNode): boolean {
-  if (node === null || node.isInline()) {
+/**
+ * Returns true if the given node needs a block cursor given an adjacent selection,
+ * the node must be non-inline and one of:
+ * - DecoratorNode
+ * - ShadowRootNode with a parent that is not also a ShadowRootNode
+ * - An ElementNode that can't be empty
+ */
+export function $needsBlockCursorBeside(node: null | LexicalNode): boolean {
+  if (!node || node.isInline()) {
     return false;
   }
   if ($isDecoratorNode(node)) {
@@ -1952,14 +1958,14 @@ export function $updateDOMBlockCursorElement(
 
     if (offset === elementNodeSize) {
       const child = elementNode.getChildAtIndex(offset - 1);
-      if (needsBlockCursor(child)) {
+      if ($needsBlockCursorBeside(child)) {
         isBlockCursor = true;
       }
     } else {
       const child = elementNode.getChildAtIndex(offset);
-      if (child !== null && needsBlockCursor(child)) {
+      if (child !== null && $needsBlockCursorBeside(child)) {
         const sibling = child.getPreviousSibling();
-        if (sibling === null || needsBlockCursor(sibling)) {
+        if (sibling === null || $needsBlockCursorBeside(sibling)) {
           isBlockCursor = true;
           insertBeforeElement = editor.getElementByKey(child.__key);
         }

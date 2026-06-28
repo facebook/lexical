@@ -314,6 +314,7 @@ export {
   $isTokenOrSegmented,
   $isTokenOrTab,
   $markSlotEditable,
+  $needsBlockCursorBeside,
   $nodesOfType,
   $onUpdate,
   $removeFromParent,

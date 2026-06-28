@@ -23,7 +23,7 @@ jobs:
       E2E_PORT: 4000
       test_results_path: 'test-results/'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-pnpm
         with:
           node-version: ${{ inputs.node-version }}

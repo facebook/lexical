@@ -224,6 +224,7 @@ let isSelectionChangeFromMouseDown = false;
 let isInsertLineBreak = false;
 let isFirefoxEndingComposition = false;
 let isSafariEndingComposition = false;
+let hadOrphanedCompositionEvents = false;
 let safariEndCompositionEventData = '';
 let postDeleteSelectionToRestore: RangeSelection | null = null;
 let collapsedSelectionFormat: [number, string, number, NodeKey, number] = [
@@ -1029,9 +1030,12 @@ function $handleBeforeInput(event: InputEvent): boolean {
     }
 
     case 'insertFromComposition': {
-      // This is the end of composition
+      const skipRedundantInsert = hadOrphanedCompositionEvents;
+      hadOrphanedCompositionEvents = false;
       $setCompositionKey(null);
-      dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, event);
+      if (!skipRedundantInsert) {
+        dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, event);
+      }
       break;
     }
 
@@ -1194,7 +1198,23 @@ function $handleInput(event: InputEvent): boolean {
         ? getDOMSelectionPoints(domSelection, editor._rootElement)
         : null;
 
+    // formatText() (e.g. Bold during composition) clears compositionKey,
+    // but the browser still sends insertCompositionText with the
+    // committed text. The browser has already updated the DOM, so we
+    // must not re-insert via CONTROLLED_TEXT_INSERTION_COMMAND — let
+    // $updateSelectedTextFromDOM sync from the DOM instead. Not gated
+    // on IS_IOS because the formatText → $setCompositionKey(null) path
+    // is platform-independent.
+    const isOrphanedCompositionEnd =
+      event.inputType === 'insertCompositionText' &&
+      !isFirefoxEndingComposition &&
+      !editor.isComposing();
+    if (isOrphanedCompositionEnd) {
+      hadOrphanedCompositionEvents = true;
+    }
+
     if (
+      !isOrphanedCompositionEnd &&
       $shouldPreventDefaultAndInsertText(
         selection,
         targetRange,
@@ -1297,6 +1317,7 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
   const selection = $getSelection();
 
   if ($isRangeSelection(selection) && !editor.isComposing()) {
+    hadOrphanedCompositionEvents = false;
     const anchor = selection.anchor;
     const node = selection.anchor.getNode();
     $setCompositionKey(anchor.key);

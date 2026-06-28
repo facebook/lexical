@@ -99,7 +99,6 @@ import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {PollExtension} from './plugins/PollExtension';
 import {PullQuoteExtension} from './plugins/PullQuoteExtension';
 import {ReactReviewExtension} from './plugins/ReviewExtension';
-import {RubyExtension} from './plugins/RubyExtension';
 import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import {TabFocusExtension} from './plugins/TabFocusExtension';
 import {TerseExportExtension} from './plugins/TerseExportExtension';
@@ -265,7 +264,6 @@ const AppExtension = /* @__PURE__ */ defineExtension({
     DragDropPasteExtension,
     EmojisExtension,
     MentionsExtension,
-    RubyExtension,
     /* @__PURE__ */ configExtension(LinkExtension, {validateUrl}),
     PlaygroundAutoLinkExtension,
     ClickableLinkExtension,

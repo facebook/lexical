@@ -42,7 +42,7 @@ import {
   SerializedParagraphNode,
   TextNode,
 } from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {$assertNodeType, initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, it, test} from 'vitest';
 
 const editorConfig = Object.freeze({
@@ -491,7 +491,10 @@ describe('LexicalLinkNode tests', () => {
       });
 
       editor.read(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         const [textNode, linkNode] = paragraph.getChildren();
 
         // Check first text node
@@ -520,7 +523,10 @@ describe('LexicalLinkNode tests', () => {
 
       // Verify structure after link removal
       editor.read(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         const [textNode, markNode] = paragraph.getChildren();
 
         // Check text node remains unchanged
@@ -553,7 +559,10 @@ describe('LexicalLinkNode tests', () => {
 
       // Verify initial structure: paragraph > link > heading > text
       editor.read(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         const linkNode = paragraph.getFirstChild();
 
         expect($isLinkNode(linkNode)).toBe(true);
@@ -573,7 +582,10 @@ describe('LexicalLinkNode tests', () => {
 
       // Verify structure after link removal: paragraph > heading > text
       editor.read(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         const children = paragraph.getChildren();
 
         // Link should be removed, heading should be moved up to paragraph level
@@ -602,7 +614,10 @@ describe('LexicalLinkNode tests', () => {
       });
 
       editor.read(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         const [precedingText, linkNode] = paragraph.getChildren();
 
         // Check first text node
@@ -634,7 +649,10 @@ describe('LexicalLinkNode tests', () => {
 
       // Verify structure after link removal
       editor.read(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         const children = paragraph.getChildren();
         expect(children.map(node => node.getTextContent())).toEqual([
           'some text',
@@ -663,7 +681,10 @@ describe('LexicalLinkNode tests', () => {
 
       // Verify initial structure
       editor.read(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         const linkNode = paragraph.getFirstChild();
         expect($isLinkNode(linkNode)).toBe(true);
         if ($isLinkNode(linkNode)) {
@@ -682,7 +703,10 @@ describe('LexicalLinkNode tests', () => {
 
       // Verify that the link was removed only from the space
       editor.read(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         const children = paragraph.getChildren();
 
         // Should have two children: linkNode with 'hello' and a text node with ' '
@@ -722,7 +746,10 @@ describe('LexicalLinkNode tests', () => {
 
       // Verify initial structure
       editor.read(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         const linkNode = paragraph.getFirstChild();
         expect($isLinkNode(linkNode)).toBe(true);
         if ($isLinkNode(linkNode)) {
@@ -741,7 +768,10 @@ describe('LexicalLinkNode tests', () => {
 
       // Verify that the link was removed only from the space
       editor.read(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         const children = paragraph.getChildren();
 
         // Should have two children: a text node with ' ' and linkNode with 'hello'
@@ -781,7 +811,10 @@ describe('LexicalLinkNode tests', () => {
 
       // Verify initial structure
       editor.read(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         const linkNode = paragraph.getFirstChild();
         expect($isLinkNode(linkNode)).toBe(true);
         if ($isLinkNode(linkNode)) {
@@ -800,7 +833,10 @@ describe('LexicalLinkNode tests', () => {
 
       // Verify that the link was removed only from 'hello'
       editor.read(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         const children = paragraph.getChildren();
 
         // Should have three children: link with ' ', text with 'hello', link with ' '

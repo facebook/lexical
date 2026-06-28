@@ -6,39 +6,29 @@
  *
  */
 
-import {
-  type AriaLiveRegionHandle,
-  type AriaLiveRegionOptions,
-  registerAriaLiveRegion,
-} from '@lexical/a11y';
-import {useCallback, useEffect, useRef} from 'react';
+import {AriaLiveRegionExtension} from '@lexical/a11y';
+import {getExtensionDependencyFromEditor} from '@lexical/extension';
+import {useCallback} from 'react';
+
+import {useLexicalComposerContext} from './LexicalComposerContext';
 
 export type {AriaLiveRegionOptions, AriaPoliteness} from '@lexical/a11y';
 
 /**
- * React wrapper around `registerAriaLiveRegion` from `@lexical/a11y`.
- *
- * Mounts a visually hidden `aria-live` region on first render, removes it
- * on unmount, and returns an `announce` function that writes a message
- * into it. The returned function is stable across renders.
+ * Returns a stable `announce` function backed by the editor's
+ * {@link AriaLiveRegionExtension} output. Requires
+ * `AriaLiveRegionExtension` in the editor's extension tree.
  */
-export function useLexicalAriaLiveRegion(
-  options: AriaLiveRegionOptions = {},
-): (message: string) => void {
-  const handleRef = useRef<AriaLiveRegionHandle | null>(null);
-  const {politeness, owner} = options;
-  useEffect(() => {
-    const handle = registerAriaLiveRegion({owner, politeness});
-    handleRef.current = handle;
-    return () => {
-      handle.dispose();
-      handleRef.current = null;
-    };
-  }, [politeness, owner]);
-  return useCallback((message: string) => {
-    const handle = handleRef.current;
-    if (handle !== null) {
-      handle.announce(message);
-    }
-  }, []);
+export function useLexicalAriaLiveRegion(): (message: string) => void {
+  const [editor] = useLexicalComposerContext();
+  return useCallback(
+    (message: string) => {
+      const dep = getExtensionDependencyFromEditor(
+        editor,
+        AriaLiveRegionExtension,
+      );
+      dep.output.current.announce(message);
+    },
+    [editor],
+  );
 }

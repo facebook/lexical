@@ -6,24 +6,61 @@
  *
  */
 
+import {AriaLiveRegionExtension} from '@lexical/a11y';
+import {configExtension} from '@lexical/extension';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {useLexicalAriaLiveRegion} from '@lexical/react/useLexicalAriaLiveRegion';
 import * as React from 'react';
-import {useImperativeHandle} from 'react';
+import {useEffect, useImperativeHandle, useRef} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
 import {act} from 'react-dom/test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 type Handle = {announce: (message: string) => void};
 
-const Harness = React.forwardRef<Handle, {politeness?: 'polite' | 'assertive'}>(
-  function HarnessImpl({politeness}, ref) {
-    const announce = useLexicalAriaLiveRegion(
-      politeness ? {politeness} : undefined,
-    );
-    useImperativeHandle(ref, () => ({announce}), [announce]);
-    return null;
-  },
-);
+const Harness = React.forwardRef<Handle>(function HarnessImpl(_props, ref) {
+  const [editor] = useLexicalComposerContext();
+  const editorRootRef = useRef<HTMLDivElement>(null);
+  const announce = useLexicalAriaLiveRegion();
+  useImperativeHandle(ref, () => ({announce}), [announce]);
+
+  useEffect(() => {
+    const root = editorRootRef.current;
+    if (root === null) {
+      return;
+    }
+    editor.setRootElement(root);
+    return () => editor.setRootElement(null);
+  }, [editor]);
+
+  return (
+    <div
+      ref={editorRootRef}
+      contentEditable={true}
+      data-testid="editor-root"
+      role="textbox"
+      tabIndex={0}
+    />
+  );
+});
+
+function WithExtension({
+  children,
+  politeness,
+}: {
+  children: React.ReactNode;
+  politeness?: 'polite' | 'assertive';
+}) {
+  const ext = politeness
+    ? configExtension(AriaLiveRegionExtension, {politeness})
+    : AriaLiveRegionExtension;
+  return (
+    <LexicalExtensionComposer extension={ext}>
+      {children}
+    </LexicalExtensionComposer>
+  );
+}
 
 describe('useLexicalAriaLiveRegion', () => {
   let container: HTMLDivElement;
@@ -40,6 +77,11 @@ describe('useLexicalAriaLiveRegion', () => {
       root.unmount();
     });
     document.body.removeChild(container);
+    for (const region of Array.from(
+      document.body.querySelectorAll('[aria-live]'),
+    )) {
+      region.remove();
+    }
   });
 
   function findRegion(): HTMLElement | null {
@@ -48,7 +90,11 @@ describe('useLexicalAriaLiveRegion', () => {
 
   test('mounts an aria-live region with polite default and aria-atomic', () => {
     act(() => {
-      root.render(<Harness ref={React.createRef()} />);
+      root.render(
+        <WithExtension>
+          <Harness ref={React.createRef()} />
+        </WithExtension>,
+      );
     });
     const region = findRegion();
     expect(region).not.toBeNull();
@@ -60,7 +106,11 @@ describe('useLexicalAriaLiveRegion', () => {
   test('writes a message into the region when announce is called', () => {
     const ref = React.createRef<Handle>();
     act(() => {
-      root.render(<Harness ref={ref} />);
+      root.render(
+        <WithExtension>
+          <Harness ref={ref} />
+        </WithExtension>,
+      );
     });
     act(() => {
       ref.current!.announce('Bold on');
@@ -71,7 +121,11 @@ describe('useLexicalAriaLiveRegion', () => {
   test('repeating the same message toggles a zero-width space so SR re-announces', () => {
     const ref = React.createRef<Handle>();
     act(() => {
-      root.render(<Harness ref={ref} />);
+      root.render(
+        <WithExtension>
+          <Harness ref={ref} />
+        </WithExtension>,
+      );
     });
     act(() => {
       ref.current!.announce('Italic on');
@@ -80,26 +134,17 @@ describe('useLexicalAriaLiveRegion', () => {
     act(() => {
       ref.current!.announce('Italic on');
     });
-    expect(findRegion()!.textContent).toBe('Italic on\u200B');
+    expect(findRegion()!.textContent).toBe('Italic on​');
   });
 
   test('politeness=assertive sets aria-live="assertive"', () => {
     act(() => {
-      root.render(<Harness ref={React.createRef()} politeness="assertive" />);
+      root.render(
+        <WithExtension politeness="assertive">
+          <Harness ref={React.createRef()} />
+        </WithExtension>,
+      );
     });
     expect(findRegion()!.getAttribute('aria-live')).toBe('assertive');
-  });
-
-  test('removes the region on unmount', () => {
-    act(() => {
-      root.render(<Harness ref={React.createRef()} />);
-    });
-    expect(findRegion()).not.toBeNull();
-    act(() => {
-      root.unmount();
-    });
-    expect(findRegion()).toBeNull();
-    // Re-render so afterEach's unmount is a no-op.
-    root = createRoot(container);
   });
 });

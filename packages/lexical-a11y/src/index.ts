@@ -75,16 +75,13 @@ function applyVisuallyHidden(el: HTMLElement): void {
 /**
  * Mounts a visually hidden `aria-live` region as a child of `owner`
  * (default `document.body`) and returns a handle that announces messages
- * and disposes the region when called.
- *
- * Framework-agnostic — call from React via `useLexicalAriaLiveRegion`,
- * from Svelte via `onMount` / `onDestroy`, or imperatively from vanilla
- * JS. WAI-ARIA status message pattern (WCAG 4.1.3).
+ * and disposes the region when called. WAI-ARIA status message pattern
+ * (WCAG 4.1.3).
  *
  * If neither `owner` nor `document.body` is available (e.g. SSR), the
  * returned handle is a no-op.
  */
-export function registerAriaLiveRegion(
+function registerAriaLiveRegion(
   options: AriaLiveRegionOptions = {},
 ): AriaLiveRegionHandle {
   const politeness = options.politeness ?? 'polite';

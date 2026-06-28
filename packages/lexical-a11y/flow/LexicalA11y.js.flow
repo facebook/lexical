@@ -23,10 +23,6 @@ export type AriaLiveRegionRef = {
   current: AriaLiveRegionHandle,
 };
 
-declare export function registerAriaLiveRegion(
-  options?: AriaLiveRegionOptions,
-): AriaLiveRegionHandle;
-
 export type FocusTrapInitialFocus = 'firstFocusable' | 'container';
 
 export type RovingOrientation = 'horizontal' | 'vertical' | 'both';

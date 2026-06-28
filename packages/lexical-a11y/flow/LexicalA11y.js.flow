@@ -29,16 +29,6 @@ declare export function registerAriaLiveRegion(
 
 export type FocusTrapInitialFocus = 'firstFocusable' | 'container';
 
-export type FocusTrapOptions = {
-  initialFocus?: FocusTrapInitialFocus,
-  allowOutside?: (target: HTMLElement) => boolean,
-};
-
-declare export function registerFocusTrap(
-  container: HTMLElement,
-  options?: FocusTrapOptions,
-): () => void;
-
 export type RovingOrientation = 'horizontal' | 'vertical' | 'both';
 
 export type RovingTabIndexOptions = {
@@ -46,45 +36,12 @@ export type RovingTabIndexOptions = {
   itemSelector?: string,
 };
 
-declare export function registerRovingTabIndex(
-  container: HTMLElement,
-  options?: RovingTabIndexOptions,
-): () => void;
-
-import type {LexicalEditor, LexicalExtension} from 'lexical';
+import type {LexicalExtension} from 'lexical';
 import type {NamedSignalsOutput} from '@lexical/extension';
 
 export type FocusManagerOptions = {
   toolbarItemSelector?: string,
 };
-
-declare export function registerFocusManager(
-  editor: LexicalEditor,
-  toolbar: HTMLElement,
-  options?: FocusManagerOptions,
-): () => void;
-
-export type HistoryAnnounceOptions = {
-  undone?: string,
-  redone?: string,
-};
-
-declare export function registerHistoryAnnounce(
-  editor: LexicalEditor,
-  announce: (message: string) => void,
-  options?: HistoryAnnounceOptions,
-): () => void;
-
-export type EditorModeAnnounceOptions = {
-  editable?: string,
-  readOnly?: string,
-};
-
-declare export function registerEditorModeAnnounce(
-  editor: LexicalEditor,
-  announce: (message: string) => void,
-  options?: EditorModeAnnounceOptions,
-): () => void;
 
 export type AriaLiveRegionExtensionConfig = {
   politeness: AriaPoliteness,

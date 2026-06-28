@@ -7,14 +7,11 @@
  * @flow strict
  */
 
-import type {LexicalEditor} from 'lexical';
-
 export type FocusManagerOptions = {
   toolbarItemSelector?: string,
 };
 
 declare export hook useLexicalFocusManager(
-  editor: LexicalEditor,
   toolbarRef: {current: HTMLElement | null, ...},
   options?: FocusManagerOptions,
 ): void;

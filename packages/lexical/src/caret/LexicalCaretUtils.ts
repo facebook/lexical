@@ -31,6 +31,7 @@ import {
   $copyNode,
   $getNodeByKeyOrThrow,
   $isRootOrShadowRoot,
+  $isShadowRootNode,
   $setSelection,
   INTERNAL_$isBlock,
 } from '../LexicalUtils';
@@ -358,9 +359,8 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
   } else if (focusCandidate) {
     const focusBlock = $getBlockFromCaret(focusCandidate);
     const focusBlockParent = focusBlock && focusBlock.getParent();
-    const topmostShadowRoot = focusBlock
-      ? $getTopmostShadowRoot(focusBlock)
-      : null;
+    const topmostShadowRoot =
+      focusBlock && focusBlock.getParents().findLast($isShadowRootNode);
     if (
       focusBlock &&
       focusBlockParent &&
@@ -428,18 +428,6 @@ function $getBlockFromCaret(
     }
   }
   return null;
-}
-
-function $getTopmostShadowRoot(node: ElementNode): ElementNode | null {
-  let topmostShadowRoot: ElementNode | null = null;
-  let walk: ElementNode | null = node.getParent();
-  while (walk && !$isRootNode(walk)) {
-    if ($isRootOrShadowRoot(walk)) {
-      topmostShadowRoot = walk;
-    }
-    walk = walk.getParent();
-  }
-  return topmostShadowRoot;
 }
 
 /**

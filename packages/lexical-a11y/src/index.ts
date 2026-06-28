@@ -11,6 +11,8 @@ import {mergeRegister} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_LOW,
   defineExtension,
+  getActiveElementDeep,
+  getComposedEventTarget,
   isHTMLElement,
   KEY_DOWN_COMMAND,
   type LexicalEditor,
@@ -90,7 +92,7 @@ export function registerAriaLiveRegion(
   if (host === null) {
     return NOOP_HANDLE;
   }
-  const region = document.createElement('div');
+  const region = host.ownerDocument.createElement('div');
   region.setAttribute('aria-live', politeness);
   region.setAttribute('aria-atomic', 'true');
   region.setAttribute('role', 'status');
@@ -183,15 +185,15 @@ export interface FocusTrapOptions {
  * Framework-agnostic — React consumers should use
  * `useLexicalFocusTrap` from `@lexical/react`.
  */
-export function registerFocusTrap(
+function registerFocusTrap(
   container: HTMLElement,
   options: FocusTrapOptions = {},
 ): () => void {
   const initialFocus = options.initialFocus ?? 'firstFocusable';
 
-  const previouslyFocused = isHTMLElement(document.activeElement)
-    ? document.activeElement
-    : null;
+  const doc = container.ownerDocument;
+  const deepActive = getActiveElementDeep(doc);
+  const previouslyFocused = isHTMLElement(deepActive) ? deepActive : null;
 
   const focusable = getFocusableElements(container);
   if (initialFocus === 'container' && container.hasAttribute('tabindex')) {
@@ -219,7 +221,7 @@ export function registerFocusTrap(
     event.preventDefault();
     const first = currentFocusable[0];
     const last = currentFocusable[currentFocusable.length - 1];
-    const active = document.activeElement;
+    const active = getActiveElementDeep(doc);
     const activeIndex =
       isHTMLElement(active) && container.contains(active)
         ? currentFocusable.indexOf(active)
@@ -238,10 +240,11 @@ export function registerFocusTrap(
   // ordering routes the browser's default Tab past the modal in
   // Safari), pull it back to the first focusable inside.
   const focusinHandler = (event: FocusEvent) => {
-    if (!isHTMLElement(event.target) || container.contains(event.target)) {
+    const target = getComposedEventTarget(event);
+    if (!isHTMLElement(target) || container.contains(target)) {
       return;
     }
-    if (options.allowOutside != null && options.allowOutside(event.target)) {
+    if (options.allowOutside != null && options.allowOutside(target)) {
       return;
     }
     const currentFocusable = getFocusableElements(container);
@@ -253,18 +256,15 @@ export function registerFocusTrap(
   };
 
   container.addEventListener('keydown', keydownHandler);
-  document.addEventListener('focusin', focusinHandler);
+  doc.addEventListener('focusin', focusinHandler);
 
   return () => {
     container.removeEventListener('keydown', keydownHandler);
-    document.removeEventListener('focusin', focusinHandler);
+    doc.removeEventListener('focusin', focusinHandler);
     if (
       previouslyFocused !== null &&
-      // `isHTMLElement` admits any `Element` whose nodeType is 1, so SVG
-      // and other non-focusable elements can pass — keep the runtime
-      // `focus` check as a guard against that.
       typeof previouslyFocused.focus === 'function' &&
-      document.contains(previouslyFocused)
+      doc.contains(previouslyFocused)
     ) {
       previouslyFocused.focus();
     }
@@ -304,7 +304,7 @@ const DEFAULT_ROVING_SELECTOR = ':scope > button:not([disabled])';
  * Framework-agnostic — React consumers should use
  * `useLexicalRovingTabIndex` from `@lexical/react`.
  */
-export function registerRovingTabIndex(
+function registerRovingTabIndex(
   container: HTMLElement,
   options: RovingTabIndexOptions = {},
 ): () => void {
@@ -325,7 +325,9 @@ export function registerRovingTabIndex(
     if (items.length === 0) {
       return;
     }
-    const activeIdx = items.findIndex(el => el === document.activeElement);
+    const activeIdx = items.findIndex(
+      el => el === getActiveElementDeep(container.ownerDocument),
+    );
     applyTabIndex(items, activeIdx >= 0 ? activeIdx : 0);
   };
 
@@ -336,7 +338,9 @@ export function registerRovingTabIndex(
     if (items.length === 0) {
       return;
     }
-    const currentIdx = items.findIndex(el => el === document.activeElement);
+    const currentIdx = items.findIndex(
+      el => el === getActiveElementDeep(container.ownerDocument),
+    );
     if (currentIdx < 0) {
       return;
     }
@@ -420,7 +424,7 @@ export interface FocusManagerOptions {
  * Framework-agnostic — React consumers should use
  * `useLexicalFocusManager` from `@lexical/react`.
  */
-export function registerFocusManager(
+function registerFocusManager(
   editor: LexicalEditor,
   toolbar: HTMLElement,
   options: FocusManagerOptions = {},
@@ -504,7 +508,7 @@ export interface HistoryAnnounceOptions {
  * for a vanilla integration, or use `HistoryAnnounceExtension` for
  * `@lexical/extension` hosts.
  */
-export function registerHistoryAnnounce(
+function registerHistoryAnnounce(
   editor: LexicalEditor,
   announce: (message: string) => void,
   options: HistoryAnnounceOptions = {},
@@ -547,7 +551,7 @@ export interface EditorModeAnnounceOptions {
  * for a vanilla integration, or use `EditorModeAnnounceExtension` for
  * `@lexical/extension` hosts.
  */
-export function registerEditorModeAnnounce(
+function registerEditorModeAnnounce(
   editor: LexicalEditor,
   announce: (message: string) => void,
   options: EditorModeAnnounceOptions = {},

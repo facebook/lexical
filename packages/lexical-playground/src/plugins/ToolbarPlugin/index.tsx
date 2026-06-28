@@ -584,7 +584,7 @@ export default function ToolbarPlugin({
   const {toolbarState, updateToolbarState} = useToolbarState();
   const toolbarRef = useRef<HTMLDivElement>(null);
   useLexicalRovingTabIndex(toolbarRef);
-  useLexicalFocusManager(activeEditor, toolbarRef);
+  useLexicalFocusManager(toolbarRef);
 
   const dispatchToolbarCommand = <T extends LexicalCommand<unknown>>(
     command: T,

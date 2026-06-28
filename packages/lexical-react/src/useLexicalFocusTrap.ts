@@ -6,39 +6,35 @@
  *
  */
 
-import {type FocusTrapInitialFocus, registerFocusTrap} from '@lexical/a11y';
+import {FocusTrapExtension,type FocusTrapInitialFocus} from '@lexical/a11y';
+import {batch, getExtensionDependencyFromEditor} from '@lexical/extension';
 import {RefObject, useEffect} from 'react';
+
+import {useLexicalComposerContext} from './LexicalComposerContext';
 
 export type {FocusTrapInitialFocus} from '@lexical/a11y';
 
 /**
- * React wrapper around `registerFocusTrap` from `@lexical/a11y`.
+ * React adapter for {@link FocusTrapExtension}. Drives the extension's
+ * `container` / `initialFocus` signals so the trap activates while
+ * `isActive` is `true` and deactivates on cleanup.
  *
- * Traps Tab / Shift+Tab focus inside `containerRef` while `isActive` is
- * true, and restores focus to the previously-focused element when the
- * trap deactivates. Intended for modal dialogs and other transient
- * overlays.
- *
- * `initialFocus` is expected to stay stable for the lifetime of the
- * trap. See `registerFocusTrap` JSDoc for the trap's caveats (portal
- * descendants, single-trap requirement).
- *
- * Hosts using `@lexical/extension` can wire the same behavior via
- * `FocusTrapExtension` from `@lexical/a11y`.
+ * Requires `FocusTrapExtension` in the editor's extension tree.
  */
 export function useLexicalFocusTrap(
   containerRef: RefObject<HTMLElement | null>,
   isActive: boolean,
   initialFocus: FocusTrapInitialFocus = 'firstFocusable',
 ): void {
+  const [editor] = useLexicalComposerContext();
   useEffect(() => {
-    if (!isActive) {
-      return;
-    }
-    const container = containerRef.current;
-    if (container === null) {
-      return;
-    }
-    return registerFocusTrap(container, {initialFocus});
-  }, [isActive, containerRef, initialFocus]);
+    const dep = getExtensionDependencyFromEditor(editor, FocusTrapExtension);
+    batch(() => {
+      dep.output.container.value = isActive ? containerRef.current : null;
+      dep.output.initialFocus.value = initialFocus;
+    });
+    return () => {
+      dep.output.container.value = null;
+    };
+  }, [editor, isActive, containerRef, initialFocus]);
 }

@@ -6,11 +6,11 @@ Lexical follows the [WAI-ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/a
 
 By default, `Tab` inside the editor follows the browser's normal focus order — it moves to the next focusable element on the page. There is no keyboard trap.
 
-The optional `TabIndentationPlugin` (`@lexical/react/LexicalTabIndentationPlugin`) takes over `Tab` and uses it for block indent / outdent. Hosts that mount this plugin opt in to that behavior. WCAG 2.1.2 (No Keyboard Trap) still applies — pressing `Escape` blurs the editor (see below), at which point `Tab` leaves the editor again.
+The optional `TabIndentationExtension` (`@lexical/extension`) takes over `Tab` and uses it for block indent / outdent. Hosts that mount this extension opt in to that behavior. WCAG 2.1.2 (No Keyboard Trap) still applies — pressing `Escape` blurs the editor (see below), at which point `Tab` leaves the editor again.
 
 ## Escape key
 
-Pressing `Escape` while the editor has focus calls `editor.blur()` via the rich-text Escape command handler (registered at `COMMAND_PRIORITY_EDITOR`). After blur, the next `Tab` advances to the page's next focusable element — this is what makes the `TabIndentationPlugin` compliant with WCAG 2.1.2.
+Pressing `Escape` while the editor has focus calls `editor.blur()` via the rich-text Escape command handler (registered at `COMMAND_PRIORITY_EDITOR`). After blur, the next `Tab` advances to the page's next focusable element — this is what makes the `TabIndentationExtension` compliant with WCAG 2.1.2.
 
 Plugin authors who want to intercept `Escape` (modal close, dropdown close, etc.) should register their handler at a higher priority and return `true` to stop the command chain. Common patterns already established in the codebase:
 

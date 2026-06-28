@@ -8,7 +8,10 @@
 
 import {
   EditorModeAnnounceExtension,
+  FocusManagerExtension,
+  FocusTrapExtension,
   HistoryAnnounceExtension,
+  RovingTabIndexExtension,
 } from '@lexical/a11y';
 import {$isCodeNode} from '@lexical/code';
 import {
@@ -20,6 +23,7 @@ import {
   HorizontalRuleExtension,
   SelectBlockExtension,
   SelectionAlwaysOnDisplayExtension,
+  TabIndentationExtension,
   WatchEditableExtension,
 } from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
@@ -283,6 +287,10 @@ const AppExtension = /* @__PURE__ */ defineExtension({
     PlaygroundImportExtension,
     // Replaces the legacy `buildHTMLConfig().export` overrides.
     PlaygroundDOMRenderExtension,
+    /* @__PURE__ */ configExtension(TabIndentationExtension, {maxIndent: 7}),
+    FocusTrapExtension,
+    RovingTabIndexExtension,
+    FocusManagerExtension,
   ],
   name: '@lexical/playground',
   namespace: 'Playground',

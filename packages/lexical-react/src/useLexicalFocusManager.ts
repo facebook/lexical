@@ -6,33 +6,37 @@
  *
  */
 
-import {type FocusManagerOptions, registerFocusManager} from '@lexical/a11y';
-import {type LexicalEditor} from 'lexical';
+import {FocusManagerExtension,type FocusManagerOptions} from '@lexical/a11y';
+import {batch, getExtensionDependencyFromEditor} from '@lexical/extension';
 import {RefObject, useEffect} from 'react';
+
+import {useLexicalComposerContext} from './LexicalComposerContext';
 
 export type {FocusManagerOptions} from '@lexical/a11y';
 
 /**
- * React wrapper around `registerFocusManager` from `@lexical/a11y`.
+ * React adapter for {@link FocusManagerExtension}. Drives the
+ * extension's `toolbar` / `toolbarItemSelector` signals so Alt+F10 /
+ * Escape navigation activates while `toolbarRef` is mounted.
  *
- * Alt+F10 inside the editor moves focus to the first focusable in
- * `toolbarRef`; Escape inside the toolbar returns focus to the editor.
- * The editor's last selection is preserved across the jump.
- *
- * Hosts using `@lexical/extension` can wire the same behavior via
- * `FocusManagerExtension` from `@lexical/a11y`.
+ * Requires `FocusManagerExtension` in the editor's extension tree.
  */
 export function useLexicalFocusManager(
-  editor: LexicalEditor,
   toolbarRef: RefObject<HTMLElement | null>,
   options: FocusManagerOptions = {},
 ): void {
+  const [editor] = useLexicalComposerContext();
   const {toolbarItemSelector} = options;
   useEffect(() => {
-    const toolbar = toolbarRef.current;
-    if (toolbar === null) {
-      return;
-    }
-    return registerFocusManager(editor, toolbar, {toolbarItemSelector});
+    const dep = getExtensionDependencyFromEditor(editor, FocusManagerExtension);
+    batch(() => {
+      dep.output.toolbar.value = toolbarRef.current;
+      if (toolbarItemSelector !== undefined) {
+        dep.output.toolbarItemSelector.value = toolbarItemSelector;
+      }
+    });
+    return () => {
+      dep.output.toolbar.value = null;
+    };
   }, [editor, toolbarRef, toolbarItemSelector]);
 }

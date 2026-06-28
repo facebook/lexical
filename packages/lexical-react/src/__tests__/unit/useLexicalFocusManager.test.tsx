@@ -6,29 +6,22 @@
  *
  */
 
+import {FocusManagerExtension} from '@lexical/a11y';
+import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {useLexicalFocusManager} from '@lexical/react/useLexicalFocusManager';
-import {createEditor, type LexicalEditor} from 'lexical';
 import * as React from 'react';
-import {useEffect, useMemo, useRef} from 'react';
+import {act, useEffect, useRef} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
-import {act} from 'react-dom/test-utils';
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 
-function Harness({onEditor}: {onEditor: (editor: LexicalEditor) => void}) {
-  const editor = useMemo(
-    () =>
-      createEditor({
-        namespace: '',
-        onError: e => {
-          throw e;
-        },
-      }),
-    [],
-  );
+import {useLexicalComposerContext} from '../../LexicalComposerContext';
+
+function Harness({onReady}: {onReady?: () => void}) {
+  const [editor] = useLexicalComposerContext();
   const editorRootRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
 
-  useLexicalFocusManager(editor, toolbarRef);
+  useLexicalFocusManager(toolbarRef);
 
   useEffect(() => {
     const root = editorRootRef.current;
@@ -36,9 +29,9 @@ function Harness({onEditor}: {onEditor: (editor: LexicalEditor) => void}) {
       return;
     }
     editor.setRootElement(root);
-    onEditor(editor);
+    onReady?.();
     return () => editor.setRootElement(null);
-  }, [editor, onEditor]);
+  }, [editor, onReady]);
 
   return (
     <>
@@ -54,6 +47,14 @@ function Harness({onEditor}: {onEditor: (editor: LexicalEditor) => void}) {
         tabIndex={0}
       />
     </>
+  );
+}
+
+function WithExtension({children}: {children: React.ReactNode}) {
+  return (
+    <LexicalExtensionComposer extension={FocusManagerExtension}>
+      {children}
+    </LexicalExtensionComposer>
   );
 }
 
@@ -96,9 +97,13 @@ describe('useLexicalFocusManager', () => {
   }
 
   test('Alt+F10 inside the editor focuses the first toolbar item', () => {
-    const onEditor = vi.fn();
+    const onReady = vi.fn();
     act(() => {
-      root.render(<Harness onEditor={onEditor} />);
+      root.render(
+        <WithExtension>
+          <Harness onReady={onReady} />
+        </WithExtension>,
+      );
     });
     const editorRoot = byId('editor-root');
     act(() => {
@@ -109,9 +114,13 @@ describe('useLexicalFocusManager', () => {
   });
 
   test('Alt+F10 without Alt modifier is a no-op', () => {
-    const onEditor = vi.fn();
+    const onReady = vi.fn();
     act(() => {
-      root.render(<Harness onEditor={onEditor} />);
+      root.render(
+        <WithExtension>
+          <Harness onReady={onReady} />
+        </WithExtension>,
+      );
     });
     const editorRoot = byId('editor-root');
     act(() => {
@@ -122,14 +131,11 @@ describe('useLexicalFocusManager', () => {
   });
 
   test('Escape inside the toolbar returns focus to the editor', () => {
-    const editorRef: {current: LexicalEditor | null} = {current: null};
     act(() => {
       root.render(
-        <Harness
-          onEditor={e => {
-            editorRef.current = e;
-          }}
-        />,
+        <WithExtension>
+          <Harness />
+        </WithExtension>,
       );
     });
     const toolbarBtn = byId('btn-0');
@@ -149,8 +155,6 @@ describe('useLexicalFocusManager', () => {
       window.removeEventListener('keydown', windowSpy);
     }
     expect(document.activeElement).toBe(byId('editor-root'));
-    // stopPropagation prevents window-level handlers (e.g. modal close)
-    // from also reacting.
     expect(bubbled).toBe(false);
   });
 });

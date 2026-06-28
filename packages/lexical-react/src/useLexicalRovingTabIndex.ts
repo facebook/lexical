@@ -7,35 +7,45 @@
  */
 
 import {
-  registerRovingTabIndex,
+  RovingTabIndexExtension,
   type RovingTabIndexOptions,
 } from '@lexical/a11y';
+import {batch, getExtensionDependencyFromEditor} from '@lexical/extension';
 import {RefObject, useEffect} from 'react';
+
+import {useLexicalComposerContext} from './LexicalComposerContext';
 
 export type {RovingOrientation, RovingTabIndexOptions} from '@lexical/a11y';
 
 /**
- * React wrapper around `registerRovingTabIndex` from `@lexical/a11y`.
+ * React adapter for {@link RovingTabIndexExtension}. Drives the
+ * extension's `container` / `orientation` / `itemSelector` signals so
+ * the roving-tabindex pattern activates while `containerRef` is mounted.
  *
- * Implements the WAI-ARIA roving-tabindex pattern on `containerRef`.
- * One item carries `tabindex="0"` at a time; the rest are `-1`. Arrow
- * keys move focus inside the group; Home / End jump to the ends.
- *
- * See `registerRovingTabIndex` JSDoc for the lazy-item-query semantics.
- *
- * Hosts using `@lexical/extension` can wire the same behavior via
- * `RovingTabIndexExtension` from `@lexical/a11y`.
+ * Requires `RovingTabIndexExtension` in the editor's extension tree.
  */
 export function useLexicalRovingTabIndex(
   containerRef: RefObject<HTMLElement | null>,
   options: RovingTabIndexOptions = {},
 ): void {
+  const [editor] = useLexicalComposerContext();
   const {orientation, itemSelector} = options;
   useEffect(() => {
-    const container = containerRef.current;
-    if (container === null) {
-      return;
-    }
-    return registerRovingTabIndex(container, {itemSelector, orientation});
-  }, [containerRef, orientation, itemSelector]);
+    const dep = getExtensionDependencyFromEditor(
+      editor,
+      RovingTabIndexExtension,
+    );
+    batch(() => {
+      dep.output.container.value = containerRef.current;
+      if (orientation !== undefined) {
+        dep.output.orientation.value = orientation;
+      }
+      if (itemSelector !== undefined) {
+        dep.output.itemSelector.value = itemSelector;
+      }
+    });
+    return () => {
+      dep.output.container.value = null;
+    };
+  }, [editor, containerRef, orientation, itemSelector]);
 }

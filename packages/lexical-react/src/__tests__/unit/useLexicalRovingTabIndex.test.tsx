@@ -6,11 +6,12 @@
  *
  */
 
+import {RovingTabIndexExtension} from '@lexical/a11y';
+import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {useLexicalRovingTabIndex} from '@lexical/react/useLexicalRovingTabIndex';
 import * as React from 'react';
-import {useRef} from 'react';
+import {act, useRef} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
-import {act} from 'react-dom/test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 function Group({
@@ -30,6 +31,14 @@ function Group({
         </button>
       ))}
     </div>
+  );
+}
+
+function WithExtension({children}: {children: React.ReactNode}) {
+  return (
+    <LexicalExtensionComposer extension={RovingTabIndexExtension}>
+      {children}
+    </LexicalExtensionComposer>
   );
 }
 
@@ -66,7 +75,11 @@ describe('useLexicalRovingTabIndex', () => {
 
   test('sets tabindex=0 on the first item, -1 on the rest', () => {
     act(() => {
-      root.render(<Group />);
+      root.render(
+        <WithExtension>
+          <Group />
+        </WithExtension>,
+      );
     });
     expect(byId('btn-0').tabIndex).toBe(0);
     expect(byId('btn-1').tabIndex).toBe(-1);
@@ -75,7 +88,11 @@ describe('useLexicalRovingTabIndex', () => {
 
   test('ArrowRight moves focus to the next item and updates tabindex', () => {
     act(() => {
-      root.render(<Group />);
+      root.render(
+        <WithExtension>
+          <Group />
+        </WithExtension>,
+      );
     });
     act(() => {
       byId('btn-0').focus();
@@ -88,7 +105,11 @@ describe('useLexicalRovingTabIndex', () => {
 
   test('ArrowLeft wraps from the first item to the last', () => {
     act(() => {
-      root.render(<Group />);
+      root.render(
+        <WithExtension>
+          <Group />
+        </WithExtension>,
+      );
     });
     act(() => {
       byId('btn-0').focus();
@@ -99,7 +120,11 @@ describe('useLexicalRovingTabIndex', () => {
 
   test('ArrowRight wraps from the last item to the first', () => {
     act(() => {
-      root.render(<Group />);
+      root.render(
+        <WithExtension>
+          <Group />
+        </WithExtension>,
+      );
     });
     act(() => {
       byId('btn-2').focus();
@@ -110,7 +135,11 @@ describe('useLexicalRovingTabIndex', () => {
 
   test('Home jumps to the first item, End to the last', () => {
     act(() => {
-      root.render(<Group />);
+      root.render(
+        <WithExtension>
+          <Group />
+        </WithExtension>,
+      );
     });
     act(() => {
       byId('btn-1').focus();
@@ -123,7 +152,11 @@ describe('useLexicalRovingTabIndex', () => {
 
   test('vertical orientation ignores ArrowLeft/Right', () => {
     act(() => {
-      root.render(<Group orientation="vertical" />);
+      root.render(
+        <WithExtension>
+          <Group orientation="vertical" />
+        </WithExtension>,
+      );
     });
     act(() => {
       byId('btn-0').focus();
@@ -136,7 +169,11 @@ describe('useLexicalRovingTabIndex', () => {
 
   test('does nothing when the group is empty', () => {
     act(() => {
-      root.render(<Group count={0} />);
+      root.render(
+        <WithExtension>
+          <Group count={0} />
+        </WithExtension>,
+      );
     });
     const group = byId('group');
     expect(() => dispatchKey(group, 'ArrowRight')).not.toThrow();

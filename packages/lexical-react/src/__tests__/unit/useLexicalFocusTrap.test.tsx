@@ -6,11 +6,12 @@
  *
  */
 
+import {FocusTrapExtension} from '@lexical/a11y';
+import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {useLexicalFocusTrap} from '@lexical/react/useLexicalFocusTrap';
 import * as React from 'react';
-import {useRef} from 'react';
+import {act, useRef} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
-import {act} from 'react-dom/test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 function Trap({
@@ -32,6 +33,14 @@ function Trap({
         </button>
       ))}
     </div>
+  );
+}
+
+function WithExtension({children}: {children: React.ReactNode}) {
+  return (
+    <LexicalExtensionComposer extension={FocusTrapExtension}>
+      {children}
+    </LexicalExtensionComposer>
   );
 }
 
@@ -73,14 +82,22 @@ describe('useLexicalFocusTrap', () => {
 
   test('focuses the first focusable element on activate', () => {
     act(() => {
-      root.render(<Trap isActive={true} />);
+      root.render(
+        <WithExtension>
+          <Trap isActive={true} />
+        </WithExtension>,
+      );
     });
     expect(document.activeElement).toBe(getByTestId('btn-0'));
   });
 
   test('wraps Tab from the last focusable back to the first', () => {
     act(() => {
-      root.render(<Trap isActive={true} />);
+      root.render(
+        <WithExtension>
+          <Trap isActive={true} />
+        </WithExtension>,
+      );
     });
     const last = getByTestId('btn-2');
     const first = getByTestId('btn-0');
@@ -94,7 +111,11 @@ describe('useLexicalFocusTrap', () => {
 
   test('wraps Shift+Tab from the first focusable back to the last', () => {
     act(() => {
-      root.render(<Trap isActive={true} />);
+      root.render(
+        <WithExtension>
+          <Trap isActive={true} />
+        </WithExtension>,
+      );
     });
     const first = getByTestId('btn-0');
     const last = getByTestId('btn-2');
@@ -113,12 +134,20 @@ describe('useLexicalFocusTrap', () => {
     expect(document.activeElement).toBe(opener);
 
     act(() => {
-      root.render(<Trap isActive={true} />);
+      root.render(
+        <WithExtension>
+          <Trap isActive={true} />
+        </WithExtension>,
+      );
     });
     expect(document.activeElement).not.toBe(opener);
 
     act(() => {
-      root.render(<Trap isActive={false} />);
+      root.render(
+        <WithExtension>
+          <Trap isActive={false} />
+        </WithExtension>,
+      );
     });
     expect(document.activeElement).toBe(opener);
 
@@ -133,7 +162,11 @@ describe('useLexicalFocusTrap', () => {
     expect(document.activeElement).toBe(opener);
 
     act(() => {
-      root.render(<Trap isActive={true} />);
+      root.render(
+        <WithExtension>
+          <Trap isActive={true} />
+        </WithExtension>,
+      );
     });
     expect(document.activeElement).not.toBe(opener);
 
@@ -150,7 +183,11 @@ describe('useLexicalFocusTrap', () => {
     document.body.appendChild(opener);
     opener.focus();
     act(() => {
-      root.render(<Trap isActive={false} />);
+      root.render(
+        <WithExtension>
+          <Trap isActive={false} />
+        </WithExtension>,
+      );
     });
     expect(document.activeElement).toBe(opener);
     document.body.removeChild(opener);
@@ -158,7 +195,11 @@ describe('useLexicalFocusTrap', () => {
 
   test('handles an empty container by preventing Tab without throwing', () => {
     act(() => {
-      root.render(<Trap isActive={true} buttons={0} />);
+      root.render(
+        <WithExtension>
+          <Trap isActive={true} buttons={0} />
+        </WithExtension>,
+      );
     });
     const trap = getByTestId('trap');
     act(() => {
@@ -169,14 +210,22 @@ describe('useLexicalFocusTrap', () => {
 
   test("focuses the container itself when initialFocus is 'container'", () => {
     act(() => {
-      root.render(<Trap isActive={true} initialFocus="container" />);
+      root.render(
+        <WithExtension>
+          <Trap isActive={true} initialFocus="container" />
+        </WithExtension>,
+      );
     });
     expect(document.activeElement).toBe(getByTestId('trap'));
   });
 
   test("Tab from container (initialFocus 'container') lands on first focusable", () => {
     act(() => {
-      root.render(<Trap isActive={true} initialFocus="container" />);
+      root.render(
+        <WithExtension>
+          <Trap isActive={true} initialFocus="container" />
+        </WithExtension>,
+      );
     });
     const trap = getByTestId('trap');
     dispatchTab(trap);
@@ -185,7 +234,11 @@ describe('useLexicalFocusTrap', () => {
 
   test("Shift+Tab from container (initialFocus 'container') lands on last focusable", () => {
     act(() => {
-      root.render(<Trap isActive={true} initialFocus="container" />);
+      root.render(
+        <WithExtension>
+          <Trap isActive={true} initialFocus="container" />
+        </WithExtension>,
+      );
     });
     const trap = getByTestId('trap');
     dispatchTab(trap, true);
@@ -194,7 +247,11 @@ describe('useLexicalFocusTrap', () => {
 
   test('advances Tab through middle focusables', () => {
     act(() => {
-      root.render(<Trap isActive={true} buttons={4} />);
+      root.render(
+        <WithExtension>
+          <Trap isActive={true} buttons={4} />
+        </WithExtension>,
+      );
     });
     const btn1 = getByTestId('btn-1');
     act(() => {
@@ -206,7 +263,11 @@ describe('useLexicalFocusTrap', () => {
 
   test('advances Shift+Tab through middle focusables', () => {
     act(() => {
-      root.render(<Trap isActive={true} buttons={4} />);
+      root.render(
+        <WithExtension>
+          <Trap isActive={true} buttons={4} />
+        </WithExtension>,
+      );
     });
     const btn2 = getByTestId('btn-2');
     act(() => {
@@ -221,7 +282,11 @@ describe('useLexicalFocusTrap', () => {
     outside.textContent = 'Outside';
     document.body.appendChild(outside);
     act(() => {
-      root.render(<Trap isActive={true} />);
+      root.render(
+        <WithExtension>
+          <Trap isActive={true} />
+        </WithExtension>,
+      );
     });
     act(() => {
       outside.focus();

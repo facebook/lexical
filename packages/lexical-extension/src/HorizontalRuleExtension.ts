@@ -7,7 +7,6 @@
  */
 
 import type {
-  DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
@@ -58,27 +57,20 @@ export const INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void> =
   /* @__PURE__ */ createCommand('INSERT_HORIZONTAL_RULE_COMMAND');
 
 export class HorizontalRuleNode extends DecoratorNode<unknown> {
-  static getType(): string {
-    return 'horizontalrule';
-  }
-
-  static clone(node: HorizontalRuleNode): HorizontalRuleNode {
-    return new HorizontalRuleNode(node.__key);
-  }
-
-  static importJSON(
-    serializedNode: SerializedHorizontalRuleNode,
-  ): HorizontalRuleNode {
-    return $createHorizontalRuleNode().updateFromJSON(serializedNode);
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      hr: () => ({
-        conversion: $convertHorizontalRuleElement,
-        priority: 0,
-      }),
-    };
+  $config() {
+    // `extends` is intentionally left to the runtime default (the prototype
+    // parent) rather than declared explicitly: the deprecated
+    // `@lexical/react` HorizontalRuleNode subclasses this one and reuses the
+    // same 'horizontalrule' type, so both `$config()` overrides must infer a
+    // matching shape.
+    return this.config('horizontalrule', {
+      importDOM: {
+        hr: () => ({
+          conversion: $convertHorizontalRuleElement,
+          priority: 0,
+        }),
+      },
+    });
   }
 
   exportDOM(): DOMExportOutput {

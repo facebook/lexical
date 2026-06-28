@@ -47,8 +47,6 @@ declare export class TableCellNode extends ElementNode {
   __headerState: TableCellHeaderState;
   __width?: number;
   __backgroundColor: null | string;
-  static getType(): string;
-  static clone(node: TableCellNode): TableCellNode;
   constructor(
     headerState?: TableCellHeaderState,
     colSpan?: number,
@@ -97,8 +95,6 @@ export type TableMapValueType = {
 export type TableMapType = TableMapValueType[][];
 
 declare export class TableNode extends ElementNode {
-  static getType(): string;
-  static clone(node: TableNode): TableNode;
   constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   insertNewAfter(selection: RangeSelection): null | ParagraphNode | TableNode;
@@ -139,8 +135,6 @@ declare export function $getTableAndElementByKey(
  */
 
 declare export class TableRowNode extends ElementNode {
-  static getType(): string;
-  static clone(node: TableRowNode): TableRowNode;
   constructor(height?: ?number, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   setHeight(height: number): ?number;

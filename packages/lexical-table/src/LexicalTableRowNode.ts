@@ -12,7 +12,6 @@ import {$descendantsMatching} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   addClassNamesToElement,
-  DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
   ElementNode,
@@ -36,30 +35,21 @@ export class TableRowNode extends ElementNode {
   /** @internal */
   __height?: number;
 
-  static getType(): string {
-    return 'tablerow';
-  }
-
-  static clone(node: TableRowNode): TableRowNode {
-    return new TableRowNode(node.__height, node.__key);
+  $config() {
+    return this.config('tablerow', {
+      extends: ElementNode,
+      importDOM: {
+        tr: () => ({
+          conversion: $convertTableRowElement,
+          priority: 0,
+        }),
+      },
+    });
   }
 
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
     this.__height = prevNode.__height;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      tr: (node: Node) => ({
-        conversion: $convertTableRowElement,
-        priority: 0,
-      }),
-    };
-  }
-
-  static importJSON(serializedNode: SerializedTableRowNode): TableRowNode {
-    return $createTableRowNode().updateFromJSON(serializedNode);
   }
 
   updateFromJSON(
@@ -70,7 +60,9 @@ export class TableRowNode extends ElementNode {
       .setHeight(serializedNode.height);
   }
 
-  constructor(height?: number, key?: NodeKey) {
+  // `height` carries an explicit `undefined` default so the constructor reports
+  // zero required arguments and `$config` can synthesize the static `clone`.
+  constructor(height: number | undefined = undefined, key?: NodeKey) {
     super(key);
     this.__height = height;
   }

@@ -33,8 +33,8 @@ export class LayoutContainerNode extends ElementNode {
     this.__templateColumns = templateColumns;
   }
 
-  static getType(): string {
-    return 'layout-container';
+  $config() {
+    return this.config('layout-container', {extends: ElementNode});
   }
 
   static clone(node: LayoutContainerNode): LayoutContainerNode {

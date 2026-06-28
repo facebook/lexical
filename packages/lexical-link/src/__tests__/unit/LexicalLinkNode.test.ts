@@ -24,6 +24,7 @@ import {
   RichTextExtension,
 } from '@lexical/rich-text';
 import {
+  $cloneWithProperties,
   $createLineBreakNode,
   $createParagraphNode,
   $createRangeSelection,
@@ -82,7 +83,7 @@ describe('LexicalLinkNode tests', () => {
       await editor.update(() => {
         const linkNode = $createLinkNode('/');
 
-        const linkNodeClone = LinkNode.clone(linkNode);
+        const linkNodeClone = $cloneWithProperties(linkNode);
 
         expect(linkNodeClone).not.toBe(linkNode);
         expect(linkNodeClone).toStrictEqual(linkNode);

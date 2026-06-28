@@ -9,7 +9,6 @@
 import type {
   CaretDirection,
   CommandPayloadType,
-  DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
@@ -146,12 +145,16 @@ export type SerializedQuoteNode = SerializedElementNode;
 
 /** @noInheritDoc */
 export class QuoteNode extends ElementNode {
-  static getType(): string {
-    return 'quote';
-  }
-
-  static clone(node: QuoteNode): QuoteNode {
-    return new QuoteNode(node.__key);
+  $config() {
+    return this.config('quote', {
+      extends: ElementNode,
+      importDOM: {
+        blockquote: () => ({
+          conversion: $convertBlockquoteElement,
+          priority: 0,
+        }),
+      },
+    });
   }
 
   // View
@@ -163,15 +166,6 @@ export class QuoteNode extends ElementNode {
   }
   updateDOM(prevNode: this, dom: HTMLElement): boolean {
     return false;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      blockquote: (node: Node) => ({
-        conversion: $convertBlockquoteElement,
-        priority: 0,
-      }),
-    };
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
@@ -196,10 +190,6 @@ export class QuoteNode extends ElementNode {
     return {
       element,
     };
-  }
-
-  static importJSON(serializedNode: SerializedQuoteNode): QuoteNode {
-    return $createQuoteNode().updateFromJSON(serializedNode);
   }
 
   // Mutation
@@ -242,12 +232,43 @@ export class HeadingNode extends ElementNode {
   /** @internal */
   __tag: HeadingTagType;
 
-  static getType(): string {
-    return 'heading';
-  }
-
-  static clone(node: HeadingNode): HeadingNode {
-    return new HeadingNode(node.__tag, node.__key);
+  $config() {
+    return this.config('heading', {
+      extends: ElementNode,
+      importDOM: {
+        h1: () => ({conversion: $convertHeadingElement, priority: 0}),
+        h2: () => ({conversion: $convertHeadingElement, priority: 0}),
+        h3: () => ({conversion: $convertHeadingElement, priority: 0}),
+        h4: () => ({conversion: $convertHeadingElement, priority: 0}),
+        h5: () => ({conversion: $convertHeadingElement, priority: 0}),
+        h6: () => ({conversion: $convertHeadingElement, priority: 0}),
+        p: (node: Node) => {
+          // domNode is a <p> since we matched it by nodeName
+          const paragraph = node as HTMLParagraphElement;
+          const firstChild = paragraph.firstChild;
+          if (firstChild !== null && isGoogleDocsTitle(firstChild)) {
+            return {
+              conversion: () => ({node: null}),
+              priority: 3,
+            };
+          }
+          return null;
+        },
+        span: (node: Node) => {
+          if (isGoogleDocsTitle(node)) {
+            return {
+              conversion: () => {
+                return {
+                  node: $createHeadingNode('h1'),
+                };
+              },
+              priority: 3,
+            };
+          }
+          return null;
+        },
+      },
+    });
   }
 
   afterCloneFrom(prevNode: this): void {
@@ -288,60 +309,6 @@ export class HeadingNode extends ElementNode {
     return prevNode.__tag !== this.__tag;
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      h1: (node: Node) => ({
-        conversion: $convertHeadingElement,
-        priority: 0,
-      }),
-      h2: (node: Node) => ({
-        conversion: $convertHeadingElement,
-        priority: 0,
-      }),
-      h3: (node: Node) => ({
-        conversion: $convertHeadingElement,
-        priority: 0,
-      }),
-      h4: (node: Node) => ({
-        conversion: $convertHeadingElement,
-        priority: 0,
-      }),
-      h5: (node: Node) => ({
-        conversion: $convertHeadingElement,
-        priority: 0,
-      }),
-      h6: (node: Node) => ({
-        conversion: $convertHeadingElement,
-        priority: 0,
-      }),
-      p: (node: Node) => {
-        // domNode is a <p> since we matched it by nodeName
-        const paragraph = node as HTMLParagraphElement;
-        const firstChild = paragraph.firstChild;
-        if (firstChild !== null && isGoogleDocsTitle(firstChild)) {
-          return {
-            conversion: () => ({node: null}),
-            priority: 3,
-          };
-        }
-        return null;
-      },
-      span: (node: Node) => {
-        if (isGoogleDocsTitle(node)) {
-          return {
-            conversion: (domNode: Node) => {
-              return {
-                node: $createHeadingNode('h1'),
-              };
-            },
-            priority: 3,
-          };
-        }
-        return null;
-      },
-    };
-  }
-
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
@@ -364,12 +331,6 @@ export class HeadingNode extends ElementNode {
     return {
       element,
     };
-  }
-
-  static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
-    return $createHeadingNode(serializedNode.tag).updateFromJSON(
-      serializedNode,
-    );
   }
 
   updateFromJSON(

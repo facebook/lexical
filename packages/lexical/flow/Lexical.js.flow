@@ -1158,12 +1158,18 @@ declare export function generateRandomKey(): string;
 declare export function $isInlineElementOrDecoratorNode<T = unknown>(
   node: LexicalNode,
 ): node is ElementNode|  DecoratorNode<T>;
+export interface ShadowRootNode extends ElementNode {
+  isShadowRoot(): true;
+}
 declare export function $getNearestRootOrShadowRoot(
   node: LexicalNode,
 ): RootNode | ElementNode;
+declare export function $isShadowRootNode(
+  node: ?LexicalNode,
+): node is ShadowRootNode;
 declare export function $isRootOrShadowRoot(
   node: ?LexicalNode,
-): node is RootNode | ElementNode;
+): node is RootNode | ShadowRootNode;
 declare export function $hasAncestor(
   child: LexicalNode,
   targetNode: LexicalNode,

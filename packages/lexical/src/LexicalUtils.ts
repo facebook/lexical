@@ -19,7 +19,6 @@ import type {
   NodeMutation,
   RegisteredNode,
   RegisteredNodes,
-  Spread,
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {
@@ -1748,14 +1747,21 @@ export function $getNearestRootOrShadowRoot(
 const ShadowRootNodeBrand: unique symbol = Symbol.for(
   '@lexical/ShadowRootNodeBrand',
 );
-type ShadowRootNode = Spread<
-  {isShadowRoot(): true; [ShadowRootNodeBrand]: never},
-  ElementNode
->;
+export interface ShadowRootNode extends ElementNode {
+  [ShadowRootNodeBrand]: never;
+  isShadowRoot(): true;
+}
+
+export function $isShadowRootNode(
+  node: null | LexicalNode,
+): node is ShadowRootNode {
+  return $isElementNode(node) && node.isShadowRoot();
+}
+
 export function $isRootOrShadowRoot(
   node: null | LexicalNode,
 ): node is RootNode | ShadowRootNode {
-  return $isRootNode(node) || ($isElementNode(node) && node.isShadowRoot());
+  return $isRootNode(node) || $isShadowRootNode(node);
 }
 
 /**

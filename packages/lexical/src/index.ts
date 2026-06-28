@@ -310,6 +310,7 @@ export {
   $isLeafNode,
   $isRootOrShadowRoot,
   $isSelectionCapturedInDecoratorInput,
+  $isShadowRootNode,
   $isTokenOrSegmented,
   $isTokenOrTab,
   $markSlotEditable,
@@ -372,6 +373,7 @@ export {
   setDOMUnmanaged,
   type SetDOMUnmanagedOptions,
   setNodeIndentFromDOM,
+  type ShadowRootNode,
   toggleTextFormatType,
   unmountSlotContainer,
 } from './LexicalUtils';

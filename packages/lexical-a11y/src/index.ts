@@ -335,9 +335,8 @@ function registerRovingTabIndex(
     if (items.length === 0) {
       return;
     }
-    const activeIdx = items.findIndex(
-      el => el === getActiveElementDeep(container.ownerDocument),
-    );
+    const active = getActiveElementDeep(container.ownerDocument);
+    const activeIdx = items.findIndex(el => el === active);
     applyTabIndex(items, activeIdx >= 0 ? activeIdx : 0);
   };
 
@@ -348,9 +347,8 @@ function registerRovingTabIndex(
     if (items.length === 0) {
       return;
     }
-    const currentIdx = items.findIndex(
-      el => el === getActiveElementDeep(container.ownerDocument),
-    );
+    const active = getActiveElementDeep(container.ownerDocument);
+    const currentIdx = items.findIndex(el => el === active);
     if (currentIdx < 0) {
       return;
     }

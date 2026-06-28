@@ -7,14 +7,13 @@
  */
 
 import {FocusManagerExtension} from '@lexical/a11y';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {useLexicalFocusManager} from '@lexical/react/useLexicalFocusManager';
 import * as React from 'react';
 import {act, useEffect, useRef} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
-
-import {useLexicalComposerContext} from '../../LexicalComposerContext';
 
 function Harness({onReady}: {onReady?: () => void}) {
   const [editor] = useLexicalComposerContext();

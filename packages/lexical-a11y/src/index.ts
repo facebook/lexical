@@ -13,6 +13,7 @@ import {
   defineExtension,
   getActiveElementDeep,
   getComposedEventTarget,
+  isDOMShadowRoot,
   isHTMLElement,
   KEY_DOWN_COMMAND,
   type LexicalEditor,
@@ -144,8 +145,8 @@ function containsComposed(container: Node, target: Node): boolean {
     if (current === container) {
       return true;
     }
-    if (current instanceof ShadowRoot) {
-      current = current.host;
+    if (isDOMShadowRoot(current)) {
+      current = (current as ShadowRoot).host;
     } else {
       current = current.parentNode;
     }

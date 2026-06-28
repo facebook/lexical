@@ -181,9 +181,6 @@ export interface FocusTrapOptions {
  * `focusin` listeners and will fight over focus.
  *
  * Escape is not intercepted — the owner handles close-key behavior.
- *
- * Framework-agnostic — React consumers should use
- * `useLexicalFocusTrap` from `@lexical/react`.
  */
 function registerFocusTrap(
   container: HTMLElement,
@@ -300,9 +297,6 @@ const DEFAULT_ROVING_SELECTOR = ':scope > button:not([disabled])';
  * Items are queried lazily on every interaction so additions or
  * removals during the lifetime of the group are picked up without
  * extra wiring.
- *
- * Framework-agnostic — React consumers should use
- * `useLexicalRovingTabIndex` from `@lexical/react`.
  */
 function registerRovingTabIndex(
   container: HTMLElement,
@@ -420,9 +414,6 @@ export interface FocusManagerOptions {
  * Wires the navigation only. Selection restoration relies on the
  * editor's own focus handling; the editor's last selection is preserved
  * across the jump so toolbar commands act on the same range.
- *
- * Framework-agnostic — React consumers should use
- * `useLexicalFocusManager` from `@lexical/react`.
  */
 function registerFocusManager(
   editor: LexicalEditor,
@@ -505,9 +496,6 @@ export interface HistoryAnnounceOptions {
  * first and is unaffected; the handler returns `false` to keep the
  * command chain intact.
  *
- * Framework-agnostic — pair with `registerAriaLiveRegion`'s `announce`
- * for a vanilla integration, or use `HistoryAnnounceExtension` for
- * `@lexical/extension` hosts.
  */
 function registerHistoryAnnounce(
   editor: LexicalEditor,
@@ -548,9 +536,6 @@ export interface EditorModeAnnounceOptions {
  * the editor root is already managed by other layers; this helper only
  * contributes the announcement.
  *
- * Framework-agnostic — pair with `registerAriaLiveRegion`'s `announce`
- * for a vanilla integration, or use `EditorModeAnnounceExtension` for
- * `@lexical/extension` hosts.
  */
 function registerEditorModeAnnounce(
   editor: LexicalEditor,

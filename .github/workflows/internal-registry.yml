@@ -1,0 +1,22 @@
+name: Internal Registry
+
+# Verifies every pinned dependency is available from the registry before it can
+# break a build. Mark the merge_group run ("Internal Registry / dependency-check")
+# as a REQUIRED status check to gate landing; fork PRs are skipped and enforced
+# by that required merge_group run.
+
+on:
+  pull_request:
+  merge_group:
+
+permissions: {}
+
+jobs:
+  dependency-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/internal-registry/dependency-check

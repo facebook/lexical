@@ -1170,6 +1170,9 @@ declare export function $isShadowRootNode(
 declare export function $isRootOrShadowRoot(
   node: ?LexicalNode,
 ): node is RootNode | ShadowRootNode;
+declare export function $needsBlockCursorBeside(
+  node: null | LexicalNode,
+): boolean;
 declare export function $hasAncestor(
   child: LexicalNode,
   targetNode: LexicalNode,

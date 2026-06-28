@@ -12,15 +12,16 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isElementNode,
   $isRangeSelection,
+  $isTextNode,
   $selectAll,
   $setSelection,
-  ElementNode,
-  TextNode,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
 
 import {
+  $assertNodeType,
   $createTestDecoratorNode,
   $createTestShadowRootNode,
   TestDecoratorNode,
@@ -414,12 +415,24 @@ describe('Select-all + delete with trailing shadow root (#8745)', () => {
     editor.update(
       () => {
         const root = $getRoot();
-        const container = root.getLastChild() as ElementNode;
-        const titleP = container.getFirstChild() as ElementNode;
-        const content = container.getLastChild() as ElementNode;
-        const contentP = content.getFirstChild() as ElementNode;
-        const titleText = titleP.getFirstChild() as TextNode;
-        const contentText = contentP.getFirstChild() as TextNode;
+        const container = $assertNodeType(root.getLastChild(), $isElementNode);
+        const titleP = $assertNodeType(
+          container.getFirstChild(),
+          $isElementNode,
+        );
+        const content = $assertNodeType(
+          container.getLastChild(),
+          $isElementNode,
+        );
+        const contentP = $assertNodeType(
+          content.getFirstChild(),
+          $isElementNode,
+        );
+        const titleText = $assertNodeType(titleP.getFirstChild(), $isTextNode);
+        const contentText = $assertNodeType(
+          contentP.getFirstChild(),
+          $isTextNode,
+        );
         const selection = titleText.select(5, 5);
         assert($isRangeSelection(selection), 'Expected RangeSelection');
         selection.setTextNodeRange(titleText, 5, contentText, 7);
@@ -431,7 +444,7 @@ describe('Select-all + delete with trailing shadow root (#8745)', () => {
     editor.read(() => {
       const root = $getRoot();
       expect(root.getChildrenSize()).toBe(2);
-      const container = root.getLastChild() as ElementNode;
+      const container = $assertNodeType(root.getLastChild(), $isElementNode);
       expect(container.getChildrenSize()).toBe(2);
     });
   });

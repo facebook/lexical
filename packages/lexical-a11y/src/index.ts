@@ -156,7 +156,7 @@ function containsComposed(container: Node, target: Node): boolean {
 
 export type FocusTrapInitialFocus = 'firstFocusable' | 'container';
 
-export interface FocusTrapOptions {
+interface FocusTrapOptions {
   /**
    * Where to land focus when the trap activates:
    * - `'firstFocusable'` (default): focus the first focusable descendant.
@@ -496,7 +496,7 @@ function registerFocusManager(
   });
 }
 
-export interface HistoryAnnounceOptions {
+interface HistoryAnnounceOptions {
   /** Message announced after an undo. Default: 'Undone'. */
   undone?: string;
   /** Message announced after a redo. Default: 'Redone'. */
@@ -537,7 +537,7 @@ function registerHistoryAnnounce(
   return mergeRegister(removeUndo, removeRedo);
 }
 
-export interface EditorModeAnnounceOptions {
+interface EditorModeAnnounceOptions {
   /** Message announced when the editor becomes editable. Default: 'Editor is editable'. */
   editable?: string;
   /** Message announced when the editor becomes read-only. Default: 'Editor is read-only'. */

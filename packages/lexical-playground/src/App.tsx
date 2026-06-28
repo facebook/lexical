@@ -241,6 +241,7 @@ const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
     CardExtension,
     ReactReviewExtension,
     PullQuoteExtension,
+    /* @__PURE__ */ configExtension(TabIndentationExtension, {maxIndent: 7}),
   ],
   name: '@lexical/playground/RichText',
 });
@@ -287,7 +288,6 @@ const AppExtension = /* @__PURE__ */ defineExtension({
     PlaygroundImportExtension,
     // Replaces the legacy `buildHTMLConfig().export` overrides.
     PlaygroundDOMRenderExtension,
-    /* @__PURE__ */ configExtension(TabIndentationExtension, {maxIndent: 7}),
     FocusTrapExtension,
     RovingTabIndexExtension,
     FocusManagerExtension,

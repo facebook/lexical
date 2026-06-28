@@ -8,9 +8,8 @@
 
 import {FocusTrapExtension, type FocusTrapInitialFocus} from '@lexical/a11y';
 import {batch, getExtensionDependencyFromEditor} from '@lexical/extension';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {RefObject, useEffect} from 'react';
-
-import {useLexicalComposerContext} from './LexicalComposerContext';
 
 export type {FocusTrapInitialFocus} from '@lexical/a11y';
 

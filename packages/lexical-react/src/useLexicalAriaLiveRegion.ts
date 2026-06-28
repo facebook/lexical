@@ -8,9 +8,8 @@
 
 import {AriaLiveRegionExtension} from '@lexical/a11y';
 import {getExtensionDependencyFromEditor} from '@lexical/extension';
+import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useCallback} from 'react';
-
-import {useLexicalComposerContext} from './LexicalComposerContext';
 
 /**
  * Returns a stable `announce` function backed by the editor's

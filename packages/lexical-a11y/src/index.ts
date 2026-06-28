@@ -455,11 +455,12 @@ function registerFocusManager(
     if (event.key !== 'Escape') {
       return;
     }
-    if (isHTMLElement(event.target)) {
+    const target = getComposedEventTarget(event);
+    if (isHTMLElement(target)) {
       const items = toolbar.querySelectorAll<HTMLElement>(selector);
       let isRovingItem = false;
       for (const item of items) {
-        if (item === event.target || item.contains(event.target)) {
+        if (item === target || item.contains(target)) {
           isRovingItem = true;
           break;
         }

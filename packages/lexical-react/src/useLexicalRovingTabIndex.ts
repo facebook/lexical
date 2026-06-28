@@ -45,7 +45,11 @@ export function useLexicalRovingTabIndex(
       }
     });
     return () => {
-      dep.output.container.value = null;
+      batch(() => {
+        dep.output.container.value = null;
+        dep.output.orientation.value = 'horizontal';
+        dep.output.itemSelector.value = null;
+      });
     };
   }, [editor, containerRef, orientation, itemSelector]);
 }

@@ -6,7 +6,7 @@
  *
  */
 
-import {FocusManagerExtension,type FocusManagerOptions} from '@lexical/a11y';
+import {FocusManagerExtension, type FocusManagerOptions} from '@lexical/a11y';
 import {batch, getExtensionDependencyFromEditor} from '@lexical/extension';
 import {RefObject, useEffect} from 'react';
 
@@ -36,7 +36,10 @@ export function useLexicalFocusManager(
       }
     });
     return () => {
-      dep.output.toolbar.value = null;
+      batch(() => {
+        dep.output.toolbar.value = null;
+        dep.output.toolbarItemSelector.value = null;
+      });
     };
   }, [editor, toolbarRef, toolbarItemSelector]);
 }

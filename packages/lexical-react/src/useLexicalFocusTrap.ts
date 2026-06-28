@@ -6,7 +6,7 @@
  *
  */
 
-import {FocusTrapExtension,type FocusTrapInitialFocus} from '@lexical/a11y';
+import {FocusTrapExtension, type FocusTrapInitialFocus} from '@lexical/a11y';
 import {batch, getExtensionDependencyFromEditor} from '@lexical/extension';
 import {RefObject, useEffect} from 'react';
 
@@ -34,7 +34,10 @@ export function useLexicalFocusTrap(
       dep.output.initialFocus.value = initialFocus;
     });
     return () => {
-      dep.output.container.value = null;
+      batch(() => {
+        dep.output.container.value = null;
+        dep.output.initialFocus.value = 'firstFocusable';
+      });
     };
   }, [editor, isActive, containerRef, initialFocus]);
 }

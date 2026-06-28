@@ -417,10 +417,6 @@ function $getBlockFromCaret(
     if (INTERNAL_$isBlock(origin)) {
       return origin;
     }
-    const child = caret.getNodeAtCaret();
-    if (child && $isElementNode(child) && INTERNAL_$isBlock(child)) {
-      return child;
-    }
   } else {
     const parent = caret.getParentAtCaret();
     if (parent && INTERNAL_$isBlock(parent)) {

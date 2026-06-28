@@ -12,9 +12,8 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {useLexicalAriaLiveRegion} from '@lexical/react/useLexicalAriaLiveRegion';
 import * as React from 'react';
-import {useEffect, useImperativeHandle, useRef} from 'react';
+import {act, useEffect, useImperativeHandle, useRef} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
-import {act} from 'react-dom/test-utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 type Handle = {announce: (message: string) => void};

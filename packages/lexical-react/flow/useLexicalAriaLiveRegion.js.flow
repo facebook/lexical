@@ -7,11 +7,4 @@
  * @flow strict
  */
 
-export type AriaPoliteness = 'polite' | 'assertive';
-
-export type AriaLiveRegionOptions = {
-  politeness?: AriaPoliteness,
-  owner?: HTMLElement,
-};
-
 declare export hook useLexicalAriaLiveRegion(): (message: string) => void;

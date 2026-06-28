@@ -12,8 +12,6 @@ import {useCallback} from 'react';
 
 import {useLexicalComposerContext} from './LexicalComposerContext';
 
-export type {AriaLiveRegionOptions, AriaPoliteness} from '@lexical/a11y';
-
 /**
  * Returns a stable `announce` function backed by the editor's
  * {@link AriaLiveRegionExtension} output. Requires

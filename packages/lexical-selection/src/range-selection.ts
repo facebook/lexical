@@ -14,6 +14,7 @@ import type {
   LexicalNode,
   NodeKey,
   Point,
+  PointCaret,
   RangeSelection,
   TextNode,
 } from 'lexical';
@@ -32,7 +33,6 @@ import {
   $isLeafNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
-  $isSiblingCaret,
   $isTextNode,
   $setSelection,
   flipDirection,
@@ -75,22 +75,29 @@ export function $isAtEdgeOfElement(
   element: ElementNode,
   direction: CaretDirection,
 ): boolean {
-  const caret = $caretFromPoint(point, direction);
-  // An extendable TextPointCaret has text remaining in `direction` (node-caret
-  // iteration ignores text offsets), so the point is in the middle of a
-  // TextNode rather than at the element edge. Otherwise walk towards the edge:
-  // each step must cleanly exit an ancestor (a SiblingCaret whose origin is an
-  // ElementNode with nothing before it in `direction`); any other caret is
-  // content between the point and the edge. The point is at the edge once we
-  // exit `element` itself.
-  if (!$isExtendableTextPointCaret(caret)) {
-    for (const next of $extendCaretToRange(caret)) {
-      if (!$isSiblingCaret(next) || !$isElementNode(next.origin)) {
-        break;
-      }
-      if (element.is(next.origin)) {
-        return true;
-      }
+  // An extendable TextPointCaret has text remaining in `direction`, so the
+  // point is in the middle of a TextNode rather than at the element edge.
+  let caret: PointCaret<typeof direction> | null = $caretFromPoint(
+    point,
+    direction,
+  );
+  if ($isExtendableTextPointCaret(caret)) {
+    return false;
+  }
+  // Walk up towards element: the point is at the edge only when nothing
+  // precedes it in `direction` at every level up to element. The match is read
+  // from getParentAtCaret (origin.getParent()) rather than from a CaretRange
+  // iteration, because iterating ascends via getParentCaret, which stops at the
+  // document root and at shadow-root/slot boundaries — so it would never yield
+  // `element` when `element` is itself such a boundary (e.g. a named slot's
+  // value, a shadow root).
+  for (; caret !== null; caret = caret.getParentCaret('root')) {
+    const parent = caret.getParentAtCaret();
+    if (parent === null || caret.getAdjacentCaret() !== null) {
+      return false;
+    }
+    if (element.is(parent)) {
+      return true;
     }
   }
   return false;

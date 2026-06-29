@@ -50,6 +50,7 @@ export function InsertTableDialog({
   return (
     <>
       <TextInput
+        autoFocus={true}
         placeholder={'# of rows (1-500)'}
         label="Rows"
         onChange={setRows}

@@ -51,10 +51,12 @@ function SpeechToTextPlugin(): null {
     // @ts-expect-error missing type
     window.SpeechRecognition || window.webkitSpeechRecognition;
   const recognition = useRef<typeof SpeechRecognition | null>(null);
+  const lastInsertedText = useRef('');
   const report = useReport();
 
   useEffect(() => {
     if (isEnabled && recognition.current === null) {
+      lastInsertedText.current = '';
       recognition.current = new SpeechRecognition();
       recognition.current.continuous = true;
       recognition.current.interimResults = true;
@@ -65,25 +67,39 @@ function SpeechToTextPlugin(): null {
           const {transcript} = resultItem.item(0);
           report(transcript);
 
-          if (!resultItem.isFinal) {
+          if (!resultItem.isFinal || transcript.length === 0) {
             return;
           }
+
+          const prev = lastInsertedText.current;
+          // Skip shrunk reinterpretations from the speech engine
+          if (transcript === prev || prev.startsWith(transcript)) {
+            return;
+          }
+
+          let textToInsert: string;
+          if (transcript.startsWith(prev)) {
+            textToInsert = transcript.slice(prev.length);
+          } else {
+            textToInsert = transcript;
+          }
+          lastInsertedText.current = transcript;
 
           editor.update(() => {
             const selection = $getSelection();
 
             if ($isRangeSelection(selection)) {
-              const command = VOICE_COMMANDS[transcript.toLowerCase().trim()];
+              const command = VOICE_COMMANDS[textToInsert.toLowerCase().trim()];
 
               if (command) {
                 command({
                   editor,
                   selection,
                 });
-              } else if (transcript.match(/\s*\n\s*/)) {
+              } else if (textToInsert.match(/\s*\n\s*/)) {
                 selection.insertParagraph();
               } else {
-                selection.insertText(transcript);
+                selection.insertText(textToInsert);
               }
             }
           });
@@ -102,6 +118,7 @@ function SpeechToTextPlugin(): null {
     return () => {
       if (recognition.current !== null) {
         recognition.current.stop();
+        recognition.current = null;
       }
     };
   }, [SpeechRecognition, editor, isEnabled, report]);

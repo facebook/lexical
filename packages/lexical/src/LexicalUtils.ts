@@ -19,7 +19,6 @@ import type {
   NodeMutation,
   RegisteredNode,
   RegisteredNodes,
-  Spread,
 } from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {
@@ -1748,14 +1747,21 @@ export function $getNearestRootOrShadowRoot(
 const ShadowRootNodeBrand: unique symbol = Symbol.for(
   '@lexical/ShadowRootNodeBrand',
 );
-type ShadowRootNode = Spread<
-  {isShadowRoot(): true; [ShadowRootNodeBrand]: never},
-  ElementNode
->;
+export interface ShadowRootNode extends ElementNode {
+  [ShadowRootNodeBrand]: never;
+  isShadowRoot(): true;
+}
+
+export function $isShadowRootNode(
+  node: null | LexicalNode,
+): node is ShadowRootNode {
+  return $isElementNode(node) && node.isShadowRoot();
+}
+
 export function $isRootOrShadowRoot(
   node: null | LexicalNode,
 ): node is RootNode | ShadowRootNode {
-  return $isRootNode(node) || ($isElementNode(node) && node.isShadowRoot());
+  return $isRootNode(node) || $isShadowRootNode(node);
 }
 
 /**
@@ -1891,11 +1897,28 @@ function createBlockCursorElement(editorConfig: EditorConfig): HTMLDivElement {
   return element;
 }
 
-function needsBlockCursor(node: null | LexicalNode): boolean {
-  return (
-    ($isDecoratorNode(node) || ($isElementNode(node) && !node.canBeEmpty())) &&
-    !node.isInline()
-  );
+/**
+ * Returns true if the given node needs a block cursor given an adjacent selection,
+ * the node must be non-inline and one of:
+ * - DecoratorNode
+ * - ShadowRootNode with a parent that is not also a ShadowRootNode
+ * - An ElementNode that can't be empty
+ */
+export function $needsBlockCursorBeside(node: null | LexicalNode): boolean {
+  if (!node || node.isInline()) {
+    return false;
+  }
+  if ($isDecoratorNode(node)) {
+    return true;
+  }
+  if ($isElementNode(node)) {
+    if (node.isShadowRoot()) {
+      const parent = node.getParent();
+      return !($isElementNode(parent) && parent.isShadowRoot());
+    }
+    return !node.canBeEmpty();
+  }
+  return false;
 }
 
 export function removeDOMBlockCursorElement(
@@ -1935,14 +1958,14 @@ export function $updateDOMBlockCursorElement(
 
     if (offset === elementNodeSize) {
       const child = elementNode.getChildAtIndex(offset - 1);
-      if (needsBlockCursor(child)) {
+      if ($needsBlockCursorBeside(child)) {
         isBlockCursor = true;
       }
     } else {
       const child = elementNode.getChildAtIndex(offset);
-      if (child !== null && needsBlockCursor(child)) {
+      if (child !== null && $needsBlockCursorBeside(child)) {
         const sibling = child.getPreviousSibling();
-        if (sibling === null || needsBlockCursor(sibling)) {
+        if (sibling === null || $needsBlockCursorBeside(sibling)) {
           isBlockCursor = true;
           insertBeforeElement = editor.getElementByKey(child.__key);
         }

@@ -8,6 +8,7 @@
 
 import type {
   BaseSelection,
+  CaretDirection,
   DecoratorNode,
   ElementNode,
   LexicalNode,
@@ -31,8 +32,10 @@ import {
   $isLeafNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $isSiblingCaret,
   $isTextNode,
   $setSelection,
+  flipDirection,
   getStyleObjectFromCSS,
   INTERNAL_$isBlock,
 } from 'lexical';
@@ -53,53 +56,65 @@ export function $copyBlockFormatIndent(
   }
 }
 
-function $isPointAtBlockStart(point: Point, block: ElementNode): boolean {
-  if (point.offset !== 0) {
-    return false;
+/**
+ * Determine whether a point sits at the leading ('previous') or trailing
+ * ('next') edge of `element`'s content — i.e. there is no content between the
+ * point and that edge of the element.
+ *
+ * This is the caret-based generalization of {@link $isAtNodeEnd}. An empty
+ * `element` is considered to be at both of its edges. `@lexical/utils`
+ * re-exports this as the direction-specific `$isAtStartOfNode` /
+ * `$isAtEndOfNode` helpers.
+ *
+ * @param point - The point to test.
+ * @param element - The ancestor element whose edge is tested.
+ * @param direction - 'previous' for the start of `element`, 'next' for the end.
+ */
+export function $isAtEdgeOfElement(
+  point: Point,
+  element: ElementNode,
+  direction: CaretDirection,
+): boolean {
+  const caret = $caretFromPoint(point, direction);
+  // An extendable TextPointCaret has text remaining in `direction` (node-caret
+  // iteration ignores text offsets), so the point is in the middle of a
+  // TextNode rather than at the element edge. Otherwise walk towards the edge:
+  // each step must cleanly exit an ancestor (a SiblingCaret whose origin is an
+  // ElementNode with nothing before it in `direction`); any other caret is
+  // content between the point and the edge. The point is at the edge once we
+  // exit `element` itself.
+  if (!$isExtendableTextPointCaret(caret)) {
+    for (const next of $extendCaretToRange(caret)) {
+      if (!$isSiblingCaret(next) || !$isElementNode(next.origin)) {
+        break;
+      }
+      if (element.is(next.origin)) {
+        return true;
+      }
+    }
   }
-  let node: LexicalNode = point.getNode();
-  // When an ElementNode is empty it's not possible to distinguish if
-  // the selection's intent is the entire block or the edge so we consider
-  // it to be the entire block
+  return false;
+}
+
+/**
+ * Determine whether a point sits at the edge of a block in the given
+ * direction: 'previous' for the start of the block, 'next' for the end.
+ *
+ * Unlike {@link $isAtEdgeOfElement}, an empty block is treated as not being at
+ * the edge: when an ElementNode is empty it's not possible to distinguish if
+ * the selection's intent is the entire block or the edge so we consider it to
+ * be the entire block.
+ */
+function $isPointAtBlockEdge(
+  point: Point,
+  block: ElementNode,
+  direction: CaretDirection,
+): boolean {
+  const node = point.getNode();
   if ($isElementNode(node) && node.isEmpty()) {
     return false;
   }
-  while (!node.is(block)) {
-    if (node.getPreviousSibling() !== null) {
-      return false;
-    }
-    const parent = node.getParent();
-    if (parent === null) {
-      return false;
-    }
-    node = parent;
-  }
-  return true;
-}
-
-function $isPointAtBlockEnd(point: Point, block: ElementNode): boolean {
-  let node: LexicalNode = point.getNode();
-  if ($isElementNode(node)) {
-    if (node.isEmpty()) {
-      return false;
-    }
-    if (point.offset !== node.getChildrenSize()) {
-      return false;
-    }
-  } else if (point.offset !== node.getTextContentSize()) {
-    return false;
-  }
-  while (!node.is(block)) {
-    if (node.getNextSibling() !== null) {
-      return false;
-    }
-    const parent = node.getParent();
-    if (parent === null) {
-      return false;
-    }
-    node = parent;
-  }
-  return true;
+  return $isAtEdgeOfElement(point, block, direction);
 }
 
 /**
@@ -122,45 +137,36 @@ export function $setBlocksType<T extends ElementNode>(
   // Selections tend to not include their containing blocks so we effectively
   // expand it here
   const anchorAndFocus = selection.getStartEndPoints();
-  let skipFocusAtBlockStart = false;
-  let skipFocusAtBlockEnd = false;
+  let skipFocus = false;
   let focusBlock: ElementNode | DecoratorNode<unknown> | null = null;
   const blockMap = new Map<NodeKey, ElementNode>();
   if (anchorAndFocus) {
     const [anchor, focus] = anchorAndFocus;
-
     const anchorBlock = $findMatchingParent(
       anchor.getNode(),
       INTERNAL_$isBlock,
     );
     focusBlock = $findMatchingParent(focus.getNode(), INTERNAL_$isBlock);
-    skipFocusAtBlockStart =
-      !selection.isBackward() &&
+    // The focus is the moving edge of the selection, travelling in `direction`
+    // (towards the end of the document for a forward selection). When a
+    // selection overshoots, its focus lands at the leading edge of focusBlock
+    // in that direction — the edge opposite to travel — so focusBlock holds
+    // none of the selection and is skipped.
+    const direction = selection.isBackward() ? 'previous' : 'next';
+    skipFocus =
       $isElementNode(focusBlock) &&
       !focusBlock.is(anchorBlock) &&
-      $isPointAtBlockStart(focus, focusBlock);
-    skipFocusAtBlockEnd =
-      selection.isBackward() &&
-      $isElementNode(focusBlock) &&
-      !focusBlock.is(anchorBlock) &&
-      $isPointAtBlockEnd(focus, focusBlock);
+      $isPointAtBlockEdge(focus, focusBlock, flipDirection(direction));
     if ($isElementNode(anchorBlock)) {
       blockMap.set(anchorBlock.getKey(), anchorBlock);
     }
-    if (
-      $isElementNode(focusBlock) &&
-      !skipFocusAtBlockStart &&
-      !skipFocusAtBlockEnd
-    ) {
+    if ($isElementNode(focusBlock) && !skipFocus) {
       blockMap.set(focusBlock.getKey(), focusBlock);
     }
   }
   for (const node of selection.getNodes()) {
     if ($isElementNode(node) && INTERNAL_$isBlock(node)) {
-      if (
-        (skipFocusAtBlockStart || skipFocusAtBlockEnd) &&
-        node.is(focusBlock)
-      ) {
+      if (skipFocus && node.is(focusBlock)) {
         continue;
       }
       blockMap.set(node.getKey(), node);

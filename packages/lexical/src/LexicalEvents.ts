@@ -1159,7 +1159,7 @@ function $handleBeforeInput(event: InputEvent): boolean {
 
 function onInput(event: InputEvent, editor: LexicalEditor): void {
   // Note that the MutationObserver may or may not have already fired,
-  // but the the DOM and selection may have already changed.
+  // but the DOM and selection may have already changed.
   // See also:
   // - https://github.com/facebook/lexical/issues/7028
   // - https://github.com/facebook/lexical/pull/794

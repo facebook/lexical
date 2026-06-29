@@ -825,7 +825,7 @@ export class RangeSelection implements BaseSelection {
    * has the specified format.
    *
    * @param type the TextFormatType to check for.
-   * @returns true if the provided format is currently toggled on on the Selection, false otherwise.
+   * @returns true if the provided format is currently toggled on the Selection, false otherwise.
    */
   hasFormat(type: TextFormatType): boolean {
     const formatFlag = TEXT_TYPE_TO_FORMAT[type];

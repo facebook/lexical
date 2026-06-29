@@ -56,7 +56,7 @@ const config = defineConfig({
   use: {
     actionTimeout: 10000, // Max time to wait for actions
     navigationTimeout: 30000,
-    // this causes issues in the CI on on current version.
+    // this causes issues in the CI on current version.
     //trace: 'retain-on-failure',
     video: 'on-first-retry',
   },

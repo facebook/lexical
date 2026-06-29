@@ -41,6 +41,7 @@ import {assert, beforeEach, describe, expect, test} from 'vitest';
 
 import {$internalCreateRangeSelection} from '../../LexicalSelection';
 import {
+  $assertNodeType,
   $assertRangeSelection,
   $createTestDecoratorNode,
   $createTestInlineElementNode,
@@ -1884,7 +1885,10 @@ describe('Regression #8067', () => {
           root.clear().append(paragraph);
           const selection = $selectAll();
           selection.insertText('hello');
-          const children = paragraph.getChildren()[0] as TextNode;
+          const children = $assertNodeType(
+            paragraph.getChildren()[0],
+            $isTextNode,
+          );
           expect(children.getTextContent()).toBe('hello');
           expect(children.hasFormat('bold')).toBe(true);
         },

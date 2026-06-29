@@ -13,6 +13,7 @@ import {
   $getNodeByKey,
   $getRoot,
   $getState,
+  $isTextNode,
   $isTokenOrSegmented,
   $nodesOfType,
   $onUpdate,
@@ -57,7 +58,7 @@ import {
   scheduleMicroTask,
   scrollIntoViewIfNeeded,
 } from '../../LexicalUtils';
-import {initializeUnitTest} from '../utils';
+import {$assertNodeType, initializeUnitTest} from '../utils';
 
 describe('LexicalUtils tests', () => {
   initializeUnitTest(testEnv => {
@@ -561,7 +562,9 @@ describe('LexicalUtils tests', () => {
       const textMap = typeToNodeMap.get('text')!;
       expect(textMap.size).toEqual(2);
       expect(
-        [...textMap.values()].map(node => (node as TextNode).__text),
+        [...textMap.values()].map(
+          node => $assertNodeType(node, $isTextNode).__text,
+        ),
       ).toEqual(expect.arrayContaining(['a', 'b']));
     });
 

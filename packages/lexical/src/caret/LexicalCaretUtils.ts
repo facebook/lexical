@@ -31,11 +31,13 @@ import {
   $copyNode,
   $getNodeByKeyOrThrow,
   $isRootOrShadowRoot,
+  $isShadowRootNode,
   $setSelection,
   INTERNAL_$isBlock,
 } from '../LexicalUtils';
 import {$isElementNode, type ElementNode} from '../nodes/LexicalElementNode';
 import {$createParagraphNode} from '../nodes/LexicalParagraphNode';
+import {$isRootNode} from '../nodes/LexicalRootNode';
 import {
   $createTextNode,
   $isTextNode,
@@ -354,6 +356,36 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
       parent = parent.getParent();
       element.remove(true);
     }
+  } else if (focusCandidate) {
+    const focusBlock = $getBlockFromCaret(focusCandidate);
+    const focusBlockParent = focusBlock && focusBlock.getParent();
+    const topmostShadowRoot =
+      focusBlock && focusBlock.getParents().findLast($isShadowRootNode);
+    if (
+      focusBlock &&
+      focusBlockParent &&
+      !$isRootNode(focusBlockParent) &&
+      focusBlock.isEmpty() &&
+      seenStart.has(focusBlock.getKey()) &&
+      $getSlotNames(focusBlock).length === 0 &&
+      (!topmostShadowRoot || seenStart.has(topmostShadowRoot.getKey()))
+    ) {
+      focusBlock.remove(true);
+      let parent: ElementNode | null = focusBlockParent;
+      while (parent && !$isRootNode(parent) && parent.isEmpty()) {
+        const grandparent: ElementNode | null = parent.getParent();
+        if (
+          grandparent &&
+          $isRootNode(grandparent) &&
+          grandparent.getChildrenSize() <= 1
+        ) {
+          break;
+        }
+        const element = parent;
+        parent = grandparent;
+        element.remove(true);
+      }
+    }
   }
 
   // note this caret can be in either direction
@@ -375,6 +407,23 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     '$removeTextFromCaretRange: selection was lost, could not find a new anchor given candidates with keys: %s',
     JSON.stringify(anchorCandidates.map(n => n.origin.__key)),
   );
+}
+
+function $getBlockFromCaret(
+  caret: PointCaret<CaretDirection>,
+): ElementNode | null {
+  if ($isChildCaret(caret)) {
+    const origin = caret.origin;
+    if (INTERNAL_$isBlock(origin)) {
+      return origin;
+    }
+  } else {
+    const parent = caret.getParentAtCaret();
+    if (parent && INTERNAL_$isBlock(parent)) {
+      return parent;
+    }
+  }
+  return null;
 }
 
 /**

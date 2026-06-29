@@ -19,7 +19,7 @@ import Layout from '@theme/Layout';
 
 function LandingHero() {
   return (
-    <div className="flex w-screen flex-col items-center justify-start gap-10 p-10 lg:h-[75vh] lg:flex-row lg:justify-around">
+    <div className="flex w-full flex-col items-center justify-start gap-10 p-10 lg:h-[75vh] lg:flex-row lg:justify-around">
       <div className="w-full space-y-6 lg:max-w-[40rem] lg:min-w-[20rem]">
         <p className="text-4xl font-extrabold lg:text-6xl">
           A text editor framework that does things{' '}

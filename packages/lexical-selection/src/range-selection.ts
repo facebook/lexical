@@ -91,9 +91,9 @@ export function $isAtEdgeOfElement(
   // document root and at shadow-root/slot boundaries — so it would never yield
   // `element` when `element` is itself such a boundary (e.g. a named slot's
   // value, a shadow root).
-  for (; caret !== null; caret = caret.getParentCaret('root')) {
+  for (; caret; caret = caret.getParentCaret()) {
     const parent = caret.getParentAtCaret();
-    if (parent === null || caret.getAdjacentCaret() !== null) {
+    if (!parent || caret.getNodeAtCaret()) {
       return false;
     }
     if (element.is(parent)) {

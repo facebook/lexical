@@ -10,6 +10,7 @@ import {effect, namedSignals} from '@lexical/extension';
 import {mergeRegister} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_LOW,
+  createRefCountedRegistry,
   defineExtension,
   getActiveElementDeep,
   getComposedEventTarget,
@@ -18,6 +19,7 @@ import {
   KEY_DOWN_COMMAND,
   type LexicalEditor,
   REDO_COMMAND,
+  type RefCountedRegistry,
   safeCast,
   UNDO_COMMAND,
 } from 'lexical';
@@ -681,102 +683,20 @@ export const EditorModeAnnounceExtension = /* @__PURE__ */ defineExtension({
 });
 
 /**
- * A reference-counted registry mapping DOM containers to a per-container
- * activation. The first {@link ContainerRegistry.register} call for a
- * container activates it; every call returns its own disposer, and the
- * activation is torn down only once the last outstanding registration for
- * that container is released. This lets the same element be driven by more
- * than one caller (e.g. two React refs, or a Strict-Mode double mount)
- * without double-wiring or premature teardown.
+ * The public output of the focus-trap, roving-tabindex and focus-manager
+ * extensions: register a container (reference counted) and get back an
+ * idempotent disposer. Callers register through this method instead of a
+ * mutable map and never see the container bookkeeping or the teardown. It is
+ * the core {@link RefCountedRegistry} keyed by `HTMLElement`.
  *
- * This is the public output of the focus-trap, roving-tabindex and
- * focus-manager extensions: callers register through a method rather than a
- * mutable map, and never see the container bookkeeping or the teardown.
+ * Each extension creates the registry in its `init` phase, binds the
+ * per-container activation in `build` (where the editor is available), exposes
+ * the narrowed registry as its output, and disposes it on `register` teardown.
  */
-export interface ContainerRegistry<Options> {
-  /**
-   * Activate `container` (reference counted) and return a disposer that
-   * releases this registration. The disposer is idempotent.
-   */
-  register: (container: HTMLElement, options?: Options) => () => void;
-}
-
-/**
- * Internal handle for a {@link ContainerRegistry}, created in an extension's
- * `init` phase and shared with `build` (which binds the per-container
- * activation once the editor exists) and `register` (which disposes it on
- * teardown). Keeping the container map and teardown here — rather than on the
- * public {@link ContainerRegistry} output — is what hides them from callers.
- */
-interface ManagedContainerRegistry<Options> {
-  /** The public, consumer-facing registry exposed as the extension output. */
-  readonly registry: ContainerRegistry<Options>;
-  /** Bind the per-container activation; called from `build`. */
-  setActivate: (
-    activate: (container: HTMLElement, options?: Options) => () => void,
-  ) => void;
-  /** Dispose every live registration; called from the `register` teardown. */
-  dispose: () => void;
-}
-
-function createManagedContainerRegistry<
-  Options,
->(): ManagedContainerRegistry<Options> {
-  interface Entry {
-    count: number;
-    dispose: () => void;
-  }
-  let activate:
-    | ((container: HTMLElement, options?: Options) => () => void)
-    | null = null;
-  const entries = new Map<HTMLElement, Entry>();
-  const registry: ContainerRegistry<Options> = {
-    register(container, options) {
-      if (activate === null) {
-        throw new Error(
-          '@lexical/a11y: container registered before the extension was built',
-        );
-      }
-      let entry = entries.get(container);
-      if (entry === undefined) {
-        entry = {count: 0, dispose: activate(container, options)};
-        entries.set(container, entry);
-      }
-      entry.count += 1;
-      const ownEntry = entry;
-      let released = false;
-      return () => {
-        if (released) {
-          return;
-        }
-        released = true;
-        // No-op if the registry was already torn down, or this container was
-        // released to zero and re-registered as a fresh entry since.
-        if (entries.get(container) !== ownEntry) {
-          return;
-        }
-        ownEntry.count -= 1;
-        if (ownEntry.count === 0) {
-          entries.delete(container);
-          ownEntry.dispose();
-        }
-      };
-    },
-  };
-  return {
-    dispose() {
-      for (const entry of entries.values()) {
-        entry.dispose();
-      }
-      entries.clear();
-      activate = null;
-    },
-    registry,
-    setActivate(fn) {
-      activate = fn;
-    },
-  };
-}
+export type ContainerRegistry<Options> = RefCountedRegistry<
+  HTMLElement,
+  Options
+>;
 
 /**
  * Platform-independent extension that traps Tab / Shift+Tab focus inside one
@@ -786,11 +706,11 @@ function createManagedContainerRegistry<
  */
 export const FocusTrapExtension = /* @__PURE__ */ defineExtension({
   build: (_editor, _config, state): ContainerRegistry<FocusTrapOptions> => {
-    const managed = state.getInitResult();
-    managed.setActivate(registerFocusTrap);
-    return managed.registry;
+    const registry = state.getInitResult();
+    registry.setActivate(registerFocusTrap);
+    return registry;
   },
-  init: () => createManagedContainerRegistry<FocusTrapOptions>(),
+  init: () => createRefCountedRegistry<HTMLElement, FocusTrapOptions>(),
   name: '@lexical/a11y/FocusTrap',
   register: (_editor, _config, state) => () => state.getInitResult().dispose(),
 });
@@ -807,11 +727,11 @@ export const RovingTabIndexExtension = /* @__PURE__ */ defineExtension({
     _config,
     state,
   ): ContainerRegistry<RovingTabIndexOptions> => {
-    const managed = state.getInitResult();
-    managed.setActivate(registerRovingTabIndex);
-    return managed.registry;
+    const registry = state.getInitResult();
+    registry.setActivate(registerRovingTabIndex);
+    return registry;
   },
-  init: () => createManagedContainerRegistry<RovingTabIndexOptions>(),
+  init: () => createRefCountedRegistry<HTMLElement, RovingTabIndexOptions>(),
   name: '@lexical/a11y/RovingTabIndex',
   register: (_editor, _config, state) => () => state.getInitResult().dispose(),
 });
@@ -824,13 +744,13 @@ export const RovingTabIndexExtension = /* @__PURE__ */ defineExtension({
  */
 export const FocusManagerExtension = /* @__PURE__ */ defineExtension({
   build: (editor, _config, state): ContainerRegistry<FocusManagerOptions> => {
-    const managed = state.getInitResult();
-    managed.setActivate((toolbar, options) =>
+    const registry = state.getInitResult();
+    registry.setActivate((toolbar, options) =>
       registerFocusManager(editor, toolbar, options),
     );
-    return managed.registry;
+    return registry;
   },
-  init: () => createManagedContainerRegistry<FocusManagerOptions>(),
+  init: () => createRefCountedRegistry<HTMLElement, FocusManagerOptions>(),
   name: '@lexical/a11y/FocusManager',
   register: (_editor, _config, state) => () => state.getInitResult().dispose(),
 });

@@ -238,6 +238,11 @@ export {
 } from './LexicalNodeState';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
 export type {
+  ManagedRefCountedRegistry,
+  RefCountedRegistry,
+} from './LexicalRefCountedRegistry';
+export {createRefCountedRegistry} from './LexicalRefCountedRegistry';
+export type {
   BaseSelection,
   ElementPointType as ElementPoint,
   NodeSelection,

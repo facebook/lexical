@@ -95,7 +95,10 @@ export default function mlcPositionNodeOnRange(
       lastNodes[i] = rectNode;
     }
     while (lastNodes.length > rects.length) {
-      lastNodes.pop();
+      const node = lastNodes.pop();
+      if (node != null) {
+        node.remove();
+      }
     }
     if (hasRepositioned) {
       onReposition(lastNodes);

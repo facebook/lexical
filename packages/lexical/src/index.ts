@@ -251,6 +251,7 @@ export {
   $createPoint,
   $createRangeSelection,
   $createRangeSelectionFromDom,
+  $formatText,
   $generateNodesFromRawText,
   $getCharacterOffsets,
   $getPreviousSelection,
@@ -404,11 +405,17 @@ export {$isRootNode, RootNode} from './nodes/LexicalRootNode';
 export type {SerializedTabNode} from './nodes/LexicalTabNode';
 export {$createTabNode, $isTabNode, TabNode} from './nodes/LexicalTabNode';
 export type {
+  InlineFormattableNode,
   SerializedTextNode,
   TextFormatType,
   TextModeType,
 } from './nodes/LexicalTextNode';
-export {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';
+export {
+  $createTextNode,
+  $isInlineFormattable,
+  $isTextNode,
+  TextNode,
+} from './nodes/LexicalTextNode';
 
 // Update Tags
 export {

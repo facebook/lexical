@@ -725,6 +725,11 @@ declare export function $createNodeSelection(): NodeSelection;
 declare export function $isRangeSelection(
   x: ?unknown,
 ): x is RangeSelection;
+declare export function $formatText(
+  selection: RangeSelection | NodeSelection,
+  formatType: TextFormatType,
+  alignWithFormat?: number | null,
+): void;
 declare export function $getSelection(): null | BaseSelection;
 declare export function $getPreviousSelection(): null | BaseSelection;
 declare export function $insertNodes(nodes: LexicalNode[]): void;
@@ -805,6 +810,16 @@ declare export class TextNode extends LexicalNode {
   static importJSON(serializedTextNode: SerializedTextNode): TextNode;
   exportJSON(): SerializedTextNode;
 }
+export interface InlineFormattableNode {
+  +__isInlineFormattable: true;
+  getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
+  hasFormat(type: TextFormatType): boolean;
+  setFormat(format: number): mixed;
+  toggleFormat(type: TextFormatType): mixed;
+}
+declare export function $isInlineFormattable(
+  node: ?LexicalNode,
+): node is LexicalNode & InlineFormattableNode;
 declare export function $createTextNode(text?: string): TextNode;
 declare export function $isTextNode(
   node: ?LexicalNode,

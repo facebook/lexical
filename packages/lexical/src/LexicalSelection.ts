@@ -520,6 +520,16 @@ export class NodeSelection implements BaseSelection {
     for (const node of nodes) {
       node.remove();
     }
+    $ensureRootHasParagraph();
+  }
+}
+
+function $ensureRootHasParagraph(): void {
+  const root = $getRoot();
+  if (root.isEmpty()) {
+    const paragraph = $createParagraphNode();
+    root.append(paragraph);
+    paragraph.select();
   }
 }
 
@@ -913,9 +923,10 @@ export class RangeSelection implements BaseSelection {
     const selectedNodesLength = selectedNodes.length;
     let firstNode: TextNode = selectedNodes[0] as TextNode;
 
-    if (!$isTextNode(firstNode)) {
-      invariant(false, 'insertText: first node is not a text node');
-    }
+    invariant(
+      $isTextNode(firstNode),
+      'insertText: first node is not a text node',
+    );
     const firstNodeText = firstNode.getTextContent();
     const firstNodeTextLength = firstNodeText.length;
     const firstNodeParent = firstNode.getParentOrThrow();
@@ -1125,7 +1136,11 @@ export class RangeSelection implements BaseSelection {
           }
           // root node selections only select whole nodes, so no text splice is necessary
           if (!$isRootNode(endPoint.getNode()) && endPoint.type === 'text') {
-            lastNode = (lastNode as TextNode).spliceText(0, endOffset, '');
+            invariant(
+              $isTextNode(lastNode),
+              'insertText: lastNode is not a TextNode',
+            );
+            lastNode = lastNode.spliceText(0, endOffset, '');
           }
           markedNodeKeysForKeep.add(lastNode.__key);
         } else {
@@ -2074,6 +2089,7 @@ export class RangeSelection implements BaseSelection {
       ) {
         $collapseAtStart(this, anchorNode);
       }
+      $ensureRootHasParagraph();
     }
   }
 
@@ -2114,7 +2130,20 @@ export class RangeSelection implements BaseSelection {
       // with navigating through the parent element
       this.deleteCharacter(isBackward);
     } else {
-      this.removeText();
+      const anchorBlock = $findMatchingParent(
+        this.anchor.getNode(),
+        INTERNAL_$isBlock,
+      );
+      const focusBlock = $findMatchingParent(
+        this.focus.getNode(),
+        INTERNAL_$isBlock,
+      );
+      if (anchorBlock !== focusBlock) {
+        this.focus.set(this.anchor.key, this.anchor.offset, this.anchor.type);
+        this.deleteCharacter(isBackward);
+      } else {
+        this.removeText();
+      }
     }
   }
 

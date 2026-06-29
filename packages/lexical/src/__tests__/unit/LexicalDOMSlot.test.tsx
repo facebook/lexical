@@ -719,7 +719,7 @@ describe('ElementDOMSlot block cursor handling', () => {
     editor.update(
       () => {
         const wrap = $createInnerWrapNode();
-        // setIsInline(false) makes this a block decorator (needsBlockCursor).
+        // setIsInline(false) makes this a block decorator ($needsBlockCursorBeside).
         wrap.append($createTestDecoratorNode().setIsInline(false));
         $getRoot().clear().append(wrap);
         wrap.select(0, 0);

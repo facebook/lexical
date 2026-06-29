@@ -143,7 +143,7 @@ function containsComposed(container: Node, target: Node): boolean {
       return true;
     }
     if (isDOMShadowRoot(current)) {
-      current = (current as ShadowRoot).host;
+      current = current.host;
     } else {
       current = current.parentNode;
     }

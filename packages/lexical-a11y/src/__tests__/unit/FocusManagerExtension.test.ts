@@ -14,7 +14,7 @@ import {
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {KEY_DOWN_COMMAND} from 'lexical';
-import {afterEach, describe, expect, test} from 'vitest';
+import {afterEach, describe, expect, onTestFinished, test} from 'vitest';
 
 function createToolbar(): HTMLDivElement {
   const toolbar = document.createElement('div');
@@ -62,7 +62,7 @@ describe('FocusManagerExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    getRegistry(editor).register(toolbar);
+    onTestFinished(getRegistry(editor).register(toolbar));
 
     editor.dispatchCommand(
       KEY_DOWN_COMMAND,
@@ -79,7 +79,7 @@ describe('FocusManagerExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    getRegistry(editor).register(toolbar);
+    onTestFinished(getRegistry(editor).register(toolbar));
 
     const rootElement = document.createElement('div');
     rootElement.contentEditable = 'true';

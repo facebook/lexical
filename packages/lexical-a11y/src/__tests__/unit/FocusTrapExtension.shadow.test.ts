@@ -14,7 +14,7 @@ import {
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {getActiveElementDeep} from 'lexical';
-import {afterEach, describe, expect, test} from 'vitest';
+import {afterEach, describe, expect, onTestFinished, test} from 'vitest';
 
 interface ShadowFixture {
   host: HTMLDivElement;
@@ -75,7 +75,7 @@ describe('FocusTrapExtension (shadow DOM)', () => {
     using editor = buildTrapEditor();
     const {container, first} = createShadowFixture();
 
-    getRegistry(editor).register(container);
+    onTestFinished(getRegistry(editor).register(container));
 
     // document.activeElement is the host; the real focus is the inner button.
     expect(getActiveElementDeep(document)).toBe(first);
@@ -84,7 +84,7 @@ describe('FocusTrapExtension (shadow DOM)', () => {
   test('Tab cycles to the next focusable across the shadow boundary', () => {
     using editor = buildTrapEditor();
     const {container, first, second} = createShadowFixture();
-    getRegistry(editor).register(container);
+    onTestFinished(getRegistry(editor).register(container));
 
     first.focus();
     first.dispatchEvent(
@@ -98,7 +98,7 @@ describe('FocusTrapExtension (shadow DOM)', () => {
   test('Shift+Tab from the first item wraps to the last across the shadow boundary', () => {
     using editor = buildTrapEditor();
     const {container, first, second} = createShadowFixture();
-    getRegistry(editor).register(container);
+    onTestFinished(getRegistry(editor).register(container));
 
     first.focus();
     first.dispatchEvent(
@@ -132,7 +132,7 @@ describe('FocusTrapExtension (shadow DOM)', () => {
   test('focusin from outside the shadow host is pulled back inside the container', () => {
     using editor = buildTrapEditor();
     const {container, first} = createShadowFixture();
-    getRegistry(editor).register(container);
+    onTestFinished(getRegistry(editor).register(container));
 
     const outside = document.createElement('button');
     outside.textContent = 'outside';
@@ -151,7 +151,7 @@ describe('FocusTrapExtension (shadow DOM)', () => {
   test('focusin retargeted to a foreign shadow host is resolved via composedPath and pulled back', () => {
     using editor = buildTrapEditor();
     const {container, first} = createShadowFixture();
-    getRegistry(editor).register(container);
+    onTestFinished(getRegistry(editor).register(container));
 
     // Focus lands inside a *different* shadow tree, so the document-level
     // focusin sees event.target retargeted to the foreign host. The handler

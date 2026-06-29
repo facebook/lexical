@@ -14,7 +14,7 @@ import {
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {getActiveElementDeep} from 'lexical';
-import {afterEach, describe, expect, test} from 'vitest';
+import {afterEach, describe, expect, onTestFinished, test} from 'vitest';
 
 // Builds a roving toolbar of three buttons *inside* an open shadow root.
 // Arrow-key navigation reads the active item via getActiveElementDeep; under
@@ -74,7 +74,7 @@ describe('RovingTabIndexExtension (shadow DOM)', () => {
     using editor = buildRovingEditor();
     const {toolbar, buttons} = createShadowToolbar();
 
-    getRegistry(editor).register(toolbar, ROVING_OPTIONS);
+    onTestFinished(getRegistry(editor).register(toolbar, ROVING_OPTIONS));
 
     expect(buttons.map(b => b.tabIndex)).toEqual([0, -1, -1]);
   });
@@ -82,7 +82,7 @@ describe('RovingTabIndexExtension (shadow DOM)', () => {
   test('ArrowRight moves focus to the next item across the shadow boundary', () => {
     using editor = buildRovingEditor();
     const {toolbar, buttons} = createShadowToolbar();
-    getRegistry(editor).register(toolbar, ROVING_OPTIONS);
+    onTestFinished(getRegistry(editor).register(toolbar, ROVING_OPTIONS));
 
     const [a, b] = buttons;
     a.focus();
@@ -102,7 +102,7 @@ describe('RovingTabIndexExtension (shadow DOM)', () => {
   test('ArrowLeft from the first item wraps to the last across the shadow boundary', () => {
     using editor = buildRovingEditor();
     const {toolbar, buttons} = createShadowToolbar();
-    getRegistry(editor).register(toolbar, ROVING_OPTIONS);
+    onTestFinished(getRegistry(editor).register(toolbar, ROVING_OPTIONS));
 
     const [a, , c] = buttons;
     a.focus();
@@ -121,7 +121,7 @@ describe('RovingTabIndexExtension (shadow DOM)', () => {
   test('End jumps to the last item across the shadow boundary', () => {
     using editor = buildRovingEditor();
     const {toolbar, buttons} = createShadowToolbar();
-    getRegistry(editor).register(toolbar, ROVING_OPTIONS);
+    onTestFinished(getRegistry(editor).register(toolbar, ROVING_OPTIONS));
 
     const [a, , c] = buttons;
     a.focus();

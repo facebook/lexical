@@ -13,7 +13,7 @@ import {
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
-import {afterEach, describe, expect, test} from 'vitest';
+import {afterEach, describe, expect, onTestFinished, test} from 'vitest';
 
 function createContainer(): HTMLDivElement {
   const container = document.createElement('div');
@@ -59,7 +59,7 @@ describe('FocusTrapExtension', () => {
       }),
     );
     const container = createContainer();
-    getRegistry(editor).register(container);
+    onTestFinished(getRegistry(editor).register(container));
     expect(document.activeElement).toBe(container.querySelector('button'));
   });
 
@@ -71,7 +71,9 @@ describe('FocusTrapExtension', () => {
       }),
     );
     const container = createContainer();
-    getRegistry(editor).register(container, {initialFocus: 'container'});
+    onTestFinished(
+      getRegistry(editor).register(container, {initialFocus: 'container'}),
+    );
     expect(document.activeElement).toBe(container);
   });
 
@@ -133,7 +135,7 @@ describe('FocusTrapExtension', () => {
     const [first, second] = Array.from(
       container.querySelectorAll<HTMLButtonElement>('button'),
     );
-    getRegistry(editor).register(container);
+    onTestFinished(getRegistry(editor).register(container));
 
     first.focus();
     first.dispatchEvent(

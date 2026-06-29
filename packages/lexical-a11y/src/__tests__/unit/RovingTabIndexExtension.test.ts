@@ -13,7 +13,7 @@ import {
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
-import {afterEach, describe, expect, test} from 'vitest';
+import {afterEach, describe, expect, onTestFinished, test} from 'vitest';
 
 function createToolbar(): HTMLDivElement {
   const toolbar = document.createElement('div');
@@ -61,7 +61,7 @@ describe('RovingTabIndexExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    getRegistry(editor).register(toolbar);
+    onTestFinished(getRegistry(editor).register(toolbar));
 
     const buttons = Array.from(toolbar.querySelectorAll('button'));
     expect(buttons[0].tabIndex).toBe(0);
@@ -93,7 +93,7 @@ describe('RovingTabIndexExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    getRegistry(editor).register(toolbar);
+    onTestFinished(getRegistry(editor).register(toolbar));
 
     const [a, b] = Array.from(
       toolbar.querySelectorAll<HTMLButtonElement>('button'),
@@ -115,7 +115,7 @@ describe('RovingTabIndexExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    getRegistry(editor).register(toolbar);
+    onTestFinished(getRegistry(editor).register(toolbar));
 
     const [a, b] = Array.from(
       toolbar.querySelectorAll<HTMLButtonElement>('button'),
@@ -133,7 +133,9 @@ describe('RovingTabIndexExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    getRegistry(editor).register(toolbar, {orientation: 'vertical'});
+    onTestFinished(
+      getRegistry(editor).register(toolbar, {orientation: 'vertical'}),
+    );
 
     const [a, b] = Array.from(
       toolbar.querySelectorAll<HTMLButtonElement>('button'),

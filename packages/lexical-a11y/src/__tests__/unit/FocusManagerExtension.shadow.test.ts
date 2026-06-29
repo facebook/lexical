@@ -14,7 +14,7 @@ import {
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {getActiveElementDeep, KEY_DOWN_COMMAND} from 'lexical';
-import {afterEach, describe, expect, test} from 'vitest';
+import {afterEach, describe, expect, onTestFinished, test} from 'vitest';
 
 // A toolbar whose buttons live inside an open shadow root. Each button
 // wraps an icon <span> so Escape can be dispatched from a descendant,
@@ -66,7 +66,9 @@ describe('FocusManagerExtension (shadow DOM)', () => {
   test('Alt+F10 focuses the first item of a shadow-hosted toolbar', () => {
     using editor = buildFocusManagerEditor();
     const {toolbar, buttons} = createShadowToolbar();
-    getRegistry(editor).register(toolbar, {toolbarItemSelector: 'button'});
+    onTestFinished(
+      getRegistry(editor).register(toolbar, {toolbarItemSelector: 'button'}),
+    );
 
     editor.dispatchCommand(
       KEY_DOWN_COMMAND,
@@ -79,7 +81,9 @@ describe('FocusManagerExtension (shadow DOM)', () => {
   test('Escape from a descendant of a shadow-hosted toolbar item returns focus to the editor root', () => {
     using editor = buildFocusManagerEditor();
     const {toolbar, icons} = createShadowToolbar();
-    getRegistry(editor).register(toolbar, {toolbarItemSelector: 'button'});
+    onTestFinished(
+      getRegistry(editor).register(toolbar, {toolbarItemSelector: 'button'}),
+    );
 
     const rootElement = document.createElement('div');
     rootElement.contentEditable = 'true';

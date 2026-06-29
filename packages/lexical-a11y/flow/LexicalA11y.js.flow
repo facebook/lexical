@@ -37,7 +37,12 @@ export type RovingTabIndexOptions = {
   itemSelector?: string,
 };
 
-import type {LexicalExtension} from 'lexical';
+import type {
+  ExtensionConfigBase,
+  LexicalExtension,
+  ManagedRefCountedRegistry,
+  RefCountedRegistry,
+} from 'lexical';
 import type {NamedSignalsOutput} from '@lexical/extension';
 
 export type FocusManagerOptions = {
@@ -77,27 +82,28 @@ declare export var EditorModeAnnounceExtension: LexicalExtension<
   void,
 >;
 
-export type ContainerRegistry<Options> = {
-  register: (container: HTMLElement, options?: Options) => () => void,
-};
+export type ContainerRegistry<Options> = RefCountedRegistry<
+  HTMLElement,
+  Options,
+>;
 
 declare export var FocusTrapExtension: LexicalExtension<
-  {...},
+  ExtensionConfigBase,
   '@lexical/a11y/FocusTrap',
   ContainerRegistry<FocusTrapOptions>,
-  mixed,
+  ManagedRefCountedRegistry<HTMLElement, FocusTrapOptions>,
 >;
 
 declare export var RovingTabIndexExtension: LexicalExtension<
-  {...},
+  ExtensionConfigBase,
   '@lexical/a11y/RovingTabIndex',
   ContainerRegistry<RovingTabIndexOptions>,
-  mixed,
+  ManagedRefCountedRegistry<HTMLElement, RovingTabIndexOptions>,
 >;
 
 declare export var FocusManagerExtension: LexicalExtension<
-  {...},
+  ExtensionConfigBase,
   '@lexical/a11y/FocusManager',
   ContainerRegistry<FocusManagerOptions>,
-  mixed,
+  ManagedRefCountedRegistry<HTMLElement, FocusManagerOptions>,
 >;

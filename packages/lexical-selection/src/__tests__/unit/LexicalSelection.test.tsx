@@ -2430,7 +2430,7 @@ describe('LexicalSelection tests', () => {
             offset: 0,
           };
         },
-        name: 'moves selection to to next text node if replacing with decorator',
+        name: 'moves selection to next text node if replacing with decorator',
       },
       {
         fn: () => {

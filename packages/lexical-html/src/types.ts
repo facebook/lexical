@@ -67,7 +67,7 @@ export type ContextConfigUpdater<Ctx extends AnyContextSymbol, V> = {
 /**
  * @experimental
  *
- * Set the the context at `cfg` to a specific value, constructed with {@link contextValue}
+ * Set the context at `cfg` to a specific value, constructed with {@link contextValue}
  */
 export type ContextConfigPair<Ctx extends AnyContextSymbol, V> = readonly [
   ContextConfig<Ctx, V>,

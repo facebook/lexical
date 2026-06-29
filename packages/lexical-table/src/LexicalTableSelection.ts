@@ -223,7 +223,7 @@ export class TableSelection implements BaseSelection {
    * This will be true if any paragraph in table cells has the specified format.
    *
    * @param type the TextFormatType to check for.
-   * @returns true if the provided format is currently toggled on on the Selection, false otherwise.
+   * @returns true if the provided format is currently toggled on the Selection, false otherwise.
    */
   hasFormat(type: TextFormatType): boolean {
     let format = 0;

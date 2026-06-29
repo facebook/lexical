@@ -54,6 +54,10 @@ function buildFocusManagerEditor() {
   );
 }
 
+function getRegistry(editor: ReturnType<typeof buildFocusManagerEditor>) {
+  return getExtensionDependencyFromEditor(editor, FocusManagerExtension).output;
+}
+
 afterEach(() => {
   document.body.replaceChildren();
 });
@@ -62,11 +66,7 @@ describe('FocusManagerExtension (shadow DOM)', () => {
   test('Alt+F10 focuses the first item of a shadow-hosted toolbar', () => {
     using editor = buildFocusManagerEditor();
     const {toolbar, buttons} = createShadowToolbar();
-    const {toolbars} = getExtensionDependencyFromEditor(
-      editor,
-      FocusManagerExtension,
-    ).output;
-    toolbars.value = new Map([[toolbar, {toolbarItemSelector: 'button'}]]);
+    getRegistry(editor).register(toolbar, {toolbarItemSelector: 'button'});
 
     editor.dispatchCommand(
       KEY_DOWN_COMMAND,
@@ -79,11 +79,7 @@ describe('FocusManagerExtension (shadow DOM)', () => {
   test('Escape from a descendant of a shadow-hosted toolbar item returns focus to the editor root', () => {
     using editor = buildFocusManagerEditor();
     const {toolbar, icons} = createShadowToolbar();
-    const {toolbars} = getExtensionDependencyFromEditor(
-      editor,
-      FocusManagerExtension,
-    ).output;
-    toolbars.value = new Map([[toolbar, {toolbarItemSelector: 'button'}]]);
+    getRegistry(editor).register(toolbar, {toolbarItemSelector: 'button'});
 
     const rootElement = document.createElement('div');
     rootElement.contentEditable = 'true';

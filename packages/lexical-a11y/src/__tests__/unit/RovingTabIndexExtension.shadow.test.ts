@@ -21,6 +21,11 @@ import {afterEach, describe, expect, test} from 'vitest';
 // a naive `document.activeElement` read the active element would resolve to
 // the host (outside the toolbar) and navigation would not advance, so these
 // tests fail unless the composed-tree helper is used.
+//
+// NOTE: an explicit `itemSelector: 'button'` is used instead of the default
+// `:scope > button` because jsdom's selector engine does not resolve
+// `:scope`-relative selectors inside a shadow root (real browsers do). The
+// composed-tree focus behaviour under test is independent of the selector.
 function createShadowToolbar(): {
   host: HTMLDivElement;
   root: ShadowRoot;
@@ -50,6 +55,16 @@ function buildRovingEditor() {
   );
 }
 
+function getRegistry(editor: ReturnType<typeof buildRovingEditor>) {
+  return getExtensionDependencyFromEditor(editor, RovingTabIndexExtension)
+    .output;
+}
+
+const ROVING_OPTIONS = {
+  itemSelector: 'button',
+  orientation: 'horizontal',
+} as const;
+
 afterEach(() => {
   document.body.replaceChildren();
 });
@@ -58,14 +73,8 @@ describe('RovingTabIndexExtension (shadow DOM)', () => {
   test('applies the roving tabindex pattern to items inside a shadow root', () => {
     using editor = buildRovingEditor();
     const {toolbar, buttons} = createShadowToolbar();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      RovingTabIndexExtension,
-    ).output;
 
-    containers.value = new Map([
-      [toolbar, {itemSelector: 'button', orientation: 'horizontal'}],
-    ]);
+    getRegistry(editor).register(toolbar, ROVING_OPTIONS);
 
     expect(buttons.map(b => b.tabIndex)).toEqual([0, -1, -1]);
   });
@@ -73,13 +82,7 @@ describe('RovingTabIndexExtension (shadow DOM)', () => {
   test('ArrowRight moves focus to the next item across the shadow boundary', () => {
     using editor = buildRovingEditor();
     const {toolbar, buttons} = createShadowToolbar();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      RovingTabIndexExtension,
-    ).output;
-    containers.value = new Map([
-      [toolbar, {itemSelector: 'button', orientation: 'horizontal'}],
-    ]);
+    getRegistry(editor).register(toolbar, ROVING_OPTIONS);
 
     const [a, b] = buttons;
     a.focus();
@@ -99,13 +102,7 @@ describe('RovingTabIndexExtension (shadow DOM)', () => {
   test('ArrowLeft from the first item wraps to the last across the shadow boundary', () => {
     using editor = buildRovingEditor();
     const {toolbar, buttons} = createShadowToolbar();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      RovingTabIndexExtension,
-    ).output;
-    containers.value = new Map([
-      [toolbar, {itemSelector: 'button', orientation: 'horizontal'}],
-    ]);
+    getRegistry(editor).register(toolbar, ROVING_OPTIONS);
 
     const [a, , c] = buttons;
     a.focus();
@@ -124,13 +121,7 @@ describe('RovingTabIndexExtension (shadow DOM)', () => {
   test('End jumps to the last item across the shadow boundary', () => {
     using editor = buildRovingEditor();
     const {toolbar, buttons} = createShadowToolbar();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      RovingTabIndexExtension,
-    ).output;
-    containers.value = new Map([
-      [toolbar, {itemSelector: 'button', orientation: 'horizontal'}],
-    ]);
+    getRegistry(editor).register(toolbar, ROVING_OPTIONS);
 
     const [a, , c] = buttons;
     a.focus();

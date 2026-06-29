@@ -27,12 +27,16 @@ function createContainer(): HTMLDivElement {
   return container;
 }
 
+function getRegistry(editor: ReturnType<typeof buildEditorFromExtensions>) {
+  return getExtensionDependencyFromEditor(editor, FocusTrapExtension).output;
+}
+
 afterEach(() => {
   document.body.replaceChildren();
 });
 
 describe('FocusTrapExtension', () => {
-  test('empty containers map keeps the trap inert', () => {
+  test('no registered container keeps the trap inert', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [FocusTrapExtension, RichTextExtension],
@@ -47,7 +51,7 @@ describe('FocusTrapExtension', () => {
     outside.remove();
   });
 
-  test('activates when a container is added to the map', () => {
+  test('activates when a container is registered', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [FocusTrapExtension, RichTextExtension],
@@ -55,11 +59,7 @@ describe('FocusTrapExtension', () => {
       }),
     );
     const container = createContainer();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      FocusTrapExtension,
-    ).output;
-    containers.value = new Map([[container, {}]]);
+    getRegistry(editor).register(container);
     expect(document.activeElement).toBe(container.querySelector('button'));
   });
 
@@ -71,15 +71,11 @@ describe('FocusTrapExtension', () => {
       }),
     );
     const container = createContainer();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      FocusTrapExtension,
-    ).output;
-    containers.value = new Map([[container, {initialFocus: 'container'}]]);
+    getRegistry(editor).register(container, {initialFocus: 'container'});
     expect(document.activeElement).toBe(container);
   });
 
-  test('deactivates when the container is removed from the map', () => {
+  test('deactivates when the registration is disposed', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [FocusTrapExtension, RichTextExtension],
@@ -87,16 +83,40 @@ describe('FocusTrapExtension', () => {
       }),
     );
     const container = createContainer();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      FocusTrapExtension,
-    ).output;
-    containers.value = new Map([[container, {}]]);
+    const dispose = getRegistry(editor).register(container);
     expect(document.activeElement).toBe(container.querySelector('button'));
 
-    containers.value = new Map();
+    dispose();
     const outside = document.createElement('button');
     document.body.appendChild(outside);
+    outside.focus();
+    expect(document.activeElement).toBe(outside);
+    outside.remove();
+  });
+
+  test('reference counting keeps the trap active until the last disposer runs', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [FocusTrapExtension, RichTextExtension],
+        name: '[root]',
+      }),
+    );
+    const container = createContainer();
+    const registry = getRegistry(editor);
+    const disposeA = registry.register(container);
+    const disposeB = registry.register(container);
+    expect(document.activeElement).toBe(container.querySelector('button'));
+
+    // First release keeps the trap active (one outstanding reference remains).
+    disposeA();
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    outside.focus();
+    // The focusin safety net pulls focus back inside the still-active trap.
+    expect(document.activeElement).toBe(container.querySelector('button'));
+
+    // Last release tears it down.
+    disposeB();
     outside.focus();
     expect(document.activeElement).toBe(outside);
     outside.remove();
@@ -113,11 +133,7 @@ describe('FocusTrapExtension', () => {
     const [first, second] = Array.from(
       container.querySelectorAll<HTMLButtonElement>('button'),
     );
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      FocusTrapExtension,
-    ).output;
-    containers.value = new Map([[container, {}]]);
+    getRegistry(editor).register(container);
 
     first.focus();
     first.dispatchEvent(

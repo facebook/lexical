@@ -18,7 +18,8 @@ export type {RovingOrientation, RovingTabIndexOptions} from '@lexical/a11y';
 
 /**
  * Returns a `RefCallback` that registers the attached DOM element as a
- * roving-tabindex container with {@link RovingTabIndexExtension}.
+ * roving-tabindex container with {@link RovingTabIndexExtension}, and
+ * releases it when the element detaches.
  *
  * ```tsx
  * const rovingRef = useLexicalRovingTabIndexRef();
@@ -35,28 +36,24 @@ export function useLexicalRovingTabIndexRef(
 ): RefCallback<HTMLElement> {
   const [editor] = useLexicalComposerContext();
   const {orientation, itemSelector} = options;
-  const prevRef = useRef<HTMLElement | null>(null);
+  const disposeRef = useRef<(() => void) | null>(null);
 
   return useCallback(
     (node: HTMLElement | null) => {
-      const dep = getExtensionDependencyFromEditor(
-        editor,
-        RovingTabIndexExtension,
-      );
-      const map = new Map(dep.output.containers.value);
-
-      if (prevRef.current !== null) {
-        map.delete(prevRef.current);
+      if (disposeRef.current !== null) {
+        disposeRef.current();
+        disposeRef.current = null;
       }
       if (node !== null) {
-        map.set(node, {
+        const dep = getExtensionDependencyFromEditor(
+          editor,
+          RovingTabIndexExtension,
+        );
+        disposeRef.current = dep.output.register(node, {
           itemSelector,
-          orientation: orientation ?? 'horizontal',
+          orientation,
         });
       }
-
-      prevRef.current = node;
-      dep.output.containers.value = map;
     },
     [editor, orientation, itemSelector],
   );

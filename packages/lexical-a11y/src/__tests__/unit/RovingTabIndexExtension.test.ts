@@ -28,12 +28,17 @@ function createToolbar(): HTMLDivElement {
   return toolbar;
 }
 
+function getRegistry(editor: ReturnType<typeof buildEditorFromExtensions>) {
+  return getExtensionDependencyFromEditor(editor, RovingTabIndexExtension)
+    .output;
+}
+
 afterEach(() => {
   document.body.replaceChildren();
 });
 
 describe('RovingTabIndexExtension', () => {
-  test('empty containers map leaves item tab indices untouched', () => {
+  test('no registered container leaves item tab indices untouched', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [RovingTabIndexExtension, RichTextExtension],
@@ -56,16 +61,28 @@ describe('RovingTabIndexExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      RovingTabIndexExtension,
-    ).output;
-    containers.value = new Map([[toolbar, {}]]);
+    getRegistry(editor).register(toolbar);
 
     const buttons = Array.from(toolbar.querySelectorAll('button'));
     expect(buttons[0].tabIndex).toBe(0);
     expect(buttons[1].tabIndex).toBe(-1);
     expect(buttons[2].tabIndex).toBe(-1);
+  });
+
+  test('disposing the registration restores the natural tab order', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [RovingTabIndexExtension, RichTextExtension],
+        name: '[root]',
+      }),
+    );
+    const toolbar = createToolbar();
+    const dispose = getRegistry(editor).register(toolbar);
+    const buttons = Array.from(toolbar.querySelectorAll('button'));
+    expect(buttons.map(b => b.tabIndex)).toEqual([0, -1, -1]);
+
+    dispose();
+    expect(buttons.map(b => b.tabIndex)).toEqual([0, 0, 0]);
   });
 
   test('ArrowRight moves focus to the next button (horizontal default)', () => {
@@ -76,11 +93,7 @@ describe('RovingTabIndexExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      RovingTabIndexExtension,
-    ).output;
-    containers.value = new Map([[toolbar, {}]]);
+    getRegistry(editor).register(toolbar);
 
     const [a, b] = Array.from(
       toolbar.querySelectorAll<HTMLButtonElement>('button'),
@@ -102,11 +115,7 @@ describe('RovingTabIndexExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      RovingTabIndexExtension,
-    ).output;
-    containers.value = new Map([[toolbar, {}]]);
+    getRegistry(editor).register(toolbar);
 
     const [a, b] = Array.from(
       toolbar.querySelectorAll<HTMLButtonElement>('button'),
@@ -124,11 +133,7 @@ describe('RovingTabIndexExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      RovingTabIndexExtension,
-    ).output;
-    containers.value = new Map([[toolbar, {orientation: 'vertical'}]]);
+    getRegistry(editor).register(toolbar, {orientation: 'vertical'});
 
     const [a, b] = Array.from(
       toolbar.querySelectorAll<HTMLButtonElement>('button'),

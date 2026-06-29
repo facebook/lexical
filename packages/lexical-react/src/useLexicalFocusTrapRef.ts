@@ -16,7 +16,8 @@ export type {FocusTrapInitialFocus} from '@lexical/a11y';
 /**
  * Returns a `RefCallback` that registers the attached DOM element as a
  * focus-trap container with {@link FocusTrapExtension}. The trap
- * activates when `isActive` is `true` and the element is mounted.
+ * activates when `isActive` is `true` and the element is mounted, and is
+ * released when the element detaches or `isActive` becomes `false`.
  *
  * ```tsx
  * const trapRef = useLexicalFocusTrapRef(true, 'container');
@@ -33,22 +34,21 @@ export function useLexicalFocusTrapRef(
   initialFocus: FocusTrapInitialFocus = 'firstFocusable',
 ): RefCallback<HTMLElement> {
   const [editor] = useLexicalComposerContext();
-  const prevRef = useRef<HTMLElement | null>(null);
+  const disposeRef = useRef<(() => void) | null>(null);
 
   return useCallback(
     (node: HTMLElement | null) => {
-      const dep = getExtensionDependencyFromEditor(editor, FocusTrapExtension);
-      const map = new Map(dep.output.containers.value);
-
-      if (prevRef.current !== null) {
-        map.delete(prevRef.current);
+      if (disposeRef.current !== null) {
+        disposeRef.current();
+        disposeRef.current = null;
       }
       if (node !== null && isActive) {
-        map.set(node, {initialFocus});
+        const dep = getExtensionDependencyFromEditor(
+          editor,
+          FocusTrapExtension,
+        );
+        disposeRef.current = dep.output.register(node, {initialFocus});
       }
-
-      prevRef.current = node;
-      dep.output.containers.value = map;
     },
     [editor, isActive, initialFocus],
   );

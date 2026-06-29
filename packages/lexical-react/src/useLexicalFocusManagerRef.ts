@@ -15,8 +15,8 @@ export type {FocusManagerOptions} from '@lexical/a11y';
 
 /**
  * Returns a `RefCallback` that registers the attached DOM element as a
- * focus-managed toolbar with {@link FocusManagerExtension}. Attach it
- * to a toolbar element via `ref=`:
+ * focus-managed toolbar with {@link FocusManagerExtension}, and releases
+ * it when the element detaches. Attach it to a toolbar element via `ref=`:
  *
  * ```tsx
  * const toolbarRef = useLexicalFocusManagerRef();
@@ -33,25 +33,23 @@ export function useLexicalFocusManagerRef(
 ): RefCallback<HTMLElement> {
   const [editor] = useLexicalComposerContext();
   const {toolbarItemSelector} = options;
-  const prevRef = useRef<HTMLElement | null>(null);
+  const disposeRef = useRef<(() => void) | null>(null);
 
   return useCallback(
     (node: HTMLElement | null) => {
-      const dep = getExtensionDependencyFromEditor(
-        editor,
-        FocusManagerExtension,
-      );
-      const map = new Map(dep.output.toolbars.value);
-
-      if (prevRef.current !== null) {
-        map.delete(prevRef.current);
+      if (disposeRef.current !== null) {
+        disposeRef.current();
+        disposeRef.current = null;
       }
       if (node !== null) {
-        map.set(node, {toolbarItemSelector});
+        const dep = getExtensionDependencyFromEditor(
+          editor,
+          FocusManagerExtension,
+        );
+        disposeRef.current = dep.output.register(node, {
+          toolbarItemSelector,
+        });
       }
-
-      prevRef.current = node;
-      dep.output.toolbars.value = map;
     },
     [editor, toolbarItemSelector],
   );

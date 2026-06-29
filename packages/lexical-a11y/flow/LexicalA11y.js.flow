@@ -77,32 +77,27 @@ declare export var EditorModeAnnounceExtension: LexicalExtension<
   void,
 >;
 
-export type FocusTrapExtensionConfig = {
-  containers: $ReadOnlyMap<HTMLElement, FocusTrapOptions>,
+export type ContainerRegistry<Options> = {
+  register: (container: HTMLElement, options?: Options) => () => void,
 };
+
 declare export var FocusTrapExtension: LexicalExtension<
-  FocusTrapExtensionConfig,
+  {...},
   '@lexical/a11y/FocusTrap',
-  NamedSignalsOutput<FocusTrapExtensionConfig>,
-  void,
+  ContainerRegistry<FocusTrapOptions>,
+  mixed,
 >;
 
-export type RovingTabIndexExtensionConfig = {
-  containers: $ReadOnlyMap<HTMLElement, RovingTabIndexOptions>,
-};
 declare export var RovingTabIndexExtension: LexicalExtension<
-  RovingTabIndexExtensionConfig,
+  {...},
   '@lexical/a11y/RovingTabIndex',
-  NamedSignalsOutput<RovingTabIndexExtensionConfig>,
-  void,
+  ContainerRegistry<RovingTabIndexOptions>,
+  mixed,
 >;
 
-export type FocusManagerExtensionConfig = {
-  toolbars: $ReadOnlyMap<HTMLElement, FocusManagerOptions>,
-};
 declare export var FocusManagerExtension: LexicalExtension<
-  FocusManagerExtensionConfig,
+  {...},
   '@lexical/a11y/FocusManager',
-  NamedSignalsOutput<FocusManagerExtensionConfig>,
-  void,
+  ContainerRegistry<FocusManagerOptions>,
+  mixed,
 >;

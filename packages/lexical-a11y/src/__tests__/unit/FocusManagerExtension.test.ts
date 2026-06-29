@@ -27,12 +27,16 @@ function createToolbar(): HTMLDivElement {
   return toolbar;
 }
 
+function getRegistry(editor: ReturnType<typeof buildEditorFromExtensions>) {
+  return getExtensionDependencyFromEditor(editor, FocusManagerExtension).output;
+}
+
 afterEach(() => {
   document.body.replaceChildren();
 });
 
 describe('FocusManagerExtension', () => {
-  test('empty toolbars map leaves Alt+F10 a no-op (no focus move)', () => {
+  test('no registered toolbar leaves Alt+F10 a no-op (no focus move)', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [FocusManagerExtension, RichTextExtension],
@@ -58,11 +62,7 @@ describe('FocusManagerExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    const {toolbars} = getExtensionDependencyFromEditor(
-      editor,
-      FocusManagerExtension,
-    ).output;
-    toolbars.value = new Map([[toolbar, {}]]);
+    getRegistry(editor).register(toolbar);
 
     editor.dispatchCommand(
       KEY_DOWN_COMMAND,
@@ -79,11 +79,7 @@ describe('FocusManagerExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    const {toolbars} = getExtensionDependencyFromEditor(
-      editor,
-      FocusManagerExtension,
-    ).output;
-    toolbars.value = new Map([[toolbar, {}]]);
+    getRegistry(editor).register(toolbar);
 
     const rootElement = document.createElement('div');
     rootElement.contentEditable = 'true';
@@ -101,7 +97,7 @@ describe('FocusManagerExtension', () => {
     rootElement.remove();
   });
 
-  test('deactivates when the toolbar is removed from the map', () => {
+  test('deactivates when the registration is disposed', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [FocusManagerExtension, RichTextExtension],
@@ -109,18 +105,14 @@ describe('FocusManagerExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    const {toolbars} = getExtensionDependencyFromEditor(
-      editor,
-      FocusManagerExtension,
-    ).output;
-    toolbars.value = new Map([[toolbar, {}]]);
+    const dispose = getRegistry(editor).register(toolbar);
     editor.dispatchCommand(
       KEY_DOWN_COMMAND,
       new KeyboardEvent('keydown', {altKey: true, key: 'F10'}),
     );
     expect(document.activeElement).toBe(toolbar.querySelector('button'));
 
-    toolbars.value = new Map();
+    dispose();
     const sink = document.createElement('button');
     document.body.appendChild(sink);
     sink.focus();

@@ -62,6 +62,10 @@ function buildTrapEditor() {
   );
 }
 
+function getRegistry(editor: ReturnType<typeof buildTrapEditor>) {
+  return getExtensionDependencyFromEditor(editor, FocusTrapExtension).output;
+}
+
 afterEach(() => {
   document.body.replaceChildren();
 });
@@ -70,12 +74,8 @@ describe('FocusTrapExtension (shadow DOM)', () => {
   test('initial focus lands on the first focusable inside the shadow root', () => {
     using editor = buildTrapEditor();
     const {container, first} = createShadowFixture();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      FocusTrapExtension,
-    ).output;
 
-    containers.value = new Map([[container, {}]]);
+    getRegistry(editor).register(container);
 
     // document.activeElement is the host; the real focus is the inner button.
     expect(getActiveElementDeep(document)).toBe(first);
@@ -84,11 +84,7 @@ describe('FocusTrapExtension (shadow DOM)', () => {
   test('Tab cycles to the next focusable across the shadow boundary', () => {
     using editor = buildTrapEditor();
     const {container, first, second} = createShadowFixture();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      FocusTrapExtension,
-    ).output;
-    containers.value = new Map([[container, {}]]);
+    getRegistry(editor).register(container);
 
     first.focus();
     first.dispatchEvent(
@@ -102,11 +98,7 @@ describe('FocusTrapExtension (shadow DOM)', () => {
   test('Shift+Tab from the first item wraps to the last across the shadow boundary', () => {
     using editor = buildTrapEditor();
     const {container, first, second} = createShadowFixture();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      FocusTrapExtension,
-    ).output;
-    containers.value = new Map([[container, {}]]);
+    getRegistry(editor).register(container);
 
     first.focus();
     first.dispatchEvent(
@@ -123,32 +115,24 @@ describe('FocusTrapExtension (shadow DOM)', () => {
   test('focus is restored to the previously-focused element inside the shadow root on deactivate', () => {
     using editor = buildTrapEditor();
     const {container, first, opener} = createShadowFixture();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      FocusTrapExtension,
-    ).output;
 
     // Focus the opener *inside the shadow tree* before the trap activates.
     opener.focus();
     expect(getActiveElementDeep(document)).toBe(opener);
 
-    containers.value = new Map([[container, {}]]);
+    const dispose = getRegistry(editor).register(container);
     expect(getActiveElementDeep(document)).toBe(first);
 
     // Deactivate — restoration must walk the composed tree to recognise the
     // opener as still connected (document.contains() would say false).
-    containers.value = new Map();
+    dispose();
     expect(getActiveElementDeep(document)).toBe(opener);
   });
 
   test('focusin from outside the shadow host is pulled back inside the container', () => {
     using editor = buildTrapEditor();
     const {container, first} = createShadowFixture();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      FocusTrapExtension,
-    ).output;
-    containers.value = new Map([[container, {}]]);
+    getRegistry(editor).register(container);
 
     const outside = document.createElement('button');
     outside.textContent = 'outside';
@@ -167,11 +151,7 @@ describe('FocusTrapExtension (shadow DOM)', () => {
   test('focusin retargeted to a foreign shadow host is resolved via composedPath and pulled back', () => {
     using editor = buildTrapEditor();
     const {container, first} = createShadowFixture();
-    const {containers} = getExtensionDependencyFromEditor(
-      editor,
-      FocusTrapExtension,
-    ).output;
-    containers.value = new Map([[container, {}]]);
+    getRegistry(editor).register(container);
 
     // Focus lands inside a *different* shadow tree, so the document-level
     // focusin sees event.target retargeted to the foreign host. The handler

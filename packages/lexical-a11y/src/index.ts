@@ -680,115 +680,157 @@ export const EditorModeAnnounceExtension = /* @__PURE__ */ defineExtension({
   },
 });
 
-export interface FocusTrapExtensionConfig {
+/**
+ * A reference-counted registry mapping DOM containers to a per-container
+ * activation. The first {@link ContainerRegistry.register} call for a
+ * container activates it; every call returns its own disposer, and the
+ * activation is torn down only once the last outstanding registration for
+ * that container is released. This lets the same element be driven by more
+ * than one caller (e.g. two React refs, or a Strict-Mode double mount)
+ * without double-wiring or premature teardown.
+ *
+ * This is the public output of the focus-trap, roving-tabindex and
+ * focus-manager extensions: callers register through a method rather than a
+ * mutable map, and never see the container bookkeeping or the teardown.
+ */
+export interface ContainerRegistry<Options> {
   /**
-   * Map of container elements to their trap options. Each entry
-   * activates an independent focus trap. React adapters add/remove
-   * entries via the `useLexicalFocusTrapRef` RefCallback hook.
+   * Activate `container` (reference counted) and return a disposer that
+   * releases this registration. The disposer is idempotent.
    */
-  containers: ReadonlyMap<HTMLElement, FocusTrapOptions>;
+  register: (container: HTMLElement, options?: Options) => () => void;
 }
 
 /**
- * Platform-independent extension that traps Tab / Shift+Tab focus
- * inside one or more containers. React adapters register containers
- * via the `useLexicalFocusTrapRef` RefCallback hook from
- * `@lexical/react`.
+ * Internal handle for a {@link ContainerRegistry}, created in an extension's
+ * `init` phase and shared with `build` (which binds the per-container
+ * activation once the editor exists) and `register` (which disposes it on
+ * teardown). Keeping the container map and teardown here — rather than on the
+ * public {@link ContainerRegistry} output — is what hides them from callers.
+ */
+interface ManagedContainerRegistry<Options> {
+  /** The public, consumer-facing registry exposed as the extension output. */
+  readonly registry: ContainerRegistry<Options>;
+  /** Bind the per-container activation; called from `build`. */
+  setActivate: (
+    activate: (container: HTMLElement, options?: Options) => () => void,
+  ) => void;
+  /** Dispose every live registration; called from the `register` teardown. */
+  dispose: () => void;
+}
+
+function createManagedContainerRegistry<
+  Options,
+>(): ManagedContainerRegistry<Options> {
+  interface Entry {
+    count: number;
+    dispose: () => void;
+  }
+  let activate:
+    | ((container: HTMLElement, options?: Options) => () => void)
+    | null = null;
+  const entries = new Map<HTMLElement, Entry>();
+  const registry: ContainerRegistry<Options> = {
+    register(container, options) {
+      if (activate === null) {
+        throw new Error(
+          '@lexical/a11y: container registered before the extension was built',
+        );
+      }
+      let entry = entries.get(container);
+      if (entry === undefined) {
+        entry = {count: 0, dispose: activate(container, options)};
+        entries.set(container, entry);
+      }
+      entry.count += 1;
+      const ownEntry = entry;
+      let released = false;
+      return () => {
+        if (released) {
+          return;
+        }
+        released = true;
+        // No-op if the registry was already torn down, or this container was
+        // released to zero and re-registered as a fresh entry since.
+        if (entries.get(container) !== ownEntry) {
+          return;
+        }
+        ownEntry.count -= 1;
+        if (ownEntry.count === 0) {
+          entries.delete(container);
+          ownEntry.dispose();
+        }
+      };
+    },
+  };
+  return {
+    dispose() {
+      for (const entry of entries.values()) {
+        entry.dispose();
+      }
+      entries.clear();
+      activate = null;
+    },
+    registry,
+    setActivate(fn) {
+      activate = fn;
+    },
+  };
+}
+
+/**
+ * Platform-independent extension that traps Tab / Shift+Tab focus inside one
+ * or more containers. Register a container through the extension output
+ * ({@link ContainerRegistry.register}); the React adapter is
+ * `useLexicalFocusTrapRef` from `@lexical/react`.
  */
 export const FocusTrapExtension = /* @__PURE__ */ defineExtension({
-  build: (_editor, config) => namedSignals(config),
-  config: /* @__PURE__ */ safeCast<FocusTrapExtensionConfig>({
-    containers: new Map(),
-  }),
-  name: '@lexical/a11y/FocusTrap',
-  register(_editor, _config, state) {
-    const {containers} = state.getOutput();
-    return effect(() => {
-      const map = containers.value;
-      if (map.size === 0) {
-        return undefined;
-      }
-      return mergeRegister(
-        ...Array.from(map, ([container, opts]) =>
-          registerFocusTrap(container, opts),
-        ),
-      );
-    });
+  build: (_editor, _config, state): ContainerRegistry<FocusTrapOptions> => {
+    const managed = state.getInitResult();
+    managed.setActivate(registerFocusTrap);
+    return managed.registry;
   },
+  init: () => createManagedContainerRegistry<FocusTrapOptions>(),
+  name: '@lexical/a11y/FocusTrap',
+  register: (_editor, _config, state) => () => state.getInitResult().dispose(),
 });
-
-export interface RovingTabIndexExtensionConfig {
-  /**
-   * Map of container elements to their roving options. Each entry
-   * activates an independent roving-tabindex group. React adapters
-   * add/remove entries via the `useLexicalRovingTabIndexRef`
-   * RefCallback hook.
-   */
-  containers: ReadonlyMap<HTMLElement, RovingTabIndexOptions>;
-}
 
 /**
  * Platform-independent extension that wires the WAI-ARIA roving-tabindex
- * pattern on one or more containers. React adapters register containers
- * via the `useLexicalRovingTabIndexRef` RefCallback hook from
- * `@lexical/react`.
+ * pattern on one or more containers. Register a container through the
+ * extension output ({@link ContainerRegistry.register}); the React adapter is
+ * `useLexicalRovingTabIndexRef` from `@lexical/react`.
  */
 export const RovingTabIndexExtension = /* @__PURE__ */ defineExtension({
-  build: (_editor, config) => namedSignals(config),
-  config: /* @__PURE__ */ safeCast<RovingTabIndexExtensionConfig>({
-    containers: new Map(),
-  }),
-  name: '@lexical/a11y/RovingTabIndex',
-  register(_editor, _config, state) {
-    const {containers} = state.getOutput();
-    return effect(() => {
-      const map = containers.value;
-      if (map.size === 0) {
-        return undefined;
-      }
-      return mergeRegister(
-        ...Array.from(map, ([container, opts]) =>
-          registerRovingTabIndex(container, opts),
-        ),
-      );
-    });
+  build: (
+    _editor,
+    _config,
+    state,
+  ): ContainerRegistry<RovingTabIndexOptions> => {
+    const managed = state.getInitResult();
+    managed.setActivate(registerRovingTabIndex);
+    return managed.registry;
   },
+  init: () => createManagedContainerRegistry<RovingTabIndexOptions>(),
+  name: '@lexical/a11y/RovingTabIndex',
+  register: (_editor, _config, state) => () => state.getInitResult().dispose(),
 });
 
-export interface FocusManagerExtensionConfig {
-  /**
-   * Map of toolbar elements to their focus-manager options. Each entry
-   * activates an independent Alt+F10 / Escape handler. React adapters
-   * add/remove entries via the `useLexicalFocusManagerRef` RefCallback
-   * hook.
-   */
-  toolbars: ReadonlyMap<HTMLElement, FocusManagerOptions>;
-}
-
 /**
- * Platform-independent extension that wires the editor-to-toolbar focus
- * jump (Alt+F10 / Escape return) on one or more toolbars. React
- * adapters register toolbars via the `useLexicalFocusManagerRef`
- * RefCallback hook from `@lexical/react`.
+ * Platform-independent extension that wires the editor-to-toolbar focus jump
+ * (Alt+F10 / Escape return) on one or more toolbars. Register a toolbar
+ * through the extension output ({@link ContainerRegistry.register}); the React
+ * adapter is `useLexicalFocusManagerRef` from `@lexical/react`.
  */
 export const FocusManagerExtension = /* @__PURE__ */ defineExtension({
-  build: (_editor, config) => namedSignals(config),
-  config: /* @__PURE__ */ safeCast<FocusManagerExtensionConfig>({
-    toolbars: new Map(),
-  }),
-  name: '@lexical/a11y/FocusManager',
-  register(editor, _config, state) {
-    const {toolbars} = state.getOutput();
-    return effect(() => {
-      const map = toolbars.value;
-      if (map.size === 0) {
-        return undefined;
-      }
-      return mergeRegister(
-        ...Array.from(map, ([toolbar, opts]) =>
-          registerFocusManager(editor, toolbar, opts),
-        ),
-      );
-    });
+  build: (editor, _config, state): ContainerRegistry<FocusManagerOptions> => {
+    const managed = state.getInitResult();
+    managed.setActivate((toolbar, options) =>
+      registerFocusManager(editor, toolbar, options),
+    );
+    return managed.registry;
   },
+  init: () => createManagedContainerRegistry<FocusManagerOptions>(),
+  name: '@lexical/a11y/FocusManager',
+  register: (_editor, _config, state) => () => state.getInitResult().dispose(),
 });

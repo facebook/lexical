@@ -2190,7 +2190,7 @@ export function $formatText(
 ): void {
   if ($isNodeSelection(selection)) {
     for (const node of selection.getNodes()) {
-      if ($isTextNode(node) || $isInlineFormattable(node)) {
+      if ($isInlineFormattable(node)) {
         node.setFormat(node.getFormatFlags(formatType, null));
       }
     }
@@ -2259,13 +2259,16 @@ export function $formatText(
     startOffset = 0;
   }
 
+  const firstNextFormat = (firstNode ?? selectedTextNodes[0]).getFormatFlags(
+    formatType,
+    alignWithFormat,
+  );
+  applyFormatToElements(firstNextFormat);
+  applyFormatToInlineNodes(firstNextFormat);
+
   if (firstNode == null) {
     return;
   }
-
-  const firstNextFormat = firstNode.getFormatFlags(formatType, alignWithFormat);
-  applyFormatToElements(firstNextFormat);
-  applyFormatToInlineNodes(firstNextFormat);
 
   const lastIndex = selectedTextNodesLength - 1;
   let lastNode = selectedTextNodes[lastIndex];

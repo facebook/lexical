@@ -402,7 +402,7 @@ export {$isRootNode, RootNode} from './nodes/LexicalRootNode';
 export type {SerializedTabNode} from './nodes/LexicalTabNode';
 export {$createTabNode, $isTabNode, TabNode} from './nodes/LexicalTabNode';
 export type {
-  InlineFormattable,
+  InlineFormattableNode,
   SerializedTextNode,
   TextFormatType,
   TextModeType,

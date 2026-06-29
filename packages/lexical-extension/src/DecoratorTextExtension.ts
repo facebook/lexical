@@ -8,7 +8,7 @@
 
 import type {
   EditorConfig,
-  InlineFormattable,
+  InlineFormattableNode,
   LexicalEditor,
   LexicalNode,
   SerializedLexicalNode,
@@ -41,7 +41,7 @@ const formatState = /* @__PURE__ */ createState('format', {
 
 export class DecoratorTextNode
   extends DecoratorNode<unknown>
-  implements InlineFormattable
+  implements InlineFormattableNode
 {
   /** @internal */
   get __isInlineFormattable(): true {

@@ -306,7 +306,7 @@ export interface TextNode {
   getTopLevelElementOrThrow(): ElementNode;
 }
 
-export interface InlineFormattable {
+export interface InlineFormattableNode {
   /** @internal */
   readonly __isInlineFormattable: true;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
@@ -316,17 +316,14 @@ export interface InlineFormattable {
 }
 
 export function $isInlineFormattable(
-  node: LexicalNode | null | undefined,
-): node is LexicalNode & InlineFormattable {
-  return (
-    node != null &&
-    (node as {__isInlineFormattable?: true}).__isInlineFormattable === true
-  );
+  node: (LexicalNode & {__isInlineFormattable?: unknown}) | null | undefined,
+): node is LexicalNode & InlineFormattableNode {
+  return node != null && node.__isInlineFormattable === true;
 }
 
 /** @noInheritDoc */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
-export class TextNode extends LexicalNode implements InlineFormattable {
+export class TextNode extends LexicalNode implements InlineFormattableNode {
   /** @internal */
   declare ['constructor']: KlassConstructor<typeof TextNode>;
   __text: string;

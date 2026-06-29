@@ -1225,8 +1225,8 @@ test.describe('TextFormatting', () => {
     await toggleBold(page);
     await assertHTML(
       page,
-      // After formatting the text, the selection will be reset from the decorator node,
-      // so it will retain its previous format when toggleBold is triggered again
+      // After formatting, the selection resets to just the TextNode "B".
+      // The DecoratorTextNode is no longer selected, so it retains its bold format.
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">A</span>

@@ -11,7 +11,6 @@ export type FocusManagerOptions = {
   toolbarItemSelector?: string,
 };
 
-declare export hook useLexicalFocusManager(
-  toolbarRef: {current: HTMLElement | null, ...},
+declare export hook useLexicalFocusManagerRef(
   options?: FocusManagerOptions,
-): void;
+): (node: HTMLElement | null) => void;

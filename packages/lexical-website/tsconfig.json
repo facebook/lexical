@@ -208,11 +208,11 @@
       "@lexical/react/useLexicalEditable": [
         "../lexical-react/src/useLexicalEditable.ts"
       ],
-      "@lexical/react/useLexicalFocusManager": [
-        "../lexical-react/src/useLexicalFocusManager.ts"
+      "@lexical/react/useLexicalFocusManagerRef": [
+        "../lexical-react/src/useLexicalFocusManagerRef.ts"
       ],
-      "@lexical/react/useLexicalFocusTrap": [
-        "../lexical-react/src/useLexicalFocusTrap.ts"
+      "@lexical/react/useLexicalFocusTrapRef": [
+        "../lexical-react/src/useLexicalFocusTrapRef.ts"
       ],
       "@lexical/react/useLexicalIsTextContentEmpty": [
         "../lexical-react/src/useLexicalIsTextContentEmpty.ts"
@@ -220,8 +220,8 @@
       "@lexical/react/useLexicalNodeSelection": [
         "../lexical-react/src/useLexicalNodeSelection.ts"
       ],
-      "@lexical/react/useLexicalRovingTabIndex": [
-        "../lexical-react/src/useLexicalRovingTabIndex.ts"
+      "@lexical/react/useLexicalRovingTabIndexRef": [
+        "../lexical-react/src/useLexicalRovingTabIndexRef.ts"
       ],
       "@lexical/react/useLexicalSlotRef": [
         "../lexical-react/src/useLexicalSlotRef.ts"

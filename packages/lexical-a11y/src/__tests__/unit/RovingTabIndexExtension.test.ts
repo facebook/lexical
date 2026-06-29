@@ -13,7 +13,6 @@ import {
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
-import {configExtension} from 'lexical';
 import {afterEach, describe, expect, test} from 'vitest';
 
 function createToolbar(): HTMLDivElement {
@@ -34,7 +33,7 @@ afterEach(() => {
 });
 
 describe('RovingTabIndexExtension', () => {
-  test('container null leaves item tab indices untouched', () => {
+  test('empty containers map leaves item tab indices untouched', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [RovingTabIndexExtension, RichTextExtension],
@@ -44,13 +43,12 @@ describe('RovingTabIndexExtension', () => {
     void editor;
     const toolbar = createToolbar();
     const buttons = Array.from(toolbar.querySelectorAll('button'));
-    // No tabIndex attribute applied while config.container is null.
     for (const btn of buttons) {
       expect(btn.tabIndex).toBe(0);
     }
   });
 
-  test('applies tabindex=0 on the first item and -1 on the rest when container is set', () => {
+  test('applies tabindex=0 on the first item and -1 on the rest when container is registered', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [RovingTabIndexExtension, RichTextExtension],
@@ -58,11 +56,11 @@ describe('RovingTabIndexExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    const {container} = getExtensionDependencyFromEditor(
+    const {containers} = getExtensionDependencyFromEditor(
       editor,
       RovingTabIndexExtension,
     ).output;
-    container.value = toolbar;
+    containers.value = new Map([[toolbar, {}]]);
 
     const buttons = Array.from(toolbar.querySelectorAll('button'));
     expect(buttons[0].tabIndex).toBe(0);
@@ -78,11 +76,11 @@ describe('RovingTabIndexExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    const {container} = getExtensionDependencyFromEditor(
+    const {containers} = getExtensionDependencyFromEditor(
       editor,
       RovingTabIndexExtension,
     ).output;
-    container.value = toolbar;
+    containers.value = new Map([[toolbar, {}]]);
 
     const [a, b] = Array.from(
       toolbar.querySelectorAll<HTMLButtonElement>('button'),
@@ -104,11 +102,11 @@ describe('RovingTabIndexExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    const {container} = getExtensionDependencyFromEditor(
+    const {containers} = getExtensionDependencyFromEditor(
       editor,
       RovingTabIndexExtension,
     ).output;
-    container.value = toolbar;
+    containers.value = new Map([[toolbar, {}]]);
 
     const [a, b] = Array.from(
       toolbar.querySelectorAll<HTMLButtonElement>('button'),
@@ -121,19 +119,16 @@ describe('RovingTabIndexExtension', () => {
   test('vertical orientation responds to ArrowDown, not ArrowRight', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [
-          configExtension(RovingTabIndexExtension, {orientation: 'vertical'}),
-          RichTextExtension,
-        ],
+        dependencies: [RovingTabIndexExtension, RichTextExtension],
         name: '[root]',
       }),
     );
     const toolbar = createToolbar();
-    const {container} = getExtensionDependencyFromEditor(
+    const {containers} = getExtensionDependencyFromEditor(
       editor,
       RovingTabIndexExtension,
     ).output;
-    container.value = toolbar;
+    containers.value = new Map([[toolbar, {orientation: 'vertical'}]]);
 
     const [a, b] = Array.from(
       toolbar.querySelectorAll<HTMLButtonElement>('button'),

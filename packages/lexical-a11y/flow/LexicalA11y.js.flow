@@ -25,6 +25,11 @@ export type AriaLiveRegionRef = {
 
 export type FocusTrapInitialFocus = 'firstFocusable' | 'container';
 
+export type FocusTrapOptions = {
+  initialFocus?: FocusTrapInitialFocus,
+  allowOutside?: (target: HTMLElement) => boolean,
+};
+
 export type RovingOrientation = 'horizontal' | 'vertical' | 'both';
 
 export type RovingTabIndexOptions = {
@@ -73,8 +78,7 @@ declare export var EditorModeAnnounceExtension: LexicalExtension<
 >;
 
 export type FocusTrapExtensionConfig = {
-  container: HTMLElement | null,
-  initialFocus: FocusTrapInitialFocus,
+  containers: $ReadOnlyMap<HTMLElement, FocusTrapOptions>,
 };
 declare export var FocusTrapExtension: LexicalExtension<
   FocusTrapExtensionConfig,
@@ -84,9 +88,7 @@ declare export var FocusTrapExtension: LexicalExtension<
 >;
 
 export type RovingTabIndexExtensionConfig = {
-  container: HTMLElement | null,
-  orientation: RovingOrientation,
-  itemSelector: string | null,
+  containers: $ReadOnlyMap<HTMLElement, RovingTabIndexOptions>,
 };
 declare export var RovingTabIndexExtension: LexicalExtension<
   RovingTabIndexExtensionConfig,
@@ -96,8 +98,7 @@ declare export var RovingTabIndexExtension: LexicalExtension<
 >;
 
 export type FocusManagerExtensionConfig = {
-  toolbar: HTMLElement | null,
-  toolbarItemSelector: string | null,
+  toolbars: $ReadOnlyMap<HTMLElement, FocusManagerOptions>,
 };
 declare export var FocusManagerExtension: LexicalExtension<
   FocusManagerExtensionConfig,

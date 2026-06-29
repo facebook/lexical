@@ -8,6 +8,7 @@
 
 import type {JSX} from 'react';
 
+import {useMergeRefs} from '@floating-ui/react';
 import {$isCodeNode} from '@lexical/code';
 import {
   getCodeLanguageOptions as getCodeLanguageOptionsPrism,
@@ -23,8 +24,8 @@ import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {$isListNode, ListNode} from '@lexical/list';
 import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';
-import {useLexicalFocusManager} from '@lexical/react/useLexicalFocusManager';
-import {useLexicalRovingTabIndex} from '@lexical/react/useLexicalRovingTabIndex';
+import {useLexicalFocusManagerRef} from '@lexical/react/useLexicalFocusManagerRef';
+import {useLexicalRovingTabIndexRef} from '@lexical/react/useLexicalRovingTabIndexRef';
 import {$isHeadingNode} from '@lexical/rich-text';
 import {
   $getSelectionStyleValueForProperty,
@@ -69,7 +70,7 @@ import {
   TextFormatType,
   UNDO_COMMAND,
 } from 'lexical';
-import {Dispatch, useCallback, useEffect, useRef, useState} from 'react';
+import {Dispatch, useCallback, useEffect, useState} from 'react';
 
 import {useSettings} from '../../context/SettingsContext';
 import {
@@ -582,9 +583,9 @@ export default function ToolbarPlugin({
   const [modal, showModal] = useModal();
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const {toolbarState, updateToolbarState} = useToolbarState();
-  const toolbarRef = useRef<HTMLDivElement>(null);
-  useLexicalRovingTabIndex(toolbarRef);
-  useLexicalFocusManager(toolbarRef);
+  const rovingRef = useLexicalRovingTabIndexRef();
+  const focusManagerRef = useLexicalFocusManagerRef();
+  const toolbarRef = useMergeRefs([rovingRef, focusManagerRef]);
 
   const dispatchToolbarCommand = <T extends LexicalCommand<unknown>>(
     command: T,

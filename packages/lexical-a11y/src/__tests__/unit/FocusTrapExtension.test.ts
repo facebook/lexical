@@ -13,7 +13,6 @@ import {
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
-import {configExtension} from 'lexical';
 import {afterEach, describe, expect, test} from 'vitest';
 
 function createContainer(): HTMLDivElement {
@@ -33,7 +32,7 @@ afterEach(() => {
 });
 
 describe('FocusTrapExtension', () => {
-  test('container null keeps the trap inert', () => {
+  test('empty containers map keeps the trap inert', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [FocusTrapExtension, RichTextExtension],
@@ -41,7 +40,6 @@ describe('FocusTrapExtension', () => {
       }),
     );
     void editor;
-    // No DOM listeners installed when container is null.
     const outside = document.createElement('button');
     document.body.appendChild(outside);
     outside.focus();
@@ -49,7 +47,7 @@ describe('FocusTrapExtension', () => {
     outside.remove();
   });
 
-  test('activates when the container signal switches to a real element', () => {
+  test('activates when a container is added to the map', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [FocusTrapExtension, RichTextExtension],
@@ -57,35 +55,31 @@ describe('FocusTrapExtension', () => {
       }),
     );
     const container = createContainer();
-    const {container: containerSignal} = getExtensionDependencyFromEditor(
+    const {containers} = getExtensionDependencyFromEditor(
       editor,
       FocusTrapExtension,
     ).output;
-    containerSignal.value = container;
-    // initialFocus default is 'firstFocusable'.
+    containers.value = new Map([[container, {}]]);
     expect(document.activeElement).toBe(container.querySelector('button'));
   });
 
   test('initialFocus="container" lands focus on the container itself', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [
-          configExtension(FocusTrapExtension, {initialFocus: 'container'}),
-          RichTextExtension,
-        ],
+        dependencies: [FocusTrapExtension, RichTextExtension],
         name: '[root]',
       }),
     );
     const container = createContainer();
-    const {container: containerSignal} = getExtensionDependencyFromEditor(
+    const {containers} = getExtensionDependencyFromEditor(
       editor,
       FocusTrapExtension,
     ).output;
-    containerSignal.value = container;
+    containers.value = new Map([[container, {initialFocus: 'container'}]]);
     expect(document.activeElement).toBe(container);
   });
 
-  test('deactivates when the container signal is reset to null', () => {
+  test('deactivates when the container is removed from the map', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [FocusTrapExtension, RichTextExtension],
@@ -93,15 +87,14 @@ describe('FocusTrapExtension', () => {
       }),
     );
     const container = createContainer();
-    const {container: containerSignal} = getExtensionDependencyFromEditor(
+    const {containers} = getExtensionDependencyFromEditor(
       editor,
       FocusTrapExtension,
     ).output;
-    containerSignal.value = container;
+    containers.value = new Map([[container, {}]]);
     expect(document.activeElement).toBe(container.querySelector('button'));
 
-    containerSignal.value = null;
-    // Outside element can take focus without being yanked back.
+    containers.value = new Map();
     const outside = document.createElement('button');
     document.body.appendChild(outside);
     outside.focus();
@@ -120,11 +113,11 @@ describe('FocusTrapExtension', () => {
     const [first, second] = Array.from(
       container.querySelectorAll<HTMLButtonElement>('button'),
     );
-    const {container: containerSignal} = getExtensionDependencyFromEditor(
+    const {containers} = getExtensionDependencyFromEditor(
       editor,
       FocusTrapExtension,
     ).output;
-    containerSignal.value = container;
+    containers.value = new Map([[container, {}]]);
 
     first.focus();
     first.dispatchEvent(

@@ -27,17 +27,17 @@ Some host modals (e.g. the playground's `Modal` component) bind their close hand
 
 ## Toolbar focus jump
 
-The playground uses `useLexicalFocusManager` (`@lexical/react/useLexicalFocusManager`) to provide a documented shortcut for moving focus from the editor to the toolbar without tabbing through the page. The hook listens for `Alt+F10` inside the editor and moves focus to the toolbar's first focusable item. While focus is in the toolbar, pressing `Escape` restores both focus and the editor's prior selection via `editor.focus()`. Requires `FocusManagerExtension` from `@lexical/a11y` in the editor's extension tree.
+The playground uses `useLexicalFocusManagerRef` (`@lexical/react/useLexicalFocusManagerRef`) to provide a documented shortcut for moving focus from the editor to the toolbar without tabbing through the page. The hook returns a `RefCallback` that registers the attached element as a focus-managed toolbar. It listens for `Alt+F10` inside the editor and moves focus to the toolbar's first focusable item. While focus is in the toolbar, pressing `Escape` restores both focus and the editor's prior selection via `editor.focus()`. Multiple toolbars can be registered simultaneously. Requires `FocusManagerExtension` from `@lexical/a11y` in the editor's extension tree.
 
-This matches the WAI-ARIA editor menubar pattern and the convention used by Word and CKEditor. Hosts that don't mount `useLexicalFocusManager` get the default browser flow (Tab in, Tab out).
+This matches the WAI-ARIA editor menubar pattern and the convention used by Word and CKEditor. Hosts that don't mount `useLexicalFocusManagerRef` get the default browser flow (Tab in, Tab out).
 
 ## Toolbar arrow-key navigation
 
-Toolbars that opt into `useLexicalRovingTabIndex` (`@lexical/react/useLexicalRovingTabIndex`) collapse to a single tab stop: arrow keys move between items inside the toolbar; `Tab` moves past the toolbar as a whole. Items keep `tabindex="-1"` except the active one (`tabindex="0"`). Tracks the WAI-ARIA toolbar pattern. Requires `RovingTabIndexExtension` from `@lexical/a11y` in the editor's extension tree.
+Toolbars that opt into `useLexicalRovingTabIndexRef` (`@lexical/react/useLexicalRovingTabIndexRef`) collapse to a single tab stop: arrow keys move between items inside the toolbar; `Tab` moves past the toolbar as a whole. Items keep `tabindex="-1"` except the active one (`tabindex="0"`). The hook returns a `RefCallback` — multiple containers can be registered simultaneously. Tracks the WAI-ARIA toolbar pattern. Requires `RovingTabIndexExtension` from `@lexical/a11y` in the editor's extension tree.
 
 ## Modal focus trap
 
-`useLexicalFocusTrap` (`@lexical/react/useLexicalFocusTrap`) cycles `Tab` / `Shift+Tab` inside a modal container and restores focus to the previously-focused element on unmount. Escape is **not** intercepted by the hook — modal owners handle the close key themselves, so the editor's Escape contract above stays predictable. Requires `FocusTrapExtension` from `@lexical/a11y` in the editor's extension tree.
+`useLexicalFocusTrapRef` (`@lexical/react/useLexicalFocusTrapRef`) returns a `RefCallback` that cycles `Tab` / `Shift+Tab` inside a modal container and restores focus to the previously-focused element on deactivation. Multiple containers can be trapped simultaneously. Escape is **not** intercepted by the hook — modal owners handle the close key themselves, so the editor's Escape contract above stays predictable. Requires `FocusTrapExtension` from `@lexical/a11y` in the editor's extension tree.
 
 ## Screen reader announcements
 

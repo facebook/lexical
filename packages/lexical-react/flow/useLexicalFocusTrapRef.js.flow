@@ -9,8 +9,7 @@
 
 export type FocusTrapInitialFocus = 'firstFocusable' | 'container';
 
-declare export hook useLexicalFocusTrap(
-  containerRef: {current: HTMLElement | null, ...},
+declare export hook useLexicalFocusTrapRef(
   isActive: boolean,
   initialFocus?: FocusTrapInitialFocus,
-): void;
+): (node: HTMLElement | null) => void;

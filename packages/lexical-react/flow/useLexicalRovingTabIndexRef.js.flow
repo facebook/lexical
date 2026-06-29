@@ -14,7 +14,6 @@ export type RovingTabIndexOptions = {
   itemSelector?: string,
 };
 
-declare export hook useLexicalRovingTabIndex(
-  containerRef: {current: HTMLElement | null, ...},
+declare export hook useLexicalRovingTabIndexRef(
   options?: RovingTabIndexOptions,
-): void;
+): (node: HTMLElement | null) => void;

@@ -153,7 +153,7 @@ function containsComposed(container: Node, target: Node): boolean {
 
 export type FocusTrapInitialFocus = 'firstFocusable' | 'container';
 
-interface FocusTrapOptions {
+export interface FocusTrapOptions {
   /**
    * Where to land focus when the trap activates:
    * - `'firstFocusable'` (default): focus the first focusable descendant.
@@ -682,126 +682,113 @@ export const EditorModeAnnounceExtension = /* @__PURE__ */ defineExtension({
 
 export interface FocusTrapExtensionConfig {
   /**
-   * Container element to trap focus inside. `null` deactivates the
-   * trap; React adapters supply a signal-backed ref so modal open /
-   * close swaps the value at runtime and the `effect` re-registers.
+   * Map of container elements to their trap options. Each entry
+   * activates an independent focus trap. React adapters add/remove
+   * entries via the `useLexicalFocusTrapRef` RefCallback hook.
    */
-  container: HTMLElement | null;
-  /** {@link FocusTrapInitialFocus} for the activation-time landing. */
-  initialFocus: FocusTrapInitialFocus;
+  containers: ReadonlyMap<HTMLElement, FocusTrapOptions>;
 }
 
 /**
  * Platform-independent extension that traps Tab / Shift+Tab focus
- * inside a container while it is non-null. Hosts using
- * `@lexical/extension` swap the `container` config value (typically via
- * `configExtension` or a signal-backed ref) to activate / deactivate
- * the trap; the React adapter is `useLexicalFocusTrap` from
+ * inside one or more containers. React adapters register containers
+ * via the `useLexicalFocusTrapRef` RefCallback hook from
  * `@lexical/react`.
  */
 export const FocusTrapExtension = /* @__PURE__ */ defineExtension({
   build: (_editor, config) => namedSignals(config),
   config: /* @__PURE__ */ safeCast<FocusTrapExtensionConfig>({
-    container: null,
-    initialFocus: 'firstFocusable',
+    containers: new Map(),
   }),
   name: '@lexical/a11y/FocusTrap',
   register(_editor, _config, state) {
-    const {container, initialFocus} = state.getOutput();
+    const {containers} = state.getOutput();
     return effect(() => {
-      const c = container.value;
-      if (c === null) {
+      const map = containers.value;
+      if (map.size === 0) {
         return undefined;
       }
-      return registerFocusTrap(c, {initialFocus: initialFocus.value});
+      return mergeRegister(
+        ...Array.from(map, ([container, opts]) =>
+          registerFocusTrap(container, opts),
+        ),
+      );
     });
   },
 });
 
 export interface RovingTabIndexExtensionConfig {
   /**
-   * Container element for the roving group. `null` keeps the extension
-   * inert; supply a signal-backed ref to activate when the toolbar
-   * mounts.
+   * Map of container elements to their roving options. Each entry
+   * activates an independent roving-tabindex group. React adapters
+   * add/remove entries via the `useLexicalRovingTabIndexRef`
+   * RefCallback hook.
    */
-  container: HTMLElement | null;
-  /** {@link RovingOrientation} for arrow-key navigation. */
-  orientation: RovingOrientation;
-  /**
-   * Custom CSS selector for items. `null` falls back to the helper's
-   * default (`:scope > button:not([disabled])`).
-   */
-  itemSelector: string | null;
+  containers: ReadonlyMap<HTMLElement, RovingTabIndexOptions>;
 }
 
 /**
  * Platform-independent extension that wires the WAI-ARIA roving-tabindex
- * pattern on a container. Hosts using `@lexical/extension` supply the
- * container via the config signal; the React adapter is
- * `useLexicalRovingTabIndex` from `@lexical/react`.
+ * pattern on one or more containers. React adapters register containers
+ * via the `useLexicalRovingTabIndexRef` RefCallback hook from
+ * `@lexical/react`.
  */
 export const RovingTabIndexExtension = /* @__PURE__ */ defineExtension({
   build: (_editor, config) => namedSignals(config),
   config: /* @__PURE__ */ safeCast<RovingTabIndexExtensionConfig>({
-    container: null,
-    itemSelector: null,
-    orientation: 'horizontal',
+    containers: new Map(),
   }),
   name: '@lexical/a11y/RovingTabIndex',
   register(_editor, _config, state) {
-    const {container, itemSelector, orientation} = state.getOutput();
+    const {containers} = state.getOutput();
     return effect(() => {
-      const c = container.value;
-      if (c === null) {
+      const map = containers.value;
+      if (map.size === 0) {
         return undefined;
       }
-      const selector = itemSelector.value;
-      return registerRovingTabIndex(c, {
-        itemSelector: selector ?? undefined,
-        orientation: orientation.value,
-      });
+      return mergeRegister(
+        ...Array.from(map, ([container, opts]) =>
+          registerRovingTabIndex(container, opts),
+        ),
+      );
     });
   },
 });
 
 export interface FocusManagerExtensionConfig {
   /**
-   * Toolbar element receiving the Alt+F10 jump from the editor and the
-   * Escape return back to the editor. `null` keeps the manager inert;
-   * supply a signal-backed ref to activate when the toolbar mounts.
+   * Map of toolbar elements to their focus-manager options. Each entry
+   * activates an independent Alt+F10 / Escape handler. React adapters
+   * add/remove entries via the `useLexicalFocusManagerRef` RefCallback
+   * hook.
    */
-  toolbar: HTMLElement | null;
-  /**
-   * Custom CSS selector for the toolbar's first focusable item. `null`
-   * falls back to the helper's default.
-   */
-  toolbarItemSelector: string | null;
+  toolbars: ReadonlyMap<HTMLElement, FocusManagerOptions>;
 }
 
 /**
  * Platform-independent extension that wires the editor-to-toolbar focus
- * jump (Alt+F10 / Escape return). Hosts using `@lexical/extension`
- * supply the toolbar via the config signal; the React adapter is
- * `useLexicalFocusManager` from `@lexical/react`.
+ * jump (Alt+F10 / Escape return) on one or more toolbars. React
+ * adapters register toolbars via the `useLexicalFocusManagerRef`
+ * RefCallback hook from `@lexical/react`.
  */
 export const FocusManagerExtension = /* @__PURE__ */ defineExtension({
   build: (_editor, config) => namedSignals(config),
   config: /* @__PURE__ */ safeCast<FocusManagerExtensionConfig>({
-    toolbar: null,
-    toolbarItemSelector: null,
+    toolbars: new Map(),
   }),
   name: '@lexical/a11y/FocusManager',
   register(editor, _config, state) {
-    const {toolbar, toolbarItemSelector} = state.getOutput();
+    const {toolbars} = state.getOutput();
     return effect(() => {
-      const t = toolbar.value;
-      if (t === null) {
+      const map = toolbars.value;
+      if (map.size === 0) {
         return undefined;
       }
-      const selector = toolbarItemSelector.value;
-      return registerFocusManager(editor, t, {
-        toolbarItemSelector: selector ?? undefined,
-      });
+      return mergeRegister(
+        ...Array.from(map, ([toolbar, opts]) =>
+          registerFocusManager(editor, toolbar, opts),
+        ),
+      );
     });
   },
 });

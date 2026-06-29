@@ -8,9 +8,9 @@
 
 import {RovingTabIndexExtension} from '@lexical/a11y';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
-import {useLexicalRovingTabIndex} from '@lexical/react/useLexicalRovingTabIndex';
+import {useLexicalRovingTabIndexRef} from '@lexical/react/useLexicalRovingTabIndexRef';
 import * as React from 'react';
-import {act, useRef} from 'react';
+import {act} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
@@ -21,8 +21,9 @@ function Group({
   count?: number;
   orientation?: 'horizontal' | 'vertical' | 'both';
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useLexicalRovingTabIndex(ref, orientation ? {orientation} : undefined);
+  const ref = useLexicalRovingTabIndexRef(
+    orientation ? {orientation} : undefined,
+  );
   return (
     <div ref={ref} data-testid="group">
       {Array.from({length: count}, (_, i) => (
@@ -48,7 +49,7 @@ function dispatchKey(target: HTMLElement, key: string): void {
   );
 }
 
-describe('useLexicalRovingTabIndex', () => {
+describe('useLexicalRovingTabIndexRef', () => {
   let container: HTMLDivElement;
   let root: Root;
 

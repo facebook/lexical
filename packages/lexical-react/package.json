@@ -1779,76 +1779,76 @@
         "default": "./dist/useLexicalEditable.js"
       }
     },
-    "./useLexicalFocusManager": {
-      "source": "./src/useLexicalFocusManager.ts",
+    "./useLexicalFocusManagerRef": {
+      "source": "./src/useLexicalFocusManagerRef.ts",
       "import": {
         "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/useLexicalFocusManager.d.ts",
-        "development": "./dist/useLexicalFocusManager.dev.mjs",
-        "production": "./dist/useLexicalFocusManager.prod.mjs",
-        "node": "./dist/useLexicalFocusManager.node.mjs",
-        "default": "./dist/useLexicalFocusManager.mjs"
+        "types": "./dist/useLexicalFocusManagerRef.d.ts",
+        "development": "./dist/useLexicalFocusManagerRef.dev.mjs",
+        "production": "./dist/useLexicalFocusManagerRef.prod.mjs",
+        "node": "./dist/useLexicalFocusManagerRef.node.mjs",
+        "default": "./dist/useLexicalFocusManagerRef.mjs"
       },
       "require": {
         "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/useLexicalFocusManager.d.ts",
-        "development": "./dist/useLexicalFocusManager.dev.js",
-        "production": "./dist/useLexicalFocusManager.prod.js",
-        "default": "./dist/useLexicalFocusManager.js"
+        "types": "./dist/useLexicalFocusManagerRef.d.ts",
+        "development": "./dist/useLexicalFocusManagerRef.dev.js",
+        "production": "./dist/useLexicalFocusManagerRef.prod.js",
+        "default": "./dist/useLexicalFocusManagerRef.js"
       }
     },
-    "./useLexicalFocusManager.js": {
-      "source": "./src/useLexicalFocusManager.ts",
+    "./useLexicalFocusManagerRef.js": {
+      "source": "./src/useLexicalFocusManagerRef.ts",
       "import": {
         "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/useLexicalFocusManager.d.ts",
-        "development": "./dist/useLexicalFocusManager.dev.mjs",
-        "production": "./dist/useLexicalFocusManager.prod.mjs",
-        "node": "./dist/useLexicalFocusManager.node.mjs",
-        "default": "./dist/useLexicalFocusManager.mjs"
+        "types": "./dist/useLexicalFocusManagerRef.d.ts",
+        "development": "./dist/useLexicalFocusManagerRef.dev.mjs",
+        "production": "./dist/useLexicalFocusManagerRef.prod.mjs",
+        "node": "./dist/useLexicalFocusManagerRef.node.mjs",
+        "default": "./dist/useLexicalFocusManagerRef.mjs"
       },
       "require": {
         "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/useLexicalFocusManager.d.ts",
-        "development": "./dist/useLexicalFocusManager.dev.js",
-        "production": "./dist/useLexicalFocusManager.prod.js",
-        "default": "./dist/useLexicalFocusManager.js"
+        "types": "./dist/useLexicalFocusManagerRef.d.ts",
+        "development": "./dist/useLexicalFocusManagerRef.dev.js",
+        "production": "./dist/useLexicalFocusManagerRef.prod.js",
+        "default": "./dist/useLexicalFocusManagerRef.js"
       }
     },
-    "./useLexicalFocusTrap": {
-      "source": "./src/useLexicalFocusTrap.ts",
+    "./useLexicalFocusTrapRef": {
+      "source": "./src/useLexicalFocusTrapRef.ts",
       "import": {
         "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/useLexicalFocusTrap.d.ts",
-        "development": "./dist/useLexicalFocusTrap.dev.mjs",
-        "production": "./dist/useLexicalFocusTrap.prod.mjs",
-        "node": "./dist/useLexicalFocusTrap.node.mjs",
-        "default": "./dist/useLexicalFocusTrap.mjs"
+        "types": "./dist/useLexicalFocusTrapRef.d.ts",
+        "development": "./dist/useLexicalFocusTrapRef.dev.mjs",
+        "production": "./dist/useLexicalFocusTrapRef.prod.mjs",
+        "node": "./dist/useLexicalFocusTrapRef.node.mjs",
+        "default": "./dist/useLexicalFocusTrapRef.mjs"
       },
       "require": {
         "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/useLexicalFocusTrap.d.ts",
-        "development": "./dist/useLexicalFocusTrap.dev.js",
-        "production": "./dist/useLexicalFocusTrap.prod.js",
-        "default": "./dist/useLexicalFocusTrap.js"
+        "types": "./dist/useLexicalFocusTrapRef.d.ts",
+        "development": "./dist/useLexicalFocusTrapRef.dev.js",
+        "production": "./dist/useLexicalFocusTrapRef.prod.js",
+        "default": "./dist/useLexicalFocusTrapRef.js"
       }
     },
-    "./useLexicalFocusTrap.js": {
-      "source": "./src/useLexicalFocusTrap.ts",
+    "./useLexicalFocusTrapRef.js": {
+      "source": "./src/useLexicalFocusTrapRef.ts",
       "import": {
         "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/useLexicalFocusTrap.d.ts",
-        "development": "./dist/useLexicalFocusTrap.dev.mjs",
-        "production": "./dist/useLexicalFocusTrap.prod.mjs",
-        "node": "./dist/useLexicalFocusTrap.node.mjs",
-        "default": "./dist/useLexicalFocusTrap.mjs"
+        "types": "./dist/useLexicalFocusTrapRef.d.ts",
+        "development": "./dist/useLexicalFocusTrapRef.dev.mjs",
+        "production": "./dist/useLexicalFocusTrapRef.prod.mjs",
+        "node": "./dist/useLexicalFocusTrapRef.node.mjs",
+        "default": "./dist/useLexicalFocusTrapRef.mjs"
       },
       "require": {
         "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/useLexicalFocusTrap.d.ts",
-        "development": "./dist/useLexicalFocusTrap.dev.js",
-        "production": "./dist/useLexicalFocusTrap.prod.js",
-        "default": "./dist/useLexicalFocusTrap.js"
+        "types": "./dist/useLexicalFocusTrapRef.d.ts",
+        "development": "./dist/useLexicalFocusTrapRef.dev.js",
+        "production": "./dist/useLexicalFocusTrapRef.prod.js",
+        "default": "./dist/useLexicalFocusTrapRef.js"
       }
     },
     "./useLexicalIsTextContentEmpty": {
@@ -1923,40 +1923,40 @@
         "default": "./dist/useLexicalNodeSelection.js"
       }
     },
-    "./useLexicalRovingTabIndex": {
-      "source": "./src/useLexicalRovingTabIndex.ts",
+    "./useLexicalRovingTabIndexRef": {
+      "source": "./src/useLexicalRovingTabIndexRef.ts",
       "import": {
         "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/useLexicalRovingTabIndex.d.ts",
-        "development": "./dist/useLexicalRovingTabIndex.dev.mjs",
-        "production": "./dist/useLexicalRovingTabIndex.prod.mjs",
-        "node": "./dist/useLexicalRovingTabIndex.node.mjs",
-        "default": "./dist/useLexicalRovingTabIndex.mjs"
+        "types": "./dist/useLexicalRovingTabIndexRef.d.ts",
+        "development": "./dist/useLexicalRovingTabIndexRef.dev.mjs",
+        "production": "./dist/useLexicalRovingTabIndexRef.prod.mjs",
+        "node": "./dist/useLexicalRovingTabIndexRef.node.mjs",
+        "default": "./dist/useLexicalRovingTabIndexRef.mjs"
       },
       "require": {
         "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/useLexicalRovingTabIndex.d.ts",
-        "development": "./dist/useLexicalRovingTabIndex.dev.js",
-        "production": "./dist/useLexicalRovingTabIndex.prod.js",
-        "default": "./dist/useLexicalRovingTabIndex.js"
+        "types": "./dist/useLexicalRovingTabIndexRef.d.ts",
+        "development": "./dist/useLexicalRovingTabIndexRef.dev.js",
+        "production": "./dist/useLexicalRovingTabIndexRef.prod.js",
+        "default": "./dist/useLexicalRovingTabIndexRef.js"
       }
     },
-    "./useLexicalRovingTabIndex.js": {
-      "source": "./src/useLexicalRovingTabIndex.ts",
+    "./useLexicalRovingTabIndexRef.js": {
+      "source": "./src/useLexicalRovingTabIndexRef.ts",
       "import": {
         "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/useLexicalRovingTabIndex.d.ts",
-        "development": "./dist/useLexicalRovingTabIndex.dev.mjs",
-        "production": "./dist/useLexicalRovingTabIndex.prod.mjs",
-        "node": "./dist/useLexicalRovingTabIndex.node.mjs",
-        "default": "./dist/useLexicalRovingTabIndex.mjs"
+        "types": "./dist/useLexicalRovingTabIndexRef.d.ts",
+        "development": "./dist/useLexicalRovingTabIndexRef.dev.mjs",
+        "production": "./dist/useLexicalRovingTabIndexRef.prod.mjs",
+        "node": "./dist/useLexicalRovingTabIndexRef.node.mjs",
+        "default": "./dist/useLexicalRovingTabIndexRef.mjs"
       },
       "require": {
         "types@<5.2": "./dist/typescript-too-old.d.ts",
-        "types": "./dist/useLexicalRovingTabIndex.d.ts",
-        "development": "./dist/useLexicalRovingTabIndex.dev.js",
-        "production": "./dist/useLexicalRovingTabIndex.prod.js",
-        "default": "./dist/useLexicalRovingTabIndex.js"
+        "types": "./dist/useLexicalRovingTabIndexRef.d.ts",
+        "development": "./dist/useLexicalRovingTabIndexRef.dev.js",
+        "production": "./dist/useLexicalRovingTabIndexRef.prod.js",
+        "default": "./dist/useLexicalRovingTabIndexRef.js"
       }
     },
     "./useLexicalSlotRef": {

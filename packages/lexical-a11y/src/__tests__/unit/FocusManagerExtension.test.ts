@@ -32,7 +32,7 @@ afterEach(() => {
 });
 
 describe('FocusManagerExtension', () => {
-  test('toolbar null leaves Alt+F10 a no-op (no focus move)', () => {
+  test('empty toolbars map leaves Alt+F10 a no-op (no focus move)', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [FocusManagerExtension, RichTextExtension],
@@ -50,7 +50,7 @@ describe('FocusManagerExtension', () => {
     sink.remove();
   });
 
-  test('Alt+F10 focuses the toolbar first item when toolbar signal is set', () => {
+  test('Alt+F10 focuses the toolbar first item when toolbar is registered', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [FocusManagerExtension, RichTextExtension],
@@ -58,11 +58,11 @@ describe('FocusManagerExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    const {toolbar: toolbarSignal} = getExtensionDependencyFromEditor(
+    const {toolbars} = getExtensionDependencyFromEditor(
       editor,
       FocusManagerExtension,
     ).output;
-    toolbarSignal.value = toolbar;
+    toolbars.value = new Map([[toolbar, {}]]);
 
     editor.dispatchCommand(
       KEY_DOWN_COMMAND,
@@ -79,11 +79,11 @@ describe('FocusManagerExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    const {toolbar: toolbarSignal} = getExtensionDependencyFromEditor(
+    const {toolbars} = getExtensionDependencyFromEditor(
       editor,
       FocusManagerExtension,
     ).output;
-    toolbarSignal.value = toolbar;
+    toolbars.value = new Map([[toolbar, {}]]);
 
     const rootElement = document.createElement('div');
     rootElement.contentEditable = 'true';
@@ -101,7 +101,7 @@ describe('FocusManagerExtension', () => {
     rootElement.remove();
   });
 
-  test('deactivates when the toolbar signal returns to null', () => {
+  test('deactivates when the toolbar is removed from the map', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [FocusManagerExtension, RichTextExtension],
@@ -109,18 +109,18 @@ describe('FocusManagerExtension', () => {
       }),
     );
     const toolbar = createToolbar();
-    const {toolbar: toolbarSignal} = getExtensionDependencyFromEditor(
+    const {toolbars} = getExtensionDependencyFromEditor(
       editor,
       FocusManagerExtension,
     ).output;
-    toolbarSignal.value = toolbar;
+    toolbars.value = new Map([[toolbar, {}]]);
     editor.dispatchCommand(
       KEY_DOWN_COMMAND,
       new KeyboardEvent('keydown', {altKey: true, key: 'F10'}),
     );
     expect(document.activeElement).toBe(toolbar.querySelector('button'));
 
-    toolbarSignal.value = null;
+    toolbars.value = new Map();
     const sink = document.createElement('button');
     document.body.appendChild(sink);
     sink.focus();

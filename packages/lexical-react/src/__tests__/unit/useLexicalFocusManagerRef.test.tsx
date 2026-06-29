@@ -9,18 +9,16 @@
 import {FocusManagerExtension} from '@lexical/a11y';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
-import {useLexicalFocusManager} from '@lexical/react/useLexicalFocusManager';
+import {useLexicalFocusManagerRef} from '@lexical/react/useLexicalFocusManagerRef';
 import * as React from 'react';
-import {act, useEffect, useRef} from 'react';
+import {act, useEffect} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 
 function Harness({onReady}: {onReady?: () => void}) {
   const [editor] = useLexicalComposerContext();
-  const editorRootRef = useRef<HTMLDivElement>(null);
-  const toolbarRef = useRef<HTMLDivElement>(null);
-
-  useLexicalFocusManager(toolbarRef);
+  const editorRootRef = React.useRef<HTMLDivElement>(null);
+  const toolbarRef = useLexicalFocusManagerRef();
 
   useEffect(() => {
     const root = editorRootRef.current;
@@ -70,7 +68,7 @@ function dispatchKey(
   return event;
 }
 
-describe('useLexicalFocusManager', () => {
+describe('useLexicalFocusManagerRef', () => {
   let container: HTMLDivElement;
   let root: Root;
 

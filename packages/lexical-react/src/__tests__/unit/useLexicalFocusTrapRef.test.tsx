@@ -8,9 +8,9 @@
 
 import {FocusTrapExtension} from '@lexical/a11y';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
-import {useLexicalFocusTrap} from '@lexical/react/useLexicalFocusTrap';
+import {useLexicalFocusTrapRef} from '@lexical/react/useLexicalFocusTrapRef';
 import * as React from 'react';
-import {act, useRef} from 'react';
+import {act} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
@@ -23,8 +23,7 @@ function Trap({
   buttons?: number;
   initialFocus?: 'firstFocusable' | 'container';
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useLexicalFocusTrap(ref, isActive, initialFocus);
+  const ref = useLexicalFocusTrapRef(isActive, initialFocus);
   return (
     <div ref={ref} tabIndex={-1} data-testid="trap">
       {Array.from({length: buttons}, (_, i) => (
@@ -55,7 +54,7 @@ function dispatchTab(target: HTMLElement, shiftKey = false): void {
   );
 }
 
-describe('useLexicalFocusTrap', () => {
+describe('useLexicalFocusTrapRef', () => {
   let container: HTMLDivElement;
   let root: Root;
 
@@ -126,13 +125,7 @@ describe('useLexicalFocusTrap', () => {
     expect(document.activeElement).toBe(last);
   });
 
-  test('restores focus to the previously-focused element on deactivate', () => {
-    const opener = document.createElement('button');
-    opener.textContent = 'Opener';
-    document.body.appendChild(opener);
-    opener.focus();
-    expect(document.activeElement).toBe(opener);
-
+  test('deactivates the trap when isActive becomes false', () => {
     act(() => {
       root.render(
         <WithExtension>
@@ -140,7 +133,7 @@ describe('useLexicalFocusTrap', () => {
         </WithExtension>,
       );
     });
-    expect(document.activeElement).not.toBe(opener);
+    expect(document.activeElement).toBe(getByTestId('btn-0'));
 
     act(() => {
       root.render(
@@ -149,18 +142,16 @@ describe('useLexicalFocusTrap', () => {
         </WithExtension>,
       );
     });
-    expect(document.activeElement).toBe(opener);
 
-    document.body.removeChild(opener);
+    const outside = document.createElement('button');
+    outside.textContent = 'Outside';
+    document.body.appendChild(outside);
+    outside.focus();
+    expect(document.activeElement).toBe(outside);
+    document.body.removeChild(outside);
   });
 
-  test('restores focus to the previously-focused element on unmount', () => {
-    const opener = document.createElement('button');
-    opener.textContent = 'Opener';
-    document.body.appendChild(opener);
-    opener.focus();
-    expect(document.activeElement).toBe(opener);
-
+  test('deactivates the trap on unmount', () => {
     act(() => {
       root.render(
         <WithExtension>
@@ -168,14 +159,18 @@ describe('useLexicalFocusTrap', () => {
         </WithExtension>,
       );
     });
-    expect(document.activeElement).not.toBe(opener);
+    expect(document.activeElement).toBe(getByTestId('btn-0'));
 
     act(() => {
       root.render(<></>);
     });
-    expect(document.activeElement).toBe(opener);
 
-    document.body.removeChild(opener);
+    const outside = document.createElement('button');
+    outside.textContent = 'Outside';
+    document.body.appendChild(outside);
+    outside.focus();
+    expect(document.activeElement).toBe(outside);
+    document.body.removeChild(outside);
   });
 
   test('no-op when isActive is false', () => {

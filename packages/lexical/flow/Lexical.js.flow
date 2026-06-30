@@ -811,11 +811,11 @@ declare export class TextNode extends LexicalNode {
   exportJSON(): SerializedTextNode;
 }
 export interface InlineFormattableNode {
-  +__isInlineFormattable: true;
+  readonly __isInlineFormattable: true;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
   hasFormat(type: TextFormatType): boolean;
-  setFormat(format: number): mixed;
-  toggleFormat(type: TextFormatType): mixed;
+  setFormat(format: number): unknown;
+  toggleFormat(type: TextFormatType): unknown;
 }
 declare export function $isInlineFormattable(
   node: ?LexicalNode,

@@ -168,6 +168,47 @@ describe('useLexicalRovingTabIndexRef', () => {
     expect(document.activeElement).toBe(byId('btn-1'));
   });
 
+  test('re-registers with new options when deps change but the node stays mounted', () => {
+    act(() => {
+      root.render(
+        <WithExtension>
+          <Group orientation="horizontal" />
+        </WithExtension>,
+      );
+    });
+    const groupBefore = byId('group');
+    act(() => {
+      byId('btn-0').focus();
+    });
+    // Horizontal: ArrowRight moves focus.
+    dispatchKey(byId('btn-0'), 'ArrowRight');
+    expect(document.activeElement).toBe(byId('btn-1'));
+
+    // Re-render with a different orientation. The same <div> node is reused,
+    // so only the ref-callback identity changes (the `orientation` dep). React
+    // calls the previous callback with null — disposing the old registration —
+    // and the new one with the node, re-registering with the new options.
+    act(() => {
+      root.render(
+        <WithExtension>
+          <Group orientation="vertical" />
+        </WithExtension>,
+      );
+    });
+    expect(byId('group')).toBe(groupBefore); // same DOM node, not remounted
+
+    act(() => {
+      byId('btn-0').focus();
+    });
+    // If the old horizontal registration had leaked, its keydown listener would
+    // still move focus here. It must be gone: ArrowRight is now ignored and only
+    // the new vertical registration responds to ArrowDown.
+    dispatchKey(byId('btn-0'), 'ArrowRight');
+    expect(document.activeElement).toBe(byId('btn-0'));
+    dispatchKey(byId('btn-0'), 'ArrowDown');
+    expect(document.activeElement).toBe(byId('btn-1'));
+  });
+
   test('does nothing when the group is empty', () => {
     act(() => {
       root.render(

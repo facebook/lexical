@@ -24,7 +24,7 @@ import {
   HISTORY_MERGE_TAG,
   mergeRegister,
   NodeKey,
-  registerEventListener,
+  registerEventListeners,
   RootNode,
   safeCast,
   SELECTION_CHANGE_COMMAND,
@@ -764,8 +764,10 @@ export const PagesExtension = /* @__PURE__ */ defineExtension({
             removeRootTransform,
             removePageContentTransform,
             removeMutationListeners,
-            registerEventListener(window, 'beforeprint', handleBeforePrint),
-            registerEventListener(window, 'afterprint', handleAfterPrint),
+            registerEventListeners(window, {
+              afterprint: handleAfterPrint,
+              beforeprint: handleBeforePrint,
+            }),
           );
         });
       });

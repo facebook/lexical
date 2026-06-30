@@ -7,9 +7,12 @@
  */
 
 /**
- * The typed event map for a given {@link EventTarget}, falling back to a
- * permissive record so custom targets and events still type-check. Shared by
- * {@link registerEventListener} and `registerEventListeners`.
+ * The typed event map for a given {@link EventTarget}. Falls back to the global
+ * handlers map (rather than a permissive `Record<string, Event>`) so unknown
+ * event names are rejected as typos. Shared by {@link registerEventListener}
+ * and `registerEventListeners`; the former additionally has a `string` overload
+ * as an escape hatch for non-standard names (e.g. the legacy `textInput`),
+ * which the object form intentionally does not.
  */
 export type EventMapOf<T extends EventTarget> = T extends Window
   ? WindowEventMap
@@ -17,7 +20,7 @@ export type EventMapOf<T extends EventTarget> = T extends Window
     ? DocumentEventMap
     : T extends HTMLElement
       ? HTMLElementEventMap
-      : Record<string, Event>;
+      : GlobalEventHandlersEventMap;
 
 /**
  * Add an event listener to `target` and return a function that removes it.

@@ -10,8 +10,8 @@ import {
   effect,
   namedSignals,
   type NamedSignalsOutput,
+  RootElementExtension,
   signal,
-  watchedSignal,
 } from '@lexical/extension';
 import {mergeRegister} from '@lexical/utils';
 import {
@@ -501,27 +501,22 @@ export const AriaLiveRegionExtension = /* @__PURE__ */ defineExtension({
     owner: null,
     politeness: 'polite',
   }),
+  dependencies: [RootElementExtension],
   // Private reactive message buffer shared by `build` (writer) and `register`
   // (renderer); see the extension doc comment.
   init: () => signal<string>(''),
   name: '@lexical/a11y/AriaLiveRegion',
-  register(editor, _config, state) {
+  register(_editor, _config, state) {
     const message = state.getInitResult();
     const {owner, politeness} = state.getOutput();
-    const rootElement = watchedSignal(
-      () => editor.getRootElement(),
-      self =>
-        editor.registerRootListener(el => {
-          self.value = el;
-        }),
-    );
+    const rootElement = state.getDependency(RootElementExtension).output;
     const region = signal<HTMLElement | null>(null);
     return mergeRegister(
       // Create / dispose the region as the root document (or `owner`) changes.
       effect(() => {
         const root = rootElement.value;
         const host = owner.value ?? (root ? root.ownerDocument.body : null);
-        if (host === null) {
+        if (!host) {
           return undefined;
         }
         const el = createLiveRegion(host);
@@ -534,14 +529,14 @@ export const AriaLiveRegionExtension = /* @__PURE__ */ defineExtension({
       // Apply the (runtime-tunable) politeness to whatever region is mounted.
       effect(() => {
         const el = region.value;
-        if (el !== null) {
+        if (el) {
           el.setAttribute('aria-live', politeness.value);
         }
       }),
       // Mirror the current message into whatever region is mounted.
       effect(() => {
         const el = region.value;
-        if (el !== null) {
+        if (el) {
           el.textContent = message.value;
         }
       }),
@@ -575,30 +570,31 @@ export const HistoryAnnounceExtension = /* @__PURE__ */ defineExtension({
   register(editor, _config, state) {
     const {disabled, redone, undone} = state.getOutput();
     const {announce} = state.getDependency(AriaLiveRegionExtension).output;
-    // Read the signals at dispatch time so the commands register once and
-    // pick up message / disabled changes without re-registering. Both return
-    // false to keep the history command chain intact.
-    return mergeRegister(
-      editor.registerCommand(
-        UNDO_COMMAND,
-        () => {
-          if (!disabled.value) {
-            announce(undone.value);
-          }
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand(
-        REDO_COMMAND,
-        () => {
-          if (!disabled.value) {
-            announce(redone.value);
-          }
-          return false;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
+    // Gate registration on `disabled` from an effect so a disabled announcer
+    // adds no command overhead at all. Peek the message signals at dispatch
+    // time so changing them doesn't re-register. Both return false to keep the
+    // history command chain intact.
+    return effect(() =>
+      disabled.value
+        ? undefined
+        : mergeRegister(
+            editor.registerCommand(
+              UNDO_COMMAND,
+              () => {
+                announce(undone.peek());
+                return false;
+              },
+              COMMAND_PRIORITY_LOW,
+            ),
+            editor.registerCommand(
+              REDO_COMMAND,
+              () => {
+                announce(redone.peek());
+                return false;
+              },
+              COMMAND_PRIORITY_LOW,
+            ),
+          ),
     );
   },
 });
@@ -630,13 +626,16 @@ export const EditorModeAnnounceExtension = /* @__PURE__ */ defineExtension({
   register(editor, _config, state) {
     const {disabled, editable, readOnly} = state.getOutput();
     const {announce} = state.getDependency(AriaLiveRegionExtension).output;
-    // Read the signals at listener time so the listener registers once and
-    // picks up message / disabled changes without re-registering.
-    return editor.registerEditableListener(isEditable => {
-      if (!disabled.value) {
-        announce(isEditable ? editable.value : readOnly.value);
-      }
-    });
+    // Gate registration on `disabled` from an effect so a disabled announcer
+    // adds no listener overhead. Peek the message signals at dispatch time so
+    // changing them doesn't re-register.
+    return effect(() =>
+      disabled.value
+        ? undefined
+        : editor.registerEditableListener(isEditable => {
+            announce(isEditable ? editable.peek() : readOnly.peek());
+          }),
+    );
   },
 });
 

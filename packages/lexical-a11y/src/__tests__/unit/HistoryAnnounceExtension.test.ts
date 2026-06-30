@@ -14,15 +14,21 @@ import {
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {configExtension, REDO_COMMAND, UNDO_COMMAND} from 'lexical';
-import {afterEach, describe, expect, test} from 'vitest';
+import {afterEach, describe, expect, onTestFinished, test} from 'vitest';
 
 afterEach(() => {
-  for (const region of Array.from(
-    document.body.querySelectorAll('[aria-live]'),
-  )) {
-    region.remove();
-  }
+  document.body.replaceChildren();
 });
+
+// The live region follows the editor's root document, so a mounted root is
+// required for it to exist.
+function mountRoot(editor: ReturnType<typeof buildEditorFromExtensions>): void {
+  const root = document.createElement('div');
+  root.contentEditable = 'true';
+  document.body.appendChild(root);
+  editor.setRootElement(root);
+  onTestFinished(() => root.remove());
+}
 
 function readLiveRegion(): string {
   return document.body.querySelector('[aria-live]')!.textContent ?? '';
@@ -36,6 +42,7 @@ describe('HistoryAnnounceExtension', () => {
         name: '[root]',
       }),
     );
+    mountRoot(editor);
     editor.dispatchCommand(UNDO_COMMAND, undefined);
     expect(readLiveRegion()).toBe('Undone');
     editor.dispatchCommand(REDO_COMMAND, undefined);
@@ -55,6 +62,7 @@ describe('HistoryAnnounceExtension', () => {
         name: '[root]',
       }),
     );
+    mountRoot(editor);
     editor.dispatchCommand(UNDO_COMMAND, undefined);
     expect(readLiveRegion()).toBe('Custom undo');
     editor.dispatchCommand(REDO_COMMAND, undefined);
@@ -68,6 +76,7 @@ describe('HistoryAnnounceExtension', () => {
         name: '[root]',
       }),
     );
+    mountRoot(editor);
     const {undone, redone} = getExtensionDependencyFromEditor(
       editor,
       HistoryAnnounceExtension,
@@ -80,6 +89,28 @@ describe('HistoryAnnounceExtension', () => {
     expect(readLiveRegion()).toBe('Restored');
   });
 
+  test('does not announce while disabled, and resumes when re-enabled', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [HistoryAnnounceExtension, RichTextExtension],
+        name: '[root]',
+      }),
+    );
+    mountRoot(editor);
+    const {disabled} = getExtensionDependencyFromEditor(
+      editor,
+      HistoryAnnounceExtension,
+    ).output;
+
+    disabled.value = true;
+    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    expect(readLiveRegion()).toBe('');
+
+    disabled.value = false;
+    editor.dispatchCommand(REDO_COMMAND, undefined);
+    expect(readLiveRegion()).toBe('Redone');
+  });
+
   test('keeps the history command chain intact (returns false)', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
@@ -87,6 +118,7 @@ describe('HistoryAnnounceExtension', () => {
         name: '[root]',
       }),
     );
+    mountRoot(editor);
     // A handler registered after HistoryAnnounce at the same priority should
     // still receive the UNDO_COMMAND because HistoryAnnounce returns false.
     let reached = false;

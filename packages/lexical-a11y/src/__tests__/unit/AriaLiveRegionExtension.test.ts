@@ -14,25 +14,32 @@ import {
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {configExtension} from 'lexical';
-import {afterEach, describe, expect, test} from 'vitest';
+import {afterEach, describe, expect, onTestFinished, test} from 'vitest';
 
 afterEach(() => {
-  for (const region of Array.from(
-    document.body.querySelectorAll('[aria-live]'),
-  )) {
-    region.remove();
-  }
+  document.body.replaceChildren();
 });
 
+// The region is bound to the editor's root document, so a mounted root is
+// required (unless an explicit `owner` is configured). The default root lives
+// on `document.body`, so the region lands there.
+function mountRoot(editor: ReturnType<typeof buildEditorFromExtensions>): void {
+  const root = document.createElement('div');
+  root.contentEditable = 'true';
+  document.body.appendChild(root);
+  editor.setRootElement(root);
+  onTestFinished(() => root.remove());
+}
+
 describe('AriaLiveRegionExtension', () => {
-  test('mounts a polite live region on document.body by default', () => {
+  test('mounts a polite live region on the root document by default', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [AriaLiveRegionExtension, RichTextExtension],
         name: '[root]',
       }),
     );
-    editor.getEditorState();
+    mountRoot(editor);
     const regions = document.body.querySelectorAll('[aria-live]');
     expect(regions).toHaveLength(1);
     expect(regions[0].getAttribute('aria-live')).toBe('polite');
@@ -48,9 +55,33 @@ describe('AriaLiveRegionExtension', () => {
           name: '[root]',
         }),
       );
-      editor.getEditorState();
+      mountRoot(editor);
       expect(document.body.querySelectorAll('[aria-live]')).toHaveLength(1);
     }
+    expect(document.body.querySelectorAll('[aria-live]')).toHaveLength(0);
+  });
+
+  test('mounts the region in the editor root element document (e.g. an iframe)', () => {
+    // A real iframe stands in for an editor portaled into a separate document.
+    // It must be a live iframe (not document.implementation.createHTMLDocument)
+    // so its document has a defaultView window, which setRootElement requires.
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    const frameDoc = frame.contentDocument!;
+    onTestFinished(() => frame.remove());
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [AriaLiveRegionExtension, RichTextExtension],
+        name: '[root]',
+      }),
+    );
+    const root = frameDoc.createElement('div');
+    root.contentEditable = 'true';
+    frameDoc.body.appendChild(root);
+    editor.setRootElement(root);
+
+    // The region is created in the editor's own document, not the top-level one.
+    expect(frameDoc.body.querySelectorAll('[aria-live]')).toHaveLength(1);
     expect(document.body.querySelectorAll('[aria-live]')).toHaveLength(0);
   });
 
@@ -64,33 +95,26 @@ describe('AriaLiveRegionExtension', () => {
         name: '[root]',
       }),
     );
-    editor.getEditorState();
+    mountRoot(editor);
     expect(
       document.body.querySelector('[aria-live]')!.getAttribute('aria-live'),
     ).toBe('assertive');
   });
 
-  test('mounts onto a custom owner element', () => {
+  test('mounts onto a custom owner element regardless of the root', () => {
     const owner = document.createElement('div');
     document.body.appendChild(owner);
-    try {
-      using editor = buildEditorFromExtensions(
-        defineExtension({
-          dependencies: [
-            configExtension(AriaLiveRegionExtension, {owner}),
-            RichTextExtension,
-          ],
-          name: '[root]',
-        }),
-      );
-      editor.getEditorState();
-      expect(owner.querySelector('[aria-live]')).not.toBeNull();
-      expect(document.body.children).not.toContain(
-        owner.querySelector('[aria-live]'),
-      );
-    } finally {
-      owner.remove();
-    }
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          configExtension(AriaLiveRegionExtension, {owner}),
+          RichTextExtension,
+        ],
+        name: '[root]',
+      }),
+    );
+    void editor;
+    expect(owner.querySelector('[aria-live]')).not.toBeNull();
   });
 
   test('exposes the AriaLiveRegionHandle via dependency output', () => {
@@ -100,6 +124,7 @@ describe('AriaLiveRegionExtension', () => {
         name: '[root]',
       }),
     );
+    mountRoot(editor);
     const ref = getExtensionDependencyFromEditor(
       editor,
       AriaLiveRegionExtension,

@@ -63,6 +63,7 @@ declare export var AriaLiveRegionExtension: LexicalExtension<
 export type HistoryAnnounceExtensionConfig = {
   undone: string,
   redone: string,
+  disabled: boolean,
 };
 declare export var HistoryAnnounceExtension: LexicalExtension<
   HistoryAnnounceExtensionConfig,
@@ -74,6 +75,7 @@ declare export var HistoryAnnounceExtension: LexicalExtension<
 export type EditorModeAnnounceExtensionConfig = {
   editable: string,
   readOnly: string,
+  disabled: boolean,
 };
 declare export var EditorModeAnnounceExtension: LexicalExtension<
   EditorModeAnnounceExtensionConfig,

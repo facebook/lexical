@@ -14,15 +14,21 @@ import {
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {configExtension} from 'lexical';
-import {afterEach, describe, expect, test} from 'vitest';
+import {afterEach, describe, expect, onTestFinished, test} from 'vitest';
 
 afterEach(() => {
-  for (const region of Array.from(
-    document.body.querySelectorAll('[aria-live]'),
-  )) {
-    region.remove();
-  }
+  document.body.replaceChildren();
 });
+
+// The live region follows the editor's root document, so a mounted root is
+// required for it to exist.
+function mountRoot(editor: ReturnType<typeof buildEditorFromExtensions>): void {
+  const root = document.createElement('div');
+  root.contentEditable = 'true';
+  document.body.appendChild(root);
+  editor.setRootElement(root);
+  onTestFinished(() => root.remove());
+}
 
 function readLiveRegion(): string {
   return document.body.querySelector('[aria-live]')!.textContent ?? '';
@@ -36,6 +42,7 @@ describe('EditorModeAnnounceExtension', () => {
         name: '[root]',
       }),
     );
+    mountRoot(editor);
     editor.setEditable(false);
     expect(readLiveRegion()).toBe('Editor is read-only');
     editor.setEditable(true);
@@ -55,6 +62,7 @@ describe('EditorModeAnnounceExtension', () => {
         name: '[root]',
       }),
     );
+    mountRoot(editor);
     editor.setEditable(false);
     expect(readLiveRegion()).toBe('Locked');
     editor.setEditable(true);
@@ -68,6 +76,7 @@ describe('EditorModeAnnounceExtension', () => {
         name: '[root]',
       }),
     );
+    mountRoot(editor);
     const {editable, readOnly} = getExtensionDependencyFromEditor(
       editor,
       EditorModeAnnounceExtension,
@@ -78,5 +87,27 @@ describe('EditorModeAnnounceExtension', () => {
     expect(readLiveRegion()).toBe('Off');
     editor.setEditable(true);
     expect(readLiveRegion()).toBe('On');
+  });
+
+  test('does not announce while disabled, and resumes when re-enabled', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [EditorModeAnnounceExtension, RichTextExtension],
+        name: '[root]',
+      }),
+    );
+    mountRoot(editor);
+    const {disabled} = getExtensionDependencyFromEditor(
+      editor,
+      EditorModeAnnounceExtension,
+    ).output;
+
+    disabled.value = true;
+    editor.setEditable(false);
+    expect(readLiveRegion()).toBe('');
+
+    disabled.value = false;
+    editor.setEditable(true);
+    expect(readLiveRegion()).toBe('Editor is editable');
   });
 });

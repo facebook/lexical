@@ -605,17 +605,30 @@ export const AriaLiveRegionExtension = /* @__PURE__ */ defineExtension({
     politeness: 'polite',
   }),
   name: '@lexical/a11y/AriaLiveRegion',
-  register(_editor, config, state) {
+  register(editor, config, state) {
     const ref = state.getOutput();
-    const handle = registerAriaLiveRegion({
-      owner: config.owner ?? undefined,
-      politeness: config.politeness,
+    // Bind the region to the editor's current root so it is created in the
+    // editor's own document — e.g. an editor portaled into an iframe — rather
+    // than the top-level `document`. registerRootListener runs the returned
+    // cleanup on every root change (and on teardown), so the region follows
+    // the root across remounts with no manual tracking. An explicit `owner`
+    // config still overrides.
+    return editor.registerRootListener(rootElement => {
+      const owner =
+        config.owner ?? (rootElement ? rootElement.ownerDocument.body : null);
+      if (owner === null) {
+        return undefined;
+      }
+      const handle = registerAriaLiveRegion({
+        owner,
+        politeness: config.politeness,
+      });
+      ref.current = handle;
+      return () => {
+        handle.dispose();
+        ref.current = NOOP_HANDLE;
+      };
     });
-    ref.current = handle;
-    return () => {
-      handle.dispose();
-      ref.current = NOOP_HANDLE;
-    };
   },
 });
 
@@ -624,6 +637,9 @@ export interface HistoryAnnounceExtensionConfig {
   undone: string;
   /** Message announced after a redo. */
   redone: string;
+  /** When `true`, undo / redo are not announced. Toggle at runtime via the
+   * output signal. Default `false`. */
+  disabled: boolean;
 }
 
 /**
@@ -633,19 +649,29 @@ export interface HistoryAnnounceExtensionConfig {
 export const HistoryAnnounceExtension = /* @__PURE__ */ defineExtension({
   build: (_editor, config) => namedSignals(config),
   config: /* @__PURE__ */ safeCast<HistoryAnnounceExtensionConfig>({
+    disabled: false,
     redone: 'Redone',
     undone: 'Undone',
   }),
   dependencies: [AriaLiveRegionExtension],
   name: '@lexical/a11y/HistoryAnnounce',
   register(editor, _config, state) {
-    const {redone, undone} = state.getOutput();
+    const {disabled, redone, undone} = state.getOutput();
     const ref = state.getDependency(AriaLiveRegionExtension).output;
     return effect(() =>
-      registerHistoryAnnounce(editor, ref.current.announce, {
-        redone: redone.value,
-        undone: undone.value,
-      }),
+      disabled.value
+        ? undefined
+        : registerHistoryAnnounce(
+            editor,
+            // Read `ref.current` at announce time, not capture time: the live
+            // handle is installed lazily when the root mounts (registerRootListener),
+            // so a value captured now could still be the NOOP handle.
+            message => ref.current.announce(message),
+            {
+              redone: redone.value,
+              undone: undone.value,
+            },
+          ),
     );
   },
 });
@@ -655,6 +681,9 @@ export interface EditorModeAnnounceExtensionConfig {
   editable: string;
   /** Message announced when the editor becomes read-only. */
   readOnly: string;
+  /** When `true`, editable / read-only transitions are not announced. Toggle
+   * at runtime via the output signal. Default `false`. */
+  disabled: boolean;
 }
 
 /**
@@ -665,19 +694,29 @@ export interface EditorModeAnnounceExtensionConfig {
 export const EditorModeAnnounceExtension = /* @__PURE__ */ defineExtension({
   build: (_editor, config) => namedSignals(config),
   config: /* @__PURE__ */ safeCast<EditorModeAnnounceExtensionConfig>({
+    disabled: false,
     editable: 'Editor is editable',
     readOnly: 'Editor is read-only',
   }),
   dependencies: [AriaLiveRegionExtension],
   name: '@lexical/a11y/EditorModeAnnounce',
   register(editor, _config, state) {
-    const {editable, readOnly} = state.getOutput();
+    const {disabled, editable, readOnly} = state.getOutput();
     const ref = state.getDependency(AriaLiveRegionExtension).output;
     return effect(() =>
-      registerEditorModeAnnounce(editor, ref.current.announce, {
-        editable: editable.value,
-        readOnly: readOnly.value,
-      }),
+      disabled.value
+        ? undefined
+        : registerEditorModeAnnounce(
+            editor,
+            // Read `ref.current` at announce time, not capture time: the live
+            // handle is installed lazily when the root mounts (registerRootListener),
+            // so a value captured now could still be the NOOP handle.
+            message => ref.current.announce(message),
+            {
+              editable: editable.value,
+              readOnly: readOnly.value,
+            },
+          ),
     );
   },
 });

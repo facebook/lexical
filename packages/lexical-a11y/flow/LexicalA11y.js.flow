@@ -9,10 +9,6 @@
 
 export type AriaPoliteness = 'polite' | 'assertive';
 
-export type AriaLiveRegion = {
-  announce: (message: string) => void,
-};
-
 export type FocusTrapInitialFocus = 'firstFocusable' | 'container';
 
 export type FocusTrapOptions = {
@@ -42,6 +38,10 @@ export type FocusManagerOptions = {
 export type AriaLiveRegionExtensionConfig = {
   politeness: AriaPoliteness,
   owner: HTMLElement | null,
+};
+export type AriaLiveRegion = {
+  ...NamedSignalsOutput<AriaLiveRegionExtensionConfig>,
+  announce: (message: string) => void,
 };
 declare export var AriaLiveRegionExtension: LexicalExtension<
   AriaLiveRegionExtensionConfig,

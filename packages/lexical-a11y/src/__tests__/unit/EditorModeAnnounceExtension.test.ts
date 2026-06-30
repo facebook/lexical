@@ -69,7 +69,7 @@ describe('EditorModeAnnounceExtension', () => {
     expect(readLiveRegion()).toBe('Now editing');
   });
 
-  test('re-registers when the message signals change at runtime', () => {
+  test('reflects message signal changes at runtime', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [EditorModeAnnounceExtension, RichTextExtension],

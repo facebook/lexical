@@ -552,7 +552,7 @@ export const AriaLiveRegionExtension = /* @__PURE__ */ defineExtension({
       announce(text) {
         // Toggle a trailing zero-width space on repeats so re-announcing the
         // same text still registers as a textContent change downstream.
-        message.value = text === message.peek() ? text + '​' : text;
+        message.value = text === message.peek() ? text + '\u200B' : text;
       },
     };
   },

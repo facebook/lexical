@@ -133,7 +133,7 @@ describe('useLexicalAriaLiveRegion', () => {
     act(() => {
       ref.current!.announce('Italic on');
     });
-    expect(findRegion()!.textContent).toBe('Italic on​');
+    expect(findRegion()!.textContent).toBe('Italic on\u200B');
   });
 
   test('politeness=assertive sets aria-live="assertive"', () => {

@@ -61,7 +61,7 @@ function $isSelectingEmptyListItem(
  * the root/shadow root, it will replace the ListItemNode with a ListNode and the old ListItemNode.
  * Otherwise it will replace its parent with a new ListNode and re-insert the ListItemNode and any previous children.
  * If the selection's anchor node is not an empty ListItemNode, it will add a new ListNode or merge an existing ListNode,
- * unless the the node is a leaf node, in which case it will attempt to find a ListNode up the branch and replace it with
+ * unless the node is a leaf node, in which case it will attempt to find a ListNode up the branch and replace it with
  * a new ListNode, or create a new ListNode at the nearest root/shadow root.
  * @param listType - The type of list, "number" | "bullet" | "check".
  */

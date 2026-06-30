@@ -71,7 +71,9 @@ export function createRefCountedRegistry<Key, Options = void>(
   activate?: (key: Key, options: Options | undefined) => () => void,
 ): ManagedRefCountedRegistry<Key, Options> {
   interface Entry {
-    count: number;
+    // The live registrations for the key. Each registration's disposer is its
+    // own token; the activation is torn down once the set empties.
+    holders: Set<() => void>;
     dispose: () => void;
   }
   let activateFn:
@@ -81,6 +83,9 @@ export function createRefCountedRegistry<Key, Options = void>(
   return {
     dispose() {
       for (const entry of entries.values()) {
+        // Clear the holders so a disposer still held by a caller becomes a
+        // no-op (its token is gone) instead of disposing the activation again.
+        entry.holders.clear();
         entry.dispose();
       }
       entries.clear();
@@ -93,28 +98,26 @@ export function createRefCountedRegistry<Key, Options = void>(
       );
       let entry = entries.get(key);
       if (entry === undefined) {
-        entry = {count: 0, dispose: activateFn(key, options)};
+        entry = {dispose: activateFn(key, options), holders: new Set()};
         entries.set(key, entry);
       }
-      entry.count += 1;
       const ownEntry = entry;
-      let released = false;
-      return () => {
-        if (released) {
+      // The disposer is its own holder token. `Set.delete` returning false makes
+      // a double release — or one after the registry/entry was torn down or the
+      // key was re-registered — a no-op, since a stale disposer only ever
+      // touches its own (now-empty) entry's set. The activation is disposed once
+      // the last holder releases.
+      const release = () => {
+        if (!ownEntry.holders.delete(release)) {
           return;
         }
-        released = true;
-        // No-op if the registry was already disposed, or this key was released
-        // to zero and re-registered as a fresh entry since.
-        if (entries.get(key) !== ownEntry) {
-          return;
-        }
-        ownEntry.count -= 1;
-        if (ownEntry.count === 0) {
+        if (ownEntry.holders.size === 0) {
           entries.delete(key);
           ownEntry.dispose();
         }
       };
+      ownEntry.holders.add(release);
+      return release;
     },
     setActivate(fn) {
       activateFn = fn;

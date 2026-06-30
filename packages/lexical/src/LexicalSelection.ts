@@ -1381,8 +1381,8 @@ export class RangeSelection implements BaseSelection {
     }
 
     const firstPoint = this.isBackward() ? this.focus : this.anchor;
-    const firstNode = firstPoint.getNode();
-    const firstBlock = $findMatchingParent(firstNode, INTERNAL_$isBlock);
+    let firstNode = firstPoint.getNode();
+    let firstBlock = $findMatchingParent(firstNode, INTERNAL_$isBlock);
 
     const last = nodes[nodes.length - 1]!;
 
@@ -1500,6 +1500,10 @@ export class RangeSelection implements BaseSelection {
 
     const shouldInsert = !$isElementNode(firstBlock) || !firstBlock.isEmpty();
     const insertedParagraph = shouldInsert ? this.insertParagraph() : null;
+    if (insertedParagraph && !firstBlock.isAttached()) {
+      firstNode = this.anchor.getNode();
+      firstBlock = $findMatchingParent(firstNode, INTERNAL_$isBlock);
+    }
     const lastToInsert: LexicalNode | undefined = blocks[blocks.length - 1];
     let firstToInsert: LexicalNode | undefined = blocks[0];
     if (isMergeable(firstToInsert)) {

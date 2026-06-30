@@ -24,7 +24,7 @@ export function useLexicalAriaLiveRegion(): (message: string) => void {
         editor,
         AriaLiveRegionExtension,
       );
-      dep.output.current.announce(message);
+      dep.output.announce(message);
     },
     [editor],
   );

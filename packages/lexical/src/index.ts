@@ -237,10 +237,7 @@ export {
   type ValueOrUpdater,
 } from './LexicalNodeState';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
-export type {
-  ManagedRefCountedRegistry,
-  RefCountedRegistry,
-} from './LexicalRefCountedRegistry';
+export type {RefCountedRegistry} from './LexicalRefCountedRegistry';
 export {createRefCountedRegistry} from './LexicalRefCountedRegistry';
 export type {
   BaseSelection,

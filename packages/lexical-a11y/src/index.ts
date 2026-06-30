@@ -657,12 +657,12 @@ export const EditorModeAnnounceExtension = /* @__PURE__ */ defineExtension({
  * The public output of the focus-trap, roving-tabindex and focus-manager
  * extensions: register a container (reference counted) and get back an
  * idempotent disposer. Callers register through this method instead of a
- * mutable map and never see the container bookkeeping or the teardown. It is
- * the core {@link RefCountedRegistry} keyed by `HTMLElement`.
+ * mutable map and never see the container bookkeeping. It is the core
+ * {@link RefCountedRegistry} keyed by `HTMLElement`.
  *
- * Each extension creates the registry in its `init` phase, binds the
- * per-container activation in `build` (where the editor is available), exposes
- * the narrowed registry as its output, and disposes it on `register` teardown.
+ * Each extension creates the registry in `build` (where the editor is
+ * available for the per-container activation) and disposes it on `register`
+ * teardown via {@link RefCountedRegistry.dispose}.
  */
 export type ContainerRegistry<Options> = RefCountedRegistry<
   HTMLElement,
@@ -676,14 +676,10 @@ export type ContainerRegistry<Options> = RefCountedRegistry<
  * `useLexicalFocusTrapRef` from `@lexical/react`.
  */
 export const FocusTrapExtension = /* @__PURE__ */ defineExtension({
-  build: (_editor, _config, state): ContainerRegistry<FocusTrapOptions> => {
-    const registry = state.getInitResult();
-    registry.setActivate(registerFocusTrap);
-    return registry;
-  },
-  init: () => createRefCountedRegistry<HTMLElement, FocusTrapOptions>(),
+  build: (): ContainerRegistry<FocusTrapOptions> =>
+    createRefCountedRegistry(registerFocusTrap),
   name: '@lexical/a11y/FocusTrap',
-  register: (_editor, _config, state) => () => state.getInitResult().dispose(),
+  register: (_editor, _config, state) => () => state.getOutput().dispose(),
 });
 
 /**
@@ -693,18 +689,10 @@ export const FocusTrapExtension = /* @__PURE__ */ defineExtension({
  * `useLexicalRovingTabIndexRef` from `@lexical/react`.
  */
 export const RovingTabIndexExtension = /* @__PURE__ */ defineExtension({
-  build: (
-    _editor,
-    _config,
-    state,
-  ): ContainerRegistry<RovingTabIndexOptions> => {
-    const registry = state.getInitResult();
-    registry.setActivate(registerRovingTabIndex);
-    return registry;
-  },
-  init: () => createRefCountedRegistry<HTMLElement, RovingTabIndexOptions>(),
+  build: (): ContainerRegistry<RovingTabIndexOptions> =>
+    createRefCountedRegistry(registerRovingTabIndex),
   name: '@lexical/a11y/RovingTabIndex',
-  register: (_editor, _config, state) => () => state.getInitResult().dispose(),
+  register: (_editor, _config, state) => () => state.getOutput().dispose(),
 });
 
 /**
@@ -714,14 +702,10 @@ export const RovingTabIndexExtension = /* @__PURE__ */ defineExtension({
  * adapter is `useLexicalFocusManagerRef` from `@lexical/react`.
  */
 export const FocusManagerExtension = /* @__PURE__ */ defineExtension({
-  build: (editor, _config, state): ContainerRegistry<FocusManagerOptions> => {
-    const registry = state.getInitResult();
-    registry.setActivate((toolbar, options) =>
-      registerFocusManager(editor, toolbar, options),
-    );
-    return registry;
-  },
-  init: () => createRefCountedRegistry<HTMLElement, FocusManagerOptions>(),
+  build: (editor): ContainerRegistry<FocusManagerOptions> =>
+    createRefCountedRegistry<HTMLElement, FocusManagerOptions>(
+      (toolbar, options) => registerFocusManager(editor, toolbar, options),
+    ),
   name: '@lexical/a11y/FocusManager',
-  register: (_editor, _config, state) => () => state.getInitResult().dispose(),
+  register: (_editor, _config, state) => () => state.getOutput().dispose(),
 });

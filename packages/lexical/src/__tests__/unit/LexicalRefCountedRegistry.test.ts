@@ -104,18 +104,16 @@ describe('createRefCountedRegistry', () => {
     expect(disposeB).toHaveBeenCalledTimes(1);
   });
 
-  test('setActivate binds a deferred activation', () => {
+  test('a disposer held after registry.dispose() is a no-op', () => {
     const dispose = vi.fn();
-    const activate = vi.fn(() => dispose);
-    const registry = createRefCountedRegistry<string>();
+    const registry = createRefCountedRegistry<string>(() => dispose);
 
-    registry.setActivate(activate);
-    registry.register('k');
-    expect(activate).toHaveBeenCalledTimes(1);
-  });
+    const release = registry.register('k');
+    registry.dispose();
+    expect(dispose).toHaveBeenCalledTimes(1);
 
-  test('registering before an activation is set throws', () => {
-    const registry = createRefCountedRegistry<string>();
-    expect(() => registry.register('k')).toThrow(/before an activation/);
+    // The outstanding disposer must not run the already-run teardown again.
+    release();
+    expect(dispose).toHaveBeenCalledTimes(1);
   });
 });

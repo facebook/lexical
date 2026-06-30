@@ -26,7 +26,6 @@ export type RovingTabIndexOptions = {
 import type {
   ExtensionConfigBase,
   LexicalExtension,
-  ManagedRefCountedRegistry,
   RefCountedRegistry,
 } from 'lexical';
 import type {NamedSignalsOutput, Signal} from '@lexical/extension';
@@ -83,19 +82,19 @@ declare export var FocusTrapExtension: LexicalExtension<
   ExtensionConfigBase,
   '@lexical/a11y/FocusTrap',
   ContainerRegistry<FocusTrapOptions>,
-  ManagedRefCountedRegistry<HTMLElement, FocusTrapOptions>,
+  void,
 >;
 
 declare export var RovingTabIndexExtension: LexicalExtension<
   ExtensionConfigBase,
   '@lexical/a11y/RovingTabIndex',
   ContainerRegistry<RovingTabIndexOptions>,
-  ManagedRefCountedRegistry<HTMLElement, RovingTabIndexOptions>,
+  void,
 >;
 
 declare export var FocusManagerExtension: LexicalExtension<
   ExtensionConfigBase,
   '@lexical/a11y/FocusManager',
   ContainerRegistry<FocusManagerOptions>,
-  ManagedRefCountedRegistry<HTMLElement, FocusManagerOptions>,
+  void,
 >;

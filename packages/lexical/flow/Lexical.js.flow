@@ -1316,17 +1316,11 @@ declare export function $normalizeSelection__EXPERIMENTAL(
 
 export type RefCountedRegistry<Key, Options = void> = {
   register: (key: Key, options?: Options) => () => void,
-};
-export type ManagedRefCountedRegistry<Key, Options = void> = {
-  ...RefCountedRegistry<Key, Options>,
-  setActivate: (
-    activate: (key: Key, options: Options | void) => () => void,
-  ) => void,
   dispose: () => void,
 };
 declare export function createRefCountedRegistry<Key, Options = void>(
-  activate?: (key: Key, options: Options | void) => () => void,
-): ManagedRefCountedRegistry<Key, Options>;
+  activate: (key: Key, options: Options | void) => () => void,
+): RefCountedRegistry<Key, Options>;
 
 /**
  * Serialization/Deserialization

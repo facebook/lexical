@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import invariant from '@lexical/internal/invariant';
 
 /**
  * A registry mapping keys to a per-key activation, reference counted so the
@@ -16,9 +15,7 @@ import invariant from '@lexical/internal/invariant';
  * teardown.
  *
  * Keys are compared by identity (Map semantics), so any object works — a DOM
- * element, a `Document`, a `Window`, or an opaque handle. This is the
- * read/write surface handed to callers; owners hold the wider
- * {@link ManagedRefCountedRegistry}.
+ * element, a `Document`, a `Window`, or an opaque handle.
  */
 export interface RefCountedRegistry<Key, Options = void> {
   /**
@@ -34,51 +31,25 @@ export interface RefCountedRegistry<Key, Options = void> {
    * merge. Release the key fully before re-registering it with new options.
    */
   register: (key: Key, options?: Options) => () => void;
-}
-
-/**
- * A {@link RefCountedRegistry} plus owner-only controls. Narrow to
- * `RefCountedRegistry` when handing the registry to callers so they only see
- * `register`.
- */
-export interface ManagedRefCountedRegistry<
-  Key,
-  Options = void,
-> extends RefCountedRegistry<Key, Options> {
-  /**
-   * Bind (or replace) the activation. Useful when the activation is not
-   * available at construction — e.g. an extension that creates the registry
-   * in its `init` phase but only learns the editor in `build`. Registering a
-   * key before an activation is set throws. Replacing the activation does not
-   * re-run already-active keys.
-   */
-  setActivate: (
-    activate: (key: Key, options: Options | undefined) => () => void,
-  ) => void;
   /** Dispose every live registration and clear the registry. */
   dispose: () => void;
 }
 
 /**
- * Creates a {@link ManagedRefCountedRegistry}. Pass `activate` when it is
- * known up front (the common imperative case); omit it and call
- * {@link ManagedRefCountedRegistry.setActivate} later when it is not.
+ * Creates a {@link RefCountedRegistry}.
  *
  * @param activate - Wires `key` and returns its teardown. Called on the first
  *   registration of each key.
  */
 export function createRefCountedRegistry<Key, Options = void>(
-  activate?: (key: Key, options: Options | undefined) => () => void,
-): ManagedRefCountedRegistry<Key, Options> {
+  activate: (key: Key, options: Options | undefined) => () => void,
+): RefCountedRegistry<Key, Options> {
   interface Entry {
     // The live registrations for the key. Each registration's disposer is its
     // own token; the activation is torn down once the set empties.
     holders: Set<() => void>;
     dispose: () => void;
   }
-  let activateFn:
-    | ((key: Key, options: Options | undefined) => () => void)
-    | null = activate || null;
   const entries = new Map<Key, Entry>();
   return {
     dispose() {
@@ -86,16 +57,11 @@ export function createRefCountedRegistry<Key, Options = void>(
         entry.dispose();
       }
       entries.clear();
-      activateFn = null;
     },
     register(key, options) {
-      invariant(
-        activateFn !== null,
-        'createRefCountedRegistry: a key was registered before an activation was set',
-      );
       let entry = entries.get(key);
       if (entry === undefined) {
-        entry = {dispose: activateFn(key, options), holders: new Set()};
+        entry = {dispose: activate(key, options), holders: new Set()};
         entries.set(key, entry);
       }
       // The disposer is its own holder token. It re-resolves the entry by key
@@ -106,19 +72,17 @@ export function createRefCountedRegistry<Key, Options = void>(
       // once the last holder releases.
       const release = () => {
         const current = entries.get(key);
-        if (current === undefined || !current.holders.delete(release)) {
-          return;
-        }
-        if (current.holders.size === 0) {
+        if (
+          current &&
+          current.holders.delete(release) &&
+          current.holders.size === 0
+        ) {
           entries.delete(key);
           current.dispose();
         }
       };
       entry.holders.add(release);
       return release;
-    },
-    setActivate(fn) {
-      activateFn = fn;
     },
   };
 }

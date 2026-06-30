@@ -83,9 +83,6 @@ export function createRefCountedRegistry<Key, Options = void>(
   return {
     dispose() {
       for (const entry of entries.values()) {
-        // Clear the holders so a disposer still held by a caller becomes a
-        // no-op (its token is gone) instead of disposing the activation again.
-        entry.holders.clear();
         entry.dispose();
       }
       entries.clear();
@@ -101,22 +98,23 @@ export function createRefCountedRegistry<Key, Options = void>(
         entry = {dispose: activateFn(key, options), holders: new Set()};
         entries.set(key, entry);
       }
-      const ownEntry = entry;
-      // The disposer is its own holder token. `Set.delete` returning false makes
-      // a double release — or one after the registry/entry was torn down or the
-      // key was re-registered — a no-op, since a stale disposer only ever
-      // touches its own (now-empty) entry's set. The activation is disposed once
-      // the last holder releases.
+      // The disposer is its own holder token. It re-resolves the entry by key
+      // so it never pins a disposed entry (and its activation cleanup) alive,
+      // and so any stale release — a double call, or one after teardown or
+      // re-registration — is a no-op: the live entry (if any) does not contain
+      // this token, so `Set.delete` returns false. The activation is disposed
+      // once the last holder releases.
       const release = () => {
-        if (!ownEntry.holders.delete(release)) {
+        const current = entries.get(key);
+        if (current === undefined || !current.holders.delete(release)) {
           return;
         }
-        if (ownEntry.holders.size === 0) {
+        if (current.holders.size === 0) {
           entries.delete(key);
-          ownEntry.dispose();
+          current.dispose();
         }
       };
-      ownEntry.holders.add(release);
+      entry.holders.add(release);
       return release;
     },
     setActivate(fn) {

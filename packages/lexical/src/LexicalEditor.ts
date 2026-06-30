@@ -1189,7 +1189,7 @@ export class LexicalEditor {
     return registerListener(this._listeners.update, listener);
   }
   /**
-   * Registers a listener for for when the editor changes between editable and non-editable states.
+   * Registers a listener for when the editor changes between editable and non-editable states.
    * Will trigger the provided callback each time the editor transitions between these states until the
    * teardown function is called.
    *

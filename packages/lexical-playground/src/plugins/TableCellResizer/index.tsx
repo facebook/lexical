@@ -171,9 +171,11 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
     };
 
     const resizerContainer = resizerRef.current;
-    resizerContainer?.addEventListener('pointermove', onPointerMove, {
-      capture: true,
-    });
+    const removeResizerContainerListener = resizerContainer
+      ? registerEventListener(resizerContainer, 'pointermove', onPointerMove, {
+          capture: true,
+        })
+      : null;
 
     const removeRootListener = editor.registerRootListener(rootElement => {
       if (rootElement) {
@@ -186,7 +188,9 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
 
     return () => {
       removeRootListener();
-      resizerContainer?.removeEventListener('pointermove', onPointerMove);
+      if (removeResizerContainerListener) {
+        removeResizerContainerListener();
+      }
     };
   }, [activeCell, draggingDirection, editor, resetState, hasTable]);
 

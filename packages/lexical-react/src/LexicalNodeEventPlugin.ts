@@ -9,7 +9,11 @@
 import type {Klass, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$findMatchingParent, $getNearestNodeFromDOMNode} from 'lexical';
+import {
+  $findMatchingParent,
+  $getNearestNodeFromDOMNode,
+  registerEventListener,
+} from 'lexical';
 import {useEffect, useRef} from 'react';
 
 const capturedEvents = new Set<string>(['mouseenter', 'mouseleave']);
@@ -65,9 +69,12 @@ export function NodeEventPlugin({
 
     return editor.registerRootListener(rootElement => {
       if (rootElement) {
-        rootElement.addEventListener(eventType, onEvent, isCaptured);
-        return () =>
-          rootElement.removeEventListener(eventType, onEvent, isCaptured);
+        return registerEventListener(
+          rootElement,
+          eventType,
+          onEvent,
+          isCaptured,
+        );
       }
     });
     // We intentionally don't respect changes to eventType.

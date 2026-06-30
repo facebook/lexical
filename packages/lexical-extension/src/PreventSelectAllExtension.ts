@@ -11,6 +11,7 @@ import {
   defineExtension,
   isExactShortcutMatch,
   isHTMLElement,
+  registerEventListener,
   safeCast,
   stopLexicalPropagation,
 } from 'lexical';
@@ -54,9 +55,12 @@ export const PreventSelectAllExtension = /* @__PURE__ */ defineExtension({
       if (!stores.disabled.value) {
         return editor.registerRootListener(rootElement => {
           if (rootElement) {
-            rootElement.addEventListener('keydown', captureKeydown, true);
-            return () =>
-              rootElement.removeEventListener('keydown', captureKeydown, true);
+            return registerEventListener(
+              rootElement,
+              'keydown',
+              captureKeydown,
+              true,
+            );
           }
         });
       }

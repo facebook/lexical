@@ -22,7 +22,12 @@ import {
   useTypeahead,
 } from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getNearestNodeFromDOMNode, $getRoot, LexicalNode} from 'lexical';
+import {
+  $getNearestNodeFromDOMNode,
+  $getRoot,
+  LexicalNode,
+  registerEventListener,
+} from 'lexical';
 import {forwardRef, JSX, RefObject, useEffect, useRef, useState} from 'react';
 
 class MenuOption {
@@ -272,9 +277,7 @@ const NodeContextMenuPlugin = forwardRef<
 
     return editor.registerRootListener(rootElement => {
       if (rootElement !== null) {
-        rootElement.addEventListener('contextmenu', onContextMenu);
-        return () =>
-          rootElement.removeEventListener('contextmenu', onContextMenu);
+        return registerEventListener(rootElement, 'contextmenu', onContextMenu);
       }
     });
   }, [items, itemClassName, separatorClassName, refs, editor]);

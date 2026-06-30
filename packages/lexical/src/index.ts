@@ -485,6 +485,7 @@ export {
   removeClassNamesFromElement,
 } from './utils/classNames';
 export {mergeRegister} from './utils/mergeRegister';
+export {registerEventListener} from './utils/registerEventListener';
 export {
   getStyleObjectFromCSS,
   setDOMStyleFromCSS,

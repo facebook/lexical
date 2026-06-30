@@ -31,6 +31,7 @@ import {
   isHTMLElement,
   LexicalEditor,
   mergeRegister,
+  registerEventListener,
 } from 'lexical';
 import {
   DragEvent as ReactDragEvent,
@@ -488,8 +489,7 @@ function useDraggableBlockMenu(
         }
 
         if (rootElement) {
-          rootElement.addEventListener('blur', onBlur, true);
-          return () => rootElement.removeEventListener('blur', onBlur, true);
+          return registerEventListener(rootElement, 'blur', onBlur, true);
         }
       }),
       // Intercept BLUR_COMMAND if focus is on the menu (fallback in case event propagation wasn't stopped)

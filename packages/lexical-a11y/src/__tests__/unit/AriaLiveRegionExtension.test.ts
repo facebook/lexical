@@ -194,6 +194,33 @@ describe('AriaLiveRegionExtension', () => {
     expect(region.textContent).toBe('Loaded');
   });
 
+  test('announcing before a region is mounted is a no-op, not buffered for mount', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [AriaLiveRegionExtension, RichTextExtension],
+        name: '[root]',
+      }),
+    );
+    const {announce} = getExtensionDependencyFromEditor(
+      editor,
+      AriaLiveRegionExtension,
+    ).output;
+
+    // No root yet, so no region. Per the documented "no-op until a region is
+    // mounted" contract, this announcement is dropped — it must NOT be buffered
+    // and replayed onto the region when it later mounts.
+    announce('Early');
+    expect(document.body.querySelector('[aria-live]')).toBeNull();
+
+    mountRoot(editor);
+    const region = document.body.querySelector('[aria-live]')!;
+    expect(region.textContent).toBe('');
+
+    // A message announced after the region exists is delivered normally.
+    announce('Ready');
+    expect(region.textContent).toBe('Ready');
+  });
+
   test('keeps a custom-owner region across editor root changes (no churn)', () => {
     const owner = document.createElement('div');
     document.body.appendChild(owner);

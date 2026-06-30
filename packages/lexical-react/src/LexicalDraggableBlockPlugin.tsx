@@ -32,6 +32,7 @@ import {
   LexicalEditor,
   mergeRegister,
   registerEventListener,
+  registerEventListeners,
 } from 'lexical';
 import {
   DragEvent as ReactDragEvent,
@@ -328,10 +329,10 @@ function useDraggableBlockMenu(
     }
 
     if (scrollerElem != null) {
-      return mergeRegister(
-        registerEventListener(scrollerElem, 'mousemove', onMouseMove),
-        registerEventListener(scrollerElem, 'mouseleave', onMouseLeave),
-      );
+      return registerEventListeners(scrollerElem, {
+        mouseleave: onMouseLeave,
+        mousemove: onMouseMove,
+      });
     }
   }, [scrollerElem, anchorElem, editor, isOnMenu, setDraggableBlockElem]);
 

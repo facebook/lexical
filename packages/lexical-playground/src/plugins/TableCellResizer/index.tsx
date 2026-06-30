@@ -29,6 +29,7 @@ import {
   isHTMLElement,
   mergeRegister,
   registerEventListener,
+  registerEventListeners,
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
 import * as React from 'react';
@@ -179,10 +180,10 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
 
     const removeRootListener = editor.registerRootListener(rootElement => {
       if (rootElement) {
-        return mergeRegister(
-          registerEventListener(rootElement, 'pointermove', onPointerMove),
-          registerEventListener(rootElement, 'pointerdown', onPointerDown),
-        );
+        return registerEventListeners(rootElement, {
+          pointerdown: onPointerDown,
+          pointermove: onPointerMove,
+        });
       }
     });
 

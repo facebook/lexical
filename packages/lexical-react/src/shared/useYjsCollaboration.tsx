@@ -48,7 +48,7 @@ import {
   HISTORY_MERGE_TAG,
   mergeRegister,
   REDO_COMMAND,
-  registerEventListener,
+  registerEventListeners,
   SKIP_COLLAB_TAG,
   UNDO_COMMAND,
 } from 'lexical';
@@ -458,10 +458,10 @@ function useProvider(
     // Use both beforeunload and pagehide for maximum browser compatibility
     // beforeunload: fires before page unloads (may be cancelable)
     // pagehide: fires when page is being unloaded (more reliable, especially on mobile)
-    return mergeRegister(
-      registerEventListener(window, 'beforeunload', clearAwarenessState),
-      registerEventListener(window, 'pagehide', clearAwarenessState),
-    );
+    return registerEventListeners(window, {
+      beforeunload: clearAwarenessState,
+      pagehide: clearAwarenessState,
+    });
   }, [provider]);
 }
 

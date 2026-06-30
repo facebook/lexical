@@ -29,6 +29,7 @@ import {
   LexicalEditor,
   mergeRegister,
   registerEventListener,
+  registerEventListeners,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
@@ -123,10 +124,10 @@ function TextFormatFloatingToolbar({
 
   useEffect(() => {
     if (popupCharStylesEditorRef?.current) {
-      return mergeRegister(
-        registerEventListener(document, 'mousemove', mouseMoveListener),
-        registerEventListener(document, 'mouseup', mouseUpListener),
-      );
+      return registerEventListeners(document, {
+        mousemove: mouseMoveListener,
+        mouseup: mouseUpListener,
+      });
     }
   }, [popupCharStylesEditorRef]);
 
@@ -448,10 +449,10 @@ function useFloatingTextFormatToolbar(
         ref.current.style.display = 'block';
       }
     };
-    return mergeRegister(
-      registerEventListener(document, 'dragstart', onDragStart, true),
-      registerEventListener(document, 'dragend', onDragEnd, true),
-      registerEventListener(document, 'drop', onDragEnd, true),
+    return registerEventListeners(
+      document,
+      {dragend: onDragEnd, dragstart: onDragStart, drop: onDragEnd},
+      true,
     );
   }, []);
 

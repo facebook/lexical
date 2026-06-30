@@ -30,6 +30,7 @@ import {
   KEY_SPACE_COMMAND,
   mergeRegister,
   registerEventListener,
+  registerEventListeners,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SELECTION_FOCUS_TAG,
 } from 'lexical';
@@ -223,32 +224,25 @@ export function registerCheckList(
     editor.registerRootListener(rootElement => {
       if (rootElement !== null) {
         return mergeRegister(
-          registerEventListener(rootElement, 'click', configHandleClick),
-          registerEventListener(
-            rootElement,
-            'pointerup',
-            configHandlePointerUp,
-          ),
+          registerEventListeners(rootElement, {
+            click: configHandleClick,
+            pointerup: configHandlePointerUp,
+          }),
           // Use capture so we run before other listeners that might move focus.
-          registerEventListener(
+          // Some browsers / integrations still generate mousedown events as well
+          // as pointerdown, so handle both.
+          registerEventListeners(
             rootElement,
-            'pointerdown',
-            configHandleSelectDefaults,
             {
-              capture: true,
+              mousedown: configHandleSelectDefaults,
+              pointerdown: configHandleSelectDefaults,
             },
+            {capture: true},
           ),
-          // Some browsers / integrations still generate mousedown events; handle them too.
-          registerEventListener(
-            rootElement,
-            'mousedown',
-            configHandleSelectDefaults,
-            {
-              capture: true,
-            },
-          ),
-          // Intercept touchstart to stop the mobile browser from placing the caret
-          // and opening the keyboard when tapping the checklist marker.
+          // Intercept touchstart to stop the mobile browser from placing the
+          // caret and opening the keyboard when tapping the checklist marker.
+          // passive:false lets the handler call preventDefault, so it needs its
+          // own options and can't share the capture-only group above.
           registerEventListener(
             rootElement,
             'touchstart',

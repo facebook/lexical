@@ -17,8 +17,7 @@ import {
   $getRoot,
   getDOMSelection,
   getDOMSelectionPoints,
-  mergeRegister,
-  registerEventListener,
+  registerEventListeners,
 } from 'lexical';
 import * as React from 'react';
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
@@ -292,10 +291,10 @@ ${steps.map(formatStep).join(`\n`)}
 
     return editor.registerRootListener(rootElement => {
       if (rootElement) {
-        return mergeRegister(
-          registerEventListener(rootElement, 'keydown', onKeyDown),
-          registerEventListener(rootElement, 'keyup', onKeyUp),
-        );
+        return registerEventListeners(rootElement, {
+          keydown: onKeyDown,
+          keyup: onKeyUp,
+        });
       }
     });
   }, [editor, isRecording, pushStep]);

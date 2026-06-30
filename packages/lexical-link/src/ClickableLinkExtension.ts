@@ -18,8 +18,7 @@ import {
   isDOMNode,
   isHTMLAnchorElement,
   LexicalEditor,
-  mergeRegister,
-  registerEventListener,
+  registerEventListeners,
   safeCast,
 } from 'lexical';
 
@@ -117,9 +116,10 @@ export function registerClickableLink(
 
   return editor.registerRootListener(rootElement => {
     if (rootElement) {
-      return mergeRegister(
-        registerEventListener(rootElement, 'click', onClick, eventOptions),
-        registerEventListener(rootElement, 'mouseup', onMouseUp, eventOptions),
+      return registerEventListeners(
+        rootElement,
+        {click: onClick, mouseup: onMouseUp},
+        eventOptions,
       );
     }
   });

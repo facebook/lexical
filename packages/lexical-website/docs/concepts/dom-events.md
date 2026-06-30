@@ -42,6 +42,23 @@ const removeRootListener = editor.registerRootListener((rootElement) => {
 
 It mirrors the `addEventListener` overloads (so the event type is strongly typed) and composes well with `mergeRegister` when you need to register several listeners at once.
 
+To attach several listeners to the same target, `registerEventListeners(target, listeners, options?)` takes a `{type: listener}` map and returns a single dispose function that removes all of them. Each listener's event argument is still strongly typed per event type, and the optional `options` argument is shared across every listener:
+
+```js
+import {registerEventListeners} from 'lexical';
+
+const removeListeners = registerEventListeners(
+  rootElement,
+  {
+    click: onClick,
+    keydown: onKeyDown, // receives a KeyboardEvent
+  },
+  {capture: true}, // shared by both listeners
+);
+```
+
+Because `options` is shared, register a group that needs different options (such as a different `capture` flag) with a separate `registerEventListeners` call and combine the results with `mergeRegister`.
+
 ## 2. Directly Attach Handlers
 
 In some cases, it may be better to attach an event handler directly to the underlying DOM node of each specific node. With this approach, you generally don't need to filter the event target in the handler, which can make it a bit simpler. It will also guarantee that your handler isn't running for events that you don't care about. This approach is implemented via a [Mutation Listener](listeners.md).

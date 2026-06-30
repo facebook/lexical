@@ -486,6 +486,8 @@ export {
 } from './utils/classNames';
 export {mergeRegister} from './utils/mergeRegister';
 export {registerEventListener} from './utils/registerEventListener';
+export type {EventListenerMap} from './utils/registerEventListeners';
+export {registerEventListeners} from './utils/registerEventListeners';
 export {
   getStyleObjectFromCSS,
   setDOMStyleFromCSS,

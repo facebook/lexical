@@ -15,7 +15,6 @@ import {
   getPeerDependencyFromEditor,
   SelectBlockExtension,
   SelectionAlwaysOnDisplayExtension,
-  TabIndentationExtension,
   WatchEditableExtension,
 } from '@lexical/extension';
 import {
@@ -124,10 +123,6 @@ export function synchronizeSettingsToSignals(
     output(editor, SelectionAlwaysOnDisplayExtension).disabled.value =
       !settings.selectionAlwaysOnDisplay;
     output(editor, SelectBlockExtension).disabled.value = !settings.selectBlock;
-    const tabIndent = peerOutput(editor, TabIndentationExtension);
-    if (tabIndent) {
-      tabIndent.disabled.value = !settings.isRichText;
-    }
   });
 }
 

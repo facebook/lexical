@@ -1,5 +1,16 @@
 # Included Extensions
 
+[@lexical/a11y](/docs/api/modules/lexical_a11y)
+
+Framework-agnostic accessibility extensions. See [Keyboard Accessibility](/docs/concepts/keyboard-accessibility) for the full contract and the matching `@lexical/react` adapters.
+
+- [AriaLiveRegionExtension](/docs/api/modules/lexical_a11y#arialiveregionextension) - Owns a visually hidden `aria-live` region and exposes a stable `announce` sink (WAI-ARIA status messages, WCAG 4.1.3)
+- [EditorModeAnnounceExtension](/docs/api/modules/lexical_a11y#editormodeannounceextension) - Announces editable / read-only transitions through the live region
+- [FocusManagerExtension](/docs/api/modules/lexical_a11y#focusmanagerextension) - Editor ↔ toolbar focus jump (Alt+F10 to the toolbar, Escape back to the editor), reference-counted per toolbar
+- [FocusTrapExtension](/docs/api/modules/lexical_a11y#focustrapextension) - Traps Tab / Shift+Tab focus inside one or more containers (modal dialogs), reference-counted per container
+- [HistoryAnnounceExtension](/docs/api/modules/lexical_a11y#historyannounceextension) - Announces undo / redo through the live region
+- [RovingTabIndexExtension](/docs/api/modules/lexical_a11y#rovingtabindexextension) - WAI-ARIA roving-tabindex pattern for toolbars / groups, reference-counted per container
+
 [@lexical/clipboard](/docs/api/modules/lexical_clipboard)
 
 - [ClipboardDOMImportExtension](/docs/api/modules/lexical_clipboard#clipboarddomimportextension) - Routes `text/html` pastes and drops through the `DOMImportExtension` pipeline (experimental)
@@ -38,6 +49,7 @@
 - [NormalizeInlineElementsExtension](/docs/api/modules/lexical_extension#normalizeinlineelementsextension) - Removes empty inline elements, included by default with `RichTextExtension` and `PlainTextExtension`
 - [NormalizeTripleClickSelectionExtension](/docs/api/modules/lexical_extension#normalizetripleclickselectionextension) - Corrects over-selection after triple click events, included by default with `RichTextExtension` and `PlainTextExtension`
 - [PreventSelectAllExtension](/docs/api/modules/lexical_extension#preventselectallextension) - Prevents select all (Ctrl/Cmd+A) inside input/textarea elements from selecting the editor content, included by default with `SelectBlockExtension`
+- [RootElementExtension](/docs/api/modules/lexical_extension#rootelementextension) - Exposes the editor's root element as a reactive `Signal<HTMLElement | null>`
 - [SelectBlockExtension](/docs/api/modules/lexical_extension#selectblockextension) - Select all (Ctrl/Cmd+A) selects the nearest block element first, pressing it again selects the whole document
 - [SelectionAlwaysOnDisplayExtension](/docs/api/modules/lexical_extension#selectionalwaysondisplayextension) - Highlights selected content even when the editor is not focused
 - [TabIndentationExtension](/docs/api/modules/lexical_extension#tabindentationextension) - Changes Tab key to insert tabs and indent instead of natively focusing the next field

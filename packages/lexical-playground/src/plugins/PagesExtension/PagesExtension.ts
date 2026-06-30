@@ -24,6 +24,7 @@ import {
   HISTORY_MERGE_TAG,
   mergeRegister,
   NodeKey,
+  registerEventListener,
   RootNode,
   safeCast,
   SELECTION_CHANGE_COMMAND,
@@ -743,8 +744,16 @@ export const PagesExtension = /* @__PURE__ */ defineExtension({
             }
           };
 
-          window.addEventListener('beforeprint', handleBeforePrint);
-          window.addEventListener('afterprint', handleAfterPrint);
+          const removeBeforePrintListener = registerEventListener(
+            window,
+            'beforeprint',
+            handleBeforePrint,
+          );
+          const removeAfterPrintListener = registerEventListener(
+            window,
+            'afterprint',
+            handleAfterPrint,
+          );
 
           return () => {
             rootObserver.disconnect();
@@ -758,8 +767,8 @@ export const PagesExtension = /* @__PURE__ */ defineExtension({
             removeRootTransform();
             removePageContentTransform();
             removeMutationListeners();
-            window.removeEventListener('beforeprint', handleBeforePrint);
-            window.removeEventListener('afterprint', handleAfterPrint);
+            removeBeforePrintListener();
+            removeAfterPrintListener();
             if (output.disabled.peek()) {
               destroyPageStructure();
             }

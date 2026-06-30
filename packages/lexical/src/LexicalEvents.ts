@@ -158,6 +158,7 @@ import {
   isUnderline,
   isUndo,
 } from './LexicalUtils';
+import {registerEventListener} from './utils/registerEventListener';
 
 type RootElementRemoveHandles = (() => void)[];
 type RootElementEvents = [
@@ -1875,10 +1876,9 @@ export function addRootElementEvents(
                 );
             }
           };
-    rootElement.addEventListener(eventName, eventHandler);
-    removeHandles.push(() => {
-      rootElement.removeEventListener(eventName, eventHandler);
-    });
+    removeHandles.push(
+      registerEventListener(rootElement, eventName, eventHandler),
+    );
   }
 }
 

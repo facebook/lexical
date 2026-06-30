@@ -46,6 +46,7 @@ import {
   LexicalCommand,
   LexicalEditor,
   mergeRegister,
+  registerEventListener,
   SKIP_DOM_SELECTION_TAG,
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';
@@ -246,10 +247,7 @@ export function InsertImageDialog({
     const handler = (e: KeyboardEvent) => {
       hasModifier.current = e.altKey;
     };
-    document.addEventListener('keydown', handler);
-    return () => {
-      document.removeEventListener('keydown', handler);
-    };
+    return registerEventListener(document, 'keydown', handler);
   }, [activeEditor]);
 
   const onClick = (payload: InsertImagePayload) => {

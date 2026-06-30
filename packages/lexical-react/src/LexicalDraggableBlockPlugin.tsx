@@ -328,16 +328,11 @@ function useDraggableBlockMenu(
     }
 
     if (scrollerElem != null) {
-      scrollerElem.addEventListener('mousemove', onMouseMove);
-      scrollerElem.addEventListener('mouseleave', onMouseLeave);
+      return mergeRegister(
+        registerEventListener(scrollerElem, 'mousemove', onMouseMove),
+        registerEventListener(scrollerElem, 'mouseleave', onMouseLeave),
+      );
     }
-
-    return () => {
-      if (scrollerElem != null) {
-        scrollerElem.removeEventListener('mousemove', onMouseMove);
-        scrollerElem.removeEventListener('mouseleave', onMouseLeave);
-      }
-    };
   }, [scrollerElem, anchorElem, editor, isOnMenu, setDraggableBlockElem]);
 
   useEffect(() => {

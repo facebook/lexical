@@ -29,6 +29,7 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
   mergeRegister,
+  registerEventListener,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SELECTION_FOCUS_TAG,
 } from 'lexical';
@@ -221,51 +222,43 @@ export function registerCheckList(
 
     editor.registerRootListener(rootElement => {
       if (rootElement !== null) {
-        rootElement.addEventListener('click', configHandleClick);
-        rootElement.addEventListener('pointerup', configHandlePointerUp);
-        // Use capture so we run before other listeners that might move focus.
-        rootElement.addEventListener(
-          'pointerdown',
-          configHandleSelectDefaults,
-          {
-            capture: true,
-          },
-        );
-        // Some browsers / integrations still generate mousedown events; handle them too.
-        rootElement.addEventListener('mousedown', configHandleSelectDefaults, {
-          capture: true,
-        });
-        // Intercept touchstart to stop the mobile browser from placing the caret
-        // and opening the keyboard when tapping the checklist marker.
-        rootElement.addEventListener('touchstart', configHandleSelectDefaults, {
-          capture: true,
-          passive: false,
-        });
-        return () => {
-          rootElement.removeEventListener('click', configHandleClick);
-          rootElement.removeEventListener('pointerup', configHandlePointerUp);
-          rootElement.removeEventListener(
+        return mergeRegister(
+          registerEventListener(rootElement, 'click', configHandleClick),
+          registerEventListener(
+            rootElement,
+            'pointerup',
+            configHandlePointerUp,
+          ),
+          // Use capture so we run before other listeners that might move focus.
+          registerEventListener(
+            rootElement,
             'pointerdown',
             configHandleSelectDefaults,
             {
               capture: true,
             },
-          );
-          rootElement.removeEventListener(
+          ),
+          // Some browsers / integrations still generate mousedown events; handle them too.
+          registerEventListener(
+            rootElement,
             'mousedown',
             configHandleSelectDefaults,
             {
               capture: true,
             },
-          );
-          rootElement.removeEventListener(
+          ),
+          // Intercept touchstart to stop the mobile browser from placing the caret
+          // and opening the keyboard when tapping the checklist marker.
+          registerEventListener(
+            rootElement,
             'touchstart',
             configHandleSelectDefaults,
             {
               capture: true,
+              passive: false,
             },
-          );
-        };
+          ),
+        );
       }
     }),
   );

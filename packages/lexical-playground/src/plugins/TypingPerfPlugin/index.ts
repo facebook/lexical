@@ -8,6 +8,7 @@
 
 import type {JSX} from 'react';
 
+import {mergeRegister, registerEventListener} from 'lexical';
 import {useEffect} from 'react';
 
 import useReport from '../../hooks/useReport';
@@ -100,19 +101,13 @@ export default function TypingPerfPlugin(): JSX.Element | null {
       invalidatingEvent = true;
     };
 
-    window.addEventListener('keydown', keyDownHandler, true);
-    window.addEventListener('selectionchange', measureEventEnd, true);
-    window.addEventListener('beforeinput', beforeInputHandler, true);
-    window.addEventListener('paste', pasteHandler, true);
-    window.addEventListener('cut', cutHandler, true);
-
-    return () => {
-      window.removeEventListener('keydown', keyDownHandler, true);
-      window.removeEventListener('selectionchange', measureEventEnd, true);
-      window.removeEventListener('beforeinput', beforeInputHandler, true);
-      window.removeEventListener('paste', pasteHandler, true);
-      window.removeEventListener('cut', cutHandler, true);
-    };
+    return mergeRegister(
+      registerEventListener(window, 'keydown', keyDownHandler, true),
+      registerEventListener(window, 'selectionchange', measureEventEnd, true),
+      registerEventListener(window, 'beforeinput', beforeInputHandler, true),
+      registerEventListener(window, 'paste', pasteHandler, true),
+      registerEventListener(window, 'cut', cutHandler, true),
+    );
   }, [report]);
 
   return null;

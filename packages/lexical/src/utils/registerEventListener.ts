@@ -74,7 +74,7 @@ export function registerEventListener(
   options?: boolean | AddEventListenerOptions,
 ): () => void {
   target.addEventListener(type, listener, options);
-  return () => {
-    target.removeEventListener(type, listener, options);
-  };
+  // Return a bound `removeEventListener` rather than an arrow so the dispose
+  // function doesn't allocate an extra closure over the arguments.
+  return target.removeEventListener.bind(target, type, listener, options);
 }

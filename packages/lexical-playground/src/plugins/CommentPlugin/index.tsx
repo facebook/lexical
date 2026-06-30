@@ -55,6 +55,7 @@ import {
   getRootOwnerDocument,
   KEY_ESCAPE_COMMAND,
   mergeRegister,
+  registerEventListener,
 } from 'lexical';
 import * as React from 'react';
 import {
@@ -109,11 +110,7 @@ function AddCommentBox({
   }, [anchorKey, editor]);
 
   useEffect(() => {
-    window.addEventListener('resize', updatePosition);
-
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-    };
+    return registerEventListener(window, 'resize', updatePosition);
   }, [editor, updatePosition]);
 
   useLayoutEffect(() => {
@@ -316,11 +313,7 @@ function CommentInputBox({
   }, [selectionState.container, updateLocation]);
 
   useEffect(() => {
-    window.addEventListener('resize', updateLocation);
-
-    return () => {
-      window.removeEventListener('resize', updateLocation);
-    };
+    return registerEventListener(window, 'resize', updateLocation);
   }, [updateLocation]);
 
   const onEscape = (event: KeyboardEvent): boolean => {

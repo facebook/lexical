@@ -39,6 +39,7 @@ import {
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
   mergeRegister,
+  registerEventListener,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
@@ -412,9 +413,11 @@ export default function ImageComponent({
       ),
       editor.registerRootListener(rootElement => {
         if (rootElement) {
-          rootElement.addEventListener('contextmenu', onRightClick);
-          return () =>
-            rootElement.removeEventListener('contextmenu', onRightClick);
+          return registerEventListener(
+            rootElement,
+            'contextmenu',
+            onRightClick,
+          );
         }
       }),
     );

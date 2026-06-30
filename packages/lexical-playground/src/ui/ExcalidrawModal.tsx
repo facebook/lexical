@@ -17,7 +17,7 @@ import type {JSX} from 'react';
 import './ExcalidrawModal.css';
 
 import {Excalidraw} from '@excalidraw/excalidraw';
-import {isDOMNode} from 'lexical';
+import {isDOMNode, registerEventListener} from 'lexical';
 import * as React from 'react';
 import {ReactPortal, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
@@ -91,7 +91,7 @@ export default function ExcalidrawModal({
   }, []);
 
   useEffect(() => {
-    let modalOverlayElement: HTMLElement | null = null;
+    let unregisterClickOutside: (() => void) | null = null;
 
     const clickOutsideHandler = (event: MouseEvent) => {
       const target = event.target;
@@ -106,12 +106,18 @@ export default function ExcalidrawModal({
     };
 
     if (excaliDrawModelRef.current !== null) {
-      modalOverlayElement = excaliDrawModelRef.current?.parentElement;
-      modalOverlayElement?.addEventListener('click', clickOutsideHandler);
+      const modalOverlayElement = excaliDrawModelRef.current?.parentElement;
+      if (modalOverlayElement) {
+        unregisterClickOutside = registerEventListener(
+          modalOverlayElement,
+          'click',
+          clickOutsideHandler,
+        );
+      }
     }
 
     return () => {
-      modalOverlayElement?.removeEventListener('click', clickOutsideHandler);
+      unregisterClickOutside?.();
     };
   }, [closeOnClickOutside, onDelete]);
 
@@ -124,10 +130,12 @@ export default function ExcalidrawModal({
       }
     };
 
-    currentModalRef?.addEventListener('keydown', onKeyDown);
+    const unregisterKeyDown = currentModalRef
+      ? registerEventListener(currentModalRef, 'keydown', onKeyDown)
+      : null;
 
     return () => {
-      currentModalRef?.removeEventListener('keydown', onKeyDown);
+      unregisterKeyDown?.();
     };
   }, [elements, files, onDelete]);
 

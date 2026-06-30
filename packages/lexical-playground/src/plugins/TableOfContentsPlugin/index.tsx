@@ -14,6 +14,7 @@ import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TableOfContentsPlugin as LexicalTableOfContentsPlugin} from '@lexical/react/LexicalTableOfContentsPlugin';
+import {registerEventListener} from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
 
@@ -133,8 +134,7 @@ function TableOfContentsList({
       debounceFunction(scrollCallback, 10);
     }
 
-    document.addEventListener('scroll', onScroll);
-    return () => document.removeEventListener('scroll', onScroll);
+    return registerEventListener(document, 'scroll', onScroll);
   }, [tableOfContents, editor]);
 
   return (

@@ -29,6 +29,7 @@ import {
   defineExtension,
   getDOMSelection,
   mergeRegister,
+  registerEventListener,
   safeCast,
   SELECTION_CHANGE_COMMAND,
   SKIP_SCROLL_INTO_VIEW_TAG,
@@ -195,16 +196,9 @@ export const NormalizeTripleClickSelectionExtension =
               },
               COMMAND_PRIORITY_BEFORE_CRITICAL,
             ),
-            (() => {
-              const events = ['mouseup', 'mousedown'] as const;
-              events.forEach(v =>
-                rootElement.addEventListener(v, refreshTripleClick, true),
-              );
-              return () =>
-                events.forEach(v =>
-                  rootElement.removeEventListener(v, refreshTripleClick, true),
-                );
-            })(),
+            ...(['mouseup', 'mousedown'] as const).map(v =>
+              registerEventListener(rootElement, v, refreshTripleClick, true),
+            ),
           );
         });
       }),

@@ -42,6 +42,7 @@ import {
   getComposedEventTarget,
   isDOMNode,
   isHTMLElement,
+  registerEventListener,
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
@@ -337,10 +338,14 @@ function TableHoverActionsV2({
       }
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
+    const removeMouseMoveListener = registerEventListener(
+      document,
+      'mousemove',
+      handleMouseMove,
+    );
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
+      removeMouseMoveListener();
       setIsVisible(false);
       setIsLeftVisible(false);
     };
@@ -378,9 +383,11 @@ function TableHoverActionsV2({
 
     return editor.registerRootListener(rootElement => {
       if (rootElement) {
-        rootElement.addEventListener('mouseleave', handleMouseLeave);
-        return () =>
-          rootElement.removeEventListener('mouseleave', handleMouseLeave);
+        return registerEventListener(
+          rootElement,
+          'mouseleave',
+          handleMouseLeave,
+        );
       }
     });
   }, [editor]);

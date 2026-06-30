@@ -27,6 +27,7 @@ import {
   LexicalCommand,
   LexicalEditor,
   mergeRegister,
+  registerEventListener,
   TextNode,
 } from 'lexical';
 import {
@@ -247,11 +248,20 @@ export function useDynamicPositioning(
         }
       };
       const resizeObserver = new ResizeObserver(onReposition);
-      window.addEventListener('resize', onReposition);
-      document.addEventListener('scroll', handleScroll, {
-        capture: true,
-        passive: true,
-      });
+      const removeResizeListener = registerEventListener(
+        window,
+        'resize',
+        onReposition,
+      );
+      const removeScrollListener = registerEventListener(
+        document,
+        'scroll',
+        handleScroll,
+        {
+          capture: true,
+          passive: true,
+        },
+      );
       // Scroll events are non-composed and do not cross shadow boundaries,
       // so the document-level listener above never sees scrolls inside an
       // enclosing shadow tree. Key off the editor root rather than the
@@ -262,19 +272,19 @@ export function useDynamicPositioning(
       // scrolls at any depth reposition the floating menu.
       const shadowRootSource = rootElement ?? targetElement;
       const enclosingShadowRoots = getDOMShadowRoots(shadowRootSource);
-      for (const root of enclosingShadowRoots) {
-        root.addEventListener('scroll', handleScroll, {
+      const removeShadowRootListeners = enclosingShadowRoots.map(root =>
+        registerEventListener(root, 'scroll', handleScroll, {
           capture: true,
           passive: true,
-        });
-      }
+        }),
+      );
       resizeObserver.observe(targetElement);
       return () => {
         resizeObserver.unobserve(targetElement);
-        window.removeEventListener('resize', onReposition);
-        document.removeEventListener('scroll', handleScroll, true);
-        for (const root of enclosingShadowRoots) {
-          root.removeEventListener('scroll', handleScroll, true);
+        removeResizeListener();
+        removeScrollListener();
+        for (const removeShadowRootListener of removeShadowRootListeners) {
+          removeShadowRootListener();
         }
       };
     }

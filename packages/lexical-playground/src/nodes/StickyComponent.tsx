@@ -16,7 +16,7 @@ import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalExtensionEditorComposer} from '@lexical/react/LexicalExtensionEditorComposer';
 import {calculateZoomLevel} from '@lexical/utils';
-import {$getNodeByKey} from 'lexical';
+import {$getNodeByKey, registerEventListener} from 'lexical';
 import * as React from 'react';
 import {useEffect, useLayoutEffect, useRef} from 'react';
 
@@ -110,10 +110,14 @@ export default function StickyComponent({
       }
     };
 
-    window.addEventListener('resize', handleWindowResize);
+    const removeWindowResize = registerEventListener(
+      window,
+      'resize',
+      handleWindowResize,
+    );
 
     return () => {
-      window.removeEventListener('resize', handleWindowResize);
+      removeWindowResize();
       removeRootListener();
     };
   }, [editor]);

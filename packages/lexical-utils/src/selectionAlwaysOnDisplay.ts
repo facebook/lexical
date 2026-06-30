@@ -6,7 +6,11 @@
  *
  */
 
-import {getDOMSelectionPoints, LexicalEditor} from 'lexical';
+import {
+  getDOMSelectionPoints,
+  LexicalEditor,
+  registerEventListener,
+} from 'lexical';
 
 import markSelection from './markSelection';
 
@@ -55,13 +59,17 @@ export default function selectionAlwaysOnDisplay(
   return editor.registerRootListener(rootElement => {
     if (rootElement) {
       const document = rootElement.ownerDocument;
-      document.addEventListener('selectionchange', onSelectionChange);
+      const removeSelectionChange = registerEventListener(
+        document,
+        'selectionchange',
+        onSelectionChange,
+      );
       onSelectionChange();
       return () => {
         if (removeSelectionMark !== null) {
           removeSelectionMark();
         }
-        document.removeEventListener('selectionchange', onSelectionChange);
+        removeSelectionChange();
       };
     }
   });

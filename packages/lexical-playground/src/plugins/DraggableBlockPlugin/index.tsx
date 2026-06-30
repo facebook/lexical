@@ -20,6 +20,7 @@ import {
   $isParagraphNode,
   $isTextNode,
   getComposedEventTarget,
+  registerEventListener,
 } from 'lexical';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import * as ReactDOM from 'react-dom';
@@ -115,10 +116,7 @@ export default function DraggableBlockPlugin({
       setIsPickerOpen(false);
       setPickerState(null);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return registerEventListener(document, 'mousedown', handleClickOutside);
   }, [isPickerOpen]);
 
   const selectOption = useCallback(
@@ -189,10 +187,7 @@ export default function DraggableBlockPlugin({
         setPickerState(null);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
+    return registerEventListener(window, 'keydown', handleKeyDown);
   }, [highlightedIndex, isPickerOpen, options, selectOption]);
 
   function openComponentPicker(e: React.MouseEvent) {

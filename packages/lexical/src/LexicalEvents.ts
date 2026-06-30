@@ -221,7 +221,7 @@ const documentRegistrations = new WeakMap<Document, DocumentRegistration>();
 // The single shared `selectionchange` listener per document, reference counted
 // across all editors registered against that document: attached when the first
 // root element is registered and removed when the last one is unregistered.
-const documentSelectionChange = createRefCountedRegistry<Document>(doc => {
+const documentSelectionChange = createRefCountedRegistry((doc: Document) => {
   doc.addEventListener('selectionchange', onDocumentSelectionChange);
   return () =>
     doc.removeEventListener('selectionchange', onDocumentSelectionChange);

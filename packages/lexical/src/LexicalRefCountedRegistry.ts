@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import invariant from '@lexical/internal/invariant';
 
 /**
  * A registry mapping keys to a per-key activation, reference counted so the
@@ -86,11 +87,10 @@ export function createRefCountedRegistry<Key, Options = void>(
       activateFn = null;
     },
     register(key, options) {
-      if (activateFn === null) {
-        throw new Error(
-          'createRefCountedRegistry: a key was registered before an activation was set',
-        );
-      }
+      invariant(
+        activateFn !== null,
+        'createRefCountedRegistry: a key was registered before an activation was set',
+      );
       let entry = entries.get(key);
       if (entry === undefined) {
         entry = {count: 0, dispose: activateFn(key, options)};

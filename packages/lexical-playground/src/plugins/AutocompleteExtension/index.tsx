@@ -10,9 +10,9 @@ import {
   effect,
   IMEExtension,
   namedSignals,
+  RootElementExtension,
   shallowMergeConfig,
   WatchEditableExtension,
-  watchedSignal,
 } from '@lexical/extension';
 import {$isAtNodeEnd} from '@lexical/selection';
 import {
@@ -344,19 +344,13 @@ export const AutocompleteExtension = /* @__PURE__ */ defineExtension({
     dictionaries: defaultDictionaries,
     disabled: false,
   }),
-  dependencies: [IMEExtension, WatchEditableExtension],
+  dependencies: [IMEExtension, RootElementExtension, WatchEditableExtension],
   mergeConfig: mergeAutocompleteConfig,
   name: '@lexical/playground/autocomplete',
   register: (editor: LexicalEditor, config, state) => {
     const ime = state.getDependency(IMEExtension).output;
     const editableSignal = state.getDependency(WatchEditableExtension).output;
-    const rootElemSignal = watchedSignal(
-      () => editor.getRootElement(),
-      signal =>
-        editor.registerRootListener(rootElem => {
-          signal.value = rootElem;
-        }),
-    );
+    const rootElemSignal = state.getDependency(RootElementExtension).output;
     let activeTextNodeKey: NodeKey | null = null;
     let lastMatch: string | null = null;
     let lastSuggestion: string | null = null;

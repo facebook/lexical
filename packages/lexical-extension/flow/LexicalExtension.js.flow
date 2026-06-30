@@ -117,6 +117,7 @@ export type ClearEditorConfig = {
 }
 declare export var ClearEditorExtension: LexicalExtension<ClearEditorConfig, "@lexical/extension/ClearEditor", NamedSignalsOutput<ClearEditorConfig>, void>;
 declare export var EditorStateExtension: LexicalExtension<ExtensionConfigBase, "@lexical/extension/EditorState", Signal<EditorState>, void>;
+declare export var RootElementExtension: LexicalExtension<ExtensionConfigBase, "@lexical/extension/RootElement", Signal<HTMLElement | null>, void>;
 declare export function getExtensionDependencyFromEditor<
   Extension extends AnyLexicalExtension,
 >(

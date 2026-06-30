@@ -76,6 +76,7 @@ export {
   type PreventSelectAllConfig,
   PreventSelectAllExtension,
 } from './PreventSelectAllExtension';
+export {RootElementExtension} from './RootElementExtension';
 export {
   type SelectBlockConfig,
   SelectBlockExtension,

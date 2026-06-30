@@ -746,18 +746,16 @@ export const PagesExtension = /* @__PURE__ */ defineExtension({
 
           return mergeRegister(
             // Placed first so mergeRegister's reverse (LIFO) teardown runs it
-            // last, only after every observer, listener, and transform below
-            // has been torn down.
-            () => {
-              if (output.disabled.peek()) {
-                destroyPageStructure();
-              }
-            },
-            () => rootObserver.disconnect(),
-            () => pageObserver.disconnect(),
+            // last, only after every listener and transform below has been
+            // torn down.
             () => {
               if (rafId !== null) {
                 cancelAnimationFrame(rafId);
+              }
+              pageObserver.disconnect();
+              rootObserver.disconnect();
+              if (output.disabled.peek()) {
+                destroyPageStructure();
               }
             },
             clearMeasurementFlags,

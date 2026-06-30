@@ -6,21 +6,10 @@
  *
  */
 
+import type {EventMapOf} from './registerEventListener';
+
 import {mergeRegister} from './mergeRegister';
 import {registerEventListener} from './registerEventListener';
-
-/**
- * The typed event map for a given {@link EventTarget}, falling back to a
- * permissive record so custom targets and events still type-check. The typed
- * cases mirror the overloads of {@link registerEventListener}.
- */
-type EventMapOf<T extends EventTarget> = T extends Window
-  ? WindowEventMap
-  : T extends Document
-    ? DocumentEventMap
-    : T extends HTMLElement
-      ? HTMLElementEventMap
-      : Record<string, Event>;
 
 /**
  * A map of event type to listener for a given {@link EventTarget}. Each

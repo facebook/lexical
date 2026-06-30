@@ -879,13 +879,12 @@ function TableCellActionMenuContainer({
       ),
       editor.registerRootListener((rootElement, prevRootElement) => {
         if (rootElement) {
-          const removePointerUpListener = registerEventListener(
+          delayedCallback();
+          return registerEventListener(
             rootElement,
             'pointerup',
             delayedCallback,
           );
-          delayedCallback();
-          return removePointerUpListener;
         }
       }),
       () => clearTimeout(timeoutId),

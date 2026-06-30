@@ -7,6 +7,19 @@
  */
 
 /**
+ * The typed event map for a given {@link EventTarget}, falling back to a
+ * permissive record so custom targets and events still type-check. Shared by
+ * {@link registerEventListener} and `registerEventListeners`.
+ */
+export type EventMapOf<T extends EventTarget> = T extends Window
+  ? WindowEventMap
+  : T extends Document
+    ? DocumentEventMap
+    : T extends HTMLElement
+      ? HTMLElementEventMap
+      : Record<string, Event>;
+
+/**
  * Add an event listener to `target` and return a function that removes it.
  *
  * This is a thin, strongly typed wrapper around
@@ -43,24 +56,17 @@
  * @param options - Options forwarded to `add`/`removeEventListener`
  * @returns A function that removes the listener when called
  */
-export function registerEventListener<K extends keyof WindowEventMap>(
-  target: Window,
+export function registerEventListener<
+  T extends EventTarget,
+  K extends keyof EventMapOf<T> & string,
+>(
+  target: T,
   type: K,
-  listener: (this: Window, ev: WindowEventMap[K]) => unknown,
+  listener: (this: T, ev: EventMapOf<T>[K]) => unknown,
   options?: boolean | AddEventListenerOptions,
 ): () => void;
-export function registerEventListener<K extends keyof DocumentEventMap>(
-  target: Document,
-  type: K,
-  listener: (this: Document, ev: DocumentEventMap[K]) => unknown,
-  options?: boolean | AddEventListenerOptions,
-): () => void;
-export function registerEventListener<K extends keyof HTMLElementEventMap>(
-  target: HTMLElement,
-  type: K,
-  listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => unknown,
-  options?: boolean | AddEventListenerOptions,
-): () => void;
+// Fallback for non-standard event names (e.g. the legacy `textInput`) and
+// targets without a typed event map.
 export function registerEventListener(
   target: EventTarget,
   type: string,

@@ -11,6 +11,7 @@ import {
   buildEditorFromExtensions,
   defineExtension,
   getExtensionDependencyFromEditor,
+  type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {getActiveElementDeep, KEY_DOWN_COMMAND} from 'lexical';
@@ -54,7 +55,7 @@ function buildFocusManagerEditor() {
   );
 }
 
-function getRegistry(editor: ReturnType<typeof buildFocusManagerEditor>) {
+function getRegistry(editor: LexicalEditorWithDispose) {
   return getExtensionDependencyFromEditor(editor, FocusManagerExtension).output;
 }
 

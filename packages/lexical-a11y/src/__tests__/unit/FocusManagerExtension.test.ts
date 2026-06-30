@@ -11,6 +11,7 @@ import {
   buildEditorFromExtensions,
   defineExtension,
   getExtensionDependencyFromEditor,
+  type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {KEY_DOWN_COMMAND} from 'lexical';
@@ -27,7 +28,7 @@ function createToolbar(): HTMLDivElement {
   return toolbar;
 }
 
-function getRegistry(editor: ReturnType<typeof buildEditorFromExtensions>) {
+function getRegistry(editor: LexicalEditorWithDispose) {
   return getExtensionDependencyFromEditor(editor, FocusManagerExtension).output;
 }
 

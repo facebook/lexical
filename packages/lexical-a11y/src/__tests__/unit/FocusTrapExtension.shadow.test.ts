@@ -11,6 +11,7 @@ import {
   buildEditorFromExtensions,
   defineExtension,
   getExtensionDependencyFromEditor,
+  type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {getActiveElementDeep} from 'lexical';
@@ -62,7 +63,7 @@ function buildTrapEditor() {
   );
 }
 
-function getRegistry(editor: ReturnType<typeof buildTrapEditor>) {
+function getRegistry(editor: LexicalEditorWithDispose) {
   return getExtensionDependencyFromEditor(editor, FocusTrapExtension).output;
 }
 

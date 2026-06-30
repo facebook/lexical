@@ -11,6 +11,7 @@ import {
   buildEditorFromExtensions,
   defineExtension,
   getExtensionDependencyFromEditor,
+  type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {configExtension, REDO_COMMAND, UNDO_COMMAND} from 'lexical';
@@ -22,7 +23,7 @@ afterEach(() => {
 
 // The live region follows the editor's root document, so a mounted root is
 // required for it to exist.
-function mountRoot(editor: ReturnType<typeof buildEditorFromExtensions>): void {
+function mountRoot(editor: LexicalEditorWithDispose): void {
   const root = document.createElement('div');
   root.contentEditable = 'true';
   document.body.appendChild(root);

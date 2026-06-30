@@ -11,6 +11,7 @@ import {
   buildEditorFromExtensions,
   defineExtension,
   getExtensionDependencyFromEditor,
+  type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {configExtension} from 'lexical';
@@ -23,7 +24,7 @@ afterEach(() => {
 // The region is bound to the editor's root document, so a mounted root is
 // required (unless an explicit `owner` is configured). The default root lives
 // on `document.body`, so the region lands there.
-function mountRoot(editor: ReturnType<typeof buildEditorFromExtensions>): void {
+function mountRoot(editor: LexicalEditorWithDispose): void {
   const root = document.createElement('div');
   root.contentEditable = 'true';
   document.body.appendChild(root);

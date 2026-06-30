@@ -11,6 +11,7 @@ import {
   buildEditorFromExtensions,
   defineExtension,
   getExtensionDependencyFromEditor,
+  type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {getActiveElementDeep} from 'lexical';
@@ -55,7 +56,7 @@ function buildRovingEditor() {
   );
 }
 
-function getRegistry(editor: ReturnType<typeof buildRovingEditor>) {
+function getRegistry(editor: LexicalEditorWithDispose) {
   return getExtensionDependencyFromEditor(editor, RovingTabIndexExtension)
     .output;
 }

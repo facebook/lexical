@@ -296,25 +296,25 @@ function registerRovingTabIndex(
         if (!horizontal) {
           return;
         }
-        nextIdx = (currentIdx + 1) % items.length;
+        nextIdx = currentIdx + 1;
         break;
       case 'ArrowLeft':
         if (!horizontal) {
           return;
         }
-        nextIdx = (currentIdx - 1 + items.length) % items.length;
+        nextIdx = currentIdx - 1;
         break;
       case 'ArrowDown':
         if (!vertical) {
           return;
         }
-        nextIdx = (currentIdx + 1) % items.length;
+        nextIdx = currentIdx + 1;
         break;
       case 'ArrowUp':
         if (!vertical) {
           return;
         }
-        nextIdx = (currentIdx - 1 + items.length) % items.length;
+        nextIdx = currentIdx - 1;
         break;
       case 'Home':
         nextIdx = 0;
@@ -327,6 +327,10 @@ function registerRovingTabIndex(
     }
 
     event.preventDefault();
+    // Single wrap for every case: the only out-of-range value is -1 (left/up
+    // from the first item), and `currentIdx >= 0` keeps `nextIdx >= -1`, so one
+    // `+ length` is enough to normalize.
+    nextIdx = (nextIdx + items.length) % items.length;
     applyTabIndex(items, nextIdx);
     items[nextIdx].focus();
   };

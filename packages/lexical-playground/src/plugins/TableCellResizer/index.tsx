@@ -172,27 +172,26 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
     };
 
     const resizerContainer = resizerRef.current;
-    const removeResizerContainerListener = resizerContainer
-      ? registerEventListener(resizerContainer, 'pointermove', onPointerMove, {
-          capture: true,
-        })
-      : null;
-
-    const removeRootListener = editor.registerRootListener(rootElement => {
-      if (rootElement) {
-        return registerEventListeners(rootElement, {
-          pointerdown: onPointerDown,
-          pointermove: onPointerMove,
-        });
-      }
-    });
-
-    return () => {
-      removeRootListener();
-      if (removeResizerContainerListener) {
-        removeResizerContainerListener();
-      }
-    };
+    return mergeRegister(
+      editor.registerRootListener(rootElement => {
+        if (rootElement) {
+          return registerEventListeners(rootElement, {
+            pointerdown: onPointerDown,
+            pointermove: onPointerMove,
+          });
+        }
+      }),
+      resizerContainer
+        ? registerEventListener(
+            resizerContainer,
+            'pointermove',
+            onPointerMove,
+            {
+              capture: true,
+            },
+          )
+        : () => {},
+    );
   }, [activeCell, draggingDirection, editor, resetState, hasTable]);
 
   const isHeightChanging = (direction: PointerDraggingDirection) => {

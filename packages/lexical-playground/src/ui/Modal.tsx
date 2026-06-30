@@ -10,7 +10,7 @@ import type {JSX} from 'react';
 
 import './Modal.css';
 
-import {isDOMNode, registerEventListener} from 'lexical';
+import {isDOMNode, mergeRegister, registerEventListener} from 'lexical';
 import * as React from 'react';
 import {ReactNode, useEffect, useRef} from 'react';
 import {createPortal} from 'react-dom';
@@ -35,7 +35,6 @@ function PortalImpl({
   }, []);
 
   useEffect(() => {
-    let unregisterClickOutside: (() => void) | null = null;
     const handler = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onClose();
@@ -52,26 +51,17 @@ function PortalImpl({
         onClose();
       }
     };
-    const modelElement = modalRef.current;
-    if (modelElement !== null) {
-      const modalOverlayElement = modelElement.parentElement;
-      if (modalOverlayElement !== null) {
-        unregisterClickOutside = registerEventListener(
-          modalOverlayElement,
-          'click',
-          clickOutsideHandler,
-        );
-      }
-    }
-
-    const unregisterKeydown = registerEventListener(window, 'keydown', handler);
-
-    return () => {
-      unregisterKeydown();
-      if (unregisterClickOutside !== null) {
-        unregisterClickOutside();
-      }
-    };
+    const modalOverlayElement = modalRef.current?.parentElement ?? null;
+    return mergeRegister(
+      registerEventListener(window, 'keydown', handler),
+      modalOverlayElement
+        ? registerEventListener(
+            modalOverlayElement,
+            'click',
+            clickOutsideHandler,
+          )
+        : () => {},
+    );
   }, [closeOnClickOutside, onClose]);
 
   return (

@@ -733,17 +733,13 @@ export const AutocompleteExtension = /* @__PURE__ */ defineExtension({
       for (const loader of Object.values(output.dictionaries.value)) {
         loadDictionary(loader);
       }
-      const removeCompositionUpdateListener = registerEventListener(
-        rootElem,
-        'compositionupdate',
-        onCompositionUpdateDOM,
-      );
-      const removeCompositionEndListener = registerEventListener(
-        rootElem,
-        'compositionend',
-        onCompositionEndDOM,
-      );
       return mergeRegister(
+        registerEventListener(
+          rootElem,
+          'compositionupdate',
+          onCompositionUpdateDOM,
+        ),
+        registerEventListener(rootElem, 'compositionend', onCompositionEndDOM),
         editor.registerUpdateListener(handleUpdate),
         // Drop the ghost as soon as the editor loses focus, rather than
         // waiting for the next update.
@@ -778,11 +774,7 @@ export const AutocompleteExtension = /* @__PURE__ */ defineExtension({
           COMMAND_PRIORITY_LOW,
         ),
         addSwipeRightListener(rootElem, handleSwipeRight),
-        () => {
-          clearPendingCompositionTimer();
-          removeCompositionUpdateListener();
-          removeCompositionEndListener();
-        },
+        clearPendingCompositionTimer,
         // Tear down on dispose: clear any ghost still attached so a fresh
         // build doesn't see leftover decoration.
         dismiss,

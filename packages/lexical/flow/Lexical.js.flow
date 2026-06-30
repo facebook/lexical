@@ -2074,10 +2074,10 @@ declare export function registerEventListener(
   listener: EventListener,
   options?: EventListenerOptionsOrUseCapture,
 ): () => void;
-export type EventListenerMap<T> = {+[type: string]: EventListener};
+export type EventListenerMap<T> = {readonly [type: string]: EventListener};
 declare export function registerEventListeners(
   target: EventTarget,
-  listeners: {+[type: string]: EventListener},
+  listeners: {readonly [type: string]: EventListener},
   options?: EventListenerOptionsOrUseCapture,
 ): () => void;
 declare export function normalizeClassNames(...classNames: (typeof undefined | boolean | null | string)[]): string[];

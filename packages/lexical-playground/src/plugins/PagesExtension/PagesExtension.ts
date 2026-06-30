@@ -744,35 +744,31 @@ export const PagesExtension = /* @__PURE__ */ defineExtension({
             }
           };
 
-          const removeBeforePrintListener = registerEventListener(
-            window,
-            'beforeprint',
-            handleBeforePrint,
+          return mergeRegister(
+            // Placed first so mergeRegister's reverse (LIFO) teardown runs it
+            // last, only after every observer, listener, and transform below
+            // has been torn down.
+            () => {
+              if (output.disabled.peek()) {
+                destroyPageStructure();
+              }
+            },
+            () => rootObserver.disconnect(),
+            () => pageObserver.disconnect(),
+            () => {
+              if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+              }
+            },
+            clearMeasurementFlags,
+            removeCommandListeners,
+            removePageTransform,
+            removeRootTransform,
+            removePageContentTransform,
+            removeMutationListeners,
+            registerEventListener(window, 'beforeprint', handleBeforePrint),
+            registerEventListener(window, 'afterprint', handleAfterPrint),
           );
-          const removeAfterPrintListener = registerEventListener(
-            window,
-            'afterprint',
-            handleAfterPrint,
-          );
-
-          return () => {
-            rootObserver.disconnect();
-            pageObserver.disconnect();
-            if (rafId !== null) {
-              cancelAnimationFrame(rafId);
-            }
-            clearMeasurementFlags();
-            removeCommandListeners();
-            removePageTransform();
-            removeRootTransform();
-            removePageContentTransform();
-            removeMutationListeners();
-            removeBeforePrintListener();
-            removeAfterPrintListener();
-            if (output.disabled.peek()) {
-              destroyPageStructure();
-            }
-          };
         });
       });
     }),

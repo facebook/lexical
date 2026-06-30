@@ -42,6 +42,7 @@ import {
   getComposedEventTarget,
   isDOMNode,
   isHTMLElement,
+  mergeRegister,
   registerEventListener,
 } from 'lexical';
 import {useEffect, useRef, useState} from 'react';
@@ -338,17 +339,13 @@ function TableHoverActionsV2({
       }
     };
 
-    const removeMouseMoveListener = registerEventListener(
-      document,
-      'mousemove',
-      handleMouseMove,
+    return mergeRegister(
+      registerEventListener(document, 'mousemove', handleMouseMove),
+      () => {
+        setIsVisible(false);
+        setIsLeftVisible(false);
+      },
     );
-
-    return () => {
-      removeMouseMoveListener();
-      setIsVisible(false);
-      setIsLeftVisible(false);
-    };
   }, [
     editor,
     anchorElem,

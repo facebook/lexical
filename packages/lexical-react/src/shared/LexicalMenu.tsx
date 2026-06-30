@@ -248,45 +248,32 @@ export function useDynamicPositioning(
         }
       };
       const resizeObserver = new ResizeObserver(onReposition);
-      const removeResizeListener = registerEventListener(
-        window,
-        'resize',
-        onReposition,
-      );
-      const removeScrollListener = registerEventListener(
-        document,
-        'scroll',
-        handleScroll,
-        {
-          capture: true,
-          passive: true,
-        },
-      );
       // Scroll events are non-composed and do not cross shadow boundaries,
-      // so the document-level listener above never sees scrolls inside an
+      // so the document-level listener below never sees scrolls inside an
       // enclosing shadow tree. Key off the editor root rather than the
       // target — the target may be portaled into the light DOM while the
       // editor (and its scroll container) live inside a shadow tree, and
       // getDOMShadowRoots(target) would then return an empty list. Walk
       // out of the editor's enclosing shadow roots instead so internal
       // scrolls at any depth reposition the floating menu.
-      const shadowRootSource = rootElement ?? targetElement;
-      const enclosingShadowRoots = getDOMShadowRoots(shadowRootSource);
-      const removeShadowRootListeners = enclosingShadowRoots.map(root =>
-        registerEventListener(root, 'scroll', handleScroll, {
+      const enclosingShadowRoots = getDOMShadowRoots(
+        rootElement ?? targetElement,
+      );
+      resizeObserver.observe(targetElement);
+      return mergeRegister(
+        registerEventListener(window, 'resize', onReposition),
+        registerEventListener(document, 'scroll', handleScroll, {
           capture: true,
           passive: true,
         }),
+        ...enclosingShadowRoots.map(root =>
+          registerEventListener(root, 'scroll', handleScroll, {
+            capture: true,
+            passive: true,
+          }),
+        ),
+        () => resizeObserver.unobserve(targetElement),
       );
-      resizeObserver.observe(targetElement);
-      return () => {
-        resizeObserver.unobserve(targetElement);
-        removeResizeListener();
-        removeScrollListener();
-        for (const removeShadowRootListener of removeShadowRootListeners) {
-          removeShadowRootListener();
-        }
-      };
     }
   }, [targetElement, editor, onVisibilityChange, onReposition, resolution]);
 }

@@ -91,8 +91,6 @@ export default function ExcalidrawModal({
   }, []);
 
   useEffect(() => {
-    let unregisterClickOutside: (() => void) | null = null;
-
     const clickOutsideHandler = (event: MouseEvent) => {
       const target = event.target;
       if (
@@ -105,20 +103,10 @@ export default function ExcalidrawModal({
       }
     };
 
-    if (excaliDrawModelRef.current !== null) {
-      const modalOverlayElement = excaliDrawModelRef.current?.parentElement;
-      if (modalOverlayElement) {
-        unregisterClickOutside = registerEventListener(
-          modalOverlayElement,
-          'click',
-          clickOutsideHandler,
-        );
-      }
-    }
-
-    return () => {
-      unregisterClickOutside?.();
-    };
+    const modalOverlayElement = excaliDrawModelRef.current?.parentElement;
+    return modalOverlayElement
+      ? registerEventListener(modalOverlayElement, 'click', clickOutsideHandler)
+      : () => {};
   }, [closeOnClickOutside, onDelete]);
 
   useLayoutEffect(() => {
@@ -130,13 +118,9 @@ export default function ExcalidrawModal({
       }
     };
 
-    const unregisterKeyDown = currentModalRef
+    return currentModalRef
       ? registerEventListener(currentModalRef, 'keydown', onKeyDown)
-      : null;
-
-    return () => {
-      unregisterKeyDown?.();
-    };
+      : () => {};
   }, [elements, files, onDelete]);
 
   const save = () => {

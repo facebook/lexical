@@ -121,13 +121,9 @@ export default function DateTimeComponent({
       setIsOpen(true);
     }
 
-    const unregisterClick = dateTimePillRef
+    return dateTimePillRef
       ? registerEventListener(dateTimePillRef, 'click', onClick)
-      : null;
-
-    return () => {
-      unregisterClick?.();
-    };
+      : () => {};
   }, [refs, editor]);
 
   const withDateTimeNode = (

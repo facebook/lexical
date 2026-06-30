@@ -71,21 +71,13 @@ export function registerEventListeners<T extends EventTarget>(
   listeners: EventListenerMap<T>,
   options?: boolean | AddEventListenerOptions,
 ): () => void {
-  const disposers: (() => void)[] = [];
-  for (const type in listeners) {
-    if (Object.prototype.hasOwnProperty.call(listeners, type)) {
-      const listener = listeners[type as keyof EventListenerMap<T>];
-      if (listener) {
-        disposers.push(
-          registerEventListener(
-            target,
-            type,
-            listener as EventListener,
-            options,
-          ),
-        );
-      }
-    }
-  }
-  return mergeRegister(...disposers);
+  // Erase the per-event-type listener signatures to the loose
+  // `addEventListener` form at the single boundary where the typed map is
+  // turned into untyped registrations.
+  const entries = Object.entries(listeners) as [string, EventListener][];
+  return mergeRegister(
+    ...entries.map(([type, listener]) =>
+      registerEventListener(target, type, listener, options),
+    ),
+  );
 }

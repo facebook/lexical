@@ -16,7 +16,7 @@ import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalExtensionEditorComposer} from '@lexical/react/LexicalExtensionEditorComposer';
 import {calculateZoomLevel} from '@lexical/utils';
-import {$getNodeByKey, registerEventListener} from 'lexical';
+import {$getNodeByKey, mergeRegister, registerEventListener} from 'lexical';
 import * as React from 'react';
 import {useEffect, useLayoutEffect, useRef} from 'react';
 
@@ -94,13 +94,6 @@ export default function StickyComponent({
       }
     });
 
-    const removeRootListener = editor.registerRootListener(nextRootElem => {
-      if (nextRootElem !== null) {
-        resizeObserver.observe(nextRootElem);
-        return () => resizeObserver.unobserve(nextRootElem);
-      }
-    });
-
     const handleWindowResize = () => {
       const rootElement = editor.getRootElement();
       const stickyContainer = stickyContainerRef.current;
@@ -110,16 +103,15 @@ export default function StickyComponent({
       }
     };
 
-    const removeWindowResize = registerEventListener(
-      window,
-      'resize',
-      handleWindowResize,
+    return mergeRegister(
+      editor.registerRootListener(nextRootElem => {
+        if (nextRootElem !== null) {
+          resizeObserver.observe(nextRootElem);
+          return () => resizeObserver.unobserve(nextRootElem);
+        }
+      }),
+      registerEventListener(window, 'resize', handleWindowResize),
     );
-
-    return () => {
-      removeWindowResize();
-      removeRootListener();
-    };
   }, [editor]);
 
   useEffect(() => {

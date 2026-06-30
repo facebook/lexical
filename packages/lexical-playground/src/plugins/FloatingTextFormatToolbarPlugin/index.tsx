@@ -181,21 +181,12 @@ function TextFormatFloatingToolbar({
       });
     };
 
-    const removeResizeListener = registerEventListener(
-      window,
-      'resize',
-      update,
+    return mergeRegister(
+      registerEventListener(window, 'resize', update),
+      scrollerElem
+        ? registerEventListener(scrollerElem, 'scroll', update)
+        : () => {},
     );
-    const removeScrollListener = scrollerElem
-      ? registerEventListener(scrollerElem, 'scroll', update)
-      : null;
-
-    return () => {
-      removeResizeListener();
-      if (removeScrollListener) {
-        removeScrollListener();
-      }
-    };
   }, [editor, $updateTextFormatFloatingToolbar, anchorElem]);
 
   useEffect(() => {

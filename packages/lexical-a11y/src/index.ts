@@ -6,7 +6,7 @@
  *
  */
 
-import {effect, namedSignals} from '@lexical/extension';
+import {effect, namedSignals, signal, watchedSignal} from '@lexical/extension';
 import {mergeRegister} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_LOW,
@@ -26,41 +26,6 @@ import {
 
 export type AriaPoliteness = 'polite' | 'assertive';
 
-export interface AriaLiveRegionOptions {
-  /**
-   * How insistently the screen reader announces updates.
-   * - `polite` (default): announce after the current speech completes.
-   * - `assertive`: interrupt the current speech.
-   */
-  politeness?: AriaPoliteness;
-  /**
-   * Owner element to append the live region to. Defaults to `document.body`.
-   * Passing a specific element keeps the region in the same accessibility
-   * subtree as the editor when the editor lives inside a shadow root or a
-   * portaled overlay.
-   */
-  owner?: HTMLElement;
-}
-
-export interface AriaLiveRegionHandle {
-  /**
-   * Write a message into the live region. Calling with the same string
-   * back-to-back appends a zero-width space so screen readers register
-   * the change and re-announce.
-   */
-  announce: (message: string) => void;
-  /**
-   * Remove the live region element from its owner. Safe to call more
-   * than once.
-   */
-  dispose: () => void;
-}
-
-const NOOP_HANDLE: AriaLiveRegionHandle = {
-  announce: () => {},
-  dispose: () => {},
-};
-
 function applyVisuallyHidden(el: HTMLElement): void {
   const style = el.style;
   style.border = '0';
@@ -75,51 +40,22 @@ function applyVisuallyHidden(el: HTMLElement): void {
 }
 
 /**
- * Mounts a visually hidden `aria-live` region as a child of `owner`
- * (default `document.body`) and returns a handle that announces messages
- * and disposes the region when called. WAI-ARIA status message pattern
- * (WCAG 4.1.3).
- *
- * If neither `owner` nor `document.body` is available (e.g. SSR), the
- * returned handle is a no-op.
+ * Creates a visually hidden `aria-live` region as a child of `owner` and
+ * returns the element. WAI-ARIA status message pattern (WCAG 4.1.3). The
+ * caller owns the element's lifetime (removal); messages are written by
+ * setting `textContent`.
  */
-function registerAriaLiveRegion(
-  options: AriaLiveRegionOptions = {},
-): AriaLiveRegionHandle {
-  const politeness = options.politeness ?? 'polite';
-  const host =
-    options.owner ?? (typeof document !== 'undefined' ? document.body : null);
-  if (host === null) {
-    return NOOP_HANDLE;
-  }
-  const region = host.ownerDocument.createElement('div');
+function createLiveRegion(
+  owner: HTMLElement,
+  politeness: AriaPoliteness,
+): HTMLElement {
+  const region = owner.ownerDocument.createElement('div');
   region.setAttribute('aria-live', politeness);
   region.setAttribute('aria-atomic', 'true');
   region.setAttribute('role', 'status');
   applyVisuallyHidden(region);
-  host.appendChild(region);
-  let disposed = false;
-  return {
-    announce(message) {
-      if (disposed) {
-        return;
-      }
-      // Toggle a trailing zero-width space when the message would repeat
-      // so the screen reader detects a textContent change and re-announces.
-      const next =
-        region.textContent === message ? message + '\u200B' : message;
-      region.textContent = next;
-    },
-    dispose() {
-      if (disposed) {
-        return;
-      }
-      disposed = true;
-      if (region.parentNode !== null) {
-        region.parentNode.removeChild(region);
-      }
-    },
-  };
+  owner.appendChild(region);
+  return region;
 }
 
 const FOCUSABLE_SELECTOR = [
@@ -574,61 +510,89 @@ export interface AriaLiveRegionExtensionConfig {
 }
 
 /**
- * Stable handle ref shared between {@link AriaLiveRegionExtension} and
- * its dependents. The `register` step swaps `current` to a live handle
- * for the editor's lifetime and restores `NOOP_HANDLE` on disposal, so
- * dependent extensions can capture the ref in `build` while the actual
- * sink is created without violating the "build must not require
- * cleanup" contract.
+ * Public output of {@link AriaLiveRegionExtension}: a stable `announce`
+ * sink that is valid for the editor's lifetime. Callers never see the
+ * region element or its disposal — writing a message buffers it and it is
+ * mirrored into whatever live region is currently mounted.
  */
-export interface AriaLiveRegionRef {
-  current: AriaLiveRegionHandle;
+export interface AriaLiveRegion {
+  /**
+   * Write a message into the editor's live region. Announcing the same
+   * string back-to-back appends a zero-width space so screen readers
+   * register the change and re-announce. A no-op until a region is mounted
+   * (the editor has a root element, or an `owner` is configured).
+   */
+  announce: (message: string) => void;
 }
 
 /**
- * Platform-independent extension that owns a single `aria-live` region
- * for the editor and exposes a stable {@link AriaLiveRegionRef} as the
- * extension output. Other a11y extensions (`HistoryAnnounceExtension`,
- * `EditorModeAnnounceExtension`) take this as a dependency and announce
- * through `output.current.announce`.
+ * Platform-independent extension that owns a single `aria-live` region for
+ * the editor and exposes a stable {@link AriaLiveRegion} sink as its output.
+ * Other a11y extensions (`HistoryAnnounceExtension`,
+ * `EditorModeAnnounceExtension`) depend on it and announce through
+ * `output.announce`.
  *
- * Mount / dispose happens in `register` (the "build must not require
- * cleanup" contract); the ref's `current` is swapped to the live handle
- * there and restored to `NOOP_HANDLE` on disposal.
+ * The sink writes to a private `message` signal created in `init`. `register`
+ * tracks the editor's root element reactively and runs two effects: one
+ * creates / disposes the region element as the root document (or `owner`)
+ * changes, the other mirrors the current message into whatever region is
+ * mounted. Buffering the message in a signal decouples the stable `announce`
+ * (from `build`) from the region element — which comes and goes with the root
+ * — and creates the region in the editor's own document (e.g. an
+ * iframe-portaled editor) rather than the top-level `document`.
  */
 export const AriaLiveRegionExtension = /* @__PURE__ */ defineExtension({
-  build(_editor, _config): AriaLiveRegionRef {
-    return {current: NOOP_HANDLE};
+  build(_editor, _config, state): AriaLiveRegion {
+    const message = state.getInitResult();
+    return {
+      announce(text) {
+        // Toggle a trailing zero-width space on repeats so re-announcing the
+        // same text still registers as a textContent change downstream.
+        message.value = text === message.peek() ? text + '​' : text;
+      },
+    };
   },
   config: /* @__PURE__ */ safeCast<AriaLiveRegionExtensionConfig>({
     owner: null,
     politeness: 'polite',
   }),
+  // Private reactive message buffer shared by `build` (writer) and `register`
+  // (renderer); see the extension doc comment.
+  init: () => signal<string>(''),
   name: '@lexical/a11y/AriaLiveRegion',
   register(editor, config, state) {
-    const ref = state.getOutput();
-    // Bind the region to the editor's current root so it is created in the
-    // editor's own document — e.g. an editor portaled into an iframe — rather
-    // than the top-level `document`. registerRootListener runs the returned
-    // cleanup on every root change (and on teardown), so the region follows
-    // the root across remounts with no manual tracking. An explicit `owner`
-    // config still overrides.
-    return editor.registerRootListener(rootElement => {
-      const owner =
-        config.owner ?? (rootElement ? rootElement.ownerDocument.body : null);
-      if (owner === null) {
-        return undefined;
-      }
-      const handle = registerAriaLiveRegion({
-        owner,
-        politeness: config.politeness,
-      });
-      ref.current = handle;
-      return () => {
-        handle.dispose();
-        ref.current = NOOP_HANDLE;
-      };
-    });
+    const message = state.getInitResult();
+    const rootElement = watchedSignal(
+      () => editor.getRootElement(),
+      self =>
+        editor.registerRootListener(el => {
+          self.value = el;
+        }),
+    );
+    const region = signal<HTMLElement | null>(null);
+    return mergeRegister(
+      // Create / dispose the region as the root document (or `owner`) changes.
+      effect(() => {
+        const root = rootElement.value;
+        const owner = config.owner ?? (root ? root.ownerDocument.body : null);
+        if (owner === null) {
+          return undefined;
+        }
+        const el = createLiveRegion(owner, config.politeness);
+        region.value = el;
+        return () => {
+          el.remove();
+          region.value = null;
+        };
+      }),
+      // Mirror the current message into whatever region is mounted.
+      effect(() => {
+        const el = region.value;
+        if (el !== null) {
+          el.textContent = message.value;
+        }
+      }),
+    );
   },
 });
 
@@ -657,21 +621,14 @@ export const HistoryAnnounceExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/a11y/HistoryAnnounce',
   register(editor, _config, state) {
     const {disabled, redone, undone} = state.getOutput();
-    const ref = state.getDependency(AriaLiveRegionExtension).output;
+    const {announce} = state.getDependency(AriaLiveRegionExtension).output;
     return effect(() =>
       disabled.value
         ? undefined
-        : registerHistoryAnnounce(
-            editor,
-            // Read `ref.current` at announce time, not capture time: the live
-            // handle is installed lazily when the root mounts (registerRootListener),
-            // so a value captured now could still be the NOOP handle.
-            message => ref.current.announce(message),
-            {
-              redone: redone.value,
-              undone: undone.value,
-            },
-          ),
+        : registerHistoryAnnounce(editor, announce, {
+            redone: redone.value,
+            undone: undone.value,
+          }),
     );
   },
 });
@@ -702,21 +659,14 @@ export const EditorModeAnnounceExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/a11y/EditorModeAnnounce',
   register(editor, _config, state) {
     const {disabled, editable, readOnly} = state.getOutput();
-    const ref = state.getDependency(AriaLiveRegionExtension).output;
+    const {announce} = state.getDependency(AriaLiveRegionExtension).output;
     return effect(() =>
       disabled.value
         ? undefined
-        : registerEditorModeAnnounce(
-            editor,
-            // Read `ref.current` at announce time, not capture time: the live
-            // handle is installed lazily when the root mounts (registerRootListener),
-            // so a value captured now could still be the NOOP handle.
-            message => ref.current.announce(message),
-            {
-              editable: editable.value,
-              readOnly: readOnly.value,
-            },
-          ),
+        : registerEditorModeAnnounce(editor, announce, {
+            editable: editable.value,
+            readOnly: readOnly.value,
+          }),
     );
   },
 });

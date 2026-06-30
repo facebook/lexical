@@ -9,18 +9,8 @@
 
 export type AriaPoliteness = 'polite' | 'assertive';
 
-export type AriaLiveRegionOptions = {
-  politeness?: AriaPoliteness,
-  owner?: HTMLElement,
-};
-
-export type AriaLiveRegionHandle = {
+export type AriaLiveRegion = {
   announce: (message: string) => void,
-  dispose: () => void,
-};
-
-export type AriaLiveRegionRef = {
-  current: AriaLiveRegionHandle,
 };
 
 export type FocusTrapInitialFocus = 'firstFocusable' | 'container';
@@ -43,7 +33,7 @@ import type {
   ManagedRefCountedRegistry,
   RefCountedRegistry,
 } from 'lexical';
-import type {NamedSignalsOutput} from '@lexical/extension';
+import type {NamedSignalsOutput, Signal} from '@lexical/extension';
 
 export type FocusManagerOptions = {
   toolbarItemSelector?: string,
@@ -56,8 +46,8 @@ export type AriaLiveRegionExtensionConfig = {
 declare export var AriaLiveRegionExtension: LexicalExtension<
   AriaLiveRegionExtensionConfig,
   '@lexical/a11y/AriaLiveRegion',
-  AriaLiveRegionRef,
-  void,
+  AriaLiveRegion,
+  Signal<string>,
 >;
 
 export type HistoryAnnounceExtensionConfig = {

@@ -117,7 +117,7 @@ describe('AriaLiveRegionExtension', () => {
     expect(owner.querySelector('[aria-live]')).not.toBeNull();
   });
 
-  test('exposes the AriaLiveRegionHandle via dependency output', () => {
+  test('exposes a stable announce sink via dependency output', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [AriaLiveRegionExtension, RichTextExtension],
@@ -125,12 +125,12 @@ describe('AriaLiveRegionExtension', () => {
       }),
     );
     mountRoot(editor);
-    const ref = getExtensionDependencyFromEditor(
+    const {announce} = getExtensionDependencyFromEditor(
       editor,
       AriaLiveRegionExtension,
     ).output;
     const region = document.body.querySelector('[aria-live]')!;
-    ref.current.announce('hello');
+    announce('hello');
     expect(region.textContent).toBe('hello');
   });
 });

@@ -13,7 +13,15 @@ import {useLexicalFocusManagerRef} from '@lexical/react/useLexicalFocusManagerRe
 import * as React from 'react';
 import {act, useEffect} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
-import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  onTestFinished,
+  test,
+  vi,
+} from 'vitest';
 
 function Harness({onReady}: {onReady?: () => void}) {
   const [editor] = useLexicalComposerContext();
@@ -141,17 +149,11 @@ describe('useLexicalFocusManagerRef', () => {
     });
     expect(document.activeElement).toBe(toolbarBtn);
 
-    let bubbled = false;
-    const windowSpy = () => {
-      bubbled = true;
-    };
+    const windowSpy = vi.fn();
     window.addEventListener('keydown', windowSpy);
-    try {
-      dispatchKey(toolbarBtn, {key: 'Escape'});
-    } finally {
-      window.removeEventListener('keydown', windowSpy);
-    }
+    onTestFinished(() => window.removeEventListener('keydown', windowSpy));
+    dispatchKey(toolbarBtn, {key: 'Escape'});
     expect(document.activeElement).toBe(byId('editor-root'));
-    expect(bubbled).toBe(false);
+    expect(windowSpy).not.toHaveBeenCalled();
   });
 });

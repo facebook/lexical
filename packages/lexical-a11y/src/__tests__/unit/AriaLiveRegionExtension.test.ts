@@ -152,4 +152,74 @@ describe('AriaLiveRegionExtension', () => {
     announce('hello');
     expect(region.textContent).toBe('hello');
   });
+
+  test('does not replay the last message into a region re-created on remount', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [AriaLiveRegionExtension, RichTextExtension],
+        name: '[root]',
+      }),
+    );
+    const {announce} = getExtensionDependencyFromEditor(
+      editor,
+      AriaLiveRegionExtension,
+    ).output;
+
+    const root1 = document.createElement('div');
+    root1.contentEditable = 'true';
+    document.body.appendChild(root1);
+    onTestFinished(() => root1.remove());
+    editor.setRootElement(root1);
+
+    announce('Saved');
+    expect(document.body.querySelector('[aria-live]')!.textContent).toBe(
+      'Saved',
+    );
+
+    // Remount the editor into a fresh root (unmount, then re-mount).
+    editor.setRootElement(null);
+    const root2 = document.createElement('div');
+    root2.contentEditable = 'true';
+    document.body.appendChild(root2);
+    onTestFinished(() => root2.remove());
+    editor.setRootElement(root2);
+
+    // The freshly created region must start empty: replaying the buffered
+    // 'Saved' would make the screen reader re-announce it with no user action.
+    const region = document.body.querySelector('[aria-live]')!;
+    expect(region.textContent).toBe('');
+
+    // A genuinely new announcement still lands on the remounted region.
+    announce('Loaded');
+    expect(region.textContent).toBe('Loaded');
+  });
+
+  test('keeps a custom-owner region across editor root changes (no churn)', () => {
+    const owner = document.createElement('div');
+    document.body.appendChild(owner);
+    onTestFinished(() => owner.remove());
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          configExtension(AriaLiveRegionExtension, {owner}),
+          RichTextExtension,
+        ],
+        name: '[root]',
+      }),
+    );
+    const region = owner.querySelector('[aria-live]');
+    expect(region).not.toBeNull();
+
+    // Mount then unmount a root; the owner-hosted region must not be torn down
+    // and rebuilt, since its host (owner) never changed.
+    const root = document.createElement('div');
+    root.contentEditable = 'true';
+    document.body.appendChild(root);
+    onTestFinished(() => root.remove());
+    editor.setRootElement(root);
+    editor.setRootElement(null);
+
+    expect(owner.querySelector('[aria-live]')).toBe(region);
+    expect(owner.querySelectorAll('[aria-live]')).toHaveLength(1);
+  });
 });

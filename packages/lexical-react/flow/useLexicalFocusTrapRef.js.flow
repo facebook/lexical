@@ -12,4 +12,5 @@ export type FocusTrapInitialFocus = 'firstFocusable' | 'container';
 declare export hook useLexicalFocusTrapRef(
   isActive: boolean,
   initialFocus?: FocusTrapInitialFocus,
+  allowOutside?: (target: HTMLElement) => boolean,
 ): (node: HTMLElement | null) => void;

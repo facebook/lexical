@@ -24,6 +24,12 @@ export type {FocusTrapInitialFocus} from '@lexical/a11y';
  * return <div ref={trapRef} tabIndex={-1}>…</div>;
  * ```
  *
+ * `allowOutside` is the escape hatch for descendants that portal outside the
+ * container (autocomplete popups, tooltips): return `true` for those targets so
+ * the trap lets them keep focus instead of pulling it back. It is held in a ref
+ * and read at event time, so passing an inline lambda is fine — it does not
+ * re-create the trap on every render.
+ *
  * Multiple elements can use this hook simultaneously — each gets its
  * own independent focus trap.
  *
@@ -32,9 +38,15 @@ export type {FocusTrapInitialFocus} from '@lexical/a11y';
 export function useLexicalFocusTrapRef(
   isActive: boolean,
   initialFocus: FocusTrapInitialFocus = 'firstFocusable',
+  allowOutside?: (target: HTMLElement) => boolean,
 ): RefCallback<HTMLElement> {
   const [editor] = useLexicalComposerContext();
   const disposeRef = useRef<(() => void) | null>(null);
+  // Keep the latest predicate in a ref so an inline lambda doesn't change the
+  // RefCallback identity (which would tear down and rebuild the trap every
+  // render); the registered trap reads it at event time.
+  const allowOutsideRef = useRef(allowOutside);
+  allowOutsideRef.current = allowOutside;
 
   return useCallback(
     (node: HTMLElement | null) => {
@@ -47,7 +59,13 @@ export function useLexicalFocusTrapRef(
           editor,
           FocusTrapExtension,
         );
-        disposeRef.current = dep.output.register(node, {initialFocus});
+        disposeRef.current = dep.output.register(node, {
+          allowOutside: target => {
+            const fn = allowOutsideRef.current;
+            return fn ? fn(target) : false;
+          },
+          initialFocus,
+        });
       }
     },
     [editor, isActive, initialFocus],

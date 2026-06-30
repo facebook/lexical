@@ -18,12 +18,14 @@ function Trap({
   isActive,
   buttons = 3,
   initialFocus = 'firstFocusable',
+  allowOutside,
 }: {
   isActive: boolean;
   buttons?: number;
   initialFocus?: 'firstFocusable' | 'container';
+  allowOutside?: (target: HTMLElement) => boolean;
 }) {
-  const ref = useLexicalFocusTrapRef(isActive, initialFocus);
+  const ref = useLexicalFocusTrapRef(isActive, initialFocus, allowOutside);
   return (
     <div ref={ref} tabIndex={-1} data-testid="trap">
       {Array.from({length: buttons}, (_, i) => (
@@ -287,6 +289,32 @@ describe('useLexicalFocusTrapRef', () => {
       outside.focus();
     });
     expect(document.activeElement).toBe(getByTestId('btn-0'));
+    document.body.removeChild(outside);
+  });
+
+  test('allowOutside lets a matching element keep focus (no pull-back)', () => {
+    const outside = document.createElement('button');
+    outside.setAttribute('data-allow', 'true');
+    outside.textContent = 'Outside';
+    document.body.appendChild(outside);
+    act(() => {
+      root.render(
+        <WithExtension>
+          <Trap
+            isActive={true}
+            allowOutside={target =>
+              target.getAttribute('data-allow') === 'true'
+            }
+          />
+        </WithExtension>,
+      );
+    });
+    act(() => {
+      outside.focus();
+    });
+    // allowOutside returned true for this target, so the trap does not pull
+    // focus back into the container.
+    expect(document.activeElement).toBe(outside);
     document.body.removeChild(outside);
   });
 });

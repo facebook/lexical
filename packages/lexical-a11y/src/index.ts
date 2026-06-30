@@ -513,9 +513,12 @@ export const AriaLiveRegionExtension = /* @__PURE__ */ defineExtension({
     const region = signal<HTMLElement | null>(null);
     return mergeRegister(
       // Create / dispose the region as the root document (or `owner`) changes.
+      // Subscribe to the root only when no explicit `owner` is configured, so a
+      // fixed-owner region isn't torn down and rebuilt on unrelated root churn.
       effect(() => {
-        const root = rootElement.value;
-        const host = owner.value ?? (root ? root.ownerDocument.body : null);
+        const ownerEl = owner.value;
+        const root = ownerEl ? null : rootElement.value;
+        const host = ownerEl ?? (root ? root.ownerDocument.body : null);
         if (!host) {
           return undefined;
         }
@@ -527,17 +530,25 @@ export const AriaLiveRegionExtension = /* @__PURE__ */ defineExtension({
         };
       }),
       // Apply the (runtime-tunable) politeness to whatever region is mounted.
+      // This tracks `region` so it re-applies the attribute to a re-created
+      // region (an attribute, not an announcement).
       effect(() => {
         const el = region.value;
         if (el) {
           el.setAttribute('aria-live', politeness.value);
         }
       }),
-      // Mirror the current message into whatever region is mounted.
+      // Mirror the current message into whatever region is mounted. Always read
+      // `message.value` (to stay subscribed) but read the region with peek() so
+      // this re-runs only when the message changes, not when the region is
+      // (re)created: replaying the buffered message into a freshly mounted
+      // region would make the screen reader re-announce it on every editor
+      // remount with no user action.
       effect(() => {
-        const el = region.value;
+        const text = message.value;
+        const el = region.peek();
         if (el) {
-          el.textContent = message.value;
+          el.textContent = text;
         }
       }),
     );
@@ -605,7 +616,10 @@ export interface EditorModeAnnounceExtensionConfig {
   /** Message announced when the editor becomes read-only. */
   readOnly: string;
   /** When `true`, editable / read-only transitions are not announced. Toggle
-   * at runtime via the output signal. Default `false`. */
+   * at runtime via the output signal. Default `false`. Announcements are
+   * transition-based (like the initial mount, which is silent), so toggling
+   * `disabled` back to `false` while the editor is already read-only does not
+   * re-announce the current mode — the next `setEditable` transition does. */
   disabled: boolean;
 }
 

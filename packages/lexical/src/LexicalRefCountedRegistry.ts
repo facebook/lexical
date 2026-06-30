@@ -24,6 +24,13 @@ export interface RefCountedRegistry<Key, Options = void> {
    * Register `key` (reference counted) and return an idempotent disposer. The
    * first registration for a key runs the activation; the disposer it returns
    * runs once the last registration for that key is released.
+   *
+   * `options` configure the activation and are therefore only read on the
+   * activating (first) registration for a key. While a key is live, further
+   * registrations share that one activation and their `options` are ignored —
+   * ref counting models repeat registrations as the *same* logical thing, so
+   * registering one key with conflicting options is a caller error, not a
+   * merge. Release the key fully before re-registering it with new options.
    */
   register: (key: Key, options?: Options) => () => void;
 }

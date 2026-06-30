@@ -6,7 +6,13 @@
  *
  */
 
-import {effect, namedSignals, signal, watchedSignal} from '@lexical/extension';
+import {
+  effect,
+  namedSignals,
+  type NamedSignalsOutput,
+  signal,
+  watchedSignal,
+} from '@lexical/extension';
 import {mergeRegister} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_LOW,
@@ -40,17 +46,13 @@ function applyVisuallyHidden(el: HTMLElement): void {
 }
 
 /**
- * Creates a visually hidden `aria-live` region as a child of `owner` and
- * returns the element. WAI-ARIA status message pattern (WCAG 4.1.3). The
- * caller owns the element's lifetime (removal); messages are written by
- * setting `textContent`.
+ * Creates a visually hidden live-region element as a child of `owner` and
+ * returns it. WAI-ARIA status message pattern (WCAG 4.1.3). The caller owns
+ * the element's lifetime (removal) and applies the `aria-live` politeness and
+ * `textContent` reactively.
  */
-function createLiveRegion(
-  owner: HTMLElement,
-  politeness: AriaPoliteness,
-): HTMLElement {
+function createLiveRegion(owner: HTMLElement): HTMLElement {
   const region = owner.ownerDocument.createElement('div');
-  region.setAttribute('aria-live', politeness);
   region.setAttribute('aria-atomic', 'true');
   region.setAttribute('role', 'status');
   applyVisuallyHidden(region);
@@ -376,25 +378,6 @@ function registerFocusManager(
   const selector =
     options.toolbarItemSelector ?? DEFAULT_TOOLBAR_FOCUSABLE_SELECTOR;
 
-  const removeCommand = editor.registerCommand(
-    KEY_DOWN_COMMAND,
-    (event: KeyboardEvent) => {
-      if (!event.altKey || event.key !== 'F10') {
-        return false;
-      }
-      const firstItem =
-        toolbar.querySelector<HTMLElement>('[tabindex="0"]') ??
-        toolbar.querySelector<HTMLElement>(selector);
-      if (firstItem === null) {
-        return false;
-      }
-      event.preventDefault();
-      firstItem.focus();
-      return true;
-    },
-    COMMAND_PRIORITY_LOW,
-  );
-
   const handler = (event: KeyboardEvent) => {
     if (event.key !== 'Escape') {
       return;
@@ -430,76 +413,29 @@ function registerFocusManager(
   };
   toolbar.addEventListener('keydown', handler);
 
-  return mergeRegister(removeCommand, () => {
-    toolbar.removeEventListener('keydown', handler);
-  });
-}
-
-interface HistoryAnnounceOptions {
-  /** Message announced after an undo. Default: 'Undone'. */
-  undone?: string;
-  /** Message announced after a redo. Default: 'Redone'. */
-  redone?: string;
-}
-
-/**
- * Announces undo / redo into the supplied `announce` sink so screen
- * readers pick up history navigation. The announcement fires at
- * `COMMAND_PRIORITY_LOW` so the history extension's own handler runs
- * first and is unaffected; the handler returns `false` to keep the
- * command chain intact.
- *
- */
-function registerHistoryAnnounce(
-  editor: LexicalEditor,
-  announce: (message: string) => void,
-  options: HistoryAnnounceOptions = {},
-): () => void {
-  const undoneMessage = options.undone ?? 'Undone';
-  const redoneMessage = options.redone ?? 'Redone';
-  const removeUndo = editor.registerCommand(
-    UNDO_COMMAND,
+  return mergeRegister(
+    editor.registerCommand(
+      KEY_DOWN_COMMAND,
+      (event: KeyboardEvent) => {
+        if (!event.altKey || event.key !== 'F10') {
+          return false;
+        }
+        const firstItem =
+          toolbar.querySelector<HTMLElement>('[tabindex="0"]') ??
+          toolbar.querySelector<HTMLElement>(selector);
+        if (firstItem === null) {
+          return false;
+        }
+        event.preventDefault();
+        firstItem.focus();
+        return true;
+      },
+      COMMAND_PRIORITY_LOW,
+    ),
     () => {
-      announce(undoneMessage);
-      return false;
+      toolbar.removeEventListener('keydown', handler);
     },
-    COMMAND_PRIORITY_LOW,
   );
-  const removeRedo = editor.registerCommand(
-    REDO_COMMAND,
-    () => {
-      announce(redoneMessage);
-      return false;
-    },
-    COMMAND_PRIORITY_LOW,
-  );
-  return mergeRegister(removeUndo, removeRedo);
-}
-
-interface EditorModeAnnounceOptions {
-  /** Message announced when the editor becomes editable. Default: 'Editor is editable'. */
-  editable?: string;
-  /** Message announced when the editor becomes read-only. Default: 'Editor is read-only'. */
-  readOnly?: string;
-}
-
-/**
- * Announces editor mode transitions (`editor.setEditable(true|false)`)
- * into the supplied `announce` sink. The `aria-readonly` attribute on
- * the editor root is already managed by other layers; this helper only
- * contributes the announcement.
- *
- */
-function registerEditorModeAnnounce(
-  editor: LexicalEditor,
-  announce: (message: string) => void,
-  options: EditorModeAnnounceOptions = {},
-): () => void {
-  const editableMessage = options.editable ?? 'Editor is editable';
-  const readOnlyMessage = options.readOnly ?? 'Editor is read-only';
-  return editor.registerEditableListener(editable => {
-    announce(editable ? editableMessage : readOnlyMessage);
-  });
 }
 
 export interface AriaLiveRegionExtensionConfig {
@@ -514,20 +450,22 @@ export interface AriaLiveRegionExtensionConfig {
 }
 
 /**
- * Public output of {@link AriaLiveRegionExtension}: a stable `announce`
- * sink that is valid for the editor's lifetime. Callers never see the
- * region element or its disposal — writing a message buffers it and it is
- * mirrored into whatever live region is currently mounted.
+ * Public output of {@link AriaLiveRegionExtension}. The `politeness` and
+ * `owner` config values are exposed as runtime-tunable signals — setting
+ * `politeness` updates the mounted region's `aria-live`, setting `owner`
+ * re-mounts the region — alongside a stable `announce` sink that is valid for
+ * the editor's lifetime (callers never see the region element or its disposal).
  */
-export interface AriaLiveRegion {
-  /**
-   * Write a message into the editor's live region. Announcing the same
-   * string back-to-back appends a zero-width space so screen readers
-   * register the change and re-announce. A no-op until a region is mounted
-   * (the editor has a root element, or an `owner` is configured).
-   */
-  announce: (message: string) => void;
-}
+export type AriaLiveRegion =
+  NamedSignalsOutput<AriaLiveRegionExtensionConfig> & {
+    /**
+     * Write a message into the editor's live region. Announcing the same
+     * string back-to-back appends a zero-width space so screen readers
+     * register the change and re-announce. A no-op until a region is mounted
+     * (the editor has a root element, or an `owner` is configured).
+     */
+    announce: (message: string) => void;
+  };
 
 /**
  * Platform-independent extension that owns a single `aria-live` region for
@@ -536,19 +474,22 @@ export interface AriaLiveRegion {
  * `EditorModeAnnounceExtension`) depend on it and announce through
  * `output.announce`.
  *
- * The sink writes to a private `message` signal created in `init`. `register`
- * tracks the editor's root element reactively and runs two effects: one
- * creates / disposes the region element as the root document (or `owner`)
- * changes, the other mirrors the current message into whatever region is
- * mounted. Buffering the message in a signal decouples the stable `announce`
- * (from `build`) from the region element — which comes and goes with the root
- * — and creates the region in the editor's own document (e.g. an
- * iframe-portaled editor) rather than the top-level `document`.
+ * The sink writes to a private `message` signal created in `init`. The
+ * `politeness` / `owner` config are exposed as signals (via `namedSignals`).
+ * `register` tracks the editor's root element reactively and runs three
+ * effects: one creates / disposes the region element as the root document (or
+ * `owner`) changes, one applies the current `politeness` to the mounted region,
+ * and one mirrors the current message into it. Buffering through signals
+ * decouples the stable `announce` (from `build`) from the region element —
+ * which comes and goes with the root — and creates the region in the editor's
+ * own document (e.g. an iframe-portaled editor) rather than the top-level
+ * `document`.
  */
 export const AriaLiveRegionExtension = /* @__PURE__ */ defineExtension({
-  build(_editor, _config, state): AriaLiveRegion {
+  build(_editor, config, state): AriaLiveRegion {
     const message = state.getInitResult();
     return {
+      ...namedSignals(config),
       announce(text) {
         // Toggle a trailing zero-width space on repeats so re-announcing the
         // same text still registers as a textContent change downstream.
@@ -564,8 +505,9 @@ export const AriaLiveRegionExtension = /* @__PURE__ */ defineExtension({
   // (renderer); see the extension doc comment.
   init: () => signal<string>(''),
   name: '@lexical/a11y/AriaLiveRegion',
-  register(editor, config, state) {
+  register(editor, _config, state) {
     const message = state.getInitResult();
+    const {owner, politeness} = state.getOutput();
     const rootElement = watchedSignal(
       () => editor.getRootElement(),
       self =>
@@ -578,16 +520,23 @@ export const AriaLiveRegionExtension = /* @__PURE__ */ defineExtension({
       // Create / dispose the region as the root document (or `owner`) changes.
       effect(() => {
         const root = rootElement.value;
-        const owner = config.owner ?? (root ? root.ownerDocument.body : null);
-        if (owner === null) {
+        const host = owner.value ?? (root ? root.ownerDocument.body : null);
+        if (host === null) {
           return undefined;
         }
-        const el = createLiveRegion(owner, config.politeness);
+        const el = createLiveRegion(host);
         region.value = el;
         return () => {
           el.remove();
           region.value = null;
         };
+      }),
+      // Apply the (runtime-tunable) politeness to whatever region is mounted.
+      effect(() => {
+        const el = region.value;
+        if (el !== null) {
+          el.setAttribute('aria-live', politeness.value);
+        }
       }),
       // Mirror the current message into whatever region is mounted.
       effect(() => {
@@ -626,13 +575,30 @@ export const HistoryAnnounceExtension = /* @__PURE__ */ defineExtension({
   register(editor, _config, state) {
     const {disabled, redone, undone} = state.getOutput();
     const {announce} = state.getDependency(AriaLiveRegionExtension).output;
-    return effect(() =>
-      disabled.value
-        ? undefined
-        : registerHistoryAnnounce(editor, announce, {
-            redone: redone.value,
-            undone: undone.value,
-          }),
+    // Read the signals at dispatch time so the commands register once and
+    // pick up message / disabled changes without re-registering. Both return
+    // false to keep the history command chain intact.
+    return mergeRegister(
+      editor.registerCommand(
+        UNDO_COMMAND,
+        () => {
+          if (!disabled.value) {
+            announce(undone.value);
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+      editor.registerCommand(
+        REDO_COMMAND,
+        () => {
+          if (!disabled.value) {
+            announce(redone.value);
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
     );
   },
 });
@@ -664,14 +630,13 @@ export const EditorModeAnnounceExtension = /* @__PURE__ */ defineExtension({
   register(editor, _config, state) {
     const {disabled, editable, readOnly} = state.getOutput();
     const {announce} = state.getDependency(AriaLiveRegionExtension).output;
-    return effect(() =>
-      disabled.value
-        ? undefined
-        : registerEditorModeAnnounce(editor, announce, {
-            editable: editable.value,
-            readOnly: readOnly.value,
-          }),
-    );
+    // Read the signals at listener time so the listener registers once and
+    // picks up message / disabled changes without re-registering.
+    return editor.registerEditableListener(isEditable => {
+      if (!disabled.value) {
+        announce(isEditable ? editable.value : readOnly.value);
+      }
+    });
   },
 });
 

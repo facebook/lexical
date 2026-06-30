@@ -101,6 +101,24 @@ describe('AriaLiveRegionExtension', () => {
     ).toBe('assertive');
   });
 
+  test('reflects politeness changes from the output signal at runtime', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [AriaLiveRegionExtension, RichTextExtension],
+        name: '[root]',
+      }),
+    );
+    mountRoot(editor);
+    const region = document.body.querySelector('[aria-live]')!;
+    expect(region.getAttribute('aria-live')).toBe('polite');
+    const {politeness} = getExtensionDependencyFromEditor(
+      editor,
+      AriaLiveRegionExtension,
+    ).output;
+    politeness.value = 'assertive';
+    expect(region.getAttribute('aria-live')).toBe('assertive');
+  });
+
   test('mounts onto a custom owner element regardless of the root', () => {
     const owner = document.createElement('div');
     document.body.appendChild(owner);

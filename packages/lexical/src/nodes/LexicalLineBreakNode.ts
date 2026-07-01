@@ -19,6 +19,7 @@ import {
   $applyNodeReplacement,
   isBlockDomNode,
   isDOMTextNode,
+  isHTMLElement,
 } from '../LexicalUtils';
 
 export type SerializedLineBreakNode = SerializedLexicalNode;
@@ -58,7 +59,10 @@ export class LineBreakNode extends LexicalNode {
   static importDOM(): DOMConversionMap | null {
     return {
       br: (node: Node) => {
-        if (isOnlyChildInBlockNode(node) || isLastChildInBlockNode(node)) {
+        if (
+          isOnlyChildInBlockNode(node) ||
+          (isLastChildInBlockNode(node) && isManagedLineBreak(node))
+        ) {
           return null;
         }
         return {
@@ -153,4 +157,30 @@ export function isLastChildInBlockNode(node: Node): boolean {
 
 function isWhitespaceDomTextNode(node: Node): boolean {
   return isDOMTextNode(node) && /^( |\t|\r?\n)+$/.test(node.textContent || '');
+}
+
+/**
+ * True when `node` is a `<br>` that exists only as a rendering artifact
+ * rather than authored content, and therefore should be dropped on import
+ * to avoid a phantom trailing line break:
+ *
+ * - `data-lexical-managed-linebreak="true"`: the terminating `<br>` that
+ *   Lexical's reconciler injects so a trailing line break is not collapsed
+ *   by the parent block element (see `LexicalDOMSlot.setManagedLineBreak`).
+ *   Re-importing Lexical's own exported HTML must not turn this into a real
+ *   `LineBreakNode`.
+ * - `class="Apple-interchange-newline"`: the trailing `<br>` WebKit/Safari
+ *   appends to clipboard HTML as a transport artifact.
+ *
+ * An ordinary authored trailing `<br>` carries neither marker and is
+ * preserved so that round-trip serialization to HTML stays lossless.
+ */
+export function isManagedLineBreak(node: Node): boolean {
+  if (node.nodeName !== 'BR' || !isHTMLElement(node)) {
+    return false;
+  }
+  return (
+    node.getAttribute('data-lexical-managed-linebreak') === 'true' ||
+    node.getAttribute('class') === 'Apple-interchange-newline'
+  );
 }

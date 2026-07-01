@@ -30,6 +30,7 @@ import {
   isBlockDomNode,
   isDOMTextNode,
   isLastChildInBlockNode,
+  isManagedLineBreak,
   isOnlyChildInBlockNode,
   type LexicalNode,
   setNodeIndentFromDOM,
@@ -446,14 +447,17 @@ const IgnoreScriptStyleRule = /* @__PURE__ */ defineImportRule({
 });
 
 const LineBreakRule = /* @__PURE__ */ defineImportRule({
-  // Mirror the legacy LineBreakNode.importDOM filter: stray `<br>` that
-  // are the sole or trailing child of a block parent (e.g. Apple's
-  // `<br class="Apple-interchange-newline">` clipboard sentinel, or the
-  // trailing `<br>` browsers insert after the last text in a `<div>`)
-  // would otherwise survive as a LineBreakNode and tack an extra blank
-  // line onto the imported content.
+  // Mirror the LineBreakNode.importDOM filter: drop `<br>` that are only a
+  // rendering artifact rather than authored content. The sole child of a
+  // block is dropped (empty `<li>`/`<p>` round-trips as an empty element),
+  // and a trailing `<br>` is dropped only when it is a managed line break —
+  // Lexical's own `data-lexical-managed-linebreak` terminator or Safari's
+  // `<br class="Apple-interchange-newline">` clipboard sentinel. An ordinary
+  // authored trailing `<br>` is preserved so round-trip serialization to
+  // HTML stays lossless.
   $import: (_ctx, el) =>
-    isOnlyChildInBlockNode(el) || isLastChildInBlockNode(el)
+    isOnlyChildInBlockNode(el) ||
+    (isLastChildInBlockNode(el) && isManagedLineBreak(el))
       ? []
       : [$createLineBreakNode()],
   match: sel.tag('br'),

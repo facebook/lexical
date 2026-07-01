@@ -287,6 +287,21 @@ function registerRovingTabIndex(
     const active = getActiveElementDeep(container.ownerDocument);
     const currentIdx = items.findIndex(el => el === active);
     if (currentIdx < 0) {
+      // Firefox can focus the container itself (e.g. role="toolbar") rather
+      // than a child item. Treat any arrow/Home/End as "enter the group at
+      // the first item" so the user isn't stuck.
+      if (
+        event.key === 'ArrowRight' ||
+        event.key === 'ArrowDown' ||
+        event.key === 'ArrowLeft' ||
+        event.key === 'ArrowUp' ||
+        event.key === 'Home' ||
+        event.key === 'End'
+      ) {
+        event.preventDefault();
+        applyTabIndex(items, 0);
+        items[0].focus();
+      }
       return;
     }
 

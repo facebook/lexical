@@ -10,13 +10,13 @@ import type {BaseSelection, LexicalEditor} from 'lexical';
 import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {IS_APPLE} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   getDOMSelection,
   getDOMSelectionPoints,
+  IS_APPLE,
   registerEventListeners,
 } from 'lexical';
 import * as React from 'react';

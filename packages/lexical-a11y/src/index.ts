@@ -13,7 +13,6 @@ import {
   RootElementExtension,
   signal,
 } from '@lexical/extension';
-import {mergeRegister} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_LOW,
   createRefCountedRegistry,
@@ -24,6 +23,7 @@ import {
   isHTMLElement,
   KEY_DOWN_COMMAND,
   type LexicalEditor,
+  mergeRegister,
   REDO_COMMAND,
   type RefCountedRegistry,
   registerEventListener,

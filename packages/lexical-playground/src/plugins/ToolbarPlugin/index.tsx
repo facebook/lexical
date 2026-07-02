@@ -33,11 +33,7 @@ import {
   $patchStyleText,
 } from '@lexical/selection';
 import {$isTableNode, $isTableSelection} from '@lexical/table';
-import {
-  $getNearestNodeOfType,
-  $isEditorIsNestedEditor,
-  IS_APPLE,
-} from '@lexical/utils';
+import {$getNearestNodeOfType, $isEditorIsNestedEditor} from '@lexical/utils';
 import {
   $addUpdateTag,
   $findMatchingParent,
@@ -57,6 +53,7 @@ import {
   FORMAT_TEXT_COMMAND,
   HISTORIC_TAG,
   INDENT_CONTENT_COMMAND,
+  IS_APPLE,
   LexicalCommand,
   LexicalEditor,
   LexicalNode,

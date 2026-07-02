@@ -6,9 +6,9 @@
  *
  */
 
-import {IS_APPLE} from '@lexical/utils';
 import {
   defineExtension,
+  IS_APPLE,
   isExactShortcutMatch,
   isHTMLElement,
   registerEventListener,

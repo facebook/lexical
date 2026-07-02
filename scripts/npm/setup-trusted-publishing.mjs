@@ -16,7 +16,14 @@ import path from 'node:path';
 import {exec} from '../shared/childProcess.mjs';
 import {packagesManager} from '../shared/packagesManager.mjs';
 
-const argv = minimist(process.argv.slice(2));
+// Declare the boolean flags explicitly. Otherwise minimist greedily
+// consumes the following token as the flag's value, so
+// `--setup-trust @lexical/a11y` parses as {'setup-trust': '@lexical/a11y'}
+// with an empty `_` — the positional package name is swallowed and every
+// package gets processed instead of just the one requested.
+const argv = minimist(process.argv.slice(2), {
+  boolean: ['bootstrap', 'setup-trust', 'dry-run', 'replace'],
+});
 const bootstrap = !!argv.bootstrap;
 const setupTrust = !!argv['setup-trust'];
 const dryRun = !!argv['dry-run'];

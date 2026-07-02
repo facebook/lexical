@@ -366,7 +366,7 @@ Useful flags:
 
 - `--package <name>` (or a positional `<name>`, repeatable) — restrict the run to the given package(s), matched by full npm name (`@lexical/a11y`) or unscoped short name (`a11y`). Omit to process every public package.
 - `--dry-run` — print what would happen without touching the registry (works with both `--bootstrap` and `--setup-trust`)
-- `--workflow <filename>` — override the workflow filename (default `call-release.yml`)
+- `--workflow <filename>` — override the workflow filename (default `pre-release.yml`)
 - `--repo <owner/name>` — override the GitHub repo (default `facebook/lexical`)
 - `--stub-version <semver>` — override the placeholder version (default `0.0.0-bootstrap.0`)
 - `--registry <url>` — override the npm registry

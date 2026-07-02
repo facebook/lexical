@@ -1,0 +1,100 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @flow strict
+ */
+
+export type AriaPoliteness = 'polite' | 'assertive';
+
+export type FocusTrapInitialFocus = 'firstFocusable' | 'container';
+
+export type FocusTrapOptions = {
+  initialFocus?: FocusTrapInitialFocus,
+  allowOutside?: (target: HTMLElement) => boolean,
+};
+
+export type RovingOrientation = 'horizontal' | 'vertical' | 'both';
+
+export type RovingTabIndexOptions = {
+  orientation?: RovingOrientation,
+  itemSelector?: string,
+};
+
+import type {
+  ExtensionConfigBase,
+  LexicalExtension,
+  RefCountedRegistry,
+} from 'lexical';
+import type {NamedSignalsOutput, Signal} from '@lexical/extension';
+
+export type FocusManagerOptions = {
+  toolbarItemSelector?: string,
+};
+
+export type AriaLiveRegionExtensionConfig = {
+  politeness: AriaPoliteness,
+  owner: HTMLElement | null,
+};
+export type AriaLiveRegion = {
+  ...NamedSignalsOutput<AriaLiveRegionExtensionConfig>,
+  announce: (message: string) => void,
+};
+declare export var AriaLiveRegionExtension: LexicalExtension<
+  AriaLiveRegionExtensionConfig,
+  '@lexical/a11y/AriaLiveRegion',
+  AriaLiveRegion,
+  Signal<string>,
+>;
+
+export type HistoryAnnounceExtensionConfig = {
+  undone: string,
+  redone: string,
+  disabled: boolean,
+};
+declare export var HistoryAnnounceExtension: LexicalExtension<
+  HistoryAnnounceExtensionConfig,
+  '@lexical/a11y/HistoryAnnounce',
+  NamedSignalsOutput<HistoryAnnounceExtensionConfig>,
+  void,
+>;
+
+export type EditorModeAnnounceExtensionConfig = {
+  editable: string,
+  readOnly: string,
+  disabled: boolean,
+};
+declare export var EditorModeAnnounceExtension: LexicalExtension<
+  EditorModeAnnounceExtensionConfig,
+  '@lexical/a11y/EditorModeAnnounce',
+  NamedSignalsOutput<EditorModeAnnounceExtensionConfig>,
+  void,
+>;
+
+export type ContainerRegistry<Options> = RefCountedRegistry<
+  HTMLElement,
+  Options,
+>;
+
+declare export var FocusTrapExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/a11y/FocusTrap',
+  ContainerRegistry<FocusTrapOptions>,
+  void,
+>;
+
+declare export var RovingTabIndexExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/a11y/RovingTabIndex',
+  ContainerRegistry<RovingTabIndexOptions>,
+  void,
+>;
+
+declare export var FocusManagerExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/a11y/FocusManager',
+  ContainerRegistry<FocusManagerOptions>,
+  void,
+>;

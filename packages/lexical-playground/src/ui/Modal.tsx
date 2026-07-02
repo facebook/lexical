@@ -10,9 +10,11 @@ import type {JSX} from 'react';
 
 import './Modal.css';
 
+import {useMergeRefs} from '@floating-ui/react';
+import {useLexicalFocusTrapRef} from '@lexical/react/useLexicalFocusTrapRef';
 import {isDOMNode} from 'lexical';
 import * as React from 'react';
-import {ReactNode, useEffect, useRef} from 'react';
+import {ReactNode, useEffect, useId, useRef} from 'react';
 import {createPortal} from 'react-dom';
 
 function PortalImpl({
@@ -26,13 +28,10 @@ function PortalImpl({
   onClose: () => void;
   title: string;
 }) {
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (modalRef.current !== null) {
-      modalRef.current.focus();
-    }
-  }, []);
+  const modalDomRef = useRef<HTMLDivElement>(null);
+  const trapRef = useLexicalFocusTrapRef(true, 'container');
+  const modalRef = useMergeRefs([modalDomRef, trapRef]);
+  const titleId = useId();
 
   useEffect(() => {
     let modalOverlayElement: HTMLElement | null = null;
@@ -44,15 +43,15 @@ function PortalImpl({
     const clickOutsideHandler = (event: MouseEvent) => {
       const target = event.target;
       if (
-        modalRef.current !== null &&
+        modalDomRef.current !== null &&
         isDOMNode(target) &&
-        !modalRef.current.contains(target) &&
+        !modalDomRef.current.contains(target) &&
         closeOnClickOutside
       ) {
         onClose();
       }
     };
-    const modelElement = modalRef.current;
+    const modelElement = modalDomRef.current;
     if (modelElement !== null) {
       modalOverlayElement = modelElement.parentElement;
       if (modalOverlayElement !== null) {
@@ -71,9 +70,15 @@ function PortalImpl({
   }, [closeOnClickOutside, onClose]);
 
   return (
-    <div className="Modal__overlay" role="dialog">
-      <div className="Modal__modal" ref={modalRef}>
-        <h2 className="Modal__title">{title}</h2>
+    <div
+      className="Modal__overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}>
+      <div className="Modal__modal" tabIndex={-1} ref={modalRef}>
+        <h2 className="Modal__title" id={titleId}>
+          {title}
+        </h2>
         <button
           className="Modal__closeButton"
           aria-label="Close modal"

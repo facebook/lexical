@@ -42,7 +42,9 @@
 }
 
 .floating-text-format-popup button.popup-item i.format {
-  background-size: contain;
+  background-color: CanvasText;
+  -webkit-mask-size: contain;
+  mask-size: contain;
   height: 18px;
   width: 18px;
   margin-top: 2px;

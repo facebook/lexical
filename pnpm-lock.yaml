@@ -470,6 +470,21 @@ importers:
         specifier: '>=5.2'
         version: 6.0.3
 
+  packages/lexical-a11y:
+    dependencies:
+      '@lexical/extension':
+        specifier: workspace:*
+        version: link:../lexical-extension
+      '@lexical/utils':
+        specifier: workspace:*
+        version: link:../lexical-utils
+      lexical:
+        specifier: workspace:*
+        version: link:../lexical
+      typescript:
+        specifier: '>=5.2'
+        version: 6.0.3
+
   packages/lexical-clipboard:
     dependencies:
       '@lexical/extension':
@@ -1116,6 +1131,9 @@ importers:
       '@floating-ui/react':
         specifier: ^0.27.19
         version: 0.27.19(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      '@lexical/a11y':
+        specifier: workspace:*
+        version: link:../lexical-a11y
       '@lexical/devtools-core':
         specifier: workspace:*
         version: link:../lexical-devtools-core

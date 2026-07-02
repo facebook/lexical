@@ -344,17 +344,29 @@ Subsequent packages in the same run will then go through without
 re-prompting. The script also inserts a small (~2 s) pause between
 calls to stay under the registry's `E429` rate limit.
 
-For full first-time setup of a brand-new monorepo (or when adding a
-new package to an existing one), combine both flags:
+For full first-time setup of a brand-new monorepo, combine both flags:
 
 ```bash
 pnpm run setup-trusted-publishing --bootstrap --setup-trust
 ```
 
+When adding a **single** new package to an existing monorepo — the common
+case going forward — pass its name so the run only touches that package
+instead of re-checking all 30+ already-configured ones (which just prints a
+wall of `CONFLICT` lines). The name can be the full npm name or the unscoped
+short name, and `--package` / positional args are interchangeable and
+repeatable:
+
+```bash
+pnpm run setup-trusted-publishing --bootstrap --setup-trust @lexical/a11y
+# equivalently: --package a11y
+```
+
 Useful flags:
 
+- `--package <name>` (or a positional `<name>`, repeatable) — restrict the run to the given package(s), matched by full npm name (`@lexical/a11y`) or unscoped short name (`a11y`). Omit to process every public package.
 - `--dry-run` — print what would happen without touching the registry (works with both `--bootstrap` and `--setup-trust`)
-- `--workflow <filename>` — override the workflow filename (default `call-release.yml`)
+- `--workflow <filename>` — override the workflow filename (default `pre-release.yml`)
 - `--repo <owner/name>` — override the GitHub repo (default `facebook/lexical`)
 - `--stub-version <semver>` — override the placeholder version (default `0.0.0-bootstrap.0`)
 - `--registry <url>` — override the npm registry

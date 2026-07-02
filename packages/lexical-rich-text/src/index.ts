@@ -52,16 +52,17 @@ import {
   $applyNodeReplacement,
   $caretFromPoint,
   $comparePointCaretNext,
+  $createNodeSelection,
   $createParagraphNode,
   $createRangeSelection,
   $createTabNode,
   $extendCaretToRange,
   $findMatchingParent,
   $formatText,
-  $getAdjacentNode,
   $getCaretRange,
   $getChildCaret,
   $getCollapsedCaretRange,
+  $getEditor,
   $getNearestNodeFromDOMNode,
   $getRoot,
   $getSelection,
@@ -103,6 +104,7 @@ import {
   ElementNode,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  getDOMSelection,
   INDENT_CONTENT_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
   INSERT_PARAGRAPH_COMMAND,
@@ -753,6 +755,146 @@ function $tryExitShadowRootToBlockCursor(
   return false;
 }
 
+function $isSelectableBlockDecorator(
+  node: LexicalNode | null | undefined,
+): boolean {
+  return (
+    $isDecoratorNode(node) &&
+    !node.isInline() &&
+    !node.isIsolated() &&
+    node.isKeyboardSelectable()
+  );
+}
+
+function $selectNode(key: NodeKey): void {
+  const nodeSelection = $createNodeSelection();
+  nodeSelection.add(key);
+  $setSelection(nodeSelection);
+}
+
+function $tryDecoratorLineNavigation(
+  selection: RangeSelection,
+  isBackward: boolean,
+): boolean {
+  if (!selection.isCollapsed()) {
+    return false;
+  }
+  const focus = selection.focus;
+  const focusNode = focus.getNode();
+
+  if (
+    focus.type === 'element' &&
+    $isElementNode(focusNode) &&
+    ($isRootNode(focusNode) || $isShadowRootNode(focusNode))
+  ) {
+    const offset = focus.offset;
+    const adjacentChild = isBackward
+      ? offset > 0
+        ? focusNode.getChildAtIndex(offset - 1)
+        : null
+      : focusNode.getChildAtIndex(offset);
+    if (adjacentChild !== null && $isSelectableBlockDecorator(adjacentChild)) {
+      $selectNode(adjacentChild.__key);
+      return true;
+    }
+    return false;
+  }
+
+  const topBlock = $findMatchingParent(
+    $isElementNode(focusNode) ? focusNode : focusNode.getParentOrThrow(),
+    (n): n is ElementNode =>
+      $isElementNode(n) &&
+      !n.isInline() &&
+      ($isRootNode(n.getParent()) || $isShadowRootNode(n.getParent())),
+  );
+  if (topBlock === null) {
+    return false;
+  }
+  const adjacentSibling = isBackward
+    ? topBlock.getPreviousSibling()
+    : topBlock.getNextSibling();
+  if (
+    adjacentSibling === null ||
+    !$isSelectableBlockDecorator(adjacentSibling)
+  ) {
+    return false;
+  }
+  // Empty blocks always escape on line-move, so skip the DOM probe.
+  if (topBlock.getTextContentSize() === 0) {
+    $selectNode(adjacentSibling.__key);
+    return true;
+  }
+  const rootElement = $getEditor().getRootElement();
+  if (rootElement === null) {
+    return false;
+  }
+  const domSelection = getDOMSelection(rootElement.ownerDocument.defaultView);
+  if (domSelection === null || domSelection.rangeCount === 0) {
+    return false;
+  }
+  const savedAnchorNode = domSelection.anchorNode;
+  const savedAnchorOffset = domSelection.anchorOffset;
+  const savedFocusNode = domSelection.focusNode;
+  const savedFocusOffset = domSelection.focusOffset;
+  domSelection.modify('move', isBackward ? 'backward' : 'forward', 'line');
+  const newAnchorNode = domSelection.anchorNode;
+  const newAnchorOffset = domSelection.anchorOffset;
+  if (newAnchorNode === null) {
+    restoreDOMSelection(
+      domSelection,
+      savedAnchorNode,
+      savedAnchorOffset,
+      savedFocusNode,
+      savedFocusOffset,
+    );
+    return false;
+  }
+  const movedNode = $getNearestNodeFromDOMNode(newAnchorNode);
+  restoreDOMSelection(
+    domSelection,
+    savedAnchorNode,
+    savedAnchorOffset,
+    savedFocusNode,
+    savedFocusOffset,
+  );
+  if (movedNode === null) {
+    return false;
+  }
+  // Firefox stays in place when modify('move', 'backward', 'line') hits
+  // the top of a block — treat no movement as reaching the block edge.
+  const didNotMove =
+    newAnchorNode === savedAnchorNode && newAnchorOffset === savedAnchorOffset;
+  if (didNotMove) {
+    $selectNode(adjacentSibling.__key);
+    return true;
+  }
+  const stillInSameBlock =
+    movedNode.is(topBlock) ||
+    $findMatchingParent(movedNode, n => n.is(topBlock)) !== null;
+  if (stillInSameBlock) {
+    return false;
+  }
+  $selectNode(adjacentSibling.__key);
+  return true;
+}
+
+function restoreDOMSelection(
+  domSelection: Selection,
+  anchorNode: Node | null,
+  anchorOffset: number,
+  focusNode: Node | null,
+  focusOffset: number,
+): void {
+  if (anchorNode !== null && focusNode !== null) {
+    domSelection.setBaseAndExtent(
+      anchorNode,
+      anchorOffset,
+      focusNode,
+      focusOffset,
+    );
+  }
+}
+
 function $exitNodeSelectionToward(
   node: LexicalNode,
   direction: CaretDirection,
@@ -1055,14 +1197,7 @@ export function registerRichText(
             event.preventDefault();
             return true;
           }
-          const possibleNode = $getAdjacentNode(selection.focus, true);
-          if (
-            !event.shiftKey &&
-            $isDecoratorNode(possibleNode) &&
-            !possibleNode.isIsolated() &&
-            !possibleNode.isInline()
-          ) {
-            possibleNode.selectPrevious();
+          if (!event.shiftKey && $tryDecoratorLineNavigation(selection, true)) {
             event.preventDefault();
             return true;
           }
@@ -1096,14 +1231,10 @@ export function registerRichText(
             event.preventDefault();
             return true;
           }
-          const possibleNode = $getAdjacentNode(selection.focus, false);
           if (
             !event.shiftKey &&
-            $isDecoratorNode(possibleNode) &&
-            !possibleNode.isIsolated() &&
-            !possibleNode.isInline()
+            $tryDecoratorLineNavigation(selection, false)
           ) {
-            possibleNode.selectNext();
             event.preventDefault();
             return true;
           }

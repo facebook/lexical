@@ -2913,7 +2913,8 @@ function resolveSelectionPointOnBoundary(
       nextSibling === null &&
       $isElementNode(parent) &&
       parent.isInline() &&
-      !parent.canInsertTextAfter()
+      !parent.canInsertTextAfter() &&
+      parent.getTextContentSize() > 1
     ) {
       const parentSibling = parent.getNextSibling();
       if ($isTextNode(parentSibling)) {

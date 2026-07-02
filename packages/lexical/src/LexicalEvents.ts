@@ -1332,10 +1332,9 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
       // need to invoke the empty space heuristic below.
       anchor.type === 'element' ||
       !selection.isCollapsed() ||
-      (!IS_ANDROID_CHROME && node.getFormat() !== selection.format) ||
       (!IS_ANDROID_CHROME &&
-        $isTextNode(node) &&
-        node.getStyle() !== selection.style)
+        (node.getFormat() !== selection.format ||
+          ($isTextNode(node) && node.getStyle() !== selection.style)))
     ) {
       // We insert a zero width character, ready for the composition
       // to get inserted into the new node we create. If

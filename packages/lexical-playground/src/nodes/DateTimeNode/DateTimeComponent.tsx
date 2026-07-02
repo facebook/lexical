@@ -35,6 +35,7 @@ import {
   IS_STRIKETHROUGH,
   IS_UNDERLINE,
   NodeKey,
+  registerEventListener,
 } from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
@@ -120,15 +121,9 @@ export default function DateTimeComponent({
       setIsOpen(true);
     }
 
-    if (dateTimePillRef) {
-      dateTimePillRef.addEventListener('click', onClick);
-    }
-
-    return () => {
-      if (dateTimePillRef) {
-        dateTimePillRef.removeEventListener('click', onClick);
-      }
-    };
+    return dateTimePillRef
+      ? registerEventListener(dateTimePillRef, 'click', onClick)
+      : () => {};
   }, [refs, editor]);
 
   const withDateTimeNode = (

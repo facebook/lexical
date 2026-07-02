@@ -9,7 +9,11 @@
 import type {JSX} from 'react';
 
 import {calculateZoomLevel} from '@lexical/utils';
-import {getComposedEventTarget, isDOMNode} from 'lexical';
+import {
+  getComposedEventTarget,
+  isDOMNode,
+  registerEventListener,
+} from 'lexical';
 import * as React from 'react';
 import {
   ReactNode,
@@ -230,11 +234,7 @@ export default function DropDown({
           }
         }
       };
-      document.addEventListener('click', handle);
-
-      return () => {
-        document.removeEventListener('click', handle);
-      };
+      return registerEventListener(document, 'click', handle);
     }
   }, [dropDownRef, buttonRef, showDropDown, stopCloseOnClickSelf]);
 
@@ -253,11 +253,11 @@ export default function DropDown({
       }
     };
 
-    document.addEventListener('scroll', handleButtonPositionUpdate);
-
-    return () => {
-      document.removeEventListener('scroll', handleButtonPositionUpdate);
-    };
+    return registerEventListener(
+      document,
+      'scroll',
+      handleButtonPositionUpdate,
+    );
   }, [buttonRef, dropDownRef, showDropDown]);
 
   const handleOnClick = (e: React.MouseEvent) => {

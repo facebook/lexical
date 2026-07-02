@@ -24,6 +24,7 @@ import {
   HISTORY_MERGE_TAG,
   mergeRegister,
   NodeKey,
+  registerEventListeners,
   RootNode,
   safeCast,
   SELECTION_CHANGE_COMMAND,
@@ -743,27 +744,31 @@ export const PagesExtension = /* @__PURE__ */ defineExtension({
             }
           };
 
-          window.addEventListener('beforeprint', handleBeforePrint);
-          window.addEventListener('afterprint', handleAfterPrint);
-
-          return () => {
-            rootObserver.disconnect();
-            pageObserver.disconnect();
-            if (rafId !== null) {
-              cancelAnimationFrame(rafId);
-            }
-            clearMeasurementFlags();
-            removeCommandListeners();
-            removePageTransform();
-            removeRootTransform();
-            removePageContentTransform();
-            removeMutationListeners();
-            window.removeEventListener('beforeprint', handleBeforePrint);
-            window.removeEventListener('afterprint', handleAfterPrint);
-            if (output.disabled.peek()) {
-              destroyPageStructure();
-            }
-          };
+          return mergeRegister(
+            // Placed first so mergeRegister's reverse (LIFO) teardown runs it
+            // last, only after every listener and transform below has been
+            // torn down.
+            () => {
+              if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+              }
+              pageObserver.disconnect();
+              rootObserver.disconnect();
+              if (output.disabled.peek()) {
+                destroyPageStructure();
+              }
+            },
+            clearMeasurementFlags,
+            removeCommandListeners,
+            removePageTransform,
+            removeRootTransform,
+            removePageContentTransform,
+            removeMutationListeners,
+            registerEventListeners(window, {
+              afterprint: handleAfterPrint,
+              beforeprint: handleBeforePrint,
+            }),
+          );
         });
       });
     }),

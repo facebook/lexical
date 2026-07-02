@@ -28,6 +28,8 @@ import {
   $getNearestNodeFromDOMNode,
   isHTMLElement,
   mergeRegister,
+  registerEventListener,
+  registerEventListeners,
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
 import * as React from 'react';
@@ -170,25 +172,26 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
     };
 
     const resizerContainer = resizerRef.current;
-    resizerContainer?.addEventListener('pointermove', onPointerMove, {
-      capture: true,
-    });
-
-    const removeRootListener = editor.registerRootListener(rootElement => {
-      if (rootElement) {
-        rootElement.addEventListener('pointermove', onPointerMove);
-        rootElement.addEventListener('pointerdown', onPointerDown);
-        return () => {
-          rootElement.removeEventListener('pointermove', onPointerMove);
-          rootElement.removeEventListener('pointerdown', onPointerDown);
-        };
-      }
-    });
-
-    return () => {
-      removeRootListener();
-      resizerContainer?.removeEventListener('pointermove', onPointerMove);
-    };
+    return mergeRegister(
+      editor.registerRootListener(rootElement => {
+        if (rootElement) {
+          return registerEventListeners(rootElement, {
+            pointerdown: onPointerDown,
+            pointermove: onPointerMove,
+          });
+        }
+      }),
+      resizerContainer
+        ? registerEventListener(
+            resizerContainer,
+            'pointermove',
+            onPointerMove,
+            {
+              capture: true,
+            },
+          )
+        : () => {},
+    );
   }, [activeCell, draggingDirection, editor, resetState, hasTable]);
 
   const isHeightChanging = (direction: PointerDraggingDirection) => {

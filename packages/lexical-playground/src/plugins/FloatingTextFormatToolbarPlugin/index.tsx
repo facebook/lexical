@@ -29,6 +29,8 @@ import {
   isDOMShadowRoot,
   LexicalEditor,
   mergeRegister,
+  registerEventListener,
+  registerEventListeners,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
@@ -124,13 +126,10 @@ function TextFormatFloatingToolbar({
 
   useEffect(() => {
     if (popupCharStylesEditorRef?.current) {
-      document.addEventListener('mousemove', mouseMoveListener);
-      document.addEventListener('mouseup', mouseUpListener);
-
-      return () => {
-        document.removeEventListener('mousemove', mouseMoveListener);
-        document.removeEventListener('mouseup', mouseUpListener);
-      };
+      return registerEventListeners(document, {
+        mousemove: mouseMoveListener,
+        mouseup: mouseUpListener,
+      });
     }
   }, [popupCharStylesEditorRef]);
 
@@ -184,17 +183,12 @@ function TextFormatFloatingToolbar({
       });
     };
 
-    window.addEventListener('resize', update);
-    if (scrollerElem) {
-      scrollerElem.addEventListener('scroll', update);
-    }
-
-    return () => {
-      window.removeEventListener('resize', update);
-      if (scrollerElem) {
-        scrollerElem.removeEventListener('scroll', update);
-      }
-    };
+    return mergeRegister(
+      registerEventListener(window, 'resize', update),
+      scrollerElem
+        ? registerEventListener(scrollerElem, 'scroll', update)
+        : () => {},
+    );
   }, [editor, $updateTextFormatFloatingToolbar, anchorElem]);
 
   useEffect(() => {
@@ -433,10 +427,7 @@ function useFloatingTextFormatToolbar(
   }, [editor]);
 
   useEffect(() => {
-    document.addEventListener('selectionchange', updatePopup);
-    return () => {
-      document.removeEventListener('selectionchange', updatePopup);
-    };
+    return registerEventListener(document, 'selectionchange', updatePopup);
   }, [updatePopup]);
 
   // Hide the popup while a drag is in progress. Otherwise it sits on top of
@@ -455,14 +446,11 @@ function useFloatingTextFormatToolbar(
         ref.current.style.display = 'block';
       }
     };
-    document.addEventListener('dragstart', onDragStart, true);
-    document.addEventListener('dragend', onDragEnd, true);
-    document.addEventListener('drop', onDragEnd, true);
-    return () => {
-      document.removeEventListener('dragstart', onDragStart, true);
-      document.removeEventListener('dragend', onDragEnd, true);
-      document.removeEventListener('drop', onDragEnd, true);
-    };
+    return registerEventListeners(
+      document,
+      {dragend: onDragEnd, dragstart: onDragStart, drop: onDragEnd},
+      true,
+    );
   }, []);
 
   useEffect(() => {

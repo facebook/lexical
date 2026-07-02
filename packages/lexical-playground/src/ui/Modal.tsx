@@ -12,7 +12,7 @@ import './Modal.css';
 
 import {useMergeRefs} from '@floating-ui/react';
 import {useLexicalFocusTrapRef} from '@lexical/react/useLexicalFocusTrapRef';
-import {isDOMNode} from 'lexical';
+import {isDOMNode, mergeRegister, registerEventListener} from 'lexical';
 import * as React from 'react';
 import {ReactNode, useEffect, useId, useRef} from 'react';
 import {createPortal} from 'react-dom';
@@ -34,7 +34,6 @@ function PortalImpl({
   const titleId = useId();
 
   useEffect(() => {
-    let modalOverlayElement: HTMLElement | null = null;
     const handler = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onClose();
@@ -51,22 +50,17 @@ function PortalImpl({
         onClose();
       }
     };
-    const modelElement = modalDomRef.current;
-    if (modelElement !== null) {
-      modalOverlayElement = modelElement.parentElement;
-      if (modalOverlayElement !== null) {
-        modalOverlayElement.addEventListener('click', clickOutsideHandler);
-      }
-    }
-
-    window.addEventListener('keydown', handler);
-
-    return () => {
-      window.removeEventListener('keydown', handler);
-      if (modalOverlayElement !== null) {
-        modalOverlayElement?.removeEventListener('click', clickOutsideHandler);
-      }
-    };
+    const modalOverlayElement = modalDomRef.current?.parentElement ?? null;
+    return mergeRegister(
+      registerEventListener(window, 'keydown', handler),
+      modalOverlayElement
+        ? registerEventListener(
+            modalOverlayElement,
+            'click',
+            clickOutsideHandler,
+          )
+        : () => {},
+    );
   }, [closeOnClickOutside, onClose]);
 
   return (

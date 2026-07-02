@@ -21,6 +21,8 @@ import {
   $getNearestNodeFromDOMNode,
   getComposedEventTarget,
   isHTMLElement,
+  mergeRegister,
+  registerEventListener,
 } from 'lexical';
 import * as React from 'react';
 import {useEffect, useRef, useState} from 'react';
@@ -107,13 +109,13 @@ function CodeActionMenuContainer({
       return;
     }
 
-    document.addEventListener('mousemove', debouncedOnMouseMove);
-
-    return () => {
-      setShown(false);
-      debouncedOnMouseMove.cancel();
-      document.removeEventListener('mousemove', debouncedOnMouseMove);
-    };
+    return mergeRegister(
+      registerEventListener(document, 'mousemove', debouncedOnMouseMove),
+      () => {
+        setShown(false);
+        debouncedOnMouseMove.cancel();
+      },
+    );
   }, [shouldListenMouseMove, debouncedOnMouseMove]);
 
   useEffect(() => {

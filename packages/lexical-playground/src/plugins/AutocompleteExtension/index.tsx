@@ -35,6 +35,7 @@ import {
   type LexicalEditor,
   mergeRegister,
   type NodeKey,
+  registerEventListener,
   safeCast,
   setDOMUnmanaged,
 } from 'lexical';
@@ -726,9 +727,13 @@ export const AutocompleteExtension = /* @__PURE__ */ defineExtension({
       for (const loader of Object.values(output.dictionaries.value)) {
         loadDictionary(loader);
       }
-      rootElem.addEventListener('compositionupdate', onCompositionUpdateDOM);
-      rootElem.addEventListener('compositionend', onCompositionEndDOM);
       return mergeRegister(
+        registerEventListener(
+          rootElem,
+          'compositionupdate',
+          onCompositionUpdateDOM,
+        ),
+        registerEventListener(rootElem, 'compositionend', onCompositionEndDOM),
         editor.registerUpdateListener(handleUpdate),
         // Drop the ghost as soon as the editor loses focus, rather than
         // waiting for the next update.
@@ -763,14 +768,7 @@ export const AutocompleteExtension = /* @__PURE__ */ defineExtension({
           COMMAND_PRIORITY_LOW,
         ),
         addSwipeRightListener(rootElem, handleSwipeRight),
-        () => {
-          clearPendingCompositionTimer();
-          rootElem.removeEventListener(
-            'compositionupdate',
-            onCompositionUpdateDOM,
-          );
-          rootElem.removeEventListener('compositionend', onCompositionEndDOM);
-        },
+        clearPendingCompositionTimer,
         // Tear down on dispose: clear any ghost still attached so a fresh
         // build doesn't see leftover decoration.
         dismiss,

@@ -2076,6 +2076,18 @@ declare export function removeClassNamesFromElement(
   ...classNames: (typeof undefined | boolean | null | string)[]
 ): void;
 declare export function mergeRegister(...func: (() => void)[]): () => void;
+declare export function registerEventListener(
+  target: EventTarget,
+  type: string,
+  listener: EventListener,
+  options?: EventListenerOptionsOrUseCapture,
+): () => void;
+export type EventListenerMap<T> = {readonly [type: string]: EventListener};
+declare export function registerEventListeners<T: EventTarget>(
+  target: T,
+  listeners: EventListenerMap<T>,
+  options?: EventListenerOptionsOrUseCapture,
+): () => void;
 declare export function normalizeClassNames(...classNames: (typeof undefined | boolean | null | string)[]): string[];
 declare export function getStyleObjectFromCSS(css: string): {
   [string]: string,

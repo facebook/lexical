@@ -91,6 +91,7 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
+  registerEventListener,
   removeClassNamesFromElement,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -242,10 +243,11 @@ export function registerTableWindowHandlers(
       });
     };
 
-    editorWindow.addEventListener('pointerdown', pointerDownCallback);
-    return () => {
-      editorWindow.removeEventListener('pointerdown', pointerDownCallback);
-    };
+    return registerEventListener(
+      editorWindow,
+      'pointerdown',
+      pointerDownCallback,
+    );
   });
 }
 
@@ -425,14 +427,14 @@ export function applyTableHandlers(
       }
     }
   };
-  tableElement.addEventListener(
-    'mousedown',
-    onTripleClick,
-    tableObserver.listenerOptions,
+  tableObserver.listenersToRemove.add(
+    registerEventListener(
+      tableElement,
+      'mousedown',
+      onTripleClick,
+      tableObserver.listenerOptions,
+    ),
   );
-  tableObserver.listenersToRemove.add(() => {
-    tableElement.removeEventListener('mousedown', onTripleClick);
-  });
 
   for (const [command, direction] of ARROW_KEY_COMMANDS_WITH_DIRECTION) {
     tableObserver.listenersToRemove.add(

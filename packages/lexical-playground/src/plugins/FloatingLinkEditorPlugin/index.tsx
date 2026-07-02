@@ -47,6 +47,7 @@ import {
   LexicalEditor,
   mergeRegister,
   RangeSelection,
+  registerEventListener,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
@@ -287,10 +288,7 @@ function FloatingLinkEditor({
         setIsLinkEditMode(false);
       }
     };
-    editorElement.addEventListener('focusout', handleBlur);
-    return () => {
-      editorElement.removeEventListener('focusout', handleBlur);
-    };
+    return registerEventListener(editorElement, 'focusout', handleBlur);
   }, [editorRef, setIsLink, setIsLinkEditMode, isLink]);
 
   const monitorInputInteraction = (

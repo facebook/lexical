@@ -6,12 +6,13 @@
  *
  */
 
-import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
   $createParagraphNode,
   $isElementNode,
   EditorConfig,
   ElementNode,
+  IS_CHROME,
+  IS_FIREFOX,
   LexicalEditor,
   LexicalNode,
   RangeSelection,

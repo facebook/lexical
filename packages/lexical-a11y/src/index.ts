@@ -13,7 +13,6 @@ import {
   RootElementExtension,
   signal,
 } from '@lexical/extension';
-import {mergeRegister} from '@lexical/utils';
 import {
   COMMAND_PRIORITY_LOW,
   createRefCountedRegistry,
@@ -24,8 +23,10 @@ import {
   isHTMLElement,
   KEY_DOWN_COMMAND,
   type LexicalEditor,
+  mergeRegister,
   REDO_COMMAND,
   type RefCountedRegistry,
+  registerEventListener,
   safeCast,
   UNDO_COMMAND,
 } from 'lexical';
@@ -205,20 +206,22 @@ function registerFocusTrap(
     }
   };
 
-  container.addEventListener('keydown', keydownHandler);
-  doc.addEventListener('focusin', focusinHandler);
-
-  return () => {
-    container.removeEventListener('keydown', keydownHandler);
-    doc.removeEventListener('focusin', focusinHandler);
-    if (
-      previouslyFocused !== null &&
-      typeof previouslyFocused.focus === 'function' &&
-      containsComposed(doc, previouslyFocused)
-    ) {
-      previouslyFocused.focus();
-    }
-  };
+  return mergeRegister(
+    // Placed first so mergeRegister's reverse (LIFO) teardown runs it last,
+    // after the focusin listener is removed — otherwise restoring focus to an
+    // element outside the container would re-trigger the trap.
+    () => {
+      if (
+        previouslyFocused !== null &&
+        typeof previouslyFocused.focus === 'function' &&
+        containsComposed(doc, previouslyFocused)
+      ) {
+        previouslyFocused.focus();
+      }
+    },
+    registerEventListener(container, 'keydown', keydownHandler),
+    registerEventListener(doc, 'focusin', focusinHandler),
+  );
 }
 
 export type RovingOrientation = 'horizontal' | 'vertical' | 'both';
@@ -352,14 +355,15 @@ function registerRovingTabIndex(
     items[nextIdx].focus();
   };
 
-  container.addEventListener('keydown', handler);
-  return () => {
-    container.removeEventListener('keydown', handler);
-    const items = getItems();
-    items.forEach(item => {
-      item.tabIndex = 0;
-    });
-  };
+  return mergeRegister(
+    registerEventListener(container, 'keydown', handler),
+    () => {
+      const items = getItems();
+      items.forEach(item => {
+        item.tabIndex = 0;
+      });
+    },
+  );
 }
 
 const DEFAULT_TOOLBAR_FOCUSABLE_SELECTOR =
@@ -426,8 +430,6 @@ function registerFocusManager(
     editor.focus();
     rootElement.focus();
   };
-  toolbar.addEventListener('keydown', handler);
-
   return mergeRegister(
     editor.registerCommand(
       KEY_DOWN_COMMAND,
@@ -447,9 +449,7 @@ function registerFocusManager(
       },
       COMMAND_PRIORITY_LOW,
     ),
-    () => {
-      toolbar.removeEventListener('keydown', handler);
-    },
+    registerEventListener(toolbar, 'keydown', handler),
   );
 }
 

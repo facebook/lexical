@@ -6,7 +6,6 @@
  *
  */
 
-import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
   $getSiblingCaret,
   $isElementNode,
@@ -14,6 +13,8 @@ import {
   DOMExportOutput,
   EditorConfig,
   ElementNode,
+  IS_CHROME,
+  IS_FIREFOX,
   isHTMLElement,
   LexicalEditor,
   LexicalNode,

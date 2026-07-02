@@ -46,6 +46,7 @@ import {
   getRootOwnerDocument,
   isDOMNode,
   mergeRegister,
+  registerEventListener,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
@@ -222,9 +223,7 @@ function TableActionMenu({
       }
     }
 
-    window.addEventListener('click', handleClickOutside);
-
-    return () => window.removeEventListener('click', handleClickOutside);
+    return registerEventListener(window, 'click', handleClickOutside);
   }, [setIsMenuOpen, contextRef]);
 
   const clearTableSelection = useCallback(() => {
@@ -880,10 +879,12 @@ function TableCellActionMenuContainer({
       ),
       editor.registerRootListener((rootElement, prevRootElement) => {
         if (rootElement) {
-          rootElement.addEventListener('pointerup', delayedCallback);
           delayedCallback();
-          return () =>
-            rootElement.removeEventListener('pointerup', delayedCallback);
+          return registerEventListener(
+            rootElement,
+            'pointerup',
+            delayedCallback,
+          );
         }
       }),
       () => clearTimeout(timeoutId),

@@ -6,11 +6,12 @@
  *
  */
 
-import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
   DOMExportOutput,
   EditorConfig,
   ElementNode,
+  IS_CHROME,
+  IS_FIREFOX,
   LexicalEditor,
   LexicalNode,
 } from 'lexical';

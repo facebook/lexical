@@ -40,6 +40,30 @@ For E2E testing workflow:
 - `pnpm run tsc` - Run TypeScript compiler
 - `pnpm run ci-check` - Run all checks (TypeScript, Flow, Prettier, ESLint)
 
+### Searching and refactoring
+
+Prefer **ast-grep** over line-oriented regex (`grep`/`sed`) for anything
+structural — matching or rewriting imports, call sites, JSX, type
+annotations, etc. Regexes miss multi-line forms (a symbol on its own line
+inside a multi-line `import { ... }` block) and produce false positives
+(`IS_APPLE` matching inside `IS_APPLE_WEBKIT`); ast-grep matches the syntax
+tree, so it does neither.
+
+It isn't a dependency, so run it via npx (the CLI binary is `ast-grep`, not
+the shadow-utils `sg` that may be on `PATH`):
+
+```sh
+# Find every import of something from '@lexical/utils' (ts and tsx are
+# separate grammars, so pass -l for each; add --json=compact to post-process)
+npx --package @ast-grep/cli ast-grep run \
+  -p "import { \$\$\$NAMES } from '@lexical/utils'" -l ts packages
+```
+
+Metavariables (`$NAME`, `$$$LIST`) capture nodes for reporting or rewriting
+with `--rewrite`. Reach for it whenever a change spans many files and must be
+precise — e.g. moving symbols that `@lexical/utils` merely re-exports back to
+a direct `lexical` import.
+
 ### Tree-shaking annotations
 
 Module-scope calls to the side-effect-free factories (`defineExtension`,

@@ -500,6 +500,11 @@ i.link {
   mask-image: url(images/icons/link.svg);
 }
 
+i.add-comment {
+  -webkit-mask-image: url(images/icons/chat-left-text.svg);
+  mask-image: url(images/icons/chat-left-text.svg);
+}
+
 i.horizontal-rule {
   -webkit-mask-image: url(images/icons/horizontal-rule.svg);
   mask-image: url(images/icons/horizontal-rule.svg);

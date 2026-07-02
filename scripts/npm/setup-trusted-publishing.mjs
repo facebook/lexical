@@ -301,9 +301,14 @@ function configMatches(config) {
   if (configEnvironment(config)) {
     return false;
   }
+  // The config must grant the publish permission we register with
+  // (`--allow-publish`). npm has used more than one label for this over
+  // 11.x (`publish`, and previously `createPackage`), so accept either
+  // rather than reporting a spurious CONFLICT on re-runs.
   return (
     Array.isArray(config.permissions) &&
-    config.permissions.includes('createPackage')
+    (config.permissions.includes('publish') ||
+      config.permissions.includes('createPackage'))
   );
 }
 
@@ -477,6 +482,11 @@ async function addTrustConfig(pkg) {
     workflow,
     '--repo',
     repo,
+    // A permission flag is required: recent npm (>= 11.18) rejects
+    // `npm trust github` with "At least one permission flag is required
+    // (--allow-publish, --allow-stage-publish)" when none is given.
+    // `--allow-publish` grants the ordinary publish permission.
+    '--allow-publish',
     '--registry',
     registry,
     '-y',

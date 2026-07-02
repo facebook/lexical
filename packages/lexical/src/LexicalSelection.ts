@@ -2022,11 +2022,11 @@ export class RangeSelection implements BaseSelection {
         // No text lies in the deletion direction and nothing in scope was
         // found to delete, so the caret sits at a slot edge. A slot value is
         // nested within its host's DOM, so the boundary lives only in the
-        // model: the native modify('extend') below would cross it and select
-        // into the host. Stop when that edge is a slot value — the slot link
-        // is a virtual shadow root, so this applies whether or not the value
-        // is itself a shadow root; an ordinary (non-slotted) shadow root
-        // keeps the native behavior.
+        // model: the native caret measurement below would cross it and
+        // select into the host. Stop when that edge is a slot value — the
+        // slot link is a virtual shadow root, so this applies whether or not
+        // the value is itself a shadow root; an ordinary (non-slotted)
+        // shadow root keeps the native behavior.
         for (let node: LexicalNode | null = anchor.getNode(); node !== null; ) {
           if ($getSlotHostKey(node) !== null) {
             return;
@@ -2040,7 +2040,10 @@ export class RangeSelection implements BaseSelection {
 
       // Handle the deletion around decorators.
       const focus = this.focus;
-      this.modify('extend', isBackward, 'character');
+      // Extend the selection in the model rather than with the native
+      // modify('extend'), which would clobber the X11 PRIMARY selection.
+      // See https://github.com/facebook/lexical/issues/8766
+      $extendSelectionForDeletion(this, isBackward, 'character');
 
       if (!this.isCollapsed()) {
         const focusNode = focus.type === 'text' ? focus.getNode() : null;
@@ -2126,7 +2129,7 @@ export class RangeSelection implements BaseSelection {
       return;
     }
     if (this.isCollapsed()) {
-      this.modify('extend', isBackward, 'lineboundary');
+      $extendSelectionForDeletion(this, isBackward, 'lineboundary');
     }
     if (this.isCollapsed()) {
       // If the selection was already collapsed at the lineboundary,
@@ -2164,7 +2167,7 @@ export class RangeSelection implements BaseSelection {
       if (this.forwardDeletion(anchor, anchorNode, isBackward)) {
         return;
       }
-      this.modify('extend', isBackward, 'word');
+      $extendSelectionForDeletion(this, isBackward, 'word');
     }
     if (this.isCollapsed()) {
       // If the selection was already collapsed at the lineboundary,
@@ -2457,9 +2460,182 @@ function moveNativeSelection(
 }
 
 /**
+ * Extend a collapsed selection by one unit (`character`, `word` or
+ * `lineboundary`) in the deletion direction without ever creating a
+ * non-collapsed DOM selection, as a PRIMARY-safe replacement for
+ * `modify('extend', …)` in the delete* methods.
+ *
+ * On Linux/X11, browsers propagate any non-collapsed DOM selection made
+ * during a user gesture to the PRIMARY selection (the middle-click paste
+ * buffer), so the transient native `modify('extend')` overwrote PRIMARY on
+ * every Backspace/Delete (https://github.com/facebook/lexical/issues/8766).
+ * A collapsed caret never takes PRIMARY ownership, so the DOM caret is moved
+ * with the native `modify('move')` to measure where the engine places the
+ * unit boundary, and the `[original .. landed]` range a native extend would
+ * have produced is reconstructed in the model. `applyDOMRange` only reads the
+ * range's boundary points (it never touches the DOM selection), so the model
+ * selection ends up identical to the `modify('extend')` path — same decorator
+ * pre/post handling, point resolution, shadow-root shrink validation and
+ * anchor/focus orientation — while the DOM selection was only ever collapsed.
+ *
+ * When the measurement is not possible — no DOM selection or no
+ * `Selection.modify` (headless environments can polyfill it), or an
+ * unresolvable anchor — the selection is left collapsed, so the deletion
+ * becomes a no-op for that keystroke.
+ */
+function $extendSelectionForDeletion(
+  selection: RangeSelection,
+  isBackward: boolean,
+  granularity: 'character' | 'word' | 'lineboundary',
+): void {
+  // Decorator/block handling, resolved in the model exactly as modify() does.
+  if (
+    $modifySelectionAroundDecoratorsAndBlocks(
+      selection,
+      'extend',
+      isBackward,
+      granularity,
+    )
+  ) {
+    return;
+  }
+  const editor = getActiveEditor();
+  const domSelection = getDOMSelection(getWindow(editor));
+  if (!domSelection || typeof domSelection.modify !== 'function') {
+    return;
+  }
+  const blockCursorElement = editor._blockCursorElement;
+  const rootElement = editor._rootElement;
+  const anchor = selection.anchor;
+  const focusNode = selection.focus.getNode();
+  // A block cursor element left in the DOM would corrupt element offsets.
+  if (
+    rootElement !== null &&
+    blockCursorElement !== null &&
+    $isElementNode(focusNode) &&
+    !focusNode.isInline() &&
+    !focusNode.canBeEmpty()
+  ) {
+    removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
+  }
+  // Resolve the model anchor to a DOM position.
+  const anchorNode = anchor.getNode();
+  const anchorKeyedDOM = editor.getElementByKey(anchor.key);
+  const anchorDOM: HTMLElement | Text | null =
+    anchorKeyedDOM !== null && anchor.type === 'text' && $isTextNode(anchorNode)
+      ? $getDOMTextNode(anchorNode, anchorKeyedDOM, editor)
+      : anchorKeyedDOM;
+  if (anchorDOM === null) {
+    return;
+  }
+  const anchorOffset = anchor.offset;
+  // Sync a COLLAPSED DOM caret at the anchor (base === extent), then move it
+  // by one unit to measure the engine's boundary. Neither touches PRIMARY.
+  setDOMSelectionBaseAndExtent(
+    domSelection,
+    anchorDOM,
+    anchorOffset,
+    anchorDOM,
+    anchorOffset,
+  );
+  moveNativeSelection(
+    domSelection,
+    'move',
+    isBackward ? 'backward' : 'forward',
+    granularity,
+  );
+  if (domSelection.rangeCount === 0) {
+    return;
+  }
+  // Inside a DOM shadow root getRangeAt(0) is retargeted to the host; read the
+  // composed StaticRange (real nodes) where available. After a 'move' the DOM
+  // selection is collapsed, so start === end === the landed caret.
+  const landedRange =
+    getComposedStaticRange(domSelection, rootElement) ||
+    domSelection.getRangeAt(0);
+  const landedContainer = landedRange.startContainer;
+  const landedOffset = landedRange.startOffset;
+  // In-node character deletion (the common case): keep the focus in the
+  // anchor's own text node so the resulting model selection matches
+  // modify('extend'), which keeps the extended focus in the node being
+  // extended. A native 'move' reports a caret that lands on a text-node
+  // boundary as a position in the *adjacent* node, and that representation
+  // changes how a later insertion (e.g. at a format boundary) resolves. When
+  // the move lands inside the anchor node its offset is used directly;
+  // landing on the node's edge is clamped to that edge. Word/line deletions
+  // legitimately span nodes, so they use the general path below.
+  if (granularity === 'character' && anchor.type === 'text') {
+    const anchorTextSize = anchorNode.getTextContentSize();
+    let focusOffset = -1;
+    if (landedContainer === anchorDOM) {
+      focusOffset = landedOffset;
+    } else if (isBackward && anchorOffset > 0) {
+      focusOffset = 0;
+    } else if (!isBackward && anchorOffset < anchorTextSize) {
+      focusOffset = anchorTextSize;
+    }
+    if (focusOffset >= 0) {
+      if (focusOffset !== anchorOffset) {
+        selection.focus.set(anchor.key, focusOffset, 'text');
+        selection.dirty = true;
+      }
+      return;
+    }
+  }
+  // General path: reconstruct, in document order, the [original .. landed]
+  // range a native extend would have produced. applyDOMRange only reads these
+  // four boundary properties into the model, so a plain StaticRange-shaped
+  // object is sufficient (and avoids a StaticRange constructor dependency).
+  const [startContainer, startOffset, endContainer, endOffset] = isBackward
+    ? [landedContainer, landedOffset, anchorDOM, anchorOffset]
+    : [anchorDOM, anchorOffset, landedContainer, landedOffset];
+  const root = $isRootNode(anchorNode)
+    ? anchorNode
+    : $getNearestRootOrShadowRoot(anchorNode);
+  selection.applyDOMRange({
+    collapsed: false,
+    endContainer,
+    endOffset,
+    startContainer,
+    startOffset,
+  } as unknown as StaticRange);
+  selection.dirty = true;
+  // Shrink the selection to the valid side of any crossed shadow-root
+  // boundary (mirrors modify()).
+  const allNodes = selection.getNodes();
+  const validNodes = allNodes.filter(n => $hasAncestor(n, root));
+  if (validNodes.length > 0 && validNodes.length < allNodes.length) {
+    const edgeNode = isBackward
+      ? validNodes[0]
+      : validNodes[validNodes.length - 1];
+    const edgeElement = $isElementNode(edgeNode)
+      ? edgeNode
+      : edgeNode.getParentOrThrow();
+    if (isBackward) {
+      edgeElement.selectStart();
+    } else {
+      edgeElement.selectEnd();
+    }
+  } else if (isBackward) {
+    // applyDOMRange set anchor = range start (the landed point); the deletion
+    // anchor must stay at the original caret, so restore that orientation.
+    $swapPoints(selection);
+  }
+  if (granularity === 'lineboundary') {
+    $modifySelectionAroundDecoratorsAndBlocks(
+      selection,
+      'extend',
+      isBackward,
+      granularity,
+      'decorators',
+    );
+  }
+}
+
+/**
  * Called by `RangeSelection.deleteCharacter` to determine if
- * `this.modify('extend', isBackward, 'character')` extended the selection
- * further than a user would expect for that operation.
+ * `$extendSelectionForDeletion` extended the selection further
+ * than a user would expect for that operation.
  *
  * A short(?) JavaScript string vs. Unicode primer:
  *
@@ -2493,7 +2669,7 @@ function moveNativeSelection(
  * essentially be arbitrarily long, as there are many ways to combine
  * them.
  *
- * The `this.modify(…)` call has already extended our selection by one
+ * The native caret measurement has already extended our selection by one
  * *grapheme* in the direction we want to delete. Sounds great, it's done
  * a lot of awfully tricky work for us because this functionality has only
  * recently become available in JavaScript via `Intl.Segmenter`. The

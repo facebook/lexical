@@ -22,6 +22,7 @@ experimental.allow_variance_keywords=true
 
 ;; [generated-start update-flowconfig]
 module.name_mapper='^lexical$' -> '<PROJECT_ROOT>/packages/lexical/flow/Lexical.js.flow'
+module.name_mapper='^@lexical/a11y$' -> '<PROJECT_ROOT>/packages/lexical-a11y/flow/LexicalA11y.js.flow'
 module.name_mapper='^@lexical/clipboard$' -> '<PROJECT_ROOT>/packages/lexical-clipboard/flow/LexicalClipboard.js.flow'
 module.name_mapper='^@lexical/code$' -> '<PROJECT_ROOT>/packages/lexical-code/flow/LexicalCode.js.flow'
 module.name_mapper='^@lexical/code-core$' -> '<PROJECT_ROOT>/packages/lexical-code-core/flow/LexicalCodeCore.js.flow'
@@ -98,9 +99,13 @@ module.name_mapper='^@lexical/react/ReactProviderExtension$' -> '<PROJECT_ROOT>/
 module.name_mapper='^@lexical/react/TreeViewExtension$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/LexicalTreeViewExtension.js.flow'
 module.name_mapper='^@lexical/react/useExtensionComponent$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalExtensionComponent.js.flow'
 module.name_mapper='^@lexical/react/useExtensionSignalValue$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalExtensionSignalValue.js.flow'
+module.name_mapper='^@lexical/react/useLexicalAriaLiveRegion$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalAriaLiveRegion.js.flow'
 module.name_mapper='^@lexical/react/useLexicalEditable$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalEditable.js.flow'
+module.name_mapper='^@lexical/react/useLexicalFocusManagerRef$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalFocusManagerRef.js.flow'
+module.name_mapper='^@lexical/react/useLexicalFocusTrapRef$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalFocusTrapRef.js.flow'
 module.name_mapper='^@lexical/react/useLexicalIsTextContentEmpty$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalIsTextContentEmpty.js.flow'
 module.name_mapper='^@lexical/react/useLexicalNodeSelection$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalNodeSelection.js.flow'
+module.name_mapper='^@lexical/react/useLexicalRovingTabIndexRef$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalRovingTabIndexRef.js.flow'
 module.name_mapper='^@lexical/react/useLexicalSlotRef$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalSlotRef.js.flow'
 module.name_mapper='^@lexical/react/useLexicalSubscription$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalSubscription.js.flow'
 module.name_mapper='^@lexical/react/useLexicalTextEntity$' -> '<PROJECT_ROOT>/packages/lexical-react/flow/useLexicalTextEntity.js.flow'

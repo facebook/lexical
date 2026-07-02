@@ -10,7 +10,6 @@ import type {JSX} from 'react';
 
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {CAN_USE_DOM} from '@lexical/utils';
 import {registerEventListener} from 'lexical';
 import {useEffect, useState} from 'react';
@@ -134,7 +133,6 @@ export default function Editor(): JSX.Element {
             <TableCellResizer />
             <TableScrollShadowPlugin />
             <ExcalidrawPlugin />
-            <TabIndentationPlugin maxIndent={7} />
             {floatingAnchorElem && (
               <>
                 <FloatingLinkEditorPlugin

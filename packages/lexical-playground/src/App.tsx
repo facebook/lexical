@@ -6,6 +6,13 @@
  *
  */
 
+import {
+  EditorModeAnnounceExtension,
+  FocusManagerExtension,
+  FocusTrapExtension,
+  HistoryAnnounceExtension,
+  RovingTabIndexExtension,
+} from '@lexical/a11y';
 import {$isCodeNode} from '@lexical/code';
 import {
   $defaultShouldInsertAfter,
@@ -16,6 +23,7 @@ import {
   HorizontalRuleExtension,
   SelectBlockExtension,
   SelectionAlwaysOnDisplayExtension,
+  TabIndentationExtension,
   WatchEditableExtension,
 } from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
@@ -64,7 +72,6 @@ import {SettingsContext, useSettings} from './context/SettingsContext';
 import {ToolbarContext} from './context/ToolbarContext';
 import Editor from './Editor';
 import {registerSettingsSynchronization} from './hooks/useSynchronizeSettings';
-import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
 import {PlaygroundImportExtension} from './nodes/PlaygroundImportExtension';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
@@ -234,6 +241,7 @@ const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
     CardExtension,
     ReactReviewExtension,
     PullQuoteExtension,
+    /* @__PURE__ */ configExtension(TabIndentationExtension, {maxIndent: 7}),
   ],
   name: '@lexical/playground/RichText',
 });
@@ -247,6 +255,8 @@ const AppExtension = /* @__PURE__ */ defineExtension({
     // registerSettingsSynchronization to drive ClickableLinkExtension.
     WatchEditableExtension,
     HistoryExtension,
+    HistoryAnnounceExtension,
+    EditorModeAnnounceExtension,
     KeywordsExtension,
     HashtagExtension,
     DateTimeExtension,
@@ -278,6 +288,9 @@ const AppExtension = /* @__PURE__ */ defineExtension({
     PlaygroundImportExtension,
     // Replaces the legacy `buildHTMLConfig().export` overrides.
     PlaygroundDOMRenderExtension,
+    FocusTrapExtension,
+    RovingTabIndexExtension,
+    FocusManagerExtension,
   ],
   name: '@lexical/playground',
   namespace: 'Playground',
@@ -356,7 +369,7 @@ function App(): JSX.Element {
         <ToolbarContext>
           <header>
             <a href="https://lexical.dev" target="_blank" rel="noreferrer">
-              <img src={logo} alt="Lexical Logo" />
+              <span className="logo" role="img" aria-label="Lexical Logo" />
             </a>
           </header>
           {isRichText && isCollab ? (

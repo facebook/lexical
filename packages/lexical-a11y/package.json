@@ -1,0 +1,75 @@
+{
+  "name": "@lexical/a11y",
+  "description": "Framework-agnostic accessibility helpers (ARIA live regions, focus management, roving tab index, focus trap) usable with Lexical from React, Svelte, Vue, Solid, or vanilla DOM.",
+  "keywords": [
+    "lexical",
+    "editor",
+    "accessibility",
+    "a11y",
+    "aria"
+  ],
+  "license": "MIT",
+  "version": "0.46.0",
+  "main": "./dist/LexicalA11y.js",
+  "types": "./dist/typescript-too-old.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facebook/lexical.git",
+    "directory": "packages/lexical-a11y"
+  },
+  "module": "./dist/LexicalA11y.mjs",
+  "sideEffects": false,
+  "dependencies": {
+    "@lexical/extension": "workspace:*",
+    "@lexical/utils": "workspace:*",
+    "lexical": "workspace:*"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.2"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/__tests__",
+    "!src/__bench__",
+    "!src/__mocks__",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/**/*.bench.ts",
+    "!src/**/*.bench.tsx",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "import": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalA11y.dev.mjs",
+        "production": "./dist/LexicalA11y.prod.mjs",
+        "node": "./dist/LexicalA11y.node.mjs",
+        "default": "./dist/LexicalA11y.mjs"
+      },
+      "require": {
+        "types@<5.2": "./dist/typescript-too-old.d.ts",
+        "types": "./dist/index.d.ts",
+        "development": "./dist/LexicalA11y.dev.js",
+        "production": "./dist/LexicalA11y.prod.js",
+        "default": "./dist/LexicalA11y.js"
+      }
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/typescript-too-old.d.ts"
+      ]
+    }
+  }
+}

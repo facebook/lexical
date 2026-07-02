@@ -982,6 +982,8 @@ test.describe('Markdown', () => {
           <span
             class="editor-equation"
             contenteditable="false"
+            role="math"
+            aria-label="Equation: 1"
             data-lexical-decorator="true">
             <img
               alt=""

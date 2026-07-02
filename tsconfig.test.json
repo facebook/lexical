@@ -4,6 +4,7 @@
     "esModuleInterop": true,
     "paths": {
       "lexical": ["./packages/lexical/src/index.ts"],
+      "@lexical/a11y": ["./packages/lexical-a11y/src/index.ts"],
       "@lexical/clipboard": ["./packages/lexical-clipboard/src/index.ts"],
       "@lexical/code": ["./packages/lexical-code/src/index.ts"],
       "@lexical/code-core": ["./packages/lexical-code-core/src/index.ts"],
@@ -192,14 +193,26 @@
       "@lexical/react/useExtensionSignalValue": [
         "./packages/lexical-react/src/useExtensionSignalValue.ts"
       ],
+      "@lexical/react/useLexicalAriaLiveRegion": [
+        "./packages/lexical-react/src/useLexicalAriaLiveRegion.ts"
+      ],
       "@lexical/react/useLexicalEditable": [
         "./packages/lexical-react/src/useLexicalEditable.ts"
+      ],
+      "@lexical/react/useLexicalFocusManagerRef": [
+        "./packages/lexical-react/src/useLexicalFocusManagerRef.ts"
+      ],
+      "@lexical/react/useLexicalFocusTrapRef": [
+        "./packages/lexical-react/src/useLexicalFocusTrapRef.ts"
       ],
       "@lexical/react/useLexicalIsTextContentEmpty": [
         "./packages/lexical-react/src/useLexicalIsTextContentEmpty.ts"
       ],
       "@lexical/react/useLexicalNodeSelection": [
         "./packages/lexical-react/src/useLexicalNodeSelection.ts"
+      ],
+      "@lexical/react/useLexicalRovingTabIndexRef": [
+        "./packages/lexical-react/src/useLexicalRovingTabIndexRef.ts"
       ],
       "@lexical/react/useLexicalSlotRef": [
         "./packages/lexical-react/src/useLexicalSlotRef.ts"
@@ -222,6 +235,8 @@
         "./packages/lexical/src/__tests__/utils/index.tsx"
       ],
       "lexical/src/*": ["./packages/lexical/src/*"],
+      "@lexical/a11y/src": ["./packages/lexical-a11y/src"],
+      "@lexical/a11y/src/*": ["./packages/lexical-a11y/src/*"],
       "@lexical/clipboard/src": ["./packages/lexical-clipboard/src"],
       "@lexical/clipboard/src/*": ["./packages/lexical-clipboard/src/*"],
       "@lexical/code/src": ["./packages/lexical-code/src"],

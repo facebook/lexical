@@ -72,6 +72,8 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     const element = document.createElement(this.__inline ? 'span' : 'div');
     // EquationNodes should implement `user-action:none` in their CSS to avoid issues with deletion on Android.
     element.className = 'editor-equation';
+    element.setAttribute('role', 'math');
+    element.setAttribute('aria-label', `Equation: ${this.getEquation()}`);
     return element;
   }
 
@@ -89,12 +91,20 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
       throwOnError: false,
       trust: false,
     });
+    element.setAttribute('role', 'math');
+    element.setAttribute('aria-label', `Equation: ${this.__equation}`);
     return {element};
   }
 
-  updateDOM(prevNode: this): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement): boolean {
     // If the inline property changes, replace the element
-    return this.__inline !== prevNode.__inline;
+    if (this.__inline !== prevNode.__inline) {
+      return true;
+    }
+    if (this.__equation !== prevNode.__equation) {
+      dom.setAttribute('aria-label', `Equation: ${this.getEquation()}`);
+    }
+    return false;
   }
 
   getTextContent(): string {

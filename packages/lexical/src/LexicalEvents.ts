@@ -88,6 +88,7 @@ import {
   DOUBLE_LINE_BREAK,
   IS_ALL_FORMATTING,
 } from './LexicalConstants';
+import {createRefCountedRegistry} from './LexicalRefCountedRegistry';
 import {
   $internalCreateRangeSelection,
   RangeSelection,
@@ -202,9 +203,8 @@ let handledSelectionCommandTimeoutId: null | ReturnType<typeof setTimeout> =
 // Node can be moved between documents (for example using createPortal), so we
 // need to track the document each root element was originally registered on.
 const rootElementToDocument = new WeakMap<HTMLElement, Document>();
-// Per-document state for the shared `selectionchange` listener, keyed by the
+// Per-document state read by the shared `selectionchange` handler, keyed by the
 // document each root element was registered against:
-// - `rootElementCount` gates the single listener (attached while > 0).
 // - `editors` is the candidate set `onDocumentSelectionChange` attributes the
 //   event to, using each editor's shadow-aware anchor rather than guessing from
 //   `Selection.anchorNode` (retargeted to a light-DOM ancestor inside a shadow
@@ -217,9 +217,16 @@ const rootElementToDocument = new WeakMap<HTMLElement, Document>();
 interface DocumentRegistration {
   editors: Set<LexicalEditor>;
   hasShadowEditor: boolean | undefined;
-  rootElementCount: number;
 }
 const documentRegistrations = new WeakMap<Document, DocumentRegistration>();
+// The single shared `selectionchange` listener per document, reference counted
+// across all editors registered against that document: attached when the first
+// root element is registered and removed when the last one is unregistered.
+const documentSelectionChange = createRefCountedRegistry((doc: Document) => {
+  doc.addEventListener('selectionchange', onDocumentSelectionChange);
+  return () =>
+    doc.removeEventListener('selectionchange', onDocumentSelectionChange);
+});
 let isSelectionChangeFromDOMUpdate = false;
 let isSelectionChangeFromMouseDown = false;
 let isInsertLineBreak = false;
@@ -1780,20 +1787,18 @@ export function addRootElementEvents(
     registration = {
       editors: new Set(),
       hasShadowEditor: undefined,
-      rootElementCount: 0,
     };
     documentRegistrations.set(doc, registration);
   }
-  if (registration.rootElementCount < 1) {
-    doc.addEventListener('selectionchange', onDocumentSelectionChange);
-  }
-  registration.rootElementCount += 1;
   registration.editors.add(editor);
   registration.hasShadowEditor = undefined;
 
   // @ts-expect-error: internal field
   rootElement.__lexicalEditor = editor;
   const removeHandles = getRootElementRemoveHandles(rootElement);
+  // Reference-counted shared `selectionchange` listener; the disposer is run
+  // with this root element's other listeners in removeRootElementEvents.
+  removeHandles.push(documentSelectionChange.register(doc));
 
   for (let i = 0; i < rootElementEvents.length; i++) {
     const [eventName, onEvent] = rootElementEvents[i];
@@ -1900,15 +1905,9 @@ export function removeRootElementEvents(rootElement: HTMLElement): void {
     return;
   }
 
-  // We only want to have a single global selectionchange event handler, shared
-  // between all editor instances.
-  const newCount = registration.rootElementCount - 1;
-  invariant(newCount >= 0, 'Root element count less than 0');
+  // The shared `selectionchange` listener is reference counted by
+  // `documentSelectionChange`; its disposer runs below with `removeHandles`.
   rootElementToDocument.delete(rootElement);
-  registration.rootElementCount = newCount;
-  if (newCount === 0) {
-    doc.removeEventListener('selectionchange', onDocumentSelectionChange);
-  }
 
   const editor = getEditorPropertyFromDOMNode(rootElement);
 

@@ -1314,6 +1314,14 @@ declare export function $normalizeSelection__EXPERIMENTAL(
   selection: RangeSelection,
 ): RangeSelection;
 
+export type RefCountedRegistry<Key, Options = void> = {
+  register: (key: Key, options?: Options) => () => void,
+  dispose: () => void,
+};
+declare export function createRefCountedRegistry<Key, Options = void>(
+  activate: (key: Key, options: Options | void) => () => void,
+): RefCountedRegistry<Key, Options>;
+
 /**
  * Serialization/Deserialization
  * */

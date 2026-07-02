@@ -392,6 +392,7 @@ export type {SerializedLineBreakNode} from './nodes/LexicalLineBreakNode';
 export {
   $createLineBreakNode,
   $isLineBreakNode,
+  isAppleInterchangeNewline,
   isLastChildInBlockNode,
   isOnlyChildInBlockNode,
   LineBreakNode,

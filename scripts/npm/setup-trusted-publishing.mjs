@@ -52,6 +52,17 @@ if (!repoOwner || !repoName) {
   process.exit(1);
 }
 
+// Optional package targeting. Positional args and/or repeated `--package`
+// restrict the run to just those packages (matched by npm name, e.g.
+// `@lexical/a11y`, or the unscoped short name, e.g. `a11y`). The common
+// workflow going forward is bootstrapping one new package and configuring its
+// trust without re-touching the 30+ already-configured ones. With no targets,
+// every public package is processed (the original behavior).
+const targetNames = [
+  ...argv._.map(String),
+  ...(argv.package === undefined ? [] : [].concat(argv.package).map(String)),
+];
+
 /**
  * @param {string} name
  * @returns {Promise<boolean>}
@@ -461,7 +472,6 @@ async function addTrustConfig(pkg) {
     repo,
     '--registry',
     registry,
-    '--allow-publish',
     '-y',
   ];
   if (dryRun) {
@@ -587,7 +597,40 @@ function printManualSetup(entries) {
 }
 
 async function main() {
-  const pkgs = packagesManager.getPublicPackages();
+  let pkgs = packagesManager.getPublicPackages();
+  if (targetNames.length > 0) {
+    /** @type {Map<string, (typeof pkgs)[number]>} */
+    const byKey = new Map();
+    for (const pkg of pkgs) {
+      const npmName = pkg.getNpmName();
+      byKey.set(npmName, pkg);
+      const slash = npmName.indexOf('/');
+      if (slash !== -1) {
+        byKey.set(npmName.slice(slash + 1), pkg);
+      }
+    }
+    /** @type {typeof pkgs} */
+    const selected = [];
+    const seen = new Set();
+    const unknown = [];
+    for (const name of targetNames) {
+      const pkg = byKey.get(name);
+      if (!pkg) {
+        unknown.push(name);
+      } else if (!seen.has(pkg.getNpmName())) {
+        seen.add(pkg.getNpmName());
+        selected.push(pkg);
+      }
+    }
+    if (unknown.length > 0) {
+      console.error(
+        `Unknown package(s): ${unknown.join(', ')}\n` +
+          `Valid names: ${pkgs.map(p => p.getNpmName()).join(', ')}`,
+      );
+      process.exit(1);
+    }
+    pkgs = selected;
+  }
   console.log(
     `Checking ${pkgs.length} public package(s) against ${registry}\n`,
   );

@@ -1,0 +1,202 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+.find-replace-panel {
+  position: fixed;
+  right: max(8px, calc(50% - 564px));
+  top: 92px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow:
+    0 12px 28px 0 rgba(0, 0, 0, 0.2),
+    0 2px 4px 0 rgba(0, 0, 0, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    '.SFNSText-Regular',
+    sans-serif;
+  font-size: 13px;
+  color: #050505;
+}
+
+.find-replace-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.find-replace-input {
+  flex: 1;
+  min-width: 180px;
+  padding: 5px 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #050505;
+  background: #f9f9fb;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.find-replace-input:focus {
+  border-color: rgb(60, 132, 244);
+  background: #fff;
+}
+
+.find-replace-input::placeholder {
+  color: #999;
+}
+
+.find-replace-count {
+  font-size: 11px;
+  color: #777;
+  min-width: 50px;
+  text-align: center;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.find-replace-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: #555;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background-color 0.1s,
+    color 0.1s;
+}
+
+.find-replace-btn:hover {
+  background-color: #eee;
+  color: #050505;
+}
+
+.find-replace-btn:focus-visible {
+  outline: 2px solid rgb(60, 132, 244);
+  outline-offset: -2px;
+}
+
+.find-replace-btn:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.find-replace-btn:disabled:hover {
+  background: none;
+}
+
+.find-replace-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.find-replace-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: #777;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  flex-shrink: 0;
+  transition:
+    background-color 0.1s,
+    border-color 0.1s,
+    color 0.1s;
+}
+
+.find-replace-toggle:hover {
+  background-color: #eee;
+  color: #050505;
+}
+
+.find-replace-toggle:focus-visible {
+  outline: 2px solid rgb(60, 132, 244);
+  outline-offset: -2px;
+}
+
+.find-replace-toggle[aria-pressed='true'] {
+  background-color: rgba(60, 132, 244, 0.1);
+  border-color: rgba(60, 132, 244, 0.4);
+  color: rgb(60, 132, 244);
+}
+
+.find-replace-action {
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: #555;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background-color 0.1s,
+    color 0.1s;
+}
+
+.find-replace-action:hover {
+  background-color: #eee;
+  color: #050505;
+}
+
+.find-replace-action:focus-visible {
+  outline: 2px solid rgb(60, 132, 244);
+  outline-offset: -2px;
+}
+
+.find-replace-action:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.find-replace-action:disabled:hover {
+  background: none;
+}
+
+.find-replace-separator {
+  width: 1px;
+  height: 18px;
+  background: #e0e0e0;
+  flex-shrink: 0;
+}
+
+@media screen and (max-width: 640px) {
+  .find-replace-panel {
+    right: 4px;
+    left: 4px;
+    top: 8px;
+    border-radius: 10px;
+  }
+
+  .find-replace-input {
+    min-width: 0;
+  }
+}

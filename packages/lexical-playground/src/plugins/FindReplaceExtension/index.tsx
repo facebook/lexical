@@ -38,7 +38,7 @@ import {
   mergeRegister,
   type NodeKey,
 } from 'lexical';
-import {useCallback, useEffect, useRef} from 'react';
+import {useRef} from 'react';
 import {createPortal} from 'react-dom';
 
 // ---------------------------------------------------------------------------
@@ -816,53 +816,42 @@ function FindReplacePanel({
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (isOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      editor.dispatchCommand(CLOSE_FIND_REPLACE_COMMAND, undefined);
+      editor.focus();
+      return;
     }
-  }, [isOpen]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        editor.dispatchCommand(CLOSE_FIND_REPLACE_COMMAND, undefined);
-        editor.focus();
-        return;
-      }
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        editor.dispatchCommand(
-          e.shiftKey ? FIND_PREV_COMMAND : FIND_NEXT_COMMAND,
-          undefined,
-        );
-        return;
-      }
-      const isMod = IS_APPLE
-        ? e.metaKey && !e.ctrlKey
-        : e.ctrlKey && !e.metaKey;
-      if (e.code === 'KeyG' && isMod && !e.altKey) {
-        e.preventDefault();
-        editor.dispatchCommand(
-          e.shiftKey ? FIND_PREV_COMMAND : FIND_NEXT_COMMAND,
-          undefined,
-        );
-      } else if (
-        (e.code === 'KeyF' && isMod && !e.altKey && !e.shiftKey) ||
-        (!IS_APPLE &&
-          e.code === 'KeyH' &&
-          e.ctrlKey &&
-          !e.metaKey &&
-          !e.altKey &&
-          !e.shiftKey) ||
-        (IS_APPLE && e.code === 'KeyF' && e.metaKey && e.altKey && !e.ctrlKey)
-      ) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    },
-    [editor],
-  );
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      editor.dispatchCommand(
+        e.shiftKey ? FIND_PREV_COMMAND : FIND_NEXT_COMMAND,
+        undefined,
+      );
+      return;
+    }
+    const isMod = IS_APPLE ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey;
+    if (e.code === 'KeyG' && isMod && !e.altKey) {
+      e.preventDefault();
+      editor.dispatchCommand(
+        e.shiftKey ? FIND_PREV_COMMAND : FIND_NEXT_COMMAND,
+        undefined,
+      );
+    } else if (
+      (e.code === 'KeyF' && isMod && !e.altKey && !e.shiftKey) ||
+      (!IS_APPLE &&
+        e.code === 'KeyH' &&
+        e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !e.shiftKey) ||
+      (IS_APPLE && e.code === 'KeyF' && e.metaKey && e.altKey && !e.ctrlKey)
+    ) {
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    }
+  };
 
   if (!isOpen) {
     return null;
@@ -880,6 +869,7 @@ function FindReplacePanel({
       <div className="find-replace-row">
         <input
           ref={searchInputRef}
+          autoFocus={true}
           className="find-replace-input"
           type="text"
           placeholder="Find..."

@@ -427,12 +427,9 @@ pre::-webkit-scrollbar-thumb {
   width: 250px;
 }
 
-i.palette {
-  background-image: url(images/icons/palette.svg);
-}
-
 i.bucket {
-  background-image: url(images/icons/paint-bucket.svg);
+  -webkit-mask-image: url(images/icons/paint-bucket.svg);
+  mask-image: url(images/icons/paint-bucket.svg);
 }
 
 i.bold {
@@ -668,7 +665,8 @@ i.sticky {
 }
 
 i.star {
-  background-image: url(images/icons/star.svg);
+  -webkit-mask-image: url(images/icons/star.svg);
+  mask-image: url(images/icons/star.svg);
 }
 
 i.mic {

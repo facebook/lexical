@@ -205,13 +205,12 @@ function findEntryForOffset(
 export function $replaceMatch(
   points: MatchPoints,
   replacementText: string,
-  match?: TextMatch,
-  searchRegex?: RegExp | null,
+  match: TextMatch,
+  searchRegex: RegExp | null,
 ): void {
-  const finalText =
-    match && searchRegex
-      ? expandReplacement(replacementText, match.matchText, searchRegex)
-      : replacementText;
+  const finalText = searchRegex
+    ? expandReplacement(replacementText, match.matchText, searchRegex)
+    : replacementText;
   const anchorNode = $getNodeByKeyOrThrow(points.anchorKey);
   const focusNode = $getNodeByKeyOrThrow(points.focusKey);
   if (!$isTextNode(anchorNode) || !$isTextNode(focusNode)) {
@@ -232,7 +231,7 @@ export function $replaceAllMatches(
   matches: TextMatch[],
   offsetMap: OffsetEntry[],
   replacementText: string,
-  searchRegex?: RegExp | null,
+  searchRegex: RegExp | null,
 ): number {
   let count = 0;
   for (let i = matches.length - 1; i >= 0; i--) {
@@ -300,7 +299,11 @@ function ensureHighlightRegistered(state: HighlightState, doc: Document): void {
   const style = doc.createElement('style');
   style.textContent =
     `::highlight(${state.allName}) { background-color: rgba(255, 255, 0, 0.4); color: inherit; }\n` +
-    `::highlight(${state.currentName}) { background-color: rgba(255, 165, 0, 0.6); color: inherit; }`;
+    `::highlight(${state.currentName}) { background-color: rgba(255, 165, 0, 0.6); color: inherit; }\n` +
+    `@media (forced-colors: active) {\n` +
+    `  ::highlight(${state.allName}) { background-color: Highlight; color: HighlightText; forced-color-adjust: none; }\n` +
+    `  ::highlight(${state.currentName}) { background-color: Mark; color: MarkText; forced-color-adjust: none; }\n` +
+    `}`;
   doc.head.appendChild(style);
   state.styleElement = style;
 }
@@ -509,16 +512,16 @@ export const REPLACE_CURRENT_COMMAND: LexicalCommand<void> =
 export const REPLACE_ALL_COMMAND: LexicalCommand<void> =
   /* @__PURE__ */ createCommand('REPLACE_ALL_COMMAND');
 
-const SET_SEARCH_TERM_COMMAND: LexicalCommand<string> =
+export const SET_SEARCH_TERM_COMMAND: LexicalCommand<string> =
   /* @__PURE__ */ createCommand('SET_SEARCH_TERM_COMMAND');
 
-const SET_REPLACE_TERM_COMMAND: LexicalCommand<string> =
+export const SET_REPLACE_TERM_COMMAND: LexicalCommand<string> =
   /* @__PURE__ */ createCommand('SET_REPLACE_TERM_COMMAND');
 
-const TOGGLE_CASE_SENSITIVE_COMMAND: LexicalCommand<void> =
+export const TOGGLE_CASE_SENSITIVE_COMMAND: LexicalCommand<void> =
   /* @__PURE__ */ createCommand('TOGGLE_CASE_SENSITIVE_COMMAND');
 
-const TOGGLE_REGEX_COMMAND: LexicalCommand<void> =
+export const TOGGLE_REGEX_COMMAND: LexicalCommand<void> =
   /* @__PURE__ */ createCommand('TOGGLE_REGEX_COMMAND');
 
 // ---------------------------------------------------------------------------

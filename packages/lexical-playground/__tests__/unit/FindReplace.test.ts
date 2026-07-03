@@ -40,7 +40,12 @@ import {
   FIND_PREV_COMMAND,
   findMatches,
   FindReplaceExtension,
+  REPLACE_ALL_COMMAND,
+  REPLACE_CURRENT_COMMAND,
+  SET_SEARCH_TERM_COMMAND,
+  TOGGLE_CASE_SENSITIVE_COMMAND,
   TOGGLE_FIND_REPLACE_COMMAND,
+  TOGGLE_REGEX_COMMAND,
 } from '../../src/plugins/FindReplaceExtension';
 
 const TestExtension = defineExtension({
@@ -49,115 +54,209 @@ const TestExtension = defineExtension({
 });
 
 describe('findMatches', () => {
-  test('returns empty array for empty search term', () => {
-    expect(findMatches('hello world', '', false, false)).toEqual([]);
+  test.for([
+    {
+      caseSensitive: false,
+      expected: [],
+      isRegex: false,
+      label: 'empty search term',
+      term: '',
+      text: 'hello world',
+    },
+    {
+      caseSensitive: false,
+      expected: [],
+      isRegex: false,
+      label: 'empty text',
+      term: 'hello',
+      text: '',
+    },
+    {
+      caseSensitive: false,
+      expected: [{end: 11, matchText: 'world', start: 6}],
+      isRegex: false,
+      label: 'single match with matchText',
+      term: 'world',
+      text: 'hello world',
+    },
+    {
+      caseSensitive: false,
+      expected: [
+        {end: 3, matchText: 'foo', start: 0},
+        {end: 11, matchText: 'foo', start: 8},
+        {end: 19, matchText: 'foo', start: 16},
+      ],
+      isRegex: false,
+      label: 'multiple non-overlapping matches',
+      term: 'foo',
+      text: 'foo bar foo baz foo',
+    },
+    {
+      caseSensitive: false,
+      expected: [
+        {end: 5, matchText: 'Hello', start: 0},
+        {end: 11, matchText: 'HELLO', start: 6},
+        {end: 17, matchText: 'hello', start: 12},
+      ],
+      isRegex: false,
+      label: 'case-insensitive preserves original case in matchText',
+      term: 'hello',
+      text: 'Hello HELLO hello',
+    },
+    {
+      caseSensitive: true,
+      expected: [{end: 17, matchText: 'hello', start: 12}],
+      isRegex: false,
+      label: 'case-sensitive search',
+      term: 'hello',
+      text: 'Hello HELLO hello',
+    },
+    {
+      caseSensitive: false,
+      expected: [
+        {end: 6, matchText: '123', start: 3},
+        {end: 12, matchText: '456', start: 9},
+      ],
+      isRegex: true,
+      label: 'regex: basic pattern',
+      term: '\\d+',
+      text: 'foo123bar456',
+    },
+    {
+      caseSensitive: false,
+      expected: [{end: 7, matchText: '2026-07', start: 0}],
+      isRegex: true,
+      label: 'regex: with groups uses full match range',
+      term: '(\\d{4})-(\\d{2})',
+      text: '2026-07-03',
+    },
+    {
+      caseSensitive: false,
+      expected: [],
+      isRegex: true,
+      label: 'regex: invalid regex returns empty',
+      term: '[invalid',
+      text: 'hello',
+    },
+    {
+      caseSensitive: false,
+      expected: [{end: 15, matchText: '$10.00', start: 9}],
+      isRegex: false,
+      label: 'non-regex escapes special characters',
+      term: '$10.00',
+      text: 'price is $10.00',
+    },
+    {
+      caseSensitive: false,
+      expected: [{end: 3, matchText: 'abc', start: 0}],
+      isRegex: false,
+      label: 'matches at string boundaries',
+      term: 'abc',
+      text: 'abc',
+    },
+    {
+      caseSensitive: false,
+      expected: [{end: 5, matchText: 'hello', start: 0}],
+      isRegex: false,
+      label: 'matches at start of string',
+      term: 'hello',
+      text: 'hello world',
+    },
+    {
+      caseSensitive: false,
+      expected: [],
+      isRegex: false,
+      label: 'no match returns empty',
+      term: 'xyz',
+      text: 'hello world',
+    },
+    {
+      caseSensitive: false,
+      expected: [],
+      isRegex: true,
+      label: 'skips zero-length regex matches',
+      term: '(?=a)',
+      text: 'abc',
+    },
+  ])('$label', ({text, term, caseSensitive, isRegex, expected}) => {
+    expect(findMatches(text, term, caseSensitive, isRegex)).toEqual(expected);
   });
+});
 
-  test('returns empty array for empty text', () => {
-    expect(findMatches('', 'hello', false, false)).toEqual([]);
-  });
-
-  test('finds single match with matchText', () => {
-    expect(findMatches('hello world', 'world', false, false)).toEqual([
-      {end: 11, matchText: 'world', start: 6},
-    ]);
-  });
-
-  test('finds multiple non-overlapping matches', () => {
-    expect(findMatches('foo bar foo baz foo', 'foo', false, false)).toEqual([
-      {end: 3, matchText: 'foo', start: 0},
-      {end: 11, matchText: 'foo', start: 8},
-      {end: 19, matchText: 'foo', start: 16},
-    ]);
-  });
-
-  test('case-insensitive search preserves original case in matchText', () => {
-    expect(findMatches('Hello HELLO hello', 'hello', false, false)).toEqual([
-      {end: 5, matchText: 'Hello', start: 0},
-      {end: 11, matchText: 'HELLO', start: 6},
-      {end: 17, matchText: 'hello', start: 12},
-    ]);
-  });
-
-  test('case-sensitive search', () => {
-    expect(findMatches('Hello HELLO hello', 'hello', true, false)).toEqual([
-      {end: 17, matchText: 'hello', start: 12},
-    ]);
-  });
-
-  test('regex search: basic pattern', () => {
-    expect(findMatches('foo123bar456', '\\d+', false, true)).toEqual([
-      {end: 6, matchText: '123', start: 3},
-      {end: 12, matchText: '456', start: 9},
-    ]);
-  });
-
-  test('regex search: with groups uses full match range', () => {
-    expect(findMatches('2026-07-03', '(\\d{4})-(\\d{2})', false, true)).toEqual(
-      [{end: 7, matchText: '2026-07', start: 0}],
-    );
-  });
-
-  test('regex search: invalid regex returns empty array', () => {
-    expect(findMatches('hello', '[invalid', false, true)).toEqual([]);
-  });
-
-  test('non-regex mode escapes special characters', () => {
-    expect(findMatches('price is $10.00', '$10.00', false, false)).toEqual([
-      {end: 15, matchText: '$10.00', start: 9},
-    ]);
-  });
-
-  test('matches at string boundaries', () => {
-    expect(findMatches('abc', 'abc', false, false)).toEqual([
-      {end: 3, matchText: 'abc', start: 0},
-    ]);
-  });
-
-  test('matches at start of string', () => {
-    expect(findMatches('hello world', 'hello', false, false)).toEqual([
-      {end: 5, matchText: 'hello', start: 0},
-    ]);
-  });
-
-  test('no match returns empty array', () => {
-    expect(findMatches('hello world', 'xyz', false, false)).toEqual([]);
-  });
-
-  test('skips zero-length regex matches', () => {
-    expect(findMatches('abc', '(?=a)', false, true)).toEqual([]);
+describe('findMatches — zero-length regex edge cases', () => {
+  test.for([
+    {
+      expected: [{end: 3, matchText: 'abc', start: 0}],
+      label: '.* matches entire text as single match',
+      term: '.*',
+      text: 'abc',
+    },
+    {
+      expected: [
+        {end: 2, matchText: 'aa', start: 0},
+        {end: 5, matchText: 'aa', start: 3},
+      ],
+      label: 'a* matches non-empty runs only',
+      term: 'a*',
+      text: 'aabaa',
+    },
+    {
+      expected: [],
+      label: 'x? on text without x returns no matches',
+      term: 'x?',
+      text: 'abc',
+    },
+  ])('$label', ({text, term, expected}) => {
+    expect(findMatches(text, term, false, true)).toEqual(expected);
   });
 });
 
 describe('expandReplacement', () => {
-  test('returns template as-is when no regex', () => {
-    expect(expandReplacement('$1', 'foo', null)).toBe('$1');
-  });
-
-  test('expands $1/$2 capture groups', () => {
-    expect(expandReplacement('$1-$2', '2026-07', /(\d{4})-(\d{2})/)).toBe(
-      '2026-07',
-    );
-  });
-
-  test('expands named capture groups with different template', () => {
-    expect(expandReplacement('year=$1', '2026-07', /(\d{4})-(\d{2})/)).toBe(
-      'year=2026',
-    );
-  });
-
-  test('expands $& for full match', () => {
-    expect(expandReplacement('[$&]', 'foo', /foo/)).toBe('[foo]');
-  });
-
-  test('swaps groups', () => {
-    expect(expandReplacement('$2/$1', 'user@host', /(\w+)@(\w+)/)).toBe(
-      'host/user',
-    );
-  });
-
-  test('literal $1 with no groups in regex', () => {
-    expect(expandReplacement('$1', 'hello', /hello/)).toBe('$1');
+  test.for([
+    {
+      expected: '$1',
+      label: 'returns template as-is when no regex',
+      matchText: 'foo',
+      regex: null,
+      template: '$1',
+    },
+    {
+      expected: '2026-07',
+      label: 'expands $1/$2 capture groups',
+      matchText: '2026-07',
+      regex: /(\d{4})-(\d{2})/,
+      template: '$1-$2',
+    },
+    {
+      expected: 'year=2026',
+      label: 'expands named capture groups with different template',
+      matchText: '2026-07',
+      regex: /(\d{4})-(\d{2})/,
+      template: 'year=$1',
+    },
+    {
+      expected: '[foo]',
+      label: 'expands $& for full match',
+      matchText: 'foo',
+      regex: /foo/,
+      template: '[$&]',
+    },
+    {
+      expected: 'host/user',
+      label: 'swaps groups',
+      matchText: 'user@host',
+      regex: /(\w+)@(\w+)/,
+      template: '$2/$1',
+    },
+    {
+      expected: '$1',
+      label: 'literal $1 with no groups in regex',
+      matchText: 'hello',
+      regex: /hello/,
+      template: '$1',
+    },
+  ])('$label', ({template, matchText, regex, expected}) => {
+    expect(expandReplacement(template, matchText, regex)).toBe(expected);
   });
 });
 
@@ -387,12 +486,10 @@ describe('$replaceMatch', () => {
     editor.update(
       () => {
         const map = $buildOffsetMap();
-        const points = $resolveMatchToPoints(
-          {end: 5, matchText: 'hello', start: 0},
-          map,
-        );
+        const match = {end: 5, matchText: 'hello', start: 0};
+        const points = $resolveMatchToPoints(match, map);
         invariant(points !== null, 'expected non-null match points');
-        $replaceMatch(points, 'goodbye');
+        $replaceMatch(points, 'goodbye', match, null);
       },
       {discrete: true},
     );
@@ -423,12 +520,10 @@ describe('$replaceMatch', () => {
     editor.update(
       () => {
         const map = $buildOffsetMap();
-        const points = $resolveMatchToPoints(
-          {end: 5, matchText: 'hello', start: 0},
-          map,
-        );
+        const match = {end: 5, matchText: 'hello', start: 0};
+        const points = $resolveMatchToPoints(match, map);
         invariant(points !== null, 'expected non-null match points');
-        $replaceMatch(points, 'hi');
+        $replaceMatch(points, 'hi', match, null);
       },
       {discrete: true},
     );
@@ -450,12 +545,10 @@ describe('$replaceMatch', () => {
     editor.update(
       () => {
         const map = $buildOffsetMap();
-        const points = $resolveMatchToPoints(
-          {end: 6, matchText: 'hello ', start: 0},
-          map,
-        );
+        const match = {end: 6, matchText: 'hello ', start: 0};
+        const points = $resolveMatchToPoints(match, map);
         invariant(points !== null, 'expected non-null match points');
-        $replaceMatch(points, '');
+        $replaceMatch(points, '', match, null);
       },
       {discrete: true},
     );
@@ -505,7 +598,7 @@ describe('$replaceMatch', () => {
         const match = {end: 5, matchText: 'hello', start: 0};
         const points = $resolveMatchToPoints(match, map);
         invariant(points !== null, 'expected non-null match points');
-        $replaceMatch(points, '$1');
+        $replaceMatch(points, '$1', match, null);
       },
       {discrete: true},
     );
@@ -530,7 +623,7 @@ describe('$replaceAllMatches', () => {
       () => {
         const map = $buildOffsetMap();
         const matches = findMatches('foo bar foo', 'foo', false, false);
-        const count = $replaceAllMatches(matches, map, 'baz');
+        const count = $replaceAllMatches(matches, map, 'baz', null);
         expect(count).toBe(2);
       },
       {discrete: true},
@@ -555,7 +648,7 @@ describe('$replaceAllMatches', () => {
         const text = $getRoot().getTextContent();
         const map = $buildOffsetMap();
         const matches = findMatches(text, 'foo', false, false);
-        const count = $replaceAllMatches(matches, map, 'x');
+        const count = $replaceAllMatches(matches, map, 'x', null);
         expect(count).toBe(2);
       },
       {discrete: true},
@@ -580,7 +673,7 @@ describe('$replaceAllMatches', () => {
         const text = $getRoot().getTextContent();
         const map = $buildOffsetMap();
         const matches = findMatches(text, 'foo', false, false);
-        const count = $replaceAllMatches(matches, map, 'quxxx');
+        const count = $replaceAllMatches(matches, map, 'quxxx', null);
         expect(count).toBe(2);
       },
       {discrete: true},
@@ -614,25 +707,6 @@ describe('$replaceAllMatches', () => {
     editor.read(() => {
       expect($getRoot().getTextContent()).toBe('b/a and d/c');
     });
-  });
-});
-
-describe('findMatches — zero-length regex edge cases', () => {
-  test('.* matches entire text as single match', () => {
-    expect(findMatches('abc', '.*', false, true)).toEqual([
-      {end: 3, matchText: 'abc', start: 0},
-    ]);
-  });
-
-  test('a* matches non-empty runs only', () => {
-    expect(findMatches('aabaa', 'a*', false, true)).toEqual([
-      {end: 2, matchText: 'aa', start: 0},
-      {end: 5, matchText: 'aa', start: 3},
-    ]);
-  });
-
-  test('x? on text without x returns no matches', () => {
-    expect(findMatches('abc', 'x?', false, true)).toEqual([]);
   });
 });
 
@@ -707,5 +781,161 @@ describe('FindReplaceExtension — command dispatch integration', () => {
     // backward wrap
     editor.dispatchCommand(FIND_PREV_COMMAND, undefined);
     expect(dep.output.currentIndex.peek()).toBe(2);
+  });
+
+  test('FIND_NEXT_COMMAND with zero matches is a no-op', () => {
+    using editor = buildEditorFromExtensions(FindReplaceExtension);
+    const dep = getExtensionDependencyFromEditor(editor, FindReplaceExtension);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    dep.output.searchTerm.value = 'nonexistent';
+    expect(dep.output.matches.peek()).toHaveLength(0);
+    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    expect(dep.output.currentIndex.peek()).toBe(0);
+    editor.dispatchCommand(FIND_PREV_COMMAND, undefined);
+    expect(dep.output.currentIndex.peek()).toBe(0);
+  });
+
+  test('matches returns empty when isOpen is false', () => {
+    using editor = buildEditorFromExtensions(FindReplaceExtension);
+    const dep = getExtensionDependencyFromEditor(editor, FindReplaceExtension);
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('hello')));
+      },
+      {discrete: true},
+    );
+    dep.output.searchTerm.value = 'hello';
+    expect(dep.output.isOpen.peek()).toBe(false);
+    expect(dep.output.matches.peek()).toEqual([]);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    expect(dep.output.matches.peek()).toHaveLength(1);
+  });
+
+  test('effectiveIndex clamps when match count decreases', () => {
+    using editor = buildEditorFromExtensions(FindReplaceExtension);
+    const dep = getExtensionDependencyFromEditor(editor, FindReplaceExtension);
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('a b a b a')));
+      },
+      {discrete: true},
+    );
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    dep.output.searchTerm.value = 'a';
+    expect(dep.output.matches.peek()).toHaveLength(3);
+    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    expect(dep.output.currentIndex.peek()).toBe(2);
+    dep.output.searchTerm.value = 'a b';
+    expect(dep.output.matches.peek()).toHaveLength(2);
+    expect(dep.output.effectiveIndex.peek()).toBe(1);
+  });
+
+  test('regexError computed returns true for invalid regex', () => {
+    using editor = buildEditorFromExtensions(FindReplaceExtension);
+    const dep = getExtensionDependencyFromEditor(editor, FindReplaceExtension);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    dep.output.isRegex.value = true;
+    dep.output.searchTerm.value = '[invalid';
+    expect(dep.output.regexError.peek()).toBe(true);
+    dep.output.searchTerm.value = '\\d+';
+    expect(dep.output.regexError.peek()).toBe(false);
+  });
+
+  test('SET_SEARCH_TERM_COMMAND resets currentIndex to 0', () => {
+    using editor = buildEditorFromExtensions(FindReplaceExtension);
+    const dep = getExtensionDependencyFromEditor(editor, FindReplaceExtension);
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('a b a b a')));
+      },
+      {discrete: true},
+    );
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    dep.output.searchTerm.value = 'a';
+    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    expect(dep.output.currentIndex.peek()).toBe(2);
+    editor.dispatchCommand(SET_SEARCH_TERM_COMMAND, 'b');
+    expect(dep.output.currentIndex.peek()).toBe(0);
+    expect(dep.output.searchTerm.peek()).toBe('b');
+  });
+
+  test('TOGGLE_CASE_SENSITIVE / TOGGLE_REGEX reset currentIndex to 0', () => {
+    using editor = buildEditorFromExtensions(FindReplaceExtension);
+    const dep = getExtensionDependencyFromEditor(editor, FindReplaceExtension);
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('a b a b a')));
+      },
+      {discrete: true},
+    );
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    dep.output.searchTerm.value = 'a';
+    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    expect(dep.output.currentIndex.peek()).toBe(1);
+    editor.dispatchCommand(TOGGLE_CASE_SENSITIVE_COMMAND, undefined);
+    expect(dep.output.currentIndex.peek()).toBe(0);
+    expect(dep.output.caseSensitive.peek()).toBe(true);
+
+    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    expect(dep.output.currentIndex.peek()).toBe(1);
+    editor.dispatchCommand(TOGGLE_REGEX_COMMAND, undefined);
+    expect(dep.output.currentIndex.peek()).toBe(0);
+    expect(dep.output.isRegex.peek()).toBe(true);
+  });
+
+  test('REPLACE_CURRENT_COMMAND replaces the current match', () => {
+    using editor = buildEditorFromExtensions(FindReplaceExtension);
+    const dep = getExtensionDependencyFromEditor(editor, FindReplaceExtension);
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append($createTextNode('foo bar foo')),
+          );
+      },
+      {discrete: true},
+    );
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    dep.output.searchTerm.value = 'foo';
+    dep.output.replaceTerm.value = 'baz';
+    expect(dep.output.matches.peek()).toHaveLength(2);
+    editor.dispatchCommand(REPLACE_CURRENT_COMMAND, undefined);
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('baz bar foo');
+    });
+  });
+
+  test('REPLACE_ALL_COMMAND replaces all matches', () => {
+    using editor = buildEditorFromExtensions(FindReplaceExtension);
+    const dep = getExtensionDependencyFromEditor(editor, FindReplaceExtension);
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append($createTextNode('foo bar foo')),
+          );
+      },
+      {discrete: true},
+    );
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    dep.output.searchTerm.value = 'foo';
+    dep.output.replaceTerm.value = 'qux';
+    expect(dep.output.matches.peek()).toHaveLength(2);
+    editor.dispatchCommand(REPLACE_ALL_COMMAND, undefined);
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('qux bar qux');
+    });
   });
 });

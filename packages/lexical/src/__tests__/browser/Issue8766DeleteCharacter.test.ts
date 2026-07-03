@@ -9,6 +9,7 @@
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
+  $create,
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
@@ -74,7 +75,7 @@ class TestInlineDecoratorNode extends DecoratorNode<null> {
 }
 
 function $createTestInlineDecoratorNode(): TestInlineDecoratorNode {
-  return new TestInlineDecoratorNode();
+  return $create(TestInlineDecoratorNode);
 }
 
 const ext = defineExtension({
@@ -151,27 +152,28 @@ function nativeCharacterExtension(
   const div = document.createElement('div');
   div.contentEditable = 'true';
   document.body.appendChild(div);
-  try {
-    const textNode = document.createTextNode(text);
-    div.appendChild(textNode);
-    const domSelection = window.getSelection()!;
-    domSelection.setBaseAndExtent(textNode, offset, textNode, offset);
-    domSelection.modify(
-      'extend',
-      isBackward ? 'backward' : 'forward',
-      'character',
-    );
-    const boundary =
-      domSelection.focusNode === textNode
-        ? domSelection.focusOffset
-        : isBackward
-          ? 0
-          : text.length;
-    domSelection.removeAllRanges();
-    return boundary;
-  } finally {
+  onTestFinished(() => {
     document.body.removeChild(div);
-  }
+  });
+  const textNode = document.createTextNode(text);
+  div.appendChild(textNode);
+  const domSelection = window.getSelection()!;
+  domSelection.setBaseAndExtent(textNode, offset, textNode, offset);
+  domSelection.modify(
+    'extend',
+    isBackward ? 'backward' : 'forward',
+    'character',
+  );
+  const boundary =
+    domSelection.focusNode === textNode
+      ? domSelection.focusOffset
+      : isBackward
+        ? 0
+        : text.length;
+  // Clear immediately (not at test end): a selection left in the scratch
+  // element would interfere with the editor deletion measured next.
+  domSelection.removeAllRanges();
+  return boundary;
 }
 
 describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', () => {

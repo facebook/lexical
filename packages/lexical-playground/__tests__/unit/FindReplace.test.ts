@@ -31,6 +31,7 @@ import {
   $replaceAllMatches,
   $replaceMatch,
   $resolveMatchToPoints,
+  expandReplacement,
   findMatches,
 } from '../../src/plugins/FindReplaceExtension';
 
@@ -48,44 +49,44 @@ describe('findMatches', () => {
     expect(findMatches('', 'hello', false, false)).toEqual([]);
   });
 
-  test('finds single match', () => {
+  test('finds single match with matchText', () => {
     expect(findMatches('hello world', 'world', false, false)).toEqual([
-      {end: 11, start: 6},
+      {end: 11, matchText: 'world', start: 6},
     ]);
   });
 
   test('finds multiple non-overlapping matches', () => {
     expect(findMatches('foo bar foo baz foo', 'foo', false, false)).toEqual([
-      {end: 3, start: 0},
-      {end: 11, start: 8},
-      {end: 19, start: 16},
+      {end: 3, matchText: 'foo', start: 0},
+      {end: 11, matchText: 'foo', start: 8},
+      {end: 19, matchText: 'foo', start: 16},
     ]);
   });
 
-  test('case-insensitive search by default', () => {
+  test('case-insensitive search preserves original case in matchText', () => {
     expect(findMatches('Hello HELLO hello', 'hello', false, false)).toEqual([
-      {end: 5, start: 0},
-      {end: 11, start: 6},
-      {end: 17, start: 12},
+      {end: 5, matchText: 'Hello', start: 0},
+      {end: 11, matchText: 'HELLO', start: 6},
+      {end: 17, matchText: 'hello', start: 12},
     ]);
   });
 
   test('case-sensitive search', () => {
     expect(findMatches('Hello HELLO hello', 'hello', true, false)).toEqual([
-      {end: 17, start: 12},
+      {end: 17, matchText: 'hello', start: 12},
     ]);
   });
 
   test('regex search: basic pattern', () => {
     expect(findMatches('foo123bar456', '\\d+', false, true)).toEqual([
-      {end: 6, start: 3},
-      {end: 12, start: 9},
+      {end: 6, matchText: '123', start: 3},
+      {end: 12, matchText: '456', start: 9},
     ]);
   });
 
   test('regex search: with groups uses full match range', () => {
     expect(findMatches('2026-07-03', '(\\d{4})-(\\d{2})', false, true)).toEqual(
-      [{end: 7, start: 0}],
+      [{end: 7, matchText: '2026-07', start: 0}],
     );
   });
 
@@ -95,19 +96,19 @@ describe('findMatches', () => {
 
   test('non-regex mode escapes special characters', () => {
     expect(findMatches('price is $10.00', '$10.00', false, false)).toEqual([
-      {end: 15, start: 9},
+      {end: 15, matchText: '$10.00', start: 9},
     ]);
   });
 
   test('matches at string boundaries', () => {
     expect(findMatches('abc', 'abc', false, false)).toEqual([
-      {end: 3, start: 0},
+      {end: 3, matchText: 'abc', start: 0},
     ]);
   });
 
   test('matches at start of string', () => {
     expect(findMatches('hello world', 'hello', false, false)).toEqual([
-      {end: 5, start: 0},
+      {end: 5, matchText: 'hello', start: 0},
     ]);
   });
 
@@ -117,6 +118,38 @@ describe('findMatches', () => {
 
   test('skips zero-length regex matches', () => {
     expect(findMatches('abc', '(?=a)', false, true)).toEqual([]);
+  });
+});
+
+describe('expandReplacement', () => {
+  test('returns template as-is when no regex', () => {
+    expect(expandReplacement('$1', 'foo', null)).toBe('$1');
+  });
+
+  test('expands $1/$2 capture groups', () => {
+    expect(expandReplacement('$1-$2', '2026-07', /(\d{4})-(\d{2})/)).toBe(
+      '2026-07',
+    );
+  });
+
+  test('expands named capture groups with different template', () => {
+    expect(expandReplacement('year=$1', '2026-07', /(\d{4})-(\d{2})/)).toBe(
+      'year=2026',
+    );
+  });
+
+  test('expands $& for full match', () => {
+    expect(expandReplacement('[$&]', 'foo', /foo/)).toBe('[foo]');
+  });
+
+  test('swaps groups', () => {
+    expect(expandReplacement('$2/$1', 'user@host', /(\w+)@(\w+)/)).toBe(
+      'host/user',
+    );
+  });
+
+  test('literal $1 with no groups in regex', () => {
+    expect(expandReplacement('$1', 'hello', /hello/)).toBe('$1');
   });
 });
 
@@ -173,7 +206,6 @@ describe('$buildOffsetMap', () => {
     const map = editor.read(() => $buildOffsetMap());
     expect(map).toHaveLength(2);
     expect(map[0]).toMatchObject({globalEnd: 3, globalStart: 0});
-    // "abc" + "\n\n" + "def" → p2 starts at 5
     expect(map[1]).toMatchObject({globalEnd: 8, globalStart: 5});
   });
 
@@ -252,7 +284,6 @@ describe('$buildOffsetMap', () => {
       const text = $getRoot().getTextContent();
       return {map, text};
     });
-    // "before\n\naaa\n\nbbb"
     expect(result.text).toBe('before\n\naaa\n\nbbb');
     expect(result.map).toHaveLength(3);
     expect(result.map[0]).toMatchObject({globalEnd: 6, globalStart: 0});
@@ -276,7 +307,7 @@ describe('$resolveMatchToPoints', () => {
     );
     const result = editor.read(() => {
       const map = $buildOffsetMap();
-      return $resolveMatchToPoints({end: 5, start: 0}, map);
+      return $resolveMatchToPoints({end: 5, matchText: 'hello', start: 0}, map);
     });
     invariant(result !== null, 'expected non-null match points');
     expect(result.anchorKey).toBe(result.focusKey);
@@ -300,13 +331,12 @@ describe('$resolveMatchToPoints', () => {
     );
     const result = editor.read(() => {
       const map = $buildOffsetMap();
-      // "hello" spans hel(0-3) + lo(3-5)
-      return $resolveMatchToPoints({end: 5, start: 0}, map);
+      return $resolveMatchToPoints({end: 5, matchText: 'hello', start: 0}, map);
     });
     invariant(result !== null, 'expected non-null match points');
     expect(result.anchorKey).not.toBe(result.focusKey);
     expect(result.anchorOffset).toBe(0);
-    expect(result.focusOffset).toBe(2); // offset 5 - globalStart 3 = 2
+    expect(result.focusOffset).toBe(2);
     expect(result.format).toBe(0);
   });
 
@@ -324,8 +354,10 @@ describe('$resolveMatchToPoints', () => {
     );
     const result = editor.read(() => {
       const map = $buildOffsetMap();
-      // "abc\n\ndef" — offsets 3-4 are the \n\n gap, no TextNode covers them
-      return $resolveMatchToPoints({end: 5, start: 3}, map);
+      return $resolveMatchToPoints(
+        {end: 5, matchText: 'c\n\nd', start: 3},
+        map,
+      );
     });
     expect(result).toBeNull();
   });
@@ -347,7 +379,10 @@ describe('$replaceMatch', () => {
     editor.update(
       () => {
         const map = $buildOffsetMap();
-        const points = $resolveMatchToPoints({end: 5, start: 0}, map);
+        const points = $resolveMatchToPoints(
+          {end: 5, matchText: 'hello', start: 0},
+          map,
+        );
         invariant(points !== null, 'expected non-null match points');
         $replaceMatch(points, 'goodbye');
       },
@@ -380,7 +415,10 @@ describe('$replaceMatch', () => {
     editor.update(
       () => {
         const map = $buildOffsetMap();
-        const points = $resolveMatchToPoints({end: 5, start: 0}, map);
+        const points = $resolveMatchToPoints(
+          {end: 5, matchText: 'hello', start: 0},
+          map,
+        );
         invariant(points !== null, 'expected non-null match points');
         $replaceMatch(points, 'hi');
       },
@@ -404,7 +442,10 @@ describe('$replaceMatch', () => {
     editor.update(
       () => {
         const map = $buildOffsetMap();
-        const points = $resolveMatchToPoints({end: 6, start: 0}, map);
+        const points = $resolveMatchToPoints(
+          {end: 6, matchText: 'hello ', start: 0},
+          map,
+        );
         invariant(points !== null, 'expected non-null match points');
         $replaceMatch(points, '');
       },
@@ -412,6 +453,56 @@ describe('$replaceMatch', () => {
     );
     editor.read(() => {
       expect($getRoot().getTextContent()).toBe('world');
+    });
+  });
+
+  test('regex capture group replacement with $1/$2', () => {
+    using editor = buildEditorFromExtensions(TestExtension);
+    editor.update(
+      () => {
+        const p = $createParagraphNode();
+        p.append($createTextNode('user@host'));
+        $getRoot().clear().append(p);
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        const map = $buildOffsetMap();
+        const match = {end: 9, matchText: 'user@host', start: 0};
+        const points = $resolveMatchToPoints(match, map);
+        invariant(points !== null, 'expected non-null match points');
+        $replaceMatch(points, '$2/$1', match, /(\w+)@(\w+)/);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('host/user');
+    });
+  });
+
+  test('non-regex mode ignores $1 in replacement', () => {
+    using editor = buildEditorFromExtensions(TestExtension);
+    editor.update(
+      () => {
+        const p = $createParagraphNode();
+        p.append($createTextNode('hello world'));
+        $getRoot().clear().append(p);
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        const map = $buildOffsetMap();
+        const match = {end: 5, matchText: 'hello', start: 0};
+        const points = $resolveMatchToPoints(match, map);
+        invariant(points !== null, 'expected non-null match points');
+        $replaceMatch(points, '$1');
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('$1 world');
     });
   });
 });
@@ -488,6 +579,32 @@ describe('$replaceAllMatches', () => {
     );
     editor.read(() => {
       expect($getRoot().getTextContent()).toBe('quxxx bar quxxx');
+    });
+  });
+
+  test('replaces all with regex capture groups', () => {
+    using editor = buildEditorFromExtensions(TestExtension);
+    editor.update(
+      () => {
+        const p = $createParagraphNode();
+        p.append($createTextNode('a@b and c@d'));
+        $getRoot().clear().append(p);
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        const text = $getRoot().getTextContent();
+        const map = $buildOffsetMap();
+        const matches = findMatches(text, '(\\w+)@(\\w+)', false, true);
+        const regex = /(\w+)@(\w+)/;
+        const count = $replaceAllMatches(matches, map, '$2/$1', regex);
+        expect(count).toBe(2);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('b/a and d/c');
     });
   });
 });

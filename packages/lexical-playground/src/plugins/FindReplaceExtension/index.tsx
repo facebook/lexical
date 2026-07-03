@@ -11,17 +11,22 @@ import type {JSX} from 'react';
 
 import './FindReplace.css';
 
+import {
+  computed,
+  effect,
+  namedSignals,
+  watchedSignal,
+} from '@lexical/extension';
 import {ReactExtension} from '@lexical/react/ReactExtension';
+import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {$dfsWithSlotsIterator} from '@lexical/utils';
 import {
-  $createRangeSelection,
   $getNodeByKeyOrThrow,
   $getRoot,
   $isElementNode,
   $isLineBreakNode,
   $isTextNode,
-  $setSelection,
   COMMAND_PRIORITY_LOW,
   configExtension,
   createCommand,
@@ -33,18 +38,16 @@ import {
   mergeRegister,
   type NodeKey,
 } from 'lexical';
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import {useCallback, useEffect, useRef} from 'react';
 import {createPortal} from 'react-dom';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 export interface TextMatch {
   end: number;
+  matchText: string;
   start: number;
 }
 
@@ -62,6 +65,14 @@ export interface MatchPoints {
   format: number;
 }
 
+// ---------------------------------------------------------------------------
+// Pure functions
+// ---------------------------------------------------------------------------
+
+const EMPTY_MATCHES: TextMatch[] = Object.freeze<TextMatch[]>(
+  [],
+) as TextMatch[];
+
 export function findMatches(
   text: string,
   searchTerm: string,
@@ -69,7 +80,7 @@ export function findMatches(
   isRegex: boolean,
 ): TextMatch[] {
   if (!searchTerm || !text) {
-    return [];
+    return EMPTY_MATCHES;
   }
 
   const pattern = isRegex ? searchTerm : escapeRegExp(searchTerm);
@@ -79,24 +90,38 @@ export function findMatches(
   try {
     regex = new RegExp(pattern, flags);
   } catch {
-    return [];
+    return EMPTY_MATCHES;
   }
 
   const matches: TextMatch[] = [];
   let match: RegExpExecArray | null;
   while ((match = regex.exec(text)) !== null) {
     if (match[0].length === 0) {
-      // prevent infinite loop on zero-length matches
       regex.lastIndex++;
       continue;
     }
-    matches.push({end: match.index + match[0].length, start: match.index});
+    matches.push({
+      end: match.index + match[0].length,
+      matchText: match[0],
+      start: match.index,
+    });
   }
   return matches;
 }
 
 function escapeRegExp(string: string): string {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+export function expandReplacement(
+  template: string,
+  matchText: string,
+  searchRegex: RegExp | null,
+): string {
+  if (!searchRegex) {
+    return template;
+  }
+  return matchText.replace(searchRegex, template);
 }
 
 export function $buildOffsetMap(): OffsetEntry[] {
@@ -107,7 +132,7 @@ export function $buildOffsetMap(): OffsetEntry[] {
   for (const {node, depth} of $dfsWithSlotsIterator()) {
     if ($isElementNode(node) && !node.isInline() && depth > 0) {
       if (prevNonInlineDepth !== null && depth <= prevNonInlineDepth) {
-        offset += 2; // mirrors DOUBLE_LINE_BREAK separators from ElementNode.getTextContent()
+        offset += 2;
       }
       prevNonInlineDepth = depth;
     }
@@ -177,30 +202,55 @@ function findEntryForOffset(
 export function $replaceMatch(
   points: MatchPoints,
   replacementText: string,
+  match?: TextMatch,
+  searchRegex?: RegExp | null,
 ): void {
-  const selection = $createRangeSelection();
-  selection.anchor.set(points.anchorKey, points.anchorOffset, 'text');
-  selection.focus.set(points.focusKey, points.focusOffset, 'text');
+  const finalText =
+    match && searchRegex
+      ? expandReplacement(replacementText, match.matchText, searchRegex)
+      : replacementText;
+  const anchorNode = $getNodeByKeyOrThrow(points.anchorKey);
+  const focusNode = $getNodeByKeyOrThrow(points.focusKey);
+  if (!$isTextNode(anchorNode) || !$isTextNode(focusNode)) {
+    return;
+  }
+  const selection = anchorNode.select(0, 0);
+  selection.setTextNodeRange(
+    anchorNode,
+    points.anchorOffset,
+    focusNode,
+    points.focusOffset,
+  );
   selection.format = points.format;
-  $setSelection(selection);
-  selection.insertText(replacementText);
+  selection.insertText(finalText);
 }
 
 export function $replaceAllMatches(
   matches: TextMatch[],
   offsetMap: OffsetEntry[],
   replacementText: string,
+  searchRegex?: RegExp | null,
 ): number {
   let count = 0;
-  // Replace back-to-front so earlier offsets in the pre-built map stay valid
   for (let i = matches.length - 1; i >= 0; i--) {
     const points = $resolveMatchToPoints(matches[i], offsetMap);
     if (points) {
-      $replaceMatch(points, replacementText);
+      $replaceMatch(points, replacementText, matches[i], searchRegex);
       count++;
     }
   }
   return count;
+}
+
+function buildSearchRegex(
+  searchTerm: string,
+  caseSensitive: boolean,
+): RegExp | null {
+  try {
+    return new RegExp(searchTerm, caseSensitive ? '' : 'i');
+  } catch {
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -318,10 +368,20 @@ function $updateHighlights(
       state.allHighlight!.add(range);
       if (i === currentIndex) {
         state.currentHighlight!.add(range);
+        scrollRangeIntoView(range);
       }
     }
   } else {
     $updateOverlayHighlights(editor, matches, currentIndex, offsetMap, state);
+  }
+}
+
+function scrollRangeIntoView(range: Range): void {
+  const rect = range.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  if (rect.top < 0 || rect.bottom > viewportHeight) {
+    const el = range.startContainer.parentElement;
+    el?.scrollIntoView({behavior: 'smooth', block: 'center'});
   }
 }
 
@@ -353,7 +413,6 @@ function getOverlayContainer(
   const doc = root.ownerDocument;
   const parent = root.parentElement!;
   if (getComputedStyle(parent).position === 'static') {
-    // overlay spans need a positioned ancestor
     state.originalParentPosition = parent.style.position;
     parent.style.position = 'relative';
   }
@@ -410,6 +469,9 @@ function $updateOverlayHighlights(
     }
     const rects = createRectsFromDOMRange(editor, range);
     const isCurrent = i === currentIndex;
+    if (isCurrent) {
+      scrollRangeIntoView(range);
+    }
     for (const rect of rects) {
       const span = doc.createElement('span');
       span.style.position = 'absolute';
@@ -427,44 +489,298 @@ function $updateOverlayHighlights(
 }
 
 // ---------------------------------------------------------------------------
-// Extension definitions
+// Commands
 // ---------------------------------------------------------------------------
 
-export const OPEN_FIND_REPLACE_COMMAND: LexicalCommand<void> =
-  /* @__PURE__ */ createCommand('OPEN_FIND_REPLACE_COMMAND');
+export const TOGGLE_FIND_REPLACE_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('TOGGLE_FIND_REPLACE_COMMAND');
+
+export const CLOSE_FIND_REPLACE_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('CLOSE_FIND_REPLACE_COMMAND');
+
+export const FIND_NEXT_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('FIND_NEXT_COMMAND');
+
+export const FIND_PREV_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('FIND_PREV_COMMAND');
+
+export const REPLACE_CURRENT_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('REPLACE_CURRENT_COMMAND');
+
+export const REPLACE_ALL_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('REPLACE_ALL_COMMAND');
+
+const SET_SEARCH_TERM_COMMAND: LexicalCommand<string> =
+  /* @__PURE__ */ createCommand('SET_SEARCH_TERM_COMMAND');
+
+const SET_REPLACE_TERM_COMMAND: LexicalCommand<string> =
+  /* @__PURE__ */ createCommand('SET_REPLACE_TERM_COMMAND');
+
+const TOGGLE_CASE_SENSITIVE_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('TOGGLE_CASE_SENSITIVE_COMMAND');
+
+const TOGGLE_REGEX_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('TOGGLE_REGEX_COMMAND');
+
+// ---------------------------------------------------------------------------
+// Extension
+// ---------------------------------------------------------------------------
 
 export const FindReplaceExtension = /* @__PURE__ */ defineExtension({
-  name: '@lexical/playground/FindReplace',
-  register: editor => {
-    return editor.registerCommand(
-      KEY_DOWN_COMMAND,
-      event => {
-        const isFindReplace =
-          (event.code === 'KeyH' &&
-            event.ctrlKey &&
-            !event.metaKey &&
-            !event.altKey &&
-            !event.shiftKey) ||
-          (IS_APPLE &&
-            event.code === 'KeyF' &&
-            event.metaKey &&
-            event.altKey &&
-            !event.ctrlKey);
-        const isFind =
-          event.code === 'KeyF' &&
-          !event.altKey &&
-          !event.shiftKey &&
-          (IS_APPLE
-            ? event.metaKey && !event.ctrlKey
-            : event.ctrlKey && !event.metaKey);
-        if (isFindReplace || isFind) {
-          event.preventDefault();
-          editor.dispatchCommand(OPEN_FIND_REPLACE_COMMAND, undefined);
-          return true;
-        }
+  build: editor => {
+    const named = namedSignals({
+      caseSensitive: false,
+      currentIndex: 0,
+      isOpen: false,
+      isRegex: false,
+      replaceTerm: '',
+      searchTerm: '',
+    });
+
+    const cachedText = watchedSignal(
+      () => editor.read(() => $getRoot().getTextContent()),
+      s =>
+        editor.registerTextContentListener(text => {
+          s.value = text;
+        }),
+    );
+
+    const matches = computed(() => {
+      if (!named.isOpen.value) {
+        return EMPTY_MATCHES;
+      }
+      return findMatches(
+        cachedText.value,
+        named.searchTerm.value,
+        named.caseSensitive.value,
+        named.isRegex.value,
+      );
+    });
+
+    const effectiveIndex = computed(() => {
+      const m = matches.value;
+      const idx = named.currentIndex.value;
+      return m.length > 0 ? Math.min(idx, m.length - 1) : 0;
+    });
+
+    const regexError = computed(() => {
+      if (!named.isRegex.value || !named.searchTerm.value) {
         return false;
-      },
-      COMMAND_PRIORITY_LOW,
+      }
+      try {
+        RegExp(named.searchTerm.value);
+        return false;
+      } catch {
+        return true;
+      }
+    });
+
+    return {...named, cachedText, effectiveIndex, matches, regexError};
+  },
+  name: '@lexical/playground/FindReplace',
+  register: (editor, _config, state) => {
+    const output = state.getOutput();
+    const highlightState = createHighlightState(editor.getKey());
+
+    return mergeRegister(
+      editor.registerCommand(
+        TOGGLE_FIND_REPLACE_COMMAND,
+        () => {
+          output.isOpen.value = !output.isOpen.peek();
+          return true;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+
+      editor.registerCommand(
+        CLOSE_FIND_REPLACE_COMMAND,
+        () => {
+          output.isOpen.value = false;
+          return true;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+
+      editor.registerCommand(
+        FIND_NEXT_COMMAND,
+        () => {
+          const len = output.matches.peek().length;
+          if (len > 0) {
+            output.currentIndex.value = (output.currentIndex.peek() + 1) % len;
+          }
+          return true;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+
+      editor.registerCommand(
+        FIND_PREV_COMMAND,
+        () => {
+          const len = output.matches.peek().length;
+          if (len > 0) {
+            output.currentIndex.value =
+              (output.currentIndex.peek() - 1 + len) % len;
+          }
+          return true;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+
+      editor.registerCommand(
+        REPLACE_CURRENT_COMMAND,
+        () => {
+          const m = output.matches.peek();
+          if (m.length === 0) {
+            return true;
+          }
+          const idx = output.effectiveIndex.peek();
+          const replaceText = output.replaceTerm.peek();
+          const regex = output.isRegex.peek()
+            ? buildSearchRegex(
+                output.searchTerm.peek(),
+                output.caseSensitive.peek(),
+              )
+            : null;
+          editor.update(
+            () => {
+              const offsetMap = $buildOffsetMap();
+              const points = $resolveMatchToPoints(m[idx], offsetMap);
+              if (points) {
+                $replaceMatch(points, replaceText, m[idx], regex);
+              }
+            },
+            {discrete: true},
+          );
+          return true;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+
+      editor.registerCommand(
+        REPLACE_ALL_COMMAND,
+        () => {
+          const m = output.matches.peek();
+          if (m.length === 0) {
+            return true;
+          }
+          const replaceText = output.replaceTerm.peek();
+          const regex = output.isRegex.peek()
+            ? buildSearchRegex(
+                output.searchTerm.peek(),
+                output.caseSensitive.peek(),
+              )
+            : null;
+          editor.update(
+            () => {
+              const offsetMap = $buildOffsetMap();
+              $replaceAllMatches(m, offsetMap, replaceText, regex);
+            },
+            {discrete: true},
+          );
+          return true;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+
+      editor.registerCommand(
+        SET_SEARCH_TERM_COMMAND,
+        term => {
+          output.searchTerm.value = term;
+          output.currentIndex.value = 0;
+          return true;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+
+      editor.registerCommand(
+        SET_REPLACE_TERM_COMMAND,
+        term => {
+          output.replaceTerm.value = term;
+          return true;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+
+      editor.registerCommand(
+        TOGGLE_CASE_SENSITIVE_COMMAND,
+        () => {
+          output.caseSensitive.value = !output.caseSensitive.peek();
+          output.currentIndex.value = 0;
+          return true;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+
+      editor.registerCommand(
+        TOGGLE_REGEX_COMMAND,
+        () => {
+          output.isRegex.value = !output.isRegex.peek();
+          output.currentIndex.value = 0;
+          return true;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+
+      editor.registerCommand(
+        KEY_DOWN_COMMAND,
+        event => {
+          const isFindReplace =
+            (!IS_APPLE &&
+              event.code === 'KeyH' &&
+              event.ctrlKey &&
+              !event.metaKey &&
+              !event.altKey &&
+              !event.shiftKey) ||
+            (IS_APPLE &&
+              event.code === 'KeyF' &&
+              event.metaKey &&
+              event.altKey &&
+              !event.ctrlKey);
+          const isFind =
+            event.code === 'KeyF' &&
+            !event.altKey &&
+            !event.shiftKey &&
+            (IS_APPLE
+              ? event.metaKey && !event.ctrlKey
+              : event.ctrlKey && !event.metaKey);
+          if (isFindReplace || isFind) {
+            event.preventDefault();
+            editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+            return true;
+          }
+          if (output.isOpen.peek()) {
+            const isMod = IS_APPLE
+              ? event.metaKey && !event.ctrlKey
+              : event.ctrlKey && !event.metaKey;
+            if (event.code === 'KeyG' && isMod && !event.altKey) {
+              event.preventDefault();
+              editor.dispatchCommand(
+                event.shiftKey ? FIND_PREV_COMMAND : FIND_NEXT_COMMAND,
+                undefined,
+              );
+              return true;
+            }
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_LOW,
+      ),
+
+      effect(() => {
+        const m = output.matches.value;
+        const idx = output.effectiveIndex.value;
+        const open = output.isOpen.value;
+
+        clearHighlights(highlightState);
+        if (!open || m.length === 0) {
+          return;
+        }
+        editor.read(() => {
+          $updateHighlights(editor, m, idx, highlightState);
+        });
+      }),
+
+      () => disposeHighlightState(highlightState),
     );
   },
 });
@@ -477,74 +793,32 @@ function FindReplacePanel({
   context,
 }: DecoratorComponentProps): JSX.Element | null {
   const [editor] = context;
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [replaceTerm, setReplaceTerm] = useState('');
-  const [caseSensitive, setCaseSensitive] = useState(false);
-  const [isRegex, setIsRegex] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [cachedText, setCachedText] = useState(() =>
-    editor.read(() => $getRoot().getTextContent()),
+
+  const isOpen = useExtensionSignalValue(FindReplaceExtension, 'isOpen');
+  const searchTerm = useExtensionSignalValue(
+    FindReplaceExtension,
+    'searchTerm',
   );
+  const replaceTerm = useExtensionSignalValue(
+    FindReplaceExtension,
+    'replaceTerm',
+  );
+  const caseSensitive = useExtensionSignalValue(
+    FindReplaceExtension,
+    'caseSensitive',
+  );
+  const isRegex = useExtensionSignalValue(FindReplaceExtension, 'isRegex');
+  const matches = useExtensionSignalValue(FindReplaceExtension, 'matches');
+  const effectiveIndex = useExtensionSignalValue(
+    FindReplaceExtension,
+    'effectiveIndex',
+  );
+  const regexError = useExtensionSignalValue(
+    FindReplaceExtension,
+    'regexError',
+  );
+
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const highlightStateRef = useRef<HighlightState>(
-    createHighlightState(editor.getKey()),
-  );
-
-  useEffect(() => {
-    return mergeRegister(
-      editor.registerTextContentListener(text => {
-        setCachedText(text);
-      }),
-      editor.registerCommand(
-        OPEN_FIND_REPLACE_COMMAND,
-        () => {
-          setIsOpen(prev => !prev);
-          return true;
-        },
-        COMMAND_PRIORITY_LOW,
-      ),
-    );
-  }, [editor]);
-
-  useEffect(() => {
-    const state = highlightStateRef.current;
-    return () => disposeHighlightState(state);
-  }, []);
-
-  const regexError = useMemo(() => {
-    if (!isRegex || !searchTerm) {
-      return false;
-    }
-    try {
-      RegExp(searchTerm);
-      return false;
-    } catch {
-      return true;
-    }
-  }, [searchTerm, isRegex]);
-
-  const matches = useMemo(() => {
-    if (!isOpen) {
-      return [];
-    }
-    return findMatches(cachedText, searchTerm, caseSensitive, isRegex);
-  }, [cachedText, searchTerm, caseSensitive, isRegex, isOpen]);
-
-  const effectiveIndex =
-    matches.length > 0 ? Math.min(currentIndex, matches.length - 1) : 0;
-
-  useLayoutEffect(() => {
-    const state = highlightStateRef.current;
-    if (!isOpen || matches.length === 0) {
-      clearHighlights(state);
-      return () => clearHighlights(state);
-    }
-    editor.read(() => {
-      $updateHighlights(editor, matches, effectiveIndex, state);
-    });
-    return () => clearHighlights(state);
-  }, [editor, matches, effectiveIndex, isOpen]);
 
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
@@ -552,70 +826,46 @@ function FindReplacePanel({
     }
   }, [isOpen]);
 
-  const handleNext = useCallback(() => {
-    setCurrentIndex(prev =>
-      matches.length > 0 ? (prev + 1) % matches.length : 0,
-    );
-  }, [matches.length]);
-
-  const handlePrev = useCallback(() => {
-    setCurrentIndex(prev =>
-      matches.length > 0 ? (prev - 1 + matches.length) % matches.length : 0,
-    );
-  }, [matches.length]);
-
-  const handleReplace = useCallback(() => {
-    if (matches.length === 0) {
-      return;
-    }
-    editor.update(
-      () => {
-        const offsetMap = $buildOffsetMap();
-        const points = $resolveMatchToPoints(
-          matches[effectiveIndex],
-          offsetMap,
-        );
-        if (points) {
-          $replaceMatch(points, replaceTerm);
-        }
-      },
-      {discrete: true},
-    );
-  }, [editor, matches, effectiveIndex, replaceTerm]);
-
-  const handleReplaceAll = useCallback(() => {
-    if (matches.length === 0) {
-      return;
-    }
-    editor.update(
-      () => {
-        const offsetMap = $buildOffsetMap();
-        $replaceAllMatches(matches, offsetMap, replaceTerm);
-      },
-      {discrete: true},
-    );
-  }, [editor, matches, replaceTerm]);
-
-  const handleClose = useCallback(() => {
-    setIsOpen(false);
-    editor.focus();
-  }, [editor]);
-
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        handleClose();
-      } else if (e.key === 'Enter') {
+        editor.dispatchCommand(CLOSE_FIND_REPLACE_COMMAND, undefined);
+        editor.focus();
+        return;
+      }
+      if (e.key === 'Enter') {
         e.preventDefault();
-        if (e.shiftKey) {
-          handlePrev();
-        } else {
-          handleNext();
-        }
+        editor.dispatchCommand(
+          e.shiftKey ? FIND_PREV_COMMAND : FIND_NEXT_COMMAND,
+          undefined,
+        );
+        return;
+      }
+      const isMod = IS_APPLE
+        ? e.metaKey && !e.ctrlKey
+        : e.ctrlKey && !e.metaKey;
+      if (e.code === 'KeyG' && isMod && !e.altKey) {
+        e.preventDefault();
+        editor.dispatchCommand(
+          e.shiftKey ? FIND_PREV_COMMAND : FIND_NEXT_COMMAND,
+          undefined,
+        );
+      } else if (
+        (e.code === 'KeyF' && isMod && !e.altKey && !e.shiftKey) ||
+        (!IS_APPLE &&
+          e.code === 'KeyH' &&
+          e.ctrlKey &&
+          !e.metaKey &&
+          !e.altKey &&
+          !e.shiftKey) ||
+        (IS_APPLE && e.code === 'KeyF' && e.metaKey && e.altKey && !e.ctrlKey)
+      ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
       }
     },
-    [handleClose, handleNext, handlePrev],
+    [editor],
   );
 
   if (!isOpen) {
@@ -639,8 +889,7 @@ function FindReplacePanel({
           placeholder="Find..."
           value={searchTerm}
           onChange={e => {
-            setSearchTerm(e.target.value);
-            setCurrentIndex(0);
+            editor.dispatchCommand(SET_SEARCH_TERM_COMMAND, e.target.value);
           }}
           aria-label="Search text"
         />
@@ -653,9 +902,11 @@ function FindReplacePanel({
         </span>
         <button
           className="find-replace-btn"
-          onClick={handlePrev}
+          onClick={() => editor.dispatchCommand(FIND_PREV_COMMAND, undefined)}
           disabled={matches.length === 0}
-          title="Previous (Shift+Enter)"
+          title={
+            IS_APPLE ? 'Previous match (⇧⌘G)' : 'Previous match (Ctrl+Shift+G)'
+          }
           aria-label="Previous match">
           <svg viewBox="0 0 16 16">
             <path d="M8 4l5 6H3z" />
@@ -663,9 +914,9 @@ function FindReplacePanel({
         </button>
         <button
           className="find-replace-btn"
-          onClick={handleNext}
+          onClick={() => editor.dispatchCommand(FIND_NEXT_COMMAND, undefined)}
           disabled={matches.length === 0}
-          title="Next (Enter)"
+          title={IS_APPLE ? 'Next match (⌘G)' : 'Next match (Ctrl+G)'}
           aria-label="Next match">
           <svg viewBox="0 0 16 16">
             <path d="M8 12L3 6h10z" />
@@ -675,8 +926,7 @@ function FindReplacePanel({
         <button
           className="find-replace-toggle"
           onClick={() => {
-            setCaseSensitive(v => !v);
-            setCurrentIndex(0);
+            editor.dispatchCommand(TOGGLE_CASE_SENSITIVE_COMMAND, undefined);
           }}
           title="Match case"
           aria-label="Match case"
@@ -686,8 +936,7 @@ function FindReplacePanel({
         <button
           className="find-replace-toggle"
           onClick={() => {
-            setIsRegex(v => !v);
-            setCurrentIndex(0);
+            editor.dispatchCommand(TOGGLE_REGEX_COMMAND, undefined);
           }}
           title="Use regular expression"
           aria-label="Use regular expression"
@@ -697,7 +946,10 @@ function FindReplacePanel({
         <div className="find-replace-separator" />
         <button
           className="find-replace-btn"
-          onClick={handleClose}
+          onClick={() => {
+            editor.dispatchCommand(CLOSE_FIND_REPLACE_COMMAND, undefined);
+            editor.focus();
+          }}
           title="Close (Escape)"
           aria-label="Close">
           <svg viewBox="0 0 16 16">
@@ -711,19 +963,23 @@ function FindReplacePanel({
           type="text"
           placeholder="Replace..."
           value={replaceTerm}
-          onChange={e => setReplaceTerm(e.target.value)}
+          onChange={e => {
+            editor.dispatchCommand(SET_REPLACE_TERM_COMMAND, e.target.value);
+          }}
           aria-label="Replace text"
         />
         <button
           className="find-replace-action"
-          onClick={handleReplace}
+          onClick={() =>
+            editor.dispatchCommand(REPLACE_CURRENT_COMMAND, undefined)
+          }
           disabled={matches.length === 0}
           aria-label="Replace current match">
           Replace
         </button>
         <button
           className="find-replace-action"
-          onClick={handleReplaceAll}
+          onClick={() => editor.dispatchCommand(REPLACE_ALL_COMMAND, undefined)}
           disabled={matches.length === 0}
           aria-label="Replace all matches">
           All

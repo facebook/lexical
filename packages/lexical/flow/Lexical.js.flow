@@ -2083,7 +2083,7 @@ declare export function registerEventListener(
   options?: EventListenerOptionsOrUseCapture,
 ): () => void;
 export type EventListenerMap<T> = {readonly [type: string]: EventListener};
-declare export function registerEventListeners<T: EventTarget>(
+declare export function registerEventListeners<T extends EventTarget>(
   target: T,
   listeners: EventListenerMap<T>,
   options?: EventListenerOptionsOrUseCapture,

@@ -19,6 +19,7 @@ import {
   $isRangeSelection,
   DecoratorNode,
   type LexicalEditor,
+  type RangeSelection,
 } from 'lexical';
 import {
   afterEach,
@@ -116,15 +117,22 @@ function $initWithText(
   textNode.select(offset, offset);
 }
 
-function deleteCharacter(editor: LexicalEditor, isBackward: boolean): void {
+function runDelete(
+  editor: LexicalEditor,
+  $delete: (selection: RangeSelection) => void,
+): void {
   editor.update(
     () => {
       const selection = $getSelection();
       assert($isRangeSelection(selection), 'Expected RangeSelection');
-      selection.deleteCharacter(isBackward);
+      $delete(selection);
     },
     {discrete: true},
   );
+}
+
+function deleteCharacter(editor: LexicalEditor, isBackward: boolean): void {
+  runDelete(editor, selection => selection.deleteCharacter(isBackward));
 }
 
 function textContent(editor: LexicalEditor): string {
@@ -186,10 +194,7 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
   });
 
   afterEach(() => {
-    modifySpy.mockRestore();
-    setBaseAndExtentSpy.mockRestore();
-    extendSpy.mockRestore();
-    addRangeSpy.mockRestore();
+    vi.restoreAllMocks();
   });
 
   /**
@@ -217,20 +222,33 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
     }
   }
 
-  test('backspace removes one character with only collapsed DOM selections', () => {
-    const editor = mountEditor(() => $initWithText('hello', 5));
-    deleteCharacter(editor, true);
-    expect(textContent(editor)).toBe('hell');
-    deleteCharacter(editor, true);
-    expect(textContent(editor)).toBe('hel');
+  /**
+   * Mount an editor with `init`, run one deletion per entry of `expected`
+   * asserting the text content after each, then assert the PRIMARY-safety
+   * invariant.
+   */
+  function expectDeletionSequence(
+    init: () => void,
+    isBackward: boolean,
+    expected: string[],
+  ): void {
+    const editor = mountEditor(init);
+    for (const text of expected) {
+      deleteCharacter(editor, isBackward);
+      expect(textContent(editor)).toBe(text);
+    }
     expectOnlyCollapsedDOMSelections();
+  }
+
+  test('backspace removes one character with only collapsed DOM selections', () => {
+    expectDeletionSequence(() => $initWithText('hello', 5), true, [
+      'hell',
+      'hel',
+    ]);
   });
 
   test('forward delete removes one character with only collapsed DOM selections', () => {
-    const editor = mountEditor(() => $initWithText('hello', 0));
-    deleteCharacter(editor, false);
-    expect(textContent(editor)).toBe('ello');
-    expectOnlyCollapsedDOMSelections();
+    expectDeletionSequence(() => $initWithText('hello', 0), false, ['ello']);
   });
 
   test('backspace deletes a combining mark one code unit at a time', () => {
@@ -238,12 +256,10 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
     // Lexical does not normalize, so the combining mark is removed first,
     // then the base letter.
     const nTilde = 'n\u0303';
-    const editor = mountEditor(() => $initWithText(nTilde, nTilde.length));
-    deleteCharacter(editor, true);
-    expect(textContent(editor)).toBe('n');
-    deleteCharacter(editor, true);
-    expect(textContent(editor)).toBe('');
-    expectOnlyCollapsedDOMSelections();
+    expectDeletionSequence(() => $initWithText(nTilde, nTilde.length), true, [
+      'n',
+      '',
+    ]);
   });
 
   test('backspace on RTL (Hebrew) text deletes logically, one letter at a time', () => {
@@ -251,26 +267,21 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
     // Backspace removes the logically-last letter regardless of the RTL
     // visual order.
     const shalom = 'שלום';
-    const editor = mountEditor(() => $initWithText(shalom, shalom.length));
-    deleteCharacter(editor, true);
-    expect(textContent(editor)).toBe('שלו');
-    deleteCharacter(editor, true);
-    expect(textContent(editor)).toBe('של');
-    expectOnlyCollapsedDOMSelections();
+    expectDeletionSequence(() => $initWithText(shalom, shalom.length), true, [
+      'שלו',
+      'של',
+    ]);
   });
 
   test('backspace on RTL (Arabic) text deletes a combining mark then the base', () => {
     // Arabic lam (U+0644) + shadda combining mark (U+0651). The combining
     // mark is a separate code point that is removed first.
     const lamShadda = 'لّ';
-    const editor = mountEditor(() =>
-      $initWithText(lamShadda, lamShadda.length),
+    expectDeletionSequence(
+      () => $initWithText(lamShadda, lamShadda.length),
+      true,
+      ['ل', ''],
     );
-    deleteCharacter(editor, true);
-    expect(textContent(editor)).toBe('ل');
-    deleteCharacter(editor, true);
-    expect(textContent(editor)).toBe('');
-    expectOnlyCollapsedDOMSelections();
   });
 
   test('backspace at the end of mixed bidi text deletes the logically-last character', () => {
@@ -278,75 +289,68 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
     // the end (logical offset 6); Backspace deletes the logically-last
     // character (gimel), not the visually-adjacent one.
     const mixed = 'abcאבג';
-    const editor = mountEditor(() => $initWithText(mixed, mixed.length));
-    deleteCharacter(editor, true);
-    expect(textContent(editor)).toBe('abcאב');
-    expectOnlyCollapsedDOMSelections();
+    expectDeletionSequence(() => $initWithText(mixed, mixed.length), true, [
+      'abcאב',
+    ]);
   });
 
   test('forward delete at the start of mixed bidi text deletes the logically-first character', () => {
     // Caret at logical offset 0 of RTL "אבג" + LTR "abc"; Delete removes the
     // logically-first character (alef).
     const mixed = 'אבגabc';
-    const editor = mountEditor(() => $initWithText(mixed, 0));
-    deleteCharacter(editor, false);
-    expect(textContent(editor)).toBe('בגabc');
-    expectOnlyCollapsedDOMSelections();
+    expectDeletionSequence(() => $initWithText(mixed, 0), false, ['בגabc']);
   });
 
   test('backspace removes a whole token node with only collapsed DOM selections', () => {
     // Token nodes are atomic: a single Backspace removes the entire node.
-    const editor = mountEditor(() => $initWithText('hello world', 11, 'token'));
-    deleteCharacter(editor, true);
-    expect(textContent(editor)).toBe('');
-    expectOnlyCollapsedDOMSelections();
+    expectDeletionSequence(
+      () => $initWithText('hello world', 11, 'token'),
+      true,
+      [''],
+    );
   });
 
   test('backspace on a segmented node removes the last segment with only collapsed DOM selections', () => {
     // Segmented nodes delete a whole whitespace-delimited segment at a time.
-    const editor = mountEditor(() =>
-      $initWithText('hello world', 11, 'segmented'),
+    expectDeletionSequence(
+      () => $initWithText('hello world', 11, 'segmented'),
+      true,
+      ['hello', ''],
     );
-    deleteCharacter(editor, true);
-    expect(textContent(editor)).toBe('hello');
-    deleteCharacter(editor, true);
-    expect(textContent(editor)).toBe('');
-    expectOnlyCollapsedDOMSelections();
   });
 
   test('backspace after a linebreak deletes it with only collapsed DOM selections', () => {
     // Caret at a text node boundary: the collapsed move lands past the
     // linebreak and the measured range brackets it, so removeText deletes
     // the LineBreakNode without any non-collapsed DOM selection.
-    const editor = mountEditor(() => {
-      const paragraph = $createParagraphNode();
-      const before = $createTextNode('one');
-      const linebreak = $createLineBreakNode();
-      const after = $createTextNode('two');
-      paragraph.append(before, linebreak, after);
-      $getRoot().clear().append(paragraph);
-      after.select(0, 0);
-    });
-    deleteCharacter(editor, true);
-    expect(textContent(editor)).toBe('onetwo');
-    expectOnlyCollapsedDOMSelections();
+    expectDeletionSequence(
+      () => {
+        const paragraph = $createParagraphNode();
+        const after = $createTextNode('two');
+        paragraph.append($createTextNode('one'), $createLineBreakNode(), after);
+        $getRoot().clear().append(paragraph);
+        after.select(0, 0);
+      },
+      true,
+      ['onetwo'],
+    );
   });
 
   test('backspace across a format-run boundary deletes from the previous run', () => {
     // Caret at the start of a bold run: the collapsed move lands inside the
     // preceding plain run and the last character of that run is deleted.
-    const editor = mountEditor(() => {
-      const paragraph = $createParagraphNode();
-      const plain = $createTextNode('ab');
-      const bold = $createTextNode('cd');
-      bold.toggleFormat('bold');
-      paragraph.append(plain, bold);
-      $getRoot().clear().append(paragraph);
-      bold.select(0, 0);
-    });
-    deleteCharacter(editor, true);
-    expect(textContent(editor)).toBe('acd');
-    expectOnlyCollapsedDOMSelections();
+    expectDeletionSequence(
+      () => {
+        const paragraph = $createParagraphNode();
+        const bold = $createTextNode('cd');
+        bold.toggleFormat('bold');
+        paragraph.append($createTextNode('ab'), bold);
+        $getRoot().clear().append(paragraph);
+        bold.select(0, 0);
+      },
+      true,
+      ['acd'],
+    );
   });
 
   describe('deletes the same whole grapheme the engine would select natively', () => {
@@ -386,15 +390,10 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
         expect(nativeBoundary).toBeLessThan(text.length);
         // The scratch measurement above intentionally used modify('extend');
         // reset the spies so the invariant below only sees the deletion.
-        modifySpy.mockClear();
-        setBaseAndExtentSpy.mockClear();
-        extendSpy.mockClear();
-        addRangeSpy.mockClear();
-
-        const editor = mountEditor(() => $initWithText(text, text.length));
-        deleteCharacter(editor, true);
-        expect(textContent(editor)).toBe(text.slice(0, nativeBoundary));
-        expectOnlyCollapsedDOMSelections();
+        vi.clearAllMocks();
+        expectDeletionSequence(() => $initWithText(text, text.length), true, [
+          text.slice(0, nativeBoundary),
+        ]);
       });
     });
   });
@@ -419,14 +418,7 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
 
     test('forward deleteLine at a caret before an inline decorator deletes the rest of the line', () => {
       const editor = mountEditor($initDecoratorLine);
-      editor.update(
-        () => {
-          const selection = $getSelection();
-          assert($isRangeSelection(selection), 'Expected RangeSelection');
-          selection.deleteLine(false);
-        },
-        {discrete: true},
-      );
+      runDelete(editor, selection => selection.deleteLine(false));
       editor.read(() => {
         const root = $getRoot();
         expect(root.getChildrenSize()).toBe(3);
@@ -442,14 +434,7 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
 
     test('forward deleteWord at a caret before an inline decorator deletes it', () => {
       const editor = mountEditor($initDecoratorLine);
-      editor.update(
-        () => {
-          const selection = $getSelection();
-          assert($isRangeSelection(selection), 'Expected RangeSelection');
-          selection.deleteWord(false);
-        },
-        {discrete: true},
-      );
+      runDelete(editor, selection => selection.deleteWord(false));
       editor.read(() => {
         const p2 = $getRoot().getChildAtIndex(1)!;
         assert($isElementNode(p2), 'Expected ElementNode');

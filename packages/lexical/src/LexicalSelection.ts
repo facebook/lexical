@@ -1770,37 +1770,7 @@ export class RangeSelection implements BaseSelection {
       this.applyDOMRange(range);
       this.dirty = true;
       if (!collapse) {
-        // Validate selection; make sure that the new extended selection respects shadow roots
-        const nodes = this.getNodes();
-        const validNodes = [];
-        let shrinkSelection = false;
-        for (let i = 0; i < nodes.length; i++) {
-          const nextNode = nodes[i];
-          if ($hasAncestor(nextNode, root)) {
-            validNodes.push(nextNode);
-          } else {
-            shrinkSelection = true;
-          }
-        }
-        if (shrinkSelection && validNodes.length > 0) {
-          // validNodes length check is a safeguard against an invalid selection; as getNodes()
-          // will return an empty array in this case
-          if (isBackward) {
-            const firstValidNode = validNodes[0];
-            if ($isElementNode(firstValidNode)) {
-              firstValidNode.selectStart();
-            } else {
-              firstValidNode.getParentOrThrow().selectStart();
-            }
-          } else {
-            const lastValidNode = validNodes[validNodes.length - 1];
-            if ($isElementNode(lastValidNode)) {
-              lastValidNode.selectEnd();
-            } else {
-              lastValidNode.getParentOrThrow().selectEnd();
-            }
-          }
-        }
+        $shrinkSelectionToRoot(this, isBackward, root);
 
         // Because a range works on start and end, we might need to flip
         // the anchor and focus points to match what the DOM has, not what
@@ -2460,6 +2430,38 @@ function moveNativeSelection(
 }
 
 /**
+ * Validate that the selection respects `root` (the nearest root or shadow
+ * root): if any selected node lies outside of it, shrink the selection to the
+ * valid edge in the given direction. The valid node check is a safeguard
+ * against an invalid selection, for which getNodes() returns an empty array.
+ *
+ * @returns true if the selection was shrunk
+ */
+function $shrinkSelectionToRoot(
+  selection: RangeSelection,
+  isBackward: boolean,
+  root: LexicalNode,
+): boolean {
+  const nodes = selection.getNodes();
+  const validNodes = nodes.filter(node => $hasAncestor(node, root));
+  if (validNodes.length === 0 || validNodes.length === nodes.length) {
+    return false;
+  }
+  const edgeNode = isBackward
+    ? validNodes[0]
+    : validNodes[validNodes.length - 1];
+  const edgeElement = $isElementNode(edgeNode)
+    ? edgeNode
+    : edgeNode.getParentOrThrow();
+  if (isBackward) {
+    edgeElement.selectStart();
+  } else {
+    edgeElement.selectEnd();
+  }
+  return true;
+}
+
+/**
  * Extend a collapsed selection by one unit (`character`, `word` or
  * `lineboundary`) in the deletion direction without ever creating a
  * non-collapsed DOM selection.
@@ -2581,15 +2583,14 @@ function $extendSelectionForDeletion(
   // that edge. Word/line deletions legitimately span nodes, so they use the
   // general path below.
   if (wasCollapsed && granularity === 'character' && anchor.type === 'text') {
-    const anchorTextSize = anchorNode.getTextContentSize();
-    let clampedOffset = -1;
-    if (landedContainer === anchorDOM) {
-      clampedOffset = landedOffset;
-    } else if (isBackward && anchorOffset > 0) {
-      clampedOffset = 0;
-    } else if (!isBackward && anchorOffset < anchorTextSize) {
-      clampedOffset = anchorTextSize;
-    }
+    // The deletion-side edge of the anchor's text.
+    const edgeOffset = isBackward ? 0 : anchorNode.getTextContentSize();
+    const clampedOffset =
+      landedContainer === anchorDOM
+        ? landedOffset
+        : anchorOffset !== edgeOffset
+          ? edgeOffset
+          : -1;
     if (clampedOffset >= 0) {
       if (clampedOffset !== anchorOffset) {
         selection.focus.set(anchor.key, clampedOffset, 'text');
@@ -2616,23 +2617,7 @@ function $extendSelectionForDeletion(
     startOffset,
   } as unknown as StaticRange);
   selection.dirty = true;
-  // Shrink the selection to the valid side of any crossed shadow-root
-  // boundary (mirrors modify()).
-  const allNodes = selection.getNodes();
-  const validNodes = allNodes.filter(n => $hasAncestor(n, root));
-  if (validNodes.length > 0 && validNodes.length < allNodes.length) {
-    const edgeNode = isBackward
-      ? validNodes[0]
-      : validNodes[validNodes.length - 1];
-    const edgeElement = $isElementNode(edgeNode)
-      ? edgeNode
-      : edgeNode.getParentOrThrow();
-    if (isBackward) {
-      edgeElement.selectStart();
-    } else {
-      edgeElement.selectEnd();
-    }
-  } else if (isBackward) {
+  if (!$shrinkSelectionToRoot(selection, isBackward, root) && isBackward) {
     // applyDOMRange set anchor = range start (the landed point); the deletion
     // anchor must stay at the original caret, so restore that orientation.
     $swapPoints(selection);

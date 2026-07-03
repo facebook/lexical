@@ -78,20 +78,21 @@ function $createTestInlineDecoratorNode(): TestInlineDecoratorNode {
   return $create(TestInlineDecoratorNode);
 }
 
-const ext = defineExtension({
-  dependencies: [RichTextExtension],
-  name: '[8766-browser]',
-  nodes: [TestInlineDecoratorNode],
-});
-
-function mountEditor(): LexicalEditor {
+function mountEditor($initialEditorState: () => void): LexicalEditor {
   const container = document.createElement('div');
   document.body.appendChild(container);
   const contentEditable = document.createElement('div');
   contentEditable.contentEditable = 'true';
   container.appendChild(contentEditable);
 
-  const editor = buildEditorFromExtensions(ext);
+  const editor = buildEditorFromExtensions(
+    defineExtension({
+      $initialEditorState,
+      dependencies: [RichTextExtension],
+      name: '[8766-browser]',
+      nodes: [TestInlineDecoratorNode],
+    }),
+  );
   editor.setRootElement(contentEditable);
 
   onTestFinished(() => {
@@ -102,25 +103,19 @@ function mountEditor(): LexicalEditor {
   return editor;
 }
 
-function setup(
-  editor: LexicalEditor,
+function $initWithText(
   text: string,
   offset: number,
   mode?: 'token' | 'segmented',
 ): void {
-  editor.update(
-    () => {
-      const paragraph = $createParagraphNode();
-      const textNode = $createTextNode(text);
-      if (mode) {
-        textNode.setMode(mode);
-      }
-      paragraph.append(textNode);
-      $getRoot().clear().append(paragraph);
-      textNode.select(offset, offset);
-    },
-    {discrete: true},
-  );
+  const paragraph = $createParagraphNode();
+  const textNode = $createTextNode(text);
+  if (mode) {
+    textNode.setMode(mode);
+  }
+  paragraph.append(textNode);
+  $getRoot().clear().append(paragraph);
+  textNode.select(offset, offset);
 }
 
 function deleteCharacter(editor: LexicalEditor, isBackward: boolean): void {
@@ -225,8 +220,7 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
   }
 
   test('backspace removes one character with only collapsed DOM selections', () => {
-    const editor = mountEditor();
-    setup(editor, 'hello', 5);
+    const editor = mountEditor(() => $initWithText('hello', 5));
     deleteCharacter(editor, true);
     expect(textContent(editor)).toBe('hell');
     deleteCharacter(editor, true);
@@ -235,8 +229,7 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
   });
 
   test('forward delete removes one character with only collapsed DOM selections', () => {
-    const editor = mountEditor();
-    setup(editor, 'hello', 0);
+    const editor = mountEditor(() => $initWithText('hello', 0));
     deleteCharacter(editor, false);
     expect(textContent(editor)).toBe('ello');
     expectOnlyCollapsedDOMSelections();
@@ -247,8 +240,7 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
     // Lexical does not normalize, so the combining mark is removed first,
     // then the base letter.
     const nTilde = 'n\u0303';
-    const editor = mountEditor();
-    setup(editor, nTilde, nTilde.length);
+    const editor = mountEditor(() => $initWithText(nTilde, nTilde.length));
     deleteCharacter(editor, true);
     expect(textContent(editor)).toBe('n');
     deleteCharacter(editor, true);
@@ -261,8 +253,7 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
     // Backspace removes the logically-last letter regardless of the RTL
     // visual order.
     const shalom = 'שלום';
-    const editor = mountEditor();
-    setup(editor, shalom, shalom.length);
+    const editor = mountEditor(() => $initWithText(shalom, shalom.length));
     deleteCharacter(editor, true);
     expect(textContent(editor)).toBe('שלו');
     deleteCharacter(editor, true);
@@ -274,8 +265,9 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
     // Arabic lam (U+0644) + shadda combining mark (U+0651). The combining
     // mark is a separate code point that is removed first.
     const lamShadda = 'لّ';
-    const editor = mountEditor();
-    setup(editor, lamShadda, lamShadda.length);
+    const editor = mountEditor(() =>
+      $initWithText(lamShadda, lamShadda.length),
+    );
     deleteCharacter(editor, true);
     expect(textContent(editor)).toBe('ل');
     deleteCharacter(editor, true);
@@ -288,8 +280,7 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
     // the end (logical offset 6); Backspace deletes the logically-last
     // character (gimel), not the visually-adjacent one.
     const mixed = 'abcאבג';
-    const editor = mountEditor();
-    setup(editor, mixed, mixed.length);
+    const editor = mountEditor(() => $initWithText(mixed, mixed.length));
     deleteCharacter(editor, true);
     expect(textContent(editor)).toBe('abcאב');
     expectOnlyCollapsedDOMSelections();
@@ -299,8 +290,7 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
     // Caret at logical offset 0 of RTL "אבג" + LTR "abc"; Delete removes the
     // logically-first character (alef).
     const mixed = 'אבגabc';
-    const editor = mountEditor();
-    setup(editor, mixed, 0);
+    const editor = mountEditor(() => $initWithText(mixed, 0));
     deleteCharacter(editor, false);
     expect(textContent(editor)).toBe('בגabc');
     expectOnlyCollapsedDOMSelections();
@@ -308,8 +298,7 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
 
   test('backspace removes a whole token node with only collapsed DOM selections', () => {
     // Token nodes are atomic: a single Backspace removes the entire node.
-    const editor = mountEditor();
-    setup(editor, 'hello world', 11, 'token');
+    const editor = mountEditor(() => $initWithText('hello world', 11, 'token'));
     deleteCharacter(editor, true);
     expect(textContent(editor)).toBe('');
     expectOnlyCollapsedDOMSelections();
@@ -317,8 +306,9 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
 
   test('backspace on a segmented node removes the last segment with only collapsed DOM selections', () => {
     // Segmented nodes delete a whole whitespace-delimited segment at a time.
-    const editor = mountEditor();
-    setup(editor, 'hello world', 11, 'segmented');
+    const editor = mountEditor(() =>
+      $initWithText('hello world', 11, 'segmented'),
+    );
     deleteCharacter(editor, true);
     expect(textContent(editor)).toBe('hello');
     deleteCharacter(editor, true);
@@ -331,19 +321,15 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
     // linebreak and the measured range brackets it, so removeText deletes
     // the LineBreakNode without any non-collapsed DOM selection. (This was
     // previously a native modify('extend') fallback that clobbered PRIMARY.)
-    const editor = mountEditor();
-    editor.update(
-      () => {
-        const paragraph = $createParagraphNode();
-        const before = $createTextNode('one');
-        const linebreak = $createLineBreakNode();
-        const after = $createTextNode('two');
-        paragraph.append(before, linebreak, after);
-        $getRoot().clear().append(paragraph);
-        after.select(0, 0);
-      },
-      {discrete: true},
-    );
+    const editor = mountEditor(() => {
+      const paragraph = $createParagraphNode();
+      const before = $createTextNode('one');
+      const linebreak = $createLineBreakNode();
+      const after = $createTextNode('two');
+      paragraph.append(before, linebreak, after);
+      $getRoot().clear().append(paragraph);
+      after.select(0, 0);
+    });
     deleteCharacter(editor, true);
     expect(textContent(editor)).toBe('onetwo');
     expectOnlyCollapsedDOMSelections();
@@ -353,19 +339,15 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
     // Caret at the start of a bold run: the collapsed move lands inside the
     // preceding plain run and the last character of that run is deleted.
     // (Also previously a native modify('extend') fallback.)
-    const editor = mountEditor();
-    editor.update(
-      () => {
-        const paragraph = $createParagraphNode();
-        const plain = $createTextNode('ab');
-        const bold = $createTextNode('cd');
-        bold.toggleFormat('bold');
-        paragraph.append(plain, bold);
-        $getRoot().clear().append(paragraph);
-        bold.select(0, 0);
-      },
-      {discrete: true},
-    );
+    const editor = mountEditor(() => {
+      const paragraph = $createParagraphNode();
+      const plain = $createTextNode('ab');
+      const bold = $createTextNode('cd');
+      bold.toggleFormat('bold');
+      paragraph.append(plain, bold);
+      $getRoot().clear().append(paragraph);
+      bold.select(0, 0);
+    });
     deleteCharacter(editor, true);
     expect(textContent(editor)).toBe('acd');
     expectOnlyCollapsedDOMSelections();
@@ -413,8 +395,7 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
         extendSpy.mockClear();
         addRangeSpy.mockClear();
 
-        const editor = mountEditor();
-        setup(editor, text, text.length);
+        const editor = mountEditor(() => $initWithText(text, text.length));
         deleteCharacter(editor, true);
         expect(textContent(editor)).toBe(text.slice(0, nativeBoundary));
         expectOnlyCollapsedDOMSelections();
@@ -429,25 +410,19 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
     // the inline decorator — exactly where native caret movement gets stuck —
     // and the native measurement must continue from that hopped focus, not
     // from the anchor.
-    function setupDecoratorLine(editor: LexicalEditor): void {
-      editor.update(
-        () => {
-          const p1 = $createParagraphNode();
-          p1.append($createTextNode('One'));
-          const p2 = $createParagraphNode();
-          p2.append($createTestInlineDecoratorNode(), $createTextNode('Two'));
-          const p3 = $createParagraphNode();
-          $getRoot().clear().append(p1, p2, p3);
-          // Caret before the decorator, as an element point on the paragraph.
-          p2.select(0, 0);
-        },
-        {discrete: true},
-      );
+    function $initDecoratorLine(): void {
+      const p1 = $createParagraphNode();
+      p1.append($createTextNode('One'));
+      const p2 = $createParagraphNode();
+      p2.append($createTestInlineDecoratorNode(), $createTextNode('Two'));
+      const p3 = $createParagraphNode();
+      $getRoot().clear().append(p1, p2, p3);
+      // Caret before the decorator, as an element point on the paragraph.
+      p2.select(0, 0);
     }
 
     test('forward deleteLine at a caret before an inline decorator deletes the rest of the line', () => {
-      const editor = mountEditor();
-      setupDecoratorLine(editor);
+      const editor = mountEditor($initDecoratorLine);
       editor.update(
         () => {
           const selection = $getSelection();
@@ -470,8 +445,7 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
     });
 
     test('forward deleteWord at a caret before an inline decorator deletes it', () => {
-      const editor = mountEditor();
-      setupDecoratorLine(editor);
+      const editor = mountEditor($initDecoratorLine);
       editor.update(
         () => {
           const selection = $getSelection();

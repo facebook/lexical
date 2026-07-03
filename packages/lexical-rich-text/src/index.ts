@@ -68,6 +68,7 @@ import {
   $getSelection,
   $getSiblingCaret,
   $getSlotFrame,
+  $hasAncestor,
   $insertNodes,
   $isDecoratorNode,
   $isElementNode,
@@ -698,6 +699,16 @@ function $tryExitShadowRootToBlockCursor(
   // shadow root (e.g. LayoutItem with element-type selection).
   const shadowRoot = $findMatchingParent(focusCaret.origin, $isShadowRootNode);
   if (!shadowRoot) {
+    return false;
+  }
+  // When focus is an element-type point, $caretFromPoint returns a caret
+  // whose origin is a child of the focus node. If that child happens to be
+  // (or sit inside) a shadow root, $findMatchingParent matches it even
+  // though the selection is at the parent level, not inside the shadow root.
+  // Skip the exit logic when the focus node is not actually inside the
+  // found shadow root.
+  const focusNode = selection.focus.getNode();
+  if (!shadowRoot.is(focusNode) && !$hasAncestor(focusNode, shadowRoot)) {
     return false;
   }
   // Check that the focus is at the edge of the shadow root in the given

@@ -22,6 +22,7 @@ import {
   getPageOrFrame,
   html,
   initialize,
+  insertCollapsible,
   pasteFromClipboard,
   selectFromInsertDropdown,
   test,
@@ -746,6 +747,86 @@ test.describe('HorizontalRule', () => {
     expect(inList).toBe(true);
 
     // ArrowDown from last list item should select the HR
+    await page.keyboard.press('ArrowDown');
+
+    const isNodeSel = await getPageOrFrame(page).evaluate(() => {
+      const sel = window.lexicalEditor.getEditorState()._selection;
+      return sel !== null && '_nodes' in sel && sel._nodes.size === 1;
+    });
+    expect(isNodeSel).toBe(true);
+  });
+
+  test('ArrowDown from block cursor between shadow root and decorator selects the decorator', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+
+    await page.keyboard.type('Top');
+    await page.keyboard.press('Enter');
+
+    // Insert a collapsible (shadow root) — cursor lands in the title
+    await insertCollapsible(page);
+    await page.keyboard.type('Title');
+
+    // Navigate out of the collapsible: right from title end → content,
+    // then right again → trailing paragraph after the collapsible.
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+
+    // Insert an HR (decorator) right after the collapsible
+    await selectFromInsertDropdown(page, '.horizontal-rule');
+    await waitForSelector(page, 'hr');
+
+    // Remove the empty paragraph between collapsible and HR, then set
+    // selection to a block cursor just before the HR so the two nodes
+    // are directly adjacent (the tree shape that triggers the bug).
+    await getPageOrFrame(page).evaluate(() => {
+      const editor = window.lexicalEditor;
+      editor.update(
+        () => {
+          const root = editor.getEditorState()._nodeMap.get('root');
+          const children = root.getChildren();
+          for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            if (
+              child.getType() === 'paragraph' &&
+              child.getTextContentSize() === 0 &&
+              i > 0 &&
+              children[i - 1].getType() === 'collapsible-container'
+            ) {
+              child.remove();
+              break;
+            }
+          }
+          // Set block cursor between collapsible and HR
+          const updated = root.getChildren();
+          for (let i = 0; i < updated.length; i++) {
+            if (updated[i].getType() === 'horizontalrule') {
+              root.select(i, i);
+              break;
+            }
+          }
+        },
+        {discrete: true},
+      );
+    });
+
+    // Verify we're at a block cursor on root
+    const blockCursorState = await getPageOrFrame(page).evaluate(() => {
+      const sel = window.lexicalEditor.getEditorState()._selection;
+      return (
+        sel !== null &&
+        'anchor' in sel &&
+        sel.anchor.type === 'element' &&
+        sel.anchor.key === 'root'
+      );
+    });
+    expect(blockCursorState).toBe(true);
+
+    // ArrowDown from this block cursor should select the HR
     await page.keyboard.press('ArrowDown');
 
     const isNodeSel = await getPageOrFrame(page).evaluate(() => {

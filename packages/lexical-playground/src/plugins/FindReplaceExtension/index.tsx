@@ -32,6 +32,7 @@ import {
   createCommand,
   defineExtension,
   IS_APPLE,
+  isExactShortcutMatch,
   KEY_DOWN_COMMAND,
   type LexicalCommand,
   type LexicalEditor,
@@ -66,12 +67,14 @@ export interface MatchPoints {
 }
 
 // ---------------------------------------------------------------------------
-// Pure functions
+// Constants
 // ---------------------------------------------------------------------------
 
-const EMPTY_MATCHES: TextMatch[] = Object.freeze<TextMatch[]>(
-  [],
-) as TextMatch[];
+const CONTROL_OR_META = {ctrlKey: !IS_APPLE, metaKey: IS_APPLE};
+
+// ---------------------------------------------------------------------------
+// Pure functions
+// ---------------------------------------------------------------------------
 
 export function findMatches(
   text: string,
@@ -80,7 +83,7 @@ export function findMatches(
   isRegex: boolean,
 ): TextMatch[] {
   if (!searchTerm || !text) {
-    return EMPTY_MATCHES;
+    return [];
   }
 
   const pattern = isRegex ? searchTerm : escapeRegExp(searchTerm);
@@ -90,7 +93,7 @@ export function findMatches(
   try {
     regex = new RegExp(pattern, flags);
   } catch {
-    return EMPTY_MATCHES;
+    return [];
   }
 
   const matches: TextMatch[] = [];
@@ -534,7 +537,7 @@ export const FindReplaceExtension = /* @__PURE__ */ defineExtension({
     });
 
     const cachedText = watchedSignal(
-      () => editor.read(() => $getRoot().getTextContent()),
+      () => editor.read('latest', () => $getRoot().getTextContent()),
       s =>
         editor.registerTextContentListener(text => {
           s.value = text;
@@ -543,7 +546,7 @@ export const FindReplaceExtension = /* @__PURE__ */ defineExtension({
 
     const matches = computed(() => {
       if (!named.isOpen.value) {
-        return EMPTY_MATCHES;
+        return [];
       }
       return findMatches(
         cachedText.value,
@@ -720,35 +723,23 @@ export const FindReplaceExtension = /* @__PURE__ */ defineExtension({
       editor.registerCommand(
         KEY_DOWN_COMMAND,
         event => {
-          const isFindReplace =
-            (!IS_APPLE &&
-              event.code === 'KeyH' &&
-              event.ctrlKey &&
-              !event.metaKey &&
-              !event.altKey &&
-              !event.shiftKey) ||
-            (IS_APPLE &&
-              event.code === 'KeyF' &&
-              event.metaKey &&
-              event.altKey &&
-              !event.ctrlKey);
-          const isFind =
-            event.code === 'KeyF' &&
-            !event.altKey &&
-            !event.shiftKey &&
-            (IS_APPLE
-              ? event.metaKey && !event.ctrlKey
-              : event.ctrlKey && !event.metaKey);
-          if (isFindReplace || isFind) {
+          if (
+            isExactShortcutMatch(event, 'f', CONTROL_OR_META) ||
+            isExactShortcutMatch(event, 'h', {ctrlKey: true}) ||
+            isExactShortcutMatch(event, 'f', {altKey: true, metaKey: true})
+          ) {
             event.preventDefault();
             editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
             return true;
           }
           if (output.isOpen.peek()) {
-            const isMod = IS_APPLE
-              ? event.metaKey && !event.ctrlKey
-              : event.ctrlKey && !event.metaKey;
-            if (event.code === 'KeyG' && isMod && !event.altKey) {
+            if (
+              isExactShortcutMatch(event, 'g', CONTROL_OR_META) ||
+              isExactShortcutMatch(event, 'g', {
+                ...CONTROL_OR_META,
+                shiftKey: true,
+              })
+            ) {
               event.preventDefault();
               editor.dispatchCommand(
                 event.shiftKey ? FIND_PREV_COMMAND : FIND_NEXT_COMMAND,
@@ -831,22 +822,19 @@ function FindReplacePanel({
       );
       return;
     }
-    const isMod = IS_APPLE ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey;
-    if (e.code === 'KeyG' && isMod && !e.altKey) {
+    if (
+      isExactShortcutMatch(e, 'g', CONTROL_OR_META) ||
+      isExactShortcutMatch(e, 'g', {...CONTROL_OR_META, shiftKey: true})
+    ) {
       e.preventDefault();
       editor.dispatchCommand(
         e.shiftKey ? FIND_PREV_COMMAND : FIND_NEXT_COMMAND,
         undefined,
       );
     } else if (
-      (e.code === 'KeyF' && isMod && !e.altKey && !e.shiftKey) ||
-      (!IS_APPLE &&
-        e.code === 'KeyH' &&
-        e.ctrlKey &&
-        !e.metaKey &&
-        !e.altKey &&
-        !e.shiftKey) ||
-      (IS_APPLE && e.code === 'KeyF' && e.metaKey && e.altKey && !e.ctrlKey)
+      isExactShortcutMatch(e, 'f', CONTROL_OR_META) ||
+      isExactShortcutMatch(e, 'h', {ctrlKey: true}) ||
+      isExactShortcutMatch(e, 'f', {altKey: true, metaKey: true})
     ) {
       e.preventDefault();
       searchInputRef.current?.focus();

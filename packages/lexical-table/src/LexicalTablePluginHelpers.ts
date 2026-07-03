@@ -449,7 +449,11 @@ function $tableSelectionInsertClipboardNodesCommand(
     n => $isTableNode(n) || $dfsWithSlots(n).some(d => $isTableNode(d.node)),
   );
   if (!hasTables) {
-    // Not pasting a table - no special handling required.
+    if ($isTableSelection(selection)) {
+      const text = nodes.map(n => n.getTextContent()).join('\n');
+      selection.insertRawText(text);
+      return true;
+    }
     return false;
   }
 

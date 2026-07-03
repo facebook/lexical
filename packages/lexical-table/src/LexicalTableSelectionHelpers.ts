@@ -91,6 +91,7 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
+  PASTE_COMMAND,
   registerEventListener,
   removeClassNamesFromElement,
   SELECTION_CHANGE_COMMAND,
@@ -638,6 +639,33 @@ export function applyTableHandlers(
       },
       COMMAND_PRIORITY_HIGH,
     ),
+  );
+
+  // When TableSelection clears native selection ranges (removeAllRanges),
+  // browsers redirect paste events to <body> instead of the rootElement.
+  // Intercept at the document level and forward to PASTE_COMMAND.
+  const doc = rootElement.ownerDocument;
+  const onDocumentPaste = (event: Event) => {
+    if (event.defaultPrevented) {
+      return;
+    }
+    const shouldIntercept = editor.getEditorState().read(() => {
+      const selection = $getSelection();
+      return (
+        $isTableSelection(selection) &&
+        $isSelectionInTable(selection, tableNode)
+      );
+    });
+    if (shouldIntercept) {
+      event.preventDefault();
+      editor.update(() => {
+        editor.dispatchCommand(PASTE_COMMAND, event as ClipboardEvent);
+      });
+    }
+  };
+  doc.addEventListener('paste', onDocumentPaste);
+  tableObserver.listenersToRemove.add(() =>
+    doc.removeEventListener('paste', onDocumentPaste),
   );
 
   tableObserver.listenersToRemove.add(

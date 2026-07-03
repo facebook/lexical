@@ -725,7 +725,6 @@ export const FindReplaceExtension = /* @__PURE__ */ defineExtension({
         event => {
           if (
             isExactShortcutMatch(event, 'f', CONTROL_OR_META) ||
-            isExactShortcutMatch(event, 'h', {ctrlKey: true}) ||
             isExactShortcutMatch(event, 'f', {altKey: true, metaKey: true})
           ) {
             event.preventDefault();
@@ -833,7 +832,6 @@ function FindReplacePanel({
       );
     } else if (
       isExactShortcutMatch(e, 'f', CONTROL_OR_META) ||
-      isExactShortcutMatch(e, 'h', {ctrlKey: true}) ||
       isExactShortcutMatch(e, 'f', {altKey: true, metaKey: true})
     ) {
       e.preventDefault();

@@ -2462,21 +2462,21 @@ function moveNativeSelection(
 /**
  * Extend a collapsed selection by one unit (`character`, `word` or
  * `lineboundary`) in the deletion direction without ever creating a
- * non-collapsed DOM selection, as a PRIMARY-safe replacement for
- * `modify('extend', …)` in the delete* methods.
+ * non-collapsed DOM selection.
  *
  * On Linux/X11, browsers propagate any non-collapsed DOM selection made
  * during a user gesture to the PRIMARY selection (the middle-click paste
- * buffer), so the transient native `modify('extend')` overwrote PRIMARY on
- * every Backspace/Delete (https://github.com/facebook/lexical/issues/8766).
- * A collapsed caret never takes PRIMARY ownership, so the DOM caret is moved
- * with the native `modify('move')` to measure where the engine places the
- * unit boundary, and the `[original .. landed]` range a native extend would
- * have produced is reconstructed in the model. `applyDOMRange` only reads the
- * range's boundary points (it never touches the DOM selection), so the model
- * selection ends up identical to the `modify('extend')` path — same decorator
- * pre/post handling, point resolution, shadow-root shrink validation and
- * anchor/focus orientation — while the DOM selection was only ever collapsed.
+ * buffer), so a deletion must never pass through a transient non-collapsed
+ * DOM selection or every Backspace/Delete overwrites the user's paste
+ * buffer (https://github.com/facebook/lexical/issues/8766). A collapsed
+ * caret never takes PRIMARY ownership, so the DOM caret is moved with the
+ * native `modify('move')` to measure where the engine places the unit
+ * boundary, and the `[original .. landed]` range is constructed in the
+ * model only. `applyDOMRange` reads just the range's boundary points (it
+ * never touches the DOM selection), giving the same point resolution,
+ * decorator pre/post handling, shadow-root shrink validation and
+ * anchor/focus orientation as a native selection extension would, while
+ * the DOM selection is only ever collapsed.
  *
  * When the measurement is not possible — no DOM selection or no
  * `Selection.modify` (headless environments can polyfill it), or an
@@ -2573,14 +2573,13 @@ function $extendSelectionForDeletion(
   const landedContainer = landedRange.startContainer;
   const landedOffset = landedRange.startOffset;
   // In-node character deletion (the common case): keep the focus in the
-  // anchor's own text node so the resulting model selection matches
-  // modify('extend'), which keeps the extended focus in the node being
-  // extended. A native 'move' reports a caret that lands on a text-node
-  // boundary as a position in the *adjacent* node, and that representation
-  // changes how a later insertion (e.g. at a format boundary) resolves. When
-  // the move lands inside the anchor node its offset is used directly;
-  // landing on the node's edge is clamped to that edge. Word/line deletions
-  // legitimately span nodes, so they use the general path below.
+  // anchor's own text node. A native 'move' reports a caret that lands on a
+  // text-node boundary as a position in the *adjacent* node, and that
+  // representation changes how a later insertion (e.g. at a format or
+  // keyword boundary) resolves. When the move lands inside the anchor node
+  // its offset is used directly; landing on the node's edge is clamped to
+  // that edge. Word/line deletions legitimately span nodes, so they use the
+  // general path below.
   if (wasCollapsed && granularity === 'character' && anchor.type === 'text') {
     const anchorTextSize = anchorNode.getTextContentSize();
     let clampedOffset = -1;

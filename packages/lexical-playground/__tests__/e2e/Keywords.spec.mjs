@@ -301,11 +301,9 @@ test.describe('Keywords', () => {
 
     await page.keyboard.press('Space');
 
-    // Since deleteCharacter builds its selection in the model (#8766), the
-    // post-backspace selection state is engine-uniform, so the space
-    // insertion produces the same DOM in every browser; webkit previously
-    // diverged because the native selection extension left it in a
-    // different state.
+    // deleteCharacter builds its selection in the model (#8766), so the
+    // post-backspace state — and therefore the DOM produced by the space
+    // insertion — is the same in every browser.
     await assertHTML(
       page,
       html`

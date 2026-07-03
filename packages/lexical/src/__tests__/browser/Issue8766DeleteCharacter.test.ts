@@ -36,18 +36,16 @@ import {
 //
 // On Linux/X11, browsers propagate any non-collapsed DOM selection made
 // during a user gesture to the PRIMARY selection (the middle-click paste
-// buffer). `RangeSelection.deleteCharacter` used to extend the DOM selection
-// with the native `Selection.modify('extend', …, 'character')` before
-// removing text, overwriting PRIMARY on every Backspace/Delete. It now
-// measures a collapsed native caret move (which never takes PRIMARY
-// ownership) and builds the deletion range in the Lexical model only.
+// buffer), so deletion must never create one: `RangeSelection`'s delete
+// methods measure a collapsed native caret move (which never takes PRIMARY
+// ownership) and build the deletion range in the Lexical model only.
 //
 // These tests run in a real browser (see the `browser` project in
 // vitest.config.mts) because the contract under test is engine behavior:
-// the spies watch the engine's real Selection API to prove that character
-// deletion never creates a non-collapsed DOM selection — the invariant that
-// keeps PRIMARY intact — and the differential tests compare deletion
-// boundaries against the boundaries the engine itself produces.
+// the spies watch the engine's real Selection API to prove that deletion
+// never creates a non-collapsed DOM selection — the invariant that keeps
+// PRIMARY intact — and the differential tests compare deletion boundaries
+// against the boundaries the engine itself produces.
 
 // An inline, non-editable decorator with real layout, standing in for the
 // playground's inline ImageNode in the deleteLine/deleteWord scenarios.
@@ -135,9 +133,9 @@ function textContent(editor: LexicalEditor): string {
 
 /**
  * Ask the engine itself where one native 'character' extension from `offset`
- * lands, using a scratch contenteditable outside of Lexical. This is the
- * operation the collapsed-move measurement replaces, so it defines the
- * expected deletion boundary for whole-grapheme cases.
+ * lands, using a scratch contenteditable outside of Lexical. The engine's
+ * extension boundary defines the expected deletion span for whole-grapheme
+ * cases, so deleteCharacter's collapsed-move measurement must agree with it.
  */
 function nativeCharacterExtension(
   text: string,
@@ -319,8 +317,7 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
   test('backspace after a linebreak deletes it with only collapsed DOM selections', () => {
     // Caret at a text node boundary: the collapsed move lands past the
     // linebreak and the measured range brackets it, so removeText deletes
-    // the LineBreakNode without any non-collapsed DOM selection. (This was
-    // previously a native modify('extend') fallback that clobbered PRIMARY.)
+    // the LineBreakNode without any non-collapsed DOM selection.
     const editor = mountEditor(() => {
       const paragraph = $createParagraphNode();
       const before = $createTextNode('one');
@@ -338,7 +335,6 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
   test('backspace across a format-run boundary deletes from the previous run', () => {
     // Caret at the start of a bold run: the collapsed move lands inside the
     // preceding plain run and the last character of that run is deleted.
-    // (Also previously a native modify('extend') fallback.)
     const editor = mountEditor(() => {
       const paragraph = $createParagraphNode();
       const plain = $createTextNode('ab');

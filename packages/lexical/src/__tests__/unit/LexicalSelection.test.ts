@@ -2095,3 +2095,101 @@ describe('$wrapInlineNodes regression', () => {
     });
   });
 });
+
+describe('Regression #7551 - Selection boundary normalization for single-child inline elements', () => {
+  initializeUnitTest(testEnv => {
+    test('collapsed selection at end of single-child inline element stays inside', async () => {
+      const {editor} = testEnv;
+      let linkTextKey: string;
+
+      await editor.update(() => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        const before = $createTextNode('hello ');
+        const linkText = $createTextNode('A');
+        const link = $createLinkNode('https://example.com', {}).append(
+          linkText,
+        );
+        const after = $createTextNode(' world');
+        paragraph.append(before, link, after);
+        root.append(paragraph);
+        linkTextKey = linkText.__key;
+      });
+
+      editor.update(
+        () => {
+          const domSelection = getDOMSelection(editor._window ?? window);
+          const linkTextDOM = editor.getElementByKey(linkTextKey)!.firstChild!;
+          const range = document.createRange();
+          range.setStart(linkTextDOM, 1);
+          range.collapse(true);
+          domSelection?.removeAllRanges();
+          domSelection?.addRange(range);
+
+          const selection = $internalCreateRangeSelection(
+            $getSelection(),
+            domSelection,
+            editor,
+            {type: 'selectionchange'} as Event,
+          );
+          invariant(selection !== null);
+          const {anchor} = selection;
+          const anchorNode = anchor.getNode();
+          invariant($isTextNode(anchorNode));
+          const parent = anchorNode.getParent();
+          invariant($isLinkNode(parent));
+          expect(anchor.offset).toBe(1);
+        },
+        {discrete: true},
+      );
+    });
+
+    test('collapsed selection at end of multi-child inline element normalizes to next sibling', async () => {
+      const {editor} = testEnv;
+      let boldBKey: string;
+
+      await editor.update(() => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        const before = $createTextNode('hello ');
+        const boldB = $createTextNode('B').toggleFormat('bold');
+        const link = $createLinkNode('https://example.com', {}).append(
+          $createTextNode('A'),
+          boldB,
+        );
+        const after = $createTextNode(' world');
+        paragraph.append(before, link, after);
+        root.append(paragraph);
+        boldBKey = boldB.__key;
+      });
+
+      editor.update(
+        () => {
+          const domSelection = getDOMSelection(editor._window ?? window);
+          const boldBDOM = editor.getElementByKey(boldBKey)!.firstChild!;
+          const range = document.createRange();
+          range.setStart(boldBDOM, 1);
+          range.collapse(true);
+          domSelection?.removeAllRanges();
+          domSelection?.addRange(range);
+
+          const selection = $internalCreateRangeSelection(
+            $getSelection(),
+            domSelection,
+            editor,
+            {type: 'selectionchange'} as Event,
+          );
+          invariant(selection !== null);
+          const {anchor} = selection;
+          const anchorNode = anchor.getNode();
+          invariant($isTextNode(anchorNode));
+          expect(anchorNode.getTextContent()).toBe(' world');
+          expect(anchor.offset).toBe(0);
+        },
+        {discrete: true},
+      );
+    });
+  });
+});

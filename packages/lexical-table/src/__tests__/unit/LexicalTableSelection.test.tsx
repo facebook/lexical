@@ -232,6 +232,54 @@ describe('table selection', () => {
         );
       });
 
+      test('skips already-filled merged cells', () => {
+        testEnv.editor.update(
+          () => {
+            // Build a 3x3 table where cell (0,0) spans 2 cols
+            const merged = $createTableNode();
+            const topLeft = $createTableCellNode().setColSpan(2);
+            topLeft.append($createParagraphNode().append($createTextNode('M')));
+            merged.append(
+              $createTableRowNode().append(
+                topLeft,
+                $createTableCellNode().append(
+                  $createParagraphNode().append($createTextNode('c')),
+                ),
+              ),
+              $createTableRowNode().append(
+                ...Array.from({length: 3}, () =>
+                  $createTableCellNode().append(
+                    $createParagraphNode().append($createTextNode('x')),
+                  ),
+                ),
+              ),
+            );
+            $getRoot().clear().append(merged);
+            const [mergedMap] = $computeTableMapSkipCellCheck(
+              merged,
+              null,
+              null,
+            );
+            const sel = $createTableSelectionFrom(
+              merged,
+              mergedMap.at(0)!.at(0)!.cell,
+              mergedMap.at(-1)!.at(-1)!.cell,
+            );
+            sel.insertRawText('A\tB\tC\nD\tE\tF');
+            const texts = merged
+              .getChildren()
+              .filter($isTableRowNode)
+              .map(row => row.getChildren().map(cell => cell.getTextContent()));
+            // topLeft spans cols 0-1, TSV cell (0,0) fills it with "A",
+            // TSV cell (0,1) maps to the same merged node — skipped
+            expect(texts[0][0]).toBe('A');
+            expect(texts[0][1]).toBe('C');
+            expect(texts[1]).toEqual(['D', 'E', 'F']);
+          },
+          {discrete: true},
+        );
+      });
+
       test('empty string is no-op', () => {
         testEnv.editor.update(
           () => {

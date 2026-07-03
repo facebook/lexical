@@ -650,7 +650,7 @@ export function applyTableHandlers(
       if (event.defaultPrevented) {
         return;
       }
-      const shouldIntercept = editor.getEditorState().read(() => {
+      const shouldIntercept = editor.read('latest', () => {
         const selection = $getSelection();
         return (
           $isTableSelection(selection) &&

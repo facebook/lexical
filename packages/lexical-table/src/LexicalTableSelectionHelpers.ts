@@ -645,27 +645,25 @@ export function applyTableHandlers(
   // browsers redirect paste events to <body> instead of the rootElement.
   // Intercept at the document level and forward to PASTE_COMMAND.
   const doc = rootElement.ownerDocument;
-  const onDocumentPaste = (event: Event) => {
-    if (event.defaultPrevented) {
-      return;
-    }
-    const shouldIntercept = editor.getEditorState().read(() => {
-      const selection = $getSelection();
-      return (
-        $isTableSelection(selection) &&
-        $isSelectionInTable(selection, tableNode)
-      );
-    });
-    if (shouldIntercept) {
-      event.preventDefault();
-      editor.update(() => {
-        editor.dispatchCommand(PASTE_COMMAND, event as ClipboardEvent);
+  tableObserver.listenersToRemove.add(
+    registerEventListener(doc, 'paste', (event: ClipboardEvent) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+      const shouldIntercept = editor.getEditorState().read(() => {
+        const selection = $getSelection();
+        return (
+          $isTableSelection(selection) &&
+          $isSelectionInTable(selection, tableNode)
+        );
       });
-    }
-  };
-  doc.addEventListener('paste', onDocumentPaste);
-  tableObserver.listenersToRemove.add(() =>
-    doc.removeEventListener('paste', onDocumentPaste),
+      if (shouldIntercept) {
+        event.preventDefault();
+        editor.update(() => {
+          editor.dispatchCommand(PASTE_COMMAND, event);
+        });
+      }
+    }),
   );
 
   tableObserver.listenersToRemove.add(

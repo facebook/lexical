@@ -216,7 +216,6 @@ test.describe('Keywords', () => {
 
   test('Can type "congrats Bob!" where " Bob!" is bold', async ({
     page,
-    browserName,
     isCollab,
     isPlainText,
   }) => {
@@ -302,46 +301,30 @@ test.describe('Keywords', () => {
 
     await page.keyboard.press('Space');
 
-    if (browserName === 'webkit') {
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span
-              class="keyword"
-              style="cursor: default;"
-              data-lexical-text="true">
-              congrats
-            </span>
-            <strong
-              class="PlaygroundEditorTheme__textBold"
-              data-lexical-text="true">
-              Bob!
-            </strong>
-          </p>
-        `,
-      );
-    } else {
-      await assertHTML(
-        page,
-        html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <span
-              class="keyword"
-              style="cursor: default;"
-              data-lexical-text="true">
-              congrats
-            </span>
-            <span data-lexical-text="true"></span>
-            <strong
-              class="PlaygroundEditorTheme__textBold"
-              data-lexical-text="true">
-              Bob!
-            </strong>
-          </p>
-        `,
-      );
-    }
+    // Since deleteCharacter builds its selection in the model (#8766), the
+    // post-backspace selection state is engine-uniform, so the space
+    // insertion produces the same DOM in every browser; webkit previously
+    // diverged because the native selection extension left it in a
+    // different state.
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span
+            class="keyword"
+            style="cursor: default;"
+            data-lexical-text="true">
+            congrats
+          </span>
+          <span data-lexical-text="true"></span>
+          <strong
+            class="PlaygroundEditorTheme__textBold"
+            data-lexical-text="true">
+            Bob!
+          </strong>
+        </p>
+      `,
+    );
 
     await assertSelection(page, {
       anchorOffset: 1,

@@ -2518,25 +2518,42 @@ function $extendSelectionForDeletion(
   ) {
     removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
   }
-  // Resolve the model anchor to a DOM position.
+  const $resolvePointDOM = (point: PointType): HTMLElement | Text | null => {
+    const pointNode = point.getNode();
+    const keyedDOM = editor.getElementByKey(point.key);
+    return keyedDOM !== null && point.type === 'text' && $isTextNode(pointNode)
+      ? $getDOMTextNode(pointNode, keyedDOM, editor)
+      : keyedDOM;
+  };
+  // Resolve the model anchor to a DOM position (one end of the final range).
   const anchorNode = anchor.getNode();
-  const anchorKeyedDOM = editor.getElementByKey(anchor.key);
-  const anchorDOM: HTMLElement | Text | null =
-    anchorKeyedDOM !== null && anchor.type === 'text' && $isTextNode(anchorNode)
-      ? $getDOMTextNode(anchorNode, anchorKeyedDOM, editor)
-      : anchorKeyedDOM;
+  const anchorDOM = $resolvePointDOM(anchor);
   if (anchorDOM === null) {
     return;
   }
   const anchorOffset = anchor.offset;
-  // Sync a COLLAPSED DOM caret at the anchor (base === extent), then move it
-  // by one unit to measure the engine's boundary. Neither touches PRIMARY.
+  // Measure from the FOCUS: the decorator/block pre-pass above may have
+  // hopped the model focus past an inline decorator and returned false — the
+  // shape where native caret movement is unreliable (it can refuse to move a
+  // caret adjacent to contenteditable=false content). modify() runs the
+  // native extend from the extent (the hopped focus); do the same here. For
+  // an untouched collapsed selection the focus is the anchor.
+  const wasCollapsed = selection.isCollapsed();
+  const focus = selection.focus;
+  const focusDOM = wasCollapsed ? anchorDOM : $resolvePointDOM(focus);
+  if (focusDOM === null) {
+    return;
+  }
+  const focusOffset = focus.offset;
+  // Sync a COLLAPSED DOM caret at the measurement origin (base === extent),
+  // then move it by one unit to measure the engine's boundary. Neither
+  // operation touches PRIMARY.
   setDOMSelectionBaseAndExtent(
     domSelection,
-    anchorDOM,
-    anchorOffset,
-    anchorDOM,
-    anchorOffset,
+    focusDOM,
+    focusOffset,
+    focusDOM,
+    focusOffset,
   );
   moveNativeSelection(
     domSelection,
@@ -2564,19 +2581,19 @@ function $extendSelectionForDeletion(
   // the move lands inside the anchor node its offset is used directly;
   // landing on the node's edge is clamped to that edge. Word/line deletions
   // legitimately span nodes, so they use the general path below.
-  if (granularity === 'character' && anchor.type === 'text') {
+  if (wasCollapsed && granularity === 'character' && anchor.type === 'text') {
     const anchorTextSize = anchorNode.getTextContentSize();
-    let focusOffset = -1;
+    let clampedOffset = -1;
     if (landedContainer === anchorDOM) {
-      focusOffset = landedOffset;
+      clampedOffset = landedOffset;
     } else if (isBackward && anchorOffset > 0) {
-      focusOffset = 0;
+      clampedOffset = 0;
     } else if (!isBackward && anchorOffset < anchorTextSize) {
-      focusOffset = anchorTextSize;
+      clampedOffset = anchorTextSize;
     }
-    if (focusOffset >= 0) {
-      if (focusOffset !== anchorOffset) {
-        selection.focus.set(anchor.key, focusOffset, 'text');
+    if (clampedOffset >= 0) {
+      if (clampedOffset !== anchorOffset) {
+        selection.focus.set(anchor.key, clampedOffset, 'text');
         selection.dirty = true;
       }
       return;

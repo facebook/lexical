@@ -14,7 +14,9 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
+  DecoratorNode,
   type LexicalEditor,
 } from 'lexical';
 import {
@@ -46,9 +48,39 @@ import {
 // keeps PRIMARY intact — and the differential tests compare deletion
 // boundaries against the boundaries the engine itself produces.
 
+// An inline, non-editable decorator with real layout, standing in for the
+// playground's inline ImageNode in the deleteLine/deleteWord scenarios.
+class TestInlineDecoratorNode extends DecoratorNode<null> {
+  $config() {
+    return this.config('test_inline_decorator', {extends: DecoratorNode});
+  }
+  createDOM(): HTMLElement {
+    const span = document.createElement('span');
+    span.contentEditable = 'false';
+    span.style.display = 'inline-block';
+    span.style.width = '24px';
+    span.style.height = '24px';
+    return span;
+  }
+  updateDOM(): boolean {
+    return false;
+  }
+  isInline(): boolean {
+    return true;
+  }
+  decorate(): null {
+    return null;
+  }
+}
+
+function $createTestInlineDecoratorNode(): TestInlineDecoratorNode {
+  return new TestInlineDecoratorNode();
+}
+
 const ext = defineExtension({
   dependencies: [RichTextExtension],
   name: '[8766-browser]',
+  nodes: [TestInlineDecoratorNode],
 });
 
 function mountEditor(): LexicalEditor {
@@ -385,6 +417,75 @@ describe('deleteCharacter never creates a non-collapsed DOM selection (#8766)', 
         expect(textContent(editor)).toBe(text.slice(0, nativeBoundary));
         expectOnlyCollapsedDOMSelections();
       });
+    });
+  });
+
+  describe('deleteLine and deleteWord around inline decorators', () => {
+    // Mirrors the "can delete line which starts with element forwards"
+    // Selection e2e scenario (macOS-only binding in e2e, so covered here for
+    // all platforms). The decorator/block pre-pass hops the model focus past
+    // the inline decorator — exactly where native caret movement gets stuck —
+    // and the native measurement must continue from that hopped focus, not
+    // from the anchor.
+    function setupDecoratorLine(editor: LexicalEditor): void {
+      editor.update(
+        () => {
+          const p1 = $createParagraphNode();
+          p1.append($createTextNode('One'));
+          const p2 = $createParagraphNode();
+          p2.append($createTestInlineDecoratorNode(), $createTextNode('Two'));
+          const p3 = $createParagraphNode();
+          $getRoot().clear().append(p1, p2, p3);
+          // Caret before the decorator, as an element point on the paragraph.
+          p2.select(0, 0);
+        },
+        {discrete: true},
+      );
+    }
+
+    test('forward deleteLine at a caret before an inline decorator deletes the rest of the line', () => {
+      const editor = mountEditor();
+      setupDecoratorLine(editor);
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          assert($isRangeSelection(selection), 'Expected RangeSelection');
+          selection.deleteLine(false);
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const root = $getRoot();
+        expect(root.getChildrenSize()).toBe(3);
+        expect(root.getChildAtIndex(0)!.getTextContent()).toBe('One');
+        const p2 = root.getChildAtIndex(1)!;
+        assert($isElementNode(p2), 'Expected ElementNode');
+        // The decorator and the trailing text are both deleted.
+        expect(p2.getChildrenSize()).toBe(0);
+        expect(root.getChildAtIndex(2)!.getTextContent()).toBe('');
+      });
+      expectOnlyCollapsedDOMSelections();
+    });
+
+    test('forward deleteWord at a caret before an inline decorator deletes it', () => {
+      const editor = mountEditor();
+      setupDecoratorLine(editor);
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          assert($isRangeSelection(selection), 'Expected RangeSelection');
+          selection.deleteWord(false);
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const p2 = $getRoot().getChildAtIndex(1)!;
+        assert($isElementNode(p2), 'Expected ElementNode');
+        // The decorator is deleted as a unit; the text stays.
+        expect(p2.getChildrenSize()).toBe(1);
+        expect(p2.getTextContent()).toBe('Two');
+      });
+      expectOnlyCollapsedDOMSelections();
     });
   });
 });

@@ -174,6 +174,10 @@ function isWhitespaceDomTextNode(node: Node): boolean {
  *
  * An ordinary authored trailing `<br>` carries neither marker and is
  * preserved so that round-trip serialization to HTML stays lossless.
+ *
+ * Note: this inspects *serialized markup* and is distinct from
+ * `isEditorManagedLineBreak` in `LexicalMutations`, which identifies a
+ * line break the editor is actively managing in the live DOM.
  */
 export function isManagedLineBreak(node: Node): boolean {
   if (node.nodeName !== 'BR' || !isHTMLElement(node)) {

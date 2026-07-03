@@ -66,6 +66,7 @@ import {
   $cloneWithProperties,
   $getCompositionKey,
   $getNodeByKey,
+  $hasAncestor,
   $isRootOrShadowRoot,
   $maybeMoveChildrenSelectionToParent,
   $removeFromParent,
@@ -1291,8 +1292,7 @@ export class LexicalNode {
    * @param targetNode - the would-be child node.
    */
   isParentOf(targetNode: LexicalNode): boolean {
-    const result = $getCommonAncestor(this, targetNode);
-    return result !== null && result.type === 'ancestor';
+    return $hasAncestor(targetNode, this);
   }
 
   // TO-DO: this function can be simplified a lot

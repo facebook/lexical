@@ -75,6 +75,7 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   $isRootNode,
+  $isRootOrShadowRoot,
   $isSelectionCapturedInDecoratorInput,
   $isShadowRootNode,
   $isSiblingCaret,
@@ -792,18 +793,15 @@ function $tryDecoratorLineNavigation(
   }
   const focus = selection.focus;
   const focusNode = focus.getNode();
+  const direction = isBackward ? 'previous' : 'next';
+  const focusCaret = $caretFromPoint(focus, direction);
 
   if (
     focus.type === 'element' &&
     $isElementNode(focusNode) &&
     ($isRootNode(focusNode) || $isShadowRootNode(focusNode))
   ) {
-    const offset = focus.offset;
-    const adjacentChild = isBackward
-      ? offset > 0
-        ? focusNode.getChildAtIndex(offset - 1)
-        : null
-      : focusNode.getChildAtIndex(offset);
+    const adjacentChild = focusCaret.getNodeAtCaret();
     if (adjacentChild !== null && $isSelectableBlockDecorator(adjacentChild)) {
       $selectNode(adjacentChild.__key);
       return true;
@@ -814,16 +812,15 @@ function $tryDecoratorLineNavigation(
   const topBlock = $findMatchingParent(
     $isElementNode(focusNode) ? focusNode : focusNode.getParentOrThrow(),
     (n): n is ElementNode =>
-      $isElementNode(n) &&
-      !n.isInline() &&
-      ($isRootNode(n.getParent()) || $isShadowRootNode(n.getParent())),
+      $isElementNode(n) && !n.isInline() && $isRootOrShadowRoot(n.getParent()),
   );
   if (topBlock === null) {
     return false;
   }
-  const adjacentSibling = isBackward
-    ? topBlock.getPreviousSibling()
-    : topBlock.getNextSibling();
+  const adjacentSibling = $getSiblingCaret(
+    topBlock,
+    direction,
+  ).getNodeAtCaret();
   if (
     adjacentSibling === null ||
     !$isSelectableBlockDecorator(adjacentSibling)
@@ -880,8 +877,7 @@ function $tryDecoratorLineNavigation(
     return true;
   }
   const stillInSameBlock =
-    movedNode.is(topBlock) ||
-    $findMatchingParent(movedNode, n => n.is(topBlock)) !== null;
+    movedNode.is(topBlock) || $hasAncestor(movedNode, topBlock);
   if (stillInSameBlock) {
     return false;
   }

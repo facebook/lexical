@@ -19,6 +19,7 @@ import {
   copyToClipboard,
   expect,
   focusEditor,
+  getPageOrFrame,
   html,
   initialize,
   pasteFromClipboard,
@@ -75,7 +76,7 @@ test.describe('HorizontalRule', () => {
 
     // NodeSelection DOM representation varies across browsers
     // (Chromium auto-restores it), so assert Lexical internal state.
-    const nodeSelAfterUp = await page.evaluate(() => {
+    const nodeSelAfterUp = await getPageOrFrame(page).evaluate(() => {
       const sel = window.lexicalEditor.getEditorState()._selection;
       return sel !== null && '_nodes' in sel && sel._nodes.size === 1;
     });
@@ -631,7 +632,7 @@ test.describe('HorizontalRule', () => {
     await page.keyboard.press('ArrowUp');
     await page.keyboard.press('ArrowUp');
     await page.keyboard.press('ArrowUp');
-    const inParagraph = await page.evaluate(() => {
+    const inParagraph = await getPageOrFrame(page).evaluate(() => {
       const sel = window.lexicalEditor.getEditorState()._selection;
       return sel !== null && 'anchor' in sel;
     });
@@ -641,7 +642,7 @@ test.describe('HorizontalRule', () => {
     await page.keyboard.press('ArrowDown');
 
     // Should still be a RangeSelection (not NodeSelection on the HR)
-    const stillRange = await page.evaluate(() => {
+    const stillRange = await getPageOrFrame(page).evaluate(() => {
       const sel = window.lexicalEditor.getEditorState()._selection;
       return sel !== null && 'anchor' in sel && !('_nodes' in sel);
     });
@@ -664,12 +665,12 @@ test.describe('HorizontalRule', () => {
     await page.keyboard.type('Bottom');
 
     const isNodeSel = () =>
-      page.evaluate(() => {
+      getPageOrFrame(page).evaluate(() => {
         const sel = window.lexicalEditor.getEditorState()._selection;
         return sel !== null && '_nodes' in sel && sel._nodes.size === 1;
       });
     const isRangeSel = () =>
-      page.evaluate(() => {
+      getPageOrFrame(page).evaluate(() => {
         const sel = window.lexicalEditor.getEditorState()._selection;
         return sel !== null && 'anchor' in sel && !('_nodes' in sel);
       });
@@ -708,7 +709,7 @@ test.describe('HorizontalRule', () => {
     // ArrowDown from this single-line paragraph should select the HR
     await page.keyboard.press('ArrowDown');
 
-    const isNodeSel = await page.evaluate(() => {
+    const isNodeSel = await getPageOrFrame(page).evaluate(() => {
       const sel = window.lexicalEditor.getEditorState()._selection;
       return sel !== null && '_nodes' in sel && sel._nodes.size === 1;
     });
@@ -738,7 +739,7 @@ test.describe('HorizontalRule', () => {
     await page.keyboard.press('ArrowUp');
     await page.keyboard.press('ArrowUp');
 
-    const inList = await page.evaluate(() => {
+    const inList = await getPageOrFrame(page).evaluate(() => {
       const sel = window.lexicalEditor.getEditorState()._selection;
       return sel !== null && 'anchor' in sel;
     });
@@ -747,7 +748,7 @@ test.describe('HorizontalRule', () => {
     // ArrowDown from last list item should select the HR
     await page.keyboard.press('ArrowDown');
 
-    const isNodeSel = await page.evaluate(() => {
+    const isNodeSel = await getPageOrFrame(page).evaluate(() => {
       const sel = window.lexicalEditor.getEditorState()._selection;
       return sel !== null && '_nodes' in sel && sel._nodes.size === 1;
     });

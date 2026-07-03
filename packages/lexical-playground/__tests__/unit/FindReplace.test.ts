@@ -6,7 +6,10 @@
  *
  */
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  buildEditorFromExtensions,
+  getExtensionDependencyFromEditor,
+} from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
 import {
   $createListItemNode,
@@ -31,8 +34,13 @@ import {
   $replaceAllMatches,
   $replaceMatch,
   $resolveMatchToPoints,
+  CLOSE_FIND_REPLACE_COMMAND,
   expandReplacement,
+  FIND_NEXT_COMMAND,
+  FIND_PREV_COMMAND,
   findMatches,
+  FindReplaceExtension,
+  TOGGLE_FIND_REPLACE_COMMAND,
 } from '../../src/plugins/FindReplaceExtension';
 
 const TestExtension = defineExtension({
@@ -606,5 +614,98 @@ describe('$replaceAllMatches', () => {
     editor.read(() => {
       expect($getRoot().getTextContent()).toBe('b/a and d/c');
     });
+  });
+});
+
+describe('findMatches — zero-length regex edge cases', () => {
+  test('.* matches entire text as single match', () => {
+    expect(findMatches('abc', '.*', false, true)).toEqual([
+      {end: 3, matchText: 'abc', start: 0},
+    ]);
+  });
+
+  test('a* matches non-empty runs only', () => {
+    expect(findMatches('aabaa', 'a*', false, true)).toEqual([
+      {end: 2, matchText: 'aa', start: 0},
+      {end: 5, matchText: 'aa', start: 3},
+    ]);
+  });
+
+  test('x? on text without x returns no matches', () => {
+    expect(findMatches('abc', 'x?', false, true)).toEqual([]);
+  });
+});
+
+describe('FindReplaceExtension — command dispatch integration', () => {
+  test('TOGGLE_FIND_REPLACE_COMMAND toggles isOpen signal', () => {
+    using editor = buildEditorFromExtensions(FindReplaceExtension);
+    const dep = getExtensionDependencyFromEditor(editor, FindReplaceExtension);
+    expect(dep.output.isOpen.peek()).toBe(false);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    expect(dep.output.isOpen.peek()).toBe(true);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    expect(dep.output.isOpen.peek()).toBe(false);
+  });
+
+  test('CLOSE_FIND_REPLACE_COMMAND sets isOpen to false', () => {
+    using editor = buildEditorFromExtensions(FindReplaceExtension);
+    const dep = getExtensionDependencyFromEditor(editor, FindReplaceExtension);
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    expect(dep.output.isOpen.peek()).toBe(true);
+    editor.dispatchCommand(CLOSE_FIND_REPLACE_COMMAND, undefined);
+    expect(dep.output.isOpen.peek()).toBe(false);
+  });
+
+  test('matches computed signal updates when searchTerm and text change', () => {
+    using editor = buildEditorFromExtensions(FindReplaceExtension);
+    const dep = getExtensionDependencyFromEditor(editor, FindReplaceExtension);
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append($createTextNode('hello world hello')),
+          );
+      },
+      {discrete: true},
+    );
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    dep.output.searchTerm.value = 'hello';
+    expect(dep.output.matches.peek()).toHaveLength(2);
+    expect(dep.output.matches.peek()[0]).toMatchObject({
+      matchText: 'hello',
+      start: 0,
+    });
+  });
+
+  test('FIND_NEXT_COMMAND / FIND_PREV_COMMAND cycle currentIndex', () => {
+    using editor = buildEditorFromExtensions(FindReplaceExtension);
+    const dep = getExtensionDependencyFromEditor(editor, FindReplaceExtension);
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('a b a b a')));
+      },
+      {discrete: true},
+    );
+    editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+    dep.output.searchTerm.value = 'a';
+    expect(dep.output.matches.peek()).toHaveLength(3);
+    expect(dep.output.currentIndex.peek()).toBe(0);
+
+    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    expect(dep.output.currentIndex.peek()).toBe(1);
+
+    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    expect(dep.output.currentIndex.peek()).toBe(2);
+
+    // wrap around
+    editor.dispatchCommand(FIND_NEXT_COMMAND, undefined);
+    expect(dep.output.currentIndex.peek()).toBe(0);
+
+    // backward wrap
+    editor.dispatchCommand(FIND_PREV_COMMAND, undefined);
+    expect(dep.output.currentIndex.peek()).toBe(2);
   });
 });

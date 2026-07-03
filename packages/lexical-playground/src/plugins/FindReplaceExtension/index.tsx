@@ -338,7 +338,7 @@ function $updateHighlights(
 ): void {
   clearHighlights(state);
 
-  if (matches.length === 0) {
+  if (matches.length === 0 || !editor.getRootElement()) {
     return;
   }
 
@@ -377,12 +377,8 @@ function $updateHighlights(
 }
 
 function scrollRangeIntoView(range: Range): void {
-  const rect = range.getBoundingClientRect();
-  const viewportHeight = window.innerHeight;
-  if (rect.top < 0 || rect.bottom > viewportHeight) {
-    const el = range.startContainer.parentElement;
-    el?.scrollIntoView({behavior: 'smooth', block: 'center'});
-  }
+  const el = range.startContainer.parentElement;
+  el?.scrollIntoView({behavior: 'smooth', block: 'nearest'});
 }
 
 function clearHighlights(state: HighlightState): void {

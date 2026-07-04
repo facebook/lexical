@@ -30,10 +30,9 @@ import {
   RangeSelection,
   TextNode,
 } from 'lexical';
-import {useCallback, useEffect, useState} from 'react';
+import {startTransition, useCallback, useEffect, useState} from 'react';
 
 import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
-import {startTransition} from './shared/reactPatches';
 
 /**
  * The default set of punctuation characters (as a character-class fragment)

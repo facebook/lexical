@@ -18,10 +18,9 @@ import {
   TextNode,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useState} from 'react';
+import {startTransition, useCallback, useEffect, useState} from 'react';
 
 import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
-import {startTransition} from './shared/reactPatches';
 
 /**
  * Props for the {@link LexicalNodeMenuPlugin} component.

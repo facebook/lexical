@@ -14,4 +14,4 @@ To make it easier for React users to implement rich-text editors, Lexical expose
 
 ## Supported Versions
 
-React 17+ (tested with React 18 and React 19 beta)
+React 18+ (tested with React 18 and React 19)

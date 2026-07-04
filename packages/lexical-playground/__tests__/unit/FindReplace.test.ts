@@ -636,7 +636,7 @@ describe('$replaceMatch', () => {
       invariant($isElementNode(p), 'expected ElementNode');
       const children = p.getChildren();
       expect(children).toHaveLength(3);
-      expect($isLinkNode(children[1])).toBe(true);
+      invariant($isLinkNode(children[1]), 'expected LinkNode');
       expect(children[1].getTextContent()).toBe('repo');
     });
   });

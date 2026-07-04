@@ -137,6 +137,18 @@ export function $isRubyNode(
   return node instanceof RubyNode;
 }
 
+/**
+ * Replace a RubyNode with a plain TextNode containing the same text,
+ * preserving format and style.
+ */
+export function $unwrapRubyNode(node: RubyNode): TextNode {
+  const text = $createTextNode(node.getTextContent());
+  text.setFormat(node.getFormat());
+  text.setStyle(node.getStyle());
+  node.replace(text);
+  return text;
+}
+
 export function $toggleRuby(annotation: string | null): void {
   const selection = $getSelection();
   if (!$isRangeSelection(selection)) {
@@ -144,13 +156,9 @@ export function $toggleRuby(annotation: string | null): void {
   }
 
   if (annotation === null) {
-    const nodes = selection.getNodes();
-    for (const node of nodes) {
+    for (const node of selection.getNodes()) {
       if ($isRubyNode(node)) {
-        const text = $createTextNode(node.getTextContent());
-        text.setFormat(node.getFormat());
-        text.setStyle(node.getStyle());
-        node.replace(text);
+        $unwrapRubyNode(node);
       }
     }
     return;

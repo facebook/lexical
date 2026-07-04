@@ -19,7 +19,6 @@ import {
 } from '@floating-ui/react';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
-  $createTextNode,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getSelection,
@@ -27,6 +26,7 @@ import {
   CLICK_COMMAND,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
+  getActiveElement,
   getDOMSelection,
   getParentElement,
   isHTMLElement,
@@ -40,7 +40,7 @@ import {
 import {Dispatch, useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
-import {$isRubyNode, $toggleRuby, RubyNode} from './RubyNode';
+import {$isRubyNode, $toggleRuby, $unwrapRubyNode, RubyNode} from './RubyNode';
 
 function preventDefault(
   event: React.KeyboardEvent<HTMLInputElement> | React.MouseEvent<HTMLElement>,
@@ -222,7 +222,11 @@ function FloatingRubyEditor({
         return;
       }
       requestAnimationFrame(() => {
-        if (editorElement.contains(editorElement.ownerDocument.activeElement)) {
+        // getActiveElement rather than document.activeElement, which
+        // reports the shadow host (never contained by editorElement) when
+        // the editor UI is rendered inside a shadow root, and the wrong
+        // document entirely when it is rendered in an iframe.
+        if (editorElement.contains(getActiveElement(editorElement))) {
           return;
         }
         setIsRubyClick(false);
@@ -260,10 +264,7 @@ function FloatingRubyEditor({
       if (rubyNodeKey) {
         const node = $getNodeByKey(rubyNodeKey);
         if ($isRubyNode(node)) {
-          const text = $createTextNode(node.getTextContent());
-          text.setFormat(node.getFormat());
-          text.setStyle(node.getStyle());
-          node.replace(text);
+          $unwrapRubyNode(node);
         }
       } else {
         $toggleRuby(null);
@@ -301,7 +302,7 @@ function FloatingRubyEditor({
         isEditorPointerDownRef.current = false;
         if (
           inputRef.current &&
-          inputRef.current.ownerDocument.activeElement !== inputRef.current
+          getActiveElement(inputRef.current) !== inputRef.current
         ) {
           inputRef.current.focus();
         }

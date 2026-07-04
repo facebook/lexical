@@ -629,6 +629,51 @@ test.describe('Ruby — Shift+arrow selection', () => {
     expect(info.focus.text).toBe('A');
   });
 
+  test('repeated Shift+Right across a ruby keeps extending the selection', async ({
+    page,
+    isCollab,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText);
+    test.skip(isCollab);
+    await focusEditor(page);
+
+    // "ABCDEF" → select "B" → ruby → "A" + ruby("B","び") + "CDEF"
+    await page.keyboard.type('ABCDEF');
+    await moveLeft(page, 4);
+    await selectCharacters(page, 'left', 1);
+    await insertRubyViaToolbar(page, 'び');
+
+    // Caret at "A":1, immediately before the ruby.
+    await setCursorAt(page, 'A', 1);
+
+    // Each Shift+Right must grow the selection: press 1 selects the ruby,
+    // every later press adds one character of "CDEF". Two equal
+    // consecutive lengths mean the focus bounced back onto the ruby via
+    // DOM selection resolution and the arrow handler re-landed it at the
+    // same boundary — the stall that the offset >=1 landing guards
+    // against.
+    const lengths = [];
+    for (let i = 0; i < 5; i++) {
+      await page.keyboard.down('Shift');
+      await moveRight(page, 1);
+      await page.keyboard.up('Shift');
+      await sleep(100);
+      lengths.push(
+        await evaluate(page, () =>
+          window.lexicalEditor.read(() => {
+            const sel = window.lexicalEditor.getEditorState()._selection;
+            return sel ? sel.getTextContent().length : -1;
+          }),
+        ),
+      );
+    }
+    expect(lengths[0]).toBeGreaterThanOrEqual(1);
+    for (let i = 1; i < lengths.length; i++) {
+      expect(lengths[i]).toBeGreaterThan(lengths[i - 1]);
+    }
+  });
+
   test('Shift+Right skips consecutive ruby group', async ({
     page,
     isCollab,
@@ -919,5 +964,96 @@ test.describe('Ruby — line boundary navigation', () => {
     // The main assertion: after enough arrow presses in each direction,
     // the cursor position changed — it was not stuck on the ruby.
     // Exact positions vary by browser, so we verify non-null selection.
+  });
+});
+
+// The floating ruby editor reads the focused element to decide when to
+// close. document.activeElement reports the shadow *host* when the editor
+// UI renders inside a shadow root, so these checks must go through the
+// popup's own root node (getActiveElement) or the popup closes while its
+// input still has focus.
+test.describe('Ruby — floating editor in shadow DOM', () => {
+  test.beforeEach(({isCollab, isPlainText, page}) => {
+    // Rich-text-only; collab renders in split iframes which is an
+    // orthogonal concern to shadow root encapsulation.
+    test.skip(isPlainText || isCollab);
+    return initialize({isShadowDOM: true, page});
+  });
+
+  test('focusout without relatedTarget keeps the popup open while its input has focus', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('漢字');
+    await selectAll(page);
+    await click(page, 'button[aria-label="Insert ruby annotation"]');
+
+    const input = page.locator('.ruby-editor .ruby-input');
+    await input.waitFor({state: 'visible', timeout: 1000});
+    await input.fill('かんじ');
+
+    // Synthesize the focus-change path that has no relatedTarget (focus
+    // moving to browser chrome, devtools, another frame): the popup's
+    // requestAnimationFrame fallback must observe that focus is still on
+    // the input via the popup's shadow root, not via document.
+    await input.evaluate(el => {
+      el.dispatchEvent(
+        new FocusEvent('focusout', {bubbles: true, composed: true}),
+      );
+    });
+    await sleep(200);
+
+    await expect(input).toBeVisible();
+    const inputStillFocused = await input.evaluate(
+      el => el.getRootNode().activeElement === el,
+    );
+    expect(inputStillFocused).toBe(true);
+
+    // The surviving popup is fully functional: Enter creates the ruby.
+    await input.press('Enter');
+    await sleep(100);
+    expect(await getRubyNodes(page)).toEqual([
+      {annotation: 'かんじ', text: '漢字'},
+    ]);
+  });
+
+  test('popup opens on ruby click and closes when focus moves back into the editor', async ({
+    page,
+  }) => {
+    await focusEditor(page);
+    await page.keyboard.type('漢字ほか');
+    await selectNodeText(page, '漢字ほか');
+    // Ruby only the leading text so a later click can land on plain text.
+    await evaluate(page, () => {
+      window.lexicalEditor.update(
+        () => {
+          const root = window.lexicalEditor
+            .getEditorState()
+            ._nodeMap.get('root');
+          const textNode = root.getAllTextNodes()[0];
+          textNode.select(0, 2);
+        },
+        {discrete: true},
+      );
+    });
+    await click(page, 'button[aria-label="Insert ruby annotation"]');
+    const input = page.locator('.ruby-editor .ruby-input');
+    await input.waitFor({state: 'visible', timeout: 1000});
+    await input.fill('かんじ');
+    await input.press('Enter');
+    await sleep(100);
+
+    await click(page, 'span[data-ruby-annotation]');
+    await input.waitFor({state: 'visible', timeout: 1000});
+
+    // Clicking the plain text after the ruby moves focus back into the
+    // contentEditable; the relatedTarget path must close the popup (the
+    // shadow-aware check must not report a false "still focused"). The
+    // :not() excludes the ruby itself (its role="group" wrapper is also a
+    // data-lexical-text span) — clicking it would (correctly) reopen the
+    // popup instead.
+    await click(page, 'span[data-lexical-text="true"]:not([role="group"])');
+    await sleep(200);
+    await expect(input).toBeHidden();
   });
 });

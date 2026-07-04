@@ -6,6 +6,8 @@
  *
  */
 
+import type {CaretDirection, SiblingCaret} from 'lexical';
+
 import {
   CoreImportExtension,
   defineImportRule,
@@ -14,10 +16,15 @@ import {
 } from '@lexical/html';
 import {mergeRegister} from '@lexical/utils';
 import {
+  $caretFromPoint,
   $createTextNode,
   $getSelection,
+  $getSiblingCaret,
+  $isExtendableTextPointCaret,
   $isRangeSelection,
   $isTextNode,
+  $isTextPointCaret,
+  $setPointFromCaret,
   COMMAND_PRIORITY_HIGH,
   configExtension,
   CONTROLLED_TEXT_INSERTION_COMMAND,
@@ -26,13 +33,17 @@ import {
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_BACKSPACE_COMMAND,
-  LexicalNode,
   registerEventListener,
   registerEventListeners,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 
-import {$createRubyNode, $isRubyNode, RubyNode} from './RubyNode';
+import {
+  $createRubyNode,
+  $isRubyNode,
+  $unwrapRubyNode,
+  RubyNode,
+} from './RubyNode';
 
 const RubyImportRule = /* @__PURE__ */ defineImportRule({
   $import: (_ctx, el) => {
@@ -72,31 +83,45 @@ function $unwrapRubiesInSelection(): void {
   }
   for (const node of selection.getNodes()) {
     if ($isRubyNode(node)) {
-      const text = $createTextNode(node.getTextContent());
-      text.setFormat(node.getFormat());
-      text.setStyle(node.getStyle());
-      node.replace(text);
+      $unwrapRubyNode(node);
     }
   }
 }
 
-function $walkPastRubyChain(
-  start: RubyNode,
-  isBackward: boolean,
-): {edge: RubyNode; beyond: LexicalNode | null} {
-  const getSibling = isBackward
-    ? (n: LexicalNode) => n.getPreviousSibling()
-    : (n: LexicalNode) => n.getNextSibling();
-  let edge: RubyNode = start;
-  let beyond = getSibling(edge);
-  while ($isRubyNode(beyond)) {
-    edge = beyond;
-    beyond = getSibling(edge);
+/**
+ * Walk from a RubyNode past any contiguous RubyNode siblings in the given
+ * direction. The returned SiblingCaret is attached to the last ruby in the
+ * chain, so its getNodeAtCaret() is the first non-ruby sibling past the
+ * chain (or null at the parent boundary).
+ */
+function $caretPastRubyChain<D extends CaretDirection>(
+  ruby: RubyNode,
+  direction: D,
+): SiblingCaret<RubyNode, D> {
+  let caret = $getSiblingCaret(ruby, direction);
+  for (
+    let node = caret.getNodeAtCaret();
+    $isRubyNode(node);
+    node = caret.getNodeAtCaret()
+  ) {
+    caret = $getSiblingCaret(node, direction);
   }
-  return {beyond, edge};
+  return caret;
 }
 
-function $skipRubyOnArrow(isBackward: boolean, isShift: boolean): boolean {
+/**
+ * Move the selection point past a contiguous chain of RubyNodes so arrow
+ * navigation treats a ruby group as an atomic unit. The point (focus when
+ * extending with shift, otherwise the collapsed anchor) is handled when it
+ * is on a ruby or at the edge of a position adjacent to one, and is moved
+ * just past the far end of the chain: onto the near edge of the adjacent
+ * text node when there is one, otherwise to the parent element position
+ * past the edge ruby.
+ */
+function $skipRubyOnArrow(
+  direction: CaretDirection,
+  isShift: boolean,
+): boolean {
   const selection = $getSelection();
   if (!$isRangeSelection(selection)) {
     return false;
@@ -105,79 +130,63 @@ function $skipRubyOnArrow(isBackward: boolean, isShift: boolean): boolean {
     return false;
   }
   const point = isShift ? selection.focus : selection.anchor;
-  if (point.type !== 'text') {
-    return false;
-  }
-  const node = point.getNode();
+  const caret = $caretFromPoint(point, direction);
 
   let ruby: RubyNode | null = null;
-
-  if ($isRubyNode(node) && !node.isComposing()) {
-    if (isShift) {
-      // Offset >=1 prevents normalization from snapping focus back onto the ruby.
-      const {edge, beyond} = $walkPastRubyChain(node, isBackward);
-      if (beyond !== null && $isTextNode(beyond)) {
-        const offset = !isBackward
-          ? Math.min(1, beyond.getTextContentSize())
-          : beyond.getTextContentSize();
-        selection.focus.set(beyond.getKey(), offset, 'text');
-        return true;
-      }
-      const parent = edge.getParent();
-      if (parent !== null) {
-        const offset = isBackward ? 0 : parent.getChildrenSize();
-        selection.focus.set(parent.getKey(), offset, 'element');
-        return true;
-      }
+  let fromRuby = false;
+  if ($isTextPointCaret(caret) && $isRubyNode(caret.origin)) {
+    // The point is on the ruby itself (Safari can normalize a boundary
+    // cursor onto it).
+    if (caret.origin.isComposing()) {
       return false;
     }
-    ruby = node;
-  } else if (!$isRubyNode(node)) {
-    if (isBackward && point.offset === 0) {
-      const prev = node.getPreviousSibling();
-      if ($isRubyNode(prev)) {
-        ruby = prev;
-      }
-    } else if (!isBackward && point.offset === node.getTextContentSize()) {
-      const next = node.getNextSibling();
-      if ($isRubyNode(next)) {
-        ruby = next;
-      }
+    ruby = caret.origin;
+    fromRuby = true;
+  } else if (!$isExtendableTextPointCaret(caret)) {
+    // The point is a text node boundary or an element point, so the
+    // adjacent node in this direction may be a ruby.
+    const adjacent = caret.getNodeAtCaret();
+    if ($isRubyNode(adjacent)) {
+      ruby = adjacent;
     }
   }
-
   if (ruby === null) {
     return false;
   }
 
-  const {edge, beyond} = $walkPastRubyChain(ruby, isBackward);
-
-  if (beyond !== null && $isTextNode(beyond)) {
-    const offset = isBackward ? beyond.getTextContentSize() : 0;
-    if (isShift) {
-      selection.focus.set(beyond.getKey(), offset, 'text');
-    } else {
-      selection.anchor.set(beyond.getKey(), offset, 'text');
-      selection.focus.set(beyond.getKey(), offset, 'text');
-    }
-    return true;
+  const edgeCaret = $caretPastRubyChain(ruby, direction);
+  const beyond = edgeCaret.getNodeAtCaret();
+  if (beyond !== null && !$isTextNode(beyond)) {
+    // A non-text neighbor (decorator, linebreak): defer to default handling.
+    return false;
   }
-
-  if (beyond === null) {
-    const parent = edge.getParent();
-    if (parent !== null) {
-      const offset = isBackward ? 0 : parent.getChildrenSize();
-      if (isShift) {
-        selection.focus.set(parent.getKey(), offset, 'element');
-      } else {
-        selection.anchor.set(parent.getKey(), offset, 'element');
-        selection.focus.set(parent.getKey(), offset, 'element');
-      }
-      return true;
-    }
+  if ($isTextNode(beyond) && fromRuby && isShift && direction === 'next') {
+    // When extending forward from a caret on the ruby itself, land at
+    // offset >=1: a focus at offset 0 of the following text node is
+    // resolved back onto the ruby end by the DOM selection round-trip
+    // (reproduced in Chromium; originally reported on Safari), and every
+    // further press would then re-land at the same boundary, so the
+    // selection stops growing. Guarded by the 'repeated Shift+Right'
+    // e2e test.
+    point.set(
+      beyond.getKey(),
+      Math.min(1, beyond.getTextContentSize()),
+      'text',
+    );
+  } else {
+    // The flipped edge caret is this same boundary as a PointCaret facing
+    // back at the chain: a text point at the near edge of the adjacent
+    // text node, or the parent element point when there is no sibling.
+    // (Not $setPointFromCaret(point, edgeCaret): its TextNode branch would
+    // put a text point on the ruby itself, which arrow handling must not
+    // create.)
+    $setPointFromCaret(point, edgeCaret.getFlipped());
   }
-
-  return false;
+  if (!isShift) {
+    const {anchor, focus} = selection;
+    focus.set(anchor.key, anchor.offset, anchor.type);
+  }
+  return true;
 }
 
 function $nudgeOffRuby(): boolean {
@@ -285,13 +294,9 @@ export const RubyExtension = /* @__PURE__  */ defineExtension({
           if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
             return false;
           }
-          const {anchor} = selection;
-          if (anchor.type !== 'text') {
-            return false;
-          }
-          const node = anchor.getNode();
-          if (anchor.offset === 0) {
-            const prev = node.getPreviousSibling();
+          const caret = $caretFromPoint(selection.anchor, 'previous');
+          if (!$isExtendableTextPointCaret(caret)) {
+            const prev = caret.getNodeAtCaret();
             if ($isRubyNode(prev)) {
               prev.remove();
               event.preventDefault();
@@ -302,39 +307,29 @@ export const RubyExtension = /* @__PURE__  */ defineExtension({
         },
         COMMAND_PRIORITY_HIGH,
       ),
-      editor.registerCommand(
-        KEY_ARROW_LEFT_COMMAND,
-        event => {
-          if (event.metaKey || event.ctrlKey || event.altKey) {
-            return false;
-          }
-          if (editor.isComposing()) {
-            return false;
-          }
-          const handled = $skipRubyOnArrow(true, event.shiftKey);
-          if (handled) {
-            event.preventDefault();
-          }
-          return handled;
-        },
-        COMMAND_PRIORITY_HIGH,
-      ),
-      editor.registerCommand(
-        KEY_ARROW_RIGHT_COMMAND,
-        event => {
-          if (event.metaKey || event.ctrlKey || event.altKey) {
-            return false;
-          }
-          if (editor.isComposing()) {
-            return false;
-          }
-          const handled = $skipRubyOnArrow(false, event.shiftKey);
-          if (handled) {
-            event.preventDefault();
-          }
-          return handled;
-        },
-        COMMAND_PRIORITY_HIGH,
+      ...(
+        [
+          [KEY_ARROW_LEFT_COMMAND, 'previous'],
+          [KEY_ARROW_RIGHT_COMMAND, 'next'],
+        ] as const
+      ).map(([command, direction]) =>
+        editor.registerCommand(
+          command,
+          event => {
+            if (event.metaKey || event.ctrlKey || event.altKey) {
+              return false;
+            }
+            if (editor.isComposing()) {
+              return false;
+            }
+            const handled = $skipRubyOnArrow(direction, event.shiftKey);
+            if (handled) {
+              event.preventDefault();
+            }
+            return handled;
+          },
+          COMMAND_PRIORITY_HIGH,
+        ),
       ),
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,

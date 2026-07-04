@@ -1252,6 +1252,69 @@ describe('RubyExtension backspace', () => {
 
     expect(handled).toBe(false);
   });
+
+  test('Backspace at parent-end element point removes the preceding ruby', () => {
+    let handled = false;
+
+    editor.update(
+      () => {
+        const p = $createParagraphNode();
+        const pre = $createTextNode('前');
+        const ruby = $createRubyNode('漢', 'かん');
+        p.append(pre, ruby);
+        $getRoot().clear().append(p);
+
+        // The parent-boundary element point that arrow navigation itself
+        // creates when the ruby is the last child.
+        const sel = pre.select(0, 0);
+        sel.anchor.set(p.getKey(), 2, 'element');
+        sel.focus.set(p.getKey(), 2, 'element');
+
+        const event = new KeyboardEvent('keydown', {key: 'Backspace'});
+        handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
+      },
+      {discrete: true},
+    );
+
+    const result = editor.read(() => {
+      const first = $getRoot().getFirstChild();
+      if (!$isElementNode(first)) {
+        return {hasRuby: false, text: ''};
+      }
+      return {
+        hasRuby: first.getChildren().some($isRubyNode),
+        text: first.getTextContent(),
+      };
+    });
+
+    expect(handled).toBe(true);
+    expect(result.hasRuby).toBe(false);
+    expect(result.text).toBe('前');
+  });
+
+  test('Backspace at element point whose previous child is not a ruby is not handled', () => {
+    let handled = false;
+
+    editor.update(
+      () => {
+        const p = $createParagraphNode();
+        const pre = $createTextNode('前');
+        const post = $createTextNode('後');
+        p.append(pre, post);
+        $getRoot().clear().append(p);
+
+        const sel = pre.select(0, 0);
+        sel.anchor.set(p.getKey(), 1, 'element');
+        sel.focus.set(p.getKey(), 1, 'element');
+
+        const event = new KeyboardEvent('keydown', {key: 'Backspace'});
+        handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
+      },
+      {discrete: true},
+    );
+
+    expect(handled).toBe(false);
+  });
 });
 
 describe('RubyExtension arrow — guard conditions', () => {
@@ -1345,6 +1408,172 @@ describe('RubyExtension arrow — guard conditions', () => {
     const event = new KeyboardEvent('keydown', {key: 'ArrowRight'});
     const handled = extEditor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
     expect(handled).toBe(false);
+  });
+});
+
+// Element points arise from the extension's own parent-boundary landings
+// (and from clicks in empty areas). Arrow handling must skip a chain the
+// point faces, and must NOT consume the keypress when the chain is behind
+// the point — otherwise the caret can never leave the paragraph.
+describe('RubyExtension arrow — element points', () => {
+  let container: HTMLDivElement;
+  let extEditor: LexicalEditor;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    container.setAttribute('data-lexical-editor', 'true');
+    container.contentEditable = 'true';
+    document.body.appendChild(container);
+    extEditor = buildEditorFromExtensions({
+      dependencies: [RichTextExtension, RubyExtension],
+      name: 'ruby-element-point-test',
+      onError: e => {
+        throw e;
+      },
+    });
+    extEditor.setRootElement(container);
+  });
+
+  afterEach(() => {
+    extEditor.setRootElement(null);
+    document.body.removeChild(container);
+  });
+
+  function $selectElementPoint(p: ElementNode, offset: number) {
+    const first = p.getFirstDescendant();
+    if (!$isTextNode(first)) {
+      throw new Error('Expected a leading TextNode');
+    }
+    const sel = first.select(0, 0);
+    sel.anchor.set(p.getKey(), offset, 'element');
+    sel.focus.set(p.getKey(), offset, 'element');
+  }
+
+  test('Arrow right at parent-end element point (ruby last) is not handled', () => {
+    let handled = true;
+    // Dispatch inside the update: a committed element point can be
+    // re-resolved onto the adjacent text node by the DOM selection
+    // round-trip (jsdom always; Safari at boundaries), which would test
+    // the on-ruby path instead of the element-point path.
+    extEditor.update(
+      () => {
+        const p = $createParagraphNode();
+        p.append($createTextNode('前'), $createRubyNode('漢', 'かん'));
+        $getRoot().clear().append(p);
+        $selectElementPoint(p, 2);
+        handled = extEditor.dispatchCommand(
+          KEY_ARROW_RIGHT_COMMAND,
+          new KeyboardEvent('keydown', {key: 'ArrowRight'}),
+        );
+      },
+      {discrete: true},
+    );
+
+    // The ruby is behind the point; the keypress must fall through to the
+    // browser so the caret can leave the paragraph.
+    expect(handled).toBe(false);
+  });
+
+  test('Arrow left at parent-start element point (ruby first) is not handled', () => {
+    let handled = true;
+    extEditor.update(
+      () => {
+        const p = $createParagraphNode();
+        const ruby = $createRubyNode('漢', 'かん');
+        const post = $createTextNode('後');
+        p.append(ruby, post);
+        $getRoot().clear().append(p);
+        const sel = post.select(0, 0);
+        sel.anchor.set(p.getKey(), 0, 'element');
+        sel.focus.set(p.getKey(), 0, 'element');
+        handled = extEditor.dispatchCommand(
+          KEY_ARROW_LEFT_COMMAND,
+          new KeyboardEvent('keydown', {key: 'ArrowLeft'}),
+        );
+      },
+      {discrete: true},
+    );
+
+    expect(handled).toBe(false);
+  });
+
+  test('Arrow left from parent-end element point skips back over the ruby', () => {
+    let handled = false;
+    extEditor.update(
+      () => {
+        const p = $createParagraphNode();
+        p.append($createTextNode('前'), $createRubyNode('漢', 'かん'));
+        $getRoot().clear().append(p);
+        $selectElementPoint(p, 2);
+        handled = extEditor.dispatchCommand(
+          KEY_ARROW_LEFT_COMMAND,
+          new KeyboardEvent('keydown', {key: 'ArrowLeft'}),
+        );
+      },
+      {discrete: true},
+    );
+
+    const result = extEditor.read(() => {
+      const sel = $getSelection();
+      return $isRangeSelection(sel)
+        ? {
+            isCollapsed: sel.isCollapsed(),
+            offset: sel.anchor.offset,
+            text: sel.anchor.getNode().getTextContent(),
+            type: sel.anchor.type,
+          }
+        : null;
+    });
+
+    expect(handled).toBe(true);
+    expect(result).toEqual({
+      isCollapsed: true,
+      offset: 1,
+      text: '前',
+      type: 'text',
+    });
+  });
+
+  test('Shift+Right from element point before consecutive rubies extends past the chain', () => {
+    let handled = false;
+    extEditor.update(
+      () => {
+        const p = $createParagraphNode();
+        const ruby1 = $createRubyNode('漢', 'かん');
+        const ruby2 = $createRubyNode('字', 'じ');
+        const post = $createTextNode('後');
+        p.append(ruby1, ruby2, post);
+        $getRoot().clear().append(p);
+        const sel = post.select(0, 0);
+        sel.anchor.set(p.getKey(), 0, 'element');
+        sel.focus.set(p.getKey(), 0, 'element');
+        handled = extEditor.dispatchCommand(
+          KEY_ARROW_RIGHT_COMMAND,
+          new KeyboardEvent('keydown', {key: 'ArrowRight', shiftKey: true}),
+        );
+      },
+      {discrete: true},
+    );
+
+    const result = extEditor.read(() => {
+      const sel = $getSelection();
+      return $isRangeSelection(sel)
+        ? {
+            anchorOffset: sel.anchor.offset,
+            anchorType: sel.anchor.type,
+            focusOffset: sel.focus.offset,
+            focusText: sel.focus.getNode().getTextContent(),
+          }
+        : null;
+    });
+
+    expect(handled).toBe(true);
+    expect(result).toEqual({
+      anchorOffset: 0,
+      anchorType: 'element',
+      focusOffset: 0,
+      focusText: '後',
+    });
   });
 });
 

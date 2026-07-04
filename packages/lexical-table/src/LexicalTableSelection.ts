@@ -28,17 +28,24 @@ import {
   TextNode,
 } from 'lexical';
 
-import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
-import {$isTableNode, TableNode} from './LexicalTableNode';
-import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
+import {
+  $createTableCellNode,
+  $isTableCellNode,
+  TableCellHeaderStates,
+  TableCellNode,
+} from './LexicalTableCellNode';
+import {$createTableNode, $isTableNode, TableNode} from './LexicalTableNode';
+import {
+  $createTableRowNode,
+  $isTableRowNode,
+  TableRowNode,
+} from './LexicalTableRowNode';
 import {$findTableNode} from './LexicalTableSelectionHelpers';
 import {
   $computeTableCellRectBoundary,
   $computeTableMap,
-  $computeTableMapSkipCellCheck,
   $getTableCellNodeRect,
-  $insertTableColumnAtNode,
-  $insertTableRowAtNode,
+  $insertTableIntoGrid,
 } from './LexicalTableUtils';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
@@ -219,82 +226,25 @@ export class TableSelection implements BaseSelection {
     if (text === '') {
       return;
     }
-
     const trimmed = text.endsWith('\n') ? text.slice(0, -1) : text;
     const tsvGrid = trimmed.split('\n').map(line => line.split('\t'));
-    const tsvRowCount = tsvGrid.length;
-    const tsvColCount = Math.max(...tsvGrid.map(r => r.length));
-
-    const {anchorCell, anchorTable} = $getCellNodes(this);
-    const [tableMap, anchorMapValue] = $computeTableMap(
-      anchorTable,
-      anchorCell,
-      anchorCell,
-    );
-    const anchorRow = anchorMapValue.startRow;
-    const anchorCol = anchorMapValue.startColumn;
-
-    const tableRowCount = tableMap.length;
-    const firstRow = tableMap[0];
-    const tableColCount = firstRow !== undefined ? firstRow.length : 0;
-
-    const extraRows = Math.max(0, anchorRow + tsvRowCount - tableRowCount);
-    const extraCols = Math.max(0, anchorCol + tsvColCount - tableColCount);
-
-    if (extraRows > 0) {
-      let lastCell = tableMap[tableRowCount - 1][0].cell;
-      for (let i = 0; i < extraRows; i++) {
-        const newRow = $insertTableRowAtNode(lastCell, true);
-        if (newRow) {
-          const firstChild = newRow.getFirstChild();
-          if ($isTableCellNode(firstChild)) {
-            lastCell = firstChild;
-          }
-        }
-      }
-    }
-
-    if (extraCols > 0) {
-      let lastCell = tableMap[0][tableColCount - 1].cell;
-      for (let i = 0; i < extraCols; i++) {
-        const newCell = $insertTableColumnAtNode(lastCell, true, false);
-        if (newCell) {
-          lastCell = newCell;
-        }
-      }
-    }
-
-    const finalMap =
-      extraRows > 0 || extraCols > 0
-        ? $computeTableMapSkipCellCheck(anchorTable, null, null)[0]
-        : tableMap;
-
-    const filled = new Set<NodeKey>();
-    for (let r = 0; r < tsvRowCount; r++) {
-      const mapRow = finalMap[anchorRow + r];
-      if (!mapRow) {
-        continue;
-      }
-      for (let c = 0; c < tsvGrid[r].length; c++) {
-        const mapEntry = mapRow[anchorCol + c];
-        if (!mapEntry) {
-          continue;
-        }
-        const cellNode = mapEntry.cell;
-        const key = cellNode.getKey();
-        if (filled.has(key)) {
-          continue;
-        }
-        filled.add(key);
-
+    const tableNode = $createTableNode();
+    for (const row of tsvGrid) {
+      const rowNode = $createTableRowNode();
+      for (const cellText of row) {
+        const cellNode = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
         const paragraph = $createParagraphNode();
-        const cellText = tsvGrid[r][c];
         if (cellText) {
           paragraph.append($createTextNode(cellText));
         }
-        cellNode.splice(0, cellNode.getChildrenSize(), [paragraph]);
+        cellNode.append(paragraph);
+        rowNode.append(cellNode);
       }
+      tableNode.append(rowNode);
     }
+    const {anchorCell} = $getCellNodes(this);
+    const rangeSelection = anchorCell.select(0, anchorCell.getChildrenSize());
+    $insertTableIntoGrid(tableNode, rangeSelection);
   }
 
   insertText(): void {

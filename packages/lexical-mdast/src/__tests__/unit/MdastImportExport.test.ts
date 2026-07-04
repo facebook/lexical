@@ -149,6 +149,8 @@ describe('@lexical/mdast import/export', () => {
       ['ordered list with ) delimiter', '1) one\n2) two'],
       ['tilde code fence', '~~~\ncode\n~~~'],
       ['tilde fence with language', '~~~js\nconst x = 1;\n~~~'],
+      ['fence info-string meta', '```js title=x\nconst x = 1;\n```'],
+      ['tilde fence with meta', '~~~python linenos\nprint(1)\n~~~'],
       ['backslash hard break', 'line one\\\nline two'],
       ['two-space hard break', 'line one  \nline two'],
       ['underscore italic', '_em_'],

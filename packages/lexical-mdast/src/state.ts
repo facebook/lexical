@@ -68,6 +68,16 @@ export const codeFenceState = /* @__PURE__ */ createState('mdastCodeFence', {
 });
 
 /**
+ * The info-string tail after a `CodeNode`'s language (e.g. `title=x` in
+ * ```` ```js title=x ````). `CodeNode` itself only models the language;
+ * this keeps the rest of the info string so it survives the round-trip.
+ */
+export const codeMetaState = /* @__PURE__ */ createState('mdastCodeMeta', {
+  parse: (v): string => (typeof v === 'string' ? v : ''),
+  resetOnCopyNode: true,
+});
+
+/**
  * The hard-line-break marker a `LineBreakNode` used (`\` or trailing spaces).
  * The empty sentinel means the break is *soft* (a source newline or an
  * editor-created line break) and serializes as a plain newline.

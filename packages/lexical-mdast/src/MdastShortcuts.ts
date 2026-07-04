@@ -27,6 +27,7 @@ import {
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
+  $setState,
   COLLABORATION_TAG,
   COMMAND_PRIORITY_LOW,
   COMPOSITION_END_TAG,
@@ -38,6 +39,7 @@ import {
 
 import {$listTypeFromMdast} from './handlers';
 import {MarkdownStreamScanner} from './MdastStream';
+import {codeFenceState, codeMetaState} from './state';
 
 /**
  * Block markers are at most a few characters (`'###### '`, `'   999. '`,
@@ -72,11 +74,23 @@ function $stripLeading(element: ElementNode, n: number): void {
  * the content that followed the marker.
  */
 function $applyBlock(paragraph: ElementNode, match: MdastBlockMatch): boolean {
+  // Capture the fence before the marker is stripped from the paragraph.
+  const fence =
+    match.kind === 'code'
+      ? paragraph.getTextContent().match(/^[ \t]*(`{3,}|~{3,})/)
+      : null;
   $stripLeading(paragraph, match.markerLength);
   const remaining = paragraph.getChildren();
 
   if (match.kind === 'code') {
     const code = $createCodeNode(match.node.lang || undefined);
+    // Keep the typed fence and info-string tail so export reproduces them.
+    if (fence) {
+      $setState(code, codeFenceState, fence[1]);
+    }
+    if (match.node.meta) {
+      $setState(code, codeMetaState, match.node.meta);
+    }
     code.append(...remaining);
     paragraph.replace(code);
     code.selectStart();
@@ -415,15 +429,12 @@ export function registerMarkdownShortcuts(
         }
         const match = scanner.scanBlock(parent.getTextContent());
         // Only convert when the whole line is the marker (`## `, `- `,
-        // '```lang'). A line with content after the marker was either already
-        // converted at the trailing space, or deliberately reverted with
-        // undo — Enter must not re-convert it. A fence with a meta string
-        // (` ```js title=x `) is also skipped: Lexical has nowhere to keep
-        // the meta and converting would destroy it.
+        // '```lang title=x'). A line with content after the marker was either
+        // already converted at the trailing space, or deliberately reverted
+        // with undo — Enter must not re-convert it.
         if (
           match &&
           match.markerLength === anchorOffset &&
-          !(match.kind === 'code' && match.node.meta) &&
           $applyBlock(parent, match)
         ) {
           if (event !== null) {

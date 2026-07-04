@@ -18,6 +18,7 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $getState,
   $isRangeSelection,
   $isTextNode,
   defineExtension,
@@ -28,6 +29,7 @@ import {
 import {beforeEach, describe, expect, it, onTestFinished} from 'vitest';
 
 import {MdastShortcutsExtension} from '../../index';
+import {codeFenceState, codeMetaState} from '../../state';
 
 function createEditor(): LexicalEditor {
   const editor = buildEditorFromExtensions(
@@ -219,6 +221,18 @@ describe('@lexical/mdast streaming shortcuts', () => {
         expect(code.getLanguage()).toBe('js');
         // The fence line is entirely marker; no literal '```js' may leak in.
         expect(code.getTextContent()).toBe('');
+      });
+    });
+
+    it('```js title=x + Enter keeps the info-string meta and fence', () => {
+      type(editor, ['~~~js title=x']);
+      editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+      editor.read(() => {
+        const code = $getRoot().getFirstChild() as CodeNode;
+        expect(code.getType()).toBe('code');
+        expect(code.getLanguage()).toBe('js');
+        expect($getState(code, codeMetaState)).toBe('title=x');
+        expect($getState(code, codeFenceState)).toBe('~~~');
       });
     });
   });

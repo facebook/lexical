@@ -63,6 +63,7 @@ import {
 
 import {
   codeFenceState,
+  codeMetaState,
   emphasisMarkerState,
   hardLineBreakState,
   listMarkerState,
@@ -288,6 +289,11 @@ export const $importCode: MdastImportHandler<Code> = (node, ctx) => {
       $setState(code, codeFenceState, match[1]);
     }
   }
+  // CodeNode only models the language; keep the rest of the info string
+  // (` ```js title=x `) as node state so it survives the round-trip.
+  if (node.meta) {
+    $setState(code, codeMetaState, node.meta);
+  }
   if (node.value) {
     code.append($createTextNode(node.value));
   }
@@ -458,6 +464,12 @@ export const $exportCode: MdastExportHandler = node => {
     type: 'code',
     value: node.getTextContent(),
   };
+  // The info-string tail is a first-class mdast field; to-markdown emits it
+  // after the language (and forces fenced style).
+  const meta = $getState(node, codeMetaState);
+  if (meta) {
+    code.meta = meta;
+  }
   // `data.mdastFence` is read back by the exporter's to-markdown wrapper.
   // Only pin the fence when known; editor-created code blocks defer to the
   // document-level serialization options.

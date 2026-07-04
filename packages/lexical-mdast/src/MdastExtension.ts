@@ -9,25 +9,32 @@
 import type {
   CompiledMdast,
   FromMarkdownExtension,
+  MdastExportHandler,
   MdastExportRule,
+  MdastImportHandler,
   MdastImportRule,
   MicromarkExtension,
   ToMarkdownExtension,
 } from './types';
 import type {ElementNode} from 'lexical';
-import type {Root} from 'mdast';
+import type {Root, ThematicBreak} from 'mdast';
 
 import {CodeNode} from '@lexical/code-core';
 import {
+  $createHorizontalRuleNode,
   $getExtensionOutput,
+  $isHorizontalRuleNode,
   effect,
   getExtensionDependencyFromEditor,
+  HorizontalRuleExtension,
   namedSignals,
 } from '@lexical/extension';
 import {LinkNode} from '@lexical/link';
 import {ListItemNode, ListNode} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {
+  $getState,
+  $setState,
   configExtension,
   defineExtension,
   safeCast,
@@ -61,6 +68,7 @@ import {
   $importEmphasis,
   $importHeading,
   $importLink,
+  $importLinkReference,
   $importList,
   $importListItem,
   $importParagraph,
@@ -70,6 +78,7 @@ import {
   exportQuote,
   exportTab,
   exportText,
+  importDefinition,
   importDelete,
   importHtml,
   importInlineCode,
@@ -78,6 +87,7 @@ import {
 import {createMdastExport} from './MdastExport';
 import {createMdastImport} from './MdastImport';
 import {registerMarkdownShortcuts} from './MdastShortcuts';
+import {hrMarkerState} from './state';
 
 /**
  * Configuration for the core {@link MdastExtension} registry. Feature
@@ -305,13 +315,20 @@ export const MdastCodeExtension = /* @__PURE__ */ defineExtension({
 });
 
 /**
- * Inline links plus GFM literal autolinks, shipping {@link LinkNode}.
+ * Inline links, CommonMark reference links (`[text][id]` resolved against
+ * `[id]: url` definitions), and GFM literal autolinks, shipping
+ * {@link LinkNode}. Reference links are resolved to their target on import
+ * and serialize back as inline links.
  */
 export const MdastLinkExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     /* @__PURE__ */ configExtension(MdastExtension, {
       exportRules: [{$export: exportLink, type: 'link'}],
-      importRules: [{$import: $importLink, type: 'link'}],
+      importRules: [
+        {$import: $importLink, type: 'link'},
+        {$import: $importLinkReference, type: 'linkReference'},
+        {$import: importDefinition, type: 'definition'},
+      ],
       mdastExtensions: [/* @__PURE__ */ gfmAutolinkLiteralFromMarkdown()],
       micromarkExtensions: [/* @__PURE__ */ gfmAutolinkLiteral()],
       toMarkdownExtensions: [/* @__PURE__ */ gfmAutolinkLiteralToMarkdown()],
@@ -319,6 +336,50 @@ export const MdastLinkExtension = /* @__PURE__ */ defineExtension({
   ],
   name: '@lexical/mdast/Link',
   nodes: [LinkNode],
+});
+
+const $importThematicBreak: MdastImportHandler<ThematicBreak> = (node, ctx) => {
+  const hr = $createHorizontalRuleNode();
+  // Preserve the marker character (`---` vs `***` vs `___`).
+  if (ctx.source && node.position && node.position.start.offset != null) {
+    const marker = ctx.source
+      .slice(node.position.start.offset, node.position.start.offset + 4)
+      .trimStart()[0];
+    if (marker === '-' || marker === '*' || marker === '_') {
+      $setState(hr, hrMarkerState, marker);
+    }
+  }
+  return hr;
+};
+
+const $exportThematicBreak: MdastExportHandler = node => {
+  if (!$isHorizontalRuleNode(node)) {
+    return null;
+  }
+  const rule: ThematicBreak = {type: 'thematicBreak'};
+  const marker = $getState(node, hrMarkerState);
+  if (marker) {
+    (rule as ThematicBreak & {data?: {mdastRule?: string}}).data = {
+      mdastRule: marker,
+    };
+  }
+  return rule;
+};
+
+/**
+ * Thematic breaks (`---`, `***`, `___`), mapped to
+ * {@link HorizontalRuleExtension}'s `HorizontalRuleNode`. The original marker
+ * character is preserved on round-trip.
+ */
+export const MdastHorizontalRuleExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [
+    HorizontalRuleExtension,
+    /* @__PURE__ */ configExtension(MdastExtension, {
+      exportRules: [{$export: $exportThematicBreak, type: 'horizontalrule'}],
+      importRules: [{$import: $importThematicBreak, type: 'thematicBreak'}],
+    }),
+  ],
+  name: '@lexical/mdast/HorizontalRule',
 });
 
 /**
@@ -338,10 +399,10 @@ export const MdastStrikethroughExtension = /* @__PURE__ */ defineExtension({
 });
 
 /**
- * The recommended setup: CommonMark (headings, quotes, lists, code, links)
- * plus the lightweight GFM features (strikethrough, task lists, autolinks)
- * that map onto existing Lexical nodes. Add `MdastTableExtension` (from the
- * same package) for GFM tables.
+ * The recommended setup: CommonMark (headings, quotes, lists, code, links,
+ * thematic breaks) plus the lightweight GFM features (strikethrough, task
+ * lists, autolinks) that map onto existing Lexical nodes. Add
+ * `MdastTableExtension` (from the same package) for GFM tables.
  */
 export const MdastCommonMarkExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
@@ -349,6 +410,7 @@ export const MdastCommonMarkExtension = /* @__PURE__ */ defineExtension({
     MdastListExtension,
     MdastCodeExtension,
     MdastLinkExtension,
+    MdastHorizontalRuleExtension,
     MdastStrikethroughExtension,
   ],
   name: '@lexical/mdast/CommonMark',

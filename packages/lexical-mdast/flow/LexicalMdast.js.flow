@@ -25,6 +25,9 @@ export type MdastImportContext = {
   importChildren(parent: MdastParent, format?: number): LexicalNode[],
   importNode(node: MdastNode, format?: number): LexicalNode[],
   createText(value: string, format?: number): LexicalNode[],
+  getDefinition(
+    identifier: string,
+  ): {url: string, title?: string | null} | void,
 };
 
 export type MdastExportContext = {
@@ -118,6 +121,12 @@ declare export var MdastLinkExtension: LexicalExtension<
 declare export var MdastStrikethroughExtension: LexicalExtension<
   ExtensionConfigBase,
   '@lexical/mdast/Strikethrough',
+  void,
+  void,
+>;
+declare export var MdastHorizontalRuleExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/HorizontalRule',
   void,
   void,
 >;

@@ -29,6 +29,7 @@ export {
   MdastCodeExtension,
   MdastCommonMarkExtension,
   MdastExtension,
+  MdastHorizontalRuleExtension,
   MdastLinkExtension,
   MdastListExtension,
   MdastRichTextExtension,

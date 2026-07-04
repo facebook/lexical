@@ -71,6 +71,13 @@ describe('@lexical/mdast import/export', () => {
       ['unordered list', '- one\n- two\n- three'],
       ['ordered list', '1. one\n2. two\n3. three'],
       ['task list', '- [x] done\n- [ ] todo'],
+      ['soft line break in a paragraph', 'line one\nline two'],
+      ['soft line break in a blockquote', '> line one\n> line two'],
+      ['soft line break in a list item', '- line one\n  line two'],
+      ['thematic break (dashes)', '---'],
+      ['thematic break (stars)', '***'],
+      ['thematic break (underscores)', '___'],
+      ['autolink', '<https://example.com>'],
     ];
     for (const [name, markdown] of cases) {
       it(name, () => {
@@ -275,6 +282,35 @@ describe('@lexical/mdast import/export', () => {
       );
       const out = editor.read(() => $convertToMarkdownString());
       expect(out).toContain('| foo bar |');
+    });
+  });
+
+  describe('reference links', () => {
+    it('resolves full references against definitions', () => {
+      expect(importExport('[foo][bar]\n\n[bar]: https://example.com')).toBe(
+        '[foo](https://example.com)',
+      );
+    });
+
+    it('resolves collapsed and shortcut references', () => {
+      expect(importExport('[foo][]\n\n[foo]: https://example.com')).toBe(
+        '[foo](https://example.com)',
+      );
+      expect(importExport('[foo]\n\n[foo]: https://example.com')).toBe(
+        '[foo](https://example.com)',
+      );
+    });
+
+    it('resolves references with titles', () => {
+      expect(
+        importExport('[foo][bar]\n\n[bar]: https://example.com "the title"'),
+      ).toBe('[foo](https://example.com "the title")');
+    });
+
+    it('keeps unresolved references as literal text', () => {
+      const out = importExport('[foo][nope]');
+      expect(out).toContain('foo');
+      expect(out).not.toContain('](');
     });
   });
 

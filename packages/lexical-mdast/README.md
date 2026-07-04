@@ -31,10 +31,11 @@ the micromark/mdast extensions that tokenize them) to the core
 | `MdastRichTextExtension` | `HeadingNode`, `QuoteNode` | headings, block quotes |
 | `MdastListExtension` | `ListNode`, `ListItemNode` | ordered/unordered/task lists |
 | `MdastCodeExtension` | `CodeNode` | fenced & indented code |
-| `MdastLinkExtension` | `LinkNode` | links, GFM autolinks |
+| `MdastLinkExtension` | `LinkNode` | links, reference links, GFM autolinks |
+| `MdastHorizontalRuleExtension` | `HorizontalRuleNode` | thematic breaks (`---`) |
 | `MdastStrikethroughExtension` | – | GFM `~~strikethrough~~` |
 | `MdastTableExtension` | `TableNode`, … | GFM tables |
-| `MdastCommonMarkExtension` | – | bundle of the five above (no tables) |
+| `MdastCommonMarkExtension` | – | bundle of the six above (no tables) |
 | `MdastShortcutsExtension` | – | streaming keyboard shortcuts |
 
 ## Usage

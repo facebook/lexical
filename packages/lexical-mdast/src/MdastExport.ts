@@ -16,13 +16,13 @@ import type {
   Paragraph,
   PhrasingContent,
   RootContent,
+  ThematicBreak,
 } from 'mdast';
 import type {Options as ToMarkdownExtension} from 'mdast-util-to-markdown';
 
 import {
   $getRoot,
   $getState,
-  $isBlockElementNode,
   $isElementNode,
   $isLineBreakNode,
   $isTextNode,
@@ -31,13 +31,14 @@ import {defaultHandlers, toMarkdown} from 'mdast-util-to-markdown';
 
 import {
   $exportLineBreak,
+  $isBlockLevelNode,
   exportText,
   phrasingFromFormattedText,
   TEXT_FORMAT_MASK,
 } from './handlers';
 import {
   emphasisMarkerState,
-  hardLineBreakState,
+  paragraphBreakState,
   strongMarkerState,
 } from './state';
 
@@ -89,12 +90,19 @@ const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
     break(node: Break, parent, state, info) {
       // Delegate first: the default handler substitutes a space when a real
       // EOL is unsafe in the current construct (headings, table cells). Only
-      // when it chose the hard-break form is the preserved marker relevant.
+      // when it chose the hard-break form does the preserved marker apply:
+      // trailing-space markers are reproduced, and the empty marker means the
+      // break is SOFT (a source newline or editor line break) and serializes
+      // as a plain newline rather than being upgraded to a hard break.
       const result = defaultHandlers.break(node, parent, state, info);
+      if (result !== '\\\n') {
+        return result;
+      }
       const marker = dataField(node, 'mdastBreak');
-      return result === '\\\n' && marker && /^ {2,}$/.test(marker)
-        ? `${marker}\n`
-        : result;
+      if (!marker) {
+        return '\n';
+      }
+      return /^ {2,}$/.test(marker) ? `${marker}\n` : result;
     },
     code(node: Code, parent, state, info) {
       const fence = dataField(node, 'mdastFence');
@@ -136,6 +144,15 @@ const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
         state,
         {bullet, bulletOther: bullet === '-' ? '*' : '-'},
         () => defaultHandlers.list(node, parent, state, info),
+      );
+    },
+    thematicBreak(node: ThematicBreak, parent, state) {
+      const marker = dataField(node, 'mdastRule');
+      if (marker !== '-' && marker !== '*' && marker !== '_') {
+        return defaultHandlers.thematicBreak(node, parent, state);
+      }
+      return withOptions(state, {rule: marker}, () =>
+        defaultHandlers.thematicBreak(node, parent, state),
       );
     },
   },
@@ -236,10 +253,11 @@ function createNodeExporter(compiled: CompiledMdast) {
 
   /**
    * Converts a container whose Lexical children are inline (block quote, list
-   * item) into mdast block content. A bare LineBreakNode is a paragraph
-   * boundary (the inverse of how the import handlers join sibling paragraphs);
-   * a LineBreakNode carrying a hard-break marker stays an inline `break`.
-   * Nested block children pass through directly.
+   * item) into mdast block content. A LineBreakNode marked as a paragraph
+   * boundary (set by the import handlers when joining sibling paragraphs)
+   * splits the content; any other LineBreakNode stays an inline `break`
+   * (hard or soft according to its marker). Nested block children pass
+   * through directly.
    */
   function $exportBlocks(node: ElementNode): MdastNode[] {
     const blocks: MdastNode[] = [];
@@ -254,15 +272,15 @@ function createNodeExporter(compiled: CompiledMdast) {
     };
     for (const child of node.getChildren()) {
       if ($isLineBreakNode(child)) {
-        if ($getState(child, hardLineBreakState)) {
+        if ($getState(child, paragraphBreakState)) {
+          flushParagraph();
+        } else {
           runs.flushInto(inline as MdastNode[]);
           inline.push($exportLineBreak(child, context) as Break);
-        } else {
-          flushParagraph();
         }
       } else if (runs.push(child, inline as MdastNode[])) {
         continue;
-      } else if ($isBlockElementNode(child)) {
+      } else if ($isBlockLevelNode(child)) {
         flushParagraph();
         blocks.push(...$dispatch(child));
       } else {

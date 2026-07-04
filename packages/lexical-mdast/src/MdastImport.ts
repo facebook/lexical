@@ -22,9 +22,10 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
-  $isBlockElementNode,
 } from 'lexical';
 import {fromMarkdown} from 'mdast-util-from-markdown';
+
+import {$isBlockLevelNode} from './handlers';
 
 /**
  * Splits `value` into a run of `TextNode`s: `\n` becomes a `LineBreakNode`
@@ -51,6 +52,42 @@ function $createTextNodes(value: string, format: number): LexicalNode[] {
   return out;
 }
 
+/** A resolved `[identifier]: url "title"` definition. */
+export type ResolvedDefinition = {url: string; title?: string | null};
+
+/**
+ * Collects the document's definitions (`[id]: url "title"`) so link/image
+ * references can be resolved during the import walk. Identifiers on mdast
+ * `definition` nodes are already normalized.
+ */
+export function collectDefinitions(
+  tree: MdastParent,
+): Map<string, ResolvedDefinition> {
+  const definitions = new Map<string, ResolvedDefinition>();
+  const visit = (node: MdastNode | MdastParent): void => {
+    if ('type' in node && node.type === 'definition') {
+      const {identifier, title, url} = node as unknown as {
+        identifier: string;
+        title?: string | null;
+        url: string;
+      };
+      // CommonMark: the FIRST definition of an identifier wins.
+      if (!definitions.has(identifier)) {
+        definitions.set(identifier, {title, url});
+      }
+    }
+    if ('children' in node && Array.isArray(node.children)) {
+      for (const child of node.children) {
+        visit(child as MdastNode);
+      }
+    }
+  };
+  visit(tree);
+  return definitions;
+}
+
+const NO_DEFINITIONS: ReadonlyMap<string, ResolvedDefinition> = new Map();
+
 /**
  * Builds the recursive importer for a compiled set of transformers. The
  * returned function converts a single mdast node into Lexical nodes, threading
@@ -59,7 +96,11 @@ function $createTextNodes(value: string, format: number): LexicalNode[] {
  * Exported so the streaming shortcut engine can reuse the exact same mdast ->
  * Lexical mapping when materializing an inline construct it detected.
  */
-export function createNodeImporter(compiled: CompiledMdast, source = '') {
+export function createNodeImporter(
+  compiled: CompiledMdast,
+  source = '',
+  definitions: ReadonlyMap<string, ResolvedDefinition> = NO_DEFINITIONS,
+) {
   const {importHandlers} = compiled;
   // The context only depends on the accumulated format bitmask, which takes a
   // handful of distinct values per document — cache instead of allocating one
@@ -73,6 +114,7 @@ export function createNodeImporter(compiled: CompiledMdast, source = '') {
         createText: (value, fmt) =>
           $createTextNodes(value, fmt == null ? format : fmt),
         format,
+        getDefinition: identifier => definitions.get(identifier),
         importChildren: (parent, extra) =>
           $importChildren(parent, format | (extra || 0)),
         importNode: (node, extra) => $importNode(node, format | (extra || 0)),
@@ -134,7 +176,11 @@ export function createMdastImport(
       });
     // When importing a pre-parsed tree we have no original source string to
     // recover literal syntax from, so syntax-preservation is skipped.
-    const {$importNode} = createNodeImporter(compiled, tree ? '' : markdown);
+    const {$importNode} = createNodeImporter(
+      compiled,
+      tree ? '' : markdown,
+      collectDefinitions(mdastTree),
+    );
 
     // Top-level mdast children should produce block-level Lexical nodes. Any
     // stray inline content (e.g. from a fallback) is wrapped in a paragraph so
@@ -148,7 +194,7 @@ export function createMdastImport(
     };
     for (const child of mdastTree.children) {
       for (const lexicalNode of $importNode(child, 0)) {
-        if ($isBlockElementNode(lexicalNode)) {
+        if ($isBlockLevelNode(lexicalNode)) {
           flushPending();
           root.append(lexicalNode);
         } else {

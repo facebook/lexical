@@ -67,7 +67,11 @@ export const codeFenceState = /* @__PURE__ */ createState('mdastCodeFence', {
   resetOnCopyNode: true,
 });
 
-/** The hard-line-break marker a `LineBreakNode` used (`\` or trailing spaces). */
+/**
+ * The hard-line-break marker a `LineBreakNode` used (`\` or trailing spaces).
+ * The empty sentinel means the break is *soft* (a source newline or an
+ * editor-created line break) and serializes as a plain newline.
+ */
 export const hardLineBreakState = /* @__PURE__ */ createState(
   'mdastHardLineBreak',
   {
@@ -76,3 +80,23 @@ export const hardLineBreakState = /* @__PURE__ */ createState(
     resetOnCopyNode: true,
   },
 );
+
+/**
+ * Marks a `LineBreakNode` that stands for a *paragraph boundary* inside a
+ * container whose Lexical children are inline (blockquote, list item). Set by
+ * the import handlers when they join sibling mdast paragraphs; the exporter
+ * splits on it to reconstruct the paragraphs.
+ */
+export const paragraphBreakState = /* @__PURE__ */ createState(
+  'mdastParagraphBreak',
+  {
+    parse: (v): boolean => v === true,
+    resetOnCopyNode: true,
+  },
+);
+
+/** The marker (`-`, `*`, `_`) a thematic break / `HorizontalRuleNode` used. */
+export const hrMarkerState = /* @__PURE__ */ createState('mdastHrMarker', {
+  parse: (v): string => (v === '-' || v === '*' || v === '_' ? v : ''),
+  resetOnCopyNode: true,
+});

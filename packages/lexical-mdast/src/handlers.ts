@@ -19,6 +19,7 @@ import type {
   Html,
   InlineCode,
   Link,
+  LinkReference,
   List,
   ListItem,
   Paragraph,
@@ -46,6 +47,8 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getState,
+  $isDecoratorNode,
+  $isElementNode,
   $isLineBreakNode,
   $isParagraphNode,
   $isTextNode,
@@ -59,9 +62,25 @@ import {
   hardLineBreakState,
   listMarkerState,
   orderedMarkerState,
+  paragraphBreakState,
   setextState,
   strongMarkerState,
 } from './state';
+
+/**
+ * Whether `node` is a block-level node: a non-inline element *or* a non-inline
+ * decorator (e.g. a horizontal rule).
+ */
+export function $isBlockLevelNode(node: LexicalNode): boolean {
+  return ($isElementNode(node) || $isDecoratorNode(node)) && !node.isInline();
+}
+
+/** A `LineBreakNode` marking a paragraph boundary inside a container. */
+function $createParagraphBreakNode(): LexicalNode {
+  const lineBreak = $createLineBreakNode();
+  $setState(lineBreak, paragraphBreakState, true);
+  return lineBreak;
+}
 
 /** Reads the first source character of `node` (an inline delimiter, if any). */
 function inlineMarker(
@@ -120,7 +139,7 @@ export const $importBlockquote: MdastImportHandler<Blockquote> = (
   for (const child of node.children) {
     if (child.type === 'paragraph') {
       if (children.length > 0) {
-        children.push($createLineBreakNode());
+        children.push($createParagraphBreakNode());
       }
       children.push(...ctx.importChildren(child));
     } else {
@@ -192,7 +211,7 @@ export const $importListItem: MdastImportHandler<ListItem> = (node, ctx) => {
       extraItems.push(nestedItem);
     } else if (child.type === 'paragraph') {
       if (item.getChildrenSize() > 0) {
-        item.append($createLineBreakNode());
+        item.append($createParagraphBreakNode());
       }
       item.append(...ctx.importChildren(child));
     } else {
@@ -263,17 +282,21 @@ export const importDelete: MdastImportHandler = (node, ctx) =>
 
 export const $importBreak: MdastImportHandler<Break> = (node, ctx) => {
   const lineBreak = $createLineBreakNode();
-  // Preserve whether the hard break was written as `\` or as trailing spaces.
+  // An mdast `break` is always a HARD break; preserve whether it was written
+  // as `\` or as trailing spaces, defaulting to `\` when the literal cannot
+  // be recovered. (Soft breaks are newlines inside text values and stay
+  // unmarked, serializing back to a plain newline.)
+  let marker = '\\';
   if (ctx.source && node.position) {
     const {start, end} = node.position;
     if (start.offset != null && end.offset != null) {
       const raw = ctx.source.slice(start.offset, end.offset).replace(/\n$/, '');
-      const marker = raw === '\\' ? '\\' : /^ {2,}$/.test(raw) ? raw : '';
-      if (marker) {
-        $setState(lineBreak, hardLineBreakState, marker);
+      if (/^ {2,}$/.test(raw)) {
+        marker = raw;
       }
     }
   }
+  $setState(lineBreak, hardLineBreakState, marker);
   return [lineBreak];
 };
 
@@ -284,6 +307,43 @@ export const $importLink: MdastImportHandler<Link> = (node, ctx) => {
   link.append(...ctx.importChildren(node));
   return link;
 };
+
+/**
+ * CommonMark reference links (`[text][id]`, `[id][]`, `[id]`) resolve against
+ * the document's definitions. An unresolved reference is literal text per the
+ * spec, so it is re-emitted verbatim.
+ */
+export const $importLinkReference: MdastImportHandler<LinkReference> = (
+  node,
+  ctx,
+) => {
+  const definition = ctx.getDefinition(node.identifier);
+  if (definition) {
+    const link = $createLinkNode(definition.url, {
+      title: definition.title == null ? undefined : definition.title,
+    });
+    link.append(...ctx.importChildren(node));
+    return link;
+  }
+  const {position} = node;
+  if (ctx.source && position && position.start.offset != null) {
+    return ctx.createText(
+      ctx.source.slice(position.start.offset, position.end.offset),
+    );
+  }
+  // Approximate the literal when the source is unavailable.
+  return [
+    ...ctx.createText('['),
+    ...ctx.importChildren(node),
+    ...ctx.createText(']'),
+  ];
+};
+
+/**
+ * Definitions (`[id]: url "title"`) are consumed by {@link collectDefinitions}
+ * before the walk; the node itself produces no content.
+ */
+export const importDefinition: MdastImportHandler = () => [];
 
 /* -------------------------------------------------------------------------- *
  * Export handlers: Lexical node -> mdast node(s)                             *

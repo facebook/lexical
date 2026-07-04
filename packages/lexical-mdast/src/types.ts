@@ -53,6 +53,13 @@ export interface MdastImportContext {
    * bitmask; `\n` becomes a `LineBreakNode` and `\t` a `TabNode`.
    */
   createText(value: string, format?: number): LexicalNode[];
+  /**
+   * Resolves a link/image reference `identifier` (already normalized by
+   * mdast) against the document's definitions (`[id]: url "title"`).
+   */
+  getDefinition(
+    identifier: string,
+  ): {url: string; title?: string | null} | undefined;
 }
 
 /**

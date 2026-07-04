@@ -221,6 +221,7 @@ export function $replaceMatch(
       points.anchorOffset,
       points.focusOffset - points.anchorOffset,
       finalText,
+      true,
     );
     return;
   }
@@ -825,15 +826,16 @@ function FindReplacePanel({
       return;
     }
     if (e.key === 'Tab') {
-      const panel = e.currentTarget as HTMLElement;
+      const panel: HTMLElement = e.currentTarget as HTMLElement;
       const focusables = Array.from(
         panel.querySelectorAll<HTMLElement>('input, button'),
       );
       if (focusables.length === 0) {
         return;
       }
-      const active = panel.ownerDocument.activeElement as HTMLElement;
-      const idx = focusables.indexOf(active);
+      const active = panel.ownerDocument.activeElement;
+      const idx =
+        active instanceof HTMLElement ? focusables.indexOf(active) : -1;
       const next = e.shiftKey
         ? idx <= 0
           ? focusables.length - 1

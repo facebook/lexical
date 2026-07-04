@@ -9,7 +9,7 @@
 import {NamedSignalsOutput, Signal, signal} from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
 import {
-  $dfsWithSlots,
+  $dfs,
   $insertFirst,
   $insertNodeToNearestRoot,
   $unwrapAndFilterDescendants,
@@ -446,7 +446,7 @@ function $tableSelectionInsertClipboardNodesCommand(
   const {nodes, selection} = selectionPayload;
 
   const hasTables = nodes.some(
-    n => $isTableNode(n) || $dfsWithSlots(n).some(d => $isTableNode(d.node)),
+    n => $isTableNode(n) || $dfs(n).some(d => $isTableNode(d.node)),
   );
   if (!hasTables) {
     if ($isTableSelection(selection)) {

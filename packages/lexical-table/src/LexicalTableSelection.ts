@@ -287,13 +287,12 @@ export class TableSelection implements BaseSelection {
         }
         filled.add(key);
 
-        cellNode.getChildren().forEach(child => child.remove());
         const paragraph = $createParagraphNode();
         const cellText = tsvGrid[r][c];
         if (cellText) {
           paragraph.append($createTextNode(cellText));
         }
-        cellNode.append(paragraph);
+        cellNode.splice(0, cellNode.getChildrenSize(), [paragraph]);
       }
     }
   }

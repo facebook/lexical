@@ -653,15 +653,14 @@ export function applyTableHandlers(
       const shouldIntercept = editor.read('latest', () => {
         const selection = $getSelection();
         return (
+          rootElement.contains(doc.activeElement) &&
           $isTableSelection(selection) &&
           $isSelectionInTable(selection, tableNode)
         );
       });
       if (shouldIntercept) {
         event.preventDefault();
-        editor.update(() => {
-          editor.dispatchCommand(PASTE_COMMAND, event);
-        });
+        editor.dispatchCommand(PASTE_COMMAND, event);
       }
     }),
   );

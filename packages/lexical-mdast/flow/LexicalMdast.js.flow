@@ -130,6 +130,12 @@ declare export var MdastHorizontalRuleExtension: LexicalExtension<
   void,
   void,
 >;
+declare export var MdastShadowRootQuoteExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/ShadowRootQuote',
+  void,
+  void,
+>;
 declare export var MdastCommonMarkExtension: LexicalExtension<
   ExtensionConfigBase,
   '@lexical/mdast/CommonMark',

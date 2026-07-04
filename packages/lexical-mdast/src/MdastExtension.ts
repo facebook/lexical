@@ -72,6 +72,7 @@ import {
   $importList,
   $importListItem,
   $importParagraph,
+  $importShadowRootBlockquote,
   $importStrong,
   exportLink,
   exportParagraph,
@@ -336,6 +337,32 @@ export const MdastLinkExtension = /* @__PURE__ */ defineExtension({
   ],
   name: '@lexical/mdast/Link',
   nodes: [LinkNode],
+});
+
+/**
+ * Opt-in: import Markdown blockquotes as *shadow root* {@link QuoteNode}s
+ * (`$createQuoteNode({shadowRoot: true})`), which hold block-level children
+ * like a table cell. Structured blockquotes — multiple paragraphs, nested
+ * lists, code blocks, nested quotes — then round-trip with full fidelity
+ * instead of being reassembled from inline content.
+ *
+ * Not part of {@link MdastCommonMarkExtension}; add it alongside to opt in:
+ * ```ts
+ * dependencies: [MdastCommonMarkExtension, MdastShadowRootQuoteExtension]
+ * ```
+ * The quote *export* handler supports both forms per node, so legacy quotes
+ * (e.g. created by the `> ` shortcut) and shadow root quotes can coexist.
+ */
+export const MdastShadowRootQuoteExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [
+    MdastRichTextExtension,
+    // Declared after (and depending on) MdastRichTextExtension so this
+    // blockquote rule merges later and takes priority over the default.
+    /* @__PURE__ */ configExtension(MdastExtension, {
+      importRules: [{$import: $importShadowRootBlockquote, type: 'blockquote'}],
+    }),
+  ],
+  name: '@lexical/mdast/ShadowRootQuote',
 });
 
 const $importThematicBreak: MdastImportHandler<ThematicBreak> = (node, ctx) => {

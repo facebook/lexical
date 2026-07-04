@@ -6,7 +6,7 @@
  *
  */
 
-import type {HeadingNode} from '@lexical/rich-text';
+import type {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
 
 import {buildEditorFromExtensions, configExtension} from '@lexical/extension';
@@ -26,6 +26,7 @@ import {
   $convertToMarkdownString,
   MdastCommonMarkExtension,
   MdastExtension,
+  MdastShadowRootQuoteExtension,
   MdastTableExtension,
 } from '../../index';
 
@@ -282,6 +283,66 @@ describe('@lexical/mdast import/export', () => {
       );
       const out = editor.read(() => $convertToMarkdownString());
       expect(out).toContain('| foo bar |');
+    });
+  });
+
+  describe('with MdastShadowRootQuoteExtension', () => {
+    function shadowQuoteEditor(): LexicalEditor {
+      const editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastShadowRootQuoteExtension,
+          ],
+          name: '[root]',
+        }),
+      );
+      onTestFinished(() => editor.dispose());
+      return editor;
+    }
+
+    function shadowImportExport(markdown: string): string {
+      const editor = shadowQuoteEditor();
+      editor.update(
+        () => {
+          $convertFromMarkdownString(markdown);
+        },
+        {discrete: true},
+      );
+      return editor.read(() => $convertToMarkdownString());
+    }
+
+    const cases: [string, string][] = [
+      ['simple quote', '> quoted text'],
+      ['multi-paragraph quote', '> para one\n>\n> para two'],
+      ['quote with a nested list', '> intro\n>\n> - a\n> - b'],
+      ['quote with a code block', '> before\n>\n> ```\n> code\n> ```'],
+      ['nested quote', '> outer\n>\n> > inner'],
+      ['quote with a heading', '> # Title\n>\n> body'],
+      ['soft break stays soft', '> line one\n> line two'],
+      ['hard break stays hard', '> line one\\\n> line two'],
+    ];
+    for (const [name, markdown] of cases) {
+      it(name, () => {
+        expect(shadowImportExport(markdown)).toBe(markdown);
+      });
+    }
+
+    it('imports the quote as a shadow root with block children', () => {
+      const editor = shadowQuoteEditor();
+      editor.update(
+        () => {
+          $convertFromMarkdownString('> para one\n>\n> - a\n> - b');
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const quote = $getRoot().getFirstChild() as QuoteNode;
+        expect(quote.getType()).toBe('quote');
+        expect(quote.isShadowRoot()).toBe(true);
+        const types = quote.getChildren().map(n => n.getType());
+        expect(types).toEqual(['paragraph', 'list']);
+      });
     });
   });
 

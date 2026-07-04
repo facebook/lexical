@@ -33,6 +33,7 @@ export {
   MdastLinkExtension,
   MdastListExtension,
   MdastRichTextExtension,
+  MdastShadowRootQuoteExtension,
   MdastShortcutsExtension,
   MdastStrikethroughExtension,
 } from './MdastExtension';

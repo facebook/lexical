@@ -6,10 +6,15 @@
  *
  */
 
-import type {MdastExportHandler, MdastImportHandler} from './types';
+import type {
+  MdastExportHandler,
+  MdastImportContext,
+  MdastImportHandler,
+  MdastParent,
+} from './types';
 import type {ListItemNode, ListNode, ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
-import type {LexicalNode} from 'lexical';
+import type {ElementNode, LexicalNode} from 'lexical';
 import type {
   Blockquote,
   Break,
@@ -149,6 +154,55 @@ export const $importBlockquote: MdastImportHandler<Blockquote> = (
     }
   }
   quote.append(...children);
+  return quote;
+};
+
+/**
+ * Imports each mdast flow child of `parent` as block-level Lexical nodes,
+ * wrapping any stray inline output (e.g. from the `html` fallback) in a
+ * paragraph — the same normalization the top-level importer applies.
+ */
+export function $importBlockChildren(
+  parent: MdastParent,
+  ctx: MdastImportContext,
+): LexicalNode[] {
+  const blocks: LexicalNode[] = [];
+  let pendingParagraph: ElementNode | null = null;
+  const flushPending = () => {
+    if (pendingParagraph) {
+      blocks.push(pendingParagraph);
+      pendingParagraph = null;
+    }
+  };
+  for (const child of parent.children) {
+    for (const node of ctx.importNode(child)) {
+      if ($isBlockLevelNode(node)) {
+        flushPending();
+        blocks.push(node);
+      } else {
+        if (!pendingParagraph) {
+          pendingParagraph = $createParagraphNode();
+        }
+        pendingParagraph.append(node);
+      }
+    }
+  }
+  flushPending();
+  return blocks;
+}
+
+/**
+ * Opt-in replacement for {@link $importBlockquote} that imports the quote as a
+ * shadow root {@link QuoteNode} holding block-level children, so structured
+ * blockquotes (multiple paragraphs, nested lists, code) round-trip without
+ * being flattened to inline content. See `MdastShadowRootQuoteExtension`.
+ */
+export const $importShadowRootBlockquote: MdastImportHandler<Blockquote> = (
+  node,
+  ctx,
+) => {
+  const quote = $createQuoteNode({shadowRoot: true});
+  quote.append(...$importBlockChildren(node as MdastParent, ctx));
   return quote;
 };
 
@@ -384,8 +438,13 @@ export const exportQuote: MdastExportHandler = (node, ctx) => {
   if (!$isQuoteNode(node)) {
     return null;
   }
+  // A shadow root quote holds block-level children that dispatch directly;
+  // a legacy quote holds inline content that must be reassembled into
+  // paragraphs. Branching per node lets both forms coexist in one document.
   return {
-    children: ctx.exportBlocks(node) as Blockquote['children'],
+    children: (node.isShadowRoot()
+      ? ctx.exportChildren(node)
+      : ctx.exportBlocks(node)) as Blockquote['children'],
     type: 'blockquote',
   };
 };

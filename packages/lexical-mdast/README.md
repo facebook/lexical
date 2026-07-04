@@ -35,6 +35,7 @@ the micromark/mdast extensions that tokenize them) to the core
 | `MdastHorizontalRuleExtension` | `HorizontalRuleNode` | thematic breaks (`---`) |
 | `MdastStrikethroughExtension` | – | GFM `~~strikethrough~~` |
 | `MdastTableExtension` | `TableNode`, … | GFM tables |
+| `MdastShadowRootQuoteExtension` | – | blockquotes as block containers (full-fidelity nested content) |
 | `MdastCommonMarkExtension` | – | bundle of the six above (no tables) |
 | `MdastShortcutsExtension` | – | streaming keyboard shortcuts |
 

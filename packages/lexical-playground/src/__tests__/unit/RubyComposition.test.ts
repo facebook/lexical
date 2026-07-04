@@ -6,18 +6,8 @@
  *
  */
 
-/**
- * Safari IME composition at RubyNode boundaries.
- *
- * Safari normalizes the cursor onto the ruby <span> when the caret sits at
- * a ruby|text boundary. When the user starts IME composition there, the
- * browser writes composition text into the ruby DOM. The token-mode revert
- * restores the ruby base text, and Lexical's insertText token redirect
- * moves the composed character into an adjacent TextNode.
- *
- * For this to work, $nudgeOffRuby must NOT move the selection away from
- * the ruby node while it is composing.
- */
+// Token-mode composition tests. See $onCompositionEndImpl (LexicalEvents.ts)
+// for the redirect mechanism.
 
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
@@ -28,6 +18,7 @@ import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  $isTextNode,
   $setCompositionKey,
   COMPOSITION_END_COMMAND,
   CONTROLLED_TEXT_INSERTION_COMMAND,
@@ -35,7 +26,6 @@ import {
   KEY_ARROW_RIGHT_COMMAND,
   LexicalEditor,
   SELECTION_CHANGE_COMMAND,
-  TextNode,
 } from 'lexical';
 import assert from 'node:assert';
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
@@ -120,14 +110,14 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     vi.useRealTimers();
   });
 
-  // -- Core mechanism: selection.insertText token redirect --
-
   test('insertText at end of ruby inserts into next TextNode', () => {
     const keys = setupRubyParagraph(editor);
 
     editor.update(
       () => {
-        ($getNodeByKey(keys.ruby2Key) as TextNode).select(1, 1);
+        const ruby2 = $getNodeByKey(keys.ruby2Key);
+        assert($isRubyNode(ruby2));
+        ruby2.select(1, 1);
         $getSelection()!.insertText('あ');
       },
       {discrete: true},
@@ -141,7 +131,9 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
     editor.update(
       () => {
-        ($getNodeByKey(keys.ruby1Key) as TextNode).select(0, 0);
+        const ruby1 = $getNodeByKey(keys.ruby1Key);
+        assert($isRubyNode(ruby1));
+        ruby1.select(0, 0);
         $getSelection()!.insertText('か');
       },
       {discrete: true},
@@ -155,7 +147,9 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
     editor.update(
       () => {
-        ($getNodeByKey(keys.ruby1Key) as TextNode).select(1, 1);
+        const ruby1 = $getNodeByKey(keys.ruby1Key);
+        assert($isRubyNode(ruby1));
+        ruby1.select(1, 1);
         $getSelection()!.insertText('の');
       },
       {discrete: true},
@@ -164,14 +158,14 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     expect(editor.read(() => $getRoot().getTextContent())).toBe('前漢の字後');
   });
 
-  // -- CONTROLLED_TEXT_INSERTION_COMMAND (composition end path) --
-
   test('CONTROLLED_TEXT_INSERTION at end of ruby inserts into next TextNode', () => {
     const keys = setupRubyParagraph(editor);
 
     editor.update(
       () => {
-        ($getNodeByKey(keys.ruby2Key) as TextNode).select(1, 1);
+        const ruby2 = $getNodeByKey(keys.ruby2Key);
+        assert($isRubyNode(ruby2));
+        ruby2.select(1, 1);
       },
       {discrete: true},
     );
@@ -186,7 +180,9 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
     editor.update(
       () => {
-        ($getNodeByKey(keys.ruby1Key) as TextNode).select(0, 0);
+        const ruby1 = $getNodeByKey(keys.ruby1Key);
+        assert($isRubyNode(ruby1));
+        ruby1.select(0, 0);
       },
       {discrete: true},
     );
@@ -196,15 +192,15 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     expect(editor.read(() => $getRoot().getTextContent())).toBe('前か漢字後');
   });
 
-  // -- $nudgeOffRuby composing guard --
-
   test('$nudgeOffRuby skips when ruby node is composing', () => {
     const keys = setupRubyParagraph(editor);
 
     let anchorKey: string | null = null;
     editor.update(
       () => {
-        ($getNodeByKey(keys.ruby1Key) as TextNode).select(0, 0);
+        const ruby1 = $getNodeByKey(keys.ruby1Key);
+        assert($isRubyNode(ruby1));
+        ruby1.select(0, 0);
         $setCompositionKey(keys.ruby1Key);
 
         editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
@@ -224,7 +220,9 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     let anchorKey: string | null = null;
     editor.update(
       () => {
-        ($getNodeByKey(keys.ruby1Key) as TextNode).select(0, 0);
+        const ruby1 = $getNodeByKey(keys.ruby1Key);
+        assert($isRubyNode(ruby1));
+        ruby1.select(0, 0);
 
         editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
 
@@ -243,7 +241,9 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     let result: {key: string; offset: number} | null = null;
     editor.update(
       () => {
-        ($getNodeByKey(keys.ruby2Key) as TextNode).select(1, 1);
+        const ruby2 = $getNodeByKey(keys.ruby2Key);
+        assert($isRubyNode(ruby2));
+        ruby2.select(1, 1);
 
         editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
 
@@ -257,8 +257,6 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
     expect(result).toEqual({key: keys.postKey, offset: 0});
   });
-
-  // -- Token mode: markDirty skipped during composition --
 
   test('token node skips markDirty while composing', () => {
     const keys = setupRubyParagraph(editor);
@@ -290,8 +288,6 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
     expect(domText.nodeValue).toBe('漢か' + NBSP);
   });
-
-  // -- Arrow key: skip contiguous ruby group --
 
   test.for([
     [
@@ -364,10 +360,9 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
       let result: {key: string; offset: number} | null = null;
       editor.update(
         () => {
-          ($getNodeByKey(keys[startKeyField]) as TextNode).select(
-            startOffset,
-            startOffset,
-          );
+          const startNode = $getNodeByKey(keys[startKeyField]);
+          assert(startNode !== null && $isTextNode(startNode));
+          startNode.select(startOffset, startOffset);
           const event = new KeyboardEvent('keydown', {key: keyName});
           editor.dispatchCommand(command, event);
           const after = $getSelection();
@@ -385,14 +380,14 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     },
   );
 
-  // -- Composition end: token redirect via $onCompositionEndImpl --
-
   test('COMPOSITION_END on ruby redirects text to next TextNode', () => {
     const keys = setupRubyParagraph(editor);
 
     editor.update(
       () => {
-        ($getNodeByKey(keys.ruby2Key) as TextNode).select(1, 1);
+        const ruby2 = $getNodeByKey(keys.ruby2Key);
+        assert($isRubyNode(ruby2));
+        ruby2.select(1, 1);
         $setCompositionKey(keys.ruby2Key);
       },
       {discrete: true},
@@ -414,7 +409,9 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
     editor.update(
       () => {
-        ($getNodeByKey(keys.ruby1Key) as TextNode).select(1, 1);
+        const ruby1 = $getNodeByKey(keys.ruby1Key);
+        assert($isRubyNode(ruby1));
+        ruby1.select(1, 1);
         $setCompositionKey(keys.ruby1Key);
       },
       {discrete: true},
@@ -436,7 +433,9 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
     editor.update(
       () => {
-        ($getNodeByKey(keys.ruby1Key) as TextNode).select(0, 0);
+        const ruby1 = $getNodeByKey(keys.ruby1Key);
+        assert($isRubyNode(ruby1));
+        ruby1.select(0, 0);
         $setCompositionKey(keys.ruby1Key);
         const event = new CompositionEvent('compositionend', {data: 'あ'});
         editor.dispatchCommand(COMPOSITION_END_COMMAND, event);
@@ -446,8 +445,6 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
 
     expect(editor.read(() => $getRoot().getTextContent())).toBe('前あ漢字後');
   });
-
-  // -- Edge case: ruby as first/last/only child in paragraph --
 
   test.for([
     ['paragraph-first ruby at end', ['ruby', 'post'], 1, '漢あ後'],
@@ -475,10 +472,9 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
       if (selectionOffset > 0) {
         editor.update(
           () => {
-            ($getNodeByKey(rubyKey) as TextNode).select(
-              selectionOffset,
-              selectionOffset,
-            );
+            const rubyNode = $getNodeByKey(rubyKey);
+            assert($isRubyNode(rubyNode));
+            rubyNode.select(selectionOffset, selectionOffset);
             $setCompositionKey(rubyKey);
           },
           {discrete: true},
@@ -494,7 +490,9 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
       } else {
         editor.update(
           () => {
-            ($getNodeByKey(rubyKey) as TextNode).select(0, 0);
+            const rubyNode = $getNodeByKey(rubyKey);
+            assert($isRubyNode(rubyNode));
+            rubyNode.select(0, 0);
             $setCompositionKey(rubyKey);
             const event = new CompositionEvent('compositionend', {data: 'あ'});
             editor.dispatchCommand(COMPOSITION_END_COMMAND, event);
@@ -507,14 +505,14 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     },
   );
 
-  // -- Verify state integrity after composition --
-
   test('ruby text content is preserved after COMPOSITION_END redirect', () => {
     const keys = setupRubyParagraph(editor);
 
     editor.update(
       () => {
-        ($getNodeByKey(keys.ruby2Key) as TextNode).select(1, 1);
+        const ruby2 = $getNodeByKey(keys.ruby2Key);
+        assert($isRubyNode(ruby2));
+        ruby2.select(1, 1);
         $setCompositionKey(keys.ruby2Key);
       },
       {discrete: true},

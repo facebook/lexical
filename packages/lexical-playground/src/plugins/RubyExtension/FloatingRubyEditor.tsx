@@ -33,6 +33,7 @@ import {
   KEY_ESCAPE_COMMAND,
   LexicalEditor,
   mergeRegister,
+  NodeKey,
   registerEventListener,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -71,7 +72,7 @@ function FloatingRubyEditor({
   const isEditorPointerDownRef = useRef(false);
   const [baseText, setBaseText] = useState('');
   const [annotation, setAnnotation] = useState('');
-  const [rubyNodeKey, setRubyNodeKey] = useState<string | null>(null);
+  const [rubyNodeKey, setRubyNodeKey] = useState<NodeKey | null>(null);
   const [isRubyClick, setIsRubyClick] = useState(false);
 
   const isVisible = isRubyClick || isRubyEditMode;
@@ -115,25 +116,27 @@ function FloatingRubyEditor({
     [editor, refs],
   );
 
+  const $positionToSelection = useCallback(() => {
+    const selection = $getSelection();
+    if (!$isRangeSelection(selection) || selection.isCollapsed()) {
+      return;
+    }
+    setBaseText(selection.getTextContent());
+    setAnnotation('');
+    setRubyNodeKey(null);
+
+    const nativeSelection = getDOMSelection(editor._window);
+    if (nativeSelection !== null && nativeSelection.rangeCount > 0) {
+      refs.setPositionReference(nativeSelection.getRangeAt(0));
+    }
+  }, [editor, refs]);
+
   useEffect(() => {
     if (!isRubyEditMode) {
       return;
     }
-    editor.read('latest', () => {
-      const selection = $getSelection();
-      if ($isRangeSelection(selection) && !selection.isCollapsed()) {
-        setBaseText(selection.getTextContent());
-        setAnnotation('');
-        setRubyNodeKey(null);
-
-        const nativeSelection = getDOMSelection(editor._window);
-        if (nativeSelection !== null && nativeSelection.rangeCount > 0) {
-          const range = nativeSelection.getRangeAt(0);
-          refs.setPositionReference(range);
-        }
-      }
-    });
-  }, [editor, isRubyEditMode, refs]);
+    editor.read('latest', $positionToSelection);
+  }, [editor, isRubyEditMode, $positionToSelection]);
 
   useEffect(() => {
     return mergeRegister(
@@ -165,18 +168,7 @@ function FloatingRubyEditor({
         SELECTION_CHANGE_COMMAND,
         () => {
           if (isRubyEditMode) {
-            const selection = $getSelection();
-            if ($isRangeSelection(selection) && !selection.isCollapsed()) {
-              setBaseText(selection.getTextContent());
-              setAnnotation('');
-              setRubyNodeKey(null);
-
-              const nativeSelection = getDOMSelection(editor._window);
-              if (nativeSelection !== null && nativeSelection.rangeCount > 0) {
-                const range = nativeSelection.getRangeAt(0);
-                refs.setPositionReference(range);
-              }
-            }
+            $positionToSelection();
           }
           return false;
         },
@@ -201,7 +193,7 @@ function FloatingRubyEditor({
     isRubyClick,
     isVisible,
     positionToRubyNode,
-    refs,
+    $positionToSelection,
     setIsRubyEditMode,
   ]);
 

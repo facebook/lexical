@@ -1455,17 +1455,13 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): boolean {
     const node = $getNodeByKey(compositionKey);
     if (node !== null && $isTextNode(node) && $isTokenOrSegmented(node)) {
       node.markDirty();
-      if (data !== '') {
-        const selection = $getSelection();
-        if ($isRangeSelection(selection)) {
-          const textLen = node.getTextContentSize();
-          const offset =
-            selection.anchor.key === compositionKey
-              ? selection.anchor.offset
-              : textLen;
-          node.select(offset, offset).insertText(data);
-        }
-      }
+      const selection = $getSelection();
+      const textLen = node.getTextContentSize();
+      const offset =
+        $isRangeSelection(selection) && selection.anchor.key === compositionKey
+          ? selection.anchor.offset
+          : textLen;
+      node.select(offset, offset).insertText(data);
       return true;
     }
   }

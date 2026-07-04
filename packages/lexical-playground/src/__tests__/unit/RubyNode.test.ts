@@ -6,8 +6,13 @@
  *
  */
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  buildEditorFromExtensions,
+  getExtensionDependencyFromEditor,
+} from '@lexical/extension';
+import {DOMImportExtension} from '@lexical/html';
 import {RichTextExtension} from '@lexical/rich-text';
+import {JSDOM} from 'jsdom';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -32,7 +37,6 @@ import {
   $createRubyNode,
   $isRubyNode,
   $toggleRuby,
-  RubyNode,
 } from '../../plugins/RubyExtension/RubyNode';
 
 function $getFirstParagraph(): ElementNode {
@@ -67,10 +71,6 @@ describe('RubyNode', () => {
     document.body.removeChild(container);
   });
 
-  // -----------------------------------------------------------------------
-  // $createRubyNode / $isRubyNode
-  // -----------------------------------------------------------------------
-
   describe('$createRubyNode', () => {
     test('creates node with correct text and annotation', () => {
       editor.update(
@@ -82,10 +82,13 @@ describe('RubyNode', () => {
       );
 
       const result = editor.read(() => {
-        const ruby = $getFirstParagraph().getChildAtIndex(0)!;
+        const ruby = $getFirstParagraph().getChildAtIndex(0);
+        if (!$isRubyNode(ruby)) {
+          throw new Error('Expected RubyNode');
+        }
         return {
-          annotation: (ruby as RubyNode).getAnnotation(),
-          isToken: $isTextNode(ruby) && ruby.isToken(),
+          annotation: ruby.getAnnotation(),
+          isToken: ruby.isToken(),
           text: ruby.getTextContent(),
           type: ruby.getType(),
         };
@@ -134,10 +137,6 @@ describe('RubyNode', () => {
     });
   });
 
-  // -----------------------------------------------------------------------
-  // Serialization: importJSON / exportJSON round-trip
-  // -----------------------------------------------------------------------
-
   describe('serialization', () => {
     test('importJSON/exportJSON round-trip preserves text and annotation', () => {
       editor.update(
@@ -172,10 +171,6 @@ describe('RubyNode', () => {
     });
   });
 
-  // -----------------------------------------------------------------------
-  // DOM export: exportDOM
-  // -----------------------------------------------------------------------
-
   describe('exportDOM', () => {
     test('produces <ruby>text<rp>(<rp><rt>annotation</rt><rp>)</rp></ruby>', () => {
       editor.update(
@@ -206,10 +201,6 @@ describe('RubyNode', () => {
     });
   });
 
-  // -----------------------------------------------------------------------
-  // DOM creation: createDOM
-  // -----------------------------------------------------------------------
-
   describe('createDOM', () => {
     test('produces wrapper span > inner span with data-ruby-annotation', () => {
       editor.update(
@@ -235,10 +226,6 @@ describe('RubyNode', () => {
     });
   });
 
-  // -----------------------------------------------------------------------
-  // getDOMSlot
-  // -----------------------------------------------------------------------
-
   describe('getDOMSlot', () => {
     test('returns slot pointing to inner element', () => {
       editor.update(
@@ -260,10 +247,6 @@ describe('RubyNode', () => {
       });
     });
   });
-
-  // -----------------------------------------------------------------------
-  // $toggleRuby
-  // -----------------------------------------------------------------------
 
   describe('$toggleRuby', () => {
     test('with annotation on selection creates RubyNode', () => {
@@ -351,11 +334,63 @@ describe('RubyNode', () => {
       expect(result.hasRuby).toBe(false);
       expect(result.textContent).toBe('漢字');
     });
-  });
 
-  // -----------------------------------------------------------------------
-  // $unwrapRubiesInSelection (CONTROLLED_TEXT_INSERTION_COMMAND handler)
-  // -----------------------------------------------------------------------
+    test('preserves format and style from source text', () => {
+      editor.update(
+        () => {
+          const text = $createTextNode('漢字');
+          text.toggleFormat('bold');
+          text.setStyle('color: red');
+          const paragraph = $createParagraphNode().append(text);
+          $getRoot().clear().append(paragraph);
+          text.select(0, 2);
+          $toggleRuby('かんじ');
+        },
+        {discrete: true},
+      );
+
+      const result = editor.read(() => {
+        const ruby = $getFirstParagraph().getChildren().find($isRubyNode);
+        if (!ruby) {
+          return null;
+        }
+        return {
+          isBold: ruby.hasFormat('bold'),
+          style: ruby.getStyle(),
+        };
+      });
+
+      expect(result).toEqual({isBold: true, style: 'color: red'});
+    });
+
+    test('unwrap preserves format and style on resulting TextNode', () => {
+      editor.update(
+        () => {
+          const ruby = $createRubyNode('漢字', 'かんじ');
+          ruby.toggleFormat('bold');
+          ruby.setStyle('color: red');
+          const paragraph = $createParagraphNode().append(ruby);
+          $getRoot().clear().append(paragraph);
+          ruby.select(0, 2);
+          $toggleRuby(null);
+        },
+        {discrete: true},
+      );
+
+      const result = editor.read(() => {
+        const child = $getFirstParagraph().getFirstChild();
+        if (!$isTextNode(child) || $isRubyNode(child)) {
+          return null;
+        }
+        return {
+          isBold: child.hasFormat('bold'),
+          style: child.getStyle(),
+        };
+      });
+
+      expect(result).toEqual({isBold: true, style: 'color: red'});
+    });
+  });
 
   describe('$unwrapRubiesInSelection', () => {
     let extensionCleanup: () => void;
@@ -389,7 +424,11 @@ describe('RubyNode', () => {
       // Select the ruby + part of post text
       editor.update(
         () => {
-          const sel = ($getNodeByKey(rubyKey) as RubyNode).select(0, 0);
+          const rubyNode = $getNodeByKey(rubyKey);
+          if (!$isRubyNode(rubyNode)) {
+            throw new Error('Expected RubyNode');
+          }
+          const sel = rubyNode.select(0, 0);
           sel.focus.set(postKey, 1, 'text');
         },
         {discrete: true},
@@ -432,7 +471,11 @@ describe('RubyNode', () => {
 
       editor.update(
         () => {
-          ($getNodeByKey(rubyKey) as RubyNode).select(0, 0);
+          const rubyNode = $getNodeByKey(rubyKey);
+          if (!$isRubyNode(rubyNode)) {
+            throw new Error('Expected RubyNode');
+          }
+          rubyNode.select(0, 0);
         },
         {discrete: true},
       );
@@ -447,10 +490,6 @@ describe('RubyNode', () => {
       expect(hasRuby).toBe(true);
     });
   });
-
-  // -----------------------------------------------------------------------
-  // canInsertTextBefore / canInsertTextAfter
-  // -----------------------------------------------------------------------
 
   describe('token mode', () => {
     test('canInsertTextBefore returns false', () => {
@@ -616,11 +655,6 @@ describe('RubyExtension Shift+arrow skip', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Consecutive ruby groups: Shift+arrow must walk through ALL adjacent rubies
-// Layout: 前 | 漢(かん) | 字(じ) | 後
-// ---------------------------------------------------------------------------
-
 describe('RubyExtension Shift+arrow — consecutive rubies', () => {
   let container: HTMLDivElement;
   let extEditor: LexicalEditor;
@@ -757,13 +791,8 @@ describe('RubyExtension Shift+arrow — consecutive rubies', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Shift+arrow with focus already on a RubyNode (Safari DOM normalization)
 // Safari normalizes cursor positions at text boundaries onto the preceding
-// sibling, so focus can land on a RubyNode. The handler must walk through
-// all consecutive rubies from the focus position.
-// ---------------------------------------------------------------------------
-
+// sibling, so focus can land on a RubyNode.
 describe('RubyExtension Shift+arrow — focus on RubyNode (Safari)', () => {
   let container: HTMLDivElement;
   let extEditor: LexicalEditor;
@@ -897,12 +926,7 @@ describe('RubyExtension Shift+arrow — focus on RubyNode (Safari)', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Arrow navigation at line boundary: ruby as first/last child with no
-// adjacent TextNode. The handler must move cursor to the parent element
-// boundary instead of getting stuck.
-// ---------------------------------------------------------------------------
-
+// Without parent-boundary fallback, cursor gets stuck at ruby with no adjacent text.
 describe('RubyExtension arrow — line boundary', () => {
   let container: HTMLDivElement;
   let extEditor: LexicalEditor;
@@ -1101,13 +1125,8 @@ describe('RubyExtension arrow — line boundary', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Backspace at ruby boundary
-// Omits RichTextExtension to isolate the Ruby backspace handler from
-// RichText's deleteCharacter (which calls domSelection.modify — unavailable
-// in jsdom).
-// ---------------------------------------------------------------------------
-
+// Omits RichTextExtension: RichText's deleteCharacter calls domSelection.modify
+// which is unavailable in jsdom.
 describe('RubyExtension backspace', () => {
   let container: HTMLDivElement;
   let editor: LexicalEditor;
@@ -1235,10 +1254,6 @@ describe('RubyExtension backspace', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Guard conditions: modifier keys, composing, non-collapsed without shift
-// ---------------------------------------------------------------------------
-
 describe('RubyExtension arrow — guard conditions', () => {
   let container: HTMLDivElement;
   let extEditor: LexicalEditor;
@@ -1330,5 +1345,102 @@ describe('RubyExtension arrow — guard conditions', () => {
     const event = new KeyboardEvent('keydown', {key: 'ArrowRight'});
     const handled = extEditor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
     expect(handled).toBe(false);
+  });
+});
+
+describe('RubyImportRule — HTML <ruby> import', () => {
+  function importAndRead(html: string) {
+    const editor = buildEditorFromExtensions({
+      dependencies: [RichTextExtension, RubyExtension],
+      name: 'ruby-import-test',
+      onError: (e: Error) => {
+        throw e;
+      },
+    });
+
+    const container = document.createElement('div');
+    container.contentEditable = 'true';
+    document.body.appendChild(container);
+    editor.setRootElement(container);
+
+    editor.update(
+      () => {
+        const dep = getExtensionDependencyFromEditor(
+          editor,
+          DOMImportExtension,
+        );
+        const dom = new JSDOM(
+          `<!doctype html><html><body>${html}</body></html>`,
+        );
+        const nodes = dep.output.$generateNodesFromDOM(dom.window.document);
+        $getRoot().clear().splice(0, 0, nodes);
+      },
+      {discrete: true},
+    );
+
+    const result = editor.read(() => {
+      const paragraph = $getRoot().getFirstChild();
+      if (!$isElementNode(paragraph)) {
+        return {children: []};
+      }
+      return {
+        children: paragraph.getChildren().map(child => {
+          if ($isRubyNode(child)) {
+            return {
+              annotation: child.getAnnotation(),
+              text: child.getTextContent(),
+              type: 'ruby',
+            };
+          }
+          return {
+            text: child.getTextContent(),
+            type: child.getType(),
+          };
+        }),
+      };
+    });
+
+    editor.setRootElement(null);
+    document.body.removeChild(container);
+    return result;
+  }
+
+  test('basic <ruby> with <rt>', () => {
+    const result = importAndRead('<ruby>漢<rt>かん</rt></ruby>');
+    expect(result.children).toEqual([
+      {annotation: 'かん', text: '漢', type: 'ruby'},
+    ]);
+  });
+
+  test('<ruby> with <rp> tags (graceful skip)', () => {
+    const result = importAndRead(
+      '<ruby>漢<rp>(</rp><rt>かん</rt><rp>)</rp></ruby>',
+    );
+    expect(result.children).toEqual([
+      {annotation: 'かん', text: '漢', type: 'ruby'},
+    ]);
+  });
+
+  test('multi-segment ruby', () => {
+    const result = importAndRead('<ruby>漢<rt>かん</rt>字<rt>じ</rt></ruby>');
+    expect(result.children).toEqual([
+      {annotation: 'かん', text: '漢', type: 'ruby'},
+      {annotation: 'じ', text: '字', type: 'ruby'},
+    ]);
+  });
+
+  test('trailing text without <rt> becomes TextNode', () => {
+    const result = importAndRead('<ruby>漢<rt>かん</rt>余り</ruby>');
+    expect(result.children).toEqual([
+      {annotation: 'かん', text: '漢', type: 'ruby'},
+      {text: '余り', type: 'text'},
+    ]);
+  });
+
+  test('empty <rt> produces empty annotation', () => {
+    const result = importAndRead('<ruby>漢<rt></rt></ruby>');
+    expect(result.children).toEqual([
+      {annotation: '', text: '漢', type: 'ruby'},
+    ]);
   });
 });

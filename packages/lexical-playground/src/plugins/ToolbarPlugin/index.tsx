@@ -899,14 +899,15 @@ export default function ToolbarPlugin({
   }, [activeEditor, setIsLinkEditMode, toolbarState.isLink]);
 
   const insertRuby = useCallback(() => {
-    let hasRuby = false;
-    let hasSelection = false;
-    activeEditor.read(() => {
+    const {hasRuby, hasSelection} = activeEditor.read(() => {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
-        hasRuby = selection.getNodes().some(n => $isRubyNode(n));
-        hasSelection = !selection.isCollapsed();
+        return {
+          hasRuby: selection.getNodes().some($isRubyNode),
+          hasSelection: !selection.isCollapsed(),
+        };
       }
+      return {hasRuby: false, hasSelection: false};
     });
     if (hasRuby) {
       activeEditor.update(() => {

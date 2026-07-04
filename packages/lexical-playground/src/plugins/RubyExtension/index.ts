@@ -65,23 +65,35 @@ const RubyImportRule = /* @__PURE__ */ defineImportRule({
   name: '@lexical/playground/ruby',
 });
 
-function $unwrapRubiesInSelection(): boolean {
+function $unwrapRubiesInSelection(): void {
   const selection = $getSelection();
   if (!$isRangeSelection(selection) || selection.isCollapsed()) {
-    return false;
+    return;
   }
-  const nodes = selection.getNodes();
-  let found = false;
-  for (const node of nodes) {
+  for (const node of selection.getNodes()) {
     if ($isRubyNode(node)) {
-      found = true;
       const text = $createTextNode(node.getTextContent());
       text.setFormat(node.getFormat());
       text.setStyle(node.getStyle());
       node.replace(text);
     }
   }
-  return found;
+}
+
+function $walkPastRubyChain(
+  start: RubyNode,
+  isBackward: boolean,
+): {edge: RubyNode; beyond: LexicalNode | null} {
+  const getSibling = isBackward
+    ? (n: LexicalNode) => n.getPreviousSibling()
+    : (n: LexicalNode) => n.getNextSibling();
+  let edge: RubyNode = start;
+  let beyond = getSibling(edge);
+  while ($isRubyNode(beyond)) {
+    edge = beyond;
+    beyond = getSibling(edge);
+  }
+  return {beyond, edge};
 }
 
 function $skipRubyOnArrow(isBackward: boolean, isShift: boolean): boolean {
@@ -98,26 +110,17 @@ function $skipRubyOnArrow(isBackward: boolean, isShift: boolean): boolean {
   }
   const node = point.getNode();
 
-  let ruby: LexicalNode | null = null;
+  let ruby: RubyNode | null = null;
 
   if ($isRubyNode(node) && !node.isComposing()) {
     if (isShift) {
-      // Walk through all consecutive rubies to the far-side text node.
-      // Use offsets that normalization won't pull back onto the ruby group.
-      let edge: LexicalNode = node;
-      const walk = !isBackward
-        ? (n: LexicalNode) => n.getNextSibling()
-        : (n: LexicalNode) => n.getPreviousSibling();
-      let sib = walk(edge);
-      while ($isRubyNode(sib)) {
-        edge = sib;
-        sib = walk(edge);
-      }
-      if (sib !== null && $isTextNode(sib) && !$isRubyNode(sib)) {
+      // Offset >=1 prevents normalization from snapping focus back onto the ruby.
+      const {edge, beyond} = $walkPastRubyChain(node, isBackward);
+      if (beyond !== null && $isTextNode(beyond)) {
         const offset = !isBackward
-          ? Math.min(1, sib.getTextContentSize())
-          : sib.getTextContentSize();
-        selection.focus.set(sib.getKey(), offset, 'text');
+          ? Math.min(1, beyond.getTextContentSize())
+          : beyond.getTextContentSize();
+        selection.focus.set(beyond.getKey(), offset, 'text');
         return true;
       }
       const parent = edge.getParent();
@@ -147,28 +150,20 @@ function $skipRubyOnArrow(isBackward: boolean, isShift: boolean): boolean {
     return false;
   }
 
-  let edge: LexicalNode = ruby;
-  const getSibling = isBackward
-    ? (n: LexicalNode) => n.getPreviousSibling()
-    : (n: LexicalNode) => n.getNextSibling();
-  let next = getSibling(edge);
-  while ($isRubyNode(next)) {
-    edge = next;
-    next = getSibling(edge);
-  }
+  const {edge, beyond} = $walkPastRubyChain(ruby, isBackward);
 
-  if (next !== null && $isTextNode(next) && !$isRubyNode(next)) {
-    const offset = isBackward ? next.getTextContentSize() : 0;
+  if (beyond !== null && $isTextNode(beyond)) {
+    const offset = isBackward ? beyond.getTextContentSize() : 0;
     if (isShift) {
-      selection.focus.set(next.getKey(), offset, 'text');
+      selection.focus.set(beyond.getKey(), offset, 'text');
     } else {
-      selection.anchor.set(next.getKey(), offset, 'text');
-      selection.focus.set(next.getKey(), offset, 'text');
+      selection.anchor.set(beyond.getKey(), offset, 'text');
+      selection.focus.set(beyond.getKey(), offset, 'text');
     }
     return true;
   }
 
-  if (next === null) {
+  if (beyond === null) {
     const parent = edge.getParent();
     if (parent !== null) {
       const offset = isBackward ? 0 : parent.getChildrenSize();

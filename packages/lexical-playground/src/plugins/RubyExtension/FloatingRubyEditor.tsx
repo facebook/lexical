@@ -146,20 +146,18 @@ function FloatingRubyEditor({
           if (editorRef.current?.contains(event.target as Node)) {
             return false;
           }
-          editor.read(() => {
-            const selection = $getSelection();
-            if ($isRangeSelection(selection) && !selection.isCollapsed()) {
-              setIsRubyClick(false);
-              return;
-            }
-            const node = $getRubyNodeFromDOM(event.target);
-            if (node) {
-              positionToRubyNode(node);
-              setIsRubyClick(true);
-            } else {
-              setIsRubyClick(false);
-            }
-          });
+          const selection = $getSelection();
+          if ($isRangeSelection(selection) && !selection.isCollapsed()) {
+            setIsRubyClick(false);
+            return false;
+          }
+          const node = $getRubyNodeFromDOM(event.target);
+          if (node) {
+            positionToRubyNode(node);
+            setIsRubyClick(true);
+          } else {
+            setIsRubyClick(false);
+          }
           return false;
         },
         COMMAND_PRIORITY_HIGH,
@@ -224,7 +222,7 @@ function FloatingRubyEditor({
         return;
       }
       requestAnimationFrame(() => {
-        if (editorElement.contains(document.activeElement)) {
+        if (editorElement.contains(editorElement.ownerDocument.activeElement)) {
           return;
         }
         setIsRubyClick(false);
@@ -301,7 +299,10 @@ function FloatingRubyEditor({
       }}
       onMouseUp={() => {
         isEditorPointerDownRef.current = false;
-        if (inputRef.current && document.activeElement !== inputRef.current) {
+        if (
+          inputRef.current &&
+          inputRef.current.ownerDocument.activeElement !== inputRef.current
+        ) {
           inputRef.current.focus();
         }
       }}

@@ -27,7 +27,7 @@ import {
   MdastAutolinkLiteralExtension,
   MdastCommonMarkExtension,
   MdastExportExtension,
-  MdastExtension,
+  MdastImportExtension,
   MdastShadowRootQuoteExtension,
   MdastTableExtension,
 } from '../../index';
@@ -407,7 +407,7 @@ describe('@lexical/mdast import/export', () => {
         dependencies: [
           MdastCommonMarkExtension,
           MdastExportExtension,
-          configExtension(MdastExtension, {
+          configExtension(MdastImportExtension, {
             importRules: undefined,
             mdastExtensions: undefined,
           }),

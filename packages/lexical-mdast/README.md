@@ -24,7 +24,7 @@ Markdown — `* a`/`+ b` bullets and `~~~` fences round-trip unchanged.
 system, modelled on `@lexical/html`'s `DOMImportExtension`. Each feature
 extension ships the nodes it needs and contributes its import/export rules (and
 the micromark/mdast extensions that tokenize them) to the core
-`MdastExtension` registry:
+`MdastImportExtension` registry:
 
 | Extension | Ships | Adds |
 | --- | --- | --- |
@@ -39,13 +39,16 @@ the micromark/mdast extensions that tokenize them) to the core
 | `MdastShadowRootQuoteExtension` | – | blockquotes as block containers (full-fidelity nested content) |
 | `MdastCommonMarkExtension` | – | bundle of the six CommonMark-ish extensions above |
 | `MdastExportExtension` | – | serialization back to Markdown (`$convertToMarkdownString`) |
+| `MdastExtension` | – | bundle of `MdastImportExtension` + `MdastExportExtension` |
 | `MdastShortcutsExtension` | – | streaming keyboard shortcuts |
 
-Import and export are separate extensions: `MdastExtension` (and the feature
-extensions that contribute to it) only parse, and `MdastExportExtension`
-compiles the same registry into a serializer. An editor that never converts
-back to Markdown simply omits `MdastExportExtension` and doesn't bundle
-`mdast-util-to-markdown`.
+Import and export are separate extensions: `MdastImportExtension` (and the
+feature extensions that contribute to it) only parse, and
+`MdastExportExtension` compiles the same registry into a serializer. An
+editor that never converts back to Markdown simply omits
+`MdastExportExtension` and doesn't bundle `mdast-util-to-markdown`. When you
+want both directions without thinking about it, depend on `MdastExtension`,
+which bundles the two.
 
 ## Usage
 
@@ -82,23 +85,24 @@ const markdown = editor.read(() => $convertToMarkdownString());
 ```
 
 The same API is available from the editor as
-`$getExtensionOutput(MdastExtension).$convertFromMarkdownString(...)` and
+`$getExtensionOutput(MdastImportExtension).$convertFromMarkdownString(...)`
+and
 `$getExtensionOutput(MdastExportExtension).$convertToMarkdownString(...)`.
 
 ### Custom mappings
 
 Because extensions are the unit of configuration, you add or override behavior
-by contributing rules to `MdastExtension` from your own extension:
+by contributing rules to `MdastImportExtension` from your own extension:
 
 ```ts
-import {MdastExtension} from '@lexical/mdast';
+import {MdastImportExtension} from '@lexical/mdast';
 import {configExtension, defineExtension} from 'lexical';
 
 export const MyMdastExtension = defineExtension({
   name: 'my-mdast',
   nodes: [MyNode],
   dependencies: [
-    configExtension(MdastExtension, {
+    configExtension(MdastImportExtension, {
       importRules: [{type: 'myMdastType', $import: $importMyNode}],
       exportRules: [{type: 'my-node', $export: $exportMyNode}],
       micromarkExtensions: [myMicromarkExtension()],

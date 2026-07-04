@@ -107,7 +107,7 @@ export type MdastExportHandler<T extends LexicalNode = LexicalNode> = (
 /**
  * A single import mapping: which mdast node `type` it handles and how. The
  * unit an extension contributes (alongside the micromark/mdast extensions that
- * tokenize the construct) to {@link MdastExtension}'s `importRules` config.
+ * tokenize the construct) to {@link MdastImportExtension}'s `importRules` config.
  */
 export interface MdastImportRule {
   /** The mdast node `type` this rule handles (e.g. `'heading'`). */

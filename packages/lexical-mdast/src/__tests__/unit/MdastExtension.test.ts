@@ -27,6 +27,7 @@ import {
   MdastCommonMarkExtension,
   MdastExportExtension,
   MdastExtension,
+  MdastImportExtension,
   MdastShortcutsExtension,
 } from '../../index';
 
@@ -66,7 +67,9 @@ describe('@lexical/mdast extensions', () => {
     );
     editor.update(
       () => {
-        $getExtensionOutput(MdastExtension).$convertFromMarkdownString('## Hi');
+        $getExtensionOutput(MdastImportExtension).$convertFromMarkdownString(
+          '## Hi',
+        );
       },
       {discrete: true},
     );
@@ -75,6 +78,24 @@ describe('@lexical/mdast extensions', () => {
         $getExtensionOutput(MdastExportExtension).$convertToMarkdownString(),
       ),
     ).toBe('## Hi');
+  });
+
+  it('MdastExtension bundles import and export', () => {
+    const editor = buildEditor(
+      defineExtension({
+        dependencies: [MdastCommonMarkExtension, MdastExtension],
+        name: '[root]',
+      }),
+    );
+    editor.update(
+      () => {
+        $convertFromMarkdownString('# Both directions');
+      },
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString())).toBe(
+      '# Both directions',
+    );
   });
 
   it('wires up streaming shortcuts via MdastShortcutsExtension', () => {

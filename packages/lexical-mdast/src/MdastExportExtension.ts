@@ -12,7 +12,7 @@ import {$getExtensionOutput} from '@lexical/extension';
 import {defineExtension} from 'lexical';
 
 import {createMdastExport} from './MdastExport';
-import {MdastExtension} from './MdastExtension';
+import {MdastImportExtension} from './MdastImportExtension';
 
 /**
  * The runtime API exposed by {@link MdastExportExtension}. Obtain it inside a
@@ -29,7 +29,7 @@ export interface MdastExportExtensionOutput {
 
 /**
  * Markdown serialization for `@lexical/mdast`. Import
- * (`MdastExtension` and the feature extensions that contribute to it) and
+ * (`MdastImportExtension` and the feature extensions that contribute to it) and
  * export are separate extensions so that editors which only *parse* Markdown
  * — never serialize back — don't bundle `mdast-util-to-markdown`.
  *
@@ -47,13 +47,13 @@ export const MdastExportExtension = /* @__PURE__ */ defineExtension<
   void
 >({
   build(editor, config, state): MdastExportExtensionOutput {
-    const {registry} = state.getDependency(MdastExtension).output;
+    const {registry} = state.getDependency(MdastImportExtension).output;
     const exportMarkdown = createMdastExport(registry);
     return {
       $convertToMarkdownString: node => exportMarkdown(node),
     };
   },
-  dependencies: [MdastExtension],
+  dependencies: [MdastImportExtension],
   name: '@lexical/mdast/Export',
 });
 

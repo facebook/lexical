@@ -53,9 +53,9 @@ the time of writing:
 | bundle                         | minified  | min+gzip |
 | ------------------------------ | --------- | -------- |
 | legacy `@lexical/markdown`     | 287.3 kB  | 77.3 kB  |
-| `@lexical/mdast`               | 407.8 kB  | 102.6 kB |
-| `@lexical/mdast` (import only) | 392.8 kB  | 99.1 kB  |
-| delta (full vs legacy)         | +120.6 kB | +25.3 kB |
+| `@lexical/mdast`               | 407.7 kB  | 103.4 kB |
+| `@lexical/mdast` (import only) | 392.8 kB  | 99.7 kB  |
+| delta (full vs legacy)         | +120.5 kB | +26.1 kB |
 
 Two packaging decisions keep the delta down:
 
@@ -67,7 +67,7 @@ Two packaging decisions keep the delta down:
   omits `MdastExportExtension` and with it most of
   `mdast-util-to-markdown`.
 
-That ~25 kB (gzip) buys spec-compliant CommonMark + GFM parsing, a single
+That ~26 kB (gzip) buys spec-compliant CommonMark + GFM parsing, a single
 grammar shared by import and typing shortcuts, and the micromark/mdast
 extension ecosystem (footnotes, frontmatter, directives, ...) as the path
 for new syntax.

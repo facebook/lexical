@@ -70,7 +70,7 @@ export type MdastShortcutsConfig = {
   readonly disabled: boolean,
 };
 
-export type MdastExtensionOutput = {
+export type MdastImportExtensionOutput = {
   $convertFromMarkdownString(
     markdown: string,
     node?: ElementNode,
@@ -91,10 +91,16 @@ declare export function $convertFromMarkdownString(
 
 declare export function $convertToMarkdownString(node?: ElementNode): string;
 
-declare export var MdastExtension: LexicalExtension<
+declare export var MdastImportExtension: LexicalExtension<
   MdastConfig,
+  '@lexical/mdast/Import',
+  MdastImportExtensionOutput,
+  void,
+>;
+declare export var MdastExtension: LexicalExtension<
+  ExtensionConfigBase,
   '@lexical/mdast/Mdast',
-  MdastExtensionOutput,
+  void,
   void,
 >;
 declare export var MdastRichTextExtension: LexicalExtension<

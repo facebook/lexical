@@ -33,7 +33,7 @@ import {
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
 
-import {MdastExtension} from './MdastExtension';
+import {MdastImportExtension} from './MdastImportExtension';
 
 /** The per-column alignment (`| :-: |`) a table's delimiter row declared. */
 const tableAlignState = /* @__PURE__ */ createState('mdastTableAlign', {
@@ -126,7 +126,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
  */
 export const MdastTableExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    /* @__PURE__ */ configExtension(MdastExtension, {
+    /* @__PURE__ */ configExtension(MdastImportExtension, {
       exportRules: [{$export: $exportTable, type: 'table'}],
       importRules: [{$import: $importTable, type: 'table'}],
       mdastExtensions: [/* @__PURE__ */ gfmTableFromMarkdown()],

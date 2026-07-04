@@ -9,14 +9,15 @@
 // `@lexical/mdast` is configured exclusively through the Lexical extension
 // system. Each feature extension ships the nodes it needs and contributes its
 // import/export rules (and micromark/mdast extensions) to the core
-// `MdastExtension` registry — mirroring how `@lexical/html`'s feature
+// `MdastImportExtension` registry — mirroring how `@lexical/html`'s feature
 // extensions contribute to `DOMImportExtension`.
 //
 // - Add `MdastCommonMarkExtension` (or individual feature extensions) for
-//   import, `MdastExportExtension` to serialize back to Markdown, and
+//   import, `MdastExportExtension` to serialize back to Markdown (or
+//   `MdastExtension`, which bundles both directions), and
 //   `MdastShortcutsExtension` for streaming shortcuts.
 // - Read the Markdown API from the editor with
-//   `$getExtensionOutput(MdastExtension)` /
+//   `$getExtensionOutput(MdastImportExtension)` /
 //   `$getExtensionOutput(MdastExportExtension)`, or via the
 //   `$convert*` shorthands.
 
@@ -25,25 +26,26 @@ export {
   $convertToMarkdownString,
   MdastExportExtension,
 } from './MdastExportExtension';
+export {MdastExtension} from './MdastExtension';
 export type {
   MdastConfig,
-  MdastExtensionOutput,
+  MdastImportExtensionOutput,
   MdastShortcutsConfig,
-} from './MdastExtension';
+} from './MdastImportExtension';
 export {
   $convertFromMarkdownString,
   MdastAutolinkLiteralExtension,
   MdastCodeExtension,
   MdastCommonMarkExtension,
-  MdastExtension,
   MdastHorizontalRuleExtension,
+  MdastImportExtension,
   MdastLinkExtension,
   MdastListExtension,
   MdastRichTextExtension,
   MdastShadowRootQuoteExtension,
   MdastShortcutsExtension,
   MdastStrikethroughExtension,
-} from './MdastExtension';
+} from './MdastImportExtension';
 export {MdastTableExtension} from './MdastTableExtension';
 export type {
   MdastExportContext,

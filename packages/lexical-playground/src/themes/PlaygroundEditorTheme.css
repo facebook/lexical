@@ -508,6 +508,11 @@
   position: absolute;
   transform: translateY(-50%);
 }
+.PlaygroundEditorTheme__listItemUnchecked[dir='rtl']:before,
+.PlaygroundEditorTheme__listItemChecked[dir='rtl']:before {
+  left: auto;
+  right: 0;
+}
 .PlaygroundEditorTheme__listItemChecked {
   text-decoration: line-through;
 }
@@ -539,6 +544,10 @@
   height: 0.4em;
   transform: translateY(-50%) rotate(45deg);
   border-width: 0 0.1em 0.1em 0;
+}
+.PlaygroundEditorTheme__listItemChecked[dir='rtl']:after {
+  left: auto;
+  right: 0.35em;
 }
 .PlaygroundEditorTheme__nestedListItem {
   list-style-type: none;

@@ -1429,25 +1429,17 @@ export function $insertTableIntoGrid(
   // table, growing the table if necessary.
   let startRow = anchorCellMap.startRow;
   let startCol = anchorCellMap.startColumn;
-  let affectedRowCount = templateGridMap.length;
-  let affectedColCount = affectedRowCount > 0 ? templateGridMap[0].length : 0;
+  const affectedRowCount = templateGridMap.length;
+  const affectedColCount = affectedRowCount > 0 ? templateGridMap[0].length : 0;
 
   if (isTableSel) {
-    // If we have a table selection, we'll only modify the cells within
-    // the selection boundary.
     const selectionBoundary = $computeTableCellRectBoundary(
       initialGridMap,
       anchorCellMap,
       focusCellMap,
     );
-    const selectionRowCount =
-      selectionBoundary.maxRow - selectionBoundary.minRow + 1;
-    const selectionColCount =
-      selectionBoundary.maxColumn - selectionBoundary.minColumn + 1;
     startRow = selectionBoundary.minRow;
     startCol = selectionBoundary.minColumn;
-    affectedRowCount = Math.min(affectedRowCount, selectionRowCount);
-    affectedColCount = Math.min(affectedColCount, selectionColCount);
   }
 
   // Step 1: Unmerge all merged cells within the affected area

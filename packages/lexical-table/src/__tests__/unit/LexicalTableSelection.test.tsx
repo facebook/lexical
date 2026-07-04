@@ -159,6 +159,19 @@ describe('table selection', () => {
         );
       });
 
+      test('single row TSV fills one row with two columns', () => {
+        testEnv.editor.update(
+          () => {
+            tableSelection.insertRawText('a\tb');
+            expect($getCellTexts()).toEqual([
+              ['a', 'b'],
+              ['0,1', '1,1'],
+            ]);
+          },
+          {discrete: true},
+        );
+      });
+
       test('expands rows when TSV has more rows', () => {
         testEnv.editor.update(
           () => {

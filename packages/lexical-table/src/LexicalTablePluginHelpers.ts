@@ -446,7 +446,16 @@ function $tableSelectionInsertClipboardNodesCommand(
   );
   if (!hasTables) {
     if ($isTableSelection(selection)) {
-      const text = nodes.map(n => n.getTextContent()).join('\n');
+      let text = '';
+      let lastWasBlock = false;
+      for (const node of nodes) {
+        const isBlock = $isElementNode(node) && !node.isInline();
+        if (text.length > 0 && (isBlock || lastWasBlock)) {
+          text += '\n';
+        }
+        text += node.getTextContent();
+        lastWasBlock = isBlock;
+      }
       selection.insertRawText(text);
       return true;
     }

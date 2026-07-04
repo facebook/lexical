@@ -35,7 +35,7 @@ import {
 import {$createRubyNode, $isRubyNode, RubyNode} from './RubyNode';
 
 const RubyImportRule = /* @__PURE__ */ defineImportRule({
-  $import: (ctx, el) => {
+  $import: (_ctx, el) => {
     const children = el.childNodes;
     const results = [];
     let pendingText = '';

@@ -1,0 +1,43 @@
+{
+  "name": "@lexical/dev-mdast-editor-example",
+  "private": true,
+  "version": "0.46.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "size": "node ./size/measure.mjs"
+  },
+  "dependencies": {
+    "@lexical/code-core": "workspace:*",
+    "@lexical/extension": "workspace:*",
+    "@lexical/history": "workspace:*",
+    "@lexical/link": "workspace:*",
+    "@lexical/list": "workspace:*",
+    "@lexical/markdown": "workspace:*",
+    "@lexical/mdast": "workspace:*",
+    "@lexical/react": "workspace:*",
+    "@lexical/rich-text": "workspace:*",
+    "@lexical/selection": "workspace:*",
+    "@lexical/utils": "workspace:*",
+    "lexical": "workspace:*",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.1",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^6.0.2",
+    "tailwindcss": "^4.2.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.61.0",
+    "@rollup/rollup-darwin-arm64": "4.61.0",
+    "@rollup/rollup-win32-x64-msvc": "4.61.0",
+    "@rollup/wasm-node": "4.61.0"
+  }
+}

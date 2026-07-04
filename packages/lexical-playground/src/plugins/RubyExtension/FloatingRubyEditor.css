@@ -44,13 +44,12 @@
 }
 
 .ruby-editor .button {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   display: inline-block;
-  padding: 6px;
-  border-radius: 8px;
+  padding: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  margin: 0 2px;
   flex-shrink: 0;
 }
 
@@ -68,12 +67,14 @@
 
 .ruby-editor .ruby-confirm {
   background-image: url(../../images/icons/success-alt.svg);
-  background-size: contain;
+  background-size: 14px;
   background-repeat: no-repeat;
+  background-position: center;
 }
 
 .ruby-editor .ruby-trash {
   background-image: url(../../images/icons/trash.svg);
-  background-size: contain;
+  background-size: 14px;
   background-repeat: no-repeat;
+  background-position: center;
 }

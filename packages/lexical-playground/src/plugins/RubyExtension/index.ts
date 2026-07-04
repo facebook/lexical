@@ -27,6 +27,7 @@ import {
   KEY_ARROW_RIGHT_COMMAND,
   KEY_BACKSPACE_COMMAND,
   LexicalNode,
+  registerEventListener,
   registerEventListeners,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
@@ -225,6 +226,7 @@ export const RubyExtension = /* @__PURE__  */ defineExtension({
   nodes: [RubyNode],
   register: editor => {
     let composingRubyInner: HTMLElement | null = null;
+    let isMouseDown = false;
 
     function checkCompositionInRuby() {
       if (composingRubyInner) {
@@ -259,14 +261,22 @@ export const RubyExtension = /* @__PURE__  */ defineExtension({
     return mergeRegister(
       editor.registerRootListener(rootElement => {
         if (rootElement) {
-          return registerEventListeners(
-            rootElement,
-            {
-              compositionend: onCompositionEnd,
-              compositionstart: checkCompositionInRuby,
-              compositionupdate: checkCompositionInRuby,
-            },
-            true,
+          return mergeRegister(
+            registerEventListeners(
+              rootElement,
+              {
+                compositionend: onCompositionEnd,
+                compositionstart: checkCompositionInRuby,
+                compositionupdate: checkCompositionInRuby,
+              },
+              true,
+            ),
+            registerEventListener(rootElement, 'mousedown', () => {
+              isMouseDown = true;
+            }),
+            registerEventListener(rootElement.ownerDocument, 'mouseup', () => {
+              isMouseDown = false;
+            }),
           );
         }
       }),
@@ -333,7 +343,12 @@ export const RubyExtension = /* @__PURE__  */ defineExtension({
       ),
       editor.registerCommand(
         SELECTION_CHANGE_COMMAND,
-        () => $nudgeOffRuby(),
+        () => {
+          if (isMouseDown) {
+            return false;
+          }
+          return $nudgeOffRuby();
+        },
         COMMAND_PRIORITY_HIGH,
       ),
       editor.registerCommand(

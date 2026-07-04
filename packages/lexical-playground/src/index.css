@@ -506,7 +506,8 @@ i.add-comment {
 }
 
 i.ruby {
-  background-image: url(images/icons/ruby.svg);
+  -webkit-mask-image: url(images/icons/ruby.svg);
+  mask-image: url(images/icons/ruby.svg);
 }
 
 i.horizontal-rule {

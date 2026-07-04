@@ -20,6 +20,7 @@ import {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createTextNode,
+  $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getSelection,
   $isRangeSelection,
@@ -46,30 +47,12 @@ function preventDefault(
   event.preventDefault();
 }
 
-function getRubyNodeKeyFromDOM(
-  editor: LexicalEditor,
-  target: EventTarget | null,
-): string | null {
+function $getRubyNodeFromDOM(target: EventTarget | null): RubyNode | null {
   if (!isHTMLElement(target)) {
     return null;
   }
-  let el: HTMLElement | null = target;
-  while (el) {
-    if (el.dataset.rubyAnnotation !== undefined) {
-      const wrapper = el.parentElement;
-      if (wrapper) {
-        const key = wrapper.getAttribute('data-lexical-key');
-        if (key) {
-          return key;
-        }
-      }
-    }
-    if (el.hasAttribute('data-lexical-editor')) {
-      break;
-    }
-    el = el.parentElement;
-  }
-  return null;
+  const node = $getNearestNodeFromDOMNode(target);
+  return $isRubyNode(node) ? node : null;
 }
 
 function FloatingRubyEditor({
@@ -85,8 +68,9 @@ function FloatingRubyEditor({
 }): JSX.Element {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [annotation, setAnnotation] = useState('');
+  const isEditorPointerDownRef = useRef(false);
   const [baseText, setBaseText] = useState('');
+  const [annotation, setAnnotation] = useState('');
   const [rubyNodeKey, setRubyNodeKey] = useState<string | null>(null);
   const [isRubyClick, setIsRubyClick] = useState(false);
 
@@ -156,18 +140,23 @@ function FloatingRubyEditor({
       editor.registerCommand(
         CLICK_COMMAND,
         event => {
-          const key = getRubyNodeKeyFromDOM(editor, event.target);
-          if (key) {
-            editor.read(() => {
-              const node = $getNodeByKey(key);
-              if ($isRubyNode(node)) {
-                positionToRubyNode(node);
-                setIsRubyClick(true);
-              }
-            });
+          if (editorRef.current?.contains(event.target as Node)) {
             return false;
           }
-          setIsRubyClick(false);
+          editor.read(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection) && !selection.isCollapsed()) {
+              setIsRubyClick(false);
+              return;
+            }
+            const node = $getRubyNodeFromDOM(event.target);
+            if (node) {
+              positionToRubyNode(node);
+              setIsRubyClick(true);
+            } else {
+              setIsRubyClick(false);
+            }
+          });
           return false;
         },
         COMMAND_PRIORITY_HIGH,
@@ -228,13 +217,27 @@ function FloatingRubyEditor({
       return;
     }
     const handleBlur = (event: FocusEvent) => {
-      if (
-        !editorElement.contains(event.relatedTarget as Element) &&
-        isVisible
-      ) {
+      if (!isVisible) {
+        return;
+      }
+      if (isEditorPointerDownRef.current) {
+        return;
+      }
+      const next = event.relatedTarget as Element | null;
+      if (next !== null) {
+        if (!editorElement.contains(next)) {
+          setIsRubyClick(false);
+          setIsRubyEditMode(false);
+        }
+        return;
+      }
+      requestAnimationFrame(() => {
+        if (editorElement.contains(document.activeElement)) {
+          return;
+        }
         setIsRubyClick(false);
         setIsRubyEditMode(false);
-      }
+      });
     };
     return registerEventListener(editorElement, 'focusout', handleBlur);
   }, [editorRef, setIsRubyEditMode, isVisible]);
@@ -243,22 +246,23 @@ function FloatingRubyEditor({
     event: React.KeyboardEvent<HTMLElement> | React.MouseEvent<HTMLElement>,
   ) => {
     event.preventDefault();
-    if (!annotation.trim()) {
+    const value = annotation.trim();
+    if (!value) {
       return;
     }
     editor.update(() => {
       if (rubyNodeKey) {
         const node = $getNodeByKey(rubyNodeKey);
         if ($isRubyNode(node)) {
-          node.setAnnotation(annotation.trim());
+          node.setAnnotation(value);
         }
       } else {
-        $toggleRuby(annotation.trim());
+        $toggleRuby(value);
       }
     });
     setIsRubyClick(false);
     setIsRubyEditMode(false);
-    editor.focus();
+    requestAnimationFrame(() => editor.focus());
   };
 
   const handleDelete = () => {
@@ -277,10 +281,13 @@ function FloatingRubyEditor({
     });
     setIsRubyClick(false);
     setIsRubyEditMode(false);
-    editor.focus();
+    requestAnimationFrame(() => editor.focus());
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.nativeEvent.isComposing) {
+      return;
+    }
     if (event.key === 'Enter') {
       handleSubmit(event);
     } else if (event.key === 'Escape') {
@@ -297,6 +304,15 @@ function FloatingRubyEditor({
         refs.setFloating(el);
       }}
       className="ruby-editor"
+      onMouseDown={() => {
+        isEditorPointerDownRef.current = true;
+      }}
+      onMouseUp={() => {
+        isEditorPointerDownRef.current = false;
+        if (inputRef.current && document.activeElement !== inputRef.current) {
+          inputRef.current.focus();
+        }
+      }}
       style={{
         ...floatingStyles,
         opacity: isVisible ? 1 : 0,
@@ -310,10 +326,12 @@ function FloatingRubyEditor({
           <input
             ref={inputRef}
             className="ruby-input"
-            value={annotation}
             placeholder="annotation"
             aria-label="Ruby annotation"
-            onChange={event => setAnnotation(event.target.value)}
+            value={annotation}
+            onChange={event => {
+              setAnnotation(event.target.value);
+            }}
             onKeyDown={handleKeyDown}
           />
           <div

@@ -27,7 +27,9 @@ import {
   MdastCommonMarkExtension,
   MdastExportExtension,
   MdastExtension,
+  MdastHeadingExtension,
   MdastImportExtension,
+  MdastListExtension,
   MdastShortcutsExtension,
 } from '../../index';
 
@@ -101,7 +103,7 @@ describe('@lexical/mdast extensions', () => {
   it('wires up streaming shortcuts via MdastShortcutsExtension', () => {
     const editor = buildEditor(
       defineExtension({
-        dependencies: [MdastShortcutsExtension],
+        dependencies: [MdastHeadingExtension, MdastShortcutsExtension],
         name: '[root]',
       }),
     );
@@ -127,5 +129,40 @@ describe('@lexical/mdast extensions', () => {
     expect(editor.read(() => $getRoot().getFirstChild()!.getType())).toBe(
       'heading',
     );
+  });
+
+  it('block shortcuts only fire for features in the editor', () => {
+    // Lists but no headings: `# ` must stay literal text instead of
+    // materializing an unregistered HeadingNode.
+    const editor = buildEditor(
+      defineExtension({
+        dependencies: [MdastListExtension, MdastShortcutsExtension],
+        name: '[root]',
+      }),
+    );
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        $getRoot().clear().append(paragraph);
+        paragraph.selectEnd();
+      },
+      {discrete: true},
+    );
+    for (const chunk of ['#', ' ']) {
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText(chunk);
+          }
+        },
+        {discrete: true},
+      );
+    }
+    editor.read(() => {
+      const first = $getRoot().getFirstChild()!;
+      expect(first.getType()).toBe('paragraph');
+      expect(first.getTextContent()).toBe('# ');
+    });
   });
 });

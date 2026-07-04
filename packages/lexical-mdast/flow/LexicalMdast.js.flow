@@ -103,6 +103,18 @@ declare export var MdastExtension: LexicalExtension<
   void,
   void,
 >;
+declare export var MdastHeadingExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/Heading',
+  void,
+  void,
+>;
+declare export var MdastBlockquoteExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/Blockquote',
+  void,
+  void,
+>;
 declare export var MdastRichTextExtension: LexicalExtension<
   ExtensionConfigBase,
   '@lexical/mdast/RichText',
@@ -112,6 +124,12 @@ declare export var MdastRichTextExtension: LexicalExtension<
 declare export var MdastListExtension: LexicalExtension<
   ExtensionConfigBase,
   '@lexical/mdast/List',
+  void,
+  void,
+>;
+declare export var MdastTaskListExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/TaskList',
   void,
   void,
 >;
@@ -166,6 +184,12 @@ declare export var MdastCommonMarkExtension: LexicalExtension<
 declare export var MdastTableExtension: LexicalExtension<
   ExtensionConfigBase,
   '@lexical/mdast/Table',
+  void,
+  void,
+>;
+declare export var MdastGfmExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/Gfm',
   void,
   void,
 >;

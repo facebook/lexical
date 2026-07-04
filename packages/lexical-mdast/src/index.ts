@@ -27,6 +27,7 @@ export {
   MdastExportExtension,
 } from './MdastExportExtension';
 export {MdastExtension} from './MdastExtension';
+export {MdastGfmExtension} from './MdastGfmExtension';
 export type {
   MdastConfig,
   MdastImportExtensionOutput,
@@ -35,8 +36,10 @@ export type {
 export {
   $convertFromMarkdownString,
   MdastAutolinkLiteralExtension,
+  MdastBlockquoteExtension,
   MdastCodeExtension,
   MdastCommonMarkExtension,
+  MdastHeadingExtension,
   MdastHorizontalRuleExtension,
   MdastImportExtension,
   MdastLinkExtension,
@@ -45,6 +48,7 @@ export {
   MdastShadowRootQuoteExtension,
   MdastShortcutsExtension,
   MdastStrikethroughExtension,
+  MdastTaskListExtension,
 } from './MdastImportExtension';
 export {MdastTableExtension} from './MdastTableExtension';
 export type {

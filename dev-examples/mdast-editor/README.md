@@ -53,9 +53,9 @@ the time of writing:
 | bundle                         | minified  | min+gzip |
 | ------------------------------ | --------- | -------- |
 | legacy `@lexical/markdown`     | 287.3 kB  | 77.3 kB  |
-| `@lexical/mdast`               | 407.7 kB  | 103.4 kB |
-| `@lexical/mdast` (import only) | 392.8 kB  | 99.7 kB  |
-| delta (full vs legacy)         | +120.5 kB | +26.1 kB |
+| `@lexical/mdast`               | 408.0 kB  | 103.5 kB |
+| `@lexical/mdast` (import only) | 393.0 kB  | 99.8 kB  |
+| delta (full vs legacy)         | +120.7 kB | +26.2 kB |
 
 Two packaging decisions keep the delta down:
 

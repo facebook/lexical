@@ -26,21 +26,43 @@ extension ships the nodes it needs and contributes its import/export rules (and
 the micromark/mdast extensions that tokenize them) to the core
 `MdastImportExtension` registry:
 
+CommonMark features:
+
 | Extension | Ships | Adds |
 | --- | --- | --- |
-| `MdastRichTextExtension` | `HeadingNode`, `QuoteNode` | headings, block quotes |
-| `MdastListExtension` | `ListNode`, `ListItemNode` | ordered/unordered/task lists |
+| `MdastHeadingExtension` | `HeadingNode` | ATX & setext headings |
+| `MdastBlockquoteExtension` | `QuoteNode` | block quotes |
+| `MdastListExtension` | `ListNode`, `ListItemNode` | ordered/unordered lists |
 | `MdastCodeExtension` | `CodeNode` | fenced & indented code |
 | `MdastLinkExtension` | `LinkNode` | links, `<autolinks>`, reference links |
 | `MdastHorizontalRuleExtension` | `HorizontalRuleNode` | thematic breaks (`---`) |
-| `MdastStrikethroughExtension` | – | GFM `~~strikethrough~~` |
-| `MdastAutolinkLiteralExtension` | – | GFM literal autolinks (bare `https://…` in prose) |
-| `MdastTableExtension` | `TableNode`, … | GFM tables |
-| `MdastShadowRootQuoteExtension` | – | blockquotes as block containers (full-fidelity nested content) |
-| `MdastCommonMarkExtension` | – | bundle of the six CommonMark-ish extensions above |
-| `MdastExportExtension` | – | serialization back to Markdown (`$convertToMarkdownString`) |
-| `MdastExtension` | – | bundle of `MdastImportExtension` + `MdastExportExtension` |
-| `MdastShortcutsExtension` | – | streaming keyboard shortcuts |
+
+GFM features:
+
+| Extension | Ships | Adds |
+| --- | --- | --- |
+| `MdastStrikethroughExtension` | – | `~~strikethrough~~` |
+| `MdastTaskListExtension` | – | task lists (`- [x] …`) |
+| `MdastAutolinkLiteralExtension` | – | literal autolinks (bare `https://…` in prose) |
+| `MdastTableExtension` | `TableNode`, … | tables |
+
+Behavior and convenience bundles:
+
+| Extension | Adds |
+| --- | --- |
+| `MdastCommonMarkExtension` | bundle of the six CommonMark extensions |
+| `MdastGfmExtension` | bundle of the four GFM extensions |
+| `MdastRichTextExtension` | bundle of heading + blockquote |
+| `MdastExportExtension` | serialization back to Markdown (`$convertToMarkdownString`) |
+| `MdastExtension` | bundle of `MdastImportExtension` + `MdastExportExtension` |
+| `MdastShadowRootQuoteExtension` | opt-in: blockquotes as block containers (full-fidelity nested content) |
+| `MdastShortcutsExtension` | streaming keyboard shortcuts |
+
+Everything composes granularly and degrades gracefully: an editor with only
+the extensions it wants imports unsupported constructs as their content
+(a table becomes its cell text), and the typing shortcuts — driven by the
+same registry — only fire for constructs the editor can represent (`> `
+stays literal without `MdastBlockquoteExtension`).
 
 Import and export are separate extensions: `MdastImportExtension` (and the
 feature extensions that contribute to it) only parse, and
@@ -56,22 +78,24 @@ which bundles the two.
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
-  MdastExportExtension,
+  MdastCommonMarkExtension,
+  MdastExtension,
+  MdastGfmExtension,
   MdastShortcutsExtension,
-  MdastTableExtension,
 } from '@lexical/mdast';
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {defineExtension} from 'lexical';
 
 const editor = buildEditorFromExtensions(
   defineExtension({
-    // MdastShortcutsExtension pulls in MdastCommonMarkExtension; add
-    // MdastTableExtension for GFM tables and MdastExportExtension to
-    // serialize the editor back to Markdown.
+    // CommonMark + GFM grammar, import + export (MdastExtension), and
+    // typing shortcuts. Swap bundles for individual feature extensions
+    // to trim what you don't need.
     dependencies: [
+      MdastCommonMarkExtension,
+      MdastGfmExtension,
+      MdastExtension,
       MdastShortcutsExtension,
-      MdastTableExtension,
-      MdastExportExtension,
     ],
     name: '[root]',
   }),

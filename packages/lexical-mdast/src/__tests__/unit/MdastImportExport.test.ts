@@ -27,17 +27,25 @@ import {
   MdastAutolinkLiteralExtension,
   MdastCommonMarkExtension,
   MdastExportExtension,
+  MdastHeadingExtension,
   MdastImportExtension,
   MdastShadowRootQuoteExtension,
+  MdastStrikethroughExtension,
   MdastTableExtension,
+  MdastTaskListExtension,
 } from '../../index';
 
 function createEditor(withTable = false): LexicalEditor {
   const editor = buildEditorFromExtensions(
     defineExtension({
-      dependencies: withTable
-        ? [MdastCommonMarkExtension, MdastExportExtension, MdastTableExtension]
-        : [MdastCommonMarkExtension, MdastExportExtension],
+      dependencies: [
+        MdastCommonMarkExtension,
+        // GFM constructs under test that aren't part of CommonMark.
+        MdastStrikethroughExtension,
+        MdastTaskListExtension,
+        MdastExportExtension,
+        ...(withTable ? [MdastTableExtension] : []),
+      ],
       name: '[root]',
     }),
   );
@@ -191,6 +199,33 @@ describe('@lexical/mdast import/export', () => {
       const out = importExport('_a_ and *b*');
       expect(importExport(out)).toBe(out); // and is stable
     });
+  });
+
+  it('unwraps constructs the editor has no extension for', () => {
+    // Headings only — no blockquote extension. `> quote` imports as its
+    // children (a paragraph) instead of corrupting or dropping content.
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [MdastHeadingExtension, MdastExportExtension],
+        name: '[root]',
+      }),
+    );
+    onTestFinished(() => editor.dispose());
+    editor.update(
+      () => {
+        $convertFromMarkdownString('# Title\n\n> quoted text');
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const types = $getRoot()
+        .getChildren()
+        .map(n => n.getType());
+      expect(types).toEqual(['heading', 'paragraph']);
+    });
+    expect(editor.read(() => $convertToMarkdownString())).toBe(
+      '# Title\n\nquoted text',
+    );
   });
 
   it('imports an autolink literal (gfm) as a link', () => {

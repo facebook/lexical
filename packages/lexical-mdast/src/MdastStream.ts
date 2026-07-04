@@ -74,10 +74,22 @@ export class MarkdownStreamScanner {
     node: MdastNode,
     format: number,
   ) => LexicalNode[];
+  /**
+   * Whether the registry's grammar recognizes GFM task-list items (i.e.
+   * `MdastTaskListExtension` contributed `gfmTaskListItem`). Probed by
+   * parsing rather than configured, so it can never drift from the grammar.
+   */
+  readonly supportsTaskListItems: boolean;
 
   constructor(compiled: CompiledMdast) {
     this.compiled = compiled;
     this.importNode = createNodeImporter(compiled, '').$importNode;
+    const probe = this.parse('- [x] a').children[0] as AnyMdastNode;
+    this.supportsTaskListItems =
+      probe != null &&
+      probe.type === 'list' &&
+      (probe.children[0] as AnyMdastNode & {checked?: boolean | null})
+        .checked === true;
   }
 
   /** Characters that can close an inline construct for this registry. */
@@ -109,7 +121,10 @@ export class MarkdownStreamScanner {
       return null;
     }
     const first = this.parse(line).children[0];
-    if (!first) {
+    // Only offer shortcuts for constructs the registry can actually import:
+    // in a granular setup (e.g. no blockquote extension) the syntax should
+    // stay literal rather than materialize an unregistered node.
+    if (!first || !this.compiled.importHandlers.has(first.type)) {
       return null;
     }
     switch (first.type) {

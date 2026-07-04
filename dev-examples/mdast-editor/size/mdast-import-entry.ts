@@ -16,14 +16,22 @@
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $convertFromMarkdownString,
+  MdastCommonMarkExtension,
   MdastShortcutsExtension,
+  MdastStrikethroughExtension,
+  MdastTaskListExtension,
 } from '@lexical/mdast';
 import {defineExtension, type LexicalEditor} from 'lexical';
 
 export function createMarkdownEditor(): LexicalEditor {
   return buildEditorFromExtensions(
     defineExtension({
-      dependencies: [MdastShortcutsExtension],
+      dependencies: [
+        MdastCommonMarkExtension,
+        MdastStrikethroughExtension,
+        MdastTaskListExtension,
+        MdastShortcutsExtension,
+      ],
       name: '[root]',
     }),
   );

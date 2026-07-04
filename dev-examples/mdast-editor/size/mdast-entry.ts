@@ -16,15 +16,26 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
+  MdastCommonMarkExtension,
   MdastExportExtension,
   MdastShortcutsExtension,
+  MdastStrikethroughExtension,
+  MdastTaskListExtension,
 } from '@lexical/mdast';
 import {defineExtension, type LexicalEditor} from 'lexical';
 
 export function createMarkdownEditor(): LexicalEditor {
   return buildEditorFromExtensions(
     defineExtension({
-      dependencies: [MdastShortcutsExtension, MdastExportExtension],
+      // Feature parity with the legacy TRANSFORMERS set: CommonMark plus
+      // strikethrough and task lists (no tables, no literal autolinks).
+      dependencies: [
+        MdastCommonMarkExtension,
+        MdastStrikethroughExtension,
+        MdastTaskListExtension,
+        MdastShortcutsExtension,
+        MdastExportExtension,
+      ],
       name: '[root]',
     }),
   );

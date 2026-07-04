@@ -28,13 +28,21 @@ import {
 } from 'lexical';
 import {beforeEach, describe, expect, it, onTestFinished} from 'vitest';
 
-import {MdastShortcutsExtension} from '../../index';
+import {
+  MdastCommonMarkExtension,
+  MdastGfmExtension,
+  MdastShortcutsExtension,
+} from '../../index';
 import {codeFenceState, codeMetaState} from '../../state';
 
 function createEditor(): LexicalEditor {
   const editor = buildEditorFromExtensions(
     defineExtension({
-      dependencies: [MdastShortcutsExtension],
+      dependencies: [
+        MdastCommonMarkExtension,
+        MdastGfmExtension,
+        MdastShortcutsExtension,
+      ],
       name: '[root]',
     }),
   );

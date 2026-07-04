@@ -374,7 +374,10 @@ export function registerMarkdownShortcuts(
 
           let transformed = false;
           if (typedChar === ' ') {
-            if ($tryCheckbox(node, parent, anchorOffset)) {
+            if (
+              scanner.supportsTaskListItems &&
+              $tryCheckbox(node, parent, anchorOffset)
+            ) {
               transformed = true;
             } else if (
               anchorOffset <= MAX_BLOCK_MARKER_LENGTH &&

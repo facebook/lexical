@@ -27,10 +27,11 @@ import {
   KEY_ARROW_RIGHT_COMMAND,
   KEY_BACKSPACE_COMMAND,
   LexicalNode,
+  registerEventListeners,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 
-import {$createRubyNode, $isRubyNode, RubyNode} from '../../nodes/RubyNode';
+import {$createRubyNode, $isRubyNode, RubyNode} from './RubyNode';
 
 const RubyImportRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
@@ -256,38 +257,15 @@ export const RubyExtension = /* @__PURE__  */ defineExtension({
     }
 
     return mergeRegister(
-      editor.registerRootListener((rootElement, prevRootElement) => {
-        if (prevRootElement) {
-          prevRootElement.removeEventListener(
-            'compositionstart',
-            checkCompositionInRuby,
-            true,
-          );
-          prevRootElement.removeEventListener(
-            'compositionupdate',
-            checkCompositionInRuby,
-            true,
-          );
-          prevRootElement.removeEventListener(
-            'compositionend',
-            onCompositionEnd,
-            true,
-          );
-        }
+      editor.registerRootListener(rootElement => {
         if (rootElement) {
-          rootElement.addEventListener(
-            'compositionstart',
-            checkCompositionInRuby,
-            true,
-          );
-          rootElement.addEventListener(
-            'compositionupdate',
-            checkCompositionInRuby,
-            true,
-          );
-          rootElement.addEventListener(
-            'compositionend',
-            onCompositionEnd,
+          return registerEventListeners(
+            rootElement,
+            {
+              compositionend: onCompositionEnd,
+              compositionstart: checkCompositionInRuby,
+              compositionupdate: checkCompositionInRuby,
+            },
             true,
           );
         }

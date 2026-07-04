@@ -11,16 +11,17 @@ import type {
   DOMSlot,
   EditorConfig,
   LexicalNode,
-  SerializedTextNode,
-  Spread,
+  NodeStateVersion,
   StateValueOrUpdater,
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {
+  $create,
   $createTextNode,
   $getSelection,
   $getState,
+  $getStateChange,
   $isRangeSelection,
   $isTextNode,
   $setState,
@@ -28,13 +29,6 @@ import {
   StateConfigValue,
   TextNode,
 } from 'lexical';
-
-export type SerializedRubyNode = Spread<
-  {
-    annotation: string;
-  },
-  SerializedTextNode
->;
 
 const annotationState = /* @__PURE__ */ createState('annotation', {
   parse: v => (typeof v === 'string' ? v : ''),
@@ -47,16 +41,6 @@ export class RubyNode extends TextNode {
       extends: TextNode,
       stateConfigs: [{flat: true, stateConfig: annotationState}],
     });
-  }
-
-  constructor(text: string = '', key?: import('lexical').NodeKey) {
-    super(text, key);
-    this.__mode = 1; // token
-  }
-
-  afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(prevNode);
-    this.__mode = 1; // token
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -86,17 +70,15 @@ export class RubyNode extends TextNode {
 
   updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     const updated = super.updateDOM(prevNode, dom, config);
-    if (
-      prevNode.getAnnotation() !== this.getAnnotation() ||
-      prevNode.getTextContent() !== this.getTextContent()
-    ) {
+    const annotationChange = $getStateChange(this, prevNode, annotationState);
+    if (annotationChange || prevNode.__text !== this.__text) {
       const inner = dom.firstElementChild as HTMLElement;
       if (inner) {
         inner.dataset.rubyAnnotation = this.getAnnotation();
       }
       dom.setAttribute(
         'aria-label',
-        `${this.getTextContent()} (${this.getAnnotation()})`,
+        `${this.__text} (${this.getAnnotation()})`,
       );
     }
     return updated;
@@ -117,8 +99,10 @@ export class RubyNode extends TextNode {
     return {element: ruby};
   }
 
-  getAnnotation(): StateConfigValue<typeof annotationState> {
-    return $getState(this, annotationState);
+  getAnnotation(
+    version?: NodeStateVersion,
+  ): StateConfigValue<typeof annotationState> {
+    return $getState(this, annotationState, version);
   }
 
   setAnnotation(
@@ -141,7 +125,10 @@ export class RubyNode extends TextNode {
 }
 
 export function $createRubyNode(text: string, annotation: string): RubyNode {
-  return new RubyNode(text).setAnnotation(annotation);
+  return $create(RubyNode)
+    .setTextContent(text)
+    .setMode('token')
+    .setAnnotation(annotation);
 }
 
 export function $isRubyNode(

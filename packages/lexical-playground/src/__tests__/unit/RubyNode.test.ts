@@ -7,7 +7,7 @@
  */
 
 import {buildEditorFromExtensions} from '@lexical/extension';
-import {registerRichText, RichTextExtension} from '@lexical/rich-text';
+import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -25,16 +25,15 @@ import {
   KEY_BACKSPACE_COMMAND,
   LexicalEditor,
 } from 'lexical';
-import {createTestEditor} from 'lexical/src/__tests__/utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
+import {RubyExtension} from '../../plugins/RubyExtension';
 import {
   $createRubyNode,
   $isRubyNode,
   $toggleRuby,
   RubyNode,
-} from '../../nodes/RubyNode';
-import {RubyExtension} from '../../plugins/RubyExtension';
+} from '../../plugins/RubyExtension/RubyNode';
 
 function $getFirstParagraph(): ElementNode {
   const first = $getRoot().getFirstChild();
@@ -53,8 +52,13 @@ describe('RubyNode', () => {
     container.setAttribute('data-lexical-editor', 'true');
     container.contentEditable = 'true';
     document.body.appendChild(container);
-    editor = createTestEditor({nodes: [RubyNode]});
-    registerRichText(editor);
+    editor = buildEditorFromExtensions({
+      dependencies: [RichTextExtension, RubyExtension],
+      name: 'ruby-node-test',
+      onError: e => {
+        throw e;
+      },
+    });
     editor.setRootElement(container);
   });
 
@@ -146,7 +150,13 @@ describe('RubyNode', () => {
 
       const json = editor.getEditorState().toJSON();
 
-      const editor2 = createTestEditor({nodes: [RubyNode]});
+      const editor2 = buildEditorFromExtensions({
+        dependencies: [RubyExtension],
+        name: 'ruby-parse-test',
+        onError: e => {
+          throw e;
+        },
+      });
       const state2 = editor2.parseEditorState(json);
 
       const result = state2.read(() => {
@@ -1093,9 +1103,9 @@ describe('RubyExtension arrow — line boundary', () => {
 
 // ---------------------------------------------------------------------------
 // Backspace at ruby boundary
-// Uses createTestEditor + manual extension registration to isolate the Ruby
-// backspace handler from RichText's deleteCharacter (which calls
-// domSelection.modify — unavailable in jsdom).
+// Omits RichTextExtension to isolate the Ruby backspace handler from
+// RichText's deleteCharacter (which calls domSelection.modify — unavailable
+// in jsdom).
 // ---------------------------------------------------------------------------
 
 describe('RubyExtension backspace', () => {

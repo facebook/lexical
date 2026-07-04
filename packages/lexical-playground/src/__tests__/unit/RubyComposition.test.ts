@@ -19,7 +19,8 @@
  * the ruby node while it is composing.
  */
 
-import {registerRichText} from '@lexical/rich-text';
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -36,12 +37,14 @@ import {
   SELECTION_CHANGE_COMMAND,
   TextNode,
 } from 'lexical';
-import {createTestEditor} from 'lexical/src/__tests__/utils';
 import assert from 'node:assert';
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 
-import {$createRubyNode, $isRubyNode, RubyNode} from '../../nodes/RubyNode';
 import {RubyExtension} from '../../plugins/RubyExtension';
+import {
+  $createRubyNode,
+  $isRubyNode,
+} from '../../plugins/RubyExtension/RubyNode';
 
 vi.mock('lexical/src/environment', () => ({
   CAN_USE_BEFORE_INPUT: true,
@@ -94,7 +97,6 @@ function setupRubyParagraph(editor: LexicalEditor): {
 describe('RubyNode composition at boundary (Safari IME)', () => {
   let container: HTMLDivElement;
   let editor: LexicalEditor;
-  let extensionCleanup: () => void;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -102,15 +104,17 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
     container.setAttribute('data-lexical-editor', 'true');
     container.contentEditable = 'true';
     document.body.appendChild(container);
-    editor = createTestEditor({nodes: [RubyNode]});
-    registerRichText(editor);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    extensionCleanup = (RubyExtension as any).register(editor);
+    editor = buildEditorFromExtensions({
+      dependencies: [RichTextExtension, RubyExtension],
+      name: 'ruby-composition-test',
+      onError: e => {
+        throw e;
+      },
+    });
     editor.setRootElement(container);
   });
 
   afterEach(() => {
-    extensionCleanup();
     editor.setRootElement(null);
     document.body.removeChild(container);
     vi.useRealTimers();

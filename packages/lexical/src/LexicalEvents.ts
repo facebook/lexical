@@ -1463,9 +1463,7 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): boolean {
             selection.anchor.key === compositionKey
               ? selection.anchor.offset
               : textLen;
-          selection.anchor.set(compositionKey, offset, 'text');
-          selection.focus.set(compositionKey, offset, 'text');
-          selection.insertText(data);
+          node.select(offset, offset).insertText(data);
         }
       }
       return true;

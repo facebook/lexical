@@ -7,7 +7,7 @@
  */
 import type {JSX} from 'react';
 
-import './index.css';
+import './FloatingRubyEditor.css';
 
 import {
   autoUpdate,
@@ -28,15 +28,17 @@ import {
   COMMAND_PRIORITY_LOW,
   getDOMSelection,
   getParentElement,
+  isHTMLElement,
   KEY_ESCAPE_COMMAND,
   LexicalEditor,
   mergeRegister,
+  registerEventListener,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import {Dispatch, useCallback, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
-import {$isRubyNode, $toggleRuby, RubyNode} from '../../nodes/RubyNode';
+import {$isRubyNode, $toggleRuby, RubyNode} from './RubyNode';
 
 function preventDefault(
   event: React.KeyboardEvent<HTMLInputElement> | React.MouseEvent<HTMLElement>,
@@ -48,7 +50,7 @@ function getRubyNodeKeyFromDOM(
   editor: LexicalEditor,
   target: EventTarget | null,
 ): string | null {
-  if (!(target instanceof HTMLElement)) {
+  if (!isHTMLElement(target)) {
     return null;
   }
   let el: HTMLElement | null = target;
@@ -234,10 +236,7 @@ function FloatingRubyEditor({
         setIsRubyEditMode(false);
       }
     };
-    editorElement.addEventListener('focusout', handleBlur);
-    return () => {
-      editorElement.removeEventListener('focusout', handleBlur);
-    };
+    return registerEventListener(editorElement, 'focusout', handleBlur);
   }, [editorRef, setIsRubyEditMode, isVisible]);
 
   const handleSubmit = (

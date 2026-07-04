@@ -38,11 +38,6 @@ const annotationState = /* @__PURE__ */ createState('annotation', {
 export class RubyNode extends TextNode {
   $config() {
     return this.config('ruby', {
-      $transform: node => {
-        if (node.getMode() !== 'token') {
-          node.setMode('token');
-        }
-      },
       extends: TextNode,
       stateConfigs: [{flat: true, stateConfig: annotationState}],
     });

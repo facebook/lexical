@@ -179,8 +179,12 @@ function $applyInline(
   return true;
 }
 
-/** Matches a GFM task-list checkbox marker (`[ ] `, `[x] `) typed at line start. */
-const CHECKBOX_REGEX = /^\[([ xX]?)\]\s$/;
+/**
+ * Matches a GFM task-list checkbox marker (`[ ] `, `[x] `) typed at line
+ * start. Exactly one character is required between the brackets, matching
+ * micromark's gfm-task-list-item grammar — `[]` is not a checkbox.
+ */
+const CHECKBOX_REGEX = /^\[([ xX])\]\s$/;
 
 /**
  * Handles a checkbox marker typed at the start of a line. micromark only

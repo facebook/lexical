@@ -12,6 +12,7 @@ import type {ListNode} from '@lexical/list';
 import type {HeadingNode} from '@lexical/rich-text';
 
 import {buildEditorFromExtensions} from '@lexical/extension';
+import {$isListItemNode} from '@lexical/list';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -115,11 +116,30 @@ describe('@lexical/mdast streaming shortcuts', () => {
     });
 
     it('- [ ] -> check list', () => {
-      type(editor, ['-', ' ', '[', ']', ' ']);
+      type(editor, ['-', ' ', '[', ' ', ']', ' ']);
       editor.read(() => {
         const list = $getRoot().getFirstChild() as ListNode;
         expect(list.getType()).toBe('list');
         expect(list.getListType()).toBe('check');
+      });
+    });
+
+    it('- [x] -> checked check list item', () => {
+      type(editor, ['-', ' ', '[', 'x', ']', ' ']);
+      editor.read(() => {
+        const list = $getRoot().getFirstChild() as ListNode;
+        expect(list.getListType()).toBe('check');
+        const item = list.getFirstChild();
+        expect($isListItemNode(item) && item.getChecked()).toBe(true);
+      });
+    });
+
+    it('- [] does not become a check list (GFM requires one character)', () => {
+      type(editor, ['-', ' ', '[', ']', ' ']);
+      editor.read(() => {
+        const list = $getRoot().getFirstChild() as ListNode;
+        expect(list.getType()).toBe('list');
+        expect(list.getListType()).toBe('bullet');
       });
     });
   });

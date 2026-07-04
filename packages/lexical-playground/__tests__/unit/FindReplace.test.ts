@@ -11,6 +11,7 @@ import {
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
+import {$createLinkNode, $isLinkNode, LinkExtension} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
@@ -49,7 +50,7 @@ import {
 } from '../../src/plugins/FindReplaceExtension';
 
 const TestExtension = defineExtension({
-  dependencies: [RichTextExtension, ListExtension],
+  dependencies: [RichTextExtension, ListExtension, LinkExtension],
   name: '[test-find-replace]',
 });
 
@@ -604,6 +605,39 @@ describe('$replaceMatch', () => {
     );
     editor.read(() => {
       expect($getRoot().getTextContent()).toBe('$1 world');
+    });
+  });
+
+  test('single-node replace inside LinkNode preserves link', () => {
+    using editor = buildEditorFromExtensions(TestExtension);
+    editor.update(
+      () => {
+        const p = $createParagraphNode();
+        const link = $createLinkNode('https://example.com');
+        link.append($createTextNode('repository'));
+        p.append($createTextNode('visit '), link, $createTextNode(' now'));
+        $getRoot().clear().append(p);
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        const map = $buildOffsetMap();
+        const match = {end: 16, matchText: 'repository', start: 6};
+        const points = $resolveMatchToPoints(match, map);
+        invariant(points !== null, 'expected non-null match points');
+        $replaceMatch(points, 'repo', match, null);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('visit repo now');
+      const p = $getRoot().getFirstChild();
+      invariant($isElementNode(p), 'expected ElementNode');
+      const children = p.getChildren();
+      expect(children).toHaveLength(3);
+      expect($isLinkNode(children[1])).toBe(true);
+      expect(children[1].getTextContent()).toBe('repo');
     });
   });
 });

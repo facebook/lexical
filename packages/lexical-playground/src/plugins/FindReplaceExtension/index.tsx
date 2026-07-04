@@ -216,6 +216,14 @@ export function $replaceMatch(
   if (!$isTextNode(anchorNode) || !$isTextNode(focusNode)) {
     return;
   }
+  if (points.anchorKey === points.focusKey) {
+    anchorNode.spliceText(
+      points.anchorOffset,
+      points.focusOffset - points.anchorOffset,
+      finalText,
+    );
+    return;
+  }
   const selection = anchorNode.select(0, 0);
   selection.setTextNodeRange(
     anchorNode,
@@ -816,6 +824,27 @@ function FindReplacePanel({
       editor.focus();
       return;
     }
+    if (e.key === 'Tab') {
+      const panel = e.currentTarget as HTMLElement;
+      const focusables = Array.from(
+        panel.querySelectorAll<HTMLElement>('input, button'),
+      );
+      if (focusables.length === 0) {
+        return;
+      }
+      const active = panel.ownerDocument.activeElement as HTMLElement;
+      const idx = focusables.indexOf(active);
+      const next = e.shiftKey
+        ? idx <= 0
+          ? focusables.length - 1
+          : idx - 1
+        : idx >= focusables.length - 1
+          ? 0
+          : idx + 1;
+      e.preventDefault();
+      focusables[next].focus();
+      return;
+    }
     if (e.key === 'Enter') {
       e.preventDefault();
       editor.dispatchCommand(
@@ -855,94 +884,77 @@ function FindReplacePanel({
       onKeyDown={handleKeyDown}
       role="dialog"
       aria-label="Find and Replace">
-      <div className="find-replace-row">
-        <input
-          ref={searchInputRef}
-          autoFocus={true}
-          className="find-replace-input"
-          type="text"
-          placeholder="Find..."
-          value={searchTerm}
-          onChange={e => {
-            editor.dispatchCommand(SET_SEARCH_TERM_COMMAND, e.target.value);
-          }}
-          aria-label="Search text"
-        />
-        <span className="find-replace-count">
-          {regexError
-            ? 'Invalid regex'
-            : matches.length > 0
-              ? `${effectiveIndex + 1} / ${matches.length}`
-              : 'No results'}
-        </span>
-        <button
-          className="find-replace-btn"
-          onClick={() => editor.dispatchCommand(FIND_PREV_COMMAND, undefined)}
-          disabled={matches.length === 0}
-          title={
-            IS_APPLE ? 'Previous match (⇧⌘G)' : 'Previous match (Ctrl+Shift+G)'
-          }
-          aria-label="Previous match">
-          <svg viewBox="0 0 16 16">
-            <path d="M8 4l5 6H3z" />
-          </svg>
-        </button>
-        <button
-          className="find-replace-btn"
-          onClick={() => editor.dispatchCommand(FIND_NEXT_COMMAND, undefined)}
-          disabled={matches.length === 0}
-          title={IS_APPLE ? 'Next match (⌘G)' : 'Next match (Ctrl+G)'}
-          aria-label="Next match">
-          <svg viewBox="0 0 16 16">
-            <path d="M8 12L3 6h10z" />
-          </svg>
-        </button>
-        <div className="find-replace-separator" />
-        <button
-          className="find-replace-toggle"
-          onClick={() => {
-            editor.dispatchCommand(TOGGLE_CASE_SENSITIVE_COMMAND, undefined);
-          }}
-          title="Match case"
-          aria-label="Match case"
-          aria-pressed={caseSensitive}>
-          Aa
-        </button>
-        <button
-          className="find-replace-toggle"
-          onClick={() => {
-            editor.dispatchCommand(TOGGLE_REGEX_COMMAND, undefined);
-          }}
-          title="Use regular expression"
-          aria-label="Use regular expression"
-          aria-pressed={isRegex}>
-          .*
-        </button>
-        <div className="find-replace-separator" />
-        <button
-          className="find-replace-btn"
-          onClick={() => {
-            editor.dispatchCommand(CLOSE_FIND_REPLACE_COMMAND, undefined);
-            editor.focus();
-          }}
-          title="Close (Escape)"
-          aria-label="Close">
-          <svg viewBox="0 0 16 16">
-            <path d="M12.2 4.5l-.7-.7L8 7.3 4.5 3.8l-.7.7L7.3 8l-3.5 3.5.7.7L8 8.7l3.5 3.5.7-.7L8.7 8z" />
-          </svg>
-        </button>
-      </div>
-      <div className="find-replace-row">
-        <input
-          className="find-replace-input"
-          type="text"
-          placeholder="Replace..."
-          value={replaceTerm}
-          onChange={e => {
-            editor.dispatchCommand(SET_REPLACE_TERM_COMMAND, e.target.value);
-          }}
-          aria-label="Replace text"
-        />
+      <input
+        ref={searchInputRef}
+        autoFocus={true}
+        className="find-replace-input"
+        style={{gridColumn: 1, gridRow: 1}}
+        type="text"
+        placeholder="Find..."
+        value={searchTerm}
+        onChange={e => {
+          editor.dispatchCommand(SET_SEARCH_TERM_COMMAND, e.target.value);
+        }}
+        aria-label="Search text"
+      />
+      <input
+        className="find-replace-input"
+        style={{gridColumn: 1, gridRow: 2}}
+        type="text"
+        placeholder="Replace..."
+        value={replaceTerm}
+        onChange={e => {
+          editor.dispatchCommand(SET_REPLACE_TERM_COMMAND, e.target.value);
+        }}
+        aria-label="Replace text"
+      />
+      <button
+        className="find-replace-toggle"
+        style={{gridColumn: 3, gridRow: 1}}
+        onClick={() => {
+          editor.dispatchCommand(TOGGLE_CASE_SENSITIVE_COMMAND, undefined);
+        }}
+        title="Match case"
+        aria-label="Match case"
+        aria-pressed={caseSensitive}>
+        Aa
+      </button>
+      <button
+        className="find-replace-toggle"
+        style={{gridColumn: 4, gridRow: 1}}
+        onClick={() => {
+          editor.dispatchCommand(TOGGLE_REGEX_COMMAND, undefined);
+        }}
+        title="Use regular expression"
+        aria-label="Use regular expression"
+        aria-pressed={isRegex}>
+        .*
+      </button>
+      <button
+        className="find-replace-btn"
+        style={{gridColumn: 6, gridRow: 1}}
+        onClick={() => editor.dispatchCommand(FIND_PREV_COMMAND, undefined)}
+        disabled={matches.length === 0}
+        title={
+          IS_APPLE ? 'Previous match (⇧⌘G)' : 'Previous match (Ctrl+Shift+G)'
+        }
+        aria-label="Previous match">
+        <svg viewBox="0 0 16 16">
+          <path d="M8 4l5 6H3z" />
+        </svg>
+      </button>
+      <button
+        className="find-replace-btn"
+        style={{gridColumn: 7, gridRow: 1}}
+        onClick={() => editor.dispatchCommand(FIND_NEXT_COMMAND, undefined)}
+        disabled={matches.length === 0}
+        title={IS_APPLE ? 'Next match (⌘G)' : 'Next match (Ctrl+G)'}
+        aria-label="Next match">
+        <svg viewBox="0 0 16 16">
+          <path d="M8 12L3 6h10z" />
+        </svg>
+      </button>
+      <div className="find-replace-row2-actions">
         <button
           className="find-replace-action"
           onClick={() =>
@@ -960,6 +972,34 @@ function FindReplacePanel({
           All
         </button>
       </div>
+      <button
+        className="find-replace-btn"
+        style={{gridColumn: 9, gridRow: 1}}
+        onClick={() => {
+          editor.dispatchCommand(CLOSE_FIND_REPLACE_COMMAND, undefined);
+          editor.focus();
+        }}
+        title="Close (Escape)"
+        aria-label="Close">
+        <svg viewBox="0 0 16 16">
+          <path d="M12.2 4.5l-.7-.7L8 7.3 4.5 3.8l-.7.7L7.3 8l-3.5 3.5.7.7L8 8.7l3.5 3.5.7-.7L8.7 8z" />
+        </svg>
+      </button>
+      <span className="find-replace-count" style={{gridColumn: 2, gridRow: 1}}>
+        {regexError
+          ? 'Invalid regex'
+          : matches.length > 0
+            ? `${effectiveIndex + 1} / ${matches.length}`
+            : 'No results'}
+      </span>
+      <div
+        className="find-replace-separator"
+        style={{gridColumn: 5, gridRow: 1}}
+      />
+      <div
+        className="find-replace-separator"
+        style={{gridColumn: 8, gridRow: 1}}
+      />
     </div>,
     portalTarget,
   );

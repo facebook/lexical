@@ -110,3 +110,14 @@ export const hrMarkerState = /* @__PURE__ */ createState('mdastHrMarker', {
   parse: (v): string => (v === '-' || v === '*' || v === '_' ? v : ''),
   resetOnCopyNode: true,
 });
+
+/**
+ * The syntax a `LinkNode` was written in: `'inline'` (`[text](url)`),
+ * `'autolink'` (`<url>`), or `'literal'` (a bare GFM autolink literal,
+ * `https://…` in prose).
+ */
+export const linkStyleState = /* @__PURE__ */ createState('mdastLinkStyle', {
+  parse: (v): string =>
+    v === 'inline' || v === 'autolink' || v === 'literal' ? v : '',
+  resetOnCopyNode: true,
+});

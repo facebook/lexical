@@ -66,6 +66,7 @@ import {
   codeMetaState,
   emphasisMarkerState,
   hardLineBreakState,
+  linkStyleState,
   listMarkerState,
   orderedMarkerState,
   paragraphBreakState,
@@ -365,6 +366,16 @@ export const $importLink: MdastImportHandler<Link> = (node, ctx) => {
     title: node.title == null ? undefined : node.title,
   });
   link.append(...ctx.importChildren(node));
+  // Preserve the syntax the link was written in (`[text](url)` vs `<url>`
+  // vs a bare GFM autolink literal) so it round-trips unchanged.
+  if (ctx.source && node.position && node.position.start.offset != null) {
+    const first = ctx.source[node.position.start.offset];
+    $setState(
+      link,
+      linkStyleState,
+      first === '[' ? 'inline' : first === '<' ? 'autolink' : 'literal',
+    );
+  }
   return link;
 };
 
@@ -480,16 +491,25 @@ export const $exportCode: MdastExportHandler = node => {
   return code;
 };
 
-export const exportLink: MdastExportHandler = (node, ctx) => {
+export const $exportLink: MdastExportHandler = (node, ctx) => {
   if (!$isLinkNode(node) || $isAutoLinkNode(node)) {
     return null;
   }
-  return {
+  const link: Link = {
     children: ctx.exportInline(node) as Link['children'],
     title: node.getTitle() ?? null,
     type: 'link',
     url: node.getURL(),
   };
+  // Only pinned when known — editor-created links defer to the default
+  // serialization (autolink form when the text is the URL).
+  const style = $getState(node, linkStyleState);
+  if (style) {
+    (link as Link & {data?: {mdastLinkStyle?: string}}).data = {
+      mdastLinkStyle: style,
+    };
+  }
+  return link;
 };
 
 function $exportListNode(

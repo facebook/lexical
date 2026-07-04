@@ -61,6 +61,7 @@ import {
   $exportCode,
   $exportHeading,
   $exportLineBreak,
+  $exportLink,
   $exportList,
   $importBlockquote,
   $importBreak,
@@ -74,7 +75,6 @@ import {
   $importParagraph,
   $importShadowRootBlockquote,
   $importStrong,
-  exportLink,
   exportParagraph,
   exportQuote,
   exportTab,
@@ -359,7 +359,7 @@ export const MdastCodeExtension = /* @__PURE__ */ defineExtension({
 export const MdastLinkExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     /* @__PURE__ */ configExtension(MdastImportExtension, {
-      exportRules: [{$export: exportLink, type: 'link'}],
+      exportRules: [{$export: $exportLink, type: 'link'}],
       importRules: [
         {$import: $importLink, type: 'link'},
         {$import: $importLinkReference, type: 'linkReference'},

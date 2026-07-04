@@ -167,6 +167,7 @@ describe('@lexical/mdast import/export', () => {
       ['underscore bold', '__strong__'],
       ['underscore bold italic', '___both___'],
       ['underscore emphasis throughout', '_a_ and __b__ and _c_'],
+      ['inline link whose text is its URL', '[https://a.dev](https://a.dev)'],
       ['setext h1', 'Title\n====='],
       ['setext h2', 'Title\n-----'],
       ['hard break inside a blockquote', '> line one\\\n> line two'],
@@ -199,6 +200,37 @@ describe('@lexical/mdast import/export', () => {
       const out = importExport('_a_ and *b*');
       expect(importExport(out)).toBe(out); // and is stable
     });
+  });
+
+  it('round-trips autolink literals without normalizing to <...>', () => {
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          MdastAutolinkLiteralExtension,
+          MdastExportExtension,
+        ],
+        name: '[root]',
+      }),
+    );
+    onTestFinished(() => editor.dispose());
+    const roundTrip = (markdown: string): string => {
+      editor.update(
+        () => {
+          $convertFromMarkdownString(markdown);
+        },
+        {discrete: true},
+      );
+      return editor.read(() => $convertToMarkdownString());
+    };
+    for (const markdown of [
+      'see https://lexical.dev today',
+      'visit www.example.com now',
+      // A CommonMark autolink stays wrapped even with the literal grammar on.
+      'wrapped <https://lexical.dev> stays',
+    ]) {
+      expect(roundTrip(markdown)).toBe(markdown);
+    }
   });
 
   it('unwraps constructs the editor has no extension for', () => {

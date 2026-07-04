@@ -12,6 +12,7 @@ import type {
   Break,
   Code,
   Heading,
+  Link,
   List,
   Paragraph,
   PhrasingContent,
@@ -28,6 +29,7 @@ import {
   $isTextNode,
 } from 'lexical';
 import {defaultHandlers, toMarkdown} from 'mdast-util-to-markdown';
+import {toString as mdastToString} from 'mdast-util-to-string';
 
 import {
   $exportLineBreak,
@@ -125,6 +127,26 @@ const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
       return withOptions(state, {setext: true}, () =>
         defaultHandlers.heading(node, parent, state, info),
       );
+    },
+    link(node: Link, parent, state, info) {
+      // `data.mdastLinkStyle` preserves the syntax the link was written in.
+      // A title can't be expressed in autolink/literal form, so links with a
+      // title always fall through to the default (resource form).
+      const style = dataField(node, 'mdastLinkStyle');
+      if (style === 'literal' && node.title == null) {
+        // A bare GFM autolink literal: emit the visible text as-is. The
+        // gfm-autolink-literal to-markdown extension keeps surrounding
+        // escaping consistent so it re-parses as the same literal.
+        return mdastToString(node);
+      }
+      if (style === 'inline') {
+        // Force `[text](url)` even when the text equals the URL (the
+        // default handler would normalize that to an autolink).
+        return withOptions(state, {resourceLink: true}, () =>
+          defaultHandlers.link(node, parent, state, info),
+        );
+      }
+      return defaultHandlers.link(node, parent, state, info);
     },
     list(node: List, parent, state, info) {
       if (node.ordered) {

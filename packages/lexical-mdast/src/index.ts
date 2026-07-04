@@ -13,11 +13,18 @@
 // extensions contribute to `DOMImportExtension`.
 //
 // - Add `MdastCommonMarkExtension` (or individual feature extensions) for
-//   import/export, and `MdastShortcutsExtension` for streaming shortcuts.
+//   import, `MdastExportExtension` to serialize back to Markdown, and
+//   `MdastShortcutsExtension` for streaming shortcuts.
 // - Read the Markdown API from the editor with
-//   `$getExtensionOutput(MdastExtension)`, or via the
+//   `$getExtensionOutput(MdastExtension)` /
+//   `$getExtensionOutput(MdastExportExtension)`, or via the
 //   `$convert*` shorthands.
 
+export type {MdastExportExtensionOutput} from './MdastExportExtension';
+export {
+  $convertToMarkdownString,
+  MdastExportExtension,
+} from './MdastExportExtension';
 export type {
   MdastConfig,
   MdastExtensionOutput,
@@ -25,7 +32,7 @@ export type {
 } from './MdastExtension';
 export {
   $convertFromMarkdownString,
-  $convertToMarkdownString,
+  MdastAutolinkLiteralExtension,
   MdastCodeExtension,
   MdastCommonMarkExtension,
   MdastExtension,

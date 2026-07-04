@@ -31,13 +31,21 @@ the micromark/mdast extensions that tokenize them) to the core
 | `MdastRichTextExtension` | `HeadingNode`, `QuoteNode` | headings, block quotes |
 | `MdastListExtension` | `ListNode`, `ListItemNode` | ordered/unordered/task lists |
 | `MdastCodeExtension` | `CodeNode` | fenced & indented code |
-| `MdastLinkExtension` | `LinkNode` | links, reference links, GFM autolinks |
+| `MdastLinkExtension` | `LinkNode` | links, `<autolinks>`, reference links |
 | `MdastHorizontalRuleExtension` | `HorizontalRuleNode` | thematic breaks (`---`) |
 | `MdastStrikethroughExtension` | – | GFM `~~strikethrough~~` |
+| `MdastAutolinkLiteralExtension` | – | GFM literal autolinks (bare `https://…` in prose) |
 | `MdastTableExtension` | `TableNode`, … | GFM tables |
 | `MdastShadowRootQuoteExtension` | – | blockquotes as block containers (full-fidelity nested content) |
-| `MdastCommonMarkExtension` | – | bundle of the six above (no tables) |
+| `MdastCommonMarkExtension` | – | bundle of the six CommonMark-ish extensions above |
+| `MdastExportExtension` | – | serialization back to Markdown (`$convertToMarkdownString`) |
 | `MdastShortcutsExtension` | – | streaming keyboard shortcuts |
+
+Import and export are separate extensions: `MdastExtension` (and the feature
+extensions that contribute to it) only parse, and `MdastExportExtension`
+compiles the same registry into a serializer. An editor that never converts
+back to Markdown simply omits `MdastExportExtension` and doesn't bundle
+`mdast-util-to-markdown`.
 
 ## Usage
 
@@ -45,6 +53,7 @@ the micromark/mdast extensions that tokenize them) to the core
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
+  MdastExportExtension,
   MdastShortcutsExtension,
   MdastTableExtension,
 } from '@lexical/mdast';
@@ -54,8 +63,13 @@ import {defineExtension} from 'lexical';
 const editor = buildEditorFromExtensions(
   defineExtension({
     // MdastShortcutsExtension pulls in MdastCommonMarkExtension; add
-    // MdastTableExtension for GFM tables.
-    dependencies: [MdastShortcutsExtension, MdastTableExtension],
+    // MdastTableExtension for GFM tables and MdastExportExtension to
+    // serialize the editor back to Markdown.
+    dependencies: [
+      MdastShortcutsExtension,
+      MdastTableExtension,
+      MdastExportExtension,
+    ],
     name: '[root]',
   }),
 );
@@ -68,8 +82,8 @@ const markdown = editor.read(() => $convertToMarkdownString());
 ```
 
 The same API is available from the editor as
-`$getExtensionOutput(MdastExtension).$convertFromMarkdownString(...)` /
-`.$convertToMarkdownString(...)`.
+`$getExtensionOutput(MdastExtension).$convertFromMarkdownString(...)` and
+`$getExtensionOutput(MdastExportExtension).$convertToMarkdownString(...)`.
 
 ### Custom mappings
 

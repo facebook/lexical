@@ -7,16 +7,15 @@
  */
 
 /**
- * Bundle-size probe: the @lexical/mdast markdown stack. Functionally
- * equivalent surface to ./legacy-entry.ts — an editor with the markdown
- * node set, streaming typing shortcuts, and markdown import/export.
+ * Bundle-size probe: @lexical/mdast import only. An editor with the
+ * markdown node set, streaming typing shortcuts, and markdown import — no
+ * serialization back to Markdown, so `MdastExportExtension` (and with it
+ * `mdast-util-to-markdown`) should be tree-shaken away.
  */
 
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $convertFromMarkdownString,
-  $convertToMarkdownString,
-  MdastExportExtension,
   MdastShortcutsExtension,
 } from '@lexical/mdast';
 import {defineExtension, type LexicalEditor} from 'lexical';
@@ -24,7 +23,7 @@ import {defineExtension, type LexicalEditor} from 'lexical';
 export function createMarkdownEditor(): LexicalEditor {
   return buildEditorFromExtensions(
     defineExtension({
-      dependencies: [MdastShortcutsExtension, MdastExportExtension],
+      dependencies: [MdastShortcutsExtension],
       name: '[root]',
     }),
   );
@@ -35,8 +34,4 @@ export function markdownToEditor(
   markdown: string,
 ): void {
   editor.update(() => $convertFromMarkdownString(markdown));
-}
-
-export function editorToMarkdown(editor: LexicalEditor): string {
-  return editor.read(() => $convertToMarkdownString());
 }

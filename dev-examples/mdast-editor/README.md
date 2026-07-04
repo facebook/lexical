@@ -44,19 +44,30 @@ pnpm run build-prod   # at the monorepo root
 npm run size          # in this directory
 ```
 
-It builds two functionally-equivalent headless bundles — editor + markdown
+It builds functionally-equivalent headless bundles — editor + markdown
 node set + typing shortcuts + import/export — one per implementation, from
-the production dist artifacts, and prints their sizes. Both include the
-lexical core, so the delta is the markdown machinery itself. Snapshot at
+the production dist artifacts, and prints their sizes. All include the
+lexical core, so the deltas are the markdown machinery itself. Snapshot at
 the time of writing:
 
-| bundle                     | minified  | min+gzip |
-| -------------------------- | --------- | -------- |
-| legacy `@lexical/markdown` | 287.3 kB  | 77.3 kB  |
-| `@lexical/mdast`           | 432.6 kB  | 115.1 kB |
-| delta                      | +145.4 kB | +37.8 kB |
+| bundle                         | minified  | min+gzip |
+| ------------------------------ | --------- | -------- |
+| legacy `@lexical/markdown`     | 287.3 kB  | 77.3 kB  |
+| `@lexical/mdast`               | 407.8 kB  | 102.6 kB |
+| `@lexical/mdast` (import only) | 392.8 kB  | 99.1 kB  |
+| delta (full vs legacy)         | +120.6 kB | +25.3 kB |
 
-That ~38 kB (gzip) buys spec-compliant CommonMark + GFM parsing, a single
+Two packaging decisions keep the delta down:
+
+- The dist build keeps the micromark/mdast dependencies **external**, so
+  the app bundler resolves them with browser export conditions (named
+  character references decode through the DOM instead of shipping a
+  ~36 kB entity table) and tree-shakes what's unused.
+- Import and export are **separate extensions**; the import-only row
+  omits `MdastExportExtension` and with it most of
+  `mdast-util-to-markdown`.
+
+That ~25 kB (gzip) buys spec-compliant CommonMark + GFM parsing, a single
 grammar shared by import and typing shortcuts, and the micromark/mdast
 extension ecosystem (footnotes, frontmatter, directives, ...) as the path
 for new syntax.

@@ -43,7 +43,7 @@ if (
   process.exit(1);
 }
 
-const entries = ['legacy', 'mdast'];
+const entries = ['legacy', 'mdast', 'mdast-import'];
 const results = {};
 
 for (const entry of entries) {
@@ -66,17 +66,22 @@ for (const entry of entries) {
 }
 
 const kb = n => `${(n / 1024).toFixed(1)} kB`;
+const labels = {
+  legacy: 'legacy `@lexical/markdown`',
+  mdast: '`@lexical/mdast`',
+  'mdast-import': '`@lexical/mdast` (import only)',
+};
 console.log('\n| bundle | minified | min+gzip |');
 console.log('| --- | --- | --- |');
 for (const entry of entries) {
   const {min, gzip} = results[entry];
-  const label =
-    entry === 'legacy' ? 'legacy `@lexical/markdown`' : '`@lexical/mdast`';
-  console.log(`| ${label} | ${kb(min)} | ${kb(gzip)} |`);
+  console.log(`| ${labels[entry]} | ${kb(min)} | ${kb(gzip)} |`);
 }
 const dMin = results.mdast.min - results.legacy.min;
 const dGzip = results.mdast.gzip - results.legacy.gzip;
 const sign = n => (n >= 0 ? '+' : '');
 console.log(
-  `| delta | ${sign(dMin)}${kb(dMin)} | ${sign(dGzip)}${kb(dGzip)} |`,
+  `| delta (full vs legacy) | ${sign(dMin)}${kb(dMin)} | ${sign(dGzip)}${kb(
+    dGzip,
+  )} |`,
 );

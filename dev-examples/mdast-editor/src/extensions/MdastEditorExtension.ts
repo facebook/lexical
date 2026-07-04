@@ -16,6 +16,8 @@ import {HistoryExtension} from '@lexical/history';
 import {CheckListExtension, ListExtension} from '@lexical/list';
 import {
   $convertToMarkdownString,
+  MdastAutolinkLiteralExtension,
+  MdastExportExtension,
   MdastShortcutsExtension,
 } from '@lexical/mdast';
 import {
@@ -80,6 +82,11 @@ export const MdastEditorExtension = defineExtension({
   },
   dependencies: [
     MdastShortcutsExtension,
+    // Import and export are split so import-only editors stay lean; the
+    // live preview serializes, so opt in to export. Literal autolinks
+    // (bare https://… in prose) are GFM, also opt-in.
+    MdastExportExtension,
+    MdastAutolinkLiteralExtension,
     RichTextExtension,
     ListExtension,
     CheckListExtension,

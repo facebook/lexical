@@ -24,7 +24,9 @@ import {describe, expect, it, onTestFinished} from 'vitest';
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
+  MdastAutolinkLiteralExtension,
   MdastCommonMarkExtension,
+  MdastExportExtension,
   MdastExtension,
   MdastShadowRootQuoteExtension,
   MdastTableExtension,
@@ -34,8 +36,8 @@ function createEditor(withTable = false): LexicalEditor {
   const editor = buildEditorFromExtensions(
     defineExtension({
       dependencies: withTable
-        ? [MdastCommonMarkExtension, MdastTableExtension]
-        : [MdastCommonMarkExtension],
+        ? [MdastCommonMarkExtension, MdastExportExtension, MdastTableExtension]
+        : [MdastCommonMarkExtension, MdastExportExtension],
       name: '[root]',
     }),
   );
@@ -192,7 +194,13 @@ describe('@lexical/mdast import/export', () => {
   });
 
   it('imports an autolink literal (gfm) as a link', () => {
-    const editor = createEditor();
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [MdastCommonMarkExtension, MdastAutolinkLiteralExtension],
+        name: '[root]',
+      }),
+    );
+    onTestFinished(() => editor.dispose());
     editor.update(
       () => {
         $convertFromMarkdownString('see https://lexical.dev today');
@@ -294,6 +302,7 @@ describe('@lexical/mdast import/export', () => {
         defineExtension({
           dependencies: [
             MdastCommonMarkExtension,
+            MdastExportExtension,
             MdastShadowRootQuoteExtension,
           ],
           name: '[root]',
@@ -397,6 +406,7 @@ describe('@lexical/mdast import/export', () => {
       defineExtension({
         dependencies: [
           MdastCommonMarkExtension,
+          MdastExportExtension,
           configExtension(MdastExtension, {
             importRules: undefined,
             mdastExtensions: undefined,

@@ -85,7 +85,6 @@ import {
   importInlineCode,
   importText,
 } from './handlers';
-import {createMdastExport} from './MdastExport';
 import {createMdastImport} from './MdastImport';
 import {registerMarkdownShortcuts} from './MdastShortcuts';
 import {hrMarkerState} from './state';
@@ -126,8 +125,9 @@ export interface MdastConfig {
 /**
  * The runtime API exposed by {@link MdastExtension}. Obtain it inside a
  * read/update with `$getExtensionOutput(MdastExtension)`, or use the
- * {@link $convertFromMarkdownString} /
- * {@link $convertToMarkdownString} shorthands.
+ * {@link $convertFromMarkdownString} shorthand. Serialization lives in
+ * `MdastExportExtension` so import-only editors don't bundle the
+ * serializer (`mdast-util-to-markdown`).
  */
 export interface MdastExtensionOutput {
   /**
@@ -139,11 +139,6 @@ export interface MdastExtensionOutput {
     node?: ElementNode,
     tree?: Root,
   ): void;
-  /**
-   * Serializes the editor root (or `node`) to a Markdown string. Must be
-   * called inside an `editor.read()` or `editor.update()`.
-   */
-  $convertToMarkdownString(node?: ElementNode): string;
   /**
    * The compiled registry assembled from every contributing extension.
    *
@@ -174,8 +169,10 @@ const CORE_EXPORT_RULES: readonly MdastExportRule[] = [
  * The core Markdown registry for `@lexical/mdast`, modelled on
  * `@lexical/html`'s `DOMImportExtension`. It assembles the import/export rules
  * and micromark/mdast extensions contributed by feature extensions into a
- * compiled registry, and exposes Markdown import/export through its
- * {@link MdastExtensionOutput}.
+ * compiled registry, and exposes Markdown import through its
+ * {@link MdastExtensionOutput}. Markdown export is provided separately by
+ * `MdastExportExtension`, so editors that never serialize back to Markdown
+ * don't bundle the serializer.
  *
  * You normally do not depend on this directly — depend on a feature extension
  * (e.g. {@link MdastCommonMarkExtension}) which contributes its rules here and
@@ -203,11 +200,9 @@ export const MdastExtension = /* @__PURE__ */ defineExtension<
   build(editor, config): MdastExtensionOutput {
     const registry = compileMdast(config);
     const importMarkdown = createMdastImport(registry);
-    const exportMarkdown = createMdastExport(registry);
     return {
       $convertFromMarkdownString: (markdown, node, tree) =>
         importMarkdown(markdown, node, tree),
-      $convertToMarkdownString: node => exportMarkdown(node),
       registry,
     };
   },
@@ -316,10 +311,11 @@ export const MdastCodeExtension = /* @__PURE__ */ defineExtension({
 });
 
 /**
- * Inline links, CommonMark reference links (`[text][id]` resolved against
- * `[id]: url` definitions), and GFM literal autolinks, shipping
- * {@link LinkNode}. Reference links are resolved to their target on import
- * and serialize back as inline links.
+ * Inline links, CommonMark autolinks (`<https://…>`), and CommonMark
+ * reference links (`[text][id]` resolved against `[id]: url` definitions),
+ * shipping {@link LinkNode}. Reference links are resolved to their target on
+ * import and serialize back as inline links. For GFM *literal* autolinks
+ * (bare `https://…` in prose) add {@link MdastAutolinkLiteralExtension}.
  */
 export const MdastLinkExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
@@ -330,13 +326,31 @@ export const MdastLinkExtension = /* @__PURE__ */ defineExtension({
         {$import: $importLinkReference, type: 'linkReference'},
         {$import: importDefinition, type: 'definition'},
       ],
+    }),
+  ],
+  name: '@lexical/mdast/Link',
+  nodes: [LinkNode],
+});
+
+/**
+ * Opt-in: GFM literal autolinks — bare `https://…` / `www.…` URLs and email
+ * addresses in prose become links, the way GitHub renders them. This is a GFM
+ * extension rather than CommonMark, so it is not part of
+ * {@link MdastCommonMarkExtension}; add it alongside to opt in:
+ * ```ts
+ * dependencies: [MdastCommonMarkExtension, MdastAutolinkLiteralExtension]
+ * ```
+ */
+export const MdastAutolinkLiteralExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [
+    MdastLinkExtension,
+    /* @__PURE__ */ configExtension(MdastExtension, {
       mdastExtensions: [/* @__PURE__ */ gfmAutolinkLiteralFromMarkdown()],
       micromarkExtensions: [/* @__PURE__ */ gfmAutolinkLiteral()],
       toMarkdownExtensions: [/* @__PURE__ */ gfmAutolinkLiteralToMarkdown()],
     }),
   ],
-  name: '@lexical/mdast/Link',
-  nodes: [LinkNode],
+  name: '@lexical/mdast/AutolinkLiteral',
 });
 
 /**
@@ -428,8 +442,10 @@ export const MdastStrikethroughExtension = /* @__PURE__ */ defineExtension({
 /**
  * The recommended setup: CommonMark (headings, quotes, lists, code, links,
  * thematic breaks) plus the lightweight GFM features (strikethrough, task
- * lists, autolinks) that map onto existing Lexical nodes. Add
- * `MdastTableExtension` (from the same package) for GFM tables.
+ * lists) that map onto existing Lexical nodes. Add `MdastTableExtension` for
+ * GFM tables, {@link MdastAutolinkLiteralExtension} for GFM literal
+ * autolinks, and `MdastExportExtension` (all from this package) to serialize
+ * the editor back to Markdown.
  */
 export const MdastCommonMarkExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
@@ -491,12 +507,4 @@ export function $convertFromMarkdownString(
     node,
     tree,
   );
-}
-
-/**
- * Shorthand for `$getExtensionOutput(MdastExtension).$convertToMarkdownString`.
- * Must be called inside an `editor.read()` or `editor.update()`.
- */
-export function $convertToMarkdownString(node?: ElementNode): string {
-  return $getExtensionOutput(MdastExtension).$convertToMarkdownString(node);
 }

@@ -76,8 +76,11 @@ export type MdastExtensionOutput = {
     node?: ElementNode,
     tree?: unknown,
   ): void,
-  $convertToMarkdownString(node?: ElementNode): string,
   readonly registry: unknown,
+};
+
+export type MdastExportExtensionOutput = {
+  $convertToMarkdownString(node?: ElementNode): string,
 };
 
 declare export function $convertFromMarkdownString(
@@ -116,6 +119,18 @@ declare export var MdastLinkExtension: LexicalExtension<
   ExtensionConfigBase,
   '@lexical/mdast/Link',
   void,
+  void,
+>;
+declare export var MdastAutolinkLiteralExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/AutolinkLiteral',
+  void,
+  void,
+>;
+declare export var MdastExportExtension: LexicalExtension<
+  ExtensionConfigBase,
+  '@lexical/mdast/Export',
+  MdastExportExtensionOutput,
   void,
 >;
 declare export var MdastStrikethroughExtension: LexicalExtension<

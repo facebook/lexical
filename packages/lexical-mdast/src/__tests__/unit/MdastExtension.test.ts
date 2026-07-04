@@ -25,6 +25,7 @@ import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
   MdastCommonMarkExtension,
+  MdastExportExtension,
   MdastExtension,
   MdastShortcutsExtension,
 } from '../../index';
@@ -39,7 +40,7 @@ describe('@lexical/mdast extensions', () => {
   it('feature extensions ship the nodes their rules need', () => {
     const editor = buildEditor(
       defineExtension({
-        dependencies: [MdastCommonMarkExtension],
+        dependencies: [MdastCommonMarkExtension, MdastExportExtension],
         name: '[root]',
       }),
     );
@@ -56,10 +57,10 @@ describe('@lexical/mdast extensions', () => {
     expect(out).toBe('# Title\n\n- a\n- b');
   });
 
-  it('exposes the Markdown API through MdastExtension output', () => {
+  it('exposes the Markdown API through extension outputs', () => {
     const editor = buildEditor(
       defineExtension({
-        dependencies: [MdastCommonMarkExtension],
+        dependencies: [MdastCommonMarkExtension, MdastExportExtension],
         name: '[root]',
       }),
     );
@@ -71,7 +72,7 @@ describe('@lexical/mdast extensions', () => {
     );
     expect(
       editor.read(() =>
-        $getExtensionOutput(MdastExtension).$convertToMarkdownString(),
+        $getExtensionOutput(MdastExportExtension).$convertToMarkdownString(),
       ),
     ).toBe('## Hi');
   });

@@ -10,8 +10,10 @@ import {defineConfig} from 'vite';
 
 import lexicalMonorepoPlugin from '../../../scripts/vite/lexicalMonorepoPlugin';
 
-// Selected by size/measure.mjs: 'mdast' or 'legacy'.
-const entry = process.env.SIZE_ENTRY === 'legacy' ? 'legacy' : 'mdast';
+// Selected by size/measure.mjs: 'legacy', 'mdast', or 'mdast-import'.
+const ENTRIES = ['legacy', 'mdast', 'mdast-import'];
+const envEntry = process.env.SIZE_ENTRY ?? 'mdast';
+const entry = ENTRIES.includes(envEntry) ? envEntry : 'mdast';
 
 export default defineConfig({
   build: {

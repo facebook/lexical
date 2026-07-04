@@ -17,9 +17,12 @@ import {
   assertSelection,
   click,
   copyToClipboard,
+  expect,
   focusEditor,
+  getPageOrFrame,
   html,
   initialize,
+  insertCollapsible,
   pasteFromClipboard,
   selectFromInsertDropdown,
   test,
@@ -72,12 +75,13 @@ test.describe('HorizontalRule', () => {
 
     await page.keyboard.press('ArrowUp');
 
-    await assertSelection(page, {
-      anchorOffset: 0,
-      anchorPath: [0],
-      focusOffset: 0,
-      focusPath: [0],
+    // NodeSelection DOM representation varies across browsers
+    // (Chromium auto-restores it), so assert Lexical internal state.
+    const nodeSelAfterUp = await getPageOrFrame(page).evaluate(() => {
+      const sel = window.lexicalEditor.getEditorState()._selection;
+      return sel !== null && '_nodes' in sel && sel._nodes.size === 1;
     });
+    expect(nodeSelAfterUp).toBe(true);
 
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
@@ -471,6 +475,9 @@ test.describe('HorizontalRule', () => {
       });
 
       await page.keyboard.press('ArrowUp');
+      // ArrowUp from empty paragraph now stops at the decorator
+      // (NodeSelection); press again to exit past it.
+      await page.keyboard.press('ArrowUp');
       await page.keyboard.press('Backspace');
 
       await pasteFromClipboard(page, clipboard);
@@ -596,5 +603,236 @@ test.describe('HorizontalRule', () => {
       focusOffset: 0,
       focusPath: [],
     });
+  });
+
+  test('ArrowDown from middle of multi-line paragraph does not jump to adjacent decorator', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+
+    // Soft line breaks (Shift+Enter) guarantee multiple visual lines
+    // regardless of viewport width.
+    await page.keyboard.type('Line one');
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('Enter');
+    await page.keyboard.up('Shift');
+    await page.keyboard.type('Line two');
+    await page.keyboard.down('Shift');
+    await page.keyboard.press('Enter');
+    await page.keyboard.up('Shift');
+    await page.keyboard.type('Line three');
+    await page.keyboard.press('Enter');
+    await selectFromInsertDropdown(page, '.horizontal-rule');
+    await waitForSelector(page, 'hr');
+
+    // Move cursor to the first line of the paragraph
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowUp');
+    const inParagraph = await getPageOrFrame(page).evaluate(() => {
+      const sel = window.lexicalEditor.getEditorState()._selection;
+      return sel !== null && 'anchor' in sel;
+    });
+    expect(inParagraph).toBe(true);
+
+    // ArrowDown from line one should move to line two, NOT to the decorator.
+    await page.keyboard.press('ArrowDown');
+
+    // Should still be a RangeSelection (not NodeSelection on the HR)
+    const stillRange = await getPageOrFrame(page).evaluate(() => {
+      const sel = window.lexicalEditor.getEditorState()._selection;
+      return sel !== null && 'anchor' in sel && !('_nodes' in sel);
+    });
+    expect(stillRange).toBe(true);
+  });
+
+  test('ArrowUp navigates through consecutive decorators', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+
+    await page.keyboard.type('Top');
+    await page.keyboard.press('Enter');
+    await selectFromInsertDropdown(page, '.horizontal-rule');
+    await waitForSelector(page, 'hr');
+    await selectFromInsertDropdown(page, '.horizontal-rule');
+    await page.keyboard.type('Bottom');
+
+    const isNodeSel = () =>
+      getPageOrFrame(page).evaluate(() => {
+        const sel = window.lexicalEditor.getEditorState()._selection;
+        return sel !== null && '_nodes' in sel && sel._nodes.size === 1;
+      });
+    const isRangeSel = () =>
+      getPageOrFrame(page).evaluate(() => {
+        const sel = window.lexicalEditor.getEditorState()._selection;
+        return sel !== null && 'anchor' in sel && !('_nodes' in sel);
+      });
+
+    // ArrowUp from "Bottom" → should select second HR
+    await page.keyboard.press('ArrowUp');
+    expect(await isNodeSel()).toBe(true);
+
+    // ArrowUp → exit NodeSelection, then ArrowUp → first HR
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowUp');
+    expect(await isNodeSel()).toBe(true);
+
+    // ArrowUp → should exit to "Top" paragraph
+    await page.keyboard.press('ArrowUp');
+    expect(await isRangeSel()).toBe(true);
+  });
+
+  test('ArrowDown from last line of paragraph stops at adjacent decorator', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+
+    await page.keyboard.type('Some text');
+    await page.keyboard.press('Enter');
+    await selectFromInsertDropdown(page, '.horizontal-rule');
+    await waitForSelector(page, 'hr');
+
+    // Go back to "Some text" paragraph
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowUp');
+
+    // ArrowDown from this single-line paragraph should select the HR
+    await page.keyboard.press('ArrowDown');
+
+    const isNodeSel = await getPageOrFrame(page).evaluate(() => {
+      const sel = window.lexicalEditor.getEditorState()._selection;
+      return sel !== null && '_nodes' in sel && sel._nodes.size === 1;
+    });
+    expect(isNodeSel).toBe(true);
+  });
+
+  test('ArrowDown from last list item selects adjacent decorator', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+
+    // Create a bullet list then insert HR after it
+    await page.keyboard.type('Item one');
+    await click(page, '.block-controls');
+    await click(page, '.dropdown .icon.bullet-list');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('Item two');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await selectFromInsertDropdown(page, '.horizontal-rule');
+    await waitForSelector(page, 'hr');
+
+    // Move cursor back to the last list item
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowUp');
+
+    const inList = await getPageOrFrame(page).evaluate(() => {
+      const sel = window.lexicalEditor.getEditorState()._selection;
+      return sel !== null && 'anchor' in sel;
+    });
+    expect(inList).toBe(true);
+
+    // ArrowDown from last list item should select the HR
+    await page.keyboard.press('ArrowDown');
+
+    const isNodeSel = await getPageOrFrame(page).evaluate(() => {
+      const sel = window.lexicalEditor.getEditorState()._selection;
+      return sel !== null && '_nodes' in sel && sel._nodes.size === 1;
+    });
+    expect(isNodeSel).toBe(true);
+  });
+
+  test('ArrowDown from block cursor between shadow root and decorator selects the decorator', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+
+    await page.keyboard.type('Top');
+    await page.keyboard.press('Enter');
+
+    // Insert a collapsible (shadow root) — cursor lands in the title
+    await insertCollapsible(page);
+    await page.keyboard.type('Title');
+
+    // Navigate out of the collapsible: right from title end → content,
+    // then right again → trailing paragraph after the collapsible.
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+
+    // Insert an HR (decorator) right after the collapsible
+    await selectFromInsertDropdown(page, '.horizontal-rule');
+    await waitForSelector(page, 'hr');
+
+    // Remove the empty paragraph between collapsible and HR, then set
+    // selection to a block cursor just before the HR so the two nodes
+    // are directly adjacent (the tree shape that triggers the bug).
+    await getPageOrFrame(page).evaluate(() => {
+      const editor = window.lexicalEditor;
+      editor.update(
+        () => {
+          const root = editor.getEditorState()._nodeMap.get('root');
+          const children = root.getChildren();
+          for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            if (
+              child.getType() === 'paragraph' &&
+              child.getTextContentSize() === 0 &&
+              i > 0 &&
+              children[i - 1].getType() === 'collapsible-container'
+            ) {
+              child.remove();
+              break;
+            }
+          }
+          // Set block cursor between collapsible and HR
+          const updated = root.getChildren();
+          for (let i = 0; i < updated.length; i++) {
+            if (updated[i].getType() === 'horizontalrule') {
+              root.select(i, i);
+              break;
+            }
+          }
+        },
+        {discrete: true},
+      );
+    });
+
+    // Verify we're at a block cursor on root
+    const blockCursorState = await getPageOrFrame(page).evaluate(() => {
+      const sel = window.lexicalEditor.getEditorState()._selection;
+      return (
+        sel !== null &&
+        'anchor' in sel &&
+        sel.anchor.type === 'element' &&
+        sel.anchor.key === 'root'
+      );
+    });
+    expect(blockCursorState).toBe(true);
+
+    // ArrowDown from this block cursor should select the HR
+    await page.keyboard.press('ArrowDown');
+
+    const isNodeSel = await getPageOrFrame(page).evaluate(() => {
+      const sel = window.lexicalEditor.getEditorState()._selection;
+      return sel !== null && '_nodes' in sel && sel._nodes.size === 1;
+    });
+    expect(isNodeSel).toBe(true);
   });
 });

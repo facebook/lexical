@@ -88,6 +88,7 @@ import {EmojisExtension} from './plugins/EmojisExtension';
 import {EquationsExtension} from './plugins/EquationsExtension';
 import {ExcalidrawExtension} from './plugins/ExcalidrawExtension';
 import {FigmaExtension} from './plugins/FigmaExtension';
+import {ReactFindReplaceExtension} from './plugins/FindReplaceExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
 import {LayoutExtension} from './plugins/LayoutExtension/LayoutExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
@@ -241,6 +242,7 @@ const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
     ExcalidrawExtension,
     CardExtension,
     ReactReviewExtension,
+    ReactFindReplaceExtension,
     PullQuoteExtension,
     RubyExtension,
     /* @__PURE__ */ configExtension(TabIndentationExtension, {maxIndent: 7}),

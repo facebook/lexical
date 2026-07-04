@@ -8,10 +8,8 @@
 
 import type {MdastBlockMatch} from './MdastStream';
 import type {CompiledMdast, MdastNode} from './types';
-import type {ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
 import type {ElementNode, LexicalEditor, LexicalNode, TextNode} from 'lexical';
-import type {List} from 'mdast';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code-core';
 import {
@@ -23,7 +21,6 @@ import {
 import {$createHeadingNode, $createQuoteNode} from '@lexical/rich-text';
 import {
   $addUpdateTag,
-  $createTextNode,
   $getNodeByKey,
   $getSelection,
   $isParagraphNode,
@@ -32,28 +29,22 @@ import {
   $isTextNode,
   COLLABORATION_TAG,
   COMMAND_PRIORITY_LOW,
+  COMPOSITION_END_TAG,
   HISTORIC_TAG,
   HISTORY_PUSH_TAG,
   KEY_ENTER_COMMAND,
   mergeRegister,
 } from 'lexical';
 
+import {$listTypeFromMdast} from './handlers';
 import {MarkdownStreamScanner} from './MdastStream';
 
-/** Characters that can close an inline construct and so warrant a re-scan. */
-const INLINE_TRIGGERS = new Set<string>(['*', '_', '`', '~', ')']);
-
-function $listTypeFromMdast(node: List): ListType {
-  if (node.ordered) {
-    return 'number';
-  }
-  for (const child of node.children) {
-    if (child.type === 'listItem' && child.checked != null) {
-      return 'check';
-    }
-  }
-  return 'bullet';
-}
+/**
+ * Block markers are at most a few characters (`'###### '`, `'   999. '`,
+ * `'- [x] '`); when the caret is past this column a space cannot complete a
+ * block marker, so the micromark scan is skipped entirely.
+ */
+const MAX_BLOCK_MARKER_LENGTH = 24;
 
 /** Removes the first `n` characters from the leading text nodes of `element`. */
 function $stripLeading(element: ElementNode, n: number): void {
@@ -86,10 +77,7 @@ function $applyBlock(paragraph: ElementNode, match: MdastBlockMatch): boolean {
 
   if (match.kind === 'code') {
     const code = $createCodeNode(match.node.lang || undefined);
-    const text = remaining.map(node => node.getTextContent()).join('');
-    if (text) {
-      code.append($createTextNode(text));
-    }
+    code.append(...remaining);
     paragraph.replace(code);
     code.selectStart();
     return true;
@@ -131,6 +119,18 @@ function $applyBlock(paragraph: ElementNode, match: MdastBlockMatch): boolean {
   paragraph.replace(target);
   selectInto.selectStart();
   return true;
+}
+
+/**
+ * Cheap check that `text` (up to the caret) could plausibly contain a closed
+ * inline construct ending in `closeChar`, before paying for a micromark parse.
+ * A closing `)` needs a `](` link infix; any other delimiter needs an earlier
+ * occurrence of itself to act as the opener.
+ */
+function mayCloseInlineConstruct(text: string, closeChar: string): boolean {
+  return closeChar === ')'
+    ? text.lastIndexOf('](') > 0
+    : text.lastIndexOf(closeChar, text.length - 2) !== -1;
 }
 
 /**
@@ -249,9 +249,11 @@ function $isShortcutParagraph(
  *
  * - Block markers (`# `, `> `, `- `, `1. `, `- [ ] `) convert the paragraph
  *   into the matching Lexical block as soon as the trailing space is typed.
- * - Fenced code (`` ```lang ``) converts on <kbd>Enter</kbd>.
+ * - A marker-only line (`` ```lang ``, `## `, `- `) converts on
+ *   <kbd>Enter</kbd>.
  * - Inline constructs (`*em*`, `**strong**`, `` `code` ``, `~~del~~`,
- *   `[text](url)`) convert when their closing delimiter is typed.
+ *   `[text](url)`, plus registered `inlineShortcutTypes`) convert when their
+ *   closing delimiter is typed.
  *
  * Wired up by {@link MdastShortcutsExtension}; this is an internal helper, not
  * part of the package's public API.
@@ -261,23 +263,41 @@ export function registerMarkdownShortcuts(
   compiled: CompiledMdast,
 ): () => void {
   const scanner = new MarkdownStreamScanner(compiled);
+  const inlineTriggers = scanner.inlineTriggers;
+  // Composition end fires per IME commit (every CJK syllable, dead-key
+  // resolve, ...). Only enter the transformer pass when the just-committed
+  // character can plausibly close a trigger.
+  const compositionEndTriggers = new Set<string>([' ', ...inlineTriggers]);
 
   return mergeRegister(
     editor.registerUpdateListener(
       ({tags, dirtyLeaves, editorState, prevEditorState}) => {
-        if (tags.has(COLLABORATION_TAG) || tags.has(HISTORIC_TAG)) {
+        // Ignore updates from collaboration and undo/redo (changes already
+        // calculated), and anything that dirtied no leaves (pure selection
+        // moves) before paying for any editor-state reads.
+        if (
+          dirtyLeaves.size === 0 ||
+          tags.has(COLLABORATION_TAG) ||
+          tags.has(HISTORIC_TAG)
+        ) {
           return;
         }
+        // If the editor is still composing we must wait for the commit.
         if (editor.isComposing()) {
           return;
         }
+        // A composition commit lands without moving the selection (and may
+        // commit several characters at once), so it bypasses the typed-one-
+        // character heuristics below.
+        const isCompositionEnd = tags.has(COMPOSITION_END_TAG);
+
         const selection = editorState.read($getSelection);
         const prevSelection = prevEditorState.read($getSelection);
         if (
           !$isRangeSelection(selection) ||
           !$isRangeSelection(prevSelection) ||
           !selection.isCollapsed() ||
-          selection.is(prevSelection)
+          (selection.is(prevSelection) && !isCompositionEnd)
         ) {
           return;
         }
@@ -287,16 +307,46 @@ export function registerMarkdownShortcuts(
         if (!$isTextNode(anchorNode) || !dirtyLeaves.has(anchorKey)) {
           return;
         }
-        const typedChar = editorState.read(() => anchorNode.getTextContent())[
-          anchorOffset - 1
-        ];
-        if (typedChar !== ' ' && !INLINE_TRIGGERS.has(typedChar)) {
+        // Only react to a single typed character: the caret must have
+        // advanced exactly one position (or sit right after the first
+        // character of a fresh node). This keeps paste, drag-drop, and
+        // deletions — which can leave the caret after a delimiter — from
+        // firing destructive transforms.
+        if (
+          !isCompositionEnd &&
+          anchorOffset !== 1 &&
+          !(
+            prevSelection.anchor.key === anchorKey &&
+            anchorOffset === prevSelection.anchor.offset + 1
+          )
+        ) {
+          return;
+        }
+        const textContent = editorState.read(() => anchorNode.getTextContent());
+        const typedChar = textContent[anchorOffset - 1];
+        if (isCompositionEnd && !compositionEndTriggers.has(typedChar)) {
+          return;
+        }
+        if (typedChar !== ' ' && !inlineTriggers.has(typedChar)) {
+          return;
+        }
+        // Cheap prefilter: an inline construct needs an opener earlier in the
+        // text; skip the micromark parse when there is none.
+        if (
+          typedChar !== ' ' &&
+          !mayCloseInlineConstruct(
+            textContent.slice(0, anchorOffset),
+            typedChar,
+          )
+        ) {
           return;
         }
 
         editor.update(() => {
           const node = $getNodeByKey(anchorKey);
-          if (!$isTextNode(node)) {
+          if (!$isTextNode(node) || node.hasFormat('code')) {
+            // Per CommonMark, code spans take precedence over any other
+            // inline construct; never transform inside one.
             return;
           }
           const parent = node.getParent();
@@ -308,8 +358,15 @@ export function registerMarkdownShortcuts(
           if (typedChar === ' ') {
             if ($tryCheckbox(node, parent, anchorOffset)) {
               transformed = true;
-            } else if ($isShortcutParagraph(parent, node)) {
-              const match = scanner.scanBlock(parent.getTextContent());
+            } else if (
+              anchorOffset <= MAX_BLOCK_MARKER_LENGTH &&
+              $isShortcutParagraph(parent, node)
+            ) {
+              // The marker must end exactly at the caret, so scanning the
+              // prefix is sufficient (and cheaper than the whole line).
+              const match = scanner.scanBlock(
+                node.getTextContent().slice(0, anchorOffset),
+              );
               if (
                 match &&
                 match.kind !== 'code' &&
@@ -339,20 +396,32 @@ export function registerMarkdownShortcuts(
           return false;
         }
         const anchorNode = selection.anchor.getNode();
-        if (!$isTextNode(anchorNode)) {
+        if (!$isTextNode(anchorNode) || anchorNode.hasFormat('code')) {
           return false;
         }
         const parent = anchorNode.getParent();
+        const anchorOffset = selection.anchor.offset;
         if (
           parent === null ||
           $isCodeNode(parent) ||
           !$isShortcutParagraph(parent, anchorNode) ||
-          selection.anchor.offset !== anchorNode.getTextContentSize()
+          anchorOffset !== anchorNode.getTextContentSize()
         ) {
           return false;
         }
         const match = scanner.scanBlock(parent.getTextContent());
-        if (match && $applyBlock(parent, match)) {
+        // Only convert when the whole line is the marker (`## `, `- `,
+        // '```lang'). A line with content after the marker was either already
+        // converted at the trailing space, or deliberately reverted with
+        // undo — Enter must not re-convert it. A fence with a meta string
+        // (` ```js title=x `) is also skipped: Lexical has nowhere to keep
+        // the meta and converting would destroy it.
+        if (
+          match &&
+          match.markerLength === anchorOffset &&
+          !(match.kind === 'code' && match.node.meta) &&
+          $applyBlock(parent, match)
+        ) {
           if (event !== null) {
             event.preventDefault();
           }

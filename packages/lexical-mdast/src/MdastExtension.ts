@@ -97,6 +97,19 @@ export interface MdastConfig {
   readonly mdastExtensions: readonly FromMarkdownExtension[];
   /** `mdast-util-to-markdown` extensions (mdast -> Markdown string). */
   readonly toMarkdownExtensions: readonly ToMarkdownExtension[];
+  /**
+   * mdast inline `type`s that the streaming shortcuts may materialize when
+   * their closing delimiter is typed. Extensions that contribute a new inline
+   * construct add its type here (with a matching import rule) so shortcuts
+   * stay in lock-step with the parser.
+   */
+  readonly inlineShortcutTypes: readonly string[];
+  /**
+   * Characters that can close an inline construct; typing one triggers an
+   * inline re-scan. Extensions add their construct's closing character here
+   * (e.g. `'='` for `==highlight==`).
+   */
+  readonly inlineShortcutTriggers: readonly string[];
 }
 
 /**
@@ -190,6 +203,8 @@ export const MdastExtension = /* @__PURE__ */ defineExtension<
   config: /* @__PURE__ */ safeCast<MdastConfig>({
     exportRules: CORE_EXPORT_RULES,
     importRules: CORE_IMPORT_RULES,
+    inlineShortcutTriggers: ['*', '_', '`', '~', ')'],
+    inlineShortcutTypes: ['delete', 'emphasis', 'inlineCode', 'link', 'strong'],
     mdastExtensions: [],
     micromarkExtensions: [],
     toMarkdownExtensions: [],
@@ -197,32 +212,37 @@ export const MdastExtension = /* @__PURE__ */ defineExtension<
   mergeConfig(config, partial) {
     // Prepend contributed rules so extensions merged later (closer to the
     // editor root) take priority, matching DOMImportExtension's convention.
+    // Every key is set explicitly so an explicitly-undefined key in `partial`
+    // (allowed by Partial<MdastConfig>) can never clobber the merged arrays.
+    function mergeArray<T>(
+      contributed: readonly T[] | undefined,
+      existing: readonly T[],
+    ): readonly T[] {
+      return contributed ? [...contributed, ...existing] : existing;
+    }
     return shallowMergeConfig(config, {
-      ...partial,
-      ...(partial.importRules && {
-        importRules: [...partial.importRules, ...config.importRules],
-      }),
-      ...(partial.exportRules && {
-        exportRules: [...partial.exportRules, ...config.exportRules],
-      }),
-      ...(partial.micromarkExtensions && {
-        micromarkExtensions: [
-          ...partial.micromarkExtensions,
-          ...config.micromarkExtensions,
-        ],
-      }),
-      ...(partial.mdastExtensions && {
-        mdastExtensions: [
-          ...partial.mdastExtensions,
-          ...config.mdastExtensions,
-        ],
-      }),
-      ...(partial.toMarkdownExtensions && {
-        toMarkdownExtensions: [
-          ...partial.toMarkdownExtensions,
-          ...config.toMarkdownExtensions,
-        ],
-      }),
+      exportRules: mergeArray(partial.exportRules, config.exportRules),
+      importRules: mergeArray(partial.importRules, config.importRules),
+      inlineShortcutTriggers: mergeArray(
+        partial.inlineShortcutTriggers,
+        config.inlineShortcutTriggers,
+      ),
+      inlineShortcutTypes: mergeArray(
+        partial.inlineShortcutTypes,
+        config.inlineShortcutTypes,
+      ),
+      mdastExtensions: mergeArray(
+        partial.mdastExtensions,
+        config.mdastExtensions,
+      ),
+      micromarkExtensions: mergeArray(
+        partial.micromarkExtensions,
+        config.micromarkExtensions,
+      ),
+      toMarkdownExtensions: mergeArray(
+        partial.toMarkdownExtensions,
+        config.toMarkdownExtensions,
+      ),
     });
   },
   name: '@lexical/mdast/Mdast',
@@ -261,9 +281,9 @@ export const MdastListExtension = /* @__PURE__ */ defineExtension({
         {$import: $importList, type: 'list'},
         {$import: $importListItem, type: 'listItem'},
       ],
-      mdastExtensions: [gfmTaskListItemFromMarkdown()],
-      micromarkExtensions: [gfmTaskListItem()],
-      toMarkdownExtensions: [gfmTaskListItemToMarkdown()],
+      mdastExtensions: [/* @__PURE__ */ gfmTaskListItemFromMarkdown()],
+      micromarkExtensions: [/* @__PURE__ */ gfmTaskListItem()],
+      toMarkdownExtensions: [/* @__PURE__ */ gfmTaskListItemToMarkdown()],
     }),
   ],
   name: '@lexical/mdast/List',
@@ -292,9 +312,9 @@ export const MdastLinkExtension = /* @__PURE__ */ defineExtension({
     /* @__PURE__ */ configExtension(MdastExtension, {
       exportRules: [{$export: exportLink, type: 'link'}],
       importRules: [{$import: $importLink, type: 'link'}],
-      mdastExtensions: [gfmAutolinkLiteralFromMarkdown()],
-      micromarkExtensions: [gfmAutolinkLiteral()],
-      toMarkdownExtensions: [gfmAutolinkLiteralToMarkdown()],
+      mdastExtensions: [/* @__PURE__ */ gfmAutolinkLiteralFromMarkdown()],
+      micromarkExtensions: [/* @__PURE__ */ gfmAutolinkLiteral()],
+      toMarkdownExtensions: [/* @__PURE__ */ gfmAutolinkLiteralToMarkdown()],
     }),
   ],
   name: '@lexical/mdast/Link',
@@ -309,9 +329,9 @@ export const MdastStrikethroughExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     /* @__PURE__ */ configExtension(MdastExtension, {
       importRules: [{$import: importDelete, type: 'delete'}],
-      mdastExtensions: [gfmStrikethroughFromMarkdown()],
-      micromarkExtensions: [gfmStrikethrough()],
-      toMarkdownExtensions: [gfmStrikethroughToMarkdown()],
+      mdastExtensions: [/* @__PURE__ */ gfmStrikethroughFromMarkdown()],
+      micromarkExtensions: [/* @__PURE__ */ gfmStrikethrough()],
+      toMarkdownExtensions: [/* @__PURE__ */ gfmStrikethroughToMarkdown()],
     }),
   ],
   name: '@lexical/mdast/Strikethrough',

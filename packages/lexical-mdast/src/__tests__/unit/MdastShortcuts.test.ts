@@ -14,6 +14,7 @@ import type {HeadingNode} from '@lexical/rich-text';
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $createParagraphNode,
+  $createTextNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
@@ -189,13 +190,96 @@ describe('@lexical/mdast streaming shortcuts', () => {
   });
 
   describe('fenced code (on Enter)', () => {
-    it('```js + Enter -> code block', () => {
+    it('```js + Enter -> empty code block with the language', () => {
       type(editor, ['```js']);
       editor.dispatchCommand(KEY_ENTER_COMMAND, null);
       editor.read(() => {
         const code = $getRoot().getFirstChild() as CodeNode;
         expect(code.getType()).toBe('code');
         expect(code.getLanguage()).toBe('js');
+        // The fence line is entirely marker; no literal '```js' may leak in.
+        expect(code.getTextContent()).toBe('');
+      });
+    });
+  });
+
+  describe('does not fire destructively', () => {
+    it('Enter does not convert a line with content after the marker', () => {
+      // '# Title' inserted in one operation (paste-like), then Enter. The
+      // heading shortcut already had its chance at the space; Enter on a
+      // line with content must not re-convert it (undo-escape hatch).
+      type(editor, ['# Title']);
+      editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+      editor.read(() => {
+        expect($getRoot().getFirstChild()!.getType()).toBe('paragraph');
+        expect($getRoot().getTextContent()).toContain('# Title');
+      });
+    });
+
+    it('Enter does not convert prose that happens to parse as a list', () => {
+      type(editor, ['2024. was a big year']);
+      editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+      editor.read(() => {
+        expect($getRoot().getFirstChild()!.getType()).toBe('paragraph');
+      });
+    });
+
+    it('multi-character insertion (paste) does not transform', () => {
+      type(editor, ['see *note*']);
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('see *note*');
+      });
+    });
+
+    it('deleting back to a delimiter does not transform', () => {
+      type(editor, ['*a*b']);
+      // Simulate backspace: the trailing character is removed and the caret
+      // lands right after the closing '*'.
+      editor.update(
+        () => {
+          const paragraph = $getRoot().getFirstChild() as ElementNode;
+          const text = paragraph.getFirstChild();
+          if ($isTextNode(text)) {
+            text.setTextContent('*a*');
+            text.select(3, 3);
+          }
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('*a*');
+      });
+    });
+
+    it('does not transform inside an inline code span', () => {
+      editor.update(
+        () => {
+          const paragraph = $createParagraphNode();
+          const text = $createTextNode('use *args');
+          text.setFormat('code');
+          paragraph.append(text);
+          $getRoot().clear().append(paragraph);
+          text.selectEnd();
+        },
+        {discrete: true},
+      );
+      type(editor, ['*']);
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('use *args*');
+        const paragraph = $getRoot().getFirstChild() as ElementNode;
+        const first = paragraph.getFirstChild();
+        expect($isTextNode(first) && first.hasFormat('code')).toBe(true);
+      });
+    });
+
+    it('block markers wrapped in inline formatting keep their delimiters', () => {
+      // '# **bold** title' + space typed after '#' converts to a heading; the
+      // heading itself is exercised elsewhere. Here: pasting the full line
+      // and pressing Enter must not strip the '**'.
+      type(editor, ['# **bold** title']);
+      editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toContain('**bold** title');
       });
     });
   });

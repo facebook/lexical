@@ -35,6 +35,8 @@ export function compileMdast(config: MdastConfig): CompiledMdast {
   return {
     exportHandlers,
     importHandlers,
+    inlineShortcutTriggers: new Set(config.inlineShortcutTriggers),
+    inlineShortcutTypes: new Set(config.inlineShortcutTypes),
     mdastExtensions: [...config.mdastExtensions],
     micromarkExtensions: [...config.micromarkExtensions],
     toMarkdownExtensions: [...config.toMarkdownExtensions],

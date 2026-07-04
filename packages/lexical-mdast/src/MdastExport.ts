@@ -22,14 +22,24 @@ import type {Options as ToMarkdownExtension} from 'mdast-util-to-markdown';
 import {
   $getRoot,
   $getState,
+  $isBlockElementNode,
   $isElementNode,
   $isLineBreakNode,
   $isTextNode,
 } from 'lexical';
 import {defaultHandlers, toMarkdown} from 'mdast-util-to-markdown';
 
-import {phrasingFromFormattedText, TEXT_FORMAT_MASK} from './handlers';
-import {emphasisMarkerState, strongMarkerState} from './state';
+import {
+  $exportLineBreak,
+  exportText,
+  phrasingFromFormattedText,
+  TEXT_FORMAT_MASK,
+} from './handlers';
+import {
+  emphasisMarkerState,
+  hardLineBreakState,
+  strongMarkerState,
+} from './state';
 
 /** Reads a string field off an mdast node's `data`, if present. */
 function dataField(node: {data?: unknown}, key: string): string | undefined {
@@ -38,120 +48,134 @@ function dataField(node: {data?: unknown}, key: string): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
+type ToMarkdownState = Parameters<typeof defaultHandlers.code>[2];
+
+/**
+ * Runs `fn` with `state.options` temporarily overridden, restoring the
+ * previous values afterwards so a per-node override never leaks into the rest
+ * of the serialization.
+ */
+function withOptions<T>(
+  state: ToMarkdownState,
+  overrides: Partial<ToMarkdownState['options']>,
+  fn: () => T,
+): T {
+  const options = state.options as Record<string, unknown>;
+  const saved: Record<string, unknown> = {};
+  for (const key of Object.keys(overrides)) {
+    saved[key] = options[key];
+    options[key] = (overrides as Record<string, unknown>)[key];
+  }
+  try {
+    return fn();
+  } finally {
+    for (const key of Object.keys(saved)) {
+      options[key] = saved[key];
+    }
+  }
+}
+
 /**
  * A to-markdown extension whose handlers reproduce the literal Markdown syntax
  * captured on import (and stored on the Lexical nodes), by temporarily
  * steering the default handlers with per-node options. Delegating to the
  * defaults keeps all the indentation / nesting / disambiguation behavior
- * intact while still honoring each node's original marker/fence.
+ * intact while still honoring each node's original marker/fence. Nodes without
+ * captured syntax fall straight through to the defaults, so document-level
+ * options (and contributed `toMarkdownExtensions`) still apply to them.
  */
 const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
   handlers: {
     break(node: Break, parent, state, info) {
+      // Delegate first: the default handler substitutes a space when a real
+      // EOL is unsafe in the current construct (headings, table cells). Only
+      // when it chose the hard-break form is the preserved marker relevant.
+      const result = defaultHandlers.break(node, parent, state, info);
       const marker = dataField(node, 'mdastBreak');
-      if (marker === '\\') {
-        return '\\\n';
-      }
-      if (typeof marker === 'string' && /^ {2,}$/.test(marker)) {
-        return `${marker}\n`;
-      }
-      return defaultHandlers.break(node, parent, state, info);
+      return result === '\\\n' && marker && /^ {2,}$/.test(marker)
+        ? `${marker}\n`
+        : result;
     },
     code(node: Code, parent, state, info) {
       const fence = dataField(node, 'mdastFence');
       if (!fence) {
         return defaultHandlers.code(node, parent, state, info);
       }
-      const previous = state.options.fence;
-      const previousFences = state.options.fences;
-      state.options.fence = fence[0] === '~' ? '~' : '`';
-      state.options.fences = true;
-      try {
-        return defaultHandlers.code(node, parent, state, info);
-      } finally {
-        state.options.fence = previous;
-        state.options.fences = previousFences;
-      }
+      return withOptions(
+        state,
+        {fence: fence[0] === '~' ? '~' : '`', fences: true},
+        () => defaultHandlers.code(node, parent, state, info),
+      );
     },
     heading(node: Heading, parent, state, info) {
-      // `data.mdastSetext` is a boolean, so read it directly.
+      // `data.mdastSetext` is only present (true) for imported setext
+      // headings; everything else defers to the document-level option.
       const data = node.data as {mdastSetext?: boolean} | undefined;
-      const previous = state.options.setext;
-      state.options.setext = data ? data.mdastSetext === true : false;
-      try {
+      if (!data || data.mdastSetext !== true) {
         return defaultHandlers.heading(node, parent, state, info);
-      } finally {
-        state.options.setext = previous;
       }
+      return withOptions(state, {setext: true}, () =>
+        defaultHandlers.heading(node, parent, state, info),
+      );
     },
     list(node: List, parent, state, info) {
       if (node.ordered) {
         const ordered = dataField(node, 'mdastBulletOrdered');
-        if (ordered !== ')') {
+        if (ordered !== '.' && ordered !== ')') {
           return defaultHandlers.list(node, parent, state, info);
         }
-        const previousOrdered = state.options.bulletOrdered;
-        state.options.bulletOrdered = ')';
-        try {
-          return defaultHandlers.list(node, parent, state, info);
-        } finally {
-          state.options.bulletOrdered = previousOrdered;
-        }
+        return withOptions(state, {bulletOrdered: ordered}, () =>
+          defaultHandlers.list(node, parent, state, info),
+        );
       }
       const bullet = dataField(node, 'mdastBullet');
       if (bullet !== '-' && bullet !== '*' && bullet !== '+') {
         return defaultHandlers.list(node, parent, state, info);
       }
-      const previous = state.options.bullet;
-      const previousOther = state.options.bulletOther;
-      state.options.bullet = bullet;
-      state.options.bulletOther = bullet === '-' ? '*' : '-';
-      try {
-        return defaultHandlers.list(node, parent, state, info);
-      } finally {
-        state.options.bullet = previous;
-        state.options.bulletOther = previousOther;
-      }
+      return withOptions(
+        state,
+        {bullet, bulletOther: bullet === '-' ? '*' : '-'},
+        () => defaultHandlers.list(node, parent, state, info),
+      );
     },
   },
 };
 
 /**
- * Picks the document-level emphasis and strong delimiters from the first
- * italic / bold text node that recorded a non-default (`_`) marker, scanning
- * the tree rooted at `node`. Mixing delimiters within one document is not
- * supported by to-markdown's escaping, so a single choice is made per
- * document.
+ * Accumulates adjacent plain text nodes that share a format so they serialize
+ * to a single delimiter pair (e.g. `**ab**` rather than `**a****b**`). Shared
+ * by the inline and block export walks.
  */
-function $dominantInlineMarkers(node: ElementNode): {
-  emphasis: '*' | '_';
-  strong: '*' | '_';
-} {
-  let emphasis: '*' | '_' = '*';
-  let strong: '*' | '_' = '*';
-  let emphasisFound = false;
-  let strongFound = false;
-  const visit = (element: ElementNode): void => {
-    for (const child of element.getChildren()) {
-      if (!emphasisFound && $isTextNode(child) && child.hasFormat('italic')) {
-        emphasis = $getState(child, emphasisMarkerState);
-        emphasisFound = true;
-      }
-      if (!strongFound && $isTextNode(child) && child.hasFormat('bold')) {
-        strong = $getState(child, strongMarkerState);
-        strongFound = true;
-      }
-      if ((!emphasisFound || !strongFound) && $isElementNode(child)) {
-        visit(child);
-      }
-    }
-  };
-  visit(node);
-  return {emphasis, strong};
-}
+class TextRunAccumulator {
+  private format = -1;
+  private value = '';
 
-function $isBlockNode(node: LexicalNode): boolean {
-  return $isElementNode(node) && !node.isInline();
+  /**
+   * Returns `true` when `child` was absorbed. A format change flushes the
+   * previous run into `out` first.
+   */
+  push(child: LexicalNode, out: MdastNode[]): boolean {
+    if (child.getType() !== 'text' || !$isTextNode(child)) {
+      return false;
+    }
+    const format = child.getFormat() & TEXT_FORMAT_MASK;
+    if (format === this.format) {
+      this.value += child.getTextContent();
+    } else {
+      this.flushInto(out);
+      this.format = format;
+      this.value = child.getTextContent();
+    }
+    return true;
+  }
+
+  flushInto(out: MdastNode[]): void {
+    if (this.format >= 0) {
+      out.push(phrasingFromFormattedText(this.value, this.format));
+    }
+    this.format = -1;
+    this.value = '';
+  }
 }
 
 function createNodeExporter(compiled: CompiledMdast) {
@@ -177,17 +201,15 @@ function createNodeExporter(compiled: CompiledMdast) {
         return Array.isArray(result) ? result : [result];
       }
     }
-    // Fallbacks keep unknown nodes from disappearing entirely.
-    if ($isTextNode(node)) {
-      return [
-        phrasingFromFormattedText(
-          node.getTextContent(),
-          node.getFormat() & TEXT_FORMAT_MASK,
-        ),
-      ];
+    // Fallbacks keep unknown nodes from disappearing entirely; text and line
+    // breaks reuse the core handlers so their behavior can't drift.
+    const asText = exportText(node, context);
+    if (asText != null) {
+      return Array.isArray(asText) ? asText : [asText];
     }
-    if ($isLineBreakNode(node)) {
-      return [{type: 'break'}];
+    const asBreak = $exportLineBreak(node, context);
+    if (asBreak != null) {
+      return Array.isArray(asBreak) ? asBreak : [asBreak];
     }
     if ($isElementNode(node)) {
       return context.exportChildren(node);
@@ -197,59 +219,34 @@ function createNodeExporter(compiled: CompiledMdast) {
   }
 
   /**
-   * Converts the inline children of `node` into phrasing content, merging
-   * adjacent plain-text nodes that share a format so they serialize to a
-   * single delimiter pair (e.g. `**ab**` rather than `**a****b**`).
+   * Converts the inline children of `node` into phrasing content.
    */
   function $exportInline(node: ElementNode): MdastNode[] {
     const result: MdastNode[] = [];
-    let pendingFormat = -1;
-    let pendingValue = '';
-    const flushText = () => {
-      if (pendingFormat >= 0) {
-        result.push(phrasingFromFormattedText(pendingValue, pendingFormat));
-        pendingFormat = -1;
-        pendingValue = '';
-      }
-    };
+    const runs = new TextRunAccumulator();
     for (const child of node.getChildren()) {
-      if (child.getType() === 'text' && $isTextNode(child)) {
-        const format = child.getFormat() & TEXT_FORMAT_MASK;
-        if (format === pendingFormat) {
-          pendingValue += child.getTextContent();
-        } else {
-          flushText();
-          pendingFormat = format;
-          pendingValue = child.getTextContent();
-        }
-      } else {
-        flushText();
+      if (!runs.push(child, result)) {
+        runs.flushInto(result);
         result.push(...$dispatch(child));
       }
     }
-    flushText();
+    runs.flushInto(result);
     return result;
   }
 
   /**
    * Converts a container whose Lexical children are inline (block quote, list
-   * item) into mdast block content, splitting inline runs into paragraphs on
-   * hard line breaks and passing nested block children through directly.
+   * item) into mdast block content. A bare LineBreakNode is a paragraph
+   * boundary (the inverse of how the import handlers join sibling paragraphs);
+   * a LineBreakNode carrying a hard-break marker stays an inline `break`.
+   * Nested block children pass through directly.
    */
   function $exportBlocks(node: ElementNode): MdastNode[] {
     const blocks: MdastNode[] = [];
     let inline: PhrasingContent[] = [];
-    let pendingFormat = -1;
-    let pendingValue = '';
-    const flushText = () => {
-      if (pendingFormat >= 0) {
-        inline.push(phrasingFromFormattedText(pendingValue, pendingFormat));
-        pendingFormat = -1;
-        pendingValue = '';
-      }
-    };
+    const runs = new TextRunAccumulator();
     const flushParagraph = () => {
-      flushText();
+      runs.flushInto(inline as MdastNode[]);
       if (inline.length > 0) {
         blocks.push({children: inline, type: 'paragraph'} satisfies Paragraph);
         inline = [];
@@ -257,21 +254,19 @@ function createNodeExporter(compiled: CompiledMdast) {
     };
     for (const child of node.getChildren()) {
       if ($isLineBreakNode(child)) {
-        flushParagraph();
-      } else if (child.getType() === 'text' && $isTextNode(child)) {
-        const format = child.getFormat() & TEXT_FORMAT_MASK;
-        if (format === pendingFormat) {
-          pendingValue += child.getTextContent();
+        if ($getState(child, hardLineBreakState)) {
+          runs.flushInto(inline as MdastNode[]);
+          inline.push($exportLineBreak(child, context) as Break);
         } else {
-          flushText();
-          pendingFormat = format;
-          pendingValue = child.getTextContent();
+          flushParagraph();
         }
-      } else if ($isBlockNode(child)) {
+      } else if (runs.push(child, inline as MdastNode[])) {
+        continue;
+      } else if ($isBlockElementNode(child)) {
         flushParagraph();
         blocks.push(...$dispatch(child));
       } else {
-        flushText();
+        runs.flushInto(inline as MdastNode[]);
         inline.push(...($dispatch(child) as PhrasingContent[]));
       }
     }
@@ -283,6 +278,47 @@ function createNodeExporter(compiled: CompiledMdast) {
   }
 
   return {$dispatch};
+}
+
+/**
+ * Picks the document-level emphasis and strong delimiters from the first
+ * italic / bold text node that recorded a known delimiter on import, scanning
+ * the tree rooted at `node`. Mixing delimiters within one document is not
+ * supported by to-markdown's escaping, so a single choice is made per
+ * document; nodes with no recorded delimiter (created in the editor) are
+ * skipped so they cannot mask the document's authored style.
+ */
+function $dominantInlineMarkers(node: ElementNode): {
+  emphasis: '*' | '_' | undefined;
+  strong: '*' | '_' | undefined;
+} {
+  let emphasis: '*' | '_' | undefined;
+  let strong: '*' | '_' | undefined;
+  const visit = (element: ElementNode): void => {
+    for (const child of element.getChildren()) {
+      if ($isTextNode(child)) {
+        if (emphasis === undefined && child.hasFormat('italic')) {
+          const marker = $getState(child, emphasisMarkerState);
+          if (marker === '_') {
+            emphasis = '_';
+          }
+        }
+        if (strong === undefined && child.hasFormat('bold')) {
+          const marker = $getState(child, strongMarkerState);
+          if (marker === '_') {
+            strong = '_';
+          }
+        }
+      } else if ($isElementNode(child)) {
+        visit(child);
+      }
+      if (emphasis !== undefined && strong !== undefined) {
+        return;
+      }
+    }
+  };
+  visit(node);
+  return {emphasis, strong};
 }
 
 /**
@@ -302,17 +338,27 @@ export function createMdastExport(
         children.push(mdastNode as RootContent);
       }
     }
-    // Emphasis/strong delimiters are document-level (see $dominantInlineMarkers).
+    // Emphasis/strong delimiters are document-level; the delimiter recorded on
+    // import wins, otherwise contributed toMarkdownExtensions (and the '-'
+    // bullet baseline) decide. Defaults ride as the FIRST extension so that
+    // contributed extensions can override them; SYNTAX_TO_MARKDOWN runs last
+    // so its handlers reproduce the per-node syntax captured on import.
     const {emphasis, strong} = $dominantInlineMarkers(root);
+    const defaults: ToMarkdownExtension = {bullet: '-'};
+    if (emphasis) {
+      defaults.emphasis = emphasis;
+    }
+    if (strong) {
+      defaults.strong = strong;
+    }
     const out = toMarkdown(
       {children, type: 'root'},
       {
-        bullet: '-',
-        emphasis,
-        // SYNTAX_TO_MARKDOWN runs last so its handlers win, reproducing the
-        // per-node marker/fence/break captured on import.
-        extensions: [...compiled.toMarkdownExtensions, SYNTAX_TO_MARKDOWN],
-        strong,
+        extensions: [
+          defaults,
+          ...compiled.toMarkdownExtensions,
+          SYNTAX_TO_MARKDOWN,
+        ],
       },
     );
     // toMarkdown always appends a trailing newline; drop it so callers get the

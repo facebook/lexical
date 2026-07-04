@@ -9,17 +9,23 @@
 import type {HeadingNode} from '@lexical/rich-text';
 import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {buildEditorFromExtensions, configExtension} from '@lexical/extension';
 import {LinkNode} from '@lexical/link';
 import {ListNode} from '@lexical/list';
 import {TableNode} from '@lexical/table';
-import {$getRoot, defineExtension} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  defineExtension,
+} from 'lexical';
 import {describe, expect, it, onTestFinished} from 'vitest';
 
 import {
   $convertFromMarkdownString,
   $convertToMarkdownString,
   MdastCommonMarkExtension,
+  MdastExtension,
   MdastTableExtension,
 } from '../../index';
 
@@ -143,6 +149,9 @@ describe('@lexical/mdast import/export', () => {
       ['underscore emphasis throughout', '_a_ and __b__ and _c_'],
       ['setext h1', 'Title\n====='],
       ['setext h2', 'Title\n-----'],
+      ['hard break inside a blockquote', '> line one\\\n> line two'],
+      ['paragraph boundary inside a blockquote', '> para one\n>\n> para two'],
+      ['hard break inside a list item', '- line one\\\n  line two'],
     ];
     for (const [name, markdown] of cases) {
       it(name, () => {
@@ -153,6 +162,15 @@ describe('@lexical/mdast import/export', () => {
     it('keeps distinct bullet styles on different lists', () => {
       const markdown = '* a\n* b\n\n1. c\n\n- d\n- e';
       expect(importExport(markdown)).toBe(markdown);
+    });
+
+    it('keeps setext style when the content starts with #', () => {
+      // `#foo\n====` is a setext h1 (no space after `#`, so not ATX). The
+      // exporter escapes the leading `#` to keep it unambiguous, but the
+      // heading must stay setext and the round-trip must be stable.
+      const out = importExport('#foo\n====');
+      expect(out).toMatch(/^\\?#foo\n=+$/);
+      expect(importExport(out)).toBe(out);
     });
 
     it('normalizes mixed emphasis markers to the document delimiter', () => {
@@ -231,5 +249,70 @@ describe('@lexical/mdast import/export', () => {
         expect(table.getChildrenSize()).toBe(2);
       });
     });
+
+    it('preserves column alignment', () => {
+      const markdown = '| a | b | c |\n| :- | :-: | -: |\n| 1 | 2 | 3 |';
+      const out = importExport(markdown, true);
+      expect(out).toContain(':-');
+      expect(out).toContain(':-:');
+      expect(out).toContain('-:');
+      expect(importExport(out, true)).toBe(out);
+    });
+
+    it('joins multi-paragraph cells instead of fusing their text', () => {
+      const editor = createEditor(true);
+      editor.update(
+        () => {
+          $convertFromMarkdownString('| a |\n| - |\n| foo |');
+          const table = $getRoot().getFirstChild() as TableNode;
+          const lastRow = table.getLastChild() as ElementNode;
+          const cell = lastRow.getFirstChild() as ElementNode;
+          const extra = $createParagraphNode();
+          extra.append($createTextNode('bar'));
+          cell.append(extra);
+        },
+        {discrete: true},
+      );
+      const out = editor.read(() => $convertToMarkdownString());
+      expect(out).toContain('| foo bar |');
+    });
+  });
+
+  it('imports tab characters as TabNodes', () => {
+    const editor = createEditor();
+    editor.update(
+      () => {
+        $convertFromMarkdownString('foo\tbar');
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChild() as ElementNode;
+      const types = paragraph.getChildren().map(n => n.getType());
+      expect(types).toEqual(['text', 'tab', 'text']);
+    });
+  });
+
+  it('tolerates explicitly-undefined config keys in configExtension', () => {
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          configExtension(MdastExtension, {
+            importRules: undefined,
+            mdastExtensions: undefined,
+          }),
+        ],
+        name: '[root]',
+      }),
+    );
+    onTestFinished(() => editor.dispose());
+    editor.update(
+      () => {
+        $convertFromMarkdownString('# Still works');
+      },
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString())).toBe('# Still works');
   });
 });

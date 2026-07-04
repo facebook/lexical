@@ -7,7 +7,7 @@
  */
 
 import type {MdastExportHandler, MdastImportHandler} from './types';
-import type {Table, TableCell, TableRow} from 'mdast';
+import type {AlignType, Table, TableCell, TableRow} from 'mdast';
 
 import {configExtension} from '@lexical/extension';
 import {
@@ -22,14 +22,33 @@ import {
   TableNode,
   TableRowNode,
 } from '@lexical/table';
-import {$createParagraphNode, $isElementNode, defineExtension} from 'lexical';
+import {
+  $createParagraphNode,
+  $getState,
+  $isElementNode,
+  $setState,
+  createState,
+  defineExtension,
+} from 'lexical';
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
 
 import {MdastExtension} from './MdastExtension';
 
+/** The per-column alignment (`| :-: |`) a table's delimiter row declared. */
+const tableAlignState = /* @__PURE__ */ createState('mdastTableAlign', {
+  parse: (v): AlignType[] =>
+    Array.isArray(v)
+      ? v.map(a => (a === 'center' || a === 'left' || a === 'right' ? a : null))
+      : [],
+  resetOnCopyNode: true,
+});
+
 const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   const table = $createTableNode();
+  if (node.align && node.align.some(a => a != null)) {
+    $setState(table, tableAlignState, node.align);
+  }
   node.children.forEach((row, rowIndex) => {
     const rowNode = $createTableRowNode();
     for (const cell of row.children) {
@@ -48,7 +67,7 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
   return table;
 };
 
-const exportTable: MdastExportHandler = (node, ctx) => {
+const $exportTable: MdastExportHandler = (node, ctx) => {
   if (!$isTableNode(node)) {
     return null;
   }
@@ -65,6 +84,12 @@ const exportTable: MdastExportHandler = (node, ctx) => {
       const children: TableCell['children'] = [];
       for (const child of cell.getChildren()) {
         if ($isElementNode(child)) {
+          // GFM cells hold a single line of phrasing content; multiple block
+          // children (paragraphs from Enter inside the cell) are joined with
+          // hard breaks, which gfm-table serializes as spaces inside the cell.
+          if (children.length > 0) {
+            children.push({type: 'break'});
+          }
           children.push(...(ctx.exportInline(child) as TableCell['children']));
         }
       }
@@ -72,7 +97,11 @@ const exportTable: MdastExportHandler = (node, ctx) => {
     }
     rows.push({children: cells, type: 'tableRow'});
   }
-  return {align: [], children: rows, type: 'table'};
+  return {
+    align: $getState(node, tableAlignState),
+    children: rows,
+    type: 'table',
+  };
 };
 
 /**
@@ -98,11 +127,11 @@ const exportTable: MdastExportHandler = (node, ctx) => {
 export const MdastTableExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     /* @__PURE__ */ configExtension(MdastExtension, {
-      exportRules: [{$export: exportTable, type: 'table'}],
+      exportRules: [{$export: $exportTable, type: 'table'}],
       importRules: [{$import: $importTable, type: 'table'}],
-      mdastExtensions: [gfmTableFromMarkdown()],
-      micromarkExtensions: [gfmTable()],
-      toMarkdownExtensions: [gfmTableToMarkdown()],
+      mdastExtensions: [/* @__PURE__ */ gfmTableFromMarkdown()],
+      micromarkExtensions: [/* @__PURE__ */ gfmTable()],
+      toMarkdownExtensions: [/* @__PURE__ */ gfmTableToMarkdown()],
     }),
   ],
   name: '@lexical/mdast/Table',

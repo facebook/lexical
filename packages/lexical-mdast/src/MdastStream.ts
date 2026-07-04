@@ -6,7 +6,8 @@
  *
  */
 
-import type {CompiledMdast, LexicalNode, MdastNode} from './types';
+import type {CompiledMdast, MdastNode} from './types';
+import type {LexicalNode} from 'lexical';
 import type {
   Blockquote,
   Code,
@@ -21,23 +22,6 @@ import {fromMarkdown} from 'mdast-util-from-markdown';
 
 import {createNodeImporter} from './MdastImport';
 
-/** mdast inline types that this engine can turn into a markdown shortcut. */
-const INLINE_CONSTRUCTS = new Set<string>([
-  'delete',
-  'emphasis',
-  'inlineCode',
-  'link',
-  'strong',
-]);
-
-/** mdast block types that this engine can turn into a markdown shortcut. */
-const BLOCK_CONSTRUCTS = new Set<string>([
-  'blockquote',
-  'code',
-  'heading',
-  'list',
-]);
-
 export type MdastBlockMatch =
   | {kind: 'heading'; node: Heading; markerLength: number}
   | {kind: 'blockquote'; node: Blockquote; markerLength: number}
@@ -45,25 +29,31 @@ export type MdastBlockMatch =
   | {kind: 'code'; node: Code; markerLength: number};
 
 /**
- * Returns the offset of the first content character inside `node`, i.e. the
- * length of the leading block marker (`"## "`, `"- "`, `"> "`, ...). When the
- * construct has no content yet (the user has only typed the marker) the whole
- * `line` is the marker.
+ * Returns the offset of the first content character inside a block construct,
+ * i.e. the length of the leading block marker (`"## "`, `"- "`, `"> "`, ...).
+ * When the construct has no content yet (the user has only typed the marker)
+ * the whole `line` is the marker.
+ *
+ * The walk descends through *container* levels only (blockquote -> paragraph,
+ * list -> listItem -> paragraph) and stops at the first inline child of a
+ * paragraph or heading — descending further would treat inline delimiters
+ * (`**`, `[`, `` ` ``) as part of the block marker.
  */
 function contentStartOffset(node: AnyMdastNode, line: string): number {
-  let current: AnyMdastNode | undefined = node;
-  while (current) {
-    if ('value' in current && current.position) {
-      return current.position.start.offset ?? line.length;
+  let current: AnyMdastNode = node;
+  for (;;) {
+    if (current.type === 'heading' || current.type === 'paragraph') {
+      const first = (current as Parent).children[0];
+      return first && first.position && first.position.start.offset != null
+        ? first.position.start.offset
+        : line.length;
     }
-    const parent = current as Parent;
-    if (parent.children && parent.children.length > 0) {
-      current = parent.children[0] as AnyMdastNode;
-      continue;
+    const children = (current as Parent).children;
+    if (!children || children.length === 0) {
+      return line.length;
     }
-    break;
+    current = children[0] as AnyMdastNode;
   }
-  return line.length;
 }
 
 /**
@@ -75,13 +65,24 @@ function contentStartOffset(node: AnyMdastNode, line: string): number {
  *
  * It is constructed from the {@link CompiledMdast} registry assembled by
  * {@link MdastExtension}, so it stays in lock-step with whatever feature
- * extensions are enabled.
+ * extensions are enabled — including the inline construct types and trigger
+ * characters contributed via `inlineShortcutTypes` / `inlineShortcutTriggers`.
  */
 export class MarkdownStreamScanner {
   private readonly compiled: CompiledMdast;
+  private readonly importNode: (
+    node: MdastNode,
+    format: number,
+  ) => LexicalNode[];
 
   constructor(compiled: CompiledMdast) {
     this.compiled = compiled;
+    this.importNode = createNodeImporter(compiled, '').$importNode;
+  }
+
+  /** Characters that can close an inline construct for this registry. */
+  get inlineTriggers(): ReadonlySet<string> {
+    return this.compiled.inlineShortcutTriggers;
   }
 
   private parse(value: string) {
@@ -96,8 +97,7 @@ export class MarkdownStreamScanner {
    * import handlers as the full-document importer.
    */
   importInline(node: MdastNode): LexicalNode[] {
-    const {$importNode} = createNodeImporter(this.compiled, '');
-    return $importNode(node, 0);
+    return this.importNode(node, 0);
   }
 
   /**
@@ -109,19 +109,20 @@ export class MarkdownStreamScanner {
       return null;
     }
     const first = this.parse(line).children[0];
-    if (!first || !BLOCK_CONSTRUCTS.has(first.type)) {
+    if (!first) {
       return null;
     }
-    const markerLength = contentStartOffset(first as AnyMdastNode, line);
     switch (first.type) {
       case 'heading':
-        return {kind: 'heading', markerLength, node: first};
       case 'blockquote':
-        return {kind: 'blockquote', markerLength, node: first};
-      case 'list':
-        return {kind: 'list', markerLength, node: first};
+      case 'list': {
+        const markerLength = contentStartOffset(first as AnyMdastNode, line);
+        return {kind: first.type, markerLength, node: first} as MdastBlockMatch;
+      }
       case 'code':
-        return {kind: 'code', markerLength, node: first};
+        // A code construct recognized from a single line is just the opening
+        // fence (possibly with a language); the entire line is the marker.
+        return {kind: 'code', markerLength: line.length, node: first};
       default:
         return null;
     }
@@ -129,8 +130,9 @@ export class MarkdownStreamScanner {
 
   /**
    * Recognizes an inline construct (emphasis, strong, strikethrough, inline
-   * code, link) whose closing delimiter falls exactly at the end of `value`
-   * (the text up to the caret). Returns the mdast node, or `null`.
+   * code, link, plus any registered `inlineShortcutTypes`) whose closing
+   * delimiter falls exactly at the end of `value` (the text up to the caret).
+   * Returns the mdast node, or `null`.
    */
   scanInline(value: string): PhrasingContent | null {
     if (value.length === 0) {
@@ -146,7 +148,7 @@ export class MarkdownStreamScanner {
       !last ||
       !last.position ||
       last.position.end.offset !== value.length ||
-      !INLINE_CONSTRUCTS.has(last.type)
+      !this.compiled.inlineShortcutTypes.has(last.type)
     ) {
       return null;
     }
@@ -159,10 +161,7 @@ export class MarkdownStreamScanner {
     if (
       start > 0 &&
       value[start - 1] === openChar &&
-      (openChar === '*' ||
-        openChar === '_' ||
-        openChar === '~' ||
-        openChar === '`')
+      this.compiled.inlineShortcutTriggers.has(openChar)
     ) {
       return null;
     }

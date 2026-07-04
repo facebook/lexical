@@ -6,7 +6,7 @@
  *
  */
 
-import type {ElementNode, LexicalNode, TextNode} from 'lexical';
+import type {ElementNode, LexicalNode} from 'lexical';
 import type {Nodes as MdastNode, Parent as MdastParent} from 'mdast';
 import type {Extension as FromMarkdownExtension} from 'mdast-util-from-markdown';
 import type {Options as ToMarkdownExtension} from 'mdast-util-to-markdown';
@@ -49,9 +49,8 @@ export interface MdastImportContext {
    */
   importNode(node: MdastNode, format?: number): LexicalNode[];
   /**
-   * Create a {@link TextNode} for `value`, splitting on `\n` into separate
-   * lines joined by `LineBreakNode`s and applying the current (or supplied)
-   * format bitmask.
+   * Create text nodes for `value` with the current (or supplied) format
+   * bitmask; `\n` becomes a `LineBreakNode` and `\t` a `TabNode`.
    */
   createText(value: string, format?: number): LexicalNode[];
 }
@@ -130,6 +129,8 @@ export interface CompiledMdast {
   micromarkExtensions: MicromarkExtension[];
   mdastExtensions: FromMarkdownExtension[];
   toMarkdownExtensions: ToMarkdownExtension[];
+  /** mdast inline `type`s eligible for streaming shortcut materialization. */
+  inlineShortcutTypes: Set<string>;
+  /** Characters that can close an inline construct and trigger a re-scan. */
+  inlineShortcutTriggers: Set<string>;
 }
-
-export type {ElementNode, LexicalNode, TextNode};

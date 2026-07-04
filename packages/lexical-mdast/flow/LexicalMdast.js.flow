@@ -12,69 +12,78 @@ import type {
   ExtensionConfigBase,
   LexicalExtension,
   LexicalNode,
-  TextNode,
 } from 'lexical';
 import type {NamedSignalsOutput} from '@lexical/extension';
 
 // mdast / micromark structures are not Flow-typed; treat them opaquely.
-export type MdastNode = mixed;
-export type MdastParent = mixed;
+export type MdastNode = unknown;
+export type MdastParent = unknown;
 
 export type MdastImportContext = {
-  +format: number,
-  importChildren(parent: MdastParent, format?: number): Array<LexicalNode>,
-  importNode(node: MdastNode, format?: number): Array<LexicalNode>,
-  createText(value: string, format?: number): Array<LexicalNode>,
+  readonly format: number,
+  readonly source: string,
+  importChildren(parent: MdastParent, format?: number): LexicalNode[],
+  importNode(node: MdastNode, format?: number): LexicalNode[],
+  createText(value: string, format?: number): LexicalNode[],
 };
 
 export type MdastExportContext = {
-  exportChildren(node: ElementNode): Array<MdastNode>,
-  exportInline(node: ElementNode): Array<MdastNode>,
-  exportBlocks(node: ElementNode): Array<MdastNode>,
+  exportChildren(node: ElementNode): MdastNode[],
+  exportInline(node: ElementNode): MdastNode[],
+  exportBlocks(node: ElementNode): MdastNode[],
 };
 
 export type MdastImportHandler = (
   node: MdastNode,
   context: MdastImportContext,
-) => LexicalNode | Array<LexicalNode> | null;
+) => LexicalNode | LexicalNode[] | null;
 
 export type MdastExportHandler = (
   node: LexicalNode,
   context: MdastExportContext,
-) => MdastNode | Array<MdastNode> | null;
+) => MdastNode | MdastNode[] | null;
 
-export type MdastImportRule = {type: string, $import: MdastImportHandler};
-export type MdastExportRule = {type: string, $export: MdastExportHandler};
-
-export type MdastConfig = {
-  importRules: $ReadOnlyArray<MdastImportRule>,
-  exportRules: $ReadOnlyArray<MdastExportRule>,
-  micromarkExtensions: $ReadOnlyArray<mixed>,
-  mdastExtensions: $ReadOnlyArray<mixed>,
-  toMarkdownExtensions: $ReadOnlyArray<mixed>,
+export type MdastImportRule = {
+  readonly type: string,
+  readonly $import: MdastImportHandler,
 };
 
-export type MdastShortcutsConfig = {disabled: boolean};
+export type MdastExportRule = {
+  readonly type: string,
+  readonly $export: MdastExportHandler,
+};
+
+export type MdastConfig = {
+  readonly importRules: ReadonlyArray<MdastImportRule>,
+  readonly exportRules: ReadonlyArray<MdastExportRule>,
+  readonly micromarkExtensions: ReadonlyArray<unknown>,
+  readonly mdastExtensions: ReadonlyArray<unknown>,
+  readonly toMarkdownExtensions: ReadonlyArray<unknown>,
+  readonly inlineShortcutTypes: ReadonlyArray<string>,
+  readonly inlineShortcutTriggers: ReadonlyArray<string>,
+};
+
+export type MdastShortcutsConfig = {
+  readonly disabled: boolean,
+};
 
 export type MdastExtensionOutput = {
   $convertFromMarkdownString(
     markdown: string,
     node?: ElementNode,
-    tree?: mixed,
+    tree?: unknown,
   ): void,
   $convertToMarkdownString(node?: ElementNode): string,
-  +registry: mixed,
+  readonly registry: unknown,
 };
 
 declare export function $convertFromMarkdownString(
   markdown: string,
   node?: ElementNode,
-  tree?: mixed,
+  tree?: unknown,
 ): void;
 
-declare export function $convertToMarkdownString(
-  node?: ElementNode,
-): string;
+declare export function $convertToMarkdownString(node?: ElementNode): string;
 
 declare export var MdastExtension: LexicalExtension<
   MdastConfig,
@@ -130,5 +139,3 @@ declare export var MdastShortcutsExtension: LexicalExtension<
   NamedSignalsOutput<MdastShortcutsConfig>,
   void,
 >;
-
-export type {ElementNode, ExtensionConfigBase, LexicalNode, TextNode};

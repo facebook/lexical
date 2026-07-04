@@ -14,11 +14,16 @@ import {createState} from 'lexical';
  * the same technique `@lexical/markdown` uses; the state lives on the Lexical
  * nodes (and therefore survives serialization), and the exporter reads it to
  * reproduce the original marker/fence/break.
+ *
+ * All of these default to the empty sentinel (`''` / `false`) meaning
+ * "unknown" — i.e. the node was not created by a Markdown import. The exporter
+ * only pins a node's syntax when the marker is known, so nodes created in the
+ * editor defer to the document-level serialization options.
  */
 
 /** The bullet character (`-`, `*`, `+`) an unordered/check `ListNode` used. */
 export const listMarkerState = /* @__PURE__ */ createState('mdastListMarker', {
-  parse: (v): string => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : '-'),
+  parse: (v): string => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : ''),
   resetOnCopyNode: true,
 });
 
@@ -26,25 +31,25 @@ export const listMarkerState = /* @__PURE__ */ createState('mdastListMarker', {
 export const orderedMarkerState = /* @__PURE__ */ createState(
   'mdastOrderedMarker',
   {
-    parse: (v): '.' | ')' => (v === ')' ? ')' : '.'),
+    parse: (v): string => (v === '.' || v === ')' ? v : ''),
     resetOnCopyNode: true,
   },
 );
 
-/** The marker (`*` or `_`) an italic run used (`*em*` vs `_em_`). */
+/** The marker (`_`) an italic run used when it was not the default `*`. */
 export const emphasisMarkerState = /* @__PURE__ */ createState(
   'mdastEmphasisMarker',
   {
-    parse: (v): '*' | '_' => (v === '_' ? '_' : '*'),
+    parse: (v): string => (v === '_' ? '_' : ''),
     resetOnCopyNode: true,
   },
 );
 
-/** The marker (`*` or `_`) a bold run used (`**b**` vs `__b__`). */
+/** The marker (`_`) a bold run used when it was not the default `*`. */
 export const strongMarkerState = /* @__PURE__ */ createState(
   'mdastStrongMarker',
   {
-    parse: (v): '*' | '_' => (v === '_' ? '_' : '*'),
+    parse: (v): string => (v === '_' ? '_' : ''),
     resetOnCopyNode: true,
   },
 );
@@ -58,7 +63,7 @@ export const setextState = /* @__PURE__ */ createState('mdastSetext', {
 /** The fence a `CodeNode` used (e.g. ```` ``` ````, ````` ```` `````, `~~~`). */
 export const codeFenceState = /* @__PURE__ */ createState('mdastCodeFence', {
   parse: (v): string =>
-    typeof v === 'string' && /^(`{3,}|~{3,})$/.test(v) ? v : '```',
+    typeof v === 'string' && /^(`{3,}|~{3,})$/.test(v) ? v : '',
   resetOnCopyNode: true,
 });
 

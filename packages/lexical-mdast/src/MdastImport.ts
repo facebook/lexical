@@ -18,27 +18,29 @@ import type {Root} from 'mdast';
 import {
   $createLineBreakNode,
   $createParagraphNode,
+  $createTabNode,
   $createTextNode,
   $getRoot,
   $getSelection,
-  $isElementNode,
+  $isBlockElementNode,
 } from 'lexical';
 import {fromMarkdown} from 'mdast-util-from-markdown';
 
 /**
- * Splits `value` on `\n` into a run of `TextNode`s separated by
- * `LineBreakNode`s, applying `format` to each text node. Empty segments are
- * dropped so a leading/trailing/standalone newline yields only line breaks.
+ * Splits `value` into a run of `TextNode`s: `\n` becomes a `LineBreakNode`
+ * and `\t` a `TabNode` (matching how typed content is represented in the
+ * editor), with `format` applied to each text segment. Empty segments are
+ * dropped so a leading/trailing/standalone separator yields only its node.
  */
 function $createTextNodes(value: string, format: number): LexicalNode[] {
   const out: LexicalNode[] = [];
-  const segments = value.split('\n');
-  for (let i = 0; i < segments.length; i++) {
-    if (i > 0) {
+  const segments = value.split(/(\n|\t)/);
+  for (const segment of segments) {
+    if (segment === '\n') {
       out.push($createLineBreakNode());
-    }
-    const segment = segments[i];
-    if (segment.length > 0) {
+    } else if (segment === '\t') {
+      out.push($createTabNode());
+    } else if (segment.length > 0) {
       const textNode = $createTextNode(segment);
       if (format) {
         textNode.setFormat(format);
@@ -47,10 +49,6 @@ function $createTextNodes(value: string, format: number): LexicalNode[] {
     }
   }
   return out;
-}
-
-function $isBlockNode(node: LexicalNode): boolean {
-  return $isElementNode(node) && !node.isInline();
 }
 
 /**
@@ -63,24 +61,32 @@ function $isBlockNode(node: LexicalNode): boolean {
  */
 export function createNodeImporter(compiled: CompiledMdast, source = '') {
   const {importHandlers} = compiled;
+  // The context only depends on the accumulated format bitmask, which takes a
+  // handful of distinct values per document — cache instead of allocating one
+  // (plus three closures) per visited node.
+  const contextByFormat = new Map<number, MdastImportContext>();
 
-  function makeContext(format: number): MdastImportContext {
-    return {
-      createText: (value, fmt) =>
-        $createTextNodes(value, fmt == null ? format : fmt),
-      format,
-      importChildren: (parent, extra) =>
-        $importChildren(parent, format | (extra || 0)),
-      importNode: (node, extra) => $importNode(node, format | (extra || 0)),
-      source,
-    };
+  function getContext(format: number): MdastImportContext {
+    let context = contextByFormat.get(format);
+    if (context === undefined) {
+      context = {
+        createText: (value, fmt) =>
+          $createTextNodes(value, fmt == null ? format : fmt),
+        format,
+        importChildren: (parent, extra) =>
+          $importChildren(parent, format | (extra || 0)),
+        importNode: (node, extra) => $importNode(node, format | (extra || 0)),
+        source,
+      };
+      contextByFormat.set(format, context);
+    }
+    return context;
   }
 
   function $importNode(node: MdastNode, format: number): LexicalNode[] {
     const handler = importHandlers.get(node.type);
-    const context = makeContext(format);
     if (handler) {
-      const result = handler(node, context);
+      const result = handler(node, getContext(format));
       if (result == null) {
         return [];
       }
@@ -142,7 +148,7 @@ export function createMdastImport(
     };
     for (const child of mdastTree.children) {
       for (const lexicalNode of $importNode(child, 0)) {
-        if ($isBlockNode(lexicalNode)) {
+        if ($isBlockElementNode(lexicalNode)) {
           flushPending();
           root.append(lexicalNode);
         } else {

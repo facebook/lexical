@@ -400,7 +400,7 @@ describe('TableExtension', () => {
       });
     });
 
-    test('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND expands table when pasting larger table with TableSelection', () => {
+    test('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND clips to selection boundary with TableSelection', () => {
       editor.update(
         () => {
           const root = $getRoot().clear();
@@ -457,15 +457,14 @@ describe('TableExtension', () => {
         const table = root.getFirstChild();
         assert($isTableNode(table), 'Expected table node');
         const rows = table.getChildren().filter($isTableRowNode);
-        expect(rows.length).toBe(3);
-        expect(rows[0].getChildren().length).toBe(3);
+        expect(rows.length).toBe(2);
+        expect(rows[0].getChildren().length).toBe(2);
         const texts = rows.map(row =>
           row.getChildren().map(cell => cell.getTextContent()),
         );
         expect(texts).toEqual([
-          ['A', 'B', 'C'],
-          ['D', 'E', 'F'],
-          ['G', 'H', 'I'],
+          ['A', 'B'],
+          ['D', 'E'],
         ]);
       });
     });

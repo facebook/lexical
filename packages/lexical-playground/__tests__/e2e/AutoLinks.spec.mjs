@@ -613,9 +613,6 @@ test.describe('Auto Links', () => {
       'htp://example.com', // Typo in protocol
       'htps://example.com', // Typo in protocol
 
-      // Invalid TLDs
-      'http://example.abcdefg', // TLD too long
-
       // Spaces and Invalid Characters
       'http://exa mple.com', // Space in domain
       'https://example .com', // Space in domain

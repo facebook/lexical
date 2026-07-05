@@ -7,11 +7,15 @@
  */
 
 import {$isCodeNode} from '@lexical/code';
-import {AutoLinkExtension, createLinkMatcherWithRegExp} from '@lexical/link';
+import {
+  AutoLinkExtension,
+  createLinkMatcherWithRegExp,
+  type LinkMatcher,
+} from '@lexical/link';
 import {configExtension} from 'lexical';
 
 const URL_REGEX =
-  /((https?:\/\/(www\.)?)|(www\.))[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&//=]*[a-zA-Z0-9@_~#?&//=])?/;
+  /((https?:\/\/(www\.)?)|(www\.))[-\p{L}\p{N}@:%._+~#=]{1,256}\.[\p{L}\p{N}]{1,6}(?:[-\p{L}\p{N}()@:%_+.~#?&//=]*[\p{L}\p{N}()@_~#?&//=])?/u;
 
 // Bounded quantifiers keep this matcher linear-time. The unbounded form
 // (`[^...]+(\.[^...]+)*@...`) backtracks in O(n^2) on a long run of characters
@@ -21,14 +25,38 @@ const URL_REGEX =
 const EMAIL_REGEX =
   /(([^<>()[\]\\.,;:\s@"]{1,64}(\.[^<>()[\]\\.,;:\s@"]{1,64}){0,63})|(".{1,255}"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]{1,63}\.){1,127}[a-zA-Z]{2,63}))/;
 
+export const urlMatcher: LinkMatcher = text => {
+  const match = URL_REGEX.exec(text);
+  if (match === null) {
+    return null;
+  }
+  let matched = match[0];
+  let depth = 0;
+  for (const ch of matched) {
+    if (ch === '(') {
+      depth++;
+    } else if (ch === ')') {
+      depth--;
+    }
+  }
+  while (depth < 0 && matched.endsWith(')')) {
+    matched = matched.slice(0, -1);
+    depth++;
+  }
+  return {
+    index: match.index,
+    length: matched.length,
+    text: matched,
+    url: matched.startsWith('http') ? matched : `https://${matched}`,
+  };
+};
+
 export const PlaygroundAutoLinkExtension = /* @__PURE__ */ configExtension(
   AutoLinkExtension,
   {
     excludeParents: [$isCodeNode],
     matchers: [
-      createLinkMatcherWithRegExp(URL_REGEX, text => {
-        return text.startsWith('http') ? text : `https://${text}`;
-      }),
+      urlMatcher,
       createLinkMatcherWithRegExp(EMAIL_REGEX, text => {
         return `mailto:${text}`;
       }),

@@ -495,6 +495,7 @@ export function useYjsCursors(
 
     return createPortal(
       <div ref={ref} />,
+      // eslint-disable-next-line no-restricted-syntax
       (cursorsContainerRef && cursorsContainerRef.current) || document.body,
     );
   }, [binding, cursorsContainerRef]);
@@ -666,12 +667,12 @@ function initializeEditor(
         } else {
           const paragraph = $createParagraphNode();
           root.append(paragraph);
-          const {activeElement} = document;
+          const rootElement = editor.getRootElement();
 
           if (
             $getSelection() !== null ||
-            (activeElement !== null &&
-              activeElement === editor.getRootElement())
+            (rootElement !== null &&
+              getActiveElement(rootElement) === rootElement)
           ) {
             paragraph.select();
           }

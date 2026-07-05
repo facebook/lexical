@@ -18,11 +18,13 @@ const CHARACTER_LIMIT = 5;
 let textEncoderInstance: null | TextEncoder = null;
 
 function textEncoder(): null | TextEncoder {
+  // eslint-disable-next-line no-restricted-syntax
   if (window.TextEncoder === undefined) {
     return null;
   }
 
   if (textEncoderInstance === null) {
+    // eslint-disable-next-line no-restricted-syntax
     textEncoderInstance = new window.TextEncoder();
   }
 

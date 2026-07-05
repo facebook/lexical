@@ -30,6 +30,7 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTabNode,
+  $getDocument,
   $getEditor,
   $isLineBreakNode,
   $isTabNode,
@@ -112,7 +113,7 @@ export class CodeNode extends ElementNode {
 
   // View
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('code');
+    const element = $getDocument().createElement('code');
     addClassNamesToElement(element, config.theme.code);
     element.setAttribute('spellcheck', 'false');
     const language = this.getLanguage();
@@ -183,7 +184,7 @@ export class CodeNode extends ElementNode {
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const element = document.createElement('pre');
+    const element = $getDocument().createElement('pre');
     addClassNamesToElement(element, editor._config.theme.code);
     element.setAttribute('spellcheck', 'false');
     const language = this.getLanguage();

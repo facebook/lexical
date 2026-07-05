@@ -9,6 +9,7 @@
 import {
   $applyNodeReplacement,
   $createTextNode,
+  $getDocument,
   $isElementNode,
   $setDirectionFromDOM,
   addClassNamesToElement,
@@ -123,7 +124,7 @@ export class ListNode extends ElementNode {
 
   createDOM(config: EditorConfig, _editor?: LexicalEditor): HTMLElement {
     const tag = this.__tag;
-    const dom = document.createElement(tag);
+    const dom = $getDocument().createElement(tag);
 
     if (this.__start !== 1) {
       dom.setAttribute('start', String(this.__start));

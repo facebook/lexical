@@ -16,7 +16,7 @@ import type {
 } from 'lexical';
 import type {JSX} from 'react';
 
-import {DecoratorNode} from 'lexical';
+import {$getDocument, DecoratorNode} from 'lexical';
 
 /**
  * The serialized form of a {@link DecoratorBlockNode}: the base serialized node
@@ -69,7 +69,7 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM(): HTMLElement {
-    return document.createElement('div');
+    return $getDocument().createElement('div');
   }
 
   updateDOM(): false {

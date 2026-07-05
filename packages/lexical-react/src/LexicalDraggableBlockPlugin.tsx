@@ -77,13 +77,16 @@ function getCollapsedMargins(elem: HTMLElement): {
   marginTop: number;
   marginBottom: number;
 } {
+  const view = elem.ownerDocument.defaultView;
   const getMargin = (
     element: Element | null,
     margin: 'marginTop' | 'marginBottom',
   ): number =>
-    element ? parseFloat(window.getComputedStyle(element)[margin]) : 0;
+    element && view ? parseFloat(view.getComputedStyle(element)[margin]) : 0;
 
-  const {marginTop, marginBottom} = window.getComputedStyle(elem);
+  const {marginTop = '0', marginBottom = '0'} = view
+    ? view.getComputedStyle(elem)
+    : {};
   const prevElemSiblingMarginBottom = getMargin(
     elem.previousElementSibling,
     'marginBottom',
@@ -203,12 +206,17 @@ function setMenuPosition(
   }
 
   const targetRect = targetElem.getBoundingClientRect();
-  const targetStyle = window.getComputedStyle(targetElem);
+  const targetView = targetElem.ownerDocument.defaultView;
+  const targetStyle = targetView
+    ? targetView.getComputedStyle(targetElem)
+    : null;
   const floatingElemRect = floatingElem.getBoundingClientRect();
   const anchorElementRect = anchorElem.getBoundingClientRect();
 
   // top left
-  let targetCalculateHeight: number = parseInt(targetStyle.lineHeight, 10);
+  let targetCalculateHeight: number = targetStyle
+    ? parseInt(targetStyle.lineHeight, 10)
+    : NaN;
   if (isNaN(targetCalculateHeight)) {
     // middle
     targetCalculateHeight = targetRect.bottom - targetRect.top;
@@ -596,6 +604,7 @@ function useDraggableBlockMenu(
  * @returns A portal containing the drag handle and target line.
  */
 export function DraggableBlockPlugin_EXPERIMENTAL({
+  // eslint-disable-next-line no-restricted-syntax
   anchorElem = document.body,
   menuRef,
   targetLineRef,

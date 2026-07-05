@@ -6,7 +6,7 @@
  *
  */
 
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 import {urlMatcher} from '../../src/plugins/AutoLinkExtension';
 
@@ -18,8 +18,8 @@ describe('urlMatcher', () => {
     ['https://example.com:8080/api', 'https://example.com:8080/api'],
   ])('matches ASCII URL %s', (input, expected) => {
     const result = urlMatcher(input);
-    expect(result).not.toBeNull();
-    expect(result!.text).toBe(expected);
+    assert(result !== null);
+    expect(result.text).toBe(expected);
   });
 
   test.each([
@@ -34,8 +34,8 @@ describe('urlMatcher', () => {
     ],
   ])('matches Unicode URL %s', (input, expected) => {
     const result = urlMatcher(input);
-    expect(result).not.toBeNull();
-    expect(result!.text).toBe(expected);
+    assert(result !== null);
+    expect(result.text).toBe(expected);
   });
 
   test.each([
@@ -48,8 +48,8 @@ describe('urlMatcher', () => {
     ['go www.예시.한국 end', 'www.예시.한국'],
   ])('extracts URL from surrounding text: %s', (input, expected) => {
     const result = urlMatcher(input);
-    expect(result).not.toBeNull();
-    expect(result!.text).toBe(expected);
+    assert(result !== null);
+    expect(result.text).toBe(expected);
   });
 
   test.each([
@@ -59,8 +59,8 @@ describe('urlMatcher', () => {
     ['see https://예시.한국. ok', 'https://예시.한국'],
   ])('excludes trailing punctuation: %s', (input, expected) => {
     const result = urlMatcher(input);
-    expect(result).not.toBeNull();
-    expect(result!.text).toBe(expected);
+    assert(result !== null);
+    expect(result.text).toBe(expected);
   });
 
   test.each([
@@ -73,8 +73,8 @@ describe('urlMatcher', () => {
     ['https://example.com/a_(b_(c))', 'https://example.com/a_(b_(c))'],
   ])('handles parentheses correctly: %s', (input, expected) => {
     const result = urlMatcher(input);
-    expect(result).not.toBeNull();
-    expect(result!.text).toBe(expected);
+    assert(result !== null);
+    expect(result.text).toBe(expected);
   });
 
   test.each([
@@ -84,8 +84,8 @@ describe('urlMatcher', () => {
     ['http://пример.рф', 'http://пример.рф'],
   ])('sets correct url for %s', (input, expected) => {
     const result = urlMatcher(input);
-    expect(result).not.toBeNull();
-    expect(result!.url).toBe(expected);
+    assert(result !== null);
+    expect(result.url).toBe(expected);
   });
 
   test.each(['just text no url', 'http:// alone', ''])(

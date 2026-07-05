@@ -16,6 +16,7 @@ import {
   $createTableNode,
   $createTableNodeWithDimensions,
   $createTableRowNode,
+  $createTableSelectionFrom,
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
@@ -32,6 +33,7 @@ import {
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
+  $setSelection,
   defineExtension,
   LexicalEditorWithDispose,
   NodeKey,
@@ -395,6 +397,75 @@ describe('TableExtension', () => {
           'Expected second cell child to be a paragraph node',
         );
         expect(cell2Child.getTextContent()).toBe('b');
+      });
+    });
+
+    test('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND clips to selection boundary with TableSelection', () => {
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          const table = $createTableNode();
+          for (let r = 0; r < 2; r++) {
+            const row = $createTableRowNode();
+            for (let c = 0; c < 2; c++) {
+              const cell = $createTableCellNode();
+              cell.append(
+                $createParagraphNode().append($createTextNode(`${c},${r}`)),
+              );
+              row.append(cell);
+            }
+            table.append(row);
+          }
+          root.append(table);
+
+          const [tableMap] = $computeTableMapSkipCellCheck(table, null, null);
+          const tableSelection = $createTableSelectionFrom(
+            table,
+            tableMap[0][0].cell,
+            tableMap[1][1].cell,
+          );
+          $setSelection(tableSelection);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const template = $createTableNode();
+          for (let r = 0; r < 3; r++) {
+            const row = $createTableRowNode();
+            for (let c = 0; c < 3; c++) {
+              const cell = $createTableCellNode();
+              cell.append(
+                $createParagraphNode().append(
+                  $createTextNode(String.fromCharCode(65 + r * 3 + c)),
+                ),
+              );
+              row.append(cell);
+            }
+            template.append(row);
+          }
+          const selection = $getSelection();
+          assert($isTableSelection(selection), 'Expected table selection');
+          $insertGeneratedNodes(editor, [template], selection);
+        },
+        {discrete: true},
+      );
+
+      editor.read('latest', () => {
+        const root = $getRoot();
+        const table = root.getFirstChild();
+        assert($isTableNode(table), 'Expected table node');
+        const rows = table.getChildren().filter($isTableRowNode);
+        expect(rows.length).toBe(2);
+        expect(rows[0].getChildren().length).toBe(2);
+        const texts = rows.map(row =>
+          row.getChildren().map(cell => cell.getTextContent()),
+        );
+        expect(texts).toEqual([
+          ['A', 'B'],
+          ['D', 'E'],
+        ]);
       });
     });
   });

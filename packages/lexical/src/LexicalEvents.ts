@@ -15,6 +15,7 @@ import invariant from '@lexical/internal/invariant';
 import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
 
 import {
+  $createTextNode,
   $getPreviousSelection,
   $getRoot,
   $getSelection,
@@ -1040,10 +1041,12 @@ function $handleBeforeInput(event: InputEvent): boolean {
     case 'insertFromComposition': {
       const skipRedundantInsert = hadOrphanedCompositionEvents;
       hadOrphanedCompositionEvents = false;
+      const prevCompositionKey = editor._compositionKey;
       $setCompositionKey(null);
       if (!skipRedundantInsert) {
         dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, event);
       }
+      $cleanupComposedSubclass(prevCompositionKey);
       break;
     }
 
@@ -1389,6 +1392,34 @@ function $handleCompositionEnd(event: CompositionEvent): boolean {
   return true;
 }
 
+function $cleanupComposedSubclass(compositionKey: NodeKey | null): void {
+  if (compositionKey === null) {
+    return;
+  }
+  const composedNode = $getNodeByKey(compositionKey);
+  if (
+    !$isTextNode(composedNode) ||
+    composedNode.getType() === 'text' ||
+    $isTokenOrSegmented(composedNode) ||
+    !composedNode.isAttached()
+  ) {
+    return;
+  }
+  const sel = $getSelection();
+  const offset =
+    $isRangeSelection(sel) && sel.anchor.key === compositionKey
+      ? sel.anchor.offset
+      : null;
+  const replacement = $createTextNode(composedNode.getTextContent());
+  replacement.setFormat(composedNode.getFormat());
+  replacement.setStyle(composedNode.getStyle());
+  composedNode.replace(replacement);
+  if (offset !== null) {
+    const safeOffset = Math.min(offset, replacement.getTextContentSize());
+    replacement.select(safeOffset, safeOffset);
+  }
+}
+
 function $onCompositionEndImpl(editor: LexicalEditor, data?: string): boolean {
   const compositionKey = editor._compositionKey;
   $setCompositionKey(null);
@@ -1433,6 +1464,7 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): boolean {
           true,
         );
       }
+      $cleanupComposedSubclass(compositionKey);
       return false;
     } else if (data[data.length - 1] === '\n') {
       const selection = $getSelection();
@@ -1445,6 +1477,7 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): boolean {
           selection.anchor.set(focus.key, focus.offset, focus.type);
         }
         dispatchCommand(editor, KEY_ENTER_COMMAND, null);
+        $cleanupComposedSubclass(compositionKey);
         return false;
       }
     }
@@ -1467,6 +1500,7 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): boolean {
   }
 
   $updateSelectedTextFromDOM(true, editor, data);
+  $cleanupComposedSubclass(compositionKey);
   return false;
 }
 

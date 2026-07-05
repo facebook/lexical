@@ -27,6 +27,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   $selectAll,
+  $setCompositionKey,
   $setSelection,
   createEditor,
   ElementNode,
@@ -837,6 +838,72 @@ describe('LexicalSelection tests', () => {
           });
         });
       });
+    });
+  });
+});
+
+describe('Segmented node composition (#5065)', () => {
+  initializeUnitTest(testEnv => {
+    test('insertText during composition preserves node key', () => {
+      testEnv.editor.update(
+        () => {
+          const segmented = $createTextNode('JohnSmith').setMode('segmented');
+          $getRoot().clear().append($createParagraphNode().append(segmented));
+          const key = segmented.getKey();
+
+          $setCompositionKey(key);
+          const sel = segmented.select(4, 4);
+          sel.insertText('');
+
+          const latest = segmented.getLatest();
+          expect(latest.getKey()).toBe(key);
+          expect(latest.isSegmented()).toBe(false);
+          expect(latest.getTextContent()).toBe('JohnSmith');
+        },
+        {discrete: true},
+      );
+    });
+
+    test('insertText without composition replaces segmented node', () => {
+      testEnv.editor.update(
+        () => {
+          const segmented = $createTextNode('JohnSmith').setMode('segmented');
+          $getRoot().clear().append($createParagraphNode().append(segmented));
+
+          const sel = segmented.select(4, 4);
+          sel.insertText('');
+
+          expect(segmented.isAttached()).toBe(false);
+          const allText = $getRoot().getAllTextNodes();
+          expect(allText).toHaveLength(1);
+          expect(allText[0].getKey()).not.toBe(segmented.getKey());
+          expect(allText[0].getTextContent()).toBe('JohnSmith');
+        },
+        {discrete: true},
+      );
+    });
+
+    test('insertText during composition preserves format and style', () => {
+      testEnv.editor.update(
+        () => {
+          const segmented = $createTextNode('JohnSmith')
+            .setMode('segmented')
+            .setFormat('bold');
+          $getRoot().clear().append($createParagraphNode().append(segmented));
+          const key = segmented.getKey();
+
+          $setCompositionKey(key);
+          const sel = segmented.select(4, 4);
+          sel.format = 1; // bold
+          sel.insertText('');
+
+          const latest = segmented.getLatest();
+          expect(latest.isAttached()).toBe(true);
+          expect(latest.getKey()).toBe(key);
+          expect(latest.getFormat()).toBe(1);
+        },
+        {discrete: true},
+      );
     });
   });
 });

@@ -1001,10 +1001,20 @@ export class RangeSelection implements BaseSelection {
         return;
       }
     } else if (firstNode.isSegmented() && startOffset !== firstNodeTextLength) {
-      const textNode = $createTextNode(firstNode.getTextContent());
-      textNode.setFormat(format);
-      firstNode.replace(textNode);
-      firstNode = textNode;
+      if ($getCompositionKey() !== null) {
+        // Preserve the DOM element for the browser's composition tracker.
+        // The subclass instance stays in normal mode until composition ends,
+        // when $cleanupComposedSubclass replaces it with a plain TextNode.
+        firstNode = firstNode
+          .setMode('normal')
+          .setFormat(format)
+          .setStyle(style);
+      } else {
+        const textNode = $createTextNode(firstNode.getTextContent());
+        textNode.setFormat(format);
+        firstNode.replace(textNode);
+        firstNode = textNode;
+      }
     } else if (!this.isCollapsed() && text !== '') {
       // When the firstNode or lastNode parents are elements that
       // do not allow text to be inserted before or after, we first

@@ -1883,9 +1883,9 @@ export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode {
   return node;
 }
 
-function createBlockCursorElement(editorConfig: EditorConfig): HTMLDivElement {
+function $createBlockCursorElement(editorConfig: EditorConfig): HTMLDivElement {
   const theme = editorConfig.theme;
-  const element = document.createElement('div');
+  const element = $getDocument().createElement('div');
   element.contentEditable = 'false';
   element.setAttribute('data-lexical-cursor', 'true');
   let blockCursorTheme = theme.blockCursor;
@@ -1989,7 +1989,7 @@ export function $updateDOMBlockCursorElement(
       ).element;
       if (blockCursorElement === null) {
         editor._blockCursorElement = blockCursorElement =
-          createBlockCursorElement(editor._config);
+          $createBlockCursorElement(editor._config);
       }
       rootElement.style.caretColor = 'transparent';
       if (insertBeforeElement === null) {
@@ -2116,6 +2116,26 @@ export function getRootOwnerDocument(
   rootElement: HTMLElement | null,
 ): Document {
   return rootElement !== null ? rootElement.ownerDocument : document;
+}
+
+/**
+ * Returns the {@link Document} that owns the active editor's root element.
+ * Falls back to `globalThis.document` when the editor has no root element
+ * (e.g. headless mode with {@link @lexical/headless!withDOM | withDOM}).
+ *
+ * Use this inside `createDOM`, `updateDOM`, and `exportDOM` instead of the
+ * bare `document` global so the node works correctly when the editor lives
+ * inside a Shadow DOM or a cross-origin `<iframe>`.
+ */
+export function $getDocument(): Document {
+  const editor = $getEditor();
+  let rootElement: HTMLElement | null = null;
+  try {
+    rootElement = editor.getRootElement();
+  } catch {
+    // createHeadlessEditor() overrides getRootElement() to throw
+  }
+  return getRootOwnerDocument(rootElement);
 }
 
 /**

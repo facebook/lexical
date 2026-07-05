@@ -296,6 +296,7 @@ export {
   $createChildrenArray,
   $findMatchingParent,
   $getAdjacentNode,
+  $getDocument,
   $getDOMSlot,
   $getDOMTextNode,
   $getEditor,

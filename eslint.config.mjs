@@ -404,6 +404,40 @@ export default [
     },
   },
 
+  // Override: Library sources — ban direct `document.X` and `window.X` member
+  // access so editors inside Shadow DOM or cross-frame iframes use the correct
+  // realm. Uses `no-restricted-syntax` with MemberExpression selectors so that
+  // `typeof window/document` (SSR guards) and helper definitions in
+  // LexicalUtils.ts that use parameters (not globals) are exempt automatically.
+  // See AGENTS.md "Shadow DOM and iframe realm safety" for the full pattern table.
+  {
+    files: ['packages/**/src/**'],
+    ignores: [
+      'packages/**/__tests__/**',
+      'packages/**/__bench__/**',
+      'packages/lexical-playground/**',
+      'packages/lexical-devtools/**',
+      'packages/lexical-website/**',
+    ],
+    rules: {
+      '@lexical/no-document-in-dom-methods': ERROR,
+      'no-restricted-syntax': [
+        ERROR,
+        'WithStatement',
+        {
+          message:
+            'Use $getDocument(), ownerDocument, or getRootOwnerDocument() instead of document.* for Shadow DOM / iframe safety. See AGENTS.md.',
+          selector: 'MemberExpression[object.name="document"]',
+        },
+        {
+          message:
+            'Use getDefaultView() or getWindow() instead of window.* for Shadow DOM / iframe safety. See AGENTS.md.',
+          selector: 'MemberExpression[object.name="window"]',
+        },
+      ],
+    },
+  },
+
   // Override: Package sources - require /* @__PURE__ */ annotations on
   // module-scope calls to the side-effect-free lexical factories
   // (defineExtension, createCommand, defineImportRule, ...) so bundlers

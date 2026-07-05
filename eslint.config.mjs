@@ -356,6 +356,15 @@ export default [
       ],
       '@typescript-eslint/array-type': [ERROR, {default: 'array'}],
       '@typescript-eslint/ban-ts-comment': OFF,
+      // The build compiles with @babel/preset-typescript, which only elides an
+      // import when it is explicitly type-only. Enforce `import type` so that
+      // type-only imports never emit a runtime dependency. `separate-type-imports`
+      // keeps pure type imports as `import type {X}` (fully elided); mixed
+      // imports keep the value import and inline `type` on the type specifiers.
+      '@typescript-eslint/consistent-type-imports': [
+        ERROR,
+        {disallowTypeAnnotations: false, fixStyle: 'separate-type-imports'},
+      ],
       '@typescript-eslint/no-this-alias': OFF,
       '@typescript-eslint/no-unused-vars': [
         ERROR,

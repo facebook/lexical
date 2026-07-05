@@ -305,11 +305,7 @@ async function build(
           '@babel/plugin-transform-optional-catch-binding',
         ],
         presets: [
-          // Temporary: Babel 8 defaults onlyRemoveTypeImports to true, which
-          // requires every type-only import to be explicitly marked. Keep the
-          // old behaviour until the type-import codemod has run; a follow-up
-          // commit drops this override once the source is marked.
-          ['@babel/preset-typescript', {onlyRemoveTypeImports: false}],
+          '@babel/preset-typescript',
           // Pin development:false so the automatic runtime always emits the
           // production `jsx`/`jsxs` helpers, never `jsxDEV`. Babel 8 flipped the
           // default to infer development mode from the environment, which made

@@ -8,9 +8,9 @@
 
 import {assert, describe, expect, test} from 'vitest';
 
-import {urlMatcher} from '../../src/plugins/AutoLinkExtension';
+import {autoLinkUrlMatcher as urlMatcher} from '../../LexicalAutoLinkExtension';
 
-describe('urlMatcher', () => {
+describe('autoLinkUrlMatcher', () => {
   test.for([
     {
       expected: 'https://google.com',

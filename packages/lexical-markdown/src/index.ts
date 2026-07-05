@@ -13,15 +13,20 @@ import type {
   TextMatchTransformer,
   Transformer,
 } from './MarkdownTransformers';
-import type {BaseSelection, ElementNode} from 'lexical';
+import type {BaseSelection, ElementNode, LexicalNode} from 'lexical';
 
-import {$isRangeSelection} from 'lexical';
+import {
+  $createParagraphNode,
+  $getRoot,
+  $getSelection,
+  $isRangeSelection,
+} from 'lexical';
 
 import {
   createMarkdownExport,
   createSelectionMarkdownExport,
 } from './MarkdownExport';
-import {createMarkdownImport} from './MarkdownImport';
+import {$importMarkdownNodes} from './MarkdownImport';
 import {registerMarkdownShortcuts} from './MarkdownShortcuts';
 import {
   BOLD_ITALIC_STAR,
@@ -65,11 +70,44 @@ function $convertFromMarkdownString(
   const sanitizedMarkdown = shouldPreserveNewLines
     ? markdown
     : normalizeMarkdown(markdown, shouldMergeAdjacentLines);
-  const importMarkdown = createMarkdownImport(
+  const root = node || $getRoot();
+  root.clear();
+  $importMarkdownNodes(
+    sanitizedMarkdown,
+    root,
     transformers,
     shouldPreserveNewLines,
   );
-  return importMarkdown(sanitizedMarkdown, node);
+  if ($getSelection() !== null) {
+    root.selectStart();
+  }
+}
+
+/**
+ * Parses a markdown string and returns the resulting nodes as an array,
+ * without modifying the document tree or selection. The returned nodes can be
+ * inserted at an arbitrary position via `selection.insertNodes()`.
+ *
+ *  @param {boolean} [shouldPreserveNewLines] By setting this to true, new lines will be preserved between conversions
+ *  @param {boolean} [shouldMergeAdjacentLines] By setting this to true, adjacent non empty lines will be merged according to commonmark spec: https://spec.commonmark.org/0.24/#example-177. Not applicable if shouldPreserveNewLines = true.
+ */
+function $generateNodesFromMarkdownString(
+  markdown: string,
+  transformers: Transformer[] = TRANSFORMERS,
+  shouldPreserveNewLines = false,
+  shouldMergeAdjacentLines = false,
+): LexicalNode[] {
+  const sanitizedMarkdown = shouldPreserveNewLines
+    ? markdown
+    : normalizeMarkdown(markdown, shouldMergeAdjacentLines);
+  const container = $createParagraphNode();
+  $importMarkdownNodes(
+    sanitizedMarkdown,
+    container,
+    transformers,
+    shouldPreserveNewLines,
+  );
+  return container.getChildren();
 }
 
 /**
@@ -109,6 +147,7 @@ export {
   $convertFromMarkdownString,
   $convertSelectionToMarkdownString,
   $convertToMarkdownString,
+  $generateNodesFromMarkdownString,
   BOLD_ITALIC_STAR,
   BOLD_ITALIC_UNDERSCORE,
   BOLD_STAR,

@@ -8,7 +8,9 @@
 
 import invariant from '@lexical/internal/invariant';
 import {
+  $createParagraphNode,
   $createPoint,
+  $createTextNode,
   $findMatchingParent,
   $getNodeByKey,
   $getSelection,
@@ -26,14 +28,24 @@ import {
   TextNode,
 } from 'lexical';
 
-import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
-import {$isTableNode, TableNode} from './LexicalTableNode';
-import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
+import {
+  $createTableCellNode,
+  $isTableCellNode,
+  TableCellHeaderStates,
+  TableCellNode,
+} from './LexicalTableCellNode';
+import {$createTableNode, $isTableNode, TableNode} from './LexicalTableNode';
+import {
+  $createTableRowNode,
+  $isTableRowNode,
+  TableRowNode,
+} from './LexicalTableRowNode';
 import {$findTableNode} from './LexicalTableSelectionHelpers';
 import {
   $computeTableCellRectBoundary,
   $computeTableMap,
   $getTableCellNodeRect,
+  $insertTableIntoGrid,
 } from './LexicalTableUtils';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
@@ -211,7 +223,28 @@ export class TableSelection implements BaseSelection {
   }
 
   insertRawText(text: string): void {
-    // Do nothing?
+    if (text === '') {
+      return;
+    }
+    const trimmed = text.endsWith('\n') ? text.slice(0, -1) : text;
+    const tsvGrid = trimmed.split('\n').map(line => line.split('\t'));
+    const tableNode = $createTableNode();
+    for (const row of tsvGrid) {
+      const rowNode = $createTableRowNode();
+      for (const cellText of row) {
+        const cellNode = $createTableCellNode(TableCellHeaderStates.NO_STATUS);
+        const paragraph = $createParagraphNode();
+        if (cellText) {
+          paragraph.append($createTextNode(cellText));
+        }
+        cellNode.append(paragraph);
+        rowNode.append(cellNode);
+      }
+      tableNode.append(rowNode);
+    }
+    const {anchorCell} = $getCellNodes(this);
+    const rangeSelection = anchorCell.select(0, anchorCell.getChildrenSize());
+    $insertTableIntoGrid(tableNode, rangeSelection);
   }
 
   insertText(): void {

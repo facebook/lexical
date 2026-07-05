@@ -14,6 +14,7 @@ import {
   $createTableRowNode,
   $createTableSelectionFrom,
   $deleteTableRowAtSelection,
+  $isTableRowNode,
   $isTableSelection,
   TableMapType,
   TableNode,
@@ -118,6 +119,186 @@ describe('table selection', () => {
 
             expect(textNode.getStyle()).toBe('color: blue;');
             expect(emptyParagraph.getTextStyle()).toBe('color: blue;');
+          },
+          {discrete: true},
+        );
+      });
+    });
+
+    describe('insertRawText', () => {
+      function $getCellTexts(): string[][] {
+        return tableNode
+          .getChildren()
+          .filter($isTableRowNode)
+          .map(row => row.getChildren().map(cell => cell.getTextContent()));
+      }
+
+      test('fills 2x2 table with matching TSV', () => {
+        testEnv.editor.update(
+          () => {
+            tableSelection.insertRawText('A\tB\nC\tD');
+            expect($getCellTexts()).toEqual([
+              ['A', 'B'],
+              ['C', 'D'],
+            ]);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('single value fills anchor cell only', () => {
+        testEnv.editor.update(
+          () => {
+            tableSelection.insertRawText('hello');
+            expect($getCellTexts()).toEqual([
+              ['hello', '1,0'],
+              ['0,1', '1,1'],
+            ]);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('single row TSV fills one row with two columns', () => {
+        testEnv.editor.update(
+          () => {
+            tableSelection.insertRawText('a\tb');
+            expect($getCellTexts()).toEqual([
+              ['a', 'b'],
+              ['0,1', '1,1'],
+            ]);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('expands rows when TSV has more rows', () => {
+        testEnv.editor.update(
+          () => {
+            tableSelection.insertRawText('A\tB\nC\tD\nE\tF');
+            const texts = $getCellTexts();
+            expect(texts.length).toBe(3);
+            expect(texts[0]).toEqual(['A', 'B']);
+            expect(texts[1]).toEqual(['C', 'D']);
+            expect(texts[2]).toEqual(['E', 'F']);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('expands columns when TSV has more columns', () => {
+        testEnv.editor.update(
+          () => {
+            tableSelection.insertRawText('A\tB\tC\nD\tE\tF');
+            const texts = $getCellTexts();
+            expect(texts[0]).toEqual(['A', 'B', 'C']);
+            expect(texts[1]).toEqual(['D', 'E', 'F']);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('expands both rows and columns', () => {
+        testEnv.editor.update(
+          () => {
+            tableSelection.insertRawText('A\tB\tC\nD\tE\tF\nG\tH\tI');
+            const texts = $getCellTexts();
+            expect(texts).toEqual([
+              ['A', 'B', 'C'],
+              ['D', 'E', 'F'],
+              ['G', 'H', 'I'],
+            ]);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('strips trailing newline from clipboard', () => {
+        testEnv.editor.update(
+          () => {
+            tableSelection.insertRawText('X\tY\nZ\tW\n');
+            expect($getCellTexts()).toEqual([
+              ['X', 'Y'],
+              ['Z', 'W'],
+            ]);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('paste from non-origin anchor fills offset cells', () => {
+        testEnv.editor.update(
+          () => {
+            const offsetSelection = $createTableSelectionFrom(
+              tableNode,
+              tableMap.at(1)!.at(1)!.cell,
+              tableMap.at(1)!.at(1)!.cell,
+            );
+            offsetSelection.insertRawText('X\tY\nZ\tW');
+            const texts = $getCellTexts();
+            // Original cells preserved, offset filled + expanded
+            expect(texts[0][0]).toBe('0,0');
+            expect(texts[0][1]).toBe('1,0');
+            expect(texts[1][1]).toBe('X');
+          },
+          {discrete: true},
+        );
+      });
+
+      test('unmerges and fills merged cells', () => {
+        testEnv.editor.update(
+          () => {
+            // Build a 3x3 table where cell (0,0) spans 2 cols
+            const merged = $createTableNode();
+            const topLeft = $createTableCellNode().setColSpan(2);
+            topLeft.append($createParagraphNode().append($createTextNode('M')));
+            merged.append(
+              $createTableRowNode().append(
+                topLeft,
+                $createTableCellNode().append(
+                  $createParagraphNode().append($createTextNode('c')),
+                ),
+              ),
+              $createTableRowNode().append(
+                ...Array.from({length: 3}, () =>
+                  $createTableCellNode().append(
+                    $createParagraphNode().append($createTextNode('x')),
+                  ),
+                ),
+              ),
+            );
+            $getRoot().clear().append(merged);
+            const [mergedMap] = $computeTableMapSkipCellCheck(
+              merged,
+              null,
+              null,
+            );
+            const sel = $createTableSelectionFrom(
+              merged,
+              mergedMap.at(0)!.at(0)!.cell,
+              mergedMap.at(-1)!.at(-1)!.cell,
+            );
+            sel.insertRawText('A\tB\tC\nD\tE\tF');
+            const texts = merged
+              .getChildren()
+              .filter($isTableRowNode)
+              .map(row => row.getChildren().map(cell => cell.getTextContent()));
+            // Merged cell is unmerged, each cell gets its TSV value
+            expect(texts[0]).toEqual(['A', 'B', 'C']);
+            expect(texts[1]).toEqual(['D', 'E', 'F']);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('empty string is no-op', () => {
+        testEnv.editor.update(
+          () => {
+            tableSelection.insertRawText('');
+            expect($getCellTexts()).toEqual([
+              ['0,0', '1,0'],
+              ['0,1', '1,1'],
+            ]);
           },
           {discrete: true},
         );

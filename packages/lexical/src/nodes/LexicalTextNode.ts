@@ -826,6 +826,12 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
   /**
    * Sets the mode of the node.
    *
+   * Note: during IME composition, a segmented TextNode may be temporarily
+   * switched to normal mode to preserve the DOM element that the browser's
+   * composition tracker is bound to. Subclass transforms or method overrides
+   * that assume the node is always in segmented mode should account for this
+   * transient state.
+   *
    * @returns this TextNode.
    */
   setMode(type: TextModeType): this {

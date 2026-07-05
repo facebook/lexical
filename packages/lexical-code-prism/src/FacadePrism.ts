@@ -10,6 +10,9 @@ import type {CodeNode} from '@lexical/code-core';
 import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 import type {Token, TokenStream} from 'prismjs';
 
+// Side-effect import: loads prismjs and sets up the global `Prism` that the
+// component imports below extend. Must stay separate from the type-only import
+// above so it is not elided.
 import 'prismjs';
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-diff';

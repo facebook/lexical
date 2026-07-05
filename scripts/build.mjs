@@ -305,14 +305,18 @@ async function build(
           '@babel/plugin-transform-optional-catch-binding',
         ],
         presets: [
-          [
-            '@babel/preset-typescript',
-            {
-              allowDeclareFields: true,
-              tsconfig: path.resolve('./tsconfig.build.json'),
-            },
-          ],
-          ['@babel/preset-react', {runtime: 'automatic'}],
+          // Temporary: Babel 8 defaults onlyRemoveTypeImports to true, which
+          // requires every type-only import to be explicitly marked. Keep the
+          // old behaviour until the type-import codemod has run; a follow-up
+          // commit drops this override once the source is marked.
+          ['@babel/preset-typescript', {onlyRemoveTypeImports: false}],
+          // Pin development:false so the automatic runtime always emits the
+          // production `jsx`/`jsxs` helpers, never `jsxDEV`. Babel 8 flipped the
+          // default to infer development mode from the environment, which made
+          // the dev builds import `react/jsx-dev-runtime`; consumers that bundle
+          // those dev builds (e.g. the Docusaurus website SSG) then crash with
+          // "jsxDEV is not a function".
+          ['@babel/preset-react', {development: false, runtime: 'automatic'}],
         ],
       }),
       commonjs(),

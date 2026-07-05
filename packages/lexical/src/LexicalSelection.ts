@@ -1002,6 +1002,9 @@ export class RangeSelection implements BaseSelection {
       }
     } else if (firstNode.isSegmented() && startOffset !== firstNodeTextLength) {
       if ($getCompositionKey() !== null) {
+        // Preserve the DOM element for the browser's composition tracker.
+        // The subclass instance stays in normal mode until composition ends,
+        // when $cleanupComposedSubclass replaces it with a plain TextNode.
         firstNode = firstNode
           .setMode('normal')
           .setFormat(format)

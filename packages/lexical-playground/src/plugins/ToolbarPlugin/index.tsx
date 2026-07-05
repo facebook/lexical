@@ -97,6 +97,7 @@ import InsertLayoutDialog from '../LayoutExtension/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
 import {PagesReactExtension} from '../PagesReactExtension';
 import {InsertPollDialog} from '../PollExtension';
+import {$isRubyNode, $toggleRuby} from '../RubyExtension/RubyNode';
 import {SHORTCUTS} from '../ShortcutsPlugin/shortcuts';
 import ShortcutsHelpDialog from '../ShortcutsPlugin/ShortcutsHelpDialog';
 import {InsertTableDialog} from '../TablePlugin';
@@ -568,11 +569,13 @@ export default function ToolbarPlugin({
   activeEditor,
   setActiveEditor,
   setIsLinkEditMode,
+  setIsRubyEditMode,
 }: {
   editor: LexicalEditor;
   activeEditor: LexicalEditor;
   setActiveEditor: Dispatch<LexicalEditor>;
   setIsLinkEditMode: Dispatch<boolean>;
+  setIsRubyEditMode: Dispatch<boolean>;
 }): JSX.Element {
   const [selectedElementKey, setSelectedElementKey] = useState<NodeKey | null>(
     null,
@@ -895,6 +898,26 @@ export default function ToolbarPlugin({
     }
   }, [activeEditor, setIsLinkEditMode, toolbarState.isLink]);
 
+  const insertRuby = useCallback(() => {
+    const {hasRuby, hasSelection} = activeEditor.read(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        return {
+          hasRuby: selection.getNodes().some($isRubyNode),
+          hasSelection: !selection.isCollapsed(),
+        };
+      }
+      return {hasRuby: false, hasSelection: false};
+    });
+    if (hasRuby) {
+      activeEditor.update(() => {
+        $toggleRuby(null);
+      });
+    } else if (hasSelection) {
+      setIsRubyEditMode(true);
+    }
+  }, [activeEditor, setIsRubyEditMode]);
+
   const onCodeLanguageSelect = useCallback(
     (value: string | null) => {
       activeEditor.update(() => {
@@ -1149,6 +1172,15 @@ export default function ToolbarPlugin({
             title={`Insert link (${SHORTCUTS.INSERT_LINK})`}
             type="button">
             <i className="format link" />
+          </button>
+          <button
+            disabled={!isEditable}
+            onClick={insertRuby}
+            className="toolbar-item spaced"
+            aria-label="Insert ruby annotation"
+            title="Insert ruby annotation"
+            type="button">
+            <i className="format ruby" />
           </button>
           <DropdownColorPicker
             disabled={!isEditable}

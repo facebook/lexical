@@ -1221,8 +1221,17 @@ function $handleInput(event: InputEvent): boolean {
       hadOrphanedCompositionEvents = true;
     }
 
+    const inputAnchorNode = selection.anchor.getNode();
+    const isCompositionOnToken =
+      event.inputType === 'insertCompositionText' &&
+      !isFirefoxEndingComposition &&
+      editor.isComposing() &&
+      $isTextNode(inputAnchorNode) &&
+      $isTokenOrSegmented(inputAnchorNode);
+
     if (
       !isOrphanedCompositionEnd &&
+      !isCompositionOnToken &&
       $shouldPreventDefaultAndInsertText(
         selection,
         targetRange,
@@ -1237,8 +1246,13 @@ function $handleInput(event: InputEvent): boolean {
       // to ensure to disable composition before dispatching the
       // insertText command for when changing the sequence for FF.
       if (isFirefoxEndingComposition) {
-        $onCompositionEndImpl(editor, data);
+        const tokenRedirected = $onCompositionEndImpl(editor, data);
         isFirefoxEndingComposition = false;
+        if (tokenRedirected) {
+          $addUpdateTag(COMPOSITION_END_TAG);
+          $flushMutations();
+          return true;
+        }
       }
       const anchor = selection.anchor;
       const anchorNode = anchor.getNode();
@@ -1342,7 +1356,12 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
       !selection.isCollapsed() ||
       (!IS_ANDROID_CHROME &&
         (node.getFormat() !== selection.format ||
-          ($isTextNode(node) && node.getStyle() !== selection.style)))
+          ($isTextNode(node) && node.getStyle() !== selection.style))) ||
+      ($isTextNode(node) &&
+        ($isTokenOrSegmented(node) ||
+          (anchor.offset === 0 && !node.canInsertTextBefore()) ||
+          (anchor.offset === node.getTextContentSize() &&
+            !node.canInsertTextAfter())))
     ) {
       // We insert a zero width character, ready for the composition
       // to get inserted into the new node we create. If
@@ -1353,6 +1372,10 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
         CONTROLLED_TEXT_INSERTION_COMMAND,
         COMPOSITION_START_CHAR,
       );
+      const updatedSelection = $getSelection();
+      if ($isRangeSelection(updatedSelection)) {
+        $setCompositionKey(updatedSelection.anchor.key);
+      }
     }
   }
 
@@ -1366,7 +1389,7 @@ function $handleCompositionEnd(event: CompositionEvent): boolean {
   return true;
 }
 
-function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
+function $onCompositionEndImpl(editor: LexicalEditor, data?: string): boolean {
   const compositionKey = editor._compositionKey;
   $setCompositionKey(null);
 
@@ -1410,7 +1433,7 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
           true,
         );
       }
-      return;
+      return false;
     } else if (data[data.length - 1] === '\n') {
       const selection = $getSelection();
 
@@ -1422,12 +1445,29 @@ function $onCompositionEndImpl(editor: LexicalEditor, data?: string): void {
           selection.anchor.set(focus.key, focus.offset, focus.type);
         }
         dispatchCommand(editor, KEY_ENTER_COMMAND, null);
-        return;
+        return false;
       }
+    }
+
+    // When composition ends on a token node, markDirty reverts its DOM
+    // but the composed text is lost. Redirect it to the adjacent TextNode
+    // via the existing token-redirect logic in selection.insertText.
+    const node = $getNodeByKey(compositionKey);
+    if (node !== null && $isTextNode(node) && $isTokenOrSegmented(node)) {
+      node.markDirty();
+      const selection = $getSelection();
+      const textLen = node.getTextContentSize();
+      const offset =
+        $isRangeSelection(selection) && selection.anchor.key === compositionKey
+          ? selection.anchor.offset
+          : textLen;
+      node.select(offset, offset).insertText(data);
+      return true;
     }
   }
 
   $updateSelectedTextFromDOM(true, editor, data);
+  return false;
 }
 
 function onCompositionEnd(

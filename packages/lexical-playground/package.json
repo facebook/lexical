@@ -40,6 +40,8 @@
     "@lexical/text": "workspace:*",
     "@lexical/utils": "workspace:*",
     "@lexical/yjs": "workspace:*",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "date-fns": "^4.1.0",
     "katex": "^0.16.10",
     "lexical": "workspace:*",

@@ -52,6 +52,8 @@ import {
   RichTextExtension,
 } from '@lexical/rich-text';
 import {TableExtension} from '@lexical/table';
+import {Analytics} from '@vercel/analytics/react';
+import {SpeedInsights} from '@vercel/speed-insights/react';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -482,6 +484,8 @@ export default function PlaygroundApp(): JSX.Element {
           />
         </svg>
       </a>
+      <Analytics />
+      <SpeedInsights />
     </SettingsContext>
   );
 }

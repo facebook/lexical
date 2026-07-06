@@ -83,6 +83,53 @@ export function createLinkMatcherWithRegExp(
   };
 }
 
+const URL_REGEX =
+  /((https?:\/\/(www\.)?)|(www\.))[-\p{L}\p{N}@:%._+~#=]{1,256}\.[\p{L}\p{N}]{1,6}(?:[-\p{L}\p{N}()@:%_+.~#?&//=]*[\p{L}\p{N}()@_~#?&//=])?/u;
+
+const EMAIL_REGEX =
+  /(([^<>()[\]\\.,;:\s@"]{1,64}(\.[^<>()[\]\\.,;:\s@"]{1,64}){0,63})|(".{1,255}"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]{1,63}\.){1,127}[a-zA-Z]{2,63}))/;
+
+/**
+ * A ready-to-use {@link LinkMatcher} for URLs with full Unicode support
+ * (`\\p{L}`, `\\p{N}`). Handles parenthesis balancing so that Wikipedia-style
+ * URLs like `https://en.wikipedia.org/wiki/Fish_(disambiguation)` are matched
+ * correctly even when wrapped in prose parentheses.
+ */
+export const autoLinkUrlMatcher: LinkMatcher = text => {
+  const match = URL_REGEX.exec(text);
+  if (match === null) {
+    return null;
+  }
+  let matched = match[0];
+  let depth = 0;
+  for (const ch of matched) {
+    if (ch === '(') {
+      depth++;
+    } else if (ch === ')') {
+      depth--;
+    }
+  }
+  while (depth < 0 && matched.endsWith(')')) {
+    matched = matched.slice(0, -1);
+    depth++;
+  }
+  return {
+    index: match.index,
+    length: matched.length,
+    text: matched,
+    url: matched.startsWith('http') ? matched : `https://${matched}`,
+  };
+};
+
+/**
+ * A ready-to-use {@link LinkMatcher} for email addresses. Bounded quantifiers
+ * keep matching linear-time; the limits comfortably exceed RFC 5321 maximums.
+ */
+export const autoLinkEmailMatcher: LinkMatcher = createLinkMatcherWithRegExp(
+  EMAIL_REGEX,
+  text => `mailto:${text}`,
+);
+
 function findFirstMatch(
   text: string,
   matchers: LinkMatcher[],
@@ -628,11 +675,10 @@ export function registerAutoLink(
 
 /**
  * An extension to automatically create AutoLinkNode from text
- * that matches the configured matchers. No default implementation
- * is provided for any matcher, see {@link createLinkMatcherWithRegExp}
- * for a helper function to create a matcher from a RegExp, and the
- * Playground's [AutoLinkPlugin](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/AutoLinkPlugin/index.tsx)
- * for some example RegExps that could be used.
+ * that matches the configured matchers. For ready-to-use matchers see
+ * {@link autoLinkUrlMatcher} (Unicode URL detection with parenthesis
+ * balancing) and {@link autoLinkEmailMatcher} (email addresses). To build
+ * a custom matcher from a RegExp, see {@link createLinkMatcherWithRegExp}.
  *
  * The given `matchers` and `changeHandlers` will be merged by
  * concatenating the configured arrays.

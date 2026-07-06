@@ -15,6 +15,7 @@ import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  COMPOSITION_END_COMMAND,
   COMPOSITION_END_TAG,
   COMPOSITION_START_TAG,
   LexicalEditor,
@@ -85,7 +86,7 @@ describe('compose() helper — browser composition tests', () => {
     const rootElement = editor.getRootElement()!;
     await focusAtStart(rootElement);
 
-    await compose({rootElement}, korean(['ㅎ', '하', '한']));
+    await compose({editor, rootElement}, korean(['ㅎ', '하', '한']));
 
     editor.read(() => {
       expect($getRoot().getTextContent()).toBe('한');
@@ -101,8 +102,8 @@ describe('compose() helper — browser composition tests', () => {
     const rootElement = editor.getRootElement()!;
     await focusAtStart(rootElement);
 
-    await compose({rootElement}, korean(['ㅎ', '하', '한']));
-    await compose({rootElement}, korean(['ㄱ', '그', '글']));
+    await compose({editor, rootElement}, korean(['ㅎ', '하', '한']));
+    await compose({editor, rootElement}, korean(['ㄱ', '그', '글']));
 
     const text = editor.read(() => $getRoot().getTextContent());
     expect(text).toBe('한글');
@@ -119,7 +120,10 @@ describe('compose() helper — browser composition tests', () => {
     const rootElement = editor.getRootElement()!;
     await focusAtEnd(rootElement);
 
-    await compose({rootElement}, korean(['ㅅ', '세', '셰', '셰ㄱ', '세계']));
+    await compose(
+      {editor, rootElement},
+      korean(['ㅅ', '세', '셰', '셰ㄱ', '세계']),
+    );
 
     const text = editor.read(() => $getRoot().getTextContent());
     expect(text).toBe('hello 세계');
@@ -137,7 +141,7 @@ describe('compose() helper — browser composition tests', () => {
     await focusAtEnd(rootElement);
 
     await compose(
-      {rootElement},
+      {editor, rootElement},
       {
         cancel: true,
         steps: [{text: 'ㅎ'}, {text: '하'}],
@@ -161,7 +165,7 @@ describe('compose() helper — browser composition tests', () => {
     const rootElement = editor.getRootElement()!;
     await focusAtEnd(rootElement);
 
-    await compose({rootElement}, korean(['ㅎ', '하', '한']));
+    await compose({editor, rootElement}, korean(['ㅎ', '하', '한']));
 
     editor.read(() => {
       const text = $getRoot().getTextContent();
@@ -189,7 +193,7 @@ describe('compose() helper — browser composition tests', () => {
         .setBaseAndExtent(textSpan.firstChild, 0, textSpan.firstChild, 5);
     }
 
-    await compose({rootElement}, korean(['ㅎ', '하', '한']));
+    await compose({editor, rootElement}, korean(['ㅎ', '하', '한']));
 
     const text = editor.read(() => $getRoot().getTextContent());
     expect(text).toBe('한');
@@ -200,9 +204,9 @@ describe('compose() helper — browser composition tests', () => {
     const rootElement = editor.getRootElement()!;
     await focusAtStart(rootElement);
 
-    await compose({rootElement}, korean(['ㅎ', '하', '한']));
-    await compose({rootElement}, korean(['ㄱ', '그', '글']));
-    await compose({rootElement}, korean(['ㅇ', '이', '임']));
+    await compose({editor, rootElement}, korean(['ㅎ', '하', '한']));
+    await compose({editor, rootElement}, korean(['ㄱ', '그', '글']));
+    await compose({editor, rootElement}, korean(['ㅇ', '이', '임']));
 
     const text = editor.read(() => $getRoot().getTextContent());
     expect(text).toBe('한글임');
@@ -225,7 +229,7 @@ describe('compose() helper — browser composition tests', () => {
       document.getSelection()!.collapse(textSpan.firstChild, 5);
     }
 
-    await compose({rootElement}, korean(['ㅎ', '하', '한']));
+    await compose({editor, rootElement}, korean(['ㅎ', '하', '한']));
 
     editor.read(() => {
       expect($getRoot().getTextContent()).toBe('hello한world');
@@ -248,7 +252,7 @@ describe('compose() helper — browser composition tests', () => {
     const rootElement = editor.getRootElement()!;
     await focusAtEnd(rootElement);
 
-    await compose({rootElement}, korean(['ㅎ', '하', '한']));
+    await compose({editor, rootElement}, korean(['ㅎ', '하', '한']));
     expect(editor.read(() => $getRoot().getTextContent())).toBe('abc한');
 
     editor.dispatchCommand(UNDO_COMMAND, undefined);
@@ -264,7 +268,7 @@ describe('compose() helper — browser composition tests', () => {
     await focusAtStart(rootElement);
 
     await compose(
-      {rootElement},
+      {editor, rootElement},
       {
         commitText: 'すし',
         steps: [
@@ -303,7 +307,7 @@ describe('compose() helper — browser composition tests', () => {
       document.getSelection()!.collapse(textSpan.firstChild, 1);
     }
 
-    await compose({rootElement}, korean(['ㅎ', '하', '한']));
+    await compose({editor, rootElement}, korean(['ㅎ', '하', '한']));
 
     const text = editor.read(() => $getRoot().getTextContent());
     expect(text).toBe('a한b');
@@ -319,7 +323,7 @@ describe('Composition edge cases', () => {
     // Empty paragraph has no text spans before composition.
     expect(rootElement.querySelector('[data-lexical-text]')).toBeNull();
 
-    await compose({rootElement}, korean(['ㅎ', '하', '한']));
+    await compose({editor, rootElement}, korean(['ㅎ', '하', '한']));
 
     const text = editor.read(() => $getRoot().getTextContent());
     expect(text).toBe('한');
@@ -340,7 +344,7 @@ describe('Composition edge cases', () => {
     const rootElement = editor.getRootElement()!;
     await focusAtEnd(rootElement);
 
-    await compose({rootElement}, korean(['ㅎ', '하', '한']));
+    await compose({editor, rootElement}, korean(['ㅎ', '하', '한']));
 
     const text = editor.read(() => $getRoot().getTextContent());
     expect(text).toBe('code한');
@@ -359,7 +363,7 @@ describe('Composition edge cases', () => {
 
     // Simulate typing then backspacing all composed text.
     await compose(
-      {rootElement},
+      {editor, rootElement},
       {
         commitText: '',
         steps: [{text: 'ㅎ'}, {text: '하'}, {text: 'ㅎ'}, {text: ''}],
@@ -376,7 +380,7 @@ describe('Composition edge cases', () => {
     await focusAtStart(rootElement);
 
     await compose(
-      {rootElement},
+      {editor, rootElement},
       {
         commitText: '確定\n',
         steps: [{text: '確'}, {text: '確定'}],
@@ -400,7 +404,7 @@ describe('Composition edge cases', () => {
     const rootElement = editor.getRootElement()!;
     await focusAtEnd(rootElement);
 
-    await compose({rootElement}, korean(['ㅎ', '하', '한']));
+    await compose({editor, rootElement}, korean(['ㅎ', '하', '한']));
 
     editor.update(() => {
       const sel = $getSelection();
@@ -420,7 +424,7 @@ describe('Composition edge cases', () => {
     await focusAtStart(rootElement);
 
     await compose(
-      {rootElement},
+      {editor, rootElement},
       {
         commitText: 'かん',
         steps: [
@@ -450,24 +454,12 @@ describe('Composition state tracking', () => {
     await waitForRender();
     expect(editor.isComposing()).toBe(true);
 
-    // End it via a full compose sequence on a fresh editor to verify
-    // the flag clears.
-    rootElement.dispatchEvent(
+    // Dispatch COMPOSITION_END_COMMAND directly (bypasses platform deferral).
+    editor.dispatchCommand(
+      COMPOSITION_END_COMMAND,
       new CompositionEvent('compositionend', {bubbles: true, data: ''}),
     );
     await waitForRender();
-
-    if (IS_FIREFOX) {
-      // Firefox defers compositionend processing until the next input event.
-      const inputEvent = new InputEvent('input', {
-        bubbles: true,
-        data: '',
-        inputType: 'insertCompositionText',
-      });
-      Object.defineProperty(inputEvent, 'isComposing', {value: false});
-      rootElement.dispatchEvent(inputEvent);
-      await waitForRender();
-    }
 
     expect(editor.isComposing()).toBe(false);
   });
@@ -552,13 +544,10 @@ describe('Composition state tracking', () => {
     expect(editor.read(() => $getRoot().getTextContent())).toContain('ㅎ');
     expect(editor.isComposing()).toBe(true);
 
-    // End composition so cleanup doesn't see dangling state.
-    rootElement.dispatchEvent(
-      new CompositionEvent('compositionend', {
-        bubbles: true,
-        cancelable: true,
-        data: 'ㅎ',
-      }),
+    // Dispatch COMPOSITION_END_COMMAND directly (bypasses platform deferral).
+    editor.dispatchCommand(
+      COMPOSITION_END_COMMAND,
+      new CompositionEvent('compositionend', {bubbles: true, data: 'ㅎ'}),
     );
     await waitForRender();
     expect(editor.isComposing()).toBe(false);
@@ -576,7 +565,7 @@ describe('Composition state tracking', () => {
       }
     });
 
-    await compose({rootElement}, korean(['ㅎ', '하', '한']));
+    await compose({editor, rootElement}, korean(['ㅎ', '하', '한']));
 
     expect(
       observedTags.some(tags => tags.includes(COMPOSITION_START_TAG)),
@@ -606,7 +595,7 @@ describe('Firefox deferred compositionend', () => {
         observedTags.push(Array.from(tags));
       });
 
-      await compose({rootElement}, korean(['ㅎ', '하', '한']));
+      await compose({editor, rootElement}, korean(['ㅎ', '하', '한']));
 
       expect(
         observedTags.some(tags => tags.includes(COMPOSITION_END_TAG)),

@@ -12,20 +12,24 @@
  * with direct DOM text-node mutations (since untrusted events don't
  * trigger browser-level DOM updates).
  *
- * Chrome/Safari order:
- *   compositionstart → (compositionupdate + beforeinput + DOM mutation +
- *   input)* → beforeinput(insertCompositionText, final) + DOM mutation +
- *   input(isComposing=false) → compositionend
+ * Intermediate steps (each keystroke):
+ *   keydown(Process) → compositionstart (first only) → compositionupdate →
+ *   beforeinput(insertCompositionText) → DOM mutation → input(isComposing=true)
  *
- * Firefox order:
- *   compositionstart → (compositionupdate + beforeinput + DOM mutation +
- *   input)* → compositionend → input(isComposing=false)
+ * Commit / cancel:
+ *   DOM mutation (final text or revert) → COMPOSITION_END_COMMAND dispatched
+ *   directly through the editor.  This bypasses the platform-specific
+ *   deferral in Lexical's native compositionend handler (Safari sets a flag
+ *   and defers to the next keydown; Firefox defers to the next input event),
+ *   giving the test a single deterministic code path for all browsers.
  *
  * Between each event, the browser yields to the microtask queue so
  * deferred editor updates commit before the next event fires. We
  * replicate this with `await flush()` after every event that triggers
  * a Lexical `updateEditorSync` (compositionstart, input).
  */
+
+import {COMPOSITION_END_COMMAND, type LexicalEditor} from 'lexical';
 
 export interface CompositionStep {
   /** The cumulative composing text at this step. */
@@ -53,6 +57,8 @@ export interface CompositionSequence {
 interface CompositionTarget {
   /** The contentEditable root element the editor is attached to. */
   rootElement: HTMLElement;
+  /** The Lexical editor instance — used to dispatch COMPOSITION_END_COMMAND. */
+  editor: LexicalEditor;
 }
 
 function getActiveTextNode(root: HTMLElement): Text | null {
@@ -193,9 +199,6 @@ export async function compose(
     return;
   }
 
-  const isFirefox =
-    typeof navigator !== 'undefined' && /Firefox/i.test(navigator.userAgent);
-
   let previousComposingLength = 0;
   let composingStart = 0;
 
@@ -267,47 +270,20 @@ export async function compose(
   }
 
   // --- commit or cancel ---
+  // Instead of dispatching a DOM compositionend event (which Lexical
+  // defers on Safari and Firefox), we apply the final DOM mutation and
+  // then dispatch COMPOSITION_END_COMMAND directly through the editor.
+  // This gives a single deterministic path on all browsers.
   if (cancel) {
     rootElement.dispatchEvent(
       new KeyboardEvent('keydown', {bubbles: true, key: 'Escape'}),
     );
-    // Revert the composing text.
     applyDOMMutation(rootElement, '', composingStart, previousComposingLength);
     const textNode = getActiveTextNode(rootElement);
     if (textNode) {
       setSelectionAt(textNode, composingStart, composingStart);
     }
-
-    dispatchCompositionEvent(rootElement, 'compositionend', '');
-    dispatchInputEvent(rootElement, '', 'insertCompositionText', false);
-    await flush();
   } else {
-    // Build the commit targetRange (composing region before final mutation).
-    const commitRangeNode = getActiveTextNode(rootElement);
-    const commitTargetRange =
-      commitRangeNode != null
-        ? new StaticRange({
-            endContainer: commitRangeNode,
-            endOffset: composingStart + previousComposingLength,
-            startContainer: commitRangeNode,
-            startOffset: composingStart,
-          })
-        : undefined;
-
-    // Firefox fires compositionend before the final input; Chrome/Safari
-    // fires it after. The beforeinput → mutation → input sequence is the
-    // same in both — only compositionend placement differs.
-    if (isFirefox) {
-      dispatchCompositionEvent(rootElement, 'compositionend', commitText);
-      await flush();
-    }
-
-    dispatchBeforeInput(
-      rootElement,
-      commitText,
-      'insertCompositionText',
-      commitTargetRange,
-    );
     const textNode = applyDOMMutation(
       rootElement,
       commitText,
@@ -319,14 +295,18 @@ export async function compose(
       composingStart + commitText.length,
       composingStart + commitText.length,
     );
-    dispatchInputEvent(rootElement, commitText, 'insertCompositionText', false);
-    await flush();
-
-    if (!isFirefox) {
-      dispatchCompositionEvent(rootElement, 'compositionend', commitText);
-      await flush();
-    }
   }
+
+  const endData = cancel ? '' : commitText;
+  target.editor.dispatchCommand(
+    COMPOSITION_END_COMMAND,
+    new CompositionEvent('compositionend', {
+      bubbles: true,
+      cancelable: true,
+      data: endData,
+    }),
+  );
+  await flush();
 }
 
 /**

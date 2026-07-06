@@ -15,16 +15,15 @@
  * same signal on Firefox.
  */
 
-import {registerRichText} from '@lexical/rich-text';
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   COMPOSITION_END_TAG,
-  LexicalEditor,
 } from 'lexical';
-import {createTestEditor} from 'lexical/src/__tests__/utils';
-import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
+import {describe, expect, onTestFinished, test, vi} from 'vitest';
 
 vi.mock('lexical/src/environment', () => ({
   CAN_USE_BEFORE_INPUT: true,
@@ -40,47 +39,34 @@ vi.mock('lexical/src/environment', () => ({
 }));
 
 describe('Firefox composition-end tag forwarding', () => {
-  let container: HTMLDivElement;
-  let editor: LexicalEditor;
-
-  beforeEach(() => {
-    container = document.createElement('div');
-    container.setAttribute('data-lexical-editor', 'true');
+  test('onInput emits COMPOSITION_END_TAG after a deferred compositionend', async () => {
+    const container = document.createElement('div');
     container.contentEditable = 'true';
     document.body.appendChild(container);
-    editor = createTestEditor();
-    registerRichText(editor);
-    editor.setRootElement(container);
-  });
-
-  afterEach(() => {
-    editor.setRootElement(null);
-    document.body.removeChild(container);
-  });
-
-  test('onInput emits COMPOSITION_END_TAG after a deferred compositionend', async () => {
-    editor.update(
-      () => {
+    const editor = buildEditorFromExtensions({
+      $initialEditorState: () => {
         const paragraph = $createParagraphNode().append($createTextNode('-'));
-        $getRoot().clear().append(paragraph);
+        $getRoot().append(paragraph);
         paragraph.selectEnd();
       },
-      {discrete: true},
-    );
+      dependencies: [RichTextExtension],
+      name: 'test',
+    });
+    editor.setRootElement(container);
+    onTestFinished(() => {
+      editor.setRootElement(null);
+      document.body.removeChild(container);
+    });
 
     const observedTagSets: string[][] = [];
     editor.registerUpdateListener(({tags}) => {
       observedTagSets.push(Array.from(tags));
     });
 
-    // Firefox routes compositionend through `isFirefoxEndingComposition`; this
-    // event alone doesn't run $onCompositionEndImpl yet.
     container.dispatchEvent(
       new CompositionEvent('compositionend', {bubbles: true, data: ' '}),
     );
 
-    // The deferred composition end runs inside this onInput. The fix adds
-    // COMPOSITION_END_TAG here.
     const inputEvent = new InputEvent('input', {
       bubbles: true,
       data: ' ',
@@ -89,7 +75,6 @@ describe('Firefox composition-end tag forwarding', () => {
     Object.defineProperty(inputEvent, 'isComposing', {value: false});
     container.dispatchEvent(inputEvent);
 
-    // Update listeners fire on a microtask; let them flush before asserting.
     await Promise.resolve();
 
     expect(

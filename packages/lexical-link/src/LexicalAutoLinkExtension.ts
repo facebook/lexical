@@ -675,11 +675,10 @@ export function registerAutoLink(
 
 /**
  * An extension to automatically create AutoLinkNode from text
- * that matches the configured matchers. No default implementation
- * is provided for any matcher, see {@link createLinkMatcherWithRegExp}
- * for a helper function to create a matcher from a RegExp, and the
- * Playground's [AutoLinkPlugin](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/AutoLinkPlugin/index.tsx)
- * for some example RegExps that could be used.
+ * that matches the configured matchers. For ready-to-use matchers see
+ * {@link autoLinkUrlMatcher} (Unicode URL detection with parenthesis
+ * balancing) and {@link autoLinkEmailMatcher} (email addresses). To build
+ * a custom matcher from a RegExp, see {@link createLinkMatcherWithRegExp}.
  *
  * The given `matchers` and `changeHandlers` will be merged by
  * concatenating the configured arrays.

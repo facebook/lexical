@@ -88,8 +88,15 @@ describe('compose() helper — browser composition tests', () => {
 
     await compose({rootElement}, korean(['ㅎ', '하', '한']));
 
-    const text = editor.read(() => $getRoot().getTextContent());
-    expect(text).toBe('한');
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('한');
+      const sel = $getSelection();
+      expect($isRangeSelection(sel)).toBe(true);
+      if ($isRangeSelection(sel)) {
+        expect(sel.isCollapsed()).toBe(true);
+        expect(sel.anchor.offset).toBe(1);
+      }
+    });
   });
 
   test('Korean two-syllable composition', async () => {
@@ -223,8 +230,15 @@ describe('compose() helper — browser composition tests', () => {
 
     await compose({rootElement}, korean(['ㅎ', '하', '한']));
 
-    const text = editor.read(() => $getRoot().getTextContent());
-    expect(text).toBe('hello한world');
+    editor.read(() => {
+      expect($getRoot().getTextContent()).toBe('hello한world');
+      const sel = $getSelection();
+      expect($isRangeSelection(sel)).toBe(true);
+      if ($isRangeSelection(sel)) {
+        expect(sel.isCollapsed()).toBe(true);
+        expect(sel.anchor.offset).toBe(6);
+      }
+    });
   });
 
   test('composition then undo reverts to previous state', async () => {
@@ -301,7 +315,7 @@ describe('compose() helper — browser composition tests', () => {
   });
 });
 
-describe('Unverified path coverage', () => {
+describe('Composition edge cases', () => {
   test('composition in empty paragraph (element anchor ZWSP path)', async () => {
     const editor = createEditor();
     const rootElement = editor.getRootElement()!;
@@ -460,6 +474,98 @@ describe('Composition state tracking', () => {
       await waitForRender();
     }
 
+    expect(editor.isComposing()).toBe(false);
+  });
+
+  test('composing text is visible in model before commit', async () => {
+    const editor = createEditor();
+    const rootElement = editor.getRootElement()!;
+    await focusAtStart(rootElement);
+
+    // Manually dispatch composition start + one step (no commit).
+    rootElement.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        bubbles: true,
+        key: 'Process',
+        keyCode: 229,
+      }),
+    );
+    rootElement.dispatchEvent(
+      new CompositionEvent('compositionstart', {
+        bubbles: true,
+        cancelable: true,
+        data: '',
+      }),
+    );
+    await waitForRender();
+    expect(editor.isComposing()).toBe(true);
+
+    const composingStart = document.getSelection()?.focusOffset ?? 0;
+
+    rootElement.dispatchEvent(
+      new CompositionEvent('compositionupdate', {
+        bubbles: true,
+        cancelable: true,
+        data: 'ㅎ',
+      }),
+    );
+
+    // DOM mutation (untrusted events don't trigger real mutations).
+    const sel = document.getSelection()!;
+    let textNode: Text;
+    if (sel.focusNode instanceof Text && rootElement.contains(sel.focusNode)) {
+      textNode = sel.focusNode;
+    } else if (
+      sel.focusNode instanceof HTMLElement &&
+      rootElement.contains(sel.focusNode)
+    ) {
+      const br = sel.focusNode.querySelector('br');
+      if (br) {
+        br.remove();
+      }
+      textNode = document.createTextNode('');
+      sel.focusNode.appendChild(textNode);
+    } else {
+      throw new Error('no insertion point');
+    }
+    const v = textNode.nodeValue || '';
+    textNode.nodeValue =
+      v.slice(0, composingStart) + 'ㅎ' + v.slice(composingStart);
+    sel.collapse(textNode, composingStart + 1);
+
+    const bi = new InputEvent('beforeinput', {
+      bubbles: true,
+      cancelable: true,
+      data: 'ㅎ',
+      inputType: 'insertCompositionText',
+    });
+    Object.defineProperty(bi, 'getTargetRanges', {value: () => []});
+    rootElement.dispatchEvent(bi);
+
+    const inp = new InputEvent('input', {
+      bubbles: true,
+      cancelable: false,
+      data: 'ㅎ',
+      inputType: 'insertCompositionText',
+    });
+    Object.defineProperty(inp, 'isComposing', {value: true});
+    rootElement.dispatchEvent(inp);
+    await waitForRender();
+
+    // Model must reflect composing text while composition is still active.
+    // ZWSP may be present (inserted at compositionstart for element anchors).
+    expect(editor.read(() => $getRoot().getTextContent())).toContain('ㅎ');
+    expect(editor.isComposing()).toBe(true);
+
+    // End composition so cleanup doesn't see dangling state.
+    rootElement.dispatchEvent(
+      new CompositionEvent('compositionend', {
+        bubbles: true,
+        cancelable: true,
+        data: 'ㅎ',
+      }),
+    );
+    await waitForRender();
     expect(editor.isComposing()).toBe(false);
   });
 

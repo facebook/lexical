@@ -970,11 +970,11 @@ function $tryInlineGridLineNavigation(
   }
   const siblingDOM = editor.getElementByKey(siblingBlock.getKey());
   if (siblingDOM === null) {
-    return true;
+    return false;
   }
   const domSelection = getDOMSelection(win);
   if (domSelection === null || domSelection.rangeCount === 0) {
-    return true;
+    return false;
   }
   const curRange = domSelection.getRangeAt(0).cloneRange();
   curRange.collapse(true);
@@ -983,7 +983,7 @@ function $tryInlineGridLineNavigation(
   const targetY = sibRect.top + sibRect.height / 2;
   if (curRect.height > 0) {
     const hit = caretFromPoint(curRect.left, targetY, rootElement);
-    if (hit !== null && rootElement.contains(hit.node)) {
+    if (hit !== null && siblingDOM.contains(hit.node)) {
       const hitRange = rootElement.ownerDocument.createRange();
       hitRange.setStart(hit.node, hit.offset);
       hitRange.collapse(true);

@@ -1753,7 +1753,12 @@ export class RangeSelection implements BaseSelection {
     // When focus sits at a TextNode boundary, pre-normalize the DOM
     // selection into the adjacent sibling's Text node so that the
     // native Selection.modify can cross inline-grid/flex spans (#7301).
-    if (nextFocusDOM && granularity === 'character' && $isTextNode(focusNode)) {
+    if (
+      nextFocusDOM &&
+      granularity === 'character' &&
+      $isTextNode(focusNode) &&
+      focusNode.isUnmergeable()
+    ) {
       const atBoundary = isBackward
         ? this.focus.offset === 0
         : this.focus.offset === focusNode.getTextContentSize();

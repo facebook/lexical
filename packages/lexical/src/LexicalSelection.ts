@@ -1724,21 +1724,20 @@ export class RangeSelection implements BaseSelection {
     ) {
       removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
     }
+    const focusKeyedDOM = getElementByKeyOrThrow(editor, this.focus.key);
+    let nextFocusDOM: HTMLElement | Text | null = focusKeyedDOM;
+    if (this.focus.type === 'text') {
+      nextFocusDOM = $isTextNode(focusNode)
+        ? $getDOMTextNode(focusNode, focusKeyedDOM, editor)
+        : null;
+    }
     if (this.dirty) {
       const anchorKeyedDOM = getElementByKeyOrThrow(editor, this.anchor.key);
-      const focusKeyedDOM = getElementByKeyOrThrow(editor, this.focus.key);
       let nextAnchorDOM: HTMLElement | Text | null = anchorKeyedDOM;
-      let nextFocusDOM: HTMLElement | Text | null = focusKeyedDOM;
       if (this.anchor.type === 'text') {
         const node = this.anchor.getNode();
         nextAnchorDOM = $isTextNode(node)
           ? $getDOMTextNode(node, anchorKeyedDOM, editor)
-          : null;
-      }
-      if (this.focus.type === 'text') {
-        const node = this.focus.getNode();
-        nextFocusDOM = $isTextNode(node)
-          ? $getDOMTextNode(node, focusKeyedDOM, editor)
           : null;
       }
       if (nextAnchorDOM && nextFocusDOM) {
@@ -1749,6 +1748,52 @@ export class RangeSelection implements BaseSelection {
           nextFocusDOM,
           this.focus.offset,
         );
+      }
+    }
+    // When focus sits at a TextNode boundary, pre-normalize the DOM
+    // selection into the adjacent sibling's Text node so that the
+    // native Selection.modify can cross inline-grid/flex spans (#7301).
+    if (nextFocusDOM && granularity === 'character' && $isTextNode(focusNode)) {
+      const atBoundary = isBackward
+        ? this.focus.offset === 0
+        : this.focus.offset === focusNode.getTextContentSize();
+      if (atBoundary) {
+        const sibling = $getSiblingCaret(
+          focusNode,
+          isBackward ? 'previous' : 'next',
+        ).getNodeAtCaret();
+        if ($isTextNode(sibling)) {
+          const sibKeyedDOM = editor.getElementByKey(sibling.getKey());
+          const sibDOM = sibKeyedDOM
+            ? $getDOMTextNode(sibling, sibKeyedDOM, editor)
+            : null;
+          if (sibDOM) {
+            const sibOffset = isBackward ? sibDOM.length : 0;
+            if (collapse) {
+              setDOMSelectionBaseAndExtent(
+                domSelection,
+                sibDOM,
+                sibOffset,
+                sibDOM,
+                sibOffset,
+              );
+            } else {
+              const curAnchor = domSelection.anchorNode;
+              if (
+                curAnchor &&
+                (isDOMTextNode(curAnchor) || isHTMLElement(curAnchor))
+              ) {
+                setDOMSelectionBaseAndExtent(
+                  domSelection,
+                  curAnchor,
+                  domSelection.anchorOffset,
+                  sibDOM,
+                  sibOffset,
+                );
+              }
+            }
+          }
+        }
       }
     }
     // We use the DOM selection.modify API here to "tell" us what the selection

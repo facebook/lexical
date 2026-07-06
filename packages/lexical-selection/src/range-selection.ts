@@ -25,6 +25,7 @@ import {
   $extendCaretToRange,
   $findMatchingParent,
   $getPreviousSelection,
+  $getSiblingCaret,
   $hasAncestor,
   $isChildCaret,
   $isDecoratorNode,
@@ -34,6 +35,7 @@ import {
   $isRangeSelection,
   $isRootOrShadowRoot,
   $isTextNode,
+  $isTextPointCaret,
   $setSelection,
   flipDirection,
   getStyleObjectFromCSS,
@@ -549,6 +551,19 @@ export function $shouldOverrideDefaultCharacterSelection(
   );
   if ($isExtendableTextPointCaret(focusCaret)) {
     return false;
+  }
+  // At a plain-TextNode boundary adjacent to another plain TextNode,
+  // override so Lexical's modify() can pre-normalize across inline-grid/flex
+  // spans (#7301). Exclude TextNode subclasses (e.g. RubyNode) whose
+  // extensions provide their own arrow-key handling.
+  if ($isTextPointCaret(focusCaret) && focusCaret.origin.getType() === 'text') {
+    const sibling = $getSiblingCaret(
+      focusCaret.origin,
+      focusCaret.direction,
+    ).getNodeAtCaret();
+    if ($isTextNode(sibling) && sibling.getType() === 'text') {
+      return true;
+    }
   }
   for (const nextCaret of $extendCaretToRange(focusCaret)) {
     if ($isChildCaret(nextCaret)) {

@@ -13,6 +13,8 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
+  $isRangeSelection,
   COMPOSITION_END_TAG,
   COMPOSITION_START_TAG,
   LexicalEditor,
@@ -296,6 +298,131 @@ describe('compose() helper — browser composition tests', () => {
 
     const text = editor.read(() => $getRoot().getTextContent());
     expect(text).toBe('a한b');
+  });
+});
+
+describe('Unverified path coverage', () => {
+  test('composition in empty paragraph (element anchor ZWSP path)', async () => {
+    const editor = createEditor();
+    const rootElement = editor.getRootElement()!;
+    await focusAtStart(rootElement);
+
+    // Empty paragraph has no text spans before composition.
+    expect(rootElement.querySelector('[data-lexical-text]')).toBeNull();
+
+    await compose({rootElement}, korean(['ㅎ', '하', '한']));
+
+    const text = editor.read(() => $getRoot().getTextContent());
+    expect(text).toBe('한');
+    // ZWSP path must have created a text node; verify it exists post-compose.
+    expect(rootElement.querySelector('[data-lexical-text]')).not.toBeNull();
+  });
+
+  test('composition on token node redirects to sibling', async () => {
+    const editor = createEditor({
+      initialState: () => {
+        const p = $createParagraphNode();
+        const token = $createTextNode('code').setMode('token');
+        p.append(token);
+        $getRoot().append(p);
+        token.selectEnd();
+      },
+    });
+    const rootElement = editor.getRootElement()!;
+    await focusAtEnd(rootElement);
+
+    await compose({rootElement}, korean(['ㅎ', '하', '한']));
+
+    const text = editor.read(() => $getRoot().getTextContent());
+    expect(text).toBe('code한');
+  });
+
+  test('backspace-all composition ends with empty data', async () => {
+    const editor = createEditor({
+      initialState: () => {
+        const p = $createParagraphNode();
+        p.append($createTextNode('abc'));
+        $getRoot().append(p);
+      },
+    });
+    const rootElement = editor.getRootElement()!;
+    await focusAtEnd(rootElement);
+
+    // Simulate typing then backspacing all composed text.
+    await compose(
+      {rootElement},
+      {
+        commitText: '',
+        steps: [{text: 'ㅎ'}, {text: '하'}, {text: 'ㅎ'}, {text: ''}],
+      },
+    );
+
+    const text = editor.read(() => $getRoot().getTextContent());
+    expect(text).toBe('abc');
+  });
+
+  test('composition with newline commit creates new paragraph', async () => {
+    const editor = createEditor();
+    const rootElement = editor.getRootElement()!;
+    await focusAtStart(rootElement);
+
+    await compose(
+      {rootElement},
+      {
+        commitText: '確定\n',
+        steps: [{text: '確'}, {text: '確定'}],
+      },
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children.length).toBe(2);
+    });
+  });
+
+  test('latin text before and after composition', async () => {
+    const editor = createEditor({
+      initialState: () => {
+        const p = $createParagraphNode();
+        p.append($createTextNode('abc'));
+        $getRoot().append(p);
+      },
+    });
+    const rootElement = editor.getRootElement()!;
+    await focusAtEnd(rootElement);
+
+    await compose({rootElement}, korean(['ㅎ', '하', '한']));
+
+    editor.update(() => {
+      const sel = $getSelection();
+      if ($isRangeSelection(sel)) {
+        sel.insertText('def');
+      }
+    });
+    await waitForRender();
+
+    const text = editor.read(() => $getRoot().getTextContent());
+    expect(text).toBe('abc한def');
+  });
+
+  test('composition with explicit selection range', async () => {
+    const editor = createEditor();
+    const rootElement = editor.getRootElement()!;
+    await focusAtStart(rootElement);
+
+    await compose(
+      {rootElement},
+      {
+        commitText: 'かん',
+        steps: [
+          {selectionEnd: 1, selectionStart: 0, text: 'か'},
+          {selectionEnd: 2, selectionStart: 0, text: 'かん'},
+        ],
+      },
+    );
+
+    const text = editor.read(() => $getRoot().getTextContent());
+    expect(text).toBe('かん');
   });
 });
 

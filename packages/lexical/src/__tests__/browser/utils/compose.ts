@@ -188,29 +188,18 @@ export async function compose(
     typeof navigator !== 'undefined' && /Firefox/i.test(navigator.userAgent);
 
   let previousComposingLength = 0;
-
-  // --- compositionstart ---
-  rootElement.dispatchEvent(
-    new KeyboardEvent('keydown', {
-      bubbles: true,
-      key: 'Process',
-      keyCode: 229,
-    }),
-  );
-  dispatchCompositionEvent(rootElement, 'compositionstart', '');
-
-  // Re-read the cursor position AFTER compositionstart: Lexical may have
-  // inserted a ZWSP (format mismatch, element anchor, etc.), shifting the
-  // actual composing start offset.
-  const sel = document.getSelection();
-  const composingStart = sel ? sel.focusOffset : 0;
+  let composingStart = 0;
 
   // --- intermediate steps ---
-  for (const step of steps) {
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i];
     const {text} = step;
     const selStart = step.selectionStart ?? text.length;
     const selEnd = step.selectionEnd ?? selStart;
 
+    // Each keystroke fires keydown(Process). The first keystroke also
+    // triggers compositionstart before compositionupdate — this matches
+    // the real browser sequence where one keydown produces both events.
     rootElement.dispatchEvent(
       new KeyboardEvent('keydown', {
         bubbles: true,
@@ -218,6 +207,17 @@ export async function compose(
         keyCode: 229,
       }),
     );
+
+    if (i === 0) {
+      dispatchCompositionEvent(rootElement, 'compositionstart', '');
+
+      // Re-read the cursor position AFTER compositionstart: Lexical may
+      // have inserted a ZWSP (format mismatch, element anchor, etc.),
+      // shifting the actual composing start offset.
+      const sel = document.getSelection();
+      composingStart = sel ? sel.focusOffset : 0;
+    }
+
     dispatchCompositionEvent(rootElement, 'compositionupdate', text);
 
     const rangeNode = getActiveTextNode(rootElement);
@@ -257,6 +257,9 @@ export async function compose(
 
   // --- commit or cancel ---
   if (cancel) {
+    rootElement.dispatchEvent(
+      new KeyboardEvent('keydown', {bubbles: true, key: 'Escape'}),
+    );
     // Revert the composing text.
     applyDOMMutation(rootElement, '', composingStart, previousComposingLength);
     const textNode = getActiveTextNode(rootElement);
@@ -266,40 +269,8 @@ export async function compose(
 
     dispatchCompositionEvent(rootElement, 'compositionend', '');
     dispatchInputEvent(rootElement, '', 'insertCompositionText', false);
-  } else if (isFirefox) {
-    // Firefox: compositionend fires before the final input event.
-    dispatchCompositionEvent(rootElement, 'compositionend', commitText);
-
-    const commitRangeNode = getActiveTextNode(rootElement);
-    const commitTargetRange =
-      commitRangeNode != null
-        ? new StaticRange({
-            endContainer: commitRangeNode,
-            endOffset: composingStart + previousComposingLength,
-            startContainer: commitRangeNode,
-            startOffset: composingStart,
-          })
-        : undefined;
-    dispatchBeforeInput(
-      rootElement,
-      commitText,
-      'insertCompositionText',
-      commitTargetRange,
-    );
-    const textNode = applyDOMMutation(
-      rootElement,
-      commitText,
-      composingStart,
-      previousComposingLength,
-    );
-    setSelectionAt(
-      textNode,
-      composingStart + commitText.length,
-      composingStart + commitText.length,
-    );
-    dispatchInputEvent(rootElement, commitText, 'insertCompositionText', false);
   } else {
-    // Chrome/Safari: input fires before compositionend.
+    // Build the commit targetRange (composing region before final mutation).
     const commitRangeNode = getActiveTextNode(rootElement);
     const commitTargetRange =
       commitRangeNode != null
@@ -310,6 +281,14 @@ export async function compose(
             startOffset: composingStart,
           })
         : undefined;
+
+    // Firefox fires compositionend before the final input; Chrome/Safari
+    // fires it after. The beforeinput → mutation → input sequence is the
+    // same in both — only compositionend placement differs.
+    if (isFirefox) {
+      dispatchCompositionEvent(rootElement, 'compositionend', commitText);
+    }
+
     dispatchBeforeInput(
       rootElement,
       commitText,
@@ -329,7 +308,9 @@ export async function compose(
     );
     dispatchInputEvent(rootElement, commitText, 'insertCompositionText', false);
 
-    dispatchCompositionEvent(rootElement, 'compositionend', commitText);
+    if (!isFirefox) {
+      dispatchCompositionEvent(rootElement, 'compositionend', commitText);
+    }
   }
 
   // Let microtasks (update listeners, mutation observer) flush.

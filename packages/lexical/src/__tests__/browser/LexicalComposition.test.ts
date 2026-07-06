@@ -7,6 +7,7 @@
  */
 
 import {buildEditorFromExtensions} from '@lexical/extension';
+import {HistoryExtension} from '@lexical/history';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
@@ -15,6 +16,7 @@ import {
   COMPOSITION_END_TAG,
   COMPOSITION_START_TAG,
   LexicalEditor,
+  UNDO_COMMAND,
 } from 'lexical';
 import {describe, expect, onTestFinished, test} from 'vitest';
 
@@ -23,14 +25,22 @@ import {compose, korean} from './utils/compose';
 const IS_FIREFOX =
   typeof navigator !== 'undefined' && /Firefox/i.test(navigator.userAgent);
 
-function createEditor(initialState?: () => void): LexicalEditor {
+function createEditor(opts?: {
+  initialState?: () => void;
+  withHistory?: boolean;
+}): LexicalEditor {
+  const {initialState, withHistory} = opts ?? {};
+  const dependencies = [RichTextExtension];
+  if (withHistory) {
+    dependencies.push(HistoryExtension);
+  }
   const editor = buildEditorFromExtensions({
     $initialEditorState:
       initialState ??
       (() => {
         $getRoot().append($createParagraphNode());
       }),
-    dependencies: [RichTextExtension],
+    dependencies,
     name: 'test',
   });
   const root = document.createElement('div');
@@ -93,10 +103,12 @@ describe('compose() helper — browser composition tests', () => {
   });
 
   test('composition into existing text', async () => {
-    const editor = createEditor(() => {
-      const p = $createParagraphNode();
-      p.append($createTextNode('hello '));
-      $getRoot().append(p);
+    const editor = createEditor({
+      initialState: () => {
+        const p = $createParagraphNode();
+        p.append($createTextNode('hello '));
+        $getRoot().append(p);
+      },
     });
     const rootElement = editor.getRootElement()!;
     await focusAtEnd(rootElement);
@@ -108,10 +120,12 @@ describe('compose() helper — browser composition tests', () => {
   });
 
   test('cancelled composition reverts text', async () => {
-    const editor = createEditor(() => {
-      const p = $createParagraphNode();
-      p.append($createTextNode('abc'));
-      $getRoot().append(p);
+    const editor = createEditor({
+      initialState: () => {
+        const p = $createParagraphNode();
+        p.append($createTextNode('abc'));
+        $getRoot().append(p);
+      },
     });
     const rootElement = editor.getRootElement()!;
     await focusAtEnd(rootElement);
@@ -129,12 +143,14 @@ describe('compose() helper — browser composition tests', () => {
   });
 
   test('composition on bold-formatted text', async () => {
-    const editor = createEditor(() => {
-      const p = $createParagraphNode();
-      const bold = $createTextNode('bold').toggleFormat('bold');
-      p.append(bold);
-      $getRoot().append(p);
-      bold.selectEnd();
+    const editor = createEditor({
+      initialState: () => {
+        const p = $createParagraphNode();
+        const bold = $createTextNode('bold').toggleFormat('bold');
+        p.append(bold);
+        $getRoot().append(p);
+        bold.selectEnd();
+      },
     });
     const rootElement = editor.getRootElement()!;
     await focusAtEnd(rootElement);
@@ -148,12 +164,14 @@ describe('compose() helper — browser composition tests', () => {
   });
 
   test('composition replaces selected text', async () => {
-    const editor = createEditor(() => {
-      const p = $createParagraphNode();
-      const node = $createTextNode('hello');
-      p.append(node);
-      $getRoot().append(p);
-      node.select(0, 5);
+    const editor = createEditor({
+      initialState: () => {
+        const p = $createParagraphNode();
+        const node = $createTextNode('hello');
+        p.append(node);
+        $getRoot().append(p);
+        node.select(0, 5);
+      },
     });
     const rootElement = editor.getRootElement()!;
     await waitForRender();
@@ -182,6 +200,102 @@ describe('compose() helper — browser composition tests', () => {
 
     const text = editor.read(() => $getRoot().getTextContent());
     expect(text).toBe('한글임');
+  });
+
+  test('composition at middle of text', async () => {
+    const editor = createEditor({
+      initialState: () => {
+        const p = $createParagraphNode();
+        const node = $createTextNode('helloworld');
+        p.append(node);
+        $getRoot().append(p);
+      },
+    });
+    const rootElement = editor.getRootElement()!;
+    await waitForRender();
+    // Place cursor at offset 5 (between "hello" and "world").
+    const textSpan = rootElement.querySelector('[data-lexical-text]');
+    if (textSpan?.firstChild instanceof Text) {
+      document.getSelection()!.collapse(textSpan.firstChild, 5);
+    }
+
+    await compose({rootElement}, korean(['ㅎ', '하', '한']));
+
+    const text = editor.read(() => $getRoot().getTextContent());
+    expect(text).toBe('hello한world');
+  });
+
+  test('composition then undo reverts to previous state', async () => {
+    const editor = createEditor({
+      initialState: () => {
+        const p = $createParagraphNode();
+        p.append($createTextNode('abc'));
+        $getRoot().append(p);
+      },
+      withHistory: true,
+    });
+    const rootElement = editor.getRootElement()!;
+    await focusAtEnd(rootElement);
+
+    await compose({rootElement}, korean(['ㅎ', '하', '한']));
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('abc한');
+
+    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    await waitForRender();
+
+    const text = editor.read(() => $getRoot().getTextContent());
+    expect(text).toBe('abc');
+  });
+
+  test('Japanese romaji-to-hiragana composition', async () => {
+    const editor = createEditor();
+    const rootElement = editor.getRootElement()!;
+    await focusAtStart(rootElement);
+
+    await compose(
+      {rootElement},
+      {
+        commitText: 'すし',
+        steps: [
+          {text: 'ｓ'},
+          {text: 'す'},
+          {text: 'すｓ'},
+          {text: 'すｓｈ'},
+          {text: 'すし'},
+        ],
+      },
+    );
+
+    const text = editor.read(() => $getRoot().getTextContent());
+    expect(text).toBe('すし');
+  });
+
+  test('composition after arrow navigation', async () => {
+    const editor = createEditor({
+      initialState: () => {
+        const p = $createParagraphNode();
+        p.append($createTextNode('ab'));
+        $getRoot().append(p);
+      },
+    });
+    const rootElement = editor.getRootElement()!;
+    await focusAtEnd(rootElement);
+
+    // Move cursor left once: "ab|" → "a|b"
+    rootElement.dispatchEvent(
+      new KeyboardEvent('keydown', {bubbles: true, key: 'ArrowLeft'}),
+    );
+    await waitForRender();
+    // Manually adjust DOM selection to match (untrusted keydown doesn't move cursor).
+    const textSpan = rootElement.querySelector('[data-lexical-text]');
+    if (textSpan?.firstChild instanceof Text) {
+      document.getSelection()!.collapse(textSpan.firstChild, 1);
+    }
+
+    await compose({rootElement}, korean(['ㅎ', '하', '한']));
+
+    const text = editor.read(() => $getRoot().getTextContent());
+    expect(text).toBe('a한b');
   });
 });
 
@@ -249,10 +363,12 @@ describe('Firefox deferred compositionend', () => {
   test.skipIf(!IS_FIREFOX)(
     'COMPOSITION_END_TAG is emitted via deferred onInput path',
     async () => {
-      const editor = createEditor(() => {
-        const p = $createParagraphNode();
-        p.append($createTextNode('-'));
-        $getRoot().append(p);
+      const editor = createEditor({
+        initialState: () => {
+          const p = $createParagraphNode();
+          p.append($createTextNode('-'));
+          $getRoot().append(p);
+        },
       });
       const rootElement = editor.getRootElement()!;
       await focusAtEnd(rootElement);

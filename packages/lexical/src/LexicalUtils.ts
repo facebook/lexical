@@ -2128,14 +2128,7 @@ export function getRootOwnerDocument(
  * inside a Shadow DOM or a cross-origin `<iframe>`.
  */
 export function $getDocument(): Document {
-  const editor = $getEditor();
-  let rootElement: HTMLElement | null = null;
-  try {
-    rootElement = editor.getRootElement();
-  } catch {
-    // createHeadlessEditor() overrides getRootElement() to throw
-  }
-  return getRootOwnerDocument(rootElement);
+  return getRootOwnerDocument($getEditor()._rootElement);
 }
 
 /**

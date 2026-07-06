@@ -19,6 +19,7 @@ import type {
 } from 'lexical';
 
 import {
+  $getDocument,
   $getState,
   $setState,
   createState,
@@ -83,7 +84,7 @@ export class DecoratorTextNode
   }
 
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
-    return document.createElement('span');
+    return $getDocument().createElement('span');
   }
 }
 
@@ -155,24 +156,26 @@ export function applyFormatFromStyle(
  * @param tagNameToFormat Tag name and format mapping
  * @returns domNode
  */
-export function applyFormatToDom(
+export function $applyFormatToDom(
   lexicalNode: DecoratorTextNode,
   domNode: Text | HTMLElement,
   tagNameToFormat = DEFAULT_TAG_NAME_TO_FORMAT,
 ) {
   for (const [tag, format] of Object.entries(tagNameToFormat)) {
     if (lexicalNode.hasFormat(format)) {
-      domNode = wrapElementWith(domNode, tag);
+      domNode = $wrapElementWith(domNode, tag);
     }
   }
   return domNode;
 }
+/** @deprecated renamed to {@link $applyFormatToDom} by @lexical/eslint-plugin rules-of-lexical */
+export const applyFormatToDom = $applyFormatToDom;
 
-function wrapElementWith(
+function $wrapElementWith(
   element: HTMLElement | Text,
   tag: string,
 ): HTMLElement {
-  const el = document.createElement(tag);
+  const el = $getDocument().createElement(tag);
   el.appendChild(element);
   return el;
 }

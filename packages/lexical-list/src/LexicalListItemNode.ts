@@ -27,6 +27,7 @@ import {
   $applyNodeReplacement,
   $copyNode,
   $createParagraphNode,
+  $getDocument,
   $getSelection,
   $getSiblingCaret,
   $insertNodeToNearestRootAtCaret,
@@ -164,7 +165,7 @@ export class ListItemNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('li');
+    const element = $getDocument().createElement('li');
     this.updateListItemDOM(null, element, config);
 
     return element;

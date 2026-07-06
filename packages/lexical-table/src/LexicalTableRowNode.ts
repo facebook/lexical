@@ -11,6 +11,7 @@ import type {BaseSelection, LexicalUpdateJSON, Spread} from 'lexical';
 import {$descendantsMatching} from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $getDocument,
   addClassNamesToElement,
   DOMConversionMap,
   DOMConversionOutput,
@@ -84,7 +85,7 @@ export class TableRowNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('tr');
+    const element = $getDocument().createElement('tr');
 
     if (this.__height) {
       element.style.height = `${this.__height}px`;

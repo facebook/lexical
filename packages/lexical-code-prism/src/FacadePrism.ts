@@ -39,6 +39,7 @@ declare global {
 }
 
 export const Prism: typeof import('prismjs') =
+  // eslint-disable-next-line no-restricted-syntax
   (globalThis as {Prism?: typeof import('prismjs')}).Prism || window.Prism;
 
 export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {

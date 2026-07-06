@@ -62,6 +62,7 @@ import {
   $getCaretRange,
   $getChildCaret,
   $getCollapsedCaretRange,
+  $getDocument,
   $getEditor,
   $getNearestNodeFromDOMNode,
   $getRoot,
@@ -162,7 +163,7 @@ export class QuoteNode extends ElementNode {
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('blockquote');
+    const element = $getDocument().createElement('blockquote');
     addClassNamesToElement(element, config.theme.quote);
     return element;
   }
@@ -184,7 +185,7 @@ export class QuoteNode extends ElementNode {
 
     if (isHTMLElement(element)) {
       if (this.isEmpty()) {
-        element.append(document.createElement('br'));
+        element.append($getDocument().createElement('br'));
       }
 
       const formatType = this.getFormatType();
@@ -279,7 +280,7 @@ export class HeadingNode extends ElementNode {
 
   createDOM(config: EditorConfig): HTMLElement {
     const tag = this.__tag;
-    const element = document.createElement(tag);
+    const element = $getDocument().createElement(tag);
     const theme = config.theme;
     const classNames = theme.heading;
     if (classNames !== undefined) {
@@ -352,7 +353,7 @@ export class HeadingNode extends ElementNode {
 
     if (isHTMLElement(element)) {
       if (this.isEmpty()) {
-        element.append(document.createElement('br'));
+        element.append($getDocument().createElement('br'));
       }
 
       const formatType = this.getFormatType();

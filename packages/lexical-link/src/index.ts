@@ -13,7 +13,9 @@ export {
 } from './ClickableLinkExtension';
 export {
   type AutoLinkConfig,
+  autoLinkEmailMatcher,
   AutoLinkExtension,
+  autoLinkUrlMatcher,
   type ChangeHandler,
   createLinkMatcherWithRegExp,
   type LinkMatcher,

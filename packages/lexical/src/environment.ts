@@ -8,7 +8,9 @@
 
 export const CAN_USE_DOM: boolean =
   typeof window !== 'undefined' &&
+  // eslint-disable-next-line no-restricted-syntax
   typeof window.document !== 'undefined' &&
+  // eslint-disable-next-line no-restricted-syntax
   typeof window.document.createElement !== 'undefined';
 
 declare global {
@@ -22,6 +24,7 @@ declare global {
 }
 
 const documentMode =
+  // eslint-disable-next-line no-restricted-syntax
   CAN_USE_DOM && 'documentMode' in document ? document.documentMode : null;
 
 export const IS_APPLE: boolean =
@@ -32,12 +35,14 @@ export const IS_FIREFOX: boolean =
 
 export const CAN_USE_BEFORE_INPUT: boolean =
   CAN_USE_DOM && 'InputEvent' in window && !documentMode
-    ? 'getTargetRanges' in new window.InputEvent('input')
+    ? // eslint-disable-next-line no-restricted-syntax
+      'getTargetRanges' in new window.InputEvent('input')
     : false;
 
 export const IS_IOS: boolean =
   CAN_USE_DOM &&
   /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+  // eslint-disable-next-line no-restricted-syntax
   !window.MSStream;
 
 export const IS_ANDROID: boolean =

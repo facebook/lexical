@@ -164,7 +164,9 @@ export const DEFAULT_IMPORT_MIME_TYPE_PRIORITY: ImportMimeTypePriority = {
 };
 
 function trustHTML(html: string): string | TrustedHTML {
+  // eslint-disable-next-line no-restricted-syntax
   if (window.trustedTypes && window.trustedTypes.createPolicy) {
+    // eslint-disable-next-line no-restricted-syntax
     const policy = window.trustedTypes.createPolicy('lexical', {
       createHTML: input => input,
     });

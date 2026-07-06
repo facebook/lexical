@@ -29,6 +29,7 @@ import {
   $copyNode,
   $findMatchingParent,
   $getChildCaret,
+  $getDocument,
   $getSelection,
   $insertNodeToNearestRootAtCaret,
   $isElementNode,
@@ -119,7 +120,7 @@ export class LinkNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig): LinkHTMLElementType {
-    const element = document.createElement('a');
+    const element = $getDocument().createElement('a');
     this.updateLinkDOM(null, element, config);
     addClassNamesToElement(element, config.theme.link);
     return element;
@@ -525,7 +526,7 @@ export class AutoLinkNode extends LinkNode {
 
   createDOM(config: EditorConfig): LinkHTMLElementType {
     if (this.__isUnlinked) {
-      return document.createElement('span');
+      return $getDocument().createElement('span');
     } else {
       return super.createDOM(config);
     }

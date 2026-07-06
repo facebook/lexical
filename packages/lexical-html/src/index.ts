@@ -23,6 +23,7 @@ import {
   $assumeActiveEditor,
   $createLineBreakNode,
   $createParagraphNode,
+  $getDocument,
   $getEditor,
   $getEditorDOMRenderConfig,
   $getRoot,
@@ -270,8 +271,11 @@ export function $generateHtmlFromNodes(
   // If the caller is in a legacy `editorState.read(cb)` scope (no active editor),
   // establish one via internal API.
   $assumeActiveEditor(editor);
-  return $generateDOMFromNodes(document.createElement('div'), selection, editor)
-    .innerHTML;
+  return $generateDOMFromNodes(
+    $getDocument().createElement('div'),
+    selection,
+    editor,
+  ).innerHTML;
 }
 
 function $appendNodesToHTML(
@@ -299,7 +303,7 @@ function $appendNodesToHTML(
     return false;
   }
 
-  const fragment = document.createDocumentFragment();
+  const fragment = $getDocument().createDocumentFragment();
   const children = $getChildNodes
     ? $getChildNodes()
     : $isElementNode(target)

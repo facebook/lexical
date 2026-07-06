@@ -48,6 +48,7 @@ import {cloneMap} from './LexicalGenMap';
 import {$isSlotChild, $isSlotHost, EMPTY_SLOTS} from './LexicalSlot';
 import {
   $createChildrenArray,
+  $getDocument,
   $getDOMSlot,
   $isRootOrShadowRoot,
   $markSlotEditable,
@@ -469,8 +470,8 @@ function $setElementDirection(dom: HTMLElement, node: ElementNode): void {
 // fresh mount, slots-first on reconcile) — and starts `display: none`, revealed
 // only by an explicit mount / $getSlotTargetElement. Editability is applied
 // separately by $applySlotEditable.
-function createSlotDOM(name: string): HTMLElement {
-  const container = document.createElement('div');
+function $createSlotDOM(name: string): HTMLElement {
+  const container = $getDocument().createElement('div');
   container.setAttribute('data-lexical-slot', name);
   container.style.display = 'none';
   return container;
@@ -508,7 +509,7 @@ function $mountSlotChildren(
   let totalText = '';
   const decoratorHost = $isDecoratorNode(node);
   for (const [name, slotKey] of slots) {
-    const container = createSlotDOM(name);
+    const container = $createSlotDOM(name);
     $applySlotEditable(hostDom, decoratorHost, container);
     hostDom.appendChild(container);
     subTreeTextContent = '';
@@ -603,7 +604,7 @@ function $reconcileSlotChildren(
     subTreeTextContent = '';
     const saved = $beginCaptureGuard();
     if (container === null) {
-      container = createSlotDOM(name);
+      container = $createSlotDOM(name);
       // Keep the hidden placeholder slots-first: it must land ahead of the
       // linked-list children (and the terminating <br>) so the leading
       // DOMSlot boundary can skip it; it must not be appended after them.

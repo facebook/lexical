@@ -20,6 +20,11 @@
  * Firefox order:
  *   compositionstart → (compositionupdate + beforeinput + DOM mutation +
  *   input)* → compositionend → input(isComposing=false)
+ *
+ * Between each event, the browser yields to the microtask queue so
+ * deferred editor updates commit before the next event fires. We
+ * replicate this with `await flush()` after every event that triggers
+ * a Lexical `updateEditorSync` (compositionstart, input).
  */
 
 export interface CompositionStep {
@@ -112,6 +117,10 @@ function setSelectionAt(textNode: Text, start: number, end: number): void {
     return;
   }
   sel.setBaseAndExtent(textNode, start, textNode, end);
+}
+
+function flush(): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, 0));
 }
 
 /**
@@ -210,6 +219,7 @@ export async function compose(
 
     if (i === 0) {
       dispatchCompositionEvent(rootElement, 'compositionstart', '');
+      await flush();
 
       // Re-read the cursor position AFTER compositionstart: Lexical may
       // have inserted a ZWSP (format mismatch, element anchor, etc.),
@@ -253,6 +263,7 @@ export async function compose(
     previousComposingLength = text.length;
 
     dispatchInputEvent(rootElement, text, 'insertCompositionText', true);
+    await flush();
   }
 
   // --- commit or cancel ---
@@ -269,6 +280,7 @@ export async function compose(
 
     dispatchCompositionEvent(rootElement, 'compositionend', '');
     dispatchInputEvent(rootElement, '', 'insertCompositionText', false);
+    await flush();
   } else {
     // Build the commit targetRange (composing region before final mutation).
     const commitRangeNode = getActiveTextNode(rootElement);
@@ -287,6 +299,7 @@ export async function compose(
     // same in both — only compositionend placement differs.
     if (isFirefox) {
       dispatchCompositionEvent(rootElement, 'compositionend', commitText);
+      await flush();
     }
 
     dispatchBeforeInput(
@@ -307,14 +320,13 @@ export async function compose(
       composingStart + commitText.length,
     );
     dispatchInputEvent(rootElement, commitText, 'insertCompositionText', false);
+    await flush();
 
     if (!isFirefox) {
       dispatchCompositionEvent(rootElement, 'compositionend', commitText);
+      await flush();
     }
   }
-
-  // Let microtasks (update listeners, mutation observer) flush.
-  await new Promise(resolve => setTimeout(resolve, 0));
 }
 
 /**

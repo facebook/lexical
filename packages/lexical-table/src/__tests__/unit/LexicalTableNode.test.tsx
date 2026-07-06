@@ -60,12 +60,14 @@ const editorConfig = Object.freeze({
 });
 
 function wrapTableHtml(expected: string): string {
+  const stickyScrollbar =
+    '<div style="position: sticky; bottom: 0px; overflow-x: scroll; overflow-y: hidden; display: none"><div style="height: 1px; width: 0px"></div></div>';
   return expected
     .replace(
       /<table( dir="auto")?/g,
-      `<div class="table-scrollable-wrapper"$1><table`,
+      `<div$1><div class="table-scrollable-wrapper"><table`,
     )
-    .replace(/<\/table>/g, '</table></div>');
+    .replace(/<\/table>/g, `</table></div>${stickyScrollbar}</div>`);
 }
 
 polyfillContentEditable();
@@ -1219,20 +1221,26 @@ describe('LexicalTableNode tests', () => {
                 expectHtmlToBeEqual(
                   table.createDOM(editorConfig).outerHTML,
                   html`
-                    <div
-                      class="${editorConfig.theme
-                        .tableScrollableWrapper} ${editorConfig.theme
-                        .tableFrozenColumn}">
-                      <table
-                        class="${editorConfig.theme.table}"
-                        data-lexical-frozen-column="true">
-                        <colgroup>
-                          <col />
-                          <col />
-                          <col />
-                          <col />
-                        </colgroup>
-                      </table>
+                    <div>
+                      <div
+                        class="${editorConfig.theme
+                          .tableScrollableWrapper} ${editorConfig.theme
+                          .tableFrozenColumn}">
+                        <table
+                          class="${editorConfig.theme.table}"
+                          data-lexical-frozen-column="true">
+                          <colgroup>
+                            <col />
+                            <col />
+                            <col />
+                            <col />
+                          </colgroup>
+                        </table>
+                      </div>
+                      <div
+                        style="position: sticky; bottom: 0px; overflow-x: scroll; overflow-y: hidden; display: none">
+                        <div style="height: 1px; width: 0px"></div>
+                      </div>
                     </div>
                   `,
                 );
@@ -1699,15 +1707,21 @@ describe('LexicalTableNode tests', () => {
                 expectHtmlToBeEqual(
                   table.createDOM(editorConfig).outerHTML,
                   html`
-                    <div class="${editorConfig.theme.tableScrollableWrapper}">
-                      <table class="${editorConfig.theme.table}">
-                        <colgroup>
-                          <col />
-                          <col />
-                          <col />
-                          <col />
-                        </colgroup>
-                      </table>
+                    <div>
+                      <div class="${editorConfig.theme.tableScrollableWrapper}">
+                        <table class="${editorConfig.theme.table}">
+                          <colgroup>
+                            <col />
+                            <col />
+                            <col />
+                            <col />
+                          </colgroup>
+                        </table>
+                      </div>
+                      <div
+                        style="position: sticky; bottom: 0px; overflow-x: scroll; overflow-y: hidden; display: none">
+                        <div style="height: 1px; width: 0px"></div>
+                      </div>
                     </div>
                   `,
                 );
@@ -1920,37 +1934,43 @@ describe('LexicalTableNode tests', () => {
           expectHtmlToBeEqual(
             testEnv.innerHTML,
             html`
-              <div class="table-scrollable-wrapper" dir="auto">
-                <table class="test-table-class">
-                  <colgroup>
-                    <col />
-                    <col />
-                  </colgroup>
-                  <tr dir="auto">
-                    <th dir="auto">
-                      <p dir="auto">
-                        <br data-lexical-managed-linebreak="true" />
-                      </p>
-                    </th>
-                    <th dir="auto">
-                      <p dir="auto">
-                        <br data-lexical-managed-linebreak="true" />
-                      </p>
-                    </th>
-                  </tr>
-                  <tr dir="auto">
-                    <th dir="auto">
-                      <p dir="auto">
-                        <br data-lexical-managed-linebreak="true" />
-                      </p>
-                    </th>
-                    <td dir="auto">
-                      <p dir="auto">
-                        <br data-lexical-managed-linebreak="true" />
-                      </p>
-                    </td>
-                  </tr>
-                </table>
+              <div dir="auto">
+                <div class="table-scrollable-wrapper">
+                  <table class="test-table-class">
+                    <colgroup>
+                      <col />
+                      <col />
+                    </colgroup>
+                    <tr dir="auto">
+                      <th dir="auto">
+                        <p dir="auto">
+                          <br data-lexical-managed-linebreak="true" />
+                        </p>
+                      </th>
+                      <th dir="auto">
+                        <p dir="auto">
+                          <br data-lexical-managed-linebreak="true" />
+                        </p>
+                      </th>
+                    </tr>
+                    <tr dir="auto">
+                      <th dir="auto">
+                        <p dir="auto">
+                          <br data-lexical-managed-linebreak="true" />
+                        </p>
+                      </th>
+                      <td dir="auto">
+                        <p dir="auto">
+                          <br data-lexical-managed-linebreak="true" />
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+                <div
+                  style="position: sticky; bottom: 0px; overflow-x: scroll; overflow-y: hidden; display: none">
+                  <div style="height: 1px; width: 0px"></div>
+                </div>
               </div>
             `,
           );

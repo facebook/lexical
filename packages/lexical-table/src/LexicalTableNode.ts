@@ -148,6 +148,110 @@ function alignTableElement(
   addClassNamesToElement(dom, ...addClasses);
 }
 
+function createScrollableWrapper(
+  tableElement: HTMLTableElement,
+  config: EditorConfig,
+): HTMLDivElement {
+  const wrapper = $getDocument().createElement('div');
+  const classes = config.theme.tableScrollableWrapper;
+  if (classes) {
+    addClassNamesToElement(wrapper, classes);
+  } else {
+    wrapper.style.overflowX = 'auto';
+    wrapper.style.scrollbarWidth = 'none';
+  }
+  wrapper.appendChild(tableElement);
+  return wrapper;
+}
+
+function createStickyScrollbar(
+  scrollableWrapper: HTMLDivElement,
+  tableElement: HTMLTableElement,
+  config: EditorConfig,
+): HTMLDivElement {
+  const doc = $getDocument();
+  const scrollbar = doc.createElement('div');
+  const classes = config.theme.tableStickyScrollbar;
+  if (classes) {
+    addClassNamesToElement(scrollbar, classes);
+  } else {
+    scrollbar.style.position = 'sticky';
+    scrollbar.style.bottom = '0';
+    scrollbar.style.overflowX = 'scroll';
+    scrollbar.style.overflowY = 'hidden';
+  }
+  scrollbar.style.display = 'none';
+  const spacer = doc.createElement('div');
+  spacer.style.height = '1px';
+  spacer.style.width = '0px';
+  scrollbar.appendChild(spacer);
+
+  let syncing = false;
+  scrollableWrapper.addEventListener(
+    'scroll',
+    () => {
+      if (syncing) {
+        return;
+      }
+      syncing = true;
+      scrollbar.scrollLeft = scrollableWrapper.scrollLeft;
+      syncing = false;
+    },
+    {passive: true},
+  );
+  scrollbar.addEventListener(
+    'scroll',
+    () => {
+      if (syncing) {
+        return;
+      }
+      syncing = true;
+      scrollableWrapper.scrollLeft = scrollbar.scrollLeft;
+      syncing = false;
+    },
+    {passive: true},
+  );
+
+  queueMicrotask(() => syncStickyScrollbar(scrollbar, tableElement));
+  if (typeof ResizeObserver !== 'undefined') {
+    const resizeObserver = new ResizeObserver(() => {
+      syncStickyScrollbar(scrollbar, tableElement);
+    });
+    resizeObserver.observe(scrollableWrapper);
+    resizeObserver.observe(tableElement);
+  }
+  return scrollbar;
+}
+
+function syncStickyScrollbar(
+  scrollbar: HTMLDivElement,
+  tableElement: HTMLTableElement,
+): void {
+  const spacer = scrollbar.firstElementChild;
+  if (!spacer || !isHTMLElement(spacer) || !tableElement.isConnected) {
+    return;
+  }
+  spacer.style.width = tableElement.scrollWidth + 'px';
+  const scrollableWrapper = scrollbar.previousElementSibling;
+  const containerWidth =
+    scrollableWrapper && isHTMLElement(scrollableWrapper)
+      ? scrollableWrapper.clientWidth
+      : 0;
+  const hasOverflow = tableElement.scrollWidth > containerWidth;
+  scrollbar.style.display = hasOverflow ? '' : 'none';
+}
+
+function getScrollableWrapper(dom: HTMLElement): HTMLDivElement | null {
+  if (!isHTMLDivElement(dom)) {
+    return null;
+  }
+  const firstChild = dom.firstElementChild;
+  if (isHTMLDivElement(firstChild) && firstChild.querySelector('table')) {
+    return firstChild;
+  }
+  return dom.querySelector('table') ? dom : null;
+}
+
 const scrollableEditors = new WeakSet<LexicalEditor>();
 
 export function $isScrollableTablesActive(
@@ -284,16 +388,18 @@ export class TableNode extends ElementNode {
     addClassNamesToElement(tableElement, config.theme.table);
     this.updateTableElement(null, tableElement, config);
     if ($isScrollableTablesActive(editor)) {
-      const wrapperElement = $getDocument().createElement('div');
-      const classes = config.theme.tableScrollableWrapper;
-      if (classes) {
-        addClassNamesToElement(wrapperElement, classes);
-      } else {
-        wrapperElement.style.overflowX = 'auto';
-      }
-      wrapperElement.appendChild(tableElement);
-      this.updateTableWrapper(null, wrapperElement, tableElement, config);
-      return wrapperElement;
+      const scrollableWrapper = createScrollableWrapper(tableElement, config);
+      const stickyScrollbar = createStickyScrollbar(
+        scrollableWrapper,
+        tableElement,
+        config,
+      );
+      const outerWrapper = $getDocument().createElement('div');
+      outerWrapper.appendChild(scrollableWrapper);
+      outerWrapper.appendChild(stickyScrollbar);
+      setDOMUnmanaged(stickyScrollbar);
+      this.updateTableWrapper(null, scrollableWrapper, tableElement, config);
+      return outerWrapper;
     }
     return tableElement;
   }
@@ -351,7 +457,20 @@ export class TableNode extends ElementNode {
       return true;
     }
     if (isHTMLDivElement(dom)) {
-      this.updateTableWrapper(prevNode, dom, tableElement, config);
+      const scrollable = getScrollableWrapper(dom);
+      if (scrollable) {
+        this.updateTableWrapper(prevNode, scrollable, tableElement, config);
+        const stickyScrollbar = scrollable.nextElementSibling;
+        if (isHTMLDivElement(stickyScrollbar)) {
+          queueMicrotask(() =>
+            syncStickyScrollbar(stickyScrollbar, tableElement),
+          );
+        }
+      } else if (__DEV__) {
+        console.warn(
+          'TableNode.updateDOM: Could not find scrollable wrapper in DOM',
+        );
+      }
     }
     this.updateTableElement(prevNode, tableElement, config);
     return false;

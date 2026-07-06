@@ -201,7 +201,28 @@
 }
 .PlaygroundEditorTheme__tableScrollableWrapper {
   overflow-x: auto;
-  margin: 0px 0px 5px 0px;
+  scrollbar-width: none;
+}
+.PlaygroundEditorTheme__tableScrollableWrapper::-webkit-scrollbar {
+  display: none;
+}
+.PlaygroundEditorTheme__tableStickyScrollbar {
+  position: sticky;
+  bottom: 0;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  z-index: 1;
+  margin-bottom: 5px;
+}
+.PlaygroundEditorTheme__tableStickyScrollbar::-webkit-scrollbar {
+  height: 8px;
+}
+.PlaygroundEditorTheme__tableStickyScrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+}
+.PlaygroundEditorTheme__tableStickyScrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
 }
 .PlaygroundEditorTheme__tableScrollRight {
   box-shadow: inset -10px 0 10px rgba(0, 0, 0, 0.15);

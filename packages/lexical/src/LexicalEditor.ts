@@ -218,6 +218,7 @@ export interface EditorThemeClasses {
   tableScrollableWrapper?: EditorThemeClassName;
   tableSelected?: EditorThemeClassName;
   tableSelection?: EditorThemeClassName;
+  tableStickyScrollbar?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
   collaboration?: {
     cursor?: EditorThemeClassName;

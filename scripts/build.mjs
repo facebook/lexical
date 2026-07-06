@@ -347,6 +347,21 @@ async function build(
           format: {ascii_only: true, preserve_annotations: true},
           module: format === 'esm',
         }),
+      isProd && {
+        name: 'strip-misplaced-pure-annotations',
+        renderChunk(/** @type {string} */ source) {
+          // terser prints the annotation of `return /*#__PURE__*/ f()` (added
+          // by @babel/preset-react for JSX) before the `return` keyword, where
+          // it no longer precedes a call expression. Bundlers ignore it there
+          // and rolldown-based Vite warns with INVALID_ANNOTATION (#8785), so
+          // drop those comments; only an annotation directly before a
+          // call/new expression has any effect.
+          return source.replace(
+            /\/\*\s*[#@]__PURE__\s*\*\/(?=\s*return\b)/g,
+            '',
+          );
+        },
+      },
       {
         name: 'lexical-comment-banner',
         renderChunk(source) {

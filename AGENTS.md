@@ -291,3 +291,13 @@ For full details on the browser platform APIs involved, see
 - Supports multiple build modes: development, production, www (Meta internal)
 - TypeScript source → compiled to CommonJS and ESM
 - Package manager logic in `scripts/shared/packagesManager.mjs`
+
+### Commit and PR Hygiene for Agents
+This is an open source project: never include agent-session URLs or other
+private/team-internal links (e.g. `https://claude.ai/code/session_...`) in
+commit messages, PR titles, or PR bodies. Those URLs are private to the
+person or team that ran the session and are meaningless or misleading to
+everyone else. Co-authorship attribution (e.g. `Co-Authored-By:`) is fine.
+For Claude Code this is enforced mechanically via `attribution.sessionUrl:
+false` in the checked-in `.claude/settings.json`; agents from other vendors
+should follow this rule as written.

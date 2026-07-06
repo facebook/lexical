@@ -27,6 +27,7 @@ import type {
 import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {
   $applyNodeReplacement,
+  $getDocument,
   $setDirectionFromDOM,
   $setFormatFromDOM,
   getCachedClassNameArray,
@@ -60,7 +61,7 @@ export class ParagraphNode extends ElementNode {
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = document.createElement('p');
+    const dom = $getDocument().createElement('p');
     const classNames = getCachedClassNameArray(config.theme, 'paragraph');
     if (classNames !== undefined) {
       const domClassList = dom.classList;
@@ -90,7 +91,7 @@ export class ParagraphNode extends ElementNode {
 
     if (isHTMLElement(element)) {
       if (this.isEmpty()) {
-        element.append(document.createElement('br'));
+        element.append($getDocument().createElement('br'));
       }
 
       const formatType = this.getFormatType();

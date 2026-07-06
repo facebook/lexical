@@ -588,6 +588,7 @@ function $printSelectedCharsLine({
 }
 
 function printPrettyHTML(str: string) {
+  // eslint-disable-next-line no-restricted-syntax
   const div = document.createElement('div');
   div.innerHTML = str.trim();
   return prettifyHTML(div, 0).innerHTML;
@@ -599,10 +600,12 @@ function prettifyHTML(node: Element, level: number) {
   let textNode;
 
   for (let i = 0; i < node.children.length; i++) {
+    // eslint-disable-next-line no-restricted-syntax
     textNode = document.createTextNode('\n' + indentBefore);
     node.insertBefore(textNode, node.children[i]);
     prettifyHTML(node.children[i], level);
     if (node.lastElementChild === node.children[i]) {
+      // eslint-disable-next-line no-restricted-syntax
       textNode = document.createTextNode('\n' + indentAfter);
       node.appendChild(textNode);
     }

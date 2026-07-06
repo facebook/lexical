@@ -64,6 +64,7 @@ import {errorOnReadOnly} from '../LexicalUpdates';
 import {
   $applyNodeReplacement,
   $getCompositionKey,
+  $getDocument,
   $getEditor,
   $getEditorDOMRenderConfig,
   $setCompositionKey,
@@ -251,7 +252,7 @@ function $setTextContent(
   const firstChild = slot.getFirstChild();
 
   if (firstChild === null || firstChild.nodeType !== Node.TEXT_NODE) {
-    slot.insertChild(document.createTextNode(text));
+    slot.insertChild($getDocument().createTextNode(text));
     return;
   }
 
@@ -291,11 +292,11 @@ function $createTextInnerDOM(
   }
 }
 
-function wrapElementWith(
+function $wrapElementWith(
   element: HTMLElement | Text,
   tag: string,
 ): HTMLElement {
-  const el = document.createElement(tag);
+  const el = $getDocument().createElement(tag);
   el.appendChild(element);
   return el;
 }
@@ -526,13 +527,13 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
     const outerTag = getElementOuterTag(this, format);
     const innerTag = getElementInnerTag(this, format);
     const tag = outerTag === null ? innerTag : outerTag;
-    const dom = document.createElement(tag);
+    const dom = $getDocument().createElement(tag);
     let innerDOM = dom;
     if (this.hasFormat('code')) {
       dom.setAttribute('spellcheck', 'false');
     }
     if (outerTag !== null) {
-      innerDOM = document.createElement(innerTag);
+      innerDOM = $getDocument().createElement(innerTag);
       dom.appendChild(innerDOM);
     }
     const text = this.__text;
@@ -564,7 +565,7 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
       if (prevInnerDOM == null) {
         invariant(false, 'updateDOM: prevInnerDOM is null or undefined');
       }
-      const nextInnerDOM = document.createElement(nextInnerTag);
+      const nextInnerDOM = $getDocument().createElement(nextInnerTag);
       $createTextInnerDOM(
         nextInnerDOM,
         this,
@@ -698,16 +699,16 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
     // even if it's semantically incorrect to have to resort to using
     // <b>, <u>, <s>, <i> elements.
     if (this.hasFormat('bold')) {
-      element = wrapElementWith(element, 'b');
+      element = $wrapElementWith(element, 'b');
     }
     if (this.hasFormat('italic')) {
-      element = wrapElementWith(element, 'i');
+      element = $wrapElementWith(element, 'i');
     }
     if (this.hasFormat('strikethrough')) {
-      element = wrapElementWith(element, 's');
+      element = $wrapElementWith(element, 's');
     }
     if (this.hasFormat('underline')) {
-      element = wrapElementWith(element, 'u');
+      element = $wrapElementWith(element, 'u');
     }
 
     return {

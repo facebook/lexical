@@ -22,6 +22,7 @@ import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   $create,
   $createNodeSelection,
+  $getDocument,
   $getNodeFromDOMNode,
   $getSelection,
   $isNodeSelection,
@@ -82,11 +83,11 @@ export class HorizontalRuleNode extends DecoratorNode<unknown> {
   }
 
   exportDOM(): DOMExportOutput {
-    return {element: document.createElement('hr')};
+    return {element: $getDocument().createElement('hr')};
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('hr');
+    const element = $getDocument().createElement('hr');
     addClassNamesToElement(element, config.theme.hr);
     return element;
   }

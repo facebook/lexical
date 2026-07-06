@@ -74,6 +74,7 @@ export function importFile(editor: LexicalEditor) {
 }
 
 function readTextFileFromSystem(callback: (text: string) => void) {
+  // eslint-disable-next-line no-restricted-syntax
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = '.lexical';
@@ -123,7 +124,9 @@ export function exportFile(
 
 // Adapted from https://stackoverflow.com/a/19328891/2013580
 function exportBlob(data: SerializedDocument, fileName: string) {
+  // eslint-disable-next-line no-restricted-syntax
   const a = document.createElement('a');
+  // eslint-disable-next-line no-restricted-syntax
   const body = document.body;
 
   if (body === null) {
@@ -136,10 +139,12 @@ function exportBlob(data: SerializedDocument, fileName: string) {
   const blob = new Blob([json], {
     type: 'octet/stream',
   });
+  // eslint-disable-next-line no-restricted-syntax
   const url = window.URL.createObjectURL(blob);
   a.href = url;
   a.download = fileName;
   a.click();
+  // eslint-disable-next-line no-restricted-syntax
   window.URL.revokeObjectURL(url);
   a.remove();
 }

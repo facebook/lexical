@@ -17,6 +17,7 @@ import type {
 import {LexicalNode} from '../LexicalNode';
 import {
   $applyNodeReplacement,
+  $getDocument,
   isBlockDomNode,
   isDOMTextNode,
 } from '../LexicalUtils';
@@ -44,7 +45,7 @@ export class LineBreakNode extends LexicalNode {
   }
 
   createDOM(): HTMLElement {
-    return document.createElement('br');
+    return $getDocument().createElement('br');
   }
 
   updateDOM(): false {

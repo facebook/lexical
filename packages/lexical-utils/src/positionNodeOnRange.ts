@@ -8,7 +8,7 @@
 
 import invariant from '@lexical/internal/invariant';
 import {createRectsFromDOMRange} from '@lexical/selection';
-import {isHTMLElement, type LexicalEditor} from 'lexical';
+import {getRootOwnerDocument, isHTMLElement, type LexicalEditor} from 'lexical';
 
 import dedupeSelectionRects from './dedupeSelectionRects';
 import px from './px';
@@ -45,7 +45,9 @@ export default function mlcPositionNodeOnRange(
   let parentDOMNode: null | HTMLElement = null;
   let observer: null | MutationObserver = null;
   let lastNodes: HTMLElement[] = [];
-  const wrapperNode = document.createElement('div');
+  const wrapperNode = getRootOwnerDocument(
+    editor.getRootElement(),
+  ).createElement('div');
   wrapperNode.style.position = 'relative';
 
   function position(): void {
@@ -62,7 +64,8 @@ export default function mlcPositionNodeOnRange(
       const rect = rects[i];
       // Try to reuse the previously created Node when possible, no need to
       // remove/create on the most common case reposition case
-      const rectNode = lastNodes[i] || document.createElement('div');
+      const rectNode =
+        lastNodes[i] || getRootOwnerDocument(rootDOMNode).createElement('div');
       const rectNodeStyle = rectNode.style;
       if (rectNodeStyle.position !== 'absolute') {
         rectNodeStyle.position = 'absolute';

@@ -23,6 +23,7 @@ import type {
 import {
   $applyNodeReplacement,
   $createParagraphNode,
+  $getDocument,
   $isInlineElementOrDecoratorNode,
   $isLineBreakNode,
   $isTextNode,
@@ -139,7 +140,7 @@ export class TableCellNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig): HTMLTableCellElement {
-    const element = document.createElement(this.getTag());
+    const element = $getDocument().createElement(this.getTag());
 
     if (this.__width) {
       element.style.width = `${this.__width}px`;

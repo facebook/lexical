@@ -32,10 +32,9 @@ function createEditor(opts?: {
   withHistory?: boolean;
 }): LexicalEditor {
   const {initialState, withHistory} = opts ?? {};
-  const dependencies = [RichTextExtension];
-  if (withHistory) {
-    dependencies.push(HistoryExtension);
-  }
+  const dependencies = withHistory
+    ? [RichTextExtension, HistoryExtension]
+    : [RichTextExtension];
   const editor = buildEditorFromExtensions({
     $initialEditorState:
       initialState ??

@@ -85,10 +85,10 @@ async function fillTablePartiallyWithText(page) {
   await page.keyboard.press('c');
 }
 
-const WRAPPER = IS_TABLE_HORIZONTAL_SCROLL ? [0] : [];
+const WRAPPER = IS_TABLE_HORIZONTAL_SCROLL ? [0, 0] : [];
 const nthTableSelector = nth =>
   IS_TABLE_HORIZONTAL_SCROLL
-    ? `div.PlaygroundEditorTheme__tableScrollableWrapper:nth-of-type(${nth}) > table`
+    ? `div:nth-of-type(${nth}) > div.PlaygroundEditorTheme__tableScrollableWrapper > table`
     : `table:nth-of-type(${nth})`;
 
 test.describe('Tables', () => {

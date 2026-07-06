@@ -20,7 +20,7 @@ import {
   LexicalEditor,
   UNDO_COMMAND,
 } from 'lexical';
-import {describe, expect, onTestFinished, test} from 'vitest';
+import {assert, describe, expect, onTestFinished, test} from 'vitest';
 
 import {compose, korean} from './utils/compose';
 
@@ -91,11 +91,9 @@ describe('compose() helper — browser composition tests', () => {
     editor.read(() => {
       expect($getRoot().getTextContent()).toBe('한');
       const sel = $getSelection();
-      expect($isRangeSelection(sel)).toBe(true);
-      if ($isRangeSelection(sel)) {
-        expect(sel.isCollapsed()).toBe(true);
-        expect(sel.anchor.offset).toBe(1);
-      }
+      assert($isRangeSelection(sel));
+      expect(sel.isCollapsed()).toBe(true);
+      expect(sel.anchor.offset).toBe(1);
     });
   });
 
@@ -233,11 +231,9 @@ describe('compose() helper — browser composition tests', () => {
     editor.read(() => {
       expect($getRoot().getTextContent()).toBe('hello한world');
       const sel = $getSelection();
-      expect($isRangeSelection(sel)).toBe(true);
-      if ($isRangeSelection(sel)) {
-        expect(sel.isCollapsed()).toBe(true);
-        expect(sel.anchor.offset).toBe(6);
-      }
+      assert($isRangeSelection(sel));
+      expect(sel.isCollapsed()).toBe(true);
+      expect(sel.anchor.offset).toBe(6);
     });
   });
 

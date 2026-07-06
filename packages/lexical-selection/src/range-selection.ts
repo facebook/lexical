@@ -552,11 +552,15 @@ export function $shouldOverrideDefaultCharacterSelection(
   if ($isExtendableTextPointCaret(focusCaret)) {
     return false;
   }
-  // At a plain-TextNode boundary adjacent to another plain TextNode,
+  // At an unmergeable TextNode boundary adjacent to another plain TextNode,
   // override so Lexical's modify() can pre-normalize across inline-grid/flex
-  // spans (#7301). Exclude TextNode subclasses (e.g. RubyNode) whose
-  // extensions provide their own arrow-key handling.
-  if ($isTextPointCaret(focusCaret) && focusCaret.origin.getType() === 'text') {
+  // spans (#7301). Restricted to unmergeable nodes to avoid disrupting
+  // format-affinity at normal bold/italic boundaries.
+  if (
+    $isTextPointCaret(focusCaret) &&
+    focusCaret.origin.getType() === 'text' &&
+    focusCaret.origin.isUnmergeable()
+  ) {
     const sibling = $getSiblingCaret(
       focusCaret.origin,
       focusCaret.direction,

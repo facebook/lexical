@@ -903,6 +903,111 @@ function restoreDOMSelection(
   }
 }
 
+function $tryInlineGridLineNavigation(
+  selection: RangeSelection,
+  isBackward: boolean,
+): boolean {
+  if (!selection.isCollapsed()) {
+    return false;
+  }
+  const focusNode = selection.focus.getNode();
+  const parentBlock = $findMatchingParent(
+    $isElementNode(focusNode) ? focusNode : focusNode.getParentOrThrow(),
+    (n): n is ElementNode => $isElementNode(n) && !n.isInline(),
+  );
+  if (parentBlock === null) {
+    return false;
+  }
+  const editor = $getEditor();
+  const rootElement = editor.getRootElement();
+  if (rootElement === null) {
+    return false;
+  }
+  const win = rootElement.ownerDocument.defaultView;
+  if (win === null) {
+    return false;
+  }
+  let hasGrid = false;
+  for (const child of parentBlock.getChildren()) {
+    if ($isElementNode(child) && child.isInline()) {
+      const dom = editor.getElementByKey(child.getKey());
+      if (dom !== null) {
+        const d = win.getComputedStyle(dom).display;
+        if (d === 'inline-grid' || d === 'inline-flex') {
+          hasGrid = true;
+          break;
+        }
+      }
+    }
+  }
+  if (!hasGrid) {
+    return false;
+  }
+  const direction: CaretDirection = isBackward ? 'previous' : 'next';
+  const siblingBlock = $getSiblingCaret(
+    parentBlock,
+    direction,
+  ).getNodeAtCaret();
+  if (siblingBlock === null || !$isElementNode(siblingBlock)) {
+    if (isBackward) {
+      const first = parentBlock.getFirstDescendant();
+      if ($isTextNode(first)) {
+        first.select(0, 0);
+      } else {
+        parentBlock.select(0, 0);
+      }
+    } else {
+      const last = parentBlock.getLastDescendant();
+      if ($isTextNode(last)) {
+        const len = last.getTextContentSize();
+        last.select(len, len);
+      } else {
+        const count = parentBlock.getChildrenSize();
+        parentBlock.select(count, count);
+      }
+    }
+    return true;
+  }
+  const siblingDOM = editor.getElementByKey(siblingBlock.getKey());
+  if (siblingDOM === null) {
+    return true;
+  }
+  const domSelection = getDOMSelection(win);
+  if (domSelection === null || domSelection.rangeCount === 0) {
+    return true;
+  }
+  const curRange = domSelection.getRangeAt(0).cloneRange();
+  curRange.collapse(true);
+  const curRect = curRange.getBoundingClientRect();
+  const sibRect = siblingDOM.getBoundingClientRect();
+  const targetY = sibRect.top + sibRect.height / 2;
+  if (curRect.height > 0) {
+    const hit = caretFromPoint(curRect.left, targetY, rootElement);
+    if (hit !== null && rootElement.contains(hit.node)) {
+      const hitRange = rootElement.ownerDocument.createRange();
+      hitRange.setStart(hit.node, hit.offset);
+      hitRange.collapse(true);
+      selection.applyDOMRange(hitRange);
+      selection.dirty = true;
+      return true;
+    }
+  }
+  const targetDesc = isBackward
+    ? siblingBlock.getLastDescendant()
+    : siblingBlock.getFirstDescendant();
+  if ($isTextNode(targetDesc)) {
+    const offset = isBackward ? targetDesc.getTextContentSize() : 0;
+    targetDesc.select(offset, offset);
+  } else {
+    const childCount = siblingBlock.getChildrenSize();
+    siblingBlock.select(
+      isBackward ? childCount : 0,
+      isBackward ? childCount : 0,
+    );
+  }
+  return true;
+}
+
 function $exitNodeSelectionToward(
   node: LexicalNode,
   direction: CaretDirection,
@@ -1209,6 +1314,13 @@ export function registerRichText(
             event.preventDefault();
             return true;
           }
+          if (
+            !event.shiftKey &&
+            $tryInlineGridLineNavigation(selection, true)
+          ) {
+            event.preventDefault();
+            return true;
+          }
         }
         return false;
       },
@@ -1242,6 +1354,13 @@ export function registerRichText(
           if (
             !event.shiftKey &&
             $tryDecoratorLineNavigation(selection, false)
+          ) {
+            event.preventDefault();
+            return true;
+          }
+          if (
+            !event.shiftKey &&
+            $tryInlineGridLineNavigation(selection, false)
           ) {
             event.preventDefault();
             return true;

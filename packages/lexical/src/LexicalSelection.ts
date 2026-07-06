@@ -3112,7 +3112,7 @@ function resolveSelectionPointOnBoundary(
         prevSibling.isInline()
       ) {
         point.set(prevSibling.__key, prevSibling.getChildrenSize(), 'element');
-      } else if ($isTextNode(prevSibling)) {
+      } else if ($isTextNode(prevSibling) && !node.isUnmergeable()) {
         point.set(
           prevSibling.__key,
           prevSibling.getTextContent().length,

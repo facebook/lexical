@@ -146,7 +146,6 @@ describe('Deletion across adjacent unmergeable text in inline-grid (#7301)', () 
   });
 
   test('arrow key movement crosses span boundary via modify()', async () => {
-    let aKey: string;
     let bKey: string;
     const {editor} = mountEditor(() => {
       const paragraph = $createParagraphNode();
@@ -154,7 +153,6 @@ describe('Deletion across adjacent unmergeable text in inline-grid (#7301)', () 
       const a = $createTextNode('A').toggleUnmergeable();
       const b = $createTextNode('B').toggleUnmergeable();
       const c = $createTextNode('C').toggleUnmergeable();
-      aKey = a.getKey();
       bKey = b.getKey();
       grid.append(a, b, c);
       paragraph.append(grid);
@@ -162,7 +160,7 @@ describe('Deletion across adjacent unmergeable text in inline-grid (#7301)', () 
       a.select(1, 1);
     });
 
-    // Move forward from end of "A" — should cross into "B"
+    // Move forward from end of "A" — should cross boundary past "B"
     await editor.update(() => {
       const sel = $getSelection();
       assert($isRangeSelection(sel));
@@ -177,7 +175,8 @@ describe('Deletion across adjacent unmergeable text in inline-grid (#7301)', () 
       expect(sel.isCollapsed()).toBe(true);
     });
 
-    // Move backward from end of "B" — should cross back to "A"
+    // Move backward from end of "B" — should land at start of "B"
+    // (the boundary position), not normalize to end of "A"
     await editor.update(() => {
       const sel = $getSelection();
       assert($isRangeSelection(sel));
@@ -188,8 +187,8 @@ describe('Deletion across adjacent unmergeable text in inline-grid (#7301)', () 
       const sel = $getSelection();
       assert($isRangeSelection(sel));
       expect(sel.isCollapsed()).toBe(true);
-      expect(sel.anchor.key).toBe(aKey);
-      expect(sel.anchor.offset).toBe(1);
+      expect(sel.anchor.key).toBe(bKey);
+      expect(sel.anchor.offset).toBe(0);
     });
   });
 

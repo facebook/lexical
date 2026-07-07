@@ -403,8 +403,13 @@ function onSelectionChange(
         const currentTimeStamp = windowEvent
           ? windowEvent.timeStamp
           : performance.now();
-        const [lastFormat, lastStyle, lastOffset, lastKey, timeStamp] =
-          inputState.collapsedSelectionFormat;
+        const {
+          format: lastFormat,
+          style: lastStyle,
+          offset: lastOffset,
+          key: lastKey,
+          timeStamp,
+        } = inputState.collapsedSelectionFormat;
 
         const root = $getRoot();
         const isRootTextContentEmpty =
@@ -1774,7 +1779,20 @@ function onDocumentSelectionChange(event: Event): void {
   }
 
   if (nextActiveEditor._inputState.isSelectionChangeFromMouseDown) {
-    nextActiveEditor._inputState.isSelectionChangeFromMouseDown = false;
+    // Clear the flag on all editors registered on this document — a
+    // pointerdown inside a nested editor bubbles to the parent, setting
+    // the flag on both. Only one selectionchange fires, so stale flags
+    // on sibling/parent editors must be cleared to match the previous
+    // single-global semantics.
+    const reg =
+      ownerDocument !== null
+        ? documentRegistrations.get(ownerDocument)
+        : undefined;
+    if (reg) {
+      for (const ed of reg.editors) {
+        ed._inputState.isSelectionChangeFromMouseDown = false;
+      }
+    }
     updateEditorSync(nextActiveEditor, () => {
       const lastSelection = $getPreviousSelection();
       const domAnchorNode =
@@ -2024,11 +2042,11 @@ export function markCollapsedSelectionFormat(
   key: NodeKey,
   timeStamp: number,
 ): void {
-  editor._inputState.collapsedSelectionFormat = [
+  editor._inputState.collapsedSelectionFormat = {
     format,
-    style,
-    offset,
     key,
+    offset,
+    style,
     timeStamp,
-  ];
+  };
 }

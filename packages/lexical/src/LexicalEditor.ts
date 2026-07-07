@@ -243,6 +243,15 @@ export interface EditorConfig {
 }
 
 /** @internal */
+export interface CollapsedSelectionFormat {
+  format: number;
+  style: string;
+  offset: number;
+  key: NodeKey;
+  timeStamp: number;
+}
+
+/** @internal */
 export interface InputState {
   compositionPhase: 'idle' | 'composing' | 'ending-firefox' | 'ending-safari';
   compositionEndData: string;
@@ -252,7 +261,7 @@ export interface InputState {
   lastKeyCode: string | null;
   lastBeforeInputInsertTextTimeStamp: number;
   unprocessedBeforeInputData: string | null;
-  collapsedSelectionFormat: [number, string, number, NodeKey, number];
+  collapsedSelectionFormat: CollapsedSelectionFormat;
   postDeleteSelectionToRestore: RangeSelection | null;
 
   isSelectionChangeFromDOMUpdate: boolean;
@@ -266,7 +275,13 @@ export interface InputState {
 /** @internal */
 export function createInputState(): InputState {
   return {
-    collapsedSelectionFormat: [0, '', 0, 'root', 0],
+    collapsedSelectionFormat: {
+      format: 0,
+      key: 'root',
+      offset: 0,
+      style: '',
+      timeStamp: 0,
+    },
     compositionEndData: '',
     compositionPhase: 'idle',
     hadOrphanedCompositionEvents: false,

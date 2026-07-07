@@ -11,7 +11,10 @@ import type {LinkNode} from '@lexical/link';
 import type {ListNode} from '@lexical/list';
 import type {HeadingNode} from '@lexical/rich-text';
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  buildEditorFromExtensions,
+  type LexicalEditorWithDispose,
+} from '@lexical/extension';
 import {$isListItemNode} from '@lexical/list';
 import {
   $createParagraphNode,
@@ -26,7 +29,7 @@ import {
   KEY_ENTER_COMMAND,
   type LexicalEditor,
 } from 'lexical';
-import {beforeEach, describe, expect, it, onTestFinished} from 'vitest';
+import {describe, expect, it} from 'vitest';
 
 import {
   MdastCommonMarkExtension,
@@ -35,7 +38,7 @@ import {
 } from '../../index';
 import {codeFenceState, codeMetaState} from '../../state';
 
-function createEditor(): LexicalEditor {
+function createEditor(): LexicalEditorWithDispose {
   const editor = buildEditorFromExtensions(
     defineExtension({
       dependencies: [
@@ -46,7 +49,6 @@ function createEditor(): LexicalEditor {
       name: '[root]',
     }),
   );
-  onTestFinished(() => editor.dispose());
   editor.update(
     () => {
       const root = $getRoot();
@@ -76,25 +78,22 @@ function type(editor: LexicalEditor, chunks: string[]): void {
 }
 
 describe('@lexical/mdast streaming shortcuts', () => {
-  let editor: LexicalEditor;
-  beforeEach(() => {
-    editor = createEditor();
-  });
-
-  function firstChildType(): string {
+  function firstChildType(editor: LexicalEditor): string {
     return editor.read(() => $getRoot().getFirstChild()!.getType());
   }
 
   describe('block shortcuts (on space)', () => {
     it('# -> heading', () => {
+      using editor = createEditor();
       type(editor, ['#', ' ']);
-      expect(firstChildType()).toBe('heading');
+      expect(firstChildType(editor)).toBe('heading');
       editor.read(() => {
         expect(($getRoot().getFirstChild() as HeadingNode).getTag()).toBe('h1');
       });
     });
 
     it('### -> heading level 3', () => {
+      using editor = createEditor();
       type(editor, ['##', '#', ' ']);
       editor.read(() => {
         expect(($getRoot().getFirstChild() as HeadingNode).getTag()).toBe('h3');
@@ -102,13 +101,15 @@ describe('@lexical/mdast streaming shortcuts', () => {
     });
 
     it('> -> quote', () => {
+      using editor = createEditor();
       type(editor, ['>', ' ']);
-      expect(firstChildType()).toBe('quote');
+      expect(firstChildType(editor)).toBe('quote');
     });
 
     it('- -> bullet list', () => {
+      using editor = createEditor();
       type(editor, ['-', ' ']);
-      expect(firstChildType()).toBe('list');
+      expect(firstChildType(editor)).toBe('list');
       editor.read(() => {
         expect(($getRoot().getFirstChild() as ListNode).getListType()).toBe(
           'bullet',
@@ -117,6 +118,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
     });
 
     it('1. -> ordered list', () => {
+      using editor = createEditor();
       type(editor, ['1', '.', ' ']);
       editor.read(() => {
         const list = $getRoot().getFirstChild() as ListNode;
@@ -126,6 +128,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
     });
 
     it('- [ ] -> check list', () => {
+      using editor = createEditor();
       type(editor, ['-', ' ', '[', ' ', ']', ' ']);
       editor.read(() => {
         const list = $getRoot().getFirstChild() as ListNode;
@@ -135,6 +138,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
     });
 
     it('- [x] -> checked check list item', () => {
+      using editor = createEditor();
       type(editor, ['-', ' ', '[', 'x', ']', ' ']);
       editor.read(() => {
         const list = $getRoot().getFirstChild() as ListNode;
@@ -145,6 +149,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
     });
 
     it('- [] does not become a check list (GFM requires one character)', () => {
+      using editor = createEditor();
       type(editor, ['-', ' ', '[', ']', ' ']);
       editor.read(() => {
         const list = $getRoot().getFirstChild() as ListNode;
@@ -155,7 +160,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
   });
 
   describe('inline shortcuts (on closing delimiter)', () => {
-    function inlineFormats(): number[] {
+    function inlineFormats(editor: LexicalEditor): number[] {
       return editor.read(() => {
         const element = $getRoot().getFirstChild() as ElementNode;
         return element
@@ -165,38 +170,43 @@ describe('@lexical/mdast streaming shortcuts', () => {
     }
 
     it('**bold** applies bold', () => {
+      using editor = createEditor();
       type(editor, ['**bold*', '*']);
       editor.read(() => {
         expect($getRoot().getTextContent()).toBe('bold');
       });
-      expect(inlineFormats().some(f => f !== 0)).toBe(true);
+      expect(inlineFormats(editor).some(f => f !== 0)).toBe(true);
     });
 
     it('*italic* applies italic', () => {
+      using editor = createEditor();
       type(editor, ['*italic', '*']);
       editor.read(() => {
         expect($getRoot().getTextContent()).toBe('italic');
       });
-      expect(inlineFormats().some(f => f !== 0)).toBe(true);
+      expect(inlineFormats(editor).some(f => f !== 0)).toBe(true);
     });
 
     it('`code` applies code', () => {
+      using editor = createEditor();
       type(editor, ['`code', '`']);
       editor.read(() => {
         expect($getRoot().getTextContent()).toBe('code');
       });
-      expect(inlineFormats().some(f => f !== 0)).toBe(true);
+      expect(inlineFormats(editor).some(f => f !== 0)).toBe(true);
     });
 
     it('~~strike~~ applies strikethrough', () => {
+      using editor = createEditor();
       type(editor, ['~~strike~', '~']);
       editor.read(() => {
         expect($getRoot().getTextContent()).toBe('strike');
       });
-      expect(inlineFormats().some(f => f !== 0)).toBe(true);
+      expect(inlineFormats(editor).some(f => f !== 0)).toBe(true);
     });
 
     it('[text](url) becomes a link', () => {
+      using editor = createEditor();
       type(editor, ['[lexical](https://lexical.dev', ')']);
       editor.read(() => {
         const element = $getRoot().getFirstChild() as ElementNode;
@@ -210,9 +220,10 @@ describe('@lexical/mdast streaming shortcuts', () => {
     });
 
     it('only fires when the closing delimiter is at the caret', () => {
+      using editor = createEditor();
       // A lone opening delimiter must not transform anything.
       type(editor, ['*not italic']);
-      expect(firstChildType()).toBe('paragraph');
+      expect(firstChildType(editor)).toBe('paragraph');
       editor.read(() => {
         expect($getRoot().getTextContent()).toBe('*not italic');
       });
@@ -221,6 +232,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
 
   describe('fenced code (on Enter)', () => {
     it('```js + Enter -> empty code block with the language', () => {
+      using editor = createEditor();
       type(editor, ['```js']);
       editor.dispatchCommand(KEY_ENTER_COMMAND, null);
       editor.read(() => {
@@ -233,6 +245,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
     });
 
     it('```js title=x + Enter keeps the info-string meta and fence', () => {
+      using editor = createEditor();
       type(editor, ['~~~js title=x']);
       editor.dispatchCommand(KEY_ENTER_COMMAND, null);
       editor.read(() => {
@@ -247,6 +260,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
 
   describe('does not fire destructively', () => {
     it('Enter does not convert a line with content after the marker', () => {
+      using editor = createEditor();
       // '# Title' inserted in one operation (paste-like), then Enter. The
       // heading shortcut already had its chance at the space; Enter on a
       // line with content must not re-convert it (undo-escape hatch).
@@ -259,6 +273,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
     });
 
     it('Enter does not convert prose that happens to parse as a list', () => {
+      using editor = createEditor();
       type(editor, ['2024. was a big year']);
       editor.dispatchCommand(KEY_ENTER_COMMAND, null);
       editor.read(() => {
@@ -267,6 +282,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
     });
 
     it('multi-character insertion (paste) does not transform', () => {
+      using editor = createEditor();
       type(editor, ['see *note*']);
       editor.read(() => {
         expect($getRoot().getTextContent()).toBe('see *note*');
@@ -274,6 +290,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
     });
 
     it('deleting back to a delimiter does not transform', () => {
+      using editor = createEditor();
       type(editor, ['*a*b']);
       // Simulate backspace: the trailing character is removed and the caret
       // lands right after the closing '*'.
@@ -294,6 +311,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
     });
 
     it('does not transform inside an inline code span', () => {
+      using editor = createEditor();
       editor.update(
         () => {
           const paragraph = $createParagraphNode();
@@ -315,6 +333,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
     });
 
     it('block markers wrapped in inline formatting keep their delimiters', () => {
+      using editor = createEditor();
       // '# **bold** title' + space typed after '#' converts to a heading; the
       // heading itself is exercised elsewhere. Here: pasting the full line
       // and pressing Enter must not strip the '**'.

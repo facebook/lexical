@@ -7,7 +7,12 @@
  */
 
 import type {ElementNode, LexicalNode} from 'lexical';
-import type {Nodes as MdastNode, Parent as MdastParent} from 'mdast';
+import type {
+  BlockContent,
+  Nodes as MdastNode,
+  Parent as MdastParent,
+  PhrasingContent,
+} from 'mdast';
 import type {Extension as FromMarkdownExtension} from 'mdast-util-from-markdown';
 import type {Options as ToMarkdownExtension} from 'mdast-util-to-markdown';
 import type {Extension as MicromarkExtension} from 'micromark-util-types';
@@ -19,6 +24,39 @@ export type {
   MicromarkExtension,
   ToMarkdownExtension,
 };
+
+// The mdast `data` fields this package uses to round-trip the original
+// Markdown syntax. Declared through interface merging — mdast's sanctioned
+// extension point — so no casts are needed to read or write them, and
+// consumers see them typed on exported trees ($convertToMdast).
+declare module 'mdast' {
+  interface BreakData {
+    /** The hard-break marker: `'\\'`, trailing spaces, or `''` for soft. */
+    mdastBreak?: string;
+  }
+  interface CodeData {
+    /** The literal fence the code block used (e.g. ``` or ~~~). */
+    mdastFence?: string;
+  }
+  interface HeadingData {
+    /** Present (true) when the heading was written in setext style. */
+    mdastSetext?: boolean;
+  }
+  interface LinkData {
+    /** The syntax the link was written in. */
+    mdastLinkStyle?: 'autolink' | 'inline' | 'literal';
+  }
+  interface ListData {
+    /** The bullet character an unordered list used (`-`, `*`, `+`). */
+    mdastBullet?: '*' | '+' | '-';
+    /** The delimiter an ordered list used (`.` or `)`). */
+    mdastBulletOrdered?: ')' | '.';
+  }
+  interface ThematicBreakData {
+    /** The marker character the thematic break used (`-`, `*`, `_`). */
+    mdastRule?: string;
+  }
+}
 
 /**
  * The context passed to {@link MdastImportHandler}s while an mdast tree is
@@ -88,14 +126,14 @@ export interface MdastExportContext {
    * Convert the inline children of `node` into mdast phrasing content,
    * grouping bare line breaks as mdast `break` nodes.
    */
-  exportInline(node: ElementNode): MdastNode[];
+  exportInline(node: ElementNode): PhrasingContent[];
   /**
    * Convert the inline children of `node` into one or more mdast block nodes
    * (paragraphs), splitting on hard line breaks. Used by containers such as
    * block quotes and list items whose Lexical children are inline but whose
    * mdast children must be block-level.
    */
-  exportBlocks(node: ElementNode): MdastNode[];
+  exportBlocks(node: ElementNode): BlockContent[];
 }
 
 /**

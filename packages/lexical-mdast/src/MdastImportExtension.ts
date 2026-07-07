@@ -463,9 +463,7 @@ const $exportThematicBreak: MdastExportHandler = node => {
   const rule: ThematicBreak = {type: 'thematicBreak'};
   const marker = $getState(node, hrMarkerState);
   if (marker) {
-    (rule as ThematicBreak & {data?: {mdastRule?: string}}).data = {
-      mdastRule: marker,
-    };
+    rule.data = {mdastRule: marker};
   }
   return rule;
 };

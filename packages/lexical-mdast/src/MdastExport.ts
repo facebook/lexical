@@ -9,18 +9,21 @@
 import type {CompiledMdast, MdastExportContext, MdastNode} from './types';
 import type {ElementNode, LexicalNode} from 'lexical';
 import type {
+  BlockContent,
   Break,
   Code,
   Heading,
   Link,
   List,
-  Paragraph,
   PhrasingContent,
   Root,
   RootContent,
   ThematicBreak,
 } from 'mdast';
-import type {Options as ToMarkdownExtension} from 'mdast-util-to-markdown';
+import type {
+  Options as ToMarkdownExtension,
+  State,
+} from 'mdast-util-to-markdown';
 
 import {
   $getRoot,
@@ -45,36 +48,27 @@ import {
   strongMarkerState,
 } from './state';
 
-/** Reads a string field off an mdast node's `data`, if present. */
-function dataField(node: {data?: unknown}, key: string): string | undefined {
-  const data = node.data as Record<string, unknown> | undefined;
-  const value = data ? data[key] : undefined;
-  return typeof value === 'string' ? value : undefined;
-}
-
-type ToMarkdownState = Parameters<typeof defaultHandlers.code>[2];
-
 /**
  * Runs `fn` with `state.options` temporarily overridden, restoring the
  * previous values afterwards so a per-node override never leaks into the rest
  * of the serialization.
  */
 function withOptions<T>(
-  state: ToMarkdownState,
-  overrides: Partial<ToMarkdownState['options']>,
+  state: State,
+  overrides: State['options'],
   fn: () => T,
 ): T {
-  const options = state.options as Record<string, unknown>;
-  const saved: Record<string, unknown> = {};
-  for (const key of Object.keys(overrides)) {
-    saved[key] = options[key];
-    options[key] = (overrides as Record<string, unknown>)[key];
+  const {options} = state;
+  const saved: State['options'] = {};
+  for (const key of Object.keys(overrides) as (keyof State['options'])[]) {
+    saved[key] = options[key] as never;
+    options[key] = overrides[key] as never;
   }
   try {
     return fn();
   } finally {
-    for (const key of Object.keys(saved)) {
-      options[key] = saved[key];
+    for (const key of Object.keys(saved) as (keyof State['options'])[]) {
+      options[key] = saved[key] as never;
     }
   }
 }
@@ -101,14 +95,14 @@ const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
       if (result !== '\\\n') {
         return result;
       }
-      const marker = dataField(node, 'mdastBreak');
+      const marker = node.data && node.data.mdastBreak;
       if (!marker) {
         return '\n';
       }
       return /^ {2,}$/.test(marker) ? `${marker}\n` : result;
     },
     code(node: Code, parent, state, info) {
-      const fence = dataField(node, 'mdastFence');
+      const fence = node.data && node.data.mdastFence;
       if (!fence) {
         return defaultHandlers.code(node, parent, state, info);
       }
@@ -121,8 +115,7 @@ const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
     heading(node: Heading, parent, state, info) {
       // `data.mdastSetext` is only present (true) for imported setext
       // headings; everything else defers to the document-level option.
-      const data = node.data as {mdastSetext?: boolean} | undefined;
-      if (!data || data.mdastSetext !== true) {
+      if (!(node.data && node.data.mdastSetext === true)) {
         return defaultHandlers.heading(node, parent, state, info);
       }
       return withOptions(state, {setext: true}, () =>
@@ -133,7 +126,7 @@ const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
       // `data.mdastLinkStyle` preserves the syntax the link was written in.
       // A title can't be expressed in autolink/literal form, so links with a
       // title always fall through to the default (resource form).
-      const style = dataField(node, 'mdastLinkStyle');
+      const style = node.data && node.data.mdastLinkStyle;
       if (style === 'literal' && node.title == null) {
         // A bare GFM autolink literal: emit the visible text as-is. The
         // gfm-autolink-literal to-markdown extension keeps surrounding
@@ -151,16 +144,16 @@ const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
     },
     list(node: List, parent, state, info) {
       if (node.ordered) {
-        const ordered = dataField(node, 'mdastBulletOrdered');
-        if (ordered !== '.' && ordered !== ')') {
+        const ordered = node.data && node.data.mdastBulletOrdered;
+        if (ordered == null) {
           return defaultHandlers.list(node, parent, state, info);
         }
         return withOptions(state, {bulletOrdered: ordered}, () =>
           defaultHandlers.list(node, parent, state, info),
         );
       }
-      const bullet = dataField(node, 'mdastBullet');
-      if (bullet !== '-' && bullet !== '*' && bullet !== '+') {
+      const bullet = node.data && node.data.mdastBullet;
+      if (bullet == null) {
         return defaultHandlers.list(node, parent, state, info);
       }
       return withOptions(
@@ -170,7 +163,7 @@ const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
       );
     },
     thematicBreak(node: ThematicBreak, parent, state) {
-      const marker = dataField(node, 'mdastRule');
+      const marker = node.data && node.data.mdastRule;
       if (marker !== '-' && marker !== '*' && marker !== '_') {
         return defaultHandlers.thematicBreak(node, parent, state);
       }
@@ -192,10 +185,12 @@ class TextRunAccumulator {
 
   /**
    * Returns `true` when `child` was absorbed. A format change flushes the
-   * previous run into `out` first.
+   * previous run into `out` first. The caller decides *which* text nodes
+   * are eligible (plain text with no export rule of its own); this only
+   * guards the node kind.
    */
-  push(child: LexicalNode, out: MdastNode[]): boolean {
-    if (child.getType() !== 'text' || !$isTextNode(child)) {
+  push(child: LexicalNode, out: PhrasingContent[]): boolean {
+    if (!$isTextNode(child)) {
       return false;
     }
     const format = child.getFormat() & TEXT_FORMAT_MASK;
@@ -209,7 +204,7 @@ class TextRunAccumulator {
     return true;
   }
 
-  flushInto(out: MdastNode[]): void {
+  flushInto(out: PhrasingContent[]): void {
     if (this.format >= 0) {
       out.push(phrasingFromFormattedText(this.value, this.format));
     }
@@ -220,6 +215,18 @@ class TextRunAccumulator {
 
 function createNodeExporter(compiled: CompiledMdast) {
   const {exportHandlers} = compiled;
+
+  /**
+   * Whether the run accumulator may absorb `child`: a text node whose only
+   * export behavior would be the core text fallback. A node whose type has
+   * its own registered rule (or the core `'text'` rule, which the
+   * accumulator supersedes to merge adjacent runs) must not be swallowed —
+   * this keeps replaced/custom text nodes dispatching to their handlers.
+   */
+  function mayAccumulate(child: LexicalNode): boolean {
+    const handler = exportHandlers.get(child.getType());
+    return handler === undefined || handler === exportText;
+  }
 
   const context: MdastExportContext = {
     exportBlocks: node => $exportBlocks(node),
@@ -243,13 +250,13 @@ function createNodeExporter(compiled: CompiledMdast) {
     }
     // Fallbacks keep unknown nodes from disappearing entirely; text and line
     // breaks reuse the core handlers so their behavior can't drift.
-    const asText = exportText(node, context);
-    if (asText != null) {
-      return Array.isArray(asText) ? asText : [asText];
+    const asText = exportText(node);
+    if (asText !== null) {
+      return [asText];
     }
-    const asBreak = $exportLineBreak(node, context);
-    if (asBreak != null) {
-      return Array.isArray(asBreak) ? asBreak : [asBreak];
+    const asBreak = $exportLineBreak(node);
+    if (asBreak !== null) {
+      return [asBreak];
     }
     if ($isElementNode(node)) {
       return context.exportChildren(node);
@@ -261,13 +268,15 @@ function createNodeExporter(compiled: CompiledMdast) {
   /**
    * Converts the inline children of `node` into phrasing content.
    */
-  function $exportInline(node: ElementNode): MdastNode[] {
-    const result: MdastNode[] = [];
+  function $exportInline(node: ElementNode): PhrasingContent[] {
+    const result: PhrasingContent[] = [];
     const runs = new TextRunAccumulator();
     for (const child of node.getChildren()) {
-      if (!runs.push(child, result)) {
+      if (!(mayAccumulate(child) && runs.push(child, result))) {
         runs.flushInto(result);
-        result.push(...$dispatch(child));
+        // The registry erases types; phrasing output is the dispatch
+        // contract for inline children.
+        result.push(...($dispatch(child) as PhrasingContent[]));
       }
     }
     runs.flushInto(result);
@@ -282,38 +291,41 @@ function createNodeExporter(compiled: CompiledMdast) {
    * (hard or soft according to its marker). Nested block children pass
    * through directly.
    */
-  function $exportBlocks(node: ElementNode): MdastNode[] {
-    const blocks: MdastNode[] = [];
+  function $exportBlocks(node: ElementNode): BlockContent[] {
+    const blocks: BlockContent[] = [];
     let inline: PhrasingContent[] = [];
     const runs = new TextRunAccumulator();
     const flushParagraph = () => {
-      runs.flushInto(inline as MdastNode[]);
+      runs.flushInto(inline);
       if (inline.length > 0) {
-        blocks.push({children: inline, type: 'paragraph'} satisfies Paragraph);
+        blocks.push({children: inline, type: 'paragraph'});
         inline = [];
       }
     };
     for (const child of node.getChildren()) {
       if ($isLineBreakNode(child)) {
-        if ($getState(child, paragraphBreakState)) {
+        const asBreak = $exportLineBreak(child);
+        if ($getState(child, paragraphBreakState) || asBreak === null) {
           flushParagraph();
         } else {
-          runs.flushInto(inline as MdastNode[]);
-          inline.push($exportLineBreak(child, context) as Break);
+          runs.flushInto(inline);
+          inline.push(asBreak);
         }
-      } else if (runs.push(child, inline as MdastNode[])) {
+      } else if (mayAccumulate(child) && runs.push(child, inline)) {
         continue;
       } else if ($isBlockLevelNode(child)) {
         flushParagraph();
-        blocks.push(...$dispatch(child));
+        // The registry erases types; block-level output is the dispatch
+        // contract for block children.
+        blocks.push(...($dispatch(child) as BlockContent[]));
       } else {
-        runs.flushInto(inline as MdastNode[]);
+        runs.flushInto(inline);
         inline.push(...($dispatch(child) as PhrasingContent[]));
       }
     }
     flushParagraph();
     if (blocks.length === 0) {
-      blocks.push({children: [], type: 'paragraph'} satisfies Paragraph);
+      blocks.push({children: [], type: 'paragraph'});
     }
     return blocks;
   }

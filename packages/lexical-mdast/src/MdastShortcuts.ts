@@ -7,8 +7,7 @@
  */
 
 import type {MdastBlockMatch} from './MdastStream';
-import type {CompiledMdast, MdastNode} from './types';
-import type {HeadingTagType} from '@lexical/rich-text';
+import type {CompiledMdast} from './types';
 import type {ElementNode, LexicalEditor, LexicalNode, TextNode} from 'lexical';
 
 import {$createCodeNode, $isCodeNode} from '@lexical/code-core';
@@ -91,7 +90,7 @@ function $applyBlock(paragraph: ElementNode, match: MdastBlockMatch): boolean {
     if (match.node.meta) {
       $setState(code, codeMetaState, match.node.meta);
     }
-    code.append(...remaining);
+    code.splice(0, 0, remaining);
     paragraph.replace(code);
     code.selectStart();
     return true;
@@ -100,14 +99,15 @@ function $applyBlock(paragraph: ElementNode, match: MdastBlockMatch): boolean {
   let target: ElementNode;
   let selectInto: ElementNode;
   if (match.kind === 'heading') {
-    const depth = Math.min(6, Math.max(1, match.node.depth));
-    const heading = $createHeadingNode(`h${depth}` as HeadingTagType);
-    heading.append(...remaining);
+    const heading = $createHeadingNode(`h${match.node.depth}`).splice(
+      0,
+      0,
+      remaining,
+    );
     target = heading;
     selectInto = heading;
   } else if (match.kind === 'blockquote') {
-    const quote = $createQuoteNode();
-    quote.append(...remaining);
+    const quote = $createQuoteNode().splice(0, 0, remaining);
     target = quote;
     selectInto = quote;
   } else {
@@ -123,8 +123,7 @@ function $applyBlock(paragraph: ElementNode, match: MdastBlockMatch): boolean {
       typeof firstItem.checked === 'boolean'
         ? firstItem.checked
         : undefined;
-    const item = $createListItemNode(checked);
-    item.append(...remaining);
+    const item = $createListItemNode(checked).splice(0, 0, remaining);
     list.append(item);
     target = list;
     selectInto = item;
@@ -172,7 +171,7 @@ function $applyInline(
     target = parts.length === 3 ? parts[1] : parts[parts.length - 1];
   }
 
-  const lexicalNodes = scanner.importInline(inlineNode as MdastNode);
+  const lexicalNodes = scanner.importInline(inlineNode);
   if (lexicalNodes.length === 0) {
     return false;
   }
@@ -237,8 +236,7 @@ function $tryCheckbox(
     $stripLeading(parent, match[0].length);
     const remaining = parent.getChildren();
     const list = $createListNode('check');
-    const item = $createListItemNode(checked);
-    item.append(...remaining);
+    const item = $createListItemNode(checked).splice(0, 0, remaining);
     list.append(item);
     parent.replace(list);
     item.selectStart();

@@ -8,15 +8,7 @@
 
 import type {CompiledMdast, MdastNode} from './types';
 import type {LexicalNode} from 'lexical';
-import type {
-  Blockquote,
-  Code,
-  Heading,
-  List,
-  Nodes as AnyMdastNode,
-  Parent,
-  PhrasingContent,
-} from 'mdast';
+import type {Blockquote, Code, Heading, List, PhrasingContent} from 'mdast';
 
 import {fromMarkdown} from 'mdast-util-from-markdown';
 
@@ -39,20 +31,19 @@ export type MdastBlockMatch =
  * paragraph or heading — descending further would treat inline delimiters
  * (`**`, `[`, `` ` ``) as part of the block marker.
  */
-function contentStartOffset(node: AnyMdastNode, line: string): number {
-  let current: AnyMdastNode = node;
+function contentStartOffset(node: MdastNode, line: string): number {
+  let current: MdastNode = node;
   for (;;) {
     if (current.type === 'heading' || current.type === 'paragraph') {
-      const first = (current as Parent).children[0];
+      const first = current.children[0];
       return first && first.position && first.position.start.offset != null
         ? first.position.start.offset
         : line.length;
     }
-    const children = (current as Parent).children;
-    if (!children || children.length === 0) {
+    if (!('children' in current) || current.children.length === 0) {
       return line.length;
     }
-    current = children[0] as AnyMdastNode;
+    current = current.children[0];
   }
 }
 
@@ -84,12 +75,11 @@ export class MarkdownStreamScanner {
   constructor(compiled: CompiledMdast) {
     this.compiled = compiled;
     this.importNode = createNodeImporter(compiled, '').$importNode;
-    const probe = this.parse('- [x] a').children[0] as AnyMdastNode;
+    const probe = this.parse('- [x] a').children[0];
     this.supportsTaskListItems =
       probe != null &&
       probe.type === 'list' &&
-      (probe.children[0] as AnyMdastNode & {checked?: boolean | null})
-        .checked === true;
+      probe.children[0].checked === true;
   }
 
   /** Characters that can close an inline construct for this registry. */
@@ -129,11 +119,23 @@ export class MarkdownStreamScanner {
     }
     switch (first.type) {
       case 'heading':
+        return {
+          kind: 'heading',
+          markerLength: contentStartOffset(first, line),
+          node: first,
+        };
       case 'blockquote':
-      case 'list': {
-        const markerLength = contentStartOffset(first as AnyMdastNode, line);
-        return {kind: first.type, markerLength, node: first} as MdastBlockMatch;
-      }
+        return {
+          kind: 'blockquote',
+          markerLength: contentStartOffset(first, line),
+          node: first,
+        };
+      case 'list':
+        return {
+          kind: 'list',
+          markerLength: contentStartOffset(first, line),
+          node: first,
+        };
       case 'code':
         // A code construct recognized from a single line is just the opening
         // fence (possibly with a language); the entire line is the marker.

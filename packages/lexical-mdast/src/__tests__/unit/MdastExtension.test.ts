@@ -19,7 +19,7 @@ import {
   $isRangeSelection,
   defineExtension,
 } from 'lexical';
-import {describe, expect, it, onTestFinished} from 'vitest';
+import {describe, expect, it} from 'vitest';
 
 import {
   $convertFromMarkdownString,
@@ -33,15 +33,9 @@ import {
   MdastShortcutsExtension,
 } from '../../index';
 
-function buildEditor(dependencies: Parameters<typeof defineExtension>[0]) {
-  const editor = buildEditorFromExtensions(dependencies);
-  onTestFinished(() => editor.dispose());
-  return editor;
-}
-
 describe('@lexical/mdast extensions', () => {
   it('feature extensions ship the nodes their rules need', () => {
-    const editor = buildEditor(
+    using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [MdastCommonMarkExtension, MdastExportExtension],
         name: '[root]',
@@ -61,7 +55,7 @@ describe('@lexical/mdast extensions', () => {
   });
 
   it('exposes the Markdown API through extension outputs', () => {
-    const editor = buildEditor(
+    using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [MdastCommonMarkExtension, MdastExportExtension],
         name: '[root]',
@@ -83,7 +77,7 @@ describe('@lexical/mdast extensions', () => {
   });
 
   it('MdastExtension bundles import and export', () => {
-    const editor = buildEditor(
+    using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [MdastCommonMarkExtension, MdastExtension],
         name: '[root]',
@@ -101,7 +95,7 @@ describe('@lexical/mdast extensions', () => {
   });
 
   it('wires up streaming shortcuts via MdastShortcutsExtension', () => {
-    const editor = buildEditor(
+    using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [MdastHeadingExtension, MdastShortcutsExtension],
         name: '[root]',
@@ -134,7 +128,7 @@ describe('@lexical/mdast extensions', () => {
   it('block shortcuts only fire for features in the editor', () => {
     // Lists but no headings: `# ` must stay literal text instead of
     // materializing an unregistered HeadingNode.
-    const editor = buildEditor(
+    using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [MdastListExtension, MdastShortcutsExtension],
         name: '[root]',

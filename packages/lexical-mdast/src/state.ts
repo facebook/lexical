@@ -23,7 +23,8 @@ import {createState} from 'lexical';
 
 /** The bullet character (`-`, `*`, `+`) an unordered/check `ListNode` used. */
 export const listMarkerState = /* @__PURE__ */ createState('mdastListMarker', {
-  parse: (v): string => (typeof v === 'string' && /^[-*+]$/.test(v) ? v : ''),
+  parse: (v): '' | '*' | '+' | '-' =>
+    v === '-' || v === '*' || v === '+' ? v : '',
   resetOnCopyNode: true,
 });
 
@@ -31,7 +32,7 @@ export const listMarkerState = /* @__PURE__ */ createState('mdastListMarker', {
 export const orderedMarkerState = /* @__PURE__ */ createState(
   'mdastOrderedMarker',
   {
-    parse: (v): string => (v === '.' || v === ')' ? v : ''),
+    parse: (v): '' | ')' | '.' => (v === '.' || v === ')' ? v : ''),
     resetOnCopyNode: true,
   },
 );
@@ -117,7 +118,7 @@ export const hrMarkerState = /* @__PURE__ */ createState('mdastHrMarker', {
  * `https://…` in prose).
  */
 export const linkStyleState = /* @__PURE__ */ createState('mdastLinkStyle', {
-  parse: (v): string =>
+  parse: (v): '' | 'autolink' | 'inline' | 'literal' =>
     v === 'inline' || v === 'autolink' || v === 'literal' ? v : '',
   resetOnCopyNode: true,
 });

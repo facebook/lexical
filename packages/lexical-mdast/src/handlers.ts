@@ -7,6 +7,7 @@
  */
 
 import type {
+  MdastExportContext,
   MdastExportHandler,
   MdastImportContext,
   MdastImportHandler,
@@ -19,6 +20,7 @@ import type {
   Blockquote,
   Break,
   Code,
+  Delete,
   Emphasis,
   Heading,
   Html,
@@ -56,6 +58,7 @@ import {
   $isElementNode,
   $isLineBreakNode,
   $isParagraphNode,
+  $isTabNode,
   $isTextNode,
   $setState,
   TEXT_TYPE_TO_FORMAT,
@@ -84,14 +87,12 @@ export function $isBlockLevelNode(node: LexicalNode): boolean {
 
 /** A `LineBreakNode` marking a paragraph boundary inside a container. */
 function $createParagraphBreakNode(): LexicalNode {
-  const lineBreak = $createLineBreakNode();
-  $setState(lineBreak, paragraphBreakState, true);
-  return lineBreak;
+  return $setState($createLineBreakNode(), paragraphBreakState, true);
 }
 
 /** Reads the first source character of `node` (an inline delimiter, if any). */
 function inlineMarker(
-  ctx: Parameters<MdastImportHandler>[1],
+  ctx: MdastImportContext,
   node: {position?: {start: {offset?: number}}},
 ): string | undefined {
   if (!ctx.source || !node.position || node.position.start.offset == null) {
@@ -112,14 +113,11 @@ export const TEXT_FORMAT_MASK =
  * Import handlers: mdast node -> Lexical node(s)                              *
  * -------------------------------------------------------------------------- */
 
-export const $importParagraph: MdastImportHandler<Paragraph> = (node, ctx) => {
-  const paragraph = $createParagraphNode();
-  paragraph.append(...ctx.importChildren(node));
-  return paragraph;
-};
+export const $importParagraph: MdastImportHandler<Paragraph> = (node, ctx) =>
+  $createParagraphNode().splice(0, 0, ctx.importChildren(node));
 
 export const $importHeading: MdastImportHandler<Heading> = (node, ctx) => {
-  const heading = $createHeadingNode(`h${node.depth}` as HeadingTagType);
+  const heading = $createHeadingNode(`h${node.depth}`);
   // A level 1/2 heading that does not start with a valid ATX marker (`#`..
   // `######` followed by whitespace or end of line) was written in setext
   // style. Checking for the trailing boundary matters: `#foo\n===` is a
@@ -133,8 +131,7 @@ export const $importHeading: MdastImportHandler<Heading> = (node, ctx) => {
       $setState(heading, setextState, true);
     }
   }
-  heading.append(...ctx.importChildren(node));
-  return heading;
+  return heading.splice(0, 0, ctx.importChildren(node));
 };
 
 export const $importBlockquote: MdastImportHandler<Blockquote> = (
@@ -155,8 +152,7 @@ export const $importBlockquote: MdastImportHandler<Blockquote> = (
       children.push(...ctx.importNode(child));
     }
   }
-  quote.append(...children);
-  return quote;
+  return quote.splice(0, 0, children);
 };
 
 /**
@@ -202,11 +198,12 @@ export function $importBlockChildren(
 export const $importShadowRootBlockquote: MdastImportHandler<Blockquote> = (
   node,
   ctx,
-) => {
-  const quote = $createQuoteNode({shadowRoot: true});
-  quote.append(...$importBlockChildren(node as MdastParent, ctx));
-  return quote;
-};
+) =>
+  $createQuoteNode({shadowRoot: true}).splice(
+    0,
+    0,
+    $importBlockChildren(node, ctx),
+  );
 
 /** Maps an mdast `list` node to the Lexical {@link ListType} it represents. */
 export function $listTypeFromMdast(node: List): ListType {
@@ -237,20 +234,23 @@ export const $importList: MdastImportHandler<List> = (node, ctx) => {
     const markerWindow = ctx.source.slice(itemOffset, itemOffset + 16);
     if (listType === 'number') {
       const match = markerWindow.match(/^\s*\d+([.)])/);
-      if (match) {
-        $setState(list, orderedMarkerState, match[1]);
+      const delimiter = match && match[1];
+      if (delimiter === '.' || delimiter === ')') {
+        $setState(list, orderedMarkerState, delimiter);
       }
     } else {
       const match = markerWindow.match(/^\s*([-*+])/);
-      if (match) {
-        $setState(list, listMarkerState, match[1]);
+      const bullet = match && match[1];
+      if (bullet === '-' || bullet === '*' || bullet === '+') {
+        $setState(list, listMarkerState, bullet);
       }
     }
   }
-  for (const child of node.children) {
-    list.append(...ctx.importNode(child));
-  }
-  return list;
+  return list.splice(
+    0,
+    0,
+    node.children.flatMap(child => ctx.importNode(child)),
+  );
 };
 
 export const $importListItem: MdastImportHandler<ListItem> = (node, ctx) => {
@@ -262,16 +262,16 @@ export const $importListItem: MdastImportHandler<ListItem> = (node, ctx) => {
     if (child.type === 'list') {
       // A nested list is represented in Lexical as a ListItemNode whose only
       // child is the nested ListNode, appended as a sibling of this item.
-      const nestedItem = $createListItemNode();
-      nestedItem.append(...ctx.importNode(child));
-      extraItems.push(nestedItem);
+      extraItems.push(
+        $createListItemNode().splice(0, 0, ctx.importNode(child)),
+      );
     } else if (child.type === 'paragraph') {
       if (item.getChildrenSize() > 0) {
         item.append($createParagraphBreakNode());
       }
-      item.append(...ctx.importChildren(child));
+      item.splice(item.getChildrenSize(), 0, ctx.importChildren(child));
     } else {
-      item.append(...ctx.importNode(child));
+      item.splice(item.getChildrenSize(), 0, ctx.importNode(child));
     }
   }
   return [item, ...extraItems];
@@ -338,11 +338,10 @@ export const $importEmphasis: MdastImportHandler<Emphasis | Strong> =
 export const $importStrong: MdastImportHandler<Emphasis | Strong> =
   /* @__PURE__ */ makeEmphasisImporter(FORMAT_BOLD, strongMarkerState);
 
-export const importDelete: MdastImportHandler = (node, ctx) =>
-  ctx.importChildren(node as Strong, FORMAT_STRIKETHROUGH);
+export const importDelete: MdastImportHandler<Delete> = (node, ctx) =>
+  ctx.importChildren(node, FORMAT_STRIKETHROUGH);
 
 export const $importBreak: MdastImportHandler<Break> = (node, ctx) => {
-  const lineBreak = $createLineBreakNode();
   // An mdast `break` is always a HARD break; preserve whether it was written
   // as `\` or as trailing spaces, defaulting to `\` when the literal cannot
   // be recovered. (Soft breaks are newlines inside text values and stay
@@ -357,15 +356,13 @@ export const $importBreak: MdastImportHandler<Break> = (node, ctx) => {
       }
     }
   }
-  $setState(lineBreak, hardLineBreakState, marker);
-  return [lineBreak];
+  return [$setState($createLineBreakNode(), hardLineBreakState, marker)];
 };
 
 export const $importLink: MdastImportHandler<Link> = (node, ctx) => {
   const link = $createLinkNode(node.url, {
     title: node.title == null ? undefined : node.title,
-  });
-  link.append(...ctx.importChildren(node));
+  }).splice(0, 0, ctx.importChildren(node));
   // Preserve the syntax the link was written in (`[text](url)` vs `<url>`
   // vs a bare GFM autolink literal) so it round-trips unchanged.
   if (ctx.source && node.position && node.position.start.offset != null) {
@@ -390,11 +387,9 @@ export const $importLinkReference: MdastImportHandler<LinkReference> = (
 ) => {
   const definition = ctx.getDefinition(node.identifier);
   if (definition) {
-    const link = $createLinkNode(definition.url, {
+    return $createLinkNode(definition.url, {
       title: definition.title == null ? undefined : definition.title,
-    });
-    link.append(...ctx.importChildren(node));
-    return link;
+    }).splice(0, 0, ctx.importChildren(node));
   }
   const {position} = node;
   if (ctx.source && position && position.start.offset != null) {
@@ -425,28 +420,33 @@ export const exportParagraph: MdastExportHandler = (node, ctx) => {
     return null;
   }
   return {
-    children: ctx.exportInline(node) as PhrasingContent[],
+    children: ctx.exportInline(node),
     type: 'paragraph',
   };
+};
+
+const HEADING_DEPTHS: Record<HeadingTagType, Heading['depth']> = {
+  h1: 1,
+  h2: 2,
+  h3: 3,
+  h4: 4,
+  h5: 5,
+  h6: 6,
 };
 
 export const $exportHeading: MdastExportHandler = (node, ctx) => {
   if (!$isHeadingNode(node)) {
     return null;
   }
-  const depth = Math.min(
-    6,
-    Math.max(1, Number(node.getTag().slice(1)) || 1),
-  ) as Heading['depth'];
   const heading: Heading = {
-    children: ctx.exportInline(node) as PhrasingContent[],
-    depth,
+    children: ctx.exportInline(node),
+    depth: HEADING_DEPTHS[node.getTag()],
     type: 'heading',
   };
   // Only pin the style when it is known; nodes created in the editor defer
   // to the document-level serialization options.
   if ($getState(node, setextState)) {
-    heading.data = {mdastSetext: true} as Heading['data'];
+    heading.data = {mdastSetext: true};
   }
   return heading;
 };
@@ -458,10 +458,12 @@ export const exportQuote: MdastExportHandler = (node, ctx) => {
   // A shadow root quote holds block-level children that dispatch directly;
   // a legacy quote holds inline content that must be reassembled into
   // paragraphs. Branching per node lets both forms coexist in one document.
+  // Children of a shadow root quote dispatch through the registry, which
+  // erases types; block-level output is the dispatch contract here.
   return {
-    children: (node.isShadowRoot()
-      ? ctx.exportChildren(node)
-      : ctx.exportBlocks(node)) as Blockquote['children'],
+    children: node.isShadowRoot()
+      ? (ctx.exportChildren(node) as Blockquote['children'])
+      : ctx.exportBlocks(node),
     type: 'blockquote',
   };
 };
@@ -486,7 +488,7 @@ export const $exportCode: MdastExportHandler = node => {
   // document-level serialization options.
   const fence = $getState(node, codeFenceState);
   if (fence) {
-    code.data = {mdastFence: fence} as Code['data'];
+    code.data = {mdastFence: fence};
   }
   return code;
 };
@@ -496,7 +498,7 @@ export const $exportLink: MdastExportHandler = (node, ctx) => {
     return null;
   }
   const link: Link = {
-    children: ctx.exportInline(node) as Link['children'],
+    children: ctx.exportInline(node),
     title: node.getTitle() ?? null,
     type: 'link',
     url: node.getURL(),
@@ -505,17 +507,12 @@ export const $exportLink: MdastExportHandler = (node, ctx) => {
   // serialization (autolink form when the text is the URL).
   const style = $getState(node, linkStyleState);
   if (style) {
-    (link as Link & {data?: {mdastLinkStyle?: string}}).data = {
-      mdastLinkStyle: style,
-    };
+    link.data = {mdastLinkStyle: style};
   }
   return link;
 };
 
-function $exportListNode(
-  node: ListNode,
-  ctx: Parameters<MdastExportHandler>[1],
-): List {
+function $exportListNode(node: ListNode, ctx: MdastExportContext): List {
   const listType = node.getListType();
   const list: List = {
     children: [],
@@ -527,18 +524,15 @@ function $exportListNode(
   // Preserve the marker the list used; read back by the exporter's
   // to-markdown wrapper. Only pinned when known — editor-created lists defer
   // to the document-level serialization options.
-  const listData = list as List & {
-    data?: {mdastBullet?: string; mdastBulletOrdered?: string};
-  };
   if (listType === 'number') {
     const marker = $getState(node, orderedMarkerState);
     if (marker) {
-      listData.data = {mdastBulletOrdered: marker};
+      list.data = {mdastBulletOrdered: marker};
     }
   } else {
     const marker = $getState(node, listMarkerState);
     if (marker) {
-      listData.data = {mdastBullet: marker};
+      list.data = {mdastBullet: marker};
     }
   }
   let previousItem: ListItem | null = null;
@@ -564,7 +558,7 @@ function $exportListNode(
     }
     const item: ListItem = {
       checked: listType === 'check' ? (child.getChecked() ?? false) : null,
-      children: ctx.exportBlocks(child) as ListItem['children'],
+      children: ctx.exportBlocks(child),
       spread: false,
       type: 'listItem',
     };
@@ -606,7 +600,7 @@ export function phrasingFromFormattedText(
   return content;
 }
 
-export const exportText: MdastExportHandler = node => {
+export const exportText = (node: LexicalNode): PhrasingContent | null => {
   if (!$isTextNode(node)) {
     return null;
   }
@@ -616,13 +610,13 @@ export const exportText: MdastExportHandler = node => {
   );
 };
 
-export const $exportLineBreak: MdastExportHandler = node =>
+export const $exportLineBreak = (node: LexicalNode): Break | null =>
   $isLineBreakNode(node)
-    ? ({
+    ? {
         data: {mdastBreak: $getState(node, hardLineBreakState)},
         type: 'break',
-      } as Break)
+      }
     : null;
 
-export const exportTab: MdastExportHandler = node =>
-  node.getType() === 'tab' ? {type: 'text', value: '\t'} : null;
+export const exportTab = (node: LexicalNode): MdastText | null =>
+  $isTabNode(node) ? {type: 'text', value: '\t'} : null;

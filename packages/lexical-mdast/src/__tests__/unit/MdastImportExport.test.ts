@@ -7,9 +7,13 @@
  */
 
 import type {HeadingNode, QuoteNode} from '@lexical/rich-text';
-import type {ElementNode, LexicalEditor, TextNode} from 'lexical';
+import type {ElementNode, TextNode} from 'lexical';
 
-import {buildEditorFromExtensions, configExtension} from '@lexical/extension';
+import {
+  buildEditorFromExtensions,
+  configExtension,
+  type LexicalEditorWithDispose,
+} from '@lexical/extension';
 import {LinkNode} from '@lexical/link';
 import {ListNode} from '@lexical/list';
 import {TableNode} from '@lexical/table';
@@ -19,7 +23,7 @@ import {
   $getRoot,
   defineExtension,
 } from 'lexical';
-import {describe, expect, it, onTestFinished} from 'vitest';
+import {describe, expect, it} from 'vitest';
 
 import {
   $convertFromMarkdownString,
@@ -37,8 +41,9 @@ import {
   MdastTaskListExtension,
 } from '../../index';
 
-function createEditor(withTable = false): LexicalEditor {
-  const editor = buildEditorFromExtensions(
+function createEditor(withTable = false): LexicalEditorWithDispose {
+  // The caller is responsible for disposal (with `using`).
+  return buildEditorFromExtensions(
     defineExtension({
       dependencies: [
         MdastCommonMarkExtension,
@@ -51,12 +56,10 @@ function createEditor(withTable = false): LexicalEditor {
       name: '[root]',
     }),
   );
-  onTestFinished(() => editor.dispose());
-  return editor;
 }
 
 function importExport(markdown: string, withTable = false): string {
-  const editor = createEditor(withTable);
+  using editor = createEditor(withTable);
   editor.update(
     () => {
       $convertFromMarkdownString(markdown);
@@ -114,7 +117,7 @@ describe('@lexical/mdast import/export', () => {
   });
 
   it('imports a heading with inline formatting into the right structure', () => {
-    const editor = createEditor();
+    using editor = createEditor();
     editor.update(
       () => {
         $convertFromMarkdownString('# Hello *world*');
@@ -134,7 +137,7 @@ describe('@lexical/mdast import/export', () => {
   });
 
   it('imports nested unordered lists', () => {
-    const editor = createEditor();
+    using editor = createEditor();
     editor.update(
       () => {
         $convertFromMarkdownString('- a\n- b\n  - b1\n  - b2\n- c');
@@ -205,7 +208,7 @@ describe('@lexical/mdast import/export', () => {
   });
 
   it('round-trips autolink literals without normalizing to <...>', () => {
-    const editor = buildEditorFromExtensions(
+    using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [
           MdastCommonMarkExtension,
@@ -215,7 +218,6 @@ describe('@lexical/mdast import/export', () => {
         name: '[root]',
       }),
     );
-    onTestFinished(() => editor.dispose());
     const roundTrip = (markdown: string): string => {
       editor.update(
         () => {
@@ -237,7 +239,7 @@ describe('@lexical/mdast import/export', () => {
 
   describe('mdast tree interop', () => {
     it('$convertToMdast exposes the mdast tree before serialization', () => {
-      const editor = createEditor();
+      using editor = createEditor();
       editor.update(
         () => {
           $convertFromMarkdownString('# Title\n\nSome *emphasis* here');
@@ -263,7 +265,7 @@ describe('@lexical/mdast import/export', () => {
     });
 
     it('$convertFromMdast imports a programmatically-built tree', () => {
-      const editor = createEditor();
+      using editor = createEditor();
       editor.update(
         () => {
           $convertFromMdast({
@@ -290,7 +292,7 @@ describe('@lexical/mdast import/export', () => {
 
     it('round-trips editor -> tree -> editor', () => {
       const markdown = '# Title\n\n- one\n- two\n\n> quoted';
-      const source = createEditor();
+      using source = createEditor();
       source.update(
         () => {
           $convertFromMarkdownString(markdown);
@@ -298,7 +300,7 @@ describe('@lexical/mdast import/export', () => {
         {discrete: true},
       );
       const tree = source.read(() => $convertToMdast());
-      const target = createEditor();
+      using target = createEditor();
       target.update(
         () => {
           $convertFromMdast(tree);
@@ -310,7 +312,7 @@ describe('@lexical/mdast import/export', () => {
   });
 
   it('applies contributed document-level toMarkdown options', () => {
-    const editor = buildEditorFromExtensions(
+    using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [
           MdastCommonMarkExtension,
@@ -322,7 +324,6 @@ describe('@lexical/mdast import/export', () => {
         name: '[root]',
       }),
     );
-    onTestFinished(() => editor.dispose());
     editor.update(
       () => {
         // Imported via tree (no source), so no per-node bullet is recorded
@@ -359,13 +360,12 @@ describe('@lexical/mdast import/export', () => {
   it('unwraps constructs the editor has no extension for', () => {
     // Headings only — no blockquote extension. `> quote` imports as its
     // children (a paragraph) instead of corrupting or dropping content.
-    const editor = buildEditorFromExtensions(
+    using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [MdastHeadingExtension, MdastExportExtension],
         name: '[root]',
       }),
     );
-    onTestFinished(() => editor.dispose());
     editor.update(
       () => {
         $convertFromMarkdownString('# Title\n\n> quoted text');
@@ -384,13 +384,12 @@ describe('@lexical/mdast import/export', () => {
   });
 
   it('imports an autolink literal (gfm) as a link', () => {
-    const editor = buildEditorFromExtensions(
+    using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [MdastCommonMarkExtension, MdastAutolinkLiteralExtension],
         name: '[root]',
       }),
     );
-    onTestFinished(() => editor.dispose());
     editor.update(
       () => {
         $convertFromMarkdownString('see https://lexical.dev today');
@@ -444,7 +443,7 @@ describe('@lexical/mdast import/export', () => {
     });
 
     it('imports a table into @lexical/table nodes', () => {
-      const editor = createEditor(true);
+      using editor = createEditor(true);
       editor.update(
         () => {
           $convertFromMarkdownString('| h1 | h2 |\n| - | - |\n| a | b |');
@@ -468,7 +467,7 @@ describe('@lexical/mdast import/export', () => {
     });
 
     it('joins multi-paragraph cells instead of fusing their text', () => {
-      const editor = createEditor(true);
+      using editor = createEditor(true);
       editor.update(
         () => {
           $convertFromMarkdownString('| a |\n| - |\n| foo |');
@@ -487,8 +486,9 @@ describe('@lexical/mdast import/export', () => {
   });
 
   describe('with MdastShadowRootQuoteExtension', () => {
-    function shadowQuoteEditor(): LexicalEditor {
-      const editor = buildEditorFromExtensions(
+    function shadowQuoteEditor(): LexicalEditorWithDispose {
+      // The caller is responsible for disposal (with `using`).
+      return buildEditorFromExtensions(
         defineExtension({
           dependencies: [
             MdastCommonMarkExtension,
@@ -498,12 +498,10 @@ describe('@lexical/mdast import/export', () => {
           name: '[root]',
         }),
       );
-      onTestFinished(() => editor.dispose());
-      return editor;
     }
 
     function shadowImportExport(markdown: string): string {
-      const editor = shadowQuoteEditor();
+      using editor = shadowQuoteEditor();
       editor.update(
         () => {
           $convertFromMarkdownString(markdown);
@@ -530,7 +528,7 @@ describe('@lexical/mdast import/export', () => {
     }
 
     it('imports the quote as a shadow root with block children', () => {
-      const editor = shadowQuoteEditor();
+      using editor = shadowQuoteEditor();
       editor.update(
         () => {
           $convertFromMarkdownString('> para one\n>\n> - a\n> - b');
@@ -577,7 +575,7 @@ describe('@lexical/mdast import/export', () => {
   });
 
   it('imports tab characters as TabNodes', () => {
-    const editor = createEditor();
+    using editor = createEditor();
     editor.update(
       () => {
         $convertFromMarkdownString('foo\tbar');
@@ -592,7 +590,7 @@ describe('@lexical/mdast import/export', () => {
   });
 
   it('tolerates explicitly-undefined config keys in configExtension', () => {
-    const editor = buildEditorFromExtensions(
+    using editor = buildEditorFromExtensions(
       defineExtension({
         dependencies: [
           MdastCommonMarkExtension,
@@ -605,7 +603,6 @@ describe('@lexical/mdast import/export', () => {
         name: '[root]',
       }),
     );
-    onTestFinished(() => editor.dispose());
     editor.update(
       () => {
         $convertFromMarkdownString('# Still works');

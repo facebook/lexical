@@ -58,7 +58,7 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
           : TableCellHeaderStates.NO_STATUS,
       );
       const paragraph = $createParagraphNode();
-      paragraph.append(...ctx.importChildren(cell));
+      paragraph.splice(0, 0, ctx.importChildren(cell));
       cellNode.append(paragraph);
       rowNode.append(cellNode);
     }
@@ -90,7 +90,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
           if (children.length > 0) {
             children.push({type: 'break'});
           }
-          children.push(...(ctx.exportInline(child) as TableCell['children']));
+          children.push(...ctx.exportInline(child));
         }
       }
       cells.push({children, type: 'tableCell'});

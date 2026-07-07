@@ -61,24 +61,19 @@ export type ResolvedDefinition = {url: string; title?: string | null};
  * `definition` nodes are already normalized.
  */
 export function collectDefinitions(
-  tree: MdastParent,
+  tree: Root,
 ): Map<string, ResolvedDefinition> {
   const definitions = new Map<string, ResolvedDefinition>();
-  const visit = (node: MdastNode | MdastParent): void => {
-    if ('type' in node && node.type === 'definition') {
-      const {identifier, title, url} = node as unknown as {
-        identifier: string;
-        title?: string | null;
-        url: string;
-      };
+  const visit = (node: MdastNode): void => {
+    if (node.type === 'definition') {
       // CommonMark: the FIRST definition of an identifier wins.
-      if (!definitions.has(identifier)) {
-        definitions.set(identifier, {title, url});
+      if (!definitions.has(node.identifier)) {
+        definitions.set(node.identifier, {title: node.title, url: node.url});
       }
     }
-    if ('children' in node && Array.isArray(node.children)) {
+    if ('children' in node) {
       for (const child of node.children) {
-        visit(child as MdastNode);
+        visit(child);
       }
     }
   };
@@ -136,8 +131,8 @@ export function createNodeImporter(
     }
     // Fallback: unwrap unknown containers, render unknown literals as text, and
     // drop anything else so no content silently corrupts the tree.
-    if ('children' in node && Array.isArray(node.children)) {
-      return $importChildren(node as MdastParent, format);
+    if ('children' in node) {
+      return $importChildren(node, format);
     }
     if ('value' in node && typeof node.value === 'string') {
       return $createTextNodes(node.value, format);
@@ -148,7 +143,7 @@ export function createNodeImporter(
   function $importChildren(parent: MdastParent, format: number): LexicalNode[] {
     const out: LexicalNode[] = [];
     for (const child of parent.children) {
-      out.push(...$importNode(child as MdastNode, format));
+      out.push(...$importNode(child, format));
     }
     return out;
   }

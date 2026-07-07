@@ -2197,12 +2197,181 @@ export function $setTextFormat(
   selection: RangeSelection | NodeSelection,
   formats: Partial<Record<TextFormatType, boolean>>,
 ): void {
-  for (const type of Object.keys(formats) as TextFormatType[]) {
-    const value = formats[type];
-    if (value !== undefined) {
-      $formatText(selection, type, value ? TEXT_TYPE_TO_FORMAT[type] : 0);
+  let setBits = 0;
+  let clearBits = 0;
+  for (const [type, value] of Object.entries(formats) as [
+    TextFormatType,
+    boolean | undefined,
+  ][]) {
+    if (typeof value !== 'boolean') {
+      continue;
+    }
+    const bit = TEXT_TYPE_TO_FORMAT[type];
+    if (value) {
+      setBits |= bit;
+      if (type === 'subscript') {
+        clearBits |= TEXT_TYPE_TO_FORMAT.superscript;
+      } else if (type === 'superscript') {
+        clearBits |= TEXT_TYPE_TO_FORMAT.subscript;
+      } else if (type === 'lowercase') {
+        clearBits |=
+          TEXT_TYPE_TO_FORMAT.uppercase | TEXT_TYPE_TO_FORMAT.capitalize;
+      } else if (type === 'uppercase') {
+        clearBits |=
+          TEXT_TYPE_TO_FORMAT.lowercase | TEXT_TYPE_TO_FORMAT.capitalize;
+      } else if (type === 'capitalize') {
+        clearBits |=
+          TEXT_TYPE_TO_FORMAT.lowercase | TEXT_TYPE_TO_FORMAT.uppercase;
+      }
+    } else {
+      clearBits |= bit;
     }
   }
+  if (setBits === 0 && clearBits === 0) {
+    return;
+  }
+
+  const applyFormat = (format: number): number =>
+    (format | setBits) & ~clearBits;
+
+  if ($isNodeSelection(selection)) {
+    for (const node of selection.getNodes()) {
+      if ($isTextNode(node)) {
+        node.setFormat(applyFormat(node.getFormat()));
+      } else if ($isInlineFormattable(node)) {
+        let fmt = 0;
+        for (const key of Object.keys(
+          TEXT_TYPE_TO_FORMAT,
+        ) as TextFormatType[]) {
+          if (node.hasFormat(key)) {
+            fmt |= TEXT_TYPE_TO_FORMAT[key];
+          }
+        }
+        node.setFormat(applyFormat(fmt));
+      }
+    }
+    return;
+  }
+
+  if (selection.isCollapsed()) {
+    selection.setFormat(applyFormat(selection.format));
+    $setCompositionKey(null);
+    return;
+  }
+
+  const selectedNodes = selection.getNodes();
+  const selectedTextNodes: TextNode[] = [];
+  for (const selectedNode of selectedNodes) {
+    if ($isTextNode(selectedNode)) {
+      selectedTextNodes.push(selectedNode);
+    }
+  }
+
+  for (const node of selectedNodes) {
+    if ($isElementNode(node)) {
+      node.setTextFormat(applyFormat(node.getTextFormat()));
+    } else if (!$isTextNode(node) && $isInlineFormattable(node)) {
+      let fmt = 0;
+      for (const key of Object.keys(TEXT_TYPE_TO_FORMAT) as TextFormatType[]) {
+        if (node.hasFormat(key)) {
+          fmt |= TEXT_TYPE_TO_FORMAT[key];
+        }
+      }
+      node.setFormat(applyFormat(fmt));
+    }
+  }
+
+  const selectedTextNodesLength = selectedTextNodes.length;
+  if (selectedTextNodesLength === 0) {
+    selection.setFormat(applyFormat(selection.format));
+    $setCompositionKey(null);
+    return;
+  }
+
+  const anchor = selection.anchor;
+  const focus = selection.focus;
+  const isBackward = selection.isBackward();
+  const startPoint = isBackward ? focus : anchor;
+  const endPoint = isBackward ? anchor : focus;
+
+  let firstIndex = 0;
+  let firstNode = selectedTextNodes[0];
+  let startOffset = startPoint.type === 'element' ? 0 : startPoint.offset;
+
+  if (
+    startPoint.type === 'text' &&
+    startOffset === firstNode.getTextContentSize()
+  ) {
+    firstIndex = 1;
+    firstNode = selectedTextNodes[1];
+    startOffset = 0;
+  }
+
+  if (firstNode == null) {
+    return;
+  }
+
+  const lastIndex = selectedTextNodesLength - 1;
+  let lastNode = selectedTextNodes[lastIndex];
+  const endOffset =
+    endPoint.type === 'text' ? endPoint.offset : lastNode.getTextContentSize();
+
+  if (firstNode.is(lastNode)) {
+    if (startOffset === endOffset) {
+      return;
+    }
+    const newFormat = applyFormat(firstNode.getFormat());
+    if (
+      $isTokenOrSegmented(firstNode) ||
+      (startOffset === 0 && endOffset === firstNode.getTextContentSize())
+    ) {
+      firstNode.setFormat(newFormat);
+    } else {
+      const splitNodes = firstNode.splitText(startOffset, endOffset);
+      const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
+      replacement.setFormat(newFormat);
+      if (startPoint.type === 'text') {
+        startPoint.set(replacement.__key, 0, 'text');
+      }
+      if (endPoint.type === 'text') {
+        endPoint.set(replacement.__key, endOffset - startOffset, 'text');
+      }
+    }
+    selection.format = newFormat;
+    return;
+  }
+
+  if (startOffset !== 0 && !$isTokenOrSegmented(firstNode)) {
+    [, firstNode] = firstNode.splitText(startOffset);
+    startOffset = 0;
+  }
+  const firstNewFormat = applyFormat(firstNode.getFormat());
+  firstNode.setFormat(firstNewFormat);
+
+  const lastNewFormat = applyFormat(lastNode.getFormat());
+  if (endOffset > 0) {
+    if (
+      endOffset !== lastNode.getTextContentSize() &&
+      !$isTokenOrSegmented(lastNode)
+    ) {
+      [lastNode] = lastNode.splitText(endOffset);
+    }
+    lastNode.setFormat(lastNewFormat);
+  }
+
+  for (let i = firstIndex + 1; i < lastIndex; i++) {
+    const textNode = selectedTextNodes[i];
+    textNode.setFormat(applyFormat(textNode.getFormat()));
+  }
+
+  if (startPoint.type === 'text') {
+    startPoint.set(firstNode.__key, startOffset, 'text');
+  }
+  if (endPoint.type === 'text') {
+    endPoint.set(lastNode.__key, endOffset, 'text');
+  }
+
+  selection.format = firstNewFormat | lastNewFormat;
 }
 
 /**

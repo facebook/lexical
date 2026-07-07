@@ -1104,7 +1104,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<Partial<Record<TextFormatType, boolean>>>(
+    editor.registerCommand(
       SET_TEXT_FORMAT_COMMAND,
       formats => {
         const selection = $getSelection();

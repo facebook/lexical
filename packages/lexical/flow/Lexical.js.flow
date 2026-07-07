@@ -720,7 +720,16 @@ declare class _Point {
   set(key: NodeKey, offset: number, type: 'text' | 'element', onlyIfChanged?: boolean): void;
 }
 
+declare export function $createPoint(
+  key: NodeKey,
+  offset: number,
+  type: 'text' | 'element',
+): PointType;
 declare export function $createRangeSelection(): RangeSelection;
+declare export function $createRangeSelectionFromDom(
+  domSelection: Selection | null,
+  editor: LexicalEditor,
+): null | RangeSelection;
 declare export function $createNodeSelection(): NodeSelection;
 declare export function $isRangeSelection(
   x: ?unknown,
@@ -730,9 +739,14 @@ declare export function $formatText(
   formatType: TextFormatType,
   alignWithFormat?: number | null,
 ): void;
+declare export function $generateNodesFromRawText(
+  text: string,
+): (TextNode | LineBreakNode)[];
 declare export function $getSelection(): null | BaseSelection;
+declare export function $getTextContent(): string;
 declare export function $getPreviousSelection(): null | BaseSelection;
 declare export function $insertNodes(nodes: LexicalNode[]): void;
+declare export function $selectAll(selection?: RangeSelection | null): RangeSelection;
 declare export function $getCharacterOffsets(
   selection: BaseSelection,
 ): [number, number];
@@ -1192,8 +1206,40 @@ declare export function $hasAncestor(
   child: LexicalNode,
   targetNode: LexicalNode,
 ): boolean;
+declare export function $createChildrenArray(
+  element: ElementNode,
+  nodeMap: null | NodeMap,
+): NodeKey[];
+declare export function $findMatchingParent<T extends LexicalNode>(
+  startingNode: LexicalNode,
+  findFn: (node: LexicalNode) => node is T,
+): T | null;
+declare export function $findMatchingParent(
+  startingNode: LexicalNode,
+  findFn: (node: LexicalNode) => boolean,
+): LexicalNode | null;
+declare export function $getNodeFromDOMNode(
+  dom: Node,
+  editorState?: EditorState,
+): LexicalNode | null;
+declare export function $isTokenOrSegmented(node: TextNode): boolean;
+declare export function $isTokenOrTab(node: TextNode): boolean;
+declare export function $splitNode(
+  node: ElementNode,
+  offset: number,
+): [ElementNode | null, ElementNode];
+declare export function $setDirectionFromDOM<T extends ElementNode>(
+  node: T,
+  domNode: HTMLElement,
+): T;
+declare export function $setFormatFromDOM<T extends ElementNode>(
+  node: T,
+  domNode: HTMLElement,
+): T;
 declare export function $cloneWithProperties<T extends LexicalNode>(node: T): T;
+declare export function $cloneWithPropertiesEphemeral<T extends LexicalNode>(node: T): T;
 declare export function $copyNode<T extends LexicalNode>(node: T, skipReset?: boolean): T;
+declare export function $getDocument(): Document;
 declare export function $getEditor(): LexicalEditor;
 declare export function $getEditorDOMRenderConfig(
   editor?: LexicalEditor,
@@ -1310,6 +1356,9 @@ declare export function getComposedEventTarget(event: Event): EventTarget | null
  * LexicalNormalization
  */
 
+declare export function $normalizeSelection(
+  selection: RangeSelection,
+): RangeSelection;
 declare export function $normalizeSelection__EXPERIMENTAL(
   selection: RangeSelection,
 ): RangeSelection;

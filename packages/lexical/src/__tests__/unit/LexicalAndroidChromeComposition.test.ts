@@ -18,16 +18,16 @@
  * non-collapsed selection, Android composition latency heuristic).
  */
 
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   COMMAND_PRIORITY_CRITICAL,
   CONTROLLED_TEXT_INSERTION_COMMAND,
-  LexicalEditor,
 } from 'lexical';
-import {createTestEditor} from 'lexical/src/__tests__/utils';
-import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
+import {describe, expect, onTestFinished, test, vi} from 'vitest';
 
 vi.mock('lexical/src/environment', () => ({
   CAN_USE_BEFORE_INPUT: true,
@@ -42,35 +42,31 @@ vi.mock('lexical/src/environment', () => ({
   IS_SAFARI: false,
 }));
 
-describe('Android Chrome composition — format mismatch ZWSP skip', () => {
-  let container: HTMLDivElement;
-  let editor: LexicalEditor;
-
-  beforeEach(() => {
-    container = document.createElement('div');
-    container.setAttribute('data-lexical-editor', 'true');
-    container.contentEditable = 'true';
-    document.body.appendChild(container);
-    editor = createTestEditor();
-    editor.setRootElement(container);
+function mountEditor($initialEditorState: () => void) {
+  const container = document.createElement('div');
+  container.contentEditable = 'true';
+  document.body.appendChild(container);
+  const editor = buildEditorFromExtensions({
+    $initialEditorState,
+    dependencies: [RichTextExtension],
+    name: 'test',
   });
-
-  afterEach(() => {
+  editor.setRootElement(container);
+  onTestFinished(() => {
     editor.setRootElement(null);
     document.body.removeChild(container);
   });
+  return {container, editor};
+}
 
+describe('Android Chrome composition — format mismatch ZWSP skip', () => {
   test('compositionStart with format mismatch skips CONTROLLED_TEXT_INSERTION', async () => {
-    editor.update(
-      () => {
-        const textNode = $createTextNode('hello');
-        const paragraph = $createParagraphNode().append(textNode);
-        $getRoot().clear().append(paragraph);
-        const selection = textNode.selectEnd();
-        selection.format = 1;
-      },
-      {discrete: true},
-    );
+    const {container, editor} = mountEditor(() => {
+      const textNode = $createTextNode('hello');
+      $getRoot().append($createParagraphNode().append(textNode));
+      const selection = textNode.selectEnd();
+      selection.format = 1;
+    });
 
     const insertionPayloads: string[] = [];
     editor.registerCommand(
@@ -85,21 +81,17 @@ describe('Android Chrome composition — format mismatch ZWSP skip', () => {
     container.dispatchEvent(
       new CompositionEvent('compositionstart', {bubbles: true, data: ''}),
     );
-
     await Promise.resolve();
 
     expect(insertionPayloads).toEqual([]);
   });
 
   test('compositionStart with element anchor still dispatches CONTROLLED_TEXT_INSERTION', async () => {
-    editor.update(
-      () => {
-        const paragraph = $createParagraphNode();
-        $getRoot().clear().append(paragraph);
-        paragraph.select();
-      },
-      {discrete: true},
-    );
+    const {container, editor} = mountEditor(() => {
+      const paragraph = $createParagraphNode();
+      $getRoot().append(paragraph);
+      paragraph.select();
+    });
 
     const insertionPayloads: string[] = [];
     editor.registerCommand(
@@ -114,7 +106,6 @@ describe('Android Chrome composition — format mismatch ZWSP skip', () => {
     container.dispatchEvent(
       new CompositionEvent('compositionstart', {bubbles: true, data: ''}),
     );
-
     await Promise.resolve();
 
     expect(insertionPayloads.length).toBe(1);

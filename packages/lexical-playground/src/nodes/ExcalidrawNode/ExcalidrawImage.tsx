@@ -15,7 +15,7 @@ import type {JSX} from 'react';
 
 import {exportToSvg} from '@excalidraw/excalidraw';
 import * as React from 'react';
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
 type ImageType = 'svg' | 'canvas';
 
@@ -102,20 +102,27 @@ export default function ExcalidrawImage({
         files,
       });
       removeStyleFromSvg_HACK(svg);
-
-      if (width === 'inherit' && height === 'inherit') {
-        svg.style.maxWidth = '100%';
-        svg.style.height = 'auto';
-      } else {
-        svg.setAttribute('width', '100%');
-        svg.setAttribute('height', '100%');
-      }
       svg.setAttribute('display', 'block');
 
       setSvg(svg);
     };
     setContent().catch(console.error);
-  }, [elements, files, appState, width, height]);
+  }, [elements, files, appState]);
+
+  const svgHtml = useMemo(() => {
+    if (Svg == null) {
+      return '';
+    }
+    const clone = Svg.cloneNode(true) as SVGElement;
+    if (width === 'inherit' && height === 'inherit') {
+      clone.style.maxWidth = '100%';
+      clone.style.height = 'auto';
+    } else {
+      clone.setAttribute('width', '100%');
+      clone.setAttribute('height', '100%');
+    }
+    return clone.outerHTML;
+  }, [Svg, width, height]);
 
   const containerStyle: React.CSSProperties = {};
   if (width !== 'inherit') {
@@ -136,7 +143,7 @@ export default function ExcalidrawImage({
       }}
       className={rootClassName ?? ''}
       style={containerStyle}
-      dangerouslySetInnerHTML={{__html: Svg?.outerHTML ?? ''}}
+      dangerouslySetInnerHTML={{__html: svgHtml}}
     />
   );
 }

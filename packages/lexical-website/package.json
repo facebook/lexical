@@ -37,6 +37,8 @@
     "@mdx-js/react": "^3.1.1",
     "@mermaid-js/layout-elk": "^0.2.1",
     "@radix-ui/react-tabs": "^1.1.13",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "clsx": "^2.1.1",
     "docusaurus-plugin-typedoc": "^1.4.2",
     "fs-extra": "^11.3.4",

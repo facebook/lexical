@@ -34,6 +34,7 @@ import {
   $isLeafNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $isTabNode,
   $isTextNode,
   $isTextPointCaret,
   $setSelection,
@@ -558,14 +559,14 @@ export function $shouldOverrideDefaultCharacterSelection(
   // format-affinity at normal bold/italic boundaries.
   if (
     $isTextPointCaret(focusCaret) &&
-    focusCaret.origin.getType() === 'text' &&
+    !$isTabNode(focusCaret.origin) &&
     focusCaret.origin.isUnmergeable()
   ) {
     const sibling = $getSiblingCaret(
       focusCaret.origin,
       focusCaret.direction,
     ).getNodeAtCaret();
-    if ($isTextNode(sibling) && sibling.getType() === 'text') {
+    if ($isTextNode(sibling) && !$isTabNode(sibling)) {
       return true;
     }
   }

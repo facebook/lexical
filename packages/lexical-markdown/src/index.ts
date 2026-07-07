@@ -16,10 +16,10 @@ import type {
 import type {BaseSelection, ElementNode, LexicalNode} from 'lexical';
 
 import {
-  $createParagraphNode,
   $getRoot,
   $getSelection,
   $isRangeSelection,
+  ArtificialNode__DO_NOT_USE,
 } from 'lexical';
 
 import {
@@ -100,7 +100,7 @@ function $generateNodesFromMarkdownString(
   const sanitizedMarkdown = shouldPreserveNewLines
     ? markdown
     : normalizeMarkdown(markdown, shouldMergeAdjacentLines);
-  const container = $createParagraphNode();
+  const container = new ArtificialNode__DO_NOT_USE();
   $importMarkdownNodes(
     sanitizedMarkdown,
     container,

@@ -234,14 +234,14 @@ export const $importList: MdastImportHandler<List> = (node, ctx) => {
       ? firstItem.position.start.offset
       : undefined;
   if (itemOffset != null) {
-    const window = ctx.source.slice(itemOffset, itemOffset + 16);
+    const markerWindow = ctx.source.slice(itemOffset, itemOffset + 16);
     if (listType === 'number') {
-      const match = window.match(/^\s*\d+([.)])/);
+      const match = markerWindow.match(/^\s*\d+([.)])/);
       if (match) {
         $setState(list, orderedMarkerState, match[1]);
       }
     } else {
-      const match = window.match(/^\s*([-*+])/);
+      const match = markerWindow.match(/^\s*([-*+])/);
       if (match) {
         $setState(list, listMarkerState, match[1]);
       }

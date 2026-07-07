@@ -95,6 +95,7 @@ export function registerClickableLink(
     }
 
     const isMiddle = event.type === 'auxclick' && event.button === 1;
+    // eslint-disable-next-line no-restricted-syntax
     window.open(
       url,
       stores.newTab.peek() ||

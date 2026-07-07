@@ -307,8 +307,9 @@ function handleCheckItemEvent(
   const clientXInPixels = clientX / zoom;
 
   // Use getComputedStyle if available, otherwise fallback to 0px width
-  const beforeStyles = window.getComputedStyle
-    ? window.getComputedStyle(target, '::before')
+  const targetView = target.ownerDocument.defaultView;
+  const beforeStyles = targetView
+    ? targetView.getComputedStyle(target, '::before')
     : ({width: '0px'} as CSSStyleDeclaration);
   const beforeWidthInPixels = parseFloat(beforeStyles.width);
 

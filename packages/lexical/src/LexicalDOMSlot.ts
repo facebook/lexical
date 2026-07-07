@@ -12,7 +12,7 @@ import type {ElementNode} from './nodes/LexicalElementNode';
 import invariant from '@lexical/internal/invariant';
 
 import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from './environment';
-import {$getEditor} from './LexicalUtils';
+import {$getDocument, $getEditor} from './LexicalUtils';
 
 /**
  * The editor has at most one block cursor element
@@ -336,11 +336,11 @@ export class ElementDOMSlot<
     }
     const element: HTMLElement & LexicalPrivateDOM = this.element;
     const before = this.before;
-    const br = document.createElement('br');
+    const br = $getDocument().createElement('br');
     br.setAttribute('data-lexical-managed-linebreak', 'true');
     element.insertBefore(br, before);
     if (webkitHack) {
-      const img = document.createElement('img');
+      const img = $getDocument().createElement('img');
       img.setAttribute('data-lexical-managed-linebreak', 'true');
       img.style.setProperty('display', 'inline', 'important');
       img.style.setProperty('border', '0px', 'important');

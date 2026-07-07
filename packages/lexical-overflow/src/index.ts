@@ -13,7 +13,12 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {$applyNodeReplacement, defineExtension, ElementNode} from 'lexical';
+import {
+  $applyNodeReplacement,
+  $getDocument,
+  defineExtension,
+  ElementNode,
+} from 'lexical';
 
 export type SerializedOverflowNode = SerializedElementNode;
 
@@ -32,7 +37,7 @@ export class OverflowNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const div = document.createElement('span');
+    const div = $getDocument().createElement('span');
     const className = config.theme.characterLimit;
     if (typeof className === 'string') {
       div.className = className;

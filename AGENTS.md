@@ -252,9 +252,52 @@ When creating custom nodes:
 3. Register with extension or editor config: `nodes: [YourCustomNode]`
 4. Export a `$createYourNode()` factory function (follows $ convention)
 
+### Shadow DOM and iframe realm safety
+
+Lexical supports editors whose root element lives inside a Shadow DOM or an
+`<iframe>` document. The editor resolves its `window` and `document` from
+`rootElement.ownerDocument.defaultView`, so code that reaches for the **global**
+`window` or `document` will silently use the wrong realm when the editor crosses
+a frame boundary. Shadow DOM adds a second hazard: the browser **retargets**
+selection and focus reads to the shadow host, hiding the real nodes.
+
+Use the shadow/iframe-aware helpers exported from `lexical` instead of the raw
+browser globals:
+
+| Instead of | Use | Why |
+| --- | --- | --- |
+| `window` | `element.ownerDocument.defaultView` or `getDefaultView(element)` (@internal) | Returns the window that owns the element |
+| `window.getSelection()` | `getDOMSelection(rootElement.ownerDocument.defaultView)` | Reads selection from the correct window |
+| `selection.getRangeAt(0)` | `getDOMSelectionRange(selection, rootElement)` | Unwraps retargeted shadow-DOM selection |
+| `document` in `createDOM`/`updateDOM`/`exportDOM` | `$getDocument()` | Returns the document that owns the editor root (falls back to `globalThis.document`) |
+| `document` elsewhere | `getRootOwnerDocument(rootElement)` or `element.ownerDocument` | Returns the document that owns a specific element |
+| `document.activeElement` | `getActiveElement(element)` / `getActiveElementDeep(document)` | Walks through shadow roots to find the real focused element |
+| `event.target` | `getComposedEventTarget(event)` | Returns the un-retargeted target for composed events |
+| `element.parentElement` | `getParentElement(element)` | Crosses shadow boundaries correctly |
+| `selection.anchorNode` / `focusNode` | `getDOMSelectionPoints(selection, rootElement)` | Returns un-retargeted boundary points |
+
+Two ESLint rules enforce the globals rows at lint time:
+- `no-restricted-syntax` (error) catches all `document.*` and `window.*` member access in library sources.
+- `@lexical/no-document-in-dom-methods` (error, with autofix) catches `document.*` specifically inside `createDOM`/`updateDOM`/`exportDOM` methods and autofixes to `$getDocument().*`.
+
+The remaining rows involve local variable properties that lint cannot reliably detect, so they must be caught in code review.
+
+For full details on the browser platform APIs involved, see
+[Shadow DOM and iframes](packages/lexical-website/docs/concepts/shadow-dom.md).
+
 ### Build System
 - Uses Rollup for bundling
 - Build script: `scripts/build.mjs`
 - Supports multiple build modes: development, production, www (Meta internal)
 - TypeScript source → compiled to CommonJS and ESM
 - Package manager logic in `scripts/shared/packagesManager.mjs`
+
+### Commit and PR Hygiene for Agents
+This is an open source project: never include agent-session URLs or other
+private/team-internal links (e.g. `https://claude.ai/code/session_...`) in
+commit messages, PR titles, or PR bodies. Those URLs are private to the
+person or team that ran the session and are meaningless or misleading to
+everyone else. Co-authorship attribution (e.g. `Co-Authored-By:`) is fine.
+For Claude Code this is enforced mechanically via `attribution.sessionUrl:
+false` in the checked-in `.claude/settings.json`; agents from other vendors
+should follow this rule as written.

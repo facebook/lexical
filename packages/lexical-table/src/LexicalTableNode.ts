@@ -10,6 +10,7 @@ import invariant from '@lexical/internal/invariant';
 import {$descendantsMatching} from '@lexical/utils';
 import {
   $applyNodeReplacement,
+  $getDocument,
   $getEditor,
   $getNearestNodeFromDOMNode,
   addClassNamesToElement,
@@ -61,7 +62,7 @@ export type SerializedTableNode = Spread<
   SerializedElementNode
 >;
 
-function updateColgroup(
+function $updateColgroup(
   dom: HTMLTableElement,
   colCount: number,
   colWidths?: number[] | readonly number[],
@@ -72,7 +73,7 @@ function updateColgroup(
   }
   const cols = [];
   for (let i = 0; i < colCount; i++) {
-    const col = document.createElement('col');
+    const col = $getDocument().createElement('col');
     const width = colWidths && colWidths[i];
     if (width) {
       col.style.width = `${width}px`;
@@ -273,17 +274,17 @@ export class TableNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
-    const tableElement = document.createElement('table');
+    const tableElement = $getDocument().createElement('table');
     if (this.__style) {
       setDOMStyleFromCSS(tableElement.style, this.__style);
     }
-    const colGroup = document.createElement('colgroup');
+    const colGroup = $getDocument().createElement('colgroup');
     tableElement.appendChild(colGroup);
     setDOMUnmanaged(colGroup);
     addClassNamesToElement(tableElement, config.theme.table);
     this.updateTableElement(null, tableElement, config);
     if ($isScrollableTablesActive(editor)) {
-      const wrapperElement = document.createElement('div');
+      const wrapperElement = $getDocument().createElement('div');
       const classes = config.theme.tableScrollableWrapper;
       if (classes) {
         addClassNamesToElement(wrapperElement, classes);
@@ -339,7 +340,7 @@ export class TableNode extends ElementNode {
       this.getColumnCount() !== prevColCount ||
       this.getColWidths() !== prevColWidths
     ) {
-      updateColgroup(tableElement, this.getColumnCount(), this.getColWidths());
+      $updateColgroup(tableElement, this.getColumnCount(), this.getColWidths());
     }
     alignTableElement(tableElement, config, this.getFormatType());
   }
@@ -362,7 +363,7 @@ export class TableNode extends ElementNode {
       return;
     }
     const tableElement = getTableElement(this, dom);
-    updateColgroup(
+    $updateColgroup(
       tableElement,
       this.getColumnCount(),
       colWidths.map(width => width * scale),
@@ -436,7 +437,7 @@ export class TableNode extends ElementNode {
         // Wrap direct descendant rows in a tbody for export
         const rows = tableElement.querySelectorAll(':scope > tr');
         if (rows.length > 0) {
-          const tBody = document.createElement('tbody');
+          const tBody = $getDocument().createElement('tbody');
           for (const row of rows) {
             tBody.appendChild(row);
           }

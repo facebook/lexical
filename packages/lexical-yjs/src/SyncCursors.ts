@@ -337,7 +337,8 @@ function createCursorSelection(
   } = {},
 ): CursorSelection {
   const color = cursor.color;
-  const caret = document.createElement('span');
+  const ownerDocument = getRootOwnerDocument(binding.editor.getRootElement());
+  const caret = ownerDocument.createElement('span');
   if (theme.cursor) {
     caret.className = theme.cursor;
     setDOMStyleObject(caret.style, {
@@ -358,7 +359,7 @@ function createCursorSelection(
       'z-index': '10',
     });
   }
-  const name = document.createElement('span');
+  const name = ownerDocument.createElement('span');
   name.textContent = cursor.name;
   if (theme.cursorName) {
     name.className = theme.cursorName;
@@ -429,6 +430,7 @@ function updateCursor(
     return;
   }
 
+  const ownerDocument = getRootOwnerDocument(rootElement);
   const cursorsContainerOffsetParent = cursorsContainer.offsetParent;
   if (cursorsContainerOffsetParent === null) {
     return;
@@ -551,9 +553,9 @@ function updateCursor(
     let selection = selections[i];
 
     if (selection === undefined) {
-      selection = document.createElement('span');
+      selection = ownerDocument.createElement('span');
       selections[i] = selection;
-      const selectionBg = document.createElement('span');
+      const selectionBg = ownerDocument.createElement('span');
       if (theme.selectionBg) {
         selectionBg.className = theme.selectionBg;
       }

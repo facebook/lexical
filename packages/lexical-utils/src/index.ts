@@ -943,15 +943,18 @@ function needsManualZoom(): boolean {
     // will be wider after zoom is applied
     // https://chromestatus.com/feature/5198254868529152
     // https://github.com/facebook/lexical/issues/6863
+    // eslint-disable-next-line no-restricted-syntax
     const div = document.createElement('div');
     div.style.position = 'absolute';
     div.style.opacity = '0';
     div.style.width = '100px';
     div.style.left = '-1000px';
+    // eslint-disable-next-line no-restricted-syntax
     document.body.appendChild(div);
     const noZoom = div.getBoundingClientRect();
     div.style.setProperty('zoom', '2');
     NEEDS_MANUAL_ZOOM = div.getBoundingClientRect().width === noZoom.width;
+    // eslint-disable-next-line no-restricted-syntax
     document.body.removeChild(div);
   }
   return NEEDS_MANUAL_ZOOM;

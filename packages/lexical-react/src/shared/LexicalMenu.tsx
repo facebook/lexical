@@ -18,6 +18,7 @@ import {
   CommandListenerPriority,
   createCommand,
   getDOMShadowRoots,
+  getRootOwnerDocument,
   isDOMShadowRoot,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
@@ -116,6 +117,7 @@ const scrollIntoViewIfNeeded = (target: HTMLElement) => {
 
   const typeaheadRect = typeaheadContainerNode.getBoundingClientRect();
 
+  // eslint-disable-next-line no-restricted-syntax
   if (typeaheadRect.top + typeaheadRect.height > window.innerHeight) {
     typeaheadContainerNode.scrollIntoView({
       block: 'center',
@@ -222,7 +224,8 @@ export function useDynamicPositioning(
       const rootScrollParent =
         rootElement != null
           ? getScrollParent(rootElement, false)
-          : document.body;
+          : // eslint-disable-next-line no-restricted-syntax
+            document.body;
       let ticking = false;
       let previousIsInView = isTriggerVisibleInNearestScrollContainer(
         targetElement,
@@ -230,6 +233,7 @@ export function useDynamicPositioning(
       );
       const handleScroll = function () {
         if (!ticking) {
+          // eslint-disable-next-line no-restricted-syntax
           window.requestAnimationFrame(function () {
             onReposition();
             ticking = false;
@@ -640,7 +644,9 @@ function resolveMenuParent(
     if (isDOMShadowRoot(root)) {
       return root as ShadowRoot;
     }
+    return rootElement.ownerDocument.body;
   }
+  // eslint-disable-next-line no-restricted-syntax -- rootElement is null, no ownerDocument available
   return document.body;
 }
 
@@ -655,7 +661,7 @@ export function useMenuAnchorRef(
   const resolvedParent: HTMLElement | ShadowRoot | undefined =
     parent ?? resolveMenuParent(editor);
   const initialAnchorElement = CAN_USE_DOM
-    ? document.createElement('div')
+    ? getRootOwnerDocument(editor.getRootElement()).createElement('div')
     : null;
   const anchorElementRef = useRef<HTMLElement | null>(initialAnchorElement);
   const positionMenu = useCallback(() => {
@@ -674,8 +680,10 @@ export function useMenuAnchorRef(
         top +
         anchorHeight +
         3 +
+        // eslint-disable-next-line no-restricted-syntax
         (shouldIncludePageYOffset__EXPERIMENTAL ? window.pageYOffset : 0)
       }px`;
+      // eslint-disable-next-line no-restricted-syntax
       containerDiv.style.left = `${left + window.pageXOffset}px`;
       containerDiv.style.height = `${height}px`;
       containerDiv.style.width = `${width}px`;
@@ -689,10 +697,12 @@ export function useMenuAnchorRef(
 
         if (left + menuWidth > rootElementRect.right) {
           containerDiv.style.left = `${
+            // eslint-disable-next-line no-restricted-syntax
             rootElementRect.right - menuWidth + window.pageXOffset
           }px`;
         }
         if (
+          // eslint-disable-next-line no-restricted-syntax
           (top + menuHeight > window.innerHeight ||
             top + menuHeight > rootElementRect.bottom) &&
           top - rootElementRect.top > menuHeight + height
@@ -701,6 +711,7 @@ export function useMenuAnchorRef(
             top -
             menuHeight -
             height +
+            // eslint-disable-next-line no-restricted-syntax
             (shouldIncludePageYOffset__EXPERIMENTAL ? window.pageYOffset : 0)
           }px`;
         }

@@ -10,6 +10,7 @@ import {
   $copyNode,
   $createParagraphNode,
   $createTextNode,
+  $getDocument,
   $getNodeByKey,
   $getRoot,
   $getState,
@@ -1276,6 +1277,21 @@ describe('getParentElement', () => {
         ElementNode,
         Object.getPrototypeOf(ElementNode),
       ]);
+    });
+  });
+});
+
+describe('$getDocument', () => {
+  initializeUnitTest(testEnv => {
+    test('returns ownerDocument when rootElement is mounted', () => {
+      const doc = testEnv.editor.read(() => $getDocument());
+      expect(doc).toBe(testEnv.editor.getRootElement()!.ownerDocument);
+    });
+
+    test('returns globalThis.document when rootElement is null', () => {
+      testEnv.editor.setRootElement(null);
+      const doc = testEnv.editor.read(() => $getDocument());
+      expect(doc).toBe(document);
     });
   });
 });

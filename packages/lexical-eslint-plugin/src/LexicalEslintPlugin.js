@@ -9,6 +9,9 @@
 // @ts-check
 
 const {name, version} = require('../package.json');
+const {
+  noDocumentInDomMethods,
+} = require('./rules/no-document-in-dom-methods.js');
 const {rulesOfLexical} = require('./rules/rules-of-lexical.js');
 
 // Legacy config format (ESLint 7-8)
@@ -32,6 +35,7 @@ const plugin = {
   },
   meta: {name, version},
   rules: {
+    'no-document-in-dom-methods': noDocumentInDomMethods,
     'rules-of-lexical': rulesOfLexical,
   },
 };

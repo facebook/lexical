@@ -19,6 +19,7 @@ import type {
 
 import {
   $applyNodeReplacement,
+  $getDocument,
   $isRangeSelection,
   addClassNamesToElement,
   ElementNode,
@@ -77,7 +78,7 @@ export class MarkNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('mark');
+    const element = $getDocument().createElement('mark');
     addClassNamesToElement(element, config.theme.mark);
     if (this.__ids.length > 1) {
       addClassNamesToElement(element, config.theme.markOverlap);

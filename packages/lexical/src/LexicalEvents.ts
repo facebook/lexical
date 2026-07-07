@@ -1171,7 +1171,8 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
 
   // We don't want the onInput to bubble, in the case of nested editors.
   event.stopPropagation();
-  clearHandledSelectionCommandInsertText(editor._inputState);
+  const inputState = editor._inputState;
+  clearHandledSelectionCommandInsertText(inputState);
   // Always run the update so the editor selection stays in sync with the DOM
   // (the {event} option recomputes it). Only skip dispatching the command when
   // a native control inside a decorator owns this event: processing it would
@@ -1186,7 +1187,7 @@ function onInput(event: InputEvent, editor: LexicalEditor): void {
     },
     {event},
   );
-  editor._inputState.unprocessedBeforeInputData = null;
+  inputState.unprocessedBeforeInputData = null;
 }
 
 function $handleInput(event: InputEvent): boolean {
@@ -1507,10 +1508,14 @@ function onCompositionEnd(
   event: CompositionEvent,
   editor: LexicalEditor,
 ): void {
+  // Firefox fires compositionEnd before input; Safari fires it before
+  // keydown. The 'ending-*' phases defer handling for those browsers.
+  // Chrome/Webkit fires input first, so it dispatches immediately.
   const inputState = editor._inputState;
   if (IS_FIREFOX) {
     inputState.compositionPhase = 'ending-firefox';
   } else if (!IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT)) {
+    // https://github.com/facebook/lexical/pull/7061
     inputState.compositionPhase = 'ending-safari';
     inputState.compositionEndData = event.data;
   } else {
@@ -1538,16 +1543,17 @@ function $handleKeyDown(event: KeyboardEvent): boolean {
     return true;
   }
   if (inputState.compositionPhase === 'ending-safari') {
-    if (isBackspace(event)) {
+    const isBack = isBackspace(event);
+    if (isBack) {
       updateEditorSync(editor, () => {
         $onCompositionEndImpl(editor, inputState.compositionEndData);
       });
-      inputState.compositionPhase = 'idle';
-      inputState.compositionEndData = '';
-      return true;
     }
     inputState.compositionPhase = 'idle';
     inputState.compositionEndData = '';
+    if (isBack) {
+      return true;
+    }
   }
 
   if (isMoveForward(event)) {
@@ -1691,8 +1697,11 @@ function onDocumentSelectionChange(event: Event): void {
   const ownerDocument = getDOMOwnerDocument(event.target);
   let nextActiveEditor: LexicalEditor | null = null;
   let resolvedAnchorNode: Node | null = null;
+  const registration =
+    ownerDocument !== null
+      ? documentRegistrations.get(ownerDocument)
+      : undefined;
   if (ownerDocument !== null) {
-    const registration = documentRegistrations.get(ownerDocument);
     if (registration !== undefined) {
       const editorsForDoc = registration.editors;
       let hasShadow = registration.hasShadowEditor;
@@ -1784,12 +1793,8 @@ function onDocumentSelectionChange(event: Event): void {
     // the flag on both. Only one selectionchange fires, so stale flags
     // on sibling/parent editors must be cleared to match the previous
     // single-global semantics.
-    const reg =
-      ownerDocument !== null
-        ? documentRegistrations.get(ownerDocument)
-        : undefined;
-    if (reg) {
-      for (const ed of reg.editors) {
+    if (registration !== undefined) {
+      for (const ed of registration.editors) {
         ed._inputState.isSelectionChangeFromMouseDown = false;
       }
     }
@@ -2030,10 +2035,12 @@ function cleanActiveNestedEditorsMap(editor: LexicalEditor) {
   }
 }
 
+/** @internal */
 export function markSelectionChangeFromDOMUpdate(editor: LexicalEditor): void {
   editor._inputState.isSelectionChangeFromDOMUpdate = true;
 }
 
+/** @internal */
 export function markCollapsedSelectionFormat(
   editor: LexicalEditor,
   format: number,

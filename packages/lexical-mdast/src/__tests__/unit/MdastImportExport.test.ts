@@ -23,7 +23,9 @@ import {describe, expect, it, onTestFinished} from 'vitest';
 
 import {
   $convertFromMarkdownString,
+  $convertFromMdast,
   $convertToMarkdownString,
+  $convertToMdast,
   MdastAutolinkLiteralExtension,
   MdastCommonMarkExtension,
   MdastExportExtension,
@@ -231,6 +233,127 @@ describe('@lexical/mdast import/export', () => {
     ]) {
       expect(roundTrip(markdown)).toBe(markdown);
     }
+  });
+
+  describe('mdast tree interop', () => {
+    it('$convertToMdast exposes the mdast tree before serialization', () => {
+      const editor = createEditor();
+      editor.update(
+        () => {
+          $convertFromMarkdownString('# Title\n\nSome *emphasis* here');
+        },
+        {discrete: true},
+      );
+      const tree = editor.read(() => $convertToMdast());
+      expect(tree.type).toBe('root');
+      expect(tree.children.map(child => child.type)).toEqual([
+        'heading',
+        'paragraph',
+      ]);
+      const heading = tree.children[0] as {depth: number};
+      expect(heading.depth).toBe(1);
+      const paragraph = tree.children[1] as {
+        children: {type: string}[];
+      };
+      expect(paragraph.children.map(child => child.type)).toEqual([
+        'text',
+        'emphasis',
+        'text',
+      ]);
+    });
+
+    it('$convertFromMdast imports a programmatically-built tree', () => {
+      const editor = createEditor();
+      editor.update(
+        () => {
+          $convertFromMdast({
+            children: [
+              {
+                children: [{type: 'text', value: 'Built'}],
+                depth: 2,
+                type: 'heading',
+              },
+              {
+                children: [{type: 'text', value: 'by hand'}],
+                type: 'paragraph',
+              },
+            ],
+            type: 'root',
+          });
+        },
+        {discrete: true},
+      );
+      expect(editor.read(() => $convertToMarkdownString())).toBe(
+        '## Built\n\nby hand',
+      );
+    });
+
+    it('round-trips editor -> tree -> editor', () => {
+      const markdown = '# Title\n\n- one\n- two\n\n> quoted';
+      const source = createEditor();
+      source.update(
+        () => {
+          $convertFromMarkdownString(markdown);
+        },
+        {discrete: true},
+      );
+      const tree = source.read(() => $convertToMdast());
+      const target = createEditor();
+      target.update(
+        () => {
+          $convertFromMdast(tree);
+        },
+        {discrete: true},
+      );
+      expect(target.read(() => $convertToMarkdownString())).toBe(markdown);
+    });
+  });
+
+  it('applies contributed document-level toMarkdown options', () => {
+    const editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          MdastCommonMarkExtension,
+          MdastExportExtension,
+          configExtension(MdastImportExtension, {
+            toMarkdownExtensions: [{bullet: '+'}],
+          }),
+        ],
+        name: '[root]',
+      }),
+    );
+    onTestFinished(() => editor.dispose());
+    editor.update(
+      () => {
+        // Imported via tree (no source), so no per-node bullet is recorded
+        // and the document-level option decides.
+        $convertFromMdast({
+          children: [
+            {
+              children: [
+                {
+                  checked: null,
+                  children: [
+                    {
+                      children: [{type: 'text', value: 'one'}],
+                      type: 'paragraph',
+                    },
+                  ],
+                  spread: false,
+                  type: 'listItem',
+                },
+              ],
+              ordered: false,
+              spread: false,
+              type: 'list',
+            },
+          ],
+          type: 'root',
+        });
+      },
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString())).toBe('+ one');
   });
 
   it('unwraps constructs the editor has no extension for', () => {

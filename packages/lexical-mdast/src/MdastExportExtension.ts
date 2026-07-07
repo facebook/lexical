@@ -7,6 +7,7 @@
  */
 
 import type {ElementNode} from 'lexical';
+import type {Root} from 'mdast';
 
 import {$getExtensionOutput} from '@lexical/extension';
 import {defineExtension} from 'lexical';
@@ -25,6 +26,15 @@ export interface MdastExportExtensionOutput {
    * called inside an `editor.read()` or `editor.update()`.
    */
   $convertToMarkdownString(node?: ElementNode): string;
+  /**
+   * Exports the editor root (or `node`) to an mdast `Root` tree without
+   * serializing it, for interop with the unified/remark ecosystem (remark
+   * plugins, `remark-rehype`, tree diffing, ...). Must be called inside an
+   * `editor.read()` or `editor.update()`. Syntax preserved from import
+   * rides along as `data` fields on the nodes, mdast's sanctioned
+   * extension point.
+   */
+  $convertToMdast(node?: ElementNode): Root;
 }
 
 /**
@@ -48,9 +58,10 @@ export const MdastExportExtension = /* @__PURE__ */ defineExtension<
 >({
   build(editor, config, state): MdastExportExtensionOutput {
     const {registry} = state.getDependency(MdastImportExtension).output;
-    const exportMarkdown = createMdastExport(registry);
+    const {$exportToMdast, $exportToMarkdown} = createMdastExport(registry);
     return {
-      $convertToMarkdownString: node => exportMarkdown(node),
+      $convertToMarkdownString: node => $exportToMarkdown(node),
+      $convertToMdast: node => $exportToMdast(node),
     };
   },
   dependencies: [MdastImportExtension],
@@ -67,4 +78,13 @@ export function $convertToMarkdownString(node?: ElementNode): string {
   return $getExtensionOutput(MdastExportExtension).$convertToMarkdownString(
     node,
   );
+}
+
+/**
+ * Shorthand for `$getExtensionOutput(MdastExportExtension).$convertToMdast`.
+ * Must be called inside an `editor.read()` or `editor.update()`. Throws if
+ * the editor was not built with {@link MdastExportExtension}.
+ */
+export function $convertToMdast(node?: ElementNode): Root {
+  return $getExtensionOutput(MdastExportExtension).$convertToMdast(node);
 }

@@ -24,6 +24,7 @@
 export type {MdastExportExtensionOutput} from './MdastExportExtension';
 export {
   $convertToMarkdownString,
+  $convertToMdast,
   MdastExportExtension,
 } from './MdastExportExtension';
 export {MdastExtension} from './MdastExtension';
@@ -35,6 +36,7 @@ export type {
 } from './MdastImportExtension';
 export {
   $convertFromMarkdownString,
+  $convertFromMdast,
   MdastAutolinkLiteralExtension,
   MdastBlockquoteExtension,
   MdastCodeExtension,

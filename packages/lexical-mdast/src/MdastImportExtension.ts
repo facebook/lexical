@@ -140,6 +140,15 @@ export interface MdastImportExtensionOutput {
     tree?: Root,
   ): void;
   /**
+   * Imports an already-parsed mdast `Root` tree (e.g. produced or
+   * transformed by unified/remark tooling) and replaces the contents of the
+   * editor root (or `node`). Must be called inside an `editor.update()`.
+   * Source-based syntax preservation does not apply (there is no source
+   * text); to keep it, pass the tree alongside its source to
+   * {@link MdastImportExtensionOutput.$convertFromMarkdownString}.
+   */
+  $convertFromMdast(tree: Root, node?: ElementNode): void;
+  /**
    * The compiled registry assembled from every contributing extension.
    *
    * @internal consumed by {@link MdastShortcutsExtension}.
@@ -203,6 +212,7 @@ export const MdastImportExtension = /* @__PURE__ */ defineExtension<
     return {
       $convertFromMarkdownString: (markdown, node, tree) =>
         importMarkdown(markdown, node, tree),
+      $convertFromMdast: (tree, node) => importMarkdown('', node, tree),
       registry,
     };
   },
@@ -549,4 +559,14 @@ export function $convertFromMarkdownString(
     node,
     tree,
   );
+}
+
+/**
+ * Shorthand for `$getExtensionOutput(MdastImportExtension).$convertFromMdast`.
+ * Must be called inside an `editor.update()`. Throws if the editor was not
+ * built with {@link MdastImportExtension} (or an extension that depends on
+ * it).
+ */
+export function $convertFromMdast(tree: Root, node?: ElementNode): void {
+  $getExtensionOutput(MdastImportExtension).$convertFromMdast(tree, node);
 }

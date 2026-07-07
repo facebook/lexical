@@ -76,11 +76,13 @@ export type MdastImportExtensionOutput = {
     node?: ElementNode,
     tree?: unknown,
   ): void,
+  $convertFromMdast(tree: unknown, node?: ElementNode): void,
   readonly registry: unknown,
 };
 
 export type MdastExportExtensionOutput = {
   $convertToMarkdownString(node?: ElementNode): string,
+  $convertToMdast(node?: ElementNode): unknown,
 };
 
 declare export function $convertFromMarkdownString(
@@ -90,6 +92,13 @@ declare export function $convertFromMarkdownString(
 ): void;
 
 declare export function $convertToMarkdownString(node?: ElementNode): string;
+
+declare export function $convertFromMdast(
+  tree: unknown,
+  node?: ElementNode,
+): void;
+
+declare export function $convertToMdast(node?: ElementNode): unknown;
 
 declare export var MdastImportExtension: LexicalExtension<
   MdastConfig,

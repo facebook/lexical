@@ -16,6 +16,7 @@ import type {
   List,
   Paragraph,
   PhrasingContent,
+  Root,
   RootContent,
   ThematicBreak,
 } from 'mdast';
@@ -365,12 +366,13 @@ function $dominantInlineMarkers(node: ElementNode): {
  * Creates a reusable exporter that converts the Lexical tree rooted at the
  * supplied element (or the editor root) into a Markdown string.
  */
-export function createMdastExport(
-  compiled: CompiledMdast,
-): (node?: ElementNode) => string {
+export function createMdastExport(compiled: CompiledMdast): {
+  $exportToMdast: (node?: ElementNode) => Root;
+  $exportToMarkdown: (node?: ElementNode) => string;
+} {
   const {$dispatch} = createNodeExporter(compiled);
 
-  return node => {
+  const $exportToMdast = (node?: ElementNode): Root => {
     const root = node || $getRoot();
     const children: RootContent[] = [];
     for (const child of root.getChildren()) {
@@ -378,6 +380,12 @@ export function createMdastExport(
         children.push(mdastNode as RootContent);
       }
     }
+    return {children, type: 'root'};
+  };
+
+  const $exportToMarkdown = (node?: ElementNode): string => {
+    const root = node || $getRoot();
+    const tree = $exportToMdast(node);
     // Emphasis/strong delimiters are document-level; the delimiter recorded on
     // import wins, otherwise contributed toMarkdownExtensions (and the '-'
     // bullet baseline) decide. Defaults ride as the FIRST extension so that
@@ -391,18 +399,17 @@ export function createMdastExport(
     if (strong) {
       defaults.strong = strong;
     }
-    const out = toMarkdown(
-      {children, type: 'root'},
-      {
-        extensions: [
-          defaults,
-          ...compiled.toMarkdownExtensions,
-          SYNTAX_TO_MARKDOWN,
-        ],
-      },
-    );
+    const out = toMarkdown(tree, {
+      extensions: [
+        defaults,
+        ...compiled.toMarkdownExtensions,
+        SYNTAX_TO_MARKDOWN,
+      ],
+    });
     // toMarkdown always appends a trailing newline; drop it so callers get the
     // same shape as `@lexical/markdown`'s `$convertToMarkdownString`.
     return out.replace(/\n$/, '');
   };
+
+  return {$exportToMarkdown, $exportToMdast};
 }

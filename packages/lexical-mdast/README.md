@@ -113,6 +113,46 @@ The same API is available from the editor as
 and
 `$getExtensionOutput(MdastExportExtension).$convertToMarkdownString(...)`.
 
+### unified / remark interop
+
+The mdast tree itself is part of the API, so editor content can flow
+through the wider [unified](https://unifiedjs.com/) ecosystem — remark
+plugins, `remark-rehype` for HTML rendering, tree diffing:
+
+```ts
+import {$convertFromMdast, $convertToMdast} from '@lexical/mdast';
+
+// Editor -> mdast tree (before serialization).
+const tree = editor.read(() => $convertToMdast());
+// ... run remark plugins / transform the tree ...
+// mdast tree -> editor.
+editor.update(() => $convertFromMdast(tree));
+```
+
+`$convertFromMarkdownString(markdown, node, tree)` also accepts a
+pre-parsed tree alongside its source text, which keeps source-based
+syntax preservation working; `$convertFromMdast` alone skips it (there
+is no source to preserve from).
+
+### Serialization options
+
+Document-level `mdast-util-to-markdown` options (bullet, emphasis
+marker, fence, ...) can be contributed like any other configuration —
+scalar options in a `toMarkdownExtensions` entry apply document-wide
+and override the package defaults:
+
+```ts
+import {MdastImportExtension} from '@lexical/mdast';
+import {configExtension} from 'lexical';
+
+// Serialize bullets as `+` and emphasis as `_`. Per-node syntax
+// recorded on import (a list's bullet, a code block's fence, ...)
+// still wins for those nodes' own output.
+configExtension(MdastImportExtension, {
+  toMarkdownExtensions: [{bullet: '+', emphasis: '_'}],
+});
+```
+
 ### Custom mappings
 
 Because extensions are the unit of configuration, you add or override behavior

@@ -821,8 +821,8 @@ export class RangeSelection implements BaseSelection {
   }
 
   /**
-   * Returns whether the provided TextFormatType is present on the Selection. This will be true if any node in the Selection
-   * has the specified format.
+   * Returns whether the provided TextFormatType is present on the Selection. This will be true if all text nodes in the Selection
+   * have the specified format.
    *
    * @param type the TextFormatType to check for.
    * @returns true if the provided format is currently toggled on the Selection, false otherwise.
@@ -2186,18 +2186,38 @@ export function $isNodeSelection(x: unknown): x is NodeSelection {
 }
 
 /**
+ * Explicitly sets or unsets text formats on the selection. Unlike $formatText
+ * which toggles based on the current selection state, this function sets each
+ * specified format to the exact boolean value provided.
+ *
+ * @param selection - the selection whose nodes should be formatted.
+ * @param formats - a partial record mapping TextFormatType to boolean.
+ */
+export function $setTextFormat(
+  selection: RangeSelection | NodeSelection,
+  formats: Partial<Record<TextFormatType, boolean>>,
+): void {
+  for (const type of Object.keys(formats) as TextFormatType[]) {
+    const value = formats[type];
+    if (value !== undefined) {
+      $formatText(selection, type, value ? TEXT_TYPE_TO_FORMAT[type] : 0);
+    }
+  }
+}
+
+/**
  * Applies the provided format to TextNodes and inline formattable nodes
  * (e.g. DecoratorTextNode) in the selection, splitting or merging TextNodes
  * as necessary and aligning all formattable nodes to the same target format.
  *
- * For RangeSelection the target format is determined by the first TextNode in
- * the selection (same semantics as the previous RangeSelection.formatText).
- * For NodeSelection each node is toggled independently since there is no
- * TextNode to use as an alignment reference.
+ * For RangeSelection the target format is determined by the selection's computed
+ * format (intersection of all text nodes) when no explicit alignment is given.
+ * For NodeSelection each node is toggled independently when no explicit
+ * alignment is given, since there is no TextNode to use as an alignment reference.
  *
  * @param selection - the selection whose nodes should be formatted.
  * @param formatType - the format type to apply.
- * @param alignWithFormat - optional 32-bit bitmask to align with (RangeSelection only).
+ * @param alignWithFormat - optional 32-bit bitmask to align with.
  */
 export function $formatText(
   selection: RangeSelection | NodeSelection,
@@ -2207,7 +2227,7 @@ export function $formatText(
   if ($isNodeSelection(selection)) {
     for (const node of selection.getNodes()) {
       if ($isInlineFormattable(node)) {
-        node.setFormat(node.getFormatFlags(formatType, null));
+        node.setFormat(node.getFormatFlags(formatType, alignWithFormat));
       }
     }
     return;
@@ -2275,7 +2295,12 @@ export function $formatText(
     startOffset = 0;
   }
 
-  const firstNextFormat = (firstNode ?? selectedTextNodes[0]).getFormatFlags(
+  const referenceFormat =
+    alignWithFormat === null && $isRangeSelection(selection)
+      ? selection.format
+      : (firstNode ?? selectedTextNodes[0]).getFormat();
+  const firstNextFormat = toggleTextFormatType(
+    referenceFormat,
     formatType,
     alignWithFormat,
   );

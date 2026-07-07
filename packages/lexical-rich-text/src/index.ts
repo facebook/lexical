@@ -89,6 +89,7 @@ import {
   $setFormatFromDOM,
   $setSelection,
   $setSelectionFromCaretRange,
+  $setTextFormat,
   addClassNamesToElement,
   CAN_USE_BEFORE_INPUT,
   CLICK_COMMAND,
@@ -135,6 +136,7 @@ import {
   PASTE_TAG,
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
+  SET_TEXT_FORMAT_COMMAND,
   setNodeIndentFromDOM,
 } from 'lexical';
 
@@ -1098,6 +1100,18 @@ export function registerRichText(
           return false;
         }
         $formatText(selection, format);
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand<Partial<Record<TextFormatType, boolean>>>(
+      SET_TEXT_FORMAT_COMMAND,
+      formats => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) && !$isNodeSelection(selection)) {
+          return false;
+        }
+        $setTextFormat(selection, formats);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

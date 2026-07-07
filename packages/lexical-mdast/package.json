@@ -1,6 +1,6 @@
 {
   "name": "@lexical/mdast",
-  "description": "Markdown import, export, and streaming shortcuts for Lexical built on micromark and mdast.",
+  "description": "Experimental micromark/mdast-based Markdown support for Lexical, configured through extensions.",
   "keywords": [
     "lexical",
     "editor",

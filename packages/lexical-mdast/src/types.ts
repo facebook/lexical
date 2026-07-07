@@ -23,6 +23,7 @@ export type {
 /**
  * The context passed to {@link MdastImportHandler}s while an mdast tree is
  * being walked and converted into Lexical nodes.
+ * @experimental
  */
 export interface MdastImportContext {
   /**
@@ -65,6 +66,7 @@ export interface MdastImportContext {
 /**
  * Converts an mdast node of a particular `type` into one or more Lexical
  * nodes. Returning `null` defers to the next registered handler.
+ * @experimental
  */
 export type MdastImportHandler<T extends MdastNode = MdastNode> = (
   node: T,
@@ -74,6 +76,7 @@ export type MdastImportHandler<T extends MdastNode = MdastNode> = (
 /**
  * The context passed to {@link MdastExportHandler}s while a Lexical tree is
  * converted back into an mdast tree.
+ * @experimental
  */
 export interface MdastExportContext {
   /**
@@ -98,6 +101,7 @@ export interface MdastExportContext {
 /**
  * Converts a Lexical node into one or more mdast nodes. Returning `null`
  * defers to the next registered handler.
+ * @experimental
  */
 export type MdastExportHandler<T extends LexicalNode = LexicalNode> = (
   node: T,
@@ -108,6 +112,7 @@ export type MdastExportHandler<T extends LexicalNode = LexicalNode> = (
  * A single import mapping: which mdast node `type` it handles and how. The
  * unit an extension contributes (alongside the micromark/mdast extensions that
  * tokenize the construct) to {@link MdastImportExtension}'s `importRules` config.
+ * @experimental
  */
 export interface MdastImportRule {
   /** The mdast node `type` this rule handles (e.g. `'heading'`). */
@@ -118,6 +123,7 @@ export interface MdastImportRule {
 
 /**
  * A single export mapping: which Lexical node `getType()` it handles and how.
+ * @experimental
  */
 export interface MdastExportRule {
   /** The Lexical node `getType()` this rule handles (e.g. `'heading'`). */
@@ -129,6 +135,7 @@ export interface MdastExportRule {
 /**
  * The compiled registry produced from {@link MdastConfig} at editor build
  * time and consumed by the importer, exporter, and shortcut scanner.
+ * @experimental
  */
 export interface CompiledMdast {
   importHandlers: Map<string, MdastImportHandler>;

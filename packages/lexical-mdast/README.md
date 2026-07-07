@@ -2,6 +2,14 @@
 
 [![See API Documentation](https://lexical.dev/img/see-api-documentation.svg)](https://lexical.dev/docs/api/modules/lexical_mdast)
 
+> ⚠️ **Experimental:** everything in this package is marked
+> `@experimental` and may change between any two Lexical releases —
+> including breaking renames, signature changes, or behavior changes —
+> until the API stabilizes. `@lexical/markdown` remains the supported
+> default for production apps that don't want to track an experimental
+> API. Apps that adopt `@lexical/mdast` should pin their Lexical
+> version and treat upgrades as intentional.
+
 An alternative to `@lexical/markdown` that is built on the
 [micromark](https://github.com/micromark/micromark) /
 [mdast](https://github.com/syntax-tree/mdast) ecosystem.

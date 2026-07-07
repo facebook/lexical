@@ -25,6 +25,7 @@ import {MdastTableExtension} from './MdastTableExtension';
  * ```
  * Each member is also usable individually when you only want some of GFM
  * (e.g. task lists without tables).
+ * @experimental
  */
 export const MdastGfmExtension = /* @__PURE__ */ defineExtension({
   dependencies: [

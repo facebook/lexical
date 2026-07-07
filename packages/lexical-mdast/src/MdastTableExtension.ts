@@ -123,6 +123,7 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
  *   }),
  * );
  * ```
+ * @experimental
  */
 export const MdastTableExtension = /* @__PURE__ */ defineExtension({
   dependencies: [

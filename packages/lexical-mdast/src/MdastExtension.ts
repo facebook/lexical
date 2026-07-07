@@ -22,6 +22,7 @@ import {MdastImportExtension} from './MdastImportExtension';
  * Editors that never serialize back to Markdown can skip it (feature
  * extensions already pull in {@link MdastImportExtension}) and avoid
  * bundling the serializer (`mdast-util-to-markdown`).
+ * @experimental
  */
 export const MdastExtension = /* @__PURE__ */ defineExtension({
   dependencies: [MdastImportExtension, MdastExportExtension],

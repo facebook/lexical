@@ -95,6 +95,7 @@ import {hrMarkerState} from './state';
  * …)`; you rarely need to set them by hand. The shape mirrors
  * `@lexical/html`'s `DOMImportExtension` config: raw contribution arrays that
  * `mergeConfig` concatenates and `build` compiles.
+ * @experimental
  */
 export interface MdastConfig {
   /** mdast `type` -> Lexical mapping rules used while importing. */
@@ -128,6 +129,7 @@ export interface MdastConfig {
  * {@link $convertFromMarkdownString} shorthand. Serialization lives in
  * `MdastExportExtension` so import-only editors don't bundle the
  * serializer (`mdast-util-to-markdown`).
+ * @experimental
  */
 export interface MdastImportExtensionOutput {
   /**
@@ -199,6 +201,7 @@ const CORE_EXPORT_RULES: readonly MdastExportRule[] = [
  * );
  * editor.update(() => $convertFromMarkdownString('# Hi'));
  * ```
+ * @experimental
  */
 export const MdastImportExtension = /* @__PURE__ */ defineExtension<
   MdastConfig,
@@ -269,6 +272,7 @@ export const MdastImportExtension = /* @__PURE__ */ defineExtension<
 
 /**
  * ATX (`# …`) and setext headings, shipping {@link HeadingNode}.
+ * @experimental
  */
 export const MdastHeadingExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
@@ -285,6 +289,7 @@ export const MdastHeadingExtension = /* @__PURE__ */ defineExtension({
  * Block quotes (`> …`), shipping {@link QuoteNode}. For blockquotes that hold
  * block-level children (nested lists, code, quotes) with full fidelity, add
  * {@link MdastShadowRootQuoteExtension}.
+ * @experimental
  */
 export const MdastBlockquoteExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
@@ -301,6 +306,7 @@ export const MdastBlockquoteExtension = /* @__PURE__ */ defineExtension({
  * Convenience bundle of {@link MdastHeadingExtension} and
  * {@link MdastBlockquoteExtension} — the constructs backed by
  * `@lexical/rich-text` nodes.
+ * @experimental
  */
 export const MdastRichTextExtension = /* @__PURE__ */ defineExtension({
   dependencies: [MdastHeadingExtension, MdastBlockquoteExtension],
@@ -311,6 +317,7 @@ export const MdastRichTextExtension = /* @__PURE__ */ defineExtension({
  * Ordered and unordered lists, shipping {@link ListNode} and
  * {@link ListItemNode}. For GFM task lists (`- [x] …`) add
  * {@link MdastTaskListExtension}.
+ * @experimental
  */
 export const MdastListExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
@@ -332,6 +339,7 @@ export const MdastListExtension = /* @__PURE__ */ defineExtension({
  * list import/export handlers already understand `checked`, and the typing
  * shortcut (`[ ] ` / `[x] ` in a list item) is enabled by the grammar's
  * presence in the registry.
+ * @experimental
  */
 export const MdastTaskListExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
@@ -347,6 +355,7 @@ export const MdastTaskListExtension = /* @__PURE__ */ defineExtension({
 
 /**
  * Fenced and indented code blocks, shipping {@link CodeNode}.
+ * @experimental
  */
 export const MdastCodeExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
@@ -365,6 +374,7 @@ export const MdastCodeExtension = /* @__PURE__ */ defineExtension({
  * shipping {@link LinkNode}. Reference links are resolved to their target on
  * import and serialize back as inline links. For GFM *literal* autolinks
  * (bare `https://…` in prose) add {@link MdastAutolinkLiteralExtension}.
+ * @experimental
  */
 export const MdastLinkExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
@@ -391,6 +401,7 @@ export const MdastLinkExtension = /* @__PURE__ */ defineExtension({
  * ```ts
  * dependencies: [MdastCommonMarkExtension, MdastAutolinkLiteralExtension]
  * ```
+ * @experimental
  */
 export const MdastAutolinkLiteralExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
@@ -417,6 +428,7 @@ export const MdastAutolinkLiteralExtension = /* @__PURE__ */ defineExtension({
  * ```
  * The quote *export* handler supports both forms per node, so legacy quotes
  * (e.g. created by the `> ` shortcut) and shadow root quotes can coexist.
+ * @experimental
  */
 export const MdastShadowRootQuoteExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
@@ -462,6 +474,7 @@ const $exportThematicBreak: MdastExportHandler = node => {
  * Thematic breaks (`---`, `***`, `___`), mapped to
  * {@link HorizontalRuleExtension}'s `HorizontalRuleNode`. The original marker
  * character is preserved on round-trip.
+ * @experimental
  */
 export const MdastHorizontalRuleExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
@@ -477,6 +490,7 @@ export const MdastHorizontalRuleExtension = /* @__PURE__ */ defineExtension({
 /**
  * GFM `~~strikethrough~~`, mapped to the Lexical `strikethrough` text format.
  * Needs no extra nodes (the core text handlers carry the format bit).
+ * @experimental
  */
 export const MdastStrikethroughExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
@@ -498,6 +512,7 @@ export const MdastStrikethroughExtension = /* @__PURE__ */ defineExtension({
  * (strikethrough, task lists, literal autolinks, tables) are bundled
  * separately as `MdastGfmExtension`, and `MdastExportExtension` (or the
  * `MdastExtension` bundle) adds serialization back to Markdown.
+ * @experimental
  */
 export const MdastCommonMarkExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
@@ -523,6 +538,7 @@ export interface MdastShortcutsConfig {
  * feature extensions in the editor and no others. Combine with
  * {@link MdastCommonMarkExtension} (and `MdastGfmExtension`) — this extension
  * only wires up the behavior, it does not pull in any grammar of its own.
+ * @experimental
  */
 export const MdastShortcutsExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config) => namedSignals(config),
@@ -548,6 +564,7 @@ export const MdastShortcutsExtension = /* @__PURE__ */ defineExtension({
  * Shorthand for `$getExtensionOutput(MdastImportExtension).$convertFromMarkdownString`.
  * Must be called inside an `editor.update()`. Throws if the editor was not
  * built with {@link MdastImportExtension} (or an extension that depends on it).
+ * @experimental
  */
 export function $convertFromMarkdownString(
   markdown: string,
@@ -566,6 +583,7 @@ export function $convertFromMarkdownString(
  * Must be called inside an `editor.update()`. Throws if the editor was not
  * built with {@link MdastImportExtension} (or an extension that depends on
  * it).
+ * @experimental
  */
 export function $convertFromMdast(tree: Root, node?: ElementNode): void {
   $getExtensionOutput(MdastImportExtension).$convertFromMdast(tree, node);

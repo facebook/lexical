@@ -19,6 +19,7 @@ import {MdastImportExtension} from './MdastImportExtension';
  * The runtime API exposed by {@link MdastExportExtension}. Obtain it inside a
  * read/update with `$getExtensionOutput(MdastExportExtension)`, or use the
  * {@link $convertToMarkdownString} shorthand.
+ * @experimental
  */
 export interface MdastExportExtensionOutput {
   /**
@@ -49,6 +50,7 @@ export interface MdastExportExtensionOutput {
  * ```ts
  * dependencies: [MdastCommonMarkExtension, MdastExportExtension]
  * ```
+ * @experimental
  */
 export const MdastExportExtension = /* @__PURE__ */ defineExtension<
   Record<never, never>,
@@ -73,6 +75,7 @@ export const MdastExportExtension = /* @__PURE__ */ defineExtension<
  * `$getExtensionOutput(MdastExportExtension).$convertToMarkdownString`.
  * Must be called inside an `editor.read()` or `editor.update()`. Throws if
  * the editor was not built with {@link MdastExportExtension}.
+ * @experimental
  */
 export function $convertToMarkdownString(node?: ElementNode): string {
   return $getExtensionOutput(MdastExportExtension).$convertToMarkdownString(
@@ -84,6 +87,7 @@ export function $convertToMarkdownString(node?: ElementNode): string {
  * Shorthand for `$getExtensionOutput(MdastExportExtension).$convertToMdast`.
  * Must be called inside an `editor.read()` or `editor.update()`. Throws if
  * the editor was not built with {@link MdastExportExtension}.
+ * @experimental
  */
 export function $convertToMdast(node?: ElementNode): Root {
   return $getExtensionOutput(MdastExportExtension).$convertToMdast(node);

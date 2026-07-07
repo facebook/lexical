@@ -17,6 +17,14 @@ Because this example depends on unreleased workspace packages, the
 StackBlitz link opens the monorepo root and boots the example with the
 `start:dev-example:mdast-editor` script.
 
+Deployed builds of every dev example are served from the lexical
+website at `/dev-examples/<name>/` (this one at
+[/dev-examples/mdast-editor/](https://lexical.dev/dev-examples/mdast-editor/)),
+including on every Cloudflare/Vercel deploy preview. To build them
+locally: `pnpm run build --prod && pnpm run build:dev-examples` at the
+monorepo root, which outputs into
+`packages/lexical-website/static/dev-examples/`.
+
 ## What got simpler vs. `examples/markdown-editor`
 
 The legacy example's `MarkdownExtension.ts` is ~240 lines; the equivalent

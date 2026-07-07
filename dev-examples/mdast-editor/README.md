@@ -21,9 +21,11 @@ Deployed builds of every dev example are served from the lexical
 website at `/dev-examples/<name>/` (this one at
 [/dev-examples/mdast-editor/](https://lexical.dev/dev-examples/mdast-editor/)),
 including on every Cloudflare/Vercel deploy preview. To build them
-locally: `pnpm run build --prod && pnpm run build:dev-examples` at the
+locally: `pnpm run build && pnpm run build:dev-examples` at the
 monorepo root, which outputs into
-`packages/lexical-website/static/dev-examples/`.
+`packages/lexical-website/static/dev-examples/`. These are built from
+the development artifacts on purpose — they are demos, and the
+development builds keep Lexical's full error messages.
 
 ## What got simpler vs. `examples/markdown-editor`
 

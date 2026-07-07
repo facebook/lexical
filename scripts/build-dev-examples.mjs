@@ -14,7 +14,9 @@
 //   pnpm run build:dev-examples
 //
 // The website's `build` script runs this automatically after the monorepo
-// production build.
+// build. The examples are built in development mode on purpose: they are
+// demos, not benchmarks, and the development artifacts keep Lexical's full
+// error messages.
 
 import {execFileSync} from 'node:child_process';
 import {existsSync, readdirSync} from 'node:fs';
@@ -34,17 +36,16 @@ const outputRoot = path.resolve(
   'dev-examples',
 );
 
-// The vite builds resolve the monorepo's PRODUCTION dist artifacts; without
-// them the module resolution either fails or silently ships development
-// builds. Fail loudly instead.
+// The vite builds resolve the monorepo's development dist artifacts; fail
+// loudly when they are missing.
 if (
   !existsSync(
-    path.join(monorepoRoot, 'packages', 'lexical', 'dist', 'Lexical.prod.mjs'),
+    path.join(monorepoRoot, 'packages', 'lexical', 'dist', 'Lexical.dev.mjs'),
   )
 ) {
   console.error(
-    'Production dist artifacts are missing. Run `pnpm run build --prod` (or ' +
-      '`pnpm run build-prod`) at the monorepo root first.',
+    'Dist artifacts are missing. Run `pnpm run build` at the monorepo ' +
+      'root first.',
   );
   process.exit(1);
 }
@@ -66,6 +67,10 @@ for (const name of examples) {
     [
       'vite',
       'build',
+      // Development mode resolves the .dev.mjs artifacts deterministically
+      // (production artifacts may not exist and are not wanted here).
+      '--mode',
+      'development',
       '--logLevel',
       'warn',
       '--base',

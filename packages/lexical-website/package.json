@@ -5,7 +5,7 @@
   "scripts": {
     "docusaurus": "cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus",
     "start": "pnpm -C ../.. run build && cross-env IGNORE_PEER_DEPENDENCIES=react TYPEDOC_WATCH=true docusaurus start",
-    "build": "pnpm run tsc && pnpm -C ../.. run build --prod && pnpm -C ../.. run build:dev-examples && cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus build",
+    "build": "pnpm run tsc && pnpm -C ../.. run build && pnpm -C ../.. run build:dev-examples && cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus build",
     "tsc": "tsc -p tsconfig.json",
     "swizzle": "cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus swizzle",
     "deploy": "cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus deploy",

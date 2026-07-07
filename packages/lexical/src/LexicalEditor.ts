@@ -27,6 +27,7 @@ import {
   $isElementNode,
   BaseSelection,
   mergeRegister,
+  RangeSelection,
   TextNode,
 } from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
@@ -239,6 +240,51 @@ export interface EditorConfig {
   disableEvents?: boolean;
   namespace: string;
   theme: EditorThemeClasses;
+}
+
+/** @internal */
+export interface InputState {
+  compositionPhase: 'idle' | 'composing' | 'ending-firefox' | 'ending-safari';
+  compositionEndData: string;
+  hadOrphanedCompositionEvents: boolean;
+  isFirefoxEndingComposition: boolean;
+  isSafariEndingComposition: boolean;
+
+  lastKeyDownTimeStamp: number;
+  lastKeyCode: string | null;
+  lastBeforeInputInsertTextTimeStamp: number;
+  unprocessedBeforeInputData: string | null;
+  collapsedSelectionFormat: [number, string, number, NodeKey, number];
+  postDeleteSelectionToRestore: RangeSelection | null;
+
+  isSelectionChangeFromDOMUpdate: boolean;
+  isSelectionChangeFromMouseDown: boolean;
+  isInsertLineBreak: boolean;
+
+  isInsertTextAfterHandledSelectionCommand: boolean;
+  handledSelectionCommandTimeoutId: ReturnType<typeof setTimeout> | null;
+}
+
+/** @internal */
+export function createInputState(): InputState {
+  return {
+    collapsedSelectionFormat: [0, '', 0, 'root', 0],
+    compositionEndData: '',
+    compositionPhase: 'idle',
+    hadOrphanedCompositionEvents: false,
+    handledSelectionCommandTimeoutId: null,
+    isFirefoxEndingComposition: false,
+    isInsertLineBreak: false,
+    isInsertTextAfterHandledSelectionCommand: false,
+    isSafariEndingComposition: false,
+    isSelectionChangeFromDOMUpdate: false,
+    isSelectionChangeFromMouseDown: false,
+    lastBeforeInputInsertTextTimeStamp: 0,
+    lastKeyCode: null,
+    lastKeyDownTimeStamp: 0,
+    postDeleteSelectionToRestore: null,
+    unprocessedBeforeInputData: null,
+  };
 }
 
 /**
@@ -717,6 +763,7 @@ export function resetEditor(
     editor._cascadeCount = 0;
   }
   editor._blockCursorElement = null;
+  editor._inputState = createInputState();
 
   const observer = editor._observer;
 
@@ -1100,6 +1147,8 @@ export class LexicalEditor {
    */
   _slotsUsed: boolean;
   /** @internal */
+  _inputState: InputState;
+  /** @internal */
   _createEditorArgs?: undefined | CreateEditorArgs;
 
   /** @internal */
@@ -1168,6 +1217,7 @@ export class LexicalEditor {
     this._window = null;
     this._blockCursorElement = null;
     this._slotsUsed = false;
+    this._inputState = createInputState();
   }
 
   /**

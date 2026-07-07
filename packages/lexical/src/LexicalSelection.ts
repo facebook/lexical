@@ -3973,6 +3973,7 @@ export function $updateDOMSelection(
           prevSelection.style !== nextStyle)))
   ) {
     markCollapsedSelectionFormat(
+      editor,
       nextFormat,
       nextStyle,
       nextAnchorOffset,
@@ -4096,7 +4097,7 @@ export function $updateDOMSelection(
     }
   }
 
-  markSelectionChangeFromDOMUpdate();
+  markSelectionChangeFromDOMUpdate(editor);
 }
 
 export function $insertNodes(nodes: LexicalNode[]) {

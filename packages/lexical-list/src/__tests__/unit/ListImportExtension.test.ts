@@ -30,8 +30,8 @@ import {
   $isListNode,
   ListExtension,
   ListImportExtension,
-  ListItemNode,
-  ListNode,
+  type ListItemNode,
+  type ListNode,
 } from '@lexical/list';
 import {JSDOM} from 'jsdom';
 import {

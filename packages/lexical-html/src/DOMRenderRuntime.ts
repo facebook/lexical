@@ -13,18 +13,16 @@ import type {
   RenderContextReader,
   RenderStateConfig,
 } from './types';
-import type {
-  EditorDOMRenderConfig,
-  InitialEditorConfig,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
-} from 'lexical';
 
 import {
   $fullReconcile,
   $isLexicalNode,
   DEFAULT_EDITOR_DOM_CONFIG,
+  type EditorDOMRenderConfig,
+  type InitialEditorConfig,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
 } from 'lexical';
 
 import {compileDOMRenderConfigOverrides} from './compileDOMRenderConfigOverrides';

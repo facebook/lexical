@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {useMergeRefs} from '@floating-ui/react';
 import {$isCodeNode} from '@lexical/code';
 import {
@@ -47,27 +45,27 @@ import {
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
-  CommandPayloadType,
-  ElementFormatType,
+  type CommandPayloadType,
+  type ElementFormatType,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   HISTORIC_TAG,
   INDENT_CONTENT_COMMAND,
   IS_APPLE,
-  LexicalCommand,
-  LexicalEditor,
-  LexicalNode,
+  type LexicalCommand,
+  type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
-  NodeKey,
+  type NodeKey,
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SELECTION_FOCUS_TAG,
-  TextFormatType,
+  type TextFormatType,
   UNDO_COMMAND,
 } from 'lexical';
-import {Dispatch, useCallback, useEffect, useState} from 'react';
+import {type Dispatch, type JSX, useCallback, useEffect, useState} from 'react';
 
 import {useSettings} from '../../context/SettingsContext';
 import {
@@ -91,7 +89,7 @@ import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawExtension';
 import {
   INSERT_IMAGE_COMMAND,
   InsertImageDialog,
-  InsertImagePayload,
+  type InsertImagePayload,
 } from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutExtension/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakExtension';

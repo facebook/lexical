@@ -21,8 +21,8 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $setSlot,
-  LexicalEditor,
-  NodeKey,
+  type LexicalEditor,
+  type NodeKey,
 } from 'lexical';
 import {
   $assertNodeType,

@@ -22,7 +22,7 @@ import {
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
 import {
   $createTestDecoratorNode,

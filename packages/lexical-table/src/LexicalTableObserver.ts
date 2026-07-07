@@ -28,8 +28,8 @@ import {
   type TextFormatType,
 } from 'lexical';
 
-import {$isTableCellNode, TableCellNode} from './LexicalTableCellNode';
-import {$isTableNode, TableNode} from './LexicalTableNode';
+import {$isTableCellNode, type TableCellNode} from './LexicalTableCellNode';
+import {$isTableNode, type TableNode} from './LexicalTableNode';
 import {$isTableRowNode} from './LexicalTableRowNode';
 import {
   $createTableSelectionFrom,
@@ -41,7 +41,7 @@ import {
   $updateDOMForSelection,
   getTable,
   getTableElement,
-  HTMLTableElementWithWithTableSelectionState,
+  type HTMLTableElementWithWithTableSelectionState,
 } from './LexicalTableSelectionHelpers';
 
 export type TableDOMCell = {

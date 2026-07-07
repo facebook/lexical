@@ -6,6 +6,8 @@
  *
  */
 
+import type {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
+
 import invariant from '@lexical/internal/invariant';
 import {$descendantsMatching} from '@lexical/utils';
 import {
@@ -14,29 +16,28 @@ import {
   $getEditor,
   $getNearestNodeFromDOMNode,
   addClassNamesToElement,
-  BaseSelection,
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  ElementDOMSlot,
+  type BaseSelection,
+  type DOMConversionMap,
+  type DOMConversionOutput,
+  type DOMExportOutput,
+  type EditorConfig,
+  type ElementDOMSlot,
   type ElementFormatType,
   ElementNode,
   isHTMLElement,
-  LexicalEditor,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
   removeClassNamesFromElement,
-  SerializedElementNode,
+  type SerializedElementNode,
   setDOMStyleFromCSS,
   setDOMUnmanaged,
-  Spread,
+  type Spread,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
 import {$isTableCellNode, type TableCellNode} from './LexicalTableCellNode';
-import {TableDOMCell, TableDOMTable} from './LexicalTableObserver';
 import {$isTableRowNode} from './LexicalTableRowNode';
 import {
   $getNearestTableCellInTableFromDOMNode,

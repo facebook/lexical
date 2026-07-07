@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {JSX} from 'react';
 
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import invariant from '@lexical/internal/invariant';
@@ -51,11 +50,11 @@ import {
   COMMAND_PRIORITY_BEFORE_LOW,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
-  CommandListenerPriority,
-  CommandListenerPriorityBefore,
+  type CommandListenerPriority,
+  type CommandListenerPriorityBefore,
   createCommand,
   createEditor,
-  EditorState,
+  type EditorState,
   getDOMSelection,
   HISTORY_MERGE_TAG,
   type Klass,
@@ -67,20 +66,21 @@ import {
   RootNode,
   SKIP_DOM_SELECTION_TAG,
   TextNode,
-  UpdateListenerPayload,
+  type UpdateListenerPayload,
 } from 'lexical';
 import * as React from 'react';
 import {
   act,
   createRef,
-  ReactNode,
+  type JSX,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from 'react';
 import {createPortal} from 'react-dom';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';

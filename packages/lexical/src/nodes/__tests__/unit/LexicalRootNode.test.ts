@@ -15,7 +15,7 @@ import {
   $isRootNode,
   $isTextNode,
   ElementNode,
-  RootNode,
+  type RootNode,
 } from 'lexical';
 import {beforeEach, describe, expect, test} from 'vitest';
 

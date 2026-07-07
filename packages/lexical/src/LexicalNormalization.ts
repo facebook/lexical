@@ -6,10 +6,14 @@
  *
  */
 
-import type {RangeSelection, TextNode} from '.';
 import type {PointType} from './LexicalSelection';
 
-import {$isElementNode, $isTextNode} from '.';
+import {
+  $isElementNode,
+  $isTextNode,
+  type RangeSelection,
+  type TextNode,
+} from '.';
 import {nodeStatesAreEquivalent} from './LexicalNodeState';
 import {getActiveEditor} from './LexicalUpdates';
 

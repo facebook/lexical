@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
@@ -27,11 +25,11 @@ import {
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
   mergeRegister,
-  NodeKey,
+  type NodeKey,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {type JSX, useCallback, useEffect, useRef, useState} from 'react';
 
 import EquationEditor from '../ui/EquationEditor';
 import KatexRenderer from '../ui/KatexRenderer';

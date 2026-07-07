@@ -6,18 +6,18 @@
  *
  */
 
-import type {
-  DOMExportOutput,
-  EditorConfig,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  SerializedLexicalNode,
-  Spread,
-} from 'lexical';
 import type {JSX} from 'react';
 
-import {DecoratorNode} from 'lexical';
+import {
+  DecoratorNode,
+  type DOMExportOutput,
+  type EditorConfig,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  type SerializedLexicalNode,
+  type Spread,
+} from 'lexical';
 import * as React from 'react';
 
 type Dimension = number | 'inherit';

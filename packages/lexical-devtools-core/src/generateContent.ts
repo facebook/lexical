@@ -6,21 +6,12 @@
  *
  */
 
-import type {
-  BaseSelection,
-  DecoratorNode,
-  ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  ParagraphNode,
-  RangeSelection,
-  TextNode,
-} from 'lexical';
+import type {LexicalCommandLog} from './useLexicalCommandsLog';
 
 import {$generateHtmlFromNodes} from '@lexical/html';
-import {$isLinkNode, LinkNode} from '@lexical/link';
+import {$isLinkNode, type LinkNode} from '@lexical/link';
 import {$isMarkNode} from '@lexical/mark';
-import {$isTableSelection, TableSelection} from '@lexical/table';
+import {$isTableSelection, type TableSelection} from '@lexical/table';
 import {
   $getRoot,
   $getSelection,
@@ -34,9 +25,15 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
+  type BaseSelection,
+  type DecoratorNode,
+  type ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type ParagraphNode,
+  type RangeSelection,
+  type TextNode,
 } from 'lexical';
-
-import {LexicalCommandLog} from './useLexicalCommandsLog';
 
 export type CustomPrintNodeFn = (
   node: LexicalNode,

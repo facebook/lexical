@@ -6,18 +6,6 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  LexicalCommand,
-  LexicalNode,
-  NodeKey,
-  NodeSelection,
-  SerializedLexicalNode,
-} from 'lexical';
-
 import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   $create,
@@ -35,14 +23,29 @@ import {
   createCommand,
   DecoratorNode,
   defineExtension,
+  type DOMConversionMap,
+  type DOMConversionOutput,
+  type DOMExportOutput,
+  type EditorConfig,
   isDOMNode,
+  type LexicalCommand,
+  type LexicalNode,
   mergeRegister,
+  type NodeKey,
+  type NodeSelection,
   removeClassNamesFromElement,
+  type SerializedLexicalNode,
 } from 'lexical';
 
 import {EditorStateExtension} from './EditorStateExtension';
 import {NodeSelectionExtension} from './NodeSelectionExtension';
-import {batch, effect, ReadonlySignal, Signal, signal} from './signals';
+import {
+  batch,
+  effect,
+  type ReadonlySignal,
+  type Signal,
+  signal,
+} from './signals';
 
 /**
  * The serialized form of a {@link HorizontalRuleNode}. It has no extra fields

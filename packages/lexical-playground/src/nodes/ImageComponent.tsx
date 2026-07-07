@@ -6,14 +6,6 @@
  *
  */
 
-import type {
-  LexicalCommand,
-  LexicalEditor,
-  LexicalEditorWithDispose,
-  NodeKey,
-} from 'lexical';
-import type {JSX} from 'react';
-
 import './ImageNode.css';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
@@ -38,12 +30,17 @@ import {
   getActiveElement,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
+  type LexicalEditorWithDispose,
   mergeRegister,
+  type NodeKey,
   registerEventListener,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
 import {
+  type JSX,
   Suspense,
   useCallback,
   useEffect,

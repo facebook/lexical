@@ -7,10 +7,9 @@
  */
 
 import type {LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {forwardRef, Ref, useLayoutEffect, useState} from 'react';
+import {forwardRef, type JSX, type Ref, useLayoutEffect, useState} from 'react';
 
 import {
   ContentEditableElement,

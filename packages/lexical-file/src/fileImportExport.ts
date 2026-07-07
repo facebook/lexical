@@ -6,9 +6,12 @@
  *
  */
 
-import type {EditorState, LexicalEditor, SerializedEditorState} from 'lexical';
-
-import {CLEAR_HISTORY_COMMAND} from 'lexical';
+import {
+  CLEAR_HISTORY_COMMAND,
+  type EditorState,
+  type LexicalEditor,
+  type SerializedEditorState,
+} from 'lexical';
 
 import {version} from '../package.json';
 

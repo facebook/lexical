@@ -6,8 +6,6 @@
  *
  */
 
-import type {CodeNode} from '@lexical/code-core';
-import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 import type {Token, TokenStream} from 'prismjs';
 
 // Side-effect import: loads prismjs and sets up the global `Prism` that the
@@ -32,8 +30,15 @@ import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-cpp';
 
-import {$createCodeHighlightNode} from '@lexical/code-core';
-import {$createLineBreakNode, $createTabNode, tokenizeRawText} from 'lexical';
+import {$createCodeHighlightNode, type CodeNode} from '@lexical/code-core';
+import {
+  $createLineBreakNode,
+  $createTabNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  tokenizeRawText,
+} from 'lexical';
 
 declare global {
   interface Window {

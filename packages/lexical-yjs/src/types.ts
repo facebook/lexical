@@ -6,10 +6,10 @@
  *
  */
 
-import {CollabDecoratorNode} from './CollabDecoratorNode';
-import {CollabElementNode} from './CollabElementNode';
-import {CollabLineBreakNode} from './CollabLineBreakNode';
-import {CollabTextNode} from './CollabTextNode';
+import type {CollabDecoratorNode} from './CollabDecoratorNode';
+import type {CollabElementNode} from './CollabElementNode';
+import type {CollabLineBreakNode} from './CollabLineBreakNode';
+import type {CollabTextNode} from './CollabTextNode';
 
 declare module 'yjs' {
   interface XmlElement {

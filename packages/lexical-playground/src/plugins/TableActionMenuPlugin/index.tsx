@@ -6,9 +6,6 @@
  *
  */
 
-import type {ElementNode, LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {
@@ -30,8 +27,8 @@ import {
   getTableObserverFromTableElement,
   TableCellHeaderStates,
   TableCellNode,
-  TableObserver,
-  TableSelection,
+  type TableObserver,
+  type TableSelection,
 } from '@lexical/table';
 import {
   $getSelection,
@@ -40,17 +37,26 @@ import {
   $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
+  type ElementNode,
   getActiveElementDeep,
   getDOMSelection,
   getDOMSelectionPoints,
   getRootOwnerDocument,
   isDOMNode,
+  type LexicalEditor,
   mergeRegister,
   registerEventListener,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {ReactPortal, useCallback, useEffect, useRef, useState} from 'react';
+import {
+  type JSX,
+  type ReactPortal,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {createPortal} from 'react-dom';
 
 import useModal from '../../hooks/useModal';

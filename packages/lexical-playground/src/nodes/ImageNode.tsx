@@ -6,18 +6,6 @@
  *
  */
 
-import type {
-  DOMExportOutput,
-  EditorConfig,
-  LexicalEditorWithDispose,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  RangeSelection,
-  SerializedEditor,
-  SerializedLexicalNode,
-  Spread,
-} from 'lexical';
 import type {JSX} from 'react';
 
 import {
@@ -42,6 +30,16 @@ import {
   configExtension,
   DecoratorNode,
   defineExtension,
+  type DOMExportOutput,
+  type EditorConfig,
+  type LexicalEditorWithDispose,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type RangeSelection,
+  type SerializedEditor,
+  type SerializedLexicalNode,
+  type Spread,
 } from 'lexical';
 import * as React from 'react';
 

@@ -6,13 +6,6 @@
  *
  */
 
-import type {SerializedListItemNode} from './LexicalListItemNode';
-import type {
-  ListNodeTagType,
-  ListType,
-  SerializedListNode,
-} from './LexicalListNode';
-
 import {INSERT_CHECK_LIST_COMMAND, registerCheckList} from './checkList';
 import {
   $handleListInsertParagraph,
@@ -23,8 +16,16 @@ import {
   $createListItemNode,
   $isListItemNode,
   ListItemNode,
+  type SerializedListItemNode,
 } from './LexicalListItemNode';
-import {$createListNode, $isListNode, ListNode} from './LexicalListNode';
+import {
+  $createListNode,
+  $isListNode,
+  ListNode,
+  type ListNodeTagType,
+  type ListType,
+  type SerializedListNode,
+} from './LexicalListNode';
 import {$getListDepth} from './utils';
 
 export {

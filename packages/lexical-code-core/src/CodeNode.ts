@@ -7,21 +7,6 @@
  */
 
 import type {CodeExtension} from './CodeExtension';
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  LexicalEditor,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  ParagraphNode,
-  RangeSelection,
-  SerializedElementNode,
-  Spread,
-  TabNode,
-} from 'lexical';
 
 import {getPeerDependencyFromEditor} from '@lexical/extension';
 import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
@@ -36,9 +21,22 @@ import {
   $isTabNode,
   $isTextNode,
   addClassNamesToElement,
+  type DOMConversionMap,
+  type DOMConversionOutput,
+  type DOMExportOutput,
+  type EditorConfig,
   ElementNode,
   isHTMLElement,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type ParagraphNode,
+  type RangeSelection,
+  type SerializedElementNode,
   setDOMStyleFromCSS,
+  type Spread,
+  type TabNode,
 } from 'lexical';
 
 import {

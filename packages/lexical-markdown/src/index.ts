@@ -6,20 +6,14 @@
  *
  */
 
-import type {
-  ElementTransformer,
-  MultilineElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
-} from './MarkdownTransformers';
-import type {BaseSelection, ElementNode, LexicalNode} from 'lexical';
-
 import {
   $getRoot,
   $getSelection,
   $isRangeSelection,
   ArtificialNode__DO_NOT_USE,
+  type BaseSelection,
+  type ElementNode,
+  type LexicalNode,
 } from 'lexical';
 
 import {
@@ -36,6 +30,7 @@ import {
   CHECK_LIST,
   CODE,
   ELEMENT_TRANSFORMERS,
+  type ElementTransformer,
   HEADING,
   HIGHLIGHT,
   INLINE_CODE,
@@ -44,12 +39,16 @@ import {
   ITALIC_UNDERSCORE,
   LINK,
   MULTILINE_ELEMENT_TRANSFORMERS,
+  type MultilineElementTransformer,
   normalizeMarkdown,
   ORDERED_LIST,
   QUOTE,
   STRIKETHROUGH,
   TEXT_FORMAT_TRANSFORMERS,
   TEXT_MATCH_TRANSFORMERS,
+  type TextFormatTransformer,
+  type TextMatchTransformer,
+  type Transformer,
   TRANSFORMERS,
   UNORDERED_LIST,
 } from './MarkdownTransformers';

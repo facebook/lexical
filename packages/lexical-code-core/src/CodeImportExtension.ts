@@ -6,11 +6,10 @@
  *
  */
 
-import type {DOMPreprocessFn} from '@lexical/html';
-
 import {
   defineImportRule,
   defineOverlayRules,
+  type DOMPreprocessFn,
   ImportOverlays,
   sel,
 } from '@lexical/html';

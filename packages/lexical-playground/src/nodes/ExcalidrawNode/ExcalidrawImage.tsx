@@ -103,14 +103,19 @@ export default function ExcalidrawImage({
       });
       removeStyleFromSvg_HACK(svg);
 
-      svg.setAttribute('width', '100%');
-      svg.setAttribute('height', '100%');
+      if (width === 'inherit' && height === 'inherit') {
+        svg.style.maxWidth = '100%';
+        svg.style.height = 'auto';
+      } else {
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', '100%');
+      }
       svg.setAttribute('display', 'block');
 
       setSvg(svg);
     };
-    setContent();
-  }, [elements, files, appState]);
+    setContent().catch(console.error);
+  }, [elements, files, appState, width, height]);
 
   const containerStyle: React.CSSProperties = {};
   if (width !== 'inherit') {

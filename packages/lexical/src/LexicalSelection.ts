@@ -1768,13 +1768,13 @@ export class RangeSelection implements BaseSelection {
           isBackward ? 'previous' : 'next',
         ).getNodeAtCaret();
         if ($isTextNode(sibling)) {
-          const sibKeyedDOM = editor.getElementByKey(sibling.getKey());
-          const sibDOM = sibKeyedDOM
-            ? $getDOMTextNode(sibling, sibKeyedDOM, editor)
-            : null;
-          if (sibDOM) {
-            const sibOffset = isBackward ? sibDOM.length : 0;
-            if (collapse) {
+          if (collapse) {
+            const sibKeyedDOM = editor.getElementByKey(sibling.getKey());
+            const sibDOM = sibKeyedDOM
+              ? $getDOMTextNode(sibling, sibKeyedDOM, editor)
+              : null;
+            if (sibDOM) {
+              const sibOffset = isBackward ? sibDOM.length : 0;
               setDOMSelectionBaseAndExtent(
                 domSelection,
                 sibDOM,
@@ -1782,21 +1782,20 @@ export class RangeSelection implements BaseSelection {
                 sibDOM,
                 sibOffset,
               );
-            } else {
-              const curAnchor = domSelection.anchorNode;
-              if (
-                curAnchor &&
-                (isDOMTextNode(curAnchor) || isHTMLElement(curAnchor))
-              ) {
-                setDOMSelectionBaseAndExtent(
-                  domSelection,
-                  curAnchor,
-                  domSelection.anchorOffset,
-                  sibDOM,
-                  sibOffset,
-                );
-              }
             }
+          } else {
+            // For extend (used by deleteCharacter), native Selection.modify
+            // cannot cross inline-grid span boundaries even after
+            // pre-normalization. Set the Lexical selection directly and
+            // return early to skip the native moveNativeSelection call.
+            const sibLen = sibling.getTextContentSize();
+            if (isBackward) {
+              this.focus.set(sibling.__key, sibLen - 1, 'text');
+            } else {
+              this.focus.set(sibling.__key, 1, 'text');
+            }
+            this.dirty = true;
+            return;
           }
         }
       }

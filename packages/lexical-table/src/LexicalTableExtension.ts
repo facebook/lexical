@@ -19,7 +19,9 @@ import {
 import {TableCellNode} from './LexicalTableCellNode';
 import {
   $isScrollableTablesActive,
+  $isStickyScrollbarActive,
   setScrollableTablesActive,
+  setStickyScrollbarActive,
   TableNode,
 } from './LexicalTableNode';
 import {
@@ -49,6 +51,11 @@ export interface TableConfig {
    */
   hasHorizontalScroll: boolean;
   /**
+   * When `true` (default `false`), a sticky scrollbar is rendered below each table that overflows horizontally.
+   * Requires `hasHorizontalScroll` to be `true`.
+   */
+  hasStickyScrollbar: boolean;
+  /**
    * When `true` (default `false`), nested tables will be allowed.
    *
    * @experimental Nested tables are not officially supported.
@@ -69,6 +76,7 @@ export const TableExtension = /* @__PURE__ */ defineExtension({
     hasCellMerge: true,
     hasHorizontalScroll: true,
     hasNestedTables: false,
+    hasStickyScrollbar: false,
     hasTabHandler: true,
   }),
   dependencies: [
@@ -87,13 +95,16 @@ export const TableExtension = /* @__PURE__ */ defineExtension({
     return mergeRegister(
       effect(() => {
         const hasHorizontalScroll = stores.hasHorizontalScroll.value;
+        const hasStickyScrollbar =
+          stores.hasStickyScrollbar.value && hasHorizontalScroll;
         const hadHorizontalScroll = $isScrollableTablesActive(editor);
-        if (hadHorizontalScroll !== hasHorizontalScroll) {
+        const hadStickyScrollbar = $isStickyScrollbarActive(editor);
+        if (
+          hadHorizontalScroll !== hasHorizontalScroll ||
+          hadStickyScrollbar !== hasStickyScrollbar
+        ) {
           setScrollableTablesActive(editor, hasHorizontalScroll);
-          // Re-render existing tables through the new scroll-wrapper config
-          // without cloning every TableNode the way marking them dirty would. A
-          // full reconcile marks no nodes dirty, so it's deferred (no
-          // synchronous render from this effect) and produces no history entry.
+          setStickyScrollbarActive(editor, hasStickyScrollbar);
           editor.update($fullReconcile);
         }
       }),

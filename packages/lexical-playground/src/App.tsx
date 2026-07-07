@@ -221,7 +221,9 @@ const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
     // tracks this node set automatically (kept out of the always-on
     // PlaygroundImportExtension so plain-text mode doesn't pull in
     // RichTextExtension, which conflicts with PlainTextExtension).
-    TableExtension,
+    /* @__PURE__ */ configExtension(TableExtension, {
+      hasStickyScrollbar: true,
+    }),
     ImagesExtension,
     HorizontalRuleExtension,
     PageBreakExtension,

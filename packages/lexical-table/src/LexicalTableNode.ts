@@ -148,9 +148,10 @@ function alignTableElement(
   addClassNamesToElement(dom, ...addClasses);
 }
 
-function createScrollableWrapper(
+function $createScrollableWrapper(
   tableElement: HTMLTableElement,
   config: EditorConfig,
+  hideNativeScrollbar: boolean,
 ): HTMLDivElement {
   const wrapper = $getDocument().createElement('div');
   const classes = config.theme.tableScrollableWrapper;
@@ -158,13 +159,15 @@ function createScrollableWrapper(
     addClassNamesToElement(wrapper, classes);
   } else {
     wrapper.style.overflowX = 'auto';
-    wrapper.style.scrollbarWidth = 'none';
+    if (hideNativeScrollbar) {
+      wrapper.style.scrollbarWidth = 'none';
+    }
   }
   wrapper.appendChild(tableElement);
   return wrapper;
 }
 
-function createStickyScrollbar(
+function $createStickyScrollbar(
   scrollableWrapper: HTMLDivElement,
   tableElement: HTMLTableElement,
   config: EditorConfig,
@@ -213,13 +216,11 @@ function createStickyScrollbar(
   );
 
   queueMicrotask(() => syncStickyScrollbar(scrollbar, tableElement));
-  if (typeof ResizeObserver !== 'undefined') {
-    const resizeObserver = new ResizeObserver(() => {
-      syncStickyScrollbar(scrollbar, tableElement);
-    });
-    resizeObserver.observe(scrollableWrapper);
-    resizeObserver.observe(tableElement);
-  }
+  const resizeObserver = new ResizeObserver(() => {
+    syncStickyScrollbar(scrollbar, tableElement);
+  });
+  resizeObserver.observe(scrollableWrapper);
+  resizeObserver.observe(tableElement);
   return scrollbar;
 }
 
@@ -253,11 +254,19 @@ function getScrollableWrapper(dom: HTMLElement): HTMLDivElement | null {
 }
 
 const scrollableEditors = new WeakSet<LexicalEditor>();
+const stickyScrollbarEditors = new WeakSet<LexicalEditor>();
 
 export function $isScrollableTablesActive(
   editor: LexicalEditor = $getEditor(),
 ): boolean {
   return scrollableEditors.has(editor);
+}
+
+/** Whether the sticky scrollbar is enabled for the given editor. */
+export function $isStickyScrollbarActive(
+  editor: LexicalEditor = $getEditor(),
+): boolean {
+  return stickyScrollbarEditors.has(editor);
 }
 
 export function setScrollableTablesActive(
@@ -273,6 +282,18 @@ export function setScrollableTablesActive(
     scrollableEditors.add(editor);
   } else {
     scrollableEditors.delete(editor);
+  }
+}
+
+/** Toggle the sticky scrollbar flag for the given editor. */
+export function setStickyScrollbarActive(
+  editor: LexicalEditor,
+  active: boolean,
+): void {
+  if (active) {
+    stickyScrollbarEditors.add(editor);
+  } else {
+    stickyScrollbarEditors.delete(editor);
   }
 }
 
@@ -388,18 +409,27 @@ export class TableNode extends ElementNode {
     addClassNamesToElement(tableElement, config.theme.table);
     this.updateTableElement(null, tableElement, config);
     if ($isScrollableTablesActive(editor)) {
-      const scrollableWrapper = createScrollableWrapper(tableElement, config);
-      const stickyScrollbar = createStickyScrollbar(
-        scrollableWrapper,
+      const hasStickyScrollbar = $isStickyScrollbarActive(editor);
+      const scrollableWrapper = $createScrollableWrapper(
         tableElement,
         config,
+        hasStickyScrollbar,
       );
-      const outerWrapper = $getDocument().createElement('div');
-      outerWrapper.appendChild(scrollableWrapper);
-      outerWrapper.appendChild(stickyScrollbar);
-      setDOMUnmanaged(stickyScrollbar);
+      if (hasStickyScrollbar) {
+        const stickyScrollbar = $createStickyScrollbar(
+          scrollableWrapper,
+          tableElement,
+          config,
+        );
+        const outerWrapper = $getDocument().createElement('div');
+        outerWrapper.appendChild(scrollableWrapper);
+        outerWrapper.appendChild(stickyScrollbar);
+        setDOMUnmanaged(stickyScrollbar);
+        this.updateTableWrapper(null, scrollableWrapper, tableElement, config);
+        return outerWrapper;
+      }
       this.updateTableWrapper(null, scrollableWrapper, tableElement, config);
-      return outerWrapper;
+      return scrollableWrapper;
     }
     return tableElement;
   }
@@ -459,12 +489,18 @@ export class TableNode extends ElementNode {
     if (isHTMLDivElement(dom)) {
       const scrollable = getScrollableWrapper(dom);
       if (scrollable) {
+        const hasStickyDom = scrollable !== dom;
+        if (hasStickyDom !== $isStickyScrollbarActive()) {
+          return true;
+        }
         this.updateTableWrapper(prevNode, scrollable, tableElement, config);
-        const stickyScrollbar = scrollable.nextElementSibling;
-        if (isHTMLDivElement(stickyScrollbar)) {
-          queueMicrotask(() =>
-            syncStickyScrollbar(stickyScrollbar, tableElement),
-          );
+        if (hasStickyDom) {
+          const stickyScrollbar = scrollable.nextElementSibling;
+          if (isHTMLDivElement(stickyScrollbar)) {
+            queueMicrotask(() =>
+              syncStickyScrollbar(stickyScrollbar, tableElement),
+            );
+          }
         }
       } else if (__DEV__) {
         console.warn(

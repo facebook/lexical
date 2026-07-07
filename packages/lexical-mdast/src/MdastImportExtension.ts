@@ -177,7 +177,7 @@ const CORE_EXPORT_RULES: readonly MdastExportRule[] = [
 ];
 
 /**
- * The core Markdown registry for `@lexical/mdast`, modelled on
+ * The core Markdown registry for `@lexical/mdast`, modeled on
  * `@lexical/html`'s `DOMImportExtension`. It assembles the import/export rules
  * and micromark/mdast extensions contributed by feature extensions into a
  * compiled registry, and exposes Markdown import through its

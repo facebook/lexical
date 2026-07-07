@@ -7,8 +7,7 @@
 > including breaking renames, signature changes, or behavior changes —
 > until the API stabilizes. `@lexical/markdown` remains the supported
 > default for production apps that don't want to track an experimental
-> API. Apps that adopt `@lexical/mdast` should pin their Lexical
-> version and treat upgrades as intentional.
+> API.
 
 An alternative to `@lexical/markdown` that is built on the
 [micromark](https://github.com/micromark/micromark) /
@@ -29,7 +28,7 @@ Markdown — `* a`/`+ b` bullets and `~~~` fences round-trip unchanged.
 ## Configured through extensions
 
 `@lexical/mdast` is set up **exclusively** through the Lexical extension
-system, modelled on `@lexical/html`'s `DOMImportExtension`. Each feature
+system, modeled on `@lexical/html`'s `DOMImportExtension`. Each feature
 extension ships the nodes it needs and contributes its import/export rules (and
 the micromark/mdast extensions that tokenize them) to the core
 `MdastImportExtension` registry:

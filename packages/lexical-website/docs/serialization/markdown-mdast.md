@@ -7,8 +7,7 @@
 including breaking renames, signature changes, or behavior changes —
 until the API stabilizes. We track issues and proposals in the
 [GitHub repo](https://github.com/facebook/lexical); breaking changes
-will be called out in release notes. Apps that depend on this package
-should pin their Lexical version and treat upgrades as intentional.
+will be called out in release notes.
 
 The existing `@lexical/markdown` package is unchanged and remains the
 supported default for production apps that don't want to track an
@@ -35,7 +34,7 @@ frontmatter, directives, ...) as the path for new syntax.
 
 ## Extensions are the unit of configuration
 
-Modelled on `@lexical/html`'s `DOMImportExtension`, the package is
+Modeled on `@lexical/html`'s `DOMImportExtension`, the package is
 configured **exclusively** through the
 [extension system](/docs/extensions/intro). Each feature extension
 ships the nodes it needs and contributes its import/export rules (and

@@ -11,6 +11,12 @@ what the extension-first design removes.
 pnpm run start:dev-example mdast-editor
 ```
 
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/facebook/lexical/tree/main?file=dev-examples%2Fmdast-editor%2Fsrc%2FEditor.tsx&startScript=start:dev-example:mdast-editor)
+
+Because this example depends on unreleased workspace packages, the
+StackBlitz link opens the monorepo root and boots the example with the
+`start:dev-example:mdast-editor` script.
+
 ## What got simpler vs. `examples/markdown-editor`
 
 The legacy example's `MarkdownExtension.ts` is ~240 lines; the equivalent

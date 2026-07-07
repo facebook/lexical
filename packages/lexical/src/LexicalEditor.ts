@@ -247,8 +247,6 @@ export interface InputState {
   compositionPhase: 'idle' | 'composing' | 'ending-firefox' | 'ending-safari';
   compositionEndData: string;
   hadOrphanedCompositionEvents: boolean;
-  isFirefoxEndingComposition: boolean;
-  isSafariEndingComposition: boolean;
 
   lastKeyDownTimeStamp: number;
   lastKeyCode: string | null;
@@ -273,10 +271,8 @@ export function createInputState(): InputState {
     compositionPhase: 'idle',
     hadOrphanedCompositionEvents: false,
     handledSelectionCommandTimeoutId: null,
-    isFirefoxEndingComposition: false,
     isInsertLineBreak: false,
     isInsertTextAfterHandledSelectionCommand: false,
-    isSafariEndingComposition: false,
     isSelectionChangeFromDOMUpdate: false,
     isSelectionChangeFromMouseDown: false,
     lastBeforeInputInsertTextTimeStamp: 0,
@@ -763,6 +759,9 @@ export function resetEditor(
     editor._cascadeCount = 0;
   }
   editor._blockCursorElement = null;
+  if (editor._inputState.handledSelectionCommandTimeoutId !== null) {
+    clearTimeout(editor._inputState.handledSelectionCommandTimeoutId);
+  }
   editor._inputState = createInputState();
 
   const observer = editor._observer;

@@ -1208,7 +1208,7 @@ function $handleInput(event: InputEvent): boolean {
     // is platform-independent.
     const isOrphanedCompositionEnd =
       event.inputType === 'insertCompositionText' &&
-      !inputState.isFirefoxEndingComposition &&
+      inputState.compositionPhase !== 'ending-firefox' &&
       !editor.isComposing();
     if (isOrphanedCompositionEnd) {
       inputState.hadOrphanedCompositionEvents = true;
@@ -1217,7 +1217,7 @@ function $handleInput(event: InputEvent): boolean {
     const inputAnchorNode = selection.anchor.getNode();
     const isCompositionOnToken =
       event.inputType === 'insertCompositionText' &&
-      !inputState.isFirefoxEndingComposition &&
+      inputState.compositionPhase !== 'ending-firefox' &&
       editor.isComposing() &&
       $isTextNode(inputAnchorNode) &&
       $isTokenOrSegmented(inputAnchorNode);
@@ -1238,9 +1238,9 @@ function $handleInput(event: InputEvent): boolean {
       // Given we're over-riding the default behavior, we will need
       // to ensure to disable composition before dispatching the
       // insertText command for when changing the sequence for FF.
-      if (inputState.isFirefoxEndingComposition) {
+      if (inputState.compositionPhase === 'ending-firefox') {
         const tokenRedirected = $onCompositionEndImpl(editor, data);
-        inputState.isFirefoxEndingComposition = false;
+        inputState.compositionPhase = 'idle';
         if (tokenRedirected) {
           $addUpdateTag(COMPOSITION_END_TAG);
           $flushMutations();
@@ -1306,10 +1306,10 @@ function $handleInput(event: InputEvent): boolean {
     // adds on Chrome/Webkit so listeners gated on this tag (markdown shortcut
     // trigger, history merge, autocomplete post-commit) see the same signal on
     // Firefox.
-    if (inputState.isFirefoxEndingComposition) {
+    if (inputState.compositionPhase === 'ending-firefox') {
       $onCompositionEndImpl(editor, data || undefined);
       $addUpdateTag(COMPOSITION_END_TAG);
-      inputState.isFirefoxEndingComposition = false;
+      inputState.compositionPhase = 'idle';
     }
   }
 
@@ -1333,6 +1333,7 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
   const selection = $getSelection();
 
   if ($isRangeSelection(selection) && !editor.isComposing()) {
+    inputState.compositionPhase = 'composing';
     inputState.hadOrphanedCompositionEvents = false;
     const anchor = selection.anchor;
     const node = selection.anchor.getNode();
@@ -1379,6 +1380,7 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
 
 function $handleCompositionEnd(event: CompositionEvent): boolean {
   const editor = getActiveEditor();
+  editor._inputState.compositionPhase = 'idle';
   $onCompositionEndImpl(editor, event.data);
   $addUpdateTag(COMPOSITION_END_TAG);
   return true;
@@ -1500,21 +1502,11 @@ function onCompositionEnd(
   event: CompositionEvent,
   editor: LexicalEditor,
 ): void {
-  // Firefox fires onCompositionEnd before onInput, but Chrome/Webkit,
-  // fire onInput before onCompositionEnd. To ensure the sequence works
-  // like Chrome/Webkit we use the isFirefoxEndingComposition flag to
-  // defer handling of onCompositionEnd in Firefox till we have processed
-  // the logic in onInput.
   const inputState = editor._inputState;
   if (IS_FIREFOX) {
-    inputState.isFirefoxEndingComposition = true;
+    inputState.compositionPhase = 'ending-firefox';
   } else if (!IS_IOS && (IS_SAFARI || IS_APPLE_WEBKIT)) {
-    // Fix：https://github.com/facebook/lexical/pull/7061
-    // In safari, onCompositionEnd triggers before keydown
-    // This will cause an extra character to be deleted when exiting the IME
-    // Therefore, a flag is used to mark that the keydown event is triggered after onCompositionEnd
-    // Ensure that an extra character is not deleted due to the backspace event being triggered in the keydown event.
-    inputState.isSafariEndingComposition = true;
+    inputState.compositionPhase = 'ending-safari';
     inputState.compositionEndData = event.data;
   } else {
     dispatchCommand(editor, COMPOSITION_END_COMMAND, event);
@@ -1540,16 +1532,16 @@ function $handleKeyDown(event: KeyboardEvent): boolean {
   if (event.key == null) {
     return true;
   }
-  if (inputState.isSafariEndingComposition) {
+  if (inputState.compositionPhase === 'ending-safari') {
     if (isBackspace(event)) {
       updateEditorSync(editor, () => {
         $onCompositionEndImpl(editor, inputState.compositionEndData);
       });
-      inputState.isSafariEndingComposition = false;
+      inputState.compositionPhase = 'idle';
       inputState.compositionEndData = '';
       return true;
     }
-    inputState.isSafariEndingComposition = false;
+    inputState.compositionPhase = 'idle';
     inputState.compositionEndData = '';
   }
 

@@ -1754,7 +1754,6 @@ export class RangeSelection implements BaseSelection {
     // selection into the adjacent sibling's Text node so that the
     // native Selection.modify can cross inline-grid/flex spans (#7301).
     if (
-      nextFocusDOM &&
       granularity === 'character' &&
       $isTextNode(focusNode) &&
       focusNode.isUnmergeable()

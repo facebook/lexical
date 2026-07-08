@@ -33,6 +33,7 @@ import {
 import {gfmTableFromMarkdown, gfmTableToMarkdown} from 'mdast-util-gfm-table';
 import {gfmTable} from 'micromark-extension-gfm-table';
 
+import {$append} from './handlers';
 import {MdastImportExtension} from './MdastImportExtension';
 
 /** The per-column alignment (`| :-: |`) a table's delimiter row declared. */
@@ -58,11 +59,11 @@ const $importTable: MdastImportHandler<Table> = (node, ctx) => {
           : TableCellHeaderStates.NO_STATUS,
       );
       const paragraph = $createParagraphNode();
-      paragraph.splice(0, 0, ctx.importChildren(cell));
-      cellNode.append(paragraph);
-      rowNode.append(cellNode);
+      $append(paragraph, ctx.importChildren(cell));
+      $append(cellNode, [paragraph]);
+      $append(rowNode, [cellNode]);
     }
-    table.append(rowNode);
+    $append(table, [rowNode]);
   });
   return table;
 };
@@ -73,7 +74,10 @@ const $exportTable: MdastExportHandler = (node, ctx) => {
   }
   const rows: TableRow[] = [];
   for (const row of node.getChildren()) {
-    if (!$isTableRowNode(row)) {
+    // Structural iteration bypasses the walk's selection filter, so rows a
+    // selection export does not reach are skipped here. Cells stay: dropping
+    // one would shift the remaining cells into other columns.
+    if (!$isTableRowNode(row) || !ctx.isIncluded(row)) {
       continue;
     }
     const cells: TableCell[] = [];

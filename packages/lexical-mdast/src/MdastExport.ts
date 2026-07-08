@@ -7,7 +7,7 @@
  */
 
 import type {CompiledMdast, MdastExportContext, MdastNode} from './types';
-import type {ElementNode, LexicalNode} from 'lexical';
+import type {BaseSelection, ElementNode, LexicalNode} from 'lexical';
 import type {
   BlockContent,
   Break,
@@ -25,11 +25,14 @@ import type {
   State,
 } from 'mdast-util-to-markdown';
 
+import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $getRoot,
+  $getSelection,
   $getState,
   $isElementNode,
   $isLineBreakNode,
+  $isRangeSelection,
   $isTextNode,
 } from 'lexical';
 import {defaultHandlers, toMarkdown} from 'mdast-util-to-markdown';
@@ -213,8 +216,15 @@ class TextRunAccumulator {
   }
 }
 
-function createNodeExporter(compiled: CompiledMdast) {
+function createNodeExporter(
+  compiled: CompiledMdast,
+  selection: BaseSelection | null = null,
+) {
   const {exportHandlers} = compiled;
+  // Incremented whenever a selected leaf contributes output. Parents compare
+  // it before/after recursing to keep an element that is not itself selected
+  // but hosts selected content (the markdown analogue of extractWithChild).
+  let selectionHits = 0;
 
   /**
    * Whether the run accumulator may absorb `child`: a text node whose only
@@ -228,16 +238,80 @@ function createNodeExporter(compiled: CompiledMdast) {
     return handler === undefined || handler === exportText;
   }
 
+  /**
+   * Selection filter for one child. With no selection every child passes
+   * through unchanged. Leaves (text, line break, decorator) pass only when
+   * selected, a partially selected text node as a detached clone sliced to
+   * the selected range; `null` means skip. Elements always pass — they are
+   * judged after recursion by {@link $dispatchElement}.
+   */
+  function $filterChild(child: LexicalNode): LexicalNode | null {
+    if (selection === null || $isElementNode(child)) {
+      return child;
+    }
+    if (!child.isSelected(selection)) {
+      return null;
+    }
+    selectionHits++;
+    return $isTextNode(child)
+      ? $sliceSelectedTextNodeContent(selection, child, 'clone')
+      : child;
+  }
+
+  /**
+   * Whether `node` or any descendant is selected. See
+   * {@link MdastExportContext.isIncluded}.
+   */
+  function $isIncluded(node: LexicalNode): boolean {
+    if (selection === null || node.isSelected(selection)) {
+      return true;
+    }
+    if ($isElementNode(node)) {
+      for (const child of node.getChildren()) {
+        if ($isIncluded(child)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Dispatches an element child, appending its output to `out` unless a
+   * selection is active and neither the element nor any descendant is
+   * selected.
+   */
+  function $dispatchElement(child: LexicalNode, out: MdastNode[]): void {
+    const selfSelected = selection !== null && child.isSelected(selection);
+    if (selfSelected) {
+      selectionHits++;
+    }
+    const before = selectionHits;
+    const result = $dispatch(child);
+    if (selection === null || selfSelected || selectionHits > before) {
+      out.push(...result);
+    }
+  }
+
   const context: MdastExportContext = {
     exportBlocks: node => $exportBlocks(node),
     exportChildren: node => {
       const out: MdastNode[] = [];
       for (const child of node.getChildren()) {
-        out.push(...$dispatch(child));
+        const target = $filterChild(child);
+        if (target === null) {
+          continue;
+        }
+        if ($isElementNode(target)) {
+          $dispatchElement(target, out);
+        } else {
+          out.push(...$dispatch(target));
+        }
       }
       return out;
     },
     exportInline: node => $exportInline(node),
+    isIncluded: $isIncluded,
   };
 
   function $dispatch(node: LexicalNode): MdastNode[] {
@@ -272,11 +346,19 @@ function createNodeExporter(compiled: CompiledMdast) {
     const result: PhrasingContent[] = [];
     const runs = new TextRunAccumulator();
     for (const child of node.getChildren()) {
-      if (!(mayAccumulate(child) && runs.push(child, result))) {
+      const target = $filterChild(child);
+      if (target === null) {
+        continue;
+      }
+      if (!(mayAccumulate(target) && runs.push(target, result))) {
         runs.flushInto(result);
-        // The registry erases types; phrasing output is the dispatch
-        // contract for inline children.
-        result.push(...($dispatch(child) as PhrasingContent[]));
+        if ($isElementNode(target)) {
+          // The registry erases types; phrasing output is the dispatch
+          // contract for inline children.
+          $dispatchElement(target, result as MdastNode[]);
+        } else {
+          result.push(...($dispatch(target) as PhrasingContent[]));
+        }
       }
     }
     runs.flushInto(result);
@@ -303,24 +385,35 @@ function createNodeExporter(compiled: CompiledMdast) {
       }
     };
     for (const child of node.getChildren()) {
-      if ($isLineBreakNode(child)) {
-        const asBreak = $exportLineBreak(child);
-        if ($getState(child, paragraphBreakState) || asBreak === null) {
+      const target = $filterChild(child);
+      if (target === null) {
+        continue;
+      }
+      if ($isLineBreakNode(target)) {
+        const asBreak = $exportLineBreak(target);
+        if ($getState(target, paragraphBreakState) || asBreak === null) {
           flushParagraph();
         } else {
           runs.flushInto(inline);
           inline.push(asBreak);
         }
-      } else if (mayAccumulate(child) && runs.push(child, inline)) {
+      } else if (mayAccumulate(target) && runs.push(target, inline)) {
         continue;
-      } else if ($isBlockLevelNode(child)) {
+      } else if ($isBlockLevelNode(target)) {
         flushParagraph();
-        // The registry erases types; block-level output is the dispatch
-        // contract for block children.
-        blocks.push(...($dispatch(child) as BlockContent[]));
+        if ($isElementNode(target)) {
+          // The registry erases types; block-level output is the dispatch
+          // contract for block children.
+          $dispatchElement(target, blocks as MdastNode[]);
+        } else {
+          blocks.push(...($dispatch(target) as BlockContent[]));
+        }
+      } else if ($isElementNode(target)) {
+        runs.flushInto(inline);
+        $dispatchElement(target, inline as MdastNode[]);
       } else {
         runs.flushInto(inline);
-        inline.push(...($dispatch(child) as PhrasingContent[]));
+        inline.push(...($dispatch(target) as PhrasingContent[]));
       }
     }
     flushParagraph();
@@ -330,7 +423,7 @@ function createNodeExporter(compiled: CompiledMdast) {
     return blocks;
   }
 
-  return {$dispatch};
+  return {exportChildren: context.exportChildren};
 }
 
 /**
@@ -376,28 +469,29 @@ function $dominantInlineMarkers(node: ElementNode): {
 
 /**
  * Creates a reusable exporter that converts the Lexical tree rooted at the
- * supplied element (or the editor root) into a Markdown string.
+ * supplied element (or the editor root) — or just the selected content —
+ * into a Markdown string.
  */
 export function createMdastExport(compiled: CompiledMdast): {
   $exportToMdast: (node?: ElementNode) => Root;
   $exportToMarkdown: (node?: ElementNode) => string;
+  $exportSelectionToMarkdown: (selection?: BaseSelection | null) => string;
 } {
-  const {$dispatch} = createNodeExporter(compiled);
+  // The unfiltered exporter has no per-call state and is shared by every
+  // whole-document export; selection exports build a fresh one per call.
+  const documentExporter = createNodeExporter(compiled);
 
-  const $exportToMdast = (node?: ElementNode): Root => {
-    const root = node || $getRoot();
-    const children: RootContent[] = [];
-    for (const child of root.getChildren()) {
-      for (const mdastNode of $dispatch(child)) {
-        children.push(mdastNode as RootContent);
-      }
-    }
-    return {children, type: 'root'};
-  };
+  const $toMdast = (
+    root: ElementNode,
+    exporter: ReturnType<typeof createNodeExporter>,
+  ): Root => ({
+    // The registry erases types; root-level output is the dispatch contract
+    // for top-level children.
+    children: exporter.exportChildren(root) as RootContent[],
+    type: 'root',
+  });
 
-  const $exportToMarkdown = (node?: ElementNode): string => {
-    const root = node || $getRoot();
-    const tree = $exportToMdast(node);
+  const $serialize = (tree: Root, root: ElementNode): string => {
     // Emphasis/strong delimiters are document-level; the delimiter recorded on
     // import wins, otherwise contributed toMarkdownExtensions (and the '-'
     // bullet baseline) decide. Defaults ride as the FIRST extension so that
@@ -423,5 +517,29 @@ export function createMdastExport(compiled: CompiledMdast): {
     return out.replace(/\n$/, '');
   };
 
-  return {$exportToMarkdown, $exportToMdast};
+  const $exportToMdast = (node?: ElementNode): Root =>
+    $toMdast(node || $getRoot(), documentExporter);
+
+  const $exportToMarkdown = (node?: ElementNode): string => {
+    const root = node || $getRoot();
+    return $serialize($toMdast(root, documentExporter), root);
+  };
+
+  const $exportSelectionToMarkdown = (
+    selection: BaseSelection | null = $getSelection(),
+  ): string => {
+    if (
+      selection === null ||
+      ($isRangeSelection(selection) && selection.isCollapsed())
+    ) {
+      return '';
+    }
+    const root = $getRoot();
+    return $serialize(
+      $toMdast(root, createNodeExporter(compiled, selection)),
+      root,
+    );
+  };
+
+  return {$exportSelectionToMarkdown, $exportToMarkdown, $exportToMdast};
 }

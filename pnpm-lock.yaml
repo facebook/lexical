@@ -1028,6 +1028,9 @@ importers:
       '@lexical/rich-text':
         specifier: workspace:*
         version: link:../lexical-rich-text
+      '@lexical/selection':
+        specifier: workspace:*
+        version: link:../lexical-selection
       '@lexical/table':
         specifier: workspace:*
         version: link:../lexical-table

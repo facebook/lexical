@@ -15,7 +15,7 @@ import type {
 } from './types';
 import type {ListItemNode, ListNode, ListType} from '@lexical/list';
 import type {HeadingTagType} from '@lexical/rich-text';
-import type {ElementNode, LexicalNode} from 'lexical';
+import type {ElementNode, LexicalNode, LineBreakNode} from 'lexical';
 import type {
   Blockquote,
   Break,
@@ -78,6 +78,28 @@ import {
 } from './state';
 
 /**
+ * Appends `nodes` to `element` via {@link ElementNode.splice} (the primitive
+ * `append` delegates to, taking an array directly), returning the element.
+ */
+export function $append<T extends ElementNode>(
+  element: T,
+  nodes: LexicalNode[],
+): T {
+  return element.splice(element.getChildrenSize(), 0, nodes);
+}
+
+/**
+ * Prepends `nodes` to `element` via {@link ElementNode.splice} (the primitive
+ * `append` delegates to, taking an array directly), returning the element.
+ */
+export function $prepend<T extends ElementNode>(
+  element: T,
+  nodes: LexicalNode[],
+): T {
+  return element.splice(0, 0, nodes);
+}
+
+/**
  * Whether `node` is a block-level node: a non-inline element *or* a non-inline
  * decorator (e.g. a horizontal rule).
  */
@@ -86,7 +108,7 @@ export function $isBlockLevelNode(node: LexicalNode): boolean {
 }
 
 /** A `LineBreakNode` marking a paragraph boundary inside a container. */
-function $createParagraphBreakNode(): LexicalNode {
+function $createParagraphBreakNode(): LineBreakNode {
   return $setState($createLineBreakNode(), paragraphBreakState, true);
 }
 
@@ -114,7 +136,7 @@ export const TEXT_FORMAT_MASK =
  * -------------------------------------------------------------------------- */
 
 export const $importParagraph: MdastImportHandler<Paragraph> = (node, ctx) =>
-  $createParagraphNode().splice(0, 0, ctx.importChildren(node));
+  $append($createParagraphNode(), ctx.importChildren(node));
 
 export const $importHeading: MdastImportHandler<Heading> = (node, ctx) => {
   const heading = $createHeadingNode(`h${node.depth}`);
@@ -131,7 +153,7 @@ export const $importHeading: MdastImportHandler<Heading> = (node, ctx) => {
       $setState(heading, setextState, true);
     }
   }
-  return heading.splice(0, 0, ctx.importChildren(node));
+  return $append(heading, ctx.importChildren(node));
 };
 
 export const $importBlockquote: MdastImportHandler<Blockquote> = (
@@ -152,7 +174,7 @@ export const $importBlockquote: MdastImportHandler<Blockquote> = (
       children.push(...ctx.importNode(child));
     }
   }
-  return quote.splice(0, 0, children);
+  return $append(quote, children);
 };
 
 /**
@@ -181,7 +203,7 @@ export function $importBlockChildren(
         if (!pendingParagraph) {
           pendingParagraph = $createParagraphNode();
         }
-        pendingParagraph.append(node);
+        $append(pendingParagraph, [node]);
       }
     }
   }
@@ -199,9 +221,8 @@ export const $importShadowRootBlockquote: MdastImportHandler<Blockquote> = (
   node,
   ctx,
 ) =>
-  $createQuoteNode({shadowRoot: true}).splice(
-    0,
-    0,
+  $append(
+    $createQuoteNode({shadowRoot: true}),
     $importBlockChildren(node, ctx),
   );
 
@@ -246,9 +267,8 @@ export const $importList: MdastImportHandler<List> = (node, ctx) => {
       }
     }
   }
-  return list.splice(
-    0,
-    0,
+  return $append(
+    list,
     node.children.flatMap(child => ctx.importNode(child)),
   );
 };
@@ -262,16 +282,14 @@ export const $importListItem: MdastImportHandler<ListItem> = (node, ctx) => {
     if (child.type === 'list') {
       // A nested list is represented in Lexical as a ListItemNode whose only
       // child is the nested ListNode, appended as a sibling of this item.
-      extraItems.push(
-        $createListItemNode().splice(0, 0, ctx.importNode(child)),
-      );
+      extraItems.push($append($createListItemNode(), ctx.importNode(child)));
     } else if (child.type === 'paragraph') {
       if (item.getChildrenSize() > 0) {
-        item.append($createParagraphBreakNode());
+        $append(item, [$createParagraphBreakNode()]);
       }
-      item.splice(item.getChildrenSize(), 0, ctx.importChildren(child));
+      $append(item, ctx.importChildren(child));
     } else {
-      item.splice(item.getChildrenSize(), 0, ctx.importNode(child));
+      $append(item, ctx.importNode(child));
     }
   }
   return [item, ...extraItems];
@@ -296,7 +314,7 @@ export const $importCode: MdastImportHandler<Code> = (node, ctx) => {
     $setState(code, codeMetaState, node.meta);
   }
   if (node.value) {
-    code.append($createTextNode(node.value));
+    $append(code, [$createTextNode(node.value)]);
   }
   return code;
 };
@@ -360,9 +378,12 @@ export const $importBreak: MdastImportHandler<Break> = (node, ctx) => {
 };
 
 export const $importLink: MdastImportHandler<Link> = (node, ctx) => {
-  const link = $createLinkNode(node.url, {
-    title: node.title == null ? undefined : node.title,
-  }).splice(0, 0, ctx.importChildren(node));
+  const link = $append(
+    $createLinkNode(node.url, {
+      title: node.title == null ? undefined : node.title,
+    }),
+    ctx.importChildren(node),
+  );
   // Preserve the syntax the link was written in (`[text](url)` vs `<url>`
   // vs a bare GFM autolink literal) so it round-trips unchanged.
   if (ctx.source && node.position && node.position.start.offset != null) {
@@ -387,9 +408,12 @@ export const $importLinkReference: MdastImportHandler<LinkReference> = (
 ) => {
   const definition = ctx.getDefinition(node.identifier);
   if (definition) {
-    return $createLinkNode(definition.url, {
-      title: definition.title == null ? undefined : definition.title,
-    }).splice(0, 0, ctx.importChildren(node));
+    return $append(
+      $createLinkNode(definition.url, {
+        title: definition.title == null ? undefined : definition.title,
+      }),
+      ctx.importChildren(node),
+    );
   }
   const {position} = node;
   if (ctx.source && position && position.start.offset != null) {
@@ -537,7 +561,9 @@ function $exportListNode(node: ListNode, ctx: MdastExportContext): List {
   }
   let previousItem: ListItem | null = null;
   for (const child of node.getChildren()) {
-    if (!$isListItemNode(child)) {
+    // Structural iteration bypasses the walk's selection filter, so items a
+    // selection export does not reach are skipped here.
+    if (!$isListItemNode(child) || !ctx.isIncluded(child)) {
       continue;
     }
     const firstChild = child.getFirstChild();

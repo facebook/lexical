@@ -8,6 +8,7 @@
  */
 
 import type {
+  BaseSelection,
   ElementNode,
   ExtensionConfigBase,
   LexicalExtension,
@@ -15,9 +16,17 @@ import type {
 } from 'lexical';
 import type {NamedSignalsOutput} from '@lexical/extension';
 
-// mdast / micromark structures are not Flow-typed; treat them opaquely.
+// mdast / micromark structures stay `unknown` rather than opaque: Flow
+// consumers receive them from untyped remark/unified tooling and construct
+// mdast literals in custom export handlers, so an opaque type would force
+// suppressions at every producer.
 export type MdastNode = unknown;
 export type MdastParent = unknown;
+
+// The compiled registry is a pure handle: consumers only receive it from
+// `MdastImportExtensionOutput` and hand it back to `@lexical/mdast` APIs,
+// never construct or introspect it — exactly what opaque models.
+declare export opaque type CompiledMdast;
 
 export type MdastImportContext = {
   readonly format: number,
@@ -34,6 +43,7 @@ export type MdastExportContext = {
   exportChildren(node: ElementNode): MdastNode[],
   exportInline(node: ElementNode): MdastNode[],
   exportBlocks(node: ElementNode): MdastNode[],
+  isIncluded(node: LexicalNode): boolean,
 };
 
 export type MdastImportHandler = (
@@ -71,28 +81,22 @@ export type MdastShortcutsConfig = {
 };
 
 export type MdastImportExtensionOutput = {
-  $convertFromMarkdownString(
-    markdown: string,
-    node?: ElementNode,
-    tree?: unknown,
-  ): void,
+  $convertFromMarkdownString(markdown: string, node?: ElementNode): void,
   $convertFromMdast(tree: unknown, node?: ElementNode): void,
-  $generateNodesFromMarkdownString(
-    markdown: string,
-    tree?: unknown,
-  ): LexicalNode[],
-  readonly registry: unknown,
+  $generateNodesFromMarkdownString(markdown: string): LexicalNode[],
+  $generateNodesFromMdast(tree: unknown): LexicalNode[],
+  readonly registry: CompiledMdast,
 };
 
 export type MdastExportExtensionOutput = {
   $convertToMarkdownString(node?: ElementNode): string,
   $convertToMdast(node?: ElementNode): unknown,
+  $convertSelectionToMarkdownString(selection?: BaseSelection | null): string,
 };
 
 declare export function $convertFromMarkdownString(
   markdown: string,
   node?: ElementNode,
-  tree?: unknown,
 ): void;
 
 declare export function $convertToMarkdownString(node?: ElementNode): string;
@@ -106,8 +110,13 @@ declare export function $convertToMdast(node?: ElementNode): unknown;
 
 declare export function $generateNodesFromMarkdownString(
   markdown: string,
-  tree?: unknown,
 ): LexicalNode[];
+
+declare export function $generateNodesFromMdast(tree: unknown): LexicalNode[];
+
+declare export function $convertSelectionToMarkdownString(
+  selection?: BaseSelection | null,
+): string;
 
 declare export var MdastImportExtension: LexicalExtension<
   MdastConfig,

@@ -23,6 +23,7 @@
 
 export type {MdastExportExtensionOutput} from './MdastExportExtension';
 export {
+  $convertSelectionToMarkdownString,
   $convertToMarkdownString,
   $convertToMdast,
   MdastExportExtension,
@@ -38,6 +39,7 @@ export {
   $convertFromMarkdownString,
   $convertFromMdast,
   $generateNodesFromMarkdownString,
+  $generateNodesFromMdast,
   MdastAutolinkLiteralExtension,
   MdastBlockquoteExtension,
   MdastCodeExtension,
@@ -55,6 +57,7 @@ export {
 } from './MdastImportExtension';
 export {MdastTableExtension} from './MdastTableExtension';
 export type {
+  CompiledMdast,
   MdastExportContext,
   MdastExportHandler,
   MdastExportRule,

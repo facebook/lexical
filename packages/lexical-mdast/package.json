@@ -19,6 +19,7 @@
     "@lexical/link": "workspace:*",
     "@lexical/list": "workspace:*",
     "@lexical/rich-text": "workspace:*",
+    "@lexical/selection": "workspace:*",
     "@lexical/table": "workspace:*",
     "@lexical/utils": "workspace:*",
     "@types/mdast": "^4.0.4",

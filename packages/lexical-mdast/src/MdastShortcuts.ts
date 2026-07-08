@@ -28,7 +28,7 @@ import {
   $isTextNode,
   $setState,
   COLLABORATION_TAG,
-  COMMAND_PRIORITY_LOW,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
   COMPOSITION_END_TAG,
   HISTORIC_TAG,
   HISTORY_PUSH_TAG,
@@ -36,7 +36,7 @@ import {
   mergeRegister,
 } from 'lexical';
 
-import {$listTypeFromMdast} from './handlers';
+import {$append, $listTypeFromMdast} from './handlers';
 import {MarkdownStreamScanner} from './MdastStream';
 import {codeFenceState, codeMetaState} from './state';
 
@@ -90,7 +90,7 @@ function $applyBlock(paragraph: ElementNode, match: MdastBlockMatch): boolean {
     if (match.node.meta) {
       $setState(code, codeMetaState, match.node.meta);
     }
-    code.splice(0, 0, remaining);
+    $append(code, remaining);
     paragraph.replace(code);
     code.selectStart();
     return true;
@@ -99,15 +99,14 @@ function $applyBlock(paragraph: ElementNode, match: MdastBlockMatch): boolean {
   let target: ElementNode;
   let selectInto: ElementNode;
   if (match.kind === 'heading') {
-    const heading = $createHeadingNode(`h${match.node.depth}`).splice(
-      0,
-      0,
+    const heading = $append(
+      $createHeadingNode(`h${match.node.depth}`),
       remaining,
     );
     target = heading;
     selectInto = heading;
   } else if (match.kind === 'blockquote') {
-    const quote = $createQuoteNode().splice(0, 0, remaining);
+    const quote = $append($createQuoteNode(), remaining);
     target = quote;
     selectInto = quote;
   } else {
@@ -123,8 +122,8 @@ function $applyBlock(paragraph: ElementNode, match: MdastBlockMatch): boolean {
       typeof firstItem.checked === 'boolean'
         ? firstItem.checked
         : undefined;
-    const item = $createListItemNode(checked).splice(0, 0, remaining);
-    list.append(item);
+    const item = $append($createListItemNode(checked), remaining);
+    $append(list, [item]);
     target = list;
     selectInto = item;
   }
@@ -236,8 +235,8 @@ function $tryCheckbox(
     $stripLeading(parent, match[0].length);
     const remaining = parent.getChildren();
     const list = $createListNode('check');
-    const item = $createListItemNode(checked).splice(0, 0, remaining);
-    list.append(item);
+    const item = $append($createListItemNode(checked), remaining);
+    $append(list, [item]);
     parent.replace(list);
     item.selectStart();
     return true;
@@ -445,7 +444,10 @@ export function registerMarkdownShortcuts(
         }
         return false;
       },
-      COMMAND_PRIORITY_LOW,
+      // The lowest priority that still pre-empts the default rich-text Enter
+      // handler: prepended to the editor-priority queue, so every listener at
+      // LOW and above (and none of the defaults) runs first.
+      COMMAND_PRIORITY_BEFORE_EDITOR,
     ),
   );
 }

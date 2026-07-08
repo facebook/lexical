@@ -134,6 +134,15 @@ export interface MdastExportContext {
    * mdast children must be block-level.
    */
   exportBlocks(node: ElementNode): BlockContent[];
+  /**
+   * Whether `node` belongs in the current export: always `true` for a
+   * whole-document export; during a selection export, `true` when the node
+   * or any descendant is selected. The `exportChildren`/`exportInline`/
+   * `exportBlocks` walks apply this automatically — handlers only need it
+   * when they iterate children manually (e.g. list items, table rows) to
+   * skip structural children the selection does not reach.
+   */
+  isIncluded(node: LexicalNode): boolean;
 }
 
 /**

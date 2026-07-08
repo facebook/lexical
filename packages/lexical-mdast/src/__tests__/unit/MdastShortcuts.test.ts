@@ -29,6 +29,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
 
 import {
@@ -37,7 +38,6 @@ import {
   MdastShortcutsExtension,
 } from '../../index';
 import {codeFenceState, codeMetaState} from '../../state';
-import {$assertNodeType} from './utils';
 
 function createEditor(): LexicalEditorWithDispose {
   const editor = buildEditorFromExtensions(

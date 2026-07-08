@@ -6,11 +6,12 @@
  *
  */
 
+import type {ReadonlySignal} from '@lexical/extension';
+
 import {CodeShikiExtension} from '@lexical/code-shiki';
 import {
   computed,
   EditorStateExtension,
-  ReadonlySignal,
   TabIndentationExtension,
 } from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';

@@ -67,6 +67,8 @@ export default [
       '**/build/',
       'packages/**/npm/',
       '**/__tests__/integration/fixtures/',
+      'packages/lexical-website/static/dev-examples/',
+      '**/dist-size/',
       '**/*.js.flow',
       '**/*.d.ts',
       '**/playwright*/',

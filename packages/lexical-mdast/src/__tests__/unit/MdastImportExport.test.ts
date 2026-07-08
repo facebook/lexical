@@ -18,21 +18,28 @@ import {$isTableNode} from '@lexical/table';
 import {
   $createParagraphNode,
   $createTextNode,
+  $getCaretRange,
   $getRoot,
   $getSelection,
+  $getTextPointCaret,
   $isElementNode,
   $isRangeSelection,
   $isTextNode,
+  $setSelectionFromCaretRange,
   defineExtension,
+  type TextNode,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, it} from 'vitest';
 
 import {
   $convertFromMarkdownString,
   $convertFromMdast,
+  $convertSelectionToMarkdownString,
   $convertToMarkdownString,
   $convertToMdast,
   $generateNodesFromMarkdownString,
+  $generateNodesFromMdast,
   MdastAutolinkLiteralExtension,
   MdastCommonMarkExtension,
   MdastExportExtension,
@@ -43,7 +50,6 @@ import {
   MdastTableExtension,
   MdastTaskListExtension,
 } from '../../index';
-import {$assertNodeType} from './utils';
 
 function createEditor(withTable = false): LexicalEditorWithDispose {
   // The caller is responsible for disposal (with `using`).
@@ -417,6 +423,131 @@ describe('@lexical/mdast import/export', () => {
     expect(editor.read(() => $convertToMarkdownString())).toBe(
       'before\n\n> quoted **insert**\n\nafter',
     );
+  });
+
+  it('$generateNodesFromMdast returns detached nodes for a pre-parsed tree', () => {
+    using editor = createEditor();
+    editor.update(
+      () => {
+        const nodes = $generateNodesFromMdast({
+          children: [
+            {
+              children: [{type: 'text', value: 'Tree'}],
+              depth: 2,
+              type: 'heading',
+            },
+          ],
+          type: 'root',
+        });
+        expect(nodes).toHaveLength(1);
+        const heading = $assertNodeType(nodes[0], $isHeadingNode);
+        expect(heading.isAttached()).toBe(false);
+        expect(heading.getTextContent()).toBe('Tree');
+      },
+      {discrete: true},
+    );
+  });
+
+  describe('$convertSelectionToMarkdownString', () => {
+    /**
+     * Imports `markdown`, selects from `anchor` to `focus` (offsets into the
+     * document's text nodes, in order), and exports the selection.
+     */
+    function selectionExport(
+      markdown: string,
+      $select: (textNodes: TextNode[]) => void,
+    ): string {
+      using editor = createEditor();
+      editor.update(
+        () => {
+          $convertFromMarkdownString(markdown);
+          $select($getRoot().getAllTextNodes());
+        },
+        {discrete: true},
+      );
+      return editor.read(() => $convertSelectionToMarkdownString());
+    }
+
+    function $selectSpan(
+      anchorNode: TextNode,
+      anchorOffset: number,
+      focusNode: TextNode,
+      focusOffset?: number,
+    ): void {
+      $setSelectionFromCaretRange(
+        $getCaretRange(
+          $getTextPointCaret(anchorNode, 'next', anchorOffset),
+          $getTextPointCaret(
+            focusNode,
+            'next',
+            focusOffset === undefined ? 'next' : focusOffset,
+          ),
+        ),
+      );
+    }
+
+    it('exports a partial text selection', () => {
+      expect(
+        selectionExport('Hello World', ([text]) => text.select(6, 11)),
+      ).toBe('World');
+    });
+
+    it('keeps formatting on a selection spanning formatted text', () => {
+      expect(
+        selectionExport('Hello **Bold** World', ([plain, bold]) =>
+          $selectSpan(plain, 0, bold),
+        ),
+      ).toBe('Hello **Bold**');
+    });
+
+    it('returns an empty string for a null or collapsed selection', () => {
+      using editor = createEditor();
+      editor.update(
+        () => {
+          $convertFromMarkdownString('Hello World');
+          $getRoot().getAllTextNodes()[0].select(5, 5);
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        expect($convertSelectionToMarkdownString()).toBe('');
+        expect($convertSelectionToMarkdownString(null)).toBe('');
+      });
+    });
+
+    it('exports a multi-paragraph selection and skips unselected blocks', () => {
+      expect(
+        selectionExport('One\n\nTwo\n\nThree', ([, two]) => two.select(0, 3)),
+      ).toBe('Two');
+      expect(
+        selectionExport('One\n\nTwo\n\nThree', ([one, , three]) =>
+          $selectSpan(one, 0, three),
+        ),
+      ).toBe('One\n\nTwo\n\nThree');
+    });
+
+    it('exports only the selected list items', () => {
+      expect(
+        selectionExport('- one\n- two\n- three', ([one, two]) =>
+          $selectSpan(one, 0, two),
+        ),
+      ).toBe('- one\n- two');
+    });
+
+    it('keeps the heading structure for a partial heading selection', () => {
+      expect(selectionExport('# Heading', ([text]) => text.select(0, 4))).toBe(
+        '# Head',
+      );
+    });
+
+    it('keeps the link wrapper when link text is partially selected', () => {
+      expect(
+        selectionExport(
+          'before [link text](https://example.com) after',
+          textNodes => textNodes[1].select(0, 4),
+        ),
+      ).toBe('[link](https://example.com)');
+    });
   });
 
   it('unwraps constructs the editor has no extension for', () => {

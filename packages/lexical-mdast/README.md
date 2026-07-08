@@ -120,6 +120,11 @@ The same API is available from the editor as
 and
 `$getExtensionOutput(MdastExportExtension).$convertToMarkdownString(...)`.
 
+`$convertSelectionToMarkdownString(selection?)` serializes only the
+selected content (defaulting to the current selection): unselected
+blocks and list items are skipped and partially selected text is
+sliced to the selected range.
+
 ### unified / remark interop
 
 The mdast tree itself is part of the API, so editor content can flow
@@ -136,16 +141,17 @@ const tree = editor.read(() => $convertToMdast());
 editor.update(() => $convertFromMdast(tree));
 ```
 
-`$convertFromMarkdownString(markdown, node, tree)` also accepts a
-pre-parsed tree alongside its source text, which keeps source-based
-syntax preservation working; `$convertFromMdast` alone skips it (there
-is no source to preserve from).
+The `*FromMarkdownString` functions parse the source text themselves
+(which is also what enables source-based syntax preservation, e.g.
+keeping `*` vs `-` bullets); the `*FromMdast` functions take an
+already-parsed tree, where no source text exists so syntax
+preservation is skipped.
 
-To parse Markdown into nodes *without* replacing the document —
+To convert Markdown into nodes *without* replacing the document —
 e.g. to insert at the current selection —
-`$generateNodesFromMarkdownString(markdown, tree?)` returns a detached
-array of block-level nodes and leaves the document and selection
-untouched:
+`$generateNodesFromMarkdownString(markdown)` (and its tree-taking
+sibling `$generateNodesFromMdast(tree)`) returns a detached array of
+block-level nodes and leaves the document and selection untouched:
 
 ```ts
 import {$generateNodesFromMarkdownString} from '@lexical/mdast';

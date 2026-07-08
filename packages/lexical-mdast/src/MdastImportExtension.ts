@@ -136,31 +136,30 @@ export interface MdastImportExtensionOutput {
    * Parses `markdown` with micromark/mdast and replaces the contents of the
    * editor root (or `node`). Must be called inside an `editor.update()`.
    */
-  $convertFromMarkdownString(
-    markdown: string,
-    node?: ElementNode,
-    tree?: Root,
-  ): void;
+  $convertFromMarkdownString(markdown: string, node?: ElementNode): void;
   /**
    * Imports an already-parsed mdast `Root` tree (e.g. produced or
    * transformed by unified/remark tooling) and replaces the contents of the
    * editor root (or `node`). Must be called inside an `editor.update()`.
    * Source-based syntax preservation does not apply (there is no source
-   * text); to keep it, pass the tree alongside its source to
-   * {@link MdastImportExtensionOutput.$convertFromMarkdownString}.
+   * text to recover literal markers from).
    */
   $convertFromMdast(tree: Root, node?: ElementNode): void;
   /**
-   * Parses `markdown` (or walks the pre-parsed `tree`) and returns the
-   * resulting block-level nodes as a detached array, without modifying the
-   * document or the selection — e.g. for insertion at an arbitrary position
-   * via `selection.insertNodes()`. Must be called inside an
-   * `editor.update()`.
+   * Parses `markdown` and returns the resulting block-level nodes as a
+   * detached array, without modifying the document or the selection — e.g.
+   * for insertion at an arbitrary position via `selection.insertNodes()`.
+   * Must be called inside an `editor.update()`.
    */
-  $generateNodesFromMarkdownString(
-    markdown: string,
-    tree?: Root,
-  ): LexicalNode[];
+  $generateNodesFromMarkdownString(markdown: string): LexicalNode[];
+  /**
+   * Walks an already-parsed mdast `Root` tree and returns the resulting
+   * block-level nodes as a detached array, without modifying the document
+   * or the selection. Must be called inside an `editor.update()`. As with
+   * {@link MdastImportExtensionOutput.$convertFromMdast}, source-based
+   * syntax preservation does not apply.
+   */
+  $generateNodesFromMdast(tree: Root): LexicalNode[];
   /**
    * The compiled registry assembled from every contributing extension.
    *
@@ -222,13 +221,17 @@ export const MdastImportExtension = /* @__PURE__ */ defineExtension<
 >({
   build(editor, config): MdastImportExtensionOutput {
     const registry = compileMdast(config);
-    const {$generateNodes, $importMarkdown} = createMdastImport(registry);
+    const {
+      $generateNodesFromMarkdown,
+      $generateNodesFromMdast: $generateNodesFromTree,
+      $importMarkdown,
+      $importMdast,
+    } = createMdastImport(registry);
     return {
-      $convertFromMarkdownString: (markdown, node, tree) =>
-        $importMarkdown(markdown, node, tree),
-      $convertFromMdast: (tree, node) => $importMarkdown('', node, tree),
-      $generateNodesFromMarkdownString: (markdown, tree) =>
-        $generateNodes(markdown, tree),
+      $convertFromMarkdownString: $importMarkdown,
+      $convertFromMdast: $importMdast,
+      $generateNodesFromMarkdownString: $generateNodesFromMarkdown,
+      $generateNodesFromMdast: $generateNodesFromTree,
       registry,
     };
   },
@@ -580,12 +583,10 @@ export const MdastShortcutsExtension = /* @__PURE__ */ defineExtension({
 export function $convertFromMarkdownString(
   markdown: string,
   node?: ElementNode,
-  tree?: Root,
 ): void {
   $getExtensionOutput(MdastImportExtension).$convertFromMarkdownString(
     markdown,
     node,
-    tree,
   );
 }
 
@@ -603,18 +604,32 @@ export function $convertFromMdast(tree: Root, node?: ElementNode): void {
 /**
  * Shorthand for
  * `$getExtensionOutput(MdastImportExtension).$generateNodesFromMarkdownString`.
- * Parses `markdown` (or walks the pre-parsed `tree`) and returns the
- * resulting block-level nodes as a detached array, without modifying the
- * document or the selection. Must be called inside an `editor.update()`.
- * Throws if the editor was not built with {@link MdastImportExtension} (or
- * an extension that depends on it).
+ * Parses `markdown` and returns the resulting block-level nodes as a
+ * detached array, without modifying the document or the selection. Must be
+ * called inside an `editor.update()`. Throws if the editor was not built
+ * with {@link MdastImportExtension} (or an extension that depends on it).
  * @experimental
  */
 export function $generateNodesFromMarkdownString(
   markdown: string,
-  tree?: Root,
 ): LexicalNode[] {
   return $getExtensionOutput(
     MdastImportExtension,
-  ).$generateNodesFromMarkdownString(markdown, tree);
+  ).$generateNodesFromMarkdownString(markdown);
+}
+
+/**
+ * Shorthand for
+ * `$getExtensionOutput(MdastImportExtension).$generateNodesFromMdast`.
+ * Walks an already-parsed mdast `Root` tree and returns the resulting
+ * block-level nodes as a detached array, without modifying the document or
+ * the selection. Must be called inside an `editor.update()`. Throws if the
+ * editor was not built with {@link MdastImportExtension} (or an extension
+ * that depends on it).
+ * @experimental
+ */
+export function $generateNodesFromMdast(tree: Root): LexicalNode[] {
+  return $getExtensionOutput(MdastImportExtension).$generateNodesFromMdast(
+    tree,
+  );
 }

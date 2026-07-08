@@ -22,33 +22,32 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  tokenizeRawText,
 } from 'lexical';
 import {fromMarkdown} from 'mdast-util-from-markdown';
 
-import {$isBlockLevelNode} from './handlers';
+import {$append, $isBlockLevelNode, $prepend} from './handlers';
 
 /**
- * Splits `value` into a run of `TextNode`s: `\n` becomes a `LineBreakNode`
- * and `\t` a `TabNode` (matching how typed content is represented in the
- * editor), with `format` applied to each text segment. Empty segments are
- * dropped so a leading/trailing/standalone separator yields only its node.
+ * Splits `value` into a run of `TextNode`s via {@link tokenizeRawText}:
+ * `\n` becomes a `LineBreakNode` and `\t` a `TabNode` (matching how typed
+ * content is represented in the editor), with `format` applied to each text
+ * segment. Empty segments are dropped so a leading/trailing/standalone
+ * separator yields only its node.
  */
 function $createTextNodes(value: string, format: number): LexicalNode[] {
   const out: LexicalNode[] = [];
-  const segments = value.split(/(\n|\t)/);
-  for (const segment of segments) {
-    if (segment === '\n') {
-      out.push($createLineBreakNode());
-    } else if (segment === '\t') {
-      out.push($createTabNode());
-    } else if (segment.length > 0) {
+  tokenizeRawText(value, {
+    linebreak: () => out.push($createLineBreakNode()),
+    tab: () => out.push($createTabNode()),
+    text: segment => {
       const textNode = $createTextNode(segment);
       if (format) {
         textNode.setFormat(format);
       }
       out.push(textNode);
-    }
-  }
+    },
+  });
   return out;
 }
 
@@ -152,29 +151,25 @@ export function createNodeImporter(
 }
 
 /**
- * Creates the import entry points for a compiled registry:
- * `$generateNodes` parses a Markdown string (or walks a pre-parsed mdast
- * `Root`) into an array of detached block-level Lexical nodes without
- * touching the document or the selection, and `$importMarkdown` replaces
+ * Creates the import entry points for a compiled registry. The `Markdown`
+ * variants parse a source string (recovering literal syntax like the list
+ * bullet or link style from it); the `Mdast` variants walk a pre-parsed
+ * tree, where no source string exists so syntax-preservation is skipped.
+ * `$generateNodesFrom*` return an array of detached block-level Lexical
+ * nodes without touching the document or the selection; `$import*` replace
  * the contents of the root (or a supplied element) with that result.
  */
 export function createMdastImport(compiled: CompiledMdast): {
-  $generateNodes: (markdown: string, tree?: Root) => LexicalNode[];
-  $importMarkdown: (markdown: string, node?: ElementNode, tree?: Root) => void;
+  $generateNodesFromMarkdown: (markdown: string) => LexicalNode[];
+  $generateNodesFromMdast: (tree: Root) => LexicalNode[];
+  $importMarkdown: (markdown: string, node?: ElementNode) => void;
+  $importMdast: (tree: Root, node?: ElementNode) => void;
 } {
-  const $generateNodes = (markdown: string, tree?: Root): LexicalNode[] => {
-    const mdastTree =
-      tree ||
-      fromMarkdown(markdown, {
-        extensions: compiled.micromarkExtensions,
-        mdastExtensions: compiled.mdastExtensions,
-      });
-    // When importing a pre-parsed tree we have no original source string to
-    // recover literal syntax from, so syntax-preservation is skipped.
+  const $generateNodes = (tree: Root, source: string): LexicalNode[] => {
     const {$importNode} = createNodeImporter(
       compiled,
-      tree ? '' : markdown,
-      collectDefinitions(mdastTree),
+      source,
+      collectDefinitions(tree),
     );
 
     // Top-level mdast children should produce block-level Lexical nodes. Any
@@ -188,7 +183,7 @@ export function createMdastImport(compiled: CompiledMdast): {
         pendingParagraph = null;
       }
     };
-    for (const child of mdastTree.children) {
+    for (const child of tree.children) {
       for (const lexicalNode of $importNode(child, 0)) {
         if ($isBlockLevelNode(lexicalNode)) {
           flushPending();
@@ -197,7 +192,7 @@ export function createMdastImport(compiled: CompiledMdast): {
           if (!pendingParagraph) {
             pendingParagraph = $createParagraphNode();
           }
-          pendingParagraph.append(lexicalNode);
+          $append(pendingParagraph, [lexicalNode]);
         }
       }
     }
@@ -205,24 +200,37 @@ export function createMdastImport(compiled: CompiledMdast): {
     return blocks;
   };
 
-  const $importMarkdown = (
-    markdown: string,
+  const $generateNodesFromMarkdown = (markdown: string): LexicalNode[] =>
+    $generateNodes(
+      fromMarkdown(markdown, {
+        extensions: compiled.micromarkExtensions,
+        mdastExtensions: compiled.mdastExtensions,
+      }),
+      markdown,
+    );
+
+  const $generateNodesFromMdast = (tree: Root): LexicalNode[] =>
+    $generateNodes(tree, '');
+
+  const $replaceWithBlocks = (
+    blocks: LexicalNode[],
     node?: ElementNode,
-    tree?: Root,
   ): void => {
     const root = node || $getRoot();
-    const blocks = $generateNodes(markdown, tree);
     root.clear();
-    if (blocks.length > 0) {
-      root.splice(0, 0, blocks);
-    } else {
-      root.append($createParagraphNode());
-    }
+    $prepend(root, blocks.length > 0 ? blocks : [$createParagraphNode()]);
 
     if ($getSelection() !== null) {
       root.selectStart();
     }
   };
 
-  return {$generateNodes, $importMarkdown};
+  return {
+    $generateNodesFromMarkdown,
+    $generateNodesFromMdast,
+    $importMarkdown: (markdown, node) =>
+      $replaceWithBlocks($generateNodesFromMarkdown(markdown), node),
+    $importMdast: (tree, node) =>
+      $replaceWithBlocks($generateNodesFromMdast(tree), node),
+  };
 }

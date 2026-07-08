@@ -6,7 +6,7 @@
  *
  */
 
-import type {ElementNode} from 'lexical';
+import type {BaseSelection, ElementNode} from 'lexical';
 import type {Root} from 'mdast';
 
 import {$getExtensionOutput} from '@lexical/extension';
@@ -36,6 +36,15 @@ export interface MdastExportExtensionOutput {
    * extension point.
    */
   $convertToMdast(node?: ElementNode): Root;
+  /**
+   * Serializes only the selected content (defaulting to the current
+   * selection) to a Markdown string: leaves outside the selection are
+   * skipped, partially selected text nodes are sliced to the selected
+   * range, and elements are kept when they or any descendant are selected.
+   * Returns `''` for a null or collapsed selection. Must be called inside
+   * an `editor.read()` or `editor.update()`.
+   */
+  $convertSelectionToMarkdownString(selection?: BaseSelection | null): string;
 }
 
 /**
@@ -60,10 +69,12 @@ export const MdastExportExtension = /* @__PURE__ */ defineExtension<
 >({
   build(editor, config, state): MdastExportExtensionOutput {
     const {registry} = state.getDependency(MdastImportExtension).output;
-    const {$exportToMdast, $exportToMarkdown} = createMdastExport(registry);
+    const {$exportSelectionToMarkdown, $exportToMdast, $exportToMarkdown} =
+      createMdastExport(registry);
     return {
-      $convertToMarkdownString: node => $exportToMarkdown(node),
-      $convertToMdast: node => $exportToMdast(node),
+      $convertSelectionToMarkdownString: $exportSelectionToMarkdown,
+      $convertToMarkdownString: $exportToMarkdown,
+      $convertToMdast: $exportToMdast,
     };
   },
   dependencies: [MdastImportExtension],
@@ -91,4 +102,21 @@ export function $convertToMarkdownString(node?: ElementNode): string {
  */
 export function $convertToMdast(node?: ElementNode): Root {
   return $getExtensionOutput(MdastExportExtension).$convertToMdast(node);
+}
+
+/**
+ * Shorthand for
+ * `$getExtensionOutput(MdastExportExtension).$convertSelectionToMarkdownString`.
+ * Serializes only the selected content (defaulting to the current selection)
+ * to a Markdown string; returns `''` for a null or collapsed selection.
+ * Must be called inside an `editor.read()` or `editor.update()`. Throws if
+ * the editor was not built with {@link MdastExportExtension}.
+ * @experimental
+ */
+export function $convertSelectionToMarkdownString(
+  selection?: BaseSelection | null,
+): string {
+  return $getExtensionOutput(
+    MdastExportExtension,
+  ).$convertSelectionToMarkdownString(selection);
 }

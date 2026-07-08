@@ -20,6 +20,7 @@ import {
   $isRangeSelection,
   defineExtension,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
 
 import {
@@ -33,7 +34,6 @@ import {
   MdastListExtension,
   MdastShortcutsExtension,
 } from '../../index';
-import {$assertNodeType} from './utils';
 
 describe('@lexical/mdast extensions', () => {
   it('feature extensions ship the nodes their rules need', () => {

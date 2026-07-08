@@ -152,17 +152,17 @@ export function createNodeImporter(
 }
 
 /**
- * Creates a reusable importer that converts a Markdown string (or a pre-parsed
- * mdast `Root`) into Lexical nodes appended to the root (or a supplied
- * element).
+ * Creates the import entry points for a compiled registry:
+ * `$generateNodes` parses a Markdown string (or walks a pre-parsed mdast
+ * `Root`) into an array of detached block-level Lexical nodes without
+ * touching the document or the selection, and `$importMarkdown` replaces
+ * the contents of the root (or a supplied element) with that result.
  */
-export function createMdastImport(
-  compiled: CompiledMdast,
-): (markdown: string, node?: ElementNode, tree?: Root) => void {
-  return (markdown, node, tree) => {
-    const root = node || $getRoot();
-    root.clear();
-
+export function createMdastImport(compiled: CompiledMdast): {
+  $generateNodes: (markdown: string, tree?: Root) => LexicalNode[];
+  $importMarkdown: (markdown: string, node?: ElementNode, tree?: Root) => void;
+} {
+  const $generateNodes = (markdown: string, tree?: Root): LexicalNode[] => {
     const mdastTree =
       tree ||
       fromMarkdown(markdown, {
@@ -178,12 +178,13 @@ export function createMdastImport(
     );
 
     // Top-level mdast children should produce block-level Lexical nodes. Any
-    // stray inline content (e.g. from a fallback) is wrapped in a paragraph so
-    // the root only ever contains valid block children.
+    // stray inline content (e.g. from a fallback) is wrapped in a paragraph
+    // so the result only ever contains valid block children.
+    const blocks: LexicalNode[] = [];
     let pendingParagraph: ElementNode | null = null;
     const flushPending = () => {
       if (pendingParagraph) {
-        root.append(pendingParagraph);
+        blocks.push(pendingParagraph);
         pendingParagraph = null;
       }
     };
@@ -191,7 +192,7 @@ export function createMdastImport(
       for (const lexicalNode of $importNode(child, 0)) {
         if ($isBlockLevelNode(lexicalNode)) {
           flushPending();
-          root.append(lexicalNode);
+          blocks.push(lexicalNode);
         } else {
           if (!pendingParagraph) {
             pendingParagraph = $createParagraphNode();
@@ -201,8 +202,20 @@ export function createMdastImport(
       }
     }
     flushPending();
+    return blocks;
+  };
 
-    if (root.getChildrenSize() === 0) {
+  const $importMarkdown = (
+    markdown: string,
+    node?: ElementNode,
+    tree?: Root,
+  ): void => {
+    const root = node || $getRoot();
+    const blocks = $generateNodes(markdown, tree);
+    root.clear();
+    if (blocks.length > 0) {
+      root.splice(0, 0, blocks);
+    } else {
       root.append($createParagraphNode());
     }
 
@@ -210,4 +223,6 @@ export function createMdastImport(
       root.selectStart();
     }
   };
+
+  return {$generateNodes, $importMarkdown};
 }

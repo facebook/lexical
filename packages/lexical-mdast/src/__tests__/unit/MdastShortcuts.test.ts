@@ -6,28 +6,28 @@
  *
  */
 
-import type {CodeNode} from '@lexical/code-core';
-import type {LinkNode} from '@lexical/link';
-import type {ListNode} from '@lexical/list';
-import type {HeadingNode} from '@lexical/rich-text';
-
+import {$isCodeNode} from '@lexical/code-core';
 import {
   buildEditorFromExtensions,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
-import {$isListItemNode} from '@lexical/list';
+import {$isLinkNode} from '@lexical/link';
+import {$isListItemNode, $isListNode} from '@lexical/list';
+import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $getSelection,
   $getState,
+  $isElementNode,
+  $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   defineExtension,
-  type ElementNode,
   KEY_ENTER_COMMAND,
   type LexicalEditor,
+  type LexicalNode,
 } from 'lexical';
 import {describe, expect, it} from 'vitest';
 
@@ -37,6 +37,7 @@ import {
   MdastShortcutsExtension,
 } from '../../index';
 import {codeFenceState, codeMetaState} from '../../state';
+import {$assertNodeType} from './utils';
 
 function createEditor(): LexicalEditorWithDispose {
   const editor = buildEditorFromExtensions(
@@ -78,17 +79,26 @@ function type(editor: LexicalEditor, chunks: string[]): void {
 }
 
 describe('@lexical/mdast streaming shortcuts', () => {
-  function firstChildType(editor: LexicalEditor): string {
-    return editor.read(() => $getRoot().getFirstChild()!.getType());
+  /** Asserts the root's first child matches the guard, inside a read. */
+  function $expectFirstChild<T extends LexicalNode>(
+    editor: LexicalEditor,
+    $guard: (value: LexicalNode | null) => value is T,
+  ): void {
+    editor.read(() => {
+      $assertNodeType($getRoot().getFirstChild(), $guard);
+    });
   }
 
   describe('block shortcuts (on space)', () => {
     it('# -> heading', () => {
       using editor = createEditor();
       type(editor, ['#', ' ']);
-      expect(firstChildType(editor)).toBe('heading');
       editor.read(() => {
-        expect(($getRoot().getFirstChild() as HeadingNode).getTag()).toBe('h1');
+        const heading = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isHeadingNode,
+        );
+        expect(heading.getTag()).toBe('h1');
       });
     });
 
@@ -96,24 +106,26 @@ describe('@lexical/mdast streaming shortcuts', () => {
       using editor = createEditor();
       type(editor, ['##', '#', ' ']);
       editor.read(() => {
-        expect(($getRoot().getFirstChild() as HeadingNode).getTag()).toBe('h3');
+        const heading = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isHeadingNode,
+        );
+        expect(heading.getTag()).toBe('h3');
       });
     });
 
     it('> -> quote', () => {
       using editor = createEditor();
       type(editor, ['>', ' ']);
-      expect(firstChildType(editor)).toBe('quote');
+      $expectFirstChild(editor, $isQuoteNode);
     });
 
     it('- -> bullet list', () => {
       using editor = createEditor();
       type(editor, ['-', ' ']);
-      expect(firstChildType(editor)).toBe('list');
       editor.read(() => {
-        expect(($getRoot().getFirstChild() as ListNode).getListType()).toBe(
-          'bullet',
-        );
+        const list = $assertNodeType($getRoot().getFirstChild(), $isListNode);
+        expect(list.getListType()).toBe('bullet');
       });
     });
 
@@ -121,8 +133,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
       using editor = createEditor();
       type(editor, ['1', '.', ' ']);
       editor.read(() => {
-        const list = $getRoot().getFirstChild() as ListNode;
-        expect(list.getType()).toBe('list');
+        const list = $assertNodeType($getRoot().getFirstChild(), $isListNode);
         expect(list.getListType()).toBe('number');
       });
     });
@@ -131,8 +142,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
       using editor = createEditor();
       type(editor, ['-', ' ', '[', ' ', ']', ' ']);
       editor.read(() => {
-        const list = $getRoot().getFirstChild() as ListNode;
-        expect(list.getType()).toBe('list');
+        const list = $assertNodeType($getRoot().getFirstChild(), $isListNode);
         expect(list.getListType()).toBe('check');
       });
     });
@@ -141,7 +151,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
       using editor = createEditor();
       type(editor, ['-', ' ', '[', 'x', ']', ' ']);
       editor.read(() => {
-        const list = $getRoot().getFirstChild() as ListNode;
+        const list = $assertNodeType($getRoot().getFirstChild(), $isListNode);
         expect(list.getListType()).toBe('check');
         const item = list.getFirstChild();
         expect($isListItemNode(item) && item.getChecked()).toBe(true);
@@ -152,8 +162,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
       using editor = createEditor();
       type(editor, ['-', ' ', '[', ']', ' ']);
       editor.read(() => {
-        const list = $getRoot().getFirstChild() as ListNode;
-        expect(list.getType()).toBe('list');
+        const list = $assertNodeType($getRoot().getFirstChild(), $isListNode);
         expect(list.getListType()).toBe('bullet');
       });
     });
@@ -162,7 +171,10 @@ describe('@lexical/mdast streaming shortcuts', () => {
   describe('inline shortcuts (on closing delimiter)', () => {
     function inlineFormats(editor: LexicalEditor): number[] {
       return editor.read(() => {
-        const element = $getRoot().getFirstChild() as ElementNode;
+        const element = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        );
         return element
           .getChildren()
           .map(n => ($isTextNode(n) ? n.getFormat() : 0));
@@ -209,10 +221,11 @@ describe('@lexical/mdast streaming shortcuts', () => {
       using editor = createEditor();
       type(editor, ['[lexical](https://lexical.dev', ')']);
       editor.read(() => {
-        const element = $getRoot().getFirstChild() as ElementNode;
-        const link = element.getChildren().find(n => n.getType() === 'link') as
-          | LinkNode
-          | undefined;
+        const element = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        );
+        const link = element.getChildren().find($isLinkNode);
         expect(link).toBeDefined();
         expect(link!.getURL()).toBe('https://lexical.dev');
         expect(link!.getTextContent()).toBe('lexical');
@@ -223,7 +236,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
       using editor = createEditor();
       // A lone opening delimiter must not transform anything.
       type(editor, ['*not italic']);
-      expect(firstChildType(editor)).toBe('paragraph');
+      $expectFirstChild(editor, $isParagraphNode);
       editor.read(() => {
         expect($getRoot().getTextContent()).toBe('*not italic');
       });
@@ -236,8 +249,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
       type(editor, ['```js']);
       editor.dispatchCommand(KEY_ENTER_COMMAND, null);
       editor.read(() => {
-        const code = $getRoot().getFirstChild() as CodeNode;
-        expect(code.getType()).toBe('code');
+        const code = $assertNodeType($getRoot().getFirstChild(), $isCodeNode);
         expect(code.getLanguage()).toBe('js');
         // The fence line is entirely marker; no literal '```js' may leak in.
         expect(code.getTextContent()).toBe('');
@@ -249,8 +261,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
       type(editor, ['~~~js title=x']);
       editor.dispatchCommand(KEY_ENTER_COMMAND, null);
       editor.read(() => {
-        const code = $getRoot().getFirstChild() as CodeNode;
-        expect(code.getType()).toBe('code');
+        const code = $assertNodeType($getRoot().getFirstChild(), $isCodeNode);
         expect(code.getLanguage()).toBe('js');
         expect($getState(code, codeMetaState)).toBe('title=x');
         expect($getState(code, codeFenceState)).toBe('~~~');
@@ -266,8 +277,8 @@ describe('@lexical/mdast streaming shortcuts', () => {
       // line with content must not re-convert it (undo-escape hatch).
       type(editor, ['# Title']);
       editor.dispatchCommand(KEY_ENTER_COMMAND, null);
+      $expectFirstChild(editor, $isParagraphNode);
       editor.read(() => {
-        expect($getRoot().getFirstChild()!.getType()).toBe('paragraph');
         expect($getRoot().getTextContent()).toContain('# Title');
       });
     });
@@ -276,9 +287,7 @@ describe('@lexical/mdast streaming shortcuts', () => {
       using editor = createEditor();
       type(editor, ['2024. was a big year']);
       editor.dispatchCommand(KEY_ENTER_COMMAND, null);
-      editor.read(() => {
-        expect($getRoot().getFirstChild()!.getType()).toBe('paragraph');
-      });
+      $expectFirstChild(editor, $isParagraphNode);
     });
 
     it('multi-character insertion (paste) does not transform', () => {
@@ -296,7 +305,10 @@ describe('@lexical/mdast streaming shortcuts', () => {
       // lands right after the closing '*'.
       editor.update(
         () => {
-          const paragraph = $getRoot().getFirstChild() as ElementNode;
+          const paragraph = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isElementNode,
+          );
           const text = paragraph.getFirstChild();
           if ($isTextNode(text)) {
             text.setTextContent('*a*');
@@ -326,7 +338,10 @@ describe('@lexical/mdast streaming shortcuts', () => {
       type(editor, ['*']);
       editor.read(() => {
         expect($getRoot().getTextContent()).toBe('use *args*');
-        const paragraph = $getRoot().getFirstChild() as ElementNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        );
         const first = paragraph.getFirstChild();
         expect($isTextNode(first) && first.hasFormat('code')).toBe(true);
       });

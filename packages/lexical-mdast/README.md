@@ -141,6 +141,23 @@ pre-parsed tree alongside its source text, which keeps source-based
 syntax preservation working; `$convertFromMdast` alone skips it (there
 is no source to preserve from).
 
+To parse Markdown into nodes *without* replacing the document —
+e.g. to insert at the current selection —
+`$generateNodesFromMarkdownString(markdown, tree?)` returns a detached
+array of block-level nodes and leaves the document and selection
+untouched:
+
+```ts
+import {$generateNodesFromMarkdownString} from '@lexical/mdast';
+
+editor.update(() => {
+  const selection = $getSelection();
+  if ($isRangeSelection(selection)) {
+    selection.insertNodes($generateNodesFromMarkdownString('# Inserted'));
+  }
+});
+```
+
 ### Serialization options
 
 Document-level `mdast-util-to-markdown` options (bullet, emphasis

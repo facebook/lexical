@@ -77,6 +77,10 @@ export type MdastImportExtensionOutput = {
     tree?: unknown,
   ): void,
   $convertFromMdast(tree: unknown, node?: ElementNode): void,
+  $generateNodesFromMarkdownString(
+    markdown: string,
+    tree?: unknown,
+  ): LexicalNode[],
   readonly registry: unknown,
 };
 
@@ -99,6 +103,11 @@ declare export function $convertFromMdast(
 ): void;
 
 declare export function $convertToMdast(node?: ElementNode): unknown;
+
+declare export function $generateNodesFromMarkdownString(
+  markdown: string,
+  tree?: unknown,
+): LexicalNode[];
 
 declare export var MdastImportExtension: LexicalExtension<
   MdastConfig,

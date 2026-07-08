@@ -37,6 +37,7 @@ export type {
 export {
   $convertFromMarkdownString,
   $convertFromMdast,
+  $generateNodesFromMarkdownString,
   MdastAutolinkLiteralExtension,
   MdastBlockquoteExtension,
   MdastCodeExtension,

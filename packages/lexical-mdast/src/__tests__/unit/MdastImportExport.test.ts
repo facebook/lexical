@@ -6,30 +6,33 @@
  *
  */
 
-import type {HeadingNode, QuoteNode} from '@lexical/rich-text';
-import type {ElementNode, TextNode} from 'lexical';
-
 import {
   buildEditorFromExtensions,
   configExtension,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
-import {LinkNode} from '@lexical/link';
-import {ListNode} from '@lexical/list';
-import {TableNode} from '@lexical/table';
+import {$isLinkNode} from '@lexical/link';
+import {$isListNode} from '@lexical/list';
+import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
+import {$isTableNode} from '@lexical/table';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
+  $isElementNode,
+  $isRangeSelection,
+  $isTextNode,
   defineExtension,
 } from 'lexical';
-import {describe, expect, it} from 'vitest';
+import {assert, describe, expect, it} from 'vitest';
 
 import {
   $convertFromMarkdownString,
   $convertFromMdast,
   $convertToMarkdownString,
   $convertToMdast,
+  $generateNodesFromMarkdownString,
   MdastAutolinkLiteralExtension,
   MdastCommonMarkExtension,
   MdastExportExtension,
@@ -40,6 +43,7 @@ import {
   MdastTableExtension,
   MdastTaskListExtension,
 } from '../../index';
+import {$assertNodeType} from './utils';
 
 function createEditor(withTable = false): LexicalEditorWithDispose {
   // The caller is responsible for disposal (with `using`).
@@ -125,14 +129,16 @@ describe('@lexical/mdast import/export', () => {
       {discrete: true},
     );
     editor.read(() => {
-      const heading = $getRoot().getFirstChild() as HeadingNode;
-      expect(heading.getType()).toBe('heading');
+      const heading = $assertNodeType(
+        $getRoot().getFirstChild(),
+        $isHeadingNode,
+      );
       expect(heading.getTag()).toBe('h1');
       expect(heading.getTextContent()).toBe('Hello world');
       const children = heading.getChildren();
       // "Hello " (plain) + "world" (italic)
       expect(children).toHaveLength(2);
-      expect((children[1] as TextNode).getFormat()).not.toBe(0);
+      expect($assertNodeType(children[1], $isTextNode).getFormat()).not.toBe(0);
     });
   });
 
@@ -145,8 +151,7 @@ describe('@lexical/mdast import/export', () => {
       {discrete: true},
     );
     editor.read(() => {
-      const list = $getRoot().getFirstChild() as ListNode;
-      expect(list.getType()).toBe('list');
+      const list = $assertNodeType($getRoot().getFirstChild(), $isListNode);
       expect(list.getListType()).toBe('bullet');
       // a, b, (nested list wrapper), c
       expect(list.getChildrenSize()).toBe(4);
@@ -357,6 +362,63 @@ describe('@lexical/mdast import/export', () => {
     expect(editor.read(() => $convertToMarkdownString())).toBe('+ one');
   });
 
+  it('$generateNodesFromMarkdownString returns detached nodes without touching the document', () => {
+    using editor = createEditor();
+    editor.update(
+      () => {
+        $convertFromMarkdownString('existing content');
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        const nodes = $generateNodesFromMarkdownString('# Title\n\n- a\n- b');
+        expect(nodes).toHaveLength(2);
+        $assertNodeType(nodes[0], $isHeadingNode);
+        $assertNodeType(nodes[1], $isListNode);
+        expect(nodes[0].isAttached()).toBe(false);
+        // The document is untouched by generation.
+        expect($getRoot().getTextContent()).toBe('existing content');
+      },
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString())).toBe(
+      'existing content',
+    );
+  });
+
+  it('generated nodes can be inserted at an arbitrary position', () => {
+    using editor = createEditor();
+    editor.update(
+      () => {
+        $convertFromMarkdownString('before\n\nafter');
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        // Insert at an empty paragraph between the two existing blocks
+        // (insertNodes at a text caret would merge inline content instead).
+        const first = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        );
+        const target = $createParagraphNode();
+        first.insertAfter(target);
+        target.select();
+        const selection = $getSelection();
+        assert($isRangeSelection(selection));
+        selection.insertNodes(
+          $generateNodesFromMarkdownString('> quoted **insert**'),
+        );
+      },
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString())).toBe(
+      'before\n\n> quoted **insert**\n\nafter',
+    );
+  });
+
   it('unwraps constructs the editor has no extension for', () => {
     // Headings only — no blockquote extension. `> quote` imports as its
     // children (a paragraph) instead of corrupting or dropping content.
@@ -397,10 +459,13 @@ describe('@lexical/mdast import/export', () => {
       {discrete: true},
     );
     editor.read(() => {
-      const paragraph = $getRoot().getFirstChild() as ElementNode;
-      const links = paragraph.getChildren().filter(n => n.getType() === 'link');
+      const paragraph = $assertNodeType(
+        $getRoot().getFirstChild(),
+        $isElementNode,
+      );
+      const links = paragraph.getChildren().filter($isLinkNode);
       expect(links).toHaveLength(1);
-      expect((links[0] as LinkNode).getURL()).toBe('https://lexical.dev');
+      expect(links[0].getURL()).toBe('https://lexical.dev');
     });
   });
 
@@ -451,8 +516,7 @@ describe('@lexical/mdast import/export', () => {
         {discrete: true},
       );
       editor.read(() => {
-        const table = $getRoot().getFirstChild() as TableNode;
-        expect(table.getType()).toBe('table');
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         expect(table.getChildrenSize()).toBe(2);
       });
     });
@@ -471,9 +535,12 @@ describe('@lexical/mdast import/export', () => {
       editor.update(
         () => {
           $convertFromMarkdownString('| a |\n| - |\n| foo |');
-          const table = $getRoot().getFirstChild() as TableNode;
-          const lastRow = table.getLastChild() as ElementNode;
-          const cell = lastRow.getFirstChild() as ElementNode;
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
+          const lastRow = $assertNodeType(table.getLastChild(), $isElementNode);
+          const cell = $assertNodeType(lastRow.getFirstChild(), $isElementNode);
           const extra = $createParagraphNode();
           extra.append($createTextNode('bar'));
           cell.append(extra);
@@ -536,8 +603,7 @@ describe('@lexical/mdast import/export', () => {
         {discrete: true},
       );
       editor.read(() => {
-        const quote = $getRoot().getFirstChild() as QuoteNode;
-        expect(quote.getType()).toBe('quote');
+        const quote = $assertNodeType($getRoot().getFirstChild(), $isQuoteNode);
         expect(quote.isShadowRoot()).toBe(true);
         const types = quote.getChildren().map(n => n.getType());
         expect(types).toEqual(['paragraph', 'list']);
@@ -583,7 +649,10 @@ describe('@lexical/mdast import/export', () => {
       {discrete: true},
     );
     editor.read(() => {
-      const paragraph = $getRoot().getFirstChild() as ElementNode;
+      const paragraph = $assertNodeType(
+        $getRoot().getFirstChild(),
+        $isElementNode,
+      );
       const types = paragraph.getChildren().map(n => n.getType());
       expect(types).toEqual(['text', 'tab', 'text']);
     });

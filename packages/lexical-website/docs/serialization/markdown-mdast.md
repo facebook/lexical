@@ -128,6 +128,11 @@ const tree = editor.read(() => $convertToMdast());
 editor.update(() => $convertFromMdast(tree));
 ```
 
+To parse Markdown into nodes without replacing the document (e.g. to
+insert at the current selection), `$generateNodesFromMarkdownString`
+returns a detached array of block-level nodes and leaves the document
+and selection untouched.
+
 ## Custom syntax
 
 New syntax is added the same way the built-in features are built: an

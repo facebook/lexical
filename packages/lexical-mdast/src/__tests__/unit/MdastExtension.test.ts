@@ -11,11 +11,12 @@ import {
   buildEditorFromExtensions,
 } from '@lexical/extension';
 import {ListNode} from '@lexical/list';
-import {HeadingNode} from '@lexical/rich-text';
+import {$isHeadingNode, HeadingNode} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $getRoot,
   $getSelection,
+  $isParagraphNode,
   $isRangeSelection,
   defineExtension,
 } from 'lexical';
@@ -32,6 +33,7 @@ import {
   MdastListExtension,
   MdastShortcutsExtension,
 } from '../../index';
+import {$assertNodeType} from './utils';
 
 describe('@lexical/mdast extensions', () => {
   it('feature extensions ship the nodes their rules need', () => {
@@ -120,9 +122,9 @@ describe('@lexical/mdast extensions', () => {
         {discrete: true},
       );
     }
-    expect(editor.read(() => $getRoot().getFirstChild()!.getType())).toBe(
-      'heading',
-    );
+    editor.read(() => {
+      $assertNodeType($getRoot().getFirstChild(), $isHeadingNode);
+    });
   });
 
   it('block shortcuts only fire for features in the editor', () => {
@@ -154,8 +156,10 @@ describe('@lexical/mdast extensions', () => {
       );
     }
     editor.read(() => {
-      const first = $getRoot().getFirstChild()!;
-      expect(first.getType()).toBe('paragraph');
+      const first = $assertNodeType(
+        $getRoot().getFirstChild(),
+        $isParagraphNode,
+      );
       expect(first.getTextContent()).toBe('# ');
     });
   });

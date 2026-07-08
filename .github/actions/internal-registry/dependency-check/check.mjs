@@ -18,7 +18,13 @@ const REGISTRY = (
   process.env.REGISTRY_URL ?? 'https://registry.facebook.net'
 ).replace(/\/$/, '');
 const LOCKFILE = process.env.LOCKFILE ?? 'pnpm-lock.yaml';
-const CONCURRENCY = Number(process.env.CHECK_CONCURRENCY ?? 20);
+const CONCURRENCY = Number(process.env.CHECK_CONCURRENCY ?? 50);
+// Total attempts per request (1 initial + retries) and backoff bounds. The
+// registry can return sporadic transient errors under load; retrying with
+// backoff keeps a healthy run from failing on a momentary hiccup.
+const MAX_ATTEMPTS = Number(process.env.CHECK_MAX_ATTEMPTS ?? 4);
+const BASE_DELAY_MS = Number(process.env.CHECK_RETRY_BASE_MS ?? 500);
+const MAX_DELAY_MS = Number(process.env.CHECK_RETRY_MAX_MS ?? 10_000);
 const TOKEN = process.env.REGISTRY_TOKEN;
 
 if (!TOKEN) {
@@ -148,18 +154,38 @@ function parseYarn(text) {
   return byName;
 }
 
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+// Wait before the next attempt: honor a server-provided Retry-After when
+// present, otherwise exponential backoff with full jitter (a random delay in
+// [0, cap]) so parallel workers don't retry in lockstep.
+function backoff(attempt, res) {
+  const header = res && res.headers ? res.headers.get('retry-after') : null;
+  const retryAfter = Number(header);
+  const cap =
+    Number.isFinite(retryAfter) && retryAfter > 0
+      ? retryAfter * 1000
+      : Math.min(BASE_DELAY_MS * 2 ** attempt, MAX_DELAY_MS);
+  return sleep(Math.random() * cap);
+}
+
+// Fetch a packument, retrying transient failures (5xx and network/connection
+// errors) with backoff. Definitive outcomes (2xx/4xx) return immediately so a
+// genuinely missing package still fails fast.
 async function fetchPackument(name, attempt = 0) {
   const url = `${REGISTRY}/${name.replace(/\//g, '%2F')}`;
   try {
     const res = await fetch(url, {
       headers: {Accept: 'application/json', Authorization: `Bearer ${TOKEN}`},
     });
-    if (res.status >= 500 && attempt < 1) {
+    if (res.status >= 500 && attempt < MAX_ATTEMPTS - 1) {
+      await backoff(attempt, res);
       return fetchPackument(name, attempt + 1);
     }
     return res;
   } catch (e) {
-    if (attempt < 1) {
+    if (attempt < MAX_ATTEMPTS - 1) {
+      await backoff(attempt);
       return fetchPackument(name, attempt + 1);
     }
     throw e;

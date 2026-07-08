@@ -1569,3 +1569,58 @@ export function $insertTableIntoGrid(
 
   return true;
 }
+
+export function $setTableRowIsHeader(
+  tableNode: TableNode,
+  rowIndex: number,
+  isHeader: boolean,
+): void {
+  const [gridMap] = $computeTableMapSkipCellCheck(tableNode, null, null);
+  invariant(
+    rowIndex >= 0 && rowIndex < gridMap.length,
+    'Table row index %s out of range',
+    String(rowIndex),
+  );
+  const rowMap = gridMap[rowIndex];
+  const headerState = isHeader
+    ? TableCellHeaderStates.ROW
+    : TableCellHeaderStates.NO_STATUS;
+  const visited = new Set<TableCellNode>();
+  for (let col = 0; col < rowMap.length; col++) {
+    const mapCell = rowMap[col];
+    if (mapCell == null) {
+      continue;
+    }
+    if (!visited.has(mapCell.cell)) {
+      visited.add(mapCell.cell);
+      mapCell.cell.setHeaderStyles(headerState, TableCellHeaderStates.ROW);
+    }
+  }
+}
+
+export function $setTableColumnIsHeader(
+  tableNode: TableNode,
+  columnIndex: number,
+  isHeader: boolean,
+): void {
+  const [gridMap] = $computeTableMapSkipCellCheck(tableNode, null, null);
+  invariant(
+    gridMap.length > 0 && columnIndex >= 0 && columnIndex < gridMap[0].length,
+    'Table column index %s out of range',
+    String(columnIndex),
+  );
+  const headerState = isHeader
+    ? TableCellHeaderStates.COLUMN
+    : TableCellHeaderStates.NO_STATUS;
+  const visited = new Set<TableCellNode>();
+  for (let row = 0; row < gridMap.length; row++) {
+    const mapCell = gridMap[row][columnIndex];
+    if (mapCell == null) {
+      continue;
+    }
+    if (!visited.has(mapCell.cell)) {
+      visited.add(mapCell.cell);
+      mapCell.cell.setHeaderStyles(headerState, TableCellHeaderStates.COLUMN);
+    }
+  }
+}

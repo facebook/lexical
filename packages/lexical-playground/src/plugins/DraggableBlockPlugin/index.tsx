@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {NodeKey} from 'lexical';
-import type {JSX} from 'react';
 
 import './index.css';
 
@@ -20,15 +18,23 @@ import {
   $isParagraphNode,
   $isTextNode,
   getComposedEventTarget,
+  type NodeKey,
   registerEventListener,
 } from 'lexical';
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {
+  type JSX,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import * as ReactDOM from 'react-dom';
 
 import useModal from '../../hooks/useModal';
 import {
   ComponentPickerMenuItem,
-  ComponentPickerOption,
+  type ComponentPickerOption,
   getBaseOptions,
   getDynamicOptions,
 } from '../ComponentPickerPlugin';

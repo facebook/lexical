@@ -6,28 +6,25 @@
  *
  */
 
-import type {
-  BaseBinding,
-  Binding,
-  BindingV2,
-  ExcludedProperties,
-  Provider,
-  SyncCursorPositionsFn,
-} from '@lexical/yjs';
-import type {LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
+import type {InitialEditorStateType} from '../LexicalComposer';
 
 import {
+  type BaseBinding,
+  type Binding,
+  type BindingV2,
   CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
   CONNECTED_COMMAND,
   createBindingV2__EXPERIMENTAL,
   createUndoManager,
   DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
+  type ExcludedProperties,
   initLocalState,
+  type Provider,
   removeCursorHighlightRule,
   renderSnapshot__EXPERIMENTAL,
   setLocalStateFocus,
   syncCursorPositions,
+  type SyncCursorPositionsFn,
   syncLexicalUpdateToYjs,
   syncLexicalUpdateToYjsV2__EXPERIMENTAL,
   syncYjsChangesToLexical,
@@ -46,6 +43,7 @@ import {
   FOCUS_COMMAND,
   getActiveElement,
   HISTORY_MERGE_TAG,
+  type LexicalEditor,
   mergeRegister,
   REDO_COMMAND,
   registerEventListeners,
@@ -53,11 +51,22 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {
+  type JSX,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {createPortal} from 'react-dom';
-import {Doc, Snapshot, Transaction, UndoManager, YEvent} from 'yjs';
-
-import {InitialEditorStateType} from '../LexicalComposer';
+import {
+  type Doc,
+  type Snapshot,
+  type Transaction,
+  UndoManager,
+  type YEvent,
+} from 'yjs';
 
 export type CursorsContainerRef = React.RefObject<HTMLElement | null>;
 

@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalCommand} from 'lexical';
-
 import {NodeSelectionDataSelectedExtension} from '@lexical/extension';
 import {
   CoreImportExtension,
@@ -32,6 +30,7 @@ import {
   defineExtension,
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
+  type LexicalCommand,
   mergeRegister,
 } from 'lexical';
 

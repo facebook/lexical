@@ -6,8 +6,6 @@
  *
  */
 
-import type {DOMExportOutput, LexicalEditor, LexicalNode} from 'lexical';
-
 import {$appendNodeToHTML} from '@lexical/html';
 import {
   $create,
@@ -15,7 +13,10 @@ import {
   $getSlot,
   $getSlotNames,
   $setSlot,
+  type DOMExportOutput,
   ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
 } from 'lexical';
 
 // The Card is an ElementNode host that demonstrates the dual capability of

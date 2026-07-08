@@ -15,9 +15,9 @@ import {
   getActiveElementDeep,
   getEditorPropertyFromDOMNode,
   isLexicalEditor,
-  LexicalEditor,
+  type LexicalEditor,
   safeCast,
-  TextFormatType,
+  type TextFormatType,
 } from 'lexical';
 
 interface WithWindowState {

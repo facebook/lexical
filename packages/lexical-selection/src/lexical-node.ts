@@ -20,15 +20,15 @@ import {
   $isRootNode,
   $isTextNode,
   $isTokenOrSegmented,
-  BaseSelection,
-  ElementNode,
+  type BaseSelection,
+  type ElementNode,
   getStyleObjectFromCSS,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  Point,
-  RangeSelection,
-  TextNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  type Point,
+  type RangeSelection,
+  type TextNode,
 } from 'lexical';
 
 import {getCSSFromStyleObject} from './utils';

@@ -6,22 +6,6 @@
  *
  */
 
-import type {
-  BaseSelection,
-  DOMConversionMap,
-  DOMConversionOutput,
-  EditorConfig,
-  LexicalCommand,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  Point,
-  PointCaret,
-  PointType,
-  RangeSelection,
-  SerializedElementNode,
-} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
 import {
   $applyNodeReplacement,
@@ -42,10 +26,23 @@ import {
   $setPointFromCaret,
   $setSelection,
   addClassNamesToElement,
+  type BaseSelection,
   createCommand,
+  type DOMConversionMap,
+  type DOMConversionOutput,
+  type EditorConfig,
   ElementNode,
   isHTMLAnchorElement,
-  Spread,
+  type LexicalCommand,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type Point,
+  type PointCaret,
+  type PointType,
+  type RangeSelection,
+  type SerializedElementNode,
+  type Spread,
 } from 'lexical';
 
 export type LinkAttributes = {

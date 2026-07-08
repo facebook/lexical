@@ -11,17 +11,17 @@ import type {JSX} from 'react';
 import {
   applyFormatToDom,
   DecoratorTextNode,
-  SerializedDecoratorTextNode,
+  type SerializedDecoratorTextNode,
 } from '@lexical/extension';
 import {
   $getState,
   $setState,
   createState,
-  DOMExportOutput,
-  LexicalNode,
-  Spread,
-  StateConfigValue,
-  StateValueOrUpdater,
+  type DOMExportOutput,
+  type LexicalNode,
+  type Spread,
+  type StateConfigValue,
+  type StateValueOrUpdater,
 } from 'lexical';
 import * as React from 'react';
 

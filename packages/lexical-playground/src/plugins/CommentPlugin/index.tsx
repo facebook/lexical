@@ -7,14 +7,6 @@
  */
 
 import type {Provider} from '@lexical/yjs';
-import type {
-  EditorState,
-  LexicalCommand,
-  LexicalEditor,
-  NodeKey,
-  RangeSelection,
-} from 'lexical';
-import type {JSX} from 'react';
 import type {Doc} from 'yjs';
 
 import './index.css';
@@ -50,15 +42,21 @@ import {
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_NORMAL,
   createCommand,
+  type EditorState,
   getActiveElementDeep,
   getDOMSelection,
   getRootOwnerDocument,
   KEY_ESCAPE_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
   mergeRegister,
+  type NodeKey,
+  type RangeSelection,
   registerEventListener,
 } from 'lexical';
 import * as React from 'react';
 import {
+  type JSX,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -69,12 +67,12 @@ import {
 import {createPortal} from 'react-dom';
 
 import {
-  Comment,
-  Comments,
+  type Comment,
+  type Comments,
   CommentStore,
   createComment,
   createThread,
-  Thread,
+  type Thread,
   useCommentStore,
 } from '../../commenting';
 import useModal from '../../hooks/useModal';

@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import './index.css';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -16,13 +14,13 @@ import {
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   DecoratorNode,
-  LexicalNode,
+  type LexicalNode,
   mergeRegister,
-  NodeKey,
-  SerializedLexicalNode,
+  type NodeKey,
+  type SerializedLexicalNode,
 } from 'lexical';
 import * as React from 'react';
-import {useEffect} from 'react';
+import {type JSX, useEffect} from 'react';
 
 export type SerializedPageBreakNode = SerializedLexicalNode;
 

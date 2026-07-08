@@ -11,7 +11,7 @@ import {
   $createListNode,
   $isListNode,
   ListExtension,
-  ListType,
+  type ListType,
 } from '@lexical/list';
 import {
   $createParagraphNode,

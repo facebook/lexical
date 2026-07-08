@@ -6,12 +6,10 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {CAN_USE_DOM, registerEventListener} from 'lexical';
-import {useEffect, useState} from 'react';
+import {type JSX, useEffect, useState} from 'react';
 
 import {createWebsocketProvider} from './collaboration';
 import {useSettings} from './context/SettingsContext';

@@ -13,7 +13,7 @@ import {
   TableCellHeaderStates,
   TableCellNode,
 } from '@lexical/table';
-import {$createTextNode, $getRoot, DOMConversionOutput} from 'lexical';
+import {$createTextNode, $getRoot, type DOMConversionOutput} from 'lexical';
 import {
   expectHtmlToBeEqual,
   html,

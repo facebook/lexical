@@ -47,14 +47,14 @@ import {
   $isRangeSelection,
   $isTextNode,
   $setSelection,
-  DecoratorNode,
-  ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  ParagraphNode,
-  PointType,
+  type DecoratorNode,
+  type ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type ParagraphNode,
+  type PointType,
   type RangeSelection,
-  TextNode,
+  type TextNode,
 } from 'lexical';
 import {
   $assertNodeType,
@@ -69,7 +69,7 @@ import {
   TestComposer,
 } from 'lexical/src/__tests__/utils';
 import {act} from 'react';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, test, vi} from 'vitest';
 
 import {

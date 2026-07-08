@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import 'katex/dist/katex.css';
 
 import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
@@ -23,10 +21,10 @@ import {
   configExtension,
   createCommand,
   defineExtension,
-  LexicalCommand,
-  LexicalEditor,
+  type LexicalCommand,
+  type LexicalEditor,
 } from 'lexical';
-import {useCallback} from 'react';
+import {type JSX, useCallback} from 'react';
 
 import {$createEquationNode, EquationNode} from '../../nodes/EquationNode';
 import KatexEquationAlterer from '../../ui/KatexEquationAlterer';

@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {getScrollParent} from '@lexical/utils';
 import {
@@ -15,7 +13,7 @@ import {
   $isRangeSelection,
   CAN_USE_DOM,
   COMMAND_PRIORITY_LOW,
-  CommandListenerPriority,
+  type CommandListenerPriority,
   createCommand,
   getDOMShadowRoots,
   getRootOwnerDocument,
@@ -25,15 +23,16 @@ import {
   KEY_ENTER_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
-  LexicalCommand,
-  LexicalEditor,
+  type LexicalCommand,
+  type LexicalEditor,
   mergeRegister,
   registerEventListener,
-  TextNode,
+  type TextNode,
 } from 'lexical';
 import {
-  ReactPortal,
-  RefObject,
+  type JSX,
+  type ReactPortal,
+  type RefObject,
   useCallback,
   useEffect,
   useMemo,

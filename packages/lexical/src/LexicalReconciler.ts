@@ -15,6 +15,7 @@ import type {
   MutationListeners,
   RegisteredNodes,
 } from './LexicalEditor';
+import type {EditorState} from './LexicalEditorState';
 import type {
   LexicalNode,
   LexicalPrivateDOM,
@@ -43,7 +44,6 @@ import {
   IS_ALIGN_RIGHT,
   IS_ALIGN_START,
 } from './LexicalConstants';
-import {EditorState} from './LexicalEditorState';
 import {cloneMap} from './LexicalGenMap';
 import {$isSlotChild, $isSlotHost, EMPTY_SLOTS} from './LexicalSlot';
 import {

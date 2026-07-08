@@ -6,21 +6,17 @@
  *
  */
 
-import type {
-  Binding,
-  Provider,
-  ProviderAwareness,
-  SyncCursorPositionsFn,
-  UserState,
-} from '@lexical/yjs';
-import type {LexicalEditor} from 'lexical';
-
 import {
   $getAnchorAndFocusForUserState,
+  type Binding,
   createBinding,
   initLocalState,
+  type Provider,
+  type ProviderAwareness,
+  type SyncCursorPositionsFn,
   syncLexicalUpdateToYjs,
   syncYjsChangesToLexical,
+  type UserState,
 } from '@lexical/yjs';
 import {
   $createLineBreakNode,
@@ -32,6 +28,7 @@ import {
   $isElementNode,
   $isRangeSelection,
   createEditor,
+  type LexicalEditor,
   SKIP_COLLAB_TAG,
 } from 'lexical';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';

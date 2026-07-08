@@ -22,7 +22,7 @@ import {
   $isRangeSelection,
   createEditor,
   defineExtension,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 

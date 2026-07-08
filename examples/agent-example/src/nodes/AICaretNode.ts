@@ -6,9 +6,14 @@
  *
  */
 
-import type {DOMExportOutput, EditorConfig} from 'lexical';
-
-import {$create, DecoratorNode, defineExtension, LexicalNode} from 'lexical';
+import {
+  $create,
+  DecoratorNode,
+  defineExtension,
+  type DOMExportOutput,
+  type EditorConfig,
+  type LexicalNode,
+} from 'lexical';
 
 export class AICaretNode extends DecoratorNode<unknown> {
   $config() {

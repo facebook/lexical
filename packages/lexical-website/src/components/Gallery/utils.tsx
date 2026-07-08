@@ -6,10 +6,10 @@
  *
  */
 
+import type {Example} from './pluginList';
+
 import {useQueryString, useQueryStringList} from '@docusaurus/theme-common';
 import {useMemo} from 'react';
-
-import {Example} from './pluginList';
 
 export function useSearchName() {
   return useQueryString('title');

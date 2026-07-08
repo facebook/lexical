@@ -6,9 +6,14 @@
  *
  */
 
-import type {EditorConfig, LexicalNode, SerializedTextNode} from 'lexical';
-
-import {$applyNodeReplacement, addClassNamesToElement, TextNode} from 'lexical';
+import {
+  $applyNodeReplacement,
+  addClassNamesToElement,
+  type EditorConfig,
+  type LexicalNode,
+  type SerializedTextNode,
+  TextNode,
+} from 'lexical';
 
 /** @noInheritDoc */
 export class HashtagNode extends TextNode {

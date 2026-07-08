@@ -6,8 +6,6 @@
  *
  */
 
-import type {AnyLexicalExtension, LexicalNode} from 'lexical';
-
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $generateHtmlFromNodes,
@@ -18,7 +16,9 @@ import {
   $getRoot,
   $insertNodes,
   $isElementNode,
+  type AnyLexicalExtension,
   defineExtension,
+  type LexicalNode,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 

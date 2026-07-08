@@ -16,9 +16,9 @@ import {
   $deleteTableRowAtSelection,
   $isTableRowNode,
   $isTableSelection,
-  TableMapType,
-  TableNode,
-  TableSelection,
+  type TableMapType,
+  type TableNode,
+  type TableSelection,
 } from '@lexical/table';
 import {
   $createParagraphNode,

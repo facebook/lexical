@@ -6,26 +6,7 @@
  *
  */
 
-import type {
-  CommandPayloadType,
-  DOMSlotForNode,
-  EditorConfig,
-  EditorDOMRenderConfig,
-  EditorThemeClasses,
-  Klass,
-  LexicalCommand,
-  MutatedNodes,
-  MutationListeners,
-  NodeMutation,
-  RegisteredNode,
-  RegisteredNodes,
-} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
-import type {
-  BaseSelection,
-  PointType,
-  RangeSelection,
-} from './LexicalSelection';
 import type {RootNode} from './nodes/LexicalRootNode';
 
 import invariant from '@lexical/internal/invariant';
@@ -44,12 +25,12 @@ import {
   $isTextNode,
   DecoratorNode,
   DEFAULT_EDITOR_DOM_CONFIG,
-  ElementFormatType,
+  type ElementFormatType,
   ElementNode,
   HISTORY_MERGE_TAG,
-  LineBreakNode,
+  type LineBreakNode,
   normalizeClassNames,
-  UpdateTag,
+  type UpdateTag,
 } from '.';
 import {
   CAN_USE_DOM,
@@ -73,8 +54,22 @@ import {
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
-import {DOMSlot, ElementDOMSlot} from './LexicalDOMSlot';
-import {LexicalEditor} from './LexicalEditor';
+import {type DOMSlot, ElementDOMSlot} from './LexicalDOMSlot';
+import {
+  type CommandPayloadType,
+  type DOMSlotForNode,
+  type EditorConfig,
+  type EditorDOMRenderConfig,
+  type EditorThemeClasses,
+  type Klass,
+  type LexicalCommand,
+  LexicalEditor,
+  type MutatedNodes,
+  type MutationListeners,
+  type NodeMutation,
+  type RegisteredNode,
+  type RegisteredNodes,
+} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
 import {
   $isEphemeral,
@@ -87,7 +82,12 @@ import {
   type StaticNodeConfigValue,
 } from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
-import {$clampRangeSelectionToSlotFrame} from './LexicalSelection';
+import {
+  $clampRangeSelectionToSlotFrame,
+  type BaseSelection,
+  type PointType,
+  type RangeSelection,
+} from './LexicalSelection';
 import {
   $getSlot,
   $getSlotHostKey,

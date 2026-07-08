@@ -10,7 +10,7 @@ import {
   $isCodeNode,
   CodeExtension,
   CodeImportExtension,
-  CodeNode,
+  type CodeNode,
 } from '@lexical/code-core';
 import {
   buildEditorFromExtensions,

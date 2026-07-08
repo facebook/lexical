@@ -6,7 +6,6 @@
  *
  */
 
-import type {SerializedEditorState} from './LexicalEditorState';
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
 import devInvariant from '@lexical/internal/devInvariant';
@@ -20,21 +19,22 @@ import {
 } from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {
-  CommandPayloadType,
-  EditorUpdateOptions,
-  LexicalCommand,
+  type CommandPayloadType,
+  type EditorUpdateOptions,
+  type LexicalCommand,
   LexicalEditor,
-  MapListeners,
-  MutatedNodes,
-  RegisteredNodes,
+  type MapListeners,
+  type MutatedNodes,
+  type RegisteredNodes,
   resetEditor,
-  Transform,
+  type Transform,
 } from './LexicalEditor';
 import {
   cloneEditorState,
   createEmptyEditorState,
-  EditorState,
+  type EditorState,
   editorStateHasDirtySelection,
+  type SerializedEditorState,
 } from './LexicalEditorState';
 import {
   $garbageCollectDetachedDecorators,

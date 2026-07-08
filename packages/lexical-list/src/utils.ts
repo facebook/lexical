@@ -6,12 +6,20 @@
  *
  */
 
-import type {ElementNode, LexicalNode, Spread} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
-import {$findMatchingParent} from 'lexical';
+import {
+  $findMatchingParent,
+  type ElementNode,
+  type LexicalNode,
+  type Spread,
+} from 'lexical';
 
-import {$isListItemNode, $isListNode, ListItemNode, ListNode} from './';
+import {
+  $isListItemNode,
+  $isListNode,
+  type ListItemNode,
+  type ListNode,
+} from './';
 
 /**
  * Checks the depth of listNode from the root node.

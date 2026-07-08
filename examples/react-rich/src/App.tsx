@@ -14,13 +14,13 @@ import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {
   $isTextNode,
-  DOMConversionMap,
-  DOMExportOutput,
-  DOMExportOutputMap,
+  type DOMConversionMap,
+  type DOMExportOutput,
+  type DOMExportOutputMap,
   isHTMLElement,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
   ParagraphNode,
   TextNode,
 } from 'lexical';

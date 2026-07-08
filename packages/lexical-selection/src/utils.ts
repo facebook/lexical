@@ -5,14 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
 import {
   $getEditor,
   $isRootNode,
   $isTextNode,
+  type ElementNode,
   getRootOwnerDocument,
   getStyleObjectFromCSS,
+  type LexicalEditor,
+  type LexicalNode,
 } from 'lexical';
 
 function getDOMTextNode(element: Node | null): Text | null {

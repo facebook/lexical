@@ -608,6 +608,8 @@ export class ElementNode
     } else {
       selection.anchor.set(key, anchorOffset, 'element');
       selection.focus.set(key, focusOffset, 'element');
+      selection.format = 0;
+      selection.style = '';
       selection.dirty = true;
     }
     return selection;

@@ -904,6 +904,8 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
         $setCompositionKey(key);
       }
       selection.setTextNodeRange(this, anchorOffset, this, focusOffset);
+      selection.format = this.getFormat();
+      selection.style = this.getStyle();
     }
     return selection;
   }

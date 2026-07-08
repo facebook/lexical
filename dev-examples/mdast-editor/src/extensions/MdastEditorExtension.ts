@@ -6,6 +6,7 @@
  *
  */
 
+import {CodeShikiExtension} from '@lexical/code-shiki';
 import {
   computed,
   EditorStateExtension,
@@ -89,6 +90,9 @@ export const MdastEditorExtension = defineExtension({
     MdastGfmExtension,
     MdastExportExtension,
     MdastShortcutsExtension,
+    // Shiki syntax highlighting for the code blocks (brings its own
+    // CodeExtension / CodeIndentExtension dependencies).
+    CodeShikiExtension,
     RichTextExtension,
     ListExtension,
     CheckListExtension,

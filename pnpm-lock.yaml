@@ -367,6 +367,9 @@ importers:
       '@lexical/code-core':
         specifier: workspace:*
         version: link:../../packages/lexical-code-core
+      '@lexical/code-shiki':
+        specifier: workspace:*
+        version: link:../../packages/lexical-code-shiki
       '@lexical/extension':
         specifier: workspace:*
         version: link:../../packages/lexical-extension

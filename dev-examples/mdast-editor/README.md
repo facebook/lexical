@@ -50,7 +50,9 @@ example plumbing only (the preview signal and two toolbar commands), because
 
 It also does more: blockquotes, links, strikethrough, thematic breaks, and
 fenced code blocks round-trip out of the box (the legacy example's default
-set covered headings, lists, and inline formatting).
+set covered headings, lists, and inline formatting), and the code blocks
+are syntax-highlighted by adding `CodeShikiExtension` — highlighting
+composes with the Markdown machinery without any extra wiring.
 
 ## Bundle size
 

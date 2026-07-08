@@ -24,7 +24,7 @@ import {
   $setSlot,
   defineExtension,
   getDOMSelection,
-  LexicalNode,
+  type LexicalNode,
 } from 'lexical';
 import {afterEach, assert, describe, expect, test} from 'vitest';
 

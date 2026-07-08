@@ -6,10 +6,7 @@
  *
  */
 
-import type {CodeNode} from '@lexical/code';
-import type {LexicalCommand} from 'lexical';
-
-import {$createCodeNode, $isCodeNode} from '@lexical/code';
+import {$createCodeNode, $isCodeNode, type CodeNode} from '@lexical/code';
 import {CodeIndentExtension} from '@lexical/code-core';
 import {
   CodePrismExtension,
@@ -32,6 +29,7 @@ import {
   configExtension,
   INDENT_CONTENT_COMMAND,
   KEY_TAB_COMMAND,
+  type LexicalCommand,
   OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
 import {

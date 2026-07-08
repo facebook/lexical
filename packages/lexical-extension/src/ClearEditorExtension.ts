@@ -14,7 +14,7 @@ import {
   CLEAR_EDITOR_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   defineExtension,
-  LexicalEditor,
+  type LexicalEditor,
   safeCast,
 } from 'lexical';
 

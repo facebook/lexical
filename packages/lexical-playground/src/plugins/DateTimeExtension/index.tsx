@@ -24,7 +24,7 @@ import {
   configExtension,
   createCommand,
   defineExtension,
-  LexicalCommand,
+  type LexicalCommand,
 } from 'lexical';
 
 import {

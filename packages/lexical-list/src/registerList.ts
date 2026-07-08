@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
-
 import {
   $createParagraphNode,
   $findMatchingParent,
@@ -21,7 +19,10 @@ import {
   createCommand,
   INSERT_PARAGRAPH_COMMAND,
   KEY_BACKSPACE_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
   mergeRegister,
+  type NodeKey,
   TextNode,
 } from 'lexical';
 

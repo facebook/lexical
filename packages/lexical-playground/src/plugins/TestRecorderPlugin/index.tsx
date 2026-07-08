@@ -6,21 +6,27 @@
  *
  */
 
-import type {BaseSelection, LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  type BaseSelection,
   getDOMSelection,
   getDOMSelectionPoints,
   IS_APPLE,
+  type LexicalEditor,
   registerEventListeners,
 } from 'lexical';
 import * as React from 'react';
-import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {
+  type JSX,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 const copy = (text: string | null) => {
   const textArea = document.createElement('textarea');

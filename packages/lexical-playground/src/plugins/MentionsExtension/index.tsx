@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {
   CoreImportExtension,
   defineImportRule,
@@ -18,11 +16,11 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalTypeaheadMenuPlugin,
   MenuOption,
-  MenuTextMatch,
+  type MenuTextMatch,
   useBasicTypeaheadTriggerMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
-import {configExtension, defineExtension, TextNode} from 'lexical';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {configExtension, defineExtension, type TextNode} from 'lexical';
+import {type JSX, useCallback, useEffect, useMemo, useState} from 'react';
 
 import {$createMentionNode, MentionNode} from '../../nodes/MentionNode';
 

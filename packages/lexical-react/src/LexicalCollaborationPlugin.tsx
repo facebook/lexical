@@ -6,7 +6,9 @@
  *
  */
 
-import type {JSX} from 'react';
+import type {InitialEditorStateType} from './LexicalComposer';
+import type {LexicalEditor} from 'lexical';
+import type {Doc} from 'yjs';
 
 import {
   type CollaborationContextType,
@@ -14,19 +16,16 @@ import {
 } from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
-  Binding,
+  type Binding,
   createBinding,
-  ExcludedProperties,
-  Provider,
-  SyncCursorPositionsFn,
+  type ExcludedProperties,
+  type Provider,
+  type SyncCursorPositionsFn,
 } from '@lexical/yjs';
-import {LexicalEditor} from 'lexical';
-import {useEffect, useRef, useState} from 'react';
-import {Doc} from 'yjs';
+import {type JSX, useEffect, useRef, useState} from 'react';
 
-import {InitialEditorStateType} from './LexicalComposer';
 import {
-  CursorsContainerRef,
+  type CursorsContainerRef,
   useYjsCollaboration,
   useYjsCollaborationV2__EXPERIMENTAL,
   useYjsCursors,

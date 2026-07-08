@@ -5,7 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {$isElementNode, $isTextNode, RootNode, TextNode} from 'lexical';
+import {
+  $isElementNode,
+  $isTextNode,
+  type RootNode,
+  type TextNode,
+} from 'lexical';
 
 /**
  * Finds a TextNode with a size larger than targetCharacters and returns

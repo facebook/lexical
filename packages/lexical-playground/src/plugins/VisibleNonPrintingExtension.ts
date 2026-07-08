@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {DOMOverrideOptions} from '@lexical/html';
 
 import {$isCodeNode} from '@lexical/code-core';
 import {effect, namedSignals} from '@lexical/extension';
@@ -13,6 +12,7 @@ import {
   $setRenderContextValue,
   createRenderState,
   domOverride,
+  type DOMOverrideOptions,
   DOMRenderExtension,
 } from '@lexical/html';
 import {ListItemNode} from '@lexical/list';
@@ -23,7 +23,7 @@ import {
   $isTabNode,
   configExtension,
   defineExtension,
-  ElementNode,
+  type ElementNode,
   getStyleObjectFromCSS,
   isHTMLElement,
   LineBreakNode,

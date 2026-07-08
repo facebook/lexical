@@ -17,28 +17,32 @@ import {
   $isElementNode,
   $isParagraphNode,
   $normalizeSelection__EXPERIMENTAL,
-  BaseSelection,
-  ElementNode,
+  type BaseSelection,
+  type ElementNode,
   isCurrentlyReadOnlyMode,
-  LexicalNode,
-  NodeKey,
-  PointType,
+  type LexicalNode,
+  type NodeKey,
+  type PointType,
   TEXT_TYPE_TO_FORMAT,
-  TextFormatType,
-  TextNode,
+  type TextFormatType,
+  type TextNode,
 } from 'lexical';
 
 import {
   $createTableCellNode,
   $isTableCellNode,
   TableCellHeaderStates,
-  TableCellNode,
+  type TableCellNode,
 } from './LexicalTableCellNode';
-import {$createTableNode, $isTableNode, TableNode} from './LexicalTableNode';
+import {
+  $createTableNode,
+  $isTableNode,
+  type TableNode,
+} from './LexicalTableNode';
 import {
   $createTableRowNode,
   $isTableRowNode,
-  TableRowNode,
+  type TableRowNode,
 } from './LexicalTableRowNode';
 import {$findTableNode} from './LexicalTableSelectionHelpers';
 import {

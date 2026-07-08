@@ -32,7 +32,7 @@ import {
   LineBreakNode,
   ParagraphNode,
   resetRandomKey,
-  SerializedTextNode,
+  type SerializedTextNode,
   TabNode,
   TextNode,
 } from 'lexical';
@@ -1292,6 +1292,15 @@ describe('$getDocument', () => {
       testEnv.editor.setRootElement(null);
       const doc = testEnv.editor.read(() => $getDocument());
       expect(doc).toBe(document);
+    });
+
+    test('returns globalThis.document when called with no active editor', () => {
+      // Regression test for headless createDOM/exportDOM: $getDocument() must
+      // not throw when invoked outside editor.update()/read() (i.e. with no
+      // ambient active editor), so that nodes migrated off the bare `document`
+      // global can still be serialized headlessly.
+      expect(() => $getDocument()).not.toThrow();
+      expect($getDocument()).toBe(document);
     });
   });
 });

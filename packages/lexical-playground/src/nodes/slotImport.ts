@@ -6,9 +6,12 @@
  *
  */
 
-import type {ElementNode, LexicalNode} from 'lexical';
-
-import {$isElementNode, $isLineBreakNode} from 'lexical';
+import {
+  $isElementNode,
+  $isLineBreakNode,
+  type ElementNode,
+  type LexicalNode,
+} from 'lexical';
 
 function $flattenInlines(
   output: LexicalNode[],

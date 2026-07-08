@@ -22,7 +22,7 @@ import {
   $isRangeSelection,
   createEditor,
   defineExtension,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
@@ -31,7 +31,12 @@ import {
   $isEquationNode,
   EquationNode,
 } from '../../src/nodes/EquationNode';
-import {BLOCK_EQUATION, EQUATION} from '../../src/plugins/MarkdownTransformers';
+import {$isImageNode, ImageNode} from '../../src/nodes/ImageNode';
+import {
+  BLOCK_EQUATION,
+  EQUATION,
+  IMAGE,
+} from '../../src/plugins/MarkdownTransformers';
 
 const EQUATION_TRANSFORMERS = [BLOCK_EQUATION, EQUATION];
 const MarkdownShortcutTestExtension = defineExtension({
@@ -256,6 +261,36 @@ describe('playground EQUATION markdown transformer', () => {
       assert($isEquationNode(equation), 'Root child must be an EquationNode');
       expect(equation.getEquation()).toBe('x^2 + y^2 = z^2');
       expect(equation.isInline()).toBe(false);
+    });
+  });
+});
+
+const ImageMarkdownTestExtension = defineExtension({
+  dependencies: [RichTextExtension],
+  name: 'ImageMarkdownTest',
+  nodes: [ImageNode],
+});
+
+describe('playground IMAGE markdown transformer', () => {
+  it('imports image with the same default maxWidth as $createImageNode', () => {
+    using editor = buildEditorFromExtensions(ImageMarkdownTestExtension);
+
+    editor.update(
+      () => {
+        $convertFromMarkdownString('![alt text](http://example.com/img.png)', [
+          IMAGE,
+        ]);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const paragraph = $getRoot().getFirstChildOrThrow();
+      assert($isParagraphNode(paragraph), 'Root child must be a paragraph');
+      const image = paragraph.getFirstChildOrThrow();
+      assert($isImageNode(image), 'Paragraph child must be an ImageNode');
+      expect(image.getAltText()).toBe('alt text');
+      expect(image.__maxWidth).toBe(500);
     });
   });
 });

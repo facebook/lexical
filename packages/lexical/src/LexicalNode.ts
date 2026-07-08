@@ -6,13 +6,13 @@
  *
  */
 
+import type {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
 import type {
   EditorConfig,
   Klass,
   KlassConstructor,
   LexicalEditor,
 } from './LexicalEditor';
-import type {BaseSelection, RangeSelection} from './LexicalSelection';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -26,9 +26,8 @@ import {
   $isTextNode,
   type DecoratorNode,
   type ElementNode,
-  NODE_STATE_KEY,
+  type NODE_STATE_KEY,
 } from '.';
-import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
 import {DOMSlot} from './LexicalDOMSlot';
 import {
   $updateStateFromJSON,
@@ -44,7 +43,9 @@ import {
   $isRangeSelection,
   $moveSelectionPointToEnd,
   $updateElementSelectionOnCreateDeleteNode,
+  type BaseSelection,
   moveSelectionPointToSibling,
+  type RangeSelection,
 } from './LexicalSelection';
 import {
   $errorOnSlotCycleChild,

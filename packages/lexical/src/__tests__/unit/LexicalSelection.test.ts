@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
+import {$createLinkNode, $isLinkNode, type LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
-  ListItemNode,
-  ListNode,
+  type ListItemNode,
+  type ListNode,
 } from '@lexical/list';
 import {
   $caretRangeFromSelection,
@@ -32,11 +32,11 @@ import {
   createEditor,
   ElementNode,
   getDOMSelection,
-  LexicalEditor,
+  type LexicalEditor,
   type LexicalNode,
-  ParagraphNode,
-  RangeSelection,
-  TextNode,
+  type ParagraphNode,
+  type RangeSelection,
+  type TextNode,
 } from 'lexical';
 import {assert, beforeEach, describe, expect, test} from 'vitest';
 

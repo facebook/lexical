@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-
 import {
   $addUpdateTag,
   $createParagraphNode,
@@ -18,6 +16,7 @@ import {
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,
+  type LexicalEditor,
   PASTE_TAG,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SCROLL_INTO_VIEW_TAG,

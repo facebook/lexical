@@ -10,7 +10,7 @@ import {
   $createParagraphNode,
   $getRoot,
   $isParagraphNode,
-  DOMConversionOutput,
+  type DOMConversionOutput,
   ParagraphNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';

@@ -6,12 +6,17 @@
  *
  */
 
-import type {JSX, KeyboardEvent, Ref, RefObject} from 'react';
-
 import './EquationEditor.css';
 
 import {isHTMLElement} from 'lexical';
-import {ChangeEvent, forwardRef} from 'react';
+import {
+  type ChangeEvent,
+  forwardRef,
+  type JSX,
+  type KeyboardEvent,
+  type Ref,
+  type RefObject,
+} from 'react';
 
 type BaseEquationEditorProps = {
   equation: string;

@@ -8,7 +8,7 @@
 import './index.css';
 
 import {$isCodeNode} from '@lexical/code';
-import {$getNearestNodeFromDOMNode, LexicalEditor} from 'lexical';
+import {$getNearestNodeFromDOMNode, type LexicalEditor} from 'lexical';
 import {useState} from 'react';
 
 import {formatCodeWithPrettier} from '../../formatCodeWithPrettier';

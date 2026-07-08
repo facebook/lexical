@@ -23,13 +23,13 @@ import {
   $generateNodesFromMarkdownString,
   CHECK_LIST,
   CODE,
-  ElementTransformer,
+  type ElementTransformer,
   HEADING,
   LINK,
-  MultilineElementTransformer,
+  type MultilineElementTransformer,
   registerMarkdownShortcuts,
-  TextMatchTransformer,
-  Transformer,
+  type TextMatchTransformer,
+  type Transformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
 import {$createQuoteNode, HeadingNode, QuoteNode} from '@lexical/rich-text';

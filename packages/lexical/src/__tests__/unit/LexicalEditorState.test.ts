@@ -12,9 +12,9 @@ import {
   $getRoot,
   $isParagraphNode,
   $isTextNode,
-  ParagraphNode,
-  RootNode,
-  TextNode,
+  type ParagraphNode,
+  type RootNode,
+  type TextNode,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
 

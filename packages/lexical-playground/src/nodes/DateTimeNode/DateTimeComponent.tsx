@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import 'react-day-picker/style.css';
 import './DateTimeNode.css';
 
@@ -34,11 +32,11 @@ import {
   IS_ITALIC,
   IS_STRIKETHROUGH,
   IS_UNDERLINE,
-  NodeKey,
+  type NodeKey,
   registerEventListener,
 } from 'lexical';
 import * as React from 'react';
-import {useEffect, useRef, useState} from 'react';
+import {type JSX, useEffect, useRef, useState} from 'react';
 import {DayPicker} from 'react-day-picker';
 
 import {$isDateTimeNode, type DateTimeNode} from './DateTimeNode';

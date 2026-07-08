@@ -6,9 +6,6 @@
  *
  */
 
-import type {ElementFormatType, NodeKey} from 'lexical';
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
@@ -20,12 +17,14 @@ import {
   $isRangeSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
+  type ElementFormatType,
   FORMAT_ELEMENT_COMMAND,
   getComposedEventTarget,
   mergeRegister,
+  type NodeKey,
 } from 'lexical';
 import * as React from 'react';
-import {ReactNode, useEffect, useRef} from 'react';
+import {type JSX, type ReactNode, useEffect, useRef} from 'react';
 
 type Props = Readonly<{
   children: ReactNode;

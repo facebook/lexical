@@ -148,6 +148,7 @@ test('IME composition inserts Korean text', async () => {
   document.body.appendChild(rootElement);
   editor.setRootElement(rootElement);
   onTestFinished(() => {
+    editor.setRootElement(null);
     rootElement.remove();
     editor.dispose();
   });

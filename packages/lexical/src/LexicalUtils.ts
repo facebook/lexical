@@ -99,6 +99,7 @@ import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
+  internalGetActiveEditor,
   internalGetActiveEditorState,
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
@@ -2120,15 +2121,25 @@ export function getRootOwnerDocument(
 
 /**
  * Returns the {@link Document} that owns the active editor's root element.
- * Falls back to `globalThis.document` when the editor has no root element
- * (e.g. headless mode with {@link @lexical/headless!withDOM | withDOM}).
+ * Falls back to `globalThis.document` when there is no active editor (e.g.
+ * a node method such as `createDOM` / `exportDOM` is invoked headlessly,
+ * outside of `editor.update()` / `editor.read()`), or when the active
+ * editor has no root element (e.g. headless mode with
+ * {@link @lexical/headless!withDOM | withDOM}).
  *
  * Use this inside `createDOM`, `updateDOM`, and `exportDOM` instead of the
  * bare `document` global so the node works correctly when the editor lives
  * inside a Shadow DOM or a cross-origin `<iframe>`.
+ *
+ * Unlike most `$`-prefixed helpers, this does NOT require an ambient active
+ * editor: it must remain callable from `createDOM` / `exportDOM`, which are
+ * public methods that consumers may legitimately call while serializing
+ * nodes headlessly. Throwing here would silently break every node whose DOM
+ * methods were migrated off the bare `document` global.
  */
 export function $getDocument(): Document {
-  return getRootOwnerDocument($getEditor()._rootElement);
+  const editor = internalGetActiveEditor();
+  return getRootOwnerDocument(editor !== null ? editor._rootElement : null);
 }
 
 /**

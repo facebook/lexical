@@ -17,7 +17,7 @@ import {
   $createParagraphNode,
   $getSelection,
   $isRangeSelection,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
 
 export const ICON_URLS = {

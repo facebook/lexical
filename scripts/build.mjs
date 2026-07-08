@@ -305,14 +305,14 @@ async function build(
           '@babel/plugin-transform-optional-catch-binding',
         ],
         presets: [
-          [
-            '@babel/preset-typescript',
-            {
-              allowDeclareFields: true,
-              tsconfig: path.resolve('./tsconfig.build.json'),
-            },
-          ],
-          ['@babel/preset-react', {runtime: 'automatic'}],
+          '@babel/preset-typescript',
+          // Pin development:false so the automatic runtime always emits the
+          // production `jsx`/`jsxs` helpers, never `jsxDEV`. Babel 8 flipped the
+          // default to infer development mode from the environment, which made
+          // the dev builds import `react/jsx-dev-runtime`; consumers that bundle
+          // those dev builds (e.g. the Docusaurus website SSG) then crash with
+          // "jsxDEV is not a function".
+          ['@babel/preset-react', {development: false, runtime: 'automatic'}],
         ],
       }),
       commonjs(),

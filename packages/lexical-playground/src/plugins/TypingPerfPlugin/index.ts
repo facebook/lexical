@@ -6,10 +6,8 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {registerEventListeners} from 'lexical';
-import {useEffect} from 'react';
+import {type JSX, useEffect} from 'react';
 
 import useReport from '../../hooks/useReport';
 

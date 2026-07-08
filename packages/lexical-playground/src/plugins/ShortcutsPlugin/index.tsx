@@ -14,10 +14,10 @@ import {
   INDENT_CONTENT_COMMAND,
   isModifierMatch,
   KEY_DOWN_COMMAND,
-  LexicalEditor,
+  type LexicalEditor,
   OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
-import {Dispatch, useEffect} from 'react';
+import {type Dispatch, useEffect} from 'react';
 
 import {useToolbarState} from '../../context/ToolbarContext';
 import {sanitizeUrl} from '../../utils/url';

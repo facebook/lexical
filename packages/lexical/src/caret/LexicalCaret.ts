@@ -6,15 +6,15 @@
  *
  */
 import type {LexicalNode, NodeKey} from '../LexicalNode';
+import type {TextNode} from '../nodes/LexicalTextNode';
 
 import devInvariant from '@lexical/internal/devInvariant';
 import invariant from '@lexical/internal/invariant';
 
 import {$getSlotHostKey} from '../LexicalSlot';
 import {$getRoot, $isRootOrShadowRoot} from '../LexicalUtils';
-import {$isElementNode, ElementNode} from '../nodes/LexicalElementNode';
+import {$isElementNode, type ElementNode} from '../nodes/LexicalElementNode';
 import {$isRootNode} from '../nodes/LexicalRootNode';
-import {TextNode} from '../nodes/LexicalTextNode';
 
 /**
  * The direction of a caret, 'next' points towards the end of the document

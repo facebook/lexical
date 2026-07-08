@@ -23,9 +23,9 @@ import {afterEach, assert, beforeEach, describe, expect, it} from 'vitest';
 import * as Y from 'yjs';
 
 import {
-  Client,
+  type Client,
   createTestConnection,
-  TestConnection,
+  type TestConnection,
   waitForReact,
 } from '../utils';
 

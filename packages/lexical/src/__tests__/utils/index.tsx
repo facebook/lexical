@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {CodeHighlightNode, CodeNode} from '@lexical/code';
 import {HashtagNode} from '@lexical/hashtag';
 import {createHeadlessEditor} from '@lexical/headless';
@@ -16,7 +14,7 @@ import {ListItemNode, ListNode} from '@lexical/list';
 import {MarkNode} from '@lexical/mark';
 import {OverflowNode} from '@lexical/overflow';
 import {
-  InitialConfigType,
+  type InitialConfigType,
   LexicalComposer,
 } from '@lexical/react/LexicalComposer';
 import {
@@ -30,27 +28,27 @@ import {
   $create,
   $isRangeSelection,
   createEditor,
-  CreateEditorArgs,
+  type CreateEditorArgs,
   DecoratorNode,
-  EditorState,
-  EditorThemeClasses,
+  type EditorState,
+  type EditorThemeClasses,
   ElementNode,
-  HTMLConfig,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
-  LexicalNodeReplacement,
-  LexicalUpdateJSON,
-  RangeSelection,
+  type HTMLConfig,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalNodeReplacement,
+  type LexicalUpdateJSON,
+  type RangeSelection,
   resetRandomKey,
-  SerializedElementNode,
-  SerializedLexicalNode,
-  SerializedTextNode,
-  Spread,
+  type SerializedElementNode,
+  type SerializedLexicalNode,
+  type SerializedTextNode,
+  type Spread,
   TextNode,
 } from 'lexical';
 import * as React from 'react';
-import {act, createRef} from 'react';
+import {act, createRef, type JSX} from 'react';
 import {createRoot} from 'react-dom/client';
 import {afterEach, assert, beforeEach, expect} from 'vitest';
 

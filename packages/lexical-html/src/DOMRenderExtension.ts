@@ -6,11 +6,11 @@
  *
  */
 import type {DOMRenderConfig, DOMRenderExtensionOutput} from './types';
-import type {InitialEditorConfig} from 'lexical';
 
 import {
   $getDocument,
   defineExtension,
+  type InitialEditorConfig,
   RootNode,
   shallowMergeConfig,
 } from 'lexical';

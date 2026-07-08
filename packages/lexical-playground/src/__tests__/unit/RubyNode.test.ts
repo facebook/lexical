@@ -24,11 +24,11 @@ import {
   $isTextNode,
   $setCompositionKey,
   CONTROLLED_TEXT_INSERTION_COMMAND,
-  ElementNode,
+  type ElementNode,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_BACKSPACE_COMMAND,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 

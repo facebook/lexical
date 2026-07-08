@@ -7,15 +7,6 @@
  */
 
 import type {DOMSlot, ElementDOMSlot} from './LexicalDOMSlot';
-import type {EditorState, SerializedEditorState} from './LexicalEditorState';
-import type {
-  DOMConversion,
-  DOMConversionMap,
-  DOMExportOutput,
-  DOMExportOutputMap,
-  LexicalPrivateDOM,
-  NodeKey,
-} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from '@lexical/internal/invariant';
@@ -25,14 +16,19 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  BaseSelection,
+  type BaseSelection,
   mergeRegister,
   RangeSelection,
   TextNode,
 } from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {DequeSet} from './LexicalDequeSet';
-import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
+import {
+  cloneEditorState,
+  createEmptyEditorState,
+  type EditorState,
+  type SerializedEditorState,
+} from './LexicalEditorState';
 import {
   addRootElementEvents,
   registerDefaultCommandHandlers,
@@ -40,8 +36,16 @@ import {
 } from './LexicalEvents';
 import {GenMap} from './LexicalGenMap';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
-import {LexicalNode} from './LexicalNode';
-import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
+import {
+  type DOMConversion,
+  type DOMConversionMap,
+  type DOMExportOutput,
+  type DOMExportOutputMap,
+  LexicalNode,
+  type LexicalPrivateDOM,
+  type NodeKey,
+} from './LexicalNode';
+import {createSharedNodeState, type SharedNodeState} from './LexicalNodeState';
 import {
   $commitPendingUpdates,
   $fullReconcile,
@@ -51,7 +55,11 @@ import {
   updateEditor,
   updateEditorSync,
 } from './LexicalUpdates';
-import {FOCUS_TAG, HISTORY_MERGE_TAG, UpdateTag} from './LexicalUpdateTags';
+import {
+  FOCUS_TAG,
+  HISTORY_MERGE_TAG,
+  type UpdateTag,
+} from './LexicalUpdateTags';
 import {
   $addUpdateTag,
   $onUpdate,

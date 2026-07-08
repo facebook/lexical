@@ -6,6 +6,8 @@
  *
  */
 
+import type {SelectionDetails} from '@zag-js/combobox';
+
 import './StyleViewPlugin.css';
 
 import {
@@ -17,10 +19,10 @@ import {Portal} from '@ark-ui/react/portal';
 import {Splitter, useSplitter} from '@ark-ui/react/splitter';
 import {
   createTreeCollection,
-  TreeCollection,
+  type TreeCollection,
   TreeView,
   useTreeView,
-  UseTreeViewReturn,
+  type UseTreeViewReturn,
 } from '@ark-ui/react/tree-view';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -28,7 +30,6 @@ import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {$getAdjacentCaret, mergeRegister} from '@lexical/utils';
-import {type SelectionDetails} from '@zag-js/combobox';
 import {
   $addUpdateTag,
   $createLineBreakNode,
@@ -56,12 +57,12 @@ import {
   BLUR_COMMAND,
   COMMAND_PRIORITY_LOW,
   type EditorState,
-  ElementNode,
+  type ElementNode,
   KEY_DOWN_COMMAND,
-  LexicalEditor,
-  LexicalNode,
-  NodeCaret,
-  NodeKey,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeCaret,
+  type NodeKey,
 } from 'lexical';
 import {
   ChevronRightIcon,
@@ -76,7 +77,7 @@ import React, {
   createContext,
   Fragment,
   type JSX,
-  KeyboardEventHandler,
+  type KeyboardEventHandler,
   use,
   useCallback,
   useEffect,
@@ -90,7 +91,7 @@ import {
   $removeStyleProperty,
   $setStyleProperty,
   getStyleObjectDirect,
-  StyleObject,
+  type StyleObject,
   styleObjectToArray,
 } from '../styleState';
 

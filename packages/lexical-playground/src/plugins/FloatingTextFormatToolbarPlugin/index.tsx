@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import './index.css';
 
 import {useMergeRefs} from '@floating-ui/react';
@@ -27,14 +25,21 @@ import {
   getParentElement,
   isDOMDocumentNode,
   isDOMShadowRoot,
-  LexicalEditor,
+  type LexicalEditor,
   mergeRegister,
   registerEventListener,
   registerEventListeners,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {Dispatch, useCallback, useEffect, useRef, useState} from 'react';
+import {
+  type Dispatch,
+  type JSX,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {createPortal} from 'react-dom';
 
 import {getDOMRangeRect} from '../../utils/getDOMRangeRect';

@@ -5,11 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {Plugin} from 'vite';
 
 import {createRequire} from 'node:module';
 import * as path from 'node:path';
-import {normalizePath} from 'vite';
+import {normalizePath, type Plugin} from 'vite';
 import {viteStaticCopy} from 'vite-plugin-static-copy';
 
 const require = createRequire(import.meta.url);

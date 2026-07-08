@@ -285,6 +285,9 @@ The remaining rows involve local variable properties that lint cannot reliably d
 For full details on the browser platform APIs involved, see
 [Shadow DOM and iframes](packages/lexical-website/docs/concepts/shadow-dom.md).
 
+### Commits and Pull Requests
+- Write every commit message to match `.github/pull_request_template.md` so it can seed a PR directly: a `[Affected Packages] PR Type: title` subject line, then the `## Description` and `## Test plan` (Before/After) sections.
+
 ### Build System
 - Uses Rollup for bundling
 - Build script: `scripts/build.mjs`

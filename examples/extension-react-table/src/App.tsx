@@ -17,7 +17,7 @@ import {
   $createParagraphNode,
   $getRoot,
   defineExtension,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
 
 import ExampleTheme from './ExampleTheme';

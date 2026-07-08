@@ -6,17 +6,6 @@
  *
  */
 
-import type {
-  BaseSelection,
-  DOMChildConversion,
-  DOMConversion,
-  DOMConversionFn,
-  EditorDOMRenderConfig,
-  ElementFormatType,
-  LexicalEditor,
-  LexicalNode,
-} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
@@ -35,12 +24,20 @@ import {
   $isRootOrShadowRoot,
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
-  ElementNode,
+  type BaseSelection,
+  type DOMChildConversion,
+  type DOMConversion,
+  type DOMConversionFn,
+  type EditorDOMRenderConfig,
+  type ElementFormatType,
+  type ElementNode,
   isBlockDomNode,
   isDocumentFragment,
   isDOMDocumentNode,
   isHTMLElement,
   isInlineDomNode,
+  type LexicalEditor,
+  type LexicalNode,
 } from 'lexical';
 
 import {contextValue} from './ContextRecord';

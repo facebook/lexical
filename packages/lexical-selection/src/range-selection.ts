@@ -6,19 +6,6 @@
  *
  */
 
-import type {
-  BaseSelection,
-  CaretDirection,
-  DecoratorNode,
-  ElementNode,
-  LexicalNode,
-  NodeKey,
-  Point,
-  PointCaret,
-  RangeSelection,
-  TextNode,
-} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
 import {
   $caretFromPoint,
@@ -35,9 +22,19 @@ import {
   $isRootOrShadowRoot,
   $isTextNode,
   $setSelection,
+  type BaseSelection,
+  type CaretDirection,
+  type DecoratorNode,
+  type ElementNode,
   flipDirection,
   getStyleObjectFromCSS,
   INTERNAL_$isBlock,
+  type LexicalNode,
+  type NodeKey,
+  type Point,
+  type PointCaret,
+  type RangeSelection,
+  type TextNode,
 } from 'lexical';
 
 import {$getComputedStyleForElement, $getComputedStyleForParent} from './utils';

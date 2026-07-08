@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {JSX} from 'react';
 
 import './FloatingRubyEditor.css';
 
@@ -31,16 +30,28 @@ import {
   getParentElement,
   isHTMLElement,
   KEY_ESCAPE_COMMAND,
-  LexicalEditor,
+  type LexicalEditor,
   mergeRegister,
-  NodeKey,
+  type NodeKey,
   registerEventListener,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
-import {Dispatch, useCallback, useEffect, useRef, useState} from 'react';
+import {
+  type Dispatch,
+  type JSX,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {createPortal} from 'react-dom';
 
-import {$isRubyNode, $toggleRuby, $unwrapRubyNode, RubyNode} from './RubyNode';
+import {
+  $isRubyNode,
+  $toggleRuby,
+  $unwrapRubyNode,
+  type RubyNode,
+} from './RubyNode';
 
 function preventDefault(
   event: React.KeyboardEvent<HTMLInputElement> | React.MouseEvent<HTMLElement>,

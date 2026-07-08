@@ -10,7 +10,7 @@ import {
   $getNearestNodeFromDOMNode,
   $getSelection,
   $setSelection,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
 import * as React from 'react';
 import {useState} from 'react';

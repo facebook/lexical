@@ -6,9 +6,7 @@
  *
  */
 
-import type {JSX} from 'react';
-
-import {useMemo, useState} from 'react';
+import {type JSX, useMemo, useState} from 'react';
 
 import {isDevPlayground} from './appSettings';
 import {useSettings} from './context/SettingsContext';

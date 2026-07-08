@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalEditor, LexicalNode} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
 import {
   $createOverflowNode,
@@ -28,6 +26,8 @@ import {
   COMMAND_PRIORITY_LOW,
   DELETE_CHARACTER_COMMAND,
   HISTORY_MERGE_TAG,
+  type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
 } from 'lexical';
 import {useEffect} from 'react';

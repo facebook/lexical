@@ -35,8 +35,8 @@ import {
   $isRangeSelection,
   $setSelection,
   defineExtension,
-  LexicalEditorWithDispose,
-  NodeKey,
+  type LexicalEditorWithDispose,
+  type NodeKey,
   SELECT_ALL_COMMAND,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';

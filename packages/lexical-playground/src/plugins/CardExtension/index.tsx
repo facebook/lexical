@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalCommand, LexicalNode, NodeKey, PointType} from 'lexical';
-
 import {NodeSelectionDataSelectedExtension} from '@lexical/extension';
 import {
   CoreImportExtension,
@@ -40,7 +38,11 @@ import {
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_TAB_COMMAND,
+  type LexicalCommand,
+  type LexicalNode,
   mergeRegister,
+  type NodeKey,
+  type PointType,
 } from 'lexical';
 
 import {registerHostChromeSelection} from '../../nodes/hostChromeSelection';

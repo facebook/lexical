@@ -21,7 +21,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   defineExtension,
-  LexicalEditor,
+  type LexicalEditor,
   UNDO_COMMAND,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';

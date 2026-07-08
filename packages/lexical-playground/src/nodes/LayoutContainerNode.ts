@@ -6,17 +6,17 @@
  *
  */
 
-import type {
-  DOMExportOutput,
-  EditorConfig,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  SerializedElementNode,
-  Spread,
+import {
+  addClassNamesToElement,
+  type DOMExportOutput,
+  type EditorConfig,
+  ElementNode,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type SerializedElementNode,
+  type Spread,
 } from 'lexical';
-
-import {addClassNamesToElement, ElementNode} from 'lexical';
 
 export type SerializedLayoutContainerNode = Spread<
   {

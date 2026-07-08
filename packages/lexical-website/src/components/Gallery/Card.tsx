@@ -6,12 +6,13 @@
  *
  */
 
+import type {Example} from './pluginList';
+
 import Link from '@docusaurus/Link';
 import Heading from '@theme/Heading';
 import clsx from 'clsx';
 import React from 'react';
 
-import {Example} from './pluginList';
 import styles from './styles.module.css';
 import {TagList} from './tagList';
 

@@ -6,24 +6,21 @@
  *
  */
 
-import type {
-  BaseSelection,
-  EditorConfig,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  RangeSelection,
-  SerializedElementNode,
-  Spread,
-} from 'lexical';
-
 import {
   $applyNodeReplacement,
   $getDocument,
   $isRangeSelection,
   addClassNamesToElement,
+  type BaseSelection,
+  type EditorConfig,
   ElementNode,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type RangeSelection,
   removeClassNamesFromElement,
+  type SerializedElementNode,
+  type Spread,
 } from 'lexical';
 
 export type SerializedMarkNode = Spread<

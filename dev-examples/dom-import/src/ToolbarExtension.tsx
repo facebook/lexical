@@ -6,6 +6,8 @@
  *
  */
 
+import type {ReactNode} from 'react';
+
 import {batch, signal} from '@lexical/extension';
 import {
   INSERT_CHECK_LIST_COMMAND,
@@ -28,7 +30,6 @@ import {
   SELECTION_CHANGE_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';
-import {type ReactNode} from 'react';
 
 /**
  * Owns the toolbar's reactive state as a small set of signals and

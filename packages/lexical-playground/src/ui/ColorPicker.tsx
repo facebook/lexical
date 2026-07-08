@@ -6,13 +6,11 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import './ColorPicker.css';
 
 import {calculateZoomLevel} from '@lexical/utils';
 import * as React from 'react';
-import {useMemo, useRef, useState} from 'react';
+import {type JSX, useMemo, useRef, useState} from 'react';
 
 import {isKeyboardInput} from '../utils/focusUtils';
 import TextInput from './TextInput';

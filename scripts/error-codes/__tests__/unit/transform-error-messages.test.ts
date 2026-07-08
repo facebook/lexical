@@ -44,13 +44,14 @@ function fmt(strings: TemplateStringsArray, ...keys: unknown[]): string {
   // Normalize some of the stuff that babel will inject so the examples are
   // stable and easier to read:
   // - use strict header
-  // - @babel/helper-module-imports interop
+  // - @babel/helper-module-imports interop (CJS require + ESM import forms)
   const before = result
     .join('')
     .replace(/.use strict.;\n/g, '')
     .replace(/var _[^;]+;\n/g, '')
+    .replace(/import [^;]*?from ['"]@lexical\/internal\/[^'"]+['"];\n?/g, '')
     .replace(/function _interopRequireDefault\([^)]*\) {[^;]+?;[\s\n]*}\n/g, '')
-    .replace(/_format(Dev|Prod)(Error|Warning)Message\d+/g, 'format$1$2Message')
+    .replace(/_format(Dev|Prod)(Error|Warning)Message\d*/g, 'format$1$2Message')
     .replace(
       /\(0,\s*format(Dev|Prod)(Error|Warning)Message\.default\)/g,
       'format$1$2Message',

@@ -5,10 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {Klass, LexicalEditor, LexicalNode} from 'lexical';
 
 import {$firstToLastIterator, $lastToFirstIterator} from '@lexical/utils';
-import {$createParagraphNode, $createTextNode, TextNode} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
+  TextNode,
+} from 'lexical';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
 import {beforeEach, describe, expect, it} from 'vitest';
 

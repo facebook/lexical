@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {eventFiles} from '@lexical/rich-text';
 import {calculateZoomLevel} from '@lexical/utils';
@@ -29,14 +27,15 @@ import {
   getRootOwnerDocument,
   IS_FIREFOX,
   isHTMLElement,
-  LexicalEditor,
+  type LexicalEditor,
   mergeRegister,
   registerEventListener,
   registerEventListeners,
 } from 'lexical';
 import {
-  DragEvent as ReactDragEvent,
-  ReactNode,
+  type DragEvent as ReactDragEvent,
+  type JSX,
+  type ReactNode,
   useCallback,
   useEffect,
   useRef,

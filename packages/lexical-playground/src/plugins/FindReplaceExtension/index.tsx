@@ -7,7 +7,6 @@
  */
 
 import type {DecoratorComponentProps} from '@lexical/react/ReactPluginHostExtension';
-import type {JSX} from 'react';
 
 import './FindReplace.css';
 
@@ -39,7 +38,7 @@ import {
   mergeRegister,
   type NodeKey,
 } from 'lexical';
-import {useRef} from 'react';
+import {type JSX, useRef} from 'react';
 import {createPortal} from 'react-dom';
 
 // ---------------------------------------------------------------------------

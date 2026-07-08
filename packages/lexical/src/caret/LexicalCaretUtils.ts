@@ -6,16 +6,6 @@
  *
  */
 import type {LexicalNode, NodeKey} from '../LexicalNode';
-import type {
-  CaretDirection,
-  CaretRange,
-  ChildCaret,
-  NodeCaret,
-  PointCaret,
-  RootMode,
-  SiblingCaret,
-  TextPointCaret,
-} from './LexicalCaret';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -55,7 +45,15 @@ import {
   $isChildCaret,
   $isSiblingCaret,
   $isTextPointCaret,
+  type CaretDirection,
+  type CaretRange,
+  type ChildCaret,
   flipDirection,
+  type NodeCaret,
+  type PointCaret,
+  type RootMode,
+  type SiblingCaret,
+  type TextPointCaret,
 } from './LexicalCaret';
 
 /**

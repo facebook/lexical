@@ -17,7 +17,7 @@ import {
   $createQuoteNode,
   $isHeadingNode,
   $isQuoteNode,
-  HeadingTagType,
+  type HeadingTagType,
 } from '@lexical/rich-text';
 import {$patchStyleText, $setBlocksType} from '@lexical/selection';
 import {$isTableSelection} from '@lexical/table';
@@ -37,11 +37,11 @@ import {
   $isTextNode,
   $setSelection,
   $splitNode,
-  ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  RangeSelection,
+  type ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  type RangeSelection,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SELECTION_FOCUS_TAG,
 } from 'lexical';

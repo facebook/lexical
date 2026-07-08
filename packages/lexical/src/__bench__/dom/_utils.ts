@@ -6,9 +6,12 @@
  *
  */
 
-import type {LexicalEditor} from '../../';
-
-import {$createParagraphNode, $createTextNode, $getRoot} from '../../';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  type LexicalEditor,
+} from '../../';
 
 /**
  * Attach a fresh contentEditable host to `document.body` and bind the

@@ -7,9 +7,9 @@
  */
 import {
   $applyNodeReplacement,
-  EditorConfig,
+  type EditorConfig,
   ParagraphNode,
-  SerializedParagraphNode,
+  type SerializedParagraphNode,
 } from 'lexical';
 
 export class CustomParagraphNode extends ParagraphNode {

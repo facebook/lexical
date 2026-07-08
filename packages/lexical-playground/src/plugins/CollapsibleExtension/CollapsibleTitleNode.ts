@@ -9,13 +9,13 @@
 import {
   $createParagraphNode,
   $isElementNode,
-  EditorConfig,
+  type EditorConfig,
   ElementNode,
   IS_CHROME,
   IS_FIREFOX,
-  LexicalEditor,
-  LexicalNode,
-  RangeSelection,
+  type LexicalEditor,
+  type LexicalNode,
+  type RangeSelection,
 } from 'lexical';
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';

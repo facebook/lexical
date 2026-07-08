@@ -6,27 +6,6 @@
  *
  */
 
-import type {
-  CaretDirection,
-  CommandPayloadType,
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  ElementFormatType,
-  LexicalCommand,
-  LexicalEditor,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  NodeSelection,
-  ParagraphNode,
-  RangeSelection,
-  SerializedElementNode,
-  Spread,
-  TextFormatType,
-} from 'lexical';
-
 import {
   $getClipboardDataFromSelection,
   $handleRichTextDrop,
@@ -36,7 +15,7 @@ import {
   copyToClipboard,
   setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
-import {ReadonlySignal, signal} from '@lexical/extension';
+import {type ReadonlySignal, signal} from '@lexical/extension';
 import {
   $isParentRTL,
   $moveCharacter,
@@ -91,8 +70,10 @@ import {
   $setSelectionFromCaretRange,
   addClassNamesToElement,
   CAN_USE_BEFORE_INPUT,
+  type CaretDirection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  type CommandPayloadType,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   createCommand,
@@ -101,9 +82,14 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  type DOMConversionMap,
+  type DOMConversionOutput,
+  type DOMExportOutput,
   DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
+  type EditorConfig,
+  type ElementFormatType,
   ElementNode,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -127,15 +113,26 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalUpdateJSON,
   mergeRegister,
   MOVE_TO_END,
   MOVE_TO_START,
+  type NodeKey,
+  type NodeSelection,
   OUTDENT_CONTENT_COMMAND,
+  type ParagraphNode,
   PASTE_COMMAND,
   PASTE_TAG,
+  type RangeSelection,
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
+  type SerializedElementNode,
   setNodeIndentFromDOM,
+  type Spread,
+  type TextFormatType,
 } from 'lexical';
 
 export type SerializedHeadingNode = Spread<

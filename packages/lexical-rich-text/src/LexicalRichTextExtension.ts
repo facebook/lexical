@@ -6,8 +6,6 @@
  *
  */
 
-import type {TextFormatType} from 'lexical';
-
 import {DragonExtension} from '@lexical/dragon';
 import {
   effect,
@@ -21,6 +19,7 @@ import {
   defineExtension,
   safeCast,
   shallowMergeConfig,
+  type TextFormatType,
 } from 'lexical';
 
 import {

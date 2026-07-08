@@ -6,8 +6,6 @@
  *
  */
 
-import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
-
 import {
   $createTextNode,
   $getSelection,
@@ -18,6 +16,9 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   defineExtension,
+  type ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
   shallowMergeConfig,
   TextNode,

@@ -6,10 +6,8 @@
  *
  */
 
-import type {EventMapOf} from './registerEventListener';
-
 import {mergeRegister} from './mergeRegister';
-import {registerEventListener} from './registerEventListener';
+import {type EventMapOf, registerEventListener} from './registerEventListener';
 
 /**
  * A map of event type to listener for a given {@link EventTarget}. Each

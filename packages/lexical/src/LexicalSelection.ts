@@ -8,9 +8,7 @@
 
 import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
-import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
-import type {TextFormatType} from './nodes/LexicalTextNode';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -46,12 +44,12 @@ import {
   $setSelection,
   $setSelectionFromCaretRange,
   $updateRangeSelectionFromCaretRange,
-  CaretRange,
-  ChildCaret,
+  type CaretRange,
+  type ChildCaret,
   COLLABORATION_TAG,
   type LineBreakNode,
-  NodeCaret,
-  PointCaret,
+  type NodeCaret,
+  type PointCaret,
   SKIP_SCROLL_INTO_VIEW_TAG,
   type TextNode,
 } from '.';
@@ -62,7 +60,7 @@ import {
   markSelectionChangeFromDOMUpdate,
 } from './LexicalEvents';
 import {getIsProcessingMutations} from './LexicalMutations';
-import {insertRangeAfter, LexicalNode} from './LexicalNode';
+import {insertRangeAfter, type LexicalNode, type NodeKey} from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
 import {
   $getSlot,
@@ -117,7 +115,10 @@ import {
   toggleTextFormatType,
 } from './LexicalUtils';
 import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
-import {$isInlineFormattable} from './nodes/LexicalTextNode';
+import {
+  $isInlineFormattable,
+  type TextFormatType,
+} from './nodes/LexicalTextNode';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
 

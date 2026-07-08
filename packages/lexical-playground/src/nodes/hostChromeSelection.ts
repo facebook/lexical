@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalEditor, LexicalNode} from 'lexical';
-
 import {
   $createNodeSelection,
   $getNearestNodeFromDOMNode,
@@ -17,6 +15,8 @@ import {
   getActiveElement,
   getDOMSelection,
   isHTMLElement,
+  type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
 } from 'lexical';
 

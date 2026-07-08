@@ -6,16 +6,6 @@
  *
  */
 
-import type {CodeHighlightNode} from './CodeHighlightNode';
-import type {
-  BaseSelection,
-  LexicalCommand,
-  LexicalEditor,
-  LineBreakNode,
-  RangeSelection,
-  TabNode,
-} from 'lexical';
-
 import {effect, namedSignals} from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
 import {$onEscapeDown, $onEscapeUp} from '@lexical/utils';
@@ -34,6 +24,7 @@ import {
   $isTabNode,
   $normalizeCaret,
   $setSelectionFromCaretRange,
+  type BaseSelection,
   COMMAND_PRIORITY_LOW,
   defineExtension,
   INDENT_CONTENT_COMMAND,
@@ -43,15 +34,23 @@ import {
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_TAB_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
+  type LineBreakNode,
   mergeRegister,
   MOVE_TO_END,
   MOVE_TO_START,
   OUTDENT_CONTENT_COMMAND,
+  type RangeSelection,
   safeCast,
+  type TabNode,
 } from 'lexical';
 
 import {CodeExtension} from './CodeExtension';
-import {$isCodeHighlightNode} from './CodeHighlightNode';
+import {
+  $isCodeHighlightNode,
+  type CodeHighlightNode,
+} from './CodeHighlightNode';
 import {$isCodeNode} from './CodeNode';
 import {
   $getCodeLineDirection,

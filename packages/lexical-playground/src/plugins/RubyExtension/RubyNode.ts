@@ -6,15 +6,6 @@
  *
  */
 
-import type {
-  DOMExportOutput,
-  DOMSlot,
-  EditorConfig,
-  LexicalNode,
-  NodeStateVersion,
-  StateValueOrUpdater,
-} from 'lexical';
-
 import {addClassNamesToElement} from '@lexical/utils';
 import {
   $create,
@@ -26,7 +17,13 @@ import {
   $isTextNode,
   $setState,
   createState,
-  StateConfigValue,
+  type DOMExportOutput,
+  type DOMSlot,
+  type EditorConfig,
+  type LexicalNode,
+  type NodeStateVersion,
+  type StateConfigValue,
+  type StateValueOrUpdater,
   TextNode,
 } from 'lexical';
 

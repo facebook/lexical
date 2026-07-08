@@ -11,7 +11,7 @@ import {
   $isAutoLinkNode,
   $toggleLink,
   AutoLinkNode,
-  SerializedAutoLinkNode,
+  type SerializedAutoLinkNode,
 } from '@lexical/link';
 import {
   $createParagraphNode,
@@ -19,7 +19,7 @@ import {
   $getRoot,
   $selectAll,
   ParagraphNode,
-  SerializedParagraphNode,
+  type SerializedParagraphNode,
   TextNode,
 } from 'lexical/src';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';

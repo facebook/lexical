@@ -7,7 +7,7 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$getRoot, CLEAR_EDITOR_COMMAND, EditorState} from 'lexical';
+import {$getRoot, CLEAR_EDITOR_COMMAND, type EditorState} from 'lexical';
 import {useCallback} from 'react';
 
 interface SendButtonPluginProps {

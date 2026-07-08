@@ -10,9 +10,9 @@ import invariant from '@lexical/internal/invariant';
 import {
   $createTextNode,
   $isTextNode,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
   TextNode,
 } from 'lexical';
 

@@ -6,9 +6,6 @@
  *
  */
 
-import type {ListType} from '@lexical/list';
-import type {HeadingTagType} from '@lexical/rich-text';
-
 import {$createCodeNode, $isCodeNode, CodeNode} from '@lexical/code-core';
 import {
   $createLinkNode,
@@ -23,6 +20,7 @@ import {
   $isListNode,
   ListItemNode,
   ListNode,
+  type ListType,
 } from '@lexical/list';
 import {
   $createHeadingNode,
@@ -30,6 +28,7 @@ import {
   $isHeadingNode,
   $isQuoteNode,
   HeadingNode,
+  type HeadingTagType,
   QuoteNode,
 } from '@lexical/rich-text';
 import {
@@ -40,14 +39,14 @@ import {
   $isLineBreakNode,
   $isTextNode,
   $setState,
-  BaseSelection,
+  type BaseSelection,
   createState,
-  ElementNode,
-  Klass,
-  LexicalNode,
-  LineBreakNode,
-  TextFormatType,
-  TextNode,
+  type ElementNode,
+  type Klass,
+  type LexicalNode,
+  type LineBreakNode,
+  type TextFormatType,
+  type TextNode,
 } from 'lexical';
 
 import {unescapeText} from './utils';

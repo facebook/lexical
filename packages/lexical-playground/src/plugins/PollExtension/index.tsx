@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {$wrapNodeInElement} from '@lexical/utils';
 import {
@@ -18,10 +16,10 @@ import {
   configExtension,
   createCommand,
   defineExtension,
-  LexicalCommand,
-  LexicalEditor,
+  type LexicalCommand,
+  type LexicalEditor,
 } from 'lexical';
-import {useState} from 'react';
+import {type JSX, useState} from 'react';
 
 import {
   $createPollNode,

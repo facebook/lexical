@@ -6,21 +6,30 @@
  *
  */
 
-import type {MenuRenderFn, MenuResolution} from './shared/LexicalMenu';
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $getNodeByKey,
   COMMAND_PRIORITY_LOW,
-  CommandListenerPriority,
-  NodeKey,
-  TextNode,
+  type CommandListenerPriority,
+  type NodeKey,
+  type TextNode,
 } from 'lexical';
 import * as React from 'react';
-import {startTransition, useCallback, useEffect, useState} from 'react';
+import {
+  type JSX,
+  startTransition,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 
-import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
+import {
+  LexicalMenu,
+  MenuOption,
+  type MenuRenderFn,
+  type MenuResolution,
+  useMenuAnchorRef,
+} from './shared/LexicalMenu';
 
 /**
  * Props for the {@link LexicalNodeMenuPlugin} component.

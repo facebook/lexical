@@ -6,7 +6,8 @@
  *
  */
 
-import {Provider} from '@lexical/yjs';
+import type {Provider} from '@lexical/yjs';
+
 import {WebrtcProvider} from 'y-webrtc';
 import {WebsocketProvider} from 'y-websocket';
 import * as Y from 'yjs';

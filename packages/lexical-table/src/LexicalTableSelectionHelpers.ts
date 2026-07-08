@@ -6,32 +6,6 @@
  *
  */
 
-import type {TableCellNode} from './LexicalTableCellNode';
-import type {
-  TableDOMCell,
-  TableDOMRows,
-  TableObservers,
-} from './LexicalTableObserver';
-import type {
-  TableMapType,
-  TableMapValueType,
-  TableSelection,
-} from './LexicalTableSelection';
-import type {
-  BaseSelection,
-  CaretDirection,
-  ChildCaret,
-  EditorState,
-  ElementNode,
-  LexicalCommand,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  PointCaret,
-  RangeSelection,
-  SiblingCaret,
-} from 'lexical';
-
 import {
   $getClipboardDataFromSelection,
   copyToClipboard,
@@ -64,12 +38,17 @@ import {
   $setPointFromCaret,
   $setSelection,
   addClassNamesToElement,
+  type BaseSelection,
+  type CaretDirection,
+  type ChildCaret,
   COMMAND_PRIORITY_HIGH,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   CUT_COMMAND,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  type EditorState,
+  type ElementNode,
   FOCUS_COMMAND,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -91,28 +70,46 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
   PASTE_COMMAND,
+  type PointCaret,
+  type RangeSelection,
   registerEventListener,
   removeClassNamesFromElement,
   SELECTION_CHANGE_COMMAND,
+  type SiblingCaret,
 } from 'lexical';
 
-import {$isTableCellNode} from './LexicalTableCellNode';
+import {$isTableCellNode, type TableCellNode} from './LexicalTableCellNode';
 import {
   $getElementForTableNode,
   $isScrollableTablesActive,
   $isTableNode,
-  TableNode,
+  type TableNode,
 } from './LexicalTableNode';
-import {TableDOMTable, TableObserver} from './LexicalTableObserver';
+import {
+  type TableDOMCell,
+  type TableDOMRows,
+  type TableDOMTable,
+  TableObserver,
+  type TableObservers,
+} from './LexicalTableObserver';
 import {$isTableRowNode} from './LexicalTableRowNode';
-import {$isTableSelection} from './LexicalTableSelection';
+import {
+  $isTableSelection,
+  type TableMapType,
+  type TableMapValueType,
+  type TableSelection,
+} from './LexicalTableSelection';
 import {
   $computeTableCellRectBoundary,
   $computeTableCellRectSpans,
   $computeTableMap,
   $getNodeTriplet,
-  TableCellRectBoundary,
+  type TableCellRectBoundary,
 } from './LexicalTableUtils';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';

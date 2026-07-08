@@ -27,10 +27,10 @@ import {
   IS_SUBSCRIPT,
   IS_SUPERSCRIPT,
   IS_UNDERLINE,
-  LexicalEditor,
-  TextFormatType,
-  TextModeType,
-  TextNode,
+  type LexicalEditor,
+  type TextFormatType,
+  type TextModeType,
+  type TextNode,
 } from 'lexical';
 import * as React from 'react';
 import {act, createRef, useEffect, useMemo} from 'react';

@@ -16,14 +16,14 @@ import {
   $convertToMarkdownString,
   CHECK_LIST,
   ELEMENT_TRANSFORMERS,
-  ElementTransformer,
+  type ElementTransformer,
   isTableRowDivider,
   MULTILINE_ELEMENT_TRANSFORMERS,
-  MultilineElementTransformer,
+  type MultilineElementTransformer,
   TEXT_FORMAT_TRANSFORMERS,
   TEXT_MATCH_TRANSFORMERS,
-  TextMatchTransformer,
-  Transformer,
+  type TextMatchTransformer,
+  type Transformer,
 } from '@lexical/markdown';
 import {
   $createTableCellNode,
@@ -41,7 +41,7 @@ import {
   $createTextNode,
   $isParagraphNode,
   $isTextNode,
-  LexicalNode,
+  type LexicalNode,
 } from 'lexical';
 
 import {

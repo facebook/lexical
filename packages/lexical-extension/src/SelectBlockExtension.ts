@@ -19,7 +19,7 @@ import {
   $selectAll,
   COMMAND_PRIORITY_LOW,
   defineExtension,
-  LexicalNode,
+  type LexicalNode,
   mergeRegister,
   safeCast,
   SELECT_ALL_COMMAND,

@@ -14,7 +14,7 @@ import {
   $getRoot,
   defineExtension,
   KEY_ARROW_DOWN_COMMAND,
-  LexicalEditorWithDispose,
+  type LexicalEditorWithDispose,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';

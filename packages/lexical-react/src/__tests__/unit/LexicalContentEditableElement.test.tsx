@@ -8,9 +8,9 @@
 
 import {ContentEditableElement} from '@lexical/react/LexicalContentEditable';
 import {axe, toHaveNoViolations} from 'jest-axe';
-import {createEditor, LexicalEditor} from 'lexical';
+import {createEditor, type LexicalEditor} from 'lexical';
 import {act} from 'react';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 describe('ContentEditableElement tests', () => {

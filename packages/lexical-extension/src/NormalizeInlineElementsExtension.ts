@@ -10,7 +10,7 @@ import {
   $isElementNode,
   defineExtension,
   ElementNode,
-  LexicalNode,
+  type LexicalNode,
   safeCast,
 } from 'lexical';
 

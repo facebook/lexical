@@ -6,14 +6,6 @@
  *
  */
 
-import type {
-  MenuRenderFn,
-  MenuResolution,
-  MenuTextMatch,
-  TriggerFn,
-} from './shared/LexicalMenu';
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {getScrollParent as getScrollParent_} from '@lexical/utils';
 import {
@@ -21,18 +13,32 @@ import {
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_LOW,
-  CommandListenerPriority,
+  type CommandListenerPriority,
   createCommand,
   getDOMSelection,
   getDOMSelectionPoints,
-  LexicalCommand,
-  LexicalEditor,
-  RangeSelection,
-  TextNode,
+  type LexicalCommand,
+  type LexicalEditor,
+  type RangeSelection,
+  type TextNode,
 } from 'lexical';
-import {startTransition, useCallback, useEffect, useState} from 'react';
+import {
+  type JSX,
+  startTransition,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 
-import {LexicalMenu, MenuOption, useMenuAnchorRef} from './shared/LexicalMenu';
+import {
+  LexicalMenu,
+  MenuOption,
+  type MenuRenderFn,
+  type MenuResolution,
+  type MenuTextMatch,
+  type TriggerFn,
+  useMenuAnchorRef,
+} from './shared/LexicalMenu';
 
 /**
  * The default set of punctuation characters (as a character-class fragment)

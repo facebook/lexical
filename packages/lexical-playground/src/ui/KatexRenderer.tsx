@@ -6,11 +6,9 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import katex from 'katex';
 import * as React from 'react';
-import {useEffect, useRef} from 'react';
+import {type JSX, useEffect, useRef} from 'react';
 
 export default function KatexRenderer({
   equation,

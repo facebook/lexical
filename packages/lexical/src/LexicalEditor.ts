@@ -18,7 +18,7 @@ import {
   $isElementNode,
   type BaseSelection,
   mergeRegister,
-  RangeSelection,
+  type RangeSelection,
   TextNode,
 } from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';

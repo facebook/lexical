@@ -76,7 +76,8 @@ const markdown = editor.read(() => $convertToMarkdownString());
 
 Try it live in the
 [mdast-editor dev example](/dev-examples/mdast-editor/), a WYSIWYG
-Markdown editor with a live preview built on this package.
+Markdown editor with an editable Markdown source pane — typing on
+either side exercises import or export through this package.
 
 The bundles unpack into granular, one-construct-each extensions
 (`MdastHeadingExtension`, `MdastBlockquoteExtension`,

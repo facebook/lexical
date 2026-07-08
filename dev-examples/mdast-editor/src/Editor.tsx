@@ -16,7 +16,7 @@ import {
   RESET_MARKDOWN_COMMAND,
 } from './extensions/MarkdownPersistenceExtension';
 import {ToolbarStateExtension} from './extensions/ToolbarStateExtension';
-import {MarkdownPreviewPlugin} from './plugins/MarkdownPreviewPlugin';
+import {MarkdownSourcePlugin} from './plugins/MarkdownSourcePlugin';
 import {ToolbarPlugin} from './plugins/ToolbarPlugin';
 
 const STORAGE_KEY = '@lexical/dev-mdast-editor-example/document';
@@ -149,7 +149,7 @@ export default function Editor() {
             <ResetButton />
           </div>
           <div className="flex-1 overflow-auto bg-white dark:bg-stone-800">
-            <MarkdownPreviewPlugin />
+            <MarkdownSourcePlugin />
           </div>
         </div>
       </div>

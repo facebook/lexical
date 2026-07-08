@@ -1,6 +1,8 @@
 # Mdast Editor (dev example)
 
-A WYSIWYG Markdown editor with a live preview, built on the unreleased
+A WYSIWYG Markdown editor with an editable Markdown source pane
+(synchronized in both directions, exercising import and export), built on
+the unreleased
 [`@lexical/mdast`](../../packages/lexical-mdast) package — the
 micromark/mdast-based alternative to `@lexical/markdown`. It is a port of
 [`examples/markdown-editor`](../../examples/markdown-editor), which is the

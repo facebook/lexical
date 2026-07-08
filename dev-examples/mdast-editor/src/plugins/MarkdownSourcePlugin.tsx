@@ -9,7 +9,7 @@
 import {$convertFromMarkdownString} from '@lexical/mdast';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
-import {HISTORY_MERGE_TAG} from 'lexical';
+import {HISTORY_MERGE_TAG, SKIP_DOM_SELECTION_TAG} from 'lexical';
 import {useState} from 'react';
 
 import {MdastEditorExtension} from '../extensions/MdastEditorExtension';
@@ -41,13 +41,15 @@ export function MarkdownSourcePlugin() {
       onChange={event => {
         const text = event.target.value;
         setDraft(text);
-        // Merge into one history entry so undo doesn't replay the pane
-        // keystroke-by-keystroke.
+        // The sync must not steal focus from this pane: skip-dom-selection
+        // keeps the reconciler from applying the imported selection to the
+        // DOM, and history-merge collapses the pane's keystrokes into one
+        // undo entry.
         editor.update(
           () => {
             $convertFromMarkdownString(text);
           },
-          {tag: HISTORY_MERGE_TAG},
+          {tag: [HISTORY_MERGE_TAG, SKIP_DOM_SELECTION_TAG]},
         );
       }}
     />

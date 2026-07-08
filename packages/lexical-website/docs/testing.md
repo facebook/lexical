@@ -4,7 +4,7 @@ sidebar_position: 6
 
 # Testing
 
-Lexical has three tiers of tests: unit tests in jsdom, browser tests in a real browser, and end-to-end tests against the playground. The main thing to know is that `contentEditable` doesn't work in jsdom, so anything involving real user input needs a browser.
+Lexical has three tiers of tests: unit tests in jsdom, browser tests in a real browser, and end-to-end tests against the playground. Because `contentEditable` doesn't work in jsdom, anything involving real user input needs a browser.
 
 ## Unit tests (jsdom)
 
@@ -18,13 +18,13 @@ Test files live under `packages/**/src/__tests__/unit/` and `packages/**/__tests
 
 ### Why user input doesn't work in jsdom
 
-If you've tried `userEvent.type()` or `fireEvent.input()` from React Testing Library and nothing happened, here's why:
+Calls like `userEvent.type()` or `fireEvent.input()` from React Testing Library will not produce any effect:
 
 :::info
 
-jsdom does not implement `contentEditable` editing. In a real browser, a keystroke inside a `contentEditable` element goes through the browser's native editing engine, which modifies the DOM and fires `beforeinput`/`input` events that Lexical observes. jsdom has no such engine, so dispatching synthetic `InputEvent`s does nothing — there is nothing to actually insert the text into the DOM.
+jsdom does not implement `contentEditable` editing. In a real browser, a keystroke inside a `contentEditable` element goes through the browser's native editing engine, which modifies the DOM and fires `beforeinput`/`input` events that Lexical observes. jsdom has no such engine, so dispatching synthetic `InputEvent`s has no effect.
 
-The same applies to ProseMirror, Slate, Tiptap, and any other `contentEditable`-based editor. The workaround is the same everywhere: use Lexical's API to manipulate state in unit tests, and use a real browser when you need real input.
+The same applies to ProseMirror, Slate, Tiptap, and any other `contentEditable`-based editor. The approach is the same everywhere: use the editor's API to manipulate state in unit tests, and use a real browser when you need real input.
 
 :::
 
@@ -44,7 +44,6 @@ import {
   CONTROLLED_TEXT_INSERTION_COMMAND,
 } from 'lexical';
 
-// Create an editor with a root element attached
 const editor = buildEditorFromExtensions({
   $initialEditorState: () => {
     $getRoot().append(
@@ -82,7 +81,7 @@ editor.read(() => {
 
 `{discrete: true}` makes the update commit synchronously instead of being batched, so each step's effects are visible to the next one.
 
-**Or insert text via a command.** This also requires a selection to be set first:
+**Insert text via a command.** This also requires a selection to be set first:
 
 ```ts
 editor.dispatchCommand(CONTROLLED_TEXT_INSERTION_COMMAND, ' world');
@@ -92,13 +91,14 @@ Both approaches update the editor state and the DOM. Use whichever is closer to 
 
 ### What you cannot test in jsdom
 
-- Typing by dispatching `KeyboardEvent` or `InputEvent` on the DOM
+- Typing by dispatching `KeyboardEvent` or `InputEvent` on the DOM to insert text
 - IME / composition sequences
 - Selection changes driven by mouse clicks or arrow keys
 - Clipboard paste with real browser `DataTransfer`
-- Any behavior that depends on the browser's native editing engine
 
-If your test needs any of these, use browser tests.
+`KeyboardEvent` dispatch *does* work for non-text-input events. `KEY_ENTER_COMMAND`, `KEY_TAB_COMMAND`, `KEY_ARROW_*` commands, and shortcuts can all be tested in jsdom, either by dispatching the event on the DOM or via `editor.dispatchCommand`.
+
+If your test needs real text input or composition, use browser tests.
 
 ### Editor cleanup with `using`
 
@@ -114,18 +114,7 @@ it('inserts text', () => {
 });
 ```
 
-Most of Lexical's own tests use this pattern. If you need manual cleanup (for example, in a shared `mountEditor()` helper), call `editor.dispose()` yourself or use vitest's `onTestFinished` callback.
-
-### Running specific tests
-
-Pass a filename filter to run a subset of tests:
-
-```bash
-pnpm test-unit LexicalReconciler
-pnpm test-browser compose
-```
-
-vitest matches the filter against file paths, so any substring of the filename works.
+This only works in unit tests (jsdom). The `using` syntax is not supported in all browser engines, so browser tests should call `editor.dispose()` manually or use vitest's `onTestFinished` callback instead.
 
 ## Browser tests (vitest browser mode)
 
@@ -172,7 +161,26 @@ test('IME composition inserts Korean text', async () => {
 });
 ```
 
-### When to use which tier
+For a complete working setup with vitest browser mode configured from scratch, see the [`website-toolbar` example](https://github.com/facebook/lexical/tree/main/examples/website-toolbar).
+
+## End-to-end (E2E) tests
+
+E2E tests use [Playwright](https://playwright.dev/) to drive the full playground application in Chromium, Firefox, and WebKit. They click, type, and verify what appears on screen, with no access to Lexical internals. Install the browsers first:
+
+```bash
+pnpm exec playwright install
+```
+
+Then start the playground and run the tests:
+
+```bash
+pnpm start &
+pnpm test-e2e-chromium   # or -firefox, -webkit
+```
+
+Tests live under `packages/lexical-playground/__tests__/` in `e2e/` (feature coverage) and `regression/` (one test per reported bug) directories.
+
+## When to use which tier
 
 | What you're testing | Tier |
 |---|---|
@@ -186,27 +194,19 @@ test('IME composition inserts Korean text', async () => {
 | Full-application user scenarios | E2E |
 | Cross-browser rendering differences | E2E |
 
-## End-to-end (E2E) tests
+## Running specific tests
 
-E2E tests use [Playwright](https://playwright.dev/) to drive the full playground application in Chromium, Firefox, and WebKit. They click, type, and verify what appears on screen, with no access to Lexical internals. Install the browsers first:
-
-```bash
-npx playwright install
-```
-
-Then start the playground and run the tests:
+Pass a filename filter to run a subset of tests:
 
 ```bash
-pnpm start &
-pnpm test-e2e-chromium   # or -firefox, -webkit
+pnpm test-unit LexicalReconciler
+pnpm test-browser compose
 ```
 
-Tests live under `packages/lexical-playground/__tests__/` in `e2e/` (proactive) and `regression/` (reactive — one test per reported bug) directories.
+vitest matches the filter against file paths, so any substring of the filename works.
 
 ## General guidelines
 
 - New features must include tests.
 - If it can break, it should have a test.
 - Do not merge pull requests with failing tests — this blocks other people and releases.
-- Start with unit tests. Reach for browser tests when you need real input behavior. Use E2E for full-application scenarios.
-- If you're dispatching synthetic `InputEvent`s in a unit test and they're not working, that's the signal to move to a browser test.

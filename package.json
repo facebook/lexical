@@ -4,14 +4,14 @@
   "version": "0.46.0",
   "license": "MIT",
   "private": true,
-  "packageManager": "pnpm@10.34.1",
+  "packageManager": "pnpm@11.10.0",
   "workspaces": [
     "packages/*",
     "dev-examples/*"
   ],
   "engines": {
     "node": ">=20.19.0",
-    "pnpm": ">=9.0.0"
+    "pnpm": ">=11.0.0"
   },
   "engineStrict": true,
   "scripts": {
@@ -210,26 +210,5 @@
     "Firefox >= 115",
     "Safari >= 15",
     "Edge >= 86"
-  ],
-  "pnpm": {
-    "peerDependencyRules": {
-      "allowedVersions": {
-        "eslint": "10"
-      }
-    },
-    "overrides": {
-      "react": "19.2.5",
-      "react-dom": "19.2.5",
-      "@types/node": "25.9.1",
-      "postcss": "8.5.15",
-      "prettier": "3.8.1",
-      "yaml@^1": "^1.10.3",
-      "uuid": ">=14.0.0",
-      "webpack-dev-server": ">=5.2.4",
-      "onnxruntime-node": "link:./stubs/empty",
-      "sharp": "link:./stubs/empty",
-      "yjs": "$yjs",
-      "tmp": ">=0.2.6"
-    }
-  }
+  ]
 }

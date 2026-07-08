@@ -8,7 +8,7 @@
 
 /**
  * Firefox defers its compositionend handling until the next onInput
- * (`isFirefoxEndingComposition` flag). The Chrome/Webkit path adds
+ * (the `'ending-firefox'` composition phase). The Chrome/Webkit path adds
  * `COMPOSITION_END_TAG` to that update via `$handleCompositionEnd`; the
  * Firefox onInput defer branch must mirror it so listeners gated on the tag
  * (markdown shortcut trigger, history merge, autocomplete post-commit) see the

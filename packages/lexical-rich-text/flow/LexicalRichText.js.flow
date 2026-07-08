@@ -34,8 +34,12 @@ declare export class QuoteNode extends ElementNode {
     restoreSelection?: boolean,
   ): ParagraphNode;
   collapseAtStart(): true;
+  isShadowRoot(): boolean;
+  setIsShadowRoot(isShadowRoot: boolean): this;
 }
-declare export function $createQuoteNode(): QuoteNode;
+declare export function $createQuoteNode(options?: {
+  shadowRoot?: boolean,
+}): QuoteNode;
 declare export function $isQuoteNode(
   node: ?LexicalNode,
 ): node is  QuoteNode;
@@ -83,7 +87,11 @@ export type RichTextConfig = {
 
 declare export function registerRichText(editor: LexicalEditor, escapeFormatTriggers?: EscapeFormatTriggerConfig): () => void;
 
-export type SerializedQuoteNode = SerializedElementNode;
+export type SerializedQuoteNode = {
+  ...SerializedElementNode,
+  shadowRoot?: boolean,
+  ...
+};
 export type SerializedHeadingNode = {
   ...SerializedElementNode,
   tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6',

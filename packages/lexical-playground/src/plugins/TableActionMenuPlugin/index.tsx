@@ -921,7 +921,6 @@ function TableCellActionMenuContainer({
             ref={menuRootRef}>
             <i className="chevron-down" />
           </button>
-          {colorPickerModal}
           {isMenuOpen && (
             <TableActionMenu
               contextRef={menuRootRef}
@@ -934,6 +933,7 @@ function TableCellActionMenuContainer({
           )}
         </>
       )}
+      {colorPickerModal}
     </div>
   );
 }

@@ -1725,21 +1725,20 @@ export class RangeSelection implements BaseSelection {
     ) {
       removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
     }
+    const focusKeyedDOM = getElementByKeyOrThrow(editor, this.focus.key);
+    let nextFocusDOM: HTMLElement | Text | null = focusKeyedDOM;
+    if (this.focus.type === 'text') {
+      nextFocusDOM = $isTextNode(focusNode)
+        ? $getDOMTextNode(focusNode, focusKeyedDOM, editor)
+        : null;
+    }
     if (this.dirty) {
       const anchorKeyedDOM = getElementByKeyOrThrow(editor, this.anchor.key);
-      const focusKeyedDOM = getElementByKeyOrThrow(editor, this.focus.key);
       let nextAnchorDOM: HTMLElement | Text | null = anchorKeyedDOM;
-      let nextFocusDOM: HTMLElement | Text | null = focusKeyedDOM;
       if (this.anchor.type === 'text') {
         const node = this.anchor.getNode();
         nextAnchorDOM = $isTextNode(node)
           ? $getDOMTextNode(node, anchorKeyedDOM, editor)
-          : null;
-      }
-      if (this.focus.type === 'text') {
-        const node = this.focus.getNode();
-        nextFocusDOM = $isTextNode(node)
-          ? $getDOMTextNode(node, focusKeyedDOM, editor)
           : null;
       }
       if (nextAnchorDOM && nextFocusDOM) {
@@ -1750,6 +1749,55 @@ export class RangeSelection implements BaseSelection {
           nextFocusDOM,
           this.focus.offset,
         );
+      }
+    }
+    // When focus sits at a TextNode boundary, pre-normalize the DOM
+    // selection into the adjacent sibling's Text node so that the
+    // native Selection.modify can cross inline-grid/flex spans (#7301).
+    if (
+      granularity === 'character' &&
+      $isTextNode(focusNode) &&
+      focusNode.isUnmergeable()
+    ) {
+      const atBoundary = isBackward
+        ? this.focus.offset === 0
+        : this.focus.offset === focusNode.getTextContentSize();
+      if (atBoundary) {
+        const sibling = $getSiblingCaret(
+          focusNode,
+          isBackward ? 'previous' : 'next',
+        ).getNodeAtCaret();
+        if ($isTextNode(sibling)) {
+          if (collapse) {
+            const sibKeyedDOM = editor.getElementByKey(sibling.getKey());
+            const sibDOM = sibKeyedDOM
+              ? $getDOMTextNode(sibling, sibKeyedDOM, editor)
+              : null;
+            if (sibDOM) {
+              const sibOffset = isBackward ? sibDOM.length : 0;
+              setDOMSelectionBaseAndExtent(
+                domSelection,
+                sibDOM,
+                sibOffset,
+                sibDOM,
+                sibOffset,
+              );
+            }
+          } else {
+            // For extend (used by deleteCharacter), native Selection.modify
+            // cannot cross inline-grid span boundaries even after
+            // pre-normalization. Set the Lexical selection directly and
+            // return early to skip the native moveNativeSelection call.
+            const sibLen = sibling.getTextContentSize();
+            if (isBackward) {
+              this.focus.set(sibling.__key, sibLen - 1, 'text');
+            } else {
+              this.focus.set(sibling.__key, 1, 'text');
+            }
+            this.dirty = true;
+            return;
+          }
+        }
       }
     }
     // We use the DOM selection.modify API here to "tell" us what the selection
@@ -2625,6 +2673,30 @@ function $extendSelectionForDeletion(
     domSelection.getRangeAt(0);
   const landedContainer = landedRange.startContainer;
   const landedOffset = landedRange.startOffset;
+  // Native 'move' cannot cross inline-grid/flex span boundaries (#7301).
+  // When at the deletion-side edge of an unmergeable TextNode, extend into
+  // the adjacent sibling directly instead of relying on the native result.
+  if (
+    wasCollapsed &&
+    granularity === 'character' &&
+    anchor.type === 'text' &&
+    $isTextNode(anchorNode) &&
+    anchorNode.isUnmergeable()
+  ) {
+    const boundaryOffset = isBackward ? 0 : anchorNode.getTextContentSize();
+    if (anchorOffset === boundaryOffset) {
+      const sibling = $getSiblingCaret(
+        anchorNode,
+        isBackward ? 'previous' : 'next',
+      ).getNodeAtCaret();
+      if ($isTextNode(sibling)) {
+        const sibOffset = isBackward ? sibling.getTextContentSize() - 1 : 1;
+        selection.focus.set(sibling.__key, sibOffset, 'text');
+        selection.dirty = true;
+        return;
+      }
+    }
+  }
   // In-node character deletion (the common case): keep the focus in the
   // anchor's own text node. A native 'move' reports a caret that lands on a
   // text-node boundary as a position in the *adjacent* node, and that
@@ -3108,7 +3180,7 @@ function resolveSelectionPointOnBoundary(
         prevSibling.isInline()
       ) {
         point.set(prevSibling.__key, prevSibling.getChildrenSize(), 'element');
-      } else if ($isTextNode(prevSibling)) {
+      } else if ($isTextNode(prevSibling) && !node.isUnmergeable()) {
         point.set(
           prevSibling.__key,
           prevSibling.getTextContent().length,

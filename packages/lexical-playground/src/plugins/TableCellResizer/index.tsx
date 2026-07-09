@@ -5,9 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {TableCellNode, TableDOMCell, TableMapType} from '@lexical/table';
-import type {LexicalEditor, NodeKey} from 'lexical';
-import type {JSX} from 'react';
 
 import './index.css';
 
@@ -21,22 +18,28 @@ import {
   $isTableRowNode,
   getDOMCellFromTarget,
   getTableElement,
+  type TableCellNode,
+  type TableDOMCell,
+  type TableMapType,
   TableNode,
 } from '@lexical/table';
 import {calculateZoomLevel} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
   isHTMLElement,
+  type LexicalEditor,
   mergeRegister,
+  type NodeKey,
   registerEventListener,
   registerEventListeners,
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
 import * as React from 'react';
 import {
-  CSSProperties,
-  PointerEventHandler,
-  ReactPortal,
+  type CSSProperties,
+  type JSX,
+  type PointerEventHandler,
+  type ReactPortal,
   useCallback,
   useEffect,
   useMemo,

@@ -6,12 +6,12 @@
  *
  */
 
-import type {ChildSchema, ImportContextPairOrUpdater} from '@lexical/html';
-
 import {
   $propagateTextAlignToBlockChildren,
+  type ChildSchema,
   contextValue,
   defineImportRule,
+  type ImportContextPairOrUpdater,
   ImportTextFormat,
   ImportTextStyle,
   sel,

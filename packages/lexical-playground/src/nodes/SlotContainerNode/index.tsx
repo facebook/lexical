@@ -6,9 +6,13 @@
  *
  */
 
-import type {DOMExportOutput, LexicalEditor, LexicalNode} from 'lexical';
-
-import {$create, ElementNode} from 'lexical';
+import {
+  $create,
+  type DOMExportOutput,
+  ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
+} from 'lexical';
 
 // A generic editable slot value. It is a shadow root (like a table cell), so a
 // RangeSelection and SELECT_ALL stay scoped to its contents and Backspace at

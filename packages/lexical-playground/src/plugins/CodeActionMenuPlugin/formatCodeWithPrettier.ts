@@ -6,7 +6,7 @@
  *
  */
 
-import {Options} from 'prettier';
+import type {Options} from 'prettier';
 
 const PRETTIER_PARSER_MODULES = {
   css: [() => import('prettier/parser-postcss')],

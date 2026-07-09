@@ -19,7 +19,7 @@ import {
 } from '@lexical/extension';
 import {
   ClickableLinkExtension,
-  LinkAttributes,
+  type LinkAttributes,
   LinkExtension,
 } from '@lexical/link';
 import {CheckListExtension, ListExtension} from '@lexical/list';

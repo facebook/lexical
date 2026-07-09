@@ -13,7 +13,7 @@ import {
   $isListNode,
   ListItemNode,
   ListNode,
-  ListType,
+  type ListType,
   registerList,
 } from '@lexical/list';
 import {registerRichText} from '@lexical/rich-text';
@@ -37,7 +37,7 @@ import {
   $nodesOfType,
   $selectAll,
   INSERT_PARAGRAPH_COMMAND,
-  LexicalNode,
+  type LexicalNode,
 } from 'lexical';
 import {
   $assertNodeType,

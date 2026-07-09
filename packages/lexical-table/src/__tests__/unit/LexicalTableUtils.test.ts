@@ -14,6 +14,9 @@ import {
   $isTableNode,
   $isTableRowNode,
   $moveTableColumn,
+  $setTableColumnIsHeader,
+  $setTableRowIsHeader,
+  TableCellHeaderStates,
   TableCellNode,
   TableNode,
   TableRowNode,
@@ -23,7 +26,7 @@ import {
   $createTextNode,
   $getRoot,
   createEditor,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
 import {beforeEach, describe, expect, test} from 'vitest';
 
@@ -51,6 +54,23 @@ function $getTableCellTexts(tableNode: TableNode): string[][] {
         return '';
       }
       return cell.getTextContent();
+    });
+  });
+}
+
+function $getHeaderStates(
+  table: TableNode,
+  flag: (typeof TableCellHeaderStates)[keyof typeof TableCellHeaderStates],
+): boolean[][] {
+  return table.getChildren().map(row => {
+    if (!$isTableRowNode(row)) {
+      return [];
+    }
+    return row.getChildren().map(cell => {
+      if (!$isTableCellNode(cell)) {
+        return false;
+      }
+      return cell.hasHeaderState(flag);
     });
   });
 }
@@ -489,6 +509,557 @@ describe('$moveTableColumn', () => {
         }
         expect(row.getChildrenSize()).toBe(4);
       });
+    });
+  });
+});
+
+describe('$setTableRowIsHeader', () => {
+  let editor: LexicalEditor;
+
+  beforeEach(() => {
+    editor = createEditor({
+      namespace: 'test',
+      nodes: [TableNode, TableCellNode, TableRowNode],
+      onError: (error: Error) => {
+        throw error;
+      },
+      theme: {},
+    });
+    editor._headless = true;
+  });
+
+  test('sets a row as header', () => {
+    editor.update(
+      () => {
+        $getRoot().append($createTestTable(3, 3));
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $getRoot().getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected table node');
+        }
+        $setTableRowIsHeader(table, 0, true);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $getRoot().getFirstChild();
+      if (!$isTableNode(table)) {
+        throw new Error('Expected table node');
+      }
+      expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
+        [true, true, true],
+        [false, false, false],
+        [false, false, false],
+      ]);
+    });
+  });
+
+  test('clears a header row', () => {
+    editor.update(
+      () => {
+        const table = $createTableNode();
+        const headerRow = $createTableRowNode();
+        for (let c = 0; c < 3; c++) {
+          const cell = $createTableCellNode(TableCellHeaderStates.ROW);
+          cell.append($createParagraphNode().append($createTextNode(`h${c}`)));
+          headerRow.append(cell);
+        }
+        table.append(headerRow);
+        const bodyRow = $createTableRowNode();
+        for (let c = 0; c < 3; c++) {
+          const cell = $createTableCellNode();
+          cell.append($createParagraphNode().append($createTextNode(`b${c}`)));
+          bodyRow.append(cell);
+        }
+        table.append(bodyRow);
+        $getRoot().append(table);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $getRoot().getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected table node');
+        }
+        $setTableRowIsHeader(table, 0, false);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $getRoot().getFirstChild();
+      if (!$isTableNode(table)) {
+        throw new Error('Expected table node');
+      }
+      expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
+        [false, false, false],
+        [false, false, false],
+      ]);
+    });
+  });
+
+  test('preserves COLUMN bits when setting ROW header', () => {
+    editor.update(
+      () => {
+        const table = $createTableNode();
+        const row = $createTableRowNode();
+        const cell0 = $createTableCellNode(TableCellHeaderStates.COLUMN);
+        cell0.append($createParagraphNode());
+        const cell1 = $createTableCellNode();
+        cell1.append($createParagraphNode());
+        row.append(cell0, cell1);
+        table.append(row);
+        $getRoot().append(table);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $getRoot().getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected table node');
+        }
+        $setTableRowIsHeader(table, 0, true);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $getRoot().getFirstChild();
+      if (!$isTableNode(table)) {
+        throw new Error('Expected table node');
+      }
+      expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
+        [true, true],
+      ]);
+      expect($getHeaderStates(table, TableCellHeaderStates.COLUMN)).toEqual([
+        [true, false],
+      ]);
+    });
+  });
+
+  test('handles colSpan cells', () => {
+    editor.update(
+      () => {
+        const table = $createTableNode();
+        const row = $createTableRowNode();
+        const spanCell = $createTableCellNode();
+        spanCell.setColSpan(2);
+        spanCell.append($createParagraphNode());
+        const normalCell = $createTableCellNode();
+        normalCell.append($createParagraphNode());
+        row.append(spanCell, normalCell);
+        table.append(row);
+        $getRoot().append(table);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $getRoot().getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected table node');
+        }
+        $setTableRowIsHeader(table, 0, true);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $getRoot().getFirstChild();
+      if (!$isTableNode(table)) {
+        throw new Error('Expected table node');
+      }
+      expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
+        [true, true],
+      ]);
+    });
+  });
+
+  test('handles rowSpan cells', () => {
+    editor.update(
+      () => {
+        const table = $createTableNode();
+        const row0 = $createTableRowNode();
+        const spanCell = $createTableCellNode();
+        spanCell.setRowSpan(2);
+        spanCell.append($createParagraphNode());
+        const cell01 = $createTableCellNode();
+        cell01.append($createParagraphNode());
+        row0.append(spanCell, cell01);
+
+        const row1 = $createTableRowNode();
+        const cell11 = $createTableCellNode();
+        cell11.append($createParagraphNode());
+        row1.append(cell11);
+
+        table.append(row0, row1);
+        $getRoot().append(table);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $getRoot().getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected table node');
+        }
+        $setTableRowIsHeader(table, 0, true);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $getRoot().getFirstChild();
+      if (!$isTableNode(table)) {
+        throw new Error('Expected table node');
+      }
+      expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
+        [true, true],
+        [false],
+      ]);
+    });
+  });
+
+  test('sets a middle row as header', () => {
+    editor.update(
+      () => {
+        $getRoot().append($createTestTable(3, 3));
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $getRoot().getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected table node');
+        }
+        $setTableRowIsHeader(table, 1, true);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $getRoot().getFirstChild();
+      if (!$isTableNode(table)) {
+        throw new Error('Expected table node');
+      }
+      expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
+        [false, false, false],
+        [true, true, true],
+        [false, false, false],
+      ]);
+    });
+  });
+
+  test('throws on out-of-range row index', () => {
+    editor.update(
+      () => {
+        $getRoot().append($createTestTable(3, 3));
+      },
+      {discrete: true},
+    );
+
+    expect(() => {
+      editor.update(
+        () => {
+          const table = $getRoot().getFirstChild();
+          if (!$isTableNode(table)) {
+            throw new Error('Expected table node');
+          }
+          $setTableRowIsHeader(table, 5, true);
+        },
+        {discrete: true},
+      );
+    }).toThrow();
+  });
+
+  test('clears ROW from BOTH header state, preserving COLUMN', () => {
+    editor.update(
+      () => {
+        const table = $createTableNode();
+        const row = $createTableRowNode();
+        const cell = $createTableCellNode(TableCellHeaderStates.BOTH);
+        cell.append($createParagraphNode());
+        row.append(cell);
+        table.append(row);
+        $getRoot().append(table);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $getRoot().getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected table node');
+        }
+        $setTableRowIsHeader(table, 0, false);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $getRoot().getFirstChild();
+      if (!$isTableNode(table)) {
+        throw new Error('Expected table node');
+      }
+      expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
+        [false],
+      ]);
+      expect($getHeaderStates(table, TableCellHeaderStates.COLUMN)).toEqual([
+        [true],
+      ]);
+    });
+  });
+});
+
+describe('$setTableColumnIsHeader', () => {
+  let editor: LexicalEditor;
+
+  beforeEach(() => {
+    editor = createEditor({
+      namespace: 'test',
+      nodes: [TableNode, TableCellNode, TableRowNode],
+      onError: (error: Error) => {
+        throw error;
+      },
+      theme: {},
+    });
+    editor._headless = true;
+  });
+
+  test('sets a column as header', () => {
+    editor.update(
+      () => {
+        $getRoot().append($createTestTable(3, 3));
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $getRoot().getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected table node');
+        }
+        $setTableColumnIsHeader(table, 0, true);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $getRoot().getFirstChild();
+      if (!$isTableNode(table)) {
+        throw new Error('Expected table node');
+      }
+      expect($getHeaderStates(table, TableCellHeaderStates.COLUMN)).toEqual([
+        [true, false, false],
+        [true, false, false],
+        [true, false, false],
+      ]);
+    });
+  });
+
+  test('clears a header column', () => {
+    editor.update(
+      () => {
+        const table = $createTableNode();
+        for (let r = 0; r < 3; r++) {
+          const row = $createTableRowNode();
+          const headerCell = $createTableCellNode(TableCellHeaderStates.COLUMN);
+          headerCell.append($createParagraphNode());
+          const normalCell = $createTableCellNode();
+          normalCell.append($createParagraphNode());
+          row.append(headerCell, normalCell);
+          table.append(row);
+        }
+        $getRoot().append(table);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $getRoot().getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected table node');
+        }
+        $setTableColumnIsHeader(table, 0, false);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $getRoot().getFirstChild();
+      if (!$isTableNode(table)) {
+        throw new Error('Expected table node');
+      }
+      expect($getHeaderStates(table, TableCellHeaderStates.COLUMN)).toEqual([
+        [false, false],
+        [false, false],
+        [false, false],
+      ]);
+    });
+  });
+
+  test('preserves ROW bits when setting COLUMN header', () => {
+    editor.update(
+      () => {
+        const table = $createTableNode();
+        const row = $createTableRowNode();
+        const cell0 = $createTableCellNode(TableCellHeaderStates.ROW);
+        cell0.append($createParagraphNode());
+        const cell1 = $createTableCellNode(TableCellHeaderStates.ROW);
+        cell1.append($createParagraphNode());
+        row.append(cell0, cell1);
+        table.append(row);
+        $getRoot().append(table);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $getRoot().getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected table node');
+        }
+        $setTableColumnIsHeader(table, 0, true);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $getRoot().getFirstChild();
+      if (!$isTableNode(table)) {
+        throw new Error('Expected table node');
+      }
+      expect($getHeaderStates(table, TableCellHeaderStates.COLUMN)).toEqual([
+        [true, false],
+      ]);
+      expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
+        [true, true],
+      ]);
+    });
+  });
+
+  test('handles rowSpan cells', () => {
+    editor.update(
+      () => {
+        const table = $createTableNode();
+        const row0 = $createTableRowNode();
+        const spanCell = $createTableCellNode();
+        spanCell.setRowSpan(2);
+        spanCell.append($createParagraphNode());
+        const cell01 = $createTableCellNode();
+        cell01.append($createParagraphNode());
+        row0.append(spanCell, cell01);
+
+        const row1 = $createTableRowNode();
+        const cell11 = $createTableCellNode();
+        cell11.append($createParagraphNode());
+        row1.append(cell11);
+
+        table.append(row0, row1);
+        $getRoot().append(table);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $getRoot().getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected table node');
+        }
+        $setTableColumnIsHeader(table, 0, true);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $getRoot().getFirstChild();
+      if (!$isTableNode(table)) {
+        throw new Error('Expected table node');
+      }
+      expect($getHeaderStates(table, TableCellHeaderStates.COLUMN)).toEqual([
+        [true, false],
+        [false],
+      ]);
+    });
+  });
+
+  test('throws on out-of-range column index', () => {
+    editor.update(
+      () => {
+        $getRoot().append($createTestTable(3, 3));
+      },
+      {discrete: true},
+    );
+
+    expect(() => {
+      editor.update(
+        () => {
+          const table = $getRoot().getFirstChild();
+          if (!$isTableNode(table)) {
+            throw new Error('Expected table node');
+          }
+          $setTableColumnIsHeader(table, 5, true);
+        },
+        {discrete: true},
+      );
+    }).toThrow();
+  });
+
+  test('clears COLUMN from BOTH header state, preserving ROW', () => {
+    editor.update(
+      () => {
+        const table = $createTableNode();
+        const row = $createTableRowNode();
+        const cell = $createTableCellNode(TableCellHeaderStates.BOTH);
+        cell.append($createParagraphNode());
+        row.append(cell);
+        table.append(row);
+        $getRoot().append(table);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $getRoot().getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected table node');
+        }
+        $setTableColumnIsHeader(table, 0, false);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $getRoot().getFirstChild();
+      if (!$isTableNode(table)) {
+        throw new Error('Expected table node');
+      }
+      expect($getHeaderStates(table, TableCellHeaderStates.COLUMN)).toEqual([
+        [false],
+      ]);
+      expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
+        [true],
+      ]);
     });
   });
 });

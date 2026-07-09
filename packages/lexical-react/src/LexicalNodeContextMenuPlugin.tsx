@@ -25,10 +25,17 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $getNearestNodeFromDOMNode,
   $getRoot,
-  LexicalNode,
+  type LexicalNode,
   registerEventListener,
 } from 'lexical';
-import {forwardRef, JSX, RefObject, useEffect, useRef, useState} from 'react';
+import {
+  forwardRef,
+  type JSX,
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 class MenuOption {
   key: string;

@@ -6,15 +6,6 @@
  *
  */
 
-import type {
-  BaseSelection,
-  ElementNode,
-  LexicalNode,
-  LineBreakNode,
-  TextFormatType,
-  TextNode,
-} from 'lexical';
-
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $getRoot,
@@ -23,16 +14,22 @@ import {
   $isElementNode,
   $isLineBreakNode,
   $isTextNode,
+  type BaseSelection,
+  type ElementNode,
+  type LexicalNode,
+  type LineBreakNode,
+  type TextFormatType,
+  type TextNode,
 } from 'lexical';
 
 import {
-  ElementTransformer,
+  type ElementTransformer,
   getCodeSpanDelimiter,
   hardLineBreakState,
-  MultilineElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
+  type MultilineElementTransformer,
+  type TextFormatTransformer,
+  type TextMatchTransformer,
+  type Transformer,
 } from './MarkdownTransformers';
 import {isEmptyParagraph, transformersByType} from './utils';
 

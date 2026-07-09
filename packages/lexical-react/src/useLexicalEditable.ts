@@ -6,10 +6,12 @@
  *
  */
 
-import type {LexicalSubscription} from './useLexicalSubscription';
 import type {LexicalEditor} from 'lexical';
 
-import {useLexicalSubscription} from './useLexicalSubscription';
+import {
+  type LexicalSubscription,
+  useLexicalSubscription,
+} from './useLexicalSubscription';
 
 function subscription(editor: LexicalEditor): LexicalSubscription<boolean> {
   return {

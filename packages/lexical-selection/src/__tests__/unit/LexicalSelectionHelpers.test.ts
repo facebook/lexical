@@ -25,12 +25,12 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $setSelection,
-  ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  ParagraphNode,
-  RangeSelection,
-  TextModeType,
+  type ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type ParagraphNode,
+  type RangeSelection,
+  type TextModeType,
   TextNode,
 } from 'lexical';
 import {

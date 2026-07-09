@@ -5,13 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {CodeNode} from '@lexical/code';
-import type {LexicalCommand} from 'lexical';
 
 import {
   $createCodeNode,
   $isCodeHighlightNode,
   $isCodeNode,
+  type CodeNode,
 } from '@lexical/code';
 import {CodeIndentExtension} from '@lexical/code-core';
 import {
@@ -40,6 +39,7 @@ import {
   configExtension,
   INDENT_CONTENT_COMMAND,
   KEY_TAB_COMMAND,
+  type LexicalCommand,
   OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
 import {

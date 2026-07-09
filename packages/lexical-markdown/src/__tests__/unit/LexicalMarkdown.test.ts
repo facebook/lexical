@@ -20,15 +20,16 @@ import {
   $convertFromMarkdownString,
   $convertSelectionToMarkdownString,
   $convertToMarkdownString,
+  $generateNodesFromMarkdownString,
   CHECK_LIST,
   CODE,
-  ElementTransformer,
+  type ElementTransformer,
   HEADING,
   LINK,
-  MultilineElementTransformer,
+  type MultilineElementTransformer,
   registerMarkdownShortcuts,
-  TextMatchTransformer,
-  Transformer,
+  type TextMatchTransformer,
+  type Transformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
 import {$createQuoteNode, HeadingNode, QuoteNode} from '@lexical/rich-text';
@@ -2866,5 +2867,135 @@ describe('Ordered list start adjustment (#8677)', () => {
     expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
       '<ol start="5"><li value="5"></li></ol><ul><li value="1"><span style="white-space: pre-wrap;">A</span></li></ul>',
     );
+  });
+});
+
+describe('$generateNodesFromMarkdownString', () => {
+  function createTestEditor() {
+    return createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+  }
+
+  it('returns nodes without modifying the root', () => {
+    const editor = createTestEditor();
+
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('existing')));
+      },
+      {discrete: true},
+    );
+
+    let nodes: ReturnType<typeof $generateNodesFromMarkdownString> = [];
+    editor.update(
+      () => {
+        nodes = $generateNodesFromMarkdownString(
+          '# Heading\n\nParagraph',
+          TRANSFORMERS,
+        );
+      },
+      {discrete: true},
+    );
+
+    expect(nodes).toHaveLength(2);
+    expect(nodes[0].getType()).toBe('heading');
+    expect(nodes[1].getType()).toBe('paragraph');
+
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('existing');
+  });
+
+  it('produces the same nodes as $convertFromMarkdownString', () => {
+    const md = '# Title\n\n- item 1\n- item 2\n\n> quote\n\n```\ncode\n```';
+
+    const convertEditor = createTestEditor();
+    convertEditor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+      discrete: true,
+    });
+    const convertHtml = convertEditor.read(() =>
+      $generateHtmlFromNodes(convertEditor),
+    );
+
+    const generateEditor = createTestEditor();
+    generateEditor.update(
+      () => {
+        const nodes = $generateNodesFromMarkdownString(md, TRANSFORMERS);
+        $getRoot()
+          .clear()
+          .append(...nodes);
+      },
+      {discrete: true},
+    );
+    const generateHtml = generateEditor.read(() =>
+      $generateHtmlFromNodes(generateEditor),
+    );
+
+    expect(generateHtml).toBe(convertHtml);
+  });
+
+  it('returned nodes can be inserted at selection', () => {
+    const editor = createTestEditor();
+
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append($createTextNode('before')),
+            $createParagraphNode().append($createTextNode('after')),
+          );
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.select(1, 1);
+        const nodes = $generateNodesFromMarkdownString(
+          '**bold**',
+          TRANSFORMERS,
+        );
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertNodes(nodes);
+        }
+      },
+      {discrete: true},
+    );
+
+    const html = editor.read(() => $generateHtmlFromNodes(editor));
+    expect(html).toContain('before');
+    expect(html).toContain('<strong');
+    expect(html).toContain('after');
+  });
+
+  it('handles adjacent line merging (commonmark)', () => {
+    const editor = createTestEditor();
+
+    let nodes: ReturnType<typeof $generateNodesFromMarkdownString> = [];
+    editor.update(
+      () => {
+        nodes = $generateNodesFromMarkdownString(
+          'line 1\nline 2',
+          TRANSFORMERS,
+          false,
+          true,
+        );
+      },
+      {discrete: true},
+    );
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0].getType()).toBe('paragraph');
   });
 });

@@ -6,13 +6,13 @@
  *
  */
 
+import type {ExtensionState} from '../../store';
+import type {LexicalCommandLog} from '@lexical/devtools-core';
 import type {LexicalEditor} from 'lexical';
+import type {StoreApi} from 'zustand';
 
-import {LexicalCommandLog} from '@lexical/devtools-core';
 import {registerRPCService} from '@webext-pegasus/rpc';
-import {StoreApi} from 'zustand';
 
-import {ExtensionState} from '../../store';
 import {InjectedPegasusService} from './InjectedPegasusService';
 import scanAndListenForEditors from './scanAndListenForEditors';
 

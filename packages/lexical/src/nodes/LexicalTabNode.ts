@@ -6,18 +6,17 @@
  *
  */
 
-import type {DOMConversionMap, NodeKey} from '../LexicalNode';
+import type {EditorConfig} from '../LexicalEditor';
+import type {DOMConversionMap, LexicalNode, NodeKey} from '../LexicalNode';
 
 import invariant from '@lexical/internal/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
-import {EditorConfig} from '../LexicalEditor';
-import {LexicalNode} from '../LexicalNode';
 import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
 import {
-  SerializedTextNode,
-  TextDetailType,
-  TextModeType,
+  type SerializedTextNode,
+  type TextDetailType,
+  type TextModeType,
   TextNode,
 } from './LexicalTextNode';
 

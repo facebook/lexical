@@ -6,7 +6,11 @@
  *
  */
 
-import {effect, namedSignals, NamedSignalsOutput} from '@lexical/extension';
+import {
+  effect,
+  namedSignals,
+  type NamedSignalsOutput,
+} from '@lexical/extension';
 import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
 import {objectKlassEquals} from '@lexical/utils';
 import {
@@ -18,7 +22,7 @@ import {
   COMMAND_PRIORITY_LOW,
   configExtension,
   defineExtension,
-  LexicalEditor,
+  type LexicalEditor,
   mergeRegister,
   PASTE_COMMAND,
   shallowMergeConfig,
@@ -27,7 +31,7 @@ import {
 import {
   $linkNodeTransform,
   $toggleLink,
-  LinkAttributes,
+  type LinkAttributes,
   LinkNode,
   TOGGLE_LINK_COMMAND,
 } from './LexicalLinkNode';

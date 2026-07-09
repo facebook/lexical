@@ -5,12 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {
-  CommandListenerPriority,
-  LexicalNode,
-  MutationListener,
-} from 'lexical';
-import type {JSX} from 'react';
 
 import {$isLinkNode, AutoLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
@@ -24,15 +18,18 @@ import {
   $getSelection,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
+  type CommandListenerPriority,
   createCommand,
-  LexicalCommand,
-  LexicalEditor,
+  type LexicalCommand,
+  type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
-  NodeKey,
+  type MutationListener,
+  type NodeKey,
   PASTE_TAG,
-  TextNode,
+  type TextNode,
 } from 'lexical';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {type JSX, useCallback, useEffect, useMemo, useState} from 'react';
 
 /**
  * The result of matching a URL for an embed: the matched `url`, an `id`

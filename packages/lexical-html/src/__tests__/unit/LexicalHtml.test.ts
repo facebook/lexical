@@ -29,7 +29,7 @@ import {
   $setSlot,
   isHTMLElement,
   ParagraphNode,
-  RangeSelection,
+  type RangeSelection,
 } from 'lexical';
 import {
   $createTestShadowRootNode,

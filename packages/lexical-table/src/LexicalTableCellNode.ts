@@ -6,20 +6,6 @@
  *
  */
 
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  LexicalEditor,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  ParagraphNode,
-  SerializedElementNode,
-  Spread,
-} from 'lexical';
-
 import {
   $applyNodeReplacement,
   $createParagraphNode,
@@ -28,8 +14,19 @@ import {
   $isLineBreakNode,
   $isTextNode,
   addClassNamesToElement,
+  type DOMConversionMap,
+  type DOMConversionOutput,
+  type DOMExportOutput,
+  type EditorConfig,
   ElementNode,
   isHTMLElement,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type ParagraphNode,
+  type SerializedElementNode,
+  type Spread,
 } from 'lexical';
 
 import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';

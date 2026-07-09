@@ -6,16 +6,16 @@
  *
  */
 
+import type {ExtensionState} from '../../store';
 import type {LexicalEditor} from 'lexical';
+import type {StoreApi} from 'zustand';
 
 import {
-  LexicalCommandLog,
+  type LexicalCommandLog,
   registerLexicalCommandLogger,
 } from '@lexical/devtools-core';
-import {StoreApi} from 'zustand';
 
 import {serializeEditorState} from '../../serializeEditorState';
-import {ExtensionState} from '../../store';
 import queryLexicalNodes from './utils/queryLexicalNodes';
 
 export default function scanAndListenForEditors(

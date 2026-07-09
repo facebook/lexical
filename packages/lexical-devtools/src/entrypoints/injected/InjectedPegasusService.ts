@@ -6,16 +6,17 @@
  *
  */
 
-import {generateContent, LexicalCommandLog} from '@lexical/devtools-core';
-import {IPegasusRPCService, PegasusRPCMessage} from '@webext-pegasus/rpc';
-import {LexicalEditor} from 'lexical';
-import {StoreApi} from 'zustand';
+import type {ExtensionState} from '../../store';
+import type {SerializedRawEditorState} from '../../types';
+import type {IPegasusRPCService, PegasusRPCMessage} from '@webext-pegasus/rpc';
+import type {LexicalEditor} from 'lexical';
+import type {StoreApi} from 'zustand';
+
+import {generateContent, type LexicalCommandLog} from '@lexical/devtools-core';
 
 import {ElementPicker} from '../../element-picker';
 import {readEditorState} from '../../lexicalForExtension';
 import {deserializeEditorState} from '../../serializeEditorState';
-import {ExtensionState} from '../../store';
-import {SerializedRawEditorState} from '../../types';
 import {isLexicalNode} from '../../utils/isLexicalNode';
 import scanAndListenForEditors from './scanAndListenForEditors';
 import {

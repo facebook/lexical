@@ -6,8 +6,8 @@
  *
  */
 
-import type {EditorState, NodeKey} from 'lexical';
-import type {ContentType, Transaction as YTransaction} from 'yjs';
+import type {Binding, BindingV2, Provider} from '.';
+import type {AnyBinding} from './Bindings';
 
 import invariant from '@lexical/internal/invariant';
 import {
@@ -20,31 +20,33 @@ import {
   $isRangeSelection,
   $isTextNode,
   COLLABORATION_TAG,
+  type EditorState,
   HISTORIC_TAG,
+  type NodeKey,
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
 import {
+  type ContentType,
   Item,
   iterateDeletedStructs,
   Map as YMap,
-  Text as YText,
+  type Text as YText,
+  type Transaction as YTransaction,
   XmlElement,
   XmlText,
-  YEvent,
+  type YEvent,
   YMapEvent,
   YTextEvent,
   YXmlEvent,
 } from 'yjs';
 
-import {Binding, BindingV2, Provider} from '.';
-import {AnyBinding} from './Bindings';
 import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
 import {CollabTextNode} from './CollabTextNode';
 import {
   $syncLocalCursorPosition,
   syncCursorPositions,
-  SyncCursorPositionsFn,
+  type SyncCursorPositionsFn,
   syncLexicalSelectionToYjs,
 } from './SyncCursors';
 import {$createOrUpdateNodeFromYElement, $updateYFragment} from './SyncV2';

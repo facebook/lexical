@@ -11,7 +11,7 @@ import {
   COMMAND_PRIORITY_EDITOR,
   createCommand,
   defineExtension,
-  LexicalCommand,
+  type LexicalCommand,
 } from 'lexical';
 
 import {$createFigmaNode, FigmaNode} from '../../nodes/FigmaNode';

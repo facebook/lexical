@@ -6,9 +6,6 @@
  *
  */
 
-import type {Option, Options, PollNode} from './PollNode';
-import type {JSX} from 'react';
-
 import './PollNode.css';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
@@ -18,17 +15,23 @@ import {
   $getNodeByKey,
   $getSelection,
   $isNodeSelection,
-  BaseSelection,
+  type BaseSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   mergeRegister,
-  NodeKey,
+  type NodeKey,
 } from 'lexical';
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {type JSX, useEffect, useMemo, useRef, useState} from 'react';
 
 import Button from '../ui/Button';
 import joinClasses from '../utils/joinClasses';
-import {$isPollNode, createPollOption} from './PollNode';
+import {
+  $isPollNode,
+  createPollOption,
+  type Option,
+  type Options,
+  type PollNode,
+} from './PollNode';
 
 function getTotalVotes(options: Options): number {
   return options.reduce((totalVotes, next) => {

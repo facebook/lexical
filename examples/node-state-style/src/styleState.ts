@@ -33,10 +33,10 @@ import {
   defineExtension,
   getStyleObjectFromCSS,
   isHTMLElement,
-  LexicalNode,
+  type LexicalNode,
   setDOMStyleObject,
   TextNode,
-  ValueOrUpdater,
+  type ValueOrUpdater,
 } from 'lexical';
 
 /**

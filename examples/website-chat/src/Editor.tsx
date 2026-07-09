@@ -10,8 +10,8 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  EditorState,
-  LexicalEditor,
+  type EditorState,
+  type LexicalEditor,
 } from 'lexical';
 import {useCallback, useEffect, useRef, useState} from 'react';
 

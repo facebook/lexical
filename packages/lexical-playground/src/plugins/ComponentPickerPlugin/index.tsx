@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {$createCodeNode} from '@lexical/code';
 import {INSERT_HORIZONTAL_RULE_COMMAND} from '@lexical/extension';
 import {
@@ -30,10 +28,10 @@ import {
   $getSelection,
   $isRangeSelection,
   FORMAT_ELEMENT_COMMAND,
-  LexicalEditor,
-  TextNode,
+  type LexicalEditor,
+  type TextNode,
 } from 'lexical';
-import {useCallback, useMemo, useState} from 'react';
+import {type JSX, useCallback, useMemo, useState} from 'react';
 
 import useModal from '../../hooks/useModal';
 import catTypingGif from '../../images/cat-typing.gif';

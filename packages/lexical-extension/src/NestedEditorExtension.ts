@@ -6,7 +6,12 @@
  *
  */
 
-import {$getEditor, defineExtension, LexicalEditor, safeCast} from 'lexical';
+import {
+  $getEditor,
+  defineExtension,
+  type LexicalEditor,
+  safeCast,
+} from 'lexical';
 
 import {LexicalBuilder} from './LexicalBuilder';
 import {namedSignals} from './namedSignals';

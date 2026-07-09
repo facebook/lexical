@@ -6,20 +6,21 @@
  *
  */
 
-import type {BaseSelection, LexicalUpdateJSON, Spread} from 'lexical';
-
 import {$descendantsMatching} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $getDocument,
   addClassNamesToElement,
-  DOMConversionMap,
-  DOMConversionOutput,
-  EditorConfig,
+  type BaseSelection,
+  type DOMConversionMap,
+  type DOMConversionOutput,
+  type EditorConfig,
   ElementNode,
-  LexicalNode,
-  NodeKey,
-  SerializedElementNode,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type SerializedElementNode,
+  type Spread,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';

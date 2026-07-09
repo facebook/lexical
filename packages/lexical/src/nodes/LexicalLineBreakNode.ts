@@ -7,14 +7,14 @@
  */
 
 import type {KlassConstructor} from '../LexicalEditor';
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  NodeKey,
-  SerializedLexicalNode,
-} from '../LexicalNode';
 
-import {LexicalNode} from '../LexicalNode';
+import {
+  type DOMConversionMap,
+  type DOMConversionOutput,
+  LexicalNode,
+  type NodeKey,
+  type SerializedLexicalNode,
+} from '../LexicalNode';
 import {
   $applyNodeReplacement,
   $getDocument,

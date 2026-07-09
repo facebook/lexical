@@ -6,14 +6,15 @@
  *
  */
 
-import type {LexicalCommand, LexicalEditor, RangeSelection} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
+  type LexicalCommand,
+  type LexicalEditor,
+  type RangeSelection,
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';

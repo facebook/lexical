@@ -6,8 +6,7 @@
  *
  */
 
-import type {LexicalCommand, LexicalEditor, NodeKey} from 'lexical';
-import type {JSX, RefCallback} from 'react';
+import type {DecoratorComponentProps} from '@lexical/react/ReactPluginHostExtension';
 
 import {namedSignals, WatchEditableExtension} from '@lexical/extension';
 import {
@@ -17,7 +16,6 @@ import {
   sel,
 } from '@lexical/html';
 import {ReactExtension} from '@lexical/react/ReactExtension';
-import {DecoratorComponentProps} from '@lexical/react/ReactPluginHostExtension';
 import {useExtensionDependency} from '@lexical/react/useExtensionComponent';
 import {
   useExtensionSignalValue,
@@ -34,10 +32,13 @@ import {
   configExtension,
   createCommand,
   defineExtension,
+  type LexicalCommand,
+  type LexicalEditor,
   mergeRegister,
   NODE_STATE_DIRECT,
+  type NodeKey,
 } from 'lexical';
-import {useCallback, useState} from 'react';
+import {type JSX, type RefCallback, useCallback, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import {

@@ -5,11 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {EditorState, LexicalEditor} from 'lexical';
+
 import './ShikiViewPlugin.css';
 
 import {$generateHtmlFromNodes} from '@lexical/html';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {EditorState, LexicalEditor} from 'lexical';
 import * as prettier from 'prettier';
 import {useEffect, useMemo, useState} from 'react';
 import {createHighlighterCore} from 'shiki/core';

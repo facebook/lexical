@@ -6,8 +6,6 @@
  *
  */
 
-import type {CommandPayloadType, LexicalEditor} from 'lexical';
-
 import {
   $getHtmlContent,
   $handlePlainTextDrop,
@@ -31,6 +29,7 @@ import {
   $selectAll,
   CAN_USE_BEFORE_INPUT,
   COMMAND_PRIORITY_EDITOR,
+  type CommandPayloadType,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
@@ -52,6 +51,7 @@ import {
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
+  type LexicalEditor,
   mergeRegister,
   PASTE_COMMAND,
   PASTE_TAG,

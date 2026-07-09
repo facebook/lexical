@@ -15,7 +15,7 @@ import {
   configExtension,
   createCommand,
   defineExtension,
-  LexicalCommand,
+  type LexicalCommand,
 } from 'lexical';
 
 import {$createPageBreakNode, PageBreakNode} from '../../nodes/PageBreakNode';

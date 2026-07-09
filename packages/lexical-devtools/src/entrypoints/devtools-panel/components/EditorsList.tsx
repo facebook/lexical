@@ -6,6 +6,7 @@
  *
  */
 
+import type {SerializedRawEditorState} from '../../../types';
 import type {IInjectedPegasusService} from '../../injected/InjectedPegasusService';
 import type {EditorState} from 'lexical';
 
@@ -17,7 +18,6 @@ import * as React from 'react';
 import {useEffect, useMemo, useRef, useState} from 'react';
 
 import {useExtensionStore} from '../../../store';
-import {SerializedRawEditorState} from '../../../types';
 
 interface Props {
   tabID: number;

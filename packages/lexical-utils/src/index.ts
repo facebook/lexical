@@ -63,7 +63,7 @@ import {
   type CaretDirection,
   type CaretRange,
   type EditorState,
-  ElementNode,
+  type ElementNode,
   type Klass,
   type LexicalEditor,
   type LexicalNode,
@@ -71,12 +71,12 @@ import {
   type NodeCaret,
   type NodeKey,
   type PasteCommandType,
-  PointCaret,
+  type PointCaret,
   type PointType,
   type RangeSelection,
   type SiblingCaret,
-  StateConfig,
-  ValueOrUpdater,
+  type StateConfig,
+  type ValueOrUpdater,
 } from 'lexical';
 
 export {default as dedupeSelectionRects} from './dedupeSelectionRects';

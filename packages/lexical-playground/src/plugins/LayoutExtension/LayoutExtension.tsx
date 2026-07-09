@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalCommand, NodeKey} from 'lexical';
-
 import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
 import {
   $insertNodeToNearestRoot,
@@ -26,7 +24,9 @@ import {
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
+  type LexicalCommand,
   mergeRegister,
+  type NodeKey,
 } from 'lexical';
 
 import {

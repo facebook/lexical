@@ -562,10 +562,7 @@ export function $shouldOverrideDefaultCharacterSelection(
     !$isTabNode(focusCaret.origin) &&
     focusCaret.origin.isUnmergeable()
   ) {
-    const sibling = $getSiblingCaret(
-      focusCaret.origin,
-      focusCaret.direction,
-    ).getNodeAtCaret();
+    const sibling = focusCaret.getNodeAtCaret();
     if ($isTextNode(sibling) && !$isTabNode(sibling)) {
       return true;
     }

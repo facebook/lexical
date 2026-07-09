@@ -52,6 +52,11 @@ export {
   type InitialStateConfig,
   InitialStateExtension,
 } from './InitialStateExtension';
+export {
+  type KeyboardShortcutsConfig,
+  KeyboardShortcutsExtension,
+  type NamedKeyboardShortcuts,
+} from './KeyboardShortcutsExtension';
 export {buildEditorFromExtensions, LexicalBuilder} from './LexicalBuilder';
 export {
   namedSignals,
@@ -104,12 +109,17 @@ export {watchedSignal} from './watchedSignal';
 export {
   type AnyLexicalExtension,
   type AnyLexicalExtensionArgument,
+  CompiledKeyboardShortcuts,
+  compileKeyboardShortcuts,
   configExtension,
   declarePeerDependency,
   defineExtension,
   type ExtensionConfigBase,
   type ExtensionRegisterState,
   type InitialEditorStateType,
+  type KeyboardShortcut,
+  type KeyboardShortcutHandler,
+  type KeyboardShortcutMatch,
   type LexicalEditorWithDispose,
   type LexicalExtension,
   type LexicalExtensionArgument,
@@ -121,6 +131,8 @@ export {
   type NormalizedLexicalExtensionArgument,
   type NormalizedPeerDependency,
   type OutputComponentExtension,
+  registerKeyboardShortcuts,
+  type RegisterKeyboardShortcutsOptions,
   safeCast,
   shallowMergeConfig,
 } from 'lexical';

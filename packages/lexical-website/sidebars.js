@@ -117,6 +117,7 @@ const sidebars = {
       label: 'Collaboration',
       type: 'category',
     },
+    'testing',
     'faq',
   ],
 };

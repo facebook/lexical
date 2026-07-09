@@ -12,7 +12,6 @@ import {
   $extendCaretToRange,
   $findMatchingParent,
   $getPreviousSelection,
-  $getSiblingCaret,
   $hasAncestor,
   $isChildCaret,
   $isDecoratorNode,

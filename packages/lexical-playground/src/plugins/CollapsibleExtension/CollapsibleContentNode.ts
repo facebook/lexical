@@ -7,13 +7,13 @@
  */
 
 import {
-  DOMExportOutput,
-  EditorConfig,
+  type DOMExportOutput,
+  type EditorConfig,
   ElementNode,
   IS_CHROME,
   IS_FIREFOX,
-  LexicalEditor,
-  LexicalNode,
+  type LexicalEditor,
+  type LexicalNode,
 } from 'lexical';
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';

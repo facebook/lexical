@@ -6,17 +6,6 @@
  *
  */
 
-import type {
-  DOMExportOutput,
-  EditorConfig,
-  ElementDOMSlot,
-  LexicalEditor,
-  LexicalNode,
-  NodeStateVersion,
-  StateConfigValue,
-  StateValueOrUpdater,
-} from 'lexical';
-
 import {$appendNodeToHTML} from '@lexical/html';
 import {
   $create,
@@ -29,8 +18,16 @@ import {
   $setSlot,
   $setState,
   createState,
+  type DOMExportOutput,
+  type EditorConfig,
+  type ElementDOMSlot,
   ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeStateVersion,
   setDOMUnmanaged,
+  type StateConfigValue,
+  type StateValueOrUpdater,
 } from 'lexical';
 
 // The star rating (0–5), persisted as NodeState rather than a bespoke

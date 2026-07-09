@@ -6,8 +6,6 @@
  *
  */
 
-import type {CaretDirection, SiblingCaret} from 'lexical';
-
 import {
   CoreImportExtension,
   defineImportRule,
@@ -25,6 +23,7 @@ import {
   $isTextNode,
   $isTextPointCaret,
   $setPointFromCaret,
+  type CaretDirection,
   COMMAND_PRIORITY_HIGH,
   configExtension,
   CONTROLLED_TEXT_INSERTION_COMMAND,
@@ -36,6 +35,7 @@ import {
   registerEventListener,
   registerEventListeners,
   SELECTION_CHANGE_COMMAND,
+  type SiblingCaret,
 } from 'lexical';
 
 import {

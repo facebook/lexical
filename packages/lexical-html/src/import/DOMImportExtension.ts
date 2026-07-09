@@ -6,7 +6,6 @@
  *
  */
 import type {ContextRecord} from '../types';
-import type {DOMImportRuleEntry} from './defineOverlayRules';
 import type {
   DOMImportExtensionOutput,
   DOMPreprocessContext,
@@ -22,7 +21,10 @@ import {DOMImportContextSymbol, DOMImportExtensionName} from '../constants';
 import {$withFullContext, contextFromPairs} from '../ContextRecord';
 import {type CompiledDispatch, compileImportRules} from './compileImportRules';
 import {defineImportRule} from './defineImportRule';
-import {flattenRuleEntries} from './defineOverlayRules';
+import {
+  type DOMImportRuleEntry,
+  flattenRuleEntries,
+} from './defineOverlayRules';
 import {ImportSessionImpl} from './ImportContext';
 import {$inlineStylesFromStyleSheets} from './inlineStylesFromStyleSheets';
 import {$runImport} from './runImport';

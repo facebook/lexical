@@ -6,10 +6,8 @@
  *
  */
 
-import type {ListItemNode} from './LexicalListItemNode';
-import type {ElementNode, LexicalCommand, LexicalEditor} from 'lexical';
+import type {Signal} from '@lexical/extension';
 
-import {Signal} from '@lexical/extension';
 import {calculateZoomLevel} from '@lexical/utils';
 import {
   $addUpdateTag,
@@ -20,6 +18,7 @@ import {
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
   createCommand,
+  type ElementNode,
   getActiveElement,
   getNearestEditorFromDOMNode,
   isHTMLElement,
@@ -28,6 +27,8 @@ import {
   KEY_ARROW_UP_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
   mergeRegister,
   registerEventListener,
   registerEventListeners,
@@ -36,7 +37,7 @@ import {
 } from 'lexical';
 
 import {$insertList} from './formatList';
-import {$isListItemNode} from './LexicalListItemNode';
+import {$isListItemNode, type ListItemNode} from './LexicalListItemNode';
 import {$isListNode} from './LexicalListNode';
 
 export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> =

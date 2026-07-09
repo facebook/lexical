@@ -6,18 +6,15 @@
  *
  */
 
-import type {EditorState, LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
-
 import {
-  CustomPrintNodeFn,
+  type CustomPrintNodeFn,
   generateContent,
   TreeView as TreeViewCore,
   useLexicalCommandsLog,
 } from '@lexical/devtools-core';
-import {mergeRegister} from 'lexical';
+import {type EditorState, type LexicalEditor, mergeRegister} from 'lexical';
 import * as React from 'react';
-import {useEffect, useState} from 'react';
+import {type JSX, useEffect, useState} from 'react';
 
 /**
  * TreeView is a React component that provides a visual representation of

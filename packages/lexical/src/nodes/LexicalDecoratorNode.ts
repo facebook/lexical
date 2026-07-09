@@ -7,13 +7,17 @@
  */
 
 import type {KlassConstructor, LexicalEditor} from '../LexicalEditor';
-import type {NodeKey, SlotChildNode, SlotHostNode} from '../LexicalNode';
 import type {ElementNode} from './LexicalElementNode';
 import type {EditorConfig} from 'lexical';
 
 import invariant from '@lexical/internal/invariant';
 
-import {LexicalNode} from '../LexicalNode';
+import {
+  LexicalNode,
+  type NodeKey,
+  type SlotChildNode,
+  type SlotHostNode,
+} from '../LexicalNode';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export interface DecoratorNode<T> {

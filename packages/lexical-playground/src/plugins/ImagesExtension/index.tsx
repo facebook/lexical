@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {caretFromPoint} from '@lexical/clipboard';
 import {
   $generateNodesFromDOM,
@@ -18,7 +16,7 @@ import {
 import {
   $isAutoLinkNode,
   $isLinkNode,
-  LinkNode,
+  type LinkNode,
   TOGGLE_LINK_COMMAND,
 } from '@lexical/link';
 import {$wrapNodeInElement} from '@lexical/utils';
@@ -43,13 +41,13 @@ import {
   DROP_COMMAND,
   getDOMSelectionFromTarget,
   isHTMLElement,
-  LexicalCommand,
-  LexicalEditor,
+  type LexicalCommand,
+  type LexicalEditor,
   mergeRegister,
   registerEventListener,
   SKIP_DOM_SELECTION_TAG,
 } from 'lexical';
-import {useEffect, useRef, useState} from 'react';
+import {type JSX, useEffect, useRef, useState} from 'react';
 
 import landscapeImage from '../../images/landscape.jpg';
 import yellowFlowerImage from '../../images/yellow-flower.jpg';
@@ -57,7 +55,7 @@ import {
   $createImageNode,
   $isImageNode,
   ImageNode,
-  ImagePayload,
+  type ImagePayload,
 } from '../../nodes/ImageNode';
 import Button from '../../ui/Button';
 import {DialogActions, DialogButtonsList} from '../../ui/Dialog';

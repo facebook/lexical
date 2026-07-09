@@ -6,7 +6,6 @@
  *
  */
 
-import type {LexicalNode, TextNode} from '.';
 import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalPrivateDOM} from './LexicalNode';
@@ -18,6 +17,8 @@ import {
   $isRangeSelection,
   $isTextNode,
   $setSelection,
+  type LexicalNode,
+  type TextNode,
 } from '.';
 import {IS_FIREFOX} from './environment';
 import {updateEditorSync} from './LexicalUpdates';

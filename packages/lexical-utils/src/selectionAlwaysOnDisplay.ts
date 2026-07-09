@@ -8,7 +8,7 @@
 
 import {
   getDOMSelectionPoints,
-  LexicalEditor,
+  type LexicalEditor,
   mergeRegister,
   registerEventListener,
 } from 'lexical';

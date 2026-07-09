@@ -18,7 +18,7 @@ import {
   COMPOSITION_END_COMMAND,
   COMPOSITION_END_TAG,
   COMPOSITION_START_TAG,
-  LexicalEditor,
+  type LexicalEditor,
   UNDO_COMMAND,
 } from 'lexical';
 import {assert, describe, expect, onTestFinished, test} from 'vitest';

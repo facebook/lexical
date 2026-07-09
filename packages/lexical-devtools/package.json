@@ -39,8 +39,8 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@babel/plugin-transform-flow-strip-types": "^7.29.7",
-    "@babel/preset-react": "^7.29.7",
+    "@babel/plugin-transform-flow-strip-types": "^8.0.1",
+    "@babel/preset-react": "^8.0.1",
     "@lexical/devtools-core": "workspace:*",
     "@rollup/plugin-babel": "^7.1.0",
     "@types/react": "^19.2.14",

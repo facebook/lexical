@@ -6,7 +6,6 @@
  *
  */
 
-import type {ElementTransformer, Transformer} from '@lexical/markdown';
 import type {LexicalNode} from 'lexical';
 
 import {
@@ -14,7 +13,12 @@ import {
   $isHorizontalRuleNode,
   HorizontalRuleNode,
 } from '@lexical/extension';
-import {registerMarkdownShortcuts, TRANSFORMERS} from '@lexical/markdown';
+import {
+  type ElementTransformer,
+  registerMarkdownShortcuts,
+  type Transformer,
+  TRANSFORMERS,
+} from '@lexical/markdown';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useEffect} from 'react';
 

@@ -6,12 +6,12 @@
  *
  */
 
-import {$createLinkNode, LinkNode} from '@lexical/link';
+import {$createLinkNode, type LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,
-  ListItemNode,
-  ListNode,
+  type ListItemNode,
+  type ListNode,
 } from '@lexical/list';
 import {$createHeadingNode, $isHeadingNode} from '@lexical/rich-text';
 import {
@@ -44,14 +44,14 @@ import {
   $setSelection,
   $setSelectionFromCaretRange,
   $splitAtPointCaretNext,
-  ChildCaret,
-  ElementNode,
-  LexicalNode,
-  NodeCaret,
-  ParagraphNode,
-  RootNode,
-  SiblingCaret,
-  TextNode,
+  type ChildCaret,
+  type ElementNode,
+  type LexicalNode,
+  type NodeCaret,
+  type ParagraphNode,
+  type RootNode,
+  type SiblingCaret,
+  type TextNode,
 } from 'lexical';
 import {beforeEach, describe, expect, test} from 'vitest';
 

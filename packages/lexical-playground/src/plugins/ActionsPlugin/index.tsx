@@ -6,16 +6,13 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
-
 import {$createCodeNode, $isCodeNode, CodeIndentExtension} from '@lexical/code';
 import {getPeerDependencyFromEditor} from '@lexical/extension';
 import {
   editorStateFromSerializedDocument,
   exportFile,
   importFile,
-  SerializedDocument,
+  type SerializedDocument,
   serializedDocumentFromEditorState,
 } from '@lexical/file';
 import {
@@ -39,10 +36,12 @@ import {
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  type LexicalEditor,
   mergeRegister,
   RootNode,
 } from 'lexical';
 import {
+  type JSX,
   startTransition,
   useActionState,
   useEffect,

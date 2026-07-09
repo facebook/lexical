@@ -6,19 +6,20 @@
  *
  */
 
+import type {Provider} from '.';
 import type {CollabDecoratorNode} from './CollabDecoratorNode';
-import type {CollabElementNode} from './CollabElementNode';
 import type {CollabLineBreakNode} from './CollabLineBreakNode';
 import type {CollabTextNode} from './CollabTextNode';
 import type {Cursor} from './SyncCursors';
-import type {LexicalEditor, NodeKey} from 'lexical';
+import type {Klass, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
 import invariant from '@lexical/internal/invariant';
-import {Klass, LexicalNode} from 'lexical';
-import {Doc, XmlElement, XmlText} from 'yjs';
+import {type Doc, XmlElement, XmlText} from 'yjs';
 
-import {Provider} from '.';
-import {$createCollabElementNode} from './CollabElementNode';
+import {
+  $createCollabElementNode,
+  type CollabElementNode,
+} from './CollabElementNode';
 import {CollabV2Mapping} from './CollabV2Mapping';
 import {initializeNodeProperties} from './Utils';
 

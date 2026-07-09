@@ -6,7 +6,7 @@
  *
  */
 
-import {$createLinkNode, LinkNode} from '@lexical/link';
+import {$createLinkNode, type LinkNode} from '@lexical/link';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -16,13 +16,13 @@ import {
   $getSiblingCaret,
   $isChildCaret,
   $isElementNode,
-  CaretDirection,
-  LexicalNode,
-  NodeCaret,
-  NodeKey,
-  ParagraphNode,
-  SiblingCaret,
-  TextNode,
+  type CaretDirection,
+  type LexicalNode,
+  type NodeCaret,
+  type NodeKey,
+  type ParagraphNode,
+  type SiblingCaret,
+  type TextNode,
 } from 'lexical';
 import {beforeEach, describe, expect, test} from 'vitest';
 

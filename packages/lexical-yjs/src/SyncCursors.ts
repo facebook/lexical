@@ -6,13 +6,10 @@
  *
  */
 
-import type {
-  BaseSelection,
-  LexicalNode,
-  NodeKey,
-  NodeMap,
-  Point,
-} from 'lexical';
+import type {Provider, UserState} from '.';
+import type {CollabDecoratorNode} from './CollabDecoratorNode';
+import type {CollabLineBreakNode} from './CollabLineBreakNode';
+import type {CollabV2Mapping} from './CollabV2Mapping';
 
 import invariant from '@lexical/internal/invariant';
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
@@ -23,33 +20,34 @@ import {
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
+  type BaseSelection,
   getRootOwnerDocument,
   isDOMShadowRoot,
+  type LexicalNode,
+  type NodeKey,
+  type NodeMap,
+  type Point,
   setDOMStyleObject,
 } from 'lexical';
 import {
-  AbsolutePosition,
+  type AbsolutePosition,
   compareRelativePositions,
   createAbsolutePositionFromRelativePosition,
   createRelativePositionFromTypeIndex,
-  RelativePosition,
+  type RelativePosition,
   XmlElement,
-  XmlText,
+  type XmlText,
 } from 'yjs';
 
-import {Provider, UserState} from '.';
 import {
-  AnyBinding,
+  type AnyBinding,
   type BaseBinding,
   type Binding,
   type BindingV2,
   isBindingV1,
 } from './Bindings';
-import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
-import {CollabLineBreakNode} from './CollabLineBreakNode';
 import {CollabTextNode} from './CollabTextNode';
-import {CollabV2Mapping} from './CollabV2Mapping';
 import {getPositionFromElementAndOffset} from './Utils';
 
 export type CursorSelection = {

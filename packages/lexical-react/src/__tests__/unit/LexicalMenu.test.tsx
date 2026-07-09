@@ -7,12 +7,12 @@
  */
 
 import * as ComposerContext from '@lexical/react/LexicalComposerContext';
-import {KEY_ENTER_COMMAND, LexicalEditor} from 'lexical';
+import {KEY_ENTER_COMMAND, type LexicalEditor} from 'lexical';
 import {createTestEditor} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import {act} from 'react';
 import ReactDOM from 'react-dom';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {
   afterEach,
   beforeEach,
@@ -26,8 +26,8 @@ import {
 import {
   LexicalMenu,
   MenuOption,
-  MenuRenderFn,
-  MenuResolution,
+  type MenuRenderFn,
+  type MenuResolution,
   useDynamicPositioning,
 } from '../../shared/LexicalMenu';
 

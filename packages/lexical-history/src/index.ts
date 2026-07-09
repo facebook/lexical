@@ -6,15 +6,13 @@
  *
  */
 
-import type {EditorState, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
-
 import {
   batch,
   effect,
   getPeerDependencyFromEditor,
   namedSignals,
-  ReadonlySignal,
-  Signal,
+  type ReadonlySignal,
+  type Signal,
   signal,
 } from '@lexical/extension';
 import {
@@ -31,10 +29,14 @@ import {
   configExtension,
   CUT_TAG,
   defineExtension,
+  type EditorState,
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,
+  type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
+  type NodeKey,
   PASTE_TAG,
   REDO_COMMAND,
   safeCast,

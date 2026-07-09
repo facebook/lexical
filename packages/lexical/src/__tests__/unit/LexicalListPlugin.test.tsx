@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {ListItemNode, ListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
@@ -22,7 +20,7 @@ import {
   $insertNodes,
   INDENT_CONTENT_COMMAND,
   KEY_ENTER_COMMAND,
-  LexicalEditor,
+  type LexicalEditor,
   OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
 import {
@@ -30,8 +28,8 @@ import {
   html,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
-import {act} from 'react';
-import {createRoot, Root} from 'react-dom/client';
+import {act, type JSX} from 'react';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, test, vi} from 'vitest';
 
 import {

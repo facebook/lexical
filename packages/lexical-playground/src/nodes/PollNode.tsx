@@ -13,11 +13,11 @@ import {
   $setState,
   createState,
   DecoratorNode,
-  DOMExportOutput,
-  LexicalNode,
-  SerializedLexicalNode,
-  Spread,
-  StateConfigValue,
+  type DOMExportOutput,
+  type LexicalNode,
+  type SerializedLexicalNode,
+  type Spread,
+  type StateConfigValue,
   type StateValueOrUpdater,
 } from 'lexical';
 import * as React from 'react';

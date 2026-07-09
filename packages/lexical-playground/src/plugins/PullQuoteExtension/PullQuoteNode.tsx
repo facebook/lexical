@@ -6,13 +6,6 @@
  *
  */
 
-import type {
-  DOMExportOutput,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  SlotChildNode,
-} from 'lexical';
 import type {JSX} from 'react';
 
 import {$appendNodeToHTML} from '@lexical/html';
@@ -26,6 +19,11 @@ import {
   $getSlotNames,
   $setSlot,
   DecoratorNode,
+  type DOMExportOutput,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  type SlotChildNode,
 } from 'lexical';
 
 import {$createSlotContainerNode} from '../../nodes/SlotContainerNode';

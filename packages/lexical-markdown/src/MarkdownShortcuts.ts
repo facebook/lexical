@@ -6,15 +6,6 @@
  *
  */
 
-import type {
-  ElementTransformer,
-  MultilineElementTransformer,
-  TextFormatTransformer,
-  TextMatchTransformer,
-  Transformer,
-} from './MarkdownTransformers';
-import type {ElementNode, LexicalEditor, LexicalNode, TextNode} from 'lexical';
-
 import {$isCodeNode} from '@lexical/code-core';
 import invariant from '@lexical/internal/invariant';
 import {
@@ -29,15 +20,26 @@ import {
   COLLABORATION_TAG,
   COMMAND_PRIORITY_LOW,
   COMPOSITION_END_TAG,
+  type ElementNode,
   HISTORIC_TAG,
   HISTORY_PUSH_TAG,
   KEY_ENTER_COMMAND,
+  type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
   TEXT_TYPE_TO_FORMAT,
+  type TextNode,
 } from 'lexical';
 
 import {canContainTransformableMarkdown} from './importTextTransformers';
-import {TRANSFORMERS} from './MarkdownTransformers';
+import {
+  type ElementTransformer,
+  type MultilineElementTransformer,
+  type TextFormatTransformer,
+  type TextMatchTransformer,
+  type Transformer,
+  TRANSFORMERS,
+} from './MarkdownTransformers';
 import {indexBy, PUNCTUATION_OR_SPACE, transformersByType} from './utils';
 
 function runElementTransformers(

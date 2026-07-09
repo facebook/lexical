@@ -6,13 +6,6 @@
  *
  */
 
-import type {
-  ElementNode,
-  LexicalCommand,
-  LexicalEditor,
-  RangeSelection,
-} from 'lexical';
-
 import {
   $getNearestBlockElementAncestorOrThrow,
   $handleIndentAndOutdent,
@@ -26,11 +19,15 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
   defineExtension,
+  type ElementNode,
   INDENT_CONTENT_COMMAND,
   INSERT_TAB_COMMAND,
   KEY_TAB_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
   mergeRegister,
   OUTDENT_CONTENT_COMMAND,
+  type RangeSelection,
   safeCast,
 } from 'lexical';
 

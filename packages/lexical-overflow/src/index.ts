@@ -6,18 +6,15 @@
  *
  */
 
-import type {
-  EditorConfig,
-  LexicalNode,
-  RangeSelection,
-  SerializedElementNode,
-} from 'lexical';
-
 import {
   $applyNodeReplacement,
   $getDocument,
   defineExtension,
+  type EditorConfig,
   ElementNode,
+  type LexicalNode,
+  type RangeSelection,
+  type SerializedElementNode,
 } from 'lexical';
 
 export type SerializedOverflowNode = SerializedElementNode;

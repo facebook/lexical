@@ -15,7 +15,7 @@ import {
   $isParagraphNode,
   $isTextNode,
   defineExtension,
-  ParagraphNode,
+  type ParagraphNode,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
 

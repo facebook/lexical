@@ -6,22 +6,6 @@
  *
  */
 
-import type {ListNode, ListType} from './';
-import type {
-  BaseSelection,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  EditorThemeClasses,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  ParagraphNode,
-  RangeSelection,
-  SerializedElementNode,
-  Spread,
-} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
 import {
   $applyNodeReplacement,
@@ -39,17 +23,29 @@ import {
   $setDirectionFromDOM,
   $setFormatFromDOM,
   addClassNamesToElement,
+  type BaseSelection,
   buildImportMap,
+  type DOMConversionOutput,
+  type DOMExportOutput,
+  type EditorConfig,
+  type EditorThemeClasses,
   ElementNode,
   getStyleObjectFromCSS,
   isHTMLElement,
-  LexicalEditor,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
   normalizeClassNames,
+  type ParagraphNode,
+  type RangeSelection,
   removeClassNamesFromElement,
+  type SerializedElementNode,
   setDOMStyleFromCSS,
+  type Spread,
 } from 'lexical';
 
-import {$createListNode, $isListNode} from './';
+import {$createListNode, $isListNode, type ListNode, type ListType} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
 import {isNestedListNode} from './utils';
 

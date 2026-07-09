@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {Klass, LexicalEditor, LexicalNode} from 'lexical';
 
 import {$descendantsMatching} from '@lexical/utils';
 import {
@@ -13,6 +12,9 @@ import {
   $createTextNode,
   $getRoot,
   $isTextNode,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
   ParagraphNode,
 } from 'lexical';
 import {createTestEditor} from 'lexical/src/__tests__/utils';

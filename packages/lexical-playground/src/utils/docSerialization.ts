@@ -6,7 +6,8 @@
  *
  */
 
-import {SerializedDocument} from '@lexical/file';
+import type {SerializedDocument} from '@lexical/file';
+
 import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

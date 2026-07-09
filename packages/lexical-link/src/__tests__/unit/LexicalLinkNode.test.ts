@@ -15,7 +15,7 @@ import {
   formatUrl,
   LinkExtension,
   LinkNode,
-  SerializedLinkNode,
+  type SerializedLinkNode,
 } from '@lexical/link';
 import {$createMarkNode, $isMarkNode} from '@lexical/mark';
 import {
@@ -37,10 +37,10 @@ import {
   $isTextNode,
   $selectAll,
   $setSelection,
-  ParagraphNode,
-  RangeSelection,
-  SerializedParagraphNode,
-  TextNode,
+  type ParagraphNode,
+  type RangeSelection,
+  type SerializedParagraphNode,
+  type TextNode,
 } from 'lexical';
 import {$assertNodeType, initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, it, test} from 'vitest';

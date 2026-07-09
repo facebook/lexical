@@ -6,7 +6,7 @@
  *
  */
 
-import {INITIAL_SETTINGS, Settings} from './appSettings';
+import {INITIAL_SETTINGS, type Settings} from './appSettings';
 
 // Export a function so this is not tree-shaken,
 // but evaluate it immediately so it executes before

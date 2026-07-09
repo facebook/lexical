@@ -6,11 +6,9 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {HashtagNode, registerLexicalHashtag} from '@lexical/hashtag';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {useEffect} from 'react';
+import {type JSX, useEffect} from 'react';
 
 /**
  * Enables hashtag support by transforming runs of text that begin with `#`

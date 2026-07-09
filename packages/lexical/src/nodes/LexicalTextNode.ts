@@ -13,19 +13,6 @@ import type {
   Spread,
   TextNodeThemeClasses,
 } from '../LexicalEditor';
-import type {
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  LexicalUpdateJSON,
-  NodeKey,
-  SerializedLexicalNode,
-} from '../LexicalNode';
-import type {
-  BaseSelection,
-  RangeSelection,
-  TextPointType,
-} from '../LexicalSelection';
 import type {ElementNode} from './LexicalElementNode';
 
 import invariant from '@lexical/internal/invariant';
@@ -50,7 +37,15 @@ import {
   TEXT_TYPE_TO_FORMAT,
   TEXT_TYPE_TO_MODE,
 } from '../LexicalConstants';
-import {LexicalNode} from '../LexicalNode';
+import {
+  type DOMConversionMap,
+  type DOMConversionOutput,
+  type DOMExportOutput,
+  LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type SerializedLexicalNode,
+} from '../LexicalNode';
 import {$cloneNodeState} from '../LexicalNodeState';
 import {
   $generateNodesFromRawText,
@@ -59,6 +54,9 @@ import {
   $isRangeSelection,
   $updateElementSelectionOnCreateDeleteNode,
   adjustPointOffsetForMergedSibling,
+  type BaseSelection,
+  type RangeSelection,
+  type TextPointType,
 } from '../LexicalSelection';
 import {errorOnReadOnly} from '../LexicalUpdates';
 import {

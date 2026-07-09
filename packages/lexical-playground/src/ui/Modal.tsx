@@ -6,15 +6,13 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import './Modal.css';
 
 import {useMergeRefs} from '@floating-ui/react';
 import {useLexicalFocusTrapRef} from '@lexical/react/useLexicalFocusTrapRef';
 import {isDOMNode, mergeRegister, registerEventListener} from 'lexical';
 import * as React from 'react';
-import {ReactNode, useEffect, useId, useRef} from 'react';
+import {type JSX, type ReactNode, useEffect, useId, useRef} from 'react';
 import {createPortal} from 'react-dom';
 
 function PortalImpl({

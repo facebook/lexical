@@ -7,18 +7,6 @@
  */
 
 import type {
-  DOMExportOutput,
-  NodeKey,
-  SerializedLexicalNode,
-  SlotChildNode,
-  SlotHostNode,
-} from '../LexicalNode';
-import type {
-  BaseSelection,
-  PointType,
-  RangeSelection,
-} from '../LexicalSelection';
-import type {
   BaseStaticNodeConfig,
   KlassConstructor,
   LexicalEditor,
@@ -29,7 +17,7 @@ import type {
 
 import invariant from '@lexical/internal/invariant';
 
-import {$isTextNode, TextNode} from '../index';
+import {$isTextNode, type TextNode} from '../index';
 import {
   DOUBLE_LINE_BREAK,
   ELEMENT_FORMAT_TO_TYPE,
@@ -37,12 +25,23 @@ import {
   TEXT_TYPE_TO_FORMAT,
 } from '../LexicalConstants';
 import {ElementDOMSlot} from '../LexicalDOMSlot';
-import {$isEphemeral, LexicalNode} from '../LexicalNode';
+import {
+  $isEphemeral,
+  type DOMExportOutput,
+  LexicalNode,
+  type NodeKey,
+  type SerializedLexicalNode,
+  type SlotChildNode,
+  type SlotHostNode,
+} from '../LexicalNode';
 import {
   $getSelection,
   $internalMakeRangeSelection,
   $isRangeSelection,
+  type BaseSelection,
   moveSelectionPointToSibling,
+  type PointType,
+  type RangeSelection,
 } from '../LexicalSelection';
 import {
   $errorOnSlotCycleChild,

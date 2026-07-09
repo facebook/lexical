@@ -7,13 +7,18 @@
  */
 
 import type {Binding} from '.';
-import type {DecoratorNode, NodeKey, NodeMap} from 'lexical';
+import type {CollabElementNode} from './CollabElementNode';
 import type {XmlElement} from 'yjs';
 
 import invariant from '@lexical/internal/invariant';
-import {$getNodeByKey, $isDecoratorNode} from 'lexical';
+import {
+  $getNodeByKey,
+  $isDecoratorNode,
+  type DecoratorNode,
+  type NodeKey,
+  type NodeMap,
+} from 'lexical';
 
-import {CollabElementNode} from './CollabElementNode';
 import {
   $destroySlotsShared,
   $syncPropertiesFromYjs,

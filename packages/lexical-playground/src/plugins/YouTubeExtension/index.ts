@@ -13,7 +13,7 @@ import {
   configExtension,
   createCommand,
   defineExtension,
-  LexicalCommand,
+  type LexicalCommand,
 } from 'lexical';
 
 import {$createYouTubeNode, YouTubeNode} from '../../nodes/YouTubeNode';

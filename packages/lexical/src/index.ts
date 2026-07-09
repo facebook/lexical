@@ -118,6 +118,7 @@ export {
   SELECT_ALL_COMMAND,
   SELECTION_CHANGE_COMMAND,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
+  SET_TEXT_FORMAT_COMMAND,
   UNDO_COMMAND,
 } from './LexicalCommands';
 export {
@@ -263,6 +264,7 @@ export {
   $isBlockElementNode,
   $isNodeSelection,
   $isRangeSelection,
+  $setTextFormat,
   $updateDOMSelection,
   type RawTextVisitor,
   tokenizeRawText,

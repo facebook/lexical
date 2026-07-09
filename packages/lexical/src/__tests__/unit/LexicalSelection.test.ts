@@ -19,6 +19,7 @@ import {
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
+  $formatText,
   $getCaretInDirection,
   $getRoot,
   $getSelection,
@@ -29,9 +30,11 @@ import {
   $selectAll,
   $setCompositionKey,
   $setSelection,
+  $setTextFormat,
   createEditor,
   ElementNode,
   getDOMSelection,
+  IS_BOLD,
   type LexicalEditor,
   type LexicalNode,
   type ParagraphNode,
@@ -2254,6 +2257,172 @@ describe('Regression #7551 - Selection boundary normalization for single-child i
           invariant($isTextNode(anchorNode));
           expect(anchorNode.getTextContent()).toBe(' world');
           expect(anchor.offset).toBe(0);
+        },
+        {discrete: true},
+      );
+    });
+  });
+});
+
+describe('$formatText toggle direction (#6935)', () => {
+  initializeUnitTest(testEnv => {
+    test('uses selection.format (AND) instead of first node for toggle direction', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          const boldText = $createTextNode('bold');
+          boldText.setFormat(IS_BOLD);
+          const plainText = $createTextNode('plain');
+          paragraph.append(boldText, plainText);
+          root.append(paragraph);
+
+          const selection = $selectAll();
+          expect(selection.hasFormat('bold')).toBe(false);
+
+          $formatText(selection, 'bold');
+          const children = paragraph.getChildren();
+          const first = $assertNodeType(children[0], $isTextNode);
+          const second = $assertNodeType(children[1], $isTextNode);
+          expect(first.hasFormat('bold')).toBe(true);
+          expect(second.hasFormat('bold')).toBe(true);
+        },
+        {discrete: true},
+      );
+    });
+
+    test('toggling off works when all nodes share the format', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          const bold1 = $createTextNode('aaa');
+          bold1.setFormat(IS_BOLD);
+          const bold2 = $createTextNode('bbb');
+          bold2.setFormat(IS_BOLD);
+          paragraph.append(bold1, bold2);
+          root.append(paragraph);
+
+          const selection = $selectAll();
+          // onSelectionChange computes this as AND of all text nodes;
+          // unit tests bypass the event handler so we set it manually.
+          selection.format = IS_BOLD;
+          expect(selection.hasFormat('bold')).toBe(true);
+
+          $formatText(selection, 'bold');
+          const children = paragraph.getChildren();
+          const first = $assertNodeType(children[0], $isTextNode);
+          const second = $assertNodeType(children[1], $isTextNode);
+          expect(first.hasFormat('bold')).toBe(false);
+          expect(second.hasFormat('bold')).toBe(false);
+        },
+        {discrete: true},
+      );
+    });
+
+    test('explicit alignWithFormat bypasses selection.format reference', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          const boldText = $createTextNode('bold');
+          boldText.setFormat(IS_BOLD);
+          const plainText = $createTextNode('plain');
+          paragraph.append(boldText, plainText);
+          root.append(paragraph);
+
+          const selection = $selectAll();
+          $formatText(selection, 'bold', IS_BOLD);
+          const children = paragraph.getChildren();
+          const first = $assertNodeType(children[0], $isTextNode);
+          const second = $assertNodeType(children[1], $isTextNode);
+          expect(first.hasFormat('bold')).toBe(true);
+          expect(second.hasFormat('bold')).toBe(true);
+        },
+        {discrete: true},
+      );
+    });
+  });
+});
+
+describe('$setTextFormat (#5518)', () => {
+  initializeUnitTest(testEnv => {
+    test('sets bold to true on mixed formatting', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          const boldText = $createTextNode('bold');
+          boldText.setFormat(IS_BOLD);
+          const plainText = $createTextNode('plain');
+          paragraph.append(boldText, plainText);
+          root.append(paragraph);
+
+          const selection = $selectAll();
+          $setTextFormat(selection, {bold: true});
+          const children = paragraph.getChildren();
+          const first = $assertNodeType(children[0], $isTextNode);
+          const second = $assertNodeType(children[1], $isTextNode);
+          expect(first.hasFormat('bold')).toBe(true);
+          expect(second.hasFormat('bold')).toBe(true);
+        },
+        {discrete: true},
+      );
+    });
+
+    test('sets bold to false on all-bold text', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          const bold1 = $createTextNode('aaa');
+          bold1.setFormat(IS_BOLD);
+          const bold2 = $createTextNode('bbb');
+          bold2.setFormat(IS_BOLD);
+          paragraph.append(bold1, bold2);
+          root.append(paragraph);
+
+          const selection = $selectAll();
+          // $setTextFormat uses explicit alignWithFormat, so selection.format
+          // doesn't matter here — but we set it for realism.
+          selection.format = IS_BOLD;
+          $setTextFormat(selection, {bold: false});
+          const children = paragraph.getChildren();
+          const first = $assertNodeType(children[0], $isTextNode);
+          const second = $assertNodeType(children[1], $isTextNode);
+          expect(first.hasFormat('bold')).toBe(false);
+          expect(second.hasFormat('bold')).toBe(false);
+        },
+        {discrete: true},
+      );
+    });
+
+    test('sets multiple formats at once', () => {
+      const {editor} = testEnv;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          const text = $createTextNode('hello');
+          paragraph.append(text);
+          root.append(paragraph);
+
+          const selection = $selectAll();
+          $setTextFormat(selection, {bold: true, italic: true});
+          const node = $assertNodeType(paragraph.getFirstChild(), $isTextNode);
+          expect(node.hasFormat('bold')).toBe(true);
+          expect(node.hasFormat('italic')).toBe(true);
         },
         {discrete: true},
       );

@@ -70,6 +70,7 @@ import {
   $setSelection,
   $setSelectionFromCaretRange,
   $setState,
+  $setTextFormat,
   addClassNamesToElement,
   CAN_USE_BEFORE_INPUT,
   type CaretDirection,
@@ -133,6 +134,7 @@ import {
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
   type SerializedElementNode,
+  SET_TEXT_FORMAT_COMMAND,
   setNodeIndentFromDOM,
   type Spread,
   type TextFormatType,
@@ -1170,6 +1172,18 @@ export function registerRichText(
           return false;
         }
         $formatText(selection, format);
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
+    editor.registerCommand(
+      SET_TEXT_FORMAT_COMMAND,
+      formats => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) && !$isNodeSelection(selection)) {
+          return false;
+        }
+        $setTextFormat(selection, formats);
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

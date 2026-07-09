@@ -87,6 +87,14 @@ export const DELETE_LINE_COMMAND: LexicalCommand<boolean> =
 export const FORMAT_TEXT_COMMAND: LexicalCommand<TextFormatType> =
   /* @__PURE__ */ createCommand('FORMAT_TEXT_COMMAND');
 /**
+ * Dispatched to explicitly set or unset text formats on the selection.
+ * Unlike FORMAT_TEXT_COMMAND which toggles, this command sets each specified
+ * format to the exact boolean value provided.
+ */
+export const SET_TEXT_FORMAT_COMMAND: LexicalCommand<
+  Partial<Record<TextFormatType, boolean>>
+> = /* @__PURE__ */ createCommand('SET_TEXT_FORMAT_COMMAND');
+/**
  * Dispatched on undo (Cmd+Z on macOS, Ctrl+Z elsewhere).
  */
 export const UNDO_COMMAND: LexicalCommand<void> =

@@ -195,15 +195,13 @@ export class CompiledKeyboardShortcuts<
   }
 
   /**
-   * Iterate all shortcuts matching the event in insertion order.
+   * All shortcuts matching the event, in insertion order.
    * Matches by `key` precede matches by the `code` fallback.
    */
-  *matches(event: KeyboardEventModifiers): Generator<S, void> {
+  matches(event: KeyboardEventModifiers): S[] {
     const bits = getEventModifierBits(event);
     const byKey = this.byKey.get(`${bits}:${event.key.toLowerCase()}`);
-    if (byKey) {
-      yield* byKey;
-    }
+    const matches = byKey ? byKey.slice() : [];
     // The code fallback only applies when event.key is not a single ASCII
     // character, otherwise it would break remapped layouts (Dvorak, etc.)
     if (
@@ -212,16 +210,15 @@ export class CompiledKeyboardShortcuts<
     ) {
       const byCode = this.byCode.get(`${bits}:${event.code}`);
       if (byCode) {
-        yield* byCode;
+        matches.push(...byCode);
       }
     }
+    return matches;
   }
 
   /** The first shortcut matching the event, if any */
   match(event: KeyboardEventModifiers): S | undefined {
-    for (const shortcut of this.matches(event)) {
-      return shortcut;
-    }
+    return this.matches(event)[0];
   }
 }
 

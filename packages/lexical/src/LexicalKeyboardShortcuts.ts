@@ -6,14 +6,21 @@
  *
  */
 
-import type {CommandListenerPriority, LexicalEditor} from './LexicalEditor';
+import type {
+  CommandListenerPriority,
+  LexicalCommand,
+  LexicalEditor,
+} from './LexicalEditor';
+import type {BaseSelection} from './LexicalSelection';
 import type {
   KeyboardEventModifierMask,
   KeyboardEventModifiers,
 } from './LexicalUtils';
 
+import {IS_APPLE} from './environment';
 import {KEY_DOWN_COMMAND} from './LexicalCommands';
 import {COMMAND_PRIORITY_NORMAL} from './LexicalEditor';
+import {$getSelection} from './LexicalSelection';
 
 /**
  * The data that describes which keyboard events a shortcut matches: an
@@ -37,29 +44,70 @@ export interface KeyboardShortcutMatch {
 }
 
 /**
- * The handler for a matched {@link KeyboardShortcut}. Returning true marks
- * the event as handled: no later shortcuts or lower-priority
- * {@link KEY_DOWN_COMMAND} listeners will run, and `event.preventDefault()`
- * is called unless the shortcut sets `preventDefault: false`. Returning
- * false falls through to the next matching shortcut (if any).
- */
-export type KeyboardShortcutHandler = (
-  event: KeyboardEvent,
-  editor: LexicalEditor,
-) => boolean;
-
-/**
- * A keyboard shortcut: the key and modifiers to match plus the handler to
- * run when it matches.
+ * A keyboard shortcut is pure data: the key and modifiers to match, and the
+ * command to dispatch (with the matched KeyboardEvent as its payload) when
+ * it does. Keeping the action to a command keeps the mapping declarative -
+ * a shortcut table can be rendered as a menu (see
+ * {@link formatKeyboardShortcut}), remapped, or serialized, and the
+ * behavior lives in command listeners where any other UI can share it.
  */
 export interface KeyboardShortcut extends KeyboardShortcutMatch {
-  handler: KeyboardShortcutHandler;
   /**
-   * Call `event.preventDefault()` when the handler returns true
-   * (default true)
+   * The command dispatched with the matched KeyboardEvent as its payload.
+   * The event is considered handled when the dispatch is handled; an
+   * unhandled dispatch falls through to any other shortcut on the same key
+   * and modifiers. Listeners are responsible for calling
+   * `event.preventDefault()` if the default action must be suppressed.
    */
-  preventDefault?: boolean;
+  command: LexicalCommand<KeyboardEvent>;
+  /**
+   * A human readable description of what the shortcut does, for building
+   * menus or help dialogs from a shortcut table
+   */
+  description?: string;
+  /**
+   * Called with the current selection before the command is dispatched;
+   * returning true skips this shortcut (falling through to any other
+   * shortcut on the same key and modifiers). Menu builders may use the
+   * same predicate to render an item as disabled.
+   */
+  $disabled?: (
+    selection: null | BaseSelection,
+    editor: LexicalEditor,
+  ) => boolean;
+  /**
+   * Optional middleware around the command dispatch, for shortcuts that
+   * must run additional code (e.g. setting some state) without defining a
+   * wrapper command. It is responsible for calling `$next()` - which is
+   * `editor.dispatchCommand(command, event)` - and returning whether the
+   * event was handled (an unhandled event falls through to any other
+   * shortcut on the same key and modifiers).
+   */
+  $dispatch?: (
+    command: LexicalCommand<KeyboardEvent>,
+    event: KeyboardEvent,
+    $next: () => boolean,
+    editor: LexicalEditor,
+  ) => boolean;
 }
+
+/**
+ * The modifier mask for the primary shortcut modifier:
+ * ⌘ (metaKey) on Apple platforms and Ctrl elsewhere.
+ */
+export const CONTROL_OR_META: KeyboardEventModifierMask = {
+  ctrlKey: !IS_APPLE,
+  metaKey: IS_APPLE,
+};
+
+/**
+ * The modifier mask conventionally used for word-level editing shortcuts:
+ * Option (altKey) on Apple platforms and Ctrl elsewhere.
+ */
+export const CONTROL_OR_ALT: KeyboardEventModifierMask = {
+  altKey: IS_APPLE,
+  ctrlKey: !IS_APPLE,
+};
 
 const MODIFIER_BITS = [
   ['altKey', 1],
@@ -197,9 +245,11 @@ export interface RegisterKeyboardShortcutsOptions {
 
 /**
  * Compile the given shortcuts and register a single
- * {@link KEY_DOWN_COMMAND} listener that dispatches to them by the pressed
- * key and modifiers. When several shortcuts match the same event they are
- * tried in the given order until one handler returns true.
+ * {@link KEY_DOWN_COMMAND} listener that dispatches each matched shortcut's
+ * command with the KeyboardEvent as its payload (unless its `$disabled`
+ * predicate returns true for the current selection). When several
+ * shortcuts match the same event they are tried in the given order until
+ * one command dispatch is handled.
  *
  * @returns A cleanup function that unregisters the listener.
  */
@@ -212,11 +262,22 @@ export function registerKeyboardShortcuts(
   return editor.registerCommand(
     KEY_DOWN_COMMAND,
     event => {
+      let selection: undefined | null | BaseSelection;
       for (const shortcut of compiled.matches(event)) {
-        if (shortcut.handler(event, editor)) {
-          if (shortcut.preventDefault !== false) {
-            event.preventDefault();
+        if (shortcut.$disabled) {
+          if (selection === undefined) {
+            selection = $getSelection();
           }
+          if (shortcut.$disabled(selection, editor)) {
+            continue;
+          }
+        }
+        const $next = () => editor.dispatchCommand(shortcut.command, event);
+        if (
+          shortcut.$dispatch
+            ? shortcut.$dispatch(shortcut.command, event, $next, editor)
+            : $next()
+        ) {
           return true;
         }
       }
@@ -224,4 +285,42 @@ export function registerKeyboardShortcuts(
     },
     options.priority !== undefined ? options.priority : COMMAND_PRIORITY_NORMAL,
   );
+}
+
+export interface FormatKeyboardShortcutOptions {
+  /** Override the platform convention (defaults to the runtime platform) */
+  isApple?: boolean;
+  /** The separator between segments (default `'+'`) */
+  separator?: string;
+}
+
+/**
+ * Format the key binding of a shortcut as a human readable string for
+ * menus, tooltips, and help dialogs (e.g. `'⌘+Shift+K'` on Apple platforms
+ * and `'Ctrl+Shift+K'` elsewhere). Modifiers with an `'any'` mask are not
+ * displayed.
+ */
+export function formatKeyboardShortcut(
+  shortcut: KeyboardShortcutMatch,
+  options: FormatKeyboardShortcutOptions = {},
+): string {
+  const {isApple = IS_APPLE, separator = '+'} = options;
+  const {key, modifiers = {}} = shortcut;
+  const segments: string[] = [];
+  if (modifiers.ctrlKey === true) {
+    segments.push(isApple ? '⌃' : 'Ctrl');
+  }
+  if (modifiers.metaKey === true) {
+    segments.push(isApple ? '⌘' : 'Meta');
+  }
+  if (modifiers.altKey === true) {
+    segments.push(isApple ? 'Opt' : 'Alt');
+  }
+  if (modifiers.shiftKey === true) {
+    segments.push('Shift');
+  }
+  segments.push(
+    key === ' ' ? 'Space' : key.length === 1 ? key.toUpperCase() : key,
+  );
+  return segments.join(separator);
 }

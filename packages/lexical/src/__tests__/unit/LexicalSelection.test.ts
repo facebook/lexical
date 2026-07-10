@@ -58,6 +58,44 @@ function mapLatest<T extends LexicalNode>(nodes: T[]): T[] {
 
 describe('LexicalSelection tests', () => {
   initializeUnitTest(testEnv => {
+    test('programmatic selection movement clears stale formatting', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('Hello World');
+        paragraph.append(text);
+        root.append(paragraph);
+
+        // 1. Bold "Hello" (first 5 chars)
+        text.select(0, 5);
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.formatText('bold');
+        }
+      });
+
+      await editor.update(() => {
+        const selection = $getSelection();
+        // Verify we are indeed bold
+        if ($isRangeSelection(selection)) {
+          expect(selection.hasFormat('bold')).toBe(true);
+        }
+
+        // 2. Jump to the end (the unformatted " World" text)
+        $getRoot().selectEnd();
+      });
+
+      await editor.update(() => {
+        const selection = $getSelection();
+        // 3. Verification: format cache must be flushed
+        if ($isRangeSelection(selection)) {
+          expect(selection.hasFormat('bold')).toBe(false);
+        }
+      });
+    });
+
     describe('Inserting text either side of inline elements', () => {
       const setup = async (
         mode: 'start-of-paragraph' | 'mid-paragraph' | 'end-of-paragraph',

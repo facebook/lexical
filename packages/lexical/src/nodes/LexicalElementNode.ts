@@ -606,8 +606,18 @@ export class ElementNode
         'element',
       );
     } else {
+      // Check if we are jumping to a new container
+      const isDifferentNode =
+        selection.anchor.key !== key || selection.focus.key !== key;
+
       selection.anchor.set(key, anchorOffset, 'element');
       selection.focus.set(key, focusOffset, 'element');
+
+      // ONLY flush the cache if we programmatically moved to a new element
+      if (isDifferentNode) {
+        selection.format = 0;
+        selection.style = '';
+      }
       selection.dirty = true;
     }
     return selection;

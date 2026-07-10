@@ -96,8 +96,8 @@ import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
 import {PagesReactExtension} from '../PagesReactExtension';
 import {InsertPollDialog} from '../PollExtension';
 import {$isRubyNode, $toggleRuby} from '../RubyExtension/RubyNode';
-import {SHORTCUTS} from '../ShortcutsPlugin/shortcuts';
-import ShortcutsHelpDialog from '../ShortcutsPlugin/ShortcutsHelpDialog';
+import {SHORTCUTS} from '../ShortcutsExtension/shortcuts';
+import ShortcutsHelpDialog from '../ShortcutsExtension/ShortcutsHelpDialog';
 import {InsertTableDialog} from '../TablePlugin';
 import FontSize, {parseFontSizeForToolbar} from './fontSize';
 import {

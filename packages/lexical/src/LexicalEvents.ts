@@ -94,7 +94,11 @@ import {
   DOUBLE_LINE_BREAK,
   IS_ALL_FORMATTING,
 } from './LexicalConstants';
-import {compileKeyboardShortcuts} from './LexicalKeyboardShortcuts';
+import {
+  compileKeyboardShortcuts,
+  CONTROL_OR_ALT,
+  CONTROL_OR_META,
+} from './LexicalKeyboardShortcuts';
 import {createRefCountedRegistry} from './LexicalRefCountedRegistry';
 import {
   $internalCreateRangeSelection,
@@ -1570,8 +1574,6 @@ let keyDownShortcuts: null | CompiledKeyboardShortcuts<KeyDownShortcut> = null;
  * matches any given event.
  */
 function buildKeyDownShortcuts(): KeyDownShortcut[] {
-  const CONTROL_OR_META = {ctrlKey: !IS_APPLE, metaKey: IS_APPLE};
-  const CONTROL_OR_ALT = {altKey: IS_APPLE, ctrlKey: !IS_APPLE};
   /** Dispatch the command with the KeyboardEvent as its payload */
   const dispatch = (
     key: string,

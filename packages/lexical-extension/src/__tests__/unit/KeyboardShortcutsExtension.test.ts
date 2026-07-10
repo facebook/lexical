@@ -9,6 +9,7 @@
 import {
   buildEditorFromExtensions,
   compileKeyboardShortcuts,
+  formatKeyboardShortcut,
   getExtensionDependencyFromEditor,
   type KeyboardShortcut,
   KeyboardShortcutsExtension,
@@ -19,7 +20,6 @@ import {
   configExtension,
   createCommand,
   defineExtension,
-  formatKeyboardShortcut,
   isExactShortcutMatch,
   KEY_DOWN_COMMAND,
   type KeyboardEventModifierMask,

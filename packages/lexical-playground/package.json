@@ -1,6 +1,6 @@
 {
   "name": "lexical-playground",
-  "version": "0.47.0",
+  "version": "0.47.1-nightly.20260710.0",
   "private": true,
   "type": "module",
   "scripts": {

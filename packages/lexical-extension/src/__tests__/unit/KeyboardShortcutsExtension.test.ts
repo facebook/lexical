@@ -99,14 +99,12 @@ describe('compileKeyboardShortcuts', () => {
     } as const;
     const other = {key: 'j', modifiers: {ctrlKey: true}, name: 'other'};
     const compiled = compileKeyboardShortcuts([first, second, other]);
-    expect([...compiled.matches(makeEvent('k', 'KeyK', 2))]).toEqual([
+    expect(compiled.matches(makeEvent('k', 'KeyK', 2))).toEqual([
       first,
       second,
     ]);
-    expect([...compiled.matches(makeEvent('K', 'KeyK', 2 | 8))]).toEqual([
-      second,
-    ]);
-    expect([...compiled.matches(makeEvent('k', 'KeyK', 0))]).toEqual([]);
+    expect(compiled.matches(makeEvent('K', 'KeyK', 2 | 8))).toEqual([second]);
+    expect(compiled.matches(makeEvent('k', 'KeyK', 0))).toEqual([]);
   });
 });
 

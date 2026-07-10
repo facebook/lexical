@@ -138,6 +138,7 @@ import {
   isLexicalEditor,
   isModifier,
   isSelectionWithinEditor,
+  type KeyboardEventModifierMask,
 } from './LexicalUtils';
 import {registerEventListener} from './utils/registerEventListener';
 
@@ -1571,83 +1572,74 @@ let keyDownShortcuts: null | CompiledKeyboardShortcuts<KeyDownShortcut> = null;
 function buildKeyDownShortcuts(): KeyDownShortcut[] {
   const CONTROL_OR_META = {ctrlKey: !IS_APPLE, metaKey: IS_APPLE};
   const CONTROL_OR_ALT = {altKey: IS_APPLE, ctrlKey: !IS_APPLE};
-  const dispatchEvent =
-    (command: LexicalCommand<KeyboardEvent>) =>
-    (event: KeyboardEvent, editor: LexicalEditor) => {
+  /** Dispatch the command with the KeyboardEvent as its payload */
+  const dispatch = (
+    key: string,
+    modifiers: KeyboardEventModifierMask,
+    command: LexicalCommand<KeyboardEvent>,
+  ): KeyDownShortcut => ({
+    key,
+    modifiers,
+    onMatch: (event, editor) => {
       dispatchCommand(editor, command, event);
-    };
-  const preventAndDispatch =
-    <T>(command: LexicalCommand<T>, payload: T) =>
-    (event: KeyboardEvent, editor: LexicalEditor) => {
+    },
+  });
+  /** preventDefault() and dispatch the command with a fixed payload */
+  const prevent = <T>(
+    key: string,
+    modifiers: KeyboardEventModifierMask,
+    command: LexicalCommand<T>,
+    payload: T,
+  ): KeyDownShortcut => ({
+    key,
+    modifiers,
+    onMatch: (event, editor) => {
       event.preventDefault();
       dispatchCommand(editor, command, payload);
-    };
-  const dispatchEnter =
-    (isInsertLineBreak: boolean) =>
-    (event: KeyboardEvent, editor: LexicalEditor) => {
+    },
+  });
+  const enter = (
+    modifiers: KeyboardEventModifierMask,
+    isInsertLineBreak: boolean,
+  ): KeyDownShortcut => ({
+    key: 'Enter',
+    modifiers,
+    onMatch: (event, editor) => {
       editor._inputState.isInsertLineBreak = isInsertLineBreak;
       dispatchCommand(editor, KEY_ENTER_COMMAND, event);
-    };
+    },
+  });
   // Only RangeSelection can use the native cut/copy
-  const dispatchCopyOrCut =
-    (command: LexicalCommand<KeyboardEvent>) =>
-    (event: KeyboardEvent, editor: LexicalEditor) => {
+  const copyOrCut = (
+    key: string,
+    command: LexicalCommand<KeyboardEvent>,
+  ): KeyDownShortcut => ({
+    key,
+    modifiers: CONTROL_OR_META,
+    onMatch: (event, editor) => {
       const prevSelection = editor._editorState._selection;
       if (prevSelection !== null && !$isRangeSelection(prevSelection)) {
         event.preventDefault();
         dispatchCommand(editor, command, event);
       }
-    };
+    },
+  });
   return [
-    // moveForward / moveToEnd
-    {
-      key: 'ArrowRight',
-      modifiers: {shiftKey: 'any'},
-      onMatch: dispatchEvent(KEY_ARROW_RIGHT_COMMAND),
-    },
-    {
-      key: 'ArrowRight',
-      modifiers: {...CONTROL_OR_META, shiftKey: 'any'},
-      onMatch: dispatchEvent(MOVE_TO_END),
-    },
-    // moveBackward / moveToStart
-    {
-      key: 'ArrowLeft',
-      modifiers: {shiftKey: 'any'},
-      onMatch: dispatchEvent(KEY_ARROW_LEFT_COMMAND),
-    },
-    {
-      key: 'ArrowLeft',
-      modifiers: {...CONTROL_OR_META, shiftKey: 'any'},
-      onMatch: dispatchEvent(MOVE_TO_START),
-    },
-    // moveUp / moveDown
-    {
-      key: 'ArrowUp',
-      modifiers: {altKey: 'any', shiftKey: 'any'},
-      onMatch: dispatchEvent(KEY_ARROW_UP_COMMAND),
-    },
-    {
-      key: 'ArrowDown',
-      modifiers: {altKey: 'any', shiftKey: 'any'},
-      onMatch: dispatchEvent(KEY_ARROW_DOWN_COMMAND),
-    },
+    // moveForward / moveToEnd / moveBackward / moveToStart / moveUp / moveDown
+    dispatch('ArrowRight', {shiftKey: 'any'}, KEY_ARROW_RIGHT_COMMAND),
+    dispatch('ArrowRight', {...CONTROL_OR_META, shiftKey: 'any'}, MOVE_TO_END),
+    dispatch('ArrowLeft', {shiftKey: 'any'}, KEY_ARROW_LEFT_COMMAND),
+    dispatch('ArrowLeft', {...CONTROL_OR_META, shiftKey: 'any'}, MOVE_TO_START),
+    dispatch('ArrowUp', {altKey: 'any', shiftKey: 'any'}, KEY_ARROW_UP_COMMAND),
+    dispatch(
+      'ArrowDown',
+      {altKey: 'any', shiftKey: 'any'},
+      KEY_ARROW_DOWN_COMMAND,
+    ),
     // lineBreak / paragraph
-    {
-      key: 'Enter',
-      modifiers: {...ANY_MODIFIERS, shiftKey: true},
-      onMatch: dispatchEnter(true),
-    },
-    {
-      key: 'Enter',
-      modifiers: {...ANY_MODIFIERS, shiftKey: false},
-      onMatch: dispatchEnter(false),
-    },
-    {
-      key: ' ',
-      modifiers: ANY_MODIFIERS,
-      onMatch: dispatchEvent(KEY_SPACE_COMMAND),
-    },
+    enter({...ANY_MODIFIERS, shiftKey: true}, true),
+    enter({...ANY_MODIFIERS, shiftKey: false}, false),
+    dispatch(' ', ANY_MODIFIERS, KEY_SPACE_COMMAND),
     // deleteBackward
     {
       key: 'Backspace',
@@ -1658,58 +1650,26 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
         }
       },
     },
-    {
-      key: 'Escape',
-      modifiers: ANY_MODIFIERS,
-      onMatch: dispatchEvent(KEY_ESCAPE_COMMAND),
-    },
+    dispatch('Escape', ANY_MODIFIERS, KEY_ESCAPE_COMMAND),
     // deleteForward
-    {key: 'Delete', onMatch: dispatchEvent(KEY_DELETE_COMMAND)},
+    dispatch('Delete', {}, KEY_DELETE_COMMAND),
     // deleteWordBackward / deleteWordForward
-    {
-      key: 'Backspace',
-      modifiers: CONTROL_OR_ALT,
-      onMatch: preventAndDispatch(DELETE_WORD_COMMAND, true),
-    },
-    {
-      key: 'Delete',
-      modifiers: CONTROL_OR_ALT,
-      onMatch: preventAndDispatch(DELETE_WORD_COMMAND, false),
-    },
-    // bold / underline / italic
-    {
-      key: 'b',
-      modifiers: CONTROL_OR_META,
-      onMatch: preventAndDispatch(FORMAT_TEXT_COMMAND, 'bold'),
-    },
-    {
-      key: 'u',
-      modifiers: CONTROL_OR_META,
-      onMatch: preventAndDispatch(FORMAT_TEXT_COMMAND, 'underline'),
-    },
-    {
-      key: 'i',
-      modifiers: CONTROL_OR_META,
-      onMatch: preventAndDispatch(FORMAT_TEXT_COMMAND, 'italic'),
-    },
-    {
-      key: 'Tab',
-      modifiers: {shiftKey: 'any'},
-      onMatch: dispatchEvent(KEY_TAB_COMMAND),
-    },
+    prevent('Backspace', CONTROL_OR_ALT, DELETE_WORD_COMMAND, true),
+    prevent('Delete', CONTROL_OR_ALT, DELETE_WORD_COMMAND, false),
+    prevent('b', CONTROL_OR_META, FORMAT_TEXT_COMMAND, 'bold'),
+    prevent('u', CONTROL_OR_META, FORMAT_TEXT_COMMAND, 'underline'),
+    prevent('i', CONTROL_OR_META, FORMAT_TEXT_COMMAND, 'italic'),
+    dispatch('Tab', {shiftKey: 'any'}, KEY_TAB_COMMAND),
     // undo / redo
-    {
-      key: 'z',
-      modifiers: CONTROL_OR_META,
-      onMatch: preventAndDispatch(UNDO_COMMAND, undefined),
-    },
+    prevent('z', CONTROL_OR_META, UNDO_COMMAND, undefined),
     ...(IS_APPLE
       ? [
-          {
-            key: 'z',
-            modifiers: {metaKey: true, shiftKey: true},
-            onMatch: preventAndDispatch(REDO_COMMAND, undefined),
-          },
+          prevent(
+            'z',
+            {metaKey: true, shiftKey: true},
+            REDO_COMMAND,
+            undefined,
+          ),
           // openLineBreak
           {
             key: 'o',
@@ -1721,45 +1681,23 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
             },
           },
           // deleteBackward / deleteForward
-          {
-            key: 'h',
-            modifiers: {ctrlKey: true},
-            onMatch: preventAndDispatch(DELETE_CHARACTER_COMMAND, true),
-          },
-          {
-            key: 'd',
-            modifiers: {ctrlKey: true},
-            onMatch: preventAndDispatch(DELETE_CHARACTER_COMMAND, false),
-          },
+          prevent('h', {ctrlKey: true}, DELETE_CHARACTER_COMMAND, true),
+          prevent('d', {ctrlKey: true}, DELETE_CHARACTER_COMMAND, false),
           // deleteLineBackward / deleteLineForward
-          {
-            key: 'Backspace',
-            modifiers: {metaKey: true},
-            onMatch: preventAndDispatch(DELETE_LINE_COMMAND, true),
-          },
-          {
-            key: 'Delete',
-            modifiers: {metaKey: true},
-            onMatch: preventAndDispatch(DELETE_LINE_COMMAND, false),
-          },
-          {
-            key: 'k',
-            modifiers: {ctrlKey: true},
-            onMatch: preventAndDispatch(DELETE_LINE_COMMAND, false),
-          },
+          prevent('Backspace', {metaKey: true}, DELETE_LINE_COMMAND, true),
+          prevent('Delete', {metaKey: true}, DELETE_LINE_COMMAND, false),
+          prevent('k', {ctrlKey: true}, DELETE_LINE_COMMAND, false),
         ]
       : [
-          {
-            key: 'y',
-            modifiers: {ctrlKey: true},
-            onMatch: preventAndDispatch(REDO_COMMAND, undefined),
-          },
-          {
-            key: 'z',
-            modifiers: {ctrlKey: true, shiftKey: true},
-            onMatch: preventAndDispatch(REDO_COMMAND, undefined),
-          },
+          prevent('y', {ctrlKey: true}, REDO_COMMAND, undefined),
+          prevent(
+            'z',
+            {ctrlKey: true, shiftKey: true},
+            REDO_COMMAND,
+            undefined,
+          ),
         ]),
+    // selectAll
     {
       key: 'a',
       modifiers: CONTROL_OR_META,
@@ -1770,16 +1708,8 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
         }
       },
     },
-    {
-      key: 'c',
-      modifiers: CONTROL_OR_META,
-      onMatch: dispatchCopyOrCut(COPY_COMMAND),
-    },
-    {
-      key: 'x',
-      modifiers: CONTROL_OR_META,
-      onMatch: dispatchCopyOrCut(CUT_COMMAND),
-    },
+    copyOrCut('c', COPY_COMMAND),
+    copyOrCut('x', CUT_COMMAND),
   ];
 }
 

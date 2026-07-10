@@ -18,7 +18,11 @@ import {$getExtensionOutput} from '@lexical/extension';
 import {defineExtension, type LexicalNode, shallowMergeConfig} from 'lexical';
 
 import {DOMImportContextSymbol, DOMImportExtensionName} from '../constants';
-import {$withFullContext, contextFromPairs} from '../ContextRecord';
+import {
+  $withFullContext,
+  contextFromPairs,
+  getContextRecord,
+} from '../ContextRecord';
 import {type CompiledDispatch, compileImportRules} from './compileImportRules';
 import {defineImportRule} from './defineImportRule';
 import {
@@ -140,18 +144,24 @@ export const DOMImportExtension = /* @__PURE__ */ defineExtension<
         options?: GenerateNodesFromDOMOptions,
       ) => {
         // The session record IS the root layer of the walk's context.
-        // Start with per-call options.context applied on top of the
-        // editor's contextDefaults, then ensure we have a *fresh*
-        // mutable child (never the shared defaults record) so
-        // session.set writes never leak into the editor's config.
+        // When this import runs nested inside another import operation —
+        // e.g. raw HTML inside a Markdown import, or a rule re-entering
+        // the walk for sub-content — it chains to the ambient import
+        // context so states layered by the outer operation stay
+        // readable; the outermost call chains to the editor's
+        // contextDefaults. Per-call options.context applies on top,
+        // and the record is always a *fresh* mutable child (never the
+        // shared parent) so session.set writes never leak outward.
+        const parentRecord =
+          getContextRecord(DOMImportContextSymbol, editor) || defaults;
         const fromOpts =
           options && options.context
-            ? contextFromPairs(options.context, defaults)
-            : defaults;
+            ? contextFromPairs(options.context, parentRecord)
+            : parentRecord;
         const sessionRecord: ContextRecord<typeof DOMImportContextSymbol> =
-          fromOpts !== undefined && fromOpts !== defaults
+          fromOpts !== undefined && fromOpts !== parentRecord
             ? fromOpts
-            : Object.create(defaults || null);
+            : Object.create(parentRecord || null);
         const session = new ImportSessionImpl(sessionRecord);
         const preprocessCtx: DOMPreprocessContext = {session};
         // Stack of preprocessors: config-level first, then per-call.

@@ -118,22 +118,27 @@ export type MdastImportHandler<T extends MdastNode = MdastNode> = (
  */
 export interface MdastExportContext {
   /**
-   * Convert the children of `node` into mdast nodes by dispatching each child
-   * through the registered export handlers.
+   * Convert the children of `source` into mdast nodes by dispatching each
+   * child through the registered export handlers. `source` is an element
+   * (its `getChildren()` are exported) or an explicit list of nodes — e.g.
+   * a `DOMExportOutput.$getChildNodes()` override, which is defined as
+   * replacing `node.getChildren()` for export.
    */
-  exportChildren(node: ElementNode): MdastNode[];
+  exportChildren(source: ElementNode | readonly LexicalNode[]): MdastNode[];
   /**
-   * Convert the inline children of `node` into mdast phrasing content,
-   * grouping bare line breaks as mdast `break` nodes.
+   * Convert the inline children of `source` (an element or an explicit node
+   * list, as in {@link MdastExportContext.exportChildren}) into mdast
+   * phrasing content, grouping bare line breaks as mdast `break` nodes.
    */
-  exportInline(node: ElementNode): PhrasingContent[];
+  exportInline(source: ElementNode | readonly LexicalNode[]): PhrasingContent[];
   /**
-   * Convert the inline children of `node` into one or more mdast block nodes
-   * (paragraphs), splitting on hard line breaks. Used by containers such as
-   * block quotes and list items whose Lexical children are inline but whose
-   * mdast children must be block-level.
+   * Convert the inline children of `source` (an element or an explicit node
+   * list, as in {@link MdastExportContext.exportChildren}) into one or more
+   * mdast block nodes (paragraphs), splitting on hard line breaks. Used by
+   * containers such as block quotes and list items whose Lexical children
+   * are inline but whose mdast children must be block-level.
    */
-  exportBlocks(node: ElementNode): BlockContent[];
+  exportBlocks(source: ElementNode | readonly LexicalNode[]): BlockContent[];
   /**
    * Whether `node` belongs in the current export: always `true` for a
    * whole-document export; during a selection export, `true` when the node

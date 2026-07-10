@@ -12,6 +12,7 @@ import {
 } from '@lexical/extension';
 import {
   $getImportContextValue,
+  $withImportContext,
   type AnyDOMImportRule,
   BlockSchema,
   contextValue,
@@ -675,5 +676,38 @@ describe('ImportContext helpers', () => {
     editor.read(() => {
       expect($getImportContextValue(myState)).toBe(42);
     });
+  });
+
+  test('an import session chains to the ambient import context', () => {
+    // An import started while another import operation is active (a rule
+    // re-entering the walk for sub-content, or raw HTML inside a Markdown
+    // import) inherits the ambient context; per-call `options.context`
+    // layers on top of it, and session writes never leak back out.
+    const myState = createImportState('test/ambient', () => 'default');
+    const ProbeRule = defineImportRule({
+      $import: ctx => [$createTextNode(`saw:${ctx.get(myState)}`)],
+      match: sel.tag('cite'),
+      name: 'test/ambient-probe',
+    });
+    using editor = buildTestEditor([ProbeRule, ParagraphRule, TextRule]);
+    editor.update(
+      () => {
+        const textOf = (nodes: LexicalNode[]) =>
+          nodes.map(node => node.getTextContent()).join('');
+        expect(textOf($generate('<p><cite></cite></p>'))).toBe('saw:default');
+        $withImportContext([contextValue(myState, 'outer')])(() => {
+          expect(textOf($generate('<p><cite></cite></p>'))).toBe('saw:outer');
+          expect(
+            textOf(
+              $generate('<p><cite></cite></p>', {
+                context: [contextValue(myState, 'per-call')],
+              }),
+            ),
+          ).toBe('saw:per-call');
+        });
+        expect($getImportContextValue(myState)).toBe('default');
+      },
+      {discrete: true},
+    );
   });
 });

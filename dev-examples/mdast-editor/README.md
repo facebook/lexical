@@ -29,6 +29,25 @@ monorepo root, which outputs into
 the development artifacts on purpose — they are demos, and the
 development builds keep Lexical's full error messages.
 
+## Repro links
+
+The document can be seeded from the URL hash (mirroring the playground's
+`#doc=` convention), which makes bug reports reproducible with a plain
+link. Two encodings, so a repro can use whichever fits:
+
+- `#md=<encodeURIComponent(markdown)>` — the Markdown source, hand-editable
+  directly in the URL:
+  `/dev-examples/mdast-editor/#md=%23%20Repro%0A%0A*hello*`
+- `#doc=<base64url(gzip(SerializedDocument))>` — the full editor state
+  JSON (via `@lexical/file`), for node/state shapes Markdown can't
+  express.
+
+The **Share MD** / **Share JSON** buttons in the Markdown pane header put
+the current document in the URL (and on the clipboard) in each encoding.
+While a hash document is shown, localStorage persistence is suspended so a
+repro link never clobbers locally persisted work; **Reset** drops the hash
+and resumes normal persistence.
+
 ## What got simpler vs. `examples/markdown-editor`
 
 The legacy example's `MarkdownExtension.ts` is ~240 lines; the equivalent

@@ -21,10 +21,14 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 
+import {INSERT_ALERT_COMMAND} from '../extensions/MdastAlertExtension';
+import {INSERT_COLLAPSIBLE_COMMAND} from '../extensions/MdastCollapsibleExtension';
 import {
   FORMAT_HEADING_COMMAND,
   FORMAT_PARAGRAPH_COMMAND,
 } from '../extensions/MdastEditorExtension';
+import {INSERT_FOOTNOTE_COMMAND} from '../extensions/MdastFootnoteExtension';
+import {FORMAT_KBD_COMMAND} from '../extensions/MdastKbdExtension';
 import {
   type BlockType,
   ToolbarStateExtension,
@@ -142,6 +146,39 @@ export function ToolbarPlugin() {
         aria-label="Inline code"
         aria-pressed={isCode}>
         {'</>'}
+      </button>
+      <button
+        type="button"
+        onClick={() => editor.dispatchCommand(FORMAT_KBD_COMMAND, undefined)}
+        className={`${buttonBase} ${buttonInactive} font-mono text-xs`}
+        aria-label="Keyboard key">
+        Kbd
+      </button>
+      <Divider />
+      <button
+        type="button"
+        onClick={() =>
+          editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined)
+        }
+        className={`${buttonBase} ${buttonInactive} text-xs`}
+        aria-label="Insert collapsible section">
+        ▸ Details
+      </button>
+      <button
+        type="button"
+        onClick={() => editor.dispatchCommand(INSERT_ALERT_COMMAND, 'note')}
+        className={`${buttonBase} ${buttonInactive} text-xs`}
+        aria-label="Insert alert">
+        ! Alert
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND, undefined)
+        }
+        className={`${buttonBase} ${buttonInactive} text-xs`}
+        aria-label="Insert footnote">
+        ^ Note
       </button>
     </div>
   );

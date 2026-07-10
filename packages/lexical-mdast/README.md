@@ -63,6 +63,7 @@ Behavior and convenience bundles:
 | `MdastExportExtension` | serialization back to Markdown (`$convertToMarkdownString`) |
 | `MdastExtension` | bundle of `MdastImportExtension` + `MdastExportExtension` |
 | `MdastShadowRootQuoteExtension` | opt-in: blockquotes as block containers (full-fidelity nested content) |
+| `MdastHtmlExtension` | opt-in: raw HTML routed through the `@lexical/html` DOM import rules; HTML-encoded export via `$exportViaDOM` / `rawHtmlBlock` |
 | `MdastShortcutsExtension` | streaming keyboard shortcuts |
 
 Everything composes granularly and degrades gracefully: an editor with only
@@ -182,6 +183,75 @@ configExtension(MdastImportExtension, {
   toMarkdownExtensions: [{bullet: '+', emphasis: '_'}],
 });
 ```
+
+### Raw HTML (`MdastHtmlExtension`)
+
+Markdown passes raw HTML through — GitHub-style `<details>` blocks, inline
+`<kbd>` runs — and by default it imports as literal text. The opt-in
+`MdastHtmlExtension` routes it through the editor's `@lexical/html`
+`DOMImportExtension` rules instead, so **any HTML the editor can already
+import works from Markdown**, and Markdown *inside* the construct keeps
+working in both directions, the way it does on GitHub:
+
+```md
+<details><summary>
+The *summary* line
+</summary>
+
+The **body** blocks
+</details>
+```
+
+- **Import**: raw HTML block sequences and inline tag runs are reassembled
+  by tag balance (CommonMark splits blocks on blank lines), parsed with
+  `DOMParser`, and dispatched through the DOM import rule registry.
+  Markdown between the tags is parsed with the document's own grammar and
+  substituted back in with the surrounding formatting context. Unclosed
+  tags — including the `<p` / `<details` prefixes typing passes through —
+  stay literal text.
+- **Export**: register `$exportViaDOM` for a node type and its `exportDOM`
+  becomes the single source of truth for the Markdown encoding too: the
+  shell is rendered, the children channel and named slots (marked with
+  `data-lexical-slot`, which is stripped from the output) are substituted
+  with embedded Markdown, boolean attributes are normalized, and custom
+  element tags get their own lines where CommonMark requires it to
+  re-parse. For hand-written encodings, `rawHtmlBlock(...parts)` builds
+  the same kind of node from a template of raw tag strings, embedded
+  Markdown phrasing, and `{flow}` block runs.
+- **Context states**: `RenderContextMarkdownExport` lets `exportDOM`
+  diverge per destination (Markdown vs the HTML clipboard), and
+  `ImportContextMarkdown` lets a DOM rule distinguish Markdown import from
+  HTML paste.
+
+A complete HTML-encoded construct is one DOM import rule (which then also
+serves HTML paste) plus one export rule:
+
+```ts
+import {$exportViaDOM, MdastHtmlExtension, MdastImportExtension} from '@lexical/mdast';
+import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
+import {configExtension, defineExtension} from 'lexical';
+
+export const MdastCollapsibleExtension = defineExtension({
+  name: 'collapsible-markdown',
+  nodes: [CollapsibleNode],
+  dependencies: [
+    MdastHtmlExtension,
+    configExtension(DOMImportExtension, {
+      // sel.tag('details') -> CollapsibleNode; serves Markdown and paste.
+      rules: [DetailsImportRule],
+    }),
+    configExtension(MdastImportExtension, {
+      // exportDOM is the single source of truth for the encoding.
+      exportRules: [{$export: $exportViaDOM, type: 'collapsible'}],
+    }),
+  ],
+});
+```
+
+The [mdast-editor dev example](https://github.com/facebook/lexical/tree/main/dev-examples/mdast-editor)
+demonstrates the block path (a `<details><summary>` collapsible with a
+named summary slot), the inline path (`<kbd>` keys), and inline HTML text
+formats (`<u>`, `<mark>`, `<sub>`/`<sup>`, `style="color: …"` spans).
 
 ### Custom mappings
 

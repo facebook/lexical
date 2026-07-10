@@ -6,13 +6,19 @@
  *
  */
 
+import {$convertToMarkdownString} from '@lexical/mdast';
+import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
+import {TreeViewExtension} from '@lexical/react/TreeViewExtension';
 import {configExtension, defineExtension} from 'lexical';
+import {useState} from 'react';
 
 import {
+  docShareUrl,
   MarkdownPersistenceExtension,
+  markdownShareUrl,
   RESET_MARKDOWN_COMMAND,
 } from './extensions/MarkdownPersistenceExtension';
 import {ToolbarStateExtension} from './extensions/ToolbarStateExtension';
@@ -44,12 +50,53 @@ you export — bullet styles, code fences, setext headings, hard breaks:
 > Blockquotes survive round-trips,
 > including *inline formatting*.
 
+Formats Markdown can't express travel as inline HTML: <u>underline</u>, <mark>highlight</mark>, H<sub>2</sub>O, e=mc<sup>2</sup>, and <span style="color: red;">styled text</span>.
+
+Custom inline nodes ride the same mechanism — press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy, or <kbd>**⌘K**</kbd> with Markdown inside the tags.
+
+Footnotes[^1] live in a \`footnotes\` slot on the RootNode — outside the
+document's children — and serialize to the end of the Markdown[^details].
+Type \`[^another]\` to mint one.
+
+[^1]: The reference is an inline node; this definition body is editable
+    in the section below.
+
+[^details]: Definitions hold *block* content, so lists and code work here.
+
 1. Ordered list item one
 2. Ordered list item two
 
 - [x] Streaming shortcuts share the import grammar
 - [x] Syntax preserved via NodeState
 - [ ] Ship it
+
+## Alerts
+
+GitHub-style alerts are plain blockquotes with a \`[!TYPE]\` marker: the
+type is NodeState on the ordinary quote node, and the chrome is a
+\`DOMRenderExtension\` override — no custom node class. Click a title
+to pick another type or convert back to a blockquote:
+
+> [!NOTE]
+> Useful information that users should know, even when skimming.
+
+> [!WARNING]
+> Critical content demanding immediate attention — with *inline
+> formatting* and other **Markdown** intact.
+
+## Collapsible sections
+
+Raw HTML blocks import through the editor's HTML import rules — with
+the Markdown inside them intact, GitHub-style — so GFM-style
+\`<details>\` blocks map to a collapsible node whose summary line is
+edited in a named slot:
+
+<details><summary>
+This is the *summary* that shows when collapsed
+</summary>
+
+This is the *collapsed content* that's only visible when open
+</details>
 
 ---
 
@@ -88,8 +135,13 @@ const theme = {
   text: {
     bold: 'font-bold',
     code: 'rounded bg-zinc-200/70 px-1 py-0.5 font-mono text-[0.9em] dark:bg-zinc-700/60',
+    highlight: 'rounded-sm bg-yellow-200/80 px-0.5 dark:bg-yellow-500/30',
     italic: 'italic',
     strikethrough: 'line-through',
+    subscript: 'align-sub text-[0.8em]',
+    superscript: 'align-super text-[0.8em]',
+    underline: 'underline',
+    underlineStrikethrough: 'underline line-through',
   },
 };
 
@@ -100,11 +152,18 @@ const mdastEditorExtension = defineExtension({
       storageKey: STORAGE_KEY,
     }),
     ToolbarStateExtension,
+    // The devtools panel below the editor: the same debug view the
+    // playground shows, as an extension output component (its default
+    // config carries the tree-view-output/debug-* class names).
+    TreeViewExtension,
   ],
   name: '@lexical/dev-mdast-editor-example/Editor',
   namespace: '@lexical/dev-mdast-editor-example',
   theme,
 });
+
+const paneButtonClass =
+  'cursor-pointer rounded-md border border-solid border-transparent bg-transparent px-2 py-0.5 text-[10px] font-medium tracking-wide text-zinc-500 normal-case transition-colors duration-150 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700';
 
 function ResetButton() {
   const [editor] = useLexicalComposerContext();
@@ -112,8 +171,37 @@ function ResetButton() {
     <button
       type="button"
       onClick={() => editor.dispatchCommand(RESET_MARKDOWN_COMMAND, undefined)}
-      className="cursor-pointer rounded-md border border-solid border-transparent bg-transparent px-2 py-0.5 text-[10px] font-medium tracking-wide text-zinc-500 normal-case transition-colors duration-150 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700">
+      className={paneButtonClass}>
       Reset
+    </button>
+  );
+}
+
+// Repro links: put the current document in the URL hash (and on the
+// clipboard) so a bug report can reproduce it with a plain link. Two
+// encodings — `#md=` carries the Markdown source (hand-editable), `#doc=`
+// carries the full editor state JSON in the playground's compressed
+// convention (for shapes Markdown can't express).
+function ShareButton({kind}: {kind: 'doc' | 'md'}) {
+  const [editor] = useLexicalComposerContext();
+  const [copied, setCopied] = useState(false);
+  const share = async () => {
+    const url =
+      kind === 'md'
+        ? markdownShareUrl(editor.read(() => $convertToMarkdownString()))
+        : await docShareUrl(editor);
+    window.history.replaceState({}, '', url);
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // The URL bar still carries the link when the clipboard is denied.
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  return (
+    <button type="button" onClick={share} className={paneButtonClass}>
+      {copied ? 'Copied!' : kind === 'md' ? 'Share MD' : 'Share JSON'}
     </button>
   );
 }
@@ -123,34 +211,43 @@ export default function Editor() {
     <LexicalExtensionComposer
       extension={mdastEditorExtension}
       contentEditable={null}>
-      <div className="grid h-full w-full grid-cols-1 overflow-hidden rounded-2xl border border-solid border-black/10 md:grid-cols-2 dark:border-white/10 dark:bg-stone-800">
-        <div className="relative flex min-h-0 flex-col border-b [border-bottom-style:solid] border-b-black/10 md:border-r md:border-b-0 md:[border-right-style:solid] md:border-r-black/10 dark:border-b-white/10 dark:md:border-r-white/10">
-          <div className="flex h-11 shrink-0 items-center gap-1 border-b [border-bottom-style:solid] border-b-black/10 bg-zinc-50 px-2 dark:border-b-white/10 dark:bg-zinc-800">
-            <ToolbarPlugin />
+      <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-solid border-black/10 dark:border-white/10 dark:bg-stone-800">
+        <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-2">
+          <div className="relative flex min-h-0 flex-col border-b [border-bottom-style:solid] border-b-black/10 md:border-r md:border-b-0 md:[border-right-style:solid] md:border-r-black/10 dark:border-b-white/10 dark:md:border-r-white/10">
+            <div className="flex h-11 shrink-0 items-center gap-1 border-b [border-bottom-style:solid] border-b-black/10 bg-zinc-50 px-2 dark:border-b-white/10 dark:bg-zinc-800">
+              <ToolbarPlugin />
+            </div>
+            <div className="relative flex-1 overflow-auto">
+              <ContentEditable
+                className="min-h-full p-4 text-base leading-relaxed text-wrap outline-none"
+                aria-label="Markdown editor"
+                aria-placeholder="Start writing markdown..."
+                placeholder={
+                  <div className="pointer-events-none absolute top-4 left-4 text-zinc-400 select-none">
+                    Start writing markdown...
+                  </div>
+                }
+              />
+            </div>
           </div>
-          <div className="relative flex-1 overflow-auto">
-            <ContentEditable
-              className="min-h-full p-4 text-base leading-relaxed text-wrap outline-none"
-              aria-label="Markdown editor"
-              aria-placeholder="Start writing markdown..."
-              placeholder={
-                <div className="pointer-events-none absolute top-4 left-4 text-zinc-400 select-none">
-                  Start writing markdown...
-                </div>
-              }
-            />
+          <div className="flex min-h-0 flex-col">
+            <div className="flex h-11 shrink-0 items-center justify-between border-b [border-bottom-style:solid] border-b-black/10 bg-zinc-50 px-4 dark:border-b-white/10 dark:bg-zinc-800">
+              <span className="text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+                Markdown
+              </span>
+              <div className="flex items-center gap-0.5">
+                <ShareButton kind="md" />
+                <ShareButton kind="doc" />
+                <ResetButton />
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto bg-white dark:bg-stone-800">
+              <MarkdownSourcePlugin />
+            </div>
           </div>
         </div>
-        <div className="flex min-h-0 flex-col">
-          <div className="flex h-11 shrink-0 items-center justify-between border-b [border-bottom-style:solid] border-b-black/10 bg-zinc-50 px-4 dark:border-b-white/10 dark:bg-zinc-800">
-            <span className="text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
-              Markdown
-            </span>
-            <ResetButton />
-          </div>
-          <div className="flex-1 overflow-auto bg-white dark:bg-stone-800">
-            <MarkdownSourcePlugin />
-          </div>
+        <div className="shrink-0 border-t [border-top-style:solid] border-t-black/10 dark:border-t-white/10">
+          <ExtensionComponent lexical:extension={TreeViewExtension} />
         </div>
       </div>
     </LexicalExtensionComposer>

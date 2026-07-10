@@ -133,12 +133,72 @@ insert at the current selection), `$generateNodesFromMarkdownString`
 returns a detached array of block-level nodes and leaves the document
 and selection untouched.
 
+## Raw HTML
+
+Markdown passes raw HTML through — GitHub-style `<details>` blocks,
+inline `<kbd>` runs — and by default it imports as literal text. The
+opt-in `MdastHtmlExtension` routes it through the editor's
+[`DOMImportExtension`](/docs/serialization/dom-import) rules instead,
+so any HTML the editor can already import works from Markdown, and
+Markdown *inside* the construct keeps working in both directions, the
+way it does on GitHub:
+
+```md
+<details><summary>
+The *summary* line
+</summary>
+
+The **body** blocks
+</details>
+```
+
+On export the same idea runs in reverse: registering the generic
+`$exportViaDOM` handler for a node type makes that node's own
+`exportDOM` the single source of truth for its Markdown encoding —
+the rendered shell has its children channel and named slots
+substituted with embedded Markdown, and custom-element tags are
+placed on their own lines where CommonMark requires it to re-parse.
+`rawHtmlBlock(...parts)` builds the same kind of output from a
+hand-written template. Context states parallel the HTML pipeline's:
+`RenderContextMarkdownExport` lets `exportDOM` diverge between the
+Markdown encoding and the HTML clipboard, and `ImportContextMarkdown`
+lets a DOM rule distinguish Markdown import from HTML paste.
+
+A complete HTML-encoded construct is one DOM import rule (which then
+also serves HTML paste) plus one `$exportViaDOM` export rule — see
+the [package README](/docs/packages/lexical-mdast) for a template and
+the [mdast-editor dev example](/dev-examples/mdast-editor/) for
+complete constructs on the block path (`<details><summary>` with a
+named slot) and the inline path (`<kbd>`).
+
 ## Custom syntax
 
 New syntax is added the same way the built-in features are built: an
 extension contributes import/export rules and the micromark/mdast
 grammar for its construct, and ships the nodes those rules need. See
 the [package README](/docs/packages/lexical-mdast) for a template.
+
+## Context states
+
+The Markdown pipeline runs under the same context-record mechanism as
+the `@lexical/html` import/render pipelines, so rules use the same
+techniques in either registry:
+
+- The whole import walk runs with `ImportContextMarkdown` set. An
+  mdast import handler reads ambient state with
+  `$getImportContextValue(...)` and layers state for its subtree with
+  `$withImportContext(pairs)(() => ctx.importChildren(node))` — the
+  layer is visible to nested handlers and to any DOM-rule session the
+  subtree opens for raw HTML (DOM import sessions chain to the ambient
+  import context), and to nothing outside it. `createImportState`
+  defines app states exactly as it does for DOM rules.
+- On export, `RenderContextMarkdownExport` marks `exportDOM` shells
+  rendered for Markdown (`$exportViaDOM`), and selection exports
+  (`$convertSelectionToMarkdownString`) run under
+  `RenderContextMarkdownSelection` carrying the selection — a
+  contributed to-markdown handler that appends end-of-document data
+  (like the dev example's footnote definitions) reads it with
+  `$getRenderContextValue` to scope its output to a clipboard copy.
 
 ## Comparison with @lexical/markdown
 

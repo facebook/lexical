@@ -1,2 +1,394 @@
 @import 'tailwindcss';
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Lexical tree view (devtools) panel below the editor. Dark in both themes,
+   like the playground's debug view. The panel is the positioning context for
+   the tree/export toggle and the time-travel button in its top-right. */
+.tree-view-output {
+  display: block;
+  position: relative;
+  overflow: auto;
+  max-height: 14rem;
+  padding: 0.5rem 0.75rem;
+  background: rgb(24 24 27);
+  color: rgb(228 228 231);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.debug-treetype-button,
+.debug-timetravel-button {
+  position: absolute;
+  top: 0.5rem;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: rgb(161 161 170);
+  font-size: 11px;
+  cursor: pointer;
+}
+.debug-treetype-button {
+  right: 5.5rem;
+}
+.debug-timetravel-button {
+  right: 0.75rem;
+}
+.debug-treetype-button:hover,
+.debug-timetravel-button:hover {
+  text-decoration: underline;
+}
+.debug-timetravel-panel {
+  display: flex;
+  overflow: hidden;
+  margin: auto;
+  padding: 0 0 0.5rem;
+}
+.debug-timetravel-panel-slider {
+  flex: 8;
+  padding: 0;
+}
+.debug-timetravel-panel-button {
+  flex: 1;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: rgb(228 228 231);
+  font-size: 11px;
+  cursor: pointer;
+}
+.debug-timetravel-panel-button:hover {
+  text-decoration: underline;
+}
+
+/* Collapsible section node (GFM-style <details>/<summary>). The summary row
+   holds the toggle chrome plus the revealed `summary` slot container; the
+   content element hosts the node's children channel and is hidden while the
+   section is closed. */
+.collapsible-container {
+  border: 1px solid rgb(212 212 216);
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
+}
+.dark .collapsible-container {
+  border-color: rgb(82 82 91);
+}
+.collapsible-summary-row {
+  align-items: baseline;
+  display: flex;
+  font-weight: 600;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
+}
+.collapsible-summary-row > [data-lexical-slot='summary'] {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.collapsible-toggle {
+  background: transparent;
+  border: 0;
+  color: rgb(113 113 122);
+  cursor: pointer;
+  font-size: 0.625rem;
+  line-height: 1.5;
+  padding: 0 0.125rem;
+  user-select: none;
+}
+.collapsible-toggle::before {
+  content: '▶';
+}
+.collapsible-container[data-open='true']
+  > .collapsible-summary-row
+  > .collapsible-toggle::before {
+  content: '▼';
+}
+.collapsible-content {
+  border-top: 1px solid rgb(228 228 231);
+  padding: 0.375rem 0.625rem;
+}
+.dark .collapsible-content {
+  border-top-color: rgb(63 63 70);
+}
+.collapsible-container:not([data-open='true']) > .collapsible-content {
+  display: none;
+}
+
+/* GitHub-style alerts: an ordinary QuoteNode carrying an `alertType`
+   NodeState; the classes and the fixed title element are applied by
+   MdastAlertExtension's DOMRenderExtension override. Accent colors follow
+   GitHub's palette. These rules are unlayered, so they win over the
+   Tailwind utility classes the quote theme applies. */
+.markdown-alert-note {
+  --alert-accent: #0969da;
+}
+.markdown-alert-tip {
+  --alert-accent: #1a7f37;
+}
+.markdown-alert-important {
+  --alert-accent: #8250df;
+}
+.markdown-alert-warning {
+  --alert-accent: #9a6700;
+}
+.markdown-alert-caution {
+  --alert-accent: #cf222e;
+}
+.dark .markdown-alert-note {
+  --alert-accent: #4493f8;
+}
+.dark .markdown-alert-tip {
+  --alert-accent: #3fb950;
+}
+.dark .markdown-alert-important {
+  --alert-accent: #ab7df8;
+}
+.dark .markdown-alert-warning {
+  --alert-accent: #d29922;
+}
+.dark .markdown-alert-caution {
+  --alert-accent: #f85149;
+}
+.markdown-alert {
+  border-left-color: var(--alert-accent);
+}
+.markdown-alert-title {
+  align-items: center;
+  color: var(--alert-accent);
+  cursor: pointer;
+  display: flex;
+  font-weight: 600;
+  gap: 0.4rem;
+  margin: 0.25rem 0;
+  position: relative;
+  user-select: none;
+}
+/* Dropdown affordance on the trigger. */
+.markdown-alert-title::after {
+  content: '▾';
+  font-size: 0.75em;
+  opacity: 0.55;
+}
+.markdown-alert-title[aria-expanded='true']::after {
+  content: '▴';
+}
+.markdown-alert-title::before {
+  align-items: center;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  content: '!';
+  display: inline-flex;
+  font-size: 0.72em;
+  height: 1.45em;
+  justify-content: center;
+  line-height: 1;
+  width: 1.45em;
+}
+.markdown-alert-note > .markdown-alert-title::before {
+  content: 'i';
+}
+.markdown-alert-tip > .markdown-alert-title::before {
+  content: '✓';
+}
+.markdown-alert-caution > .markdown-alert-title::before {
+  content: '✕';
+}
+
+/* The alert-type dropdown, opened from the title trigger. It lives inside
+   the title element (marked setDOMUnmanaged so lexical leaves it alone),
+   anchored under the trigger. */
+.markdown-alert-menu {
+  background: #fff;
+  border: 1px solid rgb(212 212 216);
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  display: flex;
+  flex-direction: column;
+  left: 0;
+  min-width: 12rem;
+  padding: 0.25rem;
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  z-index: 50;
+}
+.dark .markdown-alert-menu {
+  background: rgb(39 39 42);
+  border-color: rgb(82 82 91);
+}
+.markdown-alert-menu-item {
+  align-items: center;
+  background: none;
+  border: 0;
+  border-radius: 0.375rem;
+  color: rgb(63 63 70);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  gap: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  text-align: left;
+}
+.dark .markdown-alert-menu-item {
+  color: rgb(228 228 231);
+}
+.markdown-alert-menu-item:hover {
+  background: rgb(244 244 245);
+}
+.dark .markdown-alert-menu-item:hover {
+  background: rgb(63 63 70);
+}
+/* Accent dot per type (the item carries the markdown-alert-<type> class,
+   so the same --alert-accent custom properties apply). */
+.markdown-alert-menu-item::before {
+  background: var(--alert-accent, transparent);
+  border-radius: 50%;
+  content: '';
+  flex: none;
+  height: 0.55rem;
+  width: 0.55rem;
+}
+.markdown-alert-menu-item.is-current::after {
+  content: '✓';
+  margin-left: auto;
+  opacity: 0.7;
+  padding-left: 0.5rem;
+}
+.markdown-alert-menu-remove {
+  border-radius: 0 0 0.375rem 0.375rem;
+  border-top: 1px solid rgb(228 228 231);
+  margin-top: 0.25rem;
+  padding-top: 0.45rem;
+}
+.dark .markdown-alert-menu-remove {
+  border-top-color: rgb(63 63 70);
+}
+.markdown-alert-menu-remove::before {
+  background: transparent;
+  border: 1px dashed rgb(161 161 170);
+}
+
+/* Footnotes: refs are inline superscript chips; the section (the value of
+   the root's `footnotes` slot) renders at the bottom of the editor via the
+   RootNode render override in MdastFootnoteExtension. */
+.footnote-ref {
+  color: #0969da;
+  cursor: pointer;
+  font-size: 0.75em;
+  font-weight: 600;
+  user-select: none;
+}
+.footnote-ref:hover {
+  text-decoration: underline;
+}
+.dark .footnote-ref {
+  color: #4493f8;
+}
+.footnote-ref::before {
+  content: '[';
+}
+.footnote-ref::after {
+  content: ']';
+}
+.footnotes {
+  border-top: 1px solid rgb(228 228 231);
+  font-size: 0.875em;
+  margin-top: 1.5rem;
+  padding-top: 0.5rem;
+}
+.dark .footnotes {
+  border-top-color: rgb(63 63 70);
+}
+.footnotes-title {
+  color: rgb(113 113 122);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.375rem;
+  text-transform: uppercase;
+  user-select: none;
+}
+.footnote-def {
+  align-items: baseline;
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.25rem 0;
+}
+/* The marker column: `[^label]:` plus the remove control, on ONE line (no
+   wrapping under the label) and sharing the first text baseline of the body
+   content. The controls line up via em-sized inline-flex boxes so they sit
+   on the same baseline as the label text. */
+.footnote-def-marker {
+  align-items: baseline;
+  color: rgb(113 113 122);
+  display: flex;
+  flex: none;
+  flex-wrap: nowrap;
+  gap: 0.125rem;
+  user-select: none;
+  white-space: nowrap;
+}
+.footnote-def-label::before {
+  content: '[^';
+}
+.footnote-def-label::after {
+  content: ']:';
+}
+.footnote-def-backlink,
+.footnote-def-remove {
+  align-items: center;
+  background: none;
+  border: 0;
+  border-radius: 0.25rem;
+  color: rgb(161 161 170);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.8em;
+  height: 1.25em;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  width: 1.25em;
+}
+/* The backlinks render inline after the note text (inside the body's last
+   paragraph), GitHub-style: one per reference, `↩` then `↩²`, `↩³`, ... */
+.footnote-def-backlinks {
+  display: inline-flex;
+  gap: 0.125rem;
+  margin-left: 0.25rem;
+  user-select: none;
+  vertical-align: baseline;
+}
+.footnote-def-backlink sup {
+  font-size: 0.7em;
+  line-height: 1;
+}
+.footnote-def-backlink:hover,
+.footnote-def-remove:hover {
+  background: rgb(244 244 245);
+  color: rgb(63 63 70);
+}
+.dark .footnote-def-backlink:hover,
+.dark .footnote-def-remove:hover {
+  background: rgb(63 63 70);
+  color: rgb(228 228 231);
+}
+.footnote-def-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Keyboard key node (GitHub's inline <kbd> idiom): the classic keycap. */
+.kbd-key {
+  border: 1px solid rgb(212 212 216);
+  border-bottom-width: 2px;
+  border-radius: 0.25rem;
+  background: rgb(250 250 250);
+  padding: 0.0625rem 0.3125rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85em;
+}
+.dark .kbd-key {
+  border-color: rgb(82 82 91);
+  background: rgb(39 39 42);
+}

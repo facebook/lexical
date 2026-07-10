@@ -25,6 +25,11 @@ import type {
   State,
 } from 'mdast-util-to-markdown';
 
+import {
+  $withRenderContext,
+  contextValue,
+  createRenderState,
+} from '@lexical/html';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $getRoot,
@@ -293,11 +298,26 @@ function createNodeExporter(
     }
   }
 
+  /**
+   * The children a context method exports: an element's `getChildren()`, or
+   * the explicit list the caller supplied (e.g. a
+   * `DOMExportOutput.$getChildNodes()` override, which replaces
+   * `node.getChildren()` for export by contract).
+   */
+  function $childrenOf(
+    source: ElementNode | readonly LexicalNode[],
+  ): readonly LexicalNode[] {
+    // Array.isArray does not narrow readonly-array unions in the else branch.
+    return Array.isArray(source)
+      ? source
+      : (source as ElementNode).getChildren();
+  }
+
   const context: MdastExportContext = {
-    exportBlocks: node => $exportBlocks(node),
-    exportChildren: node => {
+    exportBlocks: source => $exportBlocks(source),
+    exportChildren: source => {
       const out: MdastNode[] = [];
-      for (const child of node.getChildren()) {
+      for (const child of $childrenOf(source)) {
         const target = $filterChild(child);
         if (target === null) {
           continue;
@@ -310,7 +330,7 @@ function createNodeExporter(
       }
       return out;
     },
-    exportInline: node => $exportInline(node),
+    exportInline: source => $exportInline(source),
     isIncluded: $isIncluded,
   };
 
@@ -340,12 +360,14 @@ function createNodeExporter(
   }
 
   /**
-   * Converts the inline children of `node` into phrasing content.
+   * Converts the inline children of `source` into phrasing content.
    */
-  function $exportInline(node: ElementNode): PhrasingContent[] {
+  function $exportInline(
+    source: ElementNode | readonly LexicalNode[],
+  ): PhrasingContent[] {
     const result: PhrasingContent[] = [];
     const runs = new TextRunAccumulator();
-    for (const child of node.getChildren()) {
+    for (const child of $childrenOf(source)) {
       const target = $filterChild(child);
       if (target === null) {
         continue;
@@ -373,7 +395,9 @@ function createNodeExporter(
    * (hard or soft according to its marker). Nested block children pass
    * through directly.
    */
-  function $exportBlocks(node: ElementNode): BlockContent[] {
+  function $exportBlocks(
+    source: ElementNode | readonly LexicalNode[],
+  ): BlockContent[] {
     const blocks: BlockContent[] = [];
     let inline: PhrasingContent[] = [];
     const runs = new TextRunAccumulator();
@@ -384,7 +408,7 @@ function createNodeExporter(
         inline = [];
       }
     };
-    for (const child of node.getChildren()) {
+    for (const child of $childrenOf(source)) {
       const target = $filterChild(child);
       if (target === null) {
         continue;
@@ -472,6 +496,21 @@ function $dominantInlineMarkers(node: ElementNode): {
  * supplied element (or the editor root) — or just the selected content —
  * into a Markdown string.
  */
+/**
+ * Render context state carrying the {@link BaseSelection} being serialized
+ * during a selection export (`$convertSelectionToMarkdownString`); `null`
+ * during whole-document exports. The export runs synchronously inside the
+ * editor read, so registered export rules and contributed to-markdown
+ * handlers can read it with `$getRenderContextValue` — e.g. a `root`
+ * handler that appends end-of-document data (footnote definitions,
+ * comments) can emit everything for a document export but only the
+ * selection-referenced subset for a clipboard copy.
+ */
+export const RenderContextMarkdownSelection = /* @__PURE__ */ createRenderState(
+  'markdownSelection',
+  (): BaseSelection | null => null,
+);
+
 export function createMdastExport(compiled: CompiledMdast): {
   $exportToMdast: (node?: ElementNode) => Root;
   $exportToMarkdown: (node?: ElementNode) => string;
@@ -535,9 +574,14 @@ export function createMdastExport(compiled: CompiledMdast): {
       return '';
     }
     const root = $getRoot();
-    return $serialize(
-      $toMdast(root, createNodeExporter(compiled, selection)),
-      root,
+    // The whole export — the tree-building walk and the toMarkdown
+    // serialization — runs under a render context carrying the selection,
+    // so export rules and contributed to-markdown handlers can scope their
+    // output to a selection export.
+    return $withRenderContext([
+      contextValue(RenderContextMarkdownSelection, selection),
+    ])(() =>
+      $serialize($toMdast(root, createNodeExporter(compiled, selection)), root),
     );
   };
 

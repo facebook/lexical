@@ -8,6 +8,10 @@
 
 import type {ReadonlySignal} from '@lexical/extension';
 
+import {
+  ClipboardDOMImportExtension,
+  GetClipboardDataExtension,
+} from '@lexical/clipboard';
 import {CodeShikiExtension} from '@lexical/code-shiki';
 import {
   computed,
@@ -17,6 +21,7 @@ import {
 import {HistoryExtension} from '@lexical/history';
 import {CheckListExtension, ListExtension} from '@lexical/list';
 import {
+  $convertSelectionToMarkdownString,
   $convertToMarkdownString,
   MdastCommonMarkExtension,
   MdastExportExtension,
@@ -35,10 +40,17 @@ import {
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_EDITOR,
+  configExtension,
   createCommand,
   defineExtension,
   type LexicalCommand,
 } from 'lexical';
+
+import {HtmlTextFormatExtension} from './HtmlTextFormatExtension';
+import {MdastAlertExtension} from './MdastAlertExtension';
+import {MdastCollapsibleExtension} from './MdastCollapsibleExtension';
+import {MdastFootnoteExtension} from './MdastFootnoteExtension';
+import {MdastKbdExtension} from './MdastKbdExtension';
 
 /**
  * Reformats the current selection's blocks as a paragraph. Toolbars
@@ -91,6 +103,22 @@ export const MdastEditorExtension = defineExtension({
     MdastGfmExtension,
     MdastExportExtension,
     MdastShortcutsExtension,
+    // Example custom construct: a collapsible section whose summary line is
+    // edited in a named slot, encoded in Markdown as a GFM-style raw
+    // `<details><summary>` block.
+    MdastCollapsibleExtension,
+    // The inline counterpart: keyboard keys as GitHub's `<kbd>` idiom.
+    MdastKbdExtension,
+    // Markdown-syntax-driven construct: GitHub alerts (`> [!NOTE]`) as
+    // NodeState on the ordinary QuoteNode + a DOMRenderExtension override.
+    MdastAlertExtension,
+    // GFM footnotes: `[^label]` refs inline, definitions in a FootnotesNode
+    // on a root slot, appended to the Markdown via a to-markdown root
+    // handler.
+    MdastFootnoteExtension,
+    // Text formats Markdown can't express (underline, highlight, sub/sup,
+    // inline color) round-trip as inline HTML.
+    HtmlTextFormatExtension,
     // Shiki syntax highlighting for the code blocks (brings its own
     // CodeExtension / CodeIndentExtension dependencies).
     CodeShikiExtension,
@@ -100,6 +128,25 @@ export const MdastEditorExtension = defineExtension({
     HistoryExtension,
     TabIndentationExtension,
     EditorStateExtension,
+    // Route HTML paste through the same DOMImportExtension rules that
+    // serve Markdown import (the default clipboard handler still uses the
+    // legacy `$generateNodesFromDOM`), so pasted `<details>`, `<kbd>`, and
+    // GitHub alert markup import through the example's rules too.
+    ClipboardDOMImportExtension,
+    // Copy operations also put the selection's Markdown serialization on
+    // the clipboard as text/markdown, so Markdown-aware targets can take
+    // the source form (footnote definitions included — the selection
+    // export appends the ones its refs point at).
+    configExtension(GetClipboardDataExtension, {
+      $exportMimeType: {
+        'text/markdown': [
+          selection =>
+            selection === null
+              ? null
+              : $convertSelectionToMarkdownString(selection),
+        ],
+      },
+    }),
   ],
   name: '@lexical/dev-mdast-editor-example/MdastEditor',
   register(editor) {

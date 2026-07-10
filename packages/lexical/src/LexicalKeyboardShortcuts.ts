@@ -61,25 +61,21 @@ export interface KeyboardShortcut extends KeyboardShortcutMatch {
   preventDefault?: boolean;
 }
 
-const MOD_ALT = 1;
-const MOD_CTRL = 2;
-const MOD_META = 4;
-const MOD_SHIFT = 8;
-
 const MODIFIER_BITS = [
-  ['altKey', MOD_ALT],
-  ['ctrlKey', MOD_CTRL],
-  ['metaKey', MOD_META],
-  ['shiftKey', MOD_SHIFT],
+  ['altKey', 1],
+  ['ctrlKey', 2],
+  ['metaKey', 4],
+  ['shiftKey', 8],
 ] as const;
 
 function getEventModifierBits(event: KeyboardEventModifiers): number {
-  return (
-    (event.altKey ? MOD_ALT : 0) |
-    (event.ctrlKey ? MOD_CTRL : 0) |
-    (event.metaKey ? MOD_META : 0) |
-    (event.shiftKey ? MOD_SHIFT : 0)
-  );
+  let bits = 0;
+  for (const [prop, bit] of MODIFIER_BITS) {
+    if (event[prop]) {
+      bits |= bit;
+    }
+  }
+  return bits;
 }
 
 /**

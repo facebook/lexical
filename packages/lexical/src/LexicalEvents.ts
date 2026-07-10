@@ -1576,15 +1576,12 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
     (event: KeyboardEvent, editor: LexicalEditor) => {
       dispatchCommand(editor, command, event);
     };
-  // A function declaration, not a generic arrow function, because the
-  // build parses this module with the JSX plugin enabled and `<T>(...)`
-  // would be misparsed as a JSX tag
-  function preventAndDispatch<T>(command: LexicalCommand<T>, payload: T) {
-    return (event: KeyboardEvent, editor: LexicalEditor) => {
+  const preventAndDispatch =
+    <T>(command: LexicalCommand<T>, payload: T) =>
+    (event: KeyboardEvent, editor: LexicalEditor) => {
       event.preventDefault();
       dispatchCommand(editor, command, payload);
     };
-  }
   const dispatchEnter =
     (isInsertLineBreak: boolean) =>
     (event: KeyboardEvent, editor: LexicalEditor) => {

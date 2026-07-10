@@ -308,6 +308,7 @@ export interface TextNode {
 export interface InlineFormattableNode {
   /** @internal */
   readonly __isInlineFormattable: true;
+  getFormat(): number;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
   hasFormat(type: TextFormatType): boolean;
   setFormat(format: number): unknown;

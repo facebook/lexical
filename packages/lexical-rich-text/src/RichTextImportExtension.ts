@@ -6,7 +6,7 @@
  *
  */
 
-import {defineImportRule, sel} from '@lexical/html';
+import {BlockSchema, defineImportRule, sel} from '@lexical/html';
 import {
   $setDirectionFromDOM,
   $setFormatFromDOM,
@@ -57,6 +57,37 @@ const QuoteRule = /* @__PURE__ */ defineImportRule({
   },
   match: sel.tag('blockquote'),
   name: '@lexical/rich-text/blockquote',
+});
+
+/**
+ * Opt-in replacement for the default `<blockquote>` rule that imports the
+ * quote as a shadow root {@link QuoteNode} (see `quoteShadowRootState`).
+ * Block-level children such as `<p>` are preserved as blocks and runs of
+ * inline content are wrapped in paragraphs (`BlockSchema`), so structured
+ * blockquote HTML round-trips faithfully instead of being flattened to
+ * inline content.
+ *
+ * Not part of {@link RichTextImportRules}; without it `<blockquote>`
+ * import behavior is unchanged. To opt in, register it with a higher
+ * priority than the default rules, e.g.:
+ * ```ts
+ * configExtension(DOMImportExtension, {rules: [ShadowRootQuoteRule]})
+ * ```
+ * (rules from later configuration take priority, so this shadows the
+ * default `@lexical/rich-text/blockquote` rule).
+ *
+ * @experimental
+ */
+export const ShadowRootQuoteRule = /* @__PURE__ */ defineImportRule({
+  $import: (ctx, el) => {
+    const node = $createQuoteNode({shadowRoot: true});
+    $setFormatFromDOM(node, el);
+    setNodeIndentFromDOM(el, node);
+    $setDirectionFromDOM(node, el);
+    return [node.splice(0, 0, ctx.$importChildren(el, {schema: BlockSchema}))];
+  },
+  match: sel.tag('blockquote'),
+  name: '@lexical/rich-text/blockquote-shadow-root',
 });
 
 /**

@@ -93,6 +93,8 @@ export {
   $mergeCells,
   $moveTableColumn,
   $removeTableRowAtIndex,
+  $setTableColumnIsHeader,
+  $setTableRowIsHeader,
   $unmergeCell,
 } from './LexicalTableUtils';
 export {

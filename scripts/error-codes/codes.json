@@ -393,5 +393,8 @@
   "391": "Expected parent to be a collab element node, or a collab decorator node hosting this shared type as a named slot",
   "392": "Expected parent of a text or linebreak node to be a collab element node",
   "393": "Expected a decorator node for a collab decorator node",
-  "394": "getOffset: expected parent to be a collab element node"
+  "394": "getOffset: expected parent to be a collab element node",
+  "395": "insertText: lastNode is not a TextNode",
+  "396": "Table row index %s out of range",
+  "397": "Table column index %s out of range"
 }

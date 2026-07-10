@@ -822,8 +822,8 @@ export class RangeSelection implements BaseSelection {
   }
 
   /**
-   * Returns whether the provided TextFormatType is present on the Selection. This will be true if any node in the Selection
-   * has the specified format.
+   * Returns whether the provided TextFormatType is present on the Selection. This will be true if all text nodes in the Selection
+   * have the specified format.
    *
    * @param type the TextFormatType to check for.
    * @returns true if the provided format is currently toggled on the Selection, false otherwise.
@@ -1725,21 +1725,20 @@ export class RangeSelection implements BaseSelection {
     ) {
       removeDOMBlockCursorElement(blockCursorElement, editor, rootElement);
     }
+    const focusKeyedDOM = getElementByKeyOrThrow(editor, this.focus.key);
+    let nextFocusDOM: HTMLElement | Text | null = focusKeyedDOM;
+    if (this.focus.type === 'text') {
+      nextFocusDOM = $isTextNode(focusNode)
+        ? $getDOMTextNode(focusNode, focusKeyedDOM, editor)
+        : null;
+    }
     if (this.dirty) {
       const anchorKeyedDOM = getElementByKeyOrThrow(editor, this.anchor.key);
-      const focusKeyedDOM = getElementByKeyOrThrow(editor, this.focus.key);
       let nextAnchorDOM: HTMLElement | Text | null = anchorKeyedDOM;
-      let nextFocusDOM: HTMLElement | Text | null = focusKeyedDOM;
       if (this.anchor.type === 'text') {
         const node = this.anchor.getNode();
         nextAnchorDOM = $isTextNode(node)
           ? $getDOMTextNode(node, anchorKeyedDOM, editor)
-          : null;
-      }
-      if (this.focus.type === 'text') {
-        const node = this.focus.getNode();
-        nextFocusDOM = $isTextNode(node)
-          ? $getDOMTextNode(node, focusKeyedDOM, editor)
           : null;
       }
       if (nextAnchorDOM && nextFocusDOM) {
@@ -1750,6 +1749,55 @@ export class RangeSelection implements BaseSelection {
           nextFocusDOM,
           this.focus.offset,
         );
+      }
+    }
+    // When focus sits at a TextNode boundary, pre-normalize the DOM
+    // selection into the adjacent sibling's Text node so that the
+    // native Selection.modify can cross inline-grid/flex spans (#7301).
+    if (
+      granularity === 'character' &&
+      $isTextNode(focusNode) &&
+      focusNode.isUnmergeable()
+    ) {
+      const atBoundary = isBackward
+        ? this.focus.offset === 0
+        : this.focus.offset === focusNode.getTextContentSize();
+      if (atBoundary) {
+        const sibling = $getSiblingCaret(
+          focusNode,
+          isBackward ? 'previous' : 'next',
+        ).getNodeAtCaret();
+        if ($isTextNode(sibling)) {
+          if (collapse) {
+            const sibKeyedDOM = editor.getElementByKey(sibling.getKey());
+            const sibDOM = sibKeyedDOM
+              ? $getDOMTextNode(sibling, sibKeyedDOM, editor)
+              : null;
+            if (sibDOM) {
+              const sibOffset = isBackward ? sibDOM.length : 0;
+              setDOMSelectionBaseAndExtent(
+                domSelection,
+                sibDOM,
+                sibOffset,
+                sibDOM,
+                sibOffset,
+              );
+            }
+          } else {
+            // For extend (used by deleteCharacter), native Selection.modify
+            // cannot cross inline-grid span boundaries even after
+            // pre-normalization. Set the Lexical selection directly and
+            // return early to skip the native moveNativeSelection call.
+            const sibLen = sibling.getTextContentSize();
+            if (isBackward) {
+              this.focus.set(sibling.__key, sibLen - 1, 'text');
+            } else {
+              this.focus.set(sibling.__key, 1, 'text');
+            }
+            this.dirty = true;
+            return;
+          }
+        }
       }
     }
     // We use the DOM selection.modify API here to "tell" us what the selection
@@ -2187,72 +2235,50 @@ export function $isNodeSelection(x: unknown): x is NodeSelection {
 }
 
 /**
- * Applies the provided format to TextNodes and inline formattable nodes
- * (e.g. DecoratorTextNode) in the selection, splitting or merging TextNodes
- * as necessary and aligning all formattable nodes to the same target format.
- *
- * For RangeSelection the target format is determined by the first TextNode in
- * the selection (same semantics as the previous RangeSelection.formatText).
- * For NodeSelection each node is toggled independently since there is no
- * TextNode to use as an alignment reference.
+ * Applies a pure bitmask transform to every formattable node in the selection
+ * in a single traversal, splitting the first and last TextNodes as necessary
+ * so that only the selected text is affected. Each node receives exactly one
+ * `setFormat(applyFormat(getFormat()))` (ElementNodes use their textFormat).
  *
  * @param selection - the selection whose nodes should be formatted.
- * @param formatType - the format type to apply.
- * @param alignWithFormat - optional 32-bit bitmask to align with (RangeSelection only).
+ * @param applyFormat - maps a node's current 32-bit format to its new format.
  */
-export function $formatText(
+function $updateTextFormat(
   selection: RangeSelection | NodeSelection,
-  formatType: TextFormatType,
-  alignWithFormat: number | null = null,
+  applyFormat: (format: number) => number,
 ): void {
   if ($isNodeSelection(selection)) {
     for (const node of selection.getNodes()) {
       if ($isInlineFormattable(node)) {
-        node.setFormat(node.getFormatFlags(formatType, null));
+        node.setFormat(applyFormat(node.getFormat()));
       }
     }
     return;
   }
 
   if (selection.isCollapsed()) {
-    selection.toggleFormat(formatType);
+    selection.setFormat(applyFormat(selection.format));
     // When changing format, we should stop composition
     $setCompositionKey(null);
     return;
   }
 
-  const selectedNodes = selection.getNodes();
   const selectedTextNodes: TextNode[] = [];
-  for (const selectedNode of selectedNodes) {
-    if ($isTextNode(selectedNode)) {
-      selectedTextNodes.push(selectedNode);
+  for (const node of selection.getNodes()) {
+    if ($isTextNode(node)) {
+      selectedTextNodes.push(node);
+    } else if ($isElementNode(node)) {
+      node.setTextFormat(applyFormat(node.getTextFormat()));
+    } else if ($isInlineFormattable(node)) {
+      node.setFormat(applyFormat(node.getFormat()));
     }
   }
 
-  const applyFormatToElements = (alignWith: number | null) => {
-    for (const node of selectedNodes) {
-      if ($isElementNode(node)) {
-        const newFormat = node.getFormatFlags(formatType, alignWith);
-        node.setTextFormat(newFormat);
-      }
-    }
-  };
-
-  const applyFormatToInlineNodes = (alignWith: number | null) => {
-    for (const node of selectedNodes) {
-      if (!$isTextNode(node) && $isInlineFormattable(node)) {
-        node.setFormat(node.getFormatFlags(formatType, alignWith));
-      }
-    }
-  };
-
   const selectedTextNodesLength = selectedTextNodes.length;
   if (selectedTextNodesLength === 0) {
-    selection.toggleFormat(formatType);
+    selection.setFormat(applyFormat(selection.format));
     // When changing format, we should stop composition
     $setCompositionKey(null);
-    applyFormatToElements(alignWithFormat);
-    applyFormatToInlineNodes(alignWithFormat);
     return;
   }
 
@@ -2276,13 +2302,6 @@ export function $formatText(
     startOffset = 0;
   }
 
-  const firstNextFormat = (firstNode ?? selectedTextNodes[0]).getFormatFlags(
-    formatType,
-    alignWithFormat,
-  );
-  applyFormatToElements(firstNextFormat);
-  applyFormatToInlineNodes(firstNextFormat);
-
   if (firstNode == null) {
     return;
   }
@@ -2298,18 +2317,19 @@ export function $formatText(
     if (startOffset === endOffset) {
       return;
     }
+    const newFormat = applyFormat(firstNode.getFormat());
     // The entire node is selected or it is token, so just format it
     if (
       $isTokenOrSegmented(firstNode) ||
       (startOffset === 0 && endOffset === firstNode.getTextContentSize())
     ) {
-      firstNode.setFormat(firstNextFormat);
+      firstNode.setFormat(newFormat);
     } else {
       // Node is partially selected, so split it into two nodes
       // and style the selected one.
       const splitNodes = firstNode.splitText(startOffset, endOffset);
       const replacement = startOffset === 0 ? splitNodes[0] : splitNodes[1];
-      replacement.setFormat(firstNextFormat);
+      replacement.setFormat(newFormat);
 
       // Update selection only if starts/ends on text node
       if (startPoint.type === 'text') {
@@ -2320,7 +2340,7 @@ export function $formatText(
       }
     }
 
-    selection.format = firstNextFormat;
+    selection.format = newFormat;
     return;
   }
 
@@ -2330,9 +2350,10 @@ export function $formatText(
     [, firstNode] = firstNode.splitText(startOffset);
     startOffset = 0;
   }
+  const firstNextFormat = applyFormat(firstNode.getFormat());
   firstNode.setFormat(firstNextFormat);
 
-  const lastNextFormat = lastNode.getFormatFlags(formatType, firstNextFormat);
+  const lastNextFormat = applyFormat(lastNode.getFormat());
   // If the offset is 0, it means no actual characters are selected,
   // so we skip formatting the last node altogether.
   if (endOffset > 0) {
@@ -2348,8 +2369,7 @@ export function $formatText(
   // Process all text nodes in between
   for (let i = firstIndex + 1; i < lastIndex; i++) {
     const textNode = selectedTextNodes[i];
-    const nextFormat = textNode.getFormatFlags(formatType, lastNextFormat);
-    textNode.setFormat(nextFormat);
+    textNode.setFormat(applyFormat(textNode.getFormat()));
   }
 
   // Update selection only if starts/ends on text node
@@ -2361,6 +2381,74 @@ export function $formatText(
   }
 
   selection.format = firstNextFormat | lastNextFormat;
+}
+
+/**
+ * Explicitly sets or unsets text formats on the selection. Unlike $formatText
+ * which toggles based on the current selection state, this function sets each
+ * specified format to the exact boolean value provided. Mutually exclusive
+ * formats (subscript/superscript, lowercase/uppercase/capitalize) are
+ * reconciled by {@link toggleTextFormatType}, with later entries winning when
+ * the requested formats conflict.
+ *
+ * @param selection - the selection whose nodes should be formatted.
+ * @param formats - a partial record mapping TextFormatType to boolean.
+ */
+export function $setTextFormat(
+  selection: RangeSelection | NodeSelection,
+  formats: Partial<Record<TextFormatType, boolean>>,
+): void {
+  const entries: [TextFormatType, boolean][] = [];
+  for (const [type, value] of Object.entries(formats) as [
+    TextFormatType,
+    boolean | undefined,
+  ][]) {
+    if (typeof value === 'boolean') {
+      entries.push([type, value]);
+    }
+  }
+  if (entries.length === 0) {
+    return;
+  }
+  $updateTextFormat(selection, format => {
+    for (const [type, value] of entries) {
+      format = toggleTextFormatType(
+        format,
+        type,
+        value ? TEXT_TYPE_TO_FORMAT[type] : 0,
+      );
+    }
+    return format;
+  });
+}
+
+/**
+ * Applies the provided format to TextNodes and inline formattable nodes
+ * (e.g. DecoratorTextNode) in the selection, splitting or merging TextNodes
+ * as necessary and aligning all formattable nodes to the same target format.
+ *
+ * For RangeSelection the toggle direction is determined by the selection's
+ * computed format (intersection of all text nodes) when no explicit alignment
+ * is given. For NodeSelection each node is toggled independently when no
+ * explicit alignment is given, since there is no TextNode to use as an
+ * alignment reference.
+ *
+ * @param selection - the selection whose nodes should be formatted.
+ * @param formatType - the format type to apply.
+ * @param alignWithFormat - optional 32-bit bitmask to align with.
+ */
+export function $formatText(
+  selection: RangeSelection | NodeSelection,
+  formatType: TextFormatType,
+  alignWithFormat: number | null = null,
+): void {
+  const effectiveAlign =
+    alignWithFormat === null && $isRangeSelection(selection)
+      ? toggleTextFormatType(selection.format, formatType, null)
+      : alignWithFormat;
+  $updateTextFormat(selection, format =>
+    toggleTextFormatType(format, formatType, effectiveAlign),
+  );
 }
 
 function getCharacterOffset(point: PointType): number {
@@ -2585,6 +2673,30 @@ function $extendSelectionForDeletion(
     domSelection.getRangeAt(0);
   const landedContainer = landedRange.startContainer;
   const landedOffset = landedRange.startOffset;
+  // Native 'move' cannot cross inline-grid/flex span boundaries (#7301).
+  // When at the deletion-side edge of an unmergeable TextNode, extend into
+  // the adjacent sibling directly instead of relying on the native result.
+  if (
+    wasCollapsed &&
+    granularity === 'character' &&
+    anchor.type === 'text' &&
+    $isTextNode(anchorNode) &&
+    anchorNode.isUnmergeable()
+  ) {
+    const boundaryOffset = isBackward ? 0 : anchorNode.getTextContentSize();
+    if (anchorOffset === boundaryOffset) {
+      const sibling = $getSiblingCaret(
+        anchorNode,
+        isBackward ? 'previous' : 'next',
+      ).getNodeAtCaret();
+      if ($isTextNode(sibling)) {
+        const sibOffset = isBackward ? sibling.getTextContentSize() - 1 : 1;
+        selection.focus.set(sibling.__key, sibOffset, 'text');
+        selection.dirty = true;
+        return;
+      }
+    }
+  }
   // In-node character deletion (the common case): keep the focus in the
   // anchor's own text node. A native 'move' reports a caret that lands on a
   // text-node boundary as a position in the *adjacent* node, and that
@@ -3068,7 +3180,7 @@ function resolveSelectionPointOnBoundary(
         prevSibling.isInline()
       ) {
         point.set(prevSibling.__key, prevSibling.getChildrenSize(), 'element');
-      } else if ($isTextNode(prevSibling)) {
+      } else if ($isTextNode(prevSibling) && !node.isUnmergeable()) {
         point.set(
           prevSibling.__key,
           prevSibling.getTextContent().length,

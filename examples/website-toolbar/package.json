@@ -1,21 +1,23 @@
 {
   "name": "@lexical/website-toolbar-example",
   "private": true,
-  "version": "0.46.0",
+  "version": "0.47.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest --run",
+    "test:watch": "vitest"
   },
   "dependencies": {
-    "@lexical/extension": "0.46.0",
-    "@lexical/history": "0.46.0",
-    "@lexical/react": "0.46.0",
-    "@lexical/rich-text": "0.46.0",
-    "@lexical/selection": "0.46.0",
-    "@lexical/utils": "0.46.0",
-    "lexical": "0.46.0",
+    "@lexical/extension": "0.47.0",
+    "@lexical/history": "0.47.0",
+    "@lexical/react": "0.47.0",
+    "@lexical/rich-text": "0.47.0",
+    "@lexical/selection": "0.47.0",
+    "@lexical/utils": "0.47.0",
+    "lexical": "0.47.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },
@@ -24,10 +26,12 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.2",
+    "@vitest/browser-playwright": "^4.1.8",
     "cross-env": "^7.0.3",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.2",
-    "vite": "^7.3.2"
+    "vite": "^7.3.2",
+    "vitest": "^4.1.8"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "4.52.0",

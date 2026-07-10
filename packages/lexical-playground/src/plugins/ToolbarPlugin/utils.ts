@@ -198,6 +198,10 @@ export const formatHeading = (
       $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
       const selection = $getSelection();
       $setBlocksType(selection, () => $createHeadingNode(headingSize));
+      const updatedSelection = $getSelection();
+      if (updatedSelection) {
+        $patchStyleText(updatedSelection, {'font-size': null});
+      }
     });
   }
 };

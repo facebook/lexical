@@ -20,7 +20,9 @@ import {
   $isLeafNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $isTabNode,
   $isTextNode,
+  $isTextPointCaret,
   $setSelection,
   type BaseSelection,
   type CaretDirection,
@@ -546,6 +548,20 @@ export function $shouldOverrideDefaultCharacterSelection(
   );
   if ($isExtendableTextPointCaret(focusCaret)) {
     return false;
+  }
+  // At an unmergeable TextNode boundary adjacent to another plain TextNode,
+  // override so Lexical's modify() can pre-normalize across inline-grid/flex
+  // spans (#7301). Restricted to unmergeable nodes to avoid disrupting
+  // format-affinity at normal bold/italic boundaries.
+  if (
+    $isTextPointCaret(focusCaret) &&
+    !$isTabNode(focusCaret.origin) &&
+    focusCaret.origin.isUnmergeable()
+  ) {
+    const sibling = focusCaret.getNodeAtCaret();
+    if ($isTextNode(sibling) && !$isTabNode(sibling)) {
+      return true;
+    }
   }
   for (const nextCaret of $extendCaretToRange(focusCaret)) {
     if ($isChildCaret(nextCaret)) {

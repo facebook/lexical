@@ -50,6 +50,7 @@
       "@lexical/list": ["../lexical-list/src/index.ts"],
       "@lexical/mark": ["../lexical-mark/src/index.ts"],
       "@lexical/markdown": ["../lexical-markdown/src/index.ts"],
+      "@lexical/mdast": ["../lexical-mdast/src/index.ts"],
       "@lexical/offset": ["../lexical-offset/src/index.ts"],
       "@lexical/overflow": ["../lexical-overflow/src/index.ts"],
       "@lexical/plain-text": ["../lexical-plain-text/src/index.ts"],

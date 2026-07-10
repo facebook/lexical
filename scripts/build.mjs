@@ -151,7 +151,30 @@ const thirdPartyExternals = [
   // inlined by Rollup.
   'shiki',
   '@shikijs',
-  ...(isWWW ? [':server-only-hack:.*'] : ['@floating-ui/react']),
+  ...(isWWW
+    ? [':server-only-hack:.*']
+    : [
+        '@floating-ui/react',
+        // @lexical/mdast delegates parsing/serialization to the
+        // micromark/mdast ecosystem. Keep those (declared) dependencies
+        // external in the npm build so consumer bundlers resolve them with
+        // their own export conditions and tree-shaking — e.g. the browser
+        // condition of decode-named-character-reference (transitive, via
+        // mdast-util-from-markdown) decodes entities through the DOM
+        // instead of inlining a ~36 kB character-entities table — and so
+        // they dedupe with any other unified/remark tooling in the app.
+        'mdast-util-from-markdown',
+        'mdast-util-to-markdown',
+        'mdast-util-to-string',
+        'mdast-util-gfm-autolink-literal',
+        'mdast-util-gfm-strikethrough',
+        'mdast-util-gfm-table',
+        'mdast-util-gfm-task-list-item',
+        'micromark-extension-gfm-autolink-literal',
+        'micromark-extension-gfm-strikethrough',
+        'micromark-extension-gfm-table',
+        'micromark-extension-gfm-task-list-item',
+      ]),
 ];
 const thirdPartyExternalsRegExp = new RegExp(
   `^(${thirdPartyExternals.join('|')})(\\/|$)`,

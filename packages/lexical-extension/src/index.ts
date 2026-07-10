@@ -53,6 +53,8 @@ export {
   InitialStateExtension,
 } from './InitialStateExtension';
 export {
+  formatKeyboardShortcut,
+  type FormatKeyboardShortcutOptions,
   type KeyboardShortcutsConfig,
   KeyboardShortcutsExtension,
   type NamedKeyboardShortcuts,
@@ -118,8 +120,6 @@ export {
   defineExtension,
   type ExtensionConfigBase,
   type ExtensionRegisterState,
-  formatKeyboardShortcut,
-  type FormatKeyboardShortcutOptions,
   type InitialEditorStateType,
   type KeyboardShortcut,
   type KeyboardShortcutMatch,

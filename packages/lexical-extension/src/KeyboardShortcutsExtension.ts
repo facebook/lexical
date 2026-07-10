@@ -10,7 +10,9 @@ import {
   COMMAND_PRIORITY_NORMAL,
   type CommandListenerPriority,
   defineExtension,
+  IS_APPLE,
   type KeyboardShortcut,
+  type KeyboardShortcutMatch,
   registerKeyboardShortcuts,
   safeCast,
   shallowMergeConfig,
@@ -18,6 +20,44 @@ import {
 
 import {namedSignals} from './namedSignals';
 import {effect} from './signals';
+
+export interface FormatKeyboardShortcutOptions {
+  /** Override the platform convention (defaults to the runtime platform) */
+  isApple?: boolean;
+  /** The separator between segments (default `'+'`) */
+  separator?: string;
+}
+
+/**
+ * Format the key binding of a shortcut as a human readable string for
+ * menus, tooltips, and help dialogs (e.g. `'⌘+Shift+K'` on Apple platforms
+ * and `'Ctrl+Shift+K'` elsewhere). Modifiers with an `'any'` mask are not
+ * displayed.
+ */
+export function formatKeyboardShortcut(
+  shortcut: KeyboardShortcutMatch,
+  options: FormatKeyboardShortcutOptions = {},
+): string {
+  const {isApple = IS_APPLE, separator = '+'} = options;
+  const {key, modifiers = {}} = shortcut;
+  const segments: string[] = [];
+  if (modifiers.ctrlKey === true) {
+    segments.push(isApple ? '⌃' : 'Ctrl');
+  }
+  if (modifiers.metaKey === true) {
+    segments.push(isApple ? '⌘' : 'Meta');
+  }
+  if (modifiers.altKey === true) {
+    segments.push(isApple ? 'Opt' : 'Alt');
+  }
+  if (modifiers.shiftKey === true) {
+    segments.push('Shift');
+  }
+  segments.push(
+    key === ' ' ? 'Space' : key.length === 1 ? key.toUpperCase() : key,
+  );
+  return segments.join(separator);
+}
 
 /**
  * Keyboard shortcuts by name. The names exist so that other extensions and

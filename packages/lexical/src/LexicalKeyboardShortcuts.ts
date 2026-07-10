@@ -21,6 +21,7 @@ import {IS_APPLE} from './environment';
 import {KEY_DOWN_COMMAND} from './LexicalCommands';
 import {COMMAND_PRIORITY_NORMAL} from './LexicalEditor';
 import {$getSelection} from './LexicalSelection';
+import {dispatchCommand} from './LexicalUtils';
 
 /**
  * The data that describes which keyboard events a shortcut matches: an
@@ -48,7 +49,8 @@ export interface KeyboardShortcutMatch {
  * command to dispatch (with the matched KeyboardEvent as its payload) when
  * it does. Keeping the action to a command keeps the mapping declarative -
  * a shortcut table can be rendered as a menu (see
- * {@link formatKeyboardShortcut}), remapped, or serialized, and the
+ * `formatKeyboardShortcut` in `@lexical/extension`), remapped, or
+ * serialized, and the
  * behavior lives in command listeners where any other UI can share it.
  */
 export interface KeyboardShortcut extends KeyboardShortcutMatch {
@@ -272,11 +274,15 @@ export function registerKeyboardShortcuts(
             continue;
           }
         }
-        const $next = () => editor.dispatchCommand(shortcut.command, event);
         if (
           shortcut.$dispatch
-            ? shortcut.$dispatch(shortcut.command, event, $next, editor)
-            : $next()
+            ? shortcut.$dispatch(
+                shortcut.command,
+                event,
+                dispatchCommand.bind(null, editor, shortcut.command, event),
+                editor,
+              )
+            : dispatchCommand(editor, shortcut.command, event)
         ) {
           return true;
         }
@@ -285,42 +291,4 @@ export function registerKeyboardShortcuts(
     },
     options.priority !== undefined ? options.priority : COMMAND_PRIORITY_NORMAL,
   );
-}
-
-export interface FormatKeyboardShortcutOptions {
-  /** Override the platform convention (defaults to the runtime platform) */
-  isApple?: boolean;
-  /** The separator between segments (default `'+'`) */
-  separator?: string;
-}
-
-/**
- * Format the key binding of a shortcut as a human readable string for
- * menus, tooltips, and help dialogs (e.g. `'⌘+Shift+K'` on Apple platforms
- * and `'Ctrl+Shift+K'` elsewhere). Modifiers with an `'any'` mask are not
- * displayed.
- */
-export function formatKeyboardShortcut(
-  shortcut: KeyboardShortcutMatch,
-  options: FormatKeyboardShortcutOptions = {},
-): string {
-  const {isApple = IS_APPLE, separator = '+'} = options;
-  const {key, modifiers = {}} = shortcut;
-  const segments: string[] = [];
-  if (modifiers.ctrlKey === true) {
-    segments.push(isApple ? '⌃' : 'Ctrl');
-  }
-  if (modifiers.metaKey === true) {
-    segments.push(isApple ? '⌘' : 'Meta');
-  }
-  if (modifiers.altKey === true) {
-    segments.push(isApple ? 'Opt' : 'Alt');
-  }
-  if (modifiers.shiftKey === true) {
-    segments.push('Shift');
-  }
-  segments.push(
-    key === ' ' ? 'Space' : key.length === 1 ? key.toUpperCase() : key,
-  );
-  return segments.join(separator);
 }

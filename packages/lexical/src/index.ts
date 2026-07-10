@@ -197,8 +197,6 @@ export {
   compileKeyboardShortcuts,
   CONTROL_OR_ALT,
   CONTROL_OR_META,
-  formatKeyboardShortcut,
-  type FormatKeyboardShortcutOptions,
   type KeyboardShortcut,
   type KeyboardShortcutMatch,
   registerKeyboardShortcuts,

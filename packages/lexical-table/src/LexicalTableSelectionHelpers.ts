@@ -266,12 +266,26 @@ function $handleTableClick(
       return;
     }
     tableObserver.isSelecting = true;
+    const isTouch = tableObserver.pointerType === 'touch';
+    // Whether the anchor cell reflects the gesture currently being handled.
+    // For touch this starts out false: a simple tap must not initiate table
+    // selection mode (see the pointerType guard below), so the anchor is
+    // deferred until the pointer actually crosses into another cell in
+    // onPointerMove. Setting it eagerly would leave stale anchor state
+    // behind after a tap, which turns later taps on other cells into table
+    // selections (#8538).
+    let hasAnchorForGesture = !isTouch && tableObserver.anchorCell !== null;
 
     // Set anchor immediately if starting cell provided (handles direct drag without click)
-    if (startingCell !== null && tableObserver.anchorCell === null) {
+    if (
+      !isTouch &&
+      startingCell !== null &&
+      tableObserver.anchorCell === null
+    ) {
       editor.update(() => {
         tableObserver.$setAnchorCellForSelection(startingCell);
       });
+      hasAnchorForGesture = true;
     }
 
     const onPointerUp = () => {
@@ -316,13 +330,33 @@ function $handleTableClick(
         }
       }
       if (focusCell) {
-        const anchorCell = focusCell;
+        // Touch taps commonly include micro pointermove events. Ignore
+        // movement that stays within the starting cell until this gesture
+        // has an anchor, so a tap places the caret natively instead of
+        // creating a table selection from a previous gesture's anchor
+        // state (#8538).
+        if (
+          isTouch &&
+          !hasAnchorForGesture &&
+          startingCell !== null &&
+          focusCell.elem === startingCell.elem
+        ) {
+          return;
+        }
         // Fallback: set anchor if still missing (handles race conditions)
-        if (tableObserver.anchorCell === null) {
+        // or if it was deferred for a touch gesture. Prefer the cell the
+        // gesture started on so the selection covers where the drag began.
+        if (
+          tableObserver.anchorCell === null ||
+          (isTouch && !hasAnchorForGesture)
+        ) {
+          const anchorCell =
+            isTouch && startingCell !== null ? startingCell : focusCell;
           editor.update(() => {
             tableObserver.$setAnchorCellForSelection(anchorCell);
           });
         }
+        hasAnchorForGesture = true;
         if (
           tableObserver.focusCell === null ||
           focusCell.elem !== tableObserver.focusCell.elem

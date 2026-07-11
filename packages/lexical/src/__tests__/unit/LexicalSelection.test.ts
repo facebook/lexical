@@ -61,44 +61,53 @@ function mapLatest<T extends LexicalNode>(nodes: T[]): T[] {
 
 describe('LexicalSelection tests', () => {
   initializeUnitTest(testEnv => {
-    test('programmatic selection movement clears stale formatting', async () => {
+    test('programmatic selection movement updates format and style to match target node', async () => {
       const {editor} = testEnv;
 
+      // 1. Setup two differently formatted nodes
       await editor.update(() => {
         const root = $getRoot();
         const paragraph = $createParagraphNode();
-        const text = $createTextNode('Hello World');
-        paragraph.append(text);
+
+        // We will make text1 bold via the selection below
+        const text1 = $createTextNode('Hello');
+        const text2 = $createTextNode(' World')
+          .toggleFormat('italic')
+          .setStyle('color: red;');
+
+        paragraph.append(text1, text2);
         root.append(paragraph);
 
-        // 1. Bold "Hello" (first 5 chars)
-        text.select(0, 5);
+        // Select the first node and format the selection to bold
+        text1.select(0, 5);
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
           selection.formatText('bold');
         }
       });
 
+      // 2. Verify initial selection is bold (This will pass now!)
       await editor.update(() => {
         const selection = $getSelection();
-        // Verify we are indeed bold
         if ($isRangeSelection(selection)) {
           expect(selection.hasFormat('bold')).toBe(true);
+          expect(selection.hasFormat('italic')).toBe(false);
         }
 
-        // 2. Jump to the end (the unformatted " World" text)
+        // Programmatically jump to the end of the document (which lands exactly on the italic/red text2)
         $getRoot().selectEnd();
       });
 
+      // 3. Verification: format and style must exactly match text2 (italic, red, NOT bold)
       await editor.update(() => {
         const selection = $getSelection();
-        // 3. Verification: format cache must be flushed
         if ($isRangeSelection(selection)) {
           expect(selection.hasFormat('bold')).toBe(false);
+          expect(selection.hasFormat('italic')).toBe(true);
+          expect(selection.style).toBe('color: red;');
         }
       });
     });
-
     describe('Inserting text either side of inline elements', () => {
       const setup = async (
         mode: 'start-of-paragraph' | 'mid-paragraph' | 'end-of-paragraph',

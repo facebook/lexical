@@ -606,9 +606,17 @@ export class ElementNode
         'element',
       );
     } else {
+      const isDifferentNode =
+        selection.anchor.key !== key || selection.focus.key !== key;
+
       selection.anchor.set(key, anchorOffset, 'element');
       selection.focus.set(key, focusOffset, 'element');
       selection.dirty = true;
+
+      if (isDifferentNode) {
+        selection.format = this.getTextFormat();
+        selection.style = this.getTextStyle();
+      }
     }
     return selection;
   }

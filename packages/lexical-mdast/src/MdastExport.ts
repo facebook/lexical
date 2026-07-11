@@ -42,8 +42,9 @@ import {
   $exportLineBreak,
   $isBlockLevelNode,
   exportText,
-  phrasingFromFormattedText,
+  phrasingFromTextRuns,
   TEXT_FORMAT_MASK,
+  type TextRun,
 } from './handlers';
 import {
   emphasisMarkerState,
@@ -178,41 +179,40 @@ const SYNTAX_TO_MARKDOWN: ToMarkdownExtension = {
 };
 
 /**
- * Accumulates adjacent plain text nodes that share a format so they serialize
- * to a single delimiter pair (e.g. `**ab**` rather than `**a****b**`). Shared
- * by the inline and block export walks.
+ * Accumulates adjacent plain text nodes so a whole stretch of formatted text
+ * serializes together: nodes sharing a format merge into a single delimiter
+ * pair (`**ab**` rather than `**a****b**`), and nodes whose formats *overlap*
+ * (bold, bold+italic, italic) nest inside shared containers so the emitted
+ * delimiters re-parse to the same formatting. Shared by the inline and block
+ * export walks.
  */
 class TextRunAccumulator {
-  private format = -1;
-  private value = '';
+  private runs: TextRun[] = [];
 
   /**
-   * Returns `true` when `child` was absorbed. A format change flushes the
-   * previous run into `out` first. The caller decides *which* text nodes
-   * are eligible (plain text with no export rule of its own); this only
+   * Returns `true` when `child` was absorbed. The caller decides *which* text
+   * nodes are eligible (plain text with no export rule of its own); this only
    * guards the node kind.
    */
-  push(child: LexicalNode, out: PhrasingContent[]): boolean {
+  push(child: LexicalNode): boolean {
     if (!$isTextNode(child)) {
       return false;
     }
     const format = child.getFormat() & TEXT_FORMAT_MASK;
-    if (format === this.format) {
-      this.value += child.getTextContent();
+    const last = this.runs[this.runs.length - 1];
+    if (last !== undefined && last.format === format) {
+      last.value += child.getTextContent();
     } else {
-      this.flushInto(out);
-      this.format = format;
-      this.value = child.getTextContent();
+      this.runs.push({format, value: child.getTextContent()});
     }
     return true;
   }
 
   flushInto(out: PhrasingContent[]): void {
-    if (this.format >= 0) {
-      out.push(phrasingFromFormattedText(this.value, this.format));
+    if (this.runs.length > 0) {
+      out.push(...phrasingFromTextRuns(this.runs));
+      this.runs = [];
     }
-    this.format = -1;
-    this.value = '';
   }
 }
 
@@ -350,7 +350,7 @@ function createNodeExporter(
       if (target === null) {
         continue;
       }
-      if (!(mayAccumulate(target) && runs.push(target, result))) {
+      if (!(mayAccumulate(target) && runs.push(target))) {
         runs.flushInto(result);
         if ($isElementNode(target)) {
           // The registry erases types; phrasing output is the dispatch
@@ -397,7 +397,7 @@ function createNodeExporter(
           runs.flushInto(inline);
           inline.push(asBreak);
         }
-      } else if (mayAccumulate(target) && runs.push(target, inline)) {
+      } else if (mayAccumulate(target) && runs.push(target)) {
         continue;
       } else if ($isBlockLevelNode(target)) {
         flushParagraph();

@@ -27,6 +27,7 @@ import {
   $isTextNode,
   $setSelectionFromCaretRange,
   defineExtension,
+  TEXT_TYPE_TO_FORMAT,
   type TextNode,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
@@ -110,6 +111,114 @@ describe('@lexical/mdast import/export', () => {
         expect(importExport(markdown)).toBe(markdown);
       });
     }
+  });
+
+  describe('overlapping inline formats (#4895)', () => {
+    type Run = [text: string, format: number];
+
+    /** Builds a one-paragraph document from explicit text-node format runs. */
+    function overlapEditor(runs: Run[]): LexicalEditorWithDispose {
+      // The caller is responsible for disposal (with `using`).
+      const editor = createEditor();
+      editor.update(
+        () => {
+          const paragraph = $createParagraphNode();
+          for (const [text, format] of runs) {
+            paragraph.append($createTextNode(text).setFormat(format));
+          }
+          $getRoot().clear().append(paragraph);
+        },
+        {discrete: true},
+      );
+      return editor;
+    }
+
+    /** Reads the document back as merged (text, format) runs. */
+    function $textRuns(): Run[] {
+      const out: Run[] = [];
+      for (const node of $getRoot().getAllTextNodes()) {
+        const format = node.getFormat();
+        const text = node.getTextContent();
+        const last = out[out.length - 1];
+        if (last && last[1] === format) {
+          last[0] += text;
+        } else {
+          out.push([text, format]);
+        }
+      }
+      return out;
+    }
+
+    /**
+     * Exports `runs`, asserts the serialized markdown, and verifies that
+     * re-importing the export restores the same formatting.
+     */
+    function expectRoundTrip(runs: Run[], expected: string): void {
+      using editor = overlapEditor(runs);
+      const markdown = editor.read(() => $convertToMarkdownString());
+      expect(markdown).toBe(expected);
+      using reimported = createEditor();
+      reimported.update(
+        () => {
+          $convertFromMarkdownString(markdown);
+        },
+        {discrete: true},
+      );
+      expect(reimported.read($textRuns)).toEqual(runs);
+    }
+
+    const BOLD = TEXT_TYPE_TO_FORMAT.bold;
+    const ITALIC = TEXT_TYPE_TO_FORMAT.italic;
+    const STRIKE = TEXT_TYPE_TO_FORMAT.strikethrough;
+    const CODE = TEXT_TYPE_TO_FORMAT.code;
+
+    it('round-trips bold overlapping italic (the issue example)', () => {
+      expectRoundTrip(
+        [
+          ['he', 0],
+          ['llo', BOLD],
+          ['wor', BOLD | ITALIC],
+          ['ld', ITALIC],
+          ['!', 0],
+        ],
+        'he**llo*wor****ld*!',
+      );
+    });
+
+    it('round-trips italic overlapping bold', () => {
+      expectRoundTrip(
+        [
+          ['a', 0],
+          ['b', ITALIC],
+          ['c', ITALIC | BOLD],
+          ['d', BOLD],
+          ['e', 0],
+        ],
+        'a*b**c*****d**e',
+      );
+    });
+
+    it('round-trips strikethrough overlapping bold', () => {
+      expectRoundTrip(
+        [
+          ['a', STRIKE],
+          ['b', STRIKE | BOLD],
+          ['c', BOLD],
+        ],
+        '~~a**b**~~**c**',
+      );
+    });
+
+    it('round-trips a code span inside a bold run', () => {
+      expectRoundTrip(
+        [
+          ['a', BOLD],
+          ['b', BOLD | CODE],
+          ['c', BOLD],
+        ],
+        '**a`b`c**',
+      );
+    });
   });
 
   it('round-trips an ordered list with a custom start', () => {

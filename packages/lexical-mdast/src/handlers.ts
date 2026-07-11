@@ -626,6 +626,122 @@ export function phrasingFromFormattedText(
   return content;
 }
 
+/** A contiguous stretch of plain text sharing one Lexical format bitmask. */
+export interface TextRun {
+  format: number;
+  value: string;
+}
+
+/**
+ * Emphasis-family format bits eligible for cross-run grouping, in tie-break
+ * order matching the single-run nesting of {@link phrasingFromFormattedText}
+ * (strong outside emphasis).
+ */
+const EMPHASIS_FORMATS: readonly [number, 'strong' | 'emphasis'][] = [
+  [FORMAT_BOLD, 'strong'],
+  [FORMAT_ITALIC, 'emphasis'],
+];
+
+/**
+ * Converts a segment of strikethrough-free (or strikethrough-stripped) runs
+ * into nested emphasis/strong phrasing. At each position the wrapper is
+ * chosen greedily: the format bit shared by the longest stretch of upcoming
+ * runs becomes the outer container (ties fall back to strong-outside-emphasis,
+ * matching the single-run nesting), and the covered runs recurse with that
+ * bit cleared. Overlap is not always fully expressible as nesting — the
+ * format that extends furthest keeps a single pair of delimiters and the
+ * other side splits.
+ */
+function phrasingFromEmphasisRuns(runs: readonly TextRun[]): PhrasingContent[] {
+  const out: PhrasingContent[] = [];
+  for (let i = 0; i < runs.length; ) {
+    const {format, value} = runs[i];
+    let wrapper: 'strong' | 'emphasis' | null = null;
+    let wrapperBit = 0;
+    let end = i + 1;
+    for (const [bit, type] of EMPHASIS_FORMATS) {
+      if ((format & bit) === 0) {
+        continue;
+      }
+      let bitEnd = i + 1;
+      while (bitEnd < runs.length && runs[bitEnd].format & bit) {
+        bitEnd++;
+      }
+      if (wrapper === null || bitEnd > end) {
+        wrapper = type;
+        wrapperBit = bit;
+        end = bitEnd;
+      }
+    }
+    if (wrapper === null) {
+      out.push(
+        format & FORMAT_CODE
+          ? {type: 'inlineCode', value}
+          : {type: 'text', value},
+      );
+      i++;
+    } else {
+      out.push({
+        children: phrasingFromEmphasisRuns(
+          runs
+            .slice(i, end)
+            .map(run => ({format: run.format & ~wrapperBit, value: run.value})),
+        ),
+        type: wrapper,
+      });
+      i = end;
+    }
+  }
+  return out;
+}
+
+/**
+ * Converts a sequence of text runs into properly *nested* mdast phrasing.
+ * Runs whose formats overlap (e.g. `llo` bold, `wor` bold+italic, `ld`
+ * italic) must share a container wherever they share a format bit — emitting
+ * each run as its own fully-wrapped sibling produces adjacent delimiter runs
+ * (`**llo*****wor****ld*`) that CommonMark resolves differently, so the
+ * output would not re-parse to the same formatting (issue #4895).
+ *
+ * Strikethrough segments the sequence first and always wraps outermost (the
+ * single-run nesting order): a `~~` delimiter is only reliably flanking next
+ * to text, so `delete` must never land *inside* an emphasis/strong group
+ * where a `*` marker would abut it (`*ld~~**llo**~~*` does not re-parse).
+ * Bold/italic overlap is then grouped greedily within each segment by
+ * {@link phrasingFromEmphasisRuns}.
+ */
+export function phrasingFromTextRuns(
+  runs: readonly TextRun[],
+): PhrasingContent[] {
+  const out: PhrasingContent[] = [];
+  for (let i = 0; i < runs.length; ) {
+    const strike = (runs[i].format & FORMAT_STRIKETHROUGH) !== 0;
+    let end = i + 1;
+    while (
+      end < runs.length &&
+      ((runs[end].format & FORMAT_STRIKETHROUGH) !== 0) === strike
+    ) {
+      end++;
+    }
+    const segment = runs.slice(i, end);
+    if (strike) {
+      out.push({
+        children: phrasingFromEmphasisRuns(
+          segment.map(run => ({
+            format: run.format & ~FORMAT_STRIKETHROUGH,
+            value: run.value,
+          })),
+        ),
+        type: 'delete',
+      });
+    } else {
+      out.push(...phrasingFromEmphasisRuns(segment));
+    }
+    i = end;
+  }
+  return out;
+}
+
 export const exportText = (node: LexicalNode): PhrasingContent | null => {
   if (!$isTextNode(node)) {
     return null;

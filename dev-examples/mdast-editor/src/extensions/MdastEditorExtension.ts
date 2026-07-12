@@ -30,22 +30,31 @@ import {
 } from '@lexical/mdast';
 import {
   $createHeadingNode,
+  $isQuoteNode,
   type HeadingTagType,
   RichTextExtension,
 } from '@lexical/rich-text';
 import {$setBlocksType} from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
 import {
+  $caretFromPoint,
   $createParagraphNode,
+  $getCollapsedCaretRange,
   $getSelection,
+  $getSiblingCaret,
+  $isChildCaret,
   $isRangeSelection,
+  $setSelectionFromCaretRange,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_EDITOR,
   configExtension,
   createCommand,
   defineExtension,
+  INSERT_PARAGRAPH_COMMAND,
   type LexicalCommand,
 } from 'lexical';
 
+import {$isCollapsibleNode} from './CollapsibleNode';
 import {HtmlTextFormatExtension} from './HtmlTextFormatExtension';
 import {MdastAlertExtension} from './MdastAlertExtension';
 import {MdastCollapsibleExtension} from './MdastCollapsibleExtension';
@@ -172,6 +181,33 @@ export const MdastEditorExtension = defineExtension({
           return true;
         },
         COMMAND_PRIORITY_EDITOR,
+      ),
+      // Remove the empty paragraph and exit the node before creating a
+      // new one if enter is pressed from an terminal empty paragraph
+      // in a CollapsibleNode or QuoteNode
+      editor.registerCommand(
+        INSERT_PARAGRAPH_COMMAND,
+        () => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection) && selection.isCollapsed()) {
+            const caret = $caretFromPoint(selection.focus, 'next');
+            if (
+              $isChildCaret(caret) &&
+              caret.origin.isEmpty() &&
+              caret.origin.isLastChild()
+            ) {
+              const parent = caret.origin.getParent();
+              if ($isCollapsibleNode(parent) || $isQuoteNode(parent)) {
+                caret.origin.remove();
+                $setSelectionFromCaretRange(
+                  $getCollapsedCaretRange($getSiblingCaret(parent, 'next')),
+                );
+              }
+            }
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_BEFORE_EDITOR,
       ),
     );
   },

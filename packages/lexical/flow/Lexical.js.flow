@@ -24,6 +24,7 @@ declare export var REMOVE_TEXT_COMMAND: LexicalCommand<InputEvent | null>;
 declare export var DELETE_WORD_COMMAND: LexicalCommand<boolean>;
 declare export var DELETE_LINE_COMMAND: LexicalCommand<boolean>;
 declare export var FORMAT_TEXT_COMMAND: LexicalCommand<TextFormatType>;
+declare export var SET_TEXT_FORMAT_COMMAND: LexicalCommand<Partial<Record<TextFormatType, boolean>>>;
 declare export var UNDO_COMMAND: LexicalCommand<void>;
 declare export var REDO_COMMAND: LexicalCommand<void>;
 declare export var KEY_DOWN_COMMAND: LexicalCommand<KeyboardEvent>;
@@ -742,6 +743,10 @@ declare export function $formatText(
 declare export function $generateNodesFromRawText(
   text: string,
 ): (TextNode | LineBreakNode)[];
+declare export function $setTextFormat(
+  selection: RangeSelection | NodeSelection,
+  formats: Partial<Record<TextFormatType, boolean>>,
+): void;
 declare export function $getSelection(): null | BaseSelection;
 declare export function $getTextContent(): string;
 declare export function $getPreviousSelection(): null | BaseSelection;
@@ -826,6 +831,7 @@ declare export class TextNode extends LexicalNode {
 }
 export interface InlineFormattableNode {
   readonly __isInlineFormattable: true;
+  getFormat(): number;
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number;
   hasFormat(type: TextFormatType): boolean;
   setFormat(format: number): unknown;

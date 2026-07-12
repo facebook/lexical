@@ -86,6 +86,29 @@ Framework-agnostic accessibility extensions. See [Keyboard Accessibility](/docs/
 
 - [MarkExtension](/docs/api/modules/lexical_mark#markextension) - MarkNode
 
+[@lexical/mdast](/docs/api/modules/lexical_mdast)
+
+Experimental micromark/mdast-based Markdown support (every extension in this package is experimental). See [Markdown with @lexical/mdast](/docs/serialization/markdown-mdast) for the full story.
+
+- [MdastImportExtension](/docs/api/modules/lexical_mdast#mdastimportextension) - The core registry: compiles the rules and grammar contributed by feature extensions, exposes `$convertFromMarkdownString` / `$convertFromMdast`
+- [MdastExportExtension](/docs/api/modules/lexical_mdast#mdastexportextension) - Serialization back to Markdown (`$convertToMarkdownString` / `$convertToMdast`); separate from import so import-only editors don't bundle the serializer
+- [MdastExtension](/docs/api/modules/lexical_mdast#mdastextension) - Bundle of `MdastImportExtension` + `MdastExportExtension`
+- [MdastHeadingExtension](/docs/api/modules/lexical_mdast#mdastheadingextension) - ATX & setext headings (HeadingNode)
+- [MdastBlockquoteExtension](/docs/api/modules/lexical_mdast#mdastblockquoteextension) - Block quotes (QuoteNode)
+- [MdastRichTextExtension](/docs/api/modules/lexical_mdast#mdastrichtextextension) - Bundle of heading + blockquote
+- [MdastListExtension](/docs/api/modules/lexical_mdast#mdastlistextension) - Ordered/unordered lists (ListNode, ListItemNode)
+- [MdastTaskListExtension](/docs/api/modules/lexical_mdast#mdasttasklistextension) - GFM task lists (`- [x]`), layered on MdastListExtension
+- [MdastCodeExtension](/docs/api/modules/lexical_mdast#mdastcodeextension) - Fenced & indented code blocks (CodeNode)
+- [MdastLinkExtension](/docs/api/modules/lexical_mdast#mdastlinkextension) - Links, CommonMark autolinks, reference links (LinkNode)
+- [MdastAutolinkLiteralExtension](/docs/api/modules/lexical_mdast#mdastautolinkliteralextension) - GFM literal autolinks (bare URLs in prose)
+- [MdastHorizontalRuleExtension](/docs/api/modules/lexical_mdast#mdasthorizontalruleextension) - Thematic breaks (HorizontalRuleNode)
+- [MdastStrikethroughExtension](/docs/api/modules/lexical_mdast#mdaststrikethroughextension) - GFM strikethrough (text format)
+- [MdastTableExtension](/docs/api/modules/lexical_mdast#mdasttableextension) - GFM tables (TableNode, ...)
+- [MdastCommonMarkExtension](/docs/api/modules/lexical_mdast#mdastcommonmarkextension) - Bundle of the six CommonMark extensions
+- [MdastGfmExtension](/docs/api/modules/lexical_mdast#mdastgfmextension) - Bundle of the four GFM extensions
+- [MdastShadowRootQuoteExtension](/docs/api/modules/lexical_mdast#mdastshadowrootquoteextension) - Opt-in: blockquotes as block containers with full-fidelity nested content
+- [MdastShortcutsExtension](/docs/api/modules/lexical_mdast#mdastshortcutsextension) - Streaming Markdown typing shortcuts, driven by the same grammar as import
+
 [@lexical/overflow](/docs/api/modules/lexical_overflow)
 
 - [OverflowExtension](/docs/api/modules/lexical_overflow#overflowextension) - OverflowNode

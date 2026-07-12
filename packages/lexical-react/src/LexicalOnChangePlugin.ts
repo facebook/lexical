@@ -17,6 +17,9 @@ import useLayoutEffect from './shared/useLayoutEffect';
  * are part of a history merge, are ignored; set `ignoreSelectionChange` or
  * `ignoreHistoryMergeTagChange` to control that filtering.
  *
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link OnChangeExtension} instead.
+ *
  * @returns `null`, this plugin renders no DOM of its own.
  */
 export function OnChangePlugin({

@@ -73,6 +73,7 @@ export {
   NormalizeTripleClickSelectionExtension,
   type NormalizeTripleClickSelectionOutput,
 } from './NormalizeTripleClickSelectionExtension';
+export {type OnChangeConfig, OnChangeExtension} from './OnChangeExtension';
 export {
   type PreventSelectAllConfig,
   PreventSelectAllExtension,

@@ -49,6 +49,7 @@ Framework-agnostic accessibility extensions. See [Keyboard Accessibility](/docs/
 - [NodeSelectionDataSelectedExtension](/docs/api/modules/lexical_extension#nodeselectiondataselectedextension) - Mirrors a node's `NodeSelection` membership onto its host DOM as a `data-selected` attribute so CSS can outline selected `ElementNode` hosts; configured per node type (experimental)
 - [NormalizeInlineElementsExtension](/docs/api/modules/lexical_extension#normalizeinlineelementsextension) - Removes empty inline elements, included by default with `RichTextExtension` and `PlainTextExtension`
 - [NormalizeTripleClickSelectionExtension](/docs/api/modules/lexical_extension#normalizetripleclickselectionextension) - Corrects over-selection after triple click events, included by default with `RichTextExtension` and `PlainTextExtension`
+- [OnChangeExtension](/docs/api/modules/lexical_extension#onchangeextension) - Subscribes an external callback to update the editor state
 - [PreventSelectAllExtension](/docs/api/modules/lexical_extension#preventselectallextension) - Prevents select all (Ctrl/Cmd+A) inside input/textarea elements from selecting the editor content, included by default with `SelectBlockExtension`
 - [RootElementExtension](/docs/api/modules/lexical_extension#rootelementextension) - Exposes the editor's root element as a reactive `Signal<HTMLElement | null>`
 - [SelectBlockExtension](/docs/api/modules/lexical_extension#selectblockextension) - Select all (Ctrl/Cmd+A) selects the nearest block element first, pressing it again selects the whole document

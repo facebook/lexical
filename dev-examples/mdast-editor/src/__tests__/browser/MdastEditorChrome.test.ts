@@ -253,9 +253,52 @@ describe('footnotes', () => {
     expect(markdownOf(editor)).toBe('body and again');
   });
 
+  test('exposes GitHub/DAISY-style anchors, ids, and roles', async () => {
+    const {root} = mountEditor('first[^a] one\n\nsecond[^a] two\n\n[^a]: note');
+    // The section and its title (the accessible name every ref points at).
+    const section = root.querySelector<HTMLElement>('.footnotes')!;
+    expect(section.getAttribute('role')).toBe('doc-endnotes');
+    expect(root.querySelector('.footnotes-title')!.id).toBe('footnote-label');
+    // The definition is the fragment target of the ref anchors.
+    const definition = root.querySelector<HTMLElement>('.footnote-def')!;
+    expect(definition.id).toBe('fn-a');
+    expect(definition.getAttribute('role')).toBe('doc-endnote');
+    // Refs are real fragment links with per-label ordinal ids.
+    const refs = Array.from(
+      root.querySelectorAll<HTMLAnchorElement>('.footnote-ref a'),
+    );
+    expect(refs.map(a => a.getAttribute('href'))).toEqual(['#fn-a', '#fn-a']);
+    expect(refs.map(a => a.getAttribute('role'))).toEqual([
+      'doc-noteref',
+      'doc-noteref',
+    ]);
+    expect(refs.map(a => a.getAttribute('aria-describedby'))).toEqual([
+      'footnote-label',
+      'footnote-label',
+    ]);
+    // Ids are assigned by the update listener in document order.
+    await vi.waitFor(() => {
+      expect(refs.map(a => a.id)).toEqual(['fnref-a', 'fnref-a-2']);
+    });
+    // Backlinks target those ids.
+    await vi.waitFor(() => {
+      const backlinks = Array.from(
+        root.querySelectorAll<HTMLAnchorElement>('.footnote-def-backlink'),
+      );
+      expect(backlinks.map(a => a.getAttribute('href'))).toEqual([
+        '#fnref-a',
+        '#fnref-a-2',
+      ]);
+      expect(backlinks.map(a => a.getAttribute('role'))).toEqual([
+        'doc-backlink',
+        'doc-backlink',
+      ]);
+    });
+  });
+
   test('clicking a ref moves the caret into the definition body', async () => {
     const {editor, root} = mountEditor('body[^a]\n\n[^a]: the note');
-    root.querySelector<HTMLElement>('.footnote-ref')!.click();
+    root.querySelector<HTMLElement>('.footnote-ref a')!.click();
     await vi.waitFor(() => {
       const inDefinition = editor.read(() => {
         const selection = $getSelection();

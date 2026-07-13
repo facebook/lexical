@@ -80,7 +80,7 @@ import {
   FOOTNOTES_SLOT,
   FootnotesNode,
   normalizeLabel,
-  registerFootnoteBacklinks,
+  registerFootnoteAnchors,
 } from './FootnoteNodes';
 
 /* -------------------------------------------------------------------------- *
@@ -513,7 +513,7 @@ export const MdastFootnoteExtension = defineExtension({
   register: editor =>
     mergeRegister(
       registerFootnoteShortcut(editor),
-      registerFootnoteBacklinks(editor),
+      registerFootnoteAnchors(editor),
       editor.registerCommand(
         KEY_DOWN_COMMAND,
         event => {

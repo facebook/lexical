@@ -272,16 +272,19 @@
    the root's `footnotes` slot) renders at the bottom of the editor via the
    RootNode render override in MdastFootnoteExtension. */
 .footnote-ref {
-  color: #0969da;
-  cursor: pointer;
   font-size: 0.75em;
   font-weight: 600;
   user-select: none;
 }
-.footnote-ref:hover {
+.footnote-ref a {
+  color: #0969da;
+  cursor: pointer;
+  text-decoration: none;
+}
+.footnote-ref a:hover {
   text-decoration: underline;
 }
-.dark .footnote-ref {
+.dark .footnote-ref a {
   color: #4493f8;
 }
 .footnote-ref::before {
@@ -348,6 +351,7 @@
   justify-content: center;
   line-height: 1;
   padding: 0;
+  text-decoration: none;
   width: 1.25em;
 }
 /* The backlinks render inline after the note text (inside the body's last

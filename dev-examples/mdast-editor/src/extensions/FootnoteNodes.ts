@@ -33,7 +33,6 @@ import {
   ElementNode,
   type LexicalEditor,
   type LexicalNode,
-  type NodeKey,
   registerEventListener,
   setDOMUnmanaged,
 } from 'lexical';
@@ -61,13 +60,28 @@ export function normalizeLabel(label: string): string {
  * Ref <-> definition navigation                                              *
  * -------------------------------------------------------------------------- */
 
-function scrollNodeIntoView(editor: LexicalEditor, key: NodeKey): void {
-  const dom = editor.getElementByKey(key);
-  if (dom !== null) {
-    // Anchor-style navigation: bring the target to the top of the scroll
-    // container, the way in-page fragment links do.
-    dom.scrollIntoView({block: 'start'});
-  }
+// Navigation is real fragment navigation (GitHub's shape: `fn-*` ids on the
+// definitions, `fnref-*` ids on the references, `<a href="#...">` both
+// ways), so the BROWSER owns the scrolling, focus, and history behavior;
+// the click listeners only move the lexical selection along with it.
+
+/** The footnotes title's id; every ref's aria-describedby points here. */
+const FOOTNOTES_LABEL_ID = 'footnote-label';
+
+function definitionDomId(label: string): string {
+  return `fn-${normalizeLabel(label)}`;
+}
+
+/** `fnref-label`, `fnref-label-2`, ... for repeated references. */
+function referenceDomId(label: string, index: number): string {
+  const base = `fnref-${normalizeLabel(label)}`;
+  return index === 0 ? base : `${base}-${index + 1}`;
+}
+
+// The fragment is percent-decoded before it is matched against ids, so
+// encoding here supports any character a label can carry.
+function fragmentHref(id: string): string {
+  return `#${encodeURIComponent(id)}`;
 }
 
 /**
@@ -105,41 +119,37 @@ function $collectFootnoteRefs(label: string): FootnoteRefNode[] {
   return $collectFootnoteRefsByLabel().get(normalizeLabel(label)) ?? [];
 }
 
-/** Click-through from a reference: caret to the definition body's start. */
-function navigateToDefinition(
-  editor: LexicalEditor,
-  ref: FootnoteRefNode,
-): void {
-  let key: NodeKey | null = null;
+/**
+ * Follows a reference click with the selection: caret to the definition
+ * body's start. The scroll is the anchor's own fragment navigation, but
+ * following the link moves the focus out of the editor (to the target, or
+ * to the body when the target isn't focusable), so restore it — the caret
+ * sits exactly where the browser scrolled to, so the focus does not fight
+ * the navigation.
+ */
+function selectDefinition(editor: LexicalEditor, ref: FootnoteRefNode): void {
   editor.update(
     () => {
-      const definition = $findFootnoteDefinition(ref.getLabel());
+      const definition = $findFootnoteDefinition(ref.getLatest().getLabel());
       if (definition !== null) {
-        key = definition.getKey();
         definition.selectStart();
       }
     },
-    {
-      onUpdate: () => {
-        if (key !== null) {
-          scrollNodeIntoView(editor, key);
-        }
-      },
-    },
+    {onUpdate: () => editor.focus()},
   );
 }
 
 /**
- * Backlink from a definition: caret to just after the reference at `index`
- * within the label's references (each rendered backlink is bound to one
- * reference, GitHub-style).
+ * Follows a backlink click with the selection: caret to just after the
+ * reference at `index` within the label's references (each rendered
+ * backlink is bound to one reference, GitHub-style). Scroll and focus are
+ * handled as in {@link selectDefinition}.
  */
-function navigateToReference(
+function selectReference(
   editor: LexicalEditor,
   definition: FootnoteDefinitionNode,
   index: number,
 ): void {
-  let key: NodeKey | null = null;
   editor.update(
     () => {
       const refs = $collectFootnoteRefs(definition.getLatest().getLabel());
@@ -147,25 +157,20 @@ function navigateToReference(
       if (ref === undefined) {
         return;
       }
-      key = ref.getKey();
       const offset = ref.getIndexWithinParent() + 1;
       ref.getParentOrThrow().select(offset, offset);
     },
-    {
-      onUpdate: () => {
-        if (key !== null) {
-          scrollNodeIntoView(editor, key);
-        }
-      },
-    },
+    {onUpdate: () => editor.focus()},
   );
 }
 
 /**
- * (Re)builds one definition's backlink chrome: a `↩` button per reference
- * (`↩` then `↩²`, `↩³`, ... GitHub-style), each jumping to its own
- * reference. The container is marked unmanaged so the reconciler and the
- * mutation observer leave it alone inside the managed content DOM.
+ * (Re)builds one definition's backlink chrome: a `↩` anchor per reference
+ * (`↩` then `↩²`, `↩³`, ... GitHub-style), each a real fragment link
+ * (`role="doc-backlink"`) to its own reference's id — the browser does the
+ * jump, the click listener moves the selection along. The container is
+ * marked unmanaged so the reconciler and the mutation observer leave it
+ * alone inside the managed content DOM.
  */
 function renderBacklinks(
   editor: LexicalEditor,
@@ -174,14 +179,16 @@ function renderBacklinks(
   count: number,
 ): void {
   const doc = host.ownerDocument;
+  const label = definition.getLabel();
   const container = doc.createElement('span');
   container.className = 'footnote-def-backlinks';
   container.contentEditable = 'false';
   setDOMUnmanaged(container);
   for (let index = 0; index < count; index++) {
-    const backlink = doc.createElement('button');
-    backlink.type = 'button';
+    const backlink = doc.createElement('a');
+    backlink.href = fragmentHref(referenceDomId(label, index));
     backlink.className = 'footnote-def-backlink';
+    backlink.setAttribute('role', 'doc-backlink');
     backlink.setAttribute('aria-label', `Back to reference ${index + 1}`);
     backlink.setAttribute('title', `Back to reference ${index + 1}`);
     backlink.textContent = '↩';
@@ -194,9 +201,11 @@ function renderBacklinks(
     void registerEventListener(backlink, 'mousedown', event => {
       event.preventDefault();
     });
-    void registerEventListener(backlink, 'click', event => {
-      event.preventDefault();
-      navigateToReference(editor, definition, index);
+    void registerEventListener(backlink, 'click', () => {
+      // The default action (the fragment navigation) runs AFTER this
+      // listener and moves focus out of the editor; follow it with the
+      // selection on the next task so the follow-up wins.
+      setTimeout(() => selectReference(editor, definition, index), 0);
     });
     container.append(backlink);
   }
@@ -204,24 +213,38 @@ function renderBacklinks(
 }
 
 /**
- * Keeps every definition's backlinks in sync with the document: after each
- * update, each definition gets one backlink per reference to its label,
- * rendered after the note text (inside the body's last paragraph when there
- * is one, like GitHub, otherwise appended to the body). The chrome depends
- * on state OUTSIDE the definition node — the references live anywhere in
- * the document — so it cannot be produced by createDOM/updateDOM alone;
- * this listener re-anchors and re-counts it instead, and reconciliation
- * recreating the body DOM simply drops the chrome for the next pass to
- * rebuild.
+ * Keeps the anchor bookkeeping in sync with the document after each update:
+ *
+ * - Every reference's `<a>` gets its per-label ordinal id (`fnref-a`,
+ *   `fnref-a-2`, ...) so definition backlinks can target it. Ids depend on
+ *   document order, which createDOM cannot know, so they are (re)assigned
+ *   here.
+ * - Every definition gets one backlink per reference to its label,
+ *   rendered after the note text (inside the body's last paragraph when
+ *   there is one, like GitHub, otherwise appended to the body). The chrome
+ *   depends on state OUTSIDE the definition node — the references live
+ *   anywhere in the document — so it cannot be produced by
+ *   createDOM/updateDOM alone; this listener re-anchors and re-counts it
+ *   instead, and reconciliation recreating the body DOM simply drops the
+ *   chrome for the next pass to rebuild.
  */
-export function registerFootnoteBacklinks(editor: LexicalEditor): () => void {
+export function registerFootnoteAnchors(editor: LexicalEditor): () => void {
   return editor.registerUpdateListener(({editorState}) => {
     editorState.read(() => {
+      const refsByLabel = $collectFootnoteRefsByLabel();
+      for (const [label, refs] of refsByLabel) {
+        refs.forEach((ref, index) => {
+          const dom = editor.getElementByKey(ref.getKey());
+          const anchor = dom !== null ? dom.querySelector('a') : null;
+          if (anchor !== null) {
+            anchor.id = referenceDomId(label, index);
+          }
+        });
+      }
       const footnotes = $getSlot($getRoot(), FOOTNOTES_SLOT);
       if (!$isFootnotesNode(footnotes)) {
         return;
       }
-      const refsByLabel = $collectFootnoteRefsByLabel();
       for (const definition of footnotes.getChildren()) {
         if (!$isFootnoteDefinitionNode(definition)) {
           continue;
@@ -284,21 +307,34 @@ export class FootnoteRefNode extends DecoratorTextNode {
   }
 
   createDOM(_config: EditorConfig, editor: LexicalEditor): HTMLElement {
-    const dom = $getDocument().createElement('sup');
+    const doc = $getDocument();
+    const dom = doc.createElement('sup');
     dom.className = 'footnote-ref';
     dom.contentEditable = 'false';
-    dom.setAttribute('role', 'button');
-    dom.setAttribute('title', 'Go to footnote');
-    dom.textContent = this.getLabel();
+    // A real fragment link (GitHub's markup: role="doc-noteref", described
+    // by the footnotes title): the browser owns the click's navigation and
+    // scrolling. The per-label ordinal id lands on this anchor via
+    // registerFootnoteAnchors.
+    const anchor = doc.createElement('a');
+    anchor.href = fragmentHref(definitionDomId(this.getLabel()));
+    anchor.setAttribute('role', 'doc-noteref');
+    anchor.setAttribute('aria-describedby', FOOTNOTES_LABEL_ID);
+    anchor.setAttribute('title', 'Go to footnote');
+    anchor.textContent = this.getLabel();
+    dom.append(anchor);
     // The listeners' lifetimes are the DOM's own; `void` marks the
     // disposers as intentionally discarded. mousedown preventDefault keeps
-    // the click from moving the selection before the navigation does.
-    void registerEventListener(dom, 'mousedown', event => {
+    // the click from moving the caret; the click keeps its DEFAULT action
+    // (the fragment navigation) and the listener only moves the selection
+    // along with it.
+    void registerEventListener(anchor, 'mousedown', event => {
       event.preventDefault();
     });
-    void registerEventListener(dom, 'click', event => {
-      event.preventDefault();
-      navigateToDefinition(editor, this);
+    void registerEventListener(anchor, 'click', () => {
+      // The default action (the fragment navigation) runs AFTER this
+      // listener and moves focus out of the editor; follow it with the
+      // selection on the next task so the follow-up wins.
+      setTimeout(() => selectDefinition(editor, this), 0);
     });
     // The format bitmask renders as real wrapper tags (<b>, <em>, ...)
     // around the marker, mirroring the text serialization.
@@ -383,6 +419,10 @@ export class FootnoteDefinitionNode extends ElementNode {
     const doc = $getDocument();
     const dom = doc.createElement('div');
     dom.className = 'footnote-def';
+    // The refs' anchors target this id; doc-endnote per the DPUB-ARIA
+    // (DAISY/EPUB) note vocabulary, matching GitHub's rendered footnotes.
+    dom.id = definitionDomId(this.getLabel());
+    dom.setAttribute('role', 'doc-endnote');
     const marker = doc.createElement('div');
     marker.className = 'footnote-def-marker';
     // Chrome, not content: keep the caret out of the marker column.
@@ -415,6 +455,7 @@ export class FootnoteDefinitionNode extends ElementNode {
   updateDOM(prevNode: this, dom: HTMLElement): boolean {
     const change = $getStateChange(this, prevNode, footnoteLabelState);
     if (change !== null) {
+      dom.id = definitionDomId(change[0]);
       const label = dom.querySelector<HTMLElement>(
         ':scope > .footnote-def-marker > .footnote-def-label',
       );
@@ -493,9 +534,13 @@ export class FootnotesNode extends ElementNode {
     const doc = $getDocument();
     const dom = doc.createElement('section');
     dom.className = 'footnotes';
+    // doc-endnotes per the DPUB-ARIA (DAISY/EPUB) note vocabulary.
+    dom.setAttribute('role', 'doc-endnotes');
     const title = doc.createElement('div');
     title.className = 'footnotes-title';
-    // Chrome, not content.
+    // Chrome, not content. Every ref's aria-describedby points at this
+    // title, GitHub-style.
+    title.id = FOOTNOTES_LABEL_ID;
     title.contentEditable = 'false';
     title.textContent = 'Footnotes';
     dom.append(title);

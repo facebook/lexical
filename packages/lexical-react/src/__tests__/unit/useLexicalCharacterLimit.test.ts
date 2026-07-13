@@ -6,14 +6,13 @@
  *
  */
 
-import type {
-  OverflowNode} from '@lexical/overflow';
+import type {OverflowNode} from '@lexical/overflow';
 
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $createOverflowNode,
   $isOverflowNode,
-  OverflowExtension
+  OverflowExtension,
 } from '@lexical/overflow';
 import {
   $createParagraphNode,

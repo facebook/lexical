@@ -87,12 +87,15 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
           const root = $getRoot();
           root.clear();
           const decorator = $createTestDecoratorNode().setIsInline(inline);
+          const firstItem = $createListItemNode().append(
+            $createTextNode('first'),
+          );
           const list = $createListNode(listType).append(
-            $createListItemNode().append($createTextNode('first')),
+            firstItem,
             $createListItemNode().append($createTextNode('second')),
           );
           root.append(decorator, list);
-          list.getFirstChildOrThrow().select(0, 0);
+          firstItem.select(0, 0);
           handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
         },
         {discrete: true},
@@ -150,11 +153,12 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
           const root = $getRoot();
           root.clear();
           const decorator = $createTestDecoratorNode().setIsInline(false);
-          const list = $createListNode('bullet').append(
-            $createListItemNode().append($createTextNode('only')),
+          const onlyItem = $createListItemNode().append(
+            $createTextNode('only'),
           );
+          const list = $createListNode('bullet').append(onlyItem);
           root.append(decorator, list);
-          list.getFirstChildOrThrow().select(0, 0);
+          onlyItem.select(0, 0);
           handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
         },
         {discrete: true},
@@ -189,11 +193,12 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
           root.clear();
           const first = $createTestDecoratorNode().setIsInline(false);
           const second = $createTestDecoratorNode().setIsInline(false);
-          const list = $createListNode('bullet').append(
-            $createListItemNode().append($createTextNode('hello')),
+          const helloItem = $createListItemNode().append(
+            $createTextNode('hello'),
           );
+          const list = $createListNode('bullet').append(helloItem);
           root.append(first, second, list);
-          list.getFirstChildOrThrow().select(0, 0);
+          helloItem.select(0, 0);
           handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
         },
         {discrete: true},
@@ -235,11 +240,12 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
           const paragraph = $createParagraphNode().append(
             $createTextNode('intro'),
           );
-          const list = $createListNode('bullet').append(
-            $createListItemNode().append($createTextNode('first')),
+          const firstItem = $createListItemNode().append(
+            $createTextNode('first'),
           );
+          const list = $createListNode('bullet').append(firstItem);
           root.append(paragraph, list);
-          list.getFirstChildOrThrow().select(0, 0);
+          firstItem.select(0, 0);
           handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
         },
         {discrete: true},
@@ -258,13 +264,14 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
           const root = $getRoot();
           root.clear();
           const decorator = $createTestDecoratorNode().setIsInline(false);
+          const secondItem = $createListItemNode().append(
+            $createTextNode('second'),
+          );
           const list = $createListNode('bullet').append(
             $createListItemNode().append($createTextNode('first')),
-            $createListItemNode().append($createTextNode('second')),
+            secondItem,
           );
           root.append(decorator, list);
-          const secondItem = list.getChildAtIndex(1);
-          invariant(secondItem !== null, 'Expected a second list item');
           secondItem.select(0, 0);
           handled = editor.dispatchCommand(
             KEY_BACKSPACE_COMMAND,
@@ -359,11 +366,12 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
           const root = $getRoot();
           root.clear();
           const decorator = $createIsolatedTestDecoratorNode();
-          const list = $createListNode('bullet').append(
-            $createListItemNode().append($createTextNode('first')),
+          const firstItem = $createListItemNode().append(
+            $createTextNode('first'),
           );
+          const list = $createListNode('bullet').append(firstItem);
           root.append(decorator, list);
-          list.getFirstChildOrThrow().select(0, 0);
+          firstItem.select(0, 0);
           handled = editor.dispatchCommand(
             KEY_BACKSPACE_COMMAND,
             backspaceEvent(),

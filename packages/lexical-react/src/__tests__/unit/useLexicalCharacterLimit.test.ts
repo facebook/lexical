@@ -22,6 +22,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   $setSlot,
+  type ElementNode,
   type LexicalEditor,
 } from 'lexical';
 import {
@@ -235,7 +236,7 @@ describe('useCharacterLimit', () => {
       });
 
       await editor.update(() => {
-        const paragraph = $getRoot().getFirstChildOrThrow();
+        const paragraph = $getRoot().getFirstChildOrThrow<ElementNode>();
         const text = paragraph.getFirstChild();
         if ($isTextNode(text)) {
           text.setTextContent('abcdge');
@@ -247,7 +248,7 @@ describe('useCharacterLimit', () => {
       });
 
       editor.read(() => {
-        const paragraph = $getRoot().getFirstChildOrThrow();
+        const paragraph = $getRoot().getFirstChildOrThrow<ElementNode>();
         const children = paragraph.getChildren();
         expect(children.length).toBe(2);
         expect(children[0].getTextContent()).toBe('abcdg');
@@ -273,7 +274,7 @@ describe('useCharacterLimit', () => {
       });
 
       editor.read(() => {
-        const host = $getRoot().getFirstChildOrThrow();
+        const host = $getRoot().getFirstChildOrThrow<ElementNode>();
         const children = host.getChildren();
         expect(children[0].getTextContent()).toBe('12');
         expect($isOverflowNode(children[1])).toBe(true);

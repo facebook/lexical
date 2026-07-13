@@ -92,7 +92,7 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
             $createListItemNode().append($createTextNode('second')),
           );
           root.append(decorator, list);
-          list.getFirstChildOrThrow().selectStart();
+          list.getFirstChildOrThrow().select(0, 0);
           handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
         },
         {discrete: true},
@@ -154,7 +154,7 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
             $createListItemNode().append($createTextNode('only')),
           );
           root.append(decorator, list);
-          list.getFirstChildOrThrow().selectStart();
+          list.getFirstChildOrThrow().select(0, 0);
           handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
         },
         {discrete: true},
@@ -193,7 +193,7 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
             $createListItemNode().append($createTextNode('hello')),
           );
           root.append(first, second, list);
-          list.getFirstChildOrThrow().selectStart();
+          list.getFirstChildOrThrow().select(0, 0);
           handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
         },
         {discrete: true},
@@ -222,11 +222,11 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
     });
   });
 
-  describe('non-decorator-adjacent cases (paragraph conversion / outdent)', () => {
-    test('no decorator before the list — converts to paragraph', () => {
+  describe('returns false (defers to deleteCharacter / collapseAtStart)', () => {
+    test('no decorator before the list', () => {
       using editor = buildEditorFromExtensions(testExtension);
 
-      let handled = false;
+      let handled = true;
       const event = backspaceEvent();
       editor.update(
         () => {
@@ -239,31 +239,17 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
             $createListItemNode().append($createTextNode('first')),
           );
           root.append(paragraph, list);
-          list.getFirstChildOrThrow().selectStart();
+          list.getFirstChildOrThrow().select(0, 0);
           handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
         },
         {discrete: true},
       );
 
-      expect(handled).toBe(true);
-      expect(event.defaultPrevented).toBe(true);
-
-      editor.read(() => {
-        const children = $getRoot().getChildren();
-        expect(children).toHaveLength(2);
-        invariant(
-          $isParagraphNode(children[0]),
-          'Expected leading ParagraphNode',
-        );
-        invariant(
-          $isParagraphNode(children[1]),
-          'Expected converted ParagraphNode',
-        );
-        expect(children[1].getTextContent()).toBe('first');
-      });
+      expect(handled).toBe(false);
+      expect(event.defaultPrevented).toBe(false);
     });
 
-    test('caret on the second list item — converts to paragraph', () => {
+    test('caret on the second list item — converts to paragraph via collapseAtStart', () => {
       using editor = buildEditorFromExtensions(testExtension);
 
       let handled = false;
@@ -279,7 +265,7 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
           root.append(decorator, list);
           const secondItem = list.getChildAtIndex(1);
           invariant(secondItem !== null, 'Expected a second list item');
-          secondItem.selectStart();
+          secondItem.select(0, 0);
           handled = editor.dispatchCommand(
             KEY_BACKSPACE_COMMAND,
             backspaceEvent(),
@@ -336,10 +322,10 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
       });
     });
 
-    test('nested list — no decorator before the inner list — outdents', () => {
+    test('nested list — no decorator before the inner list', () => {
       using editor = buildEditorFromExtensions(testExtension);
 
-      let handled = false;
+      let handled = true;
       editor.update(
         () => {
           const root = $getRoot();
@@ -352,7 +338,7 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
           const outerLi = $createListItemNode().append(innerList);
           const outerList = $createListNode('bullet').append(outerLi);
           root.append(decorator, outerList);
-          innerLi.selectStart();
+          innerLi.select(0, 0);
           handled = editor.dispatchCommand(
             KEY_BACKSPACE_COMMAND,
             backspaceEvent(),
@@ -361,20 +347,13 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
         {discrete: true},
       );
 
-      expect(handled).toBe(true);
-      editor.read(() => {
-        const root = $getRoot();
-        const list = root.getChildAtIndex(1);
-        invariant($isListNode(list), 'Expected ListNode at index 1');
-        expect(list.getChildrenSize()).toBe(1);
-        expect(list.getFirstChildOrThrow().getTextContent()).toBe('nested');
-      });
+      expect(handled).toBe(false);
     });
 
-    test('isolated decorator before the list — converts to paragraph', () => {
+    test('isolated decorator before the list', () => {
       using editor = buildEditorFromExtensions(testExtension);
 
-      let handled = false;
+      let handled = true;
       editor.update(
         () => {
           const root = $getRoot();
@@ -384,7 +363,7 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
             $createListItemNode().append($createTextNode('first')),
           );
           root.append(decorator, list);
-          list.getFirstChildOrThrow().selectStart();
+          list.getFirstChildOrThrow().select(0, 0);
           handled = editor.dispatchCommand(
             KEY_BACKSPACE_COMMAND,
             backspaceEvent(),
@@ -393,27 +372,13 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
         {discrete: true},
       );
 
-      expect(handled).toBe(true);
-
-      editor.read(() => {
-        const children = $getRoot().getChildren();
-        expect(children).toHaveLength(2);
-        invariant(
-          children[0] instanceof IsolatedTestDecoratorNode,
-          'Expected leading IsolatedTestDecoratorNode',
-        );
-        invariant(
-          $isParagraphNode(children[1]),
-          'Expected converted ParagraphNode',
-        );
-        expect(children[1].getTextContent()).toBe('first');
-      });
+      expect(handled).toBe(false);
     });
 
-    test('empty first list item — converts to paragraph', () => {
+    test('empty first list item — defers to core', () => {
       using editor = buildEditorFromExtensions(testExtension);
 
-      let handled = false;
+      let handled = true;
       editor.update(
         () => {
           const root = $getRoot();
@@ -434,23 +399,7 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
         {discrete: true},
       );
 
-      expect(handled).toBe(true);
-
-      editor.read(() => {
-        const children = $getRoot().getChildren();
-        expect(children).toHaveLength(3);
-        invariant(
-          children[0] instanceof TestDecoratorNode,
-          'Expected leading TestDecoratorNode',
-        );
-        invariant(
-          $isParagraphNode(children[1]),
-          'Expected converted ParagraphNode',
-        );
-        const list = children[2];
-        invariant($isListNode(list), 'Expected trailing ListNode');
-        expect(list.getChildrenSize()).toBe(1);
-      });
+      expect(handled).toBe(false);
     });
   });
 });

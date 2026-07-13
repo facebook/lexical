@@ -398,6 +398,10 @@ export class ListItemNode extends ElementNode {
   }
 
   collapseAtStart(selection: RangeSelection): true {
+    if (isNestedListNode(this)) {
+      return true;
+    }
+
     const listNode = this.getParentOrThrow();
     const listNodeParent = listNode.getParentOrThrow();
 
@@ -406,26 +410,30 @@ export class ListItemNode extends ElementNode {
       return true;
     }
 
+    const previousSibling = this.getPreviousSibling();
+    if (this.getTextContentSize() === 0 && $isListItemNode(previousSibling)) {
+      this.remove();
+      if (listNode.getChildrenSize() === 0) {
+        listNode.remove();
+      }
+      previousSibling.selectEnd();
+      return true;
+    }
+
     const paragraph = $createParagraphNode().append(...this.getChildren());
 
-    if (listNode.getChildrenSize() === 1) {
-      listNode.insertBefore(paragraph);
-      listNode.remove();
-      const anchor = selection.anchor;
-      const focus = selection.focus;
-      const key = paragraph.getKey();
-
-      if (anchor.type === 'element' && anchor.getNode().is(this)) {
-        anchor.set(key, anchor.offset, 'element');
-      }
-
-      if (focus.type === 'element' && focus.getNode().is(this)) {
-        focus.set(key, focus.offset, 'element');
-      }
-    } else {
-      listNode.insertBefore(paragraph);
-      this.remove();
+    const nextSiblings = this.getNextSiblings();
+    if (nextSiblings.length > 0) {
+      const newList = $copyNode(listNode);
+      newList.append(...nextSiblings);
+      listNode.insertAfter(newList);
     }
+    listNode.insertAfter(paragraph);
+    this.remove();
+    if (listNode.getChildrenSize() === 0) {
+      listNode.remove();
+    }
+    paragraph.select(0, 0);
 
     return true;
   }

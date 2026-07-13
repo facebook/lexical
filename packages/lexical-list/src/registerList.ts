@@ -27,7 +27,6 @@ import {
 } from 'lexical';
 
 import {
-  $handleListBackspaceAtStart,
   $handleListInsertParagraph,
   $insertList,
   $removeList,
@@ -107,9 +106,9 @@ export function registerList(
     ),
     // Intercepts Backspace at the start of a list item before the rich-text
     // handler at COMMAND_PRIORITY_EDITOR calls deleteCharacter. Handles two
-    // cases: (1) decorator-adjacent first items (#5072) and (2) all list
-    // items at offset 0 — outdenting nested items or converting top-level
-    // items to paragraphs (#6334).
+    // cases: (1) decorator-adjacent first items (#5072) and (2) non-first
+    // list items at offset 0, which deleteCharacter would merge with the
+    // previous sibling instead of routing through collapseAtStart.
     editor.registerCommand(
       KEY_BACKSPACE_COMMAND,
       event => {
@@ -135,11 +134,14 @@ export function registerList(
               }
               current = parent;
             }
-            if (atStart && $isListItemNode(current)) {
-              if ($handleListBackspaceAtStart(current)) {
-                event.preventDefault();
-                return true;
-              }
+            if (
+              atStart &&
+              $isListItemNode(current) &&
+              current.getPreviousSibling() !== null
+            ) {
+              current.collapseAtStart(selection);
+              event.preventDefault();
+              return true;
             }
           }
         }

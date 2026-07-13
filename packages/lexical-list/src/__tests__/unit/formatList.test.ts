@@ -39,7 +39,6 @@ import {
   $nodesOfType,
   $selectAll,
   INSERT_PARAGRAPH_COMMAND,
-  KEY_BACKSPACE_COMMAND,
   type LexicalNode,
 } from 'lexical';
 import {
@@ -455,20 +454,15 @@ describe('$handleOutdent', () => {
   }, initOptions);
 });
 
-const backspaceTestExtension = defineExtension({
+const collapseTestExtension = defineExtension({
   dependencies: [ListExtension],
   name: '[root]',
 });
 
-describe('ListItemNode backspace at start', () => {
-  function backspaceEvent(): KeyboardEvent {
-    return new KeyboardEvent('keydown', {cancelable: true, key: 'Backspace'});
-  }
-
+describe('ListItemNode.collapseAtStart', () => {
   test('top-level single item converts to paragraph', () => {
-    using editor = buildEditorFromExtensions(backspaceTestExtension);
+    using editor = buildEditorFromExtensions(collapseTestExtension);
 
-    let handled = false;
     editor.update(
       () => {
         const root = $getRoot();
@@ -476,16 +470,12 @@ describe('ListItemNode backspace at start', () => {
         const listItem = $createListItemNode().append($createTextNode('hello'));
         const listNode = $createListNode('bullet').append(listItem);
         root.append(listNode);
-        listItem.selectStart();
-        handled = editor.dispatchCommand(
-          KEY_BACKSPACE_COMMAND,
-          backspaceEvent(),
-        );
+        const selection = listItem.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        listItem.collapseAtStart(selection);
       },
       {discrete: true},
     );
-
-    expect(handled).toBe(true);
 
     editor.read(() => {
       const children = $getRoot().getChildren();
@@ -495,29 +485,27 @@ describe('ListItemNode backspace at start', () => {
     });
   });
 
-  test('top-level multi-item extracts first item as paragraph', () => {
-    using editor = buildEditorFromExtensions(backspaceTestExtension);
+  test('top-level first item extracts as paragraph, keeps remaining list', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
 
-    let handled = false;
     editor.update(
       () => {
         const root = $getRoot();
         root.clear();
+        const firstItem = $createListItemNode().append(
+          $createTextNode('first'),
+        );
         const listNode = $createListNode('bullet').append(
-          $createListItemNode().append($createTextNode('first')),
+          firstItem,
           $createListItemNode().append($createTextNode('second')),
         );
         root.append(listNode);
-        listNode.getFirstChildOrThrow().selectStart();
-        handled = editor.dispatchCommand(
-          KEY_BACKSPACE_COMMAND,
-          backspaceEvent(),
-        );
+        const selection = firstItem.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        firstItem.collapseAtStart(selection);
       },
       {discrete: true},
     );
-
-    expect(handled).toBe(true);
 
     editor.read(() => {
       const children = $getRoot().getChildren();
@@ -530,9 +518,8 @@ describe('ListItemNode backspace at start', () => {
   });
 
   test('indented item outdents instead of converting to paragraph', () => {
-    using editor = buildEditorFromExtensions(backspaceTestExtension);
+    using editor = buildEditorFromExtensions(collapseTestExtension);
 
-    let handled = false;
     let indentedItemKey: string;
     editor.update(
       () => {
@@ -550,16 +537,12 @@ describe('ListItemNode backspace at start', () => {
           nestedWrapper,
         );
         root.append(listNode);
-        indentedItem.selectStart();
-        handled = editor.dispatchCommand(
-          KEY_BACKSPACE_COMMAND,
-          backspaceEvent(),
-        );
+        const selection = indentedItem.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        indentedItem.collapseAtStart(selection);
       },
       {discrete: true},
     );
-
-    expect(handled).toBe(true);
 
     editor.read(() => {
       const children = $getRoot().getChildren();
@@ -573,9 +556,8 @@ describe('ListItemNode backspace at start', () => {
   });
 
   test('indented item with siblings outdents without breaking list', () => {
-    using editor = buildEditorFromExtensions(backspaceTestExtension);
+    using editor = buildEditorFromExtensions(collapseTestExtension);
 
-    let handled = false;
     let firstIndentedKey: string;
     editor.update(
       () => {
@@ -596,16 +578,12 @@ describe('ListItemNode backspace at start', () => {
           nestedWrapper,
         );
         root.append(listNode);
-        indentedItem1.selectStart();
-        handled = editor.dispatchCommand(
-          KEY_BACKSPACE_COMMAND,
-          backspaceEvent(),
-        );
+        const selection = indentedItem1.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        indentedItem1.collapseAtStart(selection);
       },
       {discrete: true},
     );
-
-    expect(handled).toBe(true);
 
     editor.read(() => {
       const children = $getRoot().getChildren();
@@ -626,9 +604,8 @@ describe('ListItemNode backspace at start', () => {
   });
 
   test('middle item converts to paragraph and splits list', () => {
-    using editor = buildEditorFromExtensions(backspaceTestExtension);
+    using editor = buildEditorFromExtensions(collapseTestExtension);
 
-    let handled = false;
     editor.update(
       () => {
         const root = $getRoot();
@@ -640,16 +617,12 @@ describe('ListItemNode backspace at start', () => {
           $createListItemNode().append($createTextNode('third')),
         );
         root.append(listNode);
-        item2.selectStart();
-        handled = editor.dispatchCommand(
-          KEY_BACKSPACE_COMMAND,
-          backspaceEvent(),
-        );
+        const selection = item2.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        item2.collapseAtStart(selection);
       },
       {discrete: true},
     );
-
-    expect(handled).toBe(true);
 
     editor.read(() => {
       const children = $getRoot().getChildren();
@@ -666,9 +639,8 @@ describe('ListItemNode backspace at start', () => {
   });
 
   test('last item converts to paragraph without splitting', () => {
-    using editor = buildEditorFromExtensions(backspaceTestExtension);
+    using editor = buildEditorFromExtensions(collapseTestExtension);
 
-    let handled = false;
     editor.update(
       () => {
         const root = $getRoot();
@@ -679,16 +651,12 @@ describe('ListItemNode backspace at start', () => {
           item2,
         );
         root.append(listNode);
-        item2.selectStart();
-        handled = editor.dispatchCommand(
-          KEY_BACKSPACE_COMMAND,
-          backspaceEvent(),
-        );
+        const selection = item2.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        item2.collapseAtStart(selection);
       },
       {discrete: true},
     );
-
-    expect(handled).toBe(true);
 
     editor.read(() => {
       const children = $getRoot().getChildren();
@@ -702,9 +670,8 @@ describe('ListItemNode backspace at start', () => {
   });
 
   test('empty middle item is removed', () => {
-    using editor = buildEditorFromExtensions(backspaceTestExtension);
+    using editor = buildEditorFromExtensions(collapseTestExtension);
 
-    let handled = false;
     editor.update(
       () => {
         const root = $getRoot();
@@ -716,16 +683,12 @@ describe('ListItemNode backspace at start', () => {
           $createListItemNode().append($createTextNode('third')),
         );
         root.append(listNode);
-        emptyItem.select();
-        handled = editor.dispatchCommand(
-          KEY_BACKSPACE_COMMAND,
-          backspaceEvent(),
-        );
+        const selection = emptyItem.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        emptyItem.collapseAtStart(selection);
       },
       {discrete: true},
     );
-
-    expect(handled).toBe(true);
 
     editor.read(() => {
       const children = $getRoot().getChildren();
@@ -742,9 +705,8 @@ describe('ListItemNode backspace at start', () => {
   });
 
   test('empty indented item outdents', () => {
-    using editor = buildEditorFromExtensions(backspaceTestExtension);
+    using editor = buildEditorFromExtensions(collapseTestExtension);
 
-    let handled = false;
     let emptyItemKey: string;
     editor.update(
       () => {
@@ -760,16 +722,12 @@ describe('ListItemNode backspace at start', () => {
           nestedWrapper,
         );
         root.append(listNode);
-        emptyItem.select();
-        handled = editor.dispatchCommand(
-          KEY_BACKSPACE_COMMAND,
-          backspaceEvent(),
-        );
+        const selection = emptyItem.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        emptyItem.collapseAtStart(selection);
       },
       {discrete: true},
     );
-
-    expect(handled).toBe(true);
 
     editor.read(() => {
       const children = $getRoot().getChildren();

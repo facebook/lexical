@@ -398,35 +398,29 @@ export class ListItemNode extends ElementNode {
   }
 
   collapseAtStart(selection: RangeSelection): true {
-    const paragraph = $createParagraphNode();
-    const children = this.getChildren();
-    children.forEach(child => paragraph.append(child));
     const listNode = this.getParentOrThrow();
     const listNodeParent = listNode.getParentOrThrow();
-    const isIndented = $isListItemNode(listNodeParent);
+
+    if ($isListItemNode(listNodeParent)) {
+      $handleOutdent(this);
+      return true;
+    }
+
+    const paragraph = $createParagraphNode().append(...this.getChildren());
 
     if (listNode.getChildrenSize() === 1) {
-      if (isIndented) {
-        // if the list node is nested, we just want to remove it,
-        // effectively unindenting it.
-        listNode.remove();
-        listNodeParent.select();
-      } else {
-        listNode.insertBefore(paragraph);
-        listNode.remove();
-        // If we have selection on the list item, we'll need to move it
-        // to the paragraph
-        const anchor = selection.anchor;
-        const focus = selection.focus;
-        const key = paragraph.getKey();
+      listNode.insertBefore(paragraph);
+      listNode.remove();
+      const anchor = selection.anchor;
+      const focus = selection.focus;
+      const key = paragraph.getKey();
 
-        if (anchor.type === 'element' && anchor.getNode().is(this)) {
-          anchor.set(key, anchor.offset, 'element');
-        }
+      if (anchor.type === 'element' && anchor.getNode().is(this)) {
+        anchor.set(key, anchor.offset, 'element');
+      }
 
-        if (focus.type === 'element' && focus.getNode().is(this)) {
-          focus.set(key, focus.offset, 'element');
-        }
+      if (focus.type === 'element' && focus.getNode().is(this)) {
+        focus.set(key, focus.offset, 'element');
       }
     } else {
       listNode.insertBefore(paragraph);

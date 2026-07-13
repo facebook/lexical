@@ -5,12 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {
   $createListItemNode,
   $createListNode,
   $insertList,
   $isListItemNode,
   $isListNode,
+  ListExtension,
   ListItemNode,
   ListNode,
   type ListType,
@@ -37,12 +39,14 @@ import {
   $nodesOfType,
   $selectAll,
   INSERT_PARAGRAPH_COMMAND,
+  KEY_BACKSPACE_COMMAND,
   type LexicalNode,
 } from 'lexical';
 import {
   $assertNodeType,
   $createTestDecoratorNode,
   initializeUnitTest,
+  invariant,
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
@@ -449,4 +453,331 @@ describe('$handleOutdent', () => {
       });
     });
   }, initOptions);
+});
+
+const backspaceTestExtension = defineExtension({
+  dependencies: [ListExtension],
+  name: '[root]',
+});
+
+describe('ListItemNode backspace at start', () => {
+  function backspaceEvent(): KeyboardEvent {
+    return new KeyboardEvent('keydown', {cancelable: true, key: 'Backspace'});
+  }
+
+  test('top-level single item converts to paragraph', () => {
+    using editor = buildEditorFromExtensions(backspaceTestExtension);
+
+    let handled = false;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const listItem = $createListItemNode().append($createTextNode('hello'));
+        const listNode = $createListNode('bullet').append(listItem);
+        root.append(listNode);
+        listItem.selectStart();
+        handled = editor.dispatchCommand(
+          KEY_BACKSPACE_COMMAND,
+          backspaceEvent(),
+        );
+      },
+      {discrete: true},
+    );
+
+    expect(handled).toBe(true);
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(1);
+      invariant($isParagraphNode(children[0]), 'Expected ParagraphNode');
+      expect(children[0].getTextContent()).toBe('hello');
+    });
+  });
+
+  test('top-level multi-item extracts first item as paragraph', () => {
+    using editor = buildEditorFromExtensions(backspaceTestExtension);
+
+    let handled = false;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('first')),
+          $createListItemNode().append($createTextNode('second')),
+        );
+        root.append(listNode);
+        listNode.getFirstChildOrThrow().selectStart();
+        handled = editor.dispatchCommand(
+          KEY_BACKSPACE_COMMAND,
+          backspaceEvent(),
+        );
+      },
+      {discrete: true},
+    );
+
+    expect(handled).toBe(true);
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(2);
+      invariant($isParagraphNode(children[0]), 'Expected ParagraphNode');
+      expect(children[0].getTextContent()).toBe('first');
+      invariant($isListNode(children[1]), 'Expected ListNode');
+      expect(children[1].getChildrenSize()).toBe(1);
+    });
+  });
+
+  test('indented item outdents instead of converting to paragraph', () => {
+    using editor = buildEditorFromExtensions(backspaceTestExtension);
+
+    let handled = false;
+    let indentedItemKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const indentedItem = $createListItemNode().append(
+          $createTextNode('child'),
+        );
+        indentedItemKey = indentedItem.getKey();
+        const nestedWrapper = $createListItemNode().append(
+          $createListNode('bullet').append(indentedItem),
+        );
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('parent')),
+          nestedWrapper,
+        );
+        root.append(listNode);
+        indentedItem.selectStart();
+        handled = editor.dispatchCommand(
+          KEY_BACKSPACE_COMMAND,
+          backspaceEvent(),
+        );
+      },
+      {discrete: true},
+    );
+
+    expect(handled).toBe(true);
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(1);
+      invariant($isListNode(children[0]), 'Expected ListNode');
+      expect(children[0].getChildrenSize()).toBe(2);
+      const outdentedItem = $getNodeByKey(indentedItemKey);
+      invariant($isListItemNode(outdentedItem), 'Expected ListItemNode');
+      expect(outdentedItem.getTextContent()).toBe('child');
+    });
+  });
+
+  test('indented item with siblings outdents without breaking list', () => {
+    using editor = buildEditorFromExtensions(backspaceTestExtension);
+
+    let handled = false;
+    let firstIndentedKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const indentedItem1 = $createListItemNode().append(
+          $createTextNode('child1'),
+        );
+        firstIndentedKey = indentedItem1.getKey();
+        const nestedWrapper = $createListItemNode().append(
+          $createListNode('bullet').append(
+            indentedItem1,
+            $createListItemNode().append($createTextNode('child2')),
+          ),
+        );
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('parent')),
+          nestedWrapper,
+        );
+        root.append(listNode);
+        indentedItem1.selectStart();
+        handled = editor.dispatchCommand(
+          KEY_BACKSPACE_COMMAND,
+          backspaceEvent(),
+        );
+      },
+      {discrete: true},
+    );
+
+    expect(handled).toBe(true);
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(1);
+      invariant($isListNode(children[0]), 'Expected ListNode');
+      const outdentedItem = $getNodeByKey(firstIndentedKey);
+      invariant($isListItemNode(outdentedItem), 'Expected ListItemNode');
+      expect(outdentedItem.getTextContent()).toBe('child1');
+      expect(
+        children[0]
+          .getChildren()
+          .some(
+            item =>
+              $isListItemNode(item) && item.getTextContent().includes('child2'),
+          ),
+      ).toBe(true);
+    });
+  });
+
+  test('middle item converts to paragraph and splits list', () => {
+    using editor = buildEditorFromExtensions(backspaceTestExtension);
+
+    let handled = false;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const item2 = $createListItemNode().append($createTextNode('second'));
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('first')),
+          item2,
+          $createListItemNode().append($createTextNode('third')),
+        );
+        root.append(listNode);
+        item2.selectStart();
+        handled = editor.dispatchCommand(
+          KEY_BACKSPACE_COMMAND,
+          backspaceEvent(),
+        );
+      },
+      {discrete: true},
+    );
+
+    expect(handled).toBe(true);
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(3);
+      invariant($isListNode(children[0]), 'Expected first ListNode');
+      expect(children[0].getChildrenSize()).toBe(1);
+      expect(children[0].getTextContent()).toBe('first');
+      invariant($isParagraphNode(children[1]), 'Expected ParagraphNode');
+      expect(children[1].getTextContent()).toBe('second');
+      invariant($isListNode(children[2]), 'Expected second ListNode');
+      expect(children[2].getChildrenSize()).toBe(1);
+      expect(children[2].getTextContent()).toBe('third');
+    });
+  });
+
+  test('last item converts to paragraph without splitting', () => {
+    using editor = buildEditorFromExtensions(backspaceTestExtension);
+
+    let handled = false;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const item2 = $createListItemNode().append($createTextNode('second'));
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('first')),
+          item2,
+        );
+        root.append(listNode);
+        item2.selectStart();
+        handled = editor.dispatchCommand(
+          KEY_BACKSPACE_COMMAND,
+          backspaceEvent(),
+        );
+      },
+      {discrete: true},
+    );
+
+    expect(handled).toBe(true);
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(2);
+      invariant($isListNode(children[0]), 'Expected ListNode');
+      expect(children[0].getChildrenSize()).toBe(1);
+      expect(children[0].getTextContent()).toBe('first');
+      invariant($isParagraphNode(children[1]), 'Expected ParagraphNode');
+      expect(children[1].getTextContent()).toBe('second');
+    });
+  });
+
+  test('empty middle item is removed', () => {
+    using editor = buildEditorFromExtensions(backspaceTestExtension);
+
+    let handled = false;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const emptyItem = $createListItemNode();
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('first')),
+          emptyItem,
+          $createListItemNode().append($createTextNode('third')),
+        );
+        root.append(listNode);
+        emptyItem.select();
+        handled = editor.dispatchCommand(
+          KEY_BACKSPACE_COMMAND,
+          backspaceEvent(),
+        );
+      },
+      {discrete: true},
+    );
+
+    expect(handled).toBe(true);
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(1);
+      invariant($isListNode(children[0]), 'Expected ListNode');
+      expect(children[0].getChildrenSize()).toBe(2);
+      expect(children[0].getFirstChildOrThrow().getTextContent()).toBe('first');
+      expect(children[0].getLastChildOrThrow().getTextContent()).toBe('third');
+
+      const selection = $getSelection();
+      invariant($isRangeSelection(selection), 'Expected RangeSelection');
+      expect(selection.isCollapsed()).toBe(true);
+    });
+  });
+
+  test('empty indented item outdents', () => {
+    using editor = buildEditorFromExtensions(backspaceTestExtension);
+
+    let handled = false;
+    let emptyItemKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const emptyItem = $createListItemNode();
+        emptyItemKey = emptyItem.getKey();
+        const nestedWrapper = $createListItemNode().append(
+          $createListNode('bullet').append(emptyItem),
+        );
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('parent')),
+          nestedWrapper,
+        );
+        root.append(listNode);
+        emptyItem.select();
+        handled = editor.dispatchCommand(
+          KEY_BACKSPACE_COMMAND,
+          backspaceEvent(),
+        );
+      },
+      {discrete: true},
+    );
+
+    expect(handled).toBe(true);
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(1);
+      invariant($isListNode(children[0]), 'Expected ListNode');
+      const outdentedItem = $getNodeByKey(emptyItemKey);
+      invariant($isListItemNode(outdentedItem), 'Expected ListItemNode');
+      expect(outdentedItem.getIndent()).toBe(0);
+    });
+  });
 });

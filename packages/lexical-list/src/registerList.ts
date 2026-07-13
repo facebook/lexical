@@ -27,6 +27,7 @@ import {
 } from 'lexical';
 
 import {
+  $handleListBackspaceAtStart,
   $handleListInsertParagraph,
   $insertList,
   $removeList,
@@ -104,16 +105,43 @@ export function registerList(
       },
       COMMAND_PRIORITY_LOW,
     ),
-    // Runs just before the rich-text handler at COMMAND_PRIORITY_EDITOR that
-    // calls deleteCharacter. Lower-priority handlers (link, mark, etc.) still
-    // see Backspace first; only the editor-priority merge-block path is what
-    // we intercept here.
+    // Intercepts Backspace at the start of a list item before the rich-text
+    // handler at COMMAND_PRIORITY_EDITOR calls deleteCharacter. Handles two
+    // cases: (1) decorator-adjacent first items (#5072) and (2) all list
+    // items at offset 0 — outdenting nested items or converting top-level
+    // items to paragraphs (#6334).
     editor.registerCommand(
       KEY_BACKSPACE_COMMAND,
       event => {
         if ($handleListItemBackspaceAdjacentToDecorator()) {
           event.preventDefault();
           return true;
+        }
+        const selection = $getSelection();
+        if ($isRangeSelection(selection) && selection.isCollapsed()) {
+          const {anchor} = selection;
+          if (anchor.offset === 0) {
+            let atStart = true;
+            let current = anchor.getNode();
+            while (!$isListItemNode(current)) {
+              if (current.getPreviousSibling() !== null) {
+                atStart = false;
+                break;
+              }
+              const parent = current.getParent();
+              if (parent === null) {
+                atStart = false;
+                break;
+              }
+              current = parent;
+            }
+            if (atStart && $isListItemNode(current)) {
+              if ($handleListBackspaceAtStart(current)) {
+                event.preventDefault();
+                return true;
+              }
+            }
+          }
         }
         return false;
       },

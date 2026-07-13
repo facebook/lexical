@@ -6,32 +6,6 @@
  *
  */
 
-import type {TableCellNode} from './LexicalTableCellNode';
-import type {
-  TableDOMCell,
-  TableDOMRows,
-  TableObservers,
-} from './LexicalTableObserver';
-import type {
-  TableMapType,
-  TableMapValueType,
-  TableSelection,
-} from './LexicalTableSelection';
-import type {
-  BaseSelection,
-  CaretDirection,
-  ChildCaret,
-  EditorState,
-  ElementNode,
-  LexicalCommand,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  PointCaret,
-  RangeSelection,
-  SiblingCaret,
-} from 'lexical';
-
 import {
   $getClipboardDataFromSelection,
   copyToClipboard,
@@ -64,12 +38,17 @@ import {
   $setPointFromCaret,
   $setSelection,
   addClassNamesToElement,
+  type BaseSelection,
+  type CaretDirection,
+  type ChildCaret,
   COMMAND_PRIORITY_HIGH,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   CUT_COMMAND,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  type EditorState,
+  type ElementNode,
   FOCUS_COMMAND,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -91,28 +70,46 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
   PASTE_COMMAND,
+  type PointCaret,
+  type RangeSelection,
   registerEventListener,
   removeClassNamesFromElement,
   SELECTION_CHANGE_COMMAND,
+  type SiblingCaret,
 } from 'lexical';
 
-import {$isTableCellNode} from './LexicalTableCellNode';
+import {$isTableCellNode, type TableCellNode} from './LexicalTableCellNode';
 import {
   $getElementForTableNode,
   $isScrollableTablesActive,
   $isTableNode,
-  TableNode,
+  type TableNode,
 } from './LexicalTableNode';
-import {TableDOMTable, TableObserver} from './LexicalTableObserver';
+import {
+  type TableDOMCell,
+  type TableDOMRows,
+  type TableDOMTable,
+  TableObserver,
+  type TableObservers,
+} from './LexicalTableObserver';
 import {$isTableRowNode} from './LexicalTableRowNode';
-import {$isTableSelection} from './LexicalTableSelection';
+import {
+  $isTableSelection,
+  type TableMapType,
+  type TableMapValueType,
+  type TableSelection,
+} from './LexicalTableSelection';
 import {
   $computeTableCellRectBoundary,
   $computeTableCellRectSpans,
   $computeTableMap,
   $getNodeTriplet,
-  TableCellRectBoundary,
+  type TableCellRectBoundary,
 } from './LexicalTableUtils';
 
 const LEXICAL_ELEMENT_KEY = '__lexicalTableSelection';
@@ -126,6 +123,34 @@ function $getTableNodeByKeyOrThrow(key: NodeKey): TableNode {
 const isPointerDownOnEvent = (event: PointerEvent) => {
   return (event.buttons & 1) === 1;
 };
+
+// Distance (px) from a scroll container edge at which drag auto-scroll kicks
+// in, and the maximum scroll delta applied per animation frame.
+const AUTO_SCROLL_EDGE_ZONE = 40;
+const AUTO_SCROLL_MAX_STEP = 18;
+
+// Given a pointer position and the start/end edges of a scroll container on one
+// axis, return the signed per-frame scroll delta: negative near the start edge,
+// positive near the end edge, 0 while outside both edge zones. The delta ramps
+// up the deeper the pointer is into the zone (and is capped once it reaches or
+// passes the edge).
+function autoScrollStep(pos: number, start: number, end: number): number {
+  const speed = (depth: number) =>
+    Math.max(
+      1,
+      Math.ceil(
+        (Math.min(AUTO_SCROLL_EDGE_ZONE, depth) / AUTO_SCROLL_EDGE_ZONE) *
+          AUTO_SCROLL_MAX_STEP,
+      ),
+    );
+  if (pos <= start + AUTO_SCROLL_EDGE_ZONE) {
+    return -speed(start + AUTO_SCROLL_EDGE_ZONE - pos);
+  }
+  if (pos >= end - AUTO_SCROLL_EDGE_ZONE) {
+    return speed(pos - (end - AUTO_SCROLL_EDGE_ZONE));
+  }
+  return 0;
+}
 
 export function isHTMLTableElement(el: unknown): el is HTMLTableElement {
   return isHTMLElement(el) && el.nodeName === 'TABLE';
@@ -277,23 +302,217 @@ function $handleTableClick(
       });
     }
 
-    const onPointerUp = () => {
+    let lastClientX = event.clientX;
+    let lastClientY = event.clientY;
+    let autoScrollRafId: number | null = null;
+
+    const stopSelecting = () => {
       tableObserver.isSelecting = false;
+      if (autoScrollRafId !== null) {
+        editorWindow.cancelAnimationFrame(autoScrollRafId);
+        autoScrollRafId = null;
+      }
       editorWindow.removeEventListener('pointerup', onPointerUp);
       editorWindow.removeEventListener('pointermove', onPointerMove);
     };
 
+    // Resolve the table cell under the given viewport coordinates via the
+    // table's own root so elementsFromPoint isn't retargeted; narrow with the
+    // type guards rather than casting so the detached-table case (Node) falls
+    // through to no hit-test.
+    const resolveFocusCellFromPoint = (
+      clientX: number,
+      clientY: number,
+    ): TableDOMCell | null => {
+      const tableRoot = tableElement.getRootNode();
+      if (!isDOMDocumentNode(tableRoot) && !isDOMShadowRoot(tableRoot)) {
+        return null;
+      }
+      for (const el of tableRoot.elementsFromPoint(clientX, clientY)) {
+        const cell = getDOMCellInTableFromTarget(tableElement, el);
+        if (cell) {
+          return cell;
+        }
+      }
+      return null;
+    };
+
+    const applyFocusCell = (focusCell: TableDOMCell, override: boolean) => {
+      // Fallback: set anchor if still missing (handles race conditions)
+      if (tableObserver.anchorCell === null) {
+        editor.update(() => {
+          tableObserver.$setAnchorCellForSelection(focusCell);
+        });
+      }
+      if (
+        tableObserver.focusCell === null ||
+        focusCell.elem !== tableObserver.focusCell.elem
+      ) {
+        tableObservers.setNextFocus({
+          focusCell,
+          override,
+          tableKey: tableObserver.tableNodeKey,
+        });
+        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+      }
+    };
+
+    // Walk up from the table to the nearest ancestor that can actually scroll
+    // on the requested axis (the scrollable-tables wrapper for 'x'). Returns
+    // null when none is found, in which case the caller may fall back to the
+    // window.
+    const findScrollContainer = (axis: 'x' | 'y'): HTMLElement | null => {
+      for (
+        let el: HTMLElement | null = tableElement.parentElement;
+        el;
+        el = el.parentElement
+      ) {
+        const canScroll =
+          axis === 'x'
+            ? el.scrollWidth > el.clientWidth
+            : el.scrollHeight > el.clientHeight;
+        if (canScroll) {
+          const style = editorWindow.getComputedStyle(el);
+          const overflow = axis === 'x' ? style.overflowX : style.overflowY;
+          if (overflow === 'auto' || overflow === 'scroll') {
+            return el;
+          }
+        }
+      }
+      return null;
+    };
+
+    // Scroll `container` (or the window when null) on `axis` if the pointer is
+    // within the edge zone. Returns whether it actually scrolled.
+    const scrollAxis = (
+      container: HTMLElement | null,
+      pos: number,
+      axis: 'x' | 'y',
+    ): boolean => {
+      let start: number;
+      let end: number;
+      if (container === null) {
+        start = 0;
+        end = axis === 'x' ? editorWindow.innerWidth : editorWindow.innerHeight;
+      } else {
+        const rect = container.getBoundingClientRect();
+        start = axis === 'x' ? rect.left : rect.top;
+        end = axis === 'x' ? rect.right : rect.bottom;
+      }
+      const step = autoScrollStep(pos, start, end);
+      if (step === 0) {
+        return false;
+      }
+      if (container === null) {
+        const before =
+          axis === 'x' ? editorWindow.scrollX : editorWindow.scrollY;
+        editorWindow.scrollBy(axis === 'x' ? step : 0, axis === 'x' ? 0 : step);
+        return (
+          (axis === 'x' ? editorWindow.scrollX : editorWindow.scrollY) !==
+          before
+        );
+      }
+      if (axis === 'x') {
+        const before = container.scrollLeft;
+        container.scrollLeft += step;
+        return container.scrollLeft !== before;
+      }
+      const before = container.scrollTop;
+      container.scrollTop += step;
+      return container.scrollTop !== before;
+    };
+
+    // Clamp the last pointer position into the visible bounds of the scroll
+    // container(s) so a pointer dragged past an edge still hit-tests onto the
+    // newly-revealed cell instead of empty space beyond the table.
+    const clampHitPoint = (
+      hContainer: HTMLElement | null,
+      vContainer: HTMLElement | null,
+    ): [number, number] => {
+      let x = lastClientX;
+      let y = lastClientY;
+      if (hContainer === null) {
+        x = Math.min(Math.max(x, 1), editorWindow.innerWidth - 1);
+      } else {
+        const rect = hContainer.getBoundingClientRect();
+        x = Math.min(Math.max(x, rect.left + 1), rect.right - 1);
+      }
+      if (vContainer === null) {
+        y = Math.min(Math.max(y, 1), editorWindow.innerHeight - 1);
+      } else {
+        const rect = vContainer.getBoundingClientRect();
+        y = Math.min(Math.max(y, rect.top + 1), rect.bottom - 1);
+      }
+      return [x, y];
+    };
+
+    const isNearScrollEdge = (): boolean => {
+      const hContainer = findScrollContainer('x');
+      if (hContainer !== null) {
+        const rect = hContainer.getBoundingClientRect();
+        if (autoScrollStep(lastClientX, rect.left, rect.right) !== 0) {
+          return true;
+        }
+      }
+      const vContainer = findScrollContainer('y');
+      const vStart =
+        vContainer === null ? 0 : vContainer.getBoundingClientRect().top;
+      const vEnd =
+        vContainer === null
+          ? editorWindow.innerHeight
+          : vContainer.getBoundingClientRect().bottom;
+      return autoScrollStep(lastClientY, vStart, vEnd) !== 0;
+    };
+
+    const tickAutoScroll = () => {
+      autoScrollRafId = null;
+      if (!tableObserver.isSelecting) {
+        return;
+      }
+      const hContainer = findScrollContainer('x');
+      const vContainer = findScrollContainer('y');
+      // Only the table's own wrapper scrolls horizontally; pages don't
+      // auto-scroll sideways. Vertically we fall back to the window.
+      const scrolledX =
+        hContainer !== null && scrollAxis(hContainer, lastClientX, 'x');
+      const scrolledY = scrollAxis(vContainer, lastClientY, 'y');
+      if (scrolledX || scrolledY) {
+        const [hitX, hitY] = clampHitPoint(hContainer, vContainer);
+        const focusCell = resolveFocusCellFromPoint(hitX, hitY);
+        if (focusCell) {
+          applyFocusCell(focusCell, false);
+        }
+        autoScrollRafId = editorWindow.requestAnimationFrame(tickAutoScroll);
+      }
+    };
+
+    const maybeStartAutoScroll = () => {
+      // Touch taps don't initiate table selection, so they shouldn't scroll.
+      if (
+        autoScrollRafId !== null ||
+        tableObserver.pointerType === 'touch' ||
+        !isNearScrollEdge()
+      ) {
+        return;
+      }
+      autoScrollRafId = editorWindow.requestAnimationFrame(tickAutoScroll);
+    };
+
+    const onPointerUp = () => {
+      stopSelecting();
+    };
+
     const onPointerMove = (moveEvent: PointerEvent) => {
       if (!isPointerDownOnEvent(moveEvent) && tableObserver.isSelecting) {
-        tableObserver.isSelecting = false;
-        editorWindow.removeEventListener('pointerup', onPointerUp);
-        editorWindow.removeEventListener('pointermove', onPointerMove);
+        stopSelecting();
         return;
       }
       const moveTarget = getComposedEventTarget(moveEvent);
       if (!isDOMNode(moveTarget)) {
         return;
       }
+      lastClientX = moveEvent.clientX;
+      lastClientY = moveEvent.clientY;
       let focusCell: null | TableDOMCell = null;
       // In firefox the moveEvent.target may be captured so we must always
       // consult the coordinates #7245
@@ -301,43 +520,17 @@ function $handleTableClick(
       if (override) {
         focusCell = getDOMCellInTableFromTarget(tableElement, moveTarget);
       } else {
-        // Resolve via the table's own root so elementsFromPoint isn't
-        // retargeted; narrow with the type guards rather than casting so the
-        // detached-table case (Node) falls through to no hit-test.
-        const tableRoot = tableElement.getRootNode();
-        if (!isDOMDocumentNode(tableRoot) && !isDOMShadowRoot(tableRoot)) {
-          return;
-        }
-        for (const el of tableRoot.elementsFromPoint(
+        focusCell = resolveFocusCellFromPoint(
           moveEvent.clientX,
           moveEvent.clientY,
-        )) {
-          focusCell = getDOMCellInTableFromTarget(tableElement, el);
-          if (focusCell) {
-            break;
-          }
-        }
+        );
       }
       if (focusCell) {
-        const anchorCell = focusCell;
-        // Fallback: set anchor if still missing (handles race conditions)
-        if (tableObserver.anchorCell === null) {
-          editor.update(() => {
-            tableObserver.$setAnchorCellForSelection(anchorCell);
-          });
-        }
-        if (
-          tableObserver.focusCell === null ||
-          focusCell.elem !== tableObserver.focusCell.elem
-        ) {
-          tableObservers.setNextFocus({
-            focusCell,
-            override,
-            tableKey: tableObserver.tableNodeKey,
-          });
-          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
-        }
+        applyFocusCell(focusCell, override);
       }
+      // Keep the selection reachable when dragging toward/past an edge of a
+      // scrollable table (#7153).
+      maybeStartAutoScroll();
     };
     editorWindow.addEventListener(
       'pointerup',

@@ -6,7 +6,6 @@
  *
  */
 import type {DecoratorComponentProps} from './shared/types';
-import type {JSX} from 'react';
 
 import {
   effect,
@@ -29,7 +28,7 @@ import {
   mergeRegister,
 } from 'lexical';
 import * as React from 'react';
-import {Suspense, useEffect, useState} from 'react';
+import {type JSX, Suspense, useEffect, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {type Container, createRoot, type Root} from 'react-dom/client';
 

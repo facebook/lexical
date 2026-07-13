@@ -32,7 +32,7 @@ import {
   $getSelection,
   $isRangeSelection,
   $setSelection,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
 import {invariant} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, onTestFinished, test, vi} from 'vitest';

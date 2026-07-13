@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -25,7 +23,7 @@ import {
   type LexicalNode,
   PASTE_COMMAND,
 } from 'lexical';
-import {useMemo} from 'react';
+import {type JSX, useMemo} from 'react';
 
 export default function ContextMenuPlugin(): JSX.Element {
   const [editor] = useLexicalComposerContext();

@@ -7,15 +7,6 @@
  */
 
 import type {DOMSlot, ElementDOMSlot} from './LexicalDOMSlot';
-import type {EditorState, SerializedEditorState} from './LexicalEditorState';
-import type {
-  DOMConversion,
-  DOMConversionMap,
-  DOMExportOutput,
-  DOMExportOutputMap,
-  LexicalPrivateDOM,
-  NodeKey,
-} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from '@lexical/internal/invariant';
@@ -25,13 +16,19 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  BaseSelection,
+  type BaseSelection,
   mergeRegister,
+  type RangeSelection,
   TextNode,
 } from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {DequeSet} from './LexicalDequeSet';
-import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
+import {
+  cloneEditorState,
+  createEmptyEditorState,
+  type EditorState,
+  type SerializedEditorState,
+} from './LexicalEditorState';
 import {
   addRootElementEvents,
   registerDefaultCommandHandlers,
@@ -39,8 +36,16 @@ import {
 } from './LexicalEvents';
 import {GenMap} from './LexicalGenMap';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
-import {LexicalNode} from './LexicalNode';
-import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
+import {
+  type DOMConversion,
+  type DOMConversionMap,
+  type DOMExportOutput,
+  type DOMExportOutputMap,
+  LexicalNode,
+  type LexicalPrivateDOM,
+  type NodeKey,
+} from './LexicalNode';
+import {createSharedNodeState, type SharedNodeState} from './LexicalNodeState';
 import {
   $commitPendingUpdates,
   $fullReconcile,
@@ -50,7 +55,11 @@ import {
   updateEditor,
   updateEditorSync,
 } from './LexicalUpdates';
-import {FOCUS_TAG, HISTORY_MERGE_TAG, UpdateTag} from './LexicalUpdateTags';
+import {
+  FOCUS_TAG,
+  HISTORY_MERGE_TAG,
+  type UpdateTag,
+} from './LexicalUpdateTags';
 import {
   $addUpdateTag,
   $onUpdate,
@@ -239,6 +248,62 @@ export interface EditorConfig {
   disableEvents?: boolean;
   namespace: string;
   theme: EditorThemeClasses;
+}
+
+/** @internal */
+export interface CollapsedSelectionFormat {
+  format: number;
+  style: string;
+  offset: number;
+  key: NodeKey;
+  timeStamp: number;
+}
+
+/** @internal */
+export interface InputState {
+  compositionPhase: 'idle' | 'composing' | 'ending-firefox' | 'ending-safari';
+  compositionEndData: string;
+  hadOrphanedCompositionEvents: boolean;
+
+  lastKeyDownTimeStamp: number;
+  lastKeyCode: string | null;
+  lastBeforeInputInsertTextTimeStamp: number;
+  unprocessedBeforeInputData: string | null;
+  collapsedSelectionFormat: CollapsedSelectionFormat;
+  postDeleteSelectionToRestore: RangeSelection | null;
+
+  isSelectionChangeFromDOMUpdate: boolean;
+  isSelectionChangeFromMouseDown: boolean;
+  isInsertLineBreak: boolean;
+
+  isInsertTextAfterHandledSelectionCommand: boolean;
+  handledSelectionCommandTimeoutId: ReturnType<typeof setTimeout> | null;
+}
+
+/** @internal */
+export function createInputState(): InputState {
+  return {
+    collapsedSelectionFormat: {
+      format: 0,
+      key: 'root',
+      offset: 0,
+      style: '',
+      timeStamp: 0,
+    },
+    compositionEndData: '',
+    compositionPhase: 'idle',
+    hadOrphanedCompositionEvents: false,
+    handledSelectionCommandTimeoutId: null,
+    isInsertLineBreak: false,
+    isInsertTextAfterHandledSelectionCommand: false,
+    isSelectionChangeFromDOMUpdate: false,
+    isSelectionChangeFromMouseDown: false,
+    lastBeforeInputInsertTextTimeStamp: 0,
+    lastKeyCode: null,
+    lastKeyDownTimeStamp: 0,
+    postDeleteSelectionToRestore: null,
+    unprocessedBeforeInputData: null,
+  };
 }
 
 /**
@@ -717,6 +782,10 @@ export function resetEditor(
     editor._cascadeCount = 0;
   }
   editor._blockCursorElement = null;
+  if (editor._inputState.handledSelectionCommandTimeoutId !== null) {
+    clearTimeout(editor._inputState.handledSelectionCommandTimeoutId);
+  }
+  editor._inputState = createInputState();
 
   const observer = editor._observer;
 
@@ -1100,6 +1169,8 @@ export class LexicalEditor {
    */
   _slotsUsed: boolean;
   /** @internal */
+  _inputState: InputState;
+  /** @internal */
   _createEditorArgs?: undefined | CreateEditorArgs;
 
   /** @internal */
@@ -1168,6 +1239,7 @@ export class LexicalEditor {
     this._window = null;
     this._blockCursorElement = null;
     this._slotsUsed = false;
+    this._inputState = createInputState();
   }
 
   /**

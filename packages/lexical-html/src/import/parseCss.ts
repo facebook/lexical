@@ -5,12 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {Predicate} from './sel';
 import type {ElementSelectorBuilder} from './types';
 
 import invariant from '@lexical/internal/invariant';
 
-import {buildAttrPredicate, buildClassAllPredicate, buildSelector} from './sel';
+import {
+  buildAttrPredicate,
+  buildClassAllPredicate,
+  buildSelector,
+  type Predicate,
+} from './sel';
 
 const IDENT_CHAR = /[A-Za-z0-9_-]/;
 

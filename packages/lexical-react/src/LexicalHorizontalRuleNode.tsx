@@ -6,9 +6,6 @@
  *
  */
 
-import type {DOMConversionMap, DOMConversionOutput, NodeKey} from 'lexical';
-import type {JSX} from 'react';
-
 import {
   $isHorizontalRuleNode,
   HorizontalRuleNode as BaseHorizontalRuleNode,
@@ -22,12 +19,15 @@ import {
   addClassNamesToElement,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
+  type DOMConversionMap,
+  type DOMConversionOutput,
   getComposedEventTarget,
   mergeRegister,
+  type NodeKey,
   removeClassNamesFromElement,
 } from 'lexical';
 import * as React from 'react';
-import {useEffect} from 'react';
+import {type JSX, useEffect} from 'react';
 
 export {
   $isHorizontalRuleNode,

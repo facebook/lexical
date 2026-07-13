@@ -6,21 +6,22 @@
  *
  */
 
+import type {TextNode} from 'lexical';
+
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {
   LexicalNodeMenuPlugin,
   MenuOption,
-  MenuRenderFn,
-  MenuResolution,
+  type MenuRenderFn,
+  type MenuResolution,
 } from '@lexical/react/LexicalNodeMenuPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
-import {TextNode} from 'lexical';
 import * as React from 'react';
 import {act, useCallback} from 'react';
 import ReactDOM from 'react-dom';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 class TestNodeMenuOption extends MenuOption {

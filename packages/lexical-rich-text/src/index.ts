@@ -6,27 +6,6 @@
  *
  */
 
-import type {
-  CaretDirection,
-  CommandPayloadType,
-  DOMConversionMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  ElementFormatType,
-  LexicalCommand,
-  LexicalEditor,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  NodeSelection,
-  ParagraphNode,
-  RangeSelection,
-  SerializedElementNode,
-  Spread,
-  TextFormatType,
-} from 'lexical';
-
 import {
   $getClipboardDataFromSelection,
   $handleRichTextDrop,
@@ -36,7 +15,7 @@ import {
   copyToClipboard,
   setLexicalClipboardDataTransfer,
 } from '@lexical/clipboard';
-import {ReadonlySignal, signal} from '@lexical/extension';
+import {type ReadonlySignal, signal} from '@lexical/extension';
 import {
   $isParentRTL,
   $moveCharacter,
@@ -69,6 +48,7 @@ import {
   $getSelection,
   $getSiblingCaret,
   $getSlotFrame,
+  $getState,
   $hasAncestor,
   $insertNodes,
   $isDecoratorNode,
@@ -89,21 +69,31 @@ import {
   $setFormatFromDOM,
   $setSelection,
   $setSelectionFromCaretRange,
+  $setState,
+  $setTextFormat,
   addClassNamesToElement,
   CAN_USE_BEFORE_INPUT,
+  type CaretDirection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_EDITOR,
+  type CommandPayloadType,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   createCommand,
+  createState,
   CUT_COMMAND,
   CUT_TAG,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
+  type DOMConversionMap,
+  type DOMConversionOutput,
+  type DOMExportOutput,
   DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
+  type EditorConfig,
+  type ElementFormatType,
   ElementNode,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -127,15 +117,27 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalUpdateJSON,
   mergeRegister,
   MOVE_TO_END,
   MOVE_TO_START,
+  type NodeKey,
+  type NodeSelection,
   OUTDENT_CONTENT_COMMAND,
+  type ParagraphNode,
   PASTE_COMMAND,
   PASTE_TAG,
+  type RangeSelection,
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
+  type SerializedElementNode,
+  SET_TEXT_FORMAT_COMMAND,
   setNodeIndentFromDOM,
+  type Spread,
+  type TextFormatType,
 } from 'lexical';
 
 export type SerializedHeadingNode = Spread<
@@ -148,7 +150,30 @@ export type SerializedHeadingNode = Spread<
 export const DRAG_DROP_PASTE: LexicalCommand<File[]> =
   /* @__PURE__ */ createCommand('DRAG_DROP_PASTE_FILE');
 
-export type SerializedQuoteNode = SerializedElementNode;
+export type SerializedQuoteNode = Spread<
+  {
+    /**
+     * Present (and `true`) only when the quote has opted in to shadow
+     * root behavior via {@link QuoteNode.setIsShadowRoot} or
+     * `$createQuoteNode({shadowRoot: true})`. Omitted otherwise, so the
+     * serialization of quotes that have not opted in is unchanged.
+     */
+    shadowRoot?: boolean;
+  },
+  SerializedElementNode
+>;
+
+/**
+ * Opt-in state for {@link QuoteNode.isShadowRoot}. When `true`, the quote
+ * behaves like a multi-block region (similar to a table cell): it holds
+ * block-level children (paragraphs, headings, ...) instead of inline
+ * content, which allows more faithful HTML and Markdown import/export of
+ * `<blockquote>` content. Defaults to `false`, in which case there is no
+ * change to the legacy behavior (and nothing extra is serialized).
+ */
+export const quoteShadowRootState = /* @__PURE__ */ createState('shadowRoot', {
+  parse: Boolean,
+});
 
 /** @noInheritDoc */
 export class QuoteNode extends ElementNode {
@@ -158,6 +183,34 @@ export class QuoteNode extends ElementNode {
 
   static clone(node: QuoteNode): QuoteNode {
     return new QuoteNode(node.__key);
+  }
+
+  $config() {
+    return this.config('quote', {
+      extends: ElementNode,
+      stateConfigs: [{flat: true, stateConfig: quoteShadowRootState}],
+    });
+  }
+
+  /**
+   * `true` when this quote has opted in to shadow root behavior with
+   * {@link setIsShadowRoot} or `$createQuoteNode({shadowRoot: true})`,
+   * in which case it contains block-level children rather than inline
+   * content. `false` (the legacy inline-content behavior) by default.
+   */
+  isShadowRoot(): boolean {
+    return $getState(this, quoteShadowRootState);
+  }
+
+  /**
+   * Opt this quote in to (or out of) shadow root behavior. See
+   * {@link quoteShadowRootState}. Note that this does not restructure any
+   * existing children; a shadow root quote is expected to contain
+   * block-level children (non-element children will be normalized into
+   * paragraphs by the built-in shadow root transform).
+   */
+  setIsShadowRoot(isShadowRoot: boolean): this {
+    return $setState(this, quoteShadowRootState, isShadowRoot);
   }
 
   // View
@@ -208,6 +261,10 @@ export class QuoteNode extends ElementNode {
     return $createQuoteNode().updateFromJSON(serializedNode);
   }
 
+  exportJSON(): SerializedQuoteNode {
+    return super.exportJSON();
+  }
+
   // Mutation
 
   insertNewAfter(_: RangeSelection, restoreSelection?: boolean): ParagraphNode {
@@ -219,6 +276,16 @@ export class QuoteNode extends ElementNode {
   }
 
   collapseAtStart(): true {
+    if (this.isShadowRoot()) {
+      // A shadow root quote holds block-level children, so collapsing
+      // dissolves the quote and lifts the blocks out as siblings rather
+      // than merging them into a single paragraph.
+      for (const child of this.getChildren()) {
+        this.insertBefore(child);
+      }
+      this.remove();
+      return true;
+    }
     const paragraph = $createParagraphNode();
     const children = this.getChildren();
     children.forEach(child => paragraph.append(child));
@@ -231,8 +298,15 @@ export class QuoteNode extends ElementNode {
   }
 }
 
-export function $createQuoteNode(): QuoteNode {
-  return $applyNodeReplacement(new QuoteNode());
+export function $createQuoteNode(options?: {
+  /**
+   * When `true` the quote opts in to shadow root behavior
+   * (see {@link quoteShadowRootState}). Defaults to `false`.
+   */
+  shadowRoot?: boolean;
+}): QuoteNode {
+  const node = $applyNodeReplacement(new QuoteNode());
+  return options && options.shadowRoot ? node.setIsShadowRoot(true) : node;
 }
 
 export function $isQuoteNode(
@@ -903,6 +977,111 @@ function restoreDOMSelection(
   }
 }
 
+function $tryInlineGridLineNavigation(
+  selection: RangeSelection,
+  isBackward: boolean,
+): boolean {
+  if (!selection.isCollapsed()) {
+    return false;
+  }
+  const focusNode = selection.focus.getNode();
+  const parentBlock = $findMatchingParent(
+    $isElementNode(focusNode) ? focusNode : focusNode.getParentOrThrow(),
+    (n): n is ElementNode => $isElementNode(n) && !n.isInline(),
+  );
+  if (parentBlock === null) {
+    return false;
+  }
+  const editor = $getEditor();
+  const rootElement = editor.getRootElement();
+  if (rootElement === null) {
+    return false;
+  }
+  const win = rootElement.ownerDocument.defaultView;
+  if (win === null) {
+    return false;
+  }
+  let hasGrid = false;
+  for (const child of parentBlock.getChildren()) {
+    if ($isElementNode(child) && child.isInline()) {
+      const dom = editor.getElementByKey(child.getKey());
+      if (dom !== null) {
+        const d = win.getComputedStyle(dom).display;
+        if (d === 'inline-grid' || d === 'inline-flex') {
+          hasGrid = true;
+          break;
+        }
+      }
+    }
+  }
+  if (!hasGrid) {
+    return false;
+  }
+  const direction: CaretDirection = isBackward ? 'previous' : 'next';
+  const siblingBlock = $getSiblingCaret(
+    parentBlock,
+    direction,
+  ).getNodeAtCaret();
+  if (siblingBlock === null || !$isElementNode(siblingBlock)) {
+    if (isBackward) {
+      const first = parentBlock.getFirstDescendant();
+      if ($isTextNode(first)) {
+        first.select(0, 0);
+      } else {
+        parentBlock.select(0, 0);
+      }
+    } else {
+      const last = parentBlock.getLastDescendant();
+      if ($isTextNode(last)) {
+        const len = last.getTextContentSize();
+        last.select(len, len);
+      } else {
+        const count = parentBlock.getChildrenSize();
+        parentBlock.select(count, count);
+      }
+    }
+    return true;
+  }
+  const siblingDOM = editor.getElementByKey(siblingBlock.getKey());
+  if (siblingDOM === null) {
+    return false;
+  }
+  const domSelection = getDOMSelection(win);
+  if (domSelection === null || domSelection.rangeCount === 0) {
+    return false;
+  }
+  const curRange = domSelection.getRangeAt(0).cloneRange();
+  curRange.collapse(true);
+  const curRect = curRange.getBoundingClientRect();
+  const sibRect = siblingDOM.getBoundingClientRect();
+  const targetY = sibRect.top + sibRect.height / 2;
+  if (curRect.height > 0) {
+    const hit = caretFromPoint(curRect.left, targetY, rootElement);
+    if (hit !== null && siblingDOM.contains(hit.node)) {
+      const hitRange = rootElement.ownerDocument.createRange();
+      hitRange.setStart(hit.node, hit.offset);
+      hitRange.collapse(true);
+      selection.applyDOMRange(hitRange);
+      selection.dirty = true;
+      return true;
+    }
+  }
+  const targetDesc = isBackward
+    ? siblingBlock.getLastDescendant()
+    : siblingBlock.getFirstDescendant();
+  if ($isTextNode(targetDesc)) {
+    const offset = isBackward ? targetDesc.getTextContentSize() : 0;
+    targetDesc.select(offset, offset);
+  } else {
+    const childCount = siblingBlock.getChildrenSize();
+    siblingBlock.select(
+      isBackward ? childCount : 0,
+      isBackward ? childCount : 0,
+    );
+  }
+  return true;
+}
+
 function $exitNodeSelectionToward(
   node: LexicalNode,
   direction: CaretDirection,
@@ -1102,6 +1281,18 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
+    editor.registerCommand(
+      SET_TEXT_FORMAT_COMMAND,
+      formats => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) && !$isNodeSelection(selection)) {
+          return false;
+        }
+        $setTextFormat(selection, formats);
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    ),
     editor.registerCommand<ElementFormatType>(
       FORMAT_ELEMENT_COMMAND,
       format => {
@@ -1209,6 +1400,13 @@ export function registerRichText(
             event.preventDefault();
             return true;
           }
+          if (
+            !event.shiftKey &&
+            $tryInlineGridLineNavigation(selection, true)
+          ) {
+            event.preventDefault();
+            return true;
+          }
         }
         return false;
       },
@@ -1242,6 +1440,13 @@ export function registerRichText(
           if (
             !event.shiftKey &&
             $tryDecoratorLineNavigation(selection, false)
+          ) {
+            event.preventDefault();
+            return true;
+          }
+          if (
+            !event.shiftKey &&
+            $tryInlineGridLineNavigation(selection, false)
           ) {
             event.preventDefault();
             return true;
@@ -1758,4 +1963,7 @@ export {
   RichTextExtension,
   RichTextImportExtension,
 } from './LexicalRichTextExtension';
-export {RichTextImportRules} from './RichTextImportExtension';
+export {
+  RichTextImportRules,
+  ShadowRootQuoteRule,
+} from './RichTextImportExtension';

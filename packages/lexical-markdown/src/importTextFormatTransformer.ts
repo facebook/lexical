@@ -16,7 +16,6 @@ interface Delimiter {
   index: number;
   char: string;
   length: number;
-  originalLength: number;
   canOpen: boolean;
   canClose: boolean;
   active: boolean;
@@ -252,7 +251,6 @@ function scanDelimiters(
         char,
         index: i,
         length: len,
-        originalLength: len,
       });
     }
 
@@ -284,7 +282,14 @@ function processEmphasis(
       continue;
     }
 
-    const bottomKey = `${closer.char}${closer.canOpen}`;
+    // The "no opener below this point" shortcut must be keyed by everything
+    // the opener search outcome depends on: the marker, whether the closer
+    // can also open (toggles the rule of 3), and the closer's length mod 3
+    // (the rule of 3 blocks different openers per class — CommonMark's
+    // openers_bottom is likewise per length-mod-3). The length key uses the
+    // *current* length: a partially consumed closer switches class and must
+    // rescan openers a shorter closer already gave up on (#4895).
+    const bottomKey = `${closer.char}${closer.canOpen}${closer.length % 3}`;
     const bottom = openersBottom[bottomKey] ?? -1;
     let foundOpener = false;
 
@@ -300,13 +305,18 @@ function processEmphasis(
         continue;
       }
 
-      // Rule of 3
+      // Rule of 3, on the *remaining* lengths: a delimiter run partially
+      // consumed by an earlier pairing is re-measured, matching micromark
+      // (the CommonMark reference this models). Using the original lengths
+      // instead would refuse pairings like the `**` opener with the two
+      // markers left of a `****` run in `**llo*wor****`, so the exporter's
+      // own output for overlapping formats would not re-import (#4895).
       if (opener.canClose || closer.canOpen) {
-        const sum = opener.originalLength + closer.originalLength;
+        const sum = opener.length + closer.length;
         if (
           sum % 3 === 0 &&
-          opener.originalLength % 3 !== 0 &&
-          closer.originalLength % 3 !== 0
+          opener.length % 3 !== 0 &&
+          closer.length % 3 !== 0
         ) {
           continue;
         }

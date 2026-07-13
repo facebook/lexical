@@ -9,7 +9,7 @@ import {
   getExtensionDependencyFromEditor,
   LexicalBuilder,
 } from '@lexical/extension';
-import {ReactConfig, ReactExtension} from '@lexical/react/ReactExtension';
+import {type ReactConfig, ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 import {type AnyLexicalExtensionArgument, configExtension} from 'lexical';
 import {useEffect, useMemo} from 'react';

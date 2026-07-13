@@ -6,16 +6,16 @@
  *
  */
 import type {Provider} from '@lexical/yjs';
+import type * as Y from 'yjs';
 
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
 import {CollaborationPlugin} from '@lexical/react/LexicalCollaborationPlugin';
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
 import {Fragment, useCallback, useEffect, useRef, useState} from 'react';
-import * as Y from 'yjs';
 
 import Editor from './Editor';
 import ExampleTheme from './ExampleTheme';
-import {getRandomUserProfile, UserProfile} from './getRandomUserProfile';
+import {getRandomUserProfile, type UserProfile} from './getRandomUserProfile';
 import {createWebRTCProvider, createWebsocketProvider} from './providers';
 
 interface ActiveUserProfile extends UserProfile {

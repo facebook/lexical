@@ -16,7 +16,7 @@ import {
   $createTextNode,
   $getSelection,
   $isRangeSelection,
-  TextNode,
+  type TextNode,
 } from 'lexical';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 

@@ -15,7 +15,7 @@ import {
   $isLinkNode,
   LinkExtension,
   LinkImportExtension,
-  LinkNode,
+  type LinkNode,
 } from '@lexical/link';
 import {$isHeadingNode, RichTextExtension} from '@lexical/rich-text';
 import {JSDOM} from 'jsdom';

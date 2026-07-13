@@ -24,13 +24,13 @@ import {
   $setSelection,
   createEditor,
   DecoratorNode,
-  EditorConfig,
+  type EditorConfig,
   ElementNode,
-  LexicalEditor,
-  NodeKey,
+  type LexicalEditor,
+  type NodeKey,
   ParagraphNode,
-  RangeSelection,
-  TabNode,
+  type RangeSelection,
+  type TabNode,
   TextNode,
 } from 'lexical';
 import {

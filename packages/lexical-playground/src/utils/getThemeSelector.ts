@@ -6,7 +6,7 @@
  *
  */
 
-import {EditorThemeClasses} from 'lexical';
+import type {EditorThemeClasses} from 'lexical';
 
 export function getThemeSelector(
   getTheme: () => EditorThemeClasses | null | undefined,

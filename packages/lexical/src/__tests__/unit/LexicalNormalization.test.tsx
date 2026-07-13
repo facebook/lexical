@@ -9,7 +9,7 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  RangeSelection,
+  type RangeSelection,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 

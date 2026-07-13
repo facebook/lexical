@@ -8,7 +8,12 @@
 
 import {buildEditorFromExtensions} from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
-import {$createParagraphNode, $getNodeByKey, $getRoot, NodeKey} from 'lexical';
+import {
+  $createParagraphNode,
+  $getNodeByKey,
+  $getRoot,
+  type NodeKey,
+} from 'lexical';
 import {
   $createTestDecoratorNode,
   TestDecoratorNode,

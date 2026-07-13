@@ -6,13 +6,9 @@
  *
  */
 
-import type {ElementNode, LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {
-  $computeTableMapSkipCellCheck,
   $deleteTableColumnAtSelection,
   $deleteTableRowAtSelection,
   $getNodeTriplet,
@@ -25,13 +21,15 @@ import {
   $isTableCellNode,
   $isTableSelection,
   $mergeCells,
+  $setTableColumnIsHeader,
+  $setTableRowIsHeader,
   $unmergeCell,
   getTableElement,
   getTableObserverFromTableElement,
   TableCellHeaderStates,
   TableCellNode,
-  TableObserver,
-  TableSelection,
+  type TableObserver,
+  type TableSelection,
 } from '@lexical/table';
 import {
   $getSelection,
@@ -40,17 +38,26 @@ import {
   $isTextNode,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
+  type ElementNode,
   getActiveElementDeep,
   getDOMSelection,
   getDOMSelectionPoints,
   getRootOwnerDocument,
   isDOMNode,
+  type LexicalEditor,
   mergeRegister,
   registerEventListener,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import * as React from 'react';
-import {ReactPortal, useCallback, useEffect, useRef, useState} from 'react';
+import {
+  type JSX,
+  type ReactPortal,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {createPortal} from 'react-dom';
 
 import useModal from '../../hooks/useModal';
@@ -329,28 +336,9 @@ function TableActionMenu({
   const toggleTableRowIsHeader = useCallback(() => {
     editor.update(() => {
       const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
-      const tableRowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
-
-      const [gridMap] = $computeTableMapSkipCellCheck(tableNode, null, null);
-
-      const rowCells = new Set<TableCellNode>();
-
-      const newStyle =
-        tableCellNode.getHeaderStyles() ^ TableCellHeaderStates.ROW;
-
-      for (let col = 0; col < gridMap[tableRowIndex].length; col++) {
-        const mapCell = gridMap[tableRowIndex][col];
-
-        if (!mapCell?.cell) {
-          continue;
-        }
-
-        if (!rowCells.has(mapCell.cell)) {
-          rowCells.add(mapCell.cell);
-          mapCell.cell.setHeaderStyles(newStyle, TableCellHeaderStates.ROW);
-        }
-      }
+      const rowIndex = $getTableRowIndexFromTableCellNode(tableCellNode);
+      const isHeader = !tableCellNode.hasHeaderState(TableCellHeaderStates.ROW);
+      $setTableRowIsHeader(tableNode, rowIndex, isHeader);
       clearTableSelection();
       onClose();
     });
@@ -359,28 +347,11 @@ function TableActionMenu({
   const toggleTableColumnIsHeader = useCallback(() => {
     editor.update(() => {
       const tableNode = $getTableNodeFromLexicalNodeOrThrow(tableCellNode);
-
-      const tableColumnIndex =
-        $getTableColumnIndexFromTableCellNode(tableCellNode);
-
-      const [gridMap] = $computeTableMapSkipCellCheck(tableNode, null, null);
-
-      const columnCells = new Set<TableCellNode>();
-      const newStyle =
-        tableCellNode.getHeaderStyles() ^ TableCellHeaderStates.COLUMN;
-
-      for (let row = 0; row < gridMap.length; row++) {
-        const mapCell = gridMap[row][tableColumnIndex];
-
-        if (!mapCell?.cell) {
-          continue;
-        }
-
-        if (!columnCells.has(mapCell.cell)) {
-          columnCells.add(mapCell.cell);
-          mapCell.cell.setHeaderStyles(newStyle, TableCellHeaderStates.COLUMN);
-        }
-      }
+      const columnIndex = $getTableColumnIndexFromTableCellNode(tableCellNode);
+      const isHeader = !tableCellNode.hasHeaderState(
+        TableCellHeaderStates.COLUMN,
+      );
+      $setTableColumnIsHeader(tableNode, columnIndex, isHeader);
       clearTableSelection();
       onClose();
     });
@@ -915,7 +886,6 @@ function TableCellActionMenuContainer({
             ref={menuRootRef}>
             <i className="chevron-down" />
           </button>
-          {colorPickerModal}
           {isMenuOpen && (
             <TableActionMenu
               contextRef={menuRootRef}
@@ -928,6 +898,7 @@ function TableCellActionMenuContainer({
           )}
         </>
       )}
+      {colorPickerModal}
     </div>
   );
 }

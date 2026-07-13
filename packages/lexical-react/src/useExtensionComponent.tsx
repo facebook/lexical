@@ -5,16 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {
+  AnyLexicalExtension,
+  LexicalExtensionDependency,
+  OutputComponentExtension,
+} from 'lexical';
+
 import {
   getExtensionDependencyFromEditor,
   getPeerDependencyFromEditor,
 } from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {
-  type AnyLexicalExtension,
-  type LexicalExtensionDependency,
-  type OutputComponentExtension,
-} from 'lexical';
 
 /**
  * Returns the resolved {@link LexicalExtensionDependency} for `extension` from

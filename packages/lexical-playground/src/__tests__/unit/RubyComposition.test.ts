@@ -24,7 +24,7 @@ import {
   CONTROLLED_TEXT_INSERTION_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
-  LexicalEditor,
+  type LexicalEditor,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
 import assert from 'node:assert';

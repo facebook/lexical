@@ -6,12 +6,13 @@
  *
  */
 
+import type {IInjectedPegasusService} from '../../injected/InjectedPegasusService';
+
 import {IconButton, Image} from '@chakra-ui/react';
 import {getRPCService} from '@webext-pegasus/rpc';
 import * as React from 'react';
 
 import {useExtensionStore} from '../../../store';
-import {IInjectedPegasusService} from '../../injected/InjectedPegasusService';
 
 interface Props {
   tabID: number;

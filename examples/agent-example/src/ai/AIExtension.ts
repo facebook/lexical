@@ -17,7 +17,7 @@ import {
   COMMAND_PRIORITY_LOW,
   defineExtension,
   KEY_ESCAPE_COMMAND,
-  LexicalEditor,
+  type LexicalEditor,
   mergeRegister,
 } from 'lexical';
 

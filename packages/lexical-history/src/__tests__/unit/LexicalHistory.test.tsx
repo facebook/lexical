@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
@@ -50,16 +48,16 @@ import {
   createState,
   DecoratorNode,
   defineExtension,
-  EditorConfig,
+  type EditorConfig,
   HISTORY_MERGE_TAG,
   type KlassConstructor,
-  LexicalEditor,
-  LexicalEditorWithDispose,
-  LexicalNode,
+  type LexicalEditor,
+  type LexicalEditorWithDispose,
+  type LexicalNode,
   NODE_STATE_DIRECT,
   type NodeKey,
   REDO_COMMAND,
-  SerializedElementNode,
+  type SerializedElementNode,
   type SerializedTextNode,
   type Spread,
   TextNode,
@@ -71,8 +69,8 @@ import {
   html,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
-import {act} from 'react';
-import {createRoot, Root} from 'react-dom/client';
+import {act, type JSX} from 'react';
+import {createRoot, type Root} from 'react-dom/client';
 import {
   afterEach,
   assert,

@@ -23,13 +23,13 @@ import {
   $generateNodesFromMarkdownString,
   CHECK_LIST,
   CODE,
-  ElementTransformer,
+  type ElementTransformer,
   HEADING,
   LINK,
-  MultilineElementTransformer,
+  type MultilineElementTransformer,
   registerMarkdownShortcuts,
-  TextMatchTransformer,
-  Transformer,
+  type TextMatchTransformer,
+  type Transformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
 import {$createQuoteNode, HeadingNode, QuoteNode} from '@lexical/rich-text';
@@ -55,6 +55,7 @@ import {
   $setState,
   COMPOSITION_END_TAG,
   KEY_ENTER_COMMAND,
+  TEXT_TYPE_TO_FORMAT,
   type TextNode,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
@@ -1193,6 +1194,144 @@ describe('Markdown', () => {
     expect(exported).toBe(
       '````markdown\n```js\nconsole.log("hello");\n```\n````',
     );
+  });
+
+  describe('overlapping inline formats (#4895)', () => {
+    type Run = [text: string, format: number];
+
+    const BOLD = TEXT_TYPE_TO_FORMAT.bold;
+    const ITALIC = TEXT_TYPE_TO_FORMAT.italic;
+    const STRIKE = TEXT_TYPE_TO_FORMAT.strikethrough;
+    const INLINE_CODE = TEXT_TYPE_TO_FORMAT.code;
+
+    function overlapEditor() {
+      return createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+    }
+
+    /** Reads the document back as merged (text, format) runs. */
+    function $textRuns(): Run[] {
+      const out: Run[] = [];
+      for (const node of $getRoot().getAllTextNodes()) {
+        const format = node.getFormat();
+        const text = node.getTextContent();
+        const last = out[out.length - 1];
+        if (last && last[1] === format) {
+          last[0] += text;
+        } else {
+          out.push([text, format]);
+        }
+      }
+      return out;
+    }
+
+    /**
+     * Builds a one-paragraph document from explicit text-node format runs,
+     * asserts the exported markdown, and verifies that re-importing the
+     * export restores the same formatting.
+     */
+    function expectRoundTrip(runs: Run[], expected: string): void {
+      const editor = overlapEditor();
+      editor.update(
+        () => {
+          const paragraph = $createParagraphNode();
+          for (const [text, format] of runs) {
+            paragraph.append($createTextNode(text).setFormat(format));
+          }
+          $getRoot().clear().append(paragraph);
+        },
+        {discrete: true},
+      );
+      const markdown = editor.read(() =>
+        $convertToMarkdownString(TRANSFORMERS),
+      );
+      expect(markdown).toBe(expected);
+      const reimported = overlapEditor();
+      reimported.update(
+        () => {
+          $convertFromMarkdownString(markdown, TRANSFORMERS);
+        },
+        {discrete: true},
+      );
+      expect(reimported.read($textRuns)).toEqual(runs);
+    }
+
+    it('round-trips bold overlapping italic (the issue example)', () => {
+      expectRoundTrip(
+        [
+          ['he', 0],
+          ['llo', BOLD],
+          ['wor', BOLD | ITALIC],
+          ['ld', ITALIC],
+          ['!', 0],
+        ],
+        'he**llo*wor****ld*!',
+      );
+    });
+
+    it('round-trips italic overlapping bold', () => {
+      expectRoundTrip(
+        [
+          ['a', 0],
+          ['b', ITALIC],
+          ['c', ITALIC | BOLD],
+          ['d', BOLD],
+          ['e', 0],
+        ],
+        'a*b**c*****d**e',
+      );
+    });
+
+    it('round-trips strikethrough overlapping bold', () => {
+      expectRoundTrip(
+        [
+          ['a', STRIKE],
+          ['b', STRIKE | BOLD],
+          ['c', BOLD],
+        ],
+        '~~a**b**~~**c**',
+      );
+    });
+
+    it('round-trips a code span inside a bold run', () => {
+      expectRoundTrip(
+        [
+          ['a', BOLD],
+          ['b', BOLD | INLINE_CODE],
+          ['c', BOLD],
+        ],
+        '**a`b`c**',
+      );
+    });
+
+    it('imports a partially consumed delimiter run like CommonMark', () => {
+      // `**llo*wor****ld*` pairs `*wor*` first, leaving `***` of the four-
+      // marker run; the remaining `**` must still close the `**` opener
+      // (rule of 3 re-measured on the remaining lengths) and the final `*`
+      // opens the trailing emphasis.
+      const editor = overlapEditor();
+      editor.update(
+        () => {
+          $convertFromMarkdownString('he**llo*wor****ld*!', TRANSFORMERS);
+        },
+        {discrete: true},
+      );
+      expect(editor.read($textRuns)).toEqual([
+        ['he', 0],
+        ['llo', BOLD],
+        ['wor', BOLD | ITALIC],
+        ['ld', ITALIC],
+        ['!', 0],
+      ]);
+    });
   });
 
   describe('list marker', () => {

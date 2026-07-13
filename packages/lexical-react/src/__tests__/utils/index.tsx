@@ -6,6 +6,9 @@
  *
  */
 
+import type {Provider, UserState} from '@lexical/yjs';
+import type {LexicalEditor} from 'lexical';
+
 import {
   LexicalCollaboration,
   useCollaborationContext,
@@ -19,8 +22,6 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
-import {Provider, UserState} from '@lexical/yjs';
-import {LexicalEditor} from 'lexical';
 import * as React from 'react';
 import {act} from 'react';
 import {type Container, createRoot, type Root} from 'react-dom/client';

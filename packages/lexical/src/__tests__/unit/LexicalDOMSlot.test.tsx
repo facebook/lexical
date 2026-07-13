@@ -16,8 +16,8 @@ import {
   $getRoot,
   $isElementNode,
   ElementNode,
-  LexicalEditor,
-  TextNode,
+  type LexicalEditor,
+  type TextNode,
 } from 'lexical';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 

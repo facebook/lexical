@@ -6,11 +6,9 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import * as React from 'react';
-import {useMemo, useState} from 'react';
+import {type JSX, useMemo, useState} from 'react';
 
 import {useCharacterLimit} from './shared/useCharacterLimit';
 

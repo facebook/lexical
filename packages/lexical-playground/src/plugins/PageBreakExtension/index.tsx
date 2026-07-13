@@ -14,7 +14,7 @@ import {
   COMMAND_PRIORITY_EDITOR,
   createCommand,
   defineExtension,
-  LexicalCommand,
+  type LexicalCommand,
 } from 'lexical';
 
 import {$createPageBreakNode, PageBreakNode} from '../../nodes/PageBreakNode';

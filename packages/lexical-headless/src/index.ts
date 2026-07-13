@@ -6,9 +6,7 @@
  *
  */
 
-import type {CreateEditorArgs, LexicalEditor} from 'lexical';
-
-import {createEditor} from 'lexical';
+import {createEditor, type CreateEditorArgs, type LexicalEditor} from 'lexical';
 
 /**
  * Generates a headless editor that allows lexical to be used without the need for a DOM, eg in Node.js.

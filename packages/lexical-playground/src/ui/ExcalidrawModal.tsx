@@ -12,14 +12,20 @@ import type {
   ExcalidrawImperativeAPI,
   ExcalidrawInitialDataState,
 } from '@excalidraw/excalidraw/types';
-import type {JSX} from 'react';
 
 import './ExcalidrawModal.css';
 
 import {Excalidraw} from '@excalidraw/excalidraw';
 import {isDOMNode, registerEventListener} from 'lexical';
 import * as React from 'react';
-import {ReactPortal, useEffect, useLayoutEffect, useRef, useState} from 'react';
+import {
+  type JSX,
+  type ReactPortal,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import {createPortal} from 'react-dom';
 
 import Button from './Button';

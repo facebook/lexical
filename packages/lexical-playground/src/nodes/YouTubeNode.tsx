@@ -20,7 +20,7 @@ import type {JSX} from 'react';
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
 import {
   DecoratorBlockNode,
-  SerializedDecoratorBlockNode,
+  type SerializedDecoratorBlockNode,
 } from '@lexical/react/LexicalDecoratorBlockNode';
 import * as React from 'react';
 

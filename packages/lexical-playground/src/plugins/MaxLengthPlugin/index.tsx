@@ -13,7 +13,7 @@ import {
   $getSelection,
   $isRangeSelection,
   defineExtension,
-  EditorState,
+  type EditorState,
   RootNode,
   safeCast,
 } from 'lexical';

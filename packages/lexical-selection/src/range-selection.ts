@@ -6,19 +6,6 @@
  *
  */
 
-import type {
-  BaseSelection,
-  CaretDirection,
-  DecoratorNode,
-  ElementNode,
-  LexicalNode,
-  NodeKey,
-  Point,
-  PointCaret,
-  RangeSelection,
-  TextNode,
-} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
 import {
   $caretFromPoint,
@@ -33,11 +20,23 @@ import {
   $isLeafNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $isTabNode,
   $isTextNode,
+  $isTextPointCaret,
   $setSelection,
+  type BaseSelection,
+  type CaretDirection,
+  type DecoratorNode,
+  type ElementNode,
   flipDirection,
   getStyleObjectFromCSS,
   INTERNAL_$isBlock,
+  type LexicalNode,
+  type NodeKey,
+  type Point,
+  type PointCaret,
+  type RangeSelection,
+  type TextNode,
 } from 'lexical';
 
 import {$getComputedStyleForElement, $getComputedStyleForParent} from './utils';
@@ -549,6 +548,20 @@ export function $shouldOverrideDefaultCharacterSelection(
   );
   if ($isExtendableTextPointCaret(focusCaret)) {
     return false;
+  }
+  // At an unmergeable TextNode boundary adjacent to another plain TextNode,
+  // override so Lexical's modify() can pre-normalize across inline-grid/flex
+  // spans (#7301). Restricted to unmergeable nodes to avoid disrupting
+  // format-affinity at normal bold/italic boundaries.
+  if (
+    $isTextPointCaret(focusCaret) &&
+    !$isTabNode(focusCaret.origin) &&
+    focusCaret.origin.isUnmergeable()
+  ) {
+    const sibling = focusCaret.getNodeAtCaret();
+    if ($isTextNode(sibling) && !$isTabNode(sibling)) {
+      return true;
+    }
   }
   for (const nextCaret of $extendCaretToRange(focusCaret)) {
     if ($isChildCaret(nextCaret)) {

@@ -6,26 +6,7 @@
  *
  */
 
-import type {
-  CommandPayloadType,
-  DOMSlotForNode,
-  EditorConfig,
-  EditorDOMRenderConfig,
-  EditorThemeClasses,
-  Klass,
-  LexicalCommand,
-  MutatedNodes,
-  MutationListeners,
-  NodeMutation,
-  RegisteredNode,
-  RegisteredNodes,
-} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
-import type {
-  BaseSelection,
-  PointType,
-  RangeSelection,
-} from './LexicalSelection';
 import type {RootNode} from './nodes/LexicalRootNode';
 
 import invariant from '@lexical/internal/invariant';
@@ -44,12 +25,12 @@ import {
   $isTextNode,
   DecoratorNode,
   DEFAULT_EDITOR_DOM_CONFIG,
-  ElementFormatType,
+  type ElementFormatType,
   ElementNode,
   HISTORY_MERGE_TAG,
-  LineBreakNode,
+  type LineBreakNode,
   normalizeClassNames,
-  UpdateTag,
+  type UpdateTag,
 } from '.';
 import {
   CAN_USE_DOM,
@@ -73,8 +54,22 @@ import {
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
-import {DOMSlot, ElementDOMSlot} from './LexicalDOMSlot';
-import {LexicalEditor} from './LexicalEditor';
+import {type DOMSlot, ElementDOMSlot} from './LexicalDOMSlot';
+import {
+  type CommandPayloadType,
+  type DOMSlotForNode,
+  type EditorConfig,
+  type EditorDOMRenderConfig,
+  type EditorThemeClasses,
+  type Klass,
+  type LexicalCommand,
+  LexicalEditor,
+  type MutatedNodes,
+  type MutationListeners,
+  type NodeMutation,
+  type RegisteredNode,
+  type RegisteredNodes,
+} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
 import {
   $isEphemeral,
@@ -87,7 +82,12 @@ import {
   type StaticNodeConfigValue,
 } from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
-import {$clampRangeSelectionToSlotFrame} from './LexicalSelection';
+import {
+  $clampRangeSelectionToSlotFrame,
+  type BaseSelection,
+  type PointType,
+  type RangeSelection,
+} from './LexicalSelection';
 import {
   $getSlot,
   $getSlotHostKey,
@@ -99,6 +99,7 @@ import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
+  internalGetActiveEditor,
   internalGetActiveEditorState,
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
@@ -2120,15 +2121,25 @@ export function getRootOwnerDocument(
 
 /**
  * Returns the {@link Document} that owns the active editor's root element.
- * Falls back to `globalThis.document` when the editor has no root element
- * (e.g. headless mode with {@link @lexical/headless!withDOM | withDOM}).
+ * Falls back to `globalThis.document` when there is no active editor (e.g.
+ * a node method such as `createDOM` / `exportDOM` is invoked headlessly,
+ * outside of `editor.update()` / `editor.read()`), or when the active
+ * editor has no root element (e.g. headless mode with
+ * {@link @lexical/headless!withDOM | withDOM}).
  *
  * Use this inside `createDOM`, `updateDOM`, and `exportDOM` instead of the
  * bare `document` global so the node works correctly when the editor lives
  * inside a Shadow DOM or a cross-origin `<iframe>`.
+ *
+ * Unlike most `$`-prefixed helpers, this does NOT require an ambient active
+ * editor: it must remain callable from `createDOM` / `exportDOM`, which are
+ * public methods that consumers may legitimately call while serializing
+ * nodes headlessly. Throwing here would silently break every node whose DOM
+ * methods were migrated off the bare `document` global.
  */
 export function $getDocument(): Document {
-  return getRootOwnerDocument($getEditor()._rootElement);
+  const editor = internalGetActiveEditor();
+  return getRootOwnerDocument(editor !== null ? editor._rootElement : null);
 }
 
 /**

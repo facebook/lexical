@@ -87,12 +87,9 @@ export function loadCodeLanguage(
         if (editor && codeNodeKey) {
           editor.update(() => {
             const codeNode = $getNodeByKey(codeNodeKey);
-            if (
-              $isCodeNode(codeNode) &&
-              codeNode.getLanguage() === language &&
-              !codeNode.getIsSyntaxHighlightSupported()
-            ) {
+            if ($isCodeNode(codeNode) && codeNode.getLanguage() === language) {
               codeNode.setIsSyntaxHighlightSupported(true);
+              codeNode.markDirty();
             }
           });
         }

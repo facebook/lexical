@@ -20,6 +20,7 @@ import {effect} from './signals';
 export interface OnChangeConfig {
   ignoreHistoryMergeTagChange: boolean;
   ignoreSelectionChange: boolean;
+  skipInitialization: boolean;
   onChange:
     | undefined
     | ((
@@ -31,9 +32,8 @@ export interface OnChangeConfig {
 
 /**
  * Calls `onChange` with the latest {@link EditorState} whenever the editor
- * updates. By default, updates that only change the selection, and updates that
- * are part of a history merge, are ignored; set `ignoreSelectionChange` or
- * `ignoreHistoryMergeTagChange` to control that filtering.
+ * updates. By default, initial update and updates that are part of a history merge
+ * are ignored; set {@link OnChangeConfig} options to control that filtering.
  */
 export const OnChangeExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config, state) => namedSignals(config),
@@ -41,11 +41,16 @@ export const OnChangeExtension = /* @__PURE__ */ defineExtension({
     ignoreHistoryMergeTagChange: true,
     ignoreSelectionChange: false,
     onChange: undefined,
+    skipInitialization: true,
   }),
   name: '@lexical/extension/OnChange',
   register(editor, config, state) {
-    const {ignoreHistoryMergeTagChange, ignoreSelectionChange, onChange} =
-      state.getOutput();
+    const {
+      ignoreHistoryMergeTagChange,
+      ignoreSelectionChange,
+      skipInitialization,
+      onChange,
+    } = state.getOutput();
     return effect(() => {
       const onChangeHandler = onChange && onChange.value;
       if (onChangeHandler) {
@@ -63,7 +68,7 @@ export const OnChangeExtension = /* @__PURE__ */ defineExtension({
                 dirtyLeaves.size === 0) ||
               (ignoreHistoryMergeTagChange.value &&
                 tags.has(HISTORY_MERGE_TAG)) ||
-              prevEditorState.isEmpty()
+              (skipInitialization.value && prevEditorState.isEmpty())
             ) {
               return;
             }

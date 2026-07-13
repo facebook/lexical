@@ -31,6 +31,7 @@ describe('OnChangeExtension', () => {
     );
     expect(output.ignoreHistoryMergeTagChange.value).toBe(true);
     expect(output.ignoreSelectionChange.value).toBe(false);
+    expect(output.skipInitialization.value).toBe(true);
     expect(output.onChange.value).toBe(undefined);
   });
 
@@ -55,7 +56,7 @@ describe('OnChangeExtension', () => {
     }).not.toThrow();
   });
 
-  test('ignores the very first update, where prevEditorState is empty', () => {
+  test('ignores the first update, where prevEditorState is empty', () => {
     const onChange = vi.fn();
     using editor = buildEditorFromExtensions({
       dependencies: [configExtension(OnChangeExtension, {onChange})],
@@ -68,6 +69,27 @@ describe('OnChangeExtension', () => {
       {discrete: true},
     );
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  test('does not ignores the first update, where prevEditorState is empty, skipInitialization is false, and ignoreHistoryMergeTagChange is false ', () => {
+    const onChange = vi.fn();
+    using editor = buildEditorFromExtensions({
+      dependencies: [
+        configExtension(OnChangeExtension, {
+          ignoreHistoryMergeTagChange: false,
+          onChange,
+          skipInitialization: false,
+        }),
+      ],
+      name: 'OnChangeTest',
+    });
+    editor.update(
+      () => {
+        $getRoot().append($createParagraphNode());
+      },
+      {discrete: true},
+    );
+    expect(onChange).toHaveBeenCalledTimes(1);
   });
 
   test('calls onChange with the latest editor state, editor instance, and tags', () => {

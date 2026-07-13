@@ -37,6 +37,7 @@ import {
   createCommand,
   createState,
   defineExtension,
+  isDOMNode,
   isHTMLElement,
   type LexicalCommand,
   type LexicalEditor,
@@ -235,7 +236,9 @@ function $renderAlertTitle(
     const menu = doc.createElement('div');
     menu.className = 'markdown-alert-menu';
     menu.setAttribute('role', 'menu');
-    const current = editor.read(() => $getState(node, alertTypeState));
+    const current = editor.read('latest', () =>
+      $getState(node, alertTypeState),
+    );
     const addItem = (text: string, value: AlertType | null): void => {
       const item = doc.createElement('button');
       item.type = 'button';
@@ -290,10 +293,7 @@ function $renderAlertTitle(
             }
           },
           pointerdown: event => {
-            if (
-              !(event.target instanceof Node) ||
-              !title.contains(event.target)
-            ) {
+            if (!isDOMNode(event.target) || !title.contains(event.target)) {
               closeMenu();
             }
           },
@@ -408,9 +408,13 @@ const AlertDOMImportRule = defineImportRule({
     for (const title of el.querySelectorAll(':scope > .markdown-alert-title')) {
       title.remove();
     }
-    const quote = $createQuoteNode({shadowRoot: true});
-    $setState(quote, alertTypeState, match[1] as AlertType);
-    return [quote.splice(0, 0, ctx.$importChildren(el, {schema: BlockSchema}))];
+    return [
+      $setState(
+        $createQuoteNode({shadowRoot: true}),
+        alertTypeState,
+        match[1] as AlertType,
+      ).splice(0, 0, ctx.$importChildren(el, {schema: BlockSchema})),
+    ];
   },
   // GitHub renders alerts as a classed <div>; our exportDOM keeps the
   // <blockquote>.

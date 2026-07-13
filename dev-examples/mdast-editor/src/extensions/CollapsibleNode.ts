@@ -186,12 +186,11 @@ export class CollapsibleNode extends ElementNode {
 }
 
 export function $createCollapsibleNode(open: boolean = true): CollapsibleNode {
-  const node = $create(CollapsibleNode).setOpen(open);
   // Single-line summary: the bare paragraph IS the slot value (the slot link
   // itself is the virtual shadow root, no container wrapper needed).
-  $setSlot(node, 'summary', $createParagraphNode());
-  node.append($createParagraphNode());
-  return node;
+  return $setSlot($create(CollapsibleNode), 'summary', $createParagraphNode())
+    .append($createParagraphNode())
+    .setOpen(open);
 }
 
 export function $isCollapsibleNode(

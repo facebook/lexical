@@ -30,8 +30,8 @@ import {
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_EDITOR,
-  COMMAND_PRIORITY_LOW,
   configExtension,
   createCommand,
   defineExtension,
@@ -80,7 +80,7 @@ function $wrapInlineInBlocks(nodes: LexicalNode[]): LexicalNode[] {
       node => !($isTextNode(node) && node.getTextContent().trim() === ''),
     );
     if (significant) {
-      blocks.push($createParagraphNode().append(...pending));
+      blocks.push($createParagraphNode().splice(0, 0, pending));
     }
     pending = [];
   };
@@ -98,10 +98,7 @@ function $wrapInlineInBlocks(nodes: LexicalNode[]): LexicalNode[] {
 
 const DetailsImportRule = defineImportRule({
   $import: (ctx, el) => {
-    const collapsible = $createCollapsibleNode(el.hasAttribute('open'));
-    // Drop the seeded body paragraph; imported content replaces it (and the
-    // node-level transform re-seeds one if the body came out empty).
-    collapsible.clear();
+    const collapsible = $createCollapsibleNode(el.hasAttribute('open')).clear();
     const summary = $getSlot(collapsible, 'summary');
     const body: LexicalNode[] = [];
     for (const child of Array.from(el.childNodes)) {
@@ -113,7 +110,12 @@ const DetailsImportRule = defineImportRule({
         body.push(...ctx.$importOne(child));
       }
     }
-    return [collapsible.append(...$wrapInlineInBlocks(body))];
+    // Drop the seeded body paragraph if there's any body
+    const blocks = $wrapInlineInBlocks(body);
+    if (blocks.length > 0) {
+      collapsible.splice(0, collapsible.getChildrenSize(), blocks);
+    }
+    return [collapsible];
   },
   match: sel.tag('details'),
   name: '@lexical/dev-mdast-editor-example/details',
@@ -211,7 +213,7 @@ export const MdastCollapsibleExtension = defineExtension({
       editor.registerCommand(
         INSERT_PARAGRAPH_COMMAND,
         $handleSummaryEnter,
-        COMMAND_PRIORITY_LOW,
+        COMMAND_PRIORITY_BEFORE_EDITOR,
       ),
     ),
 });

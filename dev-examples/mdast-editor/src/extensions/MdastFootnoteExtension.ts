@@ -53,6 +53,10 @@ import {
   createCommand,
   defineExtension,
   HISTORIC_TAG,
+  IS_APPLE,
+  isExactShortcutMatch,
+  isHTMLElement,
+  KEY_DOWN_COMMAND,
   type LexicalCommand,
   type LexicalEditor,
   RootNode,
@@ -286,7 +290,7 @@ const FootnoteDefDOMImportRule = defineImportRule({
     for (const child of Array.from(el.childNodes)) {
       // The `[^label]:` marker span is chrome, not content.
       if (
-        child instanceof HTMLElement &&
+        isHTMLElement(child) &&
         child.hasAttribute('data-footnote-def-label')
       ) {
         continue;
@@ -329,8 +333,8 @@ const FootnoteDefDOMImportRule = defineImportRule({
 const FootnoteClipboardConfig = configExtension(GetClipboardDataExtension, {
   $exportMimeType: {
     'text/html': [
-      (selection, next) => {
-        const html = next();
+      (selection, $next) => {
+        const html = $next();
         if (html === null || html === '' || selection === null) {
           return html;
         }
@@ -370,7 +374,7 @@ const FootnoteClipboardConfig = configExtension(GetClipboardDataExtension, {
 // listener handles it instead: typing `]` after `[^label` materializes the
 // reference and creates the (empty) definition when it doesn't exist yet.
 const SHORTCUT_RE = /\[\^([^\s[\]^]+)\]$/;
-const FOOTNOTE_SHORTCUT_TAG = 'footnote-shortcut';
+export const FOOTNOTE_SHORTCUT_TAG = 'footnote-shortcut';
 
 function registerFootnoteShortcut(editor: LexicalEditor): () => void {
   return editor.registerUpdateListener(({editorState, dirtyLeaves, tags}) => {
@@ -383,36 +387,39 @@ function registerFootnoteShortcut(editor: LexicalEditor): () => void {
     ) {
       return;
     }
-    const match = editorState.read(() => {
-      const selection = $getSelection();
-      if (
-        !$isRangeSelection(selection) ||
-        !selection.isCollapsed() ||
-        selection.anchor.type !== 'text'
-      ) {
-        return null;
-      }
-      const node = selection.anchor.getNode();
-      const offset = selection.anchor.offset;
-      if (
-        !$isTextNode(node) ||
-        !node.isSimpleText() ||
-        node.hasFormat('code') ||
-        !dirtyLeaves.has(node.getKey()) ||
-        node.getTextContent().charAt(offset - 1) !== ']'
-      ) {
-        return null;
-      }
-      const found = SHORTCUT_RE.exec(node.getTextContent().slice(0, offset));
-      return found === null
-        ? null
-        : {
-            end: offset,
-            key: node.getKey(),
-            label: found[1],
-            start: offset - found[0].length,
-          };
-    });
+    const match = editorState.read(
+      () => {
+        const selection = $getSelection();
+        if (
+          !$isRangeSelection(selection) ||
+          !selection.isCollapsed() ||
+          selection.anchor.type !== 'text'
+        ) {
+          return null;
+        }
+        const node = selection.anchor.getNode();
+        const offset = selection.anchor.offset;
+        if (
+          !$isTextNode(node) ||
+          !node.isSimpleText() ||
+          node.hasFormat('code') ||
+          !dirtyLeaves.has(node.getKey()) ||
+          node.getTextContent().charAt(offset - 1) !== ']'
+        ) {
+          return null;
+        }
+        const found = SHORTCUT_RE.exec(node.getTextContent().slice(0, offset));
+        return found === null
+          ? null
+          : {
+              end: offset,
+              key: node.getKey(),
+              label: found[1],
+              start: offset - found[0].length,
+            };
+      },
+      {editor},
+    );
     if (match === null) {
       return;
     }
@@ -507,6 +514,25 @@ export const MdastFootnoteExtension = defineExtension({
     mergeRegister(
       registerFootnoteShortcut(editor),
       registerFootnoteBacklinks(editor),
+      editor.registerCommand(
+        KEY_DOWN_COMMAND,
+        event => {
+          if (
+            isExactShortcutMatch(event, 'f', {
+              altKey: true,
+              ctrlKey: !IS_APPLE,
+              metaKey: IS_APPLE,
+            })
+          ) {
+            event.preventDefault();
+            event.stopPropagation();
+            editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND, undefined);
+            return true;
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_BEFORE_EDITOR,
+      ),
       // Slots are a separate channel from the children that
       // CLEAR_EDITOR_COMMAND's default handler clears, so clearing the
       // editor participates here: drop the footnotes section, then fall
@@ -526,18 +552,21 @@ export const MdastFootnoteExtension = defineExtension({
           if (!$isRangeSelection(selection)) {
             return false;
           }
-          // Smallest unused numeric label.
-          const footnotes = $getSlot($getRoot(), FOOTNOTES_SLOT);
-          const used = new Set(
-            ($isFootnotesNode(footnotes) ? footnotes.getChildren() : [])
-              .filter($isFootnoteDefinitionNode)
-              .map(definition => normalizeLabel(definition.getLabel())),
-          );
-          let n = 1;
-          while (used.has(String(n))) {
-            n++;
+          let label = selection.getTextContent().trim();
+          if (!label) {
+            // Smallest unused numeric label.
+            const footnotes = $getSlot($getRoot(), FOOTNOTES_SLOT);
+            const used = new Set(
+              ($isFootnotesNode(footnotes) ? footnotes.getChildren() : [])
+                .filter($isFootnoteDefinitionNode)
+                .map(definition => normalizeLabel(definition.getLabel())),
+            );
+            let n = 1;
+            while (used.has(String(n))) {
+              n++;
+            }
+            label = String(n);
           }
-          const label = String(n);
           selection.insertNodes([$createFootnoteRefNode(label)]);
           // Jump into the new definition to type the note.
           $ensureFootnoteDefinition(label).selectEnd();

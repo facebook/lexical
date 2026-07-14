@@ -307,6 +307,8 @@ declare export function $deleteTableColumn__EXPERIMENTAL(): void;
 
 declare export function $unmergeCell(): void;
 
+declare export function $unmergeCellNode(cellNode: TableCellNode): void;
+
 declare export function $computeTableMap(
   table: TableNode,
   cellA: TableCellNode,

@@ -948,6 +948,13 @@ export function $unmergeCell(): void {
   return $unmergeCellNode(cellNode);
 }
 
+/**
+ * Unmerges the given cell, splitting it back into individual cells.
+ * Unlike {@link $unmergeCell}, this does not depend on the current
+ * selection. No-op if the cell is not merged.
+ *
+ * @param cellNode The merged cell to split.
+ */
 export function $unmergeCellNode(cellNode: TableCellNode): void {
   const [cell, row, grid] = $getNodeTriplet(cellNode);
   const colSpan = cell.__colSpan;

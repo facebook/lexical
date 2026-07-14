@@ -97,6 +97,7 @@ export {
   $setTableColumnIsHeader,
   $setTableRowIsHeader,
   $unmergeCell,
+  $unmergeCellNode,
 } from './LexicalTableUtils';
 export {
   TableImportRules,

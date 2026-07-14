@@ -9326,6 +9326,71 @@ test.describe('Tables', () => {
     ).toHaveCount(0);
   });
 
+  test(`Drag-selecting to the edge of a scrollable table auto-scrolls it #7153`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    // The horizontal scroll wrapper only exists when scrollable tables are on.
+    test.skip(!IS_TABLE_HORIZONTAL_SCROLL);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    // A table with many columns overflows the editor width, so it becomes
+    // horizontally scrollable.
+    await insertTable(page, 3, 15);
+
+    const wrapperSelector = 'div.PlaygroundEditorTheme__tableScrollableWrapper';
+    const getScroll = () =>
+      evaluate(
+        page,
+        selector => {
+          const wrapper = document.querySelector(selector);
+          return {
+            left: wrapper.scrollLeft,
+            max: wrapper.scrollWidth - wrapper.clientWidth,
+          };
+        },
+        wrapperSelector,
+      );
+
+    // Sanity check: the table is actually wider than its scroll container.
+    const {max} = await getScroll();
+    expect(max).toBeGreaterThan(0);
+
+    // Start a drag in a left-hand cell and hold the pointer just inside the
+    // right edge of the scroll container (within the auto-scroll edge zone),
+    // leaving the mouse button down.
+    const anchorBox = await selectorBoundingBox(
+      page,
+      `${nthTableSelector(1)} > tr:nth-of-type(2) > td:nth-child(2)`,
+    );
+    const wrapperBox = await selectorBoundingBox(page, wrapperSelector);
+    const holdY = anchorBox.y + anchorBox.height / 2;
+    await dragMouse(
+      page,
+      anchorBox,
+      {height: 0, width: 0, x: wrapperBox.x + wrapperBox.width - 5, y: holdY},
+      {mouseDown: true, mouseUp: false, slow: true},
+    );
+
+    // While the pointer is held near the edge, the requestAnimationFrame loop
+    // scrolls the wrapper all the way to the end...
+    await expect
+      .poll(async () => (await getScroll()).left, {timeout: 5000})
+      .toBeGreaterThanOrEqual(max - 1);
+
+    // ...and the selection focus reaches the last column (index 14), which was
+    // initially off-screen — the behavior that regressed in #7153.
+    await assertTableSelectionCoordinates(page, {
+      anchor: {x: 1},
+      focus: {x: 14},
+    });
+
+    await page.mouse.up();
+  });
+
   test.describe('shift-selection tests', () => {
     test('Range-select from above table into it selects the entire table', async ({
       page,

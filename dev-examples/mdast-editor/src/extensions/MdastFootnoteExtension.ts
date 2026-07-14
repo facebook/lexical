@@ -8,8 +8,8 @@
 
 import {GetClipboardDataExtension} from '@lexical/clipboard';
 import {
-  $applyFormatToDom,
   $getExtensionOutput,
+  applyFormatToDom,
   DecoratorTextExtension,
   DecoratorTextNode,
 } from '@lexical/extension';
@@ -36,6 +36,7 @@ import {
 } from '@lexical/mdast';
 import {mergeRegister} from '@lexical/utils';
 import {
+  $addUpdateTag,
   $create,
   $createParagraphNode,
   $getDocument,
@@ -44,7 +45,6 @@ import {
   $getSelection,
   $getSlot,
   $getSlotHost,
-  $getSlotNames,
   $getState,
   $getStateChange,
   $isDecoratorNode,
@@ -53,6 +53,8 @@ import {
   $isRangeSelection,
   $isRootNode,
   $isTextNode,
+  $nodesOfType,
+  $onUpdate,
   $removeSlot,
   $setSelection,
   $setSlot,
@@ -77,7 +79,10 @@ import {
   type LexicalCommand,
   type LexicalEditor,
   type LexicalNode,
+  NODE_STATE_DIRECT,
+  type NodeStateVersion,
   registerEventListener,
+  registerEventListeners,
   RootNode,
   setDOMUnmanaged,
 } from 'lexical';
@@ -145,21 +150,23 @@ function fragmentHref(id: string): string {
  */
 function afterFragmentNavigation(anchor: HTMLElement, fn: () => void): void {
   const win = anchor.ownerDocument.defaultView;
-  if (win === null) {
-    fn();
-    return;
+  const controller = new AbortController();
+  const abort = controller.abort.bind(controller, undefined);
+  const {signal} = controller;
+  signal.addEventListener('abort', fn, {once: true});
+  if (win) {
+    win.addEventListener('hashchange', abort, {
+      once: true,
+      signal,
+    });
+    signal.addEventListener(
+      'abort',
+      clearTimeout.bind(null, setTimeout(abort, 100)),
+      {once: true},
+    );
+  } else {
+    abort();
   }
-  let done = false;
-  const run = () => {
-    if (!done) {
-      done = true;
-      win.removeEventListener('hashchange', onHashChange);
-      fn();
-    }
-  };
-  const onHashChange = () => win.setTimeout(run, 0);
-  win.addEventListener('hashchange', onHashChange);
-  win.setTimeout(run, 100);
 }
 
 /**
@@ -168,27 +175,15 @@ function afterFragmentNavigation(anchor: HTMLElement, fn: () => void): void {
  */
 function $collectFootnoteRefsByLabel(): Map<string, FootnoteRefNode[]> {
   const refs = new Map<string, FootnoteRefNode[]>();
-  const visit = (node: LexicalNode): void => {
-    if ($isFootnoteRefNode(node)) {
-      const normalized = normalizeLabel(node.getLabel());
-      const group = refs.get(normalized);
-      if (group === undefined) {
-        refs.set(normalized, [node]);
-      } else {
-        group.push(node);
-      }
+  for (const node of $nodesOfType(FootnoteRefNode)) {
+    const label = normalizeLabel(node.getLabel(NODE_STATE_DIRECT));
+    const existingNodes = refs.get(label);
+    const nodes = existingNodes || [];
+    nodes.push(node);
+    if (!existingNodes) {
+      refs.set(label, nodes);
     }
-    for (const name of $getSlotNames(node)) {
-      const value = $getSlot(node, name);
-      if (value !== null && !$isFootnotesNode(value)) {
-        visit(value);
-      }
-    }
-    if ($isElementNode(node)) {
-      node.getChildren().forEach(visit);
-    }
-  };
-  $getRoot().getChildren().forEach(visit);
+  }
   return refs;
 }
 
@@ -206,15 +201,13 @@ function $collectFootnoteRefs(label: string): FootnoteRefNode[] {
  * the navigation.
  */
 function selectDefinition(editor: LexicalEditor, ref: FootnoteRefNode): void {
-  editor.update(
-    () => {
-      const definition = $findFootnoteDefinition(ref.getLatest().getLabel());
-      if (definition !== null) {
-        definition.selectStart();
-      }
-    },
-    {onUpdate: () => editor.focus()},
-  );
+  editor.update(() => {
+    const definition = $findFootnoteDefinition(ref.getLatest().getLabel());
+    if (definition !== null) {
+      definition.selectStart();
+      $onUpdate(() => editor.focus());
+    }
+  });
 }
 
 /**
@@ -228,18 +221,16 @@ function selectReference(
   definition: FootnoteDefinitionNode,
   index: number,
 ): void {
-  editor.update(
-    () => {
-      const refs = $collectFootnoteRefs(definition.getLatest().getLabel());
-      const ref = refs[index];
-      if (ref === undefined) {
-        return;
-      }
-      const offset = ref.getIndexWithinParent() + 1;
-      ref.getParentOrThrow().select(offset, offset);
-    },
-    {onUpdate: () => editor.focus()},
-  );
+  editor.update(() => {
+    const refs = $collectFootnoteRefs(definition.getLatest().getLabel());
+    const ref = refs[index];
+    if (ref === undefined) {
+      return;
+    }
+    const offset = ref.getIndexWithinParent() + 1;
+    ref.getParentOrThrow().select(offset, offset);
+    $onUpdate(() => editor.focus());
+  });
 }
 
 /**
@@ -276,15 +267,14 @@ function renderBacklinks(
       backlink.append(sup);
     }
     // See the ref's createDOM for the listener-lifetime and mousedown notes.
-    void registerEventListener(backlink, 'mousedown', event => {
-      event.preventDefault();
-    });
-    void registerEventListener(backlink, 'click', () => {
-      // The default action (the fragment navigation) runs AFTER this
-      // listener; follow it with the selection once it settles.
-      afterFragmentNavigation(backlink, () =>
-        selectReference(editor, definition, index),
-      );
+    void registerEventListeners(backlink, {
+      click: () =>
+        afterFragmentNavigation(backlink, () =>
+          selectReference(editor, definition, index),
+        ),
+      mousedown: event => {
+        event.preventDefault();
+      },
     });
     container.append(backlink);
   }
@@ -377,8 +367,8 @@ export class FootnoteRefNode extends DecoratorTextNode {
     });
   }
 
-  getLabel(): string {
-    return $getState(this, footnoteLabelState);
+  getLabel(version?: NodeStateVersion): string {
+    return $getState(this, footnoteLabelState, version);
   }
 
   setLabel(label: string): this {
@@ -406,17 +396,16 @@ export class FootnoteRefNode extends DecoratorTextNode {
     // the click from moving the caret; the click keeps its DEFAULT action
     // (the fragment navigation) and the listener only moves the selection
     // along with it.
-    void registerEventListener(anchor, 'mousedown', event => {
-      event.preventDefault();
-    });
-    void registerEventListener(anchor, 'click', () => {
-      // The default action (the fragment navigation) runs AFTER this
-      // listener; follow it with the selection once it settles.
-      afterFragmentNavigation(anchor, () => selectDefinition(editor, this));
+    void registerEventListeners(anchor, {
+      click: () =>
+        afterFragmentNavigation(anchor, () => selectDefinition(editor, this)),
+      mousedown: event => {
+        event.preventDefault();
+      },
     });
     // The format bitmask renders as real wrapper tags (<b>, <em>, ...)
     // around the marker, mirroring the text serialization.
-    return $applyFormatToDom(this, dom) as HTMLElement;
+    return applyFormatToDom(this, dom);
   }
 
   updateDOM(prevNode: this): boolean {
@@ -424,8 +413,9 @@ export class FootnoteRefNode extends DecoratorTextNode {
     // alters the wrapper structure around the <sup>, which is not worth
     // patching in place.
     return (
-      this.getLabel() !== prevNode.getLabel() ||
-      this.getFormat() !== prevNode.getFormat()
+      $getStateChange(this, prevNode, footnoteLabelState) !== null ||
+      this.getFormat(NODE_STATE_DIRECT) !==
+        prevNode.getFormat(NODE_STATE_DIRECT)
     );
   }
 
@@ -438,11 +428,7 @@ export class FootnoteRefNode extends DecoratorTextNode {
     const element = $getDocument().createElement('sup');
     element.setAttribute('data-footnote-ref', this.getLabel());
     element.textContent = `[^${this.getLabel()}]`;
-    return {element: $applyFormatToDom(this, element)};
-  }
-
-  decorate(): null {
-    return null;
+    return {element: applyFormatToDom(this, element)};
   }
 }
 
@@ -480,8 +466,8 @@ export class FootnoteDefinitionNode extends ElementNode {
     });
   }
 
-  getLabel(): string {
-    return $getState(this, footnoteLabelState);
+  getLabel(version?: NodeStateVersion): string {
+    return $getState(this, footnoteLabelState, version);
   }
 
   setLabel(label: string): this {
@@ -1074,33 +1060,31 @@ function registerFootnoteShortcut(editor: LexicalEditor): () => void {
     if (match === null) {
       return;
     }
-    editor.update(
-      () => {
-        const node = $getNodeByKey(match.key);
-        if (!$isTextNode(node)) {
-          return;
-        }
-        let target;
-        if (match.start <= 0) {
-          [target] = node.splitText(match.end);
-        } else {
-          const parts = node.splitText(match.start, match.end);
-          target = parts.length === 3 ? parts[1] : parts[parts.length - 1];
-        }
-        // The ref inherits the typed text's format, like the typed
-        // characters it replaces.
-        const ref = $createFootnoteRefNode(match.label).setFormat(
-          target.getFormat(),
-        );
-        target.replace(ref);
-        $ensureFootnoteDefinition(match.label);
-        // Caret lands after the new reference (an element point on the
-        // parent, so it works whether or not a sibling follows).
-        const offset = ref.getIndexWithinParent() + 1;
-        ref.getParentOrThrow().select(offset, offset);
-      },
-      {tag: FOOTNOTE_SHORTCUT_TAG},
-    );
+    editor.update(() => {
+      const node = $getNodeByKey(match.key);
+      if (!$isTextNode(node)) {
+        return;
+      }
+      $addUpdateTag(FOOTNOTE_SHORTCUT_TAG);
+      let target;
+      if (match.start <= 0) {
+        [target] = node.splitText(match.end);
+      } else {
+        const parts = node.splitText(match.start, match.end);
+        target = parts.length === 3 ? parts[1] : parts[parts.length - 1];
+      }
+      // The ref inherits the typed text's format, like the typed
+      // characters it replaces.
+      const ref = $createFootnoteRefNode(match.label).setFormat(
+        target.getFormat(),
+      );
+      target.replace(ref);
+      $ensureFootnoteDefinition(match.label);
+      // Caret lands after the new reference (an element point on the
+      // parent, so it works whether or not a sibling follows).
+      const offset = ref.getIndexWithinParent() + 1;
+      ref.getParentOrThrow().select(offset, offset);
+    });
   });
 }
 

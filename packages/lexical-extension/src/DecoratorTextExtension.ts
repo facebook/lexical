@@ -17,6 +17,7 @@ import {
   type InlineFormattableNode,
   type LexicalEditor,
   type LexicalNode,
+  type NodeStateVersion,
   type SerializedLexicalNode,
   type Spread,
   type StateConfigValue,
@@ -53,8 +54,8 @@ export class DecoratorTextNode
     });
   }
 
-  getFormat(): StateConfigValue<typeof formatState> {
-    return $getState(this, formatState);
+  getFormat(version?: NodeStateVersion): StateConfigValue<typeof formatState> {
+    return $getState(this, formatState, version);
   }
 
   getFormatFlags(type: TextFormatType, alignWithFormat: null | number): number {
@@ -153,26 +154,25 @@ export function applyFormatFromStyle(
  * @param tagNameToFormat Tag name and format mapping
  * @returns domNode
  */
-export function $applyFormatToDom(
+export function applyFormatToDom<T extends Text | HTMLElement>(
   lexicalNode: DecoratorTextNode,
-  domNode: Text | HTMLElement,
+  domNode: T,
   tagNameToFormat = DEFAULT_TAG_NAME_TO_FORMAT,
-) {
+): T | HTMLElement {
+  let rval: T | HTMLElement = domNode;
   for (const [tag, format] of Object.entries(tagNameToFormat)) {
     if (lexicalNode.hasFormat(format)) {
-      domNode = $wrapElementWith(domNode, tag);
+      rval = wrapElementWith(rval, tag);
     }
   }
-  return domNode;
+  return rval;
 }
-/** @deprecated renamed to {@link $applyFormatToDom} by @lexical/eslint-plugin rules-of-lexical */
-export const applyFormatToDom = $applyFormatToDom;
 
-function $wrapElementWith(
+function wrapElementWith(
   element: HTMLElement | Text,
   tag: string,
 ): HTMLElement {
-  const el = $getDocument().createElement(tag);
+  const el = element.ownerDocument.createElement(tag);
   el.appendChild(element);
   return el;
 }

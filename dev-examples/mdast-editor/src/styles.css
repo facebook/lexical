@@ -337,6 +337,10 @@
 .footnote-def-label::after {
   content: ']:';
 }
+/* Managed linebreaks don't make sense when there's trailing content */
+br[data-lexical-managed-linebreak] + .footnote-def-backlinks {
+  display: none;
+}
 .footnote-def-backlink,
 .footnote-def-remove {
   align-items: center;

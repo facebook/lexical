@@ -1339,6 +1339,43 @@ export function $moveTableColumn(
   }
 }
 
+/**
+ * Moves a row from one position to another within a simple (non-merged) table.
+ *
+ * @param tableNode The table node to modify.
+ * @param originRow The index of the row to move.
+ * @param targetRow The index to move the row to.
+ */
+export function $moveTableRow(
+  tableNode: TableNode,
+  originRow: number,
+  targetRow: number,
+): void {
+  if (originRow === targetRow) {
+    return;
+  }
+  const rows = tableNode.getChildren().filter($isTableRowNode);
+  const rowCount = rows.length;
+  if (
+    originRow < 0 ||
+    originRow >= rowCount ||
+    targetRow < 0 ||
+    targetRow >= rowCount
+  ) {
+    return;
+  }
+  if (!$isSimpleTable(tableNode)) {
+    return;
+  }
+  const originRowNode = rows[originRow];
+  const targetRowNode = rows[targetRow];
+  if (targetRow > originRow) {
+    targetRowNode.insertAfter(originRowNode);
+  } else {
+    targetRowNode.insertBefore(originRowNode);
+  }
+}
+
 export function $getTableCellNodeRect(tableCellNode: TableCellNode): {
   rowIndex: number;
   columnIndex: number;

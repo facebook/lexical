@@ -92,6 +92,7 @@ export {
   $isSimpleTable,
   $mergeCells,
   $moveTableColumn,
+  $moveTableRow,
   $removeTableRowAtIndex,
   $setTableColumnIsHeader,
   $setTableRowIsHeader,

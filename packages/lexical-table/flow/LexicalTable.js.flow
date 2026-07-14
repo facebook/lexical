@@ -478,4 +478,10 @@ declare export function $moveTableColumn(
   targetColumn: number,
 ): void;
 
+declare export function $moveTableRow(
+  tableNode: TableNode,
+  originRow: number,
+  targetRow: number,
+): void;
+
 declare export function $mergeCells(cellNodes: TableCellNode[]): TableCellNode | null;

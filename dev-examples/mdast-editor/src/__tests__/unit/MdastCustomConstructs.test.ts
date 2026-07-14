@@ -39,29 +39,27 @@ import {
 } from 'lexical';
 import {describe, expect, it} from 'vitest';
 
-import {CollapsibleNode} from '../../extensions/CollapsibleNode';
+import {HtmlTextFormatExtension} from '../../extensions/HtmlTextFormatExtension';
+import {
+  INSERT_ALERT_COMMAND,
+  MdastAlertExtension,
+} from '../../extensions/MdastAlertExtension';
+import {
+  CollapsibleNode,
+  INSERT_COLLAPSIBLE_COMMAND,
+  MdastCollapsibleExtension,
+} from '../../extensions/MdastCollapsibleExtension';
 import {
   $findFootnoteDefinition,
   $isFootnoteRefNode,
   $isFootnotesNode,
   $removeFootnoteDefinition,
   FOOTNOTES_SLOT,
-} from '../../extensions/FootnoteNodes';
-import {HtmlTextFormatExtension} from '../../extensions/HtmlTextFormatExtension';
-import {$isKbdNode} from '../../extensions/KbdNode';
-import {
-  INSERT_ALERT_COMMAND,
-  MdastAlertExtension,
-} from '../../extensions/MdastAlertExtension';
-import {
-  INSERT_COLLAPSIBLE_COMMAND,
-  MdastCollapsibleExtension,
-} from '../../extensions/MdastCollapsibleExtension';
-import {
   INSERT_FOOTNOTE_COMMAND,
   MdastFootnoteExtension,
 } from '../../extensions/MdastFootnoteExtension';
 import {
+  $isKbdNode,
   FORMAT_KBD_COMMAND,
   MdastKbdExtension,
 } from '../../extensions/MdastKbdExtension';

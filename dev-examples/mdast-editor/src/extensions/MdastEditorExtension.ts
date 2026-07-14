@@ -54,10 +54,12 @@ import {
   type LexicalCommand,
 } from 'lexical';
 
-import {$isCollapsibleNode} from './CollapsibleNode';
 import {HtmlTextFormatExtension} from './HtmlTextFormatExtension';
 import {MdastAlertExtension} from './MdastAlertExtension';
-import {MdastCollapsibleExtension} from './MdastCollapsibleExtension';
+import {
+  $isCollapsibleNode,
+  MdastCollapsibleExtension,
+} from './MdastCollapsibleExtension';
 import {MdastFootnoteExtension} from './MdastFootnoteExtension';
 import {MdastKbdExtension} from './MdastKbdExtension';
 

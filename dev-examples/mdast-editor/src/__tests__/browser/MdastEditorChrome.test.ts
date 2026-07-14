@@ -28,10 +28,12 @@ import {
 } from 'lexical';
 import {describe, expect, onTestFinished, test, vi} from 'vitest';
 
-import {$isFootnoteDefinitionNode} from '../../extensions/FootnoteNodes';
 import {MdastAlertExtension} from '../../extensions/MdastAlertExtension';
 import {MdastCollapsibleExtension} from '../../extensions/MdastCollapsibleExtension';
-import {MdastFootnoteExtension} from '../../extensions/MdastFootnoteExtension';
+import {
+  $isFootnoteDefinitionNode,
+  MdastFootnoteExtension,
+} from '../../extensions/MdastFootnoteExtension';
 
 // The in-lexical chrome these extensions render — the collapsible's chevron
 // and the alert title's dropdown — is driven by real DOM events and, for the

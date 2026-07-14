@@ -65,6 +65,7 @@ import {
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  SKIP_SCROLL_INTO_VIEW_TAG,
   SKIP_SELECTION_FOCUS_TAG,
   UNDO_COMMAND,
 } from '.';
@@ -1248,7 +1249,10 @@ function $handleInput(event: InputEvent): boolean {
         const tokenRedirected = $onCompositionEndImpl(editor, data);
         inputState.compositionPhase = 'idle';
         if (tokenRedirected) {
-          $addUpdateTag(COMPOSITION_END_TAG);
+          $addCompositionEndUpdateTags(
+            inputState.lastKeyDownTimeStamp,
+            event.timeStamp,
+          );
           $flushMutations();
           return true;
         }
@@ -1314,7 +1318,10 @@ function $handleInput(event: InputEvent): boolean {
     // Firefox.
     if (inputState.compositionPhase === 'ending-firefox') {
       $onCompositionEndImpl(editor, data || undefined);
-      $addUpdateTag(COMPOSITION_END_TAG);
+      $addCompositionEndUpdateTags(
+        inputState.lastKeyDownTimeStamp,
+        event.timeStamp,
+      );
       inputState.compositionPhase = 'idle';
     }
   }
@@ -1384,11 +1391,37 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
   return true;
 }
 
+// A compositionend without a recent keydown was not typed: the browser
+// force-committed (pointerdown elsewhere, blur), often while the editor is
+// still the active element — so activeElement guards can't detect it.
+// Reconciling such a commit must not focus the root or scroll the
+// possibly scrolled-away caret back into view. The zero check keeps Android
+// Chrome unchanged, where lastKeyDownTimeStamp is zeroed while composing.
+//
+// Every compositionend route funnels through here, the immediate one and
+// Firefox's deferred `ending-firefox` one alike.
+function $addCompositionEndUpdateTags(
+  lastKeyDownTimeStamp: number,
+  eventTimeStamp: number,
+): void {
+  $addUpdateTag(COMPOSITION_END_TAG);
+  if (
+    lastKeyDownTimeStamp !== 0 &&
+    eventTimeStamp >= lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY
+  ) {
+    $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
+    $addUpdateTag(SKIP_SCROLL_INTO_VIEW_TAG);
+  }
+}
+
 function $handleCompositionEnd(event: CompositionEvent): boolean {
   const editor = getActiveEditor();
   editor._inputState.compositionPhase = 'idle';
   $onCompositionEndImpl(editor, event.data);
-  $addUpdateTag(COMPOSITION_END_TAG);
+  $addCompositionEndUpdateTags(
+    editor._inputState.lastKeyDownTimeStamp,
+    event.timeStamp,
+  );
   return true;
 }
 

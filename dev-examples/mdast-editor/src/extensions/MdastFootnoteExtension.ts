@@ -136,6 +136,33 @@ function fragmentHref(id: string): string {
 }
 
 /**
+ * Runs a click's selection follow-up AFTER the click's default action (the
+ * fragment navigation) has fully settled. The navigation's blur/focus
+ * fixup can land asynchronously (Firefox), and a selection applied before
+ * it would be clobbered when the resulting selectionchange syncs back into
+ * the editor — so wait for the `hashchange` the navigation fires, with a
+ * timeout fallback because a same-fragment click navigates without one.
+ */
+function afterFragmentNavigation(anchor: HTMLElement, fn: () => void): void {
+  const win = anchor.ownerDocument.defaultView;
+  if (win === null) {
+    fn();
+    return;
+  }
+  let done = false;
+  const run = () => {
+    if (!done) {
+      done = true;
+      win.removeEventListener('hashchange', onHashChange);
+      fn();
+    }
+  };
+  const onHashChange = () => win.setTimeout(run, 0);
+  win.addEventListener('hashchange', onHashChange);
+  win.setTimeout(run, 100);
+}
+
+/**
  * Every reference in the document grouped by normalized label, each group in
  * document order (slot subtrees included).
  */
@@ -254,9 +281,10 @@ function renderBacklinks(
     });
     void registerEventListener(backlink, 'click', () => {
       // The default action (the fragment navigation) runs AFTER this
-      // listener and moves focus out of the editor; follow it with the
-      // selection on the next task so the follow-up wins.
-      setTimeout(() => selectReference(editor, definition, index), 0);
+      // listener; follow it with the selection once it settles.
+      afterFragmentNavigation(backlink, () =>
+        selectReference(editor, definition, index),
+      );
     });
     container.append(backlink);
   }
@@ -383,9 +411,8 @@ export class FootnoteRefNode extends DecoratorTextNode {
     });
     void registerEventListener(anchor, 'click', () => {
       // The default action (the fragment navigation) runs AFTER this
-      // listener and moves focus out of the editor; follow it with the
-      // selection on the next task so the follow-up wins.
-      setTimeout(() => selectDefinition(editor, this), 0);
+      // listener; follow it with the selection once it settles.
+      afterFragmentNavigation(anchor, () => selectDefinition(editor, this));
     });
     // The format bitmask renders as real wrapper tags (<b>, <em>, ...)
     // around the marker, mirroring the text serialization.

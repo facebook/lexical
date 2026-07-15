@@ -1749,9 +1749,22 @@ export function registerRichText(
         if (isFileTransfer && !$isRangeSelection(selection)) {
           return false;
         }
-        // contenteditable is not a native drop target; preventDefault() is
-        // required on dragover to allow the drop event to fire in Firefox.
-        event.preventDefault();
+        // Do NOT call event.preventDefault() here for text drags. Canceling
+        // dragover tells the browser the page will handle the drop itself,
+        // which suppresses the native editable drop behavior (drop caret
+        // tracking and the beforeinput insertFromDrop that $doDrop relies on
+        // for drags that don't originate in a Lexical editor). The only
+        // exception is a decorator node, which the browser can't show a drop
+        // caret for anyway and whose drops are fully handled by DROP_COMMAND.
+        const x = event.clientX;
+        const y = event.clientY;
+        const eventRange = caretFromPoint(x, y, editor.getRootElement());
+        if (eventRange !== null) {
+          const node = $getNearestNodeFromDOMNode(eventRange.node);
+          if ($isDecoratorNode(node)) {
+            event.preventDefault();
+          }
+        }
         return true;
       },
       COMMAND_PRIORITY_EDITOR,

@@ -63,10 +63,7 @@ function testSuite(charset) {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">01234</span>
           <span class="PlaygroundEditorTheme__characterLimit">
-            <span data-lexical-text="true">5</span>
-          </span>
-          <span class="PlaygroundEditorTheme__characterLimit">
-            <span data-lexical-text="true">6789</span>
+            <span data-lexical-text="true">56789</span>
           </span>
         </p>
       `,
@@ -343,7 +340,7 @@ function testSuite(charset) {
       '<ul class="PlaygroundEditorTheme__ul" dir="auto"><li value="1" class="PlaygroundEditorTheme__listItem"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem"><span data-lexical-text="true">5</span><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">6</span></span></li><li value="3" class="PlaygroundEditorTheme__listItem"><span class="PlaygroundEditorTheme__characterLimit"><span data-lexical-text="true">7</span></span></li></ul>',
     );
 
-    await pressBackspace(page, 3);
+    await pressBackspace(page, 4);
     await assertHTML(
       page,
       '<ul class="PlaygroundEditorTheme__ul" dir="auto"><li value="1" class="PlaygroundEditorTheme__listItem"><span data-lexical-text="true">1234</span></li><li value="2" class="PlaygroundEditorTheme__listItem"><span data-lexical-text="true">5</span></li></ul>',

@@ -266,7 +266,10 @@ export function $wrapOverflowedNodes(offset: number): void {
         }
 
         $mergePrevious(overflowNode);
-        $mergeNext(overflowNode);
+        const nextNode = overflowNode.getNextSibling();
+        if ($isOverflowNode(nextNode)) {
+          $mergePrevious(nextNode);
+        }
       }
     }
   }
@@ -328,43 +331,4 @@ export function $mergePrevious(overflowNode: OverflowNode): void {
   }
 
   previousNode.remove();
-}
-
-export function $mergeNext(overflowNode: OverflowNode): void {
-  const nextNode = overflowNode.getNextSibling();
-
-  if (!$isOverflowNode(nextNode)) {
-    return;
-  }
-
-  const overflowNodeChildrenSize = overflowNode.getChildrenSize();
-  const nextNodeChildren = nextNode.getChildren();
-  overflowNode.append(...nextNodeChildren);
-
-  const selection = $getSelection();
-
-  if ($isRangeSelection(selection)) {
-    const anchor = selection.anchor;
-    const anchorNode = anchor.getNode();
-    const focus = selection.focus;
-    const focusNode = focus.getNode();
-
-    if (anchorNode.is(nextNode)) {
-      anchor.set(
-        overflowNode.getKey(),
-        overflowNodeChildrenSize + anchor.offset,
-        'element',
-      );
-    }
-
-    if (focusNode.is(nextNode)) {
-      focus.set(
-        overflowNode.getKey(),
-        overflowNodeChildrenSize + focus.offset,
-        'element',
-      );
-    }
-  }
-
-  nextNode.remove();
 }

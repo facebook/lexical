@@ -24,6 +24,7 @@ import {
   $setSlot,
   type ElementNode,
   type LexicalEditor,
+  type ParagraphNode,
 } from 'lexical';
 import {
   $createTestDecoratorNode,
@@ -32,7 +33,6 @@ import {
 import {afterEach, describe, expect, test} from 'vitest';
 
 import {
-  $mergeNext,
   $mergePrevious,
   $wrapOverflowedNodes,
 } from '../../shared/useCharacterLimit';
@@ -42,9 +42,6 @@ function makeEditor(): LexicalEditor {
     dependencies: [OverflowExtension],
     name: 'character-limit-test',
     nodes: [TestDecoratorNode],
-    onError: e => {
-      throw e;
-    },
   });
   editor.setRootElement(document.createElement('div'));
   return editor;
@@ -53,7 +50,7 @@ function makeEditor(): LexicalEditor {
 function $setupLeftRightOverflow(): {
   overflowLeft: OverflowNode;
   overflowRight: OverflowNode;
-  paragraph: ReturnType<typeof $createParagraphNode>;
+  paragraph: ParagraphNode;
 } {
   const root = $getRoot();
   root.clear();
@@ -142,80 +139,6 @@ describe('useCharacterLimit', () => {
         expect(updatedSelection.anchor.offset).toBe(0);
         expect(updatedSelection.focus.key).toBe(text3.getKey());
         expect(updatedSelection.focus.offset).toBe(1);
-      });
-    });
-  });
-
-  describe('$mergeNext', () => {
-    test('merges right overflow into left with text-type selection', async () => {
-      editor = makeEditor();
-
-      await editor.update(() => {
-        const {overflowLeft, overflowRight, paragraph} =
-          $setupLeftRightOverflow();
-
-        const text1 = $createTextNode('1');
-        const text2 = $createTextNode('2');
-        const text3 = $createTextNode('3');
-        const text4 = $createTextNode('4');
-
-        overflowLeft.append(text1, text2);
-        text2.toggleFormat('bold');
-        overflowRight.append(text3, text4);
-        text4.toggleFormat('bold');
-
-        text3.select(0, 0);
-
-        $mergeNext(overflowLeft);
-
-        expect(paragraph.getChildrenSize()).toBe(1);
-        expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
-        expect(overflowLeft.getChildrenSize()).toBe(4);
-
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          throw new Error('Lost selection');
-        }
-
-        expect(selection.anchor.key).toBe(text3.getKey());
-        expect(selection.anchor.offset).toBe(0);
-      });
-    });
-
-    test('remaps element-type selection pointing to next overflow', async () => {
-      editor = makeEditor();
-
-      await editor.update(() => {
-        const {overflowLeft, overflowRight, paragraph} =
-          $setupLeftRightOverflow();
-
-        const text1 = $createTextNode('1');
-        const text2 = $createTextNode('2');
-        const text3 = $createTextNode('3');
-        const text4 = $createTextNode('4');
-
-        overflowLeft.append(text1, text2);
-        text2.toggleFormat('bold');
-        overflowRight.append(text3, text4);
-        text4.toggleFormat('bold');
-
-        overflowRight.select(1, 1);
-
-        $mergeNext(overflowLeft);
-
-        expect(paragraph.getChildrenSize()).toBe(1);
-        expect(overflowLeft.getChildrenSize()).toBe(4);
-
-        const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
-          throw new Error('Lost selection');
-        }
-
-        // offset = overflowLeft children before merge (2) + original offset (1) = 3
-        expect(selection.anchor.key).toBe(overflowLeft.getKey());
-        expect(selection.anchor.offset).toBe(3);
-        expect(selection.focus.key).toBe(overflowLeft.getKey());
-        expect(selection.focus.offset).toBe(3);
       });
     });
   });

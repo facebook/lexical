@@ -263,6 +263,7 @@ export interface CollapsedSelectionFormat {
 export interface InputState {
   compositionPhase: 'idle' | 'composing' | 'ending-firefox' | 'ending-safari';
   compositionEndData: string;
+  compositionEndTimeStamp: number;
   hadOrphanedCompositionEvents: boolean;
 
   lastKeyDownTimeStamp: number;
@@ -291,6 +292,7 @@ export function createInputState(): InputState {
       timeStamp: 0,
     },
     compositionEndData: '',
+    compositionEndTimeStamp: 0,
     compositionPhase: 'idle',
     hadOrphanedCompositionEvents: false,
     handledSelectionCommandTimeoutId: null,

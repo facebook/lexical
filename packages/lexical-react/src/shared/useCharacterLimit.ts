@@ -184,11 +184,7 @@ export function $wrapOverflowedNodes(offset: number): void {
     // element child that is not the last child. findOffset counts those
     // separators (via $rootTextContent), so the DFS must count them too.
     const prevSibling = node.getPreviousSibling();
-    if (
-      prevSibling !== null &&
-      $isElementNode(prevSibling) &&
-      !prevSibling.isInline()
-    ) {
+    if ($isElementNode(prevSibling) && !prevSibling.isInline()) {
       accumulatedLength += 2;
     }
 

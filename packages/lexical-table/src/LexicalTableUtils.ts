@@ -566,7 +566,13 @@ export function $insertTableColumnAtNode(
           insertAfterCell = cell_;
           insertAfterCellRowStart = startRow_;
         } else {
-          loopRow.append($createTableCellNodeForInsertTableColumn(headerState));
+          // Every cell to the left in this row is covered by a rowSpan from an
+          // earlier row, so the new cell is the row's first real cell and must
+          // be prepended rather than appended to the end of the row.
+          $insertFirst(
+            loopRow,
+            $createTableCellNodeForInsertTableColumn(headerState),
+          );
           continue rowLoop;
         }
       }

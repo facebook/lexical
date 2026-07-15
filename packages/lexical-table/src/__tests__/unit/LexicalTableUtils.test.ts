@@ -7,9 +7,11 @@
  */
 
 import {
+  $computeTableMapSkipCellCheck,
   $createTableCellNode,
   $createTableNode,
   $createTableRowNode,
+  $insertTableColumnAtNode,
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
@@ -1059,6 +1061,82 @@ describe('$setTableColumnIsHeader', () => {
       ]);
       expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
         [true],
+      ]);
+    });
+  });
+});
+
+describe('$insertTableColumnAtNode', () => {
+  let editor: LexicalEditor;
+
+  beforeEach(() => {
+    editor = createEditor({
+      namespace: 'test',
+      nodes: [TableNode, TableCellNode, TableRowNode],
+      onError: (error: Error) => {
+        throw error;
+      },
+      theme: {},
+    });
+    editor._headless = true;
+  });
+
+  // Renders the resolved table grid (accounting for row/col spans) to a matrix
+  // of the text content at each grid coordinate, so column alignment across
+  // rows is asserted directly rather than via raw DOM child order.
+  function $getGridTexts(table: TableNode): string[][] {
+    const [tableMap] = $computeTableMapSkipCellCheck(table, null, null);
+    return tableMap.map(row => row.map(({cell}) => cell.getTextContent()));
+  }
+
+  test('inserts the new cell in the correct column for rows spanned by a rowSpan cell', () => {
+    // Grid:
+    //   row0: [A(rowSpan=2), B]
+    //   row1: [C]              (grid col 0 is covered by A's rowSpan)
+    //   row2: [D, E]
+    editor.update(
+      () => {
+        const mkCell = (text: string) =>
+          $createTableCellNode().append(
+            $createParagraphNode().append($createTextNode(text)),
+          );
+        const a = mkCell('A');
+        a.setRowSpan(2);
+        const row0 = $createTableRowNode().append(a, mkCell('B'));
+        const row1 = $createTableRowNode().append(mkCell('C'));
+        const row2 = $createTableRowNode().append(mkCell('D'), mkCell('E'));
+        const table = $createTableNode().append(row0, row1, row2);
+        $getRoot().append(table);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $getRoot().getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected table node');
+        }
+        const [tableMap] = $computeTableMapSkipCellCheck(table, null, null);
+        // Cell A sits at grid (row 0, column 0); insert a column after it.
+        const cellA = tableMap[0][0].cell;
+        $insertTableColumnAtNode(cellA, true, false);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $getRoot().getFirstChild();
+      if (!$isTableNode(table)) {
+        throw new Error('Expected table node');
+      }
+      // The inserted (empty) column must line up at grid column 1 in every row.
+      // Row 1 is entirely covered at column 0 by A's rowSpan, so the new cell
+      // has to be prepended before C rather than appended after it.
+      expect($getGridTexts(table)).toEqual([
+        ['A', '', 'B'],
+        ['A', '', 'C'],
+        ['D', '', 'E'],
       ]);
     });
   });

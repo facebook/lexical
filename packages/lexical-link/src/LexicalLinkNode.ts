@@ -64,6 +64,29 @@ export type SerializedLinkNode = Spread<
 
 type LinkHTMLElementType = HTMLAnchorElement | HTMLSpanElement;
 
+/**
+ * Resolves the anchor class name and the render-time default `target`/`rel`
+ * from `theme.link`, which may be a plain class-name string (historical) or an
+ * object with optional `class`, `target`, and `rel`. The defaults are applied
+ * only at render time (see {@link LinkNode.updateLinkDOM}) and never written to
+ * the node's serialized state.
+ */
+function getLinkThemeConfig(config: EditorConfig): {
+  className: string | undefined;
+  defaultTarget: null | string;
+  defaultRel: null | string;
+} {
+  const theme = config.theme.link;
+  if (theme != null && typeof theme === 'object') {
+    return {
+      className: theme.class,
+      defaultRel: theme.rel != null ? theme.rel : null,
+      defaultTarget: theme.target != null ? theme.target : null,
+    };
+  }
+  return {className: theme || undefined, defaultRel: null, defaultTarget: null};
+}
+
 const SUPPORTED_URL_PROTOCOLS = new Set([
   'http:',
   'https:',
@@ -119,7 +142,7 @@ export class LinkNode extends ElementNode {
   createDOM(config: EditorConfig): LinkHTMLElementType {
     const element = $getDocument().createElement('a');
     this.updateLinkDOM(null, element, config);
-    addClassNamesToElement(element, config.theme.link);
+    addClassNamesToElement(element, getLinkThemeConfig(config).className);
     return element;
   }
 
@@ -132,10 +155,17 @@ export class LinkNode extends ElementNode {
       if (!prevNode || prevNode.__url !== this.__url) {
         anchor.href = this.sanitizeUrl(this.__url);
       }
+      const {defaultTarget, defaultRel} = getLinkThemeConfig(config);
+      // Render-time defaults from the theme are applied only when the node has
+      // no explicit value for the attribute. This never mutates the node's
+      // serialized state, so it stays opt-in and non-destructive.
+      const defaults = {rel: defaultRel, target: defaultTarget, title: null};
       for (const attr of ['target', 'rel', 'title'] as const) {
         const key = `__${attr}` as const;
-        const value = this[key];
-        if (!prevNode || prevNode[key] !== value) {
+        const value = this[key] != null ? this[key] : defaults[attr];
+        const prevValue =
+          prevNode && prevNode[key] != null ? prevNode[key] : defaults[attr];
+        if (!prevNode || prevValue !== value) {
           if (value) {
             anchor[attr] = value;
           } else {

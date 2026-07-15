@@ -241,6 +241,42 @@ describe('LexicalLinkNode tests', () => {
       });
     });
 
+    test('LinkNode.createDOM() applies theme.link default target and rel', async () => {
+      const {editor} = testEnv;
+
+      const themeConfig = Object.freeze({
+        namespace: '',
+        theme: {
+          link: {
+            class: 'my-link-class',
+            rel: 'noopener noreferrer',
+            target: '_blank',
+          },
+        },
+      });
+
+      await editor.update(() => {
+        // A link with no explicit target/rel picks up the theme defaults at
+        // render time...
+        const linkNode = $createLinkNode('https://example.com/foo');
+        expect(linkNode.createDOM(themeConfig).outerHTML).toBe(
+          '<a href="https://example.com/foo" target="_blank" rel="noopener noreferrer" class="my-link-class"></a>',
+        );
+        // ...but the defaults are render-only and never written to state.
+        expect(linkNode.getTarget()).toBe(null);
+        expect(linkNode.getRel()).toBe(null);
+
+        // An explicit target/rel on the node overrides the theme defaults.
+        const explicitNode = $createLinkNode('https://example.com/bar', {
+          rel: 'noreferrer',
+          target: '_self',
+        });
+        expect(explicitNode.createDOM(themeConfig).outerHTML).toBe(
+          '<a href="https://example.com/bar" target="_self" rel="noreferrer" class="my-link-class"></a>',
+        );
+      });
+    });
+
     test('LinkNode.createDOM() sanitizes javascript: URLs', async () => {
       const {editor} = testEnv;
 

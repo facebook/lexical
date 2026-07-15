@@ -103,6 +103,34 @@ export type Klass<T extends LexicalNode> =
 
 export type EditorThemeClassName = string;
 
+/**
+ * Theme configuration for {@link LinkNode}. Either a plain class name string
+ * (applied to the rendered `<a>`, the historical behavior) or an object that
+ * additionally supplies render-time default `target`/`rel` attributes.
+ *
+ * The defaults are applied by {@link LinkNode} at DOM render time only when the
+ * node has no explicit value for that attribute. They are NOT written to the
+ * node's serialized state, so enabling them does not rewrite saved content and
+ * a node created without a `target` still round-trips as having no `target`.
+ * This makes "open links in a new tab by default" opt-in and non-destructive.
+ */
+export type LinkNodeThemeClasses =
+  | EditorThemeClassName
+  | {
+      /** Class name(s) applied to the rendered anchor element. */
+      class?: EditorThemeClassName;
+      /**
+       * Default `target` applied to links that have no explicit target
+       * (e.g. `'_blank'` to open links in a new tab by default).
+       */
+      target?: string;
+      /**
+       * Default `rel` applied to links that have no explicit rel
+       * (e.g. `'noopener noreferrer'`, recommended alongside `target: '_blank'`).
+       */
+      rel?: string;
+    };
+
 export interface TextNodeThemeClasses {
   base?: EditorThemeClassName;
   bold?: EditorThemeClassName;
@@ -191,7 +219,7 @@ export interface EditorThemeClasses {
   hr?: EditorThemeClassName;
   hrSelected?: EditorThemeClassName;
   image?: EditorThemeClassName;
-  link?: EditorThemeClassName;
+  link?: LinkNodeThemeClasses;
   list?: {
     ul?: EditorThemeClassName;
     ulDepth?: EditorThemeClassName[];

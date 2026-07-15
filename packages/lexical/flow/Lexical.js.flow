@@ -367,7 +367,9 @@ export type EditorThemeClasses = {
   tableCellHeader?: EditorThemeClassName,
   mark?: EditorThemeClassName,
   markOverlap?: EditorThemeClassName,
-  link?: EditorThemeClassName,
+  link?:
+    | EditorThemeClassName
+    | {class?: EditorThemeClassName, target?: string, rel?: string},
   quote?: EditorThemeClassName,
   code?: EditorThemeClassName,
   codeHighlight?: {[string]: EditorThemeClassName},

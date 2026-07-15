@@ -6,6 +6,7 @@
  *
  */
 
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -18,18 +19,17 @@ import {
   $setTableColumnIsHeader,
   $setTableRowIsHeader,
   TableCellHeaderStates,
-  TableCellNode,
-  TableNode,
-  TableRowNode,
+  TableExtension,
+  type TableNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  createEditor,
-  type LexicalEditor,
+  defineExtension,
+  type LexicalEditorWithDispose,
 } from 'lexical';
-import {beforeEach, describe, expect, test} from 'vitest';
+import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 function $createTestTable(rows: number, columns: number): TableNode {
   const tableNode = $createTableNode();
@@ -76,21 +76,28 @@ function $getHeaderStates(
   });
 }
 
+let editor: LexicalEditorWithDispose;
+
+beforeEach(() => {
+  editor = buildEditorFromExtensions(
+    defineExtension({
+      dependencies: [TableExtension],
+      name: 'LexicalTableUtils-test',
+    }),
+  );
+  editor.update(
+    () => {
+      $getRoot().clear();
+    },
+    {discrete: true},
+  );
+});
+
+afterEach(() => {
+  editor.dispose();
+});
+
 describe('$moveTableColumn', () => {
-  let editor: LexicalEditor;
-
-  beforeEach(() => {
-    editor = createEditor({
-      namespace: 'test',
-      nodes: [TableNode, TableCellNode, TableRowNode],
-      onError: (error: Error) => {
-        throw error;
-      },
-      theme: {},
-    });
-    editor._headless = true;
-  });
-
   test('moves a column forward', () => {
     editor.update(
       () => {
@@ -515,20 +522,6 @@ describe('$moveTableColumn', () => {
 });
 
 describe('$moveTableRow', () => {
-  let editor: LexicalEditor;
-
-  beforeEach(() => {
-    editor = createEditor({
-      namespace: 'test',
-      nodes: [TableNode, TableCellNode, TableRowNode],
-      onError: (error: Error) => {
-        throw error;
-      },
-      theme: {},
-    });
-    editor._headless = true;
-  });
-
   test('moves a row forward', () => {
     editor.update(
       () => {
@@ -993,20 +986,6 @@ describe('$moveTableRow', () => {
 });
 
 describe('$setTableRowIsHeader', () => {
-  let editor: LexicalEditor;
-
-  beforeEach(() => {
-    editor = createEditor({
-      namespace: 'test',
-      nodes: [TableNode, TableCellNode, TableRowNode],
-      onError: (error: Error) => {
-        throw error;
-      },
-      theme: {},
-    });
-    editor._headless = true;
-  });
-
   test('sets a row as header', () => {
     editor.update(
       () => {
@@ -1306,20 +1285,6 @@ describe('$setTableRowIsHeader', () => {
 });
 
 describe('$setTableColumnIsHeader', () => {
-  let editor: LexicalEditor;
-
-  beforeEach(() => {
-    editor = createEditor({
-      namespace: 'test',
-      nodes: [TableNode, TableCellNode, TableRowNode],
-      onError: (error: Error) => {
-        throw error;
-      },
-      theme: {},
-    });
-    editor._headless = true;
-  });
-
   test('sets a column as header', () => {
     editor.update(
       () => {

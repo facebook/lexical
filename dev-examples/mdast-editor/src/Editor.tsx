@@ -12,6 +12,7 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {TreeViewExtension} from '@lexical/react/TreeViewExtension';
+import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
 import {configExtension, defineExtension} from 'lexical';
 import {useState} from 'react';
 
@@ -21,6 +22,7 @@ import {
   markdownShareUrl,
   RESET_MARKDOWN_COMMAND,
 } from './extensions/MarkdownPersistenceExtension';
+import {MdastEditorExtension} from './extensions/MdastEditorExtension';
 import {ToolbarStateExtension} from './extensions/ToolbarStateExtension';
 import {MarkdownSourcePlugin} from './plugins/MarkdownSourcePlugin';
 import {ToolbarPlugin} from './plugins/ToolbarPlugin';
@@ -163,13 +165,19 @@ const mdastEditorExtension = defineExtension({
 });
 
 const paneButtonClass =
-  'cursor-pointer rounded-md border border-solid border-transparent bg-transparent px-2 py-0.5 text-[10px] font-medium tracking-wide text-zinc-500 normal-case transition-colors duration-150 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700';
+  'cursor-pointer rounded-md border border-solid border-transparent bg-transparent px-2 py-0.5 text-[10px] font-medium tracking-wide text-zinc-500 normal-case transition-colors duration-150 enabled:hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-40 dark:text-zinc-400 dark:enabled:hover:bg-zinc-700';
 
 function ResetButton() {
   const [editor] = useLexicalComposerContext();
+  const isEditable = useExtensionSignalValue(
+    MdastEditorExtension,
+    'isEditable',
+  );
   return (
     <button
       type="button"
+      // Reset replaces the document, so it's off while read-only.
+      disabled={!isEditable}
       onClick={() => editor.dispatchCommand(RESET_MARKDOWN_COMMAND, undefined)}
       className={paneButtonClass}>
       Reset

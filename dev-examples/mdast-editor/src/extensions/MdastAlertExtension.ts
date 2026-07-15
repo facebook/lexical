@@ -309,7 +309,9 @@ function $renderAlertTitle(
       event.preventDefault();
       if (openMenuEl !== null) {
         closeMenu();
-      } else {
+      } else if (editor.isEditable()) {
+        // Every menu entry mutates the document (type change or convert to
+        // blockquote), so the dropdown simply doesn't open in read-only.
         openMenu();
       }
     },
@@ -467,6 +469,9 @@ export const MdastAlertExtension = defineExtension({
     editor.registerCommand(
       INSERT_ALERT_COMMAND,
       alertType => {
+        if (!editor.isEditable()) {
+          return false;
+        }
         const quote = $setState(
           $createQuoteNode({shadowRoot: true}),
           alertTypeState,

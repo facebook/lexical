@@ -37,6 +37,7 @@ import {
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
+  $nodesOfType,
   $setSlot,
   $setState,
   COMMAND_PRIORITY_BEFORE_EDITOR,
@@ -145,9 +146,19 @@ export class CollapsibleNode extends ElementNode {
     // as intentionally discarded.
     void registerEventListener(toggle, 'click', event => {
       event.preventDefault();
-      editor.update(() => {
-        this.setOpen(open => !open);
-      });
+      if (editor.isEditable()) {
+        editor.update(() => {
+          this.setOpen(open => !open);
+        });
+      } else if (dom.getAttribute('data-open') === 'true') {
+        // Read-only: readers can still expand and collapse, but as VIEW
+        // state — the attribute alone, never the document (the exported
+        // Markdown must not change). The editable listener in `register`
+        // resyncs the attribute from the NodeState when editing resumes.
+        dom.removeAttribute('data-open');
+      } else {
+        dom.setAttribute('data-open', 'true');
+      }
     });
     row.appendChild(toggle);
     dom.appendChild(row);
@@ -377,9 +388,33 @@ export const MdastCollapsibleExtension = defineExtension({
   nodes: [CollapsibleNode],
   register: editor =>
     mergeRegister(
+      // Read-only toggles are view-only (see the chevron listener), so the
+      // data-open attributes may have diverged from the NodeState; resync
+      // every collapsible when editing resumes.
+      editor.registerEditableListener(editable => {
+        if (!editable) {
+          return;
+        }
+        editor.read(() => {
+          for (const node of $nodesOfType(CollapsibleNode)) {
+            const dom = editor.getElementByKey(node.getKey());
+            if (dom === null) {
+              continue;
+            }
+            if (node.isOpen()) {
+              dom.setAttribute('data-open', 'true');
+            } else {
+              dom.removeAttribute('data-open');
+            }
+          }
+        });
+      }),
       editor.registerCommand(
         INSERT_COLLAPSIBLE_COMMAND,
         () => {
+          if (!editor.isEditable()) {
+            return false;
+          }
           const collapsible = $createCollapsibleNode();
           $insertNodeToNearestRoot(collapsible);
           const summary = $getSlot(collapsible, 'summary');

@@ -28,12 +28,23 @@ import {
 } from 'lexical';
 import {describe, expect, onTestFinished, test, vi} from 'vitest';
 
-import {MdastAlertExtension} from '../../extensions/MdastAlertExtension';
-import {MdastCollapsibleExtension} from '../../extensions/MdastCollapsibleExtension';
+import {
+  INSERT_ALERT_COMMAND,
+  MdastAlertExtension,
+} from '../../extensions/MdastAlertExtension';
+import {
+  INSERT_COLLAPSIBLE_COMMAND,
+  MdastCollapsibleExtension,
+} from '../../extensions/MdastCollapsibleExtension';
 import {
   $isFootnoteDefinitionNode,
+  INSERT_FOOTNOTE_COMMAND,
   MdastFootnoteExtension,
 } from '../../extensions/MdastFootnoteExtension';
+import {
+  FORMAT_KBD_COMMAND,
+  MdastKbdExtension,
+} from '../../extensions/MdastKbdExtension';
 
 // The in-lexical chrome these extensions render — the collapsible's chevron
 // and the alert title's dropdown — is driven by real DOM events and, for the
@@ -64,6 +75,7 @@ function mountEditor(markdown: string): {
         MdastCollapsibleExtension,
         MdastAlertExtension,
         MdastFootnoteExtension,
+        MdastKbdExtension,
         RichTextExtension,
       ],
       name: '[mdast-editor-example-chrome-test]',
@@ -386,5 +398,85 @@ describe('footnotes', () => {
     await vi.waitFor(() => expect($anchorBlockText()).toContain('first'));
     backlinks[1].click();
     await vi.waitFor(() => expect($anchorBlockText()).toContain('second'));
+  });
+});
+
+describe('read-only', () => {
+  const DOC = [
+    '<details><summary>\nSummary\n</summary>\n\nBody\n</details>',
+    '',
+    '> [!NOTE]\n> alert body',
+    '',
+    'ref[^a]',
+    '',
+    '[^a]: note a',
+  ].join('\n');
+
+  test('the chevron still toggles, as view state only', async () => {
+    const {editor, root} = mountEditor(DOC);
+    const before = markdownOf(editor);
+    editor.setEditable(false);
+    const host = root.querySelector<HTMLElement>('.collapsible-container')!;
+    expect(host.getAttribute('data-open')).toBeNull();
+    root.querySelector<HTMLElement>('.collapsible-toggle')!.click();
+    // The view opens synchronously (no editor update involved)...
+    expect(host.getAttribute('data-open')).toBe('true');
+    // ...and the document did not change.
+    expect(markdownOf(editor)).toBe(before);
+    // When editing resumes, the attribute resyncs from the NodeState.
+    editor.setEditable(true);
+    await vi.waitFor(() => expect(host.getAttribute('data-open')).toBeNull());
+    expect(markdownOf(editor)).toBe(before);
+  });
+
+  test('the alert menu does not open', () => {
+    const {editor, root} = mountEditor(DOC);
+    editor.setEditable(false);
+    root.querySelector<HTMLElement>('.markdown-alert-title')!.click();
+    expect(root.querySelector('.markdown-alert-menu')).toBeNull();
+  });
+
+  test('footnote deletion is blocked', () => {
+    const {editor, root} = mountEditor(DOC);
+    const before = markdownOf(editor);
+    editor.setEditable(false);
+    root.querySelector<HTMLElement>('.footnote-def-remove')!.click();
+    expect(root.querySelector('.footnote-def')).not.toBeNull();
+    expect(root.querySelector('.footnote-ref')).not.toBeNull();
+    expect(markdownOf(editor)).toBe(before);
+  });
+
+  test('mutating commands are inert; ref navigation still moves the selection', async () => {
+    const {editor, root} = mountEditor(DOC);
+    editor.update(
+      () => {
+        $getRoot().selectEnd();
+      },
+      {discrete: true},
+    );
+    const before = markdownOf(editor);
+    editor.setEditable(false);
+    editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND, undefined);
+    editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined);
+    editor.dispatchCommand(INSERT_ALERT_COMMAND, 'note');
+    editor.dispatchCommand(FORMAT_KBD_COMMAND, undefined);
+    expect(markdownOf(editor)).toBe(before);
+    // The one thing read-only still allows: moving the selection.
+    root.querySelector<HTMLElement>('.footnote-ref a')!.click();
+    await vi.waitFor(() => {
+      const inDefinition = editor.read(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          return false;
+        }
+        const anchorNode = selection.anchor.getNode();
+        return (
+          $isFootnoteDefinitionNode(anchorNode) ||
+          anchorNode.getParents().some($isFootnoteDefinitionNode)
+        );
+      });
+      expect(inDefinition).toBe(true);
+    });
+    expect(markdownOf(editor)).toBe(before);
   });
 });

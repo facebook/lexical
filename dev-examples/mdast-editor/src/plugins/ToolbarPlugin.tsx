@@ -26,6 +26,7 @@ import {INSERT_COLLAPSIBLE_COMMAND} from '../extensions/MdastCollapsibleExtensio
 import {
   FORMAT_HEADING_COMMAND,
   FORMAT_PARAGRAPH_COMMAND,
+  MdastEditorExtension,
 } from '../extensions/MdastEditorExtension';
 import {INSERT_FOOTNOTE_COMMAND} from '../extensions/MdastFootnoteExtension';
 import {FORMAT_KBD_COMMAND} from '../extensions/MdastKbdExtension';
@@ -88,6 +89,10 @@ export function ToolbarPlugin() {
   const isBold = useExtensionSignalValue(ToolbarStateExtension, 'isBold');
   const isItalic = useExtensionSignalValue(ToolbarStateExtension, 'isItalic');
   const isCode = useExtensionSignalValue(ToolbarStateExtension, 'isCode');
+  const isEditable = useExtensionSignalValue(
+    MdastEditorExtension,
+    'isEditable',
+  );
 
   return (
     <div
@@ -97,6 +102,7 @@ export function ToolbarPlugin() {
       <select
         className="h-7 cursor-pointer appearance-none rounded-md border border-solid border-transparent bg-transparent px-2 text-sm font-medium text-zinc-700 transition-colors duration-150 hover:bg-zinc-200 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-zinc-200 dark:hover:bg-zinc-700"
         value={blockType}
+        disabled={!isEditable}
         onChange={e => applyBlockType(editor, e.target.value as BlockType)}
         aria-label="Block type">
         {BLOCK_TYPES.map(({label, value}) => (
@@ -108,7 +114,7 @@ export function ToolbarPlugin() {
       <Divider />
       <button
         type="button"
-        disabled={!canUndo}
+        disabled={!isEditable || !canUndo}
         onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
         className={`${buttonBase} ${buttonInactive} text-xs`}
         aria-label="Undo">
@@ -116,7 +122,7 @@ export function ToolbarPlugin() {
       </button>
       <button
         type="button"
-        disabled={!canRedo}
+        disabled={!isEditable || !canRedo}
         onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
         className={`${buttonBase} ${buttonInactive} text-xs`}
         aria-label="Redo">
@@ -125,6 +131,7 @@ export function ToolbarPlugin() {
       <Divider />
       <button
         type="button"
+        disabled={!isEditable}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')}
         className={`${buttonBase} ${isBold ? buttonActive : buttonInactive} text-sm font-bold`}
         aria-label="Bold"
@@ -133,6 +140,7 @@ export function ToolbarPlugin() {
       </button>
       <button
         type="button"
+        disabled={!isEditable}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic')}
         className={`${buttonBase} ${isItalic ? buttonActive : buttonInactive} text-sm italic`}
         aria-label="Italic"
@@ -141,6 +149,7 @@ export function ToolbarPlugin() {
       </button>
       <button
         type="button"
+        disabled={!isEditable}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code')}
         className={`${buttonBase} ${isCode ? buttonActive : buttonInactive} font-mono text-xs`}
         aria-label="Inline code"
@@ -149,6 +158,7 @@ export function ToolbarPlugin() {
       </button>
       <button
         type="button"
+        disabled={!isEditable}
         onClick={() => editor.dispatchCommand(FORMAT_KBD_COMMAND, undefined)}
         className={`${buttonBase} ${buttonInactive} font-mono text-xs`}
         aria-label="Keyboard key">
@@ -157,6 +167,7 @@ export function ToolbarPlugin() {
       <Divider />
       <button
         type="button"
+        disabled={!isEditable}
         onClick={() =>
           editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined)
         }
@@ -166,6 +177,7 @@ export function ToolbarPlugin() {
       </button>
       <button
         type="button"
+        disabled={!isEditable}
         onClick={() => editor.dispatchCommand(INSERT_ALERT_COMMAND, 'note')}
         className={`${buttonBase} ${buttonInactive} text-xs`}
         aria-label="Insert alert">
@@ -173,6 +185,7 @@ export function ToolbarPlugin() {
       </button>
       <button
         type="button"
+        disabled={!isEditable}
         onClick={() =>
           editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND, undefined)
         }
@@ -180,6 +193,17 @@ export function ToolbarPlugin() {
         aria-label="Insert footnote">
         ^ Note
       </button>
+      <div className="ml-auto flex items-center">
+        <Divider />
+        <button
+          type="button"
+          onClick={() => editor.setEditable(!editor.isEditable())}
+          className={`${buttonBase} ${isEditable ? buttonInactive : buttonActive} text-xs whitespace-nowrap`}
+          aria-label="Toggle read-only mode"
+          aria-pressed={!isEditable}>
+          {isEditable ? 'Read-only' : 'Read-only ✓'}
+        </button>
+      </div>
     </div>
   );
 }

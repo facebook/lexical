@@ -745,6 +745,34 @@ describe('footnotes', () => {
   });
 });
 
+describe('read-only', () => {
+  it('mutating commands are inert on a read-only editor', () => {
+    using editor = createEditor();
+    editor.update(
+      () => {
+        $convertFromMarkdownString('hello[^a]\n\n[^a]: note');
+        $getRoot().selectEnd();
+      },
+      {discrete: true},
+    );
+    editor.setEditable(false);
+    const before = editor.read(() => $convertToMarkdownString());
+    editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND, undefined);
+    editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined);
+    editor.dispatchCommand(INSERT_ALERT_COMMAND, 'note');
+    editor.dispatchCommand(FORMAT_KBD_COMMAND, undefined);
+    expect(editor.read(() => $convertToMarkdownString())).toBe(before);
+    // Selection changes stay allowed.
+    editor.update(
+      () => {
+        $getRoot().selectStart();
+      },
+      {discrete: true},
+    );
+    expect(editor.read(() => $convertToMarkdownString())).toBe(before);
+  });
+});
+
 describe('HtmlTextFormatExtension', () => {
   it('round-trips the formats Markdown cannot express', () => {
     const source =

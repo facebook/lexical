@@ -504,9 +504,13 @@ export class FootnoteDefinitionNode extends ElementNode {
     // as intentionally discarded.
     void registerEventListener(remove, 'click', event => {
       event.preventDefault();
-      editor.update(() => {
-        $removeFootnoteDefinition(this.getLatest());
-      });
+      // Deleting a definition (and its refs) is a document change; the
+      // button is hidden in read-only via CSS, but guard anyway.
+      if (editor.isEditable()) {
+        editor.update(() => {
+          $removeFootnoteDefinition(this.getLatest());
+        });
+      }
     });
     marker.append(remove);
     dom.append(marker);
@@ -1153,6 +1157,7 @@ export const MdastFootnoteExtension = defineExtension({
         KEY_DOWN_COMMAND,
         event => {
           if (
+            editor.isEditable() &&
             isExactShortcutMatch(event, 'f', {
               altKey: true,
               ctrlKey: !IS_APPLE,
@@ -1184,7 +1189,7 @@ export const MdastFootnoteExtension = defineExtension({
         INSERT_FOOTNOTE_COMMAND,
         () => {
           const selection = $getSelection();
-          if (!$isRangeSelection(selection)) {
+          if (!editor.isEditable() || !$isRangeSelection(selection)) {
             return false;
           }
           let label = selection.getTextContent().trim();

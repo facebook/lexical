@@ -400,3 +400,17 @@ br[data-lexical-managed-linebreak] + .footnote-def-backlinks {
   border-color: rgb(82 82 91);
   background: rgb(39 39 42);
 }
+
+/* Read-only mode (the editor root carries contenteditable="false"): chrome
+   that would change the document hides or loses its affordance. Navigation
+   chrome (footnote refs and backlinks) and the collapsible chevron (a
+   view-only toggle in read-only) stay live. */
+[data-lexical-editor][contenteditable='false'] .footnote-def-remove {
+  display: none;
+}
+[data-lexical-editor][contenteditable='false'] .markdown-alert-title {
+  cursor: default;
+}
+[data-lexical-editor][contenteditable='false'] .markdown-alert-title::after {
+  content: none;
+}

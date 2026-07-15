@@ -17,6 +17,7 @@ import {
   computed,
   EditorStateExtension,
   TabIndentationExtension,
+  WatchEditableExtension,
 } from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {CheckListExtension, ListExtension} from '@lexical/list';
@@ -80,6 +81,13 @@ export const FORMAT_HEADING_COMMAND: LexicalCommand<HeadingTagType> =
   createCommand('FORMAT_HEADING_COMMAND');
 
 export interface MdastEditorOutput {
+  /**
+   * A signal mirroring `editor.isEditable()`. The example's chrome (the
+   * toolbar, the Reset button, the Markdown source pane) reads it to
+   * disable everything that would change the document while the editor is
+   * read-only — where the only allowed changes are to the selection.
+   */
+  isEditable: ReadonlySignal<boolean>;
   /** A signal observing the editor's contents as a Markdown string. */
   markdown: ReadonlySignal<string>;
 }
@@ -101,6 +109,7 @@ export const MdastEditorExtension = defineExtension({
   build(editor, _config, state): MdastEditorOutput {
     const editorState = state.getDependency(EditorStateExtension).output;
     return {
+      isEditable: state.getDependency(WatchEditableExtension).output,
       markdown: computed(() =>
         editorState.value.read(() => $convertToMarkdownString(), {editor}),
       ),
@@ -139,6 +148,7 @@ export const MdastEditorExtension = defineExtension({
     HistoryExtension,
     TabIndentationExtension,
     EditorStateExtension,
+    WatchEditableExtension,
     // Route HTML paste through the same DOMImportExtension rules that
     // serve Markdown import (the default clipboard handler still uses the
     // legacy `$generateNodesFromDOM`), so pasted `<details>`, `<kbd>`, and
@@ -166,7 +176,7 @@ export const MdastEditorExtension = defineExtension({
         FORMAT_PARAGRAPH_COMMAND,
         () => {
           const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
+          if (editor.isEditable() && $isRangeSelection(selection)) {
             $setBlocksType(selection, () => $createParagraphNode());
           }
           return true;
@@ -177,7 +187,7 @@ export const MdastEditorExtension = defineExtension({
         FORMAT_HEADING_COMMAND,
         tag => {
           const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
+          if (editor.isEditable() && $isRangeSelection(selection)) {
             $setBlocksType(selection, () => $createHeadingNode(tag));
           }
           return true;

@@ -155,7 +155,7 @@ export const MdastKbdExtension = defineExtension({
       FORMAT_KBD_COMMAND,
       () => {
         const selection = $getSelection();
-        if (!$isRangeSelection(selection)) {
+        if (!editor.isEditable() || !$isRangeSelection(selection)) {
           return false;
         }
         const kbd = $findMatchingParent(selection.anchor.getNode(), $isKbdNode);

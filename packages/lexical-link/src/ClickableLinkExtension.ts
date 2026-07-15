@@ -22,7 +22,7 @@ import {
 } from 'lexical';
 
 import {LinkExtension} from './LexicalLinkExtension';
-import {$isLinkNode} from './LexicalLinkNode';
+import {$isAutoLinkNode, $isLinkNode} from './LexicalLinkNode';
 
 function findMatchingDOM<T extends Node>(
   startNode: Node,
@@ -63,12 +63,15 @@ export function registerClickableLink(
 
     let url = null;
     let urlTarget = null;
+    let isUnlinkedAutolink = false;
     nearestEditor.update(() => {
       const clickedNode = $getNearestNodeFromDOMNode(target);
       if (clickedNode !== null) {
         const maybeLinkNode = $findMatchingParent(clickedNode, $isElementNode);
         if (!stores.disabled.peek()) {
           if ($isLinkNode(maybeLinkNode)) {
+            isUnlinkedAutolink =
+              $isAutoLinkNode(maybeLinkNode) && maybeLinkNode.getIsUnlinked();
             url = maybeLinkNode.sanitizeUrl(maybeLinkNode.getURL());
             urlTarget = maybeLinkNode.getTarget();
           } else {
@@ -82,7 +85,7 @@ export function registerClickableLink(
       }
     });
 
-    if (url === null || url === '') {
+    if (url === null || url === '' || isUnlinkedAutolink) {
       return;
     }
 

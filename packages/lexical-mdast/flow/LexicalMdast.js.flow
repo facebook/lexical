@@ -238,8 +238,12 @@ declare export var MdastHtmlExtension: LexicalExtension<
 >;
 // Parts are raw HTML strings or mdast content (unknown to Flow, see
 // MdastNode above); the result is an mdast node.
+export type RawHtmlBlockPart =
+  | string
+  | Array<unknown>
+  | {flow: Array<unknown>};
 declare export function rawHtmlBlock(
-  ...parts: Array<string | Array<unknown> | {flow: Array<unknown>}>
+  ...parts: Array<RawHtmlBlockPart>
 ): MdastNode;
 declare export var $exportViaDOM: MdastExportHandler;
 // Context state handles for @lexical/html's $getRenderContextValue /

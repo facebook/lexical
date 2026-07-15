@@ -218,10 +218,20 @@ The **body** blocks
   re-parse. For hand-written encodings, `rawHtmlBlock(...parts)` builds
   the same kind of node from a template of raw tag strings, embedded
   Markdown phrasing, and `{flow}` block runs.
-- **Context states**: `RenderContextMarkdownExport` lets `exportDOM`
-  diverge per destination (Markdown vs the HTML clipboard), and
-  `ImportContextMarkdown` lets a DOM rule distinguish Markdown import from
-  HTML paste.
+- **Context states**: the Markdown pipeline runs under the same
+  context-record mechanism as the `@lexical/html` import/render pipelines.
+  The whole import walk runs with `ImportContextMarkdown` set (so a DOM
+  rule can distinguish Markdown import from HTML paste); mdast import
+  handlers read ambient state with `$getImportContextValue` and layer
+  state for their subtree with `$withImportContext` around
+  `ctx.importChildren` — visible to nested handlers and to DOM-rule
+  sessions opened for raw HTML in that subtree, and to nothing outside
+  it. On export, `RenderContextMarkdownExport` lets `exportDOM` diverge
+  per destination (Markdown vs the HTML clipboard), and selection exports
+  (`$convertSelectionToMarkdownString`) run under
+  `RenderContextMarkdownSelection` carrying the selection, so a
+  contributed to-markdown handler that appends end-of-document data can
+  scope its output to a clipboard copy.
 
 A complete HTML-encoded construct is one DOM import rule (which then also
 serves HTML paste) plus one export rule:

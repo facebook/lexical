@@ -262,7 +262,6 @@ export function $isScrollableTablesActive(
   return scrollableEditors.has(editor);
 }
 
-/** Whether the sticky scrollbar is enabled for the given editor. */
 export function $isStickyScrollbarActive(
   editor: LexicalEditor = $getEditor(),
 ): boolean {
@@ -285,7 +284,6 @@ export function setScrollableTablesActive(
   }
 }
 
-/** Toggle the sticky scrollbar flag for the given editor. */
 export function setStickyScrollbarActive(
   editor: LexicalEditor,
   active: boolean,

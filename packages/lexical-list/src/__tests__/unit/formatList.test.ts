@@ -638,6 +638,37 @@ describe('ListItemNode.collapseAtStart', () => {
     });
   });
 
+  test('split preserves list type', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const item2 = $createListItemNode().append($createTextNode('second'));
+        const listNode = $createListNode('number').append(
+          $createListItemNode().append($createTextNode('first')),
+          item2,
+          $createListItemNode().append($createTextNode('third')),
+        );
+        root.append(listNode);
+        const selection = item2.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        item2.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(3);
+      invariant($isListNode(children[0]), 'Expected first ListNode');
+      expect(children[0].getListType()).toBe('number');
+      invariant($isListNode(children[2]), 'Expected second ListNode');
+      expect(children[2].getListType()).toBe('number');
+    });
+  });
+
   test('last item converts to paragraph without splitting', () => {
     using editor = buildEditorFromExtensions(collapseTestExtension);
 
@@ -669,7 +700,7 @@ describe('ListItemNode.collapseAtStart', () => {
     });
   });
 
-  test('empty middle item is removed', () => {
+  test('empty middle item converts to empty paragraph and splits list', () => {
     using editor = buildEditorFromExtensions(collapseTestExtension);
 
     editor.update(
@@ -692,11 +723,15 @@ describe('ListItemNode.collapseAtStart', () => {
 
     editor.read(() => {
       const children = $getRoot().getChildren();
-      expect(children).toHaveLength(1);
+      expect(children).toHaveLength(3);
       invariant($isListNode(children[0]), 'Expected ListNode');
-      expect(children[0].getChildrenSize()).toBe(2);
+      expect(children[0].getChildrenSize()).toBe(1);
       expect(children[0].getFirstChildOrThrow().getTextContent()).toBe('first');
-      expect(children[0].getLastChildOrThrow().getTextContent()).toBe('third');
+      invariant($isParagraphNode(children[1]), 'Expected ParagraphNode');
+      expect(children[1].getTextContent()).toBe('');
+      invariant($isListNode(children[2]), 'Expected ListNode');
+      expect(children[2].getChildrenSize()).toBe(1);
+      expect(children[2].getFirstChildOrThrow().getTextContent()).toBe('third');
 
       const selection = $getSelection();
       invariant($isRangeSelection(selection), 'Expected RangeSelection');

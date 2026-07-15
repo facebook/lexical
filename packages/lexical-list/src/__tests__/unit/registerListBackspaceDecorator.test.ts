@@ -227,12 +227,11 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
     });
   });
 
-  describe('returns false (defers to deleteCharacter / collapseAtStart)', () => {
+  describe('first item converts to paragraph via collapseAtStart', () => {
     test('no decorator before the list', () => {
       using editor = buildEditorFromExtensions(testExtension);
 
-      let handled = true;
-      const event = backspaceEvent();
+      let handled = false;
       editor.update(
         () => {
           const root = $getRoot();
@@ -246,13 +245,30 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
           const list = $createListNode('bullet').append(firstItem);
           root.append(paragraph, list);
           firstItem.select(0, 0);
-          handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
+          handled = editor.dispatchCommand(
+            KEY_BACKSPACE_COMMAND,
+            backspaceEvent(),
+          );
         },
         {discrete: true},
       );
 
-      expect(handled).toBe(false);
-      expect(event.defaultPrevented).toBe(false);
+      expect(handled).toBe(true);
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        expect(children).toHaveLength(2);
+        invariant(
+          $isParagraphNode(children[0]),
+          'Expected intro ParagraphNode',
+        );
+        expect(children[0].getTextContent()).toBe('intro');
+        invariant(
+          $isParagraphNode(children[1]),
+          'Expected converted ParagraphNode',
+        );
+        expect(children[1].getTextContent()).toBe('first');
+      });
     });
 
     test('caret on the second list item — converts to paragraph via collapseAtStart', () => {
@@ -329,10 +345,10 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
       });
     });
 
-    test('nested list — no decorator before the inner list', () => {
+    test('nested list — outdents inner item', () => {
       using editor = buildEditorFromExtensions(testExtension);
 
-      let handled = true;
+      let handled = false;
       editor.update(
         () => {
           const root = $getRoot();
@@ -354,13 +370,13 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
         {discrete: true},
       );
 
-      expect(handled).toBe(false);
+      expect(handled).toBe(true);
     });
 
     test('isolated decorator before the list', () => {
       using editor = buildEditorFromExtensions(testExtension);
 
-      let handled = true;
+      let handled = false;
       editor.update(
         () => {
           const root = $getRoot();
@@ -380,13 +396,24 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
         {discrete: true},
       );
 
-      expect(handled).toBe(false);
+      expect(handled).toBe(true);
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        expect(children).toHaveLength(2);
+        expect(children[0]).toBeInstanceOf(IsolatedTestDecoratorNode);
+        invariant(
+          $isParagraphNode(children[1]),
+          'Expected converted ParagraphNode',
+        );
+        expect(children[1].getTextContent()).toBe('first');
+      });
     });
 
-    test('empty first list item — defers to core', () => {
+    test('empty first list item — converts to empty paragraph', () => {
       using editor = buildEditorFromExtensions(testExtension);
 
-      let handled = true;
+      let handled = false;
       editor.update(
         () => {
           const root = $getRoot();
@@ -407,7 +434,22 @@ describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
         {discrete: true},
       );
 
-      expect(handled).toBe(false);
+      expect(handled).toBe(true);
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        expect(children).toHaveLength(3);
+        expect(children[0]).toBeInstanceOf(TestDecoratorNode);
+        invariant(
+          $isParagraphNode(children[1]),
+          'Expected empty ParagraphNode',
+        );
+        expect(children[1].getTextContent()).toBe('');
+        invariant($isListNode(children[2]), 'Expected remaining ListNode');
+        expect(children[2].getFirstChildOrThrow().getTextContent()).toBe(
+          'second',
+        );
+      });
     });
   });
 });

@@ -21,6 +21,7 @@ import {
   KEY_BACKSPACE_COMMAND,
   type LexicalCommand,
   type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
   type NodeKey,
   TextNode,
@@ -104,11 +105,6 @@ export function registerList(
       },
       COMMAND_PRIORITY_LOW,
     ),
-    // Intercepts Backspace at the start of a list item before the rich-text
-    // handler at COMMAND_PRIORITY_EDITOR calls deleteCharacter. Handles two
-    // cases: (1) decorator-adjacent first items (#5072) and (2) non-first
-    // list items at offset 0, which deleteCharacter would merge with the
-    // previous sibling instead of routing through collapseAtStart.
     editor.registerCommand(
       KEY_BACKSPACE_COMMAND,
       event => {
@@ -117,33 +113,27 @@ export function registerList(
           return true;
         }
         const selection = $getSelection();
-        if ($isRangeSelection(selection) && selection.isCollapsed()) {
-          const {anchor} = selection;
-          if (anchor.offset === 0) {
-            let atStart = true;
-            let current = anchor.getNode();
-            while (!$isListItemNode(current)) {
-              if (current.getPreviousSibling() !== null) {
-                atStart = false;
-                break;
-              }
-              const parent = current.getParent();
-              if (parent === null) {
-                atStart = false;
-                break;
-              }
-              current = parent;
-            }
-            if (
-              atStart &&
-              $isListItemNode(current) &&
-              current.getPreviousSibling() !== null
-            ) {
-              current.collapseAtStart(selection);
-              event.preventDefault();
-              return true;
-            }
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return false;
+        }
+        const {anchor} = selection;
+        if (anchor.offset !== 0) {
+          return false;
+        }
+        let current: LexicalNode = anchor.getNode();
+        while (!$isListItemNode(current)) {
+          if (current.getPreviousSibling() !== null) {
+            return false;
           }
+          const parent = current.getParent();
+          if (parent === null) {
+            return false;
+          }
+          current = parent;
+        }
+        if ($isListItemNode(current) && current.collapseAtStart(selection)) {
+          event.preventDefault();
+          return true;
         }
         return false;
       },

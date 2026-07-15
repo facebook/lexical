@@ -397,9 +397,9 @@ export class ListItemNode extends ElementNode {
     return newElement;
   }
 
-  collapseAtStart(selection: RangeSelection): true {
+  collapseAtStart(selection: RangeSelection): boolean {
     if (isNestedListNode(this)) {
-      return true;
+      return false;
     }
 
     const listNode = this.getParentOrThrow();
@@ -407,16 +407,6 @@ export class ListItemNode extends ElementNode {
 
     if ($isListItemNode(listNodeParent)) {
       $handleOutdent(this);
-      return true;
-    }
-
-    const previousSibling = this.getPreviousSibling();
-    if (this.getTextContentSize() === 0 && $isListItemNode(previousSibling)) {
-      this.remove();
-      if (listNode.getChildrenSize() === 0) {
-        listNode.remove();
-      }
-      previousSibling.selectEnd();
       return true;
     }
 
@@ -433,7 +423,7 @@ export class ListItemNode extends ElementNode {
     if (listNode.getChildrenSize() === 0) {
       listNode.remove();
     }
-    paragraph.select(0, 0);
+    paragraph.selectStart();
 
     return true;
   }

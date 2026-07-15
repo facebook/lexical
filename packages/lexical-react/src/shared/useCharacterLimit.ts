@@ -180,6 +180,18 @@ export function $wrapOverflowedNodes(offset: number): void {
   for (let i = 0; i < dfsNodesLength; i += 1) {
     const {node} = dfsNodes[i];
 
+    // ElementNode.getTextContent() inserts '\n\n' after each non-inline
+    // element child that is not the last child. findOffset counts those
+    // separators (via $rootTextContent), so the DFS must count them too.
+    const prevSibling = node.getPreviousSibling();
+    if (
+      prevSibling !== null &&
+      $isElementNode(prevSibling) &&
+      !prevSibling.isInline()
+    ) {
+      accumulatedLength += 2;
+    }
+
     // Slot value roots (a non-inline DecoratorNode slotted into a host) are
     // leaf nodes with __parent === null; wrapping them in OverflowNode would
     // call node.replace() and throw, so they stay out of the wrap loop. Their

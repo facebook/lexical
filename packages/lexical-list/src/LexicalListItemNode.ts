@@ -398,7 +398,7 @@ export class ListItemNode extends ElementNode {
   }
 
   collapseAtStart(selection: RangeSelection): boolean {
-    if (isNestedListNode(this)) {
+    if ($isNestedListNode(this)) {
       return false;
     }
 

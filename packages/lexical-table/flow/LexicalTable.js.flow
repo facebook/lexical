@@ -307,6 +307,8 @@ declare export function $deleteTableColumn__EXPERIMENTAL(): void;
 
 declare export function $unmergeCell(): void;
 
+declare export function $unmergeCellNode(cellNode: TableCellNode): void;
+
 declare export function $computeTableMap(
   table: TableNode,
   cellA: TableCellNode,
@@ -476,6 +478,12 @@ declare export function $moveTableColumn(
   tableNode: TableNode,
   originColumn: number,
   targetColumn: number,
+): void;
+
+declare export function $moveTableRow(
+  tableNode: TableNode,
+  originRow: number,
+  targetRow: number,
 ): void;
 
 declare export function $mergeCells(cellNodes: TableCellNode[]): TableCellNode | null;

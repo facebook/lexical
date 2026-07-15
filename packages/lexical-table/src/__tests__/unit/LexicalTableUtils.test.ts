@@ -6,6 +6,7 @@
  *
  */
 
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -14,21 +15,22 @@ import {
   $isTableNode,
   $isTableRowNode,
   $moveTableColumn,
+  $moveTableRow,
   $setTableColumnIsHeader,
   $setTableRowIsHeader,
   TableCellHeaderStates,
-  TableCellNode,
-  TableNode,
-  TableRowNode,
+  TableExtension,
+  type TableNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  createEditor,
-  type LexicalEditor,
+  defineExtension,
+  type LexicalEditorWithDispose,
 } from 'lexical';
-import {beforeEach, describe, expect, test} from 'vitest';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
+import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 function $createTestTable(rows: number, columns: number): TableNode {
   const tableNode = $createTableNode();
@@ -45,51 +47,48 @@ function $createTestTable(rows: number, columns: number): TableNode {
 }
 
 function $getTableCellTexts(tableNode: TableNode): string[][] {
-  return tableNode.getChildren().map(row => {
-    if (!$isTableRowNode(row)) {
-      return [];
-    }
-    return row.getChildren().map(cell => {
-      if (!$isTableCellNode(cell)) {
-        return '';
-      }
-      return cell.getTextContent();
-    });
-  });
+  return tableNode.getChildren().map(row =>
+    $assertNodeType(row, $isTableRowNode)
+      .getChildren()
+      .map(cell => $assertNodeType(cell, $isTableCellNode).getTextContent()),
+  );
 }
 
 function $getHeaderStates(
   table: TableNode,
   flag: (typeof TableCellHeaderStates)[keyof typeof TableCellHeaderStates],
 ): boolean[][] {
-  return table.getChildren().map(row => {
-    if (!$isTableRowNode(row)) {
-      return [];
-    }
-    return row.getChildren().map(cell => {
-      if (!$isTableCellNode(cell)) {
-        return false;
-      }
-      return cell.hasHeaderState(flag);
-    });
-  });
+  return table.getChildren().map(row =>
+    $assertNodeType(row, $isTableRowNode)
+      .getChildren()
+      .map(cell =>
+        $assertNodeType(cell, $isTableCellNode).hasHeaderState(flag),
+      ),
+  );
 }
 
+let editor: LexicalEditorWithDispose;
+
+beforeEach(() => {
+  editor = buildEditorFromExtensions(
+    defineExtension({
+      dependencies: [TableExtension],
+      name: 'LexicalTableUtils-test',
+    }),
+  );
+  editor.update(
+    () => {
+      $getRoot().clear();
+    },
+    {discrete: true},
+  );
+});
+
+afterEach(() => {
+  editor.dispose();
+});
+
 describe('$moveTableColumn', () => {
-  let editor: LexicalEditor;
-
-  beforeEach(() => {
-    editor = createEditor({
-      namespace: 'test',
-      nodes: [TableNode, TableCellNode, TableRowNode],
-      onError: (error: Error) => {
-        throw error;
-      },
-      theme: {},
-    });
-    editor._headless = true;
-  });
-
   test('moves a column forward', () => {
     editor.update(
       () => {
@@ -101,20 +100,14 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $moveTableColumn(table, 0, 2);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getTableCellTexts(table)).toEqual([
         ['r0c1', 'r0c2', 'r0c0', 'r0c3'],
         ['r1c1', 'r1c2', 'r1c0', 'r1c3'],
@@ -133,20 +126,14 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $moveTableColumn(table, 3, 1);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getTableCellTexts(table)).toEqual([
         ['r0c0', 'r0c3', 'r0c1', 'r0c2'],
         ['r1c0', 'r1c3', 'r1c1', 'r1c2'],
@@ -165,20 +152,14 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $moveTableColumn(table, 2, 0);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getTableCellTexts(table)).toEqual([
         ['r0c2', 'r0c0', 'r0c1'],
         ['r1c2', 'r1c0', 'r1c1'],
@@ -197,20 +178,14 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $moveTableColumn(table, 0, 2);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getTableCellTexts(table)).toEqual([
         ['r0c1', 'r0c2', 'r0c0'],
         ['r1c1', 'r1c2', 'r1c0'],
@@ -229,20 +204,14 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $moveTableColumn(table, 1, 1);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getTableCellTexts(table)).toEqual([
         ['r0c0', 'r0c1', 'r0c2'],
         ['r1c0', 'r1c1', 'r1c2'],
@@ -261,20 +230,14 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $moveTableColumn(table, 5, 0);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getTableCellTexts(table)).toEqual([
         ['r0c0', 'r0c1', 'r0c2'],
         ['r1c0', 'r1c1', 'r1c2'],
@@ -293,20 +256,14 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $moveTableColumn(table, 0, 10);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getTableCellTexts(table)).toEqual([
         ['r0c0', 'r0c1', 'r0c2'],
         ['r1c0', 'r1c1', 'r1c2'],
@@ -325,20 +282,14 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $moveTableColumn(table, -1, 0);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getTableCellTexts(table)).toEqual([
         ['r0c0', 'r0c1', 'r0c2'],
         ['r1c0', 'r1c1', 'r1c2'],
@@ -359,20 +310,14 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $moveTableColumn(table, 0, 2);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect(table.getColWidths()).toEqual([200, 300, 100, 400]);
     });
   });
@@ -413,32 +358,22 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $moveTableColumn(table, 0, 1);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       // Should be unchanged because table has merged cells
       const rows = table.getChildren();
-      if (!$isTableRowNode(rows[0])) {
-        throw new Error('Expected row node');
-      }
-      const firstRowCells = rows[0].getChildren();
+      const firstRow = $assertNodeType(rows[0], $isTableRowNode);
+      const firstRowCells = firstRow.getChildren();
       expect(firstRowCells.length).toBe(2); // merged cell + normal cell
-      if (!$isTableCellNode(firstRowCells[0])) {
-        throw new Error('Expected cell node');
-      }
-      expect(firstRowCells[0].getColSpan()).toBe(2);
-      expect(firstRowCells[0].getTextContent()).toBe('merged');
+      const mergedCell = $assertNodeType(firstRowCells[0], $isTableCellNode);
+      expect(mergedCell.getColSpan()).toBe(2);
+      expect(mergedCell.getTextContent()).toBe('merged');
     });
   });
 
@@ -453,20 +388,14 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $moveTableColumn(table, 0, 1);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getTableCellTexts(table)).toEqual([
         ['r0c1', 'r0c0'],
         ['r1c1', 'r1c0'],
@@ -486,48 +415,406 @@ describe('$moveTableColumn', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $moveTableColumn(table, 1, 3);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       // Verify row and column count is preserved
       const rows = table.getChildren();
       expect(rows.length).toBe(3);
       rows.forEach(row => {
-        if (!$isTableRowNode(row)) {
-          throw new Error('Expected row node');
+        expect($assertNodeType(row, $isTableRowNode).getChildrenSize()).toBe(4);
+      });
+    });
+  });
+});
+
+describe('$moveTableRow', () => {
+  test('moves a row forward', () => {
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.append($createTestTable(4, 2));
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        $moveTableRow(table, 0, 2);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+      expect($getTableCellTexts(table)).toEqual([
+        ['r1c0', 'r1c1'],
+        ['r2c0', 'r2c1'],
+        ['r0c0', 'r0c1'],
+        ['r3c0', 'r3c1'],
+      ]);
+    });
+  });
+
+  test('moves a row backward', () => {
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.append($createTestTable(4, 2));
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        $moveTableRow(table, 3, 1);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+      expect($getTableCellTexts(table)).toEqual([
+        ['r0c0', 'r0c1'],
+        ['r3c0', 'r3c1'],
+        ['r1c0', 'r1c1'],
+        ['r2c0', 'r2c1'],
+      ]);
+    });
+  });
+
+  test('moves a row to the first position', () => {
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.append($createTestTable(4, 2));
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        $moveTableRow(table, 2, 0);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+      expect($getTableCellTexts(table)).toEqual([
+        ['r2c0', 'r2c1'],
+        ['r0c0', 'r0c1'],
+        ['r1c0', 'r1c1'],
+        ['r3c0', 'r3c1'],
+      ]);
+    });
+  });
+
+  test('moves a row to the last position', () => {
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.append($createTestTable(4, 2));
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        $moveTableRow(table, 0, 3);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+      expect($getTableCellTexts(table)).toEqual([
+        ['r1c0', 'r1c1'],
+        ['r2c0', 'r2c1'],
+        ['r3c0', 'r3c1'],
+        ['r0c0', 'r0c1'],
+      ]);
+    });
+  });
+
+  test('is a no-op when origin equals target', () => {
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.append($createTestTable(3, 2));
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        $moveTableRow(table, 1, 1);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+      expect($getTableCellTexts(table)).toEqual([
+        ['r0c0', 'r0c1'],
+        ['r1c0', 'r1c1'],
+        ['r2c0', 'r2c1'],
+      ]);
+    });
+  });
+
+  test('is a no-op when origin is out of bounds', () => {
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.append($createTestTable(3, 2));
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        $moveTableRow(table, 3, 0);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+      expect($getTableCellTexts(table)).toEqual([
+        ['r0c0', 'r0c1'],
+        ['r1c0', 'r1c1'],
+        ['r2c0', 'r2c1'],
+      ]);
+    });
+  });
+
+  test('is a no-op when target is out of bounds', () => {
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.append($createTestTable(3, 2));
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        $moveTableRow(table, 0, 3);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+      expect($getTableCellTexts(table)).toEqual([
+        ['r0c0', 'r0c1'],
+        ['r1c0', 'r1c1'],
+        ['r2c0', 'r2c1'],
+      ]);
+    });
+  });
+
+  test('is a no-op when origin is negative', () => {
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.append($createTestTable(3, 2));
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        $moveTableRow(table, -1, 1);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+      expect($getTableCellTexts(table)).toEqual([
+        ['r0c0', 'r0c1'],
+        ['r1c0', 'r1c1'],
+        ['r2c0', 'r2c1'],
+      ]);
+    });
+  });
+
+  test('does not modify table with merged cells', () => {
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const tableNode = $createTableNode();
+        // Row 0: cell spanning 2 columns, then a normal cell
+        const row0 = $createTableRowNode();
+        const mergedCell = $createTableCellNode();
+        mergedCell.setColSpan(2);
+        mergedCell.append(
+          $createParagraphNode().append($createTextNode('merged')),
+        );
+        const normalCell = $createTableCellNode();
+        normalCell.append(
+          $createParagraphNode().append($createTextNode('r0c2')),
+        );
+        row0.append(mergedCell, normalCell);
+
+        // Row 1: 3 normal cells
+        const row1 = $createTableRowNode();
+        for (let c = 0; c < 3; c++) {
+          const cell = $createTableCellNode();
+          cell.append(
+            $createParagraphNode().append($createTextNode(`r1c${c}`)),
+          );
+          row1.append(cell);
         }
-        expect(row.getChildrenSize()).toBe(4);
+
+        tableNode.append(row0, row1);
+        root.append(tableNode);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        $moveTableRow(table, 0, 1);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+      // Should be unchanged because table has merged cells
+      const rows = table.getChildren();
+      const firstRow = $assertNodeType(rows[0], $isTableRowNode);
+      const firstRowCells = firstRow.getChildren();
+      expect(firstRowCells.length).toBe(2); // merged cell + normal cell
+      const mergedCell = $assertNodeType(firstRowCells[0], $isTableCellNode);
+      expect(mergedCell.getColSpan()).toBe(2);
+      expect(mergedCell.getTextContent()).toBe('merged');
+    });
+  });
+
+  test('swaps adjacent rows', () => {
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.append($createTestTable(2, 3));
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        $moveTableRow(table, 0, 1);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+      expect($getTableCellTexts(table)).toEqual([
+        ['r1c0', 'r1c1', 'r1c2'],
+        ['r0c0', 'r0c1', 'r0c2'],
+      ]);
+    });
+  });
+
+  test('moves header cells along with the row', () => {
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const tableNode = $createTableNode();
+        for (let r = 0; r < 3; r++) {
+          const row = $createTableRowNode();
+          for (let c = 0; c < 2; c++) {
+            const cell = $createTableCellNode(
+              r === 0
+                ? TableCellHeaderStates.ROW
+                : TableCellHeaderStates.NO_STATUS,
+            );
+            cell.append(
+              $createParagraphNode().append($createTextNode(`r${r}c${c}`)),
+            );
+            row.append(cell);
+          }
+          tableNode.append(row);
+        }
+        root.append(tableNode);
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        $moveTableRow(table, 0, 2);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+      expect($getTableCellTexts(table)).toEqual([
+        ['r1c0', 'r1c1'],
+        ['r2c0', 'r2c1'],
+        ['r0c0', 'r0c1'],
+      ]);
+      const rows = table.getChildren();
+      const movedRow = $assertNodeType(rows[2], $isTableRowNode);
+      movedRow.getChildren().forEach(cell => {
+        expect($assertNodeType(cell, $isTableCellNode).getHeaderStyles()).toBe(
+          TableCellHeaderStates.ROW,
+        );
+      });
+    });
+  });
+
+  test('preserves table structure after move', () => {
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.append($createTestTable(4, 3));
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        $moveTableRow(table, 1, 3);
+      },
+      {discrete: true},
+    );
+
+    editor.read('latest', () => {
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+      // Verify row and column count is preserved
+      const rows = table.getChildren();
+      expect(rows.length).toBe(4);
+      rows.forEach(row => {
+        expect($assertNodeType(row, $isTableRowNode).getChildrenSize()).toBe(3);
       });
     });
   });
 });
 
 describe('$setTableRowIsHeader', () => {
-  let editor: LexicalEditor;
-
-  beforeEach(() => {
-    editor = createEditor({
-      namespace: 'test',
-      nodes: [TableNode, TableCellNode, TableRowNode],
-      onError: (error: Error) => {
-        throw error;
-      },
-      theme: {},
-    });
-    editor._headless = true;
-  });
-
   test('sets a row as header', () => {
     editor.update(
       () => {
@@ -538,20 +825,14 @@ describe('$setTableRowIsHeader', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $setTableRowIsHeader(table, 0, true);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
         [true, true, true],
         [false, false, false],
@@ -585,20 +866,14 @@ describe('$setTableRowIsHeader', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $setTableRowIsHeader(table, 0, false);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
         [false, false, false],
         [false, false, false],
@@ -624,20 +899,14 @@ describe('$setTableRowIsHeader', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $setTableRowIsHeader(table, 0, true);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
         [true, true],
       ]);
@@ -666,20 +935,14 @@ describe('$setTableRowIsHeader', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $setTableRowIsHeader(table, 0, true);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
         [true, true],
       ]);
@@ -711,20 +974,14 @@ describe('$setTableRowIsHeader', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $setTableRowIsHeader(table, 0, true);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
         [true, true],
         [false],
@@ -742,20 +999,14 @@ describe('$setTableRowIsHeader', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $setTableRowIsHeader(table, 1, true);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
         [false, false, false],
         [true, true, true],
@@ -775,10 +1026,10 @@ describe('$setTableRowIsHeader', () => {
     expect(() => {
       editor.update(
         () => {
-          const table = $getRoot().getFirstChild();
-          if (!$isTableNode(table)) {
-            throw new Error('Expected table node');
-          }
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
           $setTableRowIsHeader(table, 5, true);
         },
         {discrete: true},
@@ -802,20 +1053,14 @@ describe('$setTableRowIsHeader', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $setTableRowIsHeader(table, 0, false);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getHeaderStates(table, TableCellHeaderStates.ROW)).toEqual([
         [false],
       ]);
@@ -827,20 +1072,6 @@ describe('$setTableRowIsHeader', () => {
 });
 
 describe('$setTableColumnIsHeader', () => {
-  let editor: LexicalEditor;
-
-  beforeEach(() => {
-    editor = createEditor({
-      namespace: 'test',
-      nodes: [TableNode, TableCellNode, TableRowNode],
-      onError: (error: Error) => {
-        throw error;
-      },
-      theme: {},
-    });
-    editor._headless = true;
-  });
-
   test('sets a column as header', () => {
     editor.update(
       () => {
@@ -851,20 +1082,14 @@ describe('$setTableColumnIsHeader', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $setTableColumnIsHeader(table, 0, true);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getHeaderStates(table, TableCellHeaderStates.COLUMN)).toEqual([
         [true, false, false],
         [true, false, false],
@@ -893,20 +1118,14 @@ describe('$setTableColumnIsHeader', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $setTableColumnIsHeader(table, 0, false);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getHeaderStates(table, TableCellHeaderStates.COLUMN)).toEqual([
         [false, false],
         [false, false],
@@ -933,20 +1152,14 @@ describe('$setTableColumnIsHeader', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $setTableColumnIsHeader(table, 0, true);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getHeaderStates(table, TableCellHeaderStates.COLUMN)).toEqual([
         [true, false],
       ]);
@@ -981,20 +1194,14 @@ describe('$setTableColumnIsHeader', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $setTableColumnIsHeader(table, 0, true);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getHeaderStates(table, TableCellHeaderStates.COLUMN)).toEqual([
         [true, false],
         [false],
@@ -1013,10 +1220,10 @@ describe('$setTableColumnIsHeader', () => {
     expect(() => {
       editor.update(
         () => {
-          const table = $getRoot().getFirstChild();
-          if (!$isTableNode(table)) {
-            throw new Error('Expected table node');
-          }
+          const table = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isTableNode,
+          );
           $setTableColumnIsHeader(table, 5, true);
         },
         {discrete: true},
@@ -1040,20 +1247,14 @@ describe('$setTableColumnIsHeader', () => {
 
     editor.update(
       () => {
-        const table = $getRoot().getFirstChild();
-        if (!$isTableNode(table)) {
-          throw new Error('Expected table node');
-        }
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         $setTableColumnIsHeader(table, 0, false);
       },
       {discrete: true},
     );
 
     editor.read('latest', () => {
-      const table = $getRoot().getFirstChild();
-      if (!$isTableNode(table)) {
-        throw new Error('Expected table node');
-      }
+      const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
       expect($getHeaderStates(table, TableCellHeaderStates.COLUMN)).toEqual([
         [false],
       ]);

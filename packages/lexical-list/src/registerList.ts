@@ -21,6 +21,7 @@ import {
   KEY_BACKSPACE_COMMAND,
   type LexicalCommand,
   type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
   type NodeKey,
   TextNode,
@@ -104,14 +105,33 @@ export function registerList(
       },
       COMMAND_PRIORITY_LOW,
     ),
-    // Runs just before the rich-text handler at COMMAND_PRIORITY_EDITOR that
-    // calls deleteCharacter. Lower-priority handlers (link, mark, etc.) still
-    // see Backspace first; only the editor-priority merge-block path is what
-    // we intercept here.
     editor.registerCommand(
       KEY_BACKSPACE_COMMAND,
       event => {
         if ($handleListItemBackspaceAdjacentToDecorator()) {
+          event.preventDefault();
+          return true;
+        }
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          return false;
+        }
+        const {anchor} = selection;
+        if (anchor.offset !== 0) {
+          return false;
+        }
+        let current: LexicalNode = anchor.getNode();
+        while (!$isListItemNode(current)) {
+          if (current.getPreviousSibling() !== null) {
+            return false;
+          }
+          const parent = current.getParent();
+          if (parent === null) {
+            return false;
+          }
+          current = parent;
+        }
+        if ($isListItemNode(current) && current.collapseAtStart(selection)) {
           event.preventDefault();
           return true;
         }

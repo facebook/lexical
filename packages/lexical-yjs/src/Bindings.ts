@@ -64,14 +64,10 @@ export type ExcludedProperties = Map<Klass<LexicalNode>, Set<string>>;
 function createBaseBinding(
   editor: LexicalEditor,
   id: string,
-  doc: Doc | null | undefined,
+  doc: Doc,
   docMap: Map<string, Doc>,
   excludedProperties?: ExcludedProperties,
 ): BaseBinding {
-  invariant(
-    doc !== undefined && doc !== null,
-    'createBinding: doc is null or undefined',
-  );
   const binding = {
     clientID: doc.clientID,
     cursorHighlightSheet: null,
@@ -88,6 +84,46 @@ function createBaseBinding(
   return binding;
 }
 
+/** Options for {@link createYjsBinding}. */
+export interface CreateYjsBindingOptions {
+  editor: LexicalEditor;
+  /** Identifier for this binding, used as the key in `docMap`. */
+  id: string;
+  doc: Doc;
+  docMap: Map<string, Doc>;
+  excludedProperties?: ExcludedProperties;
+  /** The key used to look up the root `XmlText` shared type on the Yjs `Doc`. Defaults to `'root'`. */
+  rootName?: string;
+}
+
+/**
+ * Create a V1 Yjs {@link Binding} that connects a {@link LexicalEditor} to a
+ * Yjs `Doc` for real-time collaboration.
+ *
+ * For the legacy positional-argument API, see {@link createBinding}.
+ */
+export function createYjsBinding({
+  editor,
+  id,
+  doc,
+  docMap,
+  excludedProperties,
+  rootName = 'root',
+}: CreateYjsBindingOptions): Binding {
+  const rootXmlText = doc.get(rootName, XmlText) as XmlText;
+  const root: CollabElementNode = $createCollabElementNode(
+    rootXmlText,
+    null,
+    'root',
+  );
+  root._key = 'root';
+  return {
+    ...createBaseBinding(editor, id, doc, docMap, excludedProperties),
+    collabNodeMap: new Map(),
+    root,
+  };
+}
+
 export function createBinding(
   editor: LexicalEditor,
   provider: Provider,
@@ -100,18 +136,7 @@ export function createBinding(
     doc !== undefined && doc !== null,
     'createBinding: doc is null or undefined',
   );
-  const rootXmlText = doc.get('root', XmlText) as XmlText;
-  const root: CollabElementNode = $createCollabElementNode(
-    rootXmlText,
-    null,
-    'root',
-  );
-  root._key = 'root';
-  return {
-    ...createBaseBinding(editor, id, doc, docMap, excludedProperties),
-    collabNodeMap: new Map(),
-    root,
-  };
+  return createYjsBinding({doc, docMap, editor, excludedProperties, id});
 }
 
 export function createBindingV2__EXPERIMENTAL(

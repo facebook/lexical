@@ -273,7 +273,7 @@ const AppExtension = /* @__PURE__ */ defineExtension({
     MentionsExtension,
     /* @__PURE__ */ configExtension(LinkExtension, {validateUrl}),
     PlaygroundAutoLinkExtension,
-    ClickableLinkExtension,
+    /* @__PURE__ */ configExtension(ClickableLinkExtension, {newTab: true}),
     SelectionAlwaysOnDisplayExtension,
     /* @__PURE__ */ configExtension(SelectBlockExtension, {
       cascadeSelection: true,

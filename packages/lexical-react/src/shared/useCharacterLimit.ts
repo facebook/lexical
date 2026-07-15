@@ -266,6 +266,10 @@ export function $wrapOverflowedNodes(offset: number): void {
         }
 
         $mergePrevious(overflowNode);
+        const nextNode = overflowNode.getNextSibling();
+        if ($isOverflowNode(nextNode)) {
+          $mergePrevious(nextNode);
+        }
       }
     }
   }
@@ -303,7 +307,7 @@ export function $mergePrevious(overflowNode: OverflowNode): void {
     const anchor = selection.anchor;
     const anchorNode = anchor.getNode();
     const focus = selection.focus;
-    const focusNode = anchor.getNode();
+    const focusNode = focus.getNode();
 
     if (anchorNode.is(previousNode)) {
       anchor.set(overflowNode.getKey(), anchor.offset, 'element');

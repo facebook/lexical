@@ -1586,7 +1586,7 @@ export function scrollIntoViewIfNeeded(
   // caret in RTL text) return a degenerate or out-of-bounds selection rect —
   // Safari also reports such a collapsed caret as `selection.type === 'Range'`,
   // which routes execution here (see the `#1482` comment in
-  // `updateDOMSelection`). Feeding that bogus rect to the scroller jumps the
+  // `$updateDOMSelection`). Feeding that bogus rect to the scroller jumps the
   // viewport up on every keystroke. Skip the scroll when the selection rect lies
   // entirely above rootElement. See #2495.
   const rootRect = rootElement.getBoundingClientRect();
@@ -1626,7 +1626,10 @@ export function scrollIntoViewIfNeeded(
         targetBottom -= scrollPaddingBottom;
       }
     } else {
-      const targetRect = element.getBoundingClientRect();
+      // Reuse the rect already measured for the guard above on the first
+      // iteration (element === rootElement) to avoid a second layout flush.
+      const targetRect =
+        element === rootElement ? rootRect : element.getBoundingClientRect();
       targetTop = targetRect.top;
       targetBottom = targetRect.bottom;
     }

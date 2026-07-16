@@ -255,6 +255,9 @@ function syncStickyScrollbar(
 export function findStickyScrollbarElements(
   dom: HTMLElement,
 ): StickyScrollbarElements | null {
+  if (!dom.hasAttribute('data-lexical-sticky-scrollbar')) {
+    return null;
+  }
   const firstChild = dom.firstElementChild;
   if (!isHTMLDivElement(firstChild)) {
     return null;
@@ -447,6 +450,7 @@ export class TableNode extends ElementNode {
       if (hasStickyScrollbar) {
         const stickyScrollbar = $createStickyScrollbar(config);
         const outerWrapper = $getDocument().createElement('div');
+        outerWrapper.setAttribute('data-lexical-sticky-scrollbar', 'true');
         outerWrapper.appendChild(scrollableWrapper);
         outerWrapper.appendChild(stickyScrollbar);
         setDOMUnmanaged(stickyScrollbar);
@@ -514,7 +518,7 @@ export class TableNode extends ElementNode {
     if (isHTMLDivElement(dom)) {
       const scrollable = getScrollableWrapper(dom);
       if (scrollable) {
-        const hasStickyDom = scrollable !== dom;
+        const hasStickyDom = dom.hasAttribute('data-lexical-sticky-scrollbar');
         if (hasStickyDom !== $isStickyScrollbarActive()) {
           return true;
         }

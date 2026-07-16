@@ -345,10 +345,9 @@ function removeDropTargetAttributes(actualHtml) {
 }
 
 function removeStickyScrollbar(actualHtml) {
-  return actualHtml.replace(
-    /<div[^>]*(?:tableStickyScrollbar|position:\s*sticky)[^>]*><div[^>]*><\/div><\/div>/g,
-    '',
-  );
+  return actualHtml
+    .replace(/<div[^>]*\baria-hidden="true"[^>]*><div[^>]*><\/div><\/div>/g, '')
+    .replace(/\s*data-lexical-sticky-scrollbar="true"/g, '');
 }
 
 /**

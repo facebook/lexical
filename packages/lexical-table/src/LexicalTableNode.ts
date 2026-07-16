@@ -6,6 +6,9 @@
  *
  */
 
+import type {TableExtension} from './LexicalTableExtension';
+
+import {getPeerDependencyFromEditor} from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
 import {$descendantsMatching} from '@lexical/utils';
 import {
@@ -159,19 +162,15 @@ function $createScrollableWrapper(
     addClassNamesToElement(wrapper, classes);
   } else {
     wrapper.style.overflowX = 'auto';
-    if (hideNativeScrollbar) {
-      wrapper.style.scrollbarWidth = 'none';
-    }
+  }
+  if (hideNativeScrollbar) {
+    wrapper.style.scrollbarWidth = 'none';
   }
   wrapper.appendChild(tableElement);
   return wrapper;
 }
 
-function $createStickyScrollbar(
-  scrollableWrapper: HTMLDivElement,
-  tableElement: HTMLTableElement,
-  config: EditorConfig,
-): HTMLDivElement {
+function $createStickyScrollbar(config: EditorConfig): HTMLDivElement {
   const doc = $getDocument();
   const scrollbar = doc.createElement('div');
   const classes = config.theme.tableStickyScrollbar;
@@ -184,47 +183,55 @@ function $createStickyScrollbar(
     scrollbar.style.overflowY = 'hidden';
   }
   scrollbar.style.display = 'none';
+  scrollbar.setAttribute('aria-hidden', 'true');
+  scrollbar.tabIndex = -1;
   const spacer = doc.createElement('div');
   spacer.style.height = '1px';
   spacer.style.width = '0px';
   scrollbar.appendChild(spacer);
-
-  let syncing = false;
-  scrollableWrapper.addEventListener(
-    'scroll',
-    () => {
-      if (syncing) {
-        return;
-      }
-      syncing = true;
-      scrollbar.scrollLeft = scrollableWrapper.scrollLeft;
-      syncing = false;
-    },
-    {passive: true},
-  );
-  scrollbar.addEventListener(
-    'scroll',
-    () => {
-      if (syncing) {
-        return;
-      }
-      syncing = true;
-      scrollableWrapper.scrollLeft = scrollbar.scrollLeft;
-      syncing = false;
-    },
-    {passive: true},
-  );
-
-  queueMicrotask(() => syncStickyScrollbar(scrollbar, tableElement));
-  const resizeObserver = new ResizeObserver(() => {
-    syncStickyScrollbar(scrollbar, tableElement);
-  });
-  resizeObserver.observe(scrollableWrapper);
-  resizeObserver.observe(tableElement);
   return scrollbar;
 }
 
+export interface StickyScrollbarElements {
+  scrollable: HTMLDivElement;
+  scrollbar: HTMLDivElement;
+  tableElement: HTMLTableElement;
+}
+
+export function attachStickyScrollbarListeners(
+  elements: StickyScrollbarElements,
+): () => void {
+  const {scrollable, scrollbar, tableElement} = elements;
+  const onWrapperScroll = () => {
+    if (scrollbar.scrollLeft !== scrollable.scrollLeft) {
+      scrollbar.scrollLeft = scrollable.scrollLeft;
+    }
+  };
+  const onScrollbarScroll = () => {
+    if (scrollable.scrollLeft !== scrollbar.scrollLeft) {
+      scrollable.scrollLeft = scrollbar.scrollLeft;
+    }
+  };
+  scrollable.addEventListener('scroll', onWrapperScroll, {
+    passive: true,
+  });
+  scrollbar.addEventListener('scroll', onScrollbarScroll, {passive: true});
+  const resizeObserver = new ResizeObserver(() => {
+    syncStickyScrollbar(scrollable, scrollbar, tableElement);
+  });
+  resizeObserver.observe(scrollable);
+  resizeObserver.observe(tableElement);
+  const cleanup = () => {
+    scrollable.removeEventListener('scroll', onWrapperScroll);
+    scrollbar.removeEventListener('scroll', onScrollbarScroll);
+    resizeObserver.disconnect();
+  };
+  syncStickyScrollbar(scrollable, scrollbar, tableElement);
+  return cleanup;
+}
+
 function syncStickyScrollbar(
+  scrollable: HTMLDivElement,
   scrollbar: HTMLDivElement,
   tableElement: HTMLTableElement,
 ): void {
@@ -233,28 +240,56 @@ function syncStickyScrollbar(
     return;
   }
   spacer.style.width = tableElement.scrollWidth + 'px';
-  const scrollableWrapper = scrollbar.previousElementSibling;
-  const containerWidth =
-    scrollableWrapper && isHTMLElement(scrollableWrapper)
-      ? scrollableWrapper.clientWidth
-      : 0;
-  const hasOverflow = tableElement.scrollWidth > containerWidth;
+  const containerWidth = scrollable.clientWidth;
+  const view = scrollable.ownerDocument.defaultView;
+  if (!view) {
+    scrollbar.style.display = 'none';
+    return;
+  }
+  const overflowX = view.getComputedStyle(scrollable).overflowX;
+  const isScrollable = overflowX !== 'clip' && overflowX !== 'hidden';
+  const hasOverflow = isScrollable && tableElement.scrollWidth > containerWidth;
   scrollbar.style.display = hasOverflow ? '' : 'none';
+}
+
+export function findStickyScrollbarElements(
+  dom: HTMLElement,
+): StickyScrollbarElements | null {
+  const firstChild = dom.firstElementChild;
+  if (!isHTMLDivElement(firstChild)) {
+    return null;
+  }
+  const tableElement = firstChild.querySelector(':scope > table');
+  if (
+    !tableElement ||
+    !isHTMLElement(tableElement) ||
+    tableElement.nodeName !== 'TABLE'
+  ) {
+    return null;
+  }
+  const scrollbar = firstChild.nextElementSibling;
+  if (!isHTMLDivElement(scrollbar)) {
+    return null;
+  }
+  return {
+    scrollable: firstChild,
+    scrollbar,
+    tableElement: tableElement as HTMLTableElement,
+  };
 }
 
 function getScrollableWrapper(dom: HTMLElement): HTMLDivElement | null {
   if (!isHTMLDivElement(dom)) {
     return null;
   }
-  const firstChild = dom.firstElementChild;
-  if (isHTMLDivElement(firstChild) && firstChild.querySelector('table')) {
-    return firstChild;
+  const parts = findStickyScrollbarElements(dom);
+  if (parts) {
+    return parts.scrollable;
   }
   return dom.querySelector('table') ? dom : null;
 }
 
 const scrollableEditors = new WeakSet<LexicalEditor>();
-const stickyScrollbarEditors = new WeakSet<LexicalEditor>();
 
 export function $isScrollableTablesActive(
   editor: LexicalEditor = $getEditor(),
@@ -265,7 +300,14 @@ export function $isScrollableTablesActive(
 export function $isStickyScrollbarActive(
   editor: LexicalEditor = $getEditor(),
 ): boolean {
-  return stickyScrollbarEditors.has(editor);
+  const dep = getPeerDependencyFromEditor<typeof TableExtension>(
+    editor,
+    '@lexical/table/Table',
+  );
+  return dep
+    ? dep.output.hasStickyScrollbar.value &&
+        dep.output.hasHorizontalScroll.value
+    : false;
 }
 
 export function setScrollableTablesActive(
@@ -281,17 +323,6 @@ export function setScrollableTablesActive(
     scrollableEditors.add(editor);
   } else {
     scrollableEditors.delete(editor);
-  }
-}
-
-export function setStickyScrollbarActive(
-  editor: LexicalEditor,
-  active: boolean,
-): void {
-  if (active) {
-    stickyScrollbarEditors.add(editor);
-  } else {
-    stickyScrollbarEditors.delete(editor);
   }
 }
 
@@ -414,11 +445,7 @@ export class TableNode extends ElementNode {
         hasStickyScrollbar,
       );
       if (hasStickyScrollbar) {
-        const stickyScrollbar = $createStickyScrollbar(
-          scrollableWrapper,
-          tableElement,
-          config,
-        );
+        const stickyScrollbar = $createStickyScrollbar(config);
         const outerWrapper = $getDocument().createElement('div');
         outerWrapper.appendChild(scrollableWrapper);
         outerWrapper.appendChild(stickyScrollbar);
@@ -492,14 +519,6 @@ export class TableNode extends ElementNode {
           return true;
         }
         this.updateTableWrapper(prevNode, scrollable, tableElement, config);
-        if (hasStickyDom) {
-          const stickyScrollbar = scrollable.nextElementSibling;
-          if (isHTMLDivElement(stickyScrollbar)) {
-            queueMicrotask(() =>
-              syncStickyScrollbar(stickyScrollbar, tableElement),
-            );
-          }
-        }
       } else if (__DEV__) {
         console.warn(
           'TableNode.updateDOM: Could not find scrollable wrapper in DOM',

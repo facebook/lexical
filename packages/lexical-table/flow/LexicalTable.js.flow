@@ -122,6 +122,9 @@ declare export function $isTableNode(
 declare export function $isScrollableTablesActive(
   editor?: LexicalEditor
 ): boolean;
+declare export function $isStickyScrollbarActive(
+  editor?: LexicalEditor
+): boolean;
 declare export function setScrollableTablesActive(
   editor: LexicalEditor,
   active: boolean,
@@ -465,6 +468,8 @@ export type TableConfig = {
   hasCellBackgroundColor: boolean;
   hasTabHandler: boolean;
   hasHorizontalScroll: boolean;
+  hasStickyScrollbar: boolean;
+  hasNestedTables: boolean;
 };
 
 

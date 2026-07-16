@@ -12,6 +12,7 @@ import {
   $fullReconcile,
   configExtension,
   defineExtension,
+  isHTMLElement,
   mergeRegister,
   safeCast,
 } from 'lexical';
@@ -19,9 +20,9 @@ import {
 import {TableCellNode} from './LexicalTableCellNode';
 import {
   $isScrollableTablesActive,
-  $isStickyScrollbarActive,
+  attachStickyScrollbarListeners,
+  findStickyScrollbarElements,
   setScrollableTablesActive,
-  setStickyScrollbarActive,
   TableNode,
 } from './LexicalTableNode';
 import {
@@ -52,7 +53,9 @@ export interface TableConfig {
   hasHorizontalScroll: boolean;
   /**
    * When `true` (default `false`), a sticky scrollbar is rendered below each table that overflows horizontally.
-   * Requires `hasHorizontalScroll` to be `true`.
+   * Requires `hasHorizontalScroll` to be `true`. The native scrollbar is hidden via inline
+   * `scrollbar-width: none` (Firefox/Chromium). Themed consumers providing a `tableScrollableWrapper`
+   * class should also add `::-webkit-scrollbar { display: none }` for Safari/WebKit.
    */
   hasStickyScrollbar: boolean;
   /**
@@ -92,26 +95,73 @@ export const TableExtension = /* @__PURE__ */ defineExtension({
   nodes: () => [TableNode, TableRowNode, TableCellNode],
   register(editor, config, state) {
     const stores = state.getOutput();
+    let prevStickyScrollbar = false;
     return mergeRegister(
       effect(() => {
         const hasHorizontalScroll = stores.hasHorizontalScroll.value;
         const hasStickyScrollbar =
           stores.hasStickyScrollbar.value && hasHorizontalScroll;
         const hadHorizontalScroll = $isScrollableTablesActive(editor);
-        const hadStickyScrollbar = $isStickyScrollbarActive(editor);
+        if (hadHorizontalScroll !== hasHorizontalScroll) {
+          setScrollableTablesActive(editor, hasHorizontalScroll);
+        }
         if (
           hadHorizontalScroll !== hasHorizontalScroll ||
-          hadStickyScrollbar !== hasStickyScrollbar
+          prevStickyScrollbar !== hasStickyScrollbar
         ) {
-          setScrollableTablesActive(editor, hasHorizontalScroll);
-          setStickyScrollbarActive(editor, hasStickyScrollbar);
+          // Re-render existing tables through the new scroll-wrapper config
+          // without cloning every TableNode the way marking them dirty would. A
+          // full reconcile marks no nodes dirty, so it's deferred (no
+          // synchronous render from this effect) and produces no history entry.
           editor.update($fullReconcile);
         }
+        prevStickyScrollbar = hasStickyScrollbar;
       }),
       registerTablePlugin(editor, stores),
       effect(() =>
         registerTableSelectionObserver(editor, stores.hasTabHandler.value),
       ),
+      effect(() => {
+        if (
+          !stores.hasStickyScrollbar.value ||
+          !stores.hasHorizontalScroll.value
+        ) {
+          return undefined;
+        }
+        const cleanups = new Map<string, () => void>();
+        return mergeRegister(
+          editor.registerMutationListener(
+            TableNode,
+            nodeMutations => {
+              for (const [nodeKey, mutation] of nodeMutations) {
+                const prev = cleanups.get(nodeKey);
+                if (prev) {
+                  prev();
+                  cleanups.delete(nodeKey);
+                }
+                if (mutation === 'destroyed') {
+                  continue;
+                }
+                const dom = editor.getElementByKey(nodeKey);
+                if (!dom || !isHTMLElement(dom)) {
+                  continue;
+                }
+                const parts = findStickyScrollbarElements(dom);
+                if (parts) {
+                  cleanups.set(nodeKey, attachStickyScrollbarListeners(parts));
+                }
+              }
+            },
+            {skipInitialization: false},
+          ),
+          () => {
+            for (const cleanup of cleanups.values()) {
+              cleanup();
+            }
+            cleanups.clear();
+          },
+        );
+      }),
       effect(() =>
         stores.hasCellMerge.value
           ? undefined

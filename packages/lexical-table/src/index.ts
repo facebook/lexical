@@ -31,7 +31,6 @@ export {
   $isStickyScrollbarActive,
   $isTableNode,
   setScrollableTablesActive,
-  setStickyScrollbarActive,
   TableNode,
 } from './LexicalTableNode';
 export type {TableDOMCell} from './LexicalTableObserver';

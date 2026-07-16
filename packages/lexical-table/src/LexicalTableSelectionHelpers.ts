@@ -43,6 +43,7 @@ import {
   type ChildCaret,
   COMMAND_PRIORITY_HIGH,
   CONTROLLED_TEXT_INSERTION_COMMAND,
+  COPY_COMMAND,
   CUT_COMMAND,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
@@ -835,23 +836,43 @@ export function applyTableHandlers(
   );
 
   // When TableSelection clears native selection ranges (removeAllRanges),
-  // browsers redirect paste events to <body> instead of the rootElement.
-  // Intercept at the document level and forward to PASTE_COMMAND.
+  // browsers redirect copy/paste events to <body> instead of the rootElement.
+  // Intercept at the document level and forward to the corresponding command.
   const doc = rootElement.ownerDocument;
+  const shouldInterceptClipboardEvent = (event: ClipboardEvent): boolean => {
+    if (event.defaultPrevented) {
+      return false;
+    }
+
+    if (
+      event.target === rootElement ||
+      rootElement.contains(event.target as Node)
+    ) {
+      return false;
+    }
+
+    return editor.read('latest', () => {
+      const selection = $getSelection();
+      return (
+        rootElement.contains(doc.activeElement) &&
+        $isTableSelection(selection) &&
+        $isSelectionInTable(selection, tableNode)
+      );
+    });
+  };
+
+  tableObserver.listenersToRemove.add(
+    registerEventListener(doc, 'copy', (event: ClipboardEvent) => {
+      if (shouldInterceptClipboardEvent(event)) {
+        event.preventDefault();
+        editor.dispatchCommand(COPY_COMMAND, event);
+      }
+    }),
+  );
+
   tableObserver.listenersToRemove.add(
     registerEventListener(doc, 'paste', (event: ClipboardEvent) => {
-      if (event.defaultPrevented) {
-        return;
-      }
-      const shouldIntercept = editor.read('latest', () => {
-        const selection = $getSelection();
-        return (
-          rootElement.contains(doc.activeElement) &&
-          $isTableSelection(selection) &&
-          $isSelectionInTable(selection, tableNode)
-        );
-      });
-      if (shouldIntercept) {
+      if (shouldInterceptClipboardEvent(event)) {
         event.preventDefault();
         editor.dispatchCommand(PASTE_COMMAND, event);
       }

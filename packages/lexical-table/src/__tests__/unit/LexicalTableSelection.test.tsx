@@ -16,6 +16,7 @@ import {
   $deleteTableRowAtSelection,
   $isTableRowNode,
   $isTableSelection,
+  registerTableSelectionObserver,
   type TableMapType,
   type TableNode,
   type TableSelection,
@@ -28,17 +29,23 @@ import {
   $isParagraphNode,
   $isTextNode,
   $setSelection,
+  COMMAND_PRIORITY_EDITOR,
+  COPY_COMMAND,
 } from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
-import {beforeEach, describe, expect, test} from 'vitest';
+import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 describe('table selection', () => {
   initializeUnitTest(testEnv => {
     let tableNode: TableNode;
     let tableMap: TableMapType;
     let tableSelection: TableSelection;
+    let unregisterTableSelectionObserver: (() => void) | null = null;
 
     beforeEach(() => {
+      unregisterTableSelectionObserver = registerTableSelectionObserver(
+        testEnv.editor,
+      );
       testEnv.editor.update(() => {
         tableNode = $createTableNode();
         $getRoot()
@@ -66,6 +73,45 @@ describe('table selection', () => {
         );
         $setSelection(tableSelection);
       });
+    });
+
+    describe('regression #8832', () => {
+      test('forwards document-level copy events for table selections in read-only mode', async () => {
+        const copyEvents: ClipboardEvent[] = [];
+
+        testEnv.editor.update(() => {
+          testEnv.editor.setEditable(false);
+          const selection = $getSelection();
+          expect($isTableSelection(selection)).toBe(true);
+        });
+
+        testEnv.editor.registerCommand(
+          COPY_COMMAND,
+          event => {
+            copyEvents.push(event);
+            return true;
+          },
+          COMMAND_PRIORITY_EDITOR,
+        );
+
+        const rootElement = testEnv.editor.getRootElement();
+        rootElement?.focus();
+
+        const event = new ClipboardEvent('copy', {
+          bubbles: true,
+          cancelable: true,
+        });
+        rootElement?.ownerDocument.dispatchEvent(event);
+
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        expect(copyEvents).toHaveLength(1);
+      });
+    });
+
+    afterEach(() => {
+      unregisterTableSelectionObserver?.();
+      unregisterTableSelectionObserver = null;
     });
 
     describe('regression #7076', () => {

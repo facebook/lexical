@@ -81,9 +81,14 @@ export type {
   Binding,
   BindingV2,
   ClientID,
+  CreateYjsBindingOptions,
   ExcludedProperties,
 } from './Bindings';
-export {createBinding, createBindingV2__EXPERIMENTAL} from './Bindings';
+export {
+  createBinding,
+  createBindingV2__EXPERIMENTAL,
+  createYjsBinding,
+} from './Bindings';
 
 export function createUndoManager(
   binding: BaseBinding,

@@ -10,10 +10,13 @@
     "size": "node ./size/measure.mjs"
   },
   "dependencies": {
+    "@lexical/clipboard": "workspace:*",
     "@lexical/code-core": "workspace:*",
     "@lexical/code-shiki": "workspace:*",
     "@lexical/extension": "workspace:*",
+    "@lexical/file": "workspace:*",
     "@lexical/history": "workspace:*",
+    "@lexical/html": "workspace:*",
     "@lexical/link": "workspace:*",
     "@lexical/list": "workspace:*",
     "@lexical/markdown": "workspace:*",
@@ -23,6 +26,9 @@
     "@lexical/selection": "workspace:*",
     "@lexical/utils": "workspace:*",
     "lexical": "workspace:*",
+    "mdast-util-gfm-footnote": "^2.1.0",
+    "mdast-util-to-markdown": "^2.1.2",
+    "micromark-extension-gfm-footnote": "^2.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

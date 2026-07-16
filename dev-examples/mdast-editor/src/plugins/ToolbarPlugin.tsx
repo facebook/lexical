@@ -21,10 +21,15 @@ import {
   UNDO_COMMAND,
 } from 'lexical';
 
+import {INSERT_ALERT_COMMAND} from '../extensions/MdastAlertExtension';
+import {INSERT_COLLAPSIBLE_COMMAND} from '../extensions/MdastCollapsibleExtension';
 import {
   FORMAT_HEADING_COMMAND,
   FORMAT_PARAGRAPH_COMMAND,
+  MdastEditorExtension,
 } from '../extensions/MdastEditorExtension';
+import {INSERT_FOOTNOTE_COMMAND} from '../extensions/MdastFootnoteExtension';
+import {FORMAT_KBD_COMMAND} from '../extensions/MdastKbdExtension';
 import {
   type BlockType,
   ToolbarStateExtension,
@@ -39,6 +44,32 @@ const BLOCK_TYPES: readonly {label: string; value: BlockType}[] = [
   {label: 'Numbered List', value: 'number'},
   {label: 'Check List', value: 'check'},
 ];
+
+const INSERT_TYPES = [
+  {label: 'Keyboard key', value: 'kbd'},
+  {label: 'Collapsible section', value: 'details'},
+  {label: 'Alert', value: 'alert'},
+  {label: 'Footnote', value: 'footnote'},
+] as const;
+
+type InsertType = (typeof INSERT_TYPES)[number]['value'];
+
+function applyInsert(editor: LexicalEditor, type: InsertType): void {
+  switch (type) {
+    case 'kbd':
+      editor.dispatchCommand(FORMAT_KBD_COMMAND, undefined);
+      return;
+    case 'details':
+      editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined);
+      return;
+    case 'alert':
+      editor.dispatchCommand(INSERT_ALERT_COMMAND, 'note');
+      return;
+    case 'footnote':
+      editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND, undefined);
+      return;
+  }
+}
 
 function applyBlockType(editor: LexicalEditor, type: BlockType): void {
   switch (type) {
@@ -63,6 +94,9 @@ function applyBlockType(editor: LexicalEditor, type: BlockType): void {
   }
 }
 
+const selectClass =
+  'h-7 cursor-pointer appearance-none rounded-md border border-solid border-transparent bg-transparent px-2 text-sm font-medium text-zinc-700 transition-colors duration-150 enabled:hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-30 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-zinc-200 dark:enabled:hover:bg-zinc-700';
+
 const buttonBase =
   'group flex h-7 cursor-pointer items-center justify-center rounded-md border-0 px-2 font-medium transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500';
 const buttonInactive =
@@ -84,6 +118,10 @@ export function ToolbarPlugin() {
   const isBold = useExtensionSignalValue(ToolbarStateExtension, 'isBold');
   const isItalic = useExtensionSignalValue(ToolbarStateExtension, 'isItalic');
   const isCode = useExtensionSignalValue(ToolbarStateExtension, 'isCode');
+  const isEditable = useExtensionSignalValue(
+    MdastEditorExtension,
+    'isEditable',
+  );
 
   return (
     <div
@@ -91,8 +129,9 @@ export function ToolbarPlugin() {
       role="toolbar"
       aria-label="Formatting">
       <select
-        className="h-7 cursor-pointer appearance-none rounded-md border border-solid border-transparent bg-transparent px-2 text-sm font-medium text-zinc-700 transition-colors duration-150 hover:bg-zinc-200 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-zinc-200 dark:hover:bg-zinc-700"
+        className={selectClass}
         value={blockType}
+        disabled={!isEditable}
         onChange={e => applyBlockType(editor, e.target.value as BlockType)}
         aria-label="Block type">
         {BLOCK_TYPES.map(({label, value}) => (
@@ -104,7 +143,7 @@ export function ToolbarPlugin() {
       <Divider />
       <button
         type="button"
-        disabled={!canUndo}
+        disabled={!isEditable || !canUndo}
         onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
         className={`${buttonBase} ${buttonInactive} text-xs`}
         aria-label="Undo">
@@ -112,7 +151,7 @@ export function ToolbarPlugin() {
       </button>
       <button
         type="button"
-        disabled={!canRedo}
+        disabled={!isEditable || !canRedo}
         onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
         className={`${buttonBase} ${buttonInactive} text-xs`}
         aria-label="Redo">
@@ -121,6 +160,7 @@ export function ToolbarPlugin() {
       <Divider />
       <button
         type="button"
+        disabled={!isEditable}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')}
         className={`${buttonBase} ${isBold ? buttonActive : buttonInactive} text-sm font-bold`}
         aria-label="Bold"
@@ -129,6 +169,7 @@ export function ToolbarPlugin() {
       </button>
       <button
         type="button"
+        disabled={!isEditable}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic')}
         className={`${buttonBase} ${isItalic ? buttonActive : buttonInactive} text-sm italic`}
         aria-label="Italic"
@@ -137,12 +178,43 @@ export function ToolbarPlugin() {
       </button>
       <button
         type="button"
+        disabled={!isEditable}
         onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code')}
         className={`${buttonBase} ${isCode ? buttonActive : buttonInactive} font-mono text-xs`}
         aria-label="Inline code"
         aria-pressed={isCode}>
         {'</>'}
       </button>
+      <Divider />
+      {/* A value-less controlled select: picking an entry dispatches the
+          insert and the label snaps back to "Insert". */}
+      <select
+        className={selectClass}
+        value=""
+        disabled={!isEditable}
+        onChange={e => applyInsert(editor, e.target.value as InsertType)}
+        aria-label="Insert">
+        <option value="" hidden={true}>
+          Insert
+        </option>
+        {INSERT_TYPES.map(({label, value}) => (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        ))}
+      </select>
+      <div className="ml-auto flex items-center">
+        <Divider />
+        <button
+          type="button"
+          onClick={() => editor.setEditable(!editor.isEditable())}
+          className={`${buttonBase} ${isEditable ? buttonInactive : buttonActive} text-sm`}
+          aria-label="Toggle read-only mode"
+          title={isEditable ? 'Lock editing (read-only)' : 'Unlock editing'}
+          aria-pressed={!isEditable}>
+          {isEditable ? '\u{1F513}' : '\u{1F512}'}
+        </button>
+      </div>
     </div>
   );
 }

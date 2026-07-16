@@ -16,6 +16,7 @@
   "dependencies": {
     "@lexical/code-core": "workspace:*",
     "@lexical/extension": "workspace:*",
+    "@lexical/html": "workspace:*",
     "@lexical/link": "workspace:*",
     "@lexical/list": "workspace:*",
     "@lexical/rich-text": "workspace:*",

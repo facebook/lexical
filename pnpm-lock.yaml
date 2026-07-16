@@ -365,6 +365,9 @@ importers:
 
   dev-examples/mdast-editor:
     dependencies:
+      '@lexical/clipboard':
+        specifier: workspace:*
+        version: link:../../packages/lexical-clipboard
       '@lexical/code-core':
         specifier: workspace:*
         version: link:../../packages/lexical-code-core
@@ -374,9 +377,15 @@ importers:
       '@lexical/extension':
         specifier: workspace:*
         version: link:../../packages/lexical-extension
+      '@lexical/file':
+        specifier: workspace:*
+        version: link:../../packages/lexical-file
       '@lexical/history':
         specifier: workspace:*
         version: link:../../packages/lexical-history
+      '@lexical/html':
+        specifier: workspace:*
+        version: link:../../packages/lexical-html
       '@lexical/link':
         specifier: workspace:*
         version: link:../../packages/lexical-link
@@ -404,6 +413,15 @@ importers:
       lexical:
         specifier: workspace:*
         version: link:../../packages/lexical
+      mdast-util-gfm-footnote:
+        specifier: ^2.1.0
+        version: 2.1.0
+      mdast-util-to-markdown:
+        specifier: ^2.1.2
+        version: 2.1.2
+      micromark-extension-gfm-footnote:
+        specifier: ^2.1.0
+        version: 2.1.0
       react:
         specifier: 19.2.5
         version: 19.2.5
@@ -1020,6 +1038,9 @@ importers:
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension
+      '@lexical/html':
+        specifier: workspace:*
+        version: link:../lexical-html
       '@lexical/link':
         specifier: workspace:*
         version: link:../lexical-link

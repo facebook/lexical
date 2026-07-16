@@ -107,6 +107,7 @@ Experimental micromark/mdast-based Markdown support (every extension in this pac
 - [MdastCommonMarkExtension](/docs/api/modules/lexical_mdast#mdastcommonmarkextension) - Bundle of the six CommonMark extensions
 - [MdastGfmExtension](/docs/api/modules/lexical_mdast#mdastgfmextension) - Bundle of the four GFM extensions
 - [MdastShadowRootQuoteExtension](/docs/api/modules/lexical_mdast#mdastshadowrootquoteextension) - Opt-in: blockquotes as block containers with full-fidelity nested content
+- [MdastHtmlExtension](/docs/api/modules/lexical_mdast#mdasthtmlextension) - Opt-in: raw HTML in Markdown routed through the `@lexical/html` DOM import rules (Markdown inside the tags included, GitHub-style), plus generic HTML-encoded export via `$exportViaDOM` / `rawHtmlBlock`
 - [MdastShortcutsExtension](/docs/api/modules/lexical_mdast#mdastshortcutsextension) - Streaming Markdown typing shortcuts, driven by the same grammar as import
 
 [@lexical/overflow](/docs/api/modules/lexical_overflow)

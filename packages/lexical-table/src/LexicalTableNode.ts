@@ -279,9 +279,12 @@ export class TableNode extends ElementNode {
     if (this.__style) {
       setDOMStyleFromCSS(tableElement.style, this.__style);
     }
-    const colGroup = $getDocument().createElement('colgroup');
-    tableElement.appendChild(colGroup);
-    setDOMUnmanaged(colGroup);
+    const colWidths = this.getColWidths();
+    if (colWidths) {
+      const colGroup = $getDocument().createElement('colgroup');
+      tableElement.appendChild(colGroup);
+      setDOMUnmanaged(colGroup);
+    }
     addClassNamesToElement(tableElement, config.theme.table);
     this.updateTableElement(null, tableElement, config);
     if ($isScrollableTablesActive(editor)) {

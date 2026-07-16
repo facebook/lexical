@@ -126,9 +126,7 @@ describe('LexicalTableNode tests', () => {
               expectTableHtmlToBeEqual(
                 tableNode.createDOM(editorConfig).outerHTML,
                 html`
-                  <table class="${editorConfig.theme.table}">
-                    <colgroup></colgroup>
-                  </table>
+                  <table class="${editorConfig.theme.table}"></table>
                 `,
               );
             });
@@ -166,7 +164,6 @@ describe('LexicalTableNode tests', () => {
                 tables[0]!.outerHTML,
                 html`
                   <table class="${editorConfig.theme.table}">
-                    <colgroup><col /></colgroup>
                     <tr dir="auto">
                       <td dir="auto">
                         <p dir="auto">
@@ -183,7 +180,6 @@ describe('LexicalTableNode tests', () => {
                   <table
                     class="${editorConfig.theme.table}"
                     style="background-color: blue">
-                    <colgroup><col /></colgroup>
                     <tr dir="auto">
                       <td dir="auto">
                         <p dir="auto">
@@ -220,7 +216,6 @@ describe('LexicalTableNode tests', () => {
                   <table
                     class="${editorConfig.theme.table}"
                     style="--table-index: 0">
-                    <colgroup><col /></colgroup>
                     <tr dir="auto">
                       <td dir="auto">
                         <p dir="auto">
@@ -237,7 +232,6 @@ describe('LexicalTableNode tests', () => {
                   <table
                     class="${editorConfig.theme.table}"
                     style="--table-index: 1">
-                    <colgroup><col /></colgroup>
                     <tr dir="auto">
                       <td dir="auto">
                         <p dir="auto">
@@ -515,10 +509,6 @@ describe('LexicalTableNode tests', () => {
               testEnv.innerHTML,
               html`
                 <table class="test-table-class">
-                  <colgroup>
-                    <col />
-                    <col />
-                  </colgroup>
                   <tr dir="auto" style="text-align: start">
                     <th dir="auto">
                       <p dir="auto">
@@ -668,11 +658,6 @@ describe('LexicalTableNode tests', () => {
               testEnv.innerHTML,
               html`
                 <table class="test-table-class">
-                  <colgroup>
-                    <col />
-                    <col />
-                    <col />
-                  </colgroup>
                   <tr dir="auto" style="text-align: start">
                     <td dir="auto" style="background-color: rgb(240, 240, 240)">
                       <p dir="auto" style="text-align: center">
@@ -985,12 +970,6 @@ describe('LexicalTableNode tests', () => {
               html`
                 <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
                 <table class="test-table-class">
-                  <colgroup>
-                    <col />
-                    <col />
-                    <col />
-                    <col />
-                  </colgroup>
                   <tr dir="auto">
                     <th dir="auto">
                       <p dir="auto">
@@ -1155,14 +1134,7 @@ describe('LexicalTableNode tests', () => {
                   <table
                     class="${editorConfig.theme.table} ${editorConfig.theme
                       .tableRowStriping}"
-                    data-lexical-row-striping="true">
-                    <colgroup>
-                      <col />
-                      <col />
-                      <col />
-                      <col />
-                    </colgroup>
-                  </table>
+                    data-lexical-row-striping="true"></table>
                 `,
               );
             });
@@ -1179,14 +1151,7 @@ describe('LexicalTableNode tests', () => {
               expectTableHtmlToBeEqual(
                 table.createDOM(editorConfig).outerHTML,
                 html`
-                  <table class="${editorConfig.theme.table}">
-                    <colgroup>
-                      <col />
-                      <col />
-                      <col />
-                      <col />
-                    </colgroup>
-                  </table>
+                  <table class="${editorConfig.theme.table}"></table>
                 `,
               );
             });
@@ -1225,14 +1190,7 @@ describe('LexicalTableNode tests', () => {
                         .tableFrozenColumn}">
                       <table
                         class="${editorConfig.theme.table}"
-                        data-lexical-frozen-column="true">
-                        <colgroup>
-                          <col />
-                          <col />
-                          <col />
-                          <col />
-                        </colgroup>
-                      </table>
+                        data-lexical-frozen-column="true"></table>
                     </div>
                   `,
                 );
@@ -1700,14 +1658,7 @@ describe('LexicalTableNode tests', () => {
                   table.createDOM(editorConfig).outerHTML,
                   html`
                     <div class="${editorConfig.theme.tableScrollableWrapper}">
-                      <table class="${editorConfig.theme.table}">
-                        <colgroup>
-                          <col />
-                          <col />
-                          <col />
-                          <col />
-                        </colgroup>
-                      </table>
+                      <table class="${editorConfig.theme.table}"></table>
                     </div>
                   `,
                 );
@@ -1737,14 +1688,7 @@ describe('LexicalTableNode tests', () => {
                 html`
                   <table
                     class="${editorConfig.theme.table} ${editorConfig.theme
-                      .tableAlignment.center}">
-                    <colgroup>
-                      <col />
-                      <col />
-                      <col />
-                      <col />
-                    </colgroup>
-                  </table>
+                      .tableAlignment.center}"></table>
                 `,
               );
             });
@@ -1761,14 +1705,7 @@ describe('LexicalTableNode tests', () => {
               expectTableHtmlToBeEqual(
                 table.createDOM(editorConfig).outerHTML,
                 html`
-                  <table class="${editorConfig.theme.table}">
-                    <colgroup>
-                      <col />
-                      <col />
-                      <col />
-                      <col />
-                    </colgroup>
-                  </table>
+                  <table class="${editorConfig.theme.table}"></table>
                 `,
               );
             });
@@ -1880,10 +1817,6 @@ describe('LexicalTableNode tests', () => {
             testEnv.innerHTML,
             html`
               <table class="test-table-class" dir="auto">
-                <colgroup>
-                  <col />
-                  <col />
-                </colgroup>
                 <tr dir="auto">
                   <th dir="auto">
                     <p dir="auto">
@@ -1922,10 +1855,6 @@ describe('LexicalTableNode tests', () => {
             html`
               <div class="table-scrollable-wrapper" dir="auto">
                 <table class="test-table-class">
-                  <colgroup>
-                    <col />
-                    <col />
-                  </colgroup>
                   <tr dir="auto">
                     <th dir="auto">
                       <p dir="auto">
@@ -1964,10 +1893,6 @@ describe('LexicalTableNode tests', () => {
             testEnv.innerHTML,
             html`
               <table class="test-table-class" dir="auto">
-                <colgroup>
-                  <col />
-                  <col />
-                </colgroup>
                 <tr dir="auto">
                   <th dir="auto">
                     <p dir="auto">

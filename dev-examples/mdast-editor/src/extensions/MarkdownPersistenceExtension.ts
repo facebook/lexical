@@ -151,6 +151,20 @@ export const MarkdownPersistenceExtension = defineExtension({
     let suspendPersistence = hashDoc !== null;
     let disposed = false;
 
+    // When a `#doc=` link fails to load, fall back to the normal document
+    // source (localStorage, then the default) and resume persistence —
+    // otherwise the editor is left empty, since the repro link suppressed
+    // the stored document from seeding.
+    const loadFallbackDocument = (): void => {
+      suspendPersistence = false;
+      const stored = readStoredMarkdown(storageKey);
+      editor.update(() => {
+        editor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
+        $convertFromMarkdownString(stored ?? defaultMarkdown);
+      });
+      editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+    };
+
     const applyHashDocument = (doc: HashDocument): void => {
       suspendPersistence = true;
       if (doc.kind === 'markdown') {
@@ -168,22 +182,34 @@ export const MarkdownPersistenceExtension = defineExtension({
         editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
         return;
       }
-      docFromHash(doc.hash).then(parsed => {
-        if (disposed || parsed === null) {
-          return;
-        }
-        try {
+      docFromHash(doc.hash)
+        .then(parsed => {
+          if (disposed) {
+            return;
+          }
+          if (parsed === null) {
+            loadFallbackDocument();
+            return;
+          }
           editor.setEditorState(
             editorStateFromSerializedDocument(editor, parsed),
           );
           editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
-        } catch (error) {
+        })
+        // A malformed `#doc=` payload can reject anywhere in the chain
+        // (base64 decode, gzip stream, JSON.parse, or an editor state
+        // that fails to deserialize) — a shared link is user input, so
+        // report it and load the fallback document instead of leaving
+        // an unhandled rejection and an empty editor.
+        .catch((error: unknown) => {
           console.error(
             'Failed to load the #doc= document from the URL',
             error,
           );
-        }
-      });
+          if (!disposed) {
+            loadFallbackDocument();
+          }
+        });
     };
 
     // The `#md=` case was already seeded synchronously by

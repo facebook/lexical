@@ -1581,6 +1581,18 @@ export function scrollIntoViewIfNeeded(
   if (doc === null || defaultView === null) {
     return;
   }
+  // A caret that lives inside the editor cannot have a rect that sits entirely
+  // above the editor's own box. Some browsers (notably Safari, for a collapsed
+  // caret in RTL text) return a degenerate or out-of-bounds selection rect —
+  // Safari also reports such a collapsed caret as `selection.type === 'Range'`,
+  // which routes execution here (see the `#1482` comment in
+  // `updateDOMSelection`). Feeding that bogus rect to the scroller jumps the
+  // viewport up on every keystroke. Skip the scroll when the selection rect lies
+  // entirely above rootElement. See #2495.
+  const rootRect = rootElement.getBoundingClientRect();
+  if (selectionRect.bottom < rootRect.top) {
+    return;
+  }
   let {top: currentTop, bottom: currentBottom} = selectionRect;
   let targetTop = 0;
   let targetBottom = 0;

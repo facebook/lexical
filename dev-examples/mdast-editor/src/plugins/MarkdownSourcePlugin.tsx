@@ -26,21 +26,18 @@ import {MdastEditorExtension} from '../extensions/MdastEditorExtension';
  * can't fight the caret mid-edit; on blur it snaps back to the canonical
  * round-trip output.
  */
-export function MarkdownSourcePlugin() {
+export function MarkdownSourcePlugin({readOnly = false}: {readOnly?: boolean}) {
   const [editor] = useLexicalComposerContext();
   const markdown = useExtensionSignalValue(MdastEditorExtension, 'markdown');
-  const isEditable = useExtensionSignalValue(
-    MdastEditorExtension,
-    'isEditable',
-  );
   const [draft, setDraft] = useState<null | string>(null);
   return (
     <textarea
       aria-label="Markdown source"
       spellCheck={false}
       // The pane re-imports into the editor on every keystroke — a document
-      // change, so it follows the editor's read-only state.
-      readOnly={!isEditable}
+      // change, gated by the pane's own lock (independent of the rich text
+      // editor's read-only state).
+      readOnly={readOnly}
       className="m-0 h-full w-full resize-none overflow-auto border-none bg-transparent p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap text-zinc-800 outline-none dark:text-zinc-200"
       value={draft !== null ? draft : markdown}
       onFocus={() => setDraft(markdown)}

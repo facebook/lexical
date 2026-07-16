@@ -82,10 +82,11 @@ export const FORMAT_HEADING_COMMAND: LexicalCommand<HeadingTagType> =
 
 export interface MdastEditorOutput {
   /**
-   * A signal mirroring `editor.isEditable()`. The example's chrome (the
-   * toolbar, the Reset button, the Markdown source pane) reads it to
+   * A signal mirroring `editor.isEditable()`. The toolbar reads it to
    * disable everything that would change the document while the editor is
-   * read-only — where the only allowed changes are to the selection.
+   * read-only — where the only allowed changes are to the selection. (The
+   * Markdown source pane has its own, independent lock: either side can be
+   * read-only while the other stays editable.)
    */
   isEditable: ReadonlySignal<boolean>;
   /** A signal observing the editor's contents as a Markdown string. */

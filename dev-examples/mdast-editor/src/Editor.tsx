@@ -12,7 +12,6 @@ import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {TreeViewExtension} from '@lexical/react/TreeViewExtension';
-import {useExtensionSignalValue} from '@lexical/react/useExtensionSignalValue';
 import {configExtension, defineExtension} from 'lexical';
 import {useState} from 'react';
 
@@ -22,7 +21,6 @@ import {
   markdownShareUrl,
   RESET_MARKDOWN_COMMAND,
 } from './extensions/MarkdownPersistenceExtension';
-import {MdastEditorExtension} from './extensions/MdastEditorExtension';
 import {ToolbarStateExtension} from './extensions/ToolbarStateExtension';
 import {MarkdownSourcePlugin} from './plugins/MarkdownSourcePlugin';
 import {ToolbarPlugin} from './plugins/ToolbarPlugin';
@@ -167,20 +165,41 @@ const mdastEditorExtension = defineExtension({
 const paneButtonClass =
   'cursor-pointer rounded-md border border-solid border-transparent bg-transparent px-2 py-0.5 text-[10px] font-medium tracking-wide text-zinc-500 normal-case transition-colors duration-150 enabled:hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-40 dark:text-zinc-400 dark:enabled:hover:bg-zinc-700';
 
-function ResetButton() {
+function ResetButton({disabled}: {disabled: boolean}) {
   const [editor] = useLexicalComposerContext();
-  const isEditable = useExtensionSignalValue(
-    MdastEditorExtension,
-    'isEditable',
-  );
   return (
     <button
       type="button"
-      // Reset replaces the document, so it's off while read-only.
-      disabled={!isEditable}
+      // Reset replaces the document, so it follows the pane's lock.
+      disabled={disabled}
       onClick={() => editor.dispatchCommand(RESET_MARKDOWN_COMMAND, undefined)}
       className={paneButtonClass}>
       Reset
+    </button>
+  );
+}
+
+/**
+ * The Markdown pane's own read-only lock. It is independent of the rich
+ * text editor's read-only state (the toolbar lock): either side can be
+ * locked while the other stays editable.
+ */
+function PaneLockButton({
+  locked,
+  onToggle,
+}: {
+  locked: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={paneButtonClass}
+      aria-label="Toggle Markdown read-only mode"
+      title={locked ? 'Unlock Markdown editing' : 'Lock Markdown editing'}
+      aria-pressed={locked}>
+      {locked ? '\u{1F512}' : '\u{1F513}'}
     </button>
   );
 }
@@ -215,6 +234,7 @@ function ShareButton({kind}: {kind: 'doc' | 'md'}) {
 }
 
 export default function Editor() {
+  const [sourceLocked, setSourceLocked] = useState(false);
   return (
     <LexicalExtensionComposer
       extension={mdastEditorExtension}
@@ -246,11 +266,15 @@ export default function Editor() {
               <div className="flex items-center gap-0.5">
                 <ShareButton kind="md" />
                 <ShareButton kind="doc" />
-                <ResetButton />
+                <ResetButton disabled={sourceLocked} />
+                <PaneLockButton
+                  locked={sourceLocked}
+                  onToggle={() => setSourceLocked(locked => !locked)}
+                />
               </div>
             </div>
             <div className="flex-1 overflow-auto bg-white dark:bg-stone-800">
-              <MarkdownSourcePlugin />
+              <MarkdownSourcePlugin readOnly={sourceLocked} />
             </div>
           </div>
         </div>

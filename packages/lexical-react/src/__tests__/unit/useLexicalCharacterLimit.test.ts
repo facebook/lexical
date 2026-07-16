@@ -19,6 +19,7 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   $setSlot,
@@ -30,7 +31,7 @@ import {
   $createTestDecoratorNode,
   TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
-import {afterEach, describe, expect, test} from 'vitest';
+import {afterEach, assert, describe, expect, test} from 'vitest';
 
 import {
   $mergePrevious,
@@ -177,6 +178,104 @@ describe('useCharacterLimit', () => {
         expect(children[0].getTextContent()).toBe('abcdg');
         expect($isOverflowNode(children[1])).toBe(true);
         expect(children[1].getTextContent()).toBe('ef');
+      });
+    });
+
+    test('counts \\n\\n separators between paragraphs (#6329)', async () => {
+      editor = makeEditor();
+
+      await editor.update(() => {
+        const root = $getRoot();
+        root.clear();
+        root.append(
+          $createParagraphNode().append($createTextNode('123')),
+          $createParagraphNode().append($createTextNode('456')),
+        );
+      });
+
+      await editor.update(() => {
+        // "123\n\n456" — offset 5 means "123" (3) + separator (2) = 5,
+        // so all of P2 should be overflow.
+        $wrapOverflowedNodes(5);
+      });
+
+      editor.read(() => {
+        const root = $getRoot();
+        const p1 = root.getChildAtIndex(0);
+        const p2 = root.getChildAtIndex(1);
+        assert($isParagraphNode(p1));
+        assert($isParagraphNode(p2));
+        expect(p1.getTextContent()).toBe('123');
+        expect($isOverflowNode(p1.getFirstChild())).toBe(false);
+        const overflow = p2.getFirstChild();
+        assert($isOverflowNode(overflow));
+        expect(overflow.getTextContent()).toBe('456');
+      });
+    });
+
+    test('splits text correctly with separator budget (#6329)', async () => {
+      editor = makeEditor();
+
+      await editor.update(() => {
+        const root = $getRoot();
+        root.clear();
+        root.append(
+          $createParagraphNode().append($createTextNode('12')),
+          $createParagraphNode().append($createTextNode('3456')),
+        );
+      });
+
+      await editor.update(() => {
+        // "12\n\n3456" — offset 5 means "12" (2) + separator (2) + "3" (1) = 5,
+        // so "456" in P2 should be overflow.
+        $wrapOverflowedNodes(5);
+      });
+
+      editor.read(() => {
+        const root = $getRoot();
+        const p2 = root.getChildAtIndex(1);
+        assert($isParagraphNode(p2));
+        const [kept, overflow] = p2.getChildren();
+        expect(kept.getTextContent()).toBe('3');
+        assert($isOverflowNode(overflow));
+        expect(overflow.getTextContent()).toBe('456');
+      });
+    });
+
+    test('counts multiple separators across three paragraphs (#6329)', async () => {
+      editor = makeEditor();
+
+      await editor.update(() => {
+        const root = $getRoot();
+        root.clear();
+        root.append(
+          $createParagraphNode().append($createTextNode('abc')),
+          $createParagraphNode().append($createTextNode('de')),
+          $createParagraphNode().append($createTextNode('fgh')),
+        );
+      });
+
+      await editor.update(() => {
+        // "abc\n\nde\n\nfgh" — offset 9 means "abc"(3)+sep(2)+"de"(2)+sep(2)=9,
+        // so all of P3 should be overflow.
+        $wrapOverflowedNodes(9);
+      });
+
+      editor.read(() => {
+        const root = $getRoot();
+        const p1 = root.getChildAtIndex(0);
+        const p2 = root.getChildAtIndex(1);
+        const p3 = root.getChildAtIndex(2);
+        assert($isParagraphNode(p1));
+        assert($isParagraphNode(p2));
+        assert($isParagraphNode(p3));
+        expect(p1.getTextContent()).toBe('abc');
+        expect($isOverflowNode(p1.getFirstChild())).toBe(false);
+        expect(p2.getTextContent()).toBe('de');
+        expect($isOverflowNode(p2.getFirstChild())).toBe(false);
+        const overflow = p3.getFirstChild();
+        assert($isOverflowNode(overflow));
+        expect(overflow.getTextContent()).toBe('fgh');
       });
     });
 

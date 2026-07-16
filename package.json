@@ -229,9 +229,10 @@
       "uuid": ">=14.0.0",
       "webpack-dev-server": ">=5.2.4",
       "onnxruntime-node": "link:./stubs/empty",
+      "serialize-javascript": ">=7.0.5",
       "sharp": "link:./stubs/empty",
-      "yjs": "$yjs",
-      "tmp": ">=0.2.6"
+      "tmp": ">=0.2.6",
+      "yjs": "$yjs"
     }
   }
 }

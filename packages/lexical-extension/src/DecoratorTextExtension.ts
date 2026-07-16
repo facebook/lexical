@@ -168,6 +168,14 @@ export function applyFormatToDom<T extends Text | HTMLElement>(
   return rval;
 }
 
+/**
+ * @deprecated Use {@link applyFormatToDom} instead. The `$` prefix was a
+ * mistake in the 0.47 release: the implementation does not read any editor
+ * state, so the dollar convention does not apply. This alias is kept for
+ * compatibility with 0.47.
+ */
+export const $applyFormatToDom = applyFormatToDom;
+
 function wrapElementWith(
   element: HTMLElement | Text,
   tag: string,

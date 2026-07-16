@@ -20,6 +20,7 @@ export {
 } from './ClickAfterLastBlockExtension';
 export {getKnownTypesAndNodes, type KnownTypesAndNodes} from './config';
 export {
+  $applyFormatToDom,
   $isDecoratorTextNode,
   applyFormatFromStyle,
   applyFormatToDom,

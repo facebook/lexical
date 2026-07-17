@@ -713,7 +713,11 @@ export function applyTableHandlers(
 
   for (const command of DELETE_TEXT_COMMANDS) {
     tableObserver.listenersToRemove.add(
-      editor.registerCommand(command, $deleteTextHandler, COMMAND_PRIORITY_HIGH),
+      editor.registerCommand(
+        command,
+        $deleteTextHandler,
+        COMMAND_PRIORITY_HIGH,
+      ),
     );
   }
 

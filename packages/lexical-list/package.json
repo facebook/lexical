@@ -8,7 +8,7 @@
     "list"
   ],
   "license": "MIT",
-  "version": "0.48.0",
+  "version": "0.48.1-nightly.20260717.0",
   "main": "./dist/LexicalList.js",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {

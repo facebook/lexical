@@ -23,6 +23,8 @@ import {
   attachStickyScrollbarListeners,
   findStickyScrollbarElements,
   setScrollableTablesActive,
+  type StickyScrollbarElements,
+  syncStickyScrollbar,
   TableNode,
 } from './LexicalTableNode';
 import {
@@ -56,6 +58,12 @@ export interface TableConfig {
    * Requires `hasHorizontalScroll` to be `true`. The native scrollbar is hidden via inline
    * `scrollbar-width: none` (Firefox/Chromium). Themed consumers providing a `tableScrollableWrapper`
    * class should also add `::-webkit-scrollbar { display: none }` for Safari/WebKit.
+   * A themed scrollbar is expected to guarantee its own visible height (the
+   * playground does this with `::-webkit-scrollbar { height: ... }`); the
+   * unthemed fallback depends on classic native scrollbars, so on platforms
+   * where those render with no thickness (overlay scrollbars, and non-layout
+   * environments like jsdom) it is disabled at runtime and the wrapper's
+   * native scrollbar is restored.
    */
   hasStickyScrollbar: boolean;
   /**
@@ -128,38 +136,69 @@ export const TableExtension = /* @__PURE__ */ defineExtension({
         ) {
           return undefined;
         }
-        const cleanups = new Map<string, () => void>();
+        const attached = new Map<
+          string,
+          {cleanup: () => void; parts: StickyScrollbarElements}
+        >();
+        const detachAll = () => {
+          for (const {cleanup} of attached.values()) {
+            cleanup();
+          }
+          attached.clear();
+        };
         return mergeRegister(
           editor.registerMutationListener(
             TableNode,
             nodeMutations => {
               for (const [nodeKey, mutation] of nodeMutations) {
-                const prev = cleanups.get(nodeKey);
-                if (prev) {
-                  prev();
-                  cleanups.delete(nodeKey);
-                }
+                const prev = attached.get(nodeKey);
                 if (mutation === 'destroyed') {
+                  if (prev) {
+                    prev.cleanup();
+                    attached.delete(nodeKey);
+                  }
                   continue;
                 }
                 const dom = editor.getElementByKey(nodeKey);
-                if (!dom || !isHTMLElement(dom)) {
+                const parts =
+                  dom && isHTMLElement(dom)
+                    ? findStickyScrollbarElements(dom)
+                    : null;
+                if (
+                  prev &&
+                  parts &&
+                  prev.parts.scrollable === parts.scrollable &&
+                  prev.parts.scrollbar === parts.scrollbar &&
+                  prev.parts.tableElement === parts.tableElement
+                ) {
+                  // Same DOM: keep the listeners, but resync since the
+                  // update may still change scrollability (e.g. a frozen
+                  // rows toggle switches the wrapper to overflow-x: clip).
+                  syncStickyScrollbar(parts.scrollable, parts.scrollbar);
                   continue;
                 }
-                const parts = findStickyScrollbarElements(dom);
+                if (prev) {
+                  prev.cleanup();
+                  attached.delete(nodeKey);
+                }
                 if (parts) {
-                  cleanups.set(nodeKey, attachStickyScrollbarListeners(parts));
+                  attached.set(nodeKey, {
+                    cleanup: attachStickyScrollbarListeners(parts),
+                    parts,
+                  });
                 }
               }
             },
             {skipInitialization: false},
           ),
-          () => {
-            for (const cleanup of cleanups.values()) {
-              cleanup();
+          editor.registerRootListener(rootElement => {
+            if (rootElement === null) {
+              // setRootElement(null) unmounts without delivering 'destroyed'
+              // mutations, so the observers must be released here.
+              detachAll();
             }
-            cleanups.clear();
-          },
+          }),
+          detachAll,
         );
       }),
       effect(() =>

@@ -198,10 +198,41 @@ export interface StickyScrollbarElements {
   tableElement: HTMLTableElement;
 }
 
+// Unthemed sticky scrollbars whose environment cannot render a persistent
+// proxy scrollbar (overlay scrollbars reserve no height and show no idle
+// thumb), permanently hidden in favor of the wrapper's native scrollbar.
+const overlayStickyScrollbars = new WeakSet<HTMLDivElement>();
+
+function measureScrollbarThickness(scrollbar: HTMLDivElement): number {
+  const prevDisplay = scrollbar.style.display;
+  scrollbar.style.display = '';
+  const thickness = scrollbar.offsetHeight - scrollbar.clientHeight;
+  scrollbar.style.display = prevDisplay;
+  return thickness;
+}
+
 export function attachStickyScrollbarListeners(
   elements: StickyScrollbarElements,
 ): () => void {
   const {scrollable, scrollbar, tableElement} = elements;
+  // A themed scrollbar (theme.tableStickyScrollbar, detectable by its
+  // classes) is the integrator's responsibility to keep visible (e.g. via
+  // ::-webkit-scrollbar height or scrollbar-width). The unthemed fallback
+  // relies on classic native scrollbars for its height, so where the
+  // environment renders overlay scrollbars (no reserved thickness — e.g.
+  // macOS "show scrollbars when scrolling", or non-layout environments like
+  // jsdom) the proxy would be an invisible strip: keep it hidden and
+  // restore the wrapper's native scrollbar instead of presenting no scroll
+  // affordance at all.
+  if (
+    scrollbar.classList.length === 0 &&
+    measureScrollbarThickness(scrollbar) === 0
+  ) {
+    overlayStickyScrollbars.add(scrollbar);
+    scrollbar.style.display = 'none';
+    scrollable.style.scrollbarWidth = 'auto';
+    return () => {};
+  }
   const onWrapperScroll = () => {
     if (scrollbar.scrollLeft !== scrollable.scrollLeft) {
       scrollbar.scrollLeft = scrollable.scrollLeft;
@@ -216,39 +247,53 @@ export function attachStickyScrollbarListeners(
     passive: true,
   });
   scrollbar.addEventListener('scroll', onScrollbarScroll, {passive: true});
-  const resizeObserver = new ResizeObserver(() => {
-    syncStickyScrollbar(scrollable, scrollbar, tableElement);
-  });
-  resizeObserver.observe(scrollable);
-  resizeObserver.observe(tableElement);
+  let resizeObserver: ResizeObserver | null = null;
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => {
+      syncStickyScrollbar(scrollable, scrollbar);
+    });
+    resizeObserver.observe(scrollable);
+    resizeObserver.observe(tableElement);
+  }
   const cleanup = () => {
     scrollable.removeEventListener('scroll', onWrapperScroll);
     scrollbar.removeEventListener('scroll', onScrollbarScroll);
-    resizeObserver.disconnect();
+    if (resizeObserver) {
+      resizeObserver.disconnect();
+    }
   };
-  syncStickyScrollbar(scrollable, scrollbar, tableElement);
+  syncStickyScrollbar(scrollable, scrollbar);
   return cleanup;
 }
 
-function syncStickyScrollbar(
+export function syncStickyScrollbar(
   scrollable: HTMLDivElement,
   scrollbar: HTMLDivElement,
-  tableElement: HTMLTableElement,
 ): void {
-  const spacer = scrollbar.firstElementChild;
-  if (!spacer || !isHTMLElement(spacer) || !tableElement.isConnected) {
+  if (overlayStickyScrollbars.has(scrollbar)) {
     return;
   }
-  spacer.style.width = tableElement.scrollWidth + 'px';
-  const containerWidth = scrollable.clientWidth;
+  const spacer = scrollbar.firstElementChild;
+  if (!spacer || !isHTMLElement(spacer) || !scrollable.isConnected) {
+    return;
+  }
   const view = scrollable.ownerDocument.defaultView;
   if (!view) {
     scrollbar.style.display = 'none';
     return;
   }
+  // All layout reads happen before any write so a sync forces at most one
+  // reflow, and both metrics come from the same element so their rounding
+  // can't disagree at fractional zoom levels.
   const overflowX = view.getComputedStyle(scrollable).overflowX;
-  const isScrollable = overflowX !== 'clip' && overflowX !== 'hidden';
-  const hasOverflow = isScrollable && tableElement.scrollWidth > containerWidth;
+  const isScrollable = overflowX === 'auto' || overflowX === 'scroll';
+  const scrollWidth = scrollable.scrollWidth;
+  const clientWidth = scrollable.clientWidth;
+  const spacerWidth = scrollWidth + 'px';
+  if (spacer.style.width !== spacerWidth) {
+    spacer.style.width = spacerWidth;
+  }
+  const hasOverflow = isScrollable && scrollWidth > clientWidth;
   scrollbar.style.display = hasOverflow ? '' : 'none';
 }
 
@@ -263,11 +308,7 @@ export function findStickyScrollbarElements(
     return null;
   }
   const tableElement = firstChild.querySelector(':scope > table');
-  if (
-    !tableElement ||
-    !isHTMLElement(tableElement) ||
-    tableElement.nodeName !== 'TABLE'
-  ) {
+  if (!isHTMLTableElement(tableElement)) {
     return null;
   }
   const scrollbar = firstChild.nextElementSibling;
@@ -277,19 +318,8 @@ export function findStickyScrollbarElements(
   return {
     scrollable: firstChild,
     scrollbar,
-    tableElement: tableElement as HTMLTableElement,
+    tableElement,
   };
-}
-
-function getScrollableWrapper(dom: HTMLElement): HTMLDivElement | null {
-  if (!isHTMLDivElement(dom)) {
-    return null;
-  }
-  const parts = findStickyScrollbarElements(dom);
-  if (parts) {
-    return parts.scrollable;
-  }
-  return dom.querySelector('table') ? dom : null;
 }
 
 const scrollableEditors = new WeakSet<LexicalEditor>();
@@ -307,9 +337,12 @@ export function $isStickyScrollbarActive(
     editor,
     '@lexical/table/Table',
   );
+  // peek() so a reconcile that runs inside a signals effect (e.g. via a
+  // discrete update or force-commit read) does not subscribe that effect to
+  // the table config; re-rendering on change is the TableExtension's job.
   return dep
-    ? dep.output.hasStickyScrollbar.value &&
-        dep.output.hasHorizontalScroll.value
+    ? dep.output.hasStickyScrollbar.peek() &&
+        dep.output.hasHorizontalScroll.peek()
     : false;
 }
 
@@ -447,6 +480,7 @@ export class TableNode extends ElementNode {
         config,
         hasStickyScrollbar,
       );
+      this.updateTableWrapper(null, scrollableWrapper, tableElement, config);
       if (hasStickyScrollbar) {
         const stickyScrollbar = $createStickyScrollbar(config);
         const outerWrapper = $getDocument().createElement('div');
@@ -454,10 +488,8 @@ export class TableNode extends ElementNode {
         outerWrapper.appendChild(scrollableWrapper);
         outerWrapper.appendChild(stickyScrollbar);
         setDOMUnmanaged(stickyScrollbar);
-        this.updateTableWrapper(null, scrollableWrapper, tableElement, config);
         return outerWrapper;
       }
-      this.updateTableWrapper(null, scrollableWrapper, tableElement, config);
       return scrollableWrapper;
     }
     return tableElement;
@@ -516,17 +548,15 @@ export class TableNode extends ElementNode {
       return true;
     }
     if (isHTMLDivElement(dom)) {
-      const scrollable = getScrollableWrapper(dom);
-      if (scrollable) {
-        const hasStickyDom = dom.hasAttribute('data-lexical-sticky-scrollbar');
-        if (hasStickyDom !== $isStickyScrollbarActive()) {
-          return true;
-        }
+      const hasStickyDom = dom.hasAttribute('data-lexical-sticky-scrollbar');
+      if (hasStickyDom !== $isStickyScrollbarActive()) {
+        return true;
+      }
+      // The scrollable wrapper is the table's immediate parent in both
+      // layouts (the inner div in sticky mode, dom itself otherwise).
+      const scrollable = tableElement.parentElement;
+      if (isHTMLDivElement(scrollable)) {
         this.updateTableWrapper(prevNode, scrollable, tableElement, config);
-      } else if (__DEV__) {
-        console.warn(
-          'TableNode.updateDOM: Could not find scrollable wrapper in DOM',
-        );
       }
     }
     this.updateTableElement(prevNode, tableElement, config);

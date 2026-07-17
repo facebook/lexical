@@ -317,7 +317,7 @@ describe('table selection', () => {
             // the extra cell
             const map0 = $computeTableMapSkipCellCheck(table, null, null)[0];
             const mergeTarget = map0[1][1].cell;
-            mergeTarget.__colSpan = 2;
+            mergeTarget.setColSpan(2);
             map0[1][2].cell.remove();
 
             // Select (0,0) to (2,1) — the merged cell at row 1 spans

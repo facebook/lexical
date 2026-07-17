@@ -169,6 +169,7 @@ export default defineConfig({
             include: ['packages/*/src/__bench__/*.bench.ts'],
           },
           environment: 'node',
+          include: [],
           name: 'bench',
         },
       },
@@ -189,6 +190,7 @@ export default defineConfig({
             ),
           },
           environment: 'jsdom',
+          include: [],
           name: 'bench-dom',
           setupFiles: ['./vitest.setup.mts'],
           typecheck: {

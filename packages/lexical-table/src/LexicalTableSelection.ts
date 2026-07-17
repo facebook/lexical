@@ -48,6 +48,7 @@ import {$findTableNode} from './LexicalTableSelectionHelpers';
 import {
   $computeTableCellRectBoundary,
   $computeTableMap,
+  $getTableCellNodeRect,
   $insertTableIntoGrid,
 } from './LexicalTableUtils';
 
@@ -290,19 +291,41 @@ export class TableSelection implements BaseSelection {
 
   /** @deprecated Use {@link $computeTableMap} and {@link $computeTableCellRectBoundary} directly. */
   getShape(): TableSelectionShape {
-    const {anchorTable, anchorCell, focusCell} = $getCellNodes(this);
-    const [map, cellAMap, cellBMap] = $computeTableMap(
-      anchorTable,
-      anchorCell,
-      focusCell,
+    const {anchorCell, focusCell} = $getCellNodes(this);
+    const anchorCellNodeRect = $getTableCellNodeRect(anchorCell);
+    invariant(
+      anchorCellNodeRect !== null,
+      'getCellRect: expected to find AnchorNode',
     );
-    const {minColumn, maxColumn, minRow, maxRow} =
-      $computeTableCellRectBoundary(map, cellAMap, cellBMap);
+    const focusCellNodeRect = $getTableCellNodeRect(focusCell);
+    invariant(
+      focusCellNodeRect !== null,
+      'getCellRect: expected to find focusCellNode',
+    );
+
+    const startX = Math.min(
+      anchorCellNodeRect.columnIndex,
+      focusCellNodeRect.columnIndex,
+    );
+    const stopX = Math.max(
+      anchorCellNodeRect.columnIndex + anchorCellNodeRect.colSpan - 1,
+      focusCellNodeRect.columnIndex + focusCellNodeRect.colSpan - 1,
+    );
+
+    const startY = Math.min(
+      anchorCellNodeRect.rowIndex,
+      focusCellNodeRect.rowIndex,
+    );
+    const stopY = Math.max(
+      anchorCellNodeRect.rowIndex + anchorCellNodeRect.rowSpan - 1,
+      focusCellNodeRect.rowIndex + focusCellNodeRect.rowSpan - 1,
+    );
+
     return {
-      fromX: minColumn,
-      fromY: minRow,
-      toX: maxColumn,
-      toY: maxRow,
+      fromX: Math.min(startX, stopX),
+      fromY: Math.min(startY, stopY),
+      toX: Math.max(startX, stopX),
+      toY: Math.max(startY, stopY),
     };
   }
 

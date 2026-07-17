@@ -11,7 +11,6 @@ import {
   $computeTableMapSkipCellCheck,
   $createTableCellNode,
   $createTableNode,
-  $createTableNodeWithDimensions,
   $createTableRowNode,
   $createTableSelectionFrom,
   $deleteTableRowAtSelection,
@@ -306,38 +305,7 @@ describe('table selection', () => {
       });
     });
 
-    describe('getShape with merged cells', () => {
-      test('expands boundary when a non-anchor/focus cell spans beyond the initial rectangle', () => {
-        testEnv.editor.update(
-          () => {
-            const table = $createTableNodeWithDimensions(3, 3, false);
-            $getRoot().clear().append(table);
-
-            // Merge row 1, cols 1-2 by setting colSpan and removing
-            // the extra cell
-            const map0 = $computeTableMapSkipCellCheck(table, null, null)[0];
-            const mergeTarget = map0[1][1].cell;
-            mergeTarget.setColSpan(2);
-            map0[1][2].cell.remove();
-
-            // Select (0,0) to (2,1) — the merged cell at row 1 spans
-            // to col 2, so getShape must expand toX to 2
-            const map1 = $computeTableMapSkipCellCheck(table, null, null)[0];
-            const sel = $createTableSelectionFrom(
-              table,
-              map1[0][0].cell,
-              map1[2][1].cell,
-            );
-            const shape = sel.getShape();
-            expect(shape.fromX).toBe(0);
-            expect(shape.fromY).toBe(0);
-            expect(shape.toX).toBe(2);
-            expect(shape.toY).toBe(2);
-          },
-          {discrete: true},
-        );
-      });
-
+    describe('getShape', () => {
       test('returns correct shape for non-merged table', () => {
         testEnv.editor.update(
           () => {

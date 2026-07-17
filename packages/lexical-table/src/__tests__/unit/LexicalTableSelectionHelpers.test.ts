@@ -31,6 +31,7 @@ import {
   type LexicalEditorWithDispose,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 describe('LexicalTableSelectionHelpers', () => {
@@ -328,18 +329,18 @@ describe('LexicalTableSelectionHelpers', () => {
         () => {
           const table = $createTableNodeWithDimensions(2, 2, false);
           $getRoot().clear().append(table);
-          const firstRow = table.getFirstChildOrThrow();
-          if (!$isTableRowNode(firstRow)) {
-            throw new Error('Expected TableRowNode');
-          }
-          const firstCell = firstRow.getFirstChildOrThrow();
-          if (!$isTableCellNode(firstCell)) {
-            throw new Error('Expected TableCellNode');
-          }
-          const paragraph = firstCell.getFirstChildOrThrow();
-          if (!$isParagraphNode(paragraph)) {
-            throw new Error('Expected ParagraphNode');
-          }
+          const firstRow = $assertNodeType(
+            table.getFirstChildOrThrow(),
+            $isTableRowNode,
+          );
+          const firstCell = $assertNodeType(
+            firstRow.getFirstChildOrThrow(),
+            $isTableCellNode,
+          );
+          const paragraph = $assertNodeType(
+            firstCell.getFirstChildOrThrow(),
+            $isParagraphNode,
+          );
           paragraph.clear().append($createTextNode('hello world'));
           paragraph.selectEnd();
         },

@@ -348,7 +348,7 @@ function removeStickyScrollbar(actualHtml) {
   return actualHtml
     .replace(/<div[^>]*\baria-hidden="true"[^>]*><div[^>]*><\/div><\/div>/g, '')
     .replace(/\s*data-lexical-sticky-scrollbar="true"/g, '')
-    .replace(/\s*style="scrollbar-width: none"/g, '');
+    .replace(/\s*style="scrollbar-width: none;?"/g, '');
 }
 
 /**

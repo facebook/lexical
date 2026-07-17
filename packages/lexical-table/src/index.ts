@@ -66,6 +66,7 @@ export {
   getTableObserverFromTableElement,
 } from './LexicalTableSelectionHelpers';
 export {
+  $computeTableCellRectBoundary,
   $computeTableMap,
   $computeTableMapSkipCellCheck,
   $createTableNodeWithDimensions,

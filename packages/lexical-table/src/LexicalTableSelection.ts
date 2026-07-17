@@ -288,6 +288,7 @@ export class TableSelection implements BaseSelection {
     selection.insertNodes(nodes);
   }
 
+  /** @deprecated Use {@link $computeTableMap} and {@link $computeTableCellRectBoundary} directly. */
   getShape(): TableSelectionShape {
     const {anchorTable, anchorCell, focusCell} = $getCellNodes(this);
     const [map, cellAMap, cellBMap] = $computeTableMap(

@@ -5,10 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {EditorDOMRenderConfig} from 'lexical';
+
+import type {DOMRenderExtension} from './DOMRenderExtension';
+import type {
+  AnyRenderStateConfigPairOrUpdater,
+  ContextRecord,
+  RenderStateConfig,
+} from './types';
 
 import {getPeerDependencyFromEditor} from '@lexical/extension';
-import {$getEditor, $getEditorDOMRenderConfig, LexicalEditor} from 'lexical';
+import {
+  $getEditor,
+  $getEditorDOMRenderConfig,
+  type EditorDOMRenderConfig,
+  type LexicalEditor,
+} from 'lexical';
 
 import {DOMRenderContextSymbol, DOMRenderExtensionName} from './constants';
 import {
@@ -17,12 +28,6 @@ import {
   getContextRecord,
   getContextValue,
 } from './ContextRecord';
-import {DOMRenderExtension} from './DOMRenderExtension';
-import {
-  AnyRenderStateConfigPairOrUpdater,
-  ContextRecord,
-  RenderStateConfig,
-} from './types';
 
 /**
  * Create a context state to be used during render.

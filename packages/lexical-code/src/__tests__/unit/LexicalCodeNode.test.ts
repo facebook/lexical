@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-
 import {
   $createCodeHighlightNode,
   $createCodeNode,
@@ -35,6 +33,7 @@ import {
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_TAB_COMMAND,
+  type LexicalEditor,
   MOVE_TO_END,
   MOVE_TO_START,
 } from 'lexical';

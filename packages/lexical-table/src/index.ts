@@ -93,8 +93,12 @@ export {
   $isSimpleTable,
   $mergeCells,
   $moveTableColumn,
+  $moveTableRow,
   $removeTableRowAtIndex,
+  $setTableColumnIsHeader,
+  $setTableRowIsHeader,
   $unmergeCell,
+  $unmergeCellNode,
 } from './LexicalTableUtils';
 export {
   TableImportRules,

@@ -1,6 +1,6 @@
 {
   "name": "lexical-playground",
-  "version": "0.46.0",
+  "version": "0.48.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -54,8 +54,8 @@
     "yjs": "^13.6.31"
   },
   "devDependencies": {
-    "@babel/plugin-transform-flow-strip-types": "^7.29.7",
-    "@babel/preset-react": "^7.29.7",
+    "@babel/plugin-transform-flow-strip-types": "^8.0.1",
+    "@babel/preset-react": "^8.0.1",
     "@prettier/sync": "^0.6.1",
     "@rollup/plugin-babel": "^7.1.0",
     "@rollup/plugin-commonjs": "^29.0.3",

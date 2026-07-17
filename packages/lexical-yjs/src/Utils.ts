@@ -23,16 +23,16 @@ import {
   $removeSlot,
   $setSlot,
   createEditor,
-  DecoratorNode,
-  EditorState,
-  ElementNode,
+  type DecoratorNode,
+  type EditorState,
+  type ElementNode,
   getDeclaredSlots,
   isLexicalEditor,
-  LexicalNode,
-  NodeKey,
-  NodeMap,
-  RangeSelection,
-  TextNode,
+  type LexicalNode,
+  type NodeKey,
+  type NodeMap,
+  type RangeSelection,
+  type TextNode,
 } from 'lexical';
 import {Doc, Map as YMap, XmlElement, XmlText} from 'yjs';
 
@@ -44,7 +44,7 @@ import {
 import {$createCollabElementNode, CollabElementNode} from './CollabElementNode';
 import {
   $createCollabLineBreakNode,
-  CollabLineBreakNode,
+  type CollabLineBreakNode,
 } from './CollabLineBreakNode';
 import {$createCollabTextNode, CollabTextNode} from './CollabTextNode';
 

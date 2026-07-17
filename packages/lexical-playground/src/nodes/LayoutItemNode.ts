@@ -6,9 +6,14 @@
  *
  */
 
-import type {EditorConfig, LexicalNode, SerializedElementNode} from 'lexical';
-
-import {$isParagraphNode, addClassNamesToElement, ElementNode} from 'lexical';
+import {
+  $isParagraphNode,
+  addClassNamesToElement,
+  type EditorConfig,
+  ElementNode,
+  type LexicalNode,
+  type SerializedElementNode,
+} from 'lexical';
 
 export type SerializedLayoutItemNode = SerializedElementNode;
 

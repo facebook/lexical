@@ -19,7 +19,7 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
-  LexicalCommand,
+  type LexicalCommand,
   mergeRegister,
   TextNode,
 } from 'lexical';
@@ -27,7 +27,7 @@ import _ from 'lodash';
 import {useCallback, useEffect, useState} from 'react';
 import {
   PermanentUserData,
-  Snapshot,
+  type Snapshot,
   snapshot as createSnapshot,
   XmlElement,
 } from 'yjs';

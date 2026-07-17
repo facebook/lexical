@@ -6,22 +6,24 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {$isHeadingNode, HeadingNode, HeadingTagType} from '@lexical/rich-text';
+import {
+  $isHeadingNode,
+  HeadingNode,
+  type HeadingTagType,
+} from '@lexical/rich-text';
 import {$getNextRightPreorderNode} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getRoot,
   $isElementNode,
-  ElementNode,
-  LexicalEditor,
-  NodeKey,
-  NodeMutation,
+  type ElementNode,
+  type LexicalEditor,
+  type NodeKey,
+  type NodeMutation,
   TextNode,
 } from 'lexical';
-import {useEffect, useState} from 'react';
+import {type JSX, useEffect, useState} from 'react';
 
 /**
  * A single entry in the table of contents, as a tuple of the heading node's

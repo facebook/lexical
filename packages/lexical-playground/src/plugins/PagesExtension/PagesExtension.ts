@@ -23,7 +23,7 @@ import {
   DELETE_CHARACTER_COMMAND,
   HISTORY_MERGE_TAG,
   mergeRegister,
-  NodeKey,
+  type NodeKey,
   registerEventListeners,
   RootNode,
   safeCast,
@@ -31,7 +31,7 @@ import {
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
 
-import {$isPageBreakNode, PageBreakNode} from '../../nodes/PageBreakNode';
+import {$isPageBreakNode, type PageBreakNode} from '../../nodes/PageBreakNode';
 import {PageBreakExtension} from '../PageBreakExtension';
 import {PAGE_SIZES} from './constants';
 import {

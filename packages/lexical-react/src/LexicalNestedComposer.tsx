@@ -6,29 +6,34 @@
  *
  */
 
-import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
-import type {EditableListener} from 'lexical';
-import type {JSX} from 'react';
-
 import invariant from '@lexical/internal/invariant';
 import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
 import {CollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {
   createLexicalComposerContext,
   LexicalComposerContext,
+  type LexicalComposerContextType,
 } from '@lexical/react/LexicalComposerContext';
 import {
   createSharedNodeState,
-  EditorThemeClasses,
+  type EditableListener,
+  type EditorThemeClasses,
   getRegisteredNode,
   getTransformSetFromKlass,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
-  LexicalNodeReplacement,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalNodeReplacement,
 } from 'lexical';
 import * as React from 'react';
-import {ReactNode, useContext, useEffect, useMemo, useRef} from 'react';
+import {
+  type JSX,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 
 /**
  * Props for the {@link LexicalNestedComposer} component.

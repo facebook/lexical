@@ -6,10 +6,8 @@
  *
  */
 
-import type {EditorConfig} from 'lexical';
-
 import {$createCodeNode} from '@lexical/code-core';
-import {$getRoot} from 'lexical';
+import {$getRoot, type EditorConfig} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
 

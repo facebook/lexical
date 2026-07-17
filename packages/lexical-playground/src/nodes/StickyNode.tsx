@@ -6,17 +6,6 @@
  *
  */
 
-import type {
-  EditorConfig,
-  LexicalEditor,
-  LexicalEditorWithDispose,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  SerializedEditor,
-  SerializedLexicalNode,
-  Spread,
-} from 'lexical';
 import type {JSX} from 'react';
 
 import {
@@ -32,6 +21,15 @@ import {
   configExtension,
   DecoratorNode,
   defineExtension,
+  type EditorConfig,
+  type LexicalEditor,
+  type LexicalEditorWithDispose,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type SerializedEditor,
+  type SerializedLexicalNode,
+  type Spread,
 } from 'lexical';
 import * as React from 'react';
 import {createPortal} from 'react-dom';

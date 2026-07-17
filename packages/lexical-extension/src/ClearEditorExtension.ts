@@ -14,7 +14,7 @@ import {
   CLEAR_EDITOR_COMMAND,
   COMMAND_PRIORITY_EDITOR,
   defineExtension,
-  LexicalEditor,
+  type LexicalEditor,
   safeCast,
 } from 'lexical';
 
@@ -46,8 +46,12 @@ export function registerClearEditor(
 ): () => void {
   return editor.registerCommand(
     CLEAR_EDITOR_COMMAND,
-    payload => {
-      editor.update($onClear);
+    () => {
+      // Command listeners already run in an update context. Wrapping
+      // $onClear in editor.update() would queue it as a nested update when
+      // the command is dispatched from inside another update, running it
+      // after the rest of that update's callback instead of inline here.
+      $onClear();
       return true;
     },
     COMMAND_PRIORITY_EDITOR,

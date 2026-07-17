@@ -1445,6 +1445,50 @@ export async function enableCompositionKeyEvents(page) {
   });
 }
 
+/**
+ * CDP-based IME composition helper for e2e tests.
+ *
+ * Plays an IME composition sequence through Chrome DevTools Protocol,
+ * replacing the verbose per-step client.send() calls that are
+ * copy-pasted across Composition.spec tests.
+ *
+ * @param {import('@playwright/test').CDPSession} client
+ * @param {string[]} steps - Intermediate composing text at each keystroke.
+ * @param {string} [commitText] - Final committed text. Defaults to last step.
+ */
+export async function imeCompose(client, steps, commitText) {
+  const finalText = commitText ?? steps[steps.length - 1];
+  for (const text of steps) {
+    await client.send('Input.imeSetComposition', {
+      selectionEnd: text.length,
+      selectionStart: text.length,
+      text,
+    });
+  }
+  await client.send('Input.insertText', {text: finalText});
+}
+
+// Pre-built Hiragana sequences used across multiple e2e tests.
+export const HIRAGANA_SUSHI = {
+  commitText: 'すし',
+  steps: ['ｓ', 'す', 'すｓ', 'すｓｈ', 'すし'],
+};
+
+export const HIRAGANA_MOJIA = {
+  commitText: 'もじあ',
+  steps: ['m', 'も', 'もj', 'もじ', 'もじあ'],
+};
+
+/**
+ * Types "すし もじあ" using CDP IME — the full sequence used in most
+ * Composition.spec tests.
+ */
+export async function typeSushiMojia(client, page) {
+  await imeCompose(client, HIRAGANA_SUSHI.steps, HIRAGANA_SUSHI.commitText);
+  await client.send('Input.insertText', {text: ' '});
+  await imeCompose(client, HIRAGANA_MOJIA.steps, HIRAGANA_MOJIA.commitText);
+}
+
 export async function pressToggleBold(page) {
   await keyDownCtrlOrMeta(page);
   await page.keyboard.press('b');

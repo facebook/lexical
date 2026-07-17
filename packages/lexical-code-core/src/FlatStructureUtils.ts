@@ -6,16 +6,6 @@
  *
  */
 
-import type {CodeHighlightNode} from './CodeHighlightNode';
-import type {
-  CaretDirection,
-  LexicalNode,
-  LineBreakNode,
-  RangeSelection,
-  SiblingCaret,
-  TabNode,
-} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
 import {
   $createLineBreakNode,
@@ -24,13 +14,20 @@ import {
   $isElementNode,
   $isLineBreakNode,
   $isTabNode,
+  type CaretDirection,
   getTextDirection,
+  type LexicalNode,
+  type LineBreakNode,
+  type RangeSelection,
+  type SiblingCaret,
+  type TabNode,
   tokenizeRawText,
 } from 'lexical';
 
 import {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
+  type CodeHighlightNode,
 } from './CodeHighlightNode';
 
 function $getLastMatchingCodeNode<D extends CaretDirection>(

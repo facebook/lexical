@@ -11,7 +11,7 @@ import {HistoryExtension} from '@lexical/history';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {RichTextExtension} from '@lexical/rich-text';
-import {defineExtension, EditorState} from 'lexical';
+import {defineExtension, type EditorState} from 'lexical';
 
 import {EmojiPlugin} from './plugins/EmojiPlugin';
 import {SendButtonPlugin} from './plugins/SendButtonPlugin';

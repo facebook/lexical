@@ -7,20 +7,19 @@
  */
 
 import type {BaseBinding} from './Bindings';
-import type {LexicalCommand} from 'lexical';
-import type {
-  Doc,
-  RelativePosition,
-  Snapshot,
-  UndoManager,
-  XmlElement,
-  XmlText,
-} from 'yjs';
 
 import './types';
 
-import {createCommand} from 'lexical';
-import {UndoManager as YjsUndoManager} from 'yjs';
+import {createCommand, type LexicalCommand} from 'lexical';
+import {
+  type Doc,
+  type RelativePosition,
+  type Snapshot,
+  type UndoManager,
+  UndoManager as YjsUndoManager,
+  type XmlElement,
+  type XmlText,
+} from 'yjs';
 
 export type UserState = {
   anchorPos: null | RelativePosition;
@@ -82,9 +81,14 @@ export type {
   Binding,
   BindingV2,
   ClientID,
+  CreateYjsBindingOptions,
   ExcludedProperties,
 } from './Bindings';
-export {createBinding, createBindingV2__EXPERIMENTAL} from './Bindings';
+export {
+  createBinding,
+  createBindingV2__EXPERIMENTAL,
+  createYjsBinding,
+} from './Bindings';
 
 export function createUndoManager(
   binding: BaseBinding,

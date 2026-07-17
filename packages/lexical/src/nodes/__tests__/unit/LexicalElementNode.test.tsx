@@ -14,11 +14,11 @@ import {
   $isElementNode,
   $isRangeSelection,
   createEditor,
-  ElementDOMSlot,
+  type ElementDOMSlot,
   ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  SerializedElementNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type SerializedElementNode,
   TextNode,
 } from 'lexical';
 import * as React from 'react';

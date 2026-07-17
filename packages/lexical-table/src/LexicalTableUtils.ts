@@ -6,8 +6,8 @@
  *
  */
 
-import type {TableMapType, TableMapValueType} from './LexicalTableSelection';
-import type {ElementNode, PointType} from 'lexical';
+import type {InsertTableCommandPayloadHeaders} from '.';
+import type {TableDOMTable} from './LexicalTableObserver';
 
 import invariant from '@lexical/internal/invariant';
 import {
@@ -18,27 +18,36 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
-  LexicalNode,
-  NodeKey,
-  RangeSelection,
+  type ElementNode,
+  type LexicalNode,
+  type NodeKey,
+  type PointType,
+  type RangeSelection,
 } from 'lexical';
 
-import {InsertTableCommandPayloadHeaders} from '.';
 import {
   $createTableCellNode,
   $isTableCellNode,
-  TableCellHeaderState,
+  type TableCellHeaderState,
   TableCellHeaderStates,
   TableCellNode,
 } from './LexicalTableCellNode';
-import {$createTableNode, $isTableNode, TableNode} from './LexicalTableNode';
-import {TableDOMTable} from './LexicalTableObserver';
+import {
+  $createTableNode,
+  $isTableNode,
+  type TableNode,
+} from './LexicalTableNode';
 import {
   $createTableRowNode,
   $isTableRowNode,
-  TableRowNode,
+  type TableRowNode,
 } from './LexicalTableRowNode';
-import {$isTableSelection, TableSelection} from './LexicalTableSelection';
+import {
+  $isTableSelection,
+  type TableMapType,
+  type TableMapValueType,
+  type TableSelection,
+} from './LexicalTableSelection';
 
 export function $createTableNodeWithDimensions(
   rowCount: number,
@@ -939,6 +948,13 @@ export function $unmergeCell(): void {
   return $unmergeCellNode(cellNode);
 }
 
+/**
+ * Unmerges the given cell, splitting it back into individual cells.
+ * Unlike {@link $unmergeCell}, this does not depend on the current
+ * selection. No-op if the cell is not merged.
+ *
+ * @param cellNode The merged cell to split.
+ */
 export function $unmergeCellNode(cellNode: TableCellNode): void {
   const [cell, row, grid] = $getNodeTriplet(cellNode);
   const colSpan = cell.__colSpan;
@@ -1330,6 +1346,43 @@ export function $moveTableColumn(
   }
 }
 
+/**
+ * Moves a row from one position to another within a simple (non-merged) table.
+ *
+ * @param tableNode The table node to modify.
+ * @param originRow The index of the row to move.
+ * @param targetRow The index to move the row to.
+ */
+export function $moveTableRow(
+  tableNode: TableNode,
+  originRow: number,
+  targetRow: number,
+): void {
+  if (originRow === targetRow) {
+    return;
+  }
+  const rows = tableNode.getChildren().filter($isTableRowNode);
+  const rowCount = rows.length;
+  if (
+    originRow < 0 ||
+    originRow >= rowCount ||
+    targetRow < 0 ||
+    targetRow >= rowCount
+  ) {
+    return;
+  }
+  if (!$isSimpleTable(tableNode)) {
+    return;
+  }
+  const originRowNode = rows[originRow];
+  const targetRowNode = rows[targetRow];
+  if (targetRow > originRow) {
+    targetRowNode.insertAfter(originRowNode);
+  } else {
+    targetRowNode.insertBefore(originRowNode);
+  }
+}
+
 export function $getTableCellNodeRect(tableCellNode: TableCellNode): {
   rowIndex: number;
   columnIndex: number;
@@ -1559,4 +1612,59 @@ export function $insertTableIntoGrid(
   }
 
   return true;
+}
+
+export function $setTableRowIsHeader(
+  tableNode: TableNode,
+  rowIndex: number,
+  isHeader: boolean,
+): void {
+  const [gridMap] = $computeTableMapSkipCellCheck(tableNode, null, null);
+  invariant(
+    rowIndex >= 0 && rowIndex < gridMap.length,
+    'Table row index %s out of range',
+    String(rowIndex),
+  );
+  const rowMap = gridMap[rowIndex];
+  const headerState = isHeader
+    ? TableCellHeaderStates.ROW
+    : TableCellHeaderStates.NO_STATUS;
+  const visited = new Set<TableCellNode>();
+  for (let col = 0; col < rowMap.length; col++) {
+    const mapCell = rowMap[col];
+    if (mapCell == null) {
+      continue;
+    }
+    if (!visited.has(mapCell.cell)) {
+      visited.add(mapCell.cell);
+      mapCell.cell.setHeaderStyles(headerState, TableCellHeaderStates.ROW);
+    }
+  }
+}
+
+export function $setTableColumnIsHeader(
+  tableNode: TableNode,
+  columnIndex: number,
+  isHeader: boolean,
+): void {
+  const [gridMap] = $computeTableMapSkipCellCheck(tableNode, null, null);
+  invariant(
+    gridMap.length > 0 && columnIndex >= 0 && columnIndex < gridMap[0].length,
+    'Table column index %s out of range',
+    String(columnIndex),
+  );
+  const headerState = isHeader
+    ? TableCellHeaderStates.COLUMN
+    : TableCellHeaderStates.NO_STATUS;
+  const visited = new Set<TableCellNode>();
+  for (let row = 0; row < gridMap.length; row++) {
+    const mapCell = gridMap[row][columnIndex];
+    if (mapCell == null) {
+      continue;
+    }
+    if (!visited.has(mapCell.cell)) {
+      visited.add(mapCell.cell);
+      mapCell.cell.setHeaderStyles(headerState, TableCellHeaderStates.COLUMN);
+    }
+  }
 }

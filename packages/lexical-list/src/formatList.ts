@@ -6,6 +6,8 @@
  *
  */
 
+import type {ListType} from './LexicalListNode';
+
 import invariant from '@lexical/internal/invariant';
 import {$getNearestNodeOfType} from '@lexical/utils';
 import {
@@ -20,10 +22,10 @@ import {
   $isTextNode,
   $normalizeCaret,
   $setPointFromCaret,
-  ElementNode,
-  LexicalNode,
-  NodeKey,
-  ParagraphNode,
+  type ElementNode,
+  type LexicalNode,
+  type NodeKey,
+  type ParagraphNode,
 } from 'lexical';
 
 import {
@@ -32,9 +34,8 @@ import {
   $isListItemNode,
   $isListNode,
   ListItemNode,
-  ListNode,
+  type ListNode,
 } from './';
-import {ListType} from './LexicalListNode';
 import {
   $getAllListItems,
   $getNewListStart,

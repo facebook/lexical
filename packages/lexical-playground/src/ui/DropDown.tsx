@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {calculateZoomLevel} from '@lexical/utils';
 import {
   getComposedEventTarget,
@@ -16,7 +14,8 @@ import {
 } from 'lexical';
 import * as React from 'react';
 import {
-  ReactNode,
+  type JSX,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,

@@ -6,8 +6,6 @@
  *
  */
 
-import type {CommandPayloadType, LexicalEditor} from 'lexical';
-
 import {
   $getHtmlContent,
   $handlePlainTextDrop,
@@ -23,7 +21,7 @@ import {
   $moveCharacter,
   $shouldOverrideDefaultCharacterSelection,
 } from '@lexical/selection';
-import {eventFiles, objectKlassEquals} from '@lexical/utils';
+import {objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
   $getSlotFrame,
@@ -31,6 +29,7 @@ import {
   $selectAll,
   CAN_USE_BEFORE_INPUT,
   COMMAND_PRIORITY_EDITOR,
+  type CommandPayloadType,
   CONTROLLED_TEXT_INSERTION_COMMAND,
   COPY_COMMAND,
   CUT_COMMAND,
@@ -39,7 +38,6 @@ import {
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
   DELETE_WORD_COMMAND,
-  DRAGOVER_COMMAND,
   DRAGSTART_COMMAND,
   DROP_COMMAND,
   INSERT_LINE_BREAK_COMMAND,
@@ -52,6 +50,7 @@ import {
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
   KEY_ENTER_COMMAND,
+  type LexicalEditor,
   mergeRegister,
   PASTE_COMMAND,
   PASTE_TAG,
@@ -427,20 +426,6 @@ export function registerPlainText(editor: LexicalEditor): () => void {
     editor.registerCommand<DragEvent>(
       DROP_COMMAND,
       event => $handlePlainTextDrop(event, editor),
-      COMMAND_PRIORITY_EDITOR,
-    ),
-    editor.registerCommand<DragEvent>(
-      DRAGOVER_COMMAND,
-      event => {
-        const [isFileTransfer] = eventFiles(event);
-        if (isFileTransfer) {
-          return false;
-        }
-        // contenteditable is not a native drop target; preventDefault() is
-        // required on dragover to allow the drop event to fire in Firefox.
-        event.preventDefault();
-        return true;
-      },
       COMMAND_PRIORITY_EDITOR,
     ),
     editor.registerCommand<DragEvent>(

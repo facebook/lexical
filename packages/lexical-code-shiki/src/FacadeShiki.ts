@@ -6,11 +6,13 @@
  *
  */
 
-import type {CodeNode} from '@lexical/code-core';
 import type {ThemedToken, TokensResult} from '@shikijs/types';
-import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 
-import {$createCodeHighlightNode, $isCodeNode} from '@lexical/code-core';
+import {
+  $createCodeHighlightNode,
+  $isCodeNode,
+  type CodeNode,
+} from '@lexical/code-core';
 import {
   createHighlighterCoreSync,
   getTokenStyleObject,
@@ -23,6 +25,9 @@ import {
   $createLineBreakNode,
   $createTabNode,
   $getNodeByKey,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
   tokenizeRawText,
 } from 'lexical';
 import {bundledLanguagesInfo} from 'shiki/langs';
@@ -87,12 +92,9 @@ export function loadCodeLanguage(
         if (editor && codeNodeKey) {
           editor.update(() => {
             const codeNode = $getNodeByKey(codeNodeKey);
-            if (
-              $isCodeNode(codeNode) &&
-              codeNode.getLanguage() === language &&
-              !codeNode.getIsSyntaxHighlightSupported()
-            ) {
+            if ($isCodeNode(codeNode) && codeNode.getLanguage() === language) {
               codeNode.setIsSyntaxHighlightSupported(true);
+              codeNode.markDirty();
             }
           });
         }

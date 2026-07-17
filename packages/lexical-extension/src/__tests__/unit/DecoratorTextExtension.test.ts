@@ -7,6 +7,8 @@
  */
 
 import {
+  $applyFormatToDom,
+  applyFormatToDom,
   buildEditorFromExtensions,
   DecoratorTextExtension,
   DecoratorTextNode,
@@ -17,7 +19,9 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $getSelection,
   $isParagraphNode,
+  $isRangeSelection,
   $selectAll,
   FORMAT_TEXT_COMMAND,
   TEXT_TYPE_TO_FORMAT,
@@ -25,6 +29,12 @@ import {
 import {assert, describe, expect, test} from 'vitest';
 
 const BOLD = TEXT_TYPE_TO_FORMAT.bold;
+
+test('$applyFormatToDom is a compatibility alias for applyFormatToDom', () => {
+  // The `$` prefix shipped in 0.47 by mistake (the implementation reads no
+  // editor state); the alias must survive for compatibility with 0.47.
+  expect($applyFormatToDom).toBe(applyFormatToDom);
+});
 
 describe('DecoratorTextExtension FORMAT_TEXT_COMMAND', () => {
   test('aligns DecoratorTextNode to not-bold when TextNode is bold', () => {
@@ -43,6 +53,12 @@ describe('DecoratorTextExtension FORMAT_TEXT_COMMAND', () => {
         paragraph.append(decorator, text);
 
         $selectAll();
+        // onSelectionChange doesn't run in jsdom, so manually set
+        // the AND-intersection format that the browser would compute.
+        const sel = $getSelection();
+        if ($isRangeSelection(sel)) {
+          sel.format = BOLD;
+        }
       },
       dependencies: [DecoratorTextExtension, RichTextExtension],
       name: 'test',
@@ -58,7 +74,7 @@ describe('DecoratorTextExtension FORMAT_TEXT_COMMAND', () => {
       const text = children[children.length - 1] as unknown as {
         getFormat(): number;
       };
-      // TextNode (bold=1) drives firstNextFormat → bold=0.
+      // selection.format = BOLD (AND of TextNodes) → toggle OFF → bold=0.
       // DecoratorTextNode must align to bold=0 (not toggle independently to bold=1).
       expect(decorator.getFormat()).toBe(0);
       expect(text.getFormat()).toBe(0);
@@ -113,6 +129,10 @@ describe('DecoratorTextExtension FORMAT_TEXT_COMMAND', () => {
         paragraph.append(decorator, text);
 
         $selectAll();
+        const sel = $getSelection();
+        if ($isRangeSelection(sel)) {
+          sel.format = BOLD;
+        }
       },
       dependencies: [DecoratorTextExtension, RichTextExtension],
       name: 'test',

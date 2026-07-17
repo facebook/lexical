@@ -7,20 +7,18 @@
  */
 
 import {
-  $isEditorState,
-  defineExtension,
-  HISTORY_MERGE_TAG,
-  safeCast,
-  SerializedEditorState,
-} from 'lexical';
-import {
   $createParagraphNode,
   $getRoot,
+  $isEditorState,
+  defineExtension,
   type EditorSetOptions,
   type EditorUpdateOptions,
+  HISTORY_MERGE_TAG,
   LineBreakNode,
   ParagraphNode,
   RootNode,
+  safeCast,
+  type SerializedEditorState,
   TabNode,
   TextNode,
 } from 'lexical';

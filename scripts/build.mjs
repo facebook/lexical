@@ -151,7 +151,30 @@ const thirdPartyExternals = [
   // inlined by Rollup.
   'shiki',
   '@shikijs',
-  ...(isWWW ? [':server-only-hack:.*'] : ['@floating-ui/react']),
+  ...(isWWW
+    ? [':server-only-hack:.*']
+    : [
+        '@floating-ui/react',
+        // @lexical/mdast delegates parsing/serialization to the
+        // micromark/mdast ecosystem. Keep those (declared) dependencies
+        // external in the npm build so consumer bundlers resolve them with
+        // their own export conditions and tree-shaking — e.g. the browser
+        // condition of decode-named-character-reference (transitive, via
+        // mdast-util-from-markdown) decodes entities through the DOM
+        // instead of inlining a ~36 kB character-entities table — and so
+        // they dedupe with any other unified/remark tooling in the app.
+        'mdast-util-from-markdown',
+        'mdast-util-to-markdown',
+        'mdast-util-to-string',
+        'mdast-util-gfm-autolink-literal',
+        'mdast-util-gfm-strikethrough',
+        'mdast-util-gfm-table',
+        'mdast-util-gfm-task-list-item',
+        'micromark-extension-gfm-autolink-literal',
+        'micromark-extension-gfm-strikethrough',
+        'micromark-extension-gfm-table',
+        'micromark-extension-gfm-task-list-item',
+      ]),
 ];
 const thirdPartyExternalsRegExp = new RegExp(
   `^(${thirdPartyExternals.join('|')})(\\/|$)`,
@@ -300,20 +323,32 @@ async function build(
         configFile: false,
         exclude: '**/node_modules/**',
         extensions,
+        // JSX only parses in .jsx/.tsx files. Applying preset-react
+        // unconditionally would enable the jsx syntax plugin for plain .ts
+        // too, where `<T>` in a generic arrow function (`<T>(x: T) => ...`)
+        // is ambiguous with an opening JSX element and fails to parse.
+        overrides: [
+          {
+            presets: [
+              // Pin development:false so the automatic runtime always emits the
+              // production `jsx`/`jsxs` helpers, never `jsxDEV`. Babel 8 flipped the
+              // default to infer development mode from the environment, which made
+              // the dev builds import `react/jsx-dev-runtime`; consumers that bundle
+              // those dev builds (e.g. the Docusaurus website SSG) then crash with
+              // "jsxDEV is not a function".
+              [
+                '@babel/preset-react',
+                {development: false, runtime: 'automatic'},
+              ],
+            ],
+            test: /\.[jt]sx$/,
+          },
+        ],
         plugins: [
           [transformErrorMessages, {extractCodes, noMinify: !isProd}],
           '@babel/plugin-transform-optional-catch-binding',
         ],
-        presets: [
-          [
-            '@babel/preset-typescript',
-            {
-              allowDeclareFields: true,
-              tsconfig: path.resolve('./tsconfig.build.json'),
-            },
-          ],
-          ['@babel/preset-react', {runtime: 'automatic'}],
-        ],
+        presets: ['@babel/preset-typescript'],
       }),
       commonjs(),
       json(),

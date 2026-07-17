@@ -15,7 +15,7 @@ import {
   formatUrl,
   LinkExtension,
   LinkNode,
-  SerializedLinkNode,
+  type SerializedLinkNode,
 } from '@lexical/link';
 import {$createMarkNode, $isMarkNode} from '@lexical/mark';
 import {
@@ -37,10 +37,10 @@ import {
   $isTextNode,
   $selectAll,
   $setSelection,
-  ParagraphNode,
-  RangeSelection,
-  SerializedParagraphNode,
-  TextNode,
+  type ParagraphNode,
+  type RangeSelection,
+  type SerializedParagraphNode,
+  type TextNode,
 } from 'lexical';
 import {$assertNodeType, initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, it, test} from 'vitest';
@@ -252,6 +252,48 @@ describe('LexicalLinkNode tests', () => {
         );
       });
     });
+
+    test('LinkNode.createDOM() fails closed on unparseable URLs', async () => {
+      const {editor} = testEnv;
+
+      await editor.update(() => {
+        // A `javascript:` URL crafted so that `new URL()` throws (invalid
+        // port). Previously `sanitizeUrl()` failed open and returned the
+        // attacker-controlled value unchanged; some browsers will still
+        // navigate it, allowing XSS. It must now be neutralized to
+        // about:blank.
+        const linkNode = $createLinkNode(
+          // eslint-disable-next-line no-script-url
+          'javascript://:99999999999/%0aalert(document.domain)',
+        );
+        expect(linkNode.createDOM(editorConfig).outerHTML).toBe(
+          '<a href="about:blank" class="my-link-class"></a>',
+        );
+      });
+    });
+
+    test.each([
+      // Control-character- and whitespace-obfuscated `javascript:` URLs that
+      // throw in `new URL()` but are still navigated by some browsers. The
+      // scheme must be recognized after normalization and neutralized.
+      'java\u0000script:alert(document.domain)',
+      'java\tscript:alert(document.domain)',
+      '\u0001javascript:alert(document.domain)',
+      'java\nscript:alert(document.domain)',
+      'data:text/html,<script>alert(1)</script>',
+    ])(
+      'LinkNode.createDOM() neutralizes obfuscated dangerous scheme %j',
+      async input => {
+        const {editor} = testEnv;
+
+        await editor.update(() => {
+          const linkNode = $createLinkNode(input);
+          expect(linkNode.createDOM(editorConfig).outerHTML).toBe(
+            '<a href="about:blank" class="my-link-class"></a>',
+          );
+        });
+      },
+    );
 
     describe('LinkNode.createDOM() formats URLs', () => {
       [

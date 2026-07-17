@@ -6,22 +6,6 @@
  *
  */
 
-import type {ListNode, ListType} from './';
-import type {
-  BaseSelection,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  EditorThemeClasses,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  ParagraphNode,
-  RangeSelection,
-  SerializedElementNode,
-  Spread,
-} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
 import {
   $applyNodeReplacement,
@@ -39,17 +23,29 @@ import {
   $setDirectionFromDOM,
   $setFormatFromDOM,
   addClassNamesToElement,
+  type BaseSelection,
   buildImportMap,
+  type DOMConversionOutput,
+  type DOMExportOutput,
+  type EditorConfig,
+  type EditorThemeClasses,
   ElementNode,
   getStyleObjectFromCSS,
   isHTMLElement,
-  LexicalEditor,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
   normalizeClassNames,
+  type ParagraphNode,
+  type RangeSelection,
   removeClassNamesFromElement,
+  type SerializedElementNode,
   setDOMStyleFromCSS,
+  type Spread,
 } from 'lexical';
 
-import {$createListNode, $isListNode} from './';
+import {$createListNode, $isListNode, type ListNode, type ListType} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
 import {isNestedListNode} from './utils';
 
@@ -401,41 +397,33 @@ export class ListItemNode extends ElementNode {
     return newElement;
   }
 
-  collapseAtStart(selection: RangeSelection): true {
-    const paragraph = $createParagraphNode();
-    const children = this.getChildren();
-    children.forEach(child => paragraph.append(child));
+  collapseAtStart(selection: RangeSelection): boolean {
+    if (isNestedListNode(this)) {
+      return false;
+    }
+
     const listNode = this.getParentOrThrow();
     const listNodeParent = listNode.getParentOrThrow();
-    const isIndented = $isListItemNode(listNodeParent);
 
-    if (listNode.getChildrenSize() === 1) {
-      if (isIndented) {
-        // if the list node is nested, we just want to remove it,
-        // effectively unindenting it.
-        listNode.remove();
-        listNodeParent.select();
-      } else {
-        listNode.insertBefore(paragraph);
-        listNode.remove();
-        // If we have selection on the list item, we'll need to move it
-        // to the paragraph
-        const anchor = selection.anchor;
-        const focus = selection.focus;
-        const key = paragraph.getKey();
-
-        if (anchor.type === 'element' && anchor.getNode().is(this)) {
-          anchor.set(key, anchor.offset, 'element');
-        }
-
-        if (focus.type === 'element' && focus.getNode().is(this)) {
-          focus.set(key, focus.offset, 'element');
-        }
-      }
-    } else {
-      listNode.insertBefore(paragraph);
-      this.remove();
+    if ($isListItemNode(listNodeParent)) {
+      $handleOutdent(this);
+      return true;
     }
+
+    const paragraph = $createParagraphNode().append(...this.getChildren());
+
+    const nextSiblings = this.getNextSiblings();
+    if (nextSiblings.length > 0) {
+      const newList = $copyNode(listNode);
+      newList.append(...nextSiblings);
+      listNode.insertAfter(newList);
+    }
+    listNode.insertAfter(paragraph);
+    this.remove();
+    if (listNode.getChildrenSize() === 0) {
+      listNode.remove();
+    }
+    paragraph.selectStart();
 
     return true;
   }

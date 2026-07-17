@@ -6,16 +6,17 @@
  *
  */
 
+import type {TextNode} from 'lexical';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   LexicalTypeaheadMenuPlugin,
   useBasicTypeaheadTriggerMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
-import {TextNode} from 'lexical';
 import {useCallback, useMemo, useState} from 'react';
 import * as ReactDOM from 'react-dom';
 
-import {BlockOption, getBlockOptions, ICON_URLS} from './blockOptions';
+import {type BlockOption, getBlockOptions, ICON_URLS} from './blockOptions';
 
 export function SlashMenuPlugin() {
   const [editor] = useLexicalComposerContext();

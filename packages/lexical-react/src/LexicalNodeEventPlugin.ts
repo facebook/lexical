@@ -6,12 +6,14 @@
  *
  */
 
-import type {Klass, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $findMatchingParent,
   $getNearestNodeFromDOMNode,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
   registerEventListener,
 } from 'lexical';
 import {useEffect, useRef} from 'react';

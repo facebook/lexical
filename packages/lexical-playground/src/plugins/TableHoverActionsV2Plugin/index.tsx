@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {JSX} from 'react';
 
 import './index.css';
 
@@ -45,7 +44,7 @@ import {
   mergeRegister,
   registerEventListener,
 } from 'lexical';
-import {useEffect, useRef, useState} from 'react';
+import {type JSX, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import DropDown, {DropDownItem} from '../../ui/DropDown';

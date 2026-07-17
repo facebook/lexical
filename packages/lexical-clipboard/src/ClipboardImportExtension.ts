@@ -6,8 +6,6 @@
  *
  */
 
-import type {BaseSelection, RangeSelection} from 'lexical';
-
 import {$getPeerDependency, configExtension} from '@lexical/extension';
 import {
   $generateNodesFromDOM,
@@ -22,7 +20,9 @@ import {
   $getEditor,
   $getSelection,
   $isRangeSelection,
+  type BaseSelection,
   defineExtension,
+  type RangeSelection,
   safeCast,
   shallowMergeConfig,
   tokenizeRawText,
@@ -31,7 +31,7 @@ import {
 import {
   $generateNodesFromSerializedNodes,
   $insertGeneratedNodes,
-  LexicalClipboardData,
+  type LexicalClipboardData,
 } from './clipboard';
 
 /**

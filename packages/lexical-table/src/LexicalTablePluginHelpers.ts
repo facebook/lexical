@@ -6,7 +6,9 @@
  *
  */
 
-import {NamedSignalsOutput, Signal, signal} from '@lexical/extension';
+import type {TableConfig} from './LexicalTableExtension';
+
+import {type NamedSignalsOutput, type Signal, signal} from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
 import {
   $dfs,
@@ -29,13 +31,13 @@ import {
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
-  CommandPayloadType,
-  ElementNode,
+  type CommandPayloadType,
+  type ElementNode,
   isDOMNode,
-  LexicalEditor,
+  type LexicalEditor,
   mergeRegister,
-  NodeKey,
-  RangeSelection,
+  type NodeKey,
+  type RangeSelection,
   SELECT_ALL_COMMAND,
   SELECTION_CHANGE_COMMAND,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
@@ -48,16 +50,15 @@ import {
 } from './LexicalTableCellNode';
 import {
   INSERT_TABLE_COMMAND,
-  InsertTableCommandPayload,
+  type InsertTableCommandPayload,
 } from './LexicalTableCommands';
-import {TableConfig} from './LexicalTableExtension';
 import {$isTableNode, TableNode} from './LexicalTableNode';
 import {$getTableAndElementByKey, TableObservers} from './LexicalTableObserver';
 import {$isTableRowNode, TableRowNode} from './LexicalTableRowNode';
 import {
   $createTableSelectionFrom,
   $isTableSelection,
-  TableSelection,
+  type TableSelection,
 } from './LexicalTableSelection';
 import {
   $findTableNode,

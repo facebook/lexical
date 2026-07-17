@@ -20,8 +20,8 @@ import {
   $setState,
   createState,
   defineExtension,
-  LexicalEditorWithDispose,
-  LexicalNode,
+  type LexicalEditorWithDispose,
+  type LexicalNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 

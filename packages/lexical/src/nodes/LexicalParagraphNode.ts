@@ -19,10 +19,6 @@ import type {
   LexicalNode,
 } from '../LexicalNode';
 import type {RangeSelection} from '../LexicalSelection';
-import type {
-  ElementFormatType,
-  SerializedElementNode,
-} from './LexicalElementNode';
 
 import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {
@@ -34,7 +30,11 @@ import {
   isHTMLElement,
   setNodeIndentFromDOM,
 } from '../LexicalUtils';
-import {ElementNode} from './LexicalElementNode';
+import {
+  type ElementFormatType,
+  ElementNode,
+  type SerializedElementNode,
+} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 
 export type SerializedParagraphNode = Spread<

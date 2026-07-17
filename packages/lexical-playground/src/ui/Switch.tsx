@@ -6,10 +6,8 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import * as React from 'react';
-import {useMemo} from 'react';
+import {type JSX, useMemo} from 'react';
 
 export default function Switch({
   checked,

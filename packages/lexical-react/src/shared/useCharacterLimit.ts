@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalEditor, LexicalNode} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
 import {
   $createOverflowNode,
@@ -28,6 +26,8 @@ import {
   COMMAND_PRIORITY_LOW,
   DELETE_CHARACTER_COMMAND,
   HISTORY_MERGE_TAG,
+  type LexicalEditor,
+  type LexicalNode,
   mergeRegister,
 } from 'lexical';
 import {useEffect} from 'react';
@@ -180,6 +180,14 @@ export function $wrapOverflowedNodes(offset: number): void {
   for (let i = 0; i < dfsNodesLength; i += 1) {
     const {node} = dfsNodes[i];
 
+    // ElementNode.getTextContent() inserts '\n\n' after each non-inline
+    // element child that is not the last child. findOffset counts those
+    // separators (via $rootTextContent), so the DFS must count them too.
+    const prevSibling = node.getPreviousSibling();
+    if ($isElementNode(prevSibling) && !prevSibling.isInline()) {
+      accumulatedLength += 2;
+    }
+
     // Slot value roots (a non-inline DecoratorNode slotted into a host) are
     // leaf nodes with __parent === null; wrapping them in OverflowNode would
     // call node.replace() and throw, so they stay out of the wrap loop. Their
@@ -266,6 +274,10 @@ export function $wrapOverflowedNodes(offset: number): void {
         }
 
         $mergePrevious(overflowNode);
+        const nextNode = overflowNode.getNextSibling();
+        if ($isOverflowNode(nextNode)) {
+          $mergePrevious(nextNode);
+        }
       }
     }
   }
@@ -303,7 +315,7 @@ export function $mergePrevious(overflowNode: OverflowNode): void {
     const anchor = selection.anchor;
     const anchorNode = anchor.getNode();
     const focus = selection.focus;
-    const focusNode = anchor.getNode();
+    const focusNode = focus.getNode();
 
     if (anchorNode.is(previousNode)) {
       anchor.set(overflowNode.getKey(), anchor.offset, 'element');

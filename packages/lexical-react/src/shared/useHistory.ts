@@ -6,10 +6,13 @@
  *
  */
 
-import type {HistoryState} from '@lexical/history';
 import type {LexicalEditor} from 'lexical';
 
-import {createEmptyHistoryState, registerHistory} from '@lexical/history';
+import {
+  createEmptyHistoryState,
+  type HistoryState,
+  registerHistory,
+} from '@lexical/history';
 import {useEffect, useMemo} from 'react';
 
 export function useHistory(

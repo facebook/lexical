@@ -18,8 +18,8 @@ import {
   $getRoot,
   $isParagraphNode,
   $isTextNode,
-  LexicalEditor,
-  MutationListener,
+  type LexicalEditor,
+  type MutationListener,
   ParagraphNode,
   TextNode,
 } from 'lexical';
@@ -31,7 +31,7 @@ import {
 import {afterEach, beforeEach, describe, it} from 'vitest';
 import * as Y from 'yjs';
 
-import {Client, createTestConnection, waitForReact} from '../utils';
+import {type Client, createTestConnection, waitForReact} from '../utils';
 
 describe('CollaborationSnapshot', () => {
   let container: null | HTMLDivElement = null;

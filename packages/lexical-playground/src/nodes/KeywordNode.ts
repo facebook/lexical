@@ -6,13 +6,14 @@
  *
  */
 
-import type {EditorConfig, LexicalNode, SerializedTextNode} from 'lexical';
-
 import {registerLexicalTextEntity} from '@lexical/text';
 import {
   $applyNodeReplacement,
   defineExtension,
+  type EditorConfig,
+  type LexicalNode,
   mergeRegister,
+  type SerializedTextNode,
   TextNode,
 } from 'lexical';
 

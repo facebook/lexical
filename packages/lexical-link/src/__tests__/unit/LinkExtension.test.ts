@@ -30,7 +30,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   configExtension,
-  LexicalEditorWithDispose,
+  type LexicalEditorWithDispose,
   PASTE_COMMAND,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';

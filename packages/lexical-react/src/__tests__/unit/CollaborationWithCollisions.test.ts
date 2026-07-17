@@ -14,8 +14,8 @@ import {
   $isElementNode,
   $isTextNode,
   $setSelection,
-  BaseSelection,
-  LexicalNode,
+  type BaseSelection,
+  type LexicalNode,
 } from 'lexical';
 import {afterEach, assert, beforeEach, describe, expect, it} from 'vitest';
 

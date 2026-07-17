@@ -6,22 +6,6 @@
  *
  */
 
-import type {
-  BaseSelection,
-  DOMConversionMap,
-  DOMConversionOutput,
-  EditorConfig,
-  LexicalCommand,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  Point,
-  PointCaret,
-  PointType,
-  RangeSelection,
-  SerializedElementNode,
-} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
 import {
   $applyNodeReplacement,
@@ -42,10 +26,23 @@ import {
   $setPointFromCaret,
   $setSelection,
   addClassNamesToElement,
+  type BaseSelection,
   createCommand,
+  type DOMConversionMap,
+  type DOMConversionOutput,
+  type EditorConfig,
   ElementNode,
   isHTMLAnchorElement,
-  Spread,
+  type LexicalCommand,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type Point,
+  type PointCaret,
+  type PointType,
+  type RangeSelection,
+  type SerializedElementNode,
+  type Spread,
 } from 'lexical';
 
 export type LinkAttributes = {
@@ -181,6 +178,7 @@ export class LinkNode extends ElementNode {
   }
 
   sanitizeUrl(url: string): string {
+    const rawUrl = url;
     url = formatUrl(url);
     try {
       const parsedUrl = new URL(formatUrl(url));
@@ -189,7 +187,37 @@ export class LinkNode extends ElementNode {
         return 'about:blank';
       }
     } catch {
-      return url;
+      // `new URL()` threw, so we could not verify the protocol via the
+      // parser. Preserve fail-secure behavior: default unparseable URLs to
+      // `about:blank` and only allow through inputs that positively match an
+      // allowlisted scheme.
+      //
+      // Check the ORIGINAL input, not the `formatUrl()` output: `formatUrl()`
+      // prepends `https://` to anything it does not recognize as already
+      // having a scheme, which would mask a control-character-obfuscated
+      // scheme (e.g. `java\x00script:` becomes `https://java\x00script:`).
+      //
+      // Before extracting the scheme, strip C0 control characters, DEL and
+      // whitespace, mirroring how browsers ignore these when resolving a
+      // scheme. Without this, control-character-obfuscated schemes that throw
+      // in `new URL()` but are still navigated by some browsers would slip
+      // past a naive scheme check and retain their original, attacker-
+      // controlled value. Stripping C0 control characters and DEL is the
+      // intended, security-relevant behavior here.
+      // eslint-disable-next-line no-control-regex
+      const normalizedUrl = rawUrl.replace(/[\u0000-\u001F\u007F\s]/g, '');
+      const schemeMatch = normalizedUrl.match(/^([a-z][a-z0-9+.-]*):/i);
+      if (
+        schemeMatch != null &&
+        !SUPPORTED_URL_PROTOCOLS.has(`${schemeMatch[1].toLowerCase()}:`)
+      ) {
+        // An explicit, non-allowlisted scheme survived normalization (e.g.
+        // `javascript:`, `data:`) — neutralize it. Inputs with no scheme
+        // (relative URLs such as `/path` or `#anchor`) or an allowlisted
+        // scheme are left unchanged: they cannot carry a dangerous scheme
+        // and are handled elsewhere.
+        return 'about:blank';
+      }
     }
     return url;
   }

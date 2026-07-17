@@ -5,15 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {
   $createListItemNode,
   $createListNode,
   $insertList,
   $isListItemNode,
   $isListNode,
+  ListExtension,
   ListItemNode,
   ListNode,
-  ListType,
+  type ListType,
   registerList,
 } from '@lexical/list';
 import {registerRichText} from '@lexical/rich-text';
@@ -37,12 +39,13 @@ import {
   $nodesOfType,
   $selectAll,
   INSERT_PARAGRAPH_COMMAND,
-  LexicalNode,
+  type LexicalNode,
 } from 'lexical';
 import {
   $assertNodeType,
   $createTestDecoratorNode,
   initializeUnitTest,
+  invariant,
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
 
@@ -449,4 +452,325 @@ describe('$handleOutdent', () => {
       });
     });
   }, initOptions);
+});
+
+const collapseTestExtension = defineExtension({
+  dependencies: [ListExtension],
+  name: '[root]',
+});
+
+describe('ListItemNode.collapseAtStart', () => {
+  test('top-level single item converts to paragraph', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const listItem = $createListItemNode().append($createTextNode('hello'));
+        const listNode = $createListNode('bullet').append(listItem);
+        root.append(listNode);
+        const selection = listItem.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        listItem.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(1);
+      invariant($isParagraphNode(children[0]), 'Expected ParagraphNode');
+      expect(children[0].getTextContent()).toBe('hello');
+    });
+  });
+
+  test('top-level first item extracts as paragraph, keeps remaining list', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const firstItem = $createListItemNode().append(
+          $createTextNode('first'),
+        );
+        const listNode = $createListNode('bullet').append(
+          firstItem,
+          $createListItemNode().append($createTextNode('second')),
+        );
+        root.append(listNode);
+        const selection = firstItem.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        firstItem.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(2);
+      invariant($isParagraphNode(children[0]), 'Expected ParagraphNode');
+      expect(children[0].getTextContent()).toBe('first');
+      invariant($isListNode(children[1]), 'Expected ListNode');
+      expect(children[1].getChildrenSize()).toBe(1);
+    });
+  });
+
+  test('indented item outdents instead of converting to paragraph', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    let indentedItemKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const indentedItem = $createListItemNode().append(
+          $createTextNode('child'),
+        );
+        indentedItemKey = indentedItem.getKey();
+        const nestedWrapper = $createListItemNode().append(
+          $createListNode('bullet').append(indentedItem),
+        );
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('parent')),
+          nestedWrapper,
+        );
+        root.append(listNode);
+        const selection = indentedItem.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        indentedItem.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(1);
+      invariant($isListNode(children[0]), 'Expected ListNode');
+      expect(children[0].getChildrenSize()).toBe(2);
+      const outdentedItem = $getNodeByKey(indentedItemKey);
+      invariant($isListItemNode(outdentedItem), 'Expected ListItemNode');
+      expect(outdentedItem.getTextContent()).toBe('child');
+    });
+  });
+
+  test('indented item with siblings outdents without breaking list', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    let firstIndentedKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const indentedItem1 = $createListItemNode().append(
+          $createTextNode('child1'),
+        );
+        firstIndentedKey = indentedItem1.getKey();
+        const nestedWrapper = $createListItemNode().append(
+          $createListNode('bullet').append(
+            indentedItem1,
+            $createListItemNode().append($createTextNode('child2')),
+          ),
+        );
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('parent')),
+          nestedWrapper,
+        );
+        root.append(listNode);
+        const selection = indentedItem1.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        indentedItem1.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(1);
+      invariant($isListNode(children[0]), 'Expected ListNode');
+      const outdentedItem = $getNodeByKey(firstIndentedKey);
+      invariant($isListItemNode(outdentedItem), 'Expected ListItemNode');
+      expect(outdentedItem.getTextContent()).toBe('child1');
+      expect(
+        children[0]
+          .getChildren()
+          .some(
+            item =>
+              $isListItemNode(item) && item.getTextContent().includes('child2'),
+          ),
+      ).toBe(true);
+    });
+  });
+
+  test('middle item converts to paragraph and splits list', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const item2 = $createListItemNode().append($createTextNode('second'));
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('first')),
+          item2,
+          $createListItemNode().append($createTextNode('third')),
+        );
+        root.append(listNode);
+        const selection = item2.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        item2.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(3);
+      invariant($isListNode(children[0]), 'Expected first ListNode');
+      expect(children[0].getChildrenSize()).toBe(1);
+      expect(children[0].getTextContent()).toBe('first');
+      invariant($isParagraphNode(children[1]), 'Expected ParagraphNode');
+      expect(children[1].getTextContent()).toBe('second');
+      invariant($isListNode(children[2]), 'Expected second ListNode');
+      expect(children[2].getChildrenSize()).toBe(1);
+      expect(children[2].getTextContent()).toBe('third');
+    });
+  });
+
+  test('split preserves list type', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const item2 = $createListItemNode().append($createTextNode('second'));
+        const listNode = $createListNode('number').append(
+          $createListItemNode().append($createTextNode('first')),
+          item2,
+          $createListItemNode().append($createTextNode('third')),
+        );
+        root.append(listNode);
+        const selection = item2.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        item2.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(3);
+      invariant($isListNode(children[0]), 'Expected first ListNode');
+      expect(children[0].getListType()).toBe('number');
+      invariant($isListNode(children[2]), 'Expected second ListNode');
+      expect(children[2].getListType()).toBe('number');
+    });
+  });
+
+  test('last item converts to paragraph without splitting', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const item2 = $createListItemNode().append($createTextNode('second'));
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('first')),
+          item2,
+        );
+        root.append(listNode);
+        const selection = item2.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        item2.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(2);
+      invariant($isListNode(children[0]), 'Expected ListNode');
+      expect(children[0].getChildrenSize()).toBe(1);
+      expect(children[0].getTextContent()).toBe('first');
+      invariant($isParagraphNode(children[1]), 'Expected ParagraphNode');
+      expect(children[1].getTextContent()).toBe('second');
+    });
+  });
+
+  test('empty middle item converts to empty paragraph and splits list', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const emptyItem = $createListItemNode();
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('first')),
+          emptyItem,
+          $createListItemNode().append($createTextNode('third')),
+        );
+        root.append(listNode);
+        const selection = emptyItem.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        emptyItem.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(3);
+      invariant($isListNode(children[0]), 'Expected ListNode');
+      expect(children[0].getChildrenSize()).toBe(1);
+      expect(children[0].getFirstChildOrThrow().getTextContent()).toBe('first');
+      invariant($isParagraphNode(children[1]), 'Expected ParagraphNode');
+      expect(children[1].getTextContent()).toBe('');
+      invariant($isListNode(children[2]), 'Expected ListNode');
+      expect(children[2].getChildrenSize()).toBe(1);
+      expect(children[2].getFirstChildOrThrow().getTextContent()).toBe('third');
+
+      const selection = $getSelection();
+      invariant($isRangeSelection(selection), 'Expected RangeSelection');
+      expect(selection.isCollapsed()).toBe(true);
+    });
+  });
+
+  test('empty indented item outdents', () => {
+    using editor = buildEditorFromExtensions(collapseTestExtension);
+
+    let emptyItemKey: string;
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const emptyItem = $createListItemNode();
+        emptyItemKey = emptyItem.getKey();
+        const nestedWrapper = $createListItemNode().append(
+          $createListNode('bullet').append(emptyItem),
+        );
+        const listNode = $createListNode('bullet').append(
+          $createListItemNode().append($createTextNode('parent')),
+          nestedWrapper,
+        );
+        root.append(listNode);
+        const selection = emptyItem.select(0, 0);
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        emptyItem.collapseAtStart(selection);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(1);
+      invariant($isListNode(children[0]), 'Expected ListNode');
+      const outdentedItem = $getNodeByKey(emptyItemKey);
+      invariant($isListItemNode(outdentedItem), 'Expected ListItemNode');
+      expect(outdentedItem.getIndent()).toBe(0);
+    });
+  });
 });

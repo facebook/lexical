@@ -27,8 +27,8 @@ import {
   $isElementNode,
   $isTextNode,
   ParagraphNode,
-  RangeSelection,
-  TextNode,
+  type RangeSelection,
+  type TextNode,
 } from 'lexical';
 import {
   $assertNodeType,

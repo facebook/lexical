@@ -2167,7 +2167,7 @@ function $handleArrowKey(
     if ($isRangeSelection(selection)) {
       if (direction === 'forward') {
         const focusNode = selection.focus.getNode();
-        if ($isRootOrShadowRoot(focusNode) && selection.focus.offset > 0) {
+        if ($isRootOrShadowRoot(focusNode) && selection.focus.offset === focusNode.getChildrenSize()) {
           stopEvent(event);
           return true;
         }

@@ -738,9 +738,25 @@ describe('LexicalEventHelpers', () => {
         },
         {
           expectedHTML:
-            '<p class="editor-paragraph" dir="auto"><span data-lexical-text="true">1</span></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">2</span></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">3</span></p>',
+            '<p class="editor-paragraph" dir="auto"><span data-lexical-text="true">1</span></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">2</span><br><br data-lexical-managed-linebreak="true"></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">3</span></p>',
           inputs: [pasteHTML('1<p>2<br /></p>3')],
-          name: 'last br in a block node is ignored',
+          name: 'authored trailing br in a block node is preserved',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="auto"><span data-lexical-text="true">1</span></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">2</span></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">3</span></p>',
+          inputs: [
+            pasteHTML('1<p>2<br data-lexical-managed-linebreak="true" /></p>3'),
+          ],
+          name: 'managed trailing br in a block node is ignored',
+        },
+        {
+          expectedHTML:
+            '<p class="editor-paragraph" dir="auto"><span data-lexical-text="true">1</span></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">2</span></p><p class="editor-paragraph" dir="auto"><span data-lexical-text="true">3</span></p>',
+          inputs: [
+            pasteHTML('1<p>2<br class="Apple-interchange-newline" /></p>3'),
+          ],
+          name: 'apple-interchange trailing br in a block node is ignored',
         },
       ];
 

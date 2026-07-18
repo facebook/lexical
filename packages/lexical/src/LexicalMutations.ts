@@ -56,7 +56,13 @@ function initTextEntryListener(editor: LexicalEditor): void {
   }
 }
 
-function isManagedLineBreak(
+// True when `dom` is a line break the editor is actively managing in the
+// live DOM — identified by the `__lexicalLineBreak` slot reference or by
+// having a node key. This is distinct from `isManagedLineBreak` in
+// LexicalLineBreakNode, which inspects serialized markup (the
+// `data-lexical-managed-linebreak` attribute / Apple-interchange class)
+// to decide whether a parsed `<br>` should be dropped on import.
+function isEditorManagedLineBreak(
   dom: Node,
   target: Node & LexicalPrivateDOM,
   editor: LexicalEditor,
@@ -203,7 +209,7 @@ function flushMutations(
               parentDOM != null &&
               addedDOM !== blockCursorElement &&
               node === null &&
-              !isManagedLineBreak(addedDOM, parentDOM, editor) &&
+              !isEditorManagedLineBreak(addedDOM, parentDOM, editor) &&
               // @experimental named-slots. Slot containers are keyless
               // reconciler scaffolding: a flush that observes one being
               // parked in its host or relocated by an explicit mount must
@@ -244,7 +250,7 @@ function flushMutations(
               const removedDOM = removedDOMs[s];
 
               if (
-                isManagedLineBreak(removedDOM, targetDOM, editor) ||
+                isEditorManagedLineBreak(removedDOM, targetDOM, editor) ||
                 blockCursorElement === removedDOM
               ) {
                 targetDOM.appendChild(removedDOM);
@@ -290,7 +296,7 @@ function flushMutations(
             if (
               parentDOM != null &&
               addedDOM.nodeName === 'BR' &&
-              !isManagedLineBreak(addedDOM, target, editor)
+              !isEditorManagedLineBreak(addedDOM, target, editor)
             ) {
               parentDOM.removeChild(addedDOM);
             }

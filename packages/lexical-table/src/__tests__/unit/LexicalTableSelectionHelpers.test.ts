@@ -11,21 +11,27 @@ import {
   $computeTableMapSkipCellCheck,
   $createTableNodeWithDimensions,
   $createTableSelectionFrom,
+  $isTableCellNode,
   $isTableNode,
+  $isTableRowNode,
   TableExtension,
 } from '@lexical/table';
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isParagraphNode,
   $setSelection,
   COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_EDITOR,
   COPY_COMMAND,
   defineExtension,
+  DELETE_LINE_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   type LexicalEditorWithDispose,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 describe('LexicalTableSelectionHelpers', () => {
@@ -294,6 +300,70 @@ describe('LexicalTableSelectionHelpers', () => {
       expect(received).toBe(false);
       unregister();
       document.body.removeChild(sibling);
+    });
+  });
+
+  describe('DELETE_LINE_COMMAND in table cells', () => {
+    let editor: LexicalEditorWithDispose;
+    let container: HTMLDivElement;
+
+    beforeEach(() => {
+      container = document.createElement('div');
+      document.body.appendChild(container);
+      editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [TableExtension],
+          name: 'delete-line-test',
+        }),
+      );
+      editor.setRootElement(container);
+    });
+
+    afterEach(() => {
+      editor.dispose();
+      document.body.removeChild(container);
+    });
+
+    test('DELETE_LINE_COMMAND propagates past the table handler in the first cell paragraph', () => {
+      editor.update(
+        () => {
+          const table = $createTableNodeWithDimensions(2, 2, false);
+          $getRoot().clear().append(table);
+          const firstRow = $assertNodeType(
+            table.getFirstChildOrThrow(),
+            $isTableRowNode,
+          );
+          const firstCell = $assertNodeType(
+            firstRow.getFirstChildOrThrow(),
+            $isTableCellNode,
+          );
+          const paragraph = $assertNodeType(
+            firstCell.getFirstChildOrThrow(),
+            $isParagraphNode,
+          );
+          paragraph.clear().append($createTextNode('hello world'));
+          paragraph.selectEnd();
+        },
+        {discrete: true},
+      );
+
+      let propagated = false;
+      const unregister = editor.registerCommand(
+        DELETE_LINE_COMMAND,
+        () => {
+          propagated = true;
+          return true;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      );
+
+      editor.dispatchCommand(DELETE_LINE_COMMAND, true);
+      expect(propagated).toBe(true);
+
+      propagated = false;
+      editor.dispatchCommand(DELETE_LINE_COMMAND, false);
+      expect(propagated).toBe(true);
+      unregister();
     });
   });
 });

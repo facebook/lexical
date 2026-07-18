@@ -25,6 +25,7 @@ import {
   $createLineBreakNode,
   $createTabNode,
   $getNodeByKey,
+  HISTORY_MERGE_TAG,
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
@@ -78,29 +79,32 @@ export function loadCodeLanguage(
 ) {
   const diffedLanguage = getDiffedLanguage(language);
   const langId = diffedLanguage ? diffedLanguage : language;
-  if (!isCodeLanguageLoaded(langId)) {
-    const languageInfo = bundledLanguagesInfo.find(
-      desc =>
-        desc.id === langId || (desc.aliases && desc.aliases.includes(langId)),
-    );
-    if (languageInfo) {
-      // in case we arrive here concurrently (not yet loaded language is loaded twice)
-      // shiki's synchronous checks make sure to load it only once
-      return shiki.loadLanguage(languageInfo.import()).then(() => {
-        // here we know that the language is loaded
-        // make sure the code is highlighed with the correct language
-        if (editor && codeNodeKey) {
-          editor.update(() => {
-            const codeNode = $getNodeByKey(codeNodeKey);
-            if ($isCodeNode(codeNode) && codeNode.getLanguage() === language) {
-              codeNode.setIsSyntaxHighlightSupported(true);
-              codeNode.markDirty();
-            }
-          });
-        }
-      });
-    }
+  if (isCodeLanguageLoaded(langId)) {
+    return undefined;
   }
+
+  const languageInfo = bundledLanguagesInfo.find(
+    desc =>
+      desc.id === langId || (desc.aliases && desc.aliases.includes(langId)),
+  );
+  if (!languageInfo) {
+    return undefined;
+  }
+
+  return shiki.loadLanguage(languageInfo.import()).then(() => {
+    if (editor && codeNodeKey) {
+      editor.update(
+        () => {
+          const codeNode = $getNodeByKey(codeNodeKey);
+          if ($isCodeNode(codeNode) && codeNode.getLanguage() === language) {
+            codeNode.setIsSyntaxHighlightSupported(true);
+            codeNode.markDirty();
+          }
+        },
+        {tag: HISTORY_MERGE_TAG},
+      );
+    }
+  });
 }
 
 export function isCodeThemeLoaded(theme: string) {
@@ -119,21 +123,28 @@ export function loadCodeTheme(
   editor?: LexicalEditor,
   codeNodeKey?: NodeKey,
 ) {
-  if (!isCodeThemeLoaded(theme)) {
-    const themeInfo = bundledThemesInfo.find(info => info.id === theme);
-    if (themeInfo) {
-      return shiki.loadTheme(themeInfo.import()).then(() => {
-        if (editor && codeNodeKey) {
-          editor.update(() => {
-            const codeNode = $getNodeByKey(codeNodeKey);
-            if ($isCodeNode(codeNode)) {
-              codeNode.markDirty();
-            }
-          });
-        }
-      });
-    }
+  if (isCodeThemeLoaded(theme)) {
+    return undefined;
   }
+
+  const themeInfo = bundledThemesInfo.find(info => info.id === theme);
+  if (!themeInfo) {
+    return undefined;
+  }
+
+  return shiki.loadTheme(themeInfo.import()).then(() => {
+    if (editor && codeNodeKey) {
+      editor.update(
+        () => {
+          const codeNode = $getNodeByKey(codeNodeKey);
+          if ($isCodeNode(codeNode)) {
+            codeNode.markDirty();
+          }
+        },
+        {tag: HISTORY_MERGE_TAG},
+      );
+    }
+  });
 }
 
 export function getCodeLanguageOptions(): [string, string][] {

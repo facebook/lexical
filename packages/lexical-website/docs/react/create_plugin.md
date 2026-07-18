@@ -1,4 +1,4 @@
-# Creating a React Plugin
+# Creating a Plugin
 
 In addition to using the Lexical React plugins offered by the core library, you can make your own plugins to extend or alter Lexical's functionality to suit your own use cases.
 

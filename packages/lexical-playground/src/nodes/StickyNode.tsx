@@ -78,8 +78,8 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
   __color: StickyNoteColor;
   __caption: LexicalEditorWithDispose;
 
-  static getType(): string {
-    return 'sticky';
+  $config() {
+    return this.config('sticky', {extends: DecoratorNode});
   }
 
   static clone(node: StickyNode): StickyNode {

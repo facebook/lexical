@@ -109,7 +109,7 @@ function $buildWordListTree(
       stack.pop();
     }
     if (item.level > stack[stack.length - 1].level) {
-      // Lexical's nested-list convention (see `isNestedListNode` in
+      // Lexical's nested-list convention (see `$isNestedListNode` in
       // @lexical/list): a sublist lives inside its OWN ListItemNode
       // wrapper that is a sibling of the items above it, not inside
       // the previous content item. The wrapper has no own content,

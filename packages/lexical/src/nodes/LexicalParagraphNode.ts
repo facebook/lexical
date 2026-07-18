@@ -13,7 +13,6 @@ import type {
   Spread,
 } from '../LexicalEditor';
 import type {
-  DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
@@ -50,12 +49,16 @@ export class ParagraphNode extends ElementNode {
   /** @internal */
   declare ['constructor']: KlassConstructor<typeof ParagraphNode>;
 
-  static getType(): string {
-    return 'paragraph';
-  }
-
-  static clone(node: ParagraphNode): ParagraphNode {
-    return new ParagraphNode(node.__key);
+  $config() {
+    return this.config('paragraph', {
+      extends: ElementNode,
+      importDOM: {
+        p: () => ({
+          conversion: $convertParagraphElement,
+          priority: 0,
+        }),
+      },
+    });
   }
 
   // View
@@ -77,15 +80,6 @@ export class ParagraphNode extends ElementNode {
     return false;
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      p: (node: Node) => ({
-        conversion: $convertParagraphElement,
-        priority: 0,
-      }),
-    };
-  }
-
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const {element} = super.exportDOM(editor);
 
@@ -103,10 +97,6 @@ export class ParagraphNode extends ElementNode {
     return {
       element,
     };
-  }
-
-  static importJSON(serializedNode: SerializedParagraphNode): ParagraphNode {
-    return $createParagraphNode().updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedParagraphNode {

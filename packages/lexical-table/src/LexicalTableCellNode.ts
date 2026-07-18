@@ -14,7 +14,6 @@ import {
   $isLineBreakNode,
   $isTextNode,
   addClassNamesToElement,
-  type DOMConversionMap,
   type DOMConversionOutput,
   type DOMExportOutput,
   type EditorConfig,
@@ -68,17 +67,20 @@ export class TableCellNode extends ElementNode {
   /** @internal */
   __verticalAlign?: undefined | string;
 
-  static getType(): string {
-    return 'tablecell';
-  }
-
-  static clone(node: TableCellNode): TableCellNode {
-    return new TableCellNode(
-      node.__headerState,
-      node.__colSpan,
-      node.__width,
-      node.__key,
-    );
+  $config() {
+    return this.config('tablecell', {
+      extends: ElementNode,
+      importDOM: {
+        td: () => ({
+          conversion: $convertTableCellNodeElement,
+          priority: 0,
+        }),
+        th: () => ({
+          conversion: $convertTableCellNodeElement,
+          priority: 0,
+        }),
+      },
+    });
   }
 
   afterCloneFrom(node: this): void {
@@ -89,23 +91,6 @@ export class TableCellNode extends ElementNode {
     this.__colSpan = node.__colSpan;
     this.__headerState = node.__headerState;
     this.__width = node.__width;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      td: (node: Node) => ({
-        conversion: $convertTableCellNodeElement,
-        priority: 0,
-      }),
-      th: (node: Node) => ({
-        conversion: $convertTableCellNodeElement,
-        priority: 0,
-      }),
-    };
-  }
-
-  static importJSON(serializedNode: SerializedTableCellNode): TableCellNode {
-    return $createTableCellNode().updateFromJSON(serializedNode);
   }
 
   updateFromJSON(

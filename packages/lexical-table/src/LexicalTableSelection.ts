@@ -289,7 +289,7 @@ export class TableSelection implements BaseSelection {
     selection.insertNodes(nodes);
   }
 
-  // TODO Deprecate this method. It's confusing when used with colspan|rowspan
+  /** @deprecated Use {@link $computeTableMap} and {@link $computeTableCellRectBoundary} directly. */
   getShape(): TableSelectionShape {
     const {anchorCell, focusCell} = $getCellNodes(this);
     const anchorCellNodeRect = $getTableCellNodeRect(anchorCell);
@@ -417,21 +417,27 @@ export class TableSelection implements BaseSelection {
   }
 }
 
+/** Type guard for {@link TableSelection}. */
 export function $isTableSelection(x: unknown): x is TableSelection {
   return x instanceof TableSelection;
 }
 
+/** @deprecated Use {@link $createTableSelectionFrom} instead. */
 export function $createTableSelection(): TableSelection {
-  // TODO this is a suboptimal design, it doesn't make sense to have
-  // a table selection that isn't associated with a table. This
-  // constructor should have required arguments and in __DEV__ we
-  // should check that they point to a table and are element points to
-  // cell nodes of that table.
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
   return new TableSelection('root', anchor, focus);
 }
 
+/**
+ * Creates a {@link TableSelection} spanning from `anchorCell` to `focusCell`
+ * within `tableNode`. In `__DEV__` mode, validates that both cells belong to
+ * the given table and that the table is attached to the editor state.
+ *
+ * If the current selection is already a TableSelection, it clones and
+ * re-targets it (preserving identity for dirty-checking); otherwise it
+ * constructs a fresh one.
+ */
 export function $createTableSelectionFrom(
   tableNode: TableNode,
   anchorCell: TableCellNode,
@@ -463,7 +469,11 @@ export function $createTableSelectionFrom(
   const prevSelection = $getSelection();
   const nextSelection = $isTableSelection(prevSelection)
     ? prevSelection.clone()
-    : $createTableSelection();
+    : new TableSelection(
+        'root',
+        $createPoint('root', 0, 'element'),
+        $createPoint('root', 0, 'element'),
+      );
   nextSelection.set(
     tableNode.getKey(),
     anchorCell.getKey(),

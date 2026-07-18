@@ -35,12 +35,8 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
   __equation: string;
   __inline: boolean;
 
-  static getType(): string {
-    return 'equation';
-  }
-
-  static clone(node: EquationNode): EquationNode {
-    return new EquationNode(node.__equation, node.__inline, node.__key);
+  $config() {
+    return this.config('equation', {extends: DecoratorNode});
   }
 
   constructor(equation: string = '', inline?: boolean, key?: NodeKey) {

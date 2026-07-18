@@ -121,8 +121,8 @@ export type SerializedTweetNode = Spread<
 export class TweetNode extends DecoratorBlockNode {
   __id: string;
 
-  static getType(): string {
-    return 'tweet';
+  $config() {
+    return this.config('tweet', {extends: DecoratorBlockNode});
   }
 
   static clone(node: TweetNode): TweetNode {

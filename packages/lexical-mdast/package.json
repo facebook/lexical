@@ -10,12 +10,13 @@
     "micromark"
   ],
   "license": "MIT",
-  "version": "0.47.0",
+  "version": "0.48.0",
   "main": "./dist/LexicalMdast.js",
   "types": "./dist/typescript-too-old.d.ts",
   "dependencies": {
     "@lexical/code-core": "workspace:*",
     "@lexical/extension": "workspace:*",
+    "@lexical/html": "workspace:*",
     "@lexical/link": "workspace:*",
     "@lexical/list": "workspace:*",
     "@lexical/rich-text": "workspace:*",

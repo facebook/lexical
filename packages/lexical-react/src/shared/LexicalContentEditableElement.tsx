@@ -132,7 +132,7 @@ function ContentEditableElementImpl(
       role={role}
       spellCheck={spellCheck}
       style={style}
-      tabIndex={tabIndex}
+      tabIndex={tabIndex ?? (isEditable ? undefined : -1)}
       {...rest}
     />
   );

@@ -43,6 +43,7 @@ import {
   type ChildCaret,
   COMMAND_PRIORITY_HIGH,
   CONTROLLED_TEXT_INSERTION_COMMAND,
+  COPY_COMMAND,
   CUT_COMMAND,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
@@ -52,6 +53,7 @@ import {
   FOCUS_COMMAND,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  getActiveElement,
   getComposedEventTarget,
   getDOMSelection,
   getDOMSelectionPoints,
@@ -70,7 +72,6 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
-  type LexicalCommand,
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
@@ -671,7 +672,7 @@ export function applyTableHandlers(
     ),
   );
 
-  const deleteTextHandler = (command: LexicalCommand<boolean>) => () => {
+  const $deleteTextHandler = () => {
     const selection = $getSelection();
 
     if (!$isSelectionInTable(selection, tableNode)) {
@@ -705,33 +706,6 @@ export function applyTableHandlers(
         tableObserver.$clearText();
         return true;
       }
-
-      const nearestElementNode = $findMatchingParent(
-        selection.anchor.getNode(),
-        n => $isElementNode(n),
-      );
-
-      const topLevelCellElementNode =
-        nearestElementNode &&
-        $findMatchingParent(
-          nearestElementNode,
-          n => $isElementNode(n) && $isTableCellNode(n.getParent()),
-        );
-
-      if (
-        !$isElementNode(topLevelCellElementNode) ||
-        !$isElementNode(nearestElementNode)
-      ) {
-        return false;
-      }
-
-      if (
-        command === DELETE_LINE_COMMAND &&
-        topLevelCellElementNode.getPreviousSibling() === null
-      ) {
-        // TODO: Fix Delete Line in Table Cells.
-        return true;
-      }
     }
 
     return false;
@@ -741,7 +715,7 @@ export function applyTableHandlers(
     tableObserver.listenersToRemove.add(
       editor.registerCommand(
         command,
-        deleteTextHandler(command),
+        $deleteTextHandler,
         COMMAND_PRIORITY_HIGH,
       ),
     );
@@ -854,6 +828,39 @@ export function applyTableHandlers(
       if (shouldIntercept) {
         event.preventDefault();
         editor.dispatchCommand(PASTE_COMMAND, event);
+      }
+    }),
+  );
+
+  // In read-only mode (contentEditable=false), Firefox fires the native copy
+  // event on the document rather than on the root element, so the core
+  // PASS_THROUGH copy listener never sees it. We intercept at the document
+  // level and forward to COPY_COMMAND. Unlike the paste listener above, we
+  // skip events whose target is inside the rootElement — those are already
+  // handled by the core copy listener which runs regardless of isEditable.
+  tableObserver.listenersToRemove.add(
+    registerEventListener(doc, 'copy', (event: ClipboardEvent) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+      const target = getComposedEventTarget(event);
+      if (
+        target === rootElement ||
+        (isDOMNode(target) && rootElement.contains(target))
+      ) {
+        return;
+      }
+      const shouldIntercept = editor.read('latest', () => {
+        const selection = $getSelection();
+        return (
+          rootElement.contains(getActiveElement(rootElement)) &&
+          $isTableSelection(selection) &&
+          $isSelectionInTable(selection, tableNode)
+        );
+      });
+      if (shouldIntercept) {
+        event.preventDefault();
+        editor.dispatchCommand(COPY_COMMAND, event);
       }
     }),
   );

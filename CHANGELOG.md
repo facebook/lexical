@@ -1,3 +1,23 @@
+## v0.48.0 (2026-07-16)
+
+- lexical-reactlexical-table Bug Fix Enable table copy in read-only mode (#8845) mayrang
+- lexical-extensionlexical-mdastdev-mdast-editor-example Feature Add MdastHtmlExtension and Markdown custom-construct examples (collapsible, kbd, alerts, footnotes) (#8826) Bob Ippolito
+- Fix fail closed in LinkNode.sanitizeUrl() on unparseable URLs (XSS) (#8846) xiezhenjia-meta
+- lexical Chore Fix serialize-javascript package dependency vulnerability (#8803) vijay ojha
+- lexical-react Bug Fix Count block separators in character limit overflow wrapping (#8840) mayrang
+- lexical-yjslexical-react Feature Customizable Yjs shared-type root name (#8841) mayrang
+- lexical-list Bug Fix Backspace at start of list item outdents or converts to paragraph (#8829) mayrang
+- lexical-table Feature Add moveTableRow function  Add missing export for unmergeCellNode (#8833) 
+- lexical-link Bug Fix disable link opening for disabled autolink in (#8839) Olivier Chevallier
+- lexical-rich-textlexical-plain-text Bug Fix dont cancel dragover for text drags so native drops work again (#8842) Bob Ippolito
+- Open playground links in a new tab (#8837) Sherry
+- lexical-react Bug Fix Merge adjacent OverflowNodes in useCharacterLimit (#8831) mayrang
+- lexical-code-shiki Bug Fix force re-tokenize after async language load (#8830) Olivier Chevallier
+- lexical-tablelexical-playground Bug Fix Auto-scroll while drag-selecting cells past the visible edge (#8822) Oleksandr Trukhnii
+- lexical-mdastlexical-markdown Bug Fix Roundtrip overlapping inline formats (#8825) Bob Ippolito
+- v0.47.0 (#8821) Bob Ippolito
+- v0.47.0 Lexical GitHub Actions Bot
+
 ## v0.47.0 (2026-07-10)
 
 - lexicallexical-rich-text Bug Fix Fix formatText toggle direction and add SETTEXTFORMATCOMMAND (#8807) mayrang

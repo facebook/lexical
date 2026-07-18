@@ -40,9 +40,7 @@ declare export function $isCodeHighlightNode(
 
 declare export class CodeHighlightNode extends TextNode {
   __highlightType: ?string;
-  constructor(text: string, highlightType?: string, key?: NodeKey): void;
-  static getType(): string;
-  static clone(node: CodeHighlightNode): CodeHighlightNode;
+  constructor(text?: string, highlightType?: string, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   setFormat(format: number): this;
 }
@@ -95,9 +93,7 @@ declare export function $isCodeNode(
 
 declare export class CodeNode extends ElementNode {
   __language: string | null | void;
-  static getType(): string;
-  static clone(node: CodeNode): CodeNode;
-  constructor(language: ?string, key?: NodeKey): void;
+  constructor(language?: ?string, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   insertNewAfter(
     selection: RangeSelection,

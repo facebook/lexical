@@ -62,16 +62,8 @@ function PageBreakComponent({nodeKey}: {nodeKey: NodeKey}) {
 }
 
 export class PageBreakNode extends DecoratorNode<JSX.Element> {
-  static getType(): string {
-    return 'page-break';
-  }
-
-  static clone(node: PageBreakNode): PageBreakNode {
-    return new PageBreakNode(node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedPageBreakNode): PageBreakNode {
-    return $createPageBreakNode().updateFromJSON(serializedNode);
+  $config() {
+    return this.config('page-break', {extends: DecoratorNode});
   }
 
   createDOM(): HTMLElement {

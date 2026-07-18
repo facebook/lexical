@@ -41,8 +41,8 @@ export class CollapsibleContainerNode extends ElementNode {
     this.__open = open;
   }
 
-  static getType(): string {
-    return 'collapsible-container';
+  $config() {
+    return this.config('collapsible-container', {extends: ElementNode});
   }
 
   static clone(node: CollapsibleContainerNode): CollapsibleContainerNode {

@@ -14,6 +14,7 @@ import {
   type SerializedAutoLinkNode,
 } from '@lexical/link';
 import {
+  $cloneWithProperties,
   $createParagraphNode,
   $createRangeSelection,
   $getRoot,
@@ -79,7 +80,7 @@ describe('LexicalAutoAutoLinkNode tests', () => {
       await editor.update(() => {
         const autoLinkNode = new AutoLinkNode('/');
 
-        const clone = AutoLinkNode.clone(autoLinkNode);
+        const clone = $cloneWithProperties(autoLinkNode);
 
         expect(clone).not.toBe(autoLinkNode);
         expect(clone).toStrictEqual(autoLinkNode);

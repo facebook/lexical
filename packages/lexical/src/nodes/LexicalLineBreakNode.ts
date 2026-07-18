@@ -9,10 +9,8 @@
 import type {KlassConstructor} from '../LexicalEditor';
 
 import {
-  type DOMConversionMap,
   type DOMConversionOutput,
   LexicalNode,
-  type NodeKey,
   type SerializedLexicalNode,
 } from '../LexicalNode';
 import {
@@ -28,16 +26,21 @@ export type SerializedLineBreakNode = SerializedLexicalNode;
 export class LineBreakNode extends LexicalNode {
   /** @internal */
   declare ['constructor']: KlassConstructor<typeof LineBreakNode>;
-  static getType(): string {
-    return 'linebreak';
-  }
 
-  static clone(node: LineBreakNode): LineBreakNode {
-    return new LineBreakNode(node.__key);
-  }
-
-  constructor(key?: NodeKey) {
-    super(key);
+  $config() {
+    return this.config('linebreak', {
+      importDOM: {
+        br: (node: Node) => {
+          if (isOnlyChildInBlockNode(node) || isLastChildInBlockNode(node)) {
+            return null;
+          }
+          return {
+            conversion: $convertLineBreakElement,
+            priority: 0,
+          };
+        },
+      },
+    });
   }
 
   getTextContent(): '\n' {
@@ -54,26 +57,6 @@ export class LineBreakNode extends LexicalNode {
 
   isInline(): true {
     return true;
-  }
-
-  static importDOM(): DOMConversionMap | null {
-    return {
-      br: (node: Node) => {
-        if (isOnlyChildInBlockNode(node) || isLastChildInBlockNode(node)) {
-          return null;
-        }
-        return {
-          conversion: $convertLineBreakElement,
-          priority: 0,
-        };
-      },
-    };
-  }
-
-  static importJSON(
-    serializedLineBreakNode: SerializedLineBreakNode,
-  ): LineBreakNode {
-    return $createLineBreakNode().updateFromJSON(serializedLineBreakNode);
   }
 }
 

@@ -12,6 +12,14 @@
   --playground-font-size: 16px;
 }
 
+html {
+  /* The page scrolls at the document level while .toolbar is sticky at the
+     top of the viewport (48px rendered: 36px height + 2 * 6px padding).
+     scroll-padding keeps scrollIntoViewIfNeeded and native scrolling from
+     leaving the selection hidden underneath it. */
+  scroll-padding-top: 52px;
+}
+
 body {
   margin: 0;
   font-family:

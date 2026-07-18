@@ -417,6 +417,7 @@ export class TableSelection implements BaseSelection {
   }
 }
 
+/** Type guard for {@link TableSelection}. */
 export function $isTableSelection(x: unknown): x is TableSelection {
   return x instanceof TableSelection;
 }
@@ -428,6 +429,15 @@ export function $createTableSelection(): TableSelection {
   return new TableSelection('root', anchor, focus);
 }
 
+/**
+ * Creates a {@link TableSelection} spanning from `anchorCell` to `focusCell`
+ * within `tableNode`. In `__DEV__` mode, validates that both cells belong to
+ * the given table and that the table is attached to the editor state.
+ *
+ * If the current selection is already a TableSelection, it clones and
+ * re-targets it (preserving identity for dirty-checking); otherwise it
+ * constructs a fresh one.
+ */
 export function $createTableSelectionFrom(
   tableNode: TableNode,
   anchorCell: TableCellNode,

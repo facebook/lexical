@@ -2158,6 +2158,13 @@ function $handleArrowKey(
   // Handle arrow key into a table (including from a table into a nested table)
   if (!$isSelectionInTable(selection, tableNode)) {
     if ($isRangeSelection(selection)) {
+      if (direction === 'forward') {
+        const focusNode = selection.focus.getNode();
+        if ($isRootOrShadowRoot(focusNode) && selection.focus.offset > 0) {
+          stopEvent(event);
+          return true;
+        }
+      }
       if (direction === 'backward') {
         if (selection.focus.offset > 0) {
           return false;

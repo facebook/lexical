@@ -47,7 +47,7 @@ import {
 
 import {$createListNode, $isListNode, type ListNode, type ListType} from './';
 import {$handleIndent, $handleOutdent, mergeLists} from './formatList';
-import {isNestedListNode} from './utils';
+import {$isNestedListNode} from './utils';
 
 export type SerializedListItemNode = Spread<
   {
@@ -218,7 +218,7 @@ export class ListItemNode extends ElementNode {
       element.dir = direction;
     }
 
-    if (isNestedListNode(this)) {
+    if ($isNestedListNode(this)) {
       return {
         after(containerElement) {
           if (isHTMLElement(containerElement)) {
@@ -371,8 +371,8 @@ export class ListItemNode extends ElementNode {
     if (
       prevSibling &&
       nextSibling &&
-      isNestedListNode(prevSibling) &&
-      isNestedListNode(nextSibling)
+      $isNestedListNode(prevSibling) &&
+      $isNestedListNode(nextSibling)
     ) {
       mergeLists(prevSibling.getFirstChild(), nextSibling.getFirstChild());
       nextSibling.remove();
@@ -398,7 +398,7 @@ export class ListItemNode extends ElementNode {
   }
 
   collapseAtStart(selection: RangeSelection): boolean {
-    if (isNestedListNode(this)) {
+    if ($isNestedListNode(this)) {
       return false;
     }
 

@@ -65,7 +65,9 @@ export {
   getTableElement,
   getTableObserverFromTableElement,
 } from './LexicalTableSelectionHelpers';
+export type {TableCellRectBoundary} from './LexicalTableUtils';
 export {
+  $computeTableCellRectBoundary,
   $computeTableMap,
   $computeTableMapSkipCellCheck,
   $createTableNodeWithDimensions,

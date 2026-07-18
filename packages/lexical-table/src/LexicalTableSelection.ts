@@ -289,7 +289,7 @@ export class TableSelection implements BaseSelection {
     selection.insertNodes(nodes);
   }
 
-  // TODO Deprecate this method. It's confusing when used with colspan|rowspan
+  /** @deprecated Use {@link $computeTableMap} and {@link $computeTableCellRectBoundary} directly. */
   getShape(): TableSelectionShape {
     const {anchorCell, focusCell} = $getCellNodes(this);
     const anchorCellNodeRect = $getTableCellNodeRect(anchorCell);

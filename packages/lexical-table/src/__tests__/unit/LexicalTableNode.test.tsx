@@ -63,9 +63,9 @@ function wrapTableHtml(expected: string): string {
   return expected
     .replace(
       /<table( dir="auto")?/g,
-      `<div class="table-scrollable-wrapper"$1><table`,
+      `<div$1 class="table-scrollable-wrapper"><table`,
     )
-    .replace(/<\/table>/g, '</table></div>');
+    .replace(/<\/table>/g, `</table></div>`);
 }
 
 polyfillContentEditable();

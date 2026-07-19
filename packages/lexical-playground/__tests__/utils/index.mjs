@@ -61,8 +61,10 @@ export function wrapTableHtml(
           m => [m[1], m[2]],
         );
         const dirAttr = attrs.find(([k]) => k === 'dir');
-        const divAttrs = [
-          dirAttr,
+        const outerDivAttrs = [dirAttr]
+          .filter(Boolean)
+          .map(([k, v]) => `${k}="${v}"`);
+        const innerDivAttrs = [
           !ignoreClasses && [
             'class',
             'PlaygroundEditorTheme__tableScrollableWrapper',
@@ -73,9 +75,9 @@ export function wrapTableHtml(
         const tableAttrs = attrs
           .filter(([k]) => k !== 'dir')
           .map(([k, v]) => `${k}="${v}"`);
-        return `<div ${divAttrs.join(' ')}><table ${tableAttrs.join(' ')}>`;
+        return `<div ${outerDivAttrs.join(' ')}><div ${innerDivAttrs.join(' ')}><table ${tableAttrs.join(' ')}>`;
       })
-      .replace(/<\/table>/g, '</table></div>')}
+      .replace(/<\/table>/g, '</table></div></div>')}
   `;
 }
 
@@ -342,6 +344,13 @@ function removeDropTargetAttributes(actualHtml) {
   return actualHtml.replaceAll(/ data-drop-target-for-element="true"/g, '');
 }
 
+function removeStickyScrollbar(actualHtml) {
+  return actualHtml
+    .replace(/<div[^>]*\baria-hidden="true"[^>]*><div[^>]*><\/div><\/div>/g, '')
+    .replace(/\s*data-lexical-sticky-scrollbar="true"/g, '')
+    .replace(/\s*style="scrollbar-width: none;?"/g, '');
+}
+
 /**
  * @param {import('@playwright/test').Page | import('@playwright/test').Frame} pageOrFrame
  */
@@ -360,12 +369,14 @@ async function assertHTMLOnPageOrFrame(
     ignoreInlineStyles,
   });
   return await expect(async () => {
-    const actualHtml = removeDropTargetAttributes(
-      removeSafariLinebreakImgHack(
-        await pageOrFrame
-          .locator('div[contenteditable="true"]')
-          .first()
-          .innerHTML(),
+    const actualHtml = removeStickyScrollbar(
+      removeDropTargetAttributes(
+        removeSafariLinebreakImgHack(
+          await pageOrFrame
+            .locator('div[contenteditable="true"]')
+            .first()
+            .innerHTML(),
+        ),
       ),
     );
     let actual = await prettifyHTML(actualHtml.replace(/\n/gm, ''), {

@@ -137,6 +137,51 @@ describe('TableExtension', () => {
     );
   });
 
+  it('renders and removes the sticky scrollbar DOM when hasStickyScrollbar toggles', async () => {
+    // Also serves as regression coverage that enabling the feature in a
+    // non-layout environment without ResizeObserver (jsdom) does not throw
+    // from the mutation-listener attach path.
+    const div = document.createElement('div');
+    editor.setRootElement(div);
+    const {hasStickyScrollbar} = getExtensionDependencyFromEditor(
+      editor,
+      TableExtension,
+    ).output;
+    hasStickyScrollbar.value = true;
+    await Promise.resolve();
+
+    editor.update(
+      () => {
+        $getRoot().clear().selectEnd();
+        editor.dispatchCommand(INSERT_TABLE_COMMAND, {columns: '2', rows: '2'});
+      },
+      {discrete: true},
+    );
+
+    // outer wrapper (marked with the data attribute) > scrollable wrapper > table
+    expect(
+      div.querySelector(
+        '[data-lexical-sticky-scrollbar] > .table-scrollable-wrapper > table',
+      ),
+    ).not.toBe(null);
+    // The unmanaged scrollbar is the wrapper's next sibling, hidden from
+    // the accessibility tree, with its spacer child.
+    const scrollbar = div.querySelector(
+      '[data-lexical-sticky-scrollbar] > .table-scrollable-wrapper + div',
+    );
+    expect(scrollbar).not.toBe(null);
+    expect(scrollbar!.getAttribute('aria-hidden')).toBe('true');
+    expect(scrollbar!.firstElementChild).not.toBe(null);
+
+    // Toggling off restores the plain scrollable wrapper DOM.
+    hasStickyScrollbar.value = false;
+    await Promise.resolve();
+    expect(div.querySelector('[data-lexical-sticky-scrollbar]')).toBe(null);
+    expect(div.querySelector('.table-scrollable-wrapper > table')).not.toBe(
+      null,
+    );
+  });
+
   it('Prevents nested tables by default', async () => {
     editor.update(
       () => {

@@ -28,6 +28,7 @@ export {
   $createTableNode,
   $getElementForTableNode,
   $isScrollableTablesActive,
+  $isStickyScrollbarActive,
   $isTableNode,
   setScrollableTablesActive,
   TableNode,

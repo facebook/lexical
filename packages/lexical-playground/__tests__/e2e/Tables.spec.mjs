@@ -85,10 +85,10 @@ async function fillTablePartiallyWithText(page) {
   await page.keyboard.press('c');
 }
 
-const WRAPPER = IS_TABLE_HORIZONTAL_SCROLL ? [0] : [];
+const WRAPPER = IS_TABLE_HORIZONTAL_SCROLL ? [0, 0] : [];
 const nthTableSelector = nth =>
   IS_TABLE_HORIZONTAL_SCROLL
-    ? `div.PlaygroundEditorTheme__tableScrollableWrapper:nth-of-type(${nth}) > table`
+    ? `div:nth-of-type(${nth}) > div.PlaygroundEditorTheme__tableScrollableWrapper > table`
     : `table:nth-of-type(${nth})`;
 
 test.describe('Tables', () => {
@@ -9536,8 +9536,8 @@ test.describe('Tables', () => {
   });
 
   test.describe('nested table shift-selection tests', () => {
-    const END_OF_INNER_TABLE = [1, ...WRAPPER, 2, 1, 1, 0, 2, 1]; // paragraph in the last cell
-    const START_OF_INNER_TABLE = [1, ...WRAPPER, 2, 1, 1, 0, 1, 0]; // paragraph in the first cell
+    const END_OF_INNER_TABLE = [1, ...WRAPPER, 2, 1, 1, ...WRAPPER, 2, 1]; // paragraph in the last cell
+    const START_OF_INNER_TABLE = [1, ...WRAPPER, 2, 1, 1, ...WRAPPER, 1, 0]; // paragraph in the first cell
     const TEXT_BEFORE_NESTED_TABLE = [1, ...WRAPPER, 2, 1, 0, 0, 0]; // the word "before"
     const TEXT_AFTER_NESTED_TABLE = [1, ...WRAPPER, 2, 1, 2, 0, 0]; // the word "after"
 

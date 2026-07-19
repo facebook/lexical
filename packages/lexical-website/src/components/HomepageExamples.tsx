@@ -12,6 +12,7 @@ import NotionEditor from '@examples/website-notion/Editor';
 import RichInputEditor from '@examples/website-rich-input/Editor';
 import React from 'react';
 
+import ExampleErrorBoundary from './ExampleErrorBoundary';
 import StackBlitzButton from './StackBlitzButton';
 
 const AgentEditor = React.lazy(() =>
@@ -125,7 +126,9 @@ export default function HomepageExamples() {
           title={section.title}
           description={section.description}
           stackblitzPath={section.stackblitzPath}>
-          {section.editor}
+          <ExampleErrorBoundary name={section.stackblitzPath}>
+            {section.editor}
+          </ExampleErrorBoundary>
         </ExampleSection>
       ))}
     </div>

@@ -259,7 +259,7 @@ function $buildWordListTree(
       stack.pop();
     }
     // Open a new sublist if we just stepped deeper. Lexical's
-    // nested-list convention (see `isNestedListNode` in @lexical/list):
+    // nested-list convention (see `$isNestedListNode` in @lexical/list):
     // a sublist lives inside its OWN ListItemNode wrapper that is a
     // sibling of the content items above it, not inside the previous
     // one. The wrapper holds the sublist as its first (and only) child.

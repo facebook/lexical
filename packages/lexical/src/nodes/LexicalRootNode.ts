@@ -29,12 +29,8 @@ export class RootNode extends ElementNode {
   /** @internal */
   __cachedText: null | string;
 
-  static getType(): string {
-    return 'root';
-  }
-
-  static clone(): RootNode {
-    return new RootNode();
+  $config() {
+    return this.config('root', {extends: ElementNode});
   }
 
   constructor() {

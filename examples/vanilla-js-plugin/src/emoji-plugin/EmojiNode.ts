@@ -28,8 +28,8 @@ const BASE_EMOJI_URI = new URL(`@emoji-datasource-facebook/`, import.meta.url)
 export class EmojiNode extends TextNode {
   __unifiedID: string;
 
-  static getType(): string {
-    return 'emoji';
+  $config() {
+    return this.config('emoji', {extends: TextNode});
   }
 
   static clone(node: EmojiNode): EmojiNode {

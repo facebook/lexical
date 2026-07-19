@@ -1197,6 +1197,10 @@ export function $computeTableCellRectSpans(
   return {bottomSpan, leftSpan, rightSpan, topSpan};
 }
 
+/**
+ * Compute the bounding rectangle of two table cells in a table map,
+ * expanding iteratively to include any merged cells that overlap the boundary.
+ */
 export function $computeTableCellRectBoundary(
   map: TableMapType,
   cellAMap: TableMapValueType,

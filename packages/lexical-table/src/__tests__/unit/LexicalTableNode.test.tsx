@@ -14,7 +14,7 @@ import {
   $createTableNode,
   $createTableNodeWithDimensions,
   $createTableRowNode,
-  $createTableSelection,
+  $createTableSelectionFrom,
   $getElementForTableNode,
   $insertTableColumnAtSelection,
   $isScrollableTablesActive,
@@ -334,14 +334,15 @@ describe('LexicalTableNode tests', () => {
                 .getAllTextNodes()
                 .forEach((node, i) => node.setTextContent(String(i)));
               $getRoot().append(tableNode);
-              const tableSelection = $createTableSelection();
-              tableSelection.tableKey = tableNode.getKey();
               const cells = $dfs(tableNode).flatMap(({node}) =>
                 $isTableCellNode(node) ? [node] : [],
               );
               // second column
-              tableSelection.anchor.set(cells[1].getKey(), 0, 'element');
-              tableSelection.focus.set(cells[3].getKey(), 0, 'element');
+              const tableSelection = $createTableSelectionFrom(
+                tableNode,
+                cells[1],
+                cells[3],
+              );
               expectHtmlToBeEqual(
                 $generateHtmlFromNodes(editor, tableSelection),
                 html`
@@ -924,11 +925,16 @@ describe('LexicalTableNode tests', () => {
                     table.getCellNodeFromCords(0, 0, DOMTable)?.getLastChild(),
                     $isParagraphNode,
                   ).append($createTextNode('some text'));
-                  const selection = $createTableSelection();
-                  selection.set(
-                    table.__key,
-                    table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-                    table.getCellNodeFromCords(3, 3, DOMTable)?.__key || '',
+                  const anchorCell = table.getCellNodeFromCords(
+                    0,
+                    0,
+                    DOMTable,
+                  )!;
+                  const focusCell = table.getCellNodeFromCords(3, 3, DOMTable)!;
+                  const selection = $createTableSelectionFrom(
+                    table,
+                    anchorCell,
+                    focusCell,
                   );
                   $setSelection(selection);
                   editor.dispatchCommand(
@@ -965,11 +971,16 @@ describe('LexicalTableNode tests', () => {
                     table.getCellNodeFromCords(0, 0, DOMTable)?.getLastChild(),
                     $isParagraphNode,
                   ).append($createTextNode('some text'));
-                  const selection = $createTableSelection();
-                  selection.set(
-                    table.__key,
-                    table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-                    table.getCellNodeFromCords(2, 2, DOMTable)?.__key || '',
+                  const anchorCell = table.getCellNodeFromCords(
+                    0,
+                    0,
+                    DOMTable,
+                  )!;
+                  const focusCell = table.getCellNodeFromCords(2, 2, DOMTable)!;
+                  const selection = $createTableSelectionFrom(
+                    table,
+                    anchorCell,
+                    focusCell,
                   );
                   $setSelection(selection);
                   editor.dispatchCommand(
@@ -1121,11 +1132,12 @@ describe('LexicalTableNode tests', () => {
                   table.getCellNodeFromCords(2, 1, DOMTable)?.getLastChild(),
                   $isParagraphNode,
                 ).append($createTextNode(''));
-                const selection = $createTableSelection();
-                selection.set(
-                  table.__key,
-                  table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-                  table.getCellNodeFromCords(2, 1, DOMTable)?.__key || '',
+                const anchorCell = table.getCellNodeFromCords(0, 0, DOMTable)!;
+                const focusCell = table.getCellNodeFromCords(2, 1, DOMTable)!;
+                const selection = $createTableSelectionFrom(
+                  table,
+                  anchorCell,
+                  focusCell,
                 );
                 expect(selection.getTextContent()).toBe(`1\t\t2\n3\t4\t\n`);
               }
@@ -1819,12 +1831,8 @@ describe('LexicalTableNode tests', () => {
               const root = $getRoot();
               const table = $assertNodeType(root.getLastChild(), $isTableNode);
               const DOMTable = $getElementForTableNode(editor, table);
-              const selection = $createTableSelection();
-              selection.set(
-                table.__key,
-                table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-                table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-              );
+              const cell = table.getCellNodeFromCords(0, 0, DOMTable)!;
+              const selection = $createTableSelectionFrom(table, cell, cell);
               $setSelection(selection);
               $insertTableColumnAtSelection();
               table.setColWidths([50, 50, 100]);

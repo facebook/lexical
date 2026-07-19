@@ -3190,6 +3190,14 @@ const STATIC_NODE_CONFIG_CACHE = new WeakMap<
   OwnStaticNodeConfig
 >();
 
+// TextNode.length > 0 will only be true if the compiler output
+// is not ES6 compliant, in which case we can not provide this
+// warning. We also can't reliably provide this warning if the output
+// has been optimized because `arg=undefined` parameter defaults can
+// be stripped.
+const IS_UNOPTIMIZED_DEV_BUILD =
+  __DEV__ && TextNode.length === 0 && TextNode.name === 'TextNode';
+
 /** @internal */
 export function getStaticNodeConfig(
   klass: Klass<LexicalNode>,
@@ -3244,8 +3252,9 @@ export function getStaticNodeConfig(
     if (!hasOwnStaticMethod(klass, 'clone')) {
       // TextNode.length > 0 will only be true if the compiler output
       // is not ES6 compliant, in which case we can not provide this
-      // warning
-      if (__DEV__ && TextNode.length === 0) {
+      // warning. We also can't reliably provide this warning if the output
+      // has been optimized.
+      if (__DEV__ && IS_UNOPTIMIZED_DEV_BUILD) {
         invariant(
           klass.length === 0,
           '%s (type %s) must implement a static clone method since its constructor has %s required arguments (expecting 0). Use an explicit default in the first argument of your constructor(prop: T=X, nodeKey?: NodeKey).',
@@ -3260,7 +3269,7 @@ export function getStaticNodeConfig(
       };
     }
     if (!hasOwnStaticMethod(klass, 'importJSON')) {
-      if (__DEV__ && TextNode.length === 0) {
+      if (__DEV__ && IS_UNOPTIMIZED_DEV_BUILD) {
         invariant(
           klass.length === 0,
           '%s (type %s) must implement a static importJSON method since its constructor has %s required arguments (expecting 0). Use an explicit default in the first argument of your constructor(prop: T=X, nodeKey?: NodeKey).',

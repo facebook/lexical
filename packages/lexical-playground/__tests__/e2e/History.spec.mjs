@@ -138,7 +138,7 @@ test.describe('History', () => {
         focusPath: [1],
       });
     } else {
-      assertHTML(
+      await assertHTML(
         page,
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -301,7 +301,7 @@ test.describe('History', () => {
         focusPath: [1, 0, 0],
       });
     } else {
-      assertHTML(
+      await assertHTML(
         page,
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -322,7 +322,7 @@ test.describe('History', () => {
     await redo(page);
 
     if (isRichText) {
-      assertHTML(
+      await assertHTML(
         page,
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -340,7 +340,7 @@ test.describe('History', () => {
         focusPath: [1, 0, 0],
       });
     } else {
-      assertHTML(
+      await assertHTML(
         page,
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -939,7 +939,7 @@ test.describe('History - IME', () => {
 
     await undo(page);
 
-    assertHTML(
+    await assertHTML(
       page,
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">

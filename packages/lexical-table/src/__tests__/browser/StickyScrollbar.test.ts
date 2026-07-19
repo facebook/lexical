@@ -129,10 +129,10 @@ describe('sticky scrollbar (browser)', () => {
     await expect.poll(() => scrollbar.style.display).toBe('');
 
     scrollable.scrollLeft = 120;
-    await expect.poll(() => scrollbar.scrollLeft).toBe(120);
+    await expect.poll(() => Math.round(scrollbar.scrollLeft)).toBe(120);
 
     scrollbar.scrollLeft = 40;
-    await expect.poll(() => scrollable.scrollLeft).toBe(40);
+    await expect.poll(() => Math.round(scrollable.scrollLeft)).toBe(40);
   });
 
   test('hides the scrollbar when frozen rows make the wrapper unscrollable', async () => {

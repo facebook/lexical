@@ -2167,10 +2167,13 @@ function $handleArrowKey(
     if ($isRangeSelection(selection)) {
       if (direction === 'forward') {
         const focusNode = selection.focus.getNode();
+        const focusNodeLastChild = $isElementNode(focusNode)
+          ? focusNode.getLastChild()
+          : null; 
         if (
           $isRootOrShadowRoot(focusNode) &&
           selection.focus.offset === focusNode.getChildrenSize() &&
-          (focusNode as ElementNode).__last === tableNode.__key
+          focusNodeLastChild?.getKey() === tableNode.getKey()
         ) {
           stopEvent(event);
           return true;

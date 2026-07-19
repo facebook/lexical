@@ -2141,8 +2141,7 @@ function $handleArrowKey(
         if (
           $isRootOrShadowRoot(focusNode) &&
           selection.focus.offset === focusNode.getChildrenSize() &&
-          focusNodeLastChild &&
-          focusNodeLastChild.getKey() === tableNode.getKey()
+          tableNode.is(focusNodeLastChild)
         ) {
           stopEvent(event);
           return true;

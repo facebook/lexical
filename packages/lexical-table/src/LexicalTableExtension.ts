@@ -6,6 +6,8 @@
  *
  */
 
+import type {LexicalEditor} from 'lexical';
+
 import {effect, namedSignals} from '@lexical/extension';
 import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
 import {
@@ -74,6 +76,64 @@ export interface TableConfig {
   hasNestedTables: boolean;
 }
 
+function registerStickyScrollbar(editor: LexicalEditor) {
+  const attached = new Map<
+    string,
+    {cleanup: () => void; parts: StickyScrollbarElements}
+  >();
+  const detachAll = () => {
+    for (const {cleanup} of attached.values()) {
+      cleanup();
+    }
+    attached.clear();
+  };
+  return mergeRegister(
+    detachAll,
+    editor.registerMutationListener(
+      TableNode,
+      nodeMutations => {
+        for (const [nodeKey, mutation] of nodeMutations) {
+          const prev = attached.get(nodeKey);
+          if (mutation === 'destroyed') {
+            if (prev) {
+              prev.cleanup();
+              attached.delete(nodeKey);
+            }
+            continue;
+          }
+          const dom = editor.getElementByKey(nodeKey);
+          const parts =
+            dom && isHTMLElement(dom) ? findStickyScrollbarElements(dom) : null;
+          if (
+            prev &&
+            parts &&
+            prev.parts.scrollable === parts.scrollable &&
+            prev.parts.scrollbar === parts.scrollbar &&
+            prev.parts.tableElement === parts.tableElement
+          ) {
+            // Same DOM: keep the listeners, but resync since the
+            // update may still change scrollability (e.g. a frozen
+            // rows toggle switches the wrapper to overflow-x: clip).
+            syncStickyScrollbar(parts.scrollable, parts.scrollbar);
+            continue;
+          }
+          if (prev) {
+            prev.cleanup();
+            attached.delete(nodeKey);
+          }
+          if (parts) {
+            attached.set(nodeKey, {
+              cleanup: attachStickyScrollbarListeners(parts),
+              parts,
+            });
+          }
+        }
+      },
+      {skipInitialization: false},
+    ),
+  );
+}
+
 /**
  * Configures {@link TableNode}, {@link TableRowNode}, {@link TableCellNode} and
  * registers table behaviors (see {@link TableConfig})
@@ -131,75 +191,15 @@ export const TableExtension = /* @__PURE__ */ defineExtension({
       ),
       effect(() => {
         if (
-          !stores.hasStickyScrollbar.value ||
-          !stores.hasHorizontalScroll.value
+          stores.hasStickyScrollbar.value &&
+          stores.hasHorizontalScroll.value
         ) {
-          return undefined;
-        }
-        const attached = new Map<
-          string,
-          {cleanup: () => void; parts: StickyScrollbarElements}
-        >();
-        const detachAll = () => {
-          for (const {cleanup} of attached.values()) {
-            cleanup();
-          }
-          attached.clear();
-        };
-        return mergeRegister(
-          editor.registerMutationListener(
-            TableNode,
-            nodeMutations => {
-              for (const [nodeKey, mutation] of nodeMutations) {
-                const prev = attached.get(nodeKey);
-                if (mutation === 'destroyed') {
-                  if (prev) {
-                    prev.cleanup();
-                    attached.delete(nodeKey);
-                  }
-                  continue;
-                }
-                const dom = editor.getElementByKey(nodeKey);
-                const parts =
-                  dom && isHTMLElement(dom)
-                    ? findStickyScrollbarElements(dom)
-                    : null;
-                if (
-                  prev &&
-                  parts &&
-                  prev.parts.scrollable === parts.scrollable &&
-                  prev.parts.scrollbar === parts.scrollbar &&
-                  prev.parts.tableElement === parts.tableElement
-                ) {
-                  // Same DOM: keep the listeners, but resync since the
-                  // update may still change scrollability (e.g. a frozen
-                  // rows toggle switches the wrapper to overflow-x: clip).
-                  syncStickyScrollbar(parts.scrollable, parts.scrollbar);
-                  continue;
-                }
-                if (prev) {
-                  prev.cleanup();
-                  attached.delete(nodeKey);
-                }
-                if (parts) {
-                  attached.set(nodeKey, {
-                    cleanup: attachStickyScrollbarListeners(parts),
-                    parts,
-                  });
-                }
-              }
-            },
-            {skipInitialization: false},
-          ),
-          editor.registerRootListener(rootElement => {
-            if (rootElement === null) {
-              // setRootElement(null) unmounts without delivering 'destroyed'
-              // mutations, so the observers must be released here.
-              detachAll();
+          return editor.registerRootListener(rootElement => {
+            if (rootElement) {
+              return registerStickyScrollbar(editor);
             }
-          }),
-          detachAll,
-        );
+          });
+        }
       }),
       effect(() =>
         stores.hasCellMerge.value

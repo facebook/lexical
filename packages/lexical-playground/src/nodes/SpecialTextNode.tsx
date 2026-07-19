@@ -11,18 +11,13 @@ import {
   addClassNamesToElement,
   type EditorConfig,
   type LexicalNode,
-  type SerializedTextNode,
   TextNode,
 } from 'lexical';
 
 /** @noInheritDoc */
 export class SpecialTextNode extends TextNode {
-  static getType(): string {
-    return 'specialText';
-  }
-
-  static clone(node: SpecialTextNode): SpecialTextNode {
-    return new SpecialTextNode(node.__text, node.__key);
+  $config() {
+    return this.config('specialText', {extends: TextNode});
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -41,10 +36,6 @@ export class SpecialTextNode extends TextNode {
     addClassNamesToElement(dom, config.theme.specialText);
 
     return false;
-  }
-
-  static importJSON(serializedNode: SerializedTextNode): SpecialTextNode {
-    return $createSpecialTextNode().updateFromJSON(serializedNode);
   }
 
   isTextEntity(): true {

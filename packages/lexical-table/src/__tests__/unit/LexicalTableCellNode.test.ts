@@ -11,10 +11,10 @@ import {
   $createTableCellNode,
   $isTableCellNode,
   TableCellHeaderStates,
-  TableCellNode,
 } from '@lexical/table';
 import {$createTextNode, $getRoot, type DOMConversionOutput} from 'lexical';
 import {
+  $runDOMConversion,
   expectHtmlToBeEqual,
   html,
   initializeUnitTest,
@@ -220,22 +220,14 @@ describe('LexicalTableCellNode tests', () => {
       });
     }, 15000);
 
-    // Simulates the Lexical Paste Engine finding and running the converter
-    const convertHTMLTag = (element: HTMLElement) => {
-      const importDOMMap = TableCellNode.importDOM();
-
-      // look up tag name (e.g., 'th') in the import map
-      const handler = importDOMMap![element.tagName.toLowerCase()];
-      if (!handler) {
-        throw new Error(`No handler found for tag ${element.tagName}`);
-      }
-
-      const specs = handler(element);
-      if (!specs) {
-        throw new Error(`Handler returned null for tag ${element.tagName}`);
-      }
-      return specs.conversion(element);
-    };
+    // Simulates the Lexical Paste Engine finding and running the converter by
+    // driving the real DOM-import machinery (the editor's registered conversion
+    // cache, the path the paste engine actually uses) rather than reaching into
+    // TableCellNode.importDOM() directly. The element is converted in place so
+    // the cell's row/table position is visible to the conversion.
+    const $convertHTMLTag = (
+      element: HTMLElement,
+    ): DOMConversionOutput | null => $runDOMConversion(testEnv.editor, element);
 
     const expectTableCellNode = (result: DOMConversionOutput | null) => {
       const node = result?.node;
@@ -259,7 +251,7 @@ describe('LexicalTableCellNode tests', () => {
         const th = document.createElement('th');
         th.setAttribute('scope', 'col');
 
-        const result = convertHTMLTag(th);
+        const result = $convertHTMLTag(th);
 
         const node = expectTableCellNode(result);
 
@@ -274,7 +266,7 @@ describe('LexicalTableCellNode tests', () => {
         const th = document.createElement('th');
         th.setAttribute('scope', 'row');
 
-        const result = convertHTMLTag(th);
+        const result = $convertHTMLTag(th);
 
         const node = expectTableCellNode(result);
 
@@ -292,7 +284,7 @@ describe('LexicalTableCellNode tests', () => {
         tr.appendChild(th);
         table.appendChild(tr);
 
-        const result = convertHTMLTag(th);
+        const result = $convertHTMLTag(th);
 
         const node = expectTableCellNode(result);
 
@@ -313,7 +305,7 @@ describe('LexicalTableCellNode tests', () => {
         tr.appendChild(td);
         table.appendChild(tr);
 
-        const result = convertHTMLTag(th);
+        const result = $convertHTMLTag(th);
         const node = expectTableCellNode(result);
 
         // First row, first column → BOTH
@@ -339,7 +331,7 @@ describe('LexicalTableCellNode tests', () => {
         table.appendChild(tr1);
         table.appendChild(tr2);
 
-        const result = convertHTMLTag(th2);
+        const result = $convertHTMLTag(th2);
         const node = expectTableCellNode(result);
 
         // Non-first row, first column → COLUMN
@@ -362,7 +354,7 @@ describe('LexicalTableCellNode tests', () => {
         table.appendChild(thead);
 
         // Second th in thead → ROW (not first column, so only ROW from first row)
-        const result = convertHTMLTag(th2);
+        const result = $convertHTMLTag(th2);
         const node = expectTableCellNode(result);
 
         expect(node.getHeaderStyles()).toBe(TableCellHeaderStates.ROW);
@@ -376,7 +368,7 @@ describe('LexicalTableCellNode tests', () => {
         const td = document.createElement('td');
         td.style.backgroundColor = '#F4B084';
 
-        const result = convertHTMLTag(td);
+        const result = $convertHTMLTag(td);
         const node = expectTableCellNode(result);
 
         // Browsers normalize hex to rgb when set via .style
@@ -390,7 +382,7 @@ describe('LexicalTableCellNode tests', () => {
       await editor.update(() => {
         const td = document.createElement('td');
 
-        const result = convertHTMLTag(td);
+        const result = $convertHTMLTag(td);
         const node = expectTableCellNode(result);
 
         expect(node.getBackgroundColor()).toBeNull();
@@ -404,7 +396,7 @@ describe('LexicalTableCellNode tests', () => {
         const td = document.createElement('td');
         td.style.color = 'blue';
 
-        const result = convertHTMLTag(td);
+        const result = $convertHTMLTag(td);
         expectTableCellNode(result);
 
         // The after callback propagates td color to child TextNodes
@@ -421,7 +413,7 @@ describe('LexicalTableCellNode tests', () => {
         const td = document.createElement('td');
         td.style.color = 'blue';
 
-        const result = convertHTMLTag(td);
+        const result = $convertHTMLTag(td);
         expectTableCellNode(result);
 
         const textNode = $createTextNode('Hello');

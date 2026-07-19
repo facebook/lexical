@@ -683,29 +683,6 @@ export function applyTableHandlers(
       tableObserver.$clearText();
 
       return true;
-    } else if ($isRangeSelection(selection)) {
-      const tableCellNode = $findParentTableCellNodeInTable(
-        tableNode,
-        selection.anchor.getNode(),
-      );
-
-      if (!$isTableCellNode(tableCellNode)) {
-        return false;
-      }
-
-      const anchorNode = selection.anchor.getNode();
-      const focusNode = selection.focus.getNode();
-      const isAnchorInside = tableNode.isParentOf(anchorNode);
-      const isFocusInside = tableNode.isParentOf(focusNode);
-
-      const selectionContainsPartialTable =
-        (isAnchorInside && !isFocusInside) ||
-        (isFocusInside && !isAnchorInside);
-
-      if (selectionContainsPartialTable) {
-        tableObserver.$clearText();
-        return true;
-      }
     }
 
     return false;
@@ -879,15 +856,6 @@ export function applyTableHandlers(
           tableObserver.$formatCells(payload);
 
           return true;
-        } else if ($isRangeSelection(selection)) {
-          const tableCellNode = $findMatchingParent(
-            selection.anchor.getNode(),
-            n => $isTableCellNode(n),
-          );
-
-          if (!$isTableCellNode(tableCellNode)) {
-            return false;
-          }
         }
 
         return false;

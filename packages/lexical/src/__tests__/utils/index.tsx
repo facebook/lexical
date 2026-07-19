@@ -30,6 +30,8 @@ import {
   createEditor,
   type CreateEditorArgs,
   DecoratorNode,
+  type DOMConversion,
+  type DOMConversionOutput,
   type EditorState,
   type EditorThemeClasses,
   ElementNode,
@@ -605,4 +607,37 @@ export function prettifyHtml(s: string): string {
     ...prettierConfig,
     parser: 'html',
   });
+}
+
+/**
+ * Locate and run the DOM importer for `element` through the editor's registered
+ * conversion cache — the same machinery `@lexical/html`'s paste path consults
+ * via `getConversionFunction` — and return its {@link DOMConversionOutput}.
+ *
+ * Prefer this over calling a node's static `importDOM()` directly: it exercises
+ * the real registration (priority resolution, dedup, and any `HTMLConfig`
+ * import overrides) instead of one class's raw map, and it runs the conversion
+ * on `element` in place so logic that inspects the element's DOM ancestors
+ * (e.g. a table cell reading its row/table position) sees the real context.
+ */
+export function $runDOMConversion(
+  editor: LexicalEditor,
+  element: HTMLElement,
+): DOMConversionOutput | null {
+  let match: DOMConversion | null = null;
+  const conversions = editor._htmlConversions.get(
+    element.tagName.toLowerCase(),
+  );
+  if (conversions !== undefined) {
+    for (const conversion of conversions) {
+      const candidate = conversion(element);
+      if (
+        candidate !== null &&
+        (match === null || (match.priority || 0) <= (candidate.priority || 0))
+      ) {
+        match = candidate;
+      }
+    }
+  }
+  return match !== null ? match.conversion(element) : null;
 }

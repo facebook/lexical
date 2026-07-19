@@ -886,6 +886,9 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
         'text',
       );
     } else {
+      const isDifferentNode =
+        selection.anchor.key !== key || selection.focus.key !== key;
+
       const compositionKey = $getCompositionKey();
       if (
         compositionKey === selection.anchor.key ||
@@ -894,6 +897,11 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
         $setCompositionKey(key);
       }
       selection.setTextNodeRange(this, anchorOffset, this, focusOffset);
+
+      if (isDifferentNode) {
+        selection.format = this.getFormat();
+        selection.style = this.getStyle();
+      }
     }
     return selection;
   }

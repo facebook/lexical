@@ -2137,7 +2137,7 @@ function $handleArrowKey(
         const focusNode = selection.focus.getNode();
         const focusNodeLastChild = $isElementNode(focusNode)
           ? focusNode.getLastChild()
-          : null; 
+          : null;
         if (
           $isRootOrShadowRoot(focusNode) &&
           selection.focus.offset === focusNode.getChildrenSize() &&

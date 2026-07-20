@@ -401,11 +401,11 @@ describe('LexicalSelection tests', () => {
         editor.update(
           () => {
             const sel = $createRangeSelection();
-            sel.anchor.set(leadingText.getKey(), 0, 'text');
-            sel.focus.set(
-              trailingTokenText.getKey(),
+            sel.setTextNodeRange(
+              leadingText,
+              0,
+              trailingTokenText,
               trailingTokenText.getTextContentSize(),
-              'text',
             );
             $setSelection(sel);
             sel.removeText();
@@ -423,14 +423,7 @@ describe('LexicalSelection tests', () => {
       test('remove initial TextNode', () => {
         editor.update(
           () => {
-            const sel = $createRangeSelection();
-            sel.anchor.set(leadingText.getKey(), 0, 'text');
-            sel.focus.set(
-              leadingText.getKey(),
-              leadingText.getTextContentSize(),
-              'text',
-            );
-            $setSelection(sel);
+            const sel = leadingText.select(0, leadingText.getTextContentSize());
             sel.removeText();
             expect(leadingText.isAttached()).toBe(false);
             expect(trailingTokenText.isAttached()).toBe(true);
@@ -446,14 +439,10 @@ describe('LexicalSelection tests', () => {
       test('remove trailing token TextNode', () => {
         editor.update(
           () => {
-            const sel = $createRangeSelection();
-            sel.anchor.set(trailingTokenText.getKey(), 0, 'text');
-            sel.focus.set(
-              trailingTokenText.getKey(),
+            const sel = trailingTokenText.select(
+              0,
               trailingTokenText.getTextContentSize(),
-              'text',
             );
-            $setSelection(sel);
             sel.removeText();
             expect(leadingText.isAttached()).toBe(true);
             expect(trailingTokenText.isAttached()).toBe(false);
@@ -472,8 +461,12 @@ describe('LexicalSelection tests', () => {
         editor.update(
           () => {
             const sel = $createRangeSelection();
-            sel.anchor.set(leadingText.getKey(), 0, 'text');
-            sel.focus.set(trailingTokenText.getKey(), 'token '.length, 'text');
+            sel.setTextNodeRange(
+              leadingText,
+              0,
+              trailingTokenText,
+              'token '.length,
+            );
             $setSelection(sel);
             sel.removeText();
             expect(leadingText.isAttached()).toBe(false);
@@ -493,8 +486,12 @@ describe('LexicalSelection tests', () => {
         editor.update(
           () => {
             const sel = $createRangeSelection();
-            sel.anchor.set(leadingText.getKey(), 'lead'.length, 'text');
-            sel.focus.set(trailingTokenText.getKey(), 'token '.length, 'text');
+            sel.setTextNodeRange(
+              leadingText,
+              'lead'.length,
+              trailingTokenText,
+              'token '.length,
+            );
             $setSelection(sel);
             sel.removeText();
             expect(leadingText.isAttached()).toBe(true);
@@ -535,11 +532,11 @@ describe('LexicalSelection tests', () => {
         editor.update(
           () => {
             const sel = $createRangeSelection();
-            sel.anchor.set(leadingTokenText.getKey(), 0, 'text');
-            sel.focus.set(
-              trailingText.getKey(),
+            sel.setTextNodeRange(
+              leadingTokenText,
+              0,
+              trailingText,
               trailingText.getTextContentSize(),
-              'text',
             );
             $setSelection(sel);
             sel.removeText();
@@ -557,14 +554,10 @@ describe('LexicalSelection tests', () => {
       test('remove trailing TextNode', () => {
         editor.update(
           () => {
-            const sel = $createRangeSelection();
-            sel.anchor.set(trailingText.getKey(), 0, 'text');
-            sel.focus.set(
-              trailingText.getKey(),
+            const sel = trailingText.select(
+              0,
               trailingText.getTextContentSize(),
-              'text',
             );
-            $setSelection(sel);
             sel.removeText();
             expect(leadingTokenText.isAttached()).toBe(true);
             expect(trailingText.isAttached()).toBe(false);
@@ -582,14 +575,10 @@ describe('LexicalSelection tests', () => {
       test('remove leading token TextNode', () => {
         editor.update(
           () => {
-            const sel = $createRangeSelection();
-            sel.anchor.set(leadingTokenText.getKey(), 0, 'text');
-            sel.focus.set(
-              leadingTokenText.getKey(),
+            const sel = leadingTokenText.select(
+              0,
               leadingTokenText.getTextContentSize(),
-              'text',
             );
-            $setSelection(sel);
             sel.removeText();
             expect(leadingTokenText.isAttached()).toBe(false);
             expect(trailingText.isAttached()).toBe(true);
@@ -606,11 +595,11 @@ describe('LexicalSelection tests', () => {
         editor.update(
           () => {
             const sel = $createRangeSelection();
-            sel.anchor.set(leadingTokenText.getKey(), 'token '.length, 'text');
-            sel.focus.set(
-              trailingText.getKey(),
+            sel.setTextNodeRange(
+              leadingTokenText,
+              'token '.length,
+              trailingText,
               trailingText.getTextContentSize(),
-              'text',
             );
             $setSelection(sel);
             sel.removeText();
@@ -631,8 +620,12 @@ describe('LexicalSelection tests', () => {
         editor.update(
           () => {
             const sel = $createRangeSelection();
-            sel.anchor.set(leadingTokenText.getKey(), 'token '.length, 'text');
-            sel.focus.set(trailingText.getKey(), 'trail'.length, 'text');
+            sel.setTextNodeRange(
+              leadingTokenText,
+              'token '.length,
+              trailingText,
+              'trail'.length,
+            );
             $setSelection(sel);
             sel.removeText();
             expect(leadingTokenText.isAttached()).toBe(false);
@@ -674,11 +667,11 @@ describe('LexicalSelection tests', () => {
         editor.update(
           () => {
             const sel = $createRangeSelection();
-            sel.anchor.set(leadingText.getKey(), 0, 'text');
-            sel.focus.set(
-              trailingSegmentedText.getKey(),
+            sel.setTextNodeRange(
+              leadingText,
+              0,
+              trailingSegmentedText,
               trailingSegmentedText.getTextContentSize(),
-              'text',
             );
             $setSelection(sel);
             sel.removeText();
@@ -696,14 +689,7 @@ describe('LexicalSelection tests', () => {
       test('remove initial TextNode', () => {
         editor.update(
           () => {
-            const sel = $createRangeSelection();
-            sel.anchor.set(leadingText.getKey(), 0, 'text');
-            sel.focus.set(
-              leadingText.getKey(),
-              leadingText.getTextContentSize(),
-              'text',
-            );
-            $setSelection(sel);
+            const sel = leadingText.select(0, leadingText.getTextContentSize());
             sel.removeText();
             expect(leadingText.isAttached()).toBe(false);
             expect(trailingSegmentedText.isAttached()).toBe(true);
@@ -719,14 +705,10 @@ describe('LexicalSelection tests', () => {
       test('remove trailing segmented TextNode', () => {
         editor.update(
           () => {
-            const sel = $createRangeSelection();
-            sel.anchor.set(trailingSegmentedText.getKey(), 0, 'text');
-            sel.focus.set(
-              trailingSegmentedText.getKey(),
+            const sel = trailingSegmentedText.select(
+              0,
               trailingSegmentedText.getTextContentSize(),
-              'text',
             );
-            $setSelection(sel);
             sel.removeText();
             expect(leadingText.isAttached()).toBe(true);
             expect(trailingSegmentedText.isAttached()).toBe(false);
@@ -745,11 +727,11 @@ describe('LexicalSelection tests', () => {
         editor.update(
           () => {
             const sel = $createRangeSelection();
-            sel.anchor.set(leadingText.getKey(), 0, 'text');
-            sel.focus.set(
-              trailingSegmentedText.getKey(),
+            sel.setTextNodeRange(
+              leadingText,
+              0,
+              trailingSegmentedText,
               'segmented '.length,
-              'text',
             );
             $setSelection(sel);
             sel.removeText();
@@ -772,11 +754,11 @@ describe('LexicalSelection tests', () => {
         editor.update(
           () => {
             const sel = $createRangeSelection();
-            sel.anchor.set(leadingText.getKey(), 'lead'.length, 'text');
-            sel.focus.set(
-              trailingSegmentedText.getKey(),
+            sel.setTextNodeRange(
+              leadingText,
+              'lead'.length,
+              trailingSegmentedText,
               'segmented '.length,
-              'text',
             );
             $setSelection(sel);
             expect($getSelection()).toBe(sel);
@@ -1021,7 +1003,7 @@ describe('Regression tests for #8707', () => {
       invariant($isTestShadowRootNode(shadow), 'Expected shadow root');
       const children = shadow.getChildren();
       expect(children).toHaveLength(1);
-      expect($isDecoratorNode(children[0])).toBe(true);
+      assert($isDecoratorNode(children[0]));
     });
   });
 
@@ -1053,8 +1035,8 @@ describe('Regression tests for #8707', () => {
       invariant($isTestShadowRootNode(shadow), 'Expected shadow root');
       const children = shadow.getChildren();
       expect(children).toHaveLength(2);
-      expect($isDecoratorNode(children[0])).toBe(true);
-      expect($isParagraphNode(children[1])).toBe(true);
+      assert($isDecoratorNode(children[0]));
+      assert($isParagraphNode(children[1]));
       expect(children[1].getTextContent()).toBe('inserted');
     });
   });
@@ -1090,7 +1072,7 @@ describe('Regression tests for #8707', () => {
       const shadow = root.getFirstChildOrThrow();
       invariant($isTestShadowRootNode(shadow), 'Expected shadow root');
       expect(shadow.getChildrenSize()).toBe(2);
-      expect($isParagraphNode(shadow.getLastChild())).toBe(true);
+      assert($isParagraphNode(shadow.getLastChild()));
     });
   });
 
@@ -1121,8 +1103,8 @@ describe('Regression tests for #8707', () => {
       // The decorator is a direct child of root; no empty paragraph wrapper
       // was created for it.
       expect(children).toHaveLength(2);
-      expect($isParagraphNode(children[0])).toBe(true);
-      expect($isDecoratorNode(children[1])).toBe(true);
+      assert($isParagraphNode(children[0]));
+      assert($isDecoratorNode(children[1]));
     });
   });
 });
@@ -1714,9 +1696,7 @@ describe('extract()', () => {
   test('select partial TextNode extracts paragraph text', () => {
     editor.update(
       () => {
-        const selection = $createRangeSelection();
-        selection.anchor.set(paragraphText.getKey(), 2, 'text');
-        selection.focus.set(paragraphText.getKey(), 8, 'text');
+        const selection = paragraphText.select(2, 8);
         const extracted = selection.extract();
         expect(extracted).toEqual([
           expect.objectContaining({__text: 'ragrap'}),
@@ -1729,9 +1709,7 @@ describe('extract()', () => {
   test('select partial TextNode extracts link text', () => {
     editor.update(
       () => {
-        const selection = $createRangeSelection();
-        selection.anchor.set(linkText.getKey(), 1, 'text');
-        selection.focus.set(linkText.getKey(), 4, 'text');
+        const selection = linkText.select(1, 4);
         const extracted = selection.extract();
         expect(extracted).toEqual([expect.objectContaining({__text: 'ink'})]);
         expect(selection.getNodes()).toEqual(extracted);
@@ -1743,8 +1721,7 @@ describe('extract()', () => {
     editor.update(
       () => {
         const selection = $createRangeSelection();
-        selection.anchor.set(paragraphText.getKey(), 10, 'text');
-        selection.focus.set(linkText.getKey(), 4, 'text');
+        selection.setTextNodeRange(paragraphText, 10, linkText, 4);
         const extracted = selection.extract();
         expect(mapLatest(extracted)).toEqual([
           expect.objectContaining({__text: 'text'}),
@@ -1760,12 +1737,12 @@ describe('extract()', () => {
     editor.update(
       () => {
         const selection = $createRangeSelection();
-        selection.anchor.set(
-          paragraphText.getKey(),
+        selection.setTextNodeRange(
+          paragraphText,
           paragraphText.getTextContentSize(),
-          'text',
+          linkText,
+          4,
         );
-        selection.focus.set(linkText.getKey(), 4, 'text');
         const beforeNodes = selection.getNodes();
         const extracted = selection.extract();
         expect(mapLatest(extracted)).toEqual([
@@ -1783,8 +1760,7 @@ describe('extract()', () => {
     editor.update(
       () => {
         const selection = $createRangeSelection();
-        selection.anchor.set(paragraphText.getKey(), 4, 'text');
-        selection.focus.set(linkText.getKey(), 0, 'text');
+        selection.setTextNodeRange(paragraphText, 4, linkText, 0);
         const beforeNodes = selection.getNodes();
         expect(mapLatest(selection.extract())).toEqual([
           expect.objectContaining({__text: 'graph text'}),

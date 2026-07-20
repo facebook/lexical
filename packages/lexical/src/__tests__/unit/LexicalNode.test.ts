@@ -2095,6 +2095,63 @@ describe('LexicalNode.$config() without registration', () => {
     }
   });
 
+  test('subclass static getType() is not shadowed by a superclass synthesized getType', () => {
+    // Regression for the $config() protocol (#8640): getStaticNodeConfig
+    // synthesizes `klass.getType = () => ownNodeType` for a class that derives
+    // its type from $config(). If the superclass is resolved first, that
+    // synthesized closure lives as an *own* static on the superclass. A
+    // subclass that has not yet had its own getType synthesized then *inherits*
+    // that closure via the prototype chain and returns the SUPERCLASS's
+    // hardcoded type. In an editor this makes the subclass register under the
+    // superclass's type and collide with it (e.g. CodeHighlightNode/HashtagNode
+    // resolving to 'text' and clashing with the registered TextNode).
+    class ParentConfigNode extends TextNode {
+      $config() {
+        return this.config('parent-config-node', {extends: TextNode});
+      }
+    }
+    class ChildConfigNode extends ParentConfigNode {
+      $config() {
+        return this.config('child-config-node', {extends: ParentConfigNode});
+      }
+    }
+    class SiblingConfigNode extends ParentConfigNode {
+      $config() {
+        return this.config('sibling-config-node', {extends: ParentConfigNode});
+      }
+    }
+
+    // Resolve the parent FIRST so its getType() is synthesized as an own
+    // static, then read the subclasses (which would otherwise inherit it).
+    expect(ParentConfigNode.getType()).toBe('parent-config-node');
+    expect(ChildConfigNode.getType()).toBe('child-config-node');
+    expect(SiblingConfigNode.getType()).toBe('sibling-config-node');
+
+    // Idempotent: repeated reads keep returning each class's own type, and
+    // reading the parent again does not get poisoned by the children.
+    expect(ParentConfigNode.getType()).toBe('parent-config-node');
+    expect(ChildConfigNode.getType()).toBe('child-config-node');
+  });
+
+  test('subclass static getType() resolves correctly when read before the superclass', () => {
+    // The reverse ordering of the regression above: reading the subclass first
+    // must also stay correct and must not poison the superclass.
+    class OuterConfigNode extends TextNode {
+      $config() {
+        return this.config('outer-config-node', {extends: TextNode});
+      }
+    }
+    class InnerConfigNode extends OuterConfigNode {
+      $config() {
+        return this.config('inner-config-node', {extends: OuterConfigNode});
+      }
+    }
+
+    expect(InnerConfigNode.getType()).toBe('inner-config-node');
+    expect(OuterConfigNode.getType()).toBe('outer-config-node');
+    expect(InnerConfigNode.getType()).toBe('inner-config-node');
+  });
+
   test('abstract base class declares shared $config under a Symbol key', () => {
     // An abstract base class has no concrete node `type`, so it publishes the
     // configuration it shares with its subclasses (here a $transform) under a

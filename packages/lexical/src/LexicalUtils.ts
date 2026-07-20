@@ -122,6 +122,29 @@ export function getPendingNodeToClone(): null | LexicalNode {
   return node;
 }
 
+// Internal, module-private sentinel passed as the second argument to an
+// auto-synthesized clone (see getStaticNodeConfig) by the internal clone
+// wrappers ($cloneWithProperties / $copyNode). Those wrappers are contractually
+// responsible for calling `afterCloneFrom(node)` on the result exactly once, so
+// they pass this sentinel to tell the synthesized clone NOT to call it too.
+//
+// An auto-synthesized clone has no explicit body, so when it is called *without*
+// this sentinel — i.e. directly as `NodeClass.clone(node)`, a documented and
+// idiomatic pattern before the $config() port — it must copy the source node's
+// properties itself, otherwise callers silently get a default-constructed node
+// with lost state (e.g. HeadingNode's tag reverting to 'h1').
+//
+// The signal is per-call rather than a module global, so it is unaffected by
+// reentrancy: a clone (or afterCloneFrom) that happens to clone another node,
+// even in another editor, does not accidentally suppress that node's own
+// afterCloneFrom. It is also un-spoofable by external callers because the
+// sentinel is not exported. afterCloneFrom is not guaranteed idempotent (some
+// nodes accumulate state there, e.g. a version counter), so it is critical that
+// it runs exactly once per clone regardless of call path.
+const INTERNAL_SKIP_AFTER_CLONE_FROM: unique symbol = Symbol(
+  'INTERNAL_SKIP_AFTER_CLONE_FROM',
+);
+
 let keyCounter = 1;
 
 export function resetRandomKey(): void {
@@ -1800,7 +1823,12 @@ export function $copyNode<T extends LexicalNode>(
   node: T,
   skipReset = false,
 ): T {
-  const copy = node.constructor.clone(node) as T;
+  const copy = (
+    node.constructor.clone as (
+      data: LexicalNode,
+      internalSkipAfterCloneFrom?: typeof INTERNAL_SKIP_AFTER_CLONE_FROM,
+    ) => T
+  )(node, INTERNAL_SKIP_AFTER_CLONE_FROM);
   $setNodeKey(copy, null);
   copy.afterCloneFrom(node);
   if (!skipReset) {
@@ -2889,7 +2917,12 @@ function computeTypeToNodeMap(editorState: EditorState): TypeToNodeMap {
  */
 export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
   const constructor = latestNode.constructor;
-  const mutableNode = constructor.clone(latestNode) as T;
+  const mutableNode = (
+    constructor.clone as (
+      data: LexicalNode,
+      internalSkipAfterCloneFrom?: typeof INTERNAL_SKIP_AFTER_CLONE_FROM,
+    ) => T
+  )(latestNode, INTERNAL_SKIP_AFTER_CLONE_FROM);
   mutableNode.afterCloneFrom(latestNode);
   if (__DEV__) {
     invariant(
@@ -3247,7 +3280,22 @@ export function getStaticNodeConfig(
   }
   if (!isAbstract && ownNodeType) {
     if (!hasOwnStaticMethod(klass, 'getType')) {
-      klass.getType = () => ownNodeType;
+      // Guard against subclass inheritance: a subclass that does not define its
+      // own static getType() (nor its own $config()-derived type yet) would
+      // otherwise *inherit* this synthesized closure via the prototype chain and
+      // return the superclass's hardcoded `ownNodeType`. When that happens the
+      // subclass registers under the superclass's type, colliding with it
+      // (e.g. `CodeHighlightNode`/`HashtagNode` resolving to type 'text' and
+      // clashing with `TextNode`). Only return the captured type when invoked on
+      // the exact class it was synthesized for; otherwise defer to the base
+      // LexicalNode.getType(), which resolves the correct type for `this`.
+      const synthesizedForKlass = klass;
+      klass.getType = function (this: Klass<LexicalNode>): string {
+        if (this !== synthesizedForKlass) {
+          return LexicalNode.getType.call(this);
+        }
+        return ownNodeType;
+      };
     }
     if (!hasOwnStaticMethod(klass, 'clone')) {
       // TextNode.length > 0 will only be true if the compiler output
@@ -3263,9 +3311,25 @@ export function getStaticNodeConfig(
           String(klass.length),
         );
       }
-      klass.clone = (prevNode: LexicalNode) => {
+      klass.clone = (
+        prevNode: LexicalNode,
+        internalSkipAfterCloneFrom?: typeof INTERNAL_SKIP_AFTER_CLONE_FROM,
+      ) => {
         setPendingNodeToClone(prevNode);
-        return new klass();
+        const node = new klass();
+        // The internal clone wrappers ($cloneWithProperties / $copyNode) pass
+        // the module-private INTERNAL_SKIP_AFTER_CLONE_FROM sentinel because
+        // they call afterCloneFrom themselves. When this synthesized clone is
+        // instead called directly — e.g. `NodeClass.clone(node)`, an idiomatic
+        // pre-$config() pattern — the sentinel is absent, so we call
+        // afterCloneFrom here to preserve the documented clone() contract and
+        // avoid silent property loss. afterCloneFrom is not guaranteed
+        // idempotent, so this must run exactly once (see the sentinel
+        // definition for the full rationale).
+        if (internalSkipAfterCloneFrom !== INTERNAL_SKIP_AFTER_CLONE_FROM) {
+          node.afterCloneFrom(prevNode);
+        }
+        return node;
       };
     }
     if (!hasOwnStaticMethod(klass, 'importJSON')) {

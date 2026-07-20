@@ -3280,7 +3280,22 @@ export function getStaticNodeConfig(
   }
   if (!isAbstract && ownNodeType) {
     if (!hasOwnStaticMethod(klass, 'getType')) {
-      klass.getType = () => ownNodeType;
+      // Guard against subclass inheritance: a subclass that does not define its
+      // own static getType() (nor its own $config()-derived type yet) would
+      // otherwise *inherit* this synthesized closure via the prototype chain and
+      // return the superclass's hardcoded `ownNodeType`. When that happens the
+      // subclass registers under the superclass's type, colliding with it
+      // (e.g. `CodeHighlightNode`/`HashtagNode` resolving to type 'text' and
+      // clashing with `TextNode`). Only return the captured type when invoked on
+      // the exact class it was synthesized for; otherwise defer to the base
+      // LexicalNode.getType(), which resolves the correct type for `this`.
+      const synthesizedForKlass = klass;
+      klass.getType = function (this: Klass<LexicalNode>): string {
+        if (this !== synthesizedForKlass) {
+          return LexicalNode.getType.call(this);
+        }
+        return ownNodeType;
+      };
     }
     if (!hasOwnStaticMethod(klass, 'clone')) {
       // TextNode.length > 0 will only be true if the compiler output

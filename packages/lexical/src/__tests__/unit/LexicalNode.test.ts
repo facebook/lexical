@@ -7,6 +7,7 @@
  */
 import invariant from '@lexical/internal/invariant';
 import {
+  $cloneWithProperties,
   $create,
   $createLineBreakNode,
   $createParagraphNode,
@@ -1616,6 +1617,149 @@ describe('LexicalNode tests', () => {
               expect(versionedTextNode.__mode).toEqual(0);
               expect(versionedTextNode.getLatest().__mode).toEqual(1);
               expect(versionedTextNode.getMode()).toEqual('token');
+            },
+            {discrete: true},
+          );
+        });
+        // Regression test for the $config() clone auto-synthesis BC break:
+        // a node that drops its explicit static clone() in favor of $config()
+        // gets a zero-arg auto-clone. When that auto-clone is invoked directly
+        // (NodeClass.clone(node) / node.constructor.clone(node)) rather than
+        // through $cloneWithProperties, it must still copy the source node's
+        // properties via afterCloneFrom, otherwise callers silently get a
+        // default-constructed node with lost state.
+        test('direct clone() of an auto-synthesized node preserves properties', () => {
+          class ConfigTagNode extends ElementNode {
+            __tag: string = 'default';
+            $config() {
+              return this.config('config-tag', {extends: ElementNode});
+            }
+            afterCloneFrom(node: this): void {
+              super.afterCloneFrom(node);
+              this.__tag = node.__tag;
+            }
+            setTag(tag: string): this {
+              const self = this.getWritable();
+              self.__tag = tag;
+              return self;
+            }
+          }
+          const editor = createEditor({
+            nodes: [ConfigTagNode],
+            onError(err) {
+              throw err;
+            },
+          });
+          editor.update(
+            () => {
+              const source = $create(ConfigTagNode).setTag('custom');
+              $getRoot().append(source);
+              expect(source.__tag).toBe('custom');
+              // Direct call to the auto-synthesized clone (the idiomatic,
+              // pre-#8640 pattern) must not lose __tag.
+              const directClone = ConfigTagNode.clone(source) as ConfigTagNode;
+              expect(directClone.__tag).toBe('custom');
+              // Going through $cloneWithProperties must remain correct too.
+              const wrapperClone = $cloneWithProperties(source);
+              expect(wrapperClone.__tag).toBe('custom');
+            },
+            {discrete: true},
+          );
+        });
+        // afterCloneFrom is not guaranteed idempotent — some nodes accumulate
+        // state there (e.g. incrementing a version counter). It must therefore
+        // run exactly once per clone regardless of call path, so the direct-call
+        // fix above must NOT cause $cloneWithProperties to double-apply it.
+        test('afterCloneFrom runs exactly once for auto-synthesized clone', () => {
+          class ConfigVersionNode extends ElementNode {
+            __version: number = 0;
+            $config() {
+              return this.config('config-version', {extends: ElementNode});
+            }
+            afterCloneFrom(node: this): void {
+              super.afterCloneFrom(node);
+              this.__version = node.__version + 1;
+            }
+          }
+          const editor = createEditor({
+            nodes: [ConfigVersionNode],
+            onError(err) {
+              throw err;
+            },
+          });
+          editor.update(
+            () => {
+              const source = $create(ConfigVersionNode);
+              $getRoot().append(source);
+              expect(source.__version).toBe(0);
+              // One clone => exactly one afterCloneFrom => version + 1.
+              const cloned = $cloneWithProperties(source);
+              expect(cloned.__version).toBe(1);
+            },
+            {discrete: true},
+          );
+        });
+        // Guards the reentrancy concern with the auto-clone fix: a direct
+        // clone of one auto-synthesized node performed from within another
+        // node's clone/afterCloneFrom logic must still copy its own source
+        // properties. The signal that suppresses the wrapper-driven
+        // afterCloneFrom must be per-call (not a shared/module-global flag),
+        // otherwise a nested direct clone would wrongly inherit the outer
+        // node's "skip" state and silently drop its properties.
+        test('reentrant direct clone during another clone preserves properties', () => {
+          class InnerTagNode extends ElementNode {
+            __tag: string = 'default';
+            $config() {
+              return this.config('inner-tag', {extends: ElementNode});
+            }
+            afterCloneFrom(node: this): void {
+              super.afterCloneFrom(node);
+              this.__tag = node.__tag;
+            }
+            setTag(tag: string): this {
+              const self = this.getWritable();
+              self.__tag = tag;
+              return self;
+            }
+          }
+          class OuterNode extends ElementNode {
+            // Populated during clone by directly cloning `__templateSource`.
+            __reentrantClone: InnerTagNode | null = null;
+            __templateSource: InnerTagNode | null = null;
+            $config() {
+              return this.config('outer-reentrant', {extends: ElementNode});
+            }
+            afterCloneFrom(node: this): void {
+              super.afterCloneFrom(node);
+              // Reentrant DIRECT clone of a different auto-synthesized node,
+              // performed while this OuterNode is itself being cloned.
+              if (node.__templateSource) {
+                this.__reentrantClone = InnerTagNode.clone(
+                  node.__templateSource,
+                ) as InnerTagNode;
+              }
+            }
+            setTemplateSource(source: InnerTagNode): this {
+              const self = this.getWritable();
+              self.__templateSource = source;
+              return self;
+            }
+          }
+          const editor = createEditor({
+            nodes: [InnerTagNode, OuterNode],
+            onError(err) {
+              throw err;
+            },
+          });
+          editor.update(
+            () => {
+              const inner = $create(InnerTagNode).setTag('custom');
+              const outer = $create(OuterNode).setTemplateSource(inner);
+              $getRoot().append(inner, outer);
+              const clonedOuter = $cloneWithProperties(outer);
+              // The reentrant direct clone must have copied inner's tag.
+              expect(clonedOuter.__reentrantClone).not.toBeNull();
+              expect(clonedOuter.__reentrantClone!.__tag).toBe('custom');
             },
             {discrete: true},
           );

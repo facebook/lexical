@@ -68,14 +68,20 @@ function $updateColgroup(
   colCount: number,
   colWidths?: number[] | readonly number[],
 ) {
-  const colGroup = dom.querySelector('colgroup');
-  if (!colGroup) {
+  let colGroup = dom.querySelector('colgroup');
+  if (!colWidths) {
+    if (colGroup) colGroup.remove();
     return;
+  }
+  if (!colGroup) {
+    colGroup = $getDocument().createElement('colgroup');
+    setDOMUnmanaged(colGroup);
+    dom.insertBefore(colGroup, dom.firstChild);
   }
   const cols = [];
   for (let i = 0; i < colCount; i++) {
     const col = $getDocument().createElement('col');
-    const width = colWidths && colWidths[i];
+    const width = colWidths[i];
     if (width) {
       col.style.width = `${width}px`;
     }

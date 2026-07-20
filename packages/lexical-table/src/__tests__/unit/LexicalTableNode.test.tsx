@@ -93,6 +93,12 @@ describe('LexicalTableNode tests', () => {
         );
       }
 
+      function stripTableContents(element: HTMLElement): HTMLElement {
+        const clone = element.cloneNode(true) as HTMLElement;
+        clone.querySelectorAll('tr').forEach(tr => tr.remove());
+        return clone;
+      }
+
       initializeUnitTest(
         testEnv => {
           beforeEach(async () => {
@@ -1730,8 +1736,11 @@ describe('LexicalTableNode tests', () => {
             await editor.update(() => {
               const root = $getRoot();
               const table = $assertNodeType(root.getLastChild(), $isTableNode);
-              expectTableHtmlToBeEqual(
-                table.createDOM(editorConfig).outerHTML,
+              let element = editor.getElementByKey(table.__key);
+              expect(element).toBeDefined();
+              element = stripTableContents(element!);
+              expectReconciledTableHtmlToBeEqual(
+                element!.outerHTML,
                 html`
                   <table class="${editorConfig.theme.table}">
                     <colgroup>
@@ -1770,8 +1779,11 @@ describe('LexicalTableNode tests', () => {
             await editor.update(() => {
               const root = $getRoot();
               const table = $assertNodeType(root.getLastChild(), $isTableNode);
-              expectTableHtmlToBeEqual(
-                table.createDOM(editorConfig).outerHTML,
+              let element = editor.getElementByKey(table.__key);
+              expect(element).toBeDefined();
+              element = stripTableContents(element!);
+              expectReconciledTableHtmlToBeEqual(
+                element!.outerHTML,
                 html`
                   <table class="${editorConfig.theme.table}">
                     <colgroup>

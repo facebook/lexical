@@ -72,7 +72,6 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
-  type LexicalCommand,
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
@@ -673,7 +672,7 @@ export function applyTableHandlers(
     ),
   );
 
-  const deleteTextHandler = (command: LexicalCommand<boolean>) => () => {
+  const $deleteTextHandler = () => {
     const selection = $getSelection();
 
     if (!$isSelectionInTable(selection, tableNode)) {
@@ -684,56 +683,6 @@ export function applyTableHandlers(
       tableObserver.$clearText();
 
       return true;
-    } else if ($isRangeSelection(selection)) {
-      const tableCellNode = $findParentTableCellNodeInTable(
-        tableNode,
-        selection.anchor.getNode(),
-      );
-
-      if (!$isTableCellNode(tableCellNode)) {
-        return false;
-      }
-
-      const anchorNode = selection.anchor.getNode();
-      const focusNode = selection.focus.getNode();
-      const isAnchorInside = tableNode.isParentOf(anchorNode);
-      const isFocusInside = tableNode.isParentOf(focusNode);
-
-      const selectionContainsPartialTable =
-        (isAnchorInside && !isFocusInside) ||
-        (isFocusInside && !isAnchorInside);
-
-      if (selectionContainsPartialTable) {
-        tableObserver.$clearText();
-        return true;
-      }
-
-      const nearestElementNode = $findMatchingParent(
-        selection.anchor.getNode(),
-        n => $isElementNode(n),
-      );
-
-      const topLevelCellElementNode =
-        nearestElementNode &&
-        $findMatchingParent(
-          nearestElementNode,
-          n => $isElementNode(n) && $isTableCellNode(n.getParent()),
-        );
-
-      if (
-        !$isElementNode(topLevelCellElementNode) ||
-        !$isElementNode(nearestElementNode)
-      ) {
-        return false;
-      }
-
-      if (
-        command === DELETE_LINE_COMMAND &&
-        topLevelCellElementNode.getPreviousSibling() === null
-      ) {
-        // TODO: Fix Delete Line in Table Cells.
-        return true;
-      }
     }
 
     return false;
@@ -743,7 +692,7 @@ export function applyTableHandlers(
     tableObserver.listenersToRemove.add(
       editor.registerCommand(
         command,
-        deleteTextHandler(command),
+        $deleteTextHandler,
         COMMAND_PRIORITY_HIGH,
       ),
     );
@@ -907,15 +856,6 @@ export function applyTableHandlers(
           tableObserver.$formatCells(payload);
 
           return true;
-        } else if ($isRangeSelection(selection)) {
-          const tableCellNode = $findMatchingParent(
-            selection.anchor.getNode(),
-            n => $isTableCellNode(n),
-          );
-
-          if (!$isTableCellNode(tableCellNode)) {
-            return false;
-          }
         }
 
         return false;

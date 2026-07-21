@@ -26,12 +26,8 @@ export function $isEmptyLayoutItemNode(node: LexicalNode): boolean {
 }
 
 export class LayoutItemNode extends ElementNode {
-  static getType(): string {
-    return 'layout-item';
-  }
-
-  static clone(node: LayoutItemNode): LayoutItemNode {
-    return new LayoutItemNode(node.__key);
+  $config() {
+    return this.config('layout-item', {extends: ElementNode});
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -57,10 +53,6 @@ export class LayoutItemNode extends ElementNode {
       return true;
     }
     return false;
-  }
-
-  static importJSON(serializedNode: SerializedLayoutItemNode): LayoutItemNode {
-    return $createLayoutItemNode().updateFromJSON(serializedNode);
   }
 
   isShadowRoot(): boolean {

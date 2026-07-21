@@ -28,6 +28,7 @@ export {
   $createTableNode,
   $getElementForTableNode,
   $isScrollableTablesActive,
+  $isStickyScrollbarActive,
   $isTableNode,
   setScrollableTablesActive,
   TableNode,
@@ -65,7 +66,9 @@ export {
   getTableElement,
   getTableObserverFromTableElement,
 } from './LexicalTableSelectionHelpers';
+export type {TableCellRectBoundary} from './LexicalTableUtils';
 export {
+  $computeTableCellRectBoundary,
   $computeTableMap,
   $computeTableMapSkipCellCheck,
   $createTableNodeWithDimensions,

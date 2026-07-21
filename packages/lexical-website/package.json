@@ -7,6 +7,7 @@
     "start": "pnpm -C ../.. run build && cross-env IGNORE_PEER_DEPENDENCIES=react TYPEDOC_WATCH=true docusaurus start",
     "build": "pnpm run tsc && pnpm -C ../.. run build && pnpm -C ../.. run build:dev-examples && cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus build",
     "tsc": "tsc -p tsconfig.json",
+    "test-examples": "node scripts/check-homepage-examples.mjs",
     "swizzle": "cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus swizzle",
     "deploy": "cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus deploy",
     "clear": "cross-env IGNORE_PEER_DEPENDENCIES=react docusaurus clear",

@@ -715,7 +715,9 @@ export class LexicalNode {
   /** @internal Allow us to look up the type including static props */
   declare ['constructor']: KlassConstructor<typeof LexicalNode>;
   /** @internal */
-  __type: string;
+  // `__type` is assigned once, in the constructor, and is never valid to
+  // mutate afterward.
+  readonly __type: string;
   /** @internal */
   //@ts-ignore We set the key in the constructor.
   __key: string;

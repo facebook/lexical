@@ -573,6 +573,40 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
       }
     }
 
+    // Firefox produces no DOM range when clicking between block-level
+    // decorators (rangeCount === 0). Use click coordinates to compute
+    // the correct child offset. Only act when the click landed directly
+    // on the root element (not inside a child like a table cell).
+    if (IS_FIREFOX && domSelection !== null && domSelection.rangeCount === 0) {
+      const rootElement = editor._rootElement;
+      if (rootElement !== null && event.target === rootElement) {
+        const clientY = event.clientY;
+        let offset = rootElement.childNodes.length;
+        for (let i = 0; i < rootElement.childNodes.length; i++) {
+          const child = rootElement.childNodes[i];
+          if (isHTMLElement(child)) {
+            const rect = child.getBoundingClientRect();
+            if (clientY <= (rect.top + rect.bottom) / 2) {
+              offset = i;
+              break;
+            }
+          }
+        }
+        domSelection.setBaseAndExtent(rootElement, offset, rootElement, offset);
+        const newSelection = $internalCreateRangeSelection(
+          lastSelection,
+          domSelection,
+          editor,
+          event,
+        );
+        if (newSelection !== null) {
+          $setSelection(newSelection);
+        } else {
+          domSelection.removeAllRanges();
+        }
+      }
+    }
+
     dispatchCommand(editor, CLICK_COMMAND, event);
   });
 }

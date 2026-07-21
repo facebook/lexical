@@ -16,7 +16,7 @@ import {
   $createTableNode,
   $createTableNodeWithDimensions,
   $createTableRowNode,
-  $createTableSelection,
+  $createTableSelectionFrom,
   $getElementForTableNode,
   $insertTableColumnAtSelection,
   $isScrollableTablesActive,
@@ -66,9 +66,9 @@ function wrapTableHtml(expected: string): string {
   return expected
     .replace(
       /<table( dir="auto")?/g,
-      `<div class="table-scrollable-wrapper"$1><table`,
+      `<div$1 class="table-scrollable-wrapper"><table`,
     )
-    .replace(/<\/table>/g, '</table></div>');
+    .replace(/<\/table>/g, `</table></div>`);
 }
 
 interface TableHTMLGenerator {
@@ -365,14 +365,15 @@ describe('LexicalTableNode tests', () => {
                   .getAllTextNodes()
                   .forEach((node, i) => node.setTextContent(String(i)));
                 $getRoot().append(tableNode);
-                const tableSelection = $createTableSelection();
-                tableSelection.tableKey = tableNode.getKey();
                 const cells = $dfs(tableNode).flatMap(({node}) =>
                   $isTableCellNode(node) ? [node] : [],
                 );
                 // second column
-                tableSelection.anchor.set(cells[1].getKey(), 0, 'element');
-                tableSelection.focus.set(cells[3].getKey(), 0, 'element');
+                const tableSelection = $createTableSelectionFrom(
+                  tableNode,
+                  cells[1],
+                  cells[3],
+                );
                 expectHtmlToBeEqual(
                   $generateHtmlFromNodes(editor, tableSelection),
                   html`
@@ -993,11 +994,10 @@ describe('LexicalTableNode tests', () => {
                         ?.getLastChild(),
                       $isParagraphNode,
                     ).append($createTextNode('some text'));
-                    const selection = $createTableSelection();
-                    selection.set(
-                      table.__key,
-                      table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-                      table.getCellNodeFromCords(3, 3, DOMTable)?.__key || '',
+                    const selection = $createTableSelectionFrom(
+                      table,
+                      table.getCellNodeFromCords(0, 0, DOMTable)!,
+                      table.getCellNodeFromCords(3, 3, DOMTable)!,
                     );
                     $setSelection(selection);
                     editor.dispatchCommand(
@@ -1042,11 +1042,10 @@ describe('LexicalTableNode tests', () => {
                         ?.getLastChild(),
                       $isParagraphNode,
                     ).append($createTextNode('some text'));
-                    const selection = $createTableSelection();
-                    selection.set(
-                      table.__key,
-                      table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-                      table.getCellNodeFromCords(2, 2, DOMTable)?.__key || '',
+                    const selection = $createTableSelectionFrom(
+                      table,
+                      table.getCellNodeFromCords(0, 0, DOMTable)!,
+                      table.getCellNodeFromCords(2, 2, DOMTable)!,
                     );
                     $setSelection(selection);
                     editor.dispatchCommand(
@@ -1114,11 +1113,10 @@ describe('LexicalTableNode tests', () => {
                     table.getCellNodeFromCords(2, 1, DOMTable)?.getLastChild(),
                     $isParagraphNode,
                   ).append($createTextNode(''));
-                  const selection = $createTableSelection();
-                  selection.set(
-                    table.__key,
-                    table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-                    table.getCellNodeFromCords(2, 1, DOMTable)?.__key || '',
+                  const selection = $createTableSelectionFrom(
+                    table,
+                    table.getCellNodeFromCords(0, 0, DOMTable)!,
+                    table.getCellNodeFromCords(2, 1, DOMTable)!,
                   );
                   expect(selection.getTextContent()).toBe(`1\t\t2\n3\t4\t\n`);
                 }
@@ -1805,12 +1803,8 @@ describe('LexicalTableNode tests', () => {
             editor.update(() => {
               const table = $getTestTableNode();
               const DOMTable = $getElementForTableNode(editor, table);
-              const selection = $createTableSelection();
-              selection.set(
-                table.__key,
-                table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-                table.getCellNodeFromCords(0, 0, DOMTable)?.__key || '',
-              );
+              const cell = table.getCellNodeFromCords(0, 0, DOMTable)!;
+              const selection = $createTableSelectionFrom(table, cell, cell);
               $setSelection(selection);
               $insertTableColumnAtSelection();
               table.setColWidths([50, 50, 100]);

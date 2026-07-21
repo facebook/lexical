@@ -38,6 +38,92 @@ import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {afterEach, assert, beforeEach, describe, expect, test} from 'vitest';
 
 describe('LexicalTableSelectionHelpers', () => {
+  describe('regression #7999', () => {
+    let editor: LexicalEditorWithDispose;
+    let container: HTMLDivElement;
+
+    beforeEach(() => {
+      container = document.createElement('div');
+      container.tabIndex = -1;
+      document.body.appendChild(container);
+      editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [TableExtension],
+          name: 'regression-7999-test',
+        }),
+      );
+      editor.setRootElement(container);
+    });
+
+    afterEach(() => {
+      editor.dispose();
+      document.body.removeChild(container);
+    });
+
+    test('ArrowRight at root end after a table is handled and keeps the caret in place', () => {
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear().append($createTableNodeWithDimensions(2, 2, false));
+          root.selectEnd();
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const table = root.getFirstChildOrThrow();
+          assert($isTableNode(table), 'Expected table node');
+          const lastRow = table.getLastChildOrThrow();
+          assert($isTableRowNode(lastRow), 'Expected last row node');
+          const lastCell = lastRow.getLastChildOrThrow();
+          assert($isTableCellNode(lastCell), 'Expected last cell node');
+          lastCell.selectEnd();
+        },
+        {discrete: true},
+      );
+
+      const firstHandled = editor.dispatchCommand(
+        KEY_ARROW_RIGHT_COMMAND,
+        new KeyboardEvent('keydown', {key: 'ArrowRight'}),
+      );
+      expect(firstHandled).toBe(true);
+
+      editor.read(() => {
+        const selection = $getSelection();
+        expect($isRangeSelection(selection)).toBe(true);
+        if (!$isRangeSelection(selection)) {
+          return;
+        }
+        expect(selection.isCollapsed()).toBe(true);
+        expect(selection.anchor.key).toBe($getRoot().getKey());
+        expect(selection.anchor.offset).toBe(1);
+        expect(selection.focus.key).toBe($getRoot().getKey());
+        expect(selection.focus.offset).toBe(1);
+      });
+
+      const secondHandled = editor.dispatchCommand(
+        KEY_ARROW_RIGHT_COMMAND,
+        new KeyboardEvent('keydown', {key: 'ArrowRight'}),
+      );
+      expect(secondHandled).toBe(true);
+
+      editor.read(() => {
+        const selection = $getSelection();
+        expect($isRangeSelection(selection)).toBe(true);
+        if (!$isRangeSelection(selection)) {
+          return;
+        }
+        expect(selection.isCollapsed()).toBe(true);
+        expect(selection.anchor.key).toBe($getRoot().getKey());
+        expect(selection.anchor.offset).toBe(1);
+        expect(selection.focus.key).toBe($getRoot().getKey());
+        expect(selection.focus.offset).toBe(1);
+      });
+    });
+  });
+  
   describe('regression #8670', () => {
     let editor: LexicalEditorWithDispose;
     let container: HTMLDivElement;
@@ -367,69 +453,6 @@ describe('LexicalTableSelectionHelpers', () => {
       editor.dispatchCommand(DELETE_LINE_COMMAND, false);
       expect(propagated).toBe(true);
       unregister();
-    });
-
-    test('ArrowRight at root end after a table is handled and keeps the caret in place', () => {
-      editor.update(
-        () => {
-          const root = $getRoot();
-          root.clear().append($createTableNodeWithDimensions(2, 2, false));
-          root.selectEnd();
-        },
-        {discrete: true},
-      );
-
-      editor.update(
-        () => {
-          const root = $getRoot();
-          const table = root.getFirstChildOrThrow();
-          assert($isTableNode(table), 'Expected table node');
-          const lastRow = table.getLastChildOrThrow();
-          assert($isTableRowNode(lastRow), 'Expected last row node');
-          const lastCell = lastRow.getLastChildOrThrow();
-          assert($isTableCellNode(lastCell), 'Expected last cell node');
-          lastCell.selectEnd();
-        },
-        {discrete: true},
-      );
-
-      const firstHandled = editor.dispatchCommand(
-        KEY_ARROW_RIGHT_COMMAND,
-        new KeyboardEvent('keydown', {key: 'ArrowRight'}),
-      );
-      expect(firstHandled).toBe(true);
-
-      editor.read(() => {
-        const selection = $getSelection();
-        expect($isRangeSelection(selection)).toBe(true);
-        if (!$isRangeSelection(selection)) {
-          return;
-        }
-        expect(selection.isCollapsed()).toBe(true);
-        expect(selection.anchor.key).toBe($getRoot().getKey());
-        expect(selection.anchor.offset).toBe(1);
-        expect(selection.focus.key).toBe($getRoot().getKey());
-        expect(selection.focus.offset).toBe(1);
-      });
-
-      const secondHandled = editor.dispatchCommand(
-        KEY_ARROW_RIGHT_COMMAND,
-        new KeyboardEvent('keydown', {key: 'ArrowRight'}),
-      );
-      expect(secondHandled).toBe(true);
-
-      editor.read(() => {
-        const selection = $getSelection();
-        expect($isRangeSelection(selection)).toBe(true);
-        if (!$isRangeSelection(selection)) {
-          return;
-        }
-        expect(selection.isCollapsed()).toBe(true);
-        expect(selection.anchor.key).toBe($getRoot().getKey());
-        expect(selection.anchor.offset).toBe(1);
-        expect(selection.focus.key).toBe($getRoot().getKey());
-        expect(selection.focus.offset).toBe(1);
-      });
     });
   });
 });

@@ -2133,7 +2133,7 @@ function $handleArrowKey(
   // Handle arrow key into a table (including from a table into a nested table)
   if (!$isSelectionInTable(selection, tableNode)) {
     if ($isRangeSelection(selection)) {
-      if (direction === 'forward') {
+      if (direction === 'forward' && selection.isCollapsed()) {
         const focusNode = selection.focus.getNode();
         const focusNodeLastChild = $isElementNode(focusNode)
           ? focusNode.getLastChild()

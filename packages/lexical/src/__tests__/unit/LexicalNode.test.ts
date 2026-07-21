@@ -2296,6 +2296,52 @@ describe('LexicalNode.$config() without registration', () => {
     expect(InnerConfigNode.getType()).toBe('inner-config-node');
   });
 
+  test('synthesized getType() inherited as an own static on a subclass does not recurse (#8867 follow-up)', () => {
+    // Regression for a stack-overflow that only reproduces under *compiled*
+    // class output (e.g. Meta's www bundle), where a superclass's synthesized
+    // getType() closure can end up as an *own* static on a subclass whose
+    // identity differs from the closure's captured `synthesizedForKlass`.
+    //
+    // Pre-fix cycle:
+    //   getStaticNodeConfig(Sub)  -> calls Sub.getType() (own, synthesized)
+    //     -> closure sees `this !== synthesizedForKlass` -> LexicalNode.getType.call(Sub)
+    //       -> getStaticNodeConfig(Sub) -> ... RangeError: Maximum call stack size exceeded
+    //
+    // Native ES classes don't inherit statics as own properties, so this must
+    // be constructed explicitly to mirror the compiled shape.
+    class ParentSynthNode extends TextNode {
+      $config() {
+        return this.config('parent-synth-node', {extends: TextNode});
+      }
+    }
+    class ChildSynthNode extends ParentSynthNode {
+      $config() {
+        return this.config('child-synth-node', {extends: ParentSynthNode});
+      }
+    }
+
+    // Force the parent's getType() to be synthesized as an own static.
+    expect(ParentSynthNode.getType()).toBe('parent-synth-node');
+    const parentSynthesizedGetType = Object.getOwnPropertyDescriptor(
+      ParentSynthNode,
+      'getType',
+    );
+    expect(parentSynthesizedGetType).toBeDefined();
+
+    // Simulate the compiled bundle copying that synthesized closure down onto
+    // the subclass as an OWN static (its captured `synthesizedForKlass` is
+    // still ParentSynthNode, not ChildSynthNode).
+    Object.defineProperty(ChildSynthNode, 'getType', {
+      configurable: true,
+      value: (parentSynthesizedGetType as PropertyDescriptor).value,
+      writable: true,
+    });
+
+    // Must not recurse; must resolve the child's own $config-derived type.
+    expect(() => ChildSynthNode.getType()).not.toThrow();
+    expect(ChildSynthNode.getType()).toBe('child-synth-node');
+  });
+
   test('abstract base class declares shared $config under a Symbol key', () => {
     // An abstract base class has no concrete node `type`, so it publishes the
     // configuration it shares with its subclasses (here a $transform) under a

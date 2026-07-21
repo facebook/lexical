@@ -68,7 +68,7 @@ function $updateColgroup(
   colCount: number,
   colWidths?: number[] | readonly number[],
 ) {
-  let colGroup = dom.querySelector('colgroup');
+  let colGroup = dom.querySelector<HTMLElement>(':scope > colgroup');
   if (!colWidths) {
     if (colGroup) colGroup.remove();
     return;
@@ -277,7 +277,7 @@ export class TableNode extends ElementNode {
     return super
       .getDOMSlot(element)
       .withElement(tableElement)
-      .withAfter(tableElement.querySelector('colgroup'));
+      .withAfter(tableElement.querySelector(':scope > colgroup'));
   }
 
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {

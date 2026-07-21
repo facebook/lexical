@@ -7,7 +7,7 @@
     "plain-text"
   ],
   "license": "MIT",
-  "version": "0.48.0",
+  "version": "0.48.1-nightly.20260721.0",
   "main": "./dist/LexicalPlainText.js",
   "types": "./dist/typescript-too-old.d.ts",
   "repository": {

@@ -3222,6 +3222,13 @@ const STATIC_NODE_CONFIG_CACHE = new WeakMap<
   Klass<LexicalNode>,
   OwnStaticNodeConfig
 >();
+// Brands a getType() closure that Lexical synthesized (as opposed to a
+// user-defined static getType()). getStaticNodeConfig uses this to avoid
+// re-entering a synthesized closure while deriving a node's type, which would
+// otherwise recurse infinitely for subclasses under compiled class output.
+const SYNTHESIZED_GET_TYPE: unique symbol = Symbol(
+  'lexical.synthesizedGetType',
+);
 
 // TextNode.length > 0 will only be true if the compiler output
 // is not ES6 compliant, in which case we can not provide this
@@ -3244,9 +3251,21 @@ export function getStaticNodeConfig(
       ? klass.prototype[PROTOTYPE_CONFIG_METHOD]()
       : undefined;
   const isAbstract = isAbstractNodeClass(klass);
-  const nodeType =
+  // Only trust a *user-defined* own static getType() to derive the node type.
+  // A getType() that we synthesized (branded with SYNTHESIZED_GET_TYPE) must
+  // not be called here: the synthesized closure defers to
+  // LexicalNode.getType.call(this) for a foreign `this`, which re-enters
+  // getStaticNodeConfig and — when the closure is inherited/own-copied onto a
+  // subclass by the compiled class output — causes infinite recursion
+  // (RangeError: Maximum call stack size exceeded). For such a class the type
+  // is derived from the $config record below instead. (#8867 follow-up.)
+  const ownGetType =
     !isAbstract && hasOwnStaticMethod(klass, 'getType')
-      ? klass.getType()
+      ? klass.getType
+      : undefined;
+  const nodeType =
+    ownGetType && !(SYNTHESIZED_GET_TYPE in ownGetType)
+      ? ownGetType.call(klass)
       : undefined;
   let ownNodeConfig:
     | undefined
@@ -3290,12 +3309,19 @@ export function getStaticNodeConfig(
       // the exact class it was synthesized for; otherwise defer to the base
       // LexicalNode.getType(), which resolves the correct type for `this`.
       const synthesizedForKlass = klass;
-      klass.getType = function (this: Klass<LexicalNode>): string {
+      const synthesizedGetType = function (this: Klass<LexicalNode>): string {
         if (this !== synthesizedForKlass) {
           return LexicalNode.getType.call(this);
         }
         return ownNodeType;
       };
+      // Brand the closure so getStaticNodeConfig can recognize it and avoid
+      // calling it to derive the node type (which would recurse). See the note
+      // at the `ownGetType` computation above.
+      (synthesizedGetType as {[SYNTHESIZED_GET_TYPE]?: true})[
+        SYNTHESIZED_GET_TYPE
+      ] = true;
+      klass.getType = synthesizedGetType;
     }
     if (!hasOwnStaticMethod(klass, 'clone')) {
       // TextNode.length > 0 will only be true if the compiler output

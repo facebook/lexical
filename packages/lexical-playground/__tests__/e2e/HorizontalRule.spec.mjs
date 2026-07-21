@@ -756,6 +756,73 @@ test.describe('HorizontalRule', () => {
     expect(isNodeSel).toBe(true);
   });
 
+  test('Clicking between consecutive block decorators creates selection (#6775)', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+
+    await selectFromInsertDropdown(page, '.horizontal-rule');
+    await waitForSelector(page, 'hr');
+    await selectFromInsertDropdown(page, '.horizontal-rule');
+    await getPageOrFrame(page).waitForFunction(() => {
+      const editor = document.querySelector('[contenteditable="true"]');
+      return editor && editor.querySelectorAll('hr').length === 2;
+    });
+
+    // Remove all non-decorator children so the HRs are directly adjacent
+    await getPageOrFrame(page).evaluate(() => {
+      const editor = window.lexicalEditor;
+      editor.update(
+        () => {
+          const root = editor.getEditorState()._nodeMap.get('root');
+          for (const child of root.getChildren()) {
+            if (!('decorate' in child)) {
+              child.remove();
+            }
+          }
+        },
+        {discrete: true},
+      );
+    });
+
+    // Click between the two HR elements
+    const clickPos = await getPageOrFrame(page).evaluate(() => {
+      const editor = document.querySelector('[contenteditable="true"]');
+      const hrs = editor.querySelectorAll('hr');
+      const rect1 = hrs[0].getBoundingClientRect();
+      const rect2 = hrs[1].getBoundingClientRect();
+      return {
+        x: Math.round(rect1.left + rect1.width / 2),
+        y: Math.round((rect1.bottom + rect2.top) / 2),
+      };
+    });
+    await page.mouse.click(clickPos.x, clickPos.y);
+
+    // Without the fix, Firefox leaves selection as null (rangeCount === 0).
+    // The fix computes the correct child offset from click coordinates.
+    const selState = await getPageOrFrame(page).evaluate(() => {
+      const sel = window.lexicalEditor.getEditorState()._selection;
+      if (sel === null) {
+        return null;
+      }
+      if ('anchor' in sel) {
+        return {
+          anchorKey: sel.anchor.key,
+          anchorType: sel.anchor.type,
+          type: 'range',
+        };
+      }
+      return {type: 'node'};
+    });
+    expect(selState).not.toBeNull();
+    expect(selState.type).toBe('range');
+    expect(selState.anchorKey).toBe('root');
+    expect(selState.anchorType).toBe('element');
+  });
+
   test('ArrowDown from block cursor between shadow root and decorator selects the decorator', async ({
     page,
     isPlainText,

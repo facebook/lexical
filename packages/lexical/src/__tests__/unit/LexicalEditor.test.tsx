@@ -1478,6 +1478,54 @@ describe('LexicalEditor tests', () => {
     expect(errorListener).toHaveBeenCalledTimes(0);
   });
 
+  it('applies (and warns in DEV) when a command dispatched from a read-only context mutates the editor', async () => {
+    init();
+
+    const READONLY_MUTATE_COMMAND = createCommand<void>(
+      'READONLY_MUTATE_COMMAND',
+    );
+    // A listener that mutates the editor state, mirroring the real-world case
+    // (e.g. CLEAR_EDITOR_COMMAND building a fresh paragraph).
+    const unregister = editor.registerCommand(
+      READONLY_MUTATE_COMMAND,
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('mutated')));
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    );
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      // Dispatching from inside editor.read() (a read-only context) is the
+      // application anti-pattern. Previously the mutating listener ran inline
+      // against the frozen node map and threw (caught by _onError, silently
+      // dropping the mutation). It should now be deferred to a writable update
+      // so the mutation actually applies, and warn in DEV.
+      editor.read(() => {
+        editor.dispatchCommand(READONLY_MUTATE_COMMAND, undefined);
+      });
+      // Deferred update flushes on the next tick.
+      await Promise.resolve();
+
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toMatch(/read-only context/);
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('mutated');
+      });
+
+      // A top-level (writable) dispatch must NOT warn and applies inline.
+      warnSpy.mockClear();
+      editor.dispatchCommand(READONLY_MUTATE_COMMAND, undefined);
+      expect(warnSpy).toHaveBeenCalledTimes(0);
+    } finally {
+      warnSpy.mockRestore();
+      unregister();
+    }
+  });
+
   it('Should be able to update an editor state without a root element', () => {
     const ref = createRef<HTMLDivElement>();
 

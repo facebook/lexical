@@ -145,8 +145,12 @@ export interface StaticNodeConfigValue<
   /**
    * An alternative to the static importJSON() method
    * that provides better type inference.
+   *
+   * May return `null` to signal that the node type has no JSON
+   * representation and should be skipped during deserialization,
+   * mirroring the nullable static importJSON() contract.
    */
-  readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T;
+  readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T | null;
   /**
    * An alternative to the static importDOM() method
    */
@@ -1547,10 +1551,16 @@ export class LexicalNode {
    * be important if you ever make breaking changes to a node schema (by adding or removing properties).
    * See [Serialization & Deserialization](https://lexical.dev/docs/concepts/serialization#lexical---html).
    *
+   * A subclass may override this to return `null` to signal that the node type
+   * has no JSON representation and should be skipped during deserialization
+   * (e.g. an ephemeral/decorative node that is never serialized). The return
+   * type is intentionally nullable so that such opt-out overrides remain
+   * assignable to the base contract.
+   *
    * */
   static importJSON(
     _serializedNode: SerializedLexicalNode & Record<string, unknown>,
-  ): LexicalNode {
+  ): LexicalNode | null {
     invariant(
       false,
       'LexicalNode: Node %s does not implement .importJSON().',

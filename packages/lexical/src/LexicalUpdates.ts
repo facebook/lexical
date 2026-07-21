@@ -431,6 +431,13 @@ function $parseSerializedNodeImpl<
   }
 
   const node = nodeClass.importJSON(serializedNode);
+  invariant(
+    node !== null,
+    'LexicalNode: Node %s returned null from importJSON. A node that opts ' +
+      'out of JSON import (by overriding importJSON to return null) must not ' +
+      'be serialized into the EditorState it is being parsed from.',
+    nodeClass.name,
+  );
   const children = serializedNode.children;
 
   if ($isElementNode(node) && Array.isArray(children)) {

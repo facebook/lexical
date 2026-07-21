@@ -31,6 +31,7 @@ import {
   type NodeKey,
   ParagraphNode,
   type RangeSelection,
+  type SerializedElementNode,
   type TabNode,
   TextNode,
 } from 'lexical';
@@ -1546,6 +1547,7 @@ describe('LexicalNode tests', () => {
                 version: 1,
               });
               expect(node).toBeInstanceOf(CustomTextNode);
+              invariant(node !== null);
               expect(node.getType()).toBe('custom-text');
               expect(node.getTextContent()).toBe('codegen!');
             },
@@ -1760,6 +1762,54 @@ describe('LexicalNode tests', () => {
               // The reentrant direct clone must have copied inner's tag.
               expect(clonedOuter.__reentrantClone).not.toBeNull();
               expect(clonedOuter.__reentrantClone!.__tag).toBe('custom');
+            },
+            {discrete: true},
+          );
+        });
+        test('importJSON() override may return null to opt out of JSON import (BC #8640)', () => {
+          // Backward-compatibility: before the $config() port (#8640) the base
+          // static importJSON contract was nullable, which let a subclass mark
+          // a node type as non-JSON-importable by returning null. This test
+          // pins that contract so the override typechecks and, when such a
+          // node is never serialized, deserialization of the rest of the tree
+          // is unaffected.
+          class NonImportableNode extends ElementNode {
+            static getType(): string {
+              return 'non-importable';
+            }
+            static clone(node: NonImportableNode): NonImportableNode {
+              return new NonImportableNode(node.__key);
+            }
+            static importJSON(
+              _serializedNode: SerializedElementNode,
+            ): NonImportableNode | null {
+              return null;
+            }
+            createDOM(): HTMLElement {
+              return document.createElement('div');
+            }
+            updateDOM(): boolean {
+              return false;
+            }
+          }
+          const editor = createEditor({
+            nodes: [NonImportableNode],
+            onError(err) {
+              throw err;
+            },
+          });
+          editor.update(
+            () => {
+              // The override is honored and returns null without throwing.
+              const node = NonImportableNode.importJSON({
+                children: [],
+                direction: null,
+                format: '',
+                indent: 0,
+                type: 'non-importable',
+                version: 1,
+              });
+              expect(node).toBeNull();
             },
             {discrete: true},
           );

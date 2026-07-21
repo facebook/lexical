@@ -255,7 +255,7 @@ describe('LexicalNode state', () => {
           expect(json2[NODE_STATE_KEY]).toStrictEqual({
             numberState: 1,
           });
-          const paragraph2 = ParagraphNode.importJSON(json2);
+          const paragraph2 = ParagraphNode.importJSON(json2)!;
           const json3 = paragraph2.exportJSON();
           expect(json3[NODE_STATE_KEY]).toStrictEqual({
             numberState: 1,
@@ -271,7 +271,7 @@ describe('LexicalNode state', () => {
           const malicious = JSON.parse(
             `{"type":"paragraph","version":1,"${NODE_STATE_KEY}":{"__proto__":{"injectedKey":"evil"}}}`,
           );
-          const paragraph = ParagraphNode.importJSON(malicious);
+          const paragraph = ParagraphNode.importJSON(malicious)!;
           // The global prototype is untouched.
           expect(({} as Record<string, unknown>).injectedKey).toBeUndefined();
           expect(Object.prototype).not.toHaveProperty('injectedKey');
@@ -348,7 +348,7 @@ describe('LexicalNode state', () => {
             version: 1,
           };
           for (const doc of [flatJSON, nestedJSON, bothJSON]) {
-            const node = StateNode.importJSON(doc);
+            const node = StateNode.importJSON(doc)!;
             expect(node.exportJSON()).toEqual(flatJSON);
             expect($getState(node, boolState)).toBe(true);
             expect($getState(node, numberState)).toBe(2);

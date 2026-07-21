@@ -123,7 +123,7 @@ describe('LexicalTableSelectionHelpers', () => {
       });
     });
   });
-  
+
   describe('regression #8670', () => {
     let editor: LexicalEditorWithDispose;
     let container: HTMLDivElement;

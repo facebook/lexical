@@ -575,10 +575,11 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
 
     // Firefox produces no DOM range when clicking between block-level
     // decorators (rangeCount === 0). Use click coordinates to compute
-    // the correct child offset.
+    // the correct child offset. Only act when the click landed directly
+    // on the root element (not inside a child like a table cell).
     if (IS_FIREFOX && domSelection !== null && domSelection.rangeCount === 0) {
       const rootElement = editor._rootElement;
-      if (rootElement !== null) {
+      if (rootElement !== null && event.target === rootElement) {
         const clientY = event.clientY;
         let offset = rootElement.childNodes.length;
         for (let i = 0; i < rootElement.childNodes.length; i++) {

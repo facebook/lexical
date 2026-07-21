@@ -576,12 +576,7 @@ function onClick(event: PointerEvent, editor: LexicalEditor): void {
     // Firefox produces no DOM range when clicking between block-level
     // decorators (rangeCount === 0). Use click coordinates to compute
     // the correct child offset.
-    if (
-      IS_FIREFOX &&
-      selection === null &&
-      domSelection !== null &&
-      domSelection.rangeCount === 0
-    ) {
+    if (IS_FIREFOX && domSelection !== null && domSelection.rangeCount === 0) {
       const rootElement = editor._rootElement;
       if (rootElement !== null) {
         const clientY = event.clientY;
@@ -1854,12 +1849,6 @@ function onDocumentSelectionChange(event: Event): void {
           event,
         );
         $setSelection(newSelection);
-      } else if (IS_FIREFOX && domAnchorNode === null) {
-        // Firefox leaves the DOM selection empty (rangeCount === 0) when
-        // clicking between block-level decorators. Clear Lexical's
-        // selection so it can be recomputed from click coordinates in
-        // the click event.
-        $setSelection(null);
       }
     });
   }

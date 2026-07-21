@@ -24,6 +24,19 @@ test.describe('Regression test #1055', () => {
     test.skip(isCollab);
     await focusEditor(page);
     await page.keyboard.type('hello');
+    // Wait for the typed text to settle before undoing. On WebKit the input
+    // events dispatched by keyboard.type() can be applied after the call
+    // resolves; without this barrier the undo below races ahead of the typing
+    // and the still-queued input then re-applies the text, so the editor is
+    // not empty when we assert (flaky on the mac-plain/webkit suite).
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">hello</span>
+        </p>
+      `,
+    );
     await undo(page);
     await assertHTML(
       page,

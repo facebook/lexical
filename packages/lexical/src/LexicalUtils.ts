@@ -104,6 +104,7 @@ import {
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
 } from './LexicalUpdates';
+import {TabNode} from './nodes/LexicalTabNode';
 import {type TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
@@ -3229,7 +3230,13 @@ const STATIC_NODE_CONFIG_CACHE = new WeakMap<
 // has been optimized because `arg=undefined` parameter defaults can
 // be stripped.
 const IS_UNOPTIMIZED_DEV_BUILD =
-  __DEV__ && TextNode.length === 0 && TextNode.name === 'TextNode';
+  __DEV__ &&
+  // constructor(key=undefined)
+  TabNode.length === 0 &&
+  // constructor(text='', key?: NodeKey)
+  TextNode.length === 0 &&
+  // Class name mangling is another signal that this may be unreliable
+  TextNode.name === 'TextNode';
 
 /** @internal */
 export function getStaticNodeConfig(

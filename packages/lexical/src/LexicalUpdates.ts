@@ -1284,7 +1284,30 @@ export function updateEditorSync(
   options?: EditorUpdateOptions,
 ): void {
   if (activeEditor === editor && options === undefined) {
-    updateFn();
+    if (isCurrentlyReadOnlyMode()) {
+      // We are nominally "inside an update" for this editor, but the active
+      // context is read-only (e.g. a command dispatched from inside
+      // editor.read(), or a force-commit read on the stack). Running updateFn
+      // inline here would mutate the frozen active editor state and throw
+      // "Cannot call set() on a frozen Lexical node map" — an error that gets
+      // routed to editor._onError rather than rethrown, so the mutation is
+      // silently dropped. Route through $beginUpdate instead, which starts a
+      // fresh writable update, so the work actually applies.
+      if (__DEV__) {
+        console.warn(
+          `updateEditorSync: an editor update (e.g. a command listener that ` +
+            `mutates the editor) ran while a read-only context was on the ` +
+            `stack. This most commonly happens when a command is dispatched ` +
+            `from inside editor.read(). The update has been deferred to a ` +
+            `fresh writable update so it still applies, but dispatching ` +
+            `mutations from a read-only context is an anti-pattern — dispatch ` +
+            `after editor.read() returns, or via queueMicrotask.`,
+        );
+      }
+      $beginUpdate(editor, updateFn, options);
+    } else {
+      updateFn();
+    }
   } else {
     $beginUpdate(editor, updateFn, options);
   }

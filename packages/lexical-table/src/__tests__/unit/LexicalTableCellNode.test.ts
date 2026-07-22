@@ -118,7 +118,6 @@ describe('LexicalTableCellNode tests', () => {
           `,
           html`
             <table>
-              <colgroup><col /></colgroup>
               <tbody>
                 <tr>
                   <td
@@ -150,7 +149,6 @@ describe('LexicalTableCellNode tests', () => {
           `,
           html`
             <table>
-              <colgroup><col /></colgroup>
               <tbody>
                 <tr>
                   <td
@@ -183,7 +181,6 @@ describe('LexicalTableCellNode tests', () => {
           `,
           html`
             <table>
-              <colgroup><col /></colgroup>
               <tbody>
                 <tr>
                   <td

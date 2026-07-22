@@ -419,7 +419,16 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
             window.scrollY + pointerCurrentPos.y / zoom
           }px`;
           styles[draggingDirection].height = '3px';
-          styles[draggingDirection].width = `${tableRect.width}px`;
+          /**
+           * Compute how far the table from the end of editor then use it as width of resizer indicator
+           */
+          const contentEditableElement = document.querySelector(
+            '.ContentEditable__root',
+          );
+          const editorWidth =
+            contentEditableElement?.getBoundingClientRect().right ?? 0;
+
+          styles[draggingDirection].width = `${editorWidth - tableRect.left}px`;
         } else {
           styles[draggingDirection].top = `${window.scrollY + tableRect.top}px`;
           styles[draggingDirection].left = `${

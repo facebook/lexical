@@ -8,6 +8,7 @@
 
 import {undo} from '../keyboardShortcuts/index.mjs';
 import {
+  advanceHistoryClock,
   assertHTML,
   focusEditor,
   html,
@@ -23,12 +24,20 @@ test.describe('Regression test #1055', () => {
   }) => {
     test.skip(isCollab);
     await focusEditor(page);
+    // Freeze the history merge clock before typing so the whole burst coalesces
+    // into a single undo entry deterministically. History merges consecutive
+    // same-type keystrokes only while each lands within the 300ms merge window
+    // (@lexical/history's default `delay`) of the previous one, measured against
+    // the wall clock. With slowMo + WebKit under CI load an inter-keystroke gap
+    // can exceed that window, splitting "hello" across multiple undo-stack
+    // entries so the single undo() below reverts only the last fragment and the
+    // editor is not empty when we assert (flaky on the mac-plain/webkit suite).
+    // Freezing the clock removes the timing dimension: every keystroke observes
+    // the same instant, so the burst always coalesces regardless of scheduling.
+    await advanceHistoryClock(page);
     await page.keyboard.type('hello');
-    // Wait for the typed text to settle before undoing. On WebKit the input
-    // events dispatched by keyboard.type() can be applied after the call
-    // resolves; without this barrier the undo below races ahead of the typing
-    // and the still-queued input then re-applies the text, so the editor is
-    // not empty when we assert (flaky on the mac-plain/webkit suite).
+    // Barrier: ensure every keystroke has been applied before undoing so the
+    // undo can't race ahead of input that WebKit is still settling.
     await assertHTML(
       page,
       html`

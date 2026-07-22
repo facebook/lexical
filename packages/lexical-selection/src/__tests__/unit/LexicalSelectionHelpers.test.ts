@@ -1352,11 +1352,12 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, state) => {
         selection.insertText('Test');
 
-        expect($getNodeByKey('a')!.getTextContent()).toBe('Test');
+        const firstChild = state.getFirstChild()!;
+        expect(firstChild.getTextContent()).toBe('Test');
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
-            key: 'a',
+            key: firstChild.getKey(),
             offset: 4,
             type: 'text',
           }),
@@ -1364,7 +1365,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.focus).toEqual(
           expect.objectContaining({
-            key: 'a',
+            key: firstChild.getKey(),
             offset: 4,
             type: 'text',
           }),

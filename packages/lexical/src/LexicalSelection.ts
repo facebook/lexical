@@ -383,9 +383,11 @@ function $insertTextAtPoint(
   }
   textNode.selectEnd();
   if (textNode.isComposing() && selection.anchor.type === 'text') {
-    selection.anchor.offset -= text.length;
-    selection._cachedNodes = null;
-    selection._cachedIsBackward = null;
+    selection.anchor.set(
+      selection.anchor.key,
+      selection.anchor.offset - text.length,
+      selection.anchor.type,
+    );
   }
 }
 
@@ -1051,9 +1053,11 @@ export class RangeSelection implements BaseSelection {
 
     anchorNode.spliceText(offset, 0, text, true);
     if (anchorNode.isComposing() && this.anchor.type === 'text') {
-      this.anchor.offset -= text.length;
-      this._cachedNodes = null;
-      this._cachedIsBackward = null;
+      this.anchor.set(
+        this.anchor.key,
+        this.anchor.offset - text.length,
+        this.anchor.type,
+      );
     }
   }
 

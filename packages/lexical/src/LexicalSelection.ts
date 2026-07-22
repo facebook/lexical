@@ -90,7 +90,6 @@ import {
   $isRootOrShadowRoot,
   $isSelectionCapturedInDecoratorInput,
   $isTokenOrSegmented,
-  $isTokenOrTab,
   $setCompositionKey,
   doesContainSurrogatePair,
   getActiveElement,
@@ -114,7 +113,7 @@ import {
   scrollIntoViewIfNeeded,
   toggleTextFormatType,
 } from './LexicalUtils';
-import {$createTabNode, $isTabNode} from './nodes/LexicalTabNode';
+import {$createTabNode} from './nodes/LexicalTabNode';
 import {
   $isInlineFormattable,
   type TextFormatType,
@@ -348,6 +347,46 @@ function $transferStartingElementPointToTextPoint(
     end.set(textNode.__key, 0, 'text');
   }
   start.set(textNode.__key, 0, 'text');
+}
+
+function $insertTextAtPoint(
+  selection: RangeSelection,
+  text: string,
+  format: number,
+  style: string,
+): void {
+  const anchorNode = selection.anchor.getNode();
+  invariant($isTextNode(anchorNode), 'insertText: anchor is not a text node');
+  const offset = selection.anchor.offset;
+  const textNode = $createTextNode(text);
+  textNode.setFormat(format);
+  textNode.setStyle(style);
+  const parent = anchorNode.getParentOrThrow();
+  if (offset === 0) {
+    if (parent.isInline() && !anchorNode.__prev) {
+      parent.insertBefore(textNode);
+    } else {
+      anchorNode.insertBefore(textNode, false);
+    }
+  } else if (offset === anchorNode.getTextContentSize()) {
+    if (parent.isInline() && !anchorNode.__next) {
+      parent.insertAfter(textNode);
+    } else {
+      anchorNode.insertAfter(textNode, false);
+    }
+  } else {
+    const [before] = anchorNode.splitText(offset);
+    before.insertAfter(textNode, false);
+  }
+  if (anchorNode.getTextContent() === '' && anchorNode.isAttached()) {
+    anchorNode.remove();
+  }
+  textNode.selectEnd();
+  if (textNode.isComposing() && selection.anchor.type === 'text') {
+    selection.anchor.offset -= text.length;
+    selection._cachedNodes = null;
+    selection._cachedIsBackward = null;
+  }
 }
 
 export interface BaseSelection {
@@ -849,427 +888,172 @@ export class RangeSelection implements BaseSelection {
    * @param text the text to insert into the Selection
    */
   insertText(text: string): void {
-    // Now that "removeText" has been improved and does not depend on
-    // insertText, insertText can be greatly simplified. The next
-    // commented version is a WIP (about 5 tests fail).
-    //
-    // this.removeText();
-    // if (text === '') {
-    //   return;
-    // }
-    // const anchorNode = this.anchor.getNode();
-    // const textNode = $createTextNode(text);
-    // textNode.setFormat(this.format);
-    // textNode.setStyle(this.style);
-    // if ($isTextNode(anchorNode)) {
-    //   const parent = anchorNode.getParentOrThrow();
-    //   if (this.anchor.offset === 0) {
-    //     if (parent.isInline() && !anchorNode.__prev) {
-    //       parent.insertBefore(textNode);
-    //     } else {
-    //       anchorNode.insertBefore(textNode);
-    //     }
-    //   } else if (this.anchor.offset === anchorNode.getTextContentSize()) {
-    //     if (parent.isInline() && !anchorNode.__next) {
-    //       parent.insertAfter(textNode);
-    //     } else {
-    //       anchorNode.insertAfter(textNode);
-    //     }
-    //   } else {
-    //     const [before] = anchorNode.splitText(this.anchor.offset);
-    //     before.insertAfter(textNode);
-    //   }
-    // } else {
-    //   anchorNode.splice(this.anchor.offset, 0, [textNode]);
-    // }
-    // const nodeToSelect = textNode.isAttached() ? textNode : anchorNode;
-    // nodeToSelect.selectEnd();
-    // // When composing, we need to adjust the anchor offset so that
-    // // we correctly replace that right range.
-    // if (
-    //   textNode.isComposing() &&
-    //   this.anchor.type === 'text' &&
-    //   anchorNode.getTextContent() !== ''
-    // ) {
-    //   this.anchor.offset -= text.length;
-    // }
-
-    const anchor = this.anchor;
-    const focus = this.focus;
-    const format = this.format;
-    const style = this.style;
-    let firstPoint = anchor;
-    let endPoint = focus;
-    if (!this.isCollapsed() && focus.isBefore(anchor)) {
-      firstPoint = focus;
-      endPoint = anchor;
+    // For non-collapsed selections, inherit format/style from the first
+    // selected text node so the replacement preserves the original styling.
+    let format = this.format;
+    let style = this.style;
+    if (!this.isCollapsed()) {
+      const firstPoint = this.focus.isBefore(this.anchor)
+        ? this.focus
+        : this.anchor;
+      const firstNode = firstPoint.getNode();
+      if ($isTextNode(firstNode)) {
+        format = firstNode.getFormat();
+        style = firstNode.getStyle();
+      }
+      this.removeText();
+      this.format = format;
+      this.style = style;
+      if (text === '') {
+        return;
+      }
+      if ($getCompositionKey() === null) {
+        if (this.anchor.type === 'element') {
+          $transferStartingElementPointToTextPoint(
+            this.anchor,
+            this.focus,
+            format,
+            style,
+          );
+        }
+        $insertTextAtPoint(this, text, format, style);
+        return;
+      }
+      // Composing: fall through to the collapsed code below.
+      // spliceText preserves DOM node identity so the browser's
+      // IME tracker stays attached.
     }
-    if (firstPoint.type === 'element') {
+
+    if (this.anchor.type === 'element') {
       $transferStartingElementPointToTextPoint(
-        firstPoint,
-        endPoint,
+        this.anchor,
+        this.focus,
         format,
         style,
       );
     }
-    if (endPoint.type === 'element') {
-      $setPointFromCaret(
-        endPoint,
-        $normalizeCaret($caretFromPoint(endPoint, 'next')),
-      );
-    }
-    const startOffset = firstPoint.offset;
-    let endOffset = endPoint.offset;
-    const selectedNodes = this.getNodes();
-    const selectedNodesLength = selectedNodes.length;
-    let firstNode: TextNode = selectedNodes[0] as TextNode;
 
-    invariant(
-      $isTextNode(firstNode),
-      'insertText: first node is not a text node',
-    );
-    const firstNodeText = firstNode.getTextContent();
-    const firstNodeTextLength = firstNodeText.length;
-    const firstNodeParent = firstNode.getParentOrThrow();
-    const lastIndex = selectedNodesLength - 1;
-    let lastNode = selectedNodes[lastIndex];
+    const anchorNode = this.anchor.getNode();
+    invariant($isTextNode(anchorNode), 'insertText: anchor is not a text node');
+    const offset = this.anchor.offset;
 
-    if (selectedNodesLength === 1 && endPoint.type === 'element') {
-      endOffset = firstNodeTextLength;
-      endPoint.set(firstPoint.key, endOffset, 'text');
-    }
+    const anchorParent = anchorNode.getParentOrThrow();
+    const anchorSize = anchorNode.getTextContentSize();
+    const needsRedirect =
+      $isTokenOrSegmented(anchorNode) ||
+      (offset === 0 &&
+        (!anchorNode.canInsertTextBefore() ||
+          (!anchorParent.canInsertTextBefore() && !anchorNode.__prev))) ||
+      (offset === anchorSize &&
+        (!anchorNode.canInsertTextAfter() ||
+          (!anchorParent.canInsertTextAfter() && !anchorNode.__next)));
 
-    if (
-      this.isCollapsed() &&
-      startOffset === firstNodeTextLength &&
-      ($isTokenOrSegmented(firstNode) ||
-        !firstNode.canInsertTextAfter() ||
-        (!firstNodeParent.canInsertTextAfter() &&
-          firstNode.getNextSibling() === null))
-    ) {
-      const candidateNextSibling = firstNode.getNextSibling();
-      let nextSibling: TextNode;
-      if (
-        !$isTextNode(candidateNextSibling) ||
-        !candidateNextSibling.canInsertTextBefore() ||
-        $isTokenOrSegmented(candidateNextSibling)
-      ) {
-        nextSibling = $createTextNode();
-        nextSibling.setFormat(format);
-        nextSibling.setStyle(style);
-        if (!firstNodeParent.canInsertTextAfter()) {
-          firstNodeParent.insertAfter(nextSibling);
+    if (needsRedirect) {
+      // Token/segmented nodes and nodes whose parent forbids text insertion
+      // at the boundary: reposition the cursor to an adjacent insertable
+      // node, then recurse.
+
+      // Segmented node with cursor in the middle: convert to normal
+      // text node so that the recursive insertText can proceed.
+      if (anchorNode.isSegmented() && offset !== 0 && offset !== anchorSize) {
+        if ($getCompositionKey() !== null) {
+          anchorNode.setMode('normal').setFormat(format).setStyle(style);
         } else {
-          firstNode.insertAfter(nextSibling);
+          const replacement = $createTextNode(anchorNode.getTextContent());
+          replacement.setFormat(format);
+          replacement.setStyle(style);
+          anchorNode.replace(replacement);
+          replacement.select(offset, offset);
         }
-      } else {
-        nextSibling = candidateNextSibling;
-      }
-      nextSibling.select(0, 0);
-      firstNode = nextSibling;
-      if (text !== '') {
-        this.insertText(text);
-        return;
-      }
-    } else if (
-      this.isCollapsed() &&
-      startOffset === 0 &&
-      ($isTokenOrSegmented(firstNode) ||
-        !firstNode.canInsertTextBefore() ||
-        (!firstNodeParent.canInsertTextBefore() &&
-          firstNode.getPreviousSibling() === null))
-    ) {
-      const candidatePrevSibling = firstNode.getPreviousSibling();
-      let prevSibling: TextNode;
-      if (
-        !$isTextNode(candidatePrevSibling) ||
-        $isTokenOrSegmented(candidatePrevSibling)
-      ) {
-        prevSibling = $createTextNode();
-        prevSibling.setFormat(format);
-        if (!firstNodeParent.canInsertTextBefore()) {
-          firstNodeParent.insertBefore(prevSibling);
-        } else {
-          firstNode.insertBefore(prevSibling);
+        if (text !== '') {
+          this.insertText(text);
         }
-      } else {
-        prevSibling = candidatePrevSibling;
-      }
-      prevSibling.select();
-      firstNode = prevSibling;
-      if (text !== '') {
-        this.insertText(text);
         return;
       }
-    } else if (firstNode.isSegmented() && startOffset !== firstNodeTextLength) {
-      if ($getCompositionKey() !== null) {
-        // Preserve the DOM element for the browser's composition tracker.
-        // The subclass instance stays in normal mode until composition ends,
-        // when $cleanupComposedSubclass replaces it with a plain TextNode.
-        firstNode = firstNode
-          .setMode('normal')
-          .setFormat(format)
-          .setStyle(style);
-      } else {
-        const textNode = $createTextNode(firstNode.getTextContent());
-        textNode.setFormat(format);
-        firstNode.replace(textNode);
-        firstNode = textNode;
-      }
-    } else if (!this.isCollapsed() && text !== '') {
-      // When the firstNode or lastNode parents are elements that
-      // do not allow text to be inserted before or after, we first
-      // clear the content. Then we normalize selection, then insert
-      // the new content.
-      const lastNodeParent = lastNode.getParent();
-
-      if (
-        !firstNodeParent.canInsertTextBefore() ||
-        !firstNodeParent.canInsertTextAfter() ||
-        ($isElementNode(lastNodeParent) &&
-          (!lastNodeParent.canInsertTextBefore() ||
-            !lastNodeParent.canInsertTextAfter()))
-      ) {
-        this.insertText('');
-        $normalizeSelectionPointsForBoundaries(this.anchor, this.focus, null);
-        this.insertText(text);
+      if (text === '') {
         return;
       }
-    }
-
-    if (selectedNodesLength === 1) {
-      if ($isTokenOrTab(firstNode)) {
-        const textNode = $createTextNode(text);
-        textNode.select();
-        firstNode.replace(textNode);
-        return;
-      }
-      const firstNodeFormat = firstNode.getFormat();
-      const firstNodeStyle = firstNode.getStyle();
-
-      if (
-        startOffset === endOffset &&
-        (firstNodeFormat !== format || firstNodeStyle !== style)
-      ) {
-        if (firstNode.getTextContent() === '') {
-          firstNode.setFormat(format);
-          firstNode.setStyle(style);
-        } else {
-          const textNode = $createTextNode(text);
-          textNode.setFormat(format);
-          textNode.setStyle(style);
-          textNode.select();
-          if (startOffset === 0) {
-            firstNode.insertBefore(textNode, false);
-          } else {
-            const [targetNode] = firstNode.splitText(startOffset);
-            targetNode.insertAfter(textNode, false);
-          }
-          // When composing, we need to adjust the anchor offset so that
-          // we correctly replace that right range.
-          if (textNode.isComposing() && this.anchor.type === 'text') {
-            this.anchor.offset -= text.length;
-            this._cachedNodes = null;
-            this._cachedIsBackward = null;
-          }
-          return;
-        }
-      } else if ($isTabNode(firstNode)) {
-        // We don't need to check for delCount because there is only the entire selected node case
-        // that can hit here for content size 1 and with canInsertTextBeforeAfter false
-        const textNode = $createTextNode(text);
-        textNode.setFormat(format);
-        textNode.setStyle(style);
-        textNode.select();
-        firstNode.replace(textNode);
-        return;
-      }
-      const delCount = endOffset - startOffset;
-
-      firstNode = firstNode.spliceText(startOffset, delCount, text, true);
-      if (firstNode.getTextContent() === '') {
-        firstNode.remove();
-      } else if (this.anchor.type === 'text') {
-        this.format = firstNodeFormat;
-        this.style = firstNodeStyle;
-        if (firstNode.isComposing()) {
-          // When composing, we need to adjust the anchor offset so that
-          // we correctly replace that right range.
-          this.anchor.offset -= text.length;
-          this._cachedNodes = null;
-          this._cachedIsBackward = null;
-        }
-      }
-    } else {
-      const markedNodeKeysForKeep = new Set([
-        ...firstNode.getParentKeys(),
-        ...lastNode.getParentKeys(),
-      ]);
-
-      // We have to get the parent elements before the next section,
-      // as in that section we might mutate the lastNode.
-      const firstElement = $isElementNode(firstNode)
-        ? firstNode
-        : firstNode.getParentOrThrow();
-      let lastElement = $isElementNode(lastNode)
-        ? lastNode
-        : lastNode.getParentOrThrow();
-      let lastElementChild = lastNode;
-
-      // If the last element is inline, we should instead look at getting
-      // the nodes of its parent, rather than itself. This behavior will
-      // then better match how text node insertions work. We will need to
-      // also update the last element's child accordingly as we do this.
-      if (!firstElement.is(lastElement) && lastElement.isInline()) {
-        // Keep traversing till we have a non-inline element parent.
-        do {
-          lastElementChild = lastElement;
-          lastElement = lastElement.getParentOrThrow();
-        } while (lastElement.isInline());
-      }
-
-      // Handle mutations to the last node.
-      if (
-        (endPoint.type === 'text' &&
-          (endOffset !== 0 || lastNode.getTextContent() === '')) ||
-        (endPoint.type === 'element' &&
-          lastNode.getIndexWithinParent() < endOffset)
-      ) {
+      if (offset === 0) {
+        const prev = anchorNode.getPreviousSibling();
         if (
-          $isTextNode(lastNode) &&
-          !$isTokenOrTab(lastNode) &&
-          endOffset !== lastNode.getTextContentSize()
+          $isTextNode(prev) &&
+          prev.canInsertTextAfter() &&
+          !$isTokenOrSegmented(prev)
         ) {
-          if (lastNode.isSegmented()) {
-            const textNode = $createTextNode(lastNode.getTextContent());
-            lastNode.replace(textNode);
-            lastNode = textNode;
-          }
-          // root node selections only select whole nodes, so no text splice is necessary
-          if (!$isRootNode(endPoint.getNode()) && endPoint.type === 'text') {
-            invariant(
-              $isTextNode(lastNode),
-              'insertText: lastNode is not a TextNode',
-            );
-            lastNode = lastNode.spliceText(0, endOffset, '');
-          }
-          markedNodeKeysForKeep.add(lastNode.__key);
+          prev.select();
         } else {
-          const lastNodeParent = lastNode.getParentOrThrow();
-          if (
-            !lastNodeParent.canBeEmpty() &&
-            lastNodeParent.getChildrenSize() === 1
-          ) {
-            lastNodeParent.remove();
+          const newNode = $createTextNode();
+          newNode.setFormat(format);
+          newNode.setStyle(style);
+          if (!anchorParent.canInsertTextBefore()) {
+            anchorParent.insertBefore(newNode);
           } else {
-            lastNode.remove();
+            anchorNode.insertBefore(newNode);
           }
+          newNode.select();
         }
-      } else {
-        markedNodeKeysForKeep.add(lastNode.__key);
-      }
-
-      // Either move the remaining nodes of the last parent to after
-      // the first child, or remove them entirely. If the last parent
-      // is the same as the first parent, this logic also works.
-      const lastNodeChildren = lastElement.getChildren();
-      const selectedNodesSet = new Set(selectedNodes);
-      const firstAndLastElementsAreEqual = firstElement.is(lastElement);
-
-      // We choose a target to insert all nodes after. In the case of having
-      // and inline starting parent element with a starting node that has no
-      // siblings, we should insert after the starting parent element, otherwise
-      // we will incorrectly merge into the starting parent element.
-      // TODO: should we keep on traversing parents if we're inside another
-      // nested inline element?
-      const insertionTarget =
-        firstElement.isInline() && firstNode.getNextSibling() === null
-          ? firstElement
-          : firstNode;
-
-      for (let i = lastNodeChildren.length - 1; i >= 0; i--) {
-        const lastNodeChild = lastNodeChildren[i];
-
+        this.insertText(text);
+        return;
+      } else if (offset === anchorSize) {
+        const next = anchorNode.getNextSibling();
         if (
-          lastNodeChild.is(firstNode) ||
-          ($isElementNode(lastNodeChild) && lastNodeChild.isParentOf(firstNode))
+          $isTextNode(next) &&
+          next.canInsertTextBefore() &&
+          !$isTokenOrSegmented(next)
         ) {
-          break;
-        }
-
-        if (lastNodeChild.isAttached()) {
-          if (
-            !selectedNodesSet.has(lastNodeChild) ||
-            lastNodeChild.is(lastElementChild)
-          ) {
-            if (!firstAndLastElementsAreEqual) {
-              insertionTarget.insertAfter(lastNodeChild, false);
-            }
+          next.select(0, 0);
+        } else {
+          const newNode = $createTextNode();
+          newNode.setFormat(format);
+          newNode.setStyle(style);
+          if (!anchorParent.canInsertTextAfter()) {
+            anchorParent.insertAfter(newNode);
           } else {
-            lastNodeChild.remove();
+            anchorNode.insertAfter(newNode);
           }
+          newNode.select(0, 0);
         }
+        this.insertText(text);
+        return;
       }
+      const newNode = $createTextNode(text);
+      newNode.setFormat(format);
+      newNode.setStyle(style);
+      anchorNode.replace(newNode);
+      newNode.select();
+      return;
+    }
 
-      if (!firstAndLastElementsAreEqual) {
-        // Check if we have already moved out all the nodes of the
-        // last parent, and if so, traverse the parent tree and mark
-        // them all as being able to deleted too.
-        let parent: ElementNode | null = lastElement;
-        let lastRemovedParent = null;
+    if (text === '') {
+      return;
+    }
 
-        while (parent !== null) {
-          const children = parent.getChildren();
-          const childrenLength = children.length;
-          if (
-            childrenLength === 0 ||
-            children[childrenLength - 1].is(lastRemovedParent)
-          ) {
-            markedNodeKeysForKeep.delete(parent.__key);
-            lastRemovedParent = parent;
-          }
-          parent = parent.getParent();
-        }
-      }
+    const atStartOfInline =
+      anchorParent.isInline() && offset === 0 && !anchorNode.__prev;
+    const atEndOfInline =
+      anchorParent.isInline() && offset === anchorSize && !anchorNode.__next;
+    const formatDiffers =
+      anchorNode.getFormat() !== format || anchorNode.getStyle() !== style;
 
-      // Ensure we do splicing after moving of nodes, as splicing
-      // can have side-effects (in the case of hashtags).
-      if (!$isTokenOrTab(firstNode)) {
-        firstNode = firstNode.spliceText(
-          startOffset,
-          firstNodeTextLength - startOffset,
-          text,
-          true,
-        );
-        if (firstNode.getTextContent() === '') {
-          firstNode.remove();
-        } else if (this.anchor.type === 'text') {
-          this.format = firstNode.getFormat();
-          this.style = firstNode.getStyle();
-          if (firstNode.isComposing()) {
-            // When composing, we need to adjust the anchor offset so that
-            // we correctly replace that right range.
-            this.anchor.offset -= text.length;
-            this._cachedNodes = null;
-            this._cachedIsBackward = null;
-          }
-        }
-      } else if (startOffset === firstNodeTextLength) {
-        firstNode.select();
+    if (atStartOfInline || atEndOfInline || formatDiffers) {
+      if (
+        anchorNode.getTextContent() === '' &&
+        !atStartOfInline &&
+        !atEndOfInline
+      ) {
+        anchorNode.setFormat(format);
+        anchorNode.setStyle(style);
       } else {
-        const textNode = $createTextNode(text);
-        textNode.select();
-        firstNode.replace(textNode);
+        $insertTextAtPoint(this, text, format, style);
+        return;
       }
+    }
 
-      // Remove all selected nodes that haven't already been removed.
-      for (let i = 1; i < selectedNodesLength; i++) {
-        const selectedNode = selectedNodes[i];
-        const key = selectedNode.__key;
-        if (!markedNodeKeysForKeep.has(key)) {
-          selectedNode.remove();
-        }
-      }
+    anchorNode.spliceText(offset, 0, text, true);
+    if (anchorNode.isComposing() && this.anchor.type === 'text') {
+      this.anchor.offset -= text.length;
+      this._cachedNodes = null;
+      this._cachedIsBackward = null;
     }
   }
 

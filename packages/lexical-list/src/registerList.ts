@@ -7,11 +7,9 @@
  */
 
 import {
-  $createParagraphNode,
   $findMatchingParent,
   $getNodeByKey,
   $getSelection,
-  $isDecoratorNode,
   $isRangeSelection,
   $isTextNode,
   COMMAND_PRIORITY_BEFORE_EDITOR,
@@ -108,10 +106,6 @@ export function registerList(
     editor.registerCommand(
       KEY_BACKSPACE_COMMAND,
       event => {
-        if ($handleListItemBackspaceAdjacentToDecorator()) {
-          event.preventDefault();
-          return true;
-        }
         const selection = $getSelection();
         if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
           return false;
@@ -267,64 +261,4 @@ function $findChildrenEndListItemNode(
   }
 
   return current;
-}
-
-/**
- * #5072: When the first list item of a top-level list is adjacent to a
- * non-isolated decorator that is either keyboard-selectable or a block, and
- * the caret sits at the start of that list item, Backspace previously fell
- * through `deleteCharacter`'s merge-block path and deleted the decorator
- * outright. Convert the first list item into a paragraph inserted before the
- * list instead, keeping the decorator and the list item's content intact.
- */
-function $handleListItemBackspaceAdjacentToDecorator(): boolean {
-  const selection = $getSelection();
-  if (
-    !$isRangeSelection(selection) ||
-    !selection.isCollapsed() ||
-    selection.anchor.offset !== 0
-  ) {
-    return false;
-  }
-  const anchorNode = selection.anchor.getNode();
-  const listItem = $findMatchingParent(anchorNode, $isListItemNode);
-  if (!$isListItemNode(listItem)) {
-    return false;
-  }
-  // Empty list item: defer to deleteCharacter's merge-next-block + decorator
-  // branch in LexicalSelection.ts, which already removes the empty element and
-  // places a NodeSelection on the adjacent decorator.
-  const firstDescendant = listItem.getFirstDescendant();
-  if (firstDescendant === null) {
-    return false;
-  }
-  // The caret must be at the very start of the list item — either the anchor
-  // is the list item itself, or it is the list item's first descendant.
-  if (!listItem.is(anchorNode) && !firstDescendant.is(anchorNode)) {
-    return false;
-  }
-  const list = listItem.getParent();
-  if (!$isListNode(list) || !listItem.is(list.getFirstChild())) {
-    return false;
-  }
-  // Nested lists fall through: their parent is a ListItemNode, not a
-  // DecoratorNode, so the previous-sibling check below returns false and the
-  // existing outdent path runs.
-  const previousBlock = list.getPreviousSibling();
-  if (
-    !$isDecoratorNode(previousBlock) ||
-    previousBlock.isIsolated() ||
-    !(previousBlock.isKeyboardSelectable() || !previousBlock.isInline())
-  ) {
-    return false;
-  }
-  // Demote the first list item to a paragraph and slot it in before the list.
-  const paragraph = $createParagraphNode().append(...listItem.getChildren());
-  list.insertBefore(paragraph);
-  listItem.remove();
-  if (list.isEmpty()) {
-    list.remove();
-  }
-  paragraph.selectStart();
-  return true;
 }

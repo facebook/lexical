@@ -70,9 +70,11 @@ export function formatKeyboardShortcut(
 export type NamedKeyboardShortcuts = Record<string, KeyboardShortcut | null>;
 
 export interface KeyboardShortcutsConfig {
+  /** When `true`, the shortcut listener is not registered */
   disabled: boolean;
   /** The `KEY_DOWN_COMMAND` priority (default {@link COMMAND_PRIORITY_NORMAL}) */
   priority: CommandListenerPriority;
+  /** The named shortcut table, merged by name across the extension graph */
   shortcuts: NamedKeyboardShortcuts;
 }
 

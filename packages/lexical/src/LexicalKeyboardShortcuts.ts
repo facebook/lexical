@@ -51,7 +51,7 @@ export interface KeyboardShortcutMatch {
  * command to dispatch (with the matched KeyboardEvent as its payload) when
  * it does. Keeping the action to a command keeps the mapping declarative —
  * a shortcut table can be rendered as a menu (see
- * {@link formatKeyboardShortcut} in `@lexical/extension`), remapped, or
+ * `formatKeyboardShortcut` in `@lexical/extension`), remapped, or
  * serialized, and the behavior lives in command listeners where any other
  * UI can share it.
  */
@@ -78,6 +78,7 @@ export interface KeyboardShortcut extends KeyboardShortcutMatch {
    * @param selection - The current editor selection, or null if none exists.
    * @param editor - The editor where KEY_DOWN_COMMAND originated (may
    *   differ from the registration editor in nested-editor setups).
+   * @returns `true` to skip this shortcut, `false` to allow it.
    */
   $disabled?: (
     selection: null | BaseSelection,
@@ -91,6 +92,8 @@ export interface KeyboardShortcut extends KeyboardShortcutMatch {
    * whether the event was handled (an unhandled event falls through to
    * any other shortcut on the same key and modifiers).
    *
+   * @param command - The shortcut's command.
+   * @param event - The matched KeyboardEvent.
    * @param $next - Dispatches the shortcut's command on the originating
    *   editor and returns whether the dispatch was handled.
    * @param editor - The editor where KEY_DOWN_COMMAND originated (may
@@ -114,8 +117,9 @@ export const CONTROL_OR_META: KeyboardEventModifierMask = {
 };
 
 /**
- * The modifier mask conventionally used for word-level editing shortcuts:
- * Option (altKey) on Apple platforms and Ctrl elsewhere.
+ * The modifier mask for the secondary shortcut modifier:
+ * Option (altKey) on Apple platforms and Ctrl elsewhere, conventionally
+ * used for word-level editing and block-format shortcuts.
  */
 export const CONTROL_OR_ALT: KeyboardEventModifierMask = {
   altKey: IS_APPLE,

@@ -47,11 +47,11 @@ export interface KeyboardShortcutMatch {
 /**
  * A keyboard shortcut is pure data: the key and modifiers to match, and the
  * command to dispatch (with the matched KeyboardEvent as its payload) when
- * it does. Keeping the action to a command keeps the mapping declarative -
+ * it does. Keeping the action to a command keeps the mapping declarative —
  * a shortcut table can be rendered as a menu (see
- * `formatKeyboardShortcut` in `@lexical/extension`), remapped, or
- * serialized, and the
- * behavior lives in command listeners where any other UI can share it.
+ * {@link formatKeyboardShortcut} in `@lexical/extension`), remapped, or
+ * serialized, and the behavior lives in command listeners where any other
+ * UI can share it.
  */
 export interface KeyboardShortcut extends KeyboardShortcutMatch {
   /**
@@ -72,6 +72,10 @@ export interface KeyboardShortcut extends KeyboardShortcutMatch {
    * returning true skips this shortcut (falling through to any other
    * shortcut on the same key and modifiers). Menu builders may use the
    * same predicate to render an item as disabled.
+   *
+   * @param selection - The current editor selection, or null if none exists.
+   * @param editor - The editor where KEY_DOWN_COMMAND originated (may
+   *   differ from the registration editor in nested-editor setups).
    */
   $disabled?: (
     selection: null | BaseSelection,
@@ -80,10 +84,15 @@ export interface KeyboardShortcut extends KeyboardShortcutMatch {
   /**
    * Optional middleware around the command dispatch, for shortcuts that
    * must run additional code (e.g. setting some state) without defining a
-   * wrapper command. It is responsible for calling `$next()` - which is
-   * `editor.dispatchCommand(command, event)` - and returning whether the
-   * event was handled (an unhandled event falls through to any other
-   * shortcut on the same key and modifiers).
+   * wrapper command. It is responsible for calling `$next()` — which
+   * dispatches the command on the originating editor — and returning
+   * whether the event was handled (an unhandled event falls through to
+   * any other shortcut on the same key and modifiers).
+   *
+   * @param $next - Dispatches the shortcut's command on the originating
+   *   editor and returns whether the dispatch was handled.
+   * @param editor - The editor where KEY_DOWN_COMMAND originated (may
+   *   differ from the registration editor in nested-editor setups).
    */
   $dispatch?: (
     command: LexicalCommand<KeyboardEvent>,
@@ -158,8 +167,8 @@ function pushEntry<S>(map: Map<string, S[]>, mapKey: string, shortcut: S) {
 /**
  * A shortcut table compiled for O(1) dispatch. Look-up is by a composite of
  * the event's modifier bitmask and its `key` (with a second look-up by
- * `code` for non-Latin layouts), so the cost of {@link match} is independent
- * of the number of shortcuts in the table.
+ * `code` for non-Latin layouts), so the cost of {@link match} /
+ * {@link matches} is independent of the number of shortcuts in the table.
  */
 export class CompiledKeyboardShortcuts<
   S extends KeyboardShortcutMatch = KeyboardShortcut,
@@ -197,6 +206,7 @@ export class CompiledKeyboardShortcuts<
   /**
    * All shortcuts matching the event, in insertion order.
    * Matches by `key` precede matches by the `code` fallback.
+   * @see {@link match} for the single-result fast path.
    */
   matches(event: KeyboardEventModifiers): S[] {
     const bits = getEventModifierBits(event);
@@ -216,9 +226,26 @@ export class CompiledKeyboardShortcuts<
     return matches;
   }
 
-  /** The first shortcut matching the event, if any */
+  /**
+   * The first shortcut matching the event, if any.
+   * @see {@link matches} for the full list of matching shortcuts.
+   */
   match(event: KeyboardEventModifiers): S | undefined {
-    return this.matches(event)[0];
+    const bits = getEventModifierBits(event);
+    const byKey = this.byKey.get(`${bits}:${event.key.toLowerCase()}`);
+    if (byKey && byKey.length > 0) {
+      return byKey[0];
+    }
+    if (
+      this.byCode.size > 0 &&
+      !(event.key.length === 1 && event.key.charCodeAt(0) <= 127)
+    ) {
+      const byCode = this.byCode.get(`${bits}:${event.code}`);
+      if (byCode && byCode.length > 0) {
+        return byCode[0];
+      }
+    }
+    return undefined;
   }
 }
 
@@ -260,14 +287,14 @@ export function registerKeyboardShortcuts(
   const compiled = compileKeyboardShortcuts(shortcuts);
   return editor.registerCommand(
     KEY_DOWN_COMMAND,
-    event => {
+    (event, fromEditor) => {
       let selection: undefined | null | BaseSelection;
       for (const shortcut of compiled.matches(event)) {
         if (shortcut.$disabled) {
           if (selection === undefined) {
             selection = $getSelection();
           }
-          if (shortcut.$disabled(selection, editor)) {
+          if (shortcut.$disabled(selection, fromEditor)) {
             continue;
           }
         }
@@ -276,16 +303,16 @@ export function registerKeyboardShortcuts(
             ? shortcut.$dispatch(
                 shortcut.command,
                 event,
-                dispatchCommand.bind(null, editor, shortcut.command, event),
-                editor,
+                () => dispatchCommand(fromEditor, shortcut.command, event),
+                fromEditor,
               )
-            : dispatchCommand(editor, shortcut.command, event)
+            : dispatchCommand(fromEditor, shortcut.command, event)
         ) {
           return true;
         }
       }
       return false;
     },
-    options.priority !== undefined ? options.priority : COMMAND_PRIORITY_NORMAL,
+    options.priority ?? COMMAND_PRIORITY_NORMAL,
   );
 }

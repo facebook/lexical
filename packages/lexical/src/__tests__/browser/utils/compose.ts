@@ -23,13 +23,24 @@
  *   and defers to the next keydown; Firefox defers to the next input event),
  *   giving the test a single deterministic code path for all browsers.
  *
+ *   `commit: 'forced'` opts out of that bypass: it dispatches a real DOM
+ *   compositionend and lets the native handler route it, deferral included —
+ *   the only way to reach the code that tells a browser-forced commit apart
+ *   from a typed one.
+ *
  * Between each event, the browser yields to the microtask queue so
  * deferred editor updates commit before the next event fires. We
  * replicate this with `await flush()` after every event that triggers
  * a Lexical `updateEditorSync` (compositionstart, input).
  */
 
-import {COMPOSITION_END_COMMAND, type LexicalEditor} from 'lexical';
+import {COMPOSITION_END_COMMAND, IS_FIREFOX, type LexicalEditor} from 'lexical';
+
+/**
+ * Comfortably past the window in which Lexical still credits a keydown for a
+ * composition event (ANDROID_COMPOSITION_LATENCY, 30ms in LexicalEvents).
+ */
+const KEYDOWN_RECENCY_WINDOW_MS = 80;
 
 export interface CompositionStep {
   /** The cumulative composing text at this step. */
@@ -52,6 +63,22 @@ export interface CompositionSequence {
    * committing. The DOM reverts to pre-composition text.
    */
   cancel?: boolean;
+  /**
+   * How the composition ends.
+   *
+   * - `'command'` (default) dispatches COMPOSITION_END_COMMAND through the
+   *   editor, bypassing the platform deferral for one path on every browser.
+   *   Models a *typed* commit — the steps above fire keydowns, which is what a
+   *   Space/Enter commit looks like to Lexical.
+   *
+   * - `'forced'` dispatches a real DOM `compositionend` with no keydown in
+   *   front of it, as the browser does when it force-commits on focus leaving
+   *   the editor. Routes through `onCompositionEnd`, so it exercises the
+   *   platform branches `'command'` skips (Firefox's deferral onto the
+   *   following `input`), and waits out the keydown-recency window first —
+   *   the absence of a recent keydown is how Lexical spots a forced commit.
+   */
+  commit?: 'command' | 'forced';
 }
 
 interface CompositionTarget {
@@ -127,6 +154,10 @@ function setSelectionAt(textNode: Text, start: number, end: number): void {
 
 function flush(): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, 0));
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
@@ -298,6 +329,23 @@ export async function compose(
   }
 
   const endData = cancel ? '' : commitText;
+
+  if (sequence.commit === 'forced') {
+    // The steps above fired keydowns; they have to fall out of the recency
+    // window before the commit reads as forced — as they do for real, since
+    // the user scrolls or clicks away between the last keystroke and the
+    // commit.
+    await sleep(KEYDOWN_RECENCY_WINDOW_MS);
+    dispatchCompositionEvent(rootElement, 'compositionend', endData);
+    if (IS_FIREFOX) {
+      // Firefox does not act on compositionend: it stashes the event and
+      // finishes the commit on the input that follows.
+      dispatchInputEvent(rootElement, endData, 'insertCompositionText', false);
+    }
+    await flush();
+    return;
+  }
+
   target.editor.dispatchCommand(
     COMPOSITION_END_COMMAND,
     new CompositionEvent('compositionend', {

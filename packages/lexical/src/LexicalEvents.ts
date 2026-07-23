@@ -65,6 +65,7 @@ import {
   REDO_COMMAND,
   REMOVE_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
+  SKIP_SCROLL_INTO_VIEW_TAG,
   SKIP_SELECTION_FOCUS_TAG,
   UNDO_COMMAND,
 } from '.';
@@ -169,6 +170,16 @@ type RootElementEvents = [
 ][];
 const PASS_THROUGH_COMMAND = Object.freeze({});
 const ANDROID_COMPOSITION_LATENCY = 30;
+/**
+ * How soon after a keydown a composition event still counts as caused by it.
+ *
+ * Separate from ANDROID_COMPOSITION_LATENCY, which happens to hold the same
+ * number: that one is about how late Android's keyboard delivers its events, and
+ * this one is about whether a keystroke is behind the composition event at all.
+ * They answer different questions, so tuning one must not silently move the
+ * other.
+ */
+const RECENT_KEYDOWN_WINDOW = 30;
 const rootElementEvents: RootElementEvents = [
   ['keydown', onKeyDown],
   ['pointerdown', onPointerDown],
@@ -1279,10 +1290,13 @@ function $handleInput(event: InputEvent): boolean {
       // to ensure to disable composition before dispatching the
       // insertText command for when changing the sequence for FF.
       if (inputState.compositionPhase === 'ending-firefox') {
-        const tokenRedirected = $onCompositionEndImpl(editor, data);
+        const tokenRedirected = $onCompositionEndImpl(
+          editor,
+          data,
+          event.timeStamp,
+        );
         inputState.compositionPhase = 'idle';
         if (tokenRedirected) {
-          $addUpdateTag(COMPOSITION_END_TAG);
           $flushMutations();
           return true;
         }
@@ -1347,8 +1361,7 @@ function $handleInput(event: InputEvent): boolean {
     // trigger, history merge, autocomplete post-commit) see the same signal on
     // Firefox.
     if (inputState.compositionPhase === 'ending-firefox') {
-      $onCompositionEndImpl(editor, data || undefined);
-      $addUpdateTag(COMPOSITION_END_TAG);
+      $onCompositionEndImpl(editor, data || undefined, event.timeStamp);
       inputState.compositionPhase = 'idle';
     }
   }
@@ -1385,7 +1398,7 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
       // apply the empty space heuristic. We can't do this for Safari,
       // as the keydown fires after composition start.
       event.timeStamp <
-        inputState.lastKeyDownTimeStamp + ANDROID_COMPOSITION_LATENCY ||
+        inputState.lastKeyDownTimeStamp + RECENT_KEYDOWN_WINDOW ||
       // FF has issues around composing multibyte characters, so we also
       // need to invoke the empty space heuristic below.
       anchor.type === 'element' ||
@@ -1421,8 +1434,7 @@ function $handleCompositionStart(event: CompositionEvent): boolean {
 function $handleCompositionEnd(event: CompositionEvent): boolean {
   const editor = getActiveEditor();
   editor._inputState.compositionPhase = 'idle';
-  $onCompositionEndImpl(editor, event.data);
-  $addUpdateTag(COMPOSITION_END_TAG);
+  $onCompositionEndImpl(editor, event.data, event.timeStamp);
   return true;
 }
 
@@ -1454,9 +1466,51 @@ function $cleanupComposedSubclass(compositionKey: NodeKey | null): void {
   }
 }
 
-function $onCompositionEndImpl(editor: LexicalEditor, data?: string): boolean {
+/**
+ * Ends a composition, and tags the update it runs in.
+ *
+ * The tagging lives here rather than in each caller because every exit below is
+ * a composition that has ended, and the callers did not agree on that: the
+ * token-redirect path in $handleInput only tagged when it actually redirected,
+ * and Safari's deferred path did not tag at all. Owning it here makes the tag
+ * follow from ending the composition instead of from remembering to say so.
+ *
+ * `eventTimeStamp` is the `compositionend`'s, which on the deferred paths is not
+ * the event being handled — see InputState.compositionEndTimeStamp.
+ */
+function $onCompositionEndImpl(
+  editor: LexicalEditor,
+  data: string | undefined,
+  eventTimeStamp: number,
+): boolean {
   const compositionKey = editor._compositionKey;
   $setCompositionKey(null);
+
+  $addUpdateTag(COMPOSITION_END_TAG);
+  // A compositionend that does not closely follow a keydown was not typed: the
+  // browser force-committed it, because a pointer press or a blur ended the
+  // composition for the user. It usually does so while the editor is still the
+  // active element, so the activeElement guards in $updateDOMSelection cannot
+  // tell — hence the timing. Reconciling such a commit must not grab focus, nor
+  // scroll a caret the user has deliberately scrolled away from, back into view.
+  //
+  // SKIP_SCROLL_INTO_VIEW_TAG only suppresses the scroll Lexical itself performs
+  // in reconciliation, which is what happens on Chromium. A browser that natively
+  // scrolls the caret into view on commit is beyond its reach — observed on
+  // Firefox, where a plain contentEditable jumps the same way, so the scroll is
+  // the browser's, not ours to suppress.
+  //
+  // The zero check keeps Android Chrome as it was: it zeroes lastKeyDownTimeStamp
+  // while composing (see $handleInput), so no keydown there can ever attest to a
+  // typed commit and every commit would otherwise look forced.
+  const {lastKeyDownTimeStamp} = editor._inputState;
+  if (
+    lastKeyDownTimeStamp !== 0 &&
+    eventTimeStamp >= lastKeyDownTimeStamp + RECENT_KEYDOWN_WINDOW
+  ) {
+    $addUpdateTag(SKIP_SELECTION_FOCUS_TAG);
+    $addUpdateTag(SKIP_SCROLL_INTO_VIEW_TAG);
+  }
 
   // Handle termination of composition.
   if (compositionKey !== null && data != null) {
@@ -1552,6 +1606,9 @@ function onCompositionEnd(
     // https://github.com/facebook/lexical/pull/7061
     inputState.compositionPhase = 'ending-safari';
     inputState.compositionEndData = event.data;
+    // Kept because the commit is processed on the next keydown, when this event
+    // is no longer around to be asked when the composition ended.
+    inputState.compositionEndTimeStamp = event.timeStamp;
   } else {
     dispatchCommand(editor, COMPOSITION_END_COMMAND, event);
   }
@@ -1579,12 +1636,18 @@ function $handleKeyDown(event: KeyboardEvent): boolean {
   if (inputState.compositionPhase === 'ending-safari') {
     const isBack = isBackspace(event);
     if (isBack) {
+      const compositionEndTimeStamp = inputState.compositionEndTimeStamp;
       updateEditorSync(editor, () => {
-        $onCompositionEndImpl(editor, inputState.compositionEndData);
+        $onCompositionEndImpl(
+          editor,
+          inputState.compositionEndData,
+          compositionEndTimeStamp,
+        );
       });
     }
     inputState.compositionPhase = 'idle';
     inputState.compositionEndData = '';
+    inputState.compositionEndTimeStamp = 0;
     if (isBack) {
       return true;
     }

@@ -190,8 +190,8 @@ export type {
 export {$isEditorState} from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
 export {stopLexicalPropagation} from './LexicalEvents';
+export type {CompiledKeyboardShortcuts} from './LexicalKeyboardShortcuts';
 export {
-  CompiledKeyboardShortcuts,
   compileKeyboardShortcuts,
   CONTROL_OR_ALT,
   CONTROL_OR_META,

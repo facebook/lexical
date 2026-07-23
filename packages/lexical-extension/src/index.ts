@@ -111,7 +111,7 @@ export {watchedSignal} from './watchedSignal';
 export {
   type AnyLexicalExtension,
   type AnyLexicalExtensionArgument,
-  CompiledKeyboardShortcuts,
+  type CompiledKeyboardShortcuts,
   compileKeyboardShortcuts,
   configExtension,
   CONTROL_OR_ALT,

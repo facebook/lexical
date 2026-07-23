@@ -33,6 +33,7 @@ import {
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
+  $isRootNode,
   $isTextNode,
   $isTextPointCaret,
   $parseSerializedNode,
@@ -504,6 +505,43 @@ function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {
   return serializedNode;
 }
 
+function $shouldIncludeElementWithSelectedChildren(
+  node: LexicalNode,
+  selection: BaseSelection | null,
+): boolean {
+  if (
+    !$isRangeSelection(selection) ||
+    !$isElementNode(node) ||
+    $isRootNode(node) ||
+    node.isInline()
+  ) {
+    return false;
+  }
+  const selectedNodes = selection.getNodes();
+  if (selectedNodes.length === 0) {
+    return false;
+  }
+  const selectedTextContent = selectedNodes
+    .filter(
+      selectedNode =>
+        !$isElementNode(selectedNode) && node.isParentOf(selectedNode),
+    )
+    .map(selectedNode => {
+      if ($isTextNode(selectedNode)) {
+        return $sliceSelectedTextNodeContent(
+          selection,
+          selectedNode,
+          'clone',
+        ).getTextContent();
+      }
+      return selectedNode.getTextContent();
+    })
+    .join('');
+  return (
+    selectedTextContent !== '' && selectedTextContent === node.getTextContent()
+  );
+}
+
 function $appendNodesToJSON(
   editor: LexicalEditor,
   selection: BaseSelection | null,
@@ -604,6 +642,11 @@ function $appendNodesToJSON(
   }
 
   if (shouldInclude && !shouldExclude) {
+    targetArray.push(serializedNode);
+  } else if (
+    !shouldExclude &&
+    $shouldIncludeElementWithSelectedChildren(currentNode, selection)
+  ) {
     targetArray.push(serializedNode);
   } else if (Array.isArray(serializedNode.children)) {
     for (let i = 0; i < serializedNode.children.length; i++) {

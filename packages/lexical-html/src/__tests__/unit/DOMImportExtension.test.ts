@@ -410,6 +410,29 @@ describe('DOMImportExtension', () => {
     });
   });
 
+  test('CSS selector lists dispatch tag-restricted and unrestricted groups', () => {
+    const importedTags = (selector: string): string[] => {
+      const rule = defineImportRule({
+        $import: (_ctx, el) => {
+          const p = $createParagraphNode();
+          p.append($createTextNode(el.nodeName.toLowerCase()));
+          return [p];
+        },
+        match: sel.css(selector),
+        name: 'test/css-selector-list',
+      });
+      using editor = buildTestEditor([rule]);
+      importInto(editor, '<p></p><div class="foo"></div><article></article>');
+      return editor.read(() =>
+        $rootParagraphs().map(node => node.getTextContent()),
+      );
+    };
+
+    expect(importedTags('p, .foo')).toEqual(['p', 'div']);
+    expect(importedTags('.foo, p')).toEqual(['p', 'div']);
+    expect(importedTags('p, .foo, article')).toEqual(['p', 'div', 'article']);
+  });
+
   test('isElementOfTag narrows correctly without instanceof', () => {
     const dom = new JSDOM(
       '<!doctype html><html><body><a href="x"></a><p></p></body></html>',

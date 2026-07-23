@@ -241,6 +241,30 @@ describe('registerKeyboardShortcuts', () => {
     editor.dispose();
   });
 
+  test('falls through when $dispatch returns false', () => {
+    const SKIPPED_COMMAND = createCommand<KeyboardEvent>('test/DISPATCH_SKIP');
+    const HANDLED_COMMAND = createCommand<KeyboardEvent>(
+      'test/DISPATCH_HANDLED',
+    );
+    const handled = vi.fn().mockReturnValue(true);
+    const editor = buildTestEditor(
+      [
+        {
+          $dispatch: (_command, _event, _$next) => false,
+          command: SKIPPED_COMMAND,
+          key: 'k',
+          modifiers: {ctrlKey: true},
+        },
+        {command: HANDLED_COMMAND, key: 'k', modifiers: {ctrlKey: true}},
+      ],
+      [[HANDLED_COMMAND, handled]],
+    );
+    const event = keyboardEvent({ctrlKey: true, key: 'k'});
+    expect(editor.dispatchCommand(KEY_DOWN_COMMAND, event)).toBe(true);
+    expect(handled).toHaveBeenCalledTimes(1);
+    editor.dispose();
+  });
+
   test('$dispatch middleware wraps the command dispatch', () => {
     const WRAPPED_COMMAND = createCommand<KeyboardEvent>('test/WRAPPED');
     const listener = vi.fn().mockReturnValue(true);

@@ -32,6 +32,7 @@ import {
   FORMAT_TEXT_COMMAND,
   INDENT_CONTENT_COMMAND,
   type LexicalCommand,
+  type LexicalEditor,
   type LexicalNode,
   OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
@@ -150,86 +151,87 @@ export const ShortcutsExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/Shortcuts',
   register(editor, config, state) {
     const {isLinkEditMode} = state.getOutput();
-    const listen = (name: ShortcutName, $onShortcut: () => void) =>
+    const listen = (
+      name: ShortcutName,
+      $onShortcut: (fromEditor: LexicalEditor) => void,
+    ) =>
       editor.registerCommand(
         SHORTCUT_COMMANDS[name],
-        event => {
+        (event, fromEditor) => {
           event.preventDefault();
-          $onShortcut();
+          $onShortcut(fromEditor);
           return true;
         },
         COMMAND_PRIORITY_EDITOR,
       );
     return mergeRegister(
-      listen('NORMAL', () => formatParagraph(editor)),
-      listen('HEADING1', () => formatHeading(editor, $getBlockType(), 'h1')),
-      listen('HEADING2', () => formatHeading(editor, $getBlockType(), 'h2')),
-      listen('HEADING3', () => formatHeading(editor, $getBlockType(), 'h3')),
-      listen('NUMBERED_LIST', () =>
-        formatNumberedList(editor, $getBlockType()),
+      listen('NORMAL', e => formatParagraph(e)),
+      listen('HEADING1', e => formatHeading(e, $getBlockType(), 'h1')),
+      listen('HEADING2', e => formatHeading(e, $getBlockType(), 'h2')),
+      listen('HEADING3', e => formatHeading(e, $getBlockType(), 'h3')),
+      listen('NUMBERED_LIST', e => formatNumberedList(e, $getBlockType())),
+      listen('BULLET_LIST', e => formatBulletList(e, $getBlockType())),
+      listen('CHECK_LIST', e => formatCheckList(e, $getBlockType())),
+      listen('CODE_BLOCK', e => formatCode(e, $getBlockType())),
+      listen('QUOTE', e => formatQuote(e, $getBlockType())),
+      listen('ADD_COMMENT', e =>
+        e.dispatchCommand(INSERT_INLINE_COMMAND, undefined),
       ),
-      listen('BULLET_LIST', () => formatBulletList(editor, $getBlockType())),
-      listen('CHECK_LIST', () => formatCheckList(editor, $getBlockType())),
-      listen('CODE_BLOCK', () => formatCode(editor, $getBlockType())),
-      listen('QUOTE', () => formatQuote(editor, $getBlockType())),
-      listen('ADD_COMMENT', () =>
-        editor.dispatchCommand(INSERT_INLINE_COMMAND, undefined),
-      ),
-      listen('INCREASE_FONT_SIZE', () =>
+      listen('INCREASE_FONT_SIZE', e =>
         updateFontSize(
-          editor,
+          e,
           UpdateFontSizeType.increment,
           $getFontSizeInputValue(),
         ),
       ),
-      listen('DECREASE_FONT_SIZE', () =>
+      listen('DECREASE_FONT_SIZE', e =>
         updateFontSize(
-          editor,
+          e,
           UpdateFontSizeType.decrement,
           $getFontSizeInputValue(),
         ),
       ),
-      listen('INSERT_CODE_BLOCK', () =>
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code'),
+      listen('INSERT_CODE_BLOCK', e =>
+        e.dispatchCommand(FORMAT_TEXT_COMMAND, 'code'),
       ),
-      listen('STRIKETHROUGH', () =>
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough'),
+      listen('STRIKETHROUGH', e =>
+        e.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough'),
       ),
-      listen('LOWERCASE', () =>
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'lowercase'),
+      listen('LOWERCASE', e =>
+        e.dispatchCommand(FORMAT_TEXT_COMMAND, 'lowercase'),
       ),
-      listen('UPPERCASE', () =>
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'uppercase'),
+      listen('UPPERCASE', e =>
+        e.dispatchCommand(FORMAT_TEXT_COMMAND, 'uppercase'),
       ),
-      listen('CAPITALIZE', () =>
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'capitalize'),
+      listen('CAPITALIZE', e =>
+        e.dispatchCommand(FORMAT_TEXT_COMMAND, 'capitalize'),
       ),
-      listen('CENTER_ALIGN', () =>
-        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center'),
+      listen('CENTER_ALIGN', e =>
+        e.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center'),
       ),
-      listen('JUSTIFY_ALIGN', () =>
-        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify'),
+      listen('JUSTIFY_ALIGN', e =>
+        e.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify'),
       ),
-      listen('LEFT_ALIGN', () =>
-        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left'),
+      listen('LEFT_ALIGN', e =>
+        e.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left'),
       ),
-      listen('RIGHT_ALIGN', () =>
-        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right'),
+      listen('RIGHT_ALIGN', e =>
+        e.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right'),
       ),
-      listen('SUBSCRIPT', () =>
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript'),
+      listen('SUBSCRIPT', e =>
+        e.dispatchCommand(FORMAT_TEXT_COMMAND, 'subscript'),
       ),
-      listen('SUPERSCRIPT', () =>
-        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'superscript'),
+      listen('SUPERSCRIPT', e =>
+        e.dispatchCommand(FORMAT_TEXT_COMMAND, 'superscript'),
       ),
-      listen('INDENT', () =>
-        editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined),
+      listen('INDENT', e =>
+        e.dispatchCommand(INDENT_CONTENT_COMMAND, undefined),
       ),
-      listen('OUTDENT', () =>
-        editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined),
+      listen('OUTDENT', e =>
+        e.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined),
       ),
-      listen('CLEAR_FORMATTING', () => clearFormatting(editor)),
-      listen('INSERT_LINK', () => {
+      listen('CLEAR_FORMATTING', e => clearFormatting(e)),
+      listen('INSERT_LINK', e => {
         const selection = $getSelection();
         let isLink = false;
         if ($isRangeSelection(selection)) {
@@ -237,7 +239,7 @@ export const ShortcutsExtension = /* @__PURE__ */ defineExtension({
           isLink = $isLinkNode(node) || $isLinkNode(node.getParent());
         }
         isLinkEditMode.value = !isLink;
-        editor.dispatchCommand(
+        e.dispatchCommand(
           TOGGLE_LINK_COMMAND,
           isLink ? null : sanitizeUrl('https://'),
         );

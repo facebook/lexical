@@ -1088,7 +1088,7 @@ export type KeyboardEventModifiers = Pick<
  * not be pressed.
  */
 export type KeyboardEventModifierMask = {
-  [K in Exclude<keyof KeyboardEventModifiers, 'key'>]?:
+  [K in Exclude<keyof KeyboardEventModifiers, 'key' | 'code'>]?:
     | boolean
     | undefined
     | 'any';

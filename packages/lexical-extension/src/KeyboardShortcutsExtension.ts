@@ -53,9 +53,11 @@ export function formatKeyboardShortcut(
   if (modifiers.shiftKey === true) {
     segments.push('Shift');
   }
-  segments.push(
-    key === ' ' ? 'Space' : key.length === 1 ? key.toUpperCase() : key,
-  );
+  if (key === ' ') {
+    segments.push('Space');
+  } else {
+    segments.push(key.length === 1 ? key.toUpperCase() : key);
+  }
   return segments.join(separator);
 }
 

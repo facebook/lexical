@@ -158,8 +158,8 @@ export const ShortcutsExtension = /* @__PURE__ */ defineExtension({
       editor.registerCommand(
         SHORTCUT_COMMANDS[name],
         (event, fromEditor) => {
-          event.preventDefault();
           $onShortcut(fromEditor);
+          event.preventDefault();
           return true;
         },
         COMMAND_PRIORITY_EDITOR,

@@ -17,6 +17,8 @@ import type {
   KeyboardEventModifiers,
 } from './LexicalUtils';
 
+import invariant from '@lexical/internal/invariant';
+
 import {IS_APPLE} from './environment';
 import {KEY_DOWN_COMMAND} from './LexicalCommands';
 import {COMMAND_PRIORITY_NORMAL} from './LexicalEditor';
@@ -185,6 +187,7 @@ export class CompiledKeyboardShortcuts<
 
   add(shortcut: S): this {
     const {key, modifiers = {}} = shortcut;
+    invariant(key.length > 0, 'KeyboardShortcutMatch: key must be non-empty');
     const lowerKey = key.toLowerCase();
     for (const bits of getMaskModifierBits(modifiers)) {
       pushEntry(this.byKey, `${bits}:${lowerKey}`, shortcut);
@@ -231,21 +234,7 @@ export class CompiledKeyboardShortcuts<
    * @see {@link matches} for the full list of matching shortcuts.
    */
   match(event: KeyboardEventModifiers): S | undefined {
-    const bits = getEventModifierBits(event);
-    const byKey = this.byKey.get(`${bits}:${event.key.toLowerCase()}`);
-    if (byKey && byKey.length > 0) {
-      return byKey[0];
-    }
-    if (
-      this.byCode.size > 0 &&
-      !(event.key.length === 1 && event.key.charCodeAt(0) <= 127)
-    ) {
-      const byCode = this.byCode.get(`${bits}:${event.code}`);
-      if (byCode && byCode.length > 0) {
-        return byCode[0];
-      }
-    }
-    return undefined;
+    return this.matches(event)[0];
   }
 }
 

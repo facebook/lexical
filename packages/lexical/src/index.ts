@@ -190,6 +190,16 @@ export type {
 export {$isEditorState} from './LexicalEditorState';
 export type {EventHandler} from './LexicalEvents';
 export {stopLexicalPropagation} from './LexicalEvents';
+export type {CompiledKeyboardShortcuts} from './LexicalKeyboardShortcuts';
+export {
+  compileKeyboardShortcuts,
+  CONTROL_OR_ALT,
+  CONTROL_OR_META,
+  type KeyboardShortcut,
+  type KeyboardShortcutMatch,
+  registerKeyboardShortcuts,
+  type RegisterKeyboardShortcutsOptions,
+} from './LexicalKeyboardShortcuts';
 export type {
   AbstractStaticNodeConfigRecord,
   BaseStaticNodeConfig,
@@ -373,6 +383,8 @@ export {
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
   iterStaticNodeConfigChain,
+  type KeyboardEventModifierMask,
+  type KeyboardEventModifiers,
   mountSlotContainer,
   type OwnStaticNodeConfig,
   removeFromParent,

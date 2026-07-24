@@ -38,7 +38,7 @@ export const YouTubeExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/YouTube',
   nodes: [YouTubeNode],
   register: editor =>
-    editor.registerCommand<string>(
+    editor.registerCommand(
       INSERT_YOUTUBE_COMMAND,
       payload => {
         const youTubeNode = $createYouTubeNode(payload);

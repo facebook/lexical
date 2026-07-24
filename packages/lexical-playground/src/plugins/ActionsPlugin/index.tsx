@@ -235,7 +235,7 @@ export default function ActionsPlugin({
       editor.registerEditableListener(editable => {
         setIsEditable(editable);
       }),
-      editor.registerCommand<boolean>(
+      editor.registerCommand(
         CONNECTED_COMMAND,
         payload => {
           const isConnected = payload;

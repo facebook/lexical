@@ -275,7 +275,7 @@ export default function ImageComponent({
   );
 
   const $onEnter = useCallback(
-    (event: KeyboardEvent) => {
+    (event: KeyboardEvent | null) => {
       const latestSelection = $getSelection();
       const buttonElem = buttonRef.current;
       if (
@@ -286,7 +286,7 @@ export default function ImageComponent({
         if (showCaption) {
           // Move focus into nested editor
           $setSelection(null);
-          event.preventDefault();
+          event?.preventDefault();
           caption.focus();
           return true;
         } else if (
@@ -295,7 +295,7 @@ export default function ImageComponent({
           // the shadow host when the editor is in a shadow root.
           buttonElem !== getActiveElement(buttonElem)
         ) {
-          event.preventDefault();
+          event?.preventDefault();
           buttonElem.focus();
           return true;
         }
@@ -392,12 +392,8 @@ export default function ImageComponent({
   }, [editor]);
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommand<MouseEvent>(
-        CLICK_COMMAND,
-        onClick,
-        COMMAND_PRIORITY_LOW,
-      ),
-      editor.registerCommand<MouseEvent>(
+      editor.registerCommand(CLICK_COMMAND, onClick, COMMAND_PRIORITY_LOW),
+      editor.registerCommand(
         RIGHT_CLICK_IMAGE_COMMAND,
         onClick,
         COMMAND_PRIORITY_LOW,

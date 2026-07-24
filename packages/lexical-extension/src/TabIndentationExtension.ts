@@ -85,7 +85,7 @@ export function registerTabIndentation(
     | ReadonlySignal<CanIndentPredicate> = $defaultCanIndent,
 ) {
   return mergeRegister(
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_TAB_COMMAND,
       event => {
         const selection = $getSelection();

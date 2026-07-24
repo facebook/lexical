@@ -13,6 +13,7 @@ import {
   type ListItemNode,
   type ListNode,
 } from '@lexical/list';
+import {$createMarkNode} from '@lexical/mark';
 import {$createHeadingNode, $isHeadingNode} from '@lexical/rich-text';
 import {
   $createTableCellNode,
@@ -27,6 +28,7 @@ import {
   $createTextNode,
   $getCaretRange,
   $getChildCaret,
+  $getChildCaretAtIndex,
   $getCommonAncestor,
   $getRoot,
   $getSelection,
@@ -1986,6 +1988,121 @@ describe('LexicalSelectionHelpers', () => {
 
         expect(testEnv.innerHTML).toBe(
           '<p dir="auto"><a href="https://"><span data-lexical-text="true">link</span></a><span data-lexical-text="true">foo</span></p>',
+        );
+      });
+    });
+
+    describe('canBeEmpty()=false parent cleanup', () => {
+      test('MarkNode is removed when all children are deleted via element-type range', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const p = $createParagraphNode();
+            const before = $createTextNode('before ');
+            const mark = $createMarkNode(['test-id']);
+            const markText1 = $createTextNode('aaa');
+            const markText2 = $createTextNode('bbb');
+            const after = $createTextNode(' after');
+            mark.append(markText1, markText2);
+            p.append(before, mark, after);
+            root.append(p);
+
+            const range = $getCaretRange(
+              $getChildCaretAtIndex(mark, 0, 'next'),
+              $getChildCaretAtIndex(mark, 2, 'next'),
+            );
+            $removeTextFromCaretRange(range);
+
+            expect(mark.isAttached()).toBe(false);
+            expect(before.isAttached()).toBe(true);
+            expect(after.isAttached()).toBe(true);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('LinkNode is removed when all children are deleted via element-type range', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const p = $createParagraphNode();
+            const before = $createTextNode('before ');
+            const link = $createLinkNode('https://lexical.dev');
+            const linkText = $createTextNode('click');
+            const after = $createTextNode(' after');
+            link.append(linkText);
+            p.append(before, link, after);
+            root.append(p);
+
+            const range = $getCaretRange(
+              $getChildCaretAtIndex(link, 0, 'next'),
+              $getChildCaretAtIndex(link, 1, 'next'),
+            );
+            $removeTextFromCaretRange(range);
+
+            expect(link.isAttached()).toBe(false);
+            expect(before.isAttached()).toBe(true);
+            expect(after.isAttached()).toBe(true);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('canBeEmpty()=false parent survives when only some children are removed', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const p = $createParagraphNode();
+            const mark = $createMarkNode(['test-id']);
+            const t1 = $createTextNode('aaa');
+            const t2 = $createTextNode('bbb');
+            const t3 = $createTextNode('ccc');
+            mark.append(t1, t2, t3);
+            p.append(mark);
+            root.append(p);
+
+            const range = $getCaretRange(
+              $getChildCaretAtIndex(mark, 0, 'next'),
+              $getSiblingCaret(t2, 'next'),
+            );
+            $removeTextFromCaretRange(range);
+
+            expect(mark.isAttached()).toBe(true);
+            expect(mark.getChildrenSize()).toBeGreaterThan(0);
+          },
+          {discrete: true},
+        );
+      });
+
+      test('multiple canBeEmpty()=false parents in same range are cleaned up', () => {
+        testEnv.editor.update(
+          () => {
+            const root = $getRoot();
+            root.clear();
+            const p = $createParagraphNode();
+            const mark1 = $createMarkNode(['id1']);
+            const mark2 = $createMarkNode(['id2']);
+            const t1 = $createTextNode('aaa');
+            const t2 = $createTextNode('bbb');
+            const spacer = $createTextNode(' ');
+            mark1.append(t1);
+            mark2.append(t2);
+            p.append(mark1, spacer, mark2);
+            root.append(p);
+
+            const range = $getCaretRange(
+              $getChildCaretAtIndex(p, 0, 'next'),
+              $getChildCaretAtIndex(p, 3, 'next'),
+            );
+            $removeTextFromCaretRange(range);
+
+            expect(mark1.isAttached()).toBe(false);
+            expect(mark2.isAttached()).toBe(false);
+          },
+          {discrete: true},
         );
       });
     });

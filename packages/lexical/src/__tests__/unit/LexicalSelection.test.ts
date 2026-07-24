@@ -875,6 +875,49 @@ describe('Segmented node composition (#5065)', () => {
   });
 });
 
+describe('Non-collapsed selection + composition preserves node identity', () => {
+  test('spliceText into existing node instead of creating new one', () => {
+    using editor = buildEditorFromExtensions(selectionTestExtension);
+    editor.update(
+      () => {
+        const textNode = $createTextNode('Hello World');
+        $getRoot().clear().append($createParagraphNode().append(textNode));
+        const key = textNode.getKey();
+
+        $setCompositionKey(key);
+        const sel = textNode.select(5, 11);
+        sel.insertText('!');
+
+        const latest = textNode.getLatest();
+        expect(latest.getKey()).toBe(key);
+        expect(latest.getTextContent()).toBe('Hello!');
+      },
+      {discrete: true},
+    );
+  });
+
+  test('without composition creates a new node', () => {
+    using editor = buildEditorFromExtensions(selectionTestExtension);
+    editor.update(
+      () => {
+        const textNode = $createTextNode('Hello World');
+        $getRoot().clear().append($createParagraphNode().append(textNode));
+        const key = textNode.getKey();
+
+        const sel = textNode.select(5, 11);
+        sel.insertText('!');
+
+        const allText = $getRoot().getAllTextNodes();
+        expect(allText).toHaveLength(2);
+        expect(allText[0].getTextContent()).toBe('Hello');
+        expect(allText[1].getTextContent()).toBe('!');
+        expect(allText[1].getKey()).not.toBe(key);
+      },
+      {discrete: true},
+    );
+  });
+});
+
 describe('Regression tests for #6701', () => {
   test('insertNodes fails an invariant when there is no Block ancestor', async () => {
     class InlineElementNode extends ElementNode {
@@ -1779,8 +1822,12 @@ describe('Regression #7081', () => {
           'element',
         );
         selection.insertText('123');
-        expect(textNode.isAttached()).toBe(true);
-        expect(textNode.getTextContent()).toBe('123');
+        const children = paragraphNode.getChildren();
+        const styledChild = children.find(
+          c => $isTextNode(c) && c.getStyle() === 'color: --color-test',
+        );
+        expect(styledChild).toBeDefined();
+        expect(styledChild?.getTextContent()).toBe('123');
       },
       {discrete: true},
     );
@@ -1869,6 +1916,112 @@ describe('Regression #8067', () => {
         );
         expect(children.getTextContent()).toBe('hello');
         expect(children.hasFormat('bold')).toBe(true);
+      },
+      {discrete: true},
+    );
+  });
+});
+
+describe('insertText with backward selection inherits first node format', () => {
+  test('backward selection across bold+plain inherits bold', () => {
+    using editor = buildEditorFromExtensions(selectionTestExtension);
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const paragraph = $createParagraphNode();
+        const boldNode = $createTextNode('hello');
+        boldNode.toggleFormat('bold');
+        const plainNode = $createTextNode(' world');
+        paragraph.append(boldNode, plainNode);
+        root.clear().append(paragraph);
+        // Backward selection: anchor at end of plain, focus at start of bold
+        const selection = plainNode
+          .select(6, 6)
+          .setTextNodeRange(plainNode, 6, boldNode, 0);
+        selection.insertText('X');
+        const child = $assertNodeType(paragraph.getChildren()[0], $isTextNode);
+        expect(child.getTextContent()).toBe('X');
+        expect(child.hasFormat('bold')).toBe(true);
+      },
+      {discrete: true},
+    );
+  });
+});
+
+describe('insertText needsRedirect paths', () => {
+  test('token node at middle offset replaces entire node', () => {
+    using editor = buildEditorFromExtensions(selectionTestExtension);
+    editor.update(
+      () => {
+        const token = $createTextNode('abcdef').setMode('token');
+        const paragraph = $createParagraphNode().append(token);
+        $getRoot().clear().append(paragraph);
+        const sel = token.select(3, 3);
+        sel.insertText('X');
+        const children = paragraph.getChildren();
+        expect(children).toHaveLength(1);
+        const child = $assertNodeType(children[0], $isTextNode);
+        expect(child.getTextContent()).toBe('X');
+        expect(token.isAttached()).toBe(false);
+      },
+      {discrete: true},
+    );
+  });
+
+  test('offset 0 on token reuses insertable previous sibling', () => {
+    using editor = buildEditorFromExtensions(selectionTestExtension);
+    editor.update(
+      () => {
+        const prev = $createTextNode('before');
+        const token = $createTextNode('locked').setMode('token');
+        const paragraph = $createParagraphNode().append(prev, token);
+        $getRoot().clear().append(paragraph);
+        token.select(0, 0);
+        const sel = $getSelection();
+        assert($isRangeSelection(sel));
+        sel.insertText('X');
+        expect(prev.getLatest().getTextContent()).toBe('beforeX');
+        expect(token.isAttached()).toBe(true);
+      },
+      {discrete: true},
+    );
+  });
+
+  test('offset at end of token reuses insertable next sibling', () => {
+    using editor = buildEditorFromExtensions(selectionTestExtension);
+    editor.update(
+      () => {
+        const token = $createTextNode('locked').setMode('token');
+        const next = $createTextNode('after');
+        const paragraph = $createParagraphNode().append(token, next);
+        $getRoot().clear().append(paragraph);
+        token.select(6, 6);
+        const sel = $getSelection();
+        assert($isRangeSelection(sel));
+        sel.insertText('X');
+        expect(next.getLatest().getTextContent()).toBe('Xafter');
+        expect(token.isAttached()).toBe(true);
+      },
+      {discrete: true},
+    );
+  });
+});
+
+describe('insertText formatDiffers on empty text node', () => {
+  test('applies format in-place on empty anchor then splices text', () => {
+    using editor = buildEditorFromExtensions(selectionTestExtension);
+    editor.update(
+      () => {
+        const empty = $createTextNode('');
+        const paragraph = $createParagraphNode().append(empty);
+        $getRoot().clear().append(paragraph);
+        const sel = empty.select(0, 0);
+        sel.format = IS_BOLD;
+        sel.insertText('typed');
+        expect(empty.isAttached()).toBe(true);
+        expect(empty.getLatest().getTextContent()).toBe('typed');
+        expect(empty.getLatest().hasFormat('bold')).toBe(true);
+        expect(paragraph.getChildrenSize()).toBe(1);
       },
       {discrete: true},
     );

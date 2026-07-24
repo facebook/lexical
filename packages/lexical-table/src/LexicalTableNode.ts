@@ -69,14 +69,20 @@ function $updateColgroup(
   colCount: number,
   colWidths?: number[] | readonly number[],
 ) {
-  const colGroup = dom.querySelector('colgroup');
-  if (!colGroup) {
+  let colGroup = dom.querySelector<HTMLElement>(':scope > colgroup');
+  if (!colWidths) {
+    if (colGroup) colGroup.remove();
     return;
+  }
+  if (!colGroup) {
+    colGroup = $getDocument().createElement('colgroup');
+    setDOMUnmanaged(colGroup);
+    dom.insertBefore(colGroup, dom.firstChild);
   }
   const cols = [];
   for (let i = 0; i < colCount; i++) {
     const col = $getDocument().createElement('col');
-    const width = colWidths && colWidths[i];
+    const width = colWidths[i];
     if (width) {
       col.style.width = `${width}px`;
     }
@@ -446,7 +452,7 @@ export class TableNode extends ElementNode {
     return super
       .getDOMSlot(element)
       .withElement(tableElement)
-      .withAfter(tableElement.querySelector('colgroup'));
+      .withAfter(tableElement.querySelector(':scope > colgroup'));
   }
 
   createDOM(config: EditorConfig, editor?: LexicalEditor): HTMLElement {
@@ -454,9 +460,12 @@ export class TableNode extends ElementNode {
     if (this.__style) {
       setDOMStyleFromCSS(tableElement.style, this.__style);
     }
-    const colGroup = $getDocument().createElement('colgroup');
-    tableElement.appendChild(colGroup);
-    setDOMUnmanaged(colGroup);
+    const colWidths = this.getColWidths();
+    if (colWidths) {
+      const colGroup = $getDocument().createElement('colgroup');
+      tableElement.appendChild(colGroup);
+      setDOMUnmanaged(colGroup);
+    }
     addClassNamesToElement(tableElement, config.theme.table);
     this.updateTableElement(null, tableElement, config);
     if ($isScrollableTablesActive(editor)) {

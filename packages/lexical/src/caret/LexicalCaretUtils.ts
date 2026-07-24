@@ -22,6 +22,7 @@ import {
   $getNodeByKeyOrThrow,
   $isRootOrShadowRoot,
   $isShadowRootNode,
+  $removeFromParent,
   $setSelection,
   INTERNAL_$isBlock,
 } from '../LexicalUtils';
@@ -254,8 +255,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
 
   // Mark the start of each ElementNode
   const seenStart = new Set<NodeKey>();
-  // Queue removals since removing the only child can cascade to having
-  // a parent remove itself which will affect iteration
+  // Queue removals to avoid mutating the tree during iteration
   const removedNodes: LexicalNode[] = [];
   for (const caret of range.iterNodeCarets(rootMode)) {
     if ($isChildCaret(caret)) {
@@ -267,8 +267,29 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
       }
     }
   }
+  // Use $removeFromParent instead of node.remove() to skip redundant
+  // per-node selection restoration — selection is rebuilt from
+  // anchor/focus candidates below.
+  const removedParents = new Set<ElementNode>();
   for (const node of removedNodes) {
-    node.remove();
+    const parent = node.getParent();
+    // Track parents not in seenStart — those in seenStart are traversal
+    // boundaries handled by block-merge logic below.
+    if (parent !== null && !seenStart.has(parent.getKey())) {
+      removedParents.add(parent);
+    }
+    $removeFromParent(node);
+  }
+  // Remove inline wrappers (canBeEmpty=false) that became empty
+  for (const parent of removedParents) {
+    if (
+      !parent.canBeEmpty() &&
+      !$isRootOrShadowRoot(parent) &&
+      parent.isEmpty() &&
+      parent.isAttached()
+    ) {
+      parent.remove();
+    }
   }
 
   // Splice text at the anchor and/or origin.

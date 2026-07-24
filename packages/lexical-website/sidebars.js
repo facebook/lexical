@@ -28,7 +28,6 @@ const sidebars = {
     {
       items: [
         'getting-started/quick-start',
-        'getting-started/react',
         'getting-started/theming',
         'getting-started/supported-browsers',
         'getting-started/creating-plugin',
@@ -76,7 +75,6 @@ const sidebars = {
         'extensions/intro',
         'extensions/defining-extensions',
         'extensions/migration',
-        'extensions/react',
         'extensions/signals',
         'extensions/peer-dependencies',
         'extensions/included-extensions',
@@ -105,15 +103,19 @@ const sidebars = {
     {
       items: [
         'react/index',
+        'react/getting-started',
         'react/plugins',
         'react/create_plugin',
+        'react/collaboration',
+        'react/extensions',
+        'react/migration',
         'react/faq',
       ],
       label: 'React',
       type: 'category',
     },
     {
-      items: ['collaboration/react', 'collaboration/faq'],
+      items: ['collaboration/faq'],
       label: 'Collaboration',
       type: 'category',
     },

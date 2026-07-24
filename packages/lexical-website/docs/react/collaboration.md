@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# React
+# Collaboration
 
 Lexical provides `LexicalCollaborationPlugin` and `useCollaborationContext` hook within `@lexical/react` to accelerate creation of the collaborative React backed editors.
 This is on top of the Yjs bindings provided by `@lexical/yjs`.

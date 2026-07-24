@@ -1,4 +1,4 @@
-# Lexical Plugins
+# Plugins
 
 :::tip
 
@@ -6,7 +6,7 @@ Most of these plugins are available as modern
 [Lexical Extensions](../extensions/intro.md), which do not require separate
 configuration and can have more efficient implementations.
 You should prefer using extensions over plugins where available, and
-[migrate](../extensions/migration.mdx) any project to extensions with
+[migrate](./migration.mdx) any project to extensions with
 LexicalExtensionComposer or LexicalExtensionEditorComposer if it is still
 using LexicalComposer.
 

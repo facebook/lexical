@@ -203,7 +203,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
         ruby1.select(0, 0);
         $setCompositionKey(keys.ruby1Key);
 
-        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+        editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
 
         const after = $getSelection();
         anchorKey = $isRangeSelection(after) ? after.anchor.key : null;
@@ -224,7 +224,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
         assert($isRubyNode(ruby1));
         ruby1.select(0, 0);
 
-        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+        editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
 
         const after = $getSelection();
         anchorKey = $isRangeSelection(after) ? after.anchor.key : null;
@@ -245,7 +245,7 @@ describe('RubyNode composition at boundary (Safari IME)', () => {
         assert($isRubyNode(ruby2));
         ruby2.select(1, 1);
 
-        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+        editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
 
         const after = $getSelection();
         result = $isRangeSelection(after)

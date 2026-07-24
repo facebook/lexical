@@ -739,7 +739,7 @@ export const FindReplaceExtension = /* @__PURE__ */ defineExtension({
             isExactShortcutMatch(event, 'f', {altKey: true, metaKey: true})
           ) {
             event.preventDefault();
-            editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND, undefined);
+            editor.dispatchCommand(TOGGLE_FIND_REPLACE_COMMAND);
             return true;
           }
           if (output.isOpen.peek()) {
@@ -753,7 +753,6 @@ export const FindReplaceExtension = /* @__PURE__ */ defineExtension({
               event.preventDefault();
               editor.dispatchCommand(
                 event.shiftKey ? FIND_PREV_COMMAND : FIND_NEXT_COMMAND,
-                undefined,
               );
               return true;
             }
@@ -820,7 +819,7 @@ function FindReplacePanel({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault();
-      editor.dispatchCommand(CLOSE_FIND_REPLACE_COMMAND, undefined);
+      editor.dispatchCommand(CLOSE_FIND_REPLACE_COMMAND);
       editor.focus();
       return;
     }
@@ -850,7 +849,6 @@ function FindReplacePanel({
       e.preventDefault();
       editor.dispatchCommand(
         e.shiftKey ? FIND_PREV_COMMAND : FIND_NEXT_COMMAND,
-        undefined,
       );
       return;
     }
@@ -861,7 +859,6 @@ function FindReplacePanel({
       e.preventDefault();
       editor.dispatchCommand(
         e.shiftKey ? FIND_PREV_COMMAND : FIND_NEXT_COMMAND,
-        undefined,
       );
     } else if (
       isExactShortcutMatch(e, 'f', CONTROL_OR_META) ||
@@ -913,7 +910,7 @@ function FindReplacePanel({
         className="find-replace-toggle"
         style={{gridColumn: 3, gridRow: 1}}
         onClick={() => {
-          editor.dispatchCommand(TOGGLE_CASE_SENSITIVE_COMMAND, undefined);
+          editor.dispatchCommand(TOGGLE_CASE_SENSITIVE_COMMAND);
         }}
         title="Match case"
         aria-label="Match case"
@@ -924,7 +921,7 @@ function FindReplacePanel({
         className="find-replace-toggle"
         style={{gridColumn: 4, gridRow: 1}}
         onClick={() => {
-          editor.dispatchCommand(TOGGLE_REGEX_COMMAND, undefined);
+          editor.dispatchCommand(TOGGLE_REGEX_COMMAND);
         }}
         title="Use regular expression"
         aria-label="Use regular expression"
@@ -934,7 +931,7 @@ function FindReplacePanel({
       <button
         className="find-replace-btn"
         style={{gridColumn: 6, gridRow: 1}}
-        onClick={() => editor.dispatchCommand(FIND_PREV_COMMAND, undefined)}
+        onClick={() => editor.dispatchCommand(FIND_PREV_COMMAND)}
         disabled={matches.length === 0}
         title={
           IS_APPLE ? 'Previous match (⇧⌘G)' : 'Previous match (Ctrl+Shift+G)'
@@ -947,7 +944,7 @@ function FindReplacePanel({
       <button
         className="find-replace-btn"
         style={{gridColumn: 7, gridRow: 1}}
-        onClick={() => editor.dispatchCommand(FIND_NEXT_COMMAND, undefined)}
+        onClick={() => editor.dispatchCommand(FIND_NEXT_COMMAND)}
         disabled={matches.length === 0}
         title={IS_APPLE ? 'Next match (⌘G)' : 'Next match (Ctrl+G)'}
         aria-label="Next match">
@@ -958,16 +955,14 @@ function FindReplacePanel({
       <div className="find-replace-row2-actions">
         <button
           className="find-replace-action"
-          onClick={() =>
-            editor.dispatchCommand(REPLACE_CURRENT_COMMAND, undefined)
-          }
+          onClick={() => editor.dispatchCommand(REPLACE_CURRENT_COMMAND)}
           disabled={matches.length === 0}
           aria-label="Replace current match">
           Replace
         </button>
         <button
           className="find-replace-action"
-          onClick={() => editor.dispatchCommand(REPLACE_ALL_COMMAND, undefined)}
+          onClick={() => editor.dispatchCommand(REPLACE_ALL_COMMAND)}
           disabled={matches.length === 0}
           aria-label="Replace all matches">
           All
@@ -977,7 +972,7 @@ function FindReplacePanel({
         className="find-replace-btn"
         style={{gridColumn: 9, gridRow: 1}}
         onClick={() => {
-          editor.dispatchCommand(CLOSE_FIND_REPLACE_COMMAND, undefined);
+          editor.dispatchCommand(CLOSE_FIND_REPLACE_COMMAND);
           editor.focus();
         }}
         title="Close (Escape)"

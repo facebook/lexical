@@ -1528,7 +1528,7 @@ export function registerRichText(
         if ($isRangeSelection(selection)) {
           if ($isSelectionCollapsedAtFrontOfIndentedBlock(selection)) {
             event.preventDefault();
-            return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+            return editor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
           }
           // On iOS, blocking the keydown event's default prevents the system
           // keyboard from updating its autocomplete/autocorrect suggestion bar
@@ -1619,7 +1619,7 @@ export function registerRichText(
             return editor.dispatchCommand(INSERT_LINE_BREAK_COMMAND, false);
           }
         }
-        return editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+        return editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
       },
       COMMAND_PRIORITY_EDITOR,
     ),

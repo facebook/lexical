@@ -1395,7 +1395,7 @@ describe('LexicalEditor tests', () => {
     });
 
     for (let i = 0; i < 150; i++) {
-      editor.dispatchCommand(BURST_COMMAND, undefined);
+      editor.dispatchCommand(BURST_COMMAND);
       // Yield only microtasks: commits flush, but the macrotask budget reset
       // never gets a chance to run within the burst.
       for (let j = 0; j < 4; j++) {
@@ -1432,7 +1432,7 @@ describe('LexicalEditor tests', () => {
     await new Promise(resolve => setTimeout(resolve, 0));
 
     const unregisterMutation = editor.registerMutationListener(TextNode, () => {
-      editor.dispatchCommand(NOOP_COMMAND, undefined);
+      editor.dispatchCommand(NOOP_COMMAND);
     });
     // Unbounded: flips the text content again on every commit, forever.
     const unregisterUpdate = editor.registerUpdateListener(() => {
@@ -1505,7 +1505,7 @@ describe('LexicalEditor tests', () => {
       // dropping the mutation). It should now be deferred to a writable update
       // so the mutation actually applies, and warn in DEV.
       editor.read(() => {
-        editor.dispatchCommand(READONLY_MUTATE_COMMAND, undefined);
+        editor.dispatchCommand(READONLY_MUTATE_COMMAND);
       });
       // Deferred update flushes on the next tick.
       await Promise.resolve();
@@ -1518,7 +1518,7 @@ describe('LexicalEditor tests', () => {
 
       // A top-level (writable) dispatch must NOT warn and applies inline.
       warnSpy.mockClear();
-      editor.dispatchCommand(READONLY_MUTATE_COMMAND, undefined);
+      editor.dispatchCommand(READONLY_MUTATE_COMMAND);
       expect(warnSpy).toHaveBeenCalledTimes(0);
     } finally {
       warnSpy.mockRestore();

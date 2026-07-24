@@ -476,7 +476,7 @@ describe('Collaboration', () => {
 
         await waitForReact(() => {
           // Undo the insertion of the initial paragraph and text node
-          client1.getEditor().dispatchCommand(UNDO_COMMAND, undefined);
+          client1.getEditor().dispatchCommand(UNDO_COMMAND);
         });
 
         // We expect the safety check in syncYjsChangesToLexical to

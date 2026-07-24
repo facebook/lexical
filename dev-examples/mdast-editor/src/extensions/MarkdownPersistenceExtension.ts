@@ -159,10 +159,10 @@ export const MarkdownPersistenceExtension = defineExtension({
       suspendPersistence = false;
       const stored = readStoredMarkdown(storageKey);
       editor.update(() => {
-        editor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
+        editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
         $convertFromMarkdownString(stored ?? defaultMarkdown);
       });
-      editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+      editor.dispatchCommand(CLEAR_HISTORY_COMMAND);
     };
 
     const applyHashDocument = (doc: HashDocument): void => {
@@ -176,10 +176,10 @@ export const MarkdownPersistenceExtension = defineExtension({
           // the import land as one atomic change. (The `#doc=` path
           // below replaces the whole editor state, slots included, so
           // it needs no equivalent.)
-          editor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
+          editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
           $convertFromMarkdownString(doc.markdown);
         });
-        editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+        editor.dispatchCommand(CLEAR_HISTORY_COMMAND);
         return;
       }
       docFromHash(doc.hash)
@@ -194,7 +194,7 @@ export const MarkdownPersistenceExtension = defineExtension({
           editor.setEditorState(
             editorStateFromSerializedDocument(editor, parsed),
           );
-          editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+          editor.dispatchCommand(CLEAR_HISTORY_COMMAND);
         })
         // A malformed `#doc=` payload can reject anywhere in the chain
         // (base64 decode, gzip stream, JSON.parse, or an editor state
@@ -260,7 +260,7 @@ export const MarkdownPersistenceExtension = defineExtension({
           }
           editor.update(() => {
             // Document replacement, like the repro-link path above.
-            editor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
+            editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
             $convertFromMarkdownString(defaultMarkdown);
           });
           return true;

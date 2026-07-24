@@ -523,7 +523,7 @@ function ElementFormatDropdown({
       <Divider />
       <DropDownItem
         onClick={() => {
-          editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+          editor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
         }}
         className="item wide">
         <div className="icon-text-container">
@@ -534,7 +534,7 @@ function ElementFormatDropdown({
       </DropDownItem>
       <DropDownItem
         onClick={() => {
-          editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+          editor.dispatchCommand(INDENT_CONTENT_COMMAND);
         }}
         className="item wide">
         <div className="icon-text-container">

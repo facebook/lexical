@@ -456,10 +456,10 @@ describe('read-only', () => {
     );
     const before = markdownOf(editor);
     editor.setEditable(false);
-    editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND, undefined);
-    editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined);
+    editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND);
+    editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND);
     editor.dispatchCommand(INSERT_ALERT_COMMAND, 'note');
-    editor.dispatchCommand(FORMAT_KBD_COMMAND, undefined);
+    editor.dispatchCommand(FORMAT_KBD_COMMAND);
     expect(markdownOf(editor)).toBe(before);
     // The one thing read-only still allows: moving the selection.
     root.querySelector<HTMLElement>('.footnote-ref a')!.click();

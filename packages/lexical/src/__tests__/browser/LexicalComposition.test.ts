@@ -255,7 +255,7 @@ describe('compose() helper — browser composition tests', () => {
     await compose({editor, rootElement}, korean(['ㅎ', '하', '한']));
     expect(editor.read(() => $getRoot().getTextContent())).toBe('abc한');
 
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
     await waitForRender();
 
     const text = editor.read(() => $getRoot().getTextContent());

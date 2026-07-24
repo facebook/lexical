@@ -249,7 +249,7 @@ describe('$handleListInsertParagraph', () => {
         listNode.append(listItemWithContent, listItemEmpty);
         $getRoot().append(listNode);
         listItemEmpty.select();
-        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
       });
 
       editor.read(() => {
@@ -278,7 +278,7 @@ describe('$handleListInsertParagraph', () => {
         listNode.append(listItemWithContent, listItemWhitespace);
         $getRoot().append(listNode);
         whitespaceTextNode.select();
-        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
       });
 
       editor.read(() => {
@@ -306,7 +306,7 @@ describe('$handleListInsertParagraph', () => {
         listNode.append(listItem1, listItem2);
         $getRoot().append(listNode);
         textNode.selectEnd();
-        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
       });
 
       editor.read(() => {
@@ -332,7 +332,7 @@ describe('$handleListInsertParagraph', () => {
         listNode.append(listItem1, listItem2);
         $getRoot().append(listNode);
         listItem2.select();
-        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
       });
 
       editor.read(() => {
@@ -363,7 +363,7 @@ describe('$handleListInsertParagraph', () => {
         );
         $getRoot().append(listNode);
         listItemEmpty.select();
-        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
       });
 
       editor.read(() => {

@@ -765,7 +765,7 @@ function $commitPendingUpdatesImpl(
     pendingSelection !== null &&
     (currentSelection === null || !currentSelection.is(pendingSelection))
   ) {
-    editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+    editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
   }
   /**
    * Capture pendingDecorators after garbage collecting detached decorators

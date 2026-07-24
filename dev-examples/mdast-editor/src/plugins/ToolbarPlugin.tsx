@@ -57,16 +57,16 @@ type InsertType = (typeof INSERT_TYPES)[number]['value'];
 function applyInsert(editor: LexicalEditor, type: InsertType): void {
   switch (type) {
     case 'kbd':
-      editor.dispatchCommand(FORMAT_KBD_COMMAND, undefined);
+      editor.dispatchCommand(FORMAT_KBD_COMMAND);
       return;
     case 'details':
-      editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined);
+      editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND);
       return;
     case 'alert':
       editor.dispatchCommand(INSERT_ALERT_COMMAND, 'note');
       return;
     case 'footnote':
-      editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND, undefined);
+      editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND);
       return;
   }
 }
@@ -74,8 +74,8 @@ function applyInsert(editor: LexicalEditor, type: InsertType): void {
 function applyBlockType(editor: LexicalEditor, type: BlockType): void {
   switch (type) {
     case 'paragraph':
-      editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
-      editor.dispatchCommand(FORMAT_PARAGRAPH_COMMAND, undefined);
+      editor.dispatchCommand(REMOVE_LIST_COMMAND);
+      editor.dispatchCommand(FORMAT_PARAGRAPH_COMMAND);
       return;
     case 'h1':
     case 'h2':
@@ -83,13 +83,13 @@ function applyBlockType(editor: LexicalEditor, type: BlockType): void {
       editor.dispatchCommand(FORMAT_HEADING_COMMAND, type);
       return;
     case 'bullet':
-      editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+      editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND);
       return;
     case 'number':
-      editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
+      editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND);
       return;
     case 'check':
-      editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND, undefined);
+      editor.dispatchCommand(INSERT_CHECK_LIST_COMMAND);
       return;
   }
 }
@@ -144,7 +144,7 @@ export function ToolbarPlugin() {
       <button
         type="button"
         disabled={!isEditable || !canUndo}
-        onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
+        onClick={() => editor.dispatchCommand(UNDO_COMMAND)}
         className={`${buttonBase} ${buttonInactive} text-xs`}
         aria-label="Undo">
         Undo
@@ -152,7 +152,7 @@ export function ToolbarPlugin() {
       <button
         type="button"
         disabled={!isEditable || !canRedo}
-        onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
+        onClick={() => editor.dispatchCommand(REDO_COMMAND)}
         className={`${buttonBase} ${buttonInactive} text-xs`}
         aria-label="Redo">
         Redo

@@ -140,6 +140,7 @@ export type {
   CommandListener,
   CommandListenerPriority,
   CommandListenerPriorityBefore,
+  CommandPayloadArgs,
   CommandPayloadType,
   CreateEditorArgs,
   DOMSlotForNode,

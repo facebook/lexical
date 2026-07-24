@@ -98,7 +98,7 @@ export function registerTabIndentation(
             ? OUTDENT_CONTENT_COMMAND
             : INDENT_CONTENT_COMMAND
           : INSERT_TAB_COMMAND;
-        return editor.dispatchCommand(command, undefined);
+        return editor.dispatchCommand(command);
       },
       COMMAND_PRIORITY_EDITOR,
     ),

@@ -40,7 +40,7 @@ function setUpEditor(
 describe('ClearEditorExtension', () => {
   test('CLEAR_EDITOR_COMMAND empties the document', () => {
     using editor = setUpEditor();
-    editor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
+    editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
     editor.read(() => {
       expect($getRoot().getTextContent()).toBe('');
     });
@@ -58,7 +58,7 @@ describe('ClearEditorExtension', () => {
         },
       }),
     );
-    editor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
+    editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
     editor.read(() => {
       expect($getRoot().getTextContent()).toBe('cleared');
     });
@@ -72,7 +72,7 @@ describe('ClearEditorExtension', () => {
     // wrapped it in editor.update(), the nested update would be QUEUED and
     // clear the editor after the content below was appended.
     editor.update(() => {
-      editor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
+      editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
       const root = $getRoot();
       root.clear();
       root.append(

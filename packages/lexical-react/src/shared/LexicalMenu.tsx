@@ -466,7 +466,7 @@ export function LexicalMenu<TOption extends MenuOption>({
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommand<KeyboardEvent>(
+      editor.registerCommand(
         KEY_ARROW_DOWN_COMMAND,
         payload => {
           const event = payload;
@@ -504,7 +504,7 @@ export function LexicalMenu<TOption extends MenuOption>({
         },
         commandPriority,
       ),
-      editor.registerCommand<KeyboardEvent>(
+      editor.registerCommand(
         KEY_ARROW_UP_COMMAND,
         payload => {
           const event = payload;
@@ -536,7 +536,7 @@ export function LexicalMenu<TOption extends MenuOption>({
         },
         commandPriority,
       ),
-      editor.registerCommand<KeyboardEvent>(
+      editor.registerCommand(
         KEY_ESCAPE_COMMAND,
         payload => {
           const event = payload;
@@ -547,7 +547,7 @@ export function LexicalMenu<TOption extends MenuOption>({
         },
         commandPriority,
       ),
-      editor.registerCommand<KeyboardEvent>(
+      editor.registerCommand(
         KEY_TAB_COMMAND,
         payload => {
           const event = payload;

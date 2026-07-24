@@ -93,7 +93,7 @@ export const DateTimeExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/DateTime',
   nodes: [DateTimeNode],
   register: editor =>
-    editor.registerCommand<CommandPayload>(
+    editor.registerCommand(
       INSERT_DATETIME_COMMAND,
       payload => {
         const {dateTime} = payload;

@@ -68,7 +68,7 @@ export const EquationsExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/Equations',
   nodes: [EquationNode],
   register: editor =>
-    editor.registerCommand<CommandPayload>(
+    editor.registerCommand(
       INSERT_EQUATION_COMMAND,
       payload => {
         const {equation, inline} = payload;

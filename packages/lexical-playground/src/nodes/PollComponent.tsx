@@ -149,7 +149,7 @@ export default function PollComponent({
       editor.registerUpdateListener(({editorState}) => {
         setSelection(editorState.read(() => $getSelection()));
       }),
-      editor.registerCommand<MouseEvent>(
+      editor.registerCommand(
         CLICK_COMMAND,
         payload => {
           const event = payload;

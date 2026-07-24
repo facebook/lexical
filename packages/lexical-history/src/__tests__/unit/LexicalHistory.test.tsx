@@ -261,7 +261,7 @@ describe('LexicalHistory tests', () => {
       reactRoot.render(<Test key="smth" />);
     });
 
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       CAN_REDO_COMMAND,
       payload => {
         canRedo = payload;
@@ -270,7 +270,7 @@ describe('LexicalHistory tests', () => {
       COMMAND_PRIORITY_CRITICAL,
     );
 
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       CAN_UNDO_COMMAND,
       payload => {
         canUndo = payload;
@@ -360,7 +360,7 @@ describe('LexicalHistory tests', () => {
       reactRoot.render(<Test key="smth" />);
     });
 
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       CAN_REDO_COMMAND,
       payload => {
         canRedo = payload;
@@ -369,7 +369,7 @@ describe('LexicalHistory tests', () => {
       COMMAND_PRIORITY_CRITICAL,
     );
 
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       CAN_UNDO_COMMAND,
       payload => {
         canUndo = payload;

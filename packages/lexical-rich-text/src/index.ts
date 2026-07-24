@@ -92,7 +92,6 @@ import {
   DRAGSTART_COMMAND,
   DROP_COMMAND,
   type EditorConfig,
-  type ElementFormatType,
   ElementNode,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
@@ -833,7 +832,7 @@ function $tryDecoratorLineNavigation(
   if (
     focus.type === 'element' &&
     $isElementNode(focusNode) &&
-    ($isRootNode(focusNode) || $isShadowRootNode(focusNode))
+    $isRootOrShadowRoot(focusNode)
   ) {
     const adjacentChild = focusCaret.getNodeAtCaret();
     if (adjacentChild !== null && $isSelectableBlockDecorator(adjacentChild)) {
@@ -1148,7 +1147,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       DELETE_CHARACTER_COMMAND,
       isBackward => {
         const selection = $getSelection();
@@ -1163,7 +1162,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       DELETE_WORD_COMMAND,
       isBackward => {
         const selection = $getSelection();
@@ -1175,7 +1174,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       DELETE_LINE_COMMAND,
       isBackward => {
         const selection = $getSelection();
@@ -1228,7 +1227,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<TextFormatType>(
+    editor.registerCommand(
       FORMAT_TEXT_COMMAND,
       format => {
         const selection = $getSelection();
@@ -1252,7 +1251,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<ElementFormatType>(
+    editor.registerCommand(
       FORMAT_ELEMENT_COMMAND,
       format => {
         const selection = $getSelection();
@@ -1274,7 +1273,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       INSERT_LINE_BREAK_COMMAND,
       selectStart => {
         const selection = $getSelection();
@@ -1334,7 +1333,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_ARROW_UP_COMMAND,
       event => {
         const selection = $getSelection();
@@ -1371,7 +1370,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_ARROW_DOWN_COMMAND,
       event => {
         const selection = $getSelection();
@@ -1415,7 +1414,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_ARROW_LEFT_COMMAND,
       event => {
         const selection = $getSelection();
@@ -1463,7 +1462,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_ARROW_RIGHT_COMMAND,
       event => {
         const selection = $getSelection();
@@ -1511,7 +1510,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_BACKSPACE_COMMAND,
       event => {
         const selection = $getSelection();
@@ -1549,7 +1548,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_DELETE_COMMAND,
       event => {
         const selection = $getSelection();
@@ -1569,7 +1568,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<KeyboardEvent | null>(
+    editor.registerCommand(
       KEY_ENTER_COMMAND,
       event => {
         let selection = $getSelection();
@@ -1636,7 +1635,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<DragEvent>(
+    editor.registerCommand(
       DROP_COMMAND,
       event => {
         const [, files] = eventFiles(event);
@@ -1672,7 +1671,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<DragEvent>(
+    editor.registerCommand(
       DRAGSTART_COMMAND,
       event => {
         const [isFileTransfer] = eventFiles(event);
@@ -1700,7 +1699,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<DragEvent>(
+    editor.registerCommand(
       DRAGOVER_COMMAND,
       event => {
         const [isFileTransfer] = eventFiles(event);
@@ -1830,7 +1829,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       MOVE_TO_END,
       event => {
         const selection = $getSelection();
@@ -1871,7 +1870,7 @@ export function registerRichText(
       },
       COMMAND_PRIORITY_EDITOR,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       MOVE_TO_START,
       event => {
         const selection = $getSelection();

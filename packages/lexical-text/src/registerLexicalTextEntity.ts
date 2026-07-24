@@ -211,7 +211,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
     TextNode,
     $textNodeTransform,
   );
-  const removeReverseNodeTransform = editor.registerNodeTransform<T>(
+  const removeReverseNodeTransform = editor.registerNodeTransform(
     targetNode,
     $reverseNodeTransform,
   );

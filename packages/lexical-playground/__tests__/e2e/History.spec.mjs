@@ -33,6 +33,13 @@ test.describe('History', () => {
   }) => {
     test.skip(isCollab);
     await page.focus('div[contenteditable="true"]');
+    // Freeze the history merge clock before the first burst so "hello" coalesces
+    // into a single undo entry deterministically. Each advanceHistoryClock call
+    // only makes the bursts *after* it deterministic; without this leading call
+    // the initial "hello" is typed against the real 300ms merge window, and
+    // under WebKit/CI load a slow inter-keystroke gap can split it across undo
+    // entries and desync every undo/redo assertion below (flaky on webkit).
+    await advanceHistoryClock(page);
     await page.keyboard.type('hello');
     await advanceHistoryClock(page);
     await page.keyboard.type(' world');

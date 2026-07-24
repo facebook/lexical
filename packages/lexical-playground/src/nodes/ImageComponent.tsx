@@ -286,7 +286,9 @@ export default function ImageComponent({
         if (showCaption) {
           // Move focus into nested editor
           $setSelection(null);
-          event?.preventDefault();
+          if (event !== null) {
+            event.preventDefault();
+          }
           caption.focus();
           return true;
         } else if (
@@ -295,7 +297,9 @@ export default function ImageComponent({
           // the shadow host when the editor is in a shadow root.
           buttonElem !== getActiveElement(buttonElem)
         ) {
-          event?.preventDefault();
+          if (event !== null) {
+            event.preventDefault();
+          }
           buttonElem.focus();
           return true;
         }

@@ -58,12 +58,14 @@ import {
   getDOMSelection,
   HISTORY_MERGE_TAG,
   type Klass,
+  type LexicalCommand,
   type LexicalEditor,
   type LexicalNode,
   type LexicalNodeReplacement,
   mergeRegister,
   ParagraphNode,
   RootNode,
+  safeCast,
   SKIP_DOM_SELECTION_TAG,
   TextNode,
   type UpdateListenerPayload,
@@ -81,7 +83,16 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 import {createRoot, type Root} from 'react-dom/client';
-import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
+import {
+  afterEach,
+  assert,
+  assertType,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';
 import {
@@ -3420,6 +3431,85 @@ describe('LexicalEditor tests', () => {
     calls.length = 0;
     editor.dispatchCommand(command, undefined);
     expect(calls).toHaveLength(0);
+  });
+
+  it('has an invariant payload type for commands', () => {
+    const EVENT_COMMAND = createCommand<Event>('EVENT_COMMAND');
+    const MOUSE_EVENT_COMMAND = createCommand<MouseEvent>(
+      'MOUSE_EVENT_COMMAND',
+    );
+    const MAYBE_MOUSE_EVENT_COMMAND = createCommand<undefined | MouseEvent>(
+      'MAYBE_MOUSE_EVENT_COMMAND',
+    );
+    const VOID_COMMAND = createCommand<void>('VOID_COMMAND');
+    // Test expected correct paths
+    editor.dispatchCommand(EVENT_COMMAND, new Event('test_event'));
+    editor.dispatchCommand(MOUSE_EVENT_COMMAND, new MouseEvent('mouse'));
+    editor.dispatchCommand(MAYBE_MOUSE_EVENT_COMMAND, new MouseEvent('mouse'));
+    editor.dispatchCommand(MAYBE_MOUSE_EVENT_COMMAND);
+    editor.dispatchCommand(VOID_COMMAND, undefined);
+    editor.dispatchCommand(VOID_COMMAND);
+    // Test expected inference
+    editor.registerCommand(
+      EVENT_COMMAND,
+      e => {
+        assertType<Event>(e);
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    editor.registerCommand(
+      MOUSE_EVENT_COMMAND,
+      e => {
+        assertType<MouseEvent>(e);
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    editor.registerCommand(
+      MAYBE_MOUSE_EVENT_COMMAND,
+      e => {
+        assertType<undefined | MouseEvent>(e);
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    editor.registerCommand(
+      VOID_COMMAND,
+      e => {
+        assertType<void>(e);
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    // Verify that types can't be narrowed with annotations
+    editor.registerCommand(
+      // @ts-expect-error
+      EVENT_COMMAND,
+      (e: MouseEvent) => false,
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    editor.registerCommand<LexicalCommand<MouseEvent>>(
+      // @ts-expect-error
+      EVENT_COMMAND,
+      (e: MouseEvent) => false,
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    // Verify that types can't be widened with annotations
+    // @ts-expect-error
+    safeCast<LexicalCommand<Event>>(MOUSE_EVENT_COMMAND);
+    // @ts-expect-error
+    safeCast<LexicalCommand<unknown>>(MOUSE_EVENT_COMMAND);
+    // @ts-expect-error
+    safeCast<LexicalCommand<undefined>>(MAYBE_MOUSE_EVENT_COMMAND);
+    // @ts-expect-error
+    safeCast<LexicalCommand<MouseEvent>>(MAYBE_MOUSE_EVENT_COMMAND);
+    editor.registerCommand(
+      // @ts-expect-error
+      EVENT_COMMAND,
+      (e: MouseEvent) => false,
+      COMMAND_PRIORITY_EDITOR,
+    )();
   });
 
   it('allows using the same listener for multiple node types', async () => {

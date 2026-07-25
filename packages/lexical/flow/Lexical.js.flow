@@ -12,6 +12,9 @@
  */
 export opaque type LexicalCommand<P> = Readonly<{type?: string}>;
 
+// $FlowFixMe[unclear-type]
+export type AnyLexicalCommand = LexicalCommand<any>;
+
 export type CommandPayloadType<TCommand> =
   TCommand extends LexicalCommand<infer P> ? P : empty;
 

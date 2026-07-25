@@ -42,6 +42,7 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  type AnyLexicalCommand,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
@@ -52,7 +53,6 @@ import {
   HISTORIC_TAG,
   INDENT_CONTENT_COMMAND,
   IS_APPLE,
-  type LexicalCommand,
   type LexicalEditor,
   type LexicalNode,
   mergeRegister,
@@ -523,7 +523,7 @@ function ElementFormatDropdown({
       <Divider />
       <DropDownItem
         onClick={() => {
-          editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+          editor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
         }}
         className="item wide">
         <div className="icon-text-container">
@@ -534,7 +534,7 @@ function ElementFormatDropdown({
       </DropDownItem>
       <DropDownItem
         onClick={() => {
-          editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+          editor.dispatchCommand(INDENT_CONTENT_COMMAND);
         }}
         className="item wide">
         <div className="icon-text-container">
@@ -585,7 +585,7 @@ export default function ToolbarPlugin({
   const focusManagerRef = useLexicalFocusManagerRef();
   const toolbarRef = useMergeRefs([rovingRef, focusManagerRef]);
 
-  const dispatchToolbarCommand = <T extends LexicalCommand<unknown>>(
+  const dispatchToolbarCommand = <T extends AnyLexicalCommand>(
     command: T,
     payload: CommandPayloadType<T> | undefined = undefined,
     skipRefocus: boolean = false,
@@ -824,7 +824,7 @@ export default function ToolbarPlugin({
           {editor: activeEditor},
         );
       }),
-      activeEditor.registerCommand<boolean>(
+      activeEditor.registerCommand(
         CAN_UNDO_COMMAND,
         payload => {
           updateToolbarState('canUndo', payload);
@@ -832,7 +832,7 @@ export default function ToolbarPlugin({
         },
         COMMAND_PRIORITY_CRITICAL,
       ),
-      activeEditor.registerCommand<boolean>(
+      activeEditor.registerCommand(
         CAN_REDO_COMMAND,
         payload => {
           updateToolbarState('canRedo', payload);

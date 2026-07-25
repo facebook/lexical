@@ -261,7 +261,7 @@ describe('LexicalHistory tests', () => {
       reactRoot.render(<Test key="smth" />);
     });
 
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       CAN_REDO_COMMAND,
       payload => {
         canRedo = payload;
@@ -270,7 +270,7 @@ describe('LexicalHistory tests', () => {
       COMMAND_PRIORITY_CRITICAL,
     );
 
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       CAN_UNDO_COMMAND,
       payload => {
         canUndo = payload;
@@ -280,7 +280,7 @@ describe('LexicalHistory tests', () => {
     );
 
     await act(async () => {
-      editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+      editor.dispatchCommand(CLEAR_HISTORY_COMMAND);
     });
 
     expect(canRedo).toBe(false);
@@ -343,7 +343,7 @@ describe('LexicalHistory tests', () => {
 
     await act(async () => {
       await editor.update(() => {
-        editor.dispatchCommand(UNDO_COMMAND, undefined);
+        editor.dispatchCommand(UNDO_COMMAND);
       });
     });
 
@@ -360,7 +360,7 @@ describe('LexicalHistory tests', () => {
       reactRoot.render(<Test key="smth" />);
     });
 
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       CAN_REDO_COMMAND,
       payload => {
         canRedo = payload;
@@ -369,7 +369,7 @@ describe('LexicalHistory tests', () => {
       COMMAND_PRIORITY_CRITICAL,
     );
 
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       CAN_UNDO_COMMAND,
       payload => {
         canUndo = payload;
@@ -400,7 +400,7 @@ describe('LexicalHistory tests', () => {
     // undo
     await act(async () => {
       await editor.update(() => {
-        editor.dispatchCommand(UNDO_COMMAND, undefined);
+        editor.dispatchCommand(UNDO_COMMAND);
       });
     });
     expect(canRedo).toBe(true);
@@ -409,7 +409,7 @@ describe('LexicalHistory tests', () => {
     // redo
     await act(async () => {
       await editor.update(() => {
-        editor.dispatchCommand(REDO_COMMAND, undefined);
+        editor.dispatchCommand(REDO_COMMAND);
       });
     });
     expect(canRedo).toBe(false);
@@ -418,7 +418,7 @@ describe('LexicalHistory tests', () => {
     // undo
     await act(async () => {
       await editor.update(() => {
-        editor.dispatchCommand(UNDO_COMMAND, undefined);
+        editor.dispatchCommand(UNDO_COMMAND);
       });
     });
     expect(canRedo).toBe(true);
@@ -477,7 +477,7 @@ describe('LexicalHistory tests', () => {
     });
 
     expect(sharedHistory.undoStack.length).toBe(2);
-    await editor_.dispatchCommand(UNDO_COMMAND, undefined);
+    await editor_.dispatchCommand(UNDO_COMMAND);
     expect($isNodeSelection(editor_.getEditorState()._selection)).toBe(true);
   });
 
@@ -592,7 +592,7 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
   test('canRedo becomes true after undo, canUndo goes false', () => {
     using editor = makeEditorWithOneUndoEntry();
     const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
     expect(output.canUndo.peek()).toBe(false);
     expect(output.canRedo.peek()).toBe(true);
   });
@@ -600,8 +600,8 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
   test('canRedo clears after redo, canUndo returns true', () => {
     using editor = makeEditorWithOneUndoEntry();
     const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
-    editor.dispatchCommand(REDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
+    editor.dispatchCommand(REDO_COMMAND);
     expect(output.canUndo.peek()).toBe(true);
     expect(output.canRedo.peek()).toBe(false);
   });
@@ -610,7 +610,7 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
     using editor = makeEditorWithOneUndoEntry();
     const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
     expect(output.canUndo.peek()).toBe(true);
-    editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+    editor.dispatchCommand(CLEAR_HISTORY_COMMAND);
     expect(output.canUndo.peek()).toBe(false);
     expect(output.canRedo.peek()).toBe(false);
   });
@@ -620,7 +620,7 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
     const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
     // Wrap UNDO dispatch in editor.update so that the HISTORIC_TAG from
     // undo's setEditorState does not leak into the subsequent edit.
-    editor.update(() => editor.dispatchCommand(UNDO_COMMAND, undefined), {
+    editor.update(() => editor.dispatchCommand(UNDO_COMMAND), {
       discrete: true,
     });
     expect(output.canRedo.peek()).toBe(true);
@@ -645,7 +645,7 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
 
   test('canRedo is true immediately when initialized with a non-empty redoStack', () => {
     using donor = makeEditorWithOneUndoEntry();
-    donor.dispatchCommand(UNDO_COMMAND, undefined);
+    donor.dispatchCommand(UNDO_COMMAND);
     const donorHistory = getExtensionDependencyFromEditor(
       donor,
       HistoryExtension,
@@ -828,8 +828,8 @@ describe('SharedHistoryExtension', () => {
       ).output.historyState.peek(),
     );
 
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
+    editor.dispatchCommand(UNDO_COMMAND);
     editor.read(() => {
       expect($getChildEditor().read(() => $getRoot().getTextContent())).toEqual(
         'Child editor',
@@ -849,7 +849,7 @@ describe('SharedHistoryExtension', () => {
         <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
     );
-    editor.update(() => editor.dispatchCommand(UNDO_COMMAND, undefined), {
+    editor.update(() => editor.dispatchCommand(UNDO_COMMAND), {
       discrete: true,
     });
     expectHtmlToBeEqual(

@@ -486,7 +486,7 @@ function onSelectionChange(
       }
     }
 
-    dispatchCommand(editor, SELECTION_CHANGE_COMMAND, undefined);
+    dispatchCommand(editor, SELECTION_CHANGE_COMMAND);
   });
 }
 
@@ -1021,7 +1021,7 @@ function $handleBeforeInput(event: InputEvent): boolean {
       dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, false);
     } else if (data === DOUBLE_LINE_BREAK) {
       event.preventDefault();
-      dispatchCommand(editor, INSERT_PARAGRAPH_COMMAND, undefined);
+      dispatchCommand(editor, INSERT_PARAGRAPH_COMMAND);
     } else if (data == null && event.dataTransfer) {
       // Gets around a Safari text replacement bug.
       const text = event.dataTransfer.getData('text/plain');
@@ -1097,7 +1097,7 @@ function $handleBeforeInput(event: InputEvent): boolean {
         inputState.isInsertLineBreak = false;
         dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, false);
       } else {
-        dispatchCommand(editor, INSERT_PARAGRAPH_COMMAND, undefined);
+        dispatchCommand(editor, INSERT_PARAGRAPH_COMMAND);
       }
 
       break;
@@ -1180,12 +1180,12 @@ function $handleBeforeInput(event: InputEvent): boolean {
     }
 
     case 'historyUndo': {
-      dispatchCommand(editor, UNDO_COMMAND, undefined);
+      dispatchCommand(editor, UNDO_COMMAND);
       break;
     }
 
     case 'historyRedo': {
-      dispatchCommand(editor, REDO_COMMAND, undefined);
+      dispatchCommand(editor, REDO_COMMAND);
       break;
     }
 
@@ -1657,10 +1657,10 @@ function $handleKeyDown(event: KeyboardEvent): boolean {
     dispatchCommand(editor, KEY_TAB_COMMAND, event);
   } else if (isUndo(event)) {
     event.preventDefault();
-    dispatchCommand(editor, UNDO_COMMAND, undefined);
+    dispatchCommand(editor, UNDO_COMMAND);
   } else if (isRedo(event)) {
     event.preventDefault();
-    dispatchCommand(editor, REDO_COMMAND, undefined);
+    dispatchCommand(editor, REDO_COMMAND);
   } else {
     const prevSelection = editor._editorState._selection;
     if (isSelectAll(event)) {

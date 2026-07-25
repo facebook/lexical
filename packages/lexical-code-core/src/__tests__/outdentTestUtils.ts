@@ -70,7 +70,7 @@ export function $runOutdentScenario(
       point = $getSiblingCaret(matching, 'next');
     }
     $setSelectionFromCaretRange($getCollapsedCaretRange(point));
-    editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+    editor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
   });
 
   return editor.read(() => {

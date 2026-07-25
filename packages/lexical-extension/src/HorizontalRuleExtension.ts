@@ -55,7 +55,7 @@ export type SerializedHorizontalRuleNode = SerializedLexicalNode;
 /**
  * Command that inserts a {@link HorizontalRuleNode} at the current selection.
  * Dispatch it with
- * `editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined)`.
+ * `editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND)`.
  */
 export const INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void> =
   /* @__PURE__ */ createCommand('INSERT_HORIZONTAL_RULE_COMMAND');

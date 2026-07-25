@@ -35,10 +35,10 @@ const VOICE_COMMANDS: Readonly<
     selection.insertParagraph();
   },
   redo: ({editor}) => {
-    editor.dispatchCommand(REDO_COMMAND, undefined);
+    editor.dispatchCommand(REDO_COMMAND);
   },
   undo: ({editor}) => {
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
   },
 };
 

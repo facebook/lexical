@@ -10,8 +10,16 @@
 /**
  * LexicalCommands
  */
+export opaque type LexicalCommand<P> = Readonly<{type?: string}>;
 
-export type LexicalCommand<P> = Readonly<{type?: string}>;
+// $FlowFixMe[unclear-type]
+export type AnyLexicalCommand = LexicalCommand<any>;
+
+export type CommandPayloadType<TCommand> =
+  TCommand extends LexicalCommand<infer P> ? P : empty;
+
+export type CommandPayloadArgs<P> =
+  [P extends void ? true : empty] extends [empty] ? [payload: P] : [payload?: P];
 
 declare export var SELECTION_CHANGE_COMMAND: LexicalCommand<void>;
 declare export var CLICK_COMMAND: LexicalCommand<MouseEvent>;
@@ -287,7 +295,7 @@ declare export class LexicalEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  dispatchCommand<P>(command: LexicalCommand<P>, payload: P): boolean;
+  dispatchCommand<P>(command: LexicalCommand<P>, ...args: CommandPayloadArgs<P>): boolean;
   hasNode(node: Class<LexicalNode>): boolean;
   hasNodes(nodes: Class<LexicalNode>[]): boolean;
   getKey(): string;

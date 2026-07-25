@@ -19,9 +19,9 @@ import {
 } from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {
+  type AnyLexicalCommand,
   type CommandPayloadType,
   type EditorUpdateOptions,
-  type LexicalCommand,
   LexicalEditor,
   type MapListeners,
   type MutatedNodes,
@@ -765,7 +765,7 @@ function $commitPendingUpdatesImpl(
     pendingSelection !== null &&
     (currentSelection === null || !currentSelection.is(pendingSelection))
   ) {
-    editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+    editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
   }
   /**
    * Capture pendingDecorators after garbage collecting detached decorators
@@ -875,9 +875,7 @@ export function triggerListeners<T extends keyof MapListeners>(
   }
 }
 
-export function triggerCommandListeners<
-  TCommand extends LexicalCommand<unknown>,
->(
+export function triggerCommandListeners<TCommand extends AnyLexicalCommand>(
   editor: LexicalEditor,
   type: TCommand,
   payload: CommandPayloadType<TCommand>,

@@ -137,9 +137,11 @@ export {
 export type {DOMSlot} from './LexicalDOMSlot';
 export type {ElementDOMSlot} from './LexicalDOMSlot';
 export type {
+  AnyLexicalCommand,
   CommandListener,
   CommandListenerPriority,
   CommandListenerPriorityBefore,
+  CommandPayloadArgs,
   CommandPayloadType,
   CreateEditorArgs,
   DOMSlotForNode,

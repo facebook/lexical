@@ -223,7 +223,7 @@ describe('CollapsibleNode', () => {
       },
       {discrete: true},
     );
-    editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined);
+    editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND);
     editor.read(() => {
       const collapsible = $getRoot()
         .getChildren()
@@ -299,7 +299,7 @@ describe('KbdNode', () => {
       },
       {discrete: true},
     );
-    editor.dispatchCommand(FORMAT_KBD_COMMAND, undefined);
+    editor.dispatchCommand(FORMAT_KBD_COMMAND);
     expect(editor.read(() => $convertToMarkdownString())).toBe(
       'select <kbd>me</kbd> please',
     );
@@ -315,7 +315,7 @@ describe('KbdNode', () => {
       },
       {discrete: true},
     );
-    editor.dispatchCommand(FORMAT_KBD_COMMAND, undefined);
+    editor.dispatchCommand(FORMAT_KBD_COMMAND);
     expect(editor.read(() => $convertToMarkdownString())).toBe(
       'select me please',
     );
@@ -554,7 +554,7 @@ describe('footnotes', () => {
       },
       {discrete: true},
     );
-    editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND, undefined);
+    editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND);
     // `1` is taken, so the new footnote is `2` — and the caret moved into
     // its definition body.
     editor.read(() => {
@@ -757,10 +757,10 @@ describe('read-only', () => {
     );
     editor.setEditable(false);
     const before = editor.read(() => $convertToMarkdownString());
-    editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND, undefined);
-    editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND, undefined);
+    editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND);
+    editor.dispatchCommand(INSERT_COLLAPSIBLE_COMMAND);
     editor.dispatchCommand(INSERT_ALERT_COMMAND, 'note');
-    editor.dispatchCommand(FORMAT_KBD_COMMAND, undefined);
+    editor.dispatchCommand(FORMAT_KBD_COMMAND);
     expect(editor.read(() => $convertToMarkdownString())).toBe(before);
     // Selection changes stay allowed.
     editor.update(

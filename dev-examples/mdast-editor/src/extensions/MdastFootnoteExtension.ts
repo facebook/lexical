@@ -1166,7 +1166,7 @@ export const MdastFootnoteExtension = defineExtension({
           ) {
             event.preventDefault();
             event.stopPropagation();
-            editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND, undefined);
+            editor.dispatchCommand(INSERT_FOOTNOTE_COMMAND);
             return true;
           }
           return false;

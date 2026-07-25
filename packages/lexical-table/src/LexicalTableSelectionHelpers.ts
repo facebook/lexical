@@ -253,7 +253,7 @@ export function registerTableWindowHandlers(
             observer.$clearHighlight(false);
           }
           $setSelection(null);
-          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+          editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
         }
         if (!selectionInfo) {
           return;
@@ -354,7 +354,7 @@ function $handleTableClick(
           override,
           tableKey: tableObserver.tableNodeKey,
         });
-        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+        editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
       }
     };
 

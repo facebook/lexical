@@ -172,7 +172,7 @@ function ResetButton({disabled}: {disabled: boolean}) {
       type="button"
       // Reset replaces the document, so it follows the pane's lock.
       disabled={disabled}
-      onClick={() => editor.dispatchCommand(RESET_MARKDOWN_COMMAND, undefined)}
+      onClick={() => editor.dispatchCommand(RESET_MARKDOWN_COMMAND)}
       className={paneButtonClass}>
       Reset
     </button>

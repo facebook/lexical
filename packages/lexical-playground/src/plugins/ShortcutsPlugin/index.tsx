@@ -101,9 +101,9 @@ export default function ShortcutsPlugin({
       } else if (isCapitalize(event)) {
         editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'capitalize');
       } else if (isIndent(event)) {
-        editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+        editor.dispatchCommand(INDENT_CONTENT_COMMAND);
       } else if (isOutdent(event)) {
-        editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+        editor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
       } else if (isCenterAlign(event)) {
         editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
       } else if (isLeftAlign(event)) {
@@ -137,7 +137,7 @@ export default function ShortcutsPlugin({
         setIsLinkEditMode(!toolbarState.isLink);
         editor.dispatchCommand(TOGGLE_LINK_COMMAND, url);
       } else if (isAddComment(event)) {
-        editor.dispatchCommand(INSERT_INLINE_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_INLINE_COMMAND);
       } else {
         // No match for any of the event handlers
         return false;

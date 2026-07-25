@@ -87,7 +87,7 @@ describe('LexicalTableSelectionHelpers', () => {
       );
 
       expect(() =>
-        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined),
+        editor.dispatchCommand(SELECTION_CHANGE_COMMAND),
       ).not.toThrow();
     });
 
@@ -108,8 +108,8 @@ describe('LexicalTableSelectionHelpers', () => {
 
       // Without self-healing every subsequent selection change throws
       expect(() => {
-        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
-        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+        editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
+        editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
       }).not.toThrow();
 
       // New tables still work after the registry healed itself
@@ -120,7 +120,7 @@ describe('LexicalTableSelectionHelpers', () => {
         {discrete: true},
       );
       expect(() =>
-        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined),
+        editor.dispatchCommand(SELECTION_CHANGE_COMMAND),
       ).not.toThrow();
     });
   });

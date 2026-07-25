@@ -226,7 +226,7 @@ export default function ActionsPlugin({
     docFromHash(window.location.hash).then(doc => {
       if (doc && doc.source === 'Playground') {
         editor.setEditorState(editorStateFromSerializedDocument(editor, doc));
-        editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+        editor.dispatchCommand(CLEAR_HISTORY_COMMAND);
       }
     });
   }, [editor]);
@@ -235,7 +235,7 @@ export default function ActionsPlugin({
       editor.registerEditableListener(editable => {
         setIsEditable(editable);
       }),
-      editor.registerCommand<boolean>(
+      editor.registerCommand(
         CONNECTED_COMMAND,
         payload => {
           const isConnected = payload;
@@ -399,7 +399,7 @@ export default function ActionsPlugin({
             <button
               className="action-button versions"
               onClick={() => {
-                editor.dispatchCommand(SHOW_VERSIONS_COMMAND, undefined);
+                editor.dispatchCommand(SHOW_VERSIONS_COMMAND);
               }}>
               <i className="versions" />
             </button>
@@ -424,7 +424,7 @@ function ShowClearDialog({
       <div className="Modal__content">
         <Button
           onClick={() => {
-            editor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
+            editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
             editor.focus();
             onClose();
           }}>

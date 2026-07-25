@@ -95,7 +95,7 @@ function TextFormatFloatingToolbar({
   }, [editor, isLink, setIsLinkEditMode]);
 
   const insertComment = () => {
-    editor.dispatchCommand(INSERT_INLINE_COMMAND, undefined);
+    editor.dispatchCommand(INSERT_INLINE_COMMAND);
   };
 
   function mouseMoveListener(e: MouseEvent) {

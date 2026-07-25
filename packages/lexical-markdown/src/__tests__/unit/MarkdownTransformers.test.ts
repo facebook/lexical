@@ -308,7 +308,7 @@ describe('HISTORY', () => {
 
     editor.update(
       () => {
-        editor.dispatchCommand(UNDO_COMMAND, undefined);
+        editor.dispatchCommand(UNDO_COMMAND);
       },
       {discrete: true},
     );

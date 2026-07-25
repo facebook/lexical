@@ -42,6 +42,7 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  type AnyLexicalCommand,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
@@ -52,7 +53,6 @@ import {
   HISTORIC_TAG,
   INDENT_CONTENT_COMMAND,
   IS_APPLE,
-  type LexicalCommand,
   type LexicalEditor,
   type LexicalNode,
   mergeRegister,
@@ -585,7 +585,7 @@ export default function ToolbarPlugin({
   const focusManagerRef = useLexicalFocusManagerRef();
   const toolbarRef = useMergeRefs([rovingRef, focusManagerRef]);
 
-  const dispatchToolbarCommand = <T extends LexicalCommand<unknown>>(
+  const dispatchToolbarCommand = <T extends AnyLexicalCommand>(
     command: T,
     payload: CommandPayloadType<T> | undefined = undefined,
     skipRefocus: boolean = false,

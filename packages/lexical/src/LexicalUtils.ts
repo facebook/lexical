@@ -56,6 +56,7 @@ import {
 } from './LexicalConstants';
 import {type DOMSlot, ElementDOMSlot} from './LexicalDOMSlot';
 import {
+  type AnyLexicalCommand,
   type CommandPayloadArgs,
   type CommandPayloadType,
   type DOMSlotForNode,
@@ -63,7 +64,6 @@ import {
   type EditorDOMRenderConfig,
   type EditorThemeClasses,
   type Klass,
-  type LexicalCommand,
   LexicalEditor,
   type MutatedNodes,
   type MutationListeners,
@@ -1546,7 +1546,7 @@ export function isFirefoxClipboardEvents(editor: LexicalEditor): boolean {
   );
 }
 
-export function dispatchCommand<TCommand extends LexicalCommand<unknown>>(
+export function dispatchCommand<TCommand extends AnyLexicalCommand>(
   editor: LexicalEditor,
   command: TCommand,
   ...args: CommandPayloadArgs<CommandPayloadType<TCommand>>

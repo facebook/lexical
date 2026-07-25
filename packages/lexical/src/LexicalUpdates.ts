@@ -19,9 +19,9 @@ import {
 } from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {
+  type AnyLexicalCommand,
   type CommandPayloadType,
   type EditorUpdateOptions,
-  type LexicalCommand,
   LexicalEditor,
   type MapListeners,
   type MutatedNodes,
@@ -875,9 +875,7 @@ export function triggerListeners<T extends keyof MapListeners>(
   }
 }
 
-export function triggerCommandListeners<
-  TCommand extends LexicalCommand<unknown>,
->(
+export function triggerCommandListeners<TCommand extends AnyLexicalCommand>(
   editor: LexicalEditor,
   type: TCommand,
   payload: CommandPayloadType<TCommand>,

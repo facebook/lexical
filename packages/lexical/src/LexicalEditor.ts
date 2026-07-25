@@ -671,8 +671,12 @@ declare const LexicalCommandBrand: unique symbol;
 
 export interface LexicalCommand<TPayload> {
   type?: string;
-  readonly [LexicalCommandBrand]?: TPayload;
+  // TPayload must be invariant
+  readonly [LexicalCommandBrand]?: (payload: TPayload) => TPayload;
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyLexicalCommand = LexicalCommand<any>;
 
 /**
  * Type helper for extracting the payload type from a command.
@@ -694,7 +698,7 @@ export interface LexicalCommand<TPayload> {
  * }
  * ```
  */
-export type CommandPayloadType<TCommand extends LexicalCommand<unknown>> =
+export type CommandPayloadType<TCommand extends AnyLexicalCommand> =
   TCommand extends LexicalCommand<infer TPayload> ? TPayload : never;
 
 export type CommandPayloadArgs<TPayload> = [
@@ -706,10 +710,7 @@ export type CommandPayloadArgs<TPayload> = [
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCommandListener = CommandListener<any>;
 
-type Commands = Map<
-  LexicalCommand<unknown>,
-  Tuple5<DequeSet<AnyCommandListener>>
->;
+type Commands = Map<AnyLexicalCommand, Tuple5<DequeSet<AnyCommandListener>>>;
 
 export type ListenerMap<T> = Map<T, undefined | (() => void)>;
 
@@ -1580,7 +1581,7 @@ export class LexicalEditor {
    * @param type - the type of command listeners to trigger.
    * @param payload - the data to pass as an argument to the command listeners.
    */
-  dispatchCommand<TCommand extends LexicalCommand<unknown>>(
+  dispatchCommand<TCommand extends AnyLexicalCommand>(
     type: TCommand,
     ...args: CommandPayloadArgs<CommandPayloadType<TCommand>>
   ): boolean {

@@ -8,6 +8,7 @@
 
 import {
   $applyNodeReplacement,
+  $getDocument,
   addClassNamesToElement,
   type EditorConfig,
   type LexicalNode,
@@ -21,7 +22,7 @@ export class SpecialTextNode extends TextNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = document.createElement('span');
+    const dom = $getDocument().createElement('span');
     addClassNamesToElement(dom, config.theme.specialText);
     dom.textContent = this.getTextContent();
     return dom;

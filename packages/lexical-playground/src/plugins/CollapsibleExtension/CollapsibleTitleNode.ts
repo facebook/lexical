@@ -8,6 +8,7 @@
 
 import {
   $createParagraphNode,
+  $getDocument,
   $isElementNode,
   type EditorConfig,
   ElementNode,
@@ -36,7 +37,7 @@ export class CollapsibleTitleNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig, editor: LexicalEditor): HTMLElement {
-    const dom = document.createElement('summary');
+    const dom = $getDocument().createElement('summary');
     dom.classList.add('Collapsible__title');
     if (IS_CHROME || IS_FIREFOX) {
       dom.addEventListener('click', () => {

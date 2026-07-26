@@ -336,6 +336,8 @@ export const ImagesExtension = /* @__PURE__ */ defineExtension({
 
 const TRANSPARENT_IMAGE =
   'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+// Detached element for setDragImage() visual feedback — not inserted into
+// any DOM tree, so it does not need shadow-root-aware $getDocument().
 const img = document.createElement('img');
 img.src = TRANSPARENT_IMAGE;
 

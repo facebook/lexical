@@ -10,6 +10,7 @@ import {addClassNamesToElement} from '@lexical/utils';
 import {
   $create,
   $createTextNode,
+  $getDocument,
   $getSelection,
   $getState,
   $getStateChange,
@@ -47,7 +48,7 @@ export class RubyNode extends TextNode {
       inner,
       config.theme.ruby || 'PlaygroundEditorTheme__ruby',
     );
-    const wrapper = document.createElement('span');
+    const wrapper = $getDocument().createElement('span');
     wrapper.setAttribute('role', 'group');
     wrapper.setAttribute(
       'aria-label',
@@ -82,15 +83,15 @@ export class RubyNode extends TextNode {
   }
 
   exportDOM(): DOMExportOutput {
-    const ruby = document.createElement('ruby');
+    const ruby = $getDocument().createElement('ruby');
     ruby.textContent = this.getTextContent();
-    const rpOpen = document.createElement('rp');
+    const rpOpen = $getDocument().createElement('rp');
     rpOpen.textContent = '(';
     ruby.appendChild(rpOpen);
-    const rt = document.createElement('rt');
+    const rt = $getDocument().createElement('rt');
     rt.textContent = this.getAnnotation();
     ruby.appendChild(rt);
-    const rpClose = document.createElement('rp');
+    const rpClose = $getDocument().createElement('rp');
     rpClose.textContent = ')';
     ruby.appendChild(rpClose);
     return {element: ruby};

@@ -279,7 +279,7 @@ function syncGhost(
   if (!dom) {
     return;
   }
-  const ghost = document.createElement('span');
+  const ghost = dom.ownerDocument.createElement('span');
   ghost.setAttribute(AUTOCOMPLETE_GHOST_ATTR, 'true');
   ghost.setAttribute('contenteditable', 'false');
   ghost.className = 'PlaygroundEditorTheme__autocomplete';

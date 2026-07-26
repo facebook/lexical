@@ -9,6 +9,7 @@
 import type {JSX} from 'react';
 
 import {
+  $getDocument,
   DecoratorNode,
   type DOMExportOutput,
   type EditorConfig,
@@ -73,7 +74,7 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
 
   // View
   createDOM(config: EditorConfig): HTMLElement {
-    const span = document.createElement('span');
+    const span = $getDocument().createElement('span');
     const theme = config.theme;
     const className = theme.image;
     if (className !== undefined) {
@@ -87,7 +88,7 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const element = document.createElement('span');
+    const element = $getDocument().createElement('span');
 
     element.style.display = 'inline-block';
 

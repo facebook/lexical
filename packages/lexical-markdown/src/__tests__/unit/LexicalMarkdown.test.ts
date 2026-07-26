@@ -32,7 +32,12 @@ import {
   type Transformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
-import {$createQuoteNode, HeadingNode, QuoteNode} from '@lexical/rich-text';
+import {
+  $createHeadingNode,
+  $createQuoteNode,
+  HeadingNode,
+  QuoteNode,
+} from '@lexical/rich-text';
 import {
   $addUpdateTag,
   $copyNode,
@@ -1096,6 +1101,48 @@ describe('Markdown', () => {
 
     expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
       '<h1><br></h1>',
+    );
+  });
+
+  it('should not transform a heading into an ordered list', () => {
+    const editor = createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+
+    registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+    editor.update(
+      () => {
+        const heading = $createHeadingNode('h1');
+        const text = $createTextNode('Welcome to the playground');
+        heading.append(text);
+        $getRoot().append(heading);
+        text.select(0, 0);
+      },
+      {discrete: true},
+    );
+
+    for (const character of '1. ') {
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertText(character);
+          }
+        },
+        {discrete: true},
+      );
+    }
+
+    expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
+      '<h1><span style="white-space: pre-wrap;">1. Welcome to the playground</span></h1>',
     );
   });
 

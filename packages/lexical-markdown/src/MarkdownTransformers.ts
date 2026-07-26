@@ -417,7 +417,7 @@ function getIndent(whitespaces: string): number {
 
 const listReplace = (listType: ListType): ElementTransformer['replace'] => {
   return (parentNode, children, match, isImport) => {
-    if (!isImport && $isHeadingNode(parentNode)) {
+    if ($isHeadingNode(parentNode)) {
       return false;
     }
 

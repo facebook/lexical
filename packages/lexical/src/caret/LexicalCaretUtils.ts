@@ -27,10 +27,7 @@ import {
   INTERNAL_$isBlock,
 } from '../LexicalUtils';
 import {$isElementNode, type ElementNode} from '../nodes/LexicalElementNode';
-import {
-  $createParagraphNode,
-  $isParagraphNode,
-} from '../nodes/LexicalParagraphNode';
+import {$createParagraphNode} from '../nodes/LexicalParagraphNode';
 import {$isRootNode} from '../nodes/LexicalRootNode';
 import {
   $createTextNode,
@@ -418,15 +415,8 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     ...focusCandidates,
   ].find($isCaretAttached);
   if (bestCandidate) {
-    const normalizedBest = $normalizeCaret(bestCandidate);
-    // Special-case select-all + delete: when the removal emptied the entire
-    // root and the sole surviving block is a non-paragraph element block (a
-    // list item, heading, quote, ...), it would otherwise linger empty while
-    // keeping its type. Replace it with a fresh paragraph so the document
-    // collapses to a single empty paragraph, matching an empty editor.
-    const collapsedCaret = $collapseEmptiedRootToParagraph(normalizedBest);
     const anchor = $getCaretInDirection(
-      collapsedCaret || normalizedBest,
+      $normalizeCaret(bestCandidate),
       initialRange.direction,
     );
     return $getCollapsedCaretRange(anchor);
@@ -436,61 +426,6 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
     '$removeTextFromCaretRange: selection was lost, could not find a new anchor given candidates with keys: %s',
     JSON.stringify(anchorCandidates.map(n => n.origin.__key)),
   );
-}
-
-/**
- * Handle the select-all + delete edge case where the removal emptied the whole
- * root but left behind a single non-paragraph block (list item, heading,
- * quote, ...) that survives empty while keeping its element type.
- *
- * The guard is deliberately tight: this only fires when the caret's block is an
- * empty, non-paragraph normal element block whose ancestor chain up to the root
- * is a single, empty branch (so the root's only content is this one block).
- * Any shadow root, decorator, or sibling content in the chain bails out, so the
- * shared deletion path is otherwise untouched.
- *
- * @returns a caret at the start of the replacement paragraph, or null if the
- * special case does not apply and the original caret should be used.
- */
-function $collapseEmptiedRootToParagraph(
-  caret: PointCaret<CaretDirection>,
-): null | ChildCaret<ElementNode, 'next'> {
-  const block = $getBlockFromCaret($getCaretInDirection(caret, 'next'));
-  if (
-    !block ||
-    !$isElementNode(block) ||
-    $isParagraphNode(block) ||
-    !block.isEmpty()
-  ) {
-    return null;
-  }
-  // Walk up to the top-level block (the direct child of the root), bailing on
-  // anything that means this is not a plain, fully-emptied document.
-  let topLevel: ElementNode = block;
-  for (
-    let parent = block.getParent();
-    parent !== null && !$isRootNode(parent);
-    parent = parent.getParent()
-  ) {
-    if (
-      $isRootOrShadowRoot(parent) ||
-      !$isElementNode(parent) ||
-      parent.getChildrenSize() !== 1
-    ) {
-      return null;
-    }
-    topLevel = parent;
-  }
-  const root = topLevel.getParent();
-  if (!$isRootNode(root) || root.getChildrenSize() !== 1) {
-    return null;
-  }
-  const paragraph = $createParagraphNode();
-  topLevel.insertBefore(paragraph);
-  // Use remove() (not replace()) so any selection still resolving inside the
-  // removed subtree is moved out to the parent rather than left dangling.
-  topLevel.remove();
-  return $getChildCaret(paragraph, 'next');
 }
 
 function $getBlockFromCaret(

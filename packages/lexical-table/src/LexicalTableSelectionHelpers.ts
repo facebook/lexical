@@ -901,8 +901,6 @@ export function applyTableHandlers(
           focusCell.startColumn,
         );
 
-        // Align the table itself if the selection covers every cell,
-        // regardless of which corner the drag started/ended on.
         if (
           minRow === 0 &&
           minColumn === 0 &&

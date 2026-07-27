@@ -986,16 +986,11 @@ describe('TableExtension', () => {
         },
         {discrete: true},
       );
-      // Commit in its own update so the TableNode mutation listener runs
-      // and registers the table's FORMAT_ELEMENT_COMMAND handler before the
-      // selection/dispatch happens in a later update.
       return editor.read(() =>
         $assertNodeType($getRoot().getFirstChild(), $isTableNode),
       );
     }
 
-    // A selection that covers every cell should align the table itself no
-    // matter which corner the drag started/ended on.
     const directions: {
       name: string;
       anchor: [number, number];
@@ -1025,8 +1020,6 @@ describe('TableExtension', () => {
         editor.read(() => {
           expect(table.getFormatType()).toBe('center');
 
-          // The table was aligned as a whole, so individual cell contents
-          // must be untouched.
           for (let row = 0; row < 3; row++) {
             for (let column = 0; column < 3; column++) {
               const cell = $getCell(table, row, column);
@@ -1073,10 +1066,6 @@ describe('TableExtension', () => {
       const table = createTable();
       editor.update(
         () => {
-          // Select the top-left 2x2 subset, dragged from its bottom-right
-          // corner back to its top-left corner. This selection does not
-          // cover the whole table (row/column 2 are excluded), so it must
-          // fall back to per-cell alignment regardless of direction.
           const anchorCell = $getCell(table, 1, 1);
           const focusCell = $getCell(table, 0, 0);
           $setSelection(

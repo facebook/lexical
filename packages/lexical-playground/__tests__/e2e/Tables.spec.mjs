@@ -5576,11 +5576,6 @@ test.describe('Tables', () => {
     await focusEditor(page);
     await insertTable(page, 3, 3);
 
-    // Select every cell, but starting the drag at the bottom-right cell and
-    // ending at the top-left one — the opposite of the only direction that
-    // correctly aligned the table before the #8880 fix. The default
-    // insertTable marks row 0 and column 0 as headers, so {x:2,y:2} is a
-    // plain td and {x:0,y:0} is a th.
     await selectCellsFromTableCords(
       page,
       {x: 2, y: 2},
@@ -5591,7 +5586,6 @@ test.describe('Tables', () => {
 
     await selectFromAlignDropdown(page, '.center-align');
 
-    // The table itself should carry the alignment class...
     const tableIsCenterAligned = await evaluate(page, () => {
       const table = document.querySelector('div[contenteditable="true"] table');
       return table.classList.contains(
@@ -5600,8 +5594,6 @@ test.describe('Tables', () => {
     });
     expect(tableIsCenterAligned).toBe(true);
 
-    // ...and none of the individual cells' paragraphs should have been
-    // aligned instead (the bug's symptom: text centers, table doesn't).
     const cellParagraphsWithTextAlign = await evaluate(page, () => {
       const paragraphs = document.querySelectorAll(
         'div[contenteditable="true"] table th p, div[contenteditable="true"] table td p',

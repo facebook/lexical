@@ -216,7 +216,7 @@ export class QuoteNode extends ElementNode {
     addClassNamesToElement(element, config.theme.quote);
     return element;
   }
-  updateDOM(prevNode: this, dom: HTMLElement): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     return false;
   }
 

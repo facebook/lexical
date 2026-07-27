@@ -23,7 +23,9 @@ import {
   $isTableSelection,
   $mergeCells,
   INSERT_TABLE_COMMAND,
+  type TableCellNode,
   TableExtension,
+  type TableNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,
@@ -35,6 +37,7 @@ import {
   $isRangeSelection,
   $setSelection,
   defineExtension,
+  FORMAT_ELEMENT_COMMAND,
   type LexicalEditorWithDispose,
   type NodeKey,
   SELECT_ALL_COMMAND,
@@ -947,6 +950,149 @@ describe('TableExtension', () => {
         editor.setRootElement(null);
         document.body.removeChild(container);
       }
+    });
+  });
+
+  describe('FORMAT_ELEMENT_COMMAND on a full table selection (#8880)', () => {
+    let container: HTMLDivElement;
+
+    beforeEach(() => {
+      container = document.createElement('div');
+      editor.setRootElement(container);
+    });
+
+    afterEach(() => {
+      editor.setRootElement(null);
+    });
+
+    function $getCell(
+      table: TableNode,
+      row: number,
+      column: number,
+    ): TableCellNode {
+      const rowNode = $assertNodeType(
+        table.getChildAtIndex(row),
+        $isTableRowNode,
+      );
+      return $assertNodeType(rowNode.getChildAtIndex(column), $isTableCellNode);
+    }
+
+    function createTable(): TableNode {
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          const table = $createTableNodeWithDimensions(3, 3, false);
+          root.append(table);
+        },
+        {discrete: true},
+      );
+      return editor.read(() =>
+        $assertNodeType($getRoot().getFirstChild(), $isTableNode),
+      );
+    }
+
+    const directions: {
+      name: string;
+      anchor: [number, number];
+      focus: [number, number];
+    }[] = [
+      {anchor: [0, 0], focus: [2, 2], name: 'top-left -> bottom-right'},
+      {anchor: [2, 2], focus: [0, 0], name: 'bottom-right -> top-left'},
+      {anchor: [0, 2], focus: [2, 0], name: 'top-right -> bottom-left'},
+      {anchor: [2, 0], focus: [0, 2], name: 'bottom-left -> top-right'},
+    ];
+
+    for (const {name, anchor, focus} of directions) {
+      it(`aligns the table when selected ${name}`, () => {
+        const table = createTable();
+        editor.update(
+          () => {
+            const anchorCell = $getCell(table, anchor[0], anchor[1]);
+            const focusCell = $getCell(table, focus[0], focus[1]);
+            $setSelection(
+              $createTableSelectionFrom(table, anchorCell, focusCell),
+            );
+            editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
+          },
+          {discrete: true},
+        );
+
+        editor.read(() => {
+          expect(table.getFormatType()).toBe('center');
+
+          for (let row = 0; row < 3; row++) {
+            for (let column = 0; column < 3; column++) {
+              const cell = $getCell(table, row, column);
+              const paragraph = $assertNodeType(
+                cell.getFirstChild(),
+                $isParagraphNode,
+              );
+              expect(paragraph.getFormatType()).toBe('');
+            }
+          }
+        });
+      });
+    }
+
+    it('aligns the table when the full selection includes a merged cell, selected in reverse', () => {
+      const table = createTable();
+      editor.update(
+        () => {
+          const cell0_2 = $getCell(table, 0, 2);
+          const cell1_2 = $getCell(table, 1, 2);
+          $mergeCells([cell0_2, cell1_2]);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const anchorCell = $getCell(table, 2, 2);
+          const focusCell = $getCell(table, 0, 0);
+          $setSelection(
+            $createTableSelectionFrom(table, anchorCell, focusCell),
+          );
+          editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        expect(table.getFormatType()).toBe('justify');
+      });
+    });
+
+    it('applies per-cell alignment (not table alignment) when only part of the table is selected, even in reverse direction', () => {
+      const table = createTable();
+      editor.update(
+        () => {
+          const anchorCell = $getCell(table, 1, 1);
+          const focusCell = $getCell(table, 0, 0);
+          $setSelection(
+            $createTableSelectionFrom(table, anchorCell, focusCell),
+          );
+          editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        expect(table.getFormatType()).toBe('');
+
+        for (let row = 0; row < 3; row++) {
+          for (let column = 0; column < 3; column++) {
+            const cell = $getCell(table, row, column);
+            const paragraph = $assertNodeType(
+              cell.getFirstChild(),
+              $isParagraphNode,
+            );
+            const inSelectedSubset = row <= 1 && column <= 1;
+            expect(paragraph.getFormatType()).toBe(
+              inSelectedSubset ? 'right' : '',
+            );
+          }
+        }
+      });
     });
   });
 });

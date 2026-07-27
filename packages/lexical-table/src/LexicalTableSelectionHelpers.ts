@@ -882,12 +882,6 @@ export function applyTableHandlers(
           return false;
         }
 
-        // Align the table if the entire table is selected
-        if ($isFullTableSelection(selection, tableNode)) {
-          tableNode.setFormat(formatType);
-          return true;
-        }
-
         const [tableMap, anchorCell, focusCell] = $computeTableMap(
           tableNode,
           anchorNode,
@@ -906,6 +900,17 @@ export function applyTableHandlers(
           anchorCell.startColumn,
           focusCell.startColumn,
         );
+
+        if (
+          minRow === 0 &&
+          minColumn === 0 &&
+          maxRow === tableMap.length - 1 &&
+          maxColumn === tableMap[0].length - 1
+        ) {
+          tableNode.setFormat(formatType);
+          return true;
+        }
+
         const visited = new Set<TableCellNode>();
         for (let i = minRow; i <= maxRow; i++) {
           for (let j = minColumn; j <= maxColumn; j++) {
@@ -1919,24 +1924,6 @@ function $isSelectionInTable(
     return isAnchorInside && isFocusInside;
   }
 
-  return false;
-}
-
-function $isFullTableSelection(
-  selection: null | BaseSelection,
-  tableNode: TableNode,
-): boolean {
-  if ($isTableSelection(selection)) {
-    const anchorNode = selection.anchor.getNode() as TableCellNode;
-    const focusNode = selection.focus.getNode() as TableCellNode;
-    if (tableNode && anchorNode && focusNode) {
-      const [map] = $computeTableMap(tableNode, anchorNode, focusNode);
-      return (
-        anchorNode.getKey() === map[0][0].cell.getKey() &&
-        focusNode.getKey() === map[map.length - 1].at(-1)!.cell.getKey()
-      );
-    }
-  }
   return false;
 }
 

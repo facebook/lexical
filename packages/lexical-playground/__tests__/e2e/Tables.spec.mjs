@@ -5565,6 +5565,44 @@ test.describe('Tables', () => {
     );
   });
 
+  test('Aligns the table itself (not cell text) when the whole table is selected in reverse, e.g. bottom-right to top-left (#8880)', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+    await insertTable(page, 3, 3);
+
+    await selectCellsFromTableCords(
+      page,
+      {x: 2, y: 2},
+      {x: 0, y: 0},
+      false,
+      true,
+    );
+
+    await selectFromAlignDropdown(page, '.center-align');
+
+    const tableIsCenterAligned = await evaluate(page, () => {
+      const table = document.querySelector('div[contenteditable="true"] table');
+      return table.classList.contains(
+        'PlaygroundEditorTheme__tableAlignmentCenter',
+      );
+    });
+    expect(tableIsCenterAligned).toBe(true);
+
+    const cellParagraphsWithTextAlign = await evaluate(page, () => {
+      const paragraphs = document.querySelectorAll(
+        'div[contenteditable="true"] table th p, div[contenteditable="true"] table td p',
+      );
+      return Array.from(paragraphs).filter(p => p.hasAttribute('style')).length;
+    });
+    expect(cellParagraphsWithTextAlign).toBe(0);
+  });
+
   test('Paste and insert new lines after unmerging cells', async ({
     page,
     isPlainText,

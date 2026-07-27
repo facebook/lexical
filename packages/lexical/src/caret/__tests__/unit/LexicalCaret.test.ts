@@ -14,7 +14,11 @@ import {
   type ListNode,
 } from '@lexical/list';
 import {$createMarkNode} from '@lexical/mark';
-import {$createHeadingNode, $isHeadingNode} from '@lexical/rich-text';
+import {
+  $createHeadingNode,
+  $createQuoteNode,
+  $isHeadingNode,
+} from '@lexical/rich-text';
 import {
   $createTableCellNode,
   $createTableNode,
@@ -752,6 +756,158 @@ describe('LexicalCaret', () => {
                   type: 'child',
                 },
               });
+            },
+            {discrete: true},
+          );
+        });
+      });
+      describe('select-all + delete collapses to an empty paragraph (#5835)', () => {
+        test('heading as the first (and only) block', () => {
+          testEnv.editor.update(
+            () => {
+              $getRoot()
+                .clear()
+                .append($createHeadingNode('h1').append($createTextNode('hi')));
+              const resultRange = $removeTextFromCaretRange(
+                $caretRangeFromSelection($selectAll()),
+              );
+              const children = $getRoot().getChildren();
+              expect(children).toHaveLength(1);
+              invariant(
+                $isParagraphNode(children[0]),
+                'Expected a ParagraphNode',
+              );
+              expect(children[0].isEmpty()).toBe(true);
+              expect($getRoot().getAllTextNodes()).toEqual([]);
+              expect(resultRange).toMatchObject({
+                anchor: {direction: 'next', origin: children[0], type: 'child'},
+              });
+            },
+            {discrete: true},
+          );
+        });
+        test('quote as the first (and only) block', () => {
+          testEnv.editor.update(
+            () => {
+              $getRoot()
+                .clear()
+                .append($createQuoteNode().append($createTextNode('hi')));
+              $removeTextFromCaretRange($caretRangeFromSelection($selectAll()));
+              const children = $getRoot().getChildren();
+              expect(children).toHaveLength(1);
+              invariant(
+                $isParagraphNode(children[0]),
+                'Expected a ParagraphNode',
+              );
+              expect(children[0].isEmpty()).toBe(true);
+            },
+            {discrete: true},
+          );
+        });
+        test('list item as the first block, followed by a paragraph', () => {
+          testEnv.editor.update(
+            () => {
+              $getRoot()
+                .clear()
+                .append(
+                  $createListNode('bullet').append(
+                    $createListItemNode().append($createTextNode('one')),
+                    $createListItemNode().append($createTextNode('two')),
+                  ),
+                  $createParagraphNode().append($createTextNode('after')),
+                );
+              $removeTextFromCaretRange($caretRangeFromSelection($selectAll()));
+              const children = $getRoot().getChildren();
+              expect(children).toHaveLength(1);
+              invariant(
+                $isParagraphNode(children[0]),
+                'Expected a ParagraphNode',
+              );
+              expect(children[0].isEmpty()).toBe(true);
+              expect($getRoot().getAllTextNodes()).toEqual([]);
+            },
+            {discrete: true},
+          );
+        });
+        test('nested list collapses to a single empty paragraph', () => {
+          testEnv.editor.update(
+            () => {
+              $getRoot()
+                .clear()
+                .append(
+                  $createListNode('bullet').append(
+                    $createListItemNode().append($createTextNode('one')),
+                    $createListItemNode().append(
+                      $createListNode('bullet').append(
+                        $createListItemNode().append($createTextNode('two')),
+                      ),
+                    ),
+                  ),
+                );
+              $removeTextFromCaretRange($caretRangeFromSelection($selectAll()));
+              const children = $getRoot().getChildren();
+              expect(children).toHaveLength(1);
+              invariant(
+                $isParagraphNode(children[0]),
+                'Expected a ParagraphNode',
+              );
+              expect(children[0].isEmpty()).toBe(true);
+              expect($getRoot().getAllTextNodes()).toEqual([]);
+            },
+            {discrete: true},
+          );
+        });
+        test('paragraph as the first block is left unchanged', () => {
+          testEnv.editor.update(
+            () => {
+              const paragraphNode = $createParagraphNode().append(
+                $createTextNode('hi'),
+              );
+              $getRoot()
+                .clear()
+                .append(
+                  paragraphNode,
+                  $createHeadingNode('h1').append($createTextNode('there')),
+                );
+              $removeTextFromCaretRange($caretRangeFromSelection($selectAll()));
+              const children = $getRoot().getChildren();
+              expect(children).toHaveLength(1);
+              // The original first paragraph survives (not a freshly created one)
+              expect(children[0]).toBe(paragraphNode);
+              expect(paragraphNode.isEmpty()).toBe(true);
+            },
+            {discrete: true},
+          );
+        });
+        test('partial delete that only empties the first block is unaffected', () => {
+          testEnv.editor.update(
+            () => {
+              const heading = $createHeadingNode('h1').append(
+                $createTextNode('abc'),
+              );
+              const paragraphNode = $createParagraphNode().append(
+                $createTextNode('def'),
+              );
+              $getRoot().clear().append(heading, paragraphNode);
+              // Select only the heading's own text, not the whole document.
+              const sel = $createRangeSelection();
+              const headingText = heading.getFirstChildOrThrow();
+              const paragraphText = paragraphNode.getFirstChildOrThrow();
+              invariant(
+                $isTextNode(headingText) && $isTextNode(paragraphText),
+                'Expected TextNodes',
+              );
+              sel.anchor.set(headingText.getKey(), 0, 'text');
+              sel.focus.set(headingText.getKey(), 3, 'text');
+              $setSelection(sel);
+              $removeTextFromCaretRange($caretRangeFromSelection(sel));
+              const children = $getRoot().getChildren();
+              expect(children).toHaveLength(2);
+              // The heading keeps its type; it is not converted to a paragraph.
+              invariant($isHeadingNode(children[0]), 'Expected a HeadingNode');
+              expect(children[0].isEmpty()).toBe(true);
+              expect(children[1]).toBe(paragraphNode);
+              expect(paragraphNode.getTextContent()).toBe('def');
             },
             {discrete: true},
           );

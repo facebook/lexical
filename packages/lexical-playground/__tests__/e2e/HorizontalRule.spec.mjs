@@ -164,6 +164,67 @@ test.describe('HorizontalRule', () => {
     });
   });
 
+  test('Shows block cursor before a horizontal rule preceded by a paragraph', async ({
+    page,
+    isCollab,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+
+    await page.keyboard.type('Before');
+    await page.keyboard.press('Enter');
+
+    await selectFromInsertDropdown(page, '.horizontal-rule');
+    await waitForSelector(page, 'hr');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Before</span>
+        </p>
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+      `,
+    );
+
+    await moveToLineBeginning(page);
+    await page.keyboard.press('ArrowLeft');
+
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [],
+      focusOffset: 0,
+      focusPath: [],
+    });
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Before</span>
+        </p>
+        <div
+          class="PlaygroundEditorTheme__blockCursor"
+          contenteditable="false"
+          data-lexical-cursor="true"></div>
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+      `,
+    );
+  });
+
   test('Will add a horizontal rule at the end of a current TextNode and move selection to the new ParagraphNode.', async ({
     page,
     isPlainText,

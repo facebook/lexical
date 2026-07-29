@@ -2020,11 +2020,8 @@ export function $updateDOMBlockCursorElement(
     } else {
       const child = elementNode.getChildAtIndex(offset);
       if (child !== null && $needsBlockCursorBeside(child)) {
-        const sibling = child.getPreviousSibling();
-        if (sibling === null || $needsBlockCursorBeside(sibling)) {
-          isBlockCursor = true;
-          insertBeforeElement = editor.getElementByKey(child.__key);
-        }
+        isBlockCursor = true;
+        insertBeforeElement = editor.getElementByKey(child.__key);
       }
     }
     if (isBlockCursor) {

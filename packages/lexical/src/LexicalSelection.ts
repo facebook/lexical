@@ -1101,6 +1101,21 @@ export class RangeSelection implements BaseSelection {
     if (nodes.length === 0) {
       return;
     }
+    // Two soft breaks create an empty visual line, which should act as a
+    // block boundary instead of merging inserted blocks into either side.
+    const initialAnchorNode = this.anchor.getNode();
+    const nodeBeforeAnchor =
+      this.anchor.type === 'element' &&
+      $isElementNode(initialAnchorNode) &&
+      this.anchor.offset > 0
+        ? initialAnchorNode.getChildAtIndex(this.anchor.offset - 1)
+        : this.anchor.type === 'text' && this.anchor.offset === 0
+          ? initialAnchorNode.getPreviousSibling()
+          : null;
+    const shouldPreserveInsertedBlocks =
+      this.isCollapsed() &&
+      $isLineBreakNode(nodeBeforeAnchor) &&
+      $isLineBreakNode(nodeBeforeAnchor.getPreviousSibling());
     if (!this.isCollapsed()) {
       this.removeText();
     }
@@ -1293,6 +1308,7 @@ export class RangeSelection implements BaseSelection {
     const nodeToSelect = blocksParent.getLastDescendant()!;
     const blocks = blocksParent.getChildren();
     const isMergeable = (node: LexicalNode): node is ElementNode =>
+      !shouldPreserveInsertedBlocks &&
       $isElementNode(node) &&
       INTERNAL_$isBlock(node) &&
       !node.isEmpty() &&
@@ -1332,6 +1348,7 @@ export class RangeSelection implements BaseSelection {
     );
 
     if (
+      !shouldPreserveInsertedBlocks &&
       insertedParagraph &&
       $isElementNode(lastInsertedBlock) &&
       (insertedParagraph.canMergeWhenEmpty() || INTERNAL_$isBlock(lastToInsert))

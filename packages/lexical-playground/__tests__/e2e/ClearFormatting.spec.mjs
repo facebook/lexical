@@ -14,6 +14,7 @@ import {
   outdent,
   rightAlign,
   selectAll,
+  selectCharacters,
   toggleBold,
   toggleItalic,
   toggleUnderline,
@@ -21,6 +22,7 @@ import {
 import {
   assertHTML,
   clearEditor,
+  expect,
   focusEditor,
   html,
   initialize,
@@ -329,5 +331,38 @@ test.describe('Clear All Formatting', () => {
         </p>
       `,
     );
+  });
+
+  test(`Should reset the toolbar state after clearing formatting (#8881)`, async ({
+    page,
+  }) => {
+    await focusEditor(page);
+
+    // Bold a word in the middle of the paragraph, so that clearing splits and
+    // merges text nodes rather than reformatting the whole block
+    await page.keyboard.type('Hello World Test');
+    await moveToPrevWord(page);
+    await moveToPrevWord(page);
+    await selectCharacters(page, 'right', 'World'.length);
+    await toggleBold(page);
+
+    const boldButton = page.locator(
+      '.toolbar-item[aria-label^="Format text as bold"]',
+    );
+    await expect(boldButton).toHaveClass(/active/);
+
+    await selectFromAdditionalStylesDropdown(page, '.clear');
+
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Hello World Test</span>
+        </p>
+      `,
+    );
+    // The formatting is gone, so the button must not stay stuck in the active
+    // state - otherwise it takes two clicks to bold the selection again
+    await expect(boldButton).not.toHaveClass(/active/);
   });
 });

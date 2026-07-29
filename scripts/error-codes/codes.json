@@ -396,5 +396,6 @@
   "394": "getOffset: expected parent to be a collab element node",
   "395": "insertText: lastNode is not a TextNode",
   "396": "Table row index %s out of range",
-  "397": "Table column index %s out of range"
+  "397": "Table column index %s out of range",
+  "398": "insertText: anchor is not a text node"
 }

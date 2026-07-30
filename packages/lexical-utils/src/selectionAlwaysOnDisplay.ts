@@ -6,7 +6,12 @@
  *
  */
 
-import {LexicalEditor} from 'lexical';
+import {
+  getDOMSelectionPoints,
+  type LexicalEditor,
+  mergeRegister,
+  registerEventListener,
+} from 'lexical';
 
 import markSelection from './markSelection';
 
@@ -17,9 +22,23 @@ export default function selectionAlwaysOnDisplay(
   let removeSelectionMark: (() => void) | null = null;
 
   const onSelectionChange = () => {
-    const domSelection = getSelection();
-    const domAnchorNode = domSelection && domSelection.anchorNode;
     const editorRootElement = editor.getRootElement();
+    // Read the selection from the editor's own document/window so iframe-
+    // mounted editors don't fall back to the global one. The selectionchange
+    // listener below is registered on rootElement.ownerDocument, so this
+    // matches the event's source.
+    const targetWindow =
+      editorRootElement !== null
+        ? editorRootElement.ownerDocument.defaultView
+        : null;
+    const domSelection =
+      targetWindow !== null ? targetWindow.getSelection() : null;
+    // Shadow-aware anchor so the contains() check below isn't fooled by the
+    // retargeted host.
+    const domAnchorNode =
+      domSelection !== null
+        ? getDOMSelectionPoints(domSelection, editorRootElement).anchorNode
+        : null;
 
     const isSelectionInsideEditor =
       domAnchorNode !== null &&
@@ -41,14 +60,16 @@ export default function selectionAlwaysOnDisplay(
   return editor.registerRootListener(rootElement => {
     if (rootElement) {
       const document = rootElement.ownerDocument;
-      document.addEventListener('selectionchange', onSelectionChange);
+      const cleanup = mergeRegister(
+        registerEventListener(document, 'selectionchange', onSelectionChange),
+        () => {
+          if (removeSelectionMark !== null) {
+            removeSelectionMark();
+          }
+        },
+      );
       onSelectionChange();
-      return () => {
-        if (removeSelectionMark !== null) {
-          removeSelectionMark();
-        }
-        document.removeEventListener('selectionchange', onSelectionChange);
-      };
+      return cleanup;
     }
   });
 }

@@ -6,10 +6,11 @@
  *
  */
 
+import type {LexicalEditor} from 'lexical';
+import type {RefObject} from 'react';
+
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {LexicalEditor} from 'lexical';
 import * as React from 'react';
-import {RefObject} from 'react';
 
 /**
  *

@@ -249,7 +249,7 @@ test.describe('Nested List', () => {
                     value="1">
                     <ul class="PlaygroundEditorTheme__ul">
                       <li class="PlaygroundEditorTheme__listItem" value="1">
-                        <br />
+                        <br data-lexical-managed-linebreak="true" />
                       </li>
                     </ul>
                   </li>
@@ -279,7 +279,7 @@ test.describe('Nested List', () => {
                 value="1">
                 <ul class="PlaygroundEditorTheme__ul">
                   <li class="PlaygroundEditorTheme__listItem" value="1">
-                    <br />
+                    <br data-lexical-managed-linebreak="true" />
                   </li>
                 </ul>
               </li>
@@ -302,7 +302,9 @@ test.describe('Nested List', () => {
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
             value="2">
             <ul class="PlaygroundEditorTheme__ul">
-              <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+              <li class="PlaygroundEditorTheme__listItem" value="1">
+                <br data-lexical-managed-linebreak="true" />
+              </li>
             </ul>
           </li>
         </ul>
@@ -452,7 +454,9 @@ test.describe('Nested List', () => {
       page,
       html`
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
-          <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
         </ul>
       `,
     );
@@ -721,7 +725,9 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -926,7 +932,9 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -1244,7 +1252,9 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -1331,7 +1341,9 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -1369,11 +1381,15 @@ test.describe('Nested List', () => {
             <span data-lexical-text="true">from</span>
           </li>
         </ul>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">the</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
           <li class="PlaygroundEditorTheme__listItem" value="1">
             <span data-lexical-text="true">other</span>
@@ -1398,11 +1414,15 @@ test.describe('Nested List', () => {
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">from</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">the</span>
         </p>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <span data-lexical-text="true">other</span>
         </p>
@@ -1424,11 +1444,15 @@ test.describe('Nested List', () => {
           <li class="PlaygroundEditorTheme__listItem" value="2">
             <span data-lexical-text="true">from</span>
           </li>
-          <li class="PlaygroundEditorTheme__listItem" value="3"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="3">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
           <li class="PlaygroundEditorTheme__listItem" value="4">
             <span data-lexical-text="true">the</span>
           </li>
-          <li class="PlaygroundEditorTheme__listItem" value="5"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="5">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
           <li class="PlaygroundEditorTheme__listItem" value="6">
             <span data-lexical-text="true">other</span>
           </li>
@@ -1453,7 +1477,9 @@ test.describe('Nested List', () => {
       page,
       html`
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
-          <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
         </ul>
       `,
     );
@@ -1464,7 +1490,9 @@ test.describe('Nested List', () => {
       page,
       html`
         <ol class="PlaygroundEditorTheme__ol1" dir="auto">
-          <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
         </ol>
       `,
     );
@@ -1475,7 +1503,9 @@ test.describe('Nested List', () => {
       page,
       html`
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
-          <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="1">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
         </ul>
       `,
     );
@@ -1640,7 +1670,9 @@ test.describe('Nested List', () => {
           <li class="PlaygroundEditorTheme__listItem" value="4">
             <span data-lexical-text="true">other</span>
           </li>
-          <li class="PlaygroundEditorTheme__listItem" value="5"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="5">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
         </ul>
       `,
     );
@@ -1663,7 +1695,9 @@ test.describe('Nested List', () => {
           <li class="PlaygroundEditorTheme__listItem" value="4">
             <span data-lexical-text="true">other</span>
           </li>
-          <li class="PlaygroundEditorTheme__listItem" value="5"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="5">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
         </ol>
       `,
     );
@@ -1686,7 +1720,9 @@ test.describe('Nested List', () => {
           <li class="PlaygroundEditorTheme__listItem" value="4">
             <span data-lexical-text="true">other</span>
           </li>
-          <li class="PlaygroundEditorTheme__listItem" value="5"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="5">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
         </ul>
       `,
     );
@@ -2276,7 +2312,7 @@ test.describe('Nested List', () => {
     // undo case is when the user presses undo.
 
     const forwardHTML =
-      '<ol start="321" class="PlaygroundEditorTheme__ol1" dir="auto"><li value="321" class="PlaygroundEditorTheme__listItem"><br></li></ol>';
+      '<ol start="321" class="PlaygroundEditorTheme__ol1" dir="auto"><li value="321" class="PlaygroundEditorTheme__listItem"><br data-lexical-managed-linebreak="true"></li></ol>';
 
     const undoHTML = html`
       <p class="PlaygroundEditorTheme__paragraph" dir="auto">
@@ -2333,7 +2369,9 @@ test.describe('Nested List', () => {
             class="PlaygroundEditorTheme__listItem PlaygroundEditorTheme__nestedListItem"
             value="2">
             <ul class="PlaygroundEditorTheme__ul">
-              <li class="PlaygroundEditorTheme__listItem" value="1"><br /></li>
+              <li class="PlaygroundEditorTheme__listItem" value="1">
+                <br data-lexical-managed-linebreak="true" />
+              </li>
             </ul>
           </li>
         </ul>
@@ -2347,7 +2385,9 @@ test.describe('Nested List', () => {
           <li class="PlaygroundEditorTheme__listItem" value="1">
             <span data-lexical-text="true">a</span>
           </li>
-          <li class="PlaygroundEditorTheme__listItem" value="2"><br /></li>
+          <li class="PlaygroundEditorTheme__listItem" value="2">
+            <br data-lexical-managed-linebreak="true" />
+          </li>
         </ul>
       `,
     );
@@ -2360,7 +2400,9 @@ test.describe('Nested List', () => {
             <span data-lexical-text="true">a</span>
           </li>
         </ul>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -2718,7 +2760,7 @@ test.describe('Nested List', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
           style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -2760,7 +2802,7 @@ test.describe('Nested List', () => {
           class="PlaygroundEditorTheme__paragraph PlaygroundEditorTheme__indent"
           dir="auto"
           style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px))">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
           <li class="PlaygroundEditorTheme__listItem" value="1">
@@ -2822,7 +2864,7 @@ test.describe('Nested List', () => {
       html`
         <ul class="PlaygroundEditorTheme__ul" dir="auto">
           <li class="PlaygroundEditorTheme__listItem" value="1">
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </li>
         </ul>
       `,
@@ -2831,7 +2873,9 @@ test.describe('Nested List', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });

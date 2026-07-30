@@ -10,6 +10,7 @@
     "paths": {
       "lexicalOriginal": ["../lexical/src/"],
       "lexical": ["../lexical/src/index.ts"],
+      "@lexical/a11y": ["../lexical-a11y/src/index.ts"],
       "@lexical/clipboard": ["../lexical-clipboard/src/index.ts"],
       "@lexical/code": ["../lexical-code/src/index.ts"],
       "@lexical/code-core": ["../lexical-code-core/src/index.ts"],
@@ -49,6 +50,7 @@
       "@lexical/list": ["../lexical-list/src/index.ts"],
       "@lexical/mark": ["../lexical-mark/src/index.ts"],
       "@lexical/markdown": ["../lexical-markdown/src/index.ts"],
+      "@lexical/mdast": ["../lexical-mdast/src/index.ts"],
       "@lexical/offset": ["../lexical-offset/src/index.ts"],
       "@lexical/overflow": ["../lexical-overflow/src/index.ts"],
       "@lexical/plain-text": ["../lexical-plain-text/src/index.ts"],
@@ -190,14 +192,29 @@
       "@lexical/react/useExtensionSignalValue": [
         "../lexical-react/src/useExtensionSignalValue.ts"
       ],
+      "@lexical/react/useLexicalAriaLiveRegion": [
+        "../lexical-react/src/useLexicalAriaLiveRegion.ts"
+      ],
       "@lexical/react/useLexicalEditable": [
         "../lexical-react/src/useLexicalEditable.ts"
+      ],
+      "@lexical/react/useLexicalFocusManagerRef": [
+        "../lexical-react/src/useLexicalFocusManagerRef.ts"
+      ],
+      "@lexical/react/useLexicalFocusTrapRef": [
+        "../lexical-react/src/useLexicalFocusTrapRef.ts"
       ],
       "@lexical/react/useLexicalIsTextContentEmpty": [
         "../lexical-react/src/useLexicalIsTextContentEmpty.ts"
       ],
       "@lexical/react/useLexicalNodeSelection": [
         "../lexical-react/src/useLexicalNodeSelection.ts"
+      ],
+      "@lexical/react/useLexicalRovingTabIndexRef": [
+        "../lexical-react/src/useLexicalRovingTabIndexRef.ts"
+      ],
+      "@lexical/react/useLexicalSlotRef": [
+        "../lexical-react/src/useLexicalSlotRef.ts"
       ],
       "@lexical/react/useLexicalSubscription": [
         "../lexical-react/src/useLexicalSubscription.tsx"

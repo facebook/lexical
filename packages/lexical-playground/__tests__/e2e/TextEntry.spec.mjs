@@ -96,7 +96,9 @@ test.describe('TextEntry', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
         <h1 class="PlaygroundEditorTheme__h1" dir="auto">
           <span data-lexical-text="true">Hello</span>
         </h1>
@@ -408,7 +410,9 @@ test.describe('TextEntry', () => {
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true"></span>
           </p>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         `,
       );
       await assertSelection(page, {
@@ -424,7 +428,7 @@ test.describe('TextEntry', () => {
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true"></span>
             <br />
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -444,7 +448,9 @@ test.describe('TextEntry', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         `,
       );
       await assertSelection(page, {
@@ -460,7 +466,7 @@ test.describe('TextEntry', () => {
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true"></span>
             <br />
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -490,7 +496,7 @@ test.describe('TextEntry', () => {
           <br />
           <br />
           <br />
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -519,12 +525,14 @@ test.describe('TextEntry', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <br />
             <br />
             <br />
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -543,7 +551,7 @@ test.describe('TextEntry', () => {
             <br />
             <br />
             <br />
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -569,7 +577,7 @@ test.describe('TextEntry', () => {
             <br />
             <br />
             <br />
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -583,7 +591,7 @@ test.describe('TextEntry', () => {
             <br />
             <br />
             <br />
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -609,8 +617,12 @@ test.describe('TextEntry', () => {
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         `,
       );
       await assertSelection(page, {
@@ -625,7 +637,7 @@ test.describe('TextEntry', () => {
         html`
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <br />
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -675,7 +687,9 @@ test.describe('TextEntry', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
     await assertSelection(page, {
@@ -694,7 +708,7 @@ test.describe('TextEntry', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <br />
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -711,7 +725,7 @@ test.describe('TextEntry', () => {
       html`
         <p class="PlaygroundEditorTheme__paragraph" dir="auto">
           <br />
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -727,7 +741,9 @@ test.describe('TextEntry', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
     await assertSelection(page, {

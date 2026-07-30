@@ -6,7 +6,7 @@
  *
  */
 
-import {LexicalEditor, TextNode} from 'lexical';
+import {type LexicalEditor, TextNode} from 'lexical';
 
 import {$createEmojiNode} from './EmojiNode';
 import findEmoji from './findEmoji';

@@ -71,7 +71,8 @@ Lexical provides several built-in update tags that are exported as constants:
 - `HISTORIC_TAG`: Indicates that the update is related to history operations (undo/redo)
 - `HISTORY_PUSH_TAG`: Forces a new history entry to be created
 - `HISTORY_MERGE_TAG`: Merges the current update with the previous history entry
-- `PASTE_TAG`: Indicates that the update is related to a paste operation
+- `PASTE_TAG`: Indicates that the update is related to a paste operation. `@lexical/history` treats this as a history boundary so the paste gets its own undo entry
+- `CUT_TAG`: Indicates that the update is related to a cut operation. `@lexical/history` treats this as a history boundary so the cut gets its own undo entry
 - `COLLABORATION_TAG`: Indicates that the update is related to collaborative editing
 - `SKIP_COLLAB_TAG`: Indicates that the update should skip collaborative sync
 - `SKIP_SCROLL_INTO_VIEW_TAG`: Prevents scrolling the selection into view

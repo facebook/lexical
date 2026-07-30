@@ -6,13 +6,11 @@
  *
  */
 
+import type {ErrorBoundaryType} from './types';
 import type {LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
 
-import {Suspense, useMemo, useSyncExternalStore} from 'react';
+import {type JSX, Suspense, useMemo, useSyncExternalStore} from 'react';
 import {createPortal} from 'react-dom';
-
-import {type ErrorBoundaryType} from './types';
 
 /** @internal */
 export function useReactDecorators(

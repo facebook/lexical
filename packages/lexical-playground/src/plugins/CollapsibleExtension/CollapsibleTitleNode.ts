@@ -6,15 +6,16 @@
  *
  */
 
-import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
   $createParagraphNode,
   $isElementNode,
-  EditorConfig,
+  type EditorConfig,
   ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  RangeSelection,
+  IS_CHROME,
+  IS_FIREFOX,
+  type LexicalEditor,
+  type LexicalNode,
+  type RangeSelection,
 } from 'lexical';
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';

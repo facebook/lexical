@@ -33,7 +33,7 @@ function registerKeyTimeStampTracker() {
   );
 }
 
-export const TabFocusExtension = defineExtension({
+export const TabFocusExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/TabFocus',
   register: editor => {
     if (!hasRegisteredKeyDownListener) {

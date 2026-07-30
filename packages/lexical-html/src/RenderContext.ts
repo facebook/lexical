@@ -5,10 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {EditorDOMRenderConfig} from 'lexical';
+
+import type {DOMRenderExtension} from './DOMRenderExtension';
+import type {
+  AnyRenderStateConfigPairOrUpdater,
+  ContextRecord,
+  RenderStateConfig,
+} from './types';
 
 import {getPeerDependencyFromEditor} from '@lexical/extension';
-import {$getEditor, $getEditorDOMRenderConfig, LexicalEditor} from 'lexical';
+import {
+  $getEditor,
+  $getEditorDOMRenderConfig,
+  type EditorDOMRenderConfig,
+  type LexicalEditor,
+} from 'lexical';
 
 import {DOMRenderContextSymbol, DOMRenderExtensionName} from './constants';
 import {
@@ -17,12 +28,6 @@ import {
   getContextRecord,
   getContextValue,
 } from './ContextRecord';
-import {DOMRenderExtension} from './DOMRenderExtension';
-import {
-  AnyRenderStateConfigPairOrUpdater,
-  ContextRecord,
-  RenderStateConfig,
-} from './types';
 
 /**
  * Create a context state to be used during render.
@@ -50,13 +55,19 @@ export function createRenderState<V>(
  * Render context state that is true if the export was initiated from the root of the document.
  * @experimental
  */
-export const RenderContextRoot = createRenderState('root', Boolean);
+export const RenderContextRoot = /* @__PURE__ */ createRenderState(
+  'root',
+  Boolean,
+);
 
 /**
  * Render context state that is true if this is an export operation ($generateHtmlFromNodes).
  * @experimental
  */
-export const RenderContextExport = createRenderState('isExport', Boolean);
+export const RenderContextExport = /* @__PURE__ */ createRenderState(
+  'isExport',
+  Boolean,
+);
 
 function getDefaultRenderContext(
   editor: LexicalEditor,

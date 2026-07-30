@@ -6,10 +6,15 @@
  *
  */
 import {
+  $createHorizontalRuleNode,
+  HorizontalRuleNode,
+} from '@lexical/extension';
+import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTextNode,
   $generateNodesFromRawText,
+  $getEditor,
   $isTextNode,
   $setDirectionFromDOM,
   $setFormatFromDOM,
@@ -220,7 +225,7 @@ function applyFormatOverride(format: number, ov: FormatOverride): number {
  * - `<span style="text-decoration: none">` strip inherited underline /
  *   line-through.
  */
-const InlineFormatRule = defineImportRule({
+const InlineFormatRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const inherited = ctx.get(ImportTextFormat);
     const tagDefault = TAG_DEFAULT_STYLE[el.nodeName];
@@ -402,7 +407,7 @@ function $applyTextStyle(
  * collapse whitespace using the same neighbor-aware rules as the legacy
  * `$convertTextDOMNode`.
  */
-const TextRule = defineImportRule({
+const TextRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const format = ctx.get(ImportTextFormat);
     const style = ctx.get(ImportTextStyle);
@@ -434,13 +439,13 @@ const TextRule = defineImportRule({
  * a higher-priority `<style>` rule to capture stylesheet text into the
  * import session for later use.
  */
-const IgnoreScriptStyleRule = defineImportRule({
+const IgnoreScriptStyleRule = /* @__PURE__ */ defineImportRule({
   $import: () => [],
   match: sel.tag('script', 'style'),
   name: '@lexical/html/script-style-ignore',
 });
 
-const LineBreakRule = defineImportRule({
+const LineBreakRule = /* @__PURE__ */ defineImportRule({
   // Mirror the legacy LineBreakNode.importDOM filter: stray `<br>` that
   // are the sole or trailing child of a block parent (e.g. Apple's
   // `<br class="Apple-interchange-newline">` clipboard sentinel, or the
@@ -459,7 +464,7 @@ const LineBreakRule = defineImportRule({
  * `<p>` rule. Re-applies format, indent, direction, and the legacy
  * `align` attribute fallback.
  */
-const ParagraphRule = defineImportRule({
+const ParagraphRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const p = $createParagraphNode();
     $setFormatFromDOM(p, el);
@@ -478,6 +483,31 @@ const ParagraphRule = defineImportRule({
   },
   match: sel.tag('p'),
   name: '@lexical/html/p',
+});
+
+/**
+ * `<hr>` rule, gated on {@link HorizontalRuleNode} registration so it
+ * mirrors the legacy `importDOM` contract (a node's conversions are only
+ * active when the node itself is registered). It lives here rather than
+ * next to `HorizontalRuleExtension` because `@lexical/extension`
+ * is upstream of `@lexical/html` in the package graph and cannot define
+ * import rules — this is the one node-providing extension whose import
+ * support cannot be implied by depending on it.
+ *
+ * Registered ahead of {@link TransparentBlockRule}: `<hr>` matches
+ * `isBlockDomNode`, so the wildcard block rule would otherwise consume
+ * it. When `HorizontalRuleNode` is not registered, `$next()` restores
+ * the old behavior (the childless element vanishes).
+ *
+ * @internal
+ */
+export const HorizontalRuleRule = /* @__PURE__ */ defineImportRule({
+  $import: (_ctx, _el, $next) =>
+    $getEditor().hasNode(HorizontalRuleNode)
+      ? [$createHorizontalRuleNode()]
+      : $next(),
+  match: sel.tag('hr'),
+  name: '@lexical/html/hr',
 });
 
 /**
@@ -510,7 +540,7 @@ const ParagraphRule = defineImportRule({
  * `ParagraphNode` intermediate, and there is no need for a marker node
  * to distinguish them.
  */
-const TransparentBlockRule = defineImportRule({
+const TransparentBlockRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el, $next) => {
     if (!isBlockDomNode(el)) {
       // Inline element with no dedicated rule — let the inline rules (or
@@ -529,15 +559,17 @@ const TransparentBlockRule = defineImportRule({
 /**
  * Rules covering the {@link ParagraphNode}, {@link TextNode},
  * {@link LineBreakNode}, and {@link TabNode} cases that the legacy
- * `importDOM` machinery in `@lexical/lexical` handled. Intended to be
- * registered as a dependency of every editor that uses
- * {@link DOMImportExtension}.
+ * `importDOM` machinery in `@lexical/lexical` handled, plus the
+ * registration-gated `<hr>` rule for {@link HorizontalRuleNode} (see
+ * {@link HorizontalRuleRule}). Intended to be registered as a dependency
+ * of every editor that uses {@link DOMImportExtension}.
  *
  * @experimental
  */
 export const CoreImportRules = [
   IgnoreScriptStyleRule,
   ParagraphRule,
+  HorizontalRuleRule,
   TransparentBlockRule,
   TextRule,
   LineBreakRule,

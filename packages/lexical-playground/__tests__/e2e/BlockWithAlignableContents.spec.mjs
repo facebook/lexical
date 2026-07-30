@@ -55,7 +55,9 @@ test.describe('BlockWithAlignableContents', () => {
               width="560"></iframe>
           </div>
         </div>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });
@@ -86,7 +88,9 @@ test.describe('BlockWithAlignableContents', () => {
               width="560"></iframe>
           </div>
         </div>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
     await selectAll(page);
@@ -118,7 +122,7 @@ test.describe('BlockWithAlignableContents', () => {
           class="PlaygroundEditorTheme__paragraph"
           dir="auto"
           style="text-align: center">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
       undefined,

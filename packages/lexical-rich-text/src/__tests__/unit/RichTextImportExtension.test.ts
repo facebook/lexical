@@ -10,18 +10,20 @@ import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
 } from '@lexical/extension';
-import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
+import {DOMImportExtension} from '@lexical/html';
 import {
   $isHeadingNode,
   $isQuoteNode,
-  HeadingNode,
-  QuoteNode,
+  RichTextExtension,
   RichTextImportExtension,
+  ShadowRootQuoteRule,
 } from '@lexical/rich-text';
 import {JSDOM} from 'jsdom';
 import {
   $getEditor,
   $getRoot,
+  $isParagraphNode,
+  configExtension,
   defineExtension,
   type LexicalEditor,
   type LexicalNode,
@@ -31,11 +33,11 @@ import {assert, describe, expect, test} from 'vitest';
 function buildEditor() {
   return buildEditorFromExtensions(
     defineExtension({
-      // Leaf importer extensions no longer pull `CoreImportExtension`
-      // in by themselves — the application is expected to add it once.
-      dependencies: [CoreImportExtension, RichTextImportExtension],
+      // RichTextExtension registers its own import rules (and the
+      // shared CoreImportExtension baseline) — no dedicated import
+      // extension required.
+      dependencies: [RichTextExtension],
       name: 'rich-text-host',
-      nodes: [HeadingNode, QuoteNode],
     }),
   );
 }
@@ -87,6 +89,62 @@ describe('RichTextImportExtension', () => {
     });
   });
 
+  test('blockquote does not import as a shadow root by default', () => {
+    using editor = buildEditor();
+    importInto(editor, '<blockquote><p>a</p><p>b</p></blockquote>');
+    editor.read(() => {
+      const node = $getRoot().getFirstChild();
+      assert($isQuoteNode(node), 'expected QuoteNode');
+      expect(node.isShadowRoot()).toBe(false);
+    });
+  });
+
+  test('ShadowRootQuoteRule imports blockquote as a shadow root quote', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          RichTextExtension,
+          // Registered after RichTextExtension's own rules, so it takes
+          // priority over the default blockquote rule.
+          configExtension(DOMImportExtension, {rules: [ShadowRootQuoteRule]}),
+        ],
+        name: 'rich-text-shadow-root-quote-host',
+      }),
+    );
+    importInto(editor, '<blockquote><p>a</p><p>b</p></blockquote>');
+    editor.read(() => {
+      const node = $getRoot().getFirstChild();
+      assert($isQuoteNode(node), 'expected QuoteNode');
+      expect(node.isShadowRoot()).toBe(true);
+      const children = node.getChildren();
+      expect(children.length).toBe(2);
+      expect(children.every($isParagraphNode)).toBe(true);
+      expect(children.map(child => child.getTextContent())).toEqual(['a', 'b']);
+    });
+  });
+
+  test('ShadowRootQuoteRule wraps bare inline content in a paragraph', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          RichTextExtension,
+          configExtension(DOMImportExtension, {rules: [ShadowRootQuoteRule]}),
+        ],
+        name: 'rich-text-shadow-root-quote-host',
+      }),
+    );
+    importInto(editor, '<blockquote>quoted</blockquote>');
+    editor.read(() => {
+      const node = $getRoot().getFirstChild();
+      assert($isQuoteNode(node), 'expected QuoteNode');
+      expect(node.isShadowRoot()).toBe(true);
+      const children = node.getChildren();
+      expect(children.length).toBe(1);
+      assert($isParagraphNode(children[0]), 'expected ParagraphNode');
+      expect(children[0].getTextContent()).toBe('quoted');
+    });
+  });
+
   test('Google Docs title (26pt span) promoted to h1', () => {
     using editor = buildEditor();
     importInto(editor, '<p><span style="font-size:26pt">Title</span></p>');
@@ -95,6 +153,21 @@ describe('RichTextImportExtension', () => {
       assert($isHeadingNode(node), 'expected HeadingNode');
       expect(node.getTag()).toBe('h1');
       expect(node.getTextContent()).toBe('Title');
+    });
+  });
+
+  test('deprecated RichTextImportExtension alias still imports headings', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [RichTextImportExtension],
+        name: 'rich-text-alias-host',
+      }),
+    );
+    importInto(editor, '<h2>x</h2>');
+    editor.read(() => {
+      const node = $getRoot().getFirstChild();
+      assert($isHeadingNode(node), 'expected HeadingNode');
+      expect(node.getTag()).toBe('h2');
     });
   });
 });

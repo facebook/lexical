@@ -6,16 +6,18 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-
-import {COMMAND_PRIORITY_CRITICAL, LexicalCommand} from 'lexical';
+import {
+  COMMAND_PRIORITY_CRITICAL,
+  type LexicalCommand,
+  type LexicalEditor,
+} from 'lexical';
 import {useEffect, useState} from 'react';
 
 export type LexicalCommandEntry = {index: number} & LexicalCommand<unknown> & {
     payload: unknown;
   };
 
-export type LexicalCommandLog = ReadonlyArray<LexicalCommandEntry>;
+export type LexicalCommandLog = readonly LexicalCommandEntry[];
 
 export function registerLexicalCommandLogger(
   editor: LexicalEditor,

@@ -3,3 +3,8 @@ packages:
   - 'dev-examples/*'
   - '!examples/**/*'
   - '!scripts/__tests__/integration/fixtures/**/*'
+
+minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - '@lexical/*'
+  - 'lexical'

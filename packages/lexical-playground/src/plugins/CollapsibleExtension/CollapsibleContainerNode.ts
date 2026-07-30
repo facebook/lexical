@@ -6,21 +6,22 @@
  *
  */
 
-import {IS_CHROME, IS_FIREFOX} from '@lexical/utils';
 import {
   $getSiblingCaret,
   $isElementNode,
   $rewindSiblingCaret,
-  DOMExportOutput,
-  EditorConfig,
+  type DOMExportOutput,
+  type EditorConfig,
   ElementNode,
+  IS_CHROME,
+  IS_FIREFOX,
   isHTMLElement,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  RangeSelection,
-  SerializedElementNode,
-  Spread,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  type RangeSelection,
+  type SerializedElementNode,
+  type Spread,
 } from 'lexical';
 
 import {setDomHiddenUntilFound} from './CollapsibleUtils';
@@ -40,8 +41,8 @@ export class CollapsibleContainerNode extends ElementNode {
     this.__open = open;
   }
 
-  static getType(): string {
-    return 'collapsible-container';
+  $config() {
+    return this.config('collapsible-container', {extends: ElementNode});
   }
 
   static clone(node: CollapsibleContainerNode): CollapsibleContainerNode {
@@ -82,7 +83,7 @@ export class CollapsibleContainerNode extends ElementNode {
       const detailsDom = document.createElement('details');
       detailsDom.open = this.__open;
       detailsDom.addEventListener('toggle', () => {
-        const open = editor.getEditorState().read(() => this.getOpen());
+        const open = editor.read('latest', () => this.getOpen());
         if (open !== detailsDom.open) {
           editor.update(() => this.toggleOpen());
         }

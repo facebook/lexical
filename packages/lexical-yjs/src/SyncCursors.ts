@@ -6,13 +6,10 @@
  *
  */
 
-import type {
-  BaseSelection,
-  LexicalNode,
-  NodeKey,
-  NodeMap,
-  Point,
-} from 'lexical';
+import type {Provider, UserState} from '.';
+import type {CollabDecoratorNode} from './CollabDecoratorNode';
+import type {CollabLineBreakNode} from './CollabLineBreakNode';
+import type {CollabV2Mapping} from './CollabV2Mapping';
 
 import invariant from '@lexical/internal/invariant';
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
@@ -23,31 +20,34 @@ import {
   $isLineBreakNode,
   $isRangeSelection,
   $isTextNode,
+  type BaseSelection,
+  getRootOwnerDocument,
+  isDOMShadowRoot,
+  type LexicalNode,
+  type NodeKey,
+  type NodeMap,
+  type Point,
   setDOMStyleObject,
 } from 'lexical';
 import {
-  AbsolutePosition,
+  type AbsolutePosition,
   compareRelativePositions,
   createAbsolutePositionFromRelativePosition,
   createRelativePositionFromTypeIndex,
-  RelativePosition,
+  type RelativePosition,
   XmlElement,
-  XmlText,
+  type XmlText,
 } from 'yjs';
 
-import {Provider, UserState} from '.';
 import {
-  AnyBinding,
+  type AnyBinding,
   type BaseBinding,
   type Binding,
   type BindingV2,
   isBindingV1,
 } from './Bindings';
-import {CollabDecoratorNode} from './CollabDecoratorNode';
 import {CollabElementNode} from './CollabElementNode';
-import {CollabLineBreakNode} from './CollabLineBreakNode';
 import {CollabTextNode} from './CollabTextNode';
-import {CollabV2Mapping} from './CollabV2Mapping';
 import {getPositionFromElementAndOffset} from './Utils';
 
 export type CursorSelection = {
@@ -66,7 +66,7 @@ export type CursorSelection = {
   highlightName: string;
   name: HTMLSpanElement;
   /** Legacy fallback only: absolutely-positioned rect spans, one per visual rect. */
-  selections: Array<HTMLElement>;
+  selections: HTMLElement[];
 };
 
 const SUPPORTS_CSS_HIGHLIGHTS =
@@ -75,22 +75,50 @@ const SUPPORTS_CSS_HIGHLIGHTS =
   'highlights' in CSS;
 
 /**
- * Resolve the per-binding stylesheet that hosts `::highlight(...)` rules.
+ * The subset of a binding that {@link getCursorHighlightSheet} reads. Declared
+ * structurally so callers pass a full binding and tests pass a lightweight stub,
+ * neither needing a cast.
+ *
+ * @internal
  */
-function getCursorHighlightSheet(binding: BaseBinding): CSSStyleSheet {
-  if (binding.cursorHighlightSheet === null) {
-    const rootElement = binding.editor.getRootElement();
-    const ownerDocument =
-      rootElement !== null ? rootElement.ownerDocument : document;
+export interface CursorHighlightSheetBinding {
+  cursorHighlightSheet: CSSStyleSheet | null;
+  editor: {getRootElement: () => HTMLElement | null};
+}
+
+/**
+ * Resolve the per-binding stylesheet that hosts `::highlight(...)` rules,
+ * re-adopting it into the editor's current tree scope (document or shadow
+ * root) on every call.
+ *
+ * The editor root can move between the light DOM and a shadow root (a
+ * shadow-DOM toggle) without recreating the binding, and `::highlight()` rules
+ * only apply in the tree scope that owns the highlighted ranges, so the sheet
+ * is re-homed each call. A leftover adoption in a previously-used scope is
+ * harmless: shadow encapsulation means a rule there cannot match ranges in the
+ * new scope.
+ *
+ * @internal Exported for tests; not part of the package's public API.
+ */
+export function getCursorHighlightSheet(
+  binding: CursorHighlightSheetBinding,
+): CSSStyleSheet {
+  const rootElement = binding.editor.getRootElement();
+  const ownerDocument = getRootOwnerDocument(rootElement);
+  let sheet = binding.cursorHighlightSheet;
+  if (sheet === null) {
     const view = ownerDocument.defaultView || window;
-    const sheet = new view.CSSStyleSheet();
-    ownerDocument.adoptedStyleSheets = [
-      ...ownerDocument.adoptedStyleSheets,
-      sheet,
-    ];
+    sheet = new view.CSSStyleSheet();
     binding.cursorHighlightSheet = sheet;
   }
-  return binding.cursorHighlightSheet;
+  const root = rootElement !== null ? rootElement.getRootNode() : null;
+  const target: Document | ShadowRoot = isDOMShadowRoot(root)
+    ? root
+    : ownerDocument;
+  if (!target.adoptedStyleSheets.includes(sheet)) {
+    target.adoptedStyleSheets = [...target.adoptedStyleSheets, sheet];
+  }
+  return sheet;
 }
 
 function addCursorHighlightRule(
@@ -307,7 +335,8 @@ function createCursorSelection(
   } = {},
 ): CursorSelection {
   const color = cursor.color;
-  const caret = document.createElement('span');
+  const ownerDocument = getRootOwnerDocument(binding.editor.getRootElement());
+  const caret = ownerDocument.createElement('span');
   if (theme.cursor) {
     caret.className = theme.cursor;
     setDOMStyleObject(caret.style, {
@@ -328,7 +357,7 @@ function createCursorSelection(
       'z-index': '10',
     });
   }
-  const name = document.createElement('span');
+  const name = ownerDocument.createElement('span');
   name.textContent = cursor.name;
   if (theme.cursorName) {
     name.className = theme.cursorName;
@@ -399,6 +428,7 @@ function updateCursor(
     return;
   }
 
+  const ownerDocument = getRootOwnerDocument(rootElement);
   const cursorsContainerOffsetParent = cursorsContainer.offsetParent;
   if (cursorsContainerOffsetParent === null) {
     return;
@@ -486,7 +516,7 @@ function updateCursor(
 
   // legacy fallback path: per-rect absolutely-positioned span
   const selections = nextSelection.selections;
-  let selectionRects: Array<DOMRect>;
+  let selectionRects: DOMRect[];
 
   // In the case of a collapsed selection on a linebreak, we need
   // to improvise as the browser will return nothing here as <br>
@@ -521,9 +551,9 @@ function updateCursor(
     let selection = selections[i];
 
     if (selection === undefined) {
-      selection = document.createElement('span');
+      selection = ownerDocument.createElement('span');
       selections[i] = selection;
-      const selectionBg = document.createElement('span');
+      const selectionBg = ownerDocument.createElement('span');
       if (theme.selectionBg) {
         selectionBg.className = theme.selectionBg;
       }
@@ -769,7 +799,7 @@ function getCollabNodeAndOffset(
     );
 
     if (node === null) {
-      return [collabNode, 0];
+      return [collabNode, collabNode._children.length];
     } else {
       return [node, collabNodeOffset];
     }

@@ -6,12 +6,10 @@
  *
  */
 
-import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
-import type {JSX} from 'react';
-
 import {
   createLexicalComposerContext,
   LexicalComposerContext,
+  type LexicalComposerContextType,
 } from '@lexical/react/LexicalComposerContext';
 import {
   $createParagraphNode,
@@ -19,17 +17,18 @@ import {
   $getSelection,
   CAN_USE_DOM,
   createEditor,
-  EditorState,
-  EditorThemeClasses,
+  type EditorState,
+  type EditorThemeClasses,
+  getActiveElement,
   HISTORY_MERGE_TAG,
-  HTMLConfig,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
-  LexicalNodeReplacement,
+  type HTMLConfig,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalNodeReplacement,
 } from 'lexical';
 import * as React from 'react';
-import {useMemo} from 'react';
+import {type JSX, useMemo} from 'react';
 
 import useLayoutEffect from './shared/useLayoutEffect';
 
@@ -64,10 +63,26 @@ export type InitialEditorStateType =
   | EditorState
   | ((editor: LexicalEditor) => void);
 
+/**
+ * The configuration passed to {@link LexicalComposer} via its `initialConfig`
+ * prop. It is read once when the editor is created and describes the editor's
+ * `namespace`, registered `nodes`, `theme`, error handling, initial editable
+ * state, optional initial {@link InitialEditorStateType}, and HTML
+ * import/export configuration.
+ */
 export type InitialConfigType = Readonly<{
   namespace: string;
-  nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>;
+  nodes?: readonly (Klass<LexicalNode> | LexicalNodeReplacement)[];
   onError: (error: Error, editor: LexicalEditor) => void;
+  /**
+   * Optional handler for recoverable, warn-level conditions (e.g. the
+   * update-recursion guard tripping) that the editor has already recovered
+   * from. Mirrors {@link InitialConfigType.onError} but at warn severity, so
+   * embedders can route the condition to telemetry without raising an error
+   * alarm. Defaults (in core `createEditor`) to a handler that throws in
+   * development and only `console.warn`s in production.
+   */
+  onWarn?: (error: Error, editor: LexicalEditor) => void;
   editable?: boolean;
   theme?: EditorThemeClasses;
   /**
@@ -88,6 +103,21 @@ type Props = React.PropsWithChildren<{
   initialConfig: InitialConfigType;
 }>;
 
+/**
+ * The root component for a Lexical editor in React. It creates a
+ * {@link LexicalEditor} from `initialConfig`, provides it (and its
+ * {@link LexicalComposerContextType}) to descendants through React context, and
+ * renders its `children`. Place plugins and UI such as {@link RichTextPlugin}
+ * and {@link ContentEditable} inside it, and read the editor from descendants
+ * with {@link useLexicalComposerContext}.
+ *
+ * `LexicalComposer` uses the legacy plugin pattern and does not support the
+ * extension API. To build an editor from extensions, use
+ * {@link LexicalExtensionComposer} instead; see the
+ * [React extensions guide](https://lexical.dev/docs/extensions/react).
+ *
+ * @returns A context provider wrapping `children`.
+ */
 export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
   const composerContext: [LexicalEditor, LexicalComposerContextType] = useMemo(
     () => {
@@ -96,6 +126,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         namespace,
         nodes,
         onError,
+        onWarn,
         editorState: initialEditorState,
         html,
       } = initialConfig;
@@ -111,6 +142,7 @@ export function LexicalComposer({initialConfig, children}: Props): JSX.Element {
         namespace,
         nodes,
         onError: error => onError(error, editor),
+        ...(onWarn ? {onWarn: error => onWarn(error, editor)} : {}),
         theme,
       });
       initializeEditor(editor, initialEditorState);
@@ -151,10 +183,16 @@ function initializeEditor(
       if (root.isEmpty()) {
         const paragraph = $createParagraphNode();
         root.append(paragraph);
-        const activeElement = CAN_USE_DOM ? document.activeElement : null;
+        const rootElement = editor.getRootElement();
+        // getActiveElement rather than document.activeElement, which reports
+        // the shadow host when the editor is in a shadow root.
+        const activeElement =
+          CAN_USE_DOM && rootElement !== null
+            ? getActiveElement(rootElement)
+            : null;
         if (
           $getSelection() !== null ||
-          (activeElement !== null && activeElement === editor.getRootElement())
+          (activeElement !== null && activeElement === rootElement)
         ) {
           paragraph.select();
         }

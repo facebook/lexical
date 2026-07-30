@@ -6,17 +6,19 @@
  *
  */
 
-import type {
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-  SerializedLexicalNode,
-  Spread,
-} from 'lexical';
 import type {JSX} from 'react';
 
 import katex from 'katex';
-import {$applyNodeReplacement, DecoratorNode, DOMExportOutput} from 'lexical';
+import {
+  $applyNodeReplacement,
+  DecoratorNode,
+  type DOMExportOutput,
+  type EditorConfig,
+  type LexicalNode,
+  type NodeKey,
+  type SerializedLexicalNode,
+  type Spread,
+} from 'lexical';
 import * as React from 'react';
 
 const EquationComponent = React.lazy(() => import('./EquationComponent'));
@@ -33,12 +35,8 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
   __equation: string;
   __inline: boolean;
 
-  static getType(): string {
-    return 'equation';
-  }
-
-  static clone(node: EquationNode): EquationNode {
-    return new EquationNode(node.__equation, node.__inline, node.__key);
+  $config() {
+    return this.config('equation', {extends: DecoratorNode});
   }
 
   constructor(equation: string = '', inline?: boolean, key?: NodeKey) {
@@ -72,6 +70,8 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     const element = document.createElement(this.__inline ? 'span' : 'div');
     // EquationNodes should implement `user-action:none` in their CSS to avoid issues with deletion on Android.
     element.className = 'editor-equation';
+    element.setAttribute('role', 'math');
+    element.setAttribute('aria-label', `Equation: ${this.getEquation()}`);
     return element;
   }
 
@@ -89,12 +89,20 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
       throwOnError: false,
       trust: false,
     });
+    element.setAttribute('role', 'math');
+    element.setAttribute('aria-label', `Equation: ${this.__equation}`);
     return {element};
   }
 
-  updateDOM(prevNode: this): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement): boolean {
     // If the inline property changes, replace the element
-    return this.__inline !== prevNode.__inline;
+    if (this.__inline !== prevNode.__inline) {
+      return true;
+    }
+    if (this.__equation !== prevNode.__equation) {
+      dom.setAttribute('aria-label', `Equation: ${this.getEquation()}`);
+    }
+    return false;
   }
 
   getTextContent(): string {

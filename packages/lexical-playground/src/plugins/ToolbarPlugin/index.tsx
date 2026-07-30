@@ -6,8 +6,7 @@
  *
  */
 
-import type {JSX} from 'react';
-
+import {useMergeRefs} from '@floating-ui/react';
 import {$isCodeNode} from '@lexical/code';
 import {
   getCodeLanguageOptions as getCodeLanguageOptionsPrism,
@@ -23,6 +22,8 @@ import {$isLinkNode, TOGGLE_LINK_COMMAND} from '@lexical/link';
 import {$isListNode, ListNode} from '@lexical/list';
 import {ExtensionComponent} from '@lexical/react/ExtensionComponent';
 import {INSERT_EMBED_COMMAND} from '@lexical/react/LexicalAutoEmbedPlugin';
+import {useLexicalFocusManagerRef} from '@lexical/react/useLexicalFocusManagerRef';
+import {useLexicalRovingTabIndexRef} from '@lexical/react/useLexicalRovingTabIndexRef';
 import {$isHeadingNode} from '@lexical/rich-text';
 import {
   $getSelectionStyleValueForProperty,
@@ -30,15 +31,10 @@ import {
   $patchStyleText,
 } from '@lexical/selection';
 import {$isTableNode, $isTableSelection} from '@lexical/table';
-import {
-  $findMatchingParent,
-  $getNearestNodeOfType,
-  $isEditorIsNestedEditor,
-  IS_APPLE,
-  mergeRegister,
-} from '@lexical/utils';
+import {$getNearestNodeOfType, $isEditorIsNestedEditor} from '@lexical/utils';
 import {
   $addUpdateTag,
+  $findMatchingParent,
   $getNodeByKey,
   $getRoot,
   $getSelection,
@@ -46,28 +42,30 @@ import {
   $isNodeSelection,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  type AnyLexicalCommand,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
-  CommandPayloadType,
-  ElementFormatType,
+  type CommandPayloadType,
+  type ElementFormatType,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   HISTORIC_TAG,
   INDENT_CONTENT_COMMAND,
-  LexicalCommand,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
+  IS_APPLE,
+  type LexicalEditor,
+  type LexicalNode,
+  mergeRegister,
+  type NodeKey,
   OUTDENT_CONTENT_COMMAND,
   REDO_COMMAND,
   SELECTION_CHANGE_COMMAND,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SELECTION_FOCUS_TAG,
-  TextFormatType,
+  type TextFormatType,
   UNDO_COMMAND,
 } from 'lexical';
-import {Dispatch, useCallback, useEffect, useState} from 'react';
+import {type Dispatch, type JSX, useCallback, useEffect, useState} from 'react';
 
 import {useSettings} from '../../context/SettingsContext';
 import {
@@ -91,13 +89,15 @@ import {INSERT_EXCALIDRAW_COMMAND} from '../ExcalidrawExtension';
 import {
   INSERT_IMAGE_COMMAND,
   InsertImageDialog,
-  InsertImagePayload,
+  type InsertImagePayload,
 } from '../ImagesExtension';
 import InsertLayoutDialog from '../LayoutExtension/InsertLayoutDialog';
 import {INSERT_PAGE_BREAK} from '../PageBreakExtension';
 import {PagesReactExtension} from '../PagesReactExtension';
 import {InsertPollDialog} from '../PollExtension';
+import {$isRubyNode, $toggleRuby} from '../RubyExtension/RubyNode';
 import {SHORTCUTS} from '../ShortcutsPlugin/shortcuts';
+import ShortcutsHelpDialog from '../ShortcutsPlugin/ShortcutsHelpDialog';
 import {InsertTableDialog} from '../TablePlugin';
 import FontSize, {parseFontSizeForToolbar} from './fontSize';
 import {
@@ -523,7 +523,7 @@ function ElementFormatDropdown({
       <Divider />
       <DropDownItem
         onClick={() => {
-          editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+          editor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
         }}
         className="item wide">
         <div className="icon-text-container">
@@ -534,7 +534,7 @@ function ElementFormatDropdown({
       </DropDownItem>
       <DropDownItem
         onClick={() => {
-          editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+          editor.dispatchCommand(INDENT_CONTENT_COMMAND);
         }}
         className="item wide">
         <div className="icon-text-container">
@@ -567,11 +567,13 @@ export default function ToolbarPlugin({
   activeEditor,
   setActiveEditor,
   setIsLinkEditMode,
+  setIsRubyEditMode,
 }: {
   editor: LexicalEditor;
   activeEditor: LexicalEditor;
   setActiveEditor: Dispatch<LexicalEditor>;
   setIsLinkEditMode: Dispatch<boolean>;
+  setIsRubyEditMode: Dispatch<boolean>;
 }): JSX.Element {
   const [selectedElementKey, setSelectedElementKey] = useState<NodeKey | null>(
     null,
@@ -579,8 +581,11 @@ export default function ToolbarPlugin({
   const [modal, showModal] = useModal();
   const [isEditable, setIsEditable] = useState(() => editor.isEditable());
   const {toolbarState, updateToolbarState} = useToolbarState();
+  const rovingRef = useLexicalRovingTabIndexRef();
+  const focusManagerRef = useLexicalFocusManagerRef();
+  const toolbarRef = useMergeRefs([rovingRef, focusManagerRef]);
 
-  const dispatchToolbarCommand = <T extends LexicalCommand<unknown>>(
+  const dispatchToolbarCommand = <T extends AnyLexicalCommand>(
     command: T,
     payload: CommandPayloadType<T> | undefined = undefined,
     skipRefocus: boolean = false,
@@ -801,12 +806,9 @@ export default function ToolbarPlugin({
   }, [editor, $updateToolbar, setActiveEditor]);
 
   useEffect(() => {
-    activeEditor.getEditorState().read(
-      () => {
-        $updateToolbar();
-      },
-      {editor: activeEditor},
-    );
+    activeEditor.read('latest', () => {
+      $updateToolbar();
+    });
   }, [activeEditor, $updateToolbar]);
 
   useEffect(() => {
@@ -822,7 +824,7 @@ export default function ToolbarPlugin({
           {editor: activeEditor},
         );
       }),
-      activeEditor.registerCommand<boolean>(
+      activeEditor.registerCommand(
         CAN_UNDO_COMMAND,
         payload => {
           updateToolbarState('canUndo', payload);
@@ -830,7 +832,7 @@ export default function ToolbarPlugin({
         },
         COMMAND_PRIORITY_CRITICAL,
       ),
-      activeEditor.registerCommand<boolean>(
+      activeEditor.registerCommand(
         CAN_REDO_COMMAND,
         payload => {
           updateToolbarState('canRedo', payload);
@@ -894,6 +896,26 @@ export default function ToolbarPlugin({
     }
   }, [activeEditor, setIsLinkEditMode, toolbarState.isLink]);
 
+  const insertRuby = useCallback(() => {
+    const {hasRuby, hasSelection} = activeEditor.read(() => {
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        return {
+          hasRuby: selection.getNodes().some($isRubyNode),
+          hasSelection: !selection.isCollapsed(),
+        };
+      }
+      return {hasRuby: false, hasSelection: false};
+    });
+    if (hasRuby) {
+      activeEditor.update(() => {
+        $toggleRuby(null);
+      });
+    } else if (hasSelection) {
+      setIsRubyEditMode(true);
+    }
+  }, [activeEditor, setIsRubyEditMode]);
+
   const onCodeLanguageSelect = useCallback(
     (value: string | null) => {
       activeEditor.update(() => {
@@ -929,7 +951,11 @@ export default function ToolbarPlugin({
   const canViewerSeeInsertCodeButton = !toolbarState.isImageCaption;
 
   return (
-    <div className="toolbar">
+    <div
+      ref={toolbarRef}
+      className="toolbar"
+      role="toolbar"
+      aria-label="Editor toolbar">
       <button
         disabled={!toolbarState.canUndo || !isEditable}
         onClick={e =>
@@ -1144,6 +1170,15 @@ export default function ToolbarPlugin({
             title={`Insert link (${SHORTCUTS.INSERT_LINK})`}
             type="button">
             <i className="format link" />
+          </button>
+          <button
+            disabled={!isEditable}
+            onClick={insertRuby}
+            className="toolbar-item spaced"
+            aria-label="Insert ruby annotation"
+            title="Insert ruby annotation"
+            type="button">
+            <i className="format ruby" />
           </button>
           <DropdownColorPicker
             disabled={!isEditable}
@@ -1451,6 +1486,17 @@ export default function ToolbarPlugin({
         editor={activeEditor}
         isRTL={toolbarState.isRTL}
       />
+      <Divider />
+      <button
+        type="button"
+        className="toolbar-item spaced"
+        title="Keyboard shortcuts"
+        aria-label="Show keyboard shortcuts"
+        onClick={() =>
+          showModal('Keyboard shortcuts', () => <ShortcutsHelpDialog />)
+        }>
+        <span className="text">?</span>
+      </button>
 
       {modal}
     </div>

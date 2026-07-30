@@ -20,7 +20,7 @@ import type {JSX} from 'react';
 import {BlockWithAlignableContents} from '@lexical/react/LexicalBlockWithAlignableContents';
 import {
   DecoratorBlockNode,
-  SerializedDecoratorBlockNode,
+  type SerializedDecoratorBlockNode,
 } from '@lexical/react/LexicalDecoratorBlockNode';
 import * as React from 'react';
 
@@ -68,8 +68,8 @@ export type SerializedYouTubeNode = Spread<
 export class YouTubeNode extends DecoratorBlockNode {
   __id: string;
 
-  static getType(): string {
-    return 'youtube';
+  $config() {
+    return this.config('youtube', {extends: DecoratorBlockNode});
   }
 
   static clone(node: YouTubeNode): YouTubeNode {

@@ -6,9 +6,9 @@
  *
  */
 
-import {namedSignals, NamedSignalsOutput} from '@lexical/extension';
-import {$findMatchingParent, isHTMLAnchorElement} from '@lexical/utils';
+import {namedSignals, type NamedSignalsOutput} from '@lexical/extension';
 import {
+  $findMatchingParent,
   $getNearestNodeFromDOMNode,
   $getSelection,
   $isElementNode,
@@ -16,12 +16,14 @@ import {
   defineExtension,
   getNearestEditorFromDOMNode,
   isDOMNode,
-  LexicalEditor,
+  isHTMLAnchorElement,
+  type LexicalEditor,
+  registerEventListeners,
   safeCast,
 } from 'lexical';
 
 import {LinkExtension} from './LexicalLinkExtension';
-import {$isLinkNode} from './LexicalLinkNode';
+import {$isAutoLinkNode, $isLinkNode} from './LexicalLinkNode';
 
 function findMatchingDOM<T extends Node>(
   startNode: Node,
@@ -62,12 +64,15 @@ export function registerClickableLink(
 
     let url = null;
     let urlTarget = null;
+    let isUnlinkedAutolink = false;
     nearestEditor.update(() => {
       const clickedNode = $getNearestNodeFromDOMNode(target);
       if (clickedNode !== null) {
         const maybeLinkNode = $findMatchingParent(clickedNode, $isElementNode);
         if (!stores.disabled.peek()) {
           if ($isLinkNode(maybeLinkNode)) {
+            isUnlinkedAutolink =
+              $isAutoLinkNode(maybeLinkNode) && maybeLinkNode.getIsUnlinked();
             url = maybeLinkNode.sanitizeUrl(maybeLinkNode.getURL());
             urlTarget = maybeLinkNode.getTarget();
           } else {
@@ -81,18 +86,19 @@ export function registerClickableLink(
       }
     });
 
-    if (url === null || url === '') {
+    if (url === null || url === '' || isUnlinkedAutolink) {
       return;
     }
 
     // Allow user to select link text without following url
-    const selection = editor.getEditorState().read($getSelection, {editor});
+    const selection = editor.read('latest', $getSelection);
     if ($isRangeSelection(selection) && !selection.isCollapsed()) {
       event.preventDefault();
       return;
     }
 
     const isMiddle = event.type === 'auxclick' && event.button === 1;
+    // eslint-disable-next-line no-restricted-syntax
     window.open(
       url,
       stores.newTab.peek() ||
@@ -114,12 +120,11 @@ export function registerClickableLink(
 
   return editor.registerRootListener(rootElement => {
     if (rootElement) {
-      rootElement.addEventListener('click', onClick, eventOptions);
-      rootElement.addEventListener('mouseup', onMouseUp, eventOptions);
-      return () => {
-        rootElement.removeEventListener('click', onClick);
-        rootElement.removeEventListener('mouseup', onMouseUp);
-      };
+      return registerEventListeners(
+        rootElement,
+        {click: onClick, mouseup: onMouseUp},
+        eventOptions,
+      );
     }
   });
 }
@@ -129,11 +134,14 @@ export function registerClickableLink(
  * selection to change instead of opening a link. This extension can be used to
  * restore the default behavior, e.g. when the editor is not editable.
  */
-export const ClickableLinkExtension = defineExtension({
+export const ClickableLinkExtension = /* @__PURE__ */ defineExtension({
   build(editor, config, state) {
     return namedSignals(config);
   },
-  config: safeCast<ClickableLinkConfig>({disabled: false, newTab: false}),
+  config: /* @__PURE__ */ safeCast<ClickableLinkConfig>({
+    disabled: false,
+    newTab: false,
+  }),
   dependencies: [LinkExtension],
   name: '@lexical/link/ClickableLink',
   register(editor, config, state) {

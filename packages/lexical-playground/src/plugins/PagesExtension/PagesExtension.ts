@@ -23,14 +23,15 @@ import {
   DELETE_CHARACTER_COMMAND,
   HISTORY_MERGE_TAG,
   mergeRegister,
-  NodeKey,
+  type NodeKey,
+  registerEventListeners,
   RootNode,
   safeCast,
   SELECTION_CHANGE_COMMAND,
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
 
-import {$isPageBreakNode, PageBreakNode} from '../../nodes/PageBreakNode';
+import {$isPageBreakNode, type PageBreakNode} from '../../nodes/PageBreakNode';
 import {PageBreakExtension} from '../PageBreakExtension';
 import {PAGE_SIZES} from './constants';
 import {
@@ -47,9 +48,9 @@ export interface PagesConfig {
   pageClass: string;
 }
 
-export const PagesExtension = defineExtension({
+export const PagesExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config) => {
-    const getPageSetup = () => editor.getEditorState().read($getPageSetup);
+    const getPageSetup = () => editor.read('latest', $getPageSetup);
 
     return {
       ...namedSignals({disabled: config.disabled}),
@@ -60,7 +61,7 @@ export const PagesExtension = defineExtension({
       ),
     };
   },
-  config: safeCast<PagesConfig>({
+  config: /* @__PURE__ */ safeCast<PagesConfig>({
     disabled: false,
     pageClass: 'PlaygroundEditorTheme__page',
     pageContentClass: 'PlaygroundEditorTheme__pageContent',
@@ -287,7 +288,7 @@ export const PagesExtension = defineExtension({
       // the corresponding CSS custom properties to the root element, or removes
       // them when paged mode is disabled.
       const updatePageDimensions = () => {
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           const pageSetup = $getPageSetup();
           const rootElement = editor.getRootElement();
           if (!rootElement) return;
@@ -354,7 +355,7 @@ export const PagesExtension = defineExtension({
           () => {
             const root = $getRoot();
             const children = root.getChildren();
-            const pages = [] as Array<PageNode | PageBreakNode>;
+            const pages = [] as (PageNode | PageBreakNode)[];
             for (const child of children) {
               if ($isPageNode(child) || $isPageBreakNode(child)) {
                 if ($isPageNode(child)) {
@@ -699,7 +700,7 @@ export const PagesExtension = defineExtension({
               RootNode,
               (_mutations, {prevEditorState}) => {
                 const change = $getStateChange(
-                  editor.getEditorState().read($getRoot),
+                  editor.read('latest', $getRoot),
                   prevEditorState.read($getRoot),
                   pageSetupState,
                 );
@@ -743,27 +744,31 @@ export const PagesExtension = defineExtension({
             }
           };
 
-          window.addEventListener('beforeprint', handleBeforePrint);
-          window.addEventListener('afterprint', handleAfterPrint);
-
-          return () => {
-            rootObserver.disconnect();
-            pageObserver.disconnect();
-            if (rafId !== null) {
-              cancelAnimationFrame(rafId);
-            }
-            clearMeasurementFlags();
-            removeCommandListeners();
-            removePageTransform();
-            removeRootTransform();
-            removePageContentTransform();
-            removeMutationListeners();
-            window.removeEventListener('beforeprint', handleBeforePrint);
-            window.removeEventListener('afterprint', handleAfterPrint);
-            if (output.disabled.peek()) {
-              destroyPageStructure();
-            }
-          };
+          return mergeRegister(
+            // Placed first so mergeRegister's reverse (LIFO) teardown runs it
+            // last, only after every listener and transform below has been
+            // torn down.
+            () => {
+              if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+              }
+              pageObserver.disconnect();
+              rootObserver.disconnect();
+              if (output.disabled.peek()) {
+                destroyPageStructure();
+              }
+            },
+            clearMeasurementFlags,
+            removeCommandListeners,
+            removePageTransform,
+            removeRootTransform,
+            removePageContentTransform,
+            removeMutationListeners,
+            registerEventListeners(window, {
+              afterprint: handleAfterPrint,
+              beforeprint: handleBeforePrint,
+            }),
+          );
         });
       });
     }),

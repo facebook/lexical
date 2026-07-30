@@ -9,7 +9,6 @@ import './index.css';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getYChangeState,
   CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
@@ -20,14 +19,15 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
   createCommand,
-  LexicalCommand,
+  type LexicalCommand,
+  mergeRegister,
   TextNode,
 } from 'lexical';
 import _ from 'lodash';
 import {useCallback, useEffect, useState} from 'react';
 import {
   PermanentUserData,
-  Snapshot,
+  type Snapshot,
   snapshot as createSnapshot,
   XmlElement,
 } from 'yjs';
@@ -52,9 +52,8 @@ const COLORS = [
 
 type User = string; // username
 
-export const SHOW_VERSIONS_COMMAND: LexicalCommand<void> = createCommand(
-  'SHOW_VERSIONS_COMMAND',
-);
+export const SHOW_VERSIONS_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('SHOW_VERSIONS_COMMAND');
 
 export function VersionsPlugin({id}: {id: string}) {
   const [editor] = useLexicalComposerContext();
@@ -98,10 +97,7 @@ export function VersionsPlugin({id}: {id: string}) {
         ),
         editor.registerEditableListener(isEditable => {
           if (isEditable && isDiffMode) {
-            editor.dispatchCommand(
-              CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
-              undefined,
-            );
+            editor.dispatchCommand(CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL);
           }
         }),
       ),
@@ -146,12 +142,12 @@ export function VersionsPlugin({id}: {id: string}) {
           userToColor.set(user, color);
           return color;
         };
-        editor.getEditorState().read(() => {
+        editor.read('latest', () => {
           for (const [nodeKey, mutation] of nodes.entries()) {
             if (mutation === 'destroyed') {
               continue;
             }
-            const node = $getNodeByKeyOrThrow<TextNode>(nodeKey);
+            const node = $getNodeByKeyOrThrow(nodeKey);
             const ychange = $getYChangeState<User>(node);
             const element = editor.getElementByKey(nodeKey);
             if (!ychange || !element) {
@@ -234,7 +230,6 @@ function VersionsModal({
               onClick={() => {
                 editor.dispatchCommand(
                   CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
-                  undefined,
                 );
                 onClose();
               }}>

@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {LexicalNode} from 'lexical';
 
 import {getExtensionDependencyFromEditor} from '@lexical/extension';
 import {
@@ -13,9 +12,10 @@ import {
   $getEditor,
   addClassNamesToElement,
   ElementNode,
+  type LexicalNode,
 } from 'lexical';
 
-import {$isPageNode, PageNode} from './PageNode';
+import {$isPageNode, type PageNode} from './PageNode';
 import {PagesExtension} from './PagesExtension';
 
 export class PageContentNode extends ElementNode {

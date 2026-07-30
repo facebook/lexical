@@ -326,7 +326,7 @@ test.describe('Events', () => {
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
             <span data-lexical-text="true">${replacementText}</span>
             <br />
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -344,7 +344,7 @@ test.describe('Events', () => {
             <span data-lexical-text="true">${replacementText}</span>
           </p>
           <p class="PlaygroundEditorTheme__paragraph" dir="auto">
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );

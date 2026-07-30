@@ -6,7 +6,11 @@
  *
  */
 
-import {TabIndentationExtension} from '@lexical/extension';
+import {
+  ClickAfterLastBlockExtension,
+  SelectBlockExtension,
+  TabIndentationExtension,
+} from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {ListExtension} from '@lexical/list';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
@@ -45,6 +49,8 @@ const editorExtension = defineExtension({
     HistoryExtension,
     ListExtension,
     TabIndentationExtension,
+    ClickAfterLastBlockExtension,
+    SelectBlockExtension,
   ],
   name: '@lexical/website/notion-like-editor',
   namespace: '@lexical/website/notion-like-editor',

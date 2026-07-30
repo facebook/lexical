@@ -7,14 +7,6 @@
  */
 
 import type {Provider} from '@lexical/yjs';
-import type {
-  EditorState,
-  LexicalCommand,
-  LexicalEditor,
-  NodeKey,
-  RangeSelection,
-} from 'lexical';
-import type {JSX} from 'react';
 import type {Doc} from 'yjs';
 
 import './index.css';
@@ -39,7 +31,7 @@ import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {$isRootTextContentEmpty, $rootTextContent} from '@lexical/text';
-import {mergeRegister, registerNestedElementResolver} from '@lexical/utils';
+import {registerNestedElementResolver} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -50,11 +42,21 @@ import {
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_NORMAL,
   createCommand,
+  type EditorState,
+  getActiveElementDeep,
   getDOMSelection,
+  getRootOwnerDocument,
   KEY_ESCAPE_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
+  mergeRegister,
+  type NodeKey,
+  type RangeSelection,
+  registerEventListener,
 } from 'lexical';
 import * as React from 'react';
 import {
+  type JSX,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -65,12 +67,12 @@ import {
 import {createPortal} from 'react-dom';
 
 import {
-  Comment,
-  Comments,
+  type Comment,
+  type Comments,
   CommentStore,
   createComment,
   createThread,
-  Thread,
+  type Thread,
   useCommentStore,
 } from '../../commenting';
 import useModal from '../../hooks/useModal';
@@ -78,9 +80,8 @@ import CommentEditorTheme from '../../themes/CommentEditorTheme';
 import Button from '../../ui/Button';
 import ContentEditable from '../../ui/ContentEditable';
 
-export const INSERT_INLINE_COMMAND: LexicalCommand<void> = createCommand(
-  'INSERT_INLINE_COMMAND',
-);
+export const INSERT_INLINE_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('INSERT_INLINE_COMMAND');
 
 function AddCommentBox({
   anchorKey,
@@ -107,11 +108,7 @@ function AddCommentBox({
   }, [anchorKey, editor]);
 
   useEffect(() => {
-    window.addEventListener('resize', updatePosition);
-
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-    };
+    return registerEventListener(window, 'resize', updatePosition);
   }, [editor, updatePosition]);
 
   useLayoutEffect(() => {
@@ -236,7 +233,7 @@ function CommentInputBox({
   const author = useCollabAuthorName();
 
   const updateLocation = useCallback(() => {
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       const selection = $getSelection();
 
       if ($isRangeSelection(selection)) {
@@ -267,7 +264,7 @@ function CommentInputBox({
           }px`;
           const selectionRectsLength = selectionRects.length;
           const {container} = selectionState;
-          const elements: Array<HTMLSpanElement> = selectionState.elements;
+          const elements: HTMLSpanElement[] = selectionState.elements;
           const elementsLength = elements.length;
 
           for (let i = 0; i < selectionRectsLength; i++) {
@@ -314,11 +311,7 @@ function CommentInputBox({
   }, [selectionState.container, updateLocation]);
 
   useEffect(() => {
-    window.addEventListener('resize', updateLocation);
-
-    return () => {
-      window.removeEventListener('resize', updateLocation);
-    };
+    return registerEventListener(window, 'resize', updateLocation);
   }, [updateLocation]);
 
   const onEscape = (event: KeyboardEvent): boolean => {
@@ -329,7 +322,7 @@ function CommentInputBox({
 
   const submitComment = () => {
     if (canSubmit) {
-      let quote = editor.getEditorState().read(() => {
+      let quote = editor.read('latest', () => {
         const selection = selectionRef.current;
         return selection ? selection.getTextContent() : '';
       });
@@ -398,7 +391,7 @@ function CommentsComposer({
       submitAddComment(createComment(content, author), false, thread);
       const editor = editorRef.current;
       if (editor !== null) {
-        editor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
+        editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
       }
     }
   };
@@ -532,7 +525,7 @@ function CommentsPanelList({
   submitAddComment,
   markNodeMap,
 }: {
-  activeIDs: Array<string>;
+  activeIDs: string[];
   comments: Comments;
   deleteCommentOrThread: (
     commentOrThread: Comment | Thread,
@@ -581,13 +574,18 @@ function CommentsPanelList({
               markNodeKeys !== undefined &&
               (activeIDs === null || activeIDs.indexOf(id) === -1)
             ) {
-              const activeElement = document.activeElement;
+              // getActiveElementDeep rather than document.activeElement so the
+              // focused element is resolved through any shadow roots when
+              // restoring focus after the selection moves below.
+              const activeElement = getActiveElementDeep(
+                getRootOwnerDocument(editor.getRootElement()),
+              );
               // Move selection to the start of the mark, so that we
               // update the UI with the selected thread.
               editor.update(
                 () => {
                   const markNodeKey = Array.from(markNodeKeys)[0];
-                  const markNode = $getNodeByKey<MarkNode>(markNodeKey);
+                  const markNode = $getNodeByKey(markNodeKey);
                   if ($isMarkNode(markNode)) {
                     markNode.selectStart();
                   }
@@ -674,7 +672,7 @@ function CommentsPanel({
   submitAddComment,
   markNodeMap,
 }: {
-  activeIDs: Array<string>;
+  activeIDs: string[];
   comments: Comments;
   deleteCommentOrThread: (
     commentOrThread: Comment | Thread,
@@ -728,7 +726,7 @@ export default function CommentPlugin({
     return new Map();
   }, []);
   const [activeAnchorKey, setActiveAnchorKey] = useState<NodeKey | null>();
-  const [activeIDs, setActiveIDs] = useState<Array<string>>([]);
+  const [activeIDs, setActiveIDs] = useState<string[]>([]);
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const {yjsDocMap} = collabContext;
@@ -773,7 +771,7 @@ export default function CommentPlugin({
           setTimeout(() => {
             editor.update(() => {
               for (const key of markNodeKeys) {
-                const node: null | MarkNode = $getNodeByKey(key);
+                const node = $getNodeByKey(key);
                 if ($isMarkNode(node)) {
                   node.deleteID(id);
                   if (node.getIDs().length === 0) {
@@ -814,7 +812,7 @@ export default function CommentPlugin({
   );
 
   useEffect(() => {
-    const changedElems: Array<HTMLElement> = [];
+    const changedElems: HTMLElement[] = [];
     for (let i = 0; i < activeIDs.length; i++) {
       const id = activeIDs[i];
       const keys = markNodeMap.get(id);
@@ -839,7 +837,7 @@ export default function CommentPlugin({
   }, [activeIDs, editor, markNodeMap]);
 
   useEffect(() => {
-    const markNodeKeysToIDs: Map<NodeKey, Array<string>> = new Map();
+    const markNodeKeysToIDs: Map<NodeKey, string[]> = new Map();
 
     return mergeRegister(
       registerNestedElementResolver<MarkNode>(
@@ -859,9 +857,9 @@ export default function CommentPlugin({
       editor.registerMutationListener(
         MarkNode,
         mutations => {
-          editor.getEditorState().read(() => {
+          editor.read('latest', () => {
             for (const [key, mutation] of mutations) {
-              const node: null | MarkNode = $getNodeByKey(key);
+              const node = $getNodeByKey(key);
               let ids: NodeKey[] = [];
 
               if (mutation === 'destroyed') {
@@ -950,7 +948,7 @@ export default function CommentPlugin({
   }, [editor, markNodeMap]);
 
   const onAddComment = () => {
-    editor.dispatchCommand(INSERT_INLINE_COMMAND, undefined);
+    editor.dispatchCommand(INSERT_INLINE_COMMAND);
   };
 
   return (

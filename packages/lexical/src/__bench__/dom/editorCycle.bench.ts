@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalEditor} from '../../';
-
 import invariant from '@lexical/internal/invariant';
 import {bench, describe} from 'vitest';
 
@@ -16,6 +14,7 @@ import {
   $createTextNode,
   $getRoot,
   $isParagraphNode,
+  type LexicalEditor,
 } from '../../';
 import {createTestEditor} from '../../__tests__/utils';
 import {__benchOnly} from '../../LexicalReconciler';

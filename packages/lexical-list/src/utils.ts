@@ -6,12 +6,20 @@
  *
  */
 
-import type {LexicalNode, Spread} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
-import {$findMatchingParent} from '@lexical/utils';
+import {
+  $findMatchingParent,
+  type ElementNode,
+  type LexicalNode,
+  type Spread,
+} from 'lexical';
 
-import {$isListItemNode, $isListNode, ListItemNode, ListNode} from './';
+import {
+  $isListItemNode,
+  $isListNode,
+  type ListItemNode,
+  type ListNode,
+} from './';
 
 /**
  * Checks the depth of listNode from the root node.
@@ -46,13 +54,14 @@ export function $getListDepth(listNode: ListNode): number {
  * @returns The ListNode found.
  */
 export function $getTopListNode(listItem: LexicalNode): ListNode {
-  let list = listItem.getParent<ListNode>();
+  const parentList = listItem.getParent();
 
-  if (!$isListNode(list)) {
+  if (!$isListNode(parentList)) {
     invariant(false, 'A ListItemNode must have a ListNode for a parent.');
   }
 
-  let parent: ListNode | null = list;
+  let list: ListNode = parentList;
+  let parent: ElementNode | null = parentList;
 
   while (parent !== null) {
     parent = parent.getParent();
@@ -77,7 +86,7 @@ export function $isLastItemInList(listItem: ListItemNode): boolean {
   if ($isListNode(firstChild)) {
     return false;
   }
-  let parent: ListItemNode | null = listItem;
+  let parent: ElementNode | null = listItem;
 
   while (parent !== null) {
     if ($isListItemNode(parent)) {
@@ -99,9 +108,9 @@ export function $isLastItemInList(listItem: ListItemNode): boolean {
  * @returns An array containing all nodes of type ListItemNode found.
  */
 // This should probably be $getAllChildrenOfType
-export function $getAllListItems(node: ListNode): Array<ListItemNode> {
-  let listItemNodes: Array<ListItemNode> = [];
-  const listChildren: Array<ListItemNode> = node
+export function $getAllListItems(node: ListNode): ListItemNode[] {
+  let listItemNodes: ListItemNode[] = [];
+  const listChildren: ListItemNode[] = node
     .getChildren()
     .filter($isListItemNode);
 
@@ -128,7 +137,7 @@ const NestedListNodeBrand: unique symbol = Symbol.for(
  * @param node - The node to be checked.
  * @returns true if the node is a ListItemNode and has a ListNode child, false otherwise.
  */
-export function isNestedListNode(
+export function $isNestedListNode(
   node: LexicalNode | null | undefined,
 ): node is Spread<
   {getFirstChild(): ListNode; [NestedListNodeBrand]: never},

@@ -61,8 +61,10 @@ export function wrapTableHtml(
           m => [m[1], m[2]],
         );
         const dirAttr = attrs.find(([k]) => k === 'dir');
-        const divAttrs = [
-          dirAttr,
+        const outerDivAttrs = [dirAttr]
+          .filter(Boolean)
+          .map(([k, v]) => `${k}="${v}"`);
+        const innerDivAttrs = [
           !ignoreClasses && [
             'class',
             'PlaygroundEditorTheme__tableScrollableWrapper',
@@ -73,15 +75,16 @@ export function wrapTableHtml(
         const tableAttrs = attrs
           .filter(([k]) => k !== 'dir')
           .map(([k, v]) => `${k}="${v}"`);
-        return `<div ${divAttrs.join(' ')}><table ${tableAttrs.join(' ')}>`;
+        return `<div ${outerDivAttrs.join(' ')}><div ${innerDivAttrs.join(' ')}><table ${tableAttrs.join(' ')}>`;
       })
-      .replace(/<\/table>/g, '</table></div>')}
+      .replace(/<\/table>/g, '</table></div></div>')}
   `;
 }
 
 export async function initialize({
   page,
   isCollab,
+  selectBlock,
   isAutocomplete,
   isCharLimit,
   isCharLimitUtf8,
@@ -97,6 +100,7 @@ export async function initialize({
   tableHorizontalScroll,
   shouldAllowHighlightingWithBrackets,
   selectionAlwaysOnDisplay,
+  isShadowDOM,
 }) {
   const appSettings = {};
   appSettings.isRichText = IS_RICH_TEXT;
@@ -132,6 +136,15 @@ export async function initialize({
     !!shouldAllowHighlightingWithBrackets;
 
   appSettings.selectionAlwaysOnDisplay = !!selectionAlwaysOnDisplay;
+  // The playground app defaults `selectBlock` to true (see appSettings.ts),
+  // but the e2e harness pins it to false unless a spec opts in (e.g.
+  // SelectBlock.spec.mjs), so the rest of the suite keeps the legacy
+  // whole-document SELECT_ALL semantics that selectAll()/clearEditor() rely
+  // on. This setting is always written to the URL so the app default never
+  // leaks into an e2e run.
+  appSettings.selectBlock = !!selectBlock;
+
+  appSettings.isShadowDOM = !!isShadowDOM;
 
   const urlParams = appSettingsToURLParams(appSettings);
   const url = `http://localhost:${E2E_PORT}/${
@@ -145,6 +158,31 @@ export async function initialize({
   // multiplied across retries and every test in a mode, can hang a whole CI
   // shard for hours.
   const pageError = rejectOnPageError(page);
+
+  if (isShadowDOM) {
+    // Walk open shadow roots to find the editor's contentEditable. Used by
+    // shadow DOM specs that synthesize events at a node inside the shadow
+    // tree; document.querySelector does not pierce shadow boundaries.
+    await page.addInitScript(() => {
+      window.__findShadowEditor = function findEditor(root) {
+        const direct = root.querySelector(
+          'div[contenteditable="true"][data-lexical-editor="true"]',
+        );
+        if (direct !== null) {
+          return direct;
+        }
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            const inner = findEditor(el.shadowRoot);
+            if (inner !== null) {
+              return inner;
+            }
+          }
+        }
+        return null;
+      };
+    });
+  }
 
   await page.goto(url);
 
@@ -223,7 +261,9 @@ async function exposeLexicalEditor(page, pageError = null) {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   }
@@ -234,9 +274,24 @@ async function exposeLexicalEditor(page, pageError = null) {
     ),
   );
   await leftFrame.evaluate(() => {
-    window.lexicalEditor = document.querySelector(
-      '[data-lexical-editor="true"]',
-    ).__lexicalEditor;
+    // querySelector does not pierce shadow roots, so descend into any open
+    // shadow trees to support the "Render in Shadow DOM" playground setting.
+    const findEditorElement = root => {
+      const found = root.querySelector('[data-lexical-editor="true"]');
+      if (found !== null) {
+        return found;
+      }
+      for (const element of root.querySelectorAll('*')) {
+        if (element.shadowRoot !== null) {
+          const inner = findEditorElement(element.shadowRoot);
+          if (inner !== null) {
+            return inner;
+          }
+        }
+      }
+      return null;
+    };
+    window.lexicalEditor = findEditorElement(document).__lexicalEditor;
   });
 }
 
@@ -279,7 +334,7 @@ export async function clickSelectors(page, selectors) {
 function removeSafariLinebreakImgHack(actualHtml) {
   return E2E_BROWSER === 'webkit'
     ? actualHtml.replaceAll(
-        /<img (?:[^>]+ )?data-lexical-linebreak="true"(?: [^>]+)?>/g,
+        /<img (?:[^>]+ )?data-lexical-managed-linebreak="true"(?: [^>]+)?>/g,
         '',
       )
     : actualHtml;
@@ -287,6 +342,13 @@ function removeSafariLinebreakImgHack(actualHtml) {
 
 function removeDropTargetAttributes(actualHtml) {
   return actualHtml.replaceAll(/ data-drop-target-for-element="true"/g, '');
+}
+
+function removeStickyScrollbar(actualHtml) {
+  return actualHtml
+    .replace(/<div[^>]*\baria-hidden="true"[^>]*><div[^>]*><\/div><\/div>/g, '')
+    .replace(/\s*data-lexical-sticky-scrollbar="true"/g, '')
+    .replace(/\s*style="scrollbar-width: none;?"/g, '');
 }
 
 /**
@@ -307,12 +369,14 @@ async function assertHTMLOnPageOrFrame(
     ignoreInlineStyles,
   });
   return await expect(async () => {
-    const actualHtml = removeDropTargetAttributes(
-      removeSafariLinebreakImgHack(
-        await pageOrFrame
-          .locator('div[contenteditable="true"]')
-          .first()
-          .innerHTML(),
+    const actualHtml = removeStickyScrollbar(
+      removeDropTargetAttributes(
+        removeSafariLinebreakImgHack(
+          await pageOrFrame
+            .locator('div[contenteditable="true"]')
+            .first()
+            .innerHTML(),
+        ),
       ),
     );
     let actual = await prettifyHTML(actualHtml.replace(/\n/gm, ''), {
@@ -495,7 +559,8 @@ async function assertSelectionOnPageOrFrame(page, expected) {
         if (
           child &&
           child.nodeType === Node.ELEMENT_NODE &&
-          child.getAttribute('data-lexical-linebreak') === 'true'
+          child.nodeName === 'IMG' &&
+          child.getAttribute('data-lexical-managed-linebreak') === 'true'
         ) {
           return offset - 1;
         }
@@ -586,8 +651,30 @@ export async function keyUpCtrlOrAlt(page) {
 
 async function copyToClipboardPageOrFrame(pageOrFrame) {
   return await pageOrFrame.evaluate(() => {
+    // document.querySelector doesn't pierce shadow roots; descend into any
+    // open shadow trees so this works for the "Render in Shadow DOM"
+    // playground setting too. Match `data-lexical-editor` rather than any
+    // contenteditable so we don't accidentally grab a comment/draft input
+    // that also has contenteditable=true.
+    const findEditor = root => {
+      const direct = root.querySelector(
+        'div[contenteditable="true"][data-lexical-editor="true"]',
+      );
+      if (direct !== null) {
+        return direct;
+      }
+      for (const el of root.querySelectorAll('*')) {
+        if (el.shadowRoot !== null) {
+          const inner = findEditor(el.shadowRoot);
+          if (inner !== null) {
+            return inner;
+          }
+        }
+      }
+      return null;
+    };
     const clipboardData = {};
-    const editor = document.querySelector('div[contenteditable="true"]');
+    const editor = findEditor(document);
     const copyEvent = new ClipboardEvent('copy');
     Object.defineProperty(copyEvent, 'clipboardData', {
       value: {
@@ -615,6 +702,7 @@ async function pasteWithClipboardDataFromPageOrFrame(
     async ({
       clipboardData: _clipboardData,
       canUseBeforeInput: _canUseBeforeInput,
+      editorSelector: _editorSelector,
     }) => {
       const files = [];
       for (const [clipboardKey, clipboardValue] of Object.entries(
@@ -647,10 +735,35 @@ async function pasteWithClipboardDataFromPageOrFrame(
         };
       }
 
+      // document.querySelector doesn't pierce shadow roots; descend into any
+      // open shadow trees so paste works for the "Render in Shadow DOM"
+      // playground setting too. Match `data-lexical-editor` (not just any
+      // contenteditable) so a draft/comment input doesn't shadow the real
+      // editor when activeElement is not contenteditable.
+      const findEditor = root => {
+        const direct = root.querySelector(
+          'div[contenteditable="true"][data-lexical-editor="true"]',
+        );
+        if (direct !== null) {
+          return direct;
+        }
+        for (const el of root.querySelectorAll('*')) {
+          if (el.shadowRoot !== null) {
+            const inner = findEditor(el.shadowRoot);
+            if (inner !== null) {
+              return inner;
+            }
+          }
+        }
+        return null;
+      };
+      const activeElement = document.activeElement;
       const editor =
-        document.activeElement && document.activeElement.isContentEditable
-          ? document.activeElement
-          : document.querySelector(editorSelector);
+        activeElement &&
+        activeElement.isContentEditable &&
+        activeElement.matches(_editorSelector)
+          ? activeElement
+          : findEditor(document);
       const pasteEvent = new ClipboardEvent('paste', {
         bubbles: true,
         cancelable: true,
@@ -675,7 +788,7 @@ async function pasteWithClipboardDataFromPageOrFrame(
         }
       }
     },
-    {canUseBeforeInput, clipboardData},
+    {canUseBeforeInput, clipboardData, editorSelector},
   );
 }
 
@@ -1331,6 +1444,50 @@ export async function enableCompositionKeyEvents(page) {
       true,
     );
   });
+}
+
+/**
+ * CDP-based IME composition helper for e2e tests.
+ *
+ * Plays an IME composition sequence through Chrome DevTools Protocol,
+ * replacing the verbose per-step client.send() calls that are
+ * copy-pasted across Composition.spec tests.
+ *
+ * @param {import('@playwright/test').CDPSession} client
+ * @param {string[]} steps - Intermediate composing text at each keystroke.
+ * @param {string} [commitText] - Final committed text. Defaults to last step.
+ */
+export async function imeCompose(client, steps, commitText) {
+  const finalText = commitText ?? steps[steps.length - 1];
+  for (const text of steps) {
+    await client.send('Input.imeSetComposition', {
+      selectionEnd: text.length,
+      selectionStart: text.length,
+      text,
+    });
+  }
+  await client.send('Input.insertText', {text: finalText});
+}
+
+// Pre-built Hiragana sequences used across multiple e2e tests.
+export const HIRAGANA_SUSHI = {
+  commitText: 'すし',
+  steps: ['ｓ', 'す', 'すｓ', 'すｓｈ', 'すし'],
+};
+
+export const HIRAGANA_MOJIA = {
+  commitText: 'もじあ',
+  steps: ['m', 'も', 'もj', 'もじ', 'もじあ'],
+};
+
+/**
+ * Types "すし もじあ" using CDP IME — the full sequence used in most
+ * Composition.spec tests.
+ */
+export async function typeSushiMojia(client, page) {
+  await imeCompose(client, HIRAGANA_SUSHI.steps, HIRAGANA_SUSHI.commitText);
+  await client.send('Input.insertText', {text: ' '});
+  await imeCompose(client, HIRAGANA_MOJIA.steps, HIRAGANA_MOJIA.commitText);
 }
 
 export async function pressToggleBold(page) {

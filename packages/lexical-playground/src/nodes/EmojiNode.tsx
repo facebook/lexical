@@ -6,15 +6,15 @@
  *
  */
 
-import type {
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-  SerializedTextNode,
-  Spread,
+import {
+  $applyNodeReplacement,
+  type EditorConfig,
+  type LexicalNode,
+  type NodeKey,
+  type SerializedTextNode,
+  type Spread,
+  TextNode,
 } from 'lexical';
-
-import {$applyNodeReplacement, TextNode} from 'lexical';
 
 export type SerializedEmojiNode = Spread<
   {
@@ -26,8 +26,8 @@ export type SerializedEmojiNode = Spread<
 export class EmojiNode extends TextNode {
   __className: string;
 
-  static getType(): string {
-    return 'emoji';
+  $config() {
+    return this.config('emoji', {extends: TextNode});
   }
 
   static clone(node: EmojiNode): EmojiNode {

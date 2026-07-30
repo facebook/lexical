@@ -21,11 +21,15 @@ import {
   evaluate,
   expect,
   focusEditor,
+  HIRAGANA_MOJIA,
+  HIRAGANA_SUSHI,
   html,
+  imeCompose,
   initialize,
   keyDownCtrlOrMeta,
   keyUpCtrlOrMeta,
   test,
+  typeSushiMojia,
   waitForSelector,
   waitForTypeaheadMenuOption,
 } from '../utils/index.mjs';
@@ -58,7 +62,9 @@ test.describe('Composition', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
     await assertSelection(page, {
@@ -126,7 +132,9 @@ test.describe('Composition', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
 
@@ -179,66 +187,7 @@ test.describe('Composition', () => {
       await enableCompositionKeyEvents(page);
 
       const client = await page.context().newCDPSession(page);
-
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'ｓ',
-      });
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'す',
-      });
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すｓ',
-      });
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'すｓｈ',
-      });
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すし',
-      });
-      await client.send('Input.insertText', {
-        text: 'すし',
-      });
-      await client.send('Input.insertText', {
-        text: ' ',
-      });
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'm',
-      });
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'も',
-      });
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'もj',
-      });
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'もじ',
-      });
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'もじあ',
-      });
-      await client.send('Input.insertText', {
-        text: 'もじあ',
-      });
+      await typeSushiMojia(client, page);
 
       await assertHTML(
         page,
@@ -277,78 +226,7 @@ test.describe('Composition', () => {
       await page.keyboard.press('ArrowLeft');
 
       const client = await page.context().newCDPSession(page);
-      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'ｓ',
-      });
-      // await page.keyboard.imeSetComposition('す', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'す',
-      });
-      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すｓ',
-      });
-      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'すｓｈ',
-      });
-      // await page.keyboard.imeSetComposition('すし', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すし',
-      });
-      // await page.keyboard.insertText('すし');
-      await client.send('Input.insertText', {
-        text: 'すし',
-      });
-      // await page.keyboard.type(' ');
-      await client.send('Input.insertText', {
-        text: ' ',
-      });
-      // await page.keyboard.imeSetComposition('m', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'm',
-      });
-      // await page.keyboard.imeSetComposition('も', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'も',
-      });
-      // await page.keyboard.imeSetComposition('もj', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'もj',
-      });
-      // await page.keyboard.imeSetComposition('もじ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'もじ',
-      });
-      // await page.keyboard.imeSetComposition('もじあ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'もじあ',
-      });
-      // await page.keyboard.insertText('もじあ');
-      await client.send('Input.insertText', {
-        text: 'もじあ',
-      });
+      await typeSushiMojia(client, page);
 
       await assertHTML(
         page,
@@ -357,7 +235,7 @@ test.describe('Composition', () => {
             <br />
             <span data-lexical-text="true">すし もじあ</span>
             <br />
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -387,40 +265,7 @@ test.describe('Composition', () => {
       await keyUpCtrlOrMeta(page);
 
       const client = await page.context().newCDPSession(page);
-      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'ｓ',
-      });
-      // await page.keyboard.imeSetComposition('す', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'す',
-      });
-      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すｓ',
-      });
-      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'すｓｈ',
-      });
-      // await page.keyboard.imeSetComposition('すし', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すし',
-      });
-      // await page.keyboard.insertText('すし');
-      await client.send('Input.insertText', {
-        text: 'すし',
-      });
+      await imeCompose(client, HIRAGANA_SUSHI.steps, HIRAGANA_SUSHI.commitText);
 
       await assertHTML(
         page,
@@ -456,75 +301,9 @@ test.describe('Composition', () => {
       await page.keyboard.press('ArrowLeft');
 
       const client = await page.context().newCDPSession(page);
-      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'ｓ',
-      });
-      // await page.keyboard.imeSetComposition('す', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'す',
-      });
-      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すｓ',
-      });
-      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'すｓｈ',
-      });
-      // await page.keyboard.imeSetComposition('すし', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すし',
-      });
-      // await page.keyboard.insertText('すし');
-      await client.send('Input.insertText', {
-        text: 'すし',
-      });
+      await imeCompose(client, HIRAGANA_SUSHI.steps, HIRAGANA_SUSHI.commitText);
       await page.keyboard.type(' ');
-      // await page.keyboard.imeSetComposition('m', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'm',
-      });
-      // await page.keyboard.imeSetComposition('も', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'も',
-      });
-      // await page.keyboard.imeSetComposition('もj', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'もj',
-      });
-      // await page.keyboard.imeSetComposition('もじ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'もじ',
-      });
-      // await page.keyboard.imeSetComposition('もじあ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'もじあ',
-      });
-      // await page.keyboard.insertText('もじあ');
-      await client.send('Input.insertText', {
-        text: 'もじあ',
-      });
+      await imeCompose(client, HIRAGANA_MOJIA.steps, HIRAGANA_MOJIA.commitText);
 
       await assertHTML(
         page,
@@ -568,50 +347,11 @@ test.describe('Composition', () => {
         focusPath: [0, 0, 0, 0],
       });
 
-      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'ｓ',
-      });
-      // await page.keyboard.imeSetComposition('す', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'す',
-      });
-      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すｓ',
-      });
-      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'すｓｈ',
-      });
-      // await page.keyboard.imeSetComposition('すし', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すし',
-      });
-      // await page.keyboard.imeSetComposition('す', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'す',
-      });
-      // await page.keyboard.imeSetComposition('', 0, 0);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 0,
-        selectionEnd: 0,
-        text: '',
-      });
-      // Escape would fire here
-      await page.keyboard.insertText('');
+      await imeCompose(
+        client,
+        ['ｓ', 'す', 'すｓ', 'すｓｈ', 'すし', 'す', ''],
+        '',
+      );
 
       await assertHTML(
         page,
@@ -651,75 +391,9 @@ test.describe('Composition', () => {
       await waitForSelector(page, '.mention');
 
       const client = await page.context().newCDPSession(page);
-      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'ｓ',
-      });
-      // await page.keyboard.imeSetComposition('す', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'す',
-      });
-      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すｓ',
-      });
-      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'すｓｈ',
-      });
-      // await page.keyboard.imeSetComposition('すし', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すし',
-      });
-      // await page.keyboard.insertText('すし');
-      await client.send('Input.insertText', {
-        text: 'すし',
-      });
+      await imeCompose(client, HIRAGANA_SUSHI.steps, HIRAGANA_SUSHI.commitText);
       await page.keyboard.type(' ');
-      // await page.keyboard.imeSetComposition('m', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'm',
-      });
-      // await page.keyboard.imeSetComposition('も', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'も',
-      });
-      // await page.keyboard.imeSetComposition('もj', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'もj',
-      });
-      // await page.keyboard.imeSetComposition('もじ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'もじ',
-      });
-      // await page.keyboard.imeSetComposition('もじあ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'もじあ',
-      });
-      // await page.keyboard.insertText('もじあ');
-      await client.send('Input.insertText', {
-        text: 'もじあ',
-      });
+      await imeCompose(client, HIRAGANA_MOJIA.steps, HIRAGANA_MOJIA.commitText);
 
       await assertHTML(
         page,
@@ -763,75 +437,9 @@ test.describe('Composition', () => {
       await moveLeft(page, 9);
 
       const client = await page.context().newCDPSession(page);
-      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'ｓ',
-      });
-      // await page.keyboard.imeSetComposition('す', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'す',
-      });
-      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すｓ',
-      });
-      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'すｓｈ',
-      });
-      // await page.keyboard.imeSetComposition('すし', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すし',
-      });
-      // await page.keyboard.insertText('すし');
-      await client.send('Input.insertText', {
-        text: 'すし',
-      });
+      await imeCompose(client, HIRAGANA_SUSHI.steps, HIRAGANA_SUSHI.commitText);
       await page.keyboard.type(' ');
-      // await page.keyboard.imeSetComposition('m', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'm',
-      });
-      // await page.keyboard.imeSetComposition('も', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'も',
-      });
-      // await page.keyboard.imeSetComposition('もj', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'もj',
-      });
-      // await page.keyboard.imeSetComposition('もじ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'もじ',
-      });
-      // await page.keyboard.imeSetComposition('もじあ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'もじあ',
-      });
-      // await page.keyboard.insertText('もじあ');
-      await client.send('Input.insertText', {
-        text: 'もじあ',
-      });
+      await imeCompose(client, HIRAGANA_MOJIA.steps, HIRAGANA_MOJIA.commitText);
 
       await assertHTML(
         page,
@@ -866,40 +474,7 @@ test.describe('Composition', () => {
       await page.keyboard.press('Enter');
 
       const client = await page.context().newCDPSession(page);
-      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'ｓ',
-      });
-      // await page.keyboard.imeSetComposition('す', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'す',
-      });
-      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すｓ',
-      });
-      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'すｓｈ',
-      });
-      // await page.keyboard.imeSetComposition('すし', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すし',
-      });
-      // await page.keyboard.insertText('すし');
-      await client.send('Input.insertText', {
-        text: 'すし',
-      });
+      await imeCompose(client, HIRAGANA_SUSHI.steps, HIRAGANA_SUSHI.commitText);
 
       await assertHTML(
         page,
@@ -932,76 +507,10 @@ test.describe('Composition', () => {
       await page.keyboard.type('#');
 
       const client = await page.context().newCDPSession(page);
-      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'ｓ',
-      });
-      // await page.keyboard.imeSetComposition('す', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'す',
-      });
-      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すｓ',
-      });
-      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'すｓｈ',
-      });
-      // await page.keyboard.imeSetComposition('すし', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すし',
-      });
-      // await page.keyboard.insertText('すし');
-      await client.send('Input.insertText', {
-        text: 'すし',
-      });
+      await imeCompose(client, HIRAGANA_SUSHI.steps, HIRAGANA_SUSHI.commitText);
 
       await page.keyboard.type(' ');
-      // await page.keyboard.imeSetComposition('m', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'm',
-      });
-      // await page.keyboard.imeSetComposition('も', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'も',
-      });
-      // await page.keyboard.imeSetComposition('もj', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'もj',
-      });
-      // await page.keyboard.imeSetComposition('もじ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'もじ',
-      });
-      // await page.keyboard.imeSetComposition('もじあ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'もじあ',
-      });
-      // await page.keyboard.insertText('もじあ');
-      await client.send('Input.insertText', {
-        text: 'もじあ',
-      });
+      await imeCompose(client, HIRAGANA_MOJIA.steps, HIRAGANA_MOJIA.commitText);
 
       await assertHTML(
         page,
@@ -1025,40 +534,7 @@ test.describe('Composition', () => {
 
       await moveToLineBeginning(page);
 
-      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'ｓ',
-      });
-      // await page.keyboard.imeSetComposition('す', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'す',
-      });
-      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すｓ',
-      });
-      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'すｓｈ',
-      });
-      // await page.keyboard.imeSetComposition('すし', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すし',
-      });
-      // await page.keyboard.insertText('すし');
-      await client.send('Input.insertText', {
-        text: 'すし',
-      });
+      await imeCompose(client, HIRAGANA_SUSHI.steps, HIRAGANA_SUSHI.commitText);
 
       await assertHTML(
         page,
@@ -1087,55 +563,18 @@ test.describe('Composition', () => {
       await enableCompositionKeyEvents(page);
 
       const client = await page.context().newCDPSession(page);
-      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'ｓ',
-      });
-      // await page.keyboard.imeSetComposition('す', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'す',
-      });
-      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すｓ',
-      });
-      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'すｓｈ',
-      });
-      // await page.keyboard.imeSetComposition('すし', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すし',
-      });
-      // await page.keyboard.imeSetComposition('す', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'す',
-      });
-      // await page.keyboard.imeSetComposition('', 0, 0);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 0,
-        selectionEnd: 0,
-        text: '',
-      });
-      // Escape would fire here
-      await page.keyboard.insertText('');
+      await imeCompose(
+        client,
+        ['ｓ', 'す', 'すｓ', 'すｓｈ', 'すし', 'す', ''],
+        '',
+      );
 
       await assertHTML(
         page,
         html`
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         `,
       );
       await assertSelection(page, {
@@ -1148,50 +587,11 @@ test.describe('Composition', () => {
       await page.keyboard.type(' ');
       await page.keyboard.press('ArrowLeft');
 
-      // await page.keyboard.imeSetComposition('ｓ', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'ｓ',
-      });
-      // await page.keyboard.imeSetComposition('す', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'す',
-      });
-      // await page.keyboard.imeSetComposition('すｓ', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すｓ',
-      });
-      // await page.keyboard.imeSetComposition('すｓｈ', 3, 3);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 3,
-        selectionEnd: 3,
-        text: 'すｓｈ',
-      });
-      // await page.keyboard.imeSetComposition('すし', 2, 2);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 2,
-        selectionEnd: 2,
-        text: 'すし',
-      });
-      // await page.keyboard.imeSetComposition('す', 1, 1);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 1,
-        selectionEnd: 1,
-        text: 'す',
-      });
-      // await page.keyboard.imeSetComposition('', 0, 0);
-      await client.send('Input.imeSetComposition', {
-        selectionStart: 0,
-        selectionEnd: 0,
-        text: '',
-      });
-      // Escape would fire here
-      await page.keyboard.insertText('');
+      await imeCompose(
+        client,
+        ['ｓ', 'す', 'すｓ', 'すｓｈ', 'すし', 'す', ''],
+        '',
+      );
 
       await assertHTML(
         page,
@@ -1222,31 +622,26 @@ test.describe('Composition', () => {
 
       const client = await page.context().newCDPSession(page);
 
-      // await page.keyboard.imeSetComposition('ｓ', 0, 1);
       await client.send('Input.imeSetComposition', {
         selectionStart: 0,
         selectionEnd: 1,
         text: 'ｓ',
       });
-      // await page.keyboard.imeSetComposition('す', 0, 1);
       await client.send('Input.imeSetComposition', {
         selectionStart: 0,
         selectionEnd: 1,
         text: 'す',
       });
-      // await page.keyboard.imeSetComposition('すｓ', 0, 2);
       await client.send('Input.imeSetComposition', {
         selectionStart: 0,
         selectionEnd: 2,
         text: 'すｓ',
       });
-      // await page.keyboard.imeSetComposition('すｓｈ', 0, 3);
       await client.send('Input.imeSetComposition', {
         selectionStart: 0,
         selectionEnd: 3,
         text: 'すｓｈ',
       });
-      // await page.keyboard.imeSetComposition('すｓｈ', 0, 4);
       await client.send('Input.imeSetComposition', {
         selectionStart: 0,
         // The fourth character in the DOM is a zero-width space
@@ -1261,7 +656,6 @@ test.describe('Composition', () => {
 
       expect(isFloatingToolbarDisplayedWhenUseIME).toEqual(false);
 
-      // await page.keyboard.insertText('すｓｈ');
       await client.send('Input.insertText', {
         text: 'すｓｈ',
       });

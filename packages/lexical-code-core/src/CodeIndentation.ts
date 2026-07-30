@@ -6,16 +6,6 @@
  *
  */
 
-import type {CodeHighlightNode} from './CodeHighlightNode';
-import type {
-  BaseSelection,
-  LexicalCommand,
-  LexicalEditor,
-  LineBreakNode,
-  RangeSelection,
-  TabNode,
-} from 'lexical';
-
 import {effect, namedSignals} from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
 import {$onEscapeDown, $onEscapeUp} from '@lexical/utils';
@@ -34,6 +24,7 @@ import {
   $isTabNode,
   $normalizeCaret,
   $setSelectionFromCaretRange,
+  type BaseSelection,
   COMMAND_PRIORITY_LOW,
   defineExtension,
   INDENT_CONTENT_COMMAND,
@@ -43,15 +34,23 @@ import {
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_TAB_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
+  type LineBreakNode,
   mergeRegister,
   MOVE_TO_END,
   MOVE_TO_START,
   OUTDENT_CONTENT_COMMAND,
+  type RangeSelection,
   safeCast,
+  type TabNode,
 } from 'lexical';
 
 import {CodeExtension} from './CodeExtension';
-import {$isCodeHighlightNode} from './CodeHighlightNode';
+import {
+  $isCodeHighlightNode,
+  type CodeHighlightNode,
+} from './CodeHighlightNode';
 import {$isCodeNode} from './CodeNode';
 import {
   $getCodeLineDirection,
@@ -515,22 +514,22 @@ export function registerCodeIndentation(
       ? [
           editor.registerCommand(
             KEY_ARROW_DOWN_COMMAND,
-            event => (event.altKey ? false : $onEscapeDown($isCodeNode)),
+            event => (event.altKey ? false : $onEscapeDown($isCodeNode, event)),
             COMMAND_PRIORITY_LOW,
           ),
           editor.registerCommand(
             KEY_ARROW_RIGHT_COMMAND,
-            () => $onEscapeDown($isCodeNode),
+            event => $onEscapeDown($isCodeNode, event),
             COMMAND_PRIORITY_LOW,
           ),
           editor.registerCommand(
             KEY_ARROW_UP_COMMAND,
-            event => (event.altKey ? false : $onEscapeUp($isCodeNode)),
+            event => (event.altKey ? false : $onEscapeUp($isCodeNode, event)),
             COMMAND_PRIORITY_LOW,
           ),
           editor.registerCommand(
             KEY_ARROW_LEFT_COMMAND,
-            () => $onEscapeUp($isCodeNode),
+            event => $onEscapeUp($isCodeNode, event),
             COMMAND_PRIORITY_LOW,
           ),
         ]
@@ -543,7 +542,7 @@ export function registerCodeIndentation(
           return false;
         }
         event.preventDefault();
-        editor.dispatchCommand(command, undefined);
+        editor.dispatchCommand(command);
         return true;
       },
       COMMAND_PRIORITY_LOW,
@@ -677,9 +676,9 @@ export interface CodeIndentConfig {
  * Code blocks without syntax highlighting can use this extension on its
  * own.
  */
-export const CodeIndentExtension = defineExtension({
+export const CodeIndentExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config) => namedSignals(config),
-  config: safeCast<CodeIndentConfig>({
+  config: /* @__PURE__ */ safeCast<CodeIndentConfig>({
     disabled: false,
     escapeWithArrows: false,
     tabSize: undefined,

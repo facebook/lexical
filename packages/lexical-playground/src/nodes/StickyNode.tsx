@@ -6,17 +6,6 @@
  *
  */
 
-import type {
-  EditorConfig,
-  LexicalEditor,
-  LexicalEditorWithDispose,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  SerializedEditor,
-  SerializedLexicalNode,
-  Spread,
-} from 'lexical';
 import type {JSX} from 'react';
 
 import {
@@ -32,6 +21,15 @@ import {
   configExtension,
   DecoratorNode,
   defineExtension,
+  type EditorConfig,
+  type LexicalEditor,
+  type LexicalEditorWithDispose,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type SerializedEditor,
+  type SerializedLexicalNode,
+  type Spread,
 } from 'lexical';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
@@ -53,13 +51,13 @@ export type SerializedStickyNode = Spread<
   SerializedLexicalNode
 >;
 
-const StickyEditorExtension = defineExtension({
+const StickyEditorExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     SharedHistoryExtension,
     PlainTextExtension,
     ReactProviderExtension,
     NestedEditorExtension,
-    configExtension(ReactExtension, {
+    /* @__PURE__ */ configExtension(ReactExtension, {
       contentEditable: (
         <ContentEditable
           placeholder="What's up?"
@@ -80,8 +78,8 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
   __color: StickyNoteColor;
   __caption: LexicalEditorWithDispose;
 
-  static getType(): string {
-    return 'sticky';
+  $config() {
+    return this.config('sticky', {extends: DecoratorNode});
   }
 
   static clone(node: StickyNode): StickyNode {

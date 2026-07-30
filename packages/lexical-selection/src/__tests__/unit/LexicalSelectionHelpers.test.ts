@@ -25,12 +25,12 @@ import {
   $isParagraphNode,
   $isRangeSelection,
   $setSelection,
-  ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  ParagraphNode,
-  RangeSelection,
-  TextModeType,
+  type ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type ParagraphNode,
+  type RangeSelection,
+  type TextModeType,
   TextNode,
 } from 'lexical';
 import {
@@ -320,7 +320,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -396,7 +396,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -457,7 +457,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -523,7 +523,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -599,7 +599,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -675,7 +675,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -1189,7 +1189,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -1260,7 +1260,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const selection = $getSelection();
 
         if (!$isRangeSelection(selection)) {
@@ -1352,11 +1352,12 @@ describe('LexicalSelectionHelpers tests', () => {
       setupTestCase((selection, state) => {
         selection.insertText('Test');
 
-        expect($getNodeByKey('a')!.getTextContent()).toBe('Test');
+        const firstChild = state.getFirstChild()!;
+        expect(firstChild.getTextContent()).toBe('Test');
 
         expect(selection.anchor).toEqual(
           expect.objectContaining({
-            key: 'a',
+            key: firstChild.getKey(),
             offset: 4,
             type: 'text',
           }),
@@ -1364,7 +1365,7 @@ describe('LexicalSelectionHelpers tests', () => {
 
         expect(selection.focus).toEqual(
           expect.objectContaining({
-            key: 'a',
+            key: firstChild.getKey(),
             offset: 4,
             type: 'text',
           }),
@@ -2531,8 +2532,8 @@ describe('LexicalSelectionHelpers tests', () => {
         $insertNodes([element1, element2]);
       });
       expect([
-        '<div dir="auto"><br></div><div dir="auto"><br></div>',
-        '<div dir="auto"><br></div><p dir="auto"><br></p>',
+        '<div dir="auto"><br data-lexical-managed-linebreak="true"></div><div dir="auto"><br data-lexical-managed-linebreak="true"></div>',
+        '<div dir="auto"><br data-lexical-managed-linebreak="true"></div><p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
       ]).toContain(element.innerHTML);
     });
   });
@@ -2677,9 +2678,11 @@ describe('insertNodes', () => {
       );
       selection.insertNodes([newHeading, $createLineBreakNode()]);
     });
-    editor.getEditorState().read(() => {
+    editor.read('latest', () => {
       expect(element.innerHTML).toBe(
-        '<h1 dir="auto"><span data-lexical-text="true">heading</span></h1><p dir="auto"><br></p>',
+        // the lone trailing LineBreakNode collapses to an empty paragraph,
+        // rendered with only the managed linebreak
+        '<h1 dir="auto"><span data-lexical-text="true">heading</span></h1><p dir="auto"><br data-lexical-managed-linebreak="true"></p>',
       );
       const selectedNode = ($getSelection() as RangeSelection).anchor.getNode();
       expect($isParagraphNode(selectedNode)).toBeTruthy();

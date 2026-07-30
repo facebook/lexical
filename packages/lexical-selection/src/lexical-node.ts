@@ -20,15 +20,15 @@ import {
   $isRootNode,
   $isTextNode,
   $isTokenOrSegmented,
-  BaseSelection,
-  ElementNode,
+  type BaseSelection,
+  type ElementNode,
   getStyleObjectFromCSS,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  Point,
-  RangeSelection,
-  TextNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  type Point,
+  type RangeSelection,
+  type TextNode,
 } from 'lexical';
 
 import {getCSSFromStyleObject} from './utils';
@@ -139,16 +139,22 @@ export function $trimTextContentFromAnchor(
 
   while (remaining > 0 && currentNode !== null) {
     if ($isElementNode(currentNode)) {
+      // Annotation breaks a circular inference through the loop (TS7022),
+      // remove when the deprecated generic signatures from #8661 are removed
       const lastDescendant: null | LexicalNode =
-        currentNode.getLastDescendant<LexicalNode>();
+        currentNode.getLastDescendant();
       if (lastDescendant !== null) {
         currentNode = lastDescendant;
       }
     }
+    // Annotation breaks a circular inference through the loop (TS7022),
+    // remove when the deprecated generic signatures from #8661 are removed
     let nextNode: LexicalNode | null = currentNode.getPreviousSibling();
     let additionalElementWhitespace = 0;
     if (nextNode === null) {
       let parent: LexicalNode | null = currentNode.getParentOrThrow();
+      // Annotation breaks a circular inference through the loop (TS7022),
+      // remove when the deprecated generic signatures from #8661 are removed
       let parentSibling: LexicalNode | null = parent.getPreviousSibling();
 
       while (parentSibling === null) {
@@ -188,15 +194,13 @@ export function $trimTextContentFromAnchor(
     } else {
       const key = currentNode.getKey();
       // See if we can just revert it to what was in the last editor state
-      const prevTextContent: string | null = editor
-        .getEditorState()
-        .read(() => {
-          const prevNode = $getNodeByKey(key);
-          if ($isTextNode(prevNode) && prevNode.isSimpleText()) {
-            return prevNode.getTextContent();
-          }
-          return null;
-        });
+      const prevTextContent: string | null = editor.read('latest', () => {
+        const prevNode = $getNodeByKey(key);
+        if ($isTextNode(prevNode) && prevNode.isSimpleText()) {
+          return prevNode.getTextContent();
+        }
+        return null;
+      });
       const offset = currentNodeSize - remaining;
       const slicedText = text.slice(0, offset);
       if (prevTextContent !== null && prevTextContent !== text) {

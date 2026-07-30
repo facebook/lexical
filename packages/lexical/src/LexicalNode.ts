@@ -6,13 +6,13 @@
  *
  */
 
+import type {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
 import type {
   EditorConfig,
   Klass,
   KlassConstructor,
   LexicalEditor,
 } from './LexicalEditor';
-import type {BaseSelection, RangeSelection} from './LexicalSelection';
 
 import invariant from '@lexical/internal/invariant';
 
@@ -26,9 +26,8 @@ import {
   $isTextNode,
   type DecoratorNode,
   type ElementNode,
-  NODE_STATE_KEY,
+  type NODE_STATE_KEY,
 } from '.';
-import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
 import {DOMSlot} from './LexicalDOMSlot';
 import {
   $updateStateFromJSON,
@@ -44,8 +43,21 @@ import {
   $isRangeSelection,
   $moveSelectionPointToEnd,
   $updateElementSelectionOnCreateDeleteNode,
+  type BaseSelection,
   moveSelectionPointToSibling,
+  type RangeSelection,
 } from './LexicalSelection';
+import {
+  $errorOnSlotCycleChild,
+  $getSlot,
+  $getSlotHost,
+  $getSlotHostKey,
+  $getSlotNames,
+  $getSlotsTextContent,
+  $isSlotHost,
+  $removeSlot,
+  $setSlot,
+} from './LexicalSlot';
 import {
   errorOnReadOnly,
   getActiveEditor,
@@ -55,16 +67,18 @@ import {
   $cloneWithProperties,
   $getCompositionKey,
   $getNodeByKey,
+  $hasAncestor,
   $isRootOrShadowRoot,
   $maybeMoveChildrenSelectionToParent,
+  $removeFromParent,
   $setCompositionKey,
   $setNodeKey,
   $setSelection,
   errorOnInsertTextNodeOnRoot,
   getRegisteredNode,
   getStaticNodeConfig,
+  getSuperclassOf,
   internalMarkNodeAsDirty,
-  removeFromParent,
 } from './LexicalUtils';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
@@ -84,6 +98,15 @@ export type SerializedLexicalNode = {
    * configured for flat storage
    */
   [NODE_STATE_KEY]?: Record<string, unknown>;
+  /**
+   * Named slot subtrees keyed by slot name. Present on host nodes (an
+   * ElementNode or DecoratorNode that registered slots via `$setSlot`).
+   * The `$` prefix keeps the framework-owned key out of the namespace a
+   * third-party subclass may already use for its own serialized `slots`
+   * property (mirroring the reserved NodeState `'$'` key).
+   * @experimental named-slots
+   */
+  $slots?: Record<string, SerializedLexicalNode>;
 };
 
 /**
@@ -160,6 +183,23 @@ export interface StaticNodeConfigValue<
    * ```
    */
   readonly stateConfigs?: readonly RequiredNodeStateConfig[];
+  /**
+   * @experimental named-slots
+   *
+   * Canonical order for this host's named slots. Declared names render,
+   * fold, serialize, and traverse in this order; occupied names that are
+   * not declared follow in code-unit order. Order is derived from this
+   * declaration at every {@link $setSlot} (never stored), so documents
+   * re-canonicalize on load and concurrent collaborative slot additions
+   * converge to the same order on every client. The declaration is not a
+   * schema: undeclared names are still accepted and retained, so adding,
+   * reordering, or dropping entries over time is non-destructive.
+   *
+   * Declaring slots also opts the host into eager slots-map creation in
+   * \@lexical/yjs, which makes each name's first set merge per-entry under
+   * concurrency instead of racing on attribute creation.
+   */
+  readonly slots?: readonly string[];
   /**
    * If specified, this must be the exact superclass of the node. It is not
    * checked at compile time and it is provided automatically at runtime.
@@ -401,6 +441,15 @@ export type LexicalUpdateJSON<T extends SerializedLexicalNode> = Omit<
 export interface LexicalPrivateDOM {
   __lexicalTextContent?: string | undefined | null;
   /**
+   * @experimental named-slots. Byte length of the slot text folded slots-first
+   * into the front of `__lexicalTextContent` for a host element. The suffix
+   * fast path splices the linked-list child suffix, which lives after this
+   * prefix, so it strips this many leading chars to recover the child-only
+   * text before splicing and lets the slot fold re-prepend the slot text.
+   * Absent / `0` for non-host elements, so non-slot trees splice unchanged.
+   */
+  __lexicalSlotTextLength?: number | undefined;
+  /**
    * NodeKey of the deep first text descendant (DFS order) of this
    * element, or `null` if the subtree carries no text descendants.
    * Maintained alongside `__lexicalTextContent` and used by the
@@ -446,6 +495,12 @@ export function $removeNode(
   const key = nodeToRemove.__key;
   const parent = nodeToRemove.getParent();
   if (parent === null) {
+    invariant(
+      $getSlotHostKey(nodeToRemove) === null,
+      '$removeNode: node %s is slotted into host %s; use removeSlot on the host instead of remove().',
+      key,
+      String($getSlotHostKey(nodeToRemove)),
+    );
     return;
   }
   const selection = $maybeMoveChildrenSelectionToParent(nodeToRemove);
@@ -484,10 +539,10 @@ export function $removeNode(
   if ($isRangeSelection(selection) && restoreSelection && !selectionMoved) {
     // Doing this is O(n) so lets avoid it unless we need to do it
     const index = nodeToRemove.getIndexWithinParent();
-    removeFromParent(nodeToRemove);
+    $removeFromParent(nodeToRemove);
     $updateElementSelectionOnCreateDeleteNode(selection, parent, index, -1);
   } else {
-    removeFromParent(nodeToRemove);
+    $removeFromParent(nodeToRemove);
   }
 
   if (
@@ -552,9 +607,9 @@ export type DOMConversionMap<T extends HTMLElement = HTMLElement> = Record<
 type NodeName = string;
 
 export type DOMConversionOutput = {
-  after?: (childLexicalNodes: Array<LexicalNode>) => Array<LexicalNode>;
+  after?: (childLexicalNodes: LexicalNode[]) => LexicalNode[];
   forChild?: DOMChildConversion;
-  node: null | LexicalNode | Array<LexicalNode>;
+  node: null | LexicalNode | LexicalNode[];
 };
 
 export type DOMExportOutputMap = Map<
@@ -629,11 +684,40 @@ const NON_ENUMERABLE_PROP_DESC: PropertyDescriptor = {
   writable: true,
 };
 
+/**
+ * A node that can host named slots, implemented by {@link ElementNode} and
+ * {@link DecoratorNode}. The map is allocated lazily (null until the first
+ * {@link $setSlot}) since most nodes have none. Declaring this off the base
+ * {@link LexicalNode} is what lets {@link $setSlot} / {@link $removeSlot}
+ * reject a non-host at compile time.
+ *
+ * @experimental
+ */
+export interface SlotHostNode {
+  /** @internal */
+  __slots: null | Map<string, NodeKey>;
+}
+
+/**
+ * A node that can occupy a named slot, implemented by {@link ElementNode} and
+ * {@link DecoratorNode}. Its up-pointer is `__slotHost` rather than `__parent`
+ * (the two are mutually exclusive), so the slot boundary behaves like a shadow
+ * root.
+ *
+ * @experimental
+ */
+export interface SlotChildNode {
+  /** @internal */
+  __slotHost: null | NodeKey;
+}
+
 export class LexicalNode {
   /** @internal Allow us to look up the type including static props */
   declare ['constructor']: KlassConstructor<typeof LexicalNode>;
   /** @internal */
-  __type: string;
+  // `__type` is assigned once, in the constructor, and is never valid to
+  // mutate afterward.
+  readonly __type: string;
   /** @internal */
   //@ts-ignore We set the key in the constructor.
   __key: string;
@@ -711,20 +795,19 @@ export class LexicalNode {
    * well-known symbol (by convention `Symbol.for(<NodeClassName>)`) instead of
    * a string `type` to declare configuration shared with its subclasses.
    */
-  config<Config extends StaticNodeConfigValue<this, string>>(
+  config<const Config extends StaticNodeConfigValue<this, string>>(
     type: symbol,
     config: Config,
   ): AbstractStaticNodeConfigRecord<Config>;
-  config<Type extends string, Config extends StaticNodeConfigValue<this, Type>>(
-    type: Type,
-    config: Config,
-  ): StaticNodeConfigRecord<Type, Config>;
+  config<
+    Type extends string,
+    const Config extends StaticNodeConfigValue<this, Type>,
+  >(type: Type, config: Config): StaticNodeConfigRecord<Type, Config>;
   config(
     type: string | symbol,
     config: AnyStaticNodeConfigValue,
   ): BaseStaticNodeConfig {
-    const parentKlass =
-      config.extends || Object.getPrototypeOf(this.constructor);
+    const parentKlass = config.extends || getSuperclassOf(this.constructor);
     Object.assign(config, {extends: parentKlass});
     // A concrete node records its string `type`; an abstract base class is
     // keyed by a well-known symbol (e.g. Symbol.for('ElementNode')) and has no
@@ -857,12 +940,15 @@ export class LexicalNode {
         return true;
       }
 
+      // Annotation breaks a circular inference through the loop (TS7022),
+      // remove when the deprecated generic signatures from #8661 are removed
       const node: LexicalNode | null = $getNodeByKey(nodeKey);
 
       if (node === null) {
         break;
       }
-      nodeKey = node.__parent;
+      // A slotted node has no __parent; follow its slot host up toward root.
+      nodeKey = node.__parent !== null ? node.__parent : $getSlotHostKey(node);
     }
     return false;
   }
@@ -947,19 +1033,36 @@ export class LexicalNode {
   /**
    * Returns the parent of this node, or null if none is found.
    */
-  getParent<T extends ElementNode>(): T | null {
+  getParent(): ElementNode | null;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getParent() as T | null`, and will be removed
+   * in a future release. Call this method without a type argument and
+   * narrow the result with a type guard instead.
+   */
+  getParent<T extends ElementNode>(): T | null;
+  getParent(): ElementNode | null {
     const parent = this.getLatest().__parent;
     if (parent === null) {
       return null;
     }
-    return $getNodeByKey<T>(parent);
+    // Cast: a parent key always refers to an ElementNode
+    return $getNodeByKey(parent) as ElementNode | null;
   }
 
   /**
    * Returns the parent of this node, or throws if none is found.
    */
-  getParentOrThrow<T extends ElementNode>(): T {
-    const parent = this.getParent<T>();
+  getParentOrThrow(): ElementNode;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getParentOrThrow() as T`, and will be removed
+   * in a future release. Call this method without a type argument and
+   * narrow the result with a type guard instead.
+   */
+  getParentOrThrow<T extends ElementNode>(): T;
+  getParentOrThrow(): ElementNode {
+    const parent = this.getParent();
     if (parent === null) {
       invariant(false, 'Expected node %s to have a parent.', this.__key);
     }
@@ -974,8 +1077,12 @@ export class LexicalNode {
   getTopLevelElement(): ElementNode | DecoratorNode<unknown> | null {
     let node: ElementNode | this | null = this;
     while (node !== null) {
+      // Annotation breaks a circular inference through the loop (TS7022),
+      // remove when the deprecated generic signatures from #8661 are removed
       const parent: ElementNode | null = node.getParent();
-      if ($isRootOrShadowRoot(parent)) {
+      // A slot value's host acts as a shadow root, so the slot boundary is
+      // the top of the isolated scope and this node is its top-level element.
+      if ($isRootOrShadowRoot(parent) || $getSlotHostKey(node) !== null) {
         invariant(
           $isElementNode(node) || (node === this && $isDecoratorNode(node)),
           'Children of root nodes must be elements or decorators',
@@ -1009,8 +1116,8 @@ export class LexicalNode {
    * all the way up to the RootNode.
    *
    */
-  getParents(): Array<ElementNode> {
-    const parents: Array<ElementNode> = [];
+  getParents(): ElementNode[] {
+    const parents: ElementNode[] = [];
     let node = this.getParent();
     while (node !== null) {
       parents.push(node);
@@ -1024,7 +1131,7 @@ export class LexicalNode {
    * all the way up to the RootNode.
    *
    */
-  getParentKeys(): Array<NodeKey> {
+  getParentKeys(): NodeKey[] {
     const parents = [];
     let node = this.getParent();
     while (node !== null) {
@@ -1035,28 +1142,42 @@ export class LexicalNode {
   }
 
   /**
-   * Returns the "previous" siblings - that is, the node that comes
-   * before this one in the same parent.
-   *
+   * Returns the node before this one in the same parent, or null
+   * if there is no such node.
    */
-  getPreviousSibling<T extends LexicalNode>(): T | null {
+  getPreviousSibling(): LexicalNode | null;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getPreviousSibling() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getPreviousSibling<T extends LexicalNode>(): T | null;
+  getPreviousSibling(): LexicalNode | null {
     const self = this.getLatest();
     const prevKey = self.__prev;
-    return prevKey === null ? null : $getNodeByKey<T>(prevKey);
+    return prevKey === null ? null : $getNodeByKey(prevKey);
   }
 
   /**
-   * Returns the "previous" siblings - that is, the nodes that come between
-   * this one and the first child of it's parent, inclusive.
-   *
+   * Returns all nodes before this one in the same parent,
+   * in document order.
    */
-  getPreviousSiblings<T extends LexicalNode>(): Array<T> {
-    const siblings: Array<T> = [];
+  getPreviousSiblings(): LexicalNode[];
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getPreviousSiblings() as T[]`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the results with a type guard instead.
+   */
+  getPreviousSiblings<T extends LexicalNode>(): T[];
+  getPreviousSiblings(): LexicalNode[] {
+    const siblings: LexicalNode[] = [];
     const parent = this.getParent();
     if (parent === null) {
       return siblings;
     }
-    let node: null | T = parent.getFirstChild();
+    let node = parent.getFirstChild();
     while (node !== null) {
       if (node.is(this)) {
         break;
@@ -1068,24 +1189,38 @@ export class LexicalNode {
   }
 
   /**
-   * Returns the "next" siblings - that is, the node that comes
-   * after this one in the same parent
-   *
+   * Returns the node after this one in the same parent, or null
+   * if there is no such node.
    */
-  getNextSibling<T extends LexicalNode>(): T | null {
+  getNextSibling(): LexicalNode | null;
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getNextSibling() as T | null`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the result with a type guard instead.
+   */
+  getNextSibling<T extends LexicalNode>(): T | null;
+  getNextSibling(): LexicalNode | null {
     const self = this.getLatest();
     const nextKey = self.__next;
-    return nextKey === null ? null : $getNodeByKey<T>(nextKey);
+    return nextKey === null ? null : $getNodeByKey(nextKey);
   }
 
   /**
-   * Returns all "next" siblings - that is, the nodes that come between this
-   * one and the last child of it's parent, inclusive.
-   *
+   * Returns all nodes after this one in the same parent,
+   * in document order.
    */
-  getNextSiblings<T extends LexicalNode>(): Array<T> {
-    const siblings: Array<T> = [];
-    let node: null | T = this.getNextSibling();
+  getNextSiblings(): LexicalNode[];
+  /**
+   * @deprecated The type parameter is an unchecked and unsafe cast,
+   * equivalent to `node.getNextSiblings() as T[]`, and will be
+   * removed in a future release. Call this method without a type argument
+   * and narrow the results with a type guard instead.
+   */
+  getNextSiblings<T extends LexicalNode>(): T[];
+  getNextSiblings(): LexicalNode[] {
+    const siblings: LexicalNode[] = [];
+    let node = this.getNextSibling();
     while (node !== null) {
       siblings.push(node);
       node = node.getNextSibling();
@@ -1160,8 +1295,7 @@ export class LexicalNode {
    * @param targetNode - the would-be child node.
    */
   isParentOf(targetNode: LexicalNode): boolean {
-    const result = $getCommonAncestor(this, targetNode);
-    return result !== null && result.type === 'ancestor';
+    return $hasAncestor(targetNode, this);
   }
 
   // TO-DO: this function can be simplified a lot
@@ -1171,7 +1305,7 @@ export class LexicalNode {
    *
    * @param targetNode - the node that marks the other end of the range of nodes to be returned.
    */
-  getNodesBetween(targetNode: LexicalNode): Array<LexicalNode> {
+  getNodesBetween(targetNode: LexicalNode): LexicalNode[] {
     const isBefore = this.isBefore(targetNode);
     const nodes = [];
     const visited = new Set();
@@ -1256,7 +1390,8 @@ export class LexicalNode {
     if ($isEphemeral(this)) {
       return this;
     }
-    const latest = $getNodeByKey<this>(this.__key);
+    // Cast: the nodeMap entry for this key is always the same node class
+    const latest = $getNodeByKey(this.__key) as this | null;
     if (latest === null) {
       invariant(
         false,
@@ -1309,7 +1444,7 @@ export class LexicalNode {
    *
    */
   getTextContent(): string {
-    return '';
+    return $getSlotsTextContent(this);
   }
 
   /**
@@ -1317,6 +1452,9 @@ export class LexicalNode {
    *
    */
   getTextContentSize(): number {
+    // Decorator slot hosts use this base impl: slot text is folded into
+    // getTextContent, so .length is the size — counted by length, not by each
+    // slot's own getTextContentSize (the ElementNode override sums those).
     return this.getTextContent().length;
   }
 
@@ -1500,6 +1638,9 @@ export class LexicalNode {
     const key = replaceWith.__key;
     const writableReplaceWith = replaceWith.getWritable();
     const writableParent = this.getParentOrThrow().getWritable();
+    // Before any mutation: becoming a child of this node's parent must not
+    // close a cycle through a slot up-link (reverse of $setSlot's guard).
+    $errorOnSlotCycleChild(writableParent, writableReplaceWith);
     const size = writableParent.__size;
     // Capture replaceWith's old parent / index before removeFromParent so the
     // cloned selection's element offsets in that old parent can be adjusted
@@ -1509,7 +1650,7 @@ export class LexicalNode {
       replaceWithOldParent !== null
         ? writableReplaceWith.getIndexWithinParent()
         : -1;
-    removeFromParent(writableReplaceWith);
+    $removeFromParent(writableReplaceWith);
     if (replaceWithOldParent !== null && $isRangeSelection(selection)) {
       $updateElementSelectionOnCreateDeleteNode(
         selection,
@@ -1556,6 +1697,31 @@ export class LexicalNode {
         0,
         this.getChildren(),
       );
+    }
+    // Slots live in a separate Map keyed off __slotHost, not the child list,
+    // so the splice above (when includeChildren) never moves them — and
+    // decorator hosts skip that branch entirely. Re-home each slot onto the
+    // replacement regardless of includeChildren ($setSlot has move semantics;
+    // the explicit $removeSlot keeps the doomed host's map consistent before
+    // it is destroyed); otherwise they orphan and GC. Slot-less nodes have no
+    // names, so this is a no-op.
+    const slotNames = $getSlotNames(this);
+    if (slotNames.length > 0) {
+      if (!$isSlotHost(this) || !$isSlotHost(writableReplaceWith)) {
+        invariant(
+          false,
+          'replace: node %s has slots but %s cannot host them; only ElementNodes and DecoratorNodes can host slots.',
+          this.__key,
+          writableReplaceWith.__key,
+        );
+      }
+      for (const slotName of slotNames) {
+        const slot = $getSlot(this, slotName);
+        if (slot !== null) {
+          $removeSlot(this, slotName);
+          $setSlot(writableReplaceWith, slotName, slot);
+        }
+      }
     }
     if ($isRangeSelection(selection)) {
       $setSelection(selection);
@@ -1609,6 +1775,9 @@ export class LexicalNode {
     errorOnInsertTextNodeOnRoot(this, nodeToInsert);
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
+    // Before any mutation: becoming a sibling of this node must not close a
+    // cycle through a slot up-link (reverse of $setSlot's guard).
+    $errorOnSlotCycleChild(this.getParentOrThrow(), writableNodeToInsert);
     const oldParent = writableNodeToInsert.getParent();
     const selection = $getSelection();
     let elementAnchorSelectionOnNode = false;
@@ -1629,7 +1798,7 @@ export class LexicalNode {
           focus.key === oldParentKey &&
           focus.offset === oldIndex + 1;
       }
-      removeFromParent(writableNodeToInsert);
+      $removeFromParent(writableNodeToInsert);
       // Adjust element-anchored offsets in oldParent to track its reduced
       // child count. The boolean flags captured above
       // (elementAnchorSelectionOnNode / elementFocusSelectionOnNode) recorded
@@ -1644,6 +1813,8 @@ export class LexicalNode {
           -1,
         );
       }
+    } else {
+      $removeFromParent(writableNodeToInsert);
     }
     const nextSibling = this.getNextSibling();
     const writableParent = this.getParentOrThrow().getWritable();
@@ -1693,6 +1864,9 @@ export class LexicalNode {
     errorOnInsertTextNodeOnRoot(this, nodeToInsert);
     const writableSelf = this.getWritable();
     const writableNodeToInsert = nodeToInsert.getWritable();
+    // Before any mutation: becoming a sibling of this node must not close a
+    // cycle through a slot up-link (reverse of $setSlot's guard).
+    $errorOnSlotCycleChild(this.getParentOrThrow(), writableNodeToInsert);
     const insertKey = writableNodeToInsert.__key;
     const selection = $getSelection();
     // Capture nodeToInsert's old parent / index before detaching so the
@@ -1703,7 +1877,7 @@ export class LexicalNode {
       insertOldParent !== null
         ? writableNodeToInsert.getIndexWithinParent()
         : -1;
-    removeFromParent(writableNodeToInsert);
+    $removeFromParent(writableNodeToInsert);
     if (
       insertOldParent !== null &&
       restoreSelection &&
@@ -1773,6 +1947,13 @@ export class LexicalNode {
    * */
   selectPrevious(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
+    // Slot value root has __parent === null, so the regular sibling walk
+    // would throw via getParentOrThrow. Defer to the host so the cursor
+    // moves past the slot-bearing host's previous sibling.
+    const slotHost = $getSlotHost(this);
+    if (slotHost !== null) {
+      return slotHost.selectPrevious(anchorOffset, focusOffset);
+    }
     const prevSibling = this.getPreviousSibling();
     const parent = this.getParentOrThrow();
     if (prevSibling === null) {
@@ -1795,6 +1976,13 @@ export class LexicalNode {
    * */
   selectNext(anchorOffset?: number, focusOffset?: number): RangeSelection {
     errorOnReadOnly();
+    // Slot value root has __parent === null, so the regular sibling walk
+    // would throw via getParentOrThrow. Defer to the host so the cursor
+    // moves past the slot-bearing host's next sibling.
+    const slotHost = $getSlotHost(this);
+    if (slotHost !== null) {
+      return slotHost.selectNext(anchorOffset, focusOffset);
+    }
     const nextSibling = this.getNextSibling();
     const parent = this.getParentOrThrow();
     if (nextSibling === null) {

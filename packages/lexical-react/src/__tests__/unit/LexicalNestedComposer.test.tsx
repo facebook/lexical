@@ -12,7 +12,6 @@ import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {LexicalNestedComposer} from '@lexical/react/LexicalNestedComposer';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
-import {mergeRegister} from '@lexical/utils';
 import {axe, toHaveNoViolations} from 'jest-axe';
 import {
   $applyNodeReplacement,
@@ -25,10 +24,10 @@ import {
   createCommand,
   createEditor,
   DecoratorNode,
-  EditorConfig,
+  type EditorConfig,
   getRegisteredNode,
-  LexicalEditor,
-  SerializedLexicalNode,
+  type LexicalEditor,
+  mergeRegister,
   TextNode,
 } from 'lexical';
 import {
@@ -38,13 +37,13 @@ import {
 } from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import {act, useEffect} from 'react';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {
   afterEach,
   beforeEach,
   describe,
   expect,
-  MockInstance,
+  type MockInstance,
   test,
   vi,
 } from 'vitest';
@@ -53,14 +52,8 @@ expect.extend(toHaveNoViolations);
 class ReactDecoratorNode extends DecoratorNode<React.ReactNode> {
   __decorate?: (node: this) => React.ReactNode;
   __inline?: boolean;
-  static getType() {
-    return 'react-decorator';
-  }
-  static clone(node: ReactDecoratorNode): ReactDecoratorNode {
-    return new ReactDecoratorNode(node.__key);
-  }
-  static importJSON(json: SerializedLexicalNode): ReactDecoratorNode {
-    throw new Error('not implemented');
+  $config() {
+    return this.config('react-decorator', {extends: DecoratorNode});
   }
   createDOM(_config: EditorConfig, editor: LexicalEditor): HTMLElement {
     return (editor._window || window).document.createElement(
@@ -620,6 +613,7 @@ describe('LexicalNestedComposer', () => {
           role="textbox"
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
+          tabindex="-1"
           aria-autocomplete="none"
           aria-label="parent"
           aria-readonly="true"
@@ -631,6 +625,7 @@ describe('LexicalNestedComposer', () => {
               role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
+              tabindex="-1"
               aria-autocomplete="none"
               aria-label="nested"
               aria-readonly="true"
@@ -747,6 +742,7 @@ describe('LexicalNestedComposer', () => {
               role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
+              tabindex="-1"
               aria-autocomplete="none"
               aria-label="nested"
               aria-readonly="true"
@@ -773,6 +769,7 @@ describe('LexicalNestedComposer', () => {
           role="textbox"
           spellcheck="true"
           style="user-select: text; white-space: pre-wrap; word-break: break-word"
+          tabindex="-1"
           aria-autocomplete="none"
           aria-label="parent"
           aria-readonly="true"
@@ -784,6 +781,7 @@ describe('LexicalNestedComposer', () => {
               role="textbox"
               spellcheck="true"
               style="user-select: text; white-space: pre-wrap; word-break: break-word"
+              tabindex="-1"
               aria-autocomplete="none"
               aria-label="nested"
               aria-readonly="true"

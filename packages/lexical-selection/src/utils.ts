@@ -5,13 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
 import {
   $getEditor,
   $isRootNode,
   $isTextNode,
+  type ElementNode,
+  getRootOwnerDocument,
   getStyleObjectFromCSS,
+  type LexicalEditor,
+  type LexicalNode,
 } from 'lexical';
 
 function getDOMTextNode(element: Node | null): Text | null {
@@ -56,7 +59,9 @@ export function createDOMRange(
 ): Range | null {
   const anchorKey = anchorNode.getKey();
   const focusKey = focusNode.getKey();
-  const range = document.createRange();
+  // Resolve through the editor's own document so iframe / shadow-mounted
+  // editors don't end up with a Range bound to the wrong realm.
+  const range = getRootOwnerDocument(editor.getRootElement()).createRange();
   let anchorDOM: Node | Text | null = editor.getElementByKey(anchorKey);
   let focusDOM: Node | Text | null = editor.getElementByKey(focusKey);
   let anchorOffset = _anchorOffset;
@@ -125,9 +130,9 @@ export function createDOMRange(
  * @returns The selectionRects as an array.
  */
 export function createRectsFromDOMRange(
-  editor: LexicalEditor,
+  editor: Pick<LexicalEditor, 'getRootElement'>,
   range: Range,
-): Array<ClientRect> {
+): DOMRect[] {
   const rootElement = editor.getRootElement();
 
   if (rootElement === null) {

@@ -6,18 +6,6 @@
  *
  */
 
-import type {
-  DOMExportOutput,
-  EditorConfig,
-  LexicalEditorWithDispose,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  RangeSelection,
-  SerializedEditor,
-  SerializedLexicalNode,
-  Spread,
-} from 'lexical';
 import type {JSX} from 'react';
 
 import {
@@ -42,6 +30,16 @@ import {
   configExtension,
   DecoratorNode,
   defineExtension,
+  type DOMExportOutput,
+  type EditorConfig,
+  type LexicalEditorWithDispose,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type RangeSelection,
+  type SerializedEditor,
+  type SerializedLexicalNode,
+  type Spread,
 } from 'lexical';
 import * as React from 'react';
 
@@ -53,7 +51,7 @@ import {KeywordsExtension} from './KeywordNode';
 
 const ImageComponent = React.lazy(() => import('./ImageComponent'));
 
-const CaptionEditorExtension = defineExtension({
+const CaptionEditorExtension = /* @__PURE__ */ defineExtension({
   // Skip the default empty-paragraph initializer. In collab mode
   // CollaborationPlugin's bootstrap only runs `initializeEditor` when
   // the Lexical root is empty, so a pre-seeded paragraph would prevent
@@ -72,7 +70,7 @@ const CaptionEditorExtension = defineExtension({
     LinkExtension,
     KeywordsExtension,
     EmojisExtension,
-    configExtension(ReactExtension, {
+    /* @__PURE__ */ configExtension(ReactExtension, {
       contentEditable: (
         <ContentEditable
           placeholder="Enter a caption..."
@@ -137,8 +135,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   // Captions cannot yet be used within editor cells
   __captionsEnabled: boolean;
 
-  static getType(): string {
-    return 'image';
+  $config() {
+    return this.config('image', {extends: DecoratorNode});
   }
 
   static clone(node: ImageNode): ImageNode {

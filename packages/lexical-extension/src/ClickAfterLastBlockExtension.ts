@@ -12,8 +12,9 @@ import {
   $isDecoratorNode,
   $isElementNode,
   defineExtension,
-  LexicalEditor,
-  LexicalNode,
+  type LexicalEditor,
+  type LexicalNode,
+  registerEventListeners,
   safeCast,
   stopLexicalPropagation,
 } from 'lexical';
@@ -92,26 +93,23 @@ function shouldClaimClick(
   if (event.target !== rootElement) {
     return false;
   }
-  return editor.getEditorState().read(
-    () => {
-      const lastChild = $getRoot().getLastChild();
-      if (lastChild === null) {
-        return false;
-      }
-      const lastChildDOM = editor.getElementByKey(lastChild.getKey());
-      if (lastChildDOM === null) {
-        return false;
-      }
-      // Exclusive lower edge — clicks at exactly the bottom pixel fall
-      // through to native handling, which is what users expect when
-      // they click on a block's visible bottom border.
-      if (event.clientY <= lastChildDOM.getBoundingClientRect().bottom) {
-        return false;
-      }
-      return $shouldInsertAfter(lastChild);
-    },
-    {editor},
-  );
+  return editor.read('latest', () => {
+    const lastChild = $getRoot().getLastChild();
+    if (lastChild === null) {
+      return false;
+    }
+    const lastChildDOM = editor.getElementByKey(lastChild.getKey());
+    if (lastChildDOM === null) {
+      return false;
+    }
+    // Exclusive lower edge — clicks at exactly the bottom pixel fall
+    // through to native handling, which is what users expect when
+    // they click on a block's visible bottom border.
+    if (event.clientY <= lastChildDOM.getBoundingClientRect().bottom) {
+      return false;
+    }
+    return $shouldInsertAfter(lastChild);
+  });
 }
 
 /**
@@ -130,9 +128,9 @@ function shouldClaimClick(
  *
  * Closes #8544.
  */
-export const ClickAfterLastBlockExtension = defineExtension({
+export const ClickAfterLastBlockExtension = /* @__PURE__ */ defineExtension({
   build: (_editor, config): ClickAfterLastBlockOutput => namedSignals(config),
-  config: safeCast<ClickAfterLastBlockConfig>({
+  config: /* @__PURE__ */ safeCast<ClickAfterLastBlockConfig>({
     $shouldInsertAfter: $defaultShouldInsertAfter,
     disabled: false,
   }),
@@ -216,12 +214,11 @@ export const ClickAfterLastBlockExtension = defineExtension({
         // Capture phase so the mousedown preventDefault runs before any
         // bubble-phase handler can react, and so the click flag is set
         // before lexical core's bubble-phase onClick reads it.
-        rootElement.addEventListener('mousedown', onMouseDown, true);
-        rootElement.addEventListener('click', onClick, true);
-        return () => {
-          rootElement.removeEventListener('mousedown', onMouseDown, true);
-          rootElement.removeEventListener('click', onClick, true);
-        };
+        return registerEventListeners(
+          rootElement,
+          {click: onClick, mousedown: onMouseDown},
+          true,
+        );
       });
     }),
 });

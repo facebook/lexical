@@ -6,29 +6,22 @@
  *
  */
 
-import type {EditorConfig, LexicalNode, SerializedTextNode} from 'lexical';
-
 import {registerLexicalTextEntity} from '@lexical/text';
 import {
   $applyNodeReplacement,
   defineExtension,
+  type EditorConfig,
+  type LexicalNode,
   mergeRegister,
+  type SerializedTextNode,
   TextNode,
 } from 'lexical';
 
 export type SerializedKeywordNode = SerializedTextNode;
 
 export class KeywordNode extends TextNode {
-  static getType(): string {
-    return 'keyword';
-  }
-
-  static clone(node: KeywordNode): KeywordNode {
-    return new KeywordNode(node.__text, node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedKeywordNode): KeywordNode {
-    return $createKeywordNode().updateFromJSON(serializedNode);
+  $config() {
+    return this.config('keyword', {extends: TextNode});
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -82,7 +75,7 @@ function getKeywordMatch(text: string) {
   };
 }
 
-export const KeywordsExtension = defineExtension({
+export const KeywordsExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/LexicalKeywords',
   nodes: () => [KeywordNode],
   register(editor) {

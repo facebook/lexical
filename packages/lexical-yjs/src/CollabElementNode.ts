@@ -7,7 +7,6 @@
  */
 
 import type {Binding} from '.';
-import type {ElementNode, NodeKey, NodeMap} from 'lexical';
 import type {AbstractType, Map as YMap, XmlElement, XmlText} from 'yjs';
 
 import invariant from '@lexical/internal/invariant';
@@ -18,7 +17,10 @@ import {
   $isDecoratorNode,
   $isElementNode,
   $isTextNode,
-  removeFromParent,
+  $removeFromParent,
+  type ElementNode,
+  type NodeKey,
+  type NodeMap,
 } from 'lexical';
 
 import {CollabDecoratorNode} from './CollabDecoratorNode';
@@ -26,9 +28,13 @@ import {CollabLineBreakNode} from './CollabLineBreakNode';
 import {CollabTextNode} from './CollabTextNode';
 import {
   $createCollabNodeFromLexicalNode,
+  $destroySlotsShared,
   $getOrInitCollabNodeFromSharedType,
   $syncPropertiesFromYjs,
+  $syncSlotsFromLexicalShared,
+  $syncSlotsFromYjsShared,
   createLexicalNodeFromCollabNode,
+  getNodeTypeFromSharedType,
   getPositionFromElementAndOffset,
   spliceString,
   syncPropertiesFromLexical,
@@ -38,19 +44,21 @@ type IntentionallyMarkedAsDirtyElement = boolean;
 
 export class CollabElementNode {
   _key: NodeKey;
-  _children: Array<
+  _children: (
     | CollabElementNode
     | CollabTextNode
     | CollabDecoratorNode
     | CollabLineBreakNode
-  >;
+  )[];
   _xmlText: XmlText;
   _type: string;
-  _parent: null | CollabElementNode;
+  // Normally an element's parent is another element, but a slot-value element
+  // hosted by a decorator has that decorator as its parent.
+  _parent: null | CollabElementNode | CollabDecoratorNode;
 
   constructor(
     xmlText: XmlText,
-    parent: null | CollabElementNode,
+    parent: null | CollabElementNode | CollabDecoratorNode,
     type: string,
   ) {
     this._key = '';
@@ -96,8 +104,11 @@ export class CollabElementNode {
 
   getOffset(): number {
     const collabElementNode = this._parent;
+    // A slot-value element has a decorator parent, but slots live outside the
+    // linked-list children channel so getOffset is never called on one — only
+    // real children (whose parent is an element) reach here.
     invariant(
-      collabElementNode !== null,
+      collabElementNode instanceof CollabElementNode,
       'getOffset: could not find collab element node',
     );
 
@@ -109,23 +120,23 @@ export class CollabElementNode {
     keysChanged: null | Set<string>,
   ): void {
     const lexicalNode = this.getNode();
-    invariant(
-      lexicalNode !== null,
-      'syncPropertiesFromYjs: could not find element node',
-    );
+    if (lexicalNode === null) {
+      // Concurrently removed from Lexical; nothing to sync.
+      return;
+    }
     $syncPropertiesFromYjs(binding, this._xmlText, lexicalNode, keysChanged);
   }
 
   applyChildrenYjsDelta(
     binding: Binding,
-    deltas: Array<{
+    deltas: {
       insert?: string | object | AbstractType<unknown>;
       delete?: number;
       retain?: number;
       attributes?: {
         [x: string]: unknown;
       };
-    }>,
+    }[],
   ): void {
     const children = this._children;
     let currIndex = 0;
@@ -211,7 +222,17 @@ export class CollabElementNode {
 
           currIndex += insertDelta.length;
         } else {
-          const sharedType = insertDelta;
+          const sharedType = insertDelta as
+            | XmlText
+            | YMap<unknown>
+            | XmlElement;
+          // A delta can reference a shared type that has already been deleted
+          // (e.g. while reconciling an undo against concurrent remote edits). A
+          // deleted type has no `__type` and must not be materialized into the
+          // collab tree; it carries no live content, so skip it entirely.
+          if (getNodeTypeFromSharedType(sharedType) === undefined) {
+            continue;
+          }
           const {node, nodeIndex, length} = getPositionFromElementAndOffset(
             this,
             currIndex,
@@ -219,7 +240,7 @@ export class CollabElementNode {
           );
           const collabNode = $getOrInitCollabNodeFromSharedType(
             binding,
-            sharedType as XmlText | YMap<unknown> | XmlElement,
+            sharedType,
             this,
           );
           if (
@@ -257,14 +278,16 @@ export class CollabElementNode {
   syncChildrenFromYjs(binding: Binding): void {
     // Now diff the children of the collab node with that of our existing Lexical node.
     const lexicalNode = this.getNode();
-    invariant(
-      lexicalNode !== null,
-      'syncChildrenFromYjs: could not find element node',
-    );
+    if (lexicalNode === null) {
+      // The Lexical node was concurrently removed (e.g. by a remote edit or undo)
+      // while we still have a pending change for it. There is nothing to reconcile
+      // into Lexical; this collab node will be cleaned up when its parent syncs.
+      return;
+    }
 
     const key = lexicalNode.__key;
     const prevLexicalChildrenKeys = $createChildrenArray(lexicalNode, null);
-    const nextLexicalChildrenKeys: Array<NodeKey> = [];
+    const nextLexicalChildrenKeys: NodeKey[] = [];
     const lexicalChildrenKeysLength = prevLexicalChildrenKeys.length;
     const collabChildren = this._children;
     const collabChildrenLength = collabChildren.length;
@@ -333,7 +356,7 @@ export class CollabElementNode {
           !collabKeys.has(lexicalChildKey)
         ) {
           const nodeToRemove = $getNodeByKeyOrThrow(lexicalChildKey);
-          removeFromParent(nodeToRemove);
+          $removeFromParent(nodeToRemove);
           i--;
           prevIndex++;
           continue;
@@ -387,9 +410,23 @@ export class CollabElementNode {
         if (collabNode !== undefined) {
           collabNode.destroy(binding);
         }
-        removeFromParent(lexicalChildNode);
+        $removeFromParent(lexicalChildNode);
       }
     }
+
+    this.syncSlotsFromYjs(binding, lexicalNode);
+  }
+
+  // Reconcile named slots from the `__slots` Y.Map attribute on this element's
+  // `_xmlText` into the lexical node. Slots live outside the linked-list
+  // children channel, so they are not reached by the delta-driven children
+  // reconcile above. This diff serves both initial fresh-restore and the
+  // observer path: a name present in the Y.Map but missing on the lexical node
+  // is added, a name present on the lexical node but gone from the Y.Map is
+  // removed, and a name present on both is left untouched (its own
+  // text/children edits flow through the slot's CollabElementNode YTextEvent).
+  syncSlotsFromYjs(binding: Binding, lexicalNode: ElementNode): void {
+    $syncSlotsFromYjsShared(binding, this._xmlText, lexicalNode, this);
   }
 
   syncPropertiesFromLexical(
@@ -433,6 +470,13 @@ export class CollabElementNode {
         dirtyElements,
         dirtyLeaves,
       );
+      childCollabNode.syncSlotsFromLexical(
+        binding,
+        nextChildNode,
+        prevNodeMap,
+        dirtyElements,
+        dirtyLeaves,
+      );
     } else if (
       childCollabNode instanceof CollabTextNode &&
       $isTextNode(nextChildNode)
@@ -451,7 +495,42 @@ export class CollabElementNode {
         nextChildNode,
         prevNodeMap,
       );
+      childCollabNode.syncSlotsFromLexical(
+        binding,
+        nextChildNode,
+        prevNodeMap,
+        dirtyElements,
+        dirtyLeaves,
+      );
     }
+  }
+
+  // Mirror of the lexical slot map into the `__slots` Y.Map attribute on this
+  // element's `_xmlText`. Slots live outside the linked-list children channel,
+  // so syncChildrenFromLexical never reaches them; this diff is the local
+  // (lexical -> yjs) counterpart of syncSlotsFromYjs. A name gone from lexical
+  // is deleted from the Y.Map; a name whose slot node is already serialized at
+  // that name is recursed in place (so in-slot content edits propagate); a new
+  // or replaced (different node key) name is (re)created and set. The
+  // creation-time block in $createCollabNodeFromLexicalNode still seeds slots
+  // for a brand-new host (appended via the children diff, which has no matched
+  // key to recurse through here).
+  syncSlotsFromLexical(
+    binding: Binding,
+    nextLexicalNode: ElementNode,
+    prevNodeMap: null | NodeMap,
+    dirtyElements: null | Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
+    dirtyLeaves: null | Set<NodeKey>,
+  ): void {
+    $syncSlotsFromLexicalShared(
+      binding,
+      this._xmlText,
+      nextLexicalNode,
+      prevNodeMap,
+      dirtyElements,
+      dirtyLeaves,
+      this,
+    );
   }
 
   syncChildrenFromLexical(
@@ -598,11 +677,9 @@ export class CollabElementNode {
     const child = children[index];
 
     if (child === undefined) {
-      invariant(
-        collabNode !== undefined,
-        'splice: could not find collab element node',
-      );
-      this.append(collabNode);
+      if (collabNode !== undefined) {
+        this.append(collabNode);
+      }
       return;
     }
 
@@ -612,6 +689,16 @@ export class CollabElementNode {
     const xmlText = this._xmlText;
 
     if (delCount !== 0) {
+      // Destroy the departing children before the embed is deleted below: a
+      // child's slots live on its (about-to-be-detached) `_xmlText`, which
+      // reads back empty once the embed is gone, so destroy() can only reach
+      // them while the child is still attached.
+      const childrenToDelete = children.slice(index, index + delCount);
+
+      for (let i = 0; i < childrenToDelete.length; i++) {
+        childrenToDelete[i].destroy(binding);
+      }
+
       // What if we delete many nodes, don't we need to get all their
       // sizes?
       xmlText.delete(offset, child.getSize());
@@ -631,14 +718,6 @@ export class CollabElementNode {
       xmlText.insertEmbed(offset, collabNode._map);
     } else if (collabNode instanceof CollabDecoratorNode) {
       xmlText.insertEmbed(offset, collabNode._xmlElem);
-    }
-
-    if (delCount !== 0) {
-      const childrenToDelete = children.slice(index, index + delCount);
-
-      for (let i = 0; i < childrenToDelete.length; i++) {
-        childrenToDelete[i].destroy(binding);
-      }
     }
 
     if (collabNode !== undefined) {
@@ -679,6 +758,13 @@ export class CollabElementNode {
       children[i].destroy(binding);
     }
 
+    // Slots live outside the linked-list children channel, so destroying the
+    // children above never reaches them. Destroy each slot's collab node too;
+    // otherwise it dangles in binding.collabNodeMap after the host is removed.
+    // The host's `_xmlText` must still be attached here for SLOTS_ATTR_KEY to read
+    // back (its caller — splice — destroys before detaching the embed).
+    $destroySlotsShared(binding, this._xmlText);
+
     if (collabNodeMap.get(this._key) === this) {
       collabNodeMap.delete(this._key);
     }
@@ -687,7 +773,7 @@ export class CollabElementNode {
 
 export function $createCollabElementNode(
   xmlText: XmlText,
-  parent: null | CollabElementNode,
+  parent: null | CollabElementNode | CollabDecoratorNode,
   type: string,
 ): CollabElementNode {
   const collabNode = new CollabElementNode(xmlText, parent, type);

@@ -6,6 +6,13 @@
  *
  */
 
+import {
+  EditorModeAnnounceExtension,
+  FocusManagerExtension,
+  FocusTrapExtension,
+  HistoryAnnounceExtension,
+  RovingTabIndexExtension,
+} from '@lexical/a11y';
 import {$isCodeNode} from '@lexical/code';
 import {
   $defaultShouldInsertAfter,
@@ -14,7 +21,9 @@ import {
   ClickAfterLastBlockExtension,
   DecoratorTextExtension,
   HorizontalRuleExtension,
+  SelectBlockExtension,
   SelectionAlwaysOnDisplayExtension,
+  TabIndentationExtension,
   WatchEditableExtension,
 } from '@lexical/extension';
 import {HashtagExtension} from '@lexical/hashtag';
@@ -32,12 +41,19 @@ import {
 } from '@lexical/list';
 import {PlainTextExtension} from '@lexical/plain-text';
 import {LexicalCollaboration} from '@lexical/react/LexicalCollaborationContext';
+import {
+  CollaborationPlugin,
+  CollaborationPluginV2__EXPERIMENTAL,
+} from '@lexical/react/LexicalCollaborationPlugin';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {
   $createHeadingNode,
   $createQuoteNode,
   RichTextExtension,
 } from '@lexical/rich-text';
+import {TableExtension} from '@lexical/table';
+import {Analytics} from '@vercel/analytics/react';
+import {SpeedInsights} from '@vercel/speed-insights/react';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -46,23 +62,25 @@ import {
   defineExtension,
 } from 'lexical';
 import {type JSX, useMemo} from 'react';
+import {Doc} from 'yjs';
 
 import {isDevPlayground} from './appSettings';
+import {
+  createWebsocketProvider,
+  createWebsocketProviderWithDoc,
+} from './collaboration';
 import {FlashMessageContext} from './context/FlashMessageContext';
 import {SettingsContext, useSettings} from './context/SettingsContext';
 import {ToolbarContext} from './context/ToolbarContext';
 import Editor from './Editor';
 import {registerSettingsSynchronization} from './hooks/useSynchronizeSettings';
-import logo from './images/logo.svg';
 import {KeywordsExtension} from './nodes/KeywordNode';
-import {
-  PlaygroundImportExtension,
-  PlaygroundRichTextImportExtension,
-} from './nodes/PlaygroundImportExtension';
+import {PlaygroundImportExtension} from './nodes/PlaygroundImportExtension';
 import PlaygroundNodes from './nodes/PlaygroundNodes';
 import {PlaygroundDOMRenderExtension} from './PlaygroundDOMRenderExtension';
 import {AutocompleteExtension} from './plugins/AutocompleteExtension';
 import {PlaygroundAutoLinkExtension} from './plugins/AutoLinkExtension';
+import {CardExtension} from './plugins/CardExtension';
 import {CodeHighlightExtension} from './plugins/CodeHighlightExtension';
 import {CollapsibleExtension} from './plugins/CollapsibleExtension';
 import {DateTimeExtension} from './plugins/DateTimeExtension';
@@ -72,6 +90,7 @@ import {EmojisExtension} from './plugins/EmojisExtension';
 import {EquationsExtension} from './plugins/EquationsExtension';
 import {ExcalidrawExtension} from './plugins/ExcalidrawExtension';
 import {FigmaExtension} from './plugins/FigmaExtension';
+import {ReactFindReplaceExtension} from './plugins/FindReplaceExtension';
 import {ImagesExtension} from './plugins/ImagesExtension';
 import {LayoutExtension} from './plugins/LayoutExtension/LayoutExtension';
 import {PlaygroundMarkdownShortcutsExtension} from './plugins/MarkdownShortcutsExtension';
@@ -81,21 +100,32 @@ import {PageBreakExtension} from './plugins/PageBreakExtension';
 import {PagesReactExtension} from './plugins/PagesReactExtension';
 import PasteLogPlugin from './plugins/PasteLogPlugin';
 import {PollExtension} from './plugins/PollExtension';
+import {PullQuoteExtension} from './plugins/PullQuoteExtension';
+import {ReactReviewExtension} from './plugins/ReviewExtension';
+import {RubyExtension} from './plugins/RubyExtension';
 import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import {TabFocusExtension} from './plugins/TabFocusExtension';
 import {TerseExportExtension} from './plugins/TerseExportExtension';
 import TestRecorderPlugin from './plugins/TestRecorderPlugin';
 import {TwitterExtension} from './plugins/TwitterExtension';
 import TypingPerfPlugin from './plugins/TypingPerfPlugin';
+import {VersionsPlugin} from './plugins/VersionsPlugin';
 import {VisibleNonPrintingExtension} from './plugins/VisibleNonPrintingExtension';
 import {YouTubeExtension} from './plugins/YouTubeExtension';
 import Settings from './Settings';
 import PlaygroundEditorTheme from './themes/PlaygroundEditorTheme';
+import ShadowDomWrapper from './ui/ShadowDomWrapper';
 import {validateUrl} from './utils/url';
 
 console.warn(
   'If you are profiling the playground app, please ensure you turn off the debug view. You can disable it by pressing on the settings control in the bottom-left of your screen and toggling the debug view setting.',
 );
+
+const COLLAB_DOC_ID = 'main';
+
+const skipCollaborationInit =
+  // @ts-expect-error
+  window.parent != null && window.parent.frames.right === window;
 
 function $prepopulatedRichText() {
   const root = $getRoot();
@@ -178,17 +208,22 @@ function $prepopulatedRichText() {
 }
 
 // These are only enabled for rich-text mode
-const PlaygroundRichTextExtension = defineExtension({
+const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    configExtension(RichTextExtension, {
+    /* @__PURE__ */ configExtension(RichTextExtension, {
       escapeFormatTriggers: {
         code: {arrow: true, click: true, enter: true, onlyAtBoundary: true},
       },
     }),
-    // Rich-text-only DOM importers (rich-text/list/table/code/hr); kept out of
-    // the always-on PlaygroundImportExtension so plain-text mode doesn't pull
-    // in RichTextExtension (which conflicts with PlainTextExtension).
-    PlaygroundRichTextImportExtension,
+    // Each node extension below registers its own DOM-import rules — the
+    // framework nodes (rich-text, list, table, code) and the playground block
+    // hosts (Card, PullQuote, Review) alike — so the rich-text importer set
+    // tracks this node set automatically (kept out of the always-on
+    // PlaygroundImportExtension so plain-text mode doesn't pull in
+    // RichTextExtension, which conflicts with PlainTextExtension).
+    /* @__PURE__ */ configExtension(TableExtension, {
+      hasStickyScrollbar: true,
+    }),
     ImagesExtension,
     HorizontalRuleExtension,
     PageBreakExtension,
@@ -198,7 +233,9 @@ const PlaygroundRichTextExtension = defineExtension({
     TabFocusExtension,
     CollapsibleExtension,
     CodeHighlightExtension,
-    configExtension(ListExtension, {shouldPreserveNumbering: false}),
+    /* @__PURE__ */ configExtension(ListExtension, {
+      shouldPreserveNumbering: false,
+    }),
     CheckListExtension,
     PlaygroundMarkdownShortcutsExtension,
     PageBreakExtension,
@@ -207,11 +244,17 @@ const PlaygroundRichTextExtension = defineExtension({
     EquationsExtension,
     LayoutExtension,
     ExcalidrawExtension,
+    CardExtension,
+    ReactReviewExtension,
+    ReactFindReplaceExtension,
+    PullQuoteExtension,
+    RubyExtension,
+    /* @__PURE__ */ configExtension(TabIndentationExtension, {maxIndent: 7}),
   ],
   name: '@lexical/playground/RichText',
 });
 
-const AppExtension = defineExtension({
+const AppExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     AutoFocusExtension,
     ClearEditorExtension,
@@ -220,6 +263,8 @@ const AppExtension = defineExtension({
     // registerSettingsSynchronization to drive ClickableLinkExtension.
     WatchEditableExtension,
     HistoryExtension,
+    HistoryAnnounceExtension,
+    EditorModeAnnounceExtension,
     KeywordsExtension,
     HashtagExtension,
     DateTimeExtension,
@@ -228,25 +273,32 @@ const AppExtension = defineExtension({
     DragDropPasteExtension,
     EmojisExtension,
     MentionsExtension,
-    configExtension(LinkExtension, {validateUrl}),
+    /* @__PURE__ */ configExtension(LinkExtension, {validateUrl}),
     PlaygroundAutoLinkExtension,
-    ClickableLinkExtension,
+    /* @__PURE__ */ configExtension(ClickableLinkExtension, {newTab: true}),
     SelectionAlwaysOnDisplayExtension,
+    /* @__PURE__ */ configExtension(SelectBlockExtension, {
+      cascadeSelection: true,
+    }),
     TerseExportExtension,
-    configExtension(ClickAfterLastBlockExtension, {
+    /* @__PURE__ */ configExtension(ClickAfterLastBlockExtension, {
       $shouldInsertAfter: node =>
         $defaultShouldInsertAfter(node) || $isCodeNode(node),
     }),
-    configExtension(AutocompleteExtension, {disabled: true}),
-    configExtension(VisibleNonPrintingExtension, {disabled: true}),
+    /* @__PURE__ */ configExtension(AutocompleteExtension, {disabled: true}),
+    /* @__PURE__ */ configExtension(VisibleNonPrintingExtension, {
+      disabled: true,
+    }),
     // DOMImportExtension pipeline — `PlaygroundImportExtension` bundles
-    // the shared `CoreImportExtension` baseline, every per-package
-    // import extension (rich-text, list, link, table, code, hr), the
-    // playground-specific inline-style overlay and the
-    // `ClipboardDOMImportExtension` paste handler.
+    // the shared `CoreImportExtension` baseline, the playground-specific
+    // inline-style overlay and the `ClipboardDOMImportExtension` paste
+    // handler. Per-node import rules ride along with each node extension.
     PlaygroundImportExtension,
     // Replaces the legacy `buildHTMLConfig().export` overrides.
     PlaygroundDOMRenderExtension,
+    FocusTrapExtension,
+    RovingTabIndexExtension,
+    FocusManagerExtension,
   ],
   name: '@lexical/playground',
   namespace: 'Playground',
@@ -287,7 +339,7 @@ function buildExtensionFromSettings(settings: DynamicSettings) {
         : $prepopulatedRichText,
     dependencies: [
       AppExtension,
-      configExtension(HistoryExtension, {disabled: isCollab}),
+      /* @__PURE__ */ configExtension(HistoryExtension, {disabled: isCollab}),
       isRichText ? PlaygroundRichTextExtension : PlainTextExtension,
     ],
     name: '@lexical/playground/dynamic-config',
@@ -300,7 +352,14 @@ function buildExtensionFromSettings(settings: DynamicSettings) {
 
 function App(): JSX.Element {
   const {
-    settings: {isCollab, emptyEditor, isRichText, measureTypingPerf},
+    settings: {
+      isCollab,
+      useCollabV2,
+      emptyEditor,
+      isRichText,
+      isShadowDOM,
+      measureTypingPerf,
+    },
   } = useSettings();
 
   // Only the editor-recreating settings belong in this memo's deps. Table
@@ -318,12 +377,35 @@ function App(): JSX.Element {
         <ToolbarContext>
           <header>
             <a href="https://lexical.dev" target="_blank" rel="noreferrer">
-              <img src={logo} alt="Lexical Logo" />
+              <span className="logo" role="img" aria-label="Lexical Logo" />
             </a>
           </header>
-          <div className="editor-shell">
-            <Editor />
-          </div>
+          {isRichText && isCollab ? (
+            useCollabV2 ? (
+              <CollabV2
+                id={COLLAB_DOC_ID}
+                shouldBootstrap={!skipCollaborationInit}
+              />
+            ) : (
+              <CollaborationPlugin
+                id={COLLAB_DOC_ID}
+                providerFactory={createWebsocketProvider}
+                shouldBootstrap={!skipCollaborationInit}
+                selectionHighlight={true}
+              />
+            )
+          ) : null}
+          {isShadowDOM ? (
+            <ShadowDomWrapper>
+              <div className="editor-shell">
+                <Editor />
+              </div>
+            </ShadowDomWrapper>
+          ) : (
+            <div className="editor-shell">
+              <Editor />
+            </div>
+          )}
           <Settings />
           {isDevPlayground ? <DocsPlugin /> : null}
           {isDevPlayground ? <PasteLogPlugin /> : null}
@@ -333,6 +415,34 @@ function App(): JSX.Element {
         </ToolbarContext>
       </LexicalExtensionComposer>
     </LexicalCollaboration>
+  );
+}
+
+function CollabV2({
+  id,
+  shouldBootstrap,
+}: {
+  id: string;
+  shouldBootstrap: boolean;
+}) {
+  // VersionsPlugin needs GC disabled.
+  const doc = useMemo(() => new Doc({gc: false}), []);
+
+  const provider = useMemo(() => {
+    return createWebsocketProviderWithDoc('main', doc);
+  }, [doc]);
+
+  return (
+    <>
+      <CollaborationPluginV2__EXPERIMENTAL
+        id={id}
+        doc={doc}
+        provider={provider}
+        __shouldBootstrapUnsafe={shouldBootstrap}
+        selectionHighlight={true}
+      />
+      <VersionsPlugin id={id} />
+    </>
   );
 }
 
@@ -376,6 +486,8 @@ export default function PlaygroundApp(): JSX.Element {
           />
         </svg>
       </a>
+      <Analytics />
+      <SpeedInsights />
     </SettingsContext>
   );
 }

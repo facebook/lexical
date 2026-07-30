@@ -6,47 +6,33 @@
  *
  */
 
-import {
-  $createHorizontalRuleNode,
-  HorizontalRuleExtension,
-} from '@lexical/extension';
-import {configExtension, defineExtension} from 'lexical';
+import {HorizontalRuleExtension} from '@lexical/extension';
+import {defineExtension} from 'lexical';
 
-import {defineImportRule} from './defineImportRule';
-import {DOMImportExtension} from './DOMImportExtension';
-import {selBase} from './sel';
-
-const HorizontalRuleRule = defineImportRule({
-  $import: () => [$createHorizontalRuleNode()],
-  match: selBase.tag('hr'),
-  name: '@lexical/html/hr',
-});
+import {CoreImportExtension} from './CoreImportExtension';
+import {HorizontalRuleRule} from './coreImportRules';
 
 /**
- * Import rules for {@link HorizontalRuleNode}.
+ * Import rules for {@link HorizontalRuleNode}. The `<hr>` rule is part of
+ * {@link CoreImportRules} (gated on `HorizontalRuleNode` registration), so
+ * this array exists only for backwards compatibility and introspection.
  *
  * @experimental
  */
 export const HorizontalRuleImportRules = [HorizontalRuleRule];
 
 /**
- * Bundles {@link HorizontalRuleImportRules} together with the runtime
- * {@link HorizontalRuleExtension}. The application is expected to
- * already have `CoreImportExtension` (or some equivalent) in its
- * dependency graph — the core/text/paragraph/inline-format rules are a
- * shared baseline, not something this leaf importer should re-declare.
- *
- * Lives in `@lexical/html` (not `@lexical/extension`) because
- * {@link DOMImportExtension} itself is in `@lexical/html`, and
- * `@lexical/extension` is upstream of `@lexical/html` in the dependency
- * graph.
+ * Bundles the runtime {@link HorizontalRuleExtension} together with
+ * {@link CoreImportExtension}, whose {@link CoreImportRules} include the
+ * registration-gated `<hr>` rule.
  *
  * @experimental
+ * @deprecated The `<hr>` import rule now ships with
+ * {@link CoreImportRules} and activates whenever `HorizontalRuleNode` is
+ * registered — depend on `HorizontalRuleExtension` (plus any extension
+ * that brings in `CoreImportExtension`) directly instead.
  */
-export const HorizontalRuleImportExtension = defineExtension({
-  dependencies: [
-    HorizontalRuleExtension,
-    configExtension(DOMImportExtension, {rules: HorizontalRuleImportRules}),
-  ],
+export const HorizontalRuleImportExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [HorizontalRuleExtension, CoreImportExtension],
   name: '@lexical/html/HorizontalRuleImport',
 });

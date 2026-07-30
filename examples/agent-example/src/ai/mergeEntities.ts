@@ -37,8 +37,8 @@ export interface MergedEntity {
 export function computeTokenOffsets(
   tokens: NERToken[],
   text: string,
-): Array<NERToken & {end: number; start: number}> {
-  const result: Array<NERToken & {end: number; start: number}> = [];
+): (NERToken & {end: number; start: number})[] {
+  const result: (NERToken & {end: number; start: number})[] = [];
   let cursor = 0;
   const lowerText = text.toLowerCase();
 
@@ -97,12 +97,12 @@ export function mergeEntities(
 ): MergedEntity[] {
   const withOffsets = computeTokenOffsets(tokens, text);
 
-  const merged: Array<{
+  const merged: {
     end: number;
     entity: string;
     minScore: number;
     start: number;
-  }> = [];
+  }[] = [];
 
   for (const token of withOffsets) {
     const prefix = token.entity.slice(0, 2); // "B-" or "I-"

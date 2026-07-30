@@ -165,3 +165,15 @@ editor.update(
   },
 );
 ```
+
+## Reading selection across a shadow boundary
+
+If your plugin reads the DOM selection directly — through
+`Selection.anchorNode`, `Selection.getRangeAt(0)`, or similar — and the
+editor's `contentEditable` lives inside a `ShadowRoot`, the browser retargets
+those reads to the shadow host. See
+[Shadow DOM and iframes](./shadow-dom.md) for the shadow-aware helpers
+(`getDOMSelectionPoints`, `getDOMSelectionRange`, etc.) that return the
+un-retargeted boundary points; they fall through to the standard reads in the
+plain light DOM, so there's nothing to do until you actually mount the editor
+in a shadow tree.

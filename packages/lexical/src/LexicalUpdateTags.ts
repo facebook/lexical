@@ -32,6 +32,11 @@ export const HISTORY_MERGE_TAG = 'history-merge';
 export const PASTE_TAG = 'paste';
 
 /**
+ * Indicates that the update is related to a cut operation
+ */
+export const CUT_TAG = 'cut';
+
+/**
  * Indicates that the update is related to collaborative editing
  */
 export const COLLABORATION_TAG = 'collaboration';
@@ -78,6 +83,7 @@ export const COMPOSITION_END_TAG = 'composition-end';
  */
 export type UpdateTag =
   | typeof COLLABORATION_TAG
+  | typeof CUT_TAG
   | typeof FOCUS_TAG
   | typeof HISTORIC_TAG
   | typeof HISTORY_MERGE_TAG

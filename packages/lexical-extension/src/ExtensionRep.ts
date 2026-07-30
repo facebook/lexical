@@ -7,21 +7,21 @@
  */
 
 import type {LexicalBuilder} from './LexicalBuilder';
-import type {
-  AnyLexicalExtension,
-  ExtensionBuildState,
-  ExtensionInitState,
-  ExtensionRegisterState,
-  InitialEditorConfig,
-  LexicalEditor,
-  LexicalExtensionConfig,
-  LexicalExtensionDependency,
-  LexicalExtensionInit,
-  LexicalExtensionOutput,
-} from 'lexical';
 
 import invariant from '@lexical/internal/invariant';
-import {shallowMergeConfig} from 'lexical';
+import {
+  type AnyLexicalExtension,
+  type ExtensionBuildState,
+  type ExtensionInitState,
+  type ExtensionRegisterState,
+  type InitialEditorConfig,
+  type LexicalEditor,
+  type LexicalExtensionConfig,
+  type LexicalExtensionDependency,
+  type LexicalExtensionInit,
+  type LexicalExtensionOutput,
+  shallowMergeConfig,
+} from 'lexical';
 
 export const ExtensionRepStateIds = {
   /* eslint-disable sort-keys-fix/sort-keys-fix */

@@ -117,6 +117,7 @@ export type ClearEditorConfig = {
 }
 declare export var ClearEditorExtension: LexicalExtension<ClearEditorConfig, "@lexical/extension/ClearEditor", NamedSignalsOutput<ClearEditorConfig>, void>;
 declare export var EditorStateExtension: LexicalExtension<ExtensionConfigBase, "@lexical/extension/EditorState", Signal<EditorState>, void>;
+declare export var RootElementExtension: LexicalExtension<ExtensionConfigBase, "@lexical/extension/RootElement", Signal<HTMLElement | null>, void>;
 declare export function getExtensionDependencyFromEditor<
   Extension extends AnyLexicalExtension,
 >(
@@ -138,8 +139,6 @@ declare export function getPeerDependencyFromEditorOrThrow<
 
 export type SerializedHorizontalRuleNode = SerializedLexicalNode;
 declare export class HorizontalRuleNode extends DecoratorNode<React.Node> {
-  static getType(): string;
-  static clone(node: HorizontalRuleNode): HorizontalRuleNode;
   createDOM(): HTMLElement;
   getTextContent(): '\n';
   updateDOM(): false;
@@ -182,6 +181,12 @@ declare export var NodeSelectionExtension: LexicalExtension<ExtensionConfigBase,
   watchNodeKey: (key: NodeKey) => ReadonlySignal<boolean>;
 }, void>;
 
+export type NodeSelectionDataSelectedConfig = {
+  nodes: Class<LexicalNode>[];
+  attribute: string;
+}
+declare export var NodeSelectionDataSelectedExtension: LexicalExtension<NodeSelectionDataSelectedConfig, "@lexical/extension/NodeSelectionDataSelected", void, {matchTypes: Set<string>}>;
+
 export type TabIndentationConfig = {
   disabled: boolean;
   maxIndent: null | number;
@@ -210,6 +215,28 @@ declare export class DecoratorTextNode extends DecoratorNode<unknown> {
 declare export function $isDecoratorTextNode(
   node: ?LexicalNode,
 ): node is DecoratorTextNode;
+
+declare export function applyFormatFromStyle(
+  lexicalNode: DecoratorTextNode,
+  style: CSSStyleDeclaration,
+  shouldApply?: TextFormatType,
+): DecoratorTextNode;
+
+declare export function applyFormatToDom(
+  lexicalNode: DecoratorTextNode,
+  domNode: Text | HTMLElement,
+  tagNameToFormat?: {[string]: TextFormatType},
+): Text | HTMLElement;
+
+/**
+ * @deprecated Use applyFormatToDom instead — the `$` prefix was a mistake
+ * in the 0.47 release. This alias is kept for compatibility with 0.47.
+ */
+declare export function $applyFormatToDom(
+  lexicalNode: DecoratorTextNode,
+  domNode: Text | HTMLElement,
+  tagNameToFormat?: {[string]: TextFormatType},
+): Text | HTMLElement;
 
 declare export var DecoratorTextExtension: LexicalExtension<ExtensionConfigBase, "@lexical/extension/DecoratorText", void, void>;
 

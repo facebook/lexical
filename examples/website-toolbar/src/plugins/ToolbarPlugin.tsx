@@ -24,7 +24,7 @@ import {
   COMMAND_PRIORITY_LOW,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
-  LexicalEditor,
+  type LexicalEditor,
   REDO_COMMAND,
   UNDO_COMMAND,
 } from 'lexical';

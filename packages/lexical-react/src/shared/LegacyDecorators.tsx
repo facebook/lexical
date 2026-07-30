@@ -5,12 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {LexicalEditor} from 'lexical';
 import type {JSX} from 'react';
 
 import {LexicalBuilder} from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
-import {type LexicalEditor} from 'lexical';
 
 import {type ErrorBoundaryType, useDecorators} from './useDecorators';
 

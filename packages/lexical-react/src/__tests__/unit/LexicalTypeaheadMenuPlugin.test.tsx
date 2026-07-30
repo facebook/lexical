@@ -14,21 +14,21 @@ import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {
   LexicalTypeaheadMenuPlugin,
   MenuOption,
-  MenuRenderFn,
+  type MenuRenderFn,
   useBasicTypeaheadTriggerMatch,
 } from '@lexical/react/LexicalTypeaheadMenuPlugin';
 import {
   $createParagraphNode,
   $getRoot,
   DELETE_CHARACTER_COMMAND,
-  LexicalEditor,
+  type LexicalEditor,
   ParagraphNode,
-  TextNode,
+  type TextNode,
 } from 'lexical';
 import * as React from 'react';
 import {act, useCallback} from 'react';
 import ReactDOM from 'react-dom';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 class TestMenuOption extends MenuOption {
@@ -136,7 +136,7 @@ function TypeaheadPluginWithoutMenuRenderFn({
 
 function createApp(
   plugin: React.ReactNode,
-  nodes: Array<typeof ParagraphNode> = [],
+  nodes: (typeof ParagraphNode)[] = [],
 ): React.FC {
   return function App() {
     return (

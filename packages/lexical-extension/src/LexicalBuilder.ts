@@ -39,8 +39,8 @@ import {InitialStateExtension} from './InitialStateExtension';
 /** @internal Use a well-known symbol for dev tools purposes */
 export const builderSymbol = Symbol.for('@lexical/extension/LexicalBuilder');
 
-type BuildCreateEditorArgs = Omit<CreateEditorArgs, 'onError'> &
-  Pick<InitialEditorConfig, 'onError' | '$initialEditorState'>;
+type BuildCreateEditorArgs = Omit<CreateEditorArgs, 'onError' | 'onWarn'> &
+  Pick<InitialEditorConfig, 'onError' | 'onWarn' | '$initialEditorState'>;
 
 /**
  * Build a LexicalEditor by combining together one or more extensions, optionally
@@ -178,6 +178,7 @@ export class LexicalBuilder {
     const {
       $initialEditorState: _$initialEditorState,
       onError,
+      onWarn,
       ...editorConfig
     } = this.buildCreateEditorArgs();
     const editor = Object.assign(
@@ -187,6 +188,13 @@ export class LexicalBuilder {
           ? {
               onError: err => {
                 onError(err, editor);
+              },
+            }
+          : {}),
+        ...(onWarn
+          ? {
+              onWarn: err => {
+                onWarn(err, editor);
               },
             }
           : {}),
@@ -417,6 +425,9 @@ export class LexicalBuilder {
       const {extension} = extensionRep;
       if (extension.onError !== undefined) {
         config.onError = extension.onError;
+      }
+      if (extension.onWarn !== undefined) {
+        config.onWarn = extension.onWarn;
       }
       if (extension.disableEvents !== undefined) {
         config.disableEvents = extension.disableEvents;

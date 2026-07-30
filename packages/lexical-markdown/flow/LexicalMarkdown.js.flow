@@ -23,7 +23,7 @@ export type Transformer =
   | TextMatchTransformer;
 
 export type ElementTransformer = {
-  dependencies: Array<Class<LexicalNode>>,
+  dependencies: Class<LexicalNode>[],
   export: (
     node: LexicalNode,
     traverseChildren: (node: ElementNode) => string,
@@ -31,8 +31,8 @@ export type ElementTransformer = {
   regExp: RegExp,
   replace: (
     parentNode: ElementNode,
-    children: Array<LexicalNode>,
-    match: Array<string>,
+    children: LexicalNode[],
+    match: string[],
     isImport: boolean,
   ) => boolean | void,
   type: 'element',
@@ -40,13 +40,13 @@ export type ElementTransformer = {
 };
 
 export type MultilineElementTransformer = {
-  dependencies: Array<Class<LexicalNode>>;
+  dependencies: Class<LexicalNode>[];
   export?: (
     node: LexicalNode,
     traverseChildren: (node: ElementNode) => string,
   ) => string | null;
   handleImportAfterStartMatch?: (args: {
-    lines: Array<string>;
+    lines: string[];
     rootNode: ElementNode;
     startLineIndex: number;
     startMatch: RegExp$matchResult;
@@ -61,10 +61,10 @@ export type MultilineElementTransformer = {
       };
   replace: (
     rootNode: ElementNode,
-    children: Array<LexicalNode> | null,
-    startMatch: Array<string>,
-    endMatch: Array<string> | null,
-    linesInBetween: Array<string> | null,
+    children: LexicalNode[] | null,
+    startMatch: string[],
+    endMatch: string[] | null,
+    linesInBetween: string[] | null,
     isImport: boolean,
   ) => boolean | void;
   type: 'multiline-element';
@@ -78,7 +78,7 @@ export type TextFormatTransformer = Readonly<{
 }>;
 
 export type TextMatchTransformer = Readonly<{
-  dependencies: Array<Class<LexicalNode>>,
+  dependencies: Class<LexicalNode>[],
   export?: (
     node: LexicalNode,
     exportChildren: (node: ElementNode) => string,
@@ -94,12 +94,12 @@ export type TextMatchTransformer = Readonly<{
 
 declare export function registerMarkdownShortcuts(
   editor: LexicalEditor,
-  transformers?: Array<Transformer>,
+  transformers?: Transformer[],
 ): () => void;
 
 declare export function $convertFromMarkdownString(
   markdown: string,
-  transformers?: Array<Transformer>,
+  transformers?: Transformer[],
   node?: ElementNode,
   shouldPreserveNewLines?: boolean,
   shouldMergeAdjacentLines?: boolean,
@@ -112,7 +112,7 @@ declare export function $convertSelectionToMarkdownString(
 ): string;
 
 declare export function $convertToMarkdownString(
-  transformers?: Array<Transformer>,
+  transformers?: Transformer[],
   node?: ElementNode,
   shouldPreserveNewLines?: boolean,
 ): string;
@@ -136,8 +136,8 @@ declare export var ORDERED_LIST: ElementTransformer;
 
 declare export var LINK: TextMatchTransformer;
 
-declare export var TRANSFORMERS: Array<Transformer>;
-declare export var ELEMENT_TRANSFORMERS: Array<ElementTransformer>;
-declare export var MULTILINE_ELEMENT_TRANSFORMERS: Array<MultilineElementTransformer>;
-declare export var TEXT_FORMAT_TRANSFORMERS: Array<TextFormatTransformer>;
-declare export var TEXT_MATCH_TRANSFORMERS: Array<TextFormatTransformer>;
+declare export var TRANSFORMERS: Transformer[];
+declare export var ELEMENT_TRANSFORMERS: ElementTransformer[];
+declare export var MULTILINE_ELEMENT_TRANSFORMERS: MultilineElementTransformer[];
+declare export var TEXT_FORMAT_TRANSFORMERS: TextFormatTransformer[];
+declare export var TEXT_MATCH_TRANSFORMERS: TextFormatTransformer[];

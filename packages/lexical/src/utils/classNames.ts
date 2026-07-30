@@ -8,8 +8,8 @@
 
 /** @internal */
 export function normalizeClassNames(
-  ...classNames: Array<typeof undefined | boolean | null | string>
-): Array<string> {
+  ...classNames: (typeof undefined | boolean | null | string)[]
+): string[] {
   const rval = [];
   for (const className of classNames) {
     if (className && typeof className === 'string') {
@@ -31,7 +31,7 @@ export function normalizeClassNames(
  */
 export function addClassNamesToElement(
   element: HTMLElement,
-  ...classNames: Array<typeof undefined | boolean | null | string>
+  ...classNames: (typeof undefined | boolean | null | string)[]
 ): void {
   const classesToAdd = normalizeClassNames(...classNames);
   if (classesToAdd.length > 0) {
@@ -49,7 +49,7 @@ export function addClassNamesToElement(
  */
 export function removeClassNamesFromElement(
   element: HTMLElement,
-  ...classNames: Array<typeof undefined | boolean | null | string>
+  ...classNames: (typeof undefined | boolean | null | string)[]
 ): void {
   const classesToRemove = normalizeClassNames(...classNames);
   if (classesToRemove.length > 0) {

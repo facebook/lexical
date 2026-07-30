@@ -79,7 +79,8 @@ async function buildExample({packageJson, packageJsonPath, exampleDir}) {
     'lexicalUnreleasedDependencies',
   ]) {
     const deps = packageJson[depType] || {};
-    hasPlaywright ||= '@playwright/test' in deps;
+    hasPlaywright ||=
+      '@playwright/test' in deps || '@vitest/browser-playwright' in deps;
     for (const [dep, v] of Object.entries(deps)) {
       allDeps.set(dep, `${dep}@${v}`);
     }

@@ -12,6 +12,8 @@ import {
   $createNodeSelection,
   $getRoot,
   $getSelection,
+  $isNodeSelection,
+  $isParagraphNode,
   $isRangeSelection,
   $setSelection,
   KEY_ENTER_COMMAND,
@@ -63,8 +65,15 @@ describe('KEY_ENTER_COMMAND on a single-decorator NodeSelection', () => {
 
     editor.read(() => {
       const root = $getRoot();
-      expect(root.getChildrenSize()).toBe(1);
-      expect(root.getChildren()[0]).toBeInstanceOf(TestDecoratorNode);
+      // inline nodes are wrapped
+      const children = root.getChildren();
+      expect(children).toHaveLength(1);
+      assert(children.every($isParagraphNode));
+      const paragraphChildren = children[0].getChildren();
+      expect(paragraphChildren).toHaveLength(1);
+      expect(paragraphChildren[0]).toBeInstanceOf(TestDecoratorNode);
+      const selection = $getSelection();
+      assert($isNodeSelection(selection));
     });
   });
 });

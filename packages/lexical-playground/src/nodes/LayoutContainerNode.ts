@@ -6,18 +6,17 @@
  *
  */
 
-import type {
-  DOMExportOutput,
-  EditorConfig,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  SerializedElementNode,
-  Spread,
+import {
+  addClassNamesToElement,
+  type DOMExportOutput,
+  type EditorConfig,
+  ElementNode,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type SerializedElementNode,
+  type Spread,
 } from 'lexical';
-
-import {addClassNamesToElement} from '@lexical/utils';
-import {ElementNode} from 'lexical';
 
 export type SerializedLayoutContainerNode = Spread<
   {
@@ -34,8 +33,8 @@ export class LayoutContainerNode extends ElementNode {
     this.__templateColumns = templateColumns;
   }
 
-  static getType(): string {
-    return 'layout-container';
+  $config() {
+    return this.config('layout-container', {extends: ElementNode});
   }
 
   static clone(node: LayoutContainerNode): LayoutContainerNode {

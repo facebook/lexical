@@ -9,16 +9,21 @@
 import type {LexicalEditor} from './LexicalEditor';
 import type {LexicalNode, NodeMap, SerializedLexicalNode} from './LexicalNode';
 import type {BaseSelection} from './LexicalSelection';
-import type {SerializedElementNode} from './nodes/LexicalElementNode';
-import type {SerializedRootNode} from './nodes/LexicalRootNode';
 
 import invariant from '@lexical/internal/invariant';
 
 import {cloneMap} from './LexicalGenMap';
+import {$getSlot, $getSlotNames} from './LexicalSlot';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
-import {$isElementNode} from './nodes/LexicalElementNode';
-import {$createRootNode} from './nodes/LexicalRootNode';
+import {
+  $isElementNode,
+  type SerializedElementNode,
+} from './nodes/LexicalElementNode';
+import {
+  $createRootNode,
+  type SerializedRootNode,
+} from './nodes/LexicalRootNode';
 
 export interface SerializedEditorState<
   T extends SerializedLexicalNode = SerializedLexicalNode,
@@ -47,14 +52,14 @@ export function editorStateHasDirtySelection(
 }
 
 export function cloneEditorState(current: EditorState): EditorState {
-  return new EditorState(cloneMap(current._nodeMap));
+  return new EditorState(cloneMap(current._nodeMap), null, current._slotsUsed);
 }
 
 export function createEmptyEditorState(): EditorState {
-  return new EditorState(new Map([['root', $createRootNode()]]));
+  return new EditorState(new Map([['root', $createRootNode()]]), null, false);
 }
 
-function exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
+function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
   node: LexicalNode,
 ): SerializedNode {
   const serializedNode = node.exportJSON();
@@ -83,9 +88,31 @@ function exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
 
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
-      const serializedChildNode = exportNodeToJSON(child);
+      const serializedChildNode = $exportNodeToJSON(child);
       serializedChildren.push(serializedChildNode);
     }
+  }
+
+  // Slots ride in a separate Map on every LexicalNode (an ElementNode or a
+  // DecoratorNode host), so serialize them outside the element branch.
+  const slotNames = $getSlotNames(node);
+  if (slotNames.length > 0) {
+    const serializedSlots: Record<string, SerializedLexicalNode> = {};
+    for (const name of slotNames) {
+      const slotNode = $getSlot(node, name);
+      invariant(
+        slotNode !== null,
+        'LexicalNode: Node %s has slot "%s" but it resolved to no node during export.',
+        nodeClass.name,
+        name,
+      );
+      serializedSlots[name] = $exportNodeToJSON(slotNode);
+    }
+    (
+      serializedNode as SerializedLexicalNode & {
+        $slots?: Record<string, SerializedLexicalNode>;
+      }
+    ).$slots = serializedSlots;
   }
 
   // @ts-expect-error
@@ -108,12 +135,27 @@ export class EditorState {
   _selection: null | BaseSelection;
   _flushSync: boolean;
   _readOnly: boolean;
+  /**
+   * True if this EditorState was parsed without running transforms
+   */
+  _parsed: boolean;
+  /**
+   * True if this EditorState or the LexicalEditor that created it has
+   * ever used slots
+   */
+  _slotsUsed: boolean;
 
-  constructor(nodeMap: NodeMap, selection?: null | BaseSelection) {
+  constructor(
+    nodeMap: NodeMap,
+    selection: null | BaseSelection = null,
+    slotsUsed: boolean = false,
+  ) {
     this._nodeMap = nodeMap;
     this._selection = selection || null;
     this._flushSync = false;
     this._readOnly = false;
+    this._parsed = false;
+    this._slotsUsed = slotsUsed;
   }
 
   isEmpty(): boolean {
@@ -132,6 +174,7 @@ export class EditorState {
     const editorState = new EditorState(
       this._nodeMap,
       selection === undefined ? this._selection : selection,
+      this._slotsUsed,
     );
     editorState._readOnly = true;
 
@@ -139,7 +182,7 @@ export class EditorState {
   }
   toJSON(): SerializedEditorState {
     return readEditorState(null, this, () => ({
-      root: exportNodeToJSON($getRoot()),
+      root: $exportNodeToJSON($getRoot()),
     }));
   }
 }

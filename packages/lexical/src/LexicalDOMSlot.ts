@@ -12,7 +12,7 @@ import type {ElementNode} from './nodes/LexicalElementNode';
 import invariant from '@lexical/internal/invariant';
 
 import {IS_APPLE_WEBKIT, IS_IOS, IS_SAFARI} from './environment';
-import {$getEditor} from './LexicalUtils';
+import {$getDocument, $getEditor} from './LexicalUtils';
 
 /**
  * The editor has at most one block cursor element
@@ -25,6 +25,22 @@ import {$getEditor} from './LexicalUtils';
  */
 function $getActiveBlockCursorElement(): HTMLElement | null {
   return $getEditor()._blockCursorElement;
+}
+
+/**
+ * A slot value renders slots-first into its own `[data-lexical-slot]`
+ * container, prepended ahead of the host's linked-list children. The leading
+ * boundary skips these so they are never counted as managed children.
+ */
+declare const SlotContainerDOMBrand: unique symbol;
+function isSlotContainerDOM(
+  node: Node | null,
+): node is Element & {[SlotContainerDOMBrand]: never} {
+  return (
+    node !== null &&
+    node.nodeType === 1 &&
+    (node as Element).hasAttribute('data-lexical-slot')
+  );
 }
 
 /**
@@ -256,11 +272,19 @@ export class ElementDOMSlot<
    * a block cursor among their children, so the base slot stays editor-free.
    */
   override getFirstChildAnchor(): Node | null {
-    const after = super.getFirstChildAnchor();
-    const firstChild = after ? after.nextSibling : this.element.firstChild;
+    let anchor = super.getFirstChildAnchor();
+    // Advance past the prepended slot containers (a separate channel, not
+    // managed children) so the first slot is never mistaken for the first
+    // child — which would shift every child DOM index by the slot count.
+    let node = anchor ? anchor.nextSibling : this.element.firstChild;
+    while (isSlotContainerDOM(node)) {
+      anchor = node;
+      node = node.nextSibling;
+    }
+    const firstChild = anchor ? anchor.nextSibling : this.element.firstChild;
     return firstChild !== null && firstChild === $getActiveBlockCursorElement()
       ? firstChild
-      : after;
+      : anchor;
   }
   /**
    * @internal
@@ -312,11 +336,12 @@ export class ElementDOMSlot<
     }
     const element: HTMLElement & LexicalPrivateDOM = this.element;
     const before = this.before;
-    const br = document.createElement('br');
+    const br = $getDocument().createElement('br');
+    br.setAttribute('data-lexical-managed-linebreak', 'true');
     element.insertBefore(br, before);
     if (webkitHack) {
-      const img = document.createElement('img');
-      img.setAttribute('data-lexical-linebreak', 'true');
+      const img = $getDocument().createElement('img');
+      img.setAttribute('data-lexical-managed-linebreak', 'true');
       img.style.setProperty('display', 'inline', 'important');
       img.style.setProperty('border', '0px', 'important');
       img.style.setProperty('margin', '0px', 'important');

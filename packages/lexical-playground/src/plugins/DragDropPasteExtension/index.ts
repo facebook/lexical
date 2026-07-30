@@ -20,7 +20,7 @@ const ACCEPTABLE_IMAGE_TYPES = [
   'image/webp',
 ];
 
-export const DragDropPasteExtension = defineExtension({
+export const DragDropPasteExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/DragDropPaste',
   register: editor =>
     editor.registerCommand(

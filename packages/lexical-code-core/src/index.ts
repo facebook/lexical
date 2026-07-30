@@ -6,13 +6,13 @@
  *
  */
 
-export {CodeExtension} from './CodeExtension';
+export {CodeExtension, CodeImportExtension} from './CodeExtension';
 export {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
   CodeHighlightNode,
 } from './CodeHighlightNode';
-export {CodeImportExtension, CodeImportRules} from './CodeImportExtension';
+export {CodeImportRules} from './CodeImportExtension';
 export {
   type CodeIndentConfig,
   CodeIndentExtension,

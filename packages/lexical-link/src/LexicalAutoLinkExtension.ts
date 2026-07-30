@@ -6,9 +6,6 @@
  *
  */
 
-import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
-
-import {mergeRegister} from '@lexical/utils';
 import {
   $createTextNode,
   $getSelection,
@@ -19,6 +16,10 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   defineExtension,
+  type ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
+  mergeRegister,
   shallowMergeConfig,
   TextNode,
 } from 'lexical';
@@ -33,6 +34,11 @@ import {
   TOGGLE_LINK_COMMAND,
 } from './LexicalLinkNode';
 
+/**
+ * A callback invoked when the auto-link plugin creates, updates, or removes an
+ * automatic link. It receives the new `url` and the `prevUrl`; either may be
+ * `null` when a link is added or removed.
+ */
 export type ChangeHandler = (
   url: string | null,
   prevUrl: string | null,
@@ -46,8 +52,20 @@ export interface LinkMatcherResult {
   url: string;
 }
 
+/**
+ * A function that inspects a piece of `text` and returns a
+ * {@link LinkMatcherResult} for the first URL it recognizes, or `null` if none
+ * is found. Used by the auto-link plugin to detect links as the user types.
+ */
 export type LinkMatcher = (text: string) => LinkMatcherResult | null;
 
+/**
+ * Builds a {@link LinkMatcher} from a regular expression. The matched text is
+ * used as the link URL, optionally rewritten by `urlTransformer` (for example
+ * to prepend a protocol). Pass the result to the auto-link plugin's `matchers`.
+ *
+ * @returns A matcher that reports the first match of `regExp` in the text.
+ */
 export function createLinkMatcherWithRegExp(
   regExp: RegExp,
   urlTransformer: (text: string) => string = text => text,
@@ -66,9 +84,56 @@ export function createLinkMatcherWithRegExp(
   };
 }
 
+const URL_REGEX =
+  /((https?:\/\/(www\.)?)|(www\.))[-\p{L}\p{N}@:%._+~#=]{1,256}\.[\p{L}\p{N}]{1,6}(?:[-\p{L}\p{N}()@:%_+.~#?&//=]*[\p{L}\p{N}()@_~#?&//=])?/u;
+
+const EMAIL_REGEX =
+  /(([^<>()[\]\\.,;:\s@"]{1,64}(\.[^<>()[\]\\.,;:\s@"]{1,64}){0,63})|(".{1,255}"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]{1,63}\.){1,127}[a-zA-Z]{2,63}))/;
+
+/**
+ * A ready-to-use {@link LinkMatcher} for URLs with full Unicode support
+ * (`\\p{L}`, `\\p{N}`). Handles parenthesis balancing so that Wikipedia-style
+ * URLs like `https://en.wikipedia.org/wiki/Fish_(disambiguation)` are matched
+ * correctly even when wrapped in prose parentheses.
+ */
+export const autoLinkUrlMatcher: LinkMatcher = text => {
+  const match = URL_REGEX.exec(text);
+  if (match === null) {
+    return null;
+  }
+  let matched = match[0];
+  let depth = 0;
+  for (const ch of matched) {
+    if (ch === '(') {
+      depth++;
+    } else if (ch === ')') {
+      depth--;
+    }
+  }
+  while (depth < 0 && matched.endsWith(')')) {
+    matched = matched.slice(0, -1);
+    depth++;
+  }
+  return {
+    index: match.index,
+    length: matched.length,
+    text: matched,
+    url: matched.startsWith('http') ? matched : `https://${matched}`,
+  };
+};
+
+/**
+ * A ready-to-use {@link LinkMatcher} for email addresses. Bounded quantifiers
+ * keep matching linear-time; the limits comfortably exceed RFC 5321 maximums.
+ */
+export const autoLinkEmailMatcher: LinkMatcher = createLinkMatcherWithRegExp(
+  EMAIL_REGEX,
+  text => `mailto:${text}`,
+);
+
 function findFirstMatch(
   text: string,
-  matchers: Array<LinkMatcher>,
+  matchers: LinkMatcher[],
 ): LinkMatcherResult | null {
   for (let i = 0; i < matchers.length; i++) {
     const match = matchers[i](text);
@@ -292,7 +357,7 @@ function $createAutoLinkNode_(
 
 function $handleLinkCreation(
   nodes: TextNode[],
-  matchers: Array<LinkMatcher>,
+  matchers: LinkMatcher[],
   onChange: ChangeHandler,
   separatorRegex: RegExp,
 ): void {
@@ -368,7 +433,7 @@ function $handleLinkCreation(
 
 function handleLinkEdit(
   linkNode: AutoLinkNode,
-  matchers: Array<LinkMatcher>,
+  matchers: LinkMatcher[],
   onChange: ChangeHandler,
   separatorRegex: RegExp,
 ): void {
@@ -428,7 +493,7 @@ function handleLinkEdit(
 // Given the creation preconditions, these can only be simple text nodes.
 function handleBadNeighbors(
   textNode: TextNode,
-  matchers: Array<LinkMatcher>,
+  matchers: LinkMatcher[],
   onChange: ChangeHandler,
   separatorRegex: RegExp,
 ): void {
@@ -492,7 +557,7 @@ function handleBadNeighbors(
   }
 }
 
-function replaceWithChildren(node: ElementNode): Array<LexicalNode> {
+function replaceWithChildren(node: ElementNode): LexicalNode[] {
   const children = node.getChildren();
   const childrenLength = children.length;
 
@@ -611,16 +676,15 @@ export function registerAutoLink(
 
 /**
  * An extension to automatically create AutoLinkNode from text
- * that matches the configured matchers. No default implementation
- * is provided for any matcher, see {@link createLinkMatcherWithRegExp}
- * for a helper function to create a matcher from a RegExp, and the
- * Playground's [AutoLinkPlugin](https://github.com/facebook/lexical/blob/main/packages/lexical-playground/src/plugins/AutoLinkPlugin/index.tsx)
- * for some example RegExps that could be used.
+ * that matches the configured matchers. For ready-to-use matchers see
+ * {@link autoLinkUrlMatcher} (Unicode URL detection with parenthesis
+ * balancing) and {@link autoLinkEmailMatcher} (email addresses). To build
+ * a custom matcher from a RegExp, see {@link createLinkMatcherWithRegExp}.
  *
  * The given `matchers` and `changeHandlers` will be merged by
  * concatenating the configured arrays.
  */
-export const AutoLinkExtension = defineExtension({
+export const AutoLinkExtension = /* @__PURE__ */ defineExtension({
   config: defaultConfig,
   dependencies: [LinkExtension],
   mergeConfig(config, overrides) {

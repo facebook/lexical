@@ -35,7 +35,7 @@ test.describe('Regression test #1113', () => {
             <span data-lexical-text="true">https://www.example.com</span>
           </a>
           <br />
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );

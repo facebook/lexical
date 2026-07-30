@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
 import invariant from '@lexical/internal/invariant';
 import {
@@ -52,51 +50,53 @@ import {
   COMMAND_PRIORITY_BEFORE_LOW,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
-  CommandListenerPriority,
-  CommandListenerPriorityBefore,
+  type CommandListenerPriority,
+  type CommandListenerPriorityBefore,
   createCommand,
   createEditor,
-  EditorState,
-  ElementNode,
+  type EditorState,
   getDOMSelection,
   HISTORY_MERGE_TAG,
   type Klass,
+  type LexicalCommand,
   type LexicalEditor,
   type LexicalNode,
   type LexicalNodeReplacement,
   mergeRegister,
   ParagraphNode,
   RootNode,
+  safeCast,
   SKIP_DOM_SELECTION_TAG,
   TextNode,
-  UpdateListenerPayload,
+  type UpdateListenerPayload,
 } from 'lexical';
 import * as React from 'react';
 import {
   act,
   createRef,
-  ReactNode,
+  type JSX,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from 'react';
 import {createPortal} from 'react-dom';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {
   afterEach,
   assert,
+  assertType,
   beforeEach,
   describe,
   expect,
   it,
-  Mock,
   vi,
 } from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';
-import {SerializedParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {
+  $assertNodeType,
   $createTestDecoratorNode,
   $createTestElementNode,
   $createTestInlineElementNode,
@@ -180,33 +180,6 @@ function computeUpdateListenerPayload(
   });
 }
 
-async function setDevInvariantWarnOnce(): Promise<
-  Mock<(message: string) => void>
-> {
-  const actual = (
-    await vi.importActual<typeof import('@lexical/internal/devInvariant')>(
-      '@lexical/internal/devInvariant',
-    )
-  ).default;
-  const fn = (await import('@lexical/internal/devInvariant')).default;
-  assert(vi.isMockFunction(fn), 'Expecting devInvariant to be mocked');
-  const callback = vi.fn();
-  fn.mockImplementationOnce((...args) => {
-    try {
-      return actual(...args);
-    } catch (e) {
-      callback((e as Error).message);
-    }
-  });
-  return callback;
-}
-
-vi.mock('@lexical/internal/devInvariant', async importOriginal => {
-  const mod =
-    await importOriginal<typeof import('@lexical/internal/devInvariant')>();
-  return {default: vi.fn(mod.default)};
-});
-
 describe('LexicalEditor tests', () => {
   let container: HTMLElement;
   let reactRoot: Root;
@@ -228,13 +201,15 @@ describe('LexicalEditor tests', () => {
   function useLexicalEditor(
     rootElementRef: React.RefObject<null | HTMLDivElement>,
     onError?: (error: Error) => void,
-    nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
+    nodes?: readonly (Klass<LexicalNode> | LexicalNodeReplacement)[],
+    onWarn?: (error: Error) => void,
   ) {
     const editor = useMemo(
       () =>
         createTestEditor({
           nodes: nodes ?? [],
           onError: onError || vi.fn(),
+          onWarn,
           theme: {
             tableAlignment: {
               center: 'editor-table-alignment-center',
@@ -247,7 +222,7 @@ describe('LexicalEditor tests', () => {
             },
           },
         }),
-      [onError, nodes],
+      [onError, nodes, onWarn],
     );
 
     useEffect(() => {
@@ -263,12 +238,13 @@ describe('LexicalEditor tests', () => {
 
   function init(
     onError?: (error: Error) => void,
-    nodes?: ReadonlyArray<Klass<LexicalNode> | LexicalNodeReplacement>,
+    nodes?: readonly (Klass<LexicalNode> | LexicalNodeReplacement)[],
+    onWarn?: (error: Error) => void,
   ) {
     const ref = createRef<HTMLDivElement>();
 
     function TestBase() {
-      editor = useLexicalEditor(ref, onError, nodes);
+      editor = useLexicalEditor(ref, onError, nodes, onWarn);
 
       return <div ref={ref} contentEditable={true} />;
     }
@@ -571,7 +547,7 @@ describe('LexicalEditor tests', () => {
     init();
     const onUpdate = vi.fn();
 
-    let log: Array<string> = [];
+    let log: string[] = [];
 
     editor.registerUpdateListener(onUpdate);
     editor.update(() => {
@@ -728,9 +704,9 @@ describe('LexicalEditor tests', () => {
 
     await Promise.resolve().then();
 
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Sync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
     // Calculate an expected update listener paylaod
@@ -1017,8 +993,8 @@ describe('LexicalEditor tests', () => {
 
     await editor.update(() => {
       const root = $getRoot();
-      const paragraph = root.getFirstChild() as ParagraphNode;
-      const textNode = paragraph.getFirstChild() as TextNode;
+      const paragraph = $assertNodeType(root.getFirstChild(), $isParagraphNode);
+      const textNode = $assertNodeType(paragraph.getFirstChild(), $isTextNode);
 
       textNode.getWritable();
 
@@ -1073,7 +1049,7 @@ describe('LexicalEditor tests', () => {
               </ul>
             </li>
           </ul>
-          <p dir="auto"><br /></p>
+          <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
           <ul dir="auto">
             <li value="1">
               <ul>
@@ -1128,7 +1104,7 @@ describe('LexicalEditor tests', () => {
         const root = $getRoot();
         const paragraph0 = $createParagraphNode();
         const paragraph1 = $createParagraphNode();
-        const textNodes: Array<LexicalNode> = [];
+        const textNodes: LexicalNode[] = [];
 
         for (let i = 0; i < 6; i++) {
           const node = $createTextNode(String(i)).toggleUnmergeable();
@@ -1188,7 +1164,10 @@ describe('LexicalEditor tests', () => {
 
     it('on splitText', async () => {
       await editor.update(() => {
-        const textNode1 = $getNodeByKey(textNodeKeys[1]) as TextNode;
+        const textNode1 = $assertNodeType(
+          $getNodeByKey(textNodeKeys[1]),
+          $isTextNode,
+        );
         textNode1.setTextContent('67');
         textNode1.splitText(1);
         textTransformCount.push(0, 0);
@@ -1198,7 +1177,10 @@ describe('LexicalEditor tests', () => {
 
     it('on append', async () => {
       await editor.update(() => {
-        const paragraph1 = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph1 = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         paragraph1.append($createTextNode('6').toggleUnmergeable());
         textTransformCount.push(0);
       });
@@ -1227,19 +1209,19 @@ describe('LexicalEditor tests', () => {
     boldListener();
   });
 
-  // The recursion guard in $triggerEnqueuedUpdates calls devInvariant after it
-  // has already broken the cascade (cleared the update queue). devInvariant
-  // throws in development/tests and only warns in production, so the two
-  // branches behave differently. We mock the module (see setDevInvariantWarnOnce
-  // above) so a single test file can exercise BOTH: the dev branch that
-  // throws (surfacing via the scheduled microtask, NOT editor._onError) and
-  // the prod branch that only warns (no throw, nothing routed to _onError).
-  function runCascade(): {
+  // The recursion guard in $triggerEnqueuedUpdates breaks the cascade (clears
+  // the update queue) and then routes the recovered condition through the
+  // editor's warn-level hook, editor._onWarn, rather than reporting a recovered
+  // condition as an uncaught error via editor._onError. The default _onWarn
+  // throws in development (so the recursion is impossible to miss) and only
+  // console.warns in production; embedders can supply their own onWarn to
+  // capture guard trips as warn-severity telemetry without an error alarm.
+  function runCascade(onWarn?: (error: Error) => void): {
     errorListener: ReturnType<typeof vi.fn>;
     unregister: () => void;
   } {
     const errorListener = vi.fn();
-    init(errorListener);
+    init(errorListener, undefined, onWarn);
 
     const unregister = editor.registerUpdateListener(() => {
       editor.update(() => {
@@ -1251,12 +1233,12 @@ describe('LexicalEditor tests', () => {
     return {errorListener, unregister};
   }
 
-  it('Detects infinite recursivity on update listeners (dev: devInvariant throws)', async () => {
-    // Development behavior: devInvariant throws once the cascade limit is
-    // exceeded. The cascade is broken (update queue cleared) before the guard
-    // signals, so the throw surfaces from the scheduled microtask rather than
-    // synchronously from editor.update(), and is NOT routed through
-    // editor._onError.
+  it('Detects infinite recursivity on update listeners (dev: default onWarn throws)', async () => {
+    // Development behavior: with the default onWarn, the guard throws once the
+    // cascade limit is exceeded. The cascade is broken (update queue cleared)
+    // before the guard signals, so the throw surfaces from the scheduled
+    // microtask rather than synchronously from editor.update(), and is NOT
+    // routed through editor._onError.
     const {errorListener, unregister} = runCascade();
 
     const caught: Error[] = [];
@@ -1302,20 +1284,19 @@ describe('LexicalEditor tests', () => {
     for (let i = 0; i < 10; i++) {
       await Promise.resolve();
     }
-    // The guard no longer routes through editor._onError — it surfaces via
-    // devInvariant (throw in dev / warn in prod) instead.
+    // The guard never routes through editor._onError — recovered conditions go
+    // through editor._onWarn instead.
     expect(errorListener).toHaveBeenCalledTimes(0);
   });
 
-  it('Detects infinite recursivity on update listeners (prod: devInvariant warns)', async () => {
-    // Production behavior: devInvariant does NOT throw, it only warns via
-    // console. The cascade must still be broken and the editor must remain
-    // usable, and crucially the recovered condition must NOT be reported as an
-    // uncaught error (neither via editor._onError nor as an unhandled
-    // rejection/exception) — that was the whole point of switching to
-    // devInvariant.
-    const warnSpy = await setDevInvariantWarnOnce();
-    const {errorListener, unregister} = runCascade();
+  it('routes the recursion guard through a custom onWarn for embedder telemetry', async () => {
+    // Embedder behavior: a custom onWarn fully replaces the default and does
+    // not throw, so the recovered condition is captured for telemetry without
+    // surfacing as an uncaught error (neither via editor._onError nor as an
+    // unhandled rejection/exception). The cascade must still be broken and the
+    // editor must remain usable.
+    const warnListener = vi.fn();
+    const {errorListener, unregister} = runCascade(warnListener);
 
     const caught: Error[] = [];
     const onUnhandled = (reason: unknown) => {
@@ -1329,8 +1310,8 @@ describe('LexicalEditor tests', () => {
         $getRoot().markDirty();
       });
 
-      // drain the microtask chain produced by the cascade; in the warn path
-      // nothing is thrown, so just give the queue a chance to settle.
+      // drain the microtask chain produced by the cascade; the custom onWarn
+      // does not throw, so just give the queue a chance to settle.
       for (let i = 0; i < 200; i++) {
         await Promise.resolve();
       }
@@ -1339,12 +1320,13 @@ describe('LexicalEditor tests', () => {
       process.off('uncaughtException', onUnhandled);
     }
 
-    // The guard warned exactly once, with the namespace-tagged message...
-    const matchingWarns = warnSpy.mock.calls.filter(([msg]) =>
-      typeof msg === 'string' ? /endlessly enqueueing/.test(msg) : false,
-    );
-    expect(matchingWarns).toHaveLength(1);
-    expect(String(matchingWarns[0][0])).toContain(
+    // onWarn received the namespace-tagged Error exactly once, so the guard
+    // trip is observable as warn-level telemetry...
+    expect(warnListener).toHaveBeenCalledTimes(1);
+    const warnArg = warnListener.mock.calls[0][0];
+    expect(warnArg).toBeInstanceOf(Error);
+    expect(warnArg.message).toMatch(/endlessly enqueueing/);
+    expect(warnArg.message).toContain(
       `Editor namespace: ${editor._config.namespace}`,
     );
     // ...and nothing surfaced as an uncaught error or via editor._onError.
@@ -1364,6 +1346,195 @@ describe('LexicalEditor tests', () => {
       await Promise.resolve();
     }
     expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('does not trip the recursion guard on bounded re-enqueueing across separate actions', async () => {
+    // Regression test for over-firing (#8635): a listener that re-enqueues a
+    // bounded amount of work per commit must not accumulate cascade budget
+    // across many independent user actions. The enqueued no-op never produces
+    // a commit, so the queue is never observed empty by
+    // $triggerEnqueuedUpdates and, before the fix, _cascadeCount leaked +1 per
+    // action and falsely tripped after ~100 ordinary keystrokes.
+    const errorListener = vi.fn();
+    const warnListener = vi.fn();
+    init(errorListener, undefined, warnListener);
+
+    const unregister = editor.registerUpdateListener(() => {
+      editor.update(() => {
+        // bounded: a single no-op update per commit
+      });
+    });
+
+    for (let i = 0; i < 150; i++) {
+      editor.update(() => {
+        $getRoot().markDirty();
+      });
+      // Each action yields to the event loop, like real typing, which lets
+      // the macrotask budget reset run between actions.
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+    unregister();
+
+    expect(warnListener).toHaveBeenCalledTimes(0);
+    expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('does not trip the recursion guard on a fast input burst driven by commands', async () => {
+    // Rapid input (key repeat, synthetic events) can deliver many commands
+    // without the event loop running the macrotask budget reset in between.
+    // Each dispatched command is a fresh external action, so it resets the
+    // cascade budget directly (see triggerCommandListeners).
+    const errorListener = vi.fn();
+    const warnListener = vi.fn();
+    init(errorListener, undefined, warnListener);
+
+    const BURST_COMMAND = createCommand<void>('BURST_COMMAND');
+    const unregisterCommand = editor.registerCommand(
+      BURST_COMMAND,
+      () => {
+        editor.update(() => {
+          $getRoot().markDirty();
+        });
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    );
+    const unregisterUpdate = editor.registerUpdateListener(() => {
+      editor.update(() => {
+        // bounded: a single no-op update per commit
+      });
+    });
+
+    for (let i = 0; i < 150; i++) {
+      editor.dispatchCommand(BURST_COMMAND);
+      // Yield only microtasks: commits flush, but the macrotask budget reset
+      // never gets a chance to run within the burst.
+      for (let j = 0; j < 4; j++) {
+        await Promise.resolve();
+      }
+    }
+    unregisterUpdate();
+    unregisterCommand();
+
+    expect(warnListener).toHaveBeenCalledTimes(0);
+    expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('still detects a runaway cascade that dispatches commands from a mutation listener', async () => {
+    // Mutation listeners run during $commitPendingUpdates with
+    // editor._updating === false. A runaway loop whose every cycle also
+    // dispatches a command from one must not reset its own cascade budget and
+    // escape detection: commands dispatched mid-commit are update machinery,
+    // not fresh external actions (see isCommittingPendingUpdates).
+    const errorListener = vi.fn();
+    const warnListener = vi.fn();
+    init(errorListener, undefined, warnListener);
+
+    const NOOP_COMMAND = createCommand<void>('NOOP_COMMAND');
+    let textKey = '';
+    editor.update(
+      () => {
+        const text = $createTextNode('a');
+        $getRoot().clear().append($createParagraphNode().append(text));
+        textKey = text.getKey();
+      },
+      {discrete: true},
+    );
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    const unregisterMutation = editor.registerMutationListener(TextNode, () => {
+      editor.dispatchCommand(NOOP_COMMAND);
+    });
+    // Unbounded: flips the text content again on every commit, forever.
+    const unregisterUpdate = editor.registerUpdateListener(() => {
+      editor.update(() => {
+        const text = $getNodeByKey<TextNode>(textKey);
+        if (text !== null) {
+          text.setTextContent(text.getTextContent() === 'a' ? 'b' : 'a');
+        }
+      });
+    });
+
+    editor.update(() => {
+      const text = $getNodeByKey<TextNode>(textKey);
+      if (text !== null) {
+        text.setTextContent('b');
+      }
+    });
+    // Drain only microtasks: the runaway never yields to the event loop, so
+    // the macrotask budget reset cannot save it either.
+    for (let i = 0; i < 800 && warnListener.mock.calls.length === 0; i++) {
+      await Promise.resolve();
+    }
+    unregisterUpdate();
+    unregisterMutation();
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(warnListener).toHaveBeenCalledTimes(1);
+    expect(warnListener.mock.calls[0][0].message).toMatch(
+      /endlessly enqueueing/,
+    );
+    expect(errorListener).toHaveBeenCalledTimes(0);
+
+    // editor should still be usable after the cascade is cut
+    editor.update(
+      () => {
+        $getRoot().markDirty();
+      },
+      {discrete: true},
+    );
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+    expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('applies (and warns in DEV) when a command dispatched from a read-only context mutates the editor', async () => {
+    init();
+
+    const READONLY_MUTATE_COMMAND = createCommand<void>(
+      'READONLY_MUTATE_COMMAND',
+    );
+    // A listener that mutates the editor state, mirroring the real-world case
+    // (e.g. CLEAR_EDITOR_COMMAND building a fresh paragraph).
+    const unregister = editor.registerCommand(
+      READONLY_MUTATE_COMMAND,
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('mutated')));
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    );
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      // Dispatching from inside editor.read() (a read-only context) is the
+      // application anti-pattern. Previously the mutating listener ran inline
+      // against the frozen node map and threw (caught by _onError, silently
+      // dropping the mutation). It should now be deferred to a writable update
+      // so the mutation actually applies, and warn in DEV.
+      editor.read(() => {
+        editor.dispatchCommand(READONLY_MUTATE_COMMAND);
+      });
+      // Deferred update flushes on the next tick.
+      await Promise.resolve();
+
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toMatch(/read-only context/);
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('mutated');
+      });
+
+      // A top-level (writable) dispatch must NOT warn and applies inline.
+      warnSpy.mockClear();
+      editor.dispatchCommand(READONLY_MUTATE_COMMAND);
+      expect(warnSpy).toHaveBeenCalledTimes(0);
+    } finally {
+      warnSpy.mockRestore();
+      unregister();
+    }
   });
 
   it('Should be able to update an editor state without a root element', () => {
@@ -1425,11 +1596,13 @@ describe('LexicalEditor tests', () => {
 
     editor.update(() => {
       const root = $getRoot();
-      root
-        .getFirstChild<ElementNode>()!
-        .getFirstChild<ElementNode>()!
-        .getFirstChild<TextNode>()!
-        .setTextContent('Foo');
+      $assertNodeType(
+        $assertNodeType(
+          $assertNodeType(root.getFirstChild(), $isElementNode).getFirstChild(),
+          $isElementNode,
+        ).getFirstChild(),
+        $isTextNode,
+      ).setTextContent('Foo');
     });
 
     expect(errorListener).toHaveBeenCalledTimes(1);
@@ -1448,7 +1621,7 @@ describe('LexicalEditor tests', () => {
       useEffect(() => {
         editor.update(() => {
           const root = $getRoot();
-          const firstChild = root.getFirstChild() as ParagraphNode | null;
+          const firstChild = root.getFirstChild();
           const text = changeElement ? 'Change successful' : 'Not changed';
 
           if (firstChild === null) {
@@ -1457,7 +1630,10 @@ describe('LexicalEditor tests', () => {
             paragraph.append(textNode);
             root.append(paragraph);
           } else {
-            const textNode = firstChild.getFirstChild() as TextNode;
+            const textNode = $assertNodeType(
+              $assertNodeType(firstChild, $isParagraphNode).getFirstChild(),
+              $isTextNode,
+            );
             textNode.setTextContent(text);
           }
         });
@@ -1640,7 +1816,7 @@ describe('LexicalEditor tests', () => {
       expect(listener).toHaveBeenCalledTimes(1);
       expect(container.innerHTML).toBe(
         '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto">' +
-          '<span data-lexical-decorator="true" contenteditable="false"><span>Hello world</span></span><br></p></div>',
+          '<span data-lexical-decorator="true" contenteditable="false"><span>Hello world</span></span><br data-lexical-managed-linebreak="true"></p></div>',
       );
     });
 
@@ -1682,7 +1858,7 @@ describe('LexicalEditor tests', () => {
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
       );
 
       await act(async () => {
@@ -1693,13 +1869,13 @@ describe('LexicalEditor tests', () => {
 
       expect(listener).toHaveBeenCalledTimes(5);
       expect(container.innerHTML).toBe(
-        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br></p></div>',
+        '<div contenteditable="true" style="user-select: text; white-space: pre-wrap; word-break: break-word;" data-lexical-editor="true"><p dir="auto"><br data-lexical-managed-linebreak="true"></p></div>',
       );
 
       // Wait for update to complete
       await Promise.resolve().then();
 
-      editor.getEditorState().read(() => {
+      editor.read('latest', () => {
         const root = $getRoot();
         const paragraph = root.getFirstChild()!;
         expect(root).toEqual({
@@ -1714,6 +1890,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1730,6 +1908,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 0,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1763,7 +1943,12 @@ describe('LexicalEditor tests', () => {
       );
       parsedEditorStateFromObject.read(() => {
         const root = $getRoot();
-        expect(root.getFirstChild<ParagraphNode>()!.getDirection()).toBe('rtl');
+        expect(
+          $assertNodeType(
+            root.getFirstChild(),
+            $isParagraphNode,
+          ).getDirection(),
+        ).toBe('rtl');
         expect(root.getTextContent()).toMatch(/Hello world/);
       });
     });
@@ -1785,9 +1970,15 @@ describe('LexicalEditor tests', () => {
         parsedEditorState = editor.parseEditorState(stringifiedEditorState);
         parsedEditorState.read(() => {
           parsedRoot = $getRoot();
-          parsedParagraph = parsedRoot.getFirstChild() as ParagraphNode;
+          parsedParagraph = $assertNodeType(
+            parsedRoot.getFirstChild(),
+            $isParagraphNode,
+          );
           paragraphKey = parsedParagraph.getKey();
-          parsedText = parsedParagraph.getFirstChild() as TextNode;
+          parsedText = $assertNodeType(
+            parsedParagraph.getFirstChild(),
+            $isTextNode,
+          );
           textKey = parsedText.getKey();
         });
       });
@@ -1805,6 +1996,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1821,6 +2014,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1869,9 +2064,15 @@ describe('LexicalEditor tests', () => {
         parsedEditorState = editor.parseEditorState(stringifiedEditorState);
         parsedEditorState.read(() => {
           parsedRoot = $getRoot();
-          parsedParagraph = parsedRoot.getFirstChild() as ParagraphNode;
+          parsedParagraph = $assertNodeType(
+            parsedRoot.getFirstChild(),
+            $isParagraphNode,
+          );
           paragraphKey = parsedParagraph.getKey();
-          parsedText = parsedParagraph.getFirstChild() as TextNode;
+          parsedText = $assertNodeType(
+            parsedParagraph.getFirstChild(),
+            $isTextNode,
+          );
           textKey = parsedText.getKey();
         });
       });
@@ -1889,6 +2090,8 @@ describe('LexicalEditor tests', () => {
           __parent: null,
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1905,6 +2108,8 @@ describe('LexicalEditor tests', () => {
           __parent: 'root',
           __prev: null,
           __size: 1,
+          __slotHost: null,
+          __slots: null,
           __style: '',
           __textFormat: 0,
           __textStyle: '',
@@ -1993,7 +2198,10 @@ describe('LexicalEditor tests', () => {
       let textNode2Key: string;
 
       await update(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
         paragraphNodeKey = paragraph.getKey();
 
         const [elementNode1, textNode1] = $createElementNodeWithText('A');
@@ -2008,8 +2216,14 @@ describe('LexicalEditor tests', () => {
       });
 
       await update(() => {
-        const elementNode1 = $getNodeByKey(elementNode1Key) as ElementNode;
-        const elementNode2 = $getNodeByKey(elementNode2Key) as TextNode;
+        const elementNode1 = $assertNodeType(
+          $getNodeByKey(elementNode1Key),
+          $isElementNode,
+        );
+        const elementNode2 = $assertNodeType(
+          $getNodeByKey(elementNode2Key),
+          $isElementNode,
+        );
         elementNode1.append(elementNode2);
       });
       const keys = [
@@ -2045,7 +2259,10 @@ describe('LexicalEditor tests', () => {
       let elementNode2Key: string;
 
       await update(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
 
         const elementNode1 = $createElementNodeWithText('A');
         elementNode1Key = elementNode1.getKey();
@@ -2057,8 +2274,14 @@ describe('LexicalEditor tests', () => {
       });
 
       await update(() => {
-        const elementNode1 = $getNodeByKey(elementNode1Key) as TextNode;
-        const elementNode2 = $getNodeByKey(elementNode2Key) as ElementNode;
+        const elementNode1 = $assertNodeType(
+          $getNodeByKey(elementNode1Key),
+          $isElementNode,
+        );
+        const elementNode2 = $assertNodeType(
+          $getNodeByKey(elementNode2Key),
+          $isElementNode,
+        );
         elementNode2.append(elementNode1);
       });
 
@@ -2081,7 +2304,10 @@ describe('LexicalEditor tests', () => {
       let elementNode3Key: string;
 
       await update(() => {
-        const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
 
         const elementNode1 = $createElementNodeWithText('A');
         elementNode1Key = elementNode1.getKey();
@@ -2096,9 +2322,18 @@ describe('LexicalEditor tests', () => {
       });
 
       await update(() => {
-        const elementNode1 = $getNodeByKey(elementNode1Key) as ElementNode;
-        const elementNode2 = $getNodeByKey(elementNode2Key) as ElementNode;
-        const elementNode3 = $getNodeByKey(elementNode3Key) as TextNode;
+        const elementNode1 = $assertNodeType(
+          $getNodeByKey(elementNode1Key),
+          $isElementNode,
+        );
+        const elementNode2 = $assertNodeType(
+          $getNodeByKey(elementNode2Key),
+          $isElementNode,
+        );
+        const elementNode3 = $assertNodeType(
+          $getNodeByKey(elementNode3Key),
+          $isElementNode,
+        );
         elementNode2.append(elementNode3);
         elementNode1.append(elementNode3);
       });
@@ -2294,7 +2529,10 @@ describe('LexicalEditor tests', () => {
     });
 
     await editor.update(() => {
-      const textNode = $getNodeByKey(textNodeKeys[0]) as TextNode;
+      const textNode = $assertNodeType(
+        $getNodeByKey(textNodeKeys[0]),
+        $isTextNode,
+      );
       const textNode2 = $createTextNode('bar').toggleFormat('bold');
       const textNode3 = $createTextNode('xyz').toggleFormat('italic');
       textNode.insertAfter(textNode2);
@@ -2369,9 +2607,23 @@ describe('LexicalEditor tests', () => {
       }
     }
     expect(() =>
-      createEditor({nodes: [FakeLexicalNode as Klass<LexicalNode>]}),
-    ).toThrowError(
-      /FakeLexicalNode \(type fake-node\) does not subclass LexicalNode from the lexical package used by this editor/,
+      // @ts-expect-error
+      createEditor({nodes: [FakeLexicalNode]}),
+    ).toThrow(
+      /nodes\[0\] FakeLexicalNode \(type fake-node\) is not a constructor that subclasses LexicalNode from the lexical package used by this editor/,
+    );
+  });
+  it('rejects creating an editor with invalid LexicalNode parent class (no getType)', async () => {
+    class FakeLexicalNode {}
+    // @ts-expect-error
+    expect(() => createEditor({nodes: [FakeLexicalNode]})).toThrow(
+      /nodes\[0\] FakeLexicalNode is not a constructor that subclasses LexicalNode from the lexical package used by this editor/,
+    );
+  });
+  it('rejects creating an editor with invalid LexicalNode parent class (undefined)', async () => {
+    // @ts-expect-error
+    expect(() => createEditor({nodes: [undefined]})).toThrow(
+      /nodes\[0\] undefined is not a constructor that subclasses LexicalNode from the lexical package used by this editor/,
     );
   });
   it('mutation listener on newly initialized editor', async () => {
@@ -2397,7 +2649,10 @@ describe('LexicalEditor tests', () => {
     const textNodeKeys: string[] = [];
 
     await editor.update(() => {
-      const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+      const paragraph = $assertNodeType(
+        $getRoot().getFirstChild(),
+        $isParagraphNode,
+      );
       const textNode1 = $createTextNode('foo');
       paragraph.append(textNode1);
       textNodeKeys.push(textNode1.getKey());
@@ -2412,7 +2667,10 @@ describe('LexicalEditor tests', () => {
     );
 
     await editor.update(() => {
-      const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+      const paragraph = $assertNodeType(
+        $getRoot().getFirstChild(),
+        $isParagraphNode,
+      );
       const textNode2 = $createTextNode('bar').toggleFormat('bold');
       const textNode3 = $createTextNode('xyz').toggleFormat('italic');
       paragraph.append(textNode2, textNode3);
@@ -2480,7 +2738,10 @@ describe('LexicalEditor tests', () => {
     });
 
     await editor.update(() => {
-      const textNode = $getNodeByKey(textNodeKeys[0]) as TextNode;
+      const textNode = $assertNodeType(
+        $getNodeByKey(textNodeKeys[0]),
+        $isTextNode,
+      );
       const textNode2 = $createTextNode('bar').toggleFormat('bold');
       const textNode3 = $createTextNode('xyz').toggleFormat('italic');
       textNode.insertAfter(textNode2);
@@ -2618,6 +2879,135 @@ describe('LexicalEditor tests', () => {
     expect(editor._updateTags).toEqual(new Set([]));
   });
 
+  it('does not leak a no-op update tag into the next update', () => {
+    init();
+    const observedTags: string[][] = [];
+    const unregister = editor.registerUpdateListener(({tags}) => {
+      observedTags.push([...tags]);
+    });
+
+    // A tagged update that dirties nothing still commits because it carries a
+    // deferred onUpdate callback -- this mirrors a remote collaboration sync
+    // that turns out to be a no-op (the targeted node was concurrently removed).
+    // Its tag must not survive into a later, unrelated update, otherwise a
+    // listener such as @lexical/yjs's syncLexicalUpdateToYjs would wrongly skip
+    // the next local edit.
+    editor.update(emptyFunction, {
+      discrete: true,
+      onUpdate: emptyFunction,
+      tag: 'collaboration',
+    });
+    expect(editor._updateTags).toEqual(new Set());
+
+    // A subsequent untagged local edit must not observe the leaked tag.
+    editor.update(
+      () => {
+        $getRoot().append($createParagraphNode());
+      },
+      {discrete: true},
+    );
+    unregister();
+
+    const lastObservedTags = observedTags[observedTags.length - 1];
+    expect(lastObservedTags).not.toContain('collaboration');
+  });
+
+  it('setEditorState keeps its tag when committed from inside an update', () => {
+    init();
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('historic'));
+        $getRoot().append(paragraph);
+      },
+      {discrete: true},
+    );
+    const historicState = editor.getEditorState();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('current'));
+        root.append(paragraph);
+      },
+      {discrete: true},
+    );
+
+    const observed: {content: string; tags: string[]}[] = [];
+    const unregister = editor.registerUpdateListener(({editorState, tags}) => {
+      observed.push({
+        content: editorState.read(() => $getRoot().getTextContent()),
+        tags: [...tags],
+      });
+    });
+    // Applying an editor state with a tag from *inside* an update -- the way
+    // history's undo does via dispatchCommand -- force-commits the wrapping
+    // no-op update, which resets _updateTags. The tag must still reach the
+    // update listener for the commit that actually applies the historic state;
+    // otherwise (e.g. @lexical/history) that transition is misclassified as a
+    // fresh edit rather than an undo.
+    editor.update(
+      () => {
+        editor.setEditorState(historicState, {tag: 'historic-tag'});
+      },
+      {discrete: true},
+    );
+    unregister();
+
+    const historicCommit = observed.find(o => o.content === 'historic');
+    expect(historicCommit).toBeDefined();
+    expect(historicCommit!.tags).toContain('historic-tag');
+  });
+
+  it('defers onUpdate callbacks when setEditorState commits inside an update', async () => {
+    init();
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('historic'));
+        $getRoot().append(paragraph);
+      },
+      {discrete: true},
+    );
+    const historicState = editor.getEditorState();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        paragraph.append($createTextNode('current'));
+        root.append(paragraph);
+      },
+      {discrete: true},
+    );
+
+    const events: string[] = [];
+    editor.update(
+      () => {
+        events.push('update start');
+        editor.setEditorState(historicState);
+        events.push('update end');
+      },
+      {
+        onUpdate: () => {
+          events.push('onUpdate');
+        },
+      },
+    );
+    events.push('after update');
+
+    expect(events).toEqual(['update start', 'update end', 'after update']);
+
+    await Promise.resolve();
+    expect(events).toEqual([
+      'update start',
+      'update end',
+      'after update',
+      'onUpdate',
+    ]);
+  });
+
   it('mutation listeners does not trigger when other node types are mutated', async () => {
     init();
 
@@ -2659,14 +3049,20 @@ describe('LexicalEditor tests', () => {
     });
 
     await editor.update(() => {
-      const paragraph = $getRoot().getFirstChild() as ParagraphNode;
+      const paragraph = $assertNodeType(
+        $getRoot().getFirstChild(),
+        $isParagraphNode,
+      );
       const textNode3 = $createTextNode('xyz').toggleFormat('bold');
       paragraph.append(textNode3);
       textNodeKeys.push(textNode3.getKey());
     });
 
     await editor.update(() => {
-      const textNode3 = $getNodeByKey(textNodeKeys[2]) as TextNode;
+      const textNode3 = $assertNodeType(
+        $getNodeByKey(textNodeKeys[2]),
+        $isTextNode,
+      );
       textNode3.toggleFormat('bold'); // Normalize with foobar
     });
 
@@ -2722,15 +3118,19 @@ describe('LexicalEditor tests', () => {
 
     // Change first text node's content.
     await editor.update(() => {
-      const textNode1 = $getNodeByKey(textNodeKeys[0]) as TextNode;
+      const textNode1 = $assertNodeType(
+        $getNodeByKey(textNodeKeys[0]),
+        $isTextNode,
+      );
       textNode1.setTextContent('Test'); // Normalize with foobar
     });
 
     // Append text node to paragraph.
     await editor.update(() => {
-      const paragraphNode1 = $getNodeByKey(
-        paragraphNodeKeys[0],
-      ) as ParagraphNode;
+      const paragraphNode1 = $assertNodeType(
+        $getNodeByKey(paragraphNodeKeys[0]),
+        $isParagraphNode,
+      );
       const textNode1 = $createTextNode('foo');
       paragraphNode1.append(textNode1);
     });
@@ -3033,6 +3433,85 @@ describe('LexicalEditor tests', () => {
     expect(calls).toHaveLength(0);
   });
 
+  it('has an invariant payload type for commands', () => {
+    const EVENT_COMMAND = createCommand<Event>('EVENT_COMMAND');
+    const MOUSE_EVENT_COMMAND = createCommand<MouseEvent>(
+      'MOUSE_EVENT_COMMAND',
+    );
+    const MAYBE_MOUSE_EVENT_COMMAND = createCommand<undefined | MouseEvent>(
+      'MAYBE_MOUSE_EVENT_COMMAND',
+    );
+    const VOID_COMMAND = createCommand<void>('VOID_COMMAND');
+    // Test expected correct paths
+    editor.dispatchCommand(EVENT_COMMAND, new Event('test_event'));
+    editor.dispatchCommand(MOUSE_EVENT_COMMAND, new MouseEvent('mouse'));
+    editor.dispatchCommand(MAYBE_MOUSE_EVENT_COMMAND, new MouseEvent('mouse'));
+    editor.dispatchCommand(MAYBE_MOUSE_EVENT_COMMAND);
+    editor.dispatchCommand(VOID_COMMAND, undefined);
+    editor.dispatchCommand(VOID_COMMAND);
+    // Test expected inference
+    editor.registerCommand(
+      EVENT_COMMAND,
+      e => {
+        assertType<Event>(e);
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    editor.registerCommand(
+      MOUSE_EVENT_COMMAND,
+      e => {
+        assertType<MouseEvent>(e);
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    editor.registerCommand(
+      MAYBE_MOUSE_EVENT_COMMAND,
+      e => {
+        assertType<undefined | MouseEvent>(e);
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    editor.registerCommand(
+      VOID_COMMAND,
+      e => {
+        assertType<void>(e);
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    // Verify that types can't be narrowed with annotations
+    editor.registerCommand(
+      // @ts-expect-error
+      EVENT_COMMAND,
+      (e: MouseEvent) => false,
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    editor.registerCommand<LexicalCommand<MouseEvent>>(
+      // @ts-expect-error
+      EVENT_COMMAND,
+      (e: MouseEvent) => false,
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    // Verify that types can't be widened with annotations
+    // @ts-expect-error
+    safeCast<LexicalCommand<Event>>(MOUSE_EVENT_COMMAND);
+    // @ts-expect-error
+    safeCast<LexicalCommand<unknown>>(MOUSE_EVENT_COMMAND);
+    // @ts-expect-error
+    safeCast<LexicalCommand<undefined>>(MAYBE_MOUSE_EVENT_COMMAND);
+    // @ts-expect-error
+    safeCast<LexicalCommand<MouseEvent>>(MAYBE_MOUSE_EVENT_COMMAND);
+    editor.registerCommand(
+      // @ts-expect-error
+      EVENT_COMMAND,
+      (e: MouseEvent) => false,
+      COMMAND_PRIORITY_EDITOR,
+    )();
+  });
+
   it('allows using the same listener for multiple node types', async () => {
     init();
 
@@ -3146,9 +3625,9 @@ describe('LexicalEditor tests', () => {
       },
     );
 
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Sync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
     // Calculate an expected update listener paylaod
@@ -3177,9 +3656,9 @@ describe('LexicalEditor tests', () => {
       },
     );
 
-    const textContent = headless
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = headless.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Async update\n\nSync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
   });
@@ -3208,9 +3687,9 @@ describe('LexicalEditor tests', () => {
         discrete: true,
       },
     );
-    const textContent = headless
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = headless.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Async update\n\nSync update');
   });
 
@@ -3234,9 +3713,9 @@ describe('LexicalEditor tests', () => {
       );
     });
 
-    const textContent = editor
-      .getEditorState()
-      .read(() => $getRoot().getTextContent());
+    const textContent = editor.read('latest', () =>
+      $getRoot().getTextContent(),
+    );
     expect(textContent).toBe('Async update\n\nSync update');
     expect(onUpdate).toHaveBeenCalledTimes(1);
   });
@@ -3409,7 +3888,7 @@ describe('LexicalEditor tests', () => {
         expect(text.getTextContent()).toBe('123');
       });
 
-      await newEditor.getEditorState().read(() => {
+      await newEditor.read('latest', () => {
         expect(mockTransform).toHaveBeenCalledTimes(0);
       });
 
@@ -3457,7 +3936,7 @@ describe('LexicalEditor tests', () => {
         expect(text.getTextContent()).toBe('123');
       });
 
-      await newEditor.getEditorState().read(() => {
+      await newEditor.read('latest', () => {
         expect(mockTransform).toHaveBeenCalledTimes(1);
       });
 
@@ -3508,16 +3987,8 @@ describe('LexicalEditor tests', () => {
     vi.spyOn(ParagraphNode, 'importDOM');
 
     class CustomParagraphNode extends ParagraphNode {
-      static getType() {
-        return 'custom-paragraph';
-      }
-
-      static clone(node: CustomParagraphNode) {
-        return new CustomParagraphNode(node.__key);
-      }
-
-      static importJSON(serializedNode: SerializedParagraphNode) {
-        return new CustomParagraphNode().updateFromJSON(serializedNode);
+      $config() {
+        return this.config('custom-paragraph', {extends: ParagraphNode});
       }
     }
 

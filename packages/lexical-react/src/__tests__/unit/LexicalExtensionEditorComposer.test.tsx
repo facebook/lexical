@@ -31,12 +31,12 @@ import {
   createState,
   DecoratorNode,
   defineExtension,
-  EditorConfig,
-  LexicalCommand,
-  LexicalEditor,
-  LexicalEditorWithDispose,
-  StateConfigValue,
-  StateValueOrUpdater,
+  type EditorConfig,
+  type LexicalCommand,
+  type LexicalEditor,
+  type LexicalEditorWithDispose,
+  type StateConfigValue,
+  type StateValueOrUpdater,
 } from 'lexical';
 import {
   expectHtmlToBeEqual,
@@ -45,7 +45,7 @@ import {
 } from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import {act} from 'react';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 expect.extend(toHaveNoViolations);

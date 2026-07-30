@@ -6,9 +6,9 @@
  *
  */
 
-import {HeadingTagType} from '@lexical/rich-text';
-import {IS_APPLE} from '@lexical/utils';
-import {isExactShortcutMatch} from 'lexical';
+import type {HeadingTagType} from '@lexical/rich-text';
+
+import {IS_APPLE, isExactShortcutMatch} from 'lexical';
 
 //disable eslint sorting rule for quick reference to shortcuts
 /* eslint-disable sort-keys-fix/sort-keys-fix */

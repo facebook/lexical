@@ -10,9 +10,9 @@ import invariant from '@lexical/internal/invariant';
 import {
   $createTextNode,
   $isTextNode,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
   TextNode,
 } from 'lexical';
 
@@ -42,7 +42,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
   getMatch: (text: string) => null | EntityMatch,
   targetNode: Klass<T>,
   createNode: (textNode: TextNode) => T,
-): Array<() => void> {
+): (() => void)[] {
   const isTargetNode = (node: LexicalNode | null | undefined): node is T => {
     return node instanceof targetNode;
   };
@@ -211,7 +211,7 @@ export function registerLexicalTextEntity<T extends TextNode>(
     TextNode,
     $textNodeTransform,
   );
-  const removeReverseNodeTransform = editor.registerNodeTransform<T>(
+  const removeReverseNodeTransform = editor.registerNodeTransform(
     targetNode,
     $reverseNodeTransform,
   );

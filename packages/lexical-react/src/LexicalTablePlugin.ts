@@ -6,9 +6,7 @@
  *
  */
 
-import type {JSX} from 'react';
-
-import {Signal, signal} from '@lexical/extension';
+import {type Signal, signal} from '@lexical/extension';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   $isScrollableTablesActive,
@@ -19,8 +17,11 @@ import {
   TableCellNode,
 } from '@lexical/table';
 import {$fullReconcile} from 'lexical';
-import {useEffect, useState} from 'react';
+import {type JSX, useEffect, useState} from 'react';
 
+/**
+ * Props for the {@link TablePlugin} component.
+ */
 export interface TablePluginProps {
   /**
    * When `false` (default `true`), merged cell support (colspan and rowspan) will be disabled and all
@@ -51,6 +52,9 @@ export interface TablePluginProps {
  * A plugin to enable all of the features of Lexical's TableNode.
  *
  * @param props - See type for documentation
+ * This is a legacy plugin. When building an editor with the extension API,
+ * configure {@link TableExtension} instead.
+ *
  * @returns An element to render in your LexicalComposer
  */
 export function TablePlugin({

@@ -11,15 +11,16 @@ import {
   $isAutoLinkNode,
   $toggleLink,
   AutoLinkNode,
-  SerializedAutoLinkNode,
+  type SerializedAutoLinkNode,
 } from '@lexical/link';
 import {
+  $cloneWithProperties,
   $createParagraphNode,
   $createRangeSelection,
   $getRoot,
   $selectAll,
   ParagraphNode,
-  SerializedParagraphNode,
+  type SerializedParagraphNode,
   TextNode,
 } from 'lexical/src';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
@@ -79,7 +80,7 @@ describe('LexicalAutoAutoLinkNode tests', () => {
       await editor.update(() => {
         const autoLinkNode = new AutoLinkNode('/');
 
-        const clone = AutoLinkNode.clone(autoLinkNode);
+        const clone = $cloneWithProperties(autoLinkNode);
 
         expect(clone).not.toBe(autoLinkNode);
         expect(clone).toStrictEqual(autoLinkNode);

@@ -20,6 +20,7 @@ export {
 } from './ClickAfterLastBlockExtension';
 export {getKnownTypesAndNodes, type KnownTypesAndNodes} from './config';
 export {
+  $applyFormatToDom,
   $isDecoratorTextNode,
   applyFormatFromStyle,
   applyFormatToDom,
@@ -58,6 +59,10 @@ export {
   type NamedSignalsOutput,
 } from './namedSignals';
 export {NestedEditorExtension} from './NestedEditorExtension';
+export {
+  type NodeSelectionDataSelectedConfig,
+  NodeSelectionDataSelectedExtension,
+} from './NodeSelectionDataSelectedExtension';
 export {NodeSelectionExtension} from './NodeSelectionExtension';
 export {
   type NormalizeInlineElementsConfig,
@@ -68,6 +73,15 @@ export {
   NormalizeTripleClickSelectionExtension,
   type NormalizeTripleClickSelectionOutput,
 } from './NormalizeTripleClickSelectionExtension';
+export {
+  type PreventSelectAllConfig,
+  PreventSelectAllExtension,
+} from './PreventSelectAllExtension';
+export {RootElementExtension} from './RootElementExtension';
+export {
+  type SelectBlockConfig,
+  SelectBlockExtension,
+} from './SelectBlockExtension';
 export {SelectionAlwaysOnDisplayExtension} from './SelectionAlwaysOnDisplayExtension';
 export {
   batch,

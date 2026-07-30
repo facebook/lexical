@@ -21,11 +21,11 @@ import {
  * `<p>` for a `<div role="paragraph">` (carrying over all attributes) so
  * the resulting HTML stays well-formed.
  */
-export const PlaygroundDOMRenderExtension = defineExtension({
+export const PlaygroundDOMRenderExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    configExtension(DOMRenderExtension, {
+    /* @__PURE__ */ configExtension(DOMRenderExtension, {
       overrides: [
-        domOverride([ParagraphNode], {
+        /* @__PURE__ */ domOverride([ParagraphNode], {
           $exportDOM: (node, $next, editor) => {
             const output = $next();
             if (

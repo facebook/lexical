@@ -6,10 +6,11 @@
  *
  */
 
-import type {CodeNode} from '@lexical/code-core';
-import type {LexicalEditor, LexicalNode, NodeKey} from 'lexical';
 import type {Token, TokenStream} from 'prismjs';
 
+// Side-effect import: loads prismjs and sets up the global `Prism` that the
+// component imports below extend. Must stay separate from the type-only import
+// above so it is not elided.
 import 'prismjs';
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-diff';
@@ -29,8 +30,15 @@ import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-java';
 import 'prismjs/components/prism-cpp';
 
-import {$createCodeHighlightNode} from '@lexical/code-core';
-import {$createLineBreakNode, $createTabNode, tokenizeRawText} from 'lexical';
+import {$createCodeHighlightNode, type CodeNode} from '@lexical/code-core';
+import {
+  $createLineBreakNode,
+  $createTabNode,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  tokenizeRawText,
+} from 'lexical';
 
 declare global {
   interface Window {
@@ -39,6 +47,7 @@ declare global {
 }
 
 export const Prism: typeof import('prismjs') =
+  // eslint-disable-next-line no-restricted-syntax
   (globalThis as {Prism?: typeof import('prismjs')}).Prism || window.Prism;
 
 export const CODE_LANGUAGE_FRIENDLY_NAME_MAP: Record<string, string> = {
@@ -83,7 +92,7 @@ export function getLanguageFriendlyName(lang: string) {
   return CODE_LANGUAGE_FRIENDLY_NAME_MAP[_lang] || _lang;
 }
 
-export const getCodeLanguages = (): Array<string> =>
+export const getCodeLanguages = (): string[] =>
   Object.keys(Prism.languages)
     .filter(
       // Prism has several language helpers mixed into languages object
@@ -152,7 +161,7 @@ function getTextContent(token: TokenStream): string {
 export function tokenizeDiffHighlight(
   tokens: (string | Token)[],
   language: string,
-): Array<string | Token> {
+): (string | Token)[] {
   const diffLanguage = language;
   const diffGrammar = Prism.languages[diffLanguage];
   const env = {tokens};
@@ -257,7 +266,7 @@ export function $getHighlightNodes(
 
   const code = codeNode.getTextContent();
 
-  let tokens: Array<string | Token> = Prism.tokenize(
+  let tokens: (string | Token)[] = Prism.tokenize(
     code,
     Prism.languages[diffLanguageMatch ? 'diff' : language],
   );
@@ -268,7 +277,7 @@ export function $getHighlightNodes(
 }
 
 function $mapTokensToLexicalStructure(
-  tokens: Array<string | Token>,
+  tokens: (string | Token)[],
   type?: string,
 ): LexicalNode[] {
   const nodes: LexicalNode[] = [];

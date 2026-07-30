@@ -163,7 +163,7 @@ test.describe('Emoticons', () => {
             <span class="emoji-inner">🙁</span>
           </span>
           <br />
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );
@@ -258,7 +258,9 @@ test.describe('Emoticons', () => {
               <span class="emoji-inner">🙁</span>
             </span>
           </p>
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         `,
       );
       await assertSelection(page, {
@@ -304,7 +306,7 @@ test.describe('Emoticons', () => {
               <span class="emoji-inner">🙁</span>
             </span>
             <br />
-            <br />
+            <br data-lexical-managed-linebreak="true" />
           </p>
         `,
       );
@@ -451,7 +453,9 @@ test.describe('Emoticons', () => {
     await assertHTML(
       page,
       html`
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
     await assertSelection(page, {

@@ -9,4 +9,4 @@
 
 import type {LexicalEditor} from 'lexical';
 
-declare export function useLexicalEditable(): boolean;
+declare export hook useLexicalEditable(): boolean;

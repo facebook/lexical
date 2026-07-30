@@ -14,13 +14,13 @@ import {
   $isRangeSelection,
   $isTextNode,
   type EditorState,
-  ElementNode,
+  type ElementNode,
   getDOMTextNode,
   type LexicalEditor,
   mergeRegister,
-  Point,
+  type Point,
   type RangeSelection,
-  TextNode,
+  type TextNode,
 } from 'lexical';
 
 import positionNodeOnRange from './positionNodeOnRange';

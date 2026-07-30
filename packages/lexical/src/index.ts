@@ -56,6 +56,7 @@ export {
   $getCaretInDirection,
   $getCaretRangeInDirection,
   $getChildCaretAtIndex,
+  $insertNodeToNearestRootAtCaret,
   $isExtendableTextPointCaret,
   $normalizeCaret,
   $removeTextFromCaretRange,
@@ -117,6 +118,7 @@ export {
   SELECT_ALL_COMMAND,
   SELECTION_CHANGE_COMMAND,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
+  SET_TEXT_FORMAT_COMMAND,
   UNDO_COMMAND,
 } from './LexicalCommands';
 export {
@@ -135,15 +137,18 @@ export {
 export type {DOMSlot} from './LexicalDOMSlot';
 export type {ElementDOMSlot} from './LexicalDOMSlot';
 export type {
+  AnyLexicalCommand,
   CommandListener,
   CommandListenerPriority,
   CommandListenerPriorityBefore,
+  CommandPayloadArgs,
   CommandPayloadType,
   CreateEditorArgs,
   DOMSlotForNode,
   EditableListener,
   EditorConfig,
   EditorDOMRenderConfig,
+  EditorReadMode,
   EditorSetOptions,
   EditorThemeClasses,
   EditorThemeClassName,
@@ -206,6 +211,8 @@ export type {
   NodeKey,
   NodeMap,
   SerializedLexicalNode,
+  SlotChildNode,
+  SlotHostNode,
   StaticNodeConfig,
   StaticNodeConfigAccessor,
   StaticNodeConfigRecord,
@@ -221,7 +228,10 @@ export {
   type AnyStateConfig,
   createSharedNodeState,
   createState,
+  NODE_STATE_DIRECT,
+  NODE_STATE_LATEST,
   type NodeStateJSON,
+  type NodeStateVersion,
   type StateConfig,
   type StateConfigKey,
   type StateConfigValue,
@@ -230,6 +240,8 @@ export {
   type ValueOrUpdater,
 } from './LexicalNodeState';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
+export type {RefCountedRegistry} from './LexicalRefCountedRegistry';
+export {createRefCountedRegistry} from './LexicalRefCountedRegistry';
 export type {
   BaseSelection,
   ElementPointType as ElementPoint,
@@ -244,6 +256,7 @@ export {
   $createPoint,
   $createRangeSelection,
   $createRangeSelectionFromDom,
+  $formatText,
   $generateNodesFromRawText,
   $getCharacterOffsets,
   $getPreviousSelection,
@@ -253,10 +266,24 @@ export {
   $isBlockElementNode,
   $isNodeSelection,
   $isRangeSelection,
+  $setTextFormat,
   $updateDOMSelection,
   type RawTextVisitor,
   tokenizeRawText,
 } from './LexicalSelection';
+export type {SlotName} from './LexicalSlot';
+export {
+  $getSlot,
+  $getSlotFrame,
+  $getSlotHost,
+  $getSlotNames,
+  $getSlotNameWithinHost,
+  $isSlotChild,
+  $isSlotHost,
+  $removeSlot,
+  $setSlot,
+  getDeclaredSlots,
+} from './LexicalSlot';
 export {
   $assumeActiveEditor,
   $fullReconcile,
@@ -273,6 +300,7 @@ export {
   $createChildrenArray,
   $findMatchingParent,
   $getAdjacentNode,
+  $getDocument,
   $getDOMSlot,
   $getDOMTextNode,
   $getEditor,
@@ -289,24 +317,42 @@ export {
   $isInlineElementOrDecoratorNode,
   $isLeafNode,
   $isRootOrShadowRoot,
+  $isSelectionCapturedInDecoratorInput,
+  $isShadowRootNode,
   $isTokenOrSegmented,
   $isTokenOrTab,
+  $markSlotEditable,
+  $needsBlockCursorBeside,
   $nodesOfType,
   $onUpdate,
+  $removeFromParent,
   $selectAll,
   $setCompositionKey,
   $setDirectionFromDOM,
   $setFormatFromDOM,
   $setSelection,
   $splitNode,
+  type DOMSelectionBoundaryPoints,
+  findAllLexicalElementsDeep,
+  getActiveElement,
+  getActiveElementDeep,
+  getComposedEventTarget,
+  getComposedStaticRange,
   getDOMOwnerDocument,
   getDOMSelection,
   getDOMSelectionFromTarget,
+  getDOMSelectionPoints,
+  getDOMSelectionRange,
+  getDOMSelectionRangeAndPoints,
+  getDOMShadowRoots,
   getDOMTextNode,
   getEditorPropertyFromDOMNode,
   getNearestEditorFromDOMNode,
+  getParentElement,
   getRegisteredNode,
   getRegisteredNodeOrThrow,
+  getRegisteredSubtypeMap,
+  getRootOwnerDocument,
   getStaticNodeConfig,
   getTextDirection,
   INTERNAL_$isBlock,
@@ -315,6 +361,7 @@ export {
   isDOMCapturingSelection,
   isDOMDocumentNode,
   isDOMNode,
+  isDOMShadowRoot,
   isDOMTextNode,
   isDOMUnmanaged,
   isExactShortcutMatch,
@@ -327,12 +374,17 @@ export {
   isModifierMatch,
   isSelectionCapturedInDecoratorInput,
   isSelectionWithinEditor,
+  iterStaticNodeConfigChain,
+  mountSlotContainer,
+  type OwnStaticNodeConfig,
   removeFromParent,
   resetRandomKey,
   setDOMUnmanaged,
   type SetDOMUnmanagedOptions,
   setNodeIndentFromDOM,
+  type ShadowRootNode,
   toggleTextFormatType,
+  unmountSlotContainer,
 } from './LexicalUtils';
 export {ArtificialNode__DO_NOT_USE} from './nodes/ArtificialNode';
 export {$isDecoratorNode, DecoratorNode} from './nodes/LexicalDecoratorNode';
@@ -360,17 +412,24 @@ export {$isRootNode, RootNode} from './nodes/LexicalRootNode';
 export type {SerializedTabNode} from './nodes/LexicalTabNode';
 export {$createTabNode, $isTabNode, TabNode} from './nodes/LexicalTabNode';
 export type {
+  InlineFormattableNode,
   SerializedTextNode,
   TextFormatType,
   TextModeType,
 } from './nodes/LexicalTextNode';
-export {$createTextNode, $isTextNode, TextNode} from './nodes/LexicalTextNode';
+export {
+  $createTextNode,
+  $isInlineFormattable,
+  $isTextNode,
+  TextNode,
+} from './nodes/LexicalTextNode';
 
 // Update Tags
 export {
   COLLABORATION_TAG,
   COMPOSITION_END_TAG,
   COMPOSITION_START_TAG,
+  CUT_TAG,
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,
@@ -433,6 +492,9 @@ export {
   removeClassNamesFromElement,
 } from './utils/classNames';
 export {mergeRegister} from './utils/mergeRegister';
+export {registerEventListener} from './utils/registerEventListener';
+export type {EventListenerMap} from './utils/registerEventListeners';
+export {registerEventListeners} from './utils/registerEventListeners';
 export {
   getStyleObjectFromCSS,
   setDOMStyleFromCSS,

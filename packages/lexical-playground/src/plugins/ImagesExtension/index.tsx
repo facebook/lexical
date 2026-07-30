@@ -6,8 +6,7 @@
  *
  */
 
-import type {JSX} from 'react';
-
+import {caretFromPoint} from '@lexical/clipboard';
 import {
   $generateNodesFromDOM,
   defineImportRule,
@@ -17,17 +16,14 @@ import {
 import {
   $isAutoLinkNode,
   $isLinkNode,
-  LinkNode,
+  type LinkNode,
   TOGGLE_LINK_COMMAND,
 } from '@lexical/link';
-import {
-  $findMatchingParent,
-  $wrapNodeInElement,
-  mergeRegister,
-} from '@lexical/utils';
+import {$wrapNodeInElement} from '@lexical/utils';
 import {
   $createParagraphNode,
   $createRangeSelection,
+  $findMatchingParent,
   $getSelection,
   $insertNodes,
   $isNodeSelection,
@@ -45,11 +41,13 @@ import {
   DROP_COMMAND,
   getDOMSelectionFromTarget,
   isHTMLElement,
-  LexicalCommand,
-  LexicalEditor,
+  type LexicalCommand,
+  type LexicalEditor,
+  mergeRegister,
+  registerEventListener,
   SKIP_DOM_SELECTION_TAG,
 } from 'lexical';
-import {useEffect, useRef, useState} from 'react';
+import {type JSX, useEffect, useRef, useState} from 'react';
 
 import landscapeImage from '../../images/landscape.jpg';
 import yellowFlowerImage from '../../images/yellow-flower.jpg';
@@ -57,7 +55,7 @@ import {
   $createImageNode,
   $isImageNode,
   ImageNode,
-  ImagePayload,
+  type ImagePayload,
 } from '../../nodes/ImageNode';
 import Button from '../../ui/Button';
 import {DialogActions, DialogButtonsList} from '../../ui/Dialog';
@@ -79,7 +77,7 @@ function isGoogleDocCheckboxImg(img: HTMLImageElement): boolean {
   );
 }
 
-const ImgRule = defineImportRule({
+const ImgRule = /* @__PURE__ */ defineImportRule({
   $import: (_ctx, el, $next) => {
     const src = el.getAttribute('src');
     if (!src || src.startsWith('file:///') || isGoogleDocCheckboxImg(el)) {
@@ -103,13 +101,13 @@ const ImgRule = defineImportRule({
  * content is imported into the ImageNode's nested caption editor), so a
  * top-level handler drops it entirely.
  */
-const FigcaptionRule = defineImportRule({
+const FigcaptionRule = /* @__PURE__ */ defineImportRule({
   $import: () => [],
   match: sel.tag('figcaption'),
   name: '@lexical/playground/figcaption',
 });
 
-const FigureRule = defineImportRule({
+const FigureRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const imported = ctx.$importChildren(el);
     const figcaption = el.querySelector('figcaption');
@@ -141,7 +139,7 @@ const FigureRule = defineImportRule({
 export type InsertImagePayload = Readonly<ImagePayload>;
 
 export const INSERT_IMAGE_COMMAND: LexicalCommand<InsertImagePayload> =
-  createCommand('INSERT_IMAGE_COMMAND');
+  /* @__PURE__ */ createCommand('INSERT_IMAGE_COMMAND');
 
 export function InsertImageUriDialogBody({
   onClick,
@@ -156,6 +154,7 @@ export function InsertImageUriDialogBody({
   return (
     <>
       <TextInput
+        autoFocus={true}
         label="Image URL"
         placeholder="i.e. https://source.unsplash.com/random"
         onChange={setSrc}
@@ -246,10 +245,7 @@ export function InsertImageDialog({
     const handler = (e: KeyboardEvent) => {
       hasModifier.current = e.altKey;
     };
-    document.addEventListener('keydown', handler);
-    return () => {
-      document.removeEventListener('keydown', handler);
-    };
+    return registerEventListener(document, 'keydown', handler);
   }, [activeEditor]);
 
   const onClick = (payload: InsertImagePayload) => {
@@ -297,9 +293,9 @@ export function InsertImageDialog({
   );
 }
 
-export const ImagesExtension = defineExtension({
+export const ImagesExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    configExtension(DOMImportExtension, {
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
       rules: [FigcaptionRule, FigureRule, ImgRule],
     }),
   ],
@@ -307,7 +303,7 @@ export const ImagesExtension = defineExtension({
   nodes: [ImageNode],
   register: editor =>
     mergeRegister(
-      editor.registerCommand<InsertImagePayload>(
+      editor.registerCommand(
         INSERT_IMAGE_COMMAND,
         payload => {
           const imageNode = $createImageNode(payload);
@@ -320,17 +316,17 @@ export const ImagesExtension = defineExtension({
         },
         COMMAND_PRIORITY_EDITOR,
       ),
-      editor.registerCommand<DragEvent>(
+      editor.registerCommand(
         DRAGSTART_COMMAND,
         event => $onDragStart(event),
         COMMAND_PRIORITY_HIGH,
       ),
-      editor.registerCommand<DragEvent>(
+      editor.registerCommand(
         DRAGOVER_COMMAND,
         event => $onDragover(event),
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand<DragEvent>(
+      editor.registerCommand(
         DROP_COMMAND,
         event => $onDrop(event, editor),
         COMMAND_PRIORITY_HIGH,
@@ -401,7 +397,7 @@ function $onDrop(event: DragEvent, editor: LexicalEditor): boolean {
   );
   event.preventDefault();
   if (canDropImage(event)) {
-    const range = getDragSelection(event);
+    const range = getDragSelection(event, editor.getRootElement());
     node.remove();
     const rangeSelection = $createRangeSelection();
     if (range !== null && range !== undefined) {
@@ -456,17 +452,26 @@ function canDropImage(event: DragEvent): boolean {
   );
 }
 
-function getDragSelection(event: DragEvent): Range | null | undefined {
-  let range;
+function getDragSelection(
+  event: DragEvent,
+  rootElement: HTMLElement | null,
+): Range | null | undefined {
   const domSelection = getDOMSelectionFromTarget(event.target);
-  if (document.caretRangeFromPoint) {
-    range = document.caretRangeFromPoint(event.clientX, event.clientY);
+  // Pass rootElement so caretFromPoint uses caretPositionFromPoint's
+  // shadowRoots option rather than the retargeted caretRangeFromPoint.
+  const caret = caretFromPoint(event.clientX, event.clientY, rootElement);
+  if (caret !== null) {
+    const range = (caret.node.ownerDocument ?? document).createRange();
+    range.setStart(caret.node, caret.offset);
+    range.collapse(true);
+    return range;
   } else if (event.rangeParent && domSelection !== null) {
     domSelection.collapse(event.rangeParent, event.rangeOffset || 0);
-    range = domSelection.getRangeAt(0);
-  } else {
-    throw Error(`Cannot get the selection when dragging`);
+    return domSelection.getRangeAt(0);
   }
-
-  return range;
+  // The pre-shadow code returned the caretRangeFromPoint result directly,
+  // which could be null when the cursor was over a gap with no text node.
+  // The caller ($onDrop above) is written to accept null/undefined here,
+  // so preserve the original silent fall-through rather than throwing.
+  return null;
 }

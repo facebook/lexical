@@ -12,12 +12,12 @@ import {
   $createTextNode,
   $getRoot,
   createEditor,
-  LexicalEditor,
+  type LexicalEditor,
   ParagraphNode,
 } from 'lexical';
 import * as React from 'react';
 import {act, createRef} from 'react';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 
 describe('useLexicalIsTextContentEmpty', () => {

@@ -68,7 +68,7 @@ test.describe('Element format', () => {
           class="PlaygroundEditorTheme__paragraph"
           dir="auto"
           style="text-align: center">
-          <br />
+          <br data-lexical-managed-linebreak="true" />
         </p>
       `,
     );

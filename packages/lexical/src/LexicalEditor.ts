@@ -7,15 +7,6 @@
  */
 
 import type {DOMSlot, ElementDOMSlot} from './LexicalDOMSlot';
-import type {EditorState, SerializedEditorState} from './LexicalEditorState';
-import type {
-  DOMConversion,
-  DOMConversionMap,
-  DOMExportOutput,
-  DOMExportOutputMap,
-  LexicalPrivateDOM,
-  NodeKey,
-} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from '@lexical/internal/invariant';
@@ -25,13 +16,19 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  BaseSelection,
+  type BaseSelection,
   mergeRegister,
+  type RangeSelection,
   TextNode,
 } from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {DequeSet} from './LexicalDequeSet';
-import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
+import {
+  cloneEditorState,
+  createEmptyEditorState,
+  type EditorState,
+  type SerializedEditorState,
+} from './LexicalEditorState';
 import {
   addRootElementEvents,
   registerDefaultCommandHandlers,
@@ -39,17 +36,30 @@ import {
 } from './LexicalEvents';
 import {GenMap} from './LexicalGenMap';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
-import {LexicalNode} from './LexicalNode';
-import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
+import {
+  type DOMConversion,
+  type DOMConversionMap,
+  type DOMExportOutput,
+  type DOMExportOutputMap,
+  LexicalNode,
+  type LexicalPrivateDOM,
+  type NodeKey,
+} from './LexicalNode';
+import {createSharedNodeState, type SharedNodeState} from './LexicalNodeState';
 import {
   $commitPendingUpdates,
+  $fullReconcile,
   internalGetActiveEditor,
   parseEditorState,
   triggerListeners,
   updateEditor,
   updateEditorSync,
 } from './LexicalUpdates';
-import {FOCUS_TAG, HISTORY_MERGE_TAG, UpdateTag} from './LexicalUpdateTags';
+import {
+  FOCUS_TAG,
+  HISTORY_MERGE_TAG,
+  type UpdateTag,
+} from './LexicalUpdateTags';
 import {
   $addUpdateTag,
   $onUpdate,
@@ -61,9 +71,11 @@ import {
   getCachedTypeToNodeMap,
   getDefaultView,
   getDOMSelection,
+  getParentElement,
   getRegisteredNode,
   getStaticNodeConfig,
   hasOwnStaticMethod,
+  iterStaticNodeConfigChain,
   markNodesWithTypesAsDirty,
   setNodeKeyOnDOMNode,
 } from './LexicalUtils';
@@ -137,6 +149,22 @@ export type EditorSetOptions = {
   tag?: string;
 };
 
+/**
+ * Controls which editor state {@link LexicalEditor.read} observes and whether
+ * pending updates are flushed before the read.
+ *
+ * - `'force-commit'` (the default) flushes any pending updates immediately
+ *   before the read, so it always observes a fully committed and reconciled
+ *   state.
+ * - `'pending'` reads the pending state if it exists, otherwise the committed
+ *   state, without flushing. This is safe to call when an update may already
+ *   be in progress at the cost of possibly observing an uncommitted state
+ *   before node transforms, DOM reconciliation, etc. have run.
+ * - `'latest'` reads the latest committed state without flushing pending
+ *   updates, equivalent to `editor.getEditorState().read(callbackFn, {editor})`.
+ */
+export type EditorReadMode = 'force-commit' | 'pending' | 'latest';
+
 export interface EditorFocusOptions {
   /**
    * Where to move selection when the editor is
@@ -166,9 +194,9 @@ export interface EditorThemeClasses {
   link?: EditorThemeClassName;
   list?: {
     ul?: EditorThemeClassName;
-    ulDepth?: Array<EditorThemeClassName>;
+    ulDepth?: EditorThemeClassName[];
     ol?: EditorThemeClassName;
-    olDepth?: Array<EditorThemeClassName>;
+    olDepth?: EditorThemeClassName[];
     checklist?: EditorThemeClassName;
     listitem?: EditorThemeClassName;
     listitemChecked?: EditorThemeClassName;
@@ -199,6 +227,7 @@ export interface EditorThemeClasses {
   tableScrollableWrapper?: EditorThemeClassName;
   tableSelected?: EditorThemeClassName;
   tableSelection?: EditorThemeClassName;
+  tableStickyScrollbar?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
   collaboration?: {
     cursor?: EditorThemeClassName;
@@ -220,6 +249,62 @@ export interface EditorConfig {
   disableEvents?: boolean;
   namespace: string;
   theme: EditorThemeClasses;
+}
+
+/** @internal */
+export interface CollapsedSelectionFormat {
+  format: number;
+  style: string;
+  offset: number;
+  key: NodeKey;
+  timeStamp: number;
+}
+
+/** @internal */
+export interface InputState {
+  compositionPhase: 'idle' | 'composing' | 'ending-firefox' | 'ending-safari';
+  compositionEndData: string;
+  hadOrphanedCompositionEvents: boolean;
+
+  lastKeyDownTimeStamp: number;
+  lastKeyCode: string | null;
+  lastBeforeInputInsertTextTimeStamp: number;
+  unprocessedBeforeInputData: string | null;
+  collapsedSelectionFormat: CollapsedSelectionFormat;
+  postDeleteSelectionToRestore: RangeSelection | null;
+
+  isSelectionChangeFromDOMUpdate: boolean;
+  isSelectionChangeFromMouseDown: boolean;
+  isInsertLineBreak: boolean;
+
+  isInsertTextAfterHandledSelectionCommand: boolean;
+  handledSelectionCommandTimeoutId: ReturnType<typeof setTimeout> | null;
+}
+
+/** @internal */
+export function createInputState(): InputState {
+  return {
+    collapsedSelectionFormat: {
+      format: 0,
+      key: 'root',
+      offset: 0,
+      style: '',
+      timeStamp: 0,
+    },
+    compositionEndData: '',
+    compositionPhase: 'idle',
+    hadOrphanedCompositionEvents: false,
+    handledSelectionCommandTimeoutId: null,
+    isInsertLineBreak: false,
+    isInsertTextAfterHandledSelectionCommand: false,
+    isSelectionChangeFromDOMUpdate: false,
+    isSelectionChangeFromMouseDown: false,
+    lastBeforeInputInsertTextTimeStamp: 0,
+    lastKeyCode: null,
+    lastKeyDownTimeStamp: 0,
+    postDeleteSelectionToRestore: null,
+    unprocessedBeforeInputData: null,
+  };
 }
 
 /**
@@ -316,6 +401,29 @@ export interface EditorDOMRenderConfig {
     dom: HTMLElement,
     editor: LexicalEditor,
   ) => void;
+  /**
+   * @internal @experimental named-slots
+   *
+   * Where a named slot's container should attach, for hosts rendered
+   * entirely in-lexical (no chrome framework). The reconciler consults
+   * this whenever it creates or reconciles the slot's container,
+   * synchronously within the same commit: a non-null return attaches the
+   * container to that element (a no-op when it is already there, so
+   * returning `hostDom` reveals the slot in its default slots-first
+   * position) and reveals it. Returning null (the default) leaves the
+   * container as a hidden placeholder for explicit imperative mounting
+   * (`mountSlotContainer` / lexical-react's `useLexicalSlotRef`). The
+   * named-slot analog of `$getDOMSlot`'s control over where linked-list
+   * children render; the returned element should live within the host's
+   * own DOM so it is torn down with the host. Override per node type via
+   * `DOMRenderMatch.$getSlotTargetElement` (lexical-html).
+   */
+  $getSlotTargetElement: <T extends LexicalNode>(
+    node: T,
+    slotName: string,
+    hostDom: HTMLElement,
+    editor: LexicalEditor,
+  ) => HTMLElement | null;
   /** @internal @experimental */
   $updateDOM: <T extends LexicalNode>(
     nextNode: T,
@@ -341,8 +449,17 @@ export interface CreateEditorArgs {
   disableEvents?: boolean;
   editorState?: EditorState;
   namespace?: string;
-  nodes?: ReadonlyArray<LexicalNodeConfig>;
+  nodes?: readonly LexicalNodeConfig[];
   onError?: ErrorHandler;
+  /**
+   * Optional handler for recoverable, warn-level conditions (e.g. the
+   * update-recursion guard tripping). Mirrors {@link onError} but is reserved
+   * for conditions the editor has already recovered from, so embedders can
+   * route them to telemetry at warn severity without raising an error alarm.
+   * Defaults to a handler that throws in development (so the condition is
+   * impossible to miss) and only `console.warn`s in production.
+   */
+  onWarn?: ErrorHandler;
   parentEditor?: LexicalEditor;
   editable?: boolean;
   theme?: EditorThemeClasses;
@@ -367,6 +484,21 @@ export type RegisteredNode = {
 export type Transform<T extends LexicalNode> = (node: T) => void;
 
 export type ErrorHandler = (error: Error) => void;
+
+/**
+ * Default {@link CreateEditorArgs.onWarn} handler. Used for recoverable,
+ * warn-level conditions (e.g. the update-recursion guard tripping) that the
+ * editor has already recovered from. Throws in development so the condition is
+ * impossible to miss, and only `console.warn`s in production so it is not
+ * reported as a fatal error. Embedders can override this via `onWarn` to route
+ * the condition to their own telemetry at warn severity.
+ */
+function defaultOnWarn(error: Error): void {
+  if (__DEV__) {
+    throw error;
+  }
+  console.warn(error);
+}
 
 export type MutationListeners = Map<MutationListener, Set<Klass<LexicalNode>>>;
 
@@ -535,10 +667,16 @@ function normalizePriority(
   return (priority & 7) as CommandListenerPriority;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type LexicalCommand<TPayload> = {
+declare const LexicalCommandBrand: unique symbol;
+
+export interface LexicalCommand<TPayload> {
   type?: string;
-};
+  // TPayload must be invariant
+  readonly [LexicalCommandBrand]?: (payload: TPayload) => TPayload;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyLexicalCommand = LexicalCommand<any>;
 
 /**
  * Type helper for extracting the payload type from a command.
@@ -560,16 +698,19 @@ export type LexicalCommand<TPayload> = {
  * }
  * ```
  */
-export type CommandPayloadType<TCommand extends LexicalCommand<unknown>> =
+export type CommandPayloadType<TCommand extends AnyLexicalCommand> =
   TCommand extends LexicalCommand<infer TPayload> ? TPayload : never;
+
+export type CommandPayloadArgs<TPayload> = [
+  TPayload extends undefined ? true : never,
+] extends [never]
+  ? [payload: TPayload]
+  : [payload?: TPayload];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCommandListener = CommandListener<any>;
 
-type Commands = Map<
-  LexicalCommand<unknown>,
-  Tuple5<DequeSet<AnyCommandListener>>
->;
+type Commands = Map<AnyLexicalCommand, Tuple5<DequeSet<AnyCommandListener>>>;
 
 export type ListenerMap<T> = Map<T, undefined | (() => void)>;
 
@@ -602,10 +743,7 @@ export type TransformerType = 'text' | 'decorator' | 'element' | 'root';
 
 type IntentionallyMarkedAsDirtyElement = boolean;
 
-type DOMConversionCache = Map<
-  string,
-  Array<(node: Node) => DOMConversion | null>
->;
+type DOMConversionCache = Map<string, ((node: Node) => DOMConversion | null)[]>;
 
 export type SerializedEditor = {
   editorState: SerializedEditorState;
@@ -654,6 +792,10 @@ export function resetEditor(
     editor._cascadeCount = 0;
   }
   editor._blockCursorElement = null;
+  if (editor._inputState.handledSelectionCommandTimeoutId !== null) {
+    clearTimeout(editor._inputState.handledSelectionCommandTimeoutId);
+  }
+  editor._inputState = createInputState();
 
   const observer = editor._observer;
 
@@ -725,9 +867,9 @@ export function getTransformSetFromKlass(
 ): Set<Transform<LexicalNode>> {
   const transforms = new Set<Transform<LexicalNode>>();
   const staticTransforms = new Set<(typeof klass)['transform']>();
-  let currentKlass: undefined | typeof klass = klass;
-  while (currentKlass) {
-    const {ownNodeConfig} = getStaticNodeConfig(currentKlass);
+  for (const {klass: currentKlass, ownNodeConfig} of iterStaticNodeConfigChain(
+    klass,
+  )) {
     const staticTransform = currentKlass.transform;
     if (!staticTransforms.has(staticTransform)) {
       staticTransforms.add(staticTransform);
@@ -741,13 +883,6 @@ export function getTransformSetFromKlass(
       if ($transform) {
         transforms.add($transform);
       }
-      currentKlass = ownNodeConfig.extends;
-    } else {
-      const parent = Object.getPrototypeOf(currentKlass);
-      currentKlass =
-        parent.prototype instanceof LexicalNode && parent !== LexicalNode
-          ? parent
-          : undefined;
     }
   }
   return transforms;
@@ -772,6 +907,7 @@ export const DEFAULT_EDITOR_DOM_CONFIG: EditorDOMRenderConfig = {
     dom: HTMLElement,
     _editor: LexicalEditor,
   ): DOMSlotForNode<N> => node.getDOMSlot(dom) as DOMSlotForNode<N>,
+  $getSlotTargetElement: (_node, _slotName, _hostDom, _editor) => null,
   $shouldExclude: (node, _selection, _editor) =>
     $isElementNode(node) && node.excludeFromCopy('html'),
   $shouldInclude: (node, selection, _editor) =>
@@ -808,7 +944,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
     ArtificialNode__DO_NOT_USE,
     ...(config.nodes || []),
   ];
-  const {onError, html} = config;
+  const {onError, onWarn, html} = config;
   const isEditable = config.editable !== undefined ? config.editable : true;
   let registeredNodes: RegisteredNodes;
 
@@ -821,11 +957,32 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       let replace: RegisteredNode['replace'] = null;
       let replaceWithKlass: RegisteredNode['replaceWithKlass'] = null;
 
-      if (typeof klass !== 'function') {
+      if (klass && typeof klass === 'object') {
         const options = klass;
         klass = options.replace;
         replace = options.with;
         replaceWithKlass = options.withKlass || null;
+      }
+      if (
+        typeof klass !== 'function' ||
+        !klass.prototype ||
+        !(klass === LexicalNode || klass.prototype instanceof LexicalNode)
+      ) {
+        let version = '<unknown>';
+        try {
+          version = JSON.parse(LEXICAL_VERSION);
+        } catch {
+          //
+        }
+        invariant(
+          false,
+          'createEditor: nodes[%s] %s is not a constructor that subclasses LexicalNode from the lexical package used by this editor (%s)',
+          String(i - nodes.length + (config.nodes ? config.nodes.length : 0)),
+          typeof klass === 'function'
+            ? `${klass.name}${typeof klass.getType === 'function' ? ` (type ${String(klass.getType())})` : ''}`
+            : String(klass),
+          String(version),
+        );
       }
       // For the side-effect of filling in the static methods
       void getStaticNodeConfig(klass);
@@ -896,6 +1053,7 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       theme,
     },
     onError ? onError : console.error,
+    onWarn ? onWarn : defaultOnWarn,
     initializeConversionCache(registeredNodes, html ? html.import : undefined),
     isEditable,
     editorConfig,
@@ -960,11 +1118,11 @@ export class LexicalEditor {
   /** @internal */
   _compositionKey: null | NodeKey;
   /** @internal */
-  _deferred: Array<() => void>;
+  _deferred: (() => void)[];
   /** @internal */
   _keyToDOMMap: Map<NodeKey, HTMLElement & LexicalPrivateDOM>;
   /** @internal */
-  _updates: Array<[() => void, EditorUpdateOptions | undefined]>;
+  _updates: [() => void, EditorUpdateOptions | undefined][];
   /** @internal */
   _updating: boolean;
   /** @internal */
@@ -1000,6 +1158,8 @@ export class LexicalEditor {
   /** @internal */
   _onError: ErrorHandler;
   /** @internal */
+  _onWarn: ErrorHandler;
+  /** @internal */
   _htmlConversions: DOMConversionCache;
   /** @internal */
   _window: null | Window;
@@ -1007,6 +1167,19 @@ export class LexicalEditor {
   _editable: boolean;
   /** @internal */
   _blockCursorElement: null | HTMLDivElement;
+  /**
+   * @internal @experimental
+   *
+   * Latches to `true` the first time {@link $setSlot} runs in this
+   * editor. Gates the commit-time slot-containment clamp so editors that never
+   * use slots skip the per-update frame walk entirely. The latch persists for
+   * the lifetime of the editor instance — `resetEditor` and `setEditorState`
+   * do not clear it, so an editor that once used slots keeps paying the clamp
+   * cost even after switching to a slot-free state.
+   */
+  _slotsUsed: boolean;
+  /** @internal */
+  _inputState: InputState;
   /** @internal */
   _createEditorArgs?: undefined | CreateEditorArgs;
 
@@ -1017,6 +1190,7 @@ export class LexicalEditor {
     nodes: RegisteredNodes,
     config: EditorConfig,
     onError: ErrorHandler,
+    onWarn: ErrorHandler,
     htmlConversions: DOMConversionCache,
     editable: boolean,
     createEditorArgs?: CreateEditorArgs,
@@ -1068,11 +1242,14 @@ export class LexicalEditor {
     this._key = createUID();
 
     this._onError = onError;
+    this._onWarn = onWarn;
     this._htmlConversions = htmlConversions;
     this._editable = editable;
     this._headless = parentEditor !== null && parentEditor._headless;
     this._window = null;
     this._blockCursorElement = null;
+    this._slotsUsed = false;
+    this._inputState = createInputState();
   }
 
   /**
@@ -1094,7 +1271,7 @@ export class LexicalEditor {
     return registerListener(this._listeners.update, listener);
   }
   /**
-   * Registers a listener for for when the editor changes between editable and non-editable states.
+   * Registers a listener for when the editor changes between editable and non-editable states.
    * Will trigger the provided callback each time the editor transitions between these states until the
    * teardown function is called.
    *
@@ -1390,7 +1567,7 @@ export class LexicalEditor {
    * depend on have been registered.
    * @returns True if the editor has registered all of the provided node types, false otherwise.
    */
-  hasNodes<T extends Klass<LexicalNode>>(nodes: Array<T>): boolean {
+  hasNodes<T extends Klass<LexicalNode>>(nodes: T[]): boolean {
     return nodes.every(this.hasNode.bind(this));
   }
 
@@ -1404,11 +1581,11 @@ export class LexicalEditor {
    * @param type - the type of command listeners to trigger.
    * @param payload - the data to pass as an argument to the command listeners.
    */
-  dispatchCommand<TCommand extends LexicalCommand<unknown>>(
+  dispatchCommand<TCommand extends AnyLexicalCommand>(
     type: TCommand,
-    payload: CommandPayloadType<TCommand>,
+    ...args: CommandPayloadArgs<CommandPayloadType<TCommand>>
   ): boolean {
-    return dispatchCommand(this, type, payload);
+    return dispatchCommand(this, type, ...args);
   }
 
   /**
@@ -1485,7 +1662,7 @@ export class LexicalEditor {
           nextRootElement.classList.add(...classNames);
         }
         if (__DEV__) {
-          const nextRootElementParent = nextRootElement.parentElement;
+          const nextRootElementParent = getParentElement(nextRootElement);
           if (
             nextRootElementParent != null &&
             ['flex', 'inline-flex'].includes(
@@ -1555,13 +1732,17 @@ export class LexicalEditor {
 
     flushRootMutations(this);
     const pendingEditorState = this._pendingEditorState;
-    const tags = this._updateTags;
     const tag = options !== undefined ? options.tag : null;
 
     if (pendingEditorState !== null && !pendingEditorState.isEmpty()) {
       if (tag != null) {
-        tags.add(tag);
+        this._updateTags.add(tag);
       }
+      // This may commit a no-op update (e.g. when called via dispatchCommand
+      // mid-update), which resets this._updateTags to a fresh Set. Always read
+      // this._updateTags fresh below rather than caching the reference, so the
+      // tag for the editor state we are about to apply is added to the live Set
+      // that the subsequent commit will observe.
       $commitPendingUpdates(this);
     }
 
@@ -1569,17 +1750,40 @@ export class LexicalEditor {
     this._dirtyType = FULL_RECONCILE;
     this._dirtyElements.set('root', false);
     this._compositionKey = null;
-
-    if (tag != null) {
-      tags.add(tag);
-    }
+    this._slotsUsed = this._slotsUsed || editorState._slotsUsed;
 
     // Only commit pending updates if not already in an editor.update
     // (e.g. dispatchCommand) otherwise this will cause a second commit
     // with an already read-only state and selection
-    if (!this._updating) {
-      $commitPendingUpdates(this);
-    }
+    updateEditorSync(
+      this,
+      () => {
+        if (tag) {
+          this._updateTags.add(tag);
+        }
+        if (editorState._parsed) {
+          for (const [key, node] of writableEditorState._nodeMap.entries()) {
+            // Mark all nodes as dirty with a freshly parsed EditorState
+            // hydrate-time normalize: external inputs (URL doc payloads, imported
+            // JSON, paste round-trips) may carry shadow-root slot frames whose
+            // children violate the `Children of root nodes must be elements or
+            // decorators` invariant set by `getTopLevelElement`. In-editor mutation
+            // paths still fail-fast on the invariant — this only catches shapes
+            // that were parsed in from outside.
+            //
+            // Drives the existing dirty-node transform cycle: dirty-mark the slot
+            // hosts so `ElementNode`'s `$config` `$transform` (which calls
+            // `$normalizeShadowRootChildren`) picks them up.
+            if ($isElementNode(node)) {
+              this._dirtyElements.set(key, true);
+            } else {
+              this._dirtyLeaves.add(key);
+            }
+          }
+        }
+      },
+      {discrete: this._updating ? undefined : true},
+    );
   }
 
   /**
@@ -1605,13 +1809,36 @@ export class LexicalEditor {
    * Executes a read of the editor's state, with the
    * editor context available (useful for exporting and read-only DOM
    * operations). Much like update, but prevents any mutation of the
-   * editor's state. Any pending updates will be flushed immediately before
-   * the read.
+   * editor's state.
+   *
+   * When called with a single argument the `mode` defaults to
+   * `'force-commit'`, which flushes any pending updates immediately before the
+   * read so it always observes a fully committed and reconciled state. See
+   * {@link EditorReadMode} for the behavior of the other modes (`'pending'`
+   * and `'latest'`).
    * @param callbackFn - A function that has access to read-only editor state.
    */
-  read<T>(callbackFn: () => T): T {
-    $commitPendingUpdates(this);
-    return this.getEditorState().read(callbackFn, {editor: this});
+  read<T>(callbackFn: () => T): T;
+  /**
+   * Executes a read of the editor's state in the given `mode`, with the editor
+   * context available. See {@link EditorReadMode} for the available modes.
+   * @param mode - Which editor state to read and whether to flush first.
+   * @param callbackFn - A function that has access to read-only editor state.
+   */
+  read<T>(mode: EditorReadMode, callbackFn: () => T): T;
+  read<T>(...args: [() => T] | [EditorReadMode, () => T]): T {
+    const [mode, callbackFn]: [EditorReadMode, () => T] =
+      args.length === 1 ? ['force-commit', args[0]] : args;
+    if (mode === 'force-commit') {
+      $commitPendingUpdates(this);
+    }
+    // 'pending' observes an in-progress or queued update without flushing it;
+    // 'force-commit' and 'latest' read the committed (reconciled) state.
+    const editorState =
+      mode === 'pending'
+        ? this._pendingEditorState || this._editorState
+        : this.getEditorState();
+    return editorState.read(callbackFn, {editor: this});
   }
 
   /**
@@ -1703,6 +1930,17 @@ export class LexicalEditor {
     if (this._editable !== editable) {
       this._editable = editable;
       triggerListeners('editable', this, true, editable);
+      // A named-slot island rendered inside a non-editable host carries an
+      // explicit `contentEditable` resolved from this editable state, so it
+      // does not follow the root's editability on its own. Re-render to push
+      // the toggle into those islands. A normal (non-discrete) update is safe
+      // whether `setEditable` is called standalone (it commits on a microtask)
+      // or from inside an update (it queues into that update's commit). Gated
+      // on `_slotsUsed` so an editor that never slots anything keeps the
+      // original no-reconcile behavior.
+      if (this._slotsUsed) {
+        this.update(() => $fullReconcile());
+      }
     }
   }
   /**

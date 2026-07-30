@@ -6,16 +6,10 @@
  *
  */
 
-import type {ElementFormatType, NodeKey} from 'lexical';
-import type {JSX} from 'react';
-
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {$isDecoratorBlockNode} from '@lexical/react/LexicalDecoratorBlockNode';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {
-  $getNearestBlockElementAncestorOrThrow,
-  mergeRegister,
-} from '@lexical/utils';
+import {$getNearestBlockElementAncestorOrThrow} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -23,10 +17,14 @@ import {
   $isRangeSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
+  type ElementFormatType,
   FORMAT_ELEMENT_COMMAND,
+  getComposedEventTarget,
+  mergeRegister,
+  type NodeKey,
 } from 'lexical';
 import * as React from 'react';
-import {ReactNode, useEffect, useRef} from 'react';
+import {type JSX, type ReactNode, useEffect, useRef} from 'react';
 
 type Props = Readonly<{
   children: ReactNode;
@@ -38,6 +36,15 @@ type Props = Readonly<{
   }>;
 }>;
 
+/**
+ * A wrapper component for the contents of a {@link DecoratorBlockNode} that
+ * keeps the block in sync with node selection and element alignment. It renders
+ * its `children` inside a container that reflects the node's `format`
+ * alignment, responds to `FORMAT_ELEMENT_COMMAND` to update that alignment, and
+ * toggles the node's selection when the container is clicked.
+ *
+ * @returns The element to render for the decorator block.
+ */
 export function BlockWithAlignableContents({
   children,
   format,
@@ -52,7 +59,7 @@ export function BlockWithAlignableContents({
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommand<ElementFormatType>(
+      editor.registerCommand(
         FORMAT_ELEMENT_COMMAND,
         formatType => {
           if (isSelected) {
@@ -84,10 +91,10 @@ export function BlockWithAlignableContents({
         },
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand<MouseEvent>(
+      editor.registerCommand(
         CLICK_COMMAND,
         event => {
-          if (event.target === ref.current) {
+          if (getComposedEventTarget(event) === ref.current) {
             event.preventDefault();
             if (!event.shiftKey) {
               clearSelection();

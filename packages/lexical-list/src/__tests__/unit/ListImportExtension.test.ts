@@ -10,16 +10,15 @@ import {
   buildEditorFromExtensions,
   configExtension,
   getExtensionDependencyFromEditor,
+  HorizontalRuleExtension,
 } from '@lexical/extension';
 import {
-  CoreImportExtension,
   createImportState,
   defineImportRule,
   defineOverlayRules,
   type DOMImportContext,
   DOMImportExtension,
   type DOMPreprocessFn,
-  HorizontalRuleImportExtension,
   ImportOverlays,
   InlineSchema,
   sel,
@@ -29,9 +28,10 @@ import {
   $createListNode,
   $isListItemNode,
   $isListNode,
+  ListExtension,
   ListImportExtension,
-  ListItemNode,
-  ListNode,
+  type ListItemNode,
+  type ListNode,
 } from '@lexical/list';
 import {JSDOM} from 'jsdom';
 import {
@@ -48,11 +48,11 @@ import {assert, describe, expect, test} from 'vitest';
 function buildEditor() {
   return buildEditorFromExtensions(
     defineExtension({
-      // Leaf importer extensions no longer pull `CoreImportExtension`
-      // in by themselves — the application is expected to add it once.
-      dependencies: [CoreImportExtension, ListImportExtension],
+      // ListExtension registers its own import rules (and the shared
+      // CoreImportExtension baseline) — no dedicated import extension
+      // required.
+      dependencies: [ListExtension],
       name: 'list-host',
-      nodes: [ListNode, ListItemNode],
     }),
   );
 }
@@ -151,6 +151,19 @@ describe('ListImportExtension', () => {
       );
     });
   });
+
+  test('deprecated ListImportExtension alias still imports lists', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [ListImportExtension],
+        name: 'list-alias-host',
+      }),
+    );
+    importInto(editor, '<ul><li>a</li></ul>');
+    editor.read(() => {
+      expect($items($rootList()).map(i => i.getTextContent())).toEqual(['a']);
+    });
+  });
 });
 
 // ----------------------------------------------------------------------------
@@ -246,7 +259,7 @@ function $buildWordListTree(
       stack.pop();
     }
     // Open a new sublist if we just stepped deeper. Lexical's
-    // nested-list convention (see `isNestedListNode` in @lexical/list):
+    // nested-list convention (see `$isNestedListNode` in @lexical/list):
     // a sublist lives inside its OWN ListItemNode wrapper that is a
     // sibling of the content items above it, not inside the previous
     // one. The wrapper holds the sublist as its first (and only) child.
@@ -330,14 +343,12 @@ function buildWordPasteEditor() {
   return buildEditorFromExtensions(
     defineExtension({
       dependencies: [
-        CoreImportExtension,
-        ListImportExtension,
+        ListExtension,
         configExtension(DOMImportExtension, {
           preprocess: [$installWordOverlay],
         }),
       ],
       name: 'word-paste-host',
-      nodes: [ListNode, ListItemNode],
     }),
   );
 }
@@ -497,13 +508,8 @@ describe('ListItemNode block flattening', () => {
   test('treats a non-paragraph block (<hr>) as a boundary, not inline content', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [
-          CoreImportExtension,
-          HorizontalRuleImportExtension,
-          ListImportExtension,
-        ],
+        dependencies: [HorizontalRuleExtension, ListExtension],
         name: 'list-hr-host',
-        nodes: [ListNode, ListItemNode],
       }),
     );
     importInto(editor, '<ul><li>x<hr />y</li></ul>');

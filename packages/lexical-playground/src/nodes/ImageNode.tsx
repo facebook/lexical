@@ -24,6 +24,7 @@ import {
   $createRangeSelection,
   $extendCaretToRange,
   $getChildCaret,
+  $getDocument,
   $getRoot,
   $isElementNode,
   $isParagraphNode,
@@ -178,7 +179,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   }
 
   exportDOM(): DOMExportOutput {
-    const imgElement = document.createElement('img');
+    const imgElement = $getDocument().createElement('img');
     imgElement.setAttribute('src', this.__src);
     imgElement.setAttribute('alt', this.__altText);
     imgElement.setAttribute('width', this.__width.toString());
@@ -208,8 +209,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
         return $generateHtmlFromNodes(captionEditor, selection);
       });
       if (captionHtml) {
-        const figureElement = document.createElement('figure');
-        const figcaptionElement = document.createElement('figcaption');
+        const figureElement = $getDocument().createElement('figure');
+        const figcaptionElement = $getDocument().createElement('figcaption');
         figcaptionElement.innerHTML = captionHtml;
 
         figureElement.appendChild(imgElement);
@@ -277,7 +278,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
-    const span = document.createElement('span');
+    const span = $getDocument().createElement('span');
     const theme = config.theme;
     const className = theme.image;
     if (className !== undefined) {

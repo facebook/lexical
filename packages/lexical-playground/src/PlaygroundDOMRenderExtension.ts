@@ -8,6 +8,7 @@
 
 import {domOverride, DOMRenderExtension} from '@lexical/html';
 import {
+  $getDocument,
   configExtension,
   defineExtension,
   isBlockDomNode,
@@ -49,7 +50,7 @@ export const PlaygroundDOMRenderExtension = /* @__PURE__ */ defineExtension({
                 }
                 for (const childNode of generatedElement.childNodes) {
                   if (isBlockDomNode(childNode)) {
-                    const div = document.createElement('div');
+                    const div = $getDocument().createElement('div');
                     div.setAttribute('role', 'paragraph');
                     for (const attr of generatedElement.attributes) {
                       div.setAttribute(attr.name, attr.value);

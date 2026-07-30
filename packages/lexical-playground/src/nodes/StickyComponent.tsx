@@ -19,6 +19,7 @@ import {
   mergeRegister,
   type NodeKey,
   registerEventListener,
+  registerEventListeners,
 } from 'lexical';
 import * as React from 'react';
 import {type JSX, useEffect, useLayoutEffect, useRef} from 'react';
@@ -62,6 +63,8 @@ export default function StickyComponent({
 }): JSX.Element {
   const [editor] = useLexicalComposerContext();
   const stickyContainerRef = useRef<null | HTMLDivElement>(null);
+  const dragCleanupRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => dragCleanupRef.current?.(), []);
   const positioningRef = useRef<Positioning>({
     isDragging: false,
     offsetX: 0,
@@ -162,8 +165,8 @@ export default function StickyComponent({
         }
       });
     }
-    document.removeEventListener('pointermove', handlePointerMove);
-    document.removeEventListener('pointerup', handlePointerUp);
+    dragCleanupRef.current?.();
+    dragCleanupRef.current = null;
   };
 
   const handleDelete = () => {
@@ -207,8 +210,12 @@ export default function StickyComponent({
             positioning.offsetY = event.clientY / zoom - top;
             positioning.isDragging = true;
             stickContainer.classList.add('dragging');
-            document.addEventListener('pointermove', handlePointerMove);
-            document.addEventListener('pointerup', handlePointerUp);
+            const doc = stickContainer.ownerDocument;
+            dragCleanupRef.current?.();
+            dragCleanupRef.current = registerEventListeners(doc, {
+              pointermove: handlePointerMove,
+              pointerup: handlePointerUp,
+            });
             event.preventDefault();
           }
         }}>

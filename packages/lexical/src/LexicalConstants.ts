@@ -32,19 +32,27 @@ export const IS_TOKEN = 1;
 export const IS_SEGMENTED = 2;
 // IS_INERT = 3
 
-// Text node formatting
+/** Bitmask for bold text formatting. */
 export const IS_BOLD = 1;
+/** Bitmask for italic text formatting. */
 export const IS_ITALIC = 1 << 1;
+/** Bitmask for strikethrough text formatting. */
 export const IS_STRIKETHROUGH = 1 << 2;
+/** Bitmask for underline text formatting. */
 export const IS_UNDERLINE = 1 << 3;
+/** Bitmask for code (monospace) text formatting. */
 export const IS_CODE = 1 << 4;
+/** Bitmask for subscript text formatting. */
 export const IS_SUBSCRIPT = 1 << 5;
+/** Bitmask for superscript text formatting. */
 export const IS_SUPERSCRIPT = 1 << 6;
+/** Bitmask for highlighted text formatting. */
 export const IS_HIGHLIGHT = 1 << 7;
 export const IS_LOWERCASE = 1 << 8;
 export const IS_UPPERCASE = 1 << 9;
 export const IS_CAPITALIZE = 1 << 10;
 
+/** Bitmask combining all text format flags. */
 export const IS_ALL_FORMATTING =
   IS_BOLD |
   IS_ITALIC |
@@ -98,6 +106,7 @@ export const RTL_REGEX = new RegExp('^[^' + LTR + ']*[' + RTL + ']');
 // eslint-disable-next-line no-misleading-character-class
 export const LTR_REGEX = new RegExp('^[^' + RTL + ']*[' + LTR + ']');
 
+/** Maps {@link TextFormatType} string names to their bitmask values. */
 export const TEXT_TYPE_TO_FORMAT: Record<TextFormatType | string, number> = {
   bold: IS_BOLD,
   capitalize: IS_CAPITALIZE,
@@ -150,5 +159,6 @@ export const TEXT_TYPE_TO_MODE: Record<number, TextModeType> = {
   [IS_TOKEN]: 'token',
 };
 
+/** The property key used to store node state on serialized node JSON. */
 export const NODE_STATE_KEY = '$';
 export const PROTOTYPE_CONFIG_METHOD = '$config';

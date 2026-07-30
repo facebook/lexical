@@ -999,6 +999,7 @@ export class ElementNode
   }
 }
 
+/** Returns true if the given node is an ElementNode. */
 export function $isElementNode(
   node: LexicalNode | null | undefined,
 ): node is ElementNode {

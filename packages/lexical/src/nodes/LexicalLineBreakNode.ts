@@ -64,10 +64,12 @@ function $convertLineBreakElement(node: Node): DOMConversionOutput {
   return {node: $createLineBreakNode()};
 }
 
+/** Creates a LineBreakNode representing a soft line break (Shift+Enter). */
 export function $createLineBreakNode(): LineBreakNode {
   return $applyNodeReplacement(new LineBreakNode());
 }
 
+/** Returns true if the given node is a LineBreakNode. */
 export function $isLineBreakNode(
   node: LexicalNode | null | undefined,
 ): node is LineBreakNode {

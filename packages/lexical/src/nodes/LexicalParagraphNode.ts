@@ -177,10 +177,12 @@ function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
   return {node};
 }
 
+/** Creates a ParagraphNode, the default block-level container for text. */
 export function $createParagraphNode(): ParagraphNode {
   return $applyNodeReplacement(new ParagraphNode());
 }
 
+/** Returns true if the given node is a ParagraphNode. */
 export function $isParagraphNode(
   node: LexicalNode | null | undefined,
 ): node is ParagraphNode {

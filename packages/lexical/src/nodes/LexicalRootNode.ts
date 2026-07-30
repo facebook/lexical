@@ -105,6 +105,7 @@ export function $createRootNode(): RootNode {
   return new RootNode();
 }
 
+/** Returns true if the given node is a RootNode. */
 export function $isRootNode(
   node: RootNode | LexicalNode | null | undefined,
 ): node is RootNode {

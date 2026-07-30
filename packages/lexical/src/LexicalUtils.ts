@@ -149,6 +149,7 @@ const INTERNAL_SKIP_AFTER_CLONE_FROM: unique symbol = Symbol(
 
 let keyCounter = 1;
 
+/** Resets the internal key counter, primarily for deterministic test output. */
 export function resetRandomKey(): void {
   keyCounter = 1;
 }
@@ -192,6 +193,7 @@ export const scheduleMicroTask: (fn: () => void) => void =
         Promise.resolve().then(fn);
       };
 
+/** Returns true if the active element (resolved from the anchor's root) is a decorator's own input (e.g. an input, textarea, or foreign contentEditable) rather than Lexical-managed content. */
 export function $isSelectionCapturedInDecoratorInput(
   anchorDOM: Node,
   preResolvedActiveElement?: Element | null,
@@ -230,6 +232,7 @@ export function $isSelectionCapturedInDecoratorInput(
 export const isSelectionCapturedInDecoratorInput =
   $isSelectionCapturedInDecoratorInput;
 
+/** Returns true if the given DOM anchor and focus nodes are inside the editor's root element and not captured by a decorator input. */
 export function isSelectionWithinEditor(
   editor: LexicalEditor,
   anchorDOM: null | Node,
@@ -267,6 +270,7 @@ export function isLexicalEditor(editor: unknown): editor is LexicalEditor {
   return editor instanceof LexicalEditor;
 }
 
+/** Returns the nearest LexicalEditor instance by walking up the DOM tree from the given node, or null if none is found. */
 export function getNearestEditorFromDOMNode(
   node: Node | null,
 ): LexicalEditor | null {
@@ -287,6 +291,7 @@ export function getEditorPropertyFromDOMNode(node: Node | null): unknown {
   return node ? node.__lexicalEditor : null;
 }
 
+/** Returns the text direction ('ltr' or 'rtl') of the given string, or null if it contains no strong directional characters. */
 export function getTextDirection(text: string): 'ltr' | 'rtl' | null {
   if (RTL_REGEX.test(text)) {
     return 'rtl';
@@ -327,6 +332,7 @@ export function isDOMDocumentNode(node: unknown): node is Document {
   return isDOMNode(node) && node.nodeType === DOM_DOCUMENT_TYPE;
 }
 
+/** Returns the first DOM Text node found by descending the firstChild chain from the given node, or null. */
 export function getDOMTextNode(element: Node | null): Text | null {
   let node = element;
   while (node != null) {
@@ -338,6 +344,7 @@ export function getDOMTextNode(element: Node | null): Text | null {
   return null;
 }
 
+/** Toggles the given text format type on a format bitmask, clearing mutually exclusive formats (subscript/superscript, lowercase/uppercase/capitalize). */
 export function toggleTextFormatType(
   format: number,
   type: TextFormatType,
@@ -368,6 +375,7 @@ export function toggleTextFormatType(
   return newFormat;
 }
 
+/** Returns true if the given node is a leaf (TextNode, LineBreakNode, or DecoratorNode). */
 export function $isLeafNode(
   node: LexicalNode | null | undefined,
 ): node is TextNode | LineBreakNode | DecoratorNode<unknown> {
@@ -593,6 +601,7 @@ export function internalMarkSiblingsAsDirty(node: LexicalNode) {
   }
 }
 
+/** Sets the active composition key, marking the previous and new composition nodes as dirty for re-rendering. */
 export function $setCompositionKey(compositionKey: null | NodeKey): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
@@ -652,6 +661,7 @@ export function $getNodeByKey(
   return node;
 }
 
+/** Returns the LexicalNode directly associated with the given DOM node, or null if the DOM node has no Lexical key. */
 export function $getNodeFromDOMNode(
   dom: Node,
   editorState?: EditorState,
@@ -686,6 +696,7 @@ export function getNodeKeyFromDOMNode(
   return (dom as Node & Record<typeof prop, NodeKey | undefined>)[prop];
 }
 
+/** Returns the nearest LexicalNode by walking up the DOM tree from the given node, or null if no Lexical node is found. */
 export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
   editorState?: EditorState,
@@ -754,6 +765,7 @@ export function markNodesWithTypesAsDirty(
   );
 }
 
+/** Returns the RootNode of the active EditorState. */
 export function $getRoot(): RootNode {
   return internalGetRoot(getActiveEditorState());
 }
@@ -762,6 +774,7 @@ export function internalGetRoot(editorState: EditorState): RootNode {
   return editorState._nodeMap.get('root') as RootNode;
 }
 
+/** Sets the current selection in the active EditorState, marking it dirty and clamping to slot boundaries when applicable. */
 export function $setSelection(selection: null | BaseSelection): void {
   errorOnReadOnly();
   const editorState = getActiveEditorState();
@@ -1345,6 +1358,7 @@ export function isSelectAll(event: KeyboardEventModifiers): boolean {
   return isExactShortcutMatch(event, 'a', CONTROL_OR_META);
 }
 
+/** Selects all content within the root. If a selection is provided, scopes to the nearest root or shadow root; otherwise creates a new RangeSelection spanning the entire root. */
 export function $selectAll(selection?: RangeSelection | null): RangeSelection {
   const root = $getRoot();
 
@@ -1507,6 +1521,7 @@ function resolveElement(
   return block.getChildAtIndex(isBackward ? offset - 1 : offset);
 }
 
+/** Returns the node adjacent to the given selection point in the specified direction, or null if at a boundary. */
 export function $getAdjacentNode(
   focus: PointType,
   isBackward: boolean,
@@ -1576,6 +1591,7 @@ export function getElementByKeyOrThrow(
   return element;
 }
 
+/** Returns the parent element of a DOM node, crossing shadow root boundaries and following slot assignments. */
 export function getParentElement(node: Node): HTMLElement | null {
   const parentElement =
     (node as HTMLSlotElement).assignedSlot || node.parentElement;
@@ -1590,6 +1606,7 @@ export function getParentElement(node: Node): HTMLElement | null {
   return isDOMShadowRoot(parentNode) ? (parentNode.host as HTMLElement) : null;
 }
 
+/** Returns the owner Document of the given EventTarget, or the target itself if it is a Document. */
 export function getDOMOwnerDocument(
   target: EventTarget | null,
 ): Document | null {
@@ -1690,11 +1707,13 @@ export function scrollIntoViewIfNeeded(
   }
 }
 
+/** Returns true if the given tag has been added to the current update via $addUpdateTag. */
 export function $hasUpdateTag(tag: UpdateTag): boolean {
   const editor = getActiveEditor();
   return editor._updateTags.has(tag);
 }
 
+/** Adds a tag to the current update, which can be read by update listeners and $hasUpdateTag. */
 export function $addUpdateTag(tag: UpdateTag): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
@@ -1733,6 +1752,7 @@ export function $maybeMoveChildrenSelectionToParent(
   return selection;
 }
 
+/** Returns true if targetNode is an ancestor of child by walking up the parent chain. */
 export function $hasAncestor(
   child: LexicalNode,
   targetNode: LexicalNode,
@@ -1762,6 +1782,7 @@ export function getWindow(editor: LexicalEditor): Window {
 
 const InlineNodeBrand: unique symbol = Symbol.for('@lexical/InlineNodeBrand');
 
+/** Returns true if the given node is an inline ElementNode or an inline DecoratorNode. */
 export function $isInlineElementOrDecoratorNode<T>(node: LexicalNode): node is (
   | ElementNode
   | DecoratorNode<T>
@@ -1775,6 +1796,7 @@ export function $isInlineElementOrDecoratorNode<T>(node: LexicalNode): node is (
   );
 }
 
+/** Returns the given node itself (if it is a slot boundary) or its nearest ancestor that is a RootNode, ShadowRootNode, or slot boundary. */
 export function $getNearestRootOrShadowRoot(
   node: LexicalNode,
 ): RootNode | ElementNode {
@@ -1803,12 +1825,14 @@ export interface ShadowRootNode extends ElementNode {
   isShadowRoot(): true;
 }
 
+/** Returns true if the given node is an ElementNode whose isShadowRoot() returns true. */
 export function $isShadowRootNode(
   node: null | LexicalNode,
 ): node is ShadowRootNode {
   return $isElementNode(node) && node.isShadowRoot();
 }
 
+/** Returns true if the given node is a RootNode or a ShadowRootNode. */
 export function $isRootOrShadowRoot(
   node: null | LexicalNode,
 ): node is RootNode | ShadowRootNode {
@@ -1844,6 +1868,7 @@ export function $copyNode<T extends LexicalNode>(
   return copy;
 }
 
+/** Applies any registered node replacement for the given node's type, returning the replacement node or the original if none is registered. */
 export function $applyNodeReplacement<N extends LexicalNode>(node: N): N {
   const editor = getActiveEditor();
   const nodeType = node.getType();
@@ -2520,6 +2545,7 @@ export function getComposedEventTarget(event: Event): EventTarget | null {
   return target;
 }
 
+/** Splits an ElementNode at the given child offset, returning [original, newCopy]. The original is mutated (children after offset moved out); the first element may be null per the return type contract. Recursively splits ancestors up to the nearest root or shadow root. */
 export function $splitNode(
   node: ElementNode,
   offset: number,
@@ -2992,6 +3018,7 @@ export function $cloneWithPropertiesEphemeral<T extends LexicalNode>(
   return $markEphemeral($cloneWithProperties(latestNode));
 }
 
+/** Reads the indent level from a DOM element's `data-lexical-indent` attribute or `paddingInlineStart` style, and applies it to the given ElementNode. */
 export function setNodeIndentFromDOM(
   elementDom: HTMLElement,
   elementNode: ElementNode,
@@ -3515,6 +3542,7 @@ export const $findMatchingParent: {
   return null;
 };
 
+/** Builds an ordered array of child node keys for the given ElementNode by walking its linked-list pointers. */
 export function $createChildrenArray(
   element: ElementNode,
   nodeMap: null | NodeMap,

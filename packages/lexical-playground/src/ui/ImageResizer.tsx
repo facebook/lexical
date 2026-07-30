@@ -7,11 +7,7 @@
  */
 
 import {calculateZoomLevel} from '@lexical/utils';
-import {
-  type LexicalEditor,
-  mergeRegister,
-  registerEventListener,
-} from 'lexical';
+import {type LexicalEditor, registerEventListeners} from 'lexical';
 import * as React from 'react';
 import {type JSX, useEffect, useRef} from 'react';
 
@@ -169,10 +165,10 @@ export default function ImageResizer({
 
       const doc = image.ownerDocument;
       resizeCleanupRef.current?.();
-      resizeCleanupRef.current = mergeRegister(
-        registerEventListener(doc, 'pointermove', handlePointerMove),
-        registerEventListener(doc, 'pointerup', handlePointerUp),
-      );
+      resizeCleanupRef.current = registerEventListeners(doc, {
+        pointermove: handlePointerMove,
+        pointerup: handlePointerUp,
+      });
     }
   };
   const handlePointerMove = (event: PointerEvent) => {

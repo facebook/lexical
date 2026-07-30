@@ -19,6 +19,7 @@ import {
   mergeRegister,
   type NodeKey,
   registerEventListener,
+  registerEventListeners,
 } from 'lexical';
 import * as React from 'react';
 import {type JSX, useEffect, useLayoutEffect, useRef} from 'react';
@@ -211,10 +212,10 @@ export default function StickyComponent({
             stickContainer.classList.add('dragging');
             const doc = stickContainer.ownerDocument;
             dragCleanupRef.current?.();
-            dragCleanupRef.current = mergeRegister(
-              registerEventListener(doc, 'pointermove', handlePointerMove),
-              registerEventListener(doc, 'pointerup', handlePointerUp),
-            );
+            dragCleanupRef.current = registerEventListeners(doc, {
+              pointermove: handlePointerMove,
+              pointerup: handlePointerUp,
+            });
             event.preventDefault();
           }
         }}>

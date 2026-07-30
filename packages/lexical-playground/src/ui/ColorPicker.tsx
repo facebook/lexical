@@ -9,7 +9,7 @@
 import './ColorPicker.css';
 
 import {calculateZoomLevel} from '@lexical/utils';
-import {mergeRegister, registerEventListener} from 'lexical';
+import {registerEventListeners} from 'lexical';
 import * as React from 'react';
 import {type JSX, useEffect, useMemo, useRef, useState} from 'react';
 
@@ -231,9 +231,10 @@ function MoveWrapper({className, style, onChange, children}: MoveWrapperProps) {
     };
 
     dragCleanupRef.current?.();
-    dragCleanupRef.current = mergeRegister(
-      registerEventListener(doc, 'mousemove', onMouseMove, false),
-      registerEventListener(doc, 'mouseup', onMouseUp, false),
+    dragCleanupRef.current = registerEventListeners(
+      doc,
+      {mousemove: onMouseMove, mouseup: onMouseUp},
+      false,
     );
   };
 

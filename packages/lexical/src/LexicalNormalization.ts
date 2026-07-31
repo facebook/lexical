@@ -96,6 +96,7 @@ export function $normalizeTextNode(textNode: TextNode): void {
   }
 }
 
+/** Descends element-type anchor and focus points of a RangeSelection toward the deepest text-type points, stopping at non-element leaf nodes. */
 export function $normalizeSelection(selection: RangeSelection): RangeSelection {
   $normalizePoint(selection.anchor);
   $normalizePoint(selection.focus);

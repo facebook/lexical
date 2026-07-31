@@ -7,6 +7,7 @@
  */
 
 import {
+  $getDocument,
   addClassNamesToElement,
   type DOMExportOutput,
   type EditorConfig,
@@ -42,7 +43,7 @@ export class LayoutContainerNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = document.createElement('div');
+    const dom = $getDocument().createElement('div');
     dom.style.gridTemplateColumns = this.__templateColumns;
     if (typeof config.theme.layoutContainer === 'string') {
       addClassNamesToElement(dom, config.theme.layoutContainer);
@@ -51,7 +52,7 @@ export class LayoutContainerNode extends ElementNode {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('div');
+    const element = $getDocument().createElement('div');
     element.style.gridTemplateColumns = this.__templateColumns;
     element.setAttribute('data-lexical-layout-container', 'true');
     return {element};

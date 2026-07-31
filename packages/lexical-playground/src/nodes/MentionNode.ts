@@ -8,6 +8,7 @@
 
 import {
   $applyNodeReplacement,
+  $getDocument,
   type DOMExportOutput,
   type EditorConfig,
   type LexicalNode,
@@ -63,7 +64,7 @@ export class MentionNode extends TextNode {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('span');
+    const element = $getDocument().createElement('span');
     element.setAttribute('data-lexical-mention', 'true');
     if (this.__text !== this.__mention) {
       element.setAttribute('data-lexical-mention-name', this.__mention);

@@ -246,6 +246,7 @@ export class Point {
   }
 }
 
+/** Creates a selection endpoint (Point) targeting the given node key at the specified offset. */
 export function $createPoint(
   key: NodeKey,
   offset: number,
@@ -575,6 +576,7 @@ function $ensureRootHasParagraph(): void {
   }
 }
 
+/** Returns true if the given value is a RangeSelection. */
 export function $isRangeSelection(x: unknown): x is RangeSelection {
   return x instanceof RangeSelection;
 }
@@ -2018,6 +2020,7 @@ export class RangeSelection implements BaseSelection {
   }
 }
 
+/** Returns true if the given value is a NodeSelection. */
 export function $isNodeSelection(x: unknown): x is NodeSelection {
   return x instanceof NodeSelection;
 }
@@ -2251,6 +2254,7 @@ function getCharacterOffset(point: PointType): number {
     : 0;
 }
 
+/** Returns the character offsets of the selection's anchor and focus points as an [anchor, focus] tuple. */
 export function $getCharacterOffsets(
   selection: BaseSelection,
 ): [number, number] {
@@ -3283,6 +3287,7 @@ function $internalResolveSelectionPoints(
   ];
 }
 
+/** Returns true if the given node is a non-inline ElementNode. */
 export function $isBlockElementNode(
   node: LexicalNode | null | undefined,
 ): node is ElementNode {
@@ -3313,12 +3318,14 @@ export function $internalMakeRangeSelection(
   return selection;
 }
 
+/** Creates a detached RangeSelection anchored at the root element origin (offset 0). */
 export function $createRangeSelection(): RangeSelection {
   const anchor = $createPoint('root', 0, 'element');
   const focus = $createPoint('root', 0, 'element');
   return new RangeSelection(anchor, focus, 0, '');
 }
 
+/** Creates an empty NodeSelection with no selected node keys. */
 export function $createNodeSelection(): NodeSelection {
   return new NodeSelection(new Set());
 }
@@ -3342,6 +3349,7 @@ export function $internalCreateSelection(
   return lastSelection.clone();
 }
 
+/** Creates a RangeSelection from the given DOM selection, or returns null if one cannot be resolved. */
 export function $createRangeSelectionFromDom(
   domSelection: Selection | null,
   editor: LexicalEditor,
@@ -3494,11 +3502,13 @@ function $validatePoint(name: 'anchor' | 'focus', point: PointType): void {
   }
 }
 
+/** Returns the current selection of the active editor state, or null if none exists. */
 export function $getSelection(): null | BaseSelection {
   const editorState = getActiveEditorState();
   return editorState._selection;
 }
 
+/** Returns the selection from the previous editor state, or null if none existed. */
 export function $getPreviousSelection(): null | BaseSelection {
   const editor = getActiveEditor();
   return editor._editorState._selection;
@@ -4001,6 +4011,7 @@ export function $updateDOMSelection(
   markSelectionChangeFromDOMUpdate(editor);
 }
 
+/** Inserts nodes into the current selection, falling back to the previous selection or the end of the root. */
 export function $insertNodes(nodes: LexicalNode[]) {
   let selection = $getSelection() || $getPreviousSelection();
 
@@ -4066,6 +4077,7 @@ export function $generateNodesFromRawText(
   return nodes;
 }
 
+/** Returns the text content of the current selection, or an empty string if no selection exists. */
 export function $getTextContent(): string {
   const selection = $getSelection();
   if (selection === null) {

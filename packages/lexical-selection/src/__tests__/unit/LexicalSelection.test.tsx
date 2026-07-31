@@ -3534,7 +3534,7 @@ describe('LexicalSelection tests', () => {
       });
     });
 
-    test('Bare slot value (#8894)', () => {
+    test('Bare slot value is skipped (#8894)', () => {
       class TestSlotHost extends ElementNode {
         $config() {
           return this.config('test-slot-host', {
@@ -3573,60 +3573,11 @@ describe('LexicalSelection tests', () => {
       testEditor.read(() => {
         const root = $getRoot();
         const host = root.getFirstChild()!;
-        const heading = $assertNodeType(
+        const paragraph = $assertNodeType(
           $getSlot(host, 'content'),
-          $isHeadingNode,
+          $isParagraphNode,
         );
-        expect(heading.getTextContent()).toBe('slot text');
-      });
-    });
-
-    test('Bare slot value with element-anchored selection (#8894)', () => {
-      class TestSlotHost extends ElementNode {
-        $config() {
-          return this.config('test-slot-host-2', {
-            extends: ElementNode,
-            slots: ['content'],
-          });
-        }
-        createDOM(): HTMLElement {
-          return document.createElement('div');
-        }
-        updateDOM(): false {
-          return false;
-        }
-      }
-
-      using testEditor = buildEditorFromExtensions({
-        $initialEditorState: () => {
-          const root = $getRoot();
-          const host = $create(TestSlotHost);
-          const paragraph = $createParagraphNode();
-          $setSlot(host, 'content', paragraph);
-          root.append(host);
-
-          paragraph.select(0, 0);
-          const selection = $getSelection();
-          $setBlocksType(selection, () => $createHeadingNode('h1'));
-        },
-        dependencies: [
-          RichTextExtension,
-          defineExtension({name: '@test/slot-host-2', nodes: [TestSlotHost]}),
-        ],
-        name: '@test',
-      });
-      testEditor.read(() => {
-        const root = $getRoot();
-        const host = root.getFirstChild()!;
-        const heading = $assertNodeType(
-          $getSlot(host, 'content'),
-          $isHeadingNode,
-        );
-        const sel = $getSelection();
-        expect(sel).toMatchObject({
-          anchor: {key: heading.__key, offset: 0, type: 'element'},
-          focus: {key: heading.__key, offset: 0, type: 'element'},
-        });
+        expect(paragraph.getTextContent()).toBe('slot text');
       });
     });
   });

@@ -12,9 +12,7 @@ import {
   $extendCaretToRange,
   $findMatchingParent,
   $getPreviousSelection,
-  $getSelection,
   $getSlotHost,
-  $getSlotNameWithinHost,
   $hasAncestor,
   $isChildCaret,
   $isDecoratorNode,
@@ -27,7 +25,6 @@ import {
   $isTextNode,
   $isTextPointCaret,
   $setSelection,
-  $setSlot,
   type BaseSelection,
   type CaretDirection,
   type DecoratorNode,
@@ -187,29 +184,12 @@ export function $setBlocksType<T extends ElementNode>(
       }
     }
   }
-  // Selection remapping for the normal path is delegated to
-  // LexicalNode.replace; the bare-slot-value branch below remaps manually.
   for (const prevNode of blockMap.values()) {
+    if ($getSlotHost(prevNode) !== null && prevNode.getParent() === null) {
+      continue;
+    }
     const element = $createElement();
     $afterCreateElement(prevNode, element);
-    const slotHost = $getSlotHost(prevNode);
-    if (slotHost !== null && prevNode.getParent() === null) {
-      const slotName = $getSlotNameWithinHost(prevNode);
-      if (slotName !== null) {
-        element.append(...prevNode.getChildren());
-        const prevKey = prevNode.__key;
-        $setSlot(slotHost, slotName, element);
-        const sel = $getSelection();
-        if ($isRangeSelection(sel)) {
-          for (const point of [sel.anchor, sel.focus]) {
-            if (point.key === prevKey) {
-              point.set(element.__key, point.offset, point.type);
-            }
-          }
-        }
-        continue;
-      }
-    }
     prevNode.replace(element, true);
   }
 }

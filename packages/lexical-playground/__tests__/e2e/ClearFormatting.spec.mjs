@@ -26,6 +26,7 @@ import {
   focusEditor,
   html,
   initialize,
+  locate,
   pasteFromClipboard,
   selectFromAdditionalStylesDropdown,
   selectFromBackgroundColorPicker,
@@ -346,7 +347,10 @@ test.describe('Clear All Formatting', () => {
     await selectCharacters(page, 'right', 'World'.length);
     await toggleBold(page);
 
-    const boldButton = page.locator(
+    // locate() (not page.locator()) so this resolves inside the left frame in
+    // collab mode, where the playground runs in a two-iframe split view
+    const boldButton = locate(
+      page,
       '.toolbar-item[aria-label^="Format text as bold"]',
     );
     await expect(boldButton).toHaveClass(/active/);

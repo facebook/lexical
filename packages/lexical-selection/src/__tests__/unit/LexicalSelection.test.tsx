@@ -3573,11 +3573,11 @@ describe('LexicalSelection tests', () => {
       testEditor.read(() => {
         const root = $getRoot();
         const host = root.getFirstChild()!;
-        const slotValue = $getSlot(host, 'content');
-        expect(slotValue).not.toBeNull();
-        expect($isParagraphNode(slotValue)).toBe(false);
-        expect($isHeadingNode(slotValue)).toBe(true);
-        expect(slotValue!.getTextContent()).toBe('slot text');
+        const heading = $assertNodeType(
+          $getSlot(host, 'content'),
+          $isHeadingNode,
+        );
+        expect(heading.getTextContent()).toBe('slot text');
       });
     });
 
@@ -3618,12 +3618,14 @@ describe('LexicalSelection tests', () => {
       testEditor.read(() => {
         const root = $getRoot();
         const host = root.getFirstChild()!;
-        const slotValue = $getSlot(host, 'content');
-        expect($isHeadingNode(slotValue)).toBe(true);
+        const heading = $assertNodeType(
+          $getSlot(host, 'content'),
+          $isHeadingNode,
+        );
         const sel = $getSelection();
         expect(sel).toMatchObject({
-          anchor: {key: slotValue!.__key, offset: 0, type: 'element'},
-          focus: {key: slotValue!.__key, offset: 0, type: 'element'},
+          anchor: {key: heading.__key, offset: 0, type: 'element'},
+          focus: {key: heading.__key, offset: 0, type: 'element'},
         });
       });
     });

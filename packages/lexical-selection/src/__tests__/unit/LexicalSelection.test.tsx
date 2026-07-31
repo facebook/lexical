@@ -6,7 +6,7 @@
  *
  */
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {$createLinkNode, LinkExtension} from '@lexical/link';
 import {
   $createListItemNode,
@@ -35,20 +35,23 @@ import {
 } from '@lexical/selection';
 import {$createTableNodeWithDimensions} from '@lexical/table';
 import {
+  $create,
   $createLineBreakNode,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
   $getRoot,
   $getSelection,
+  $getSlot,
   $isElementNode,
   $isLineBreakNode,
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
+  $setSlot,
   type DecoratorNode,
-  type ElementNode,
+  ElementNode,
   type LexicalEditor,
   type LexicalNode,
   type ParagraphNode,
@@ -3528,6 +3531,100 @@ describe('LexicalSelection tests', () => {
         expect($isParagraphNode(rootChildren[0])).toBe(true);
         expect($isHeadingNode(rootChildren[1])).toBe(true);
         expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Bare slot value (#8894)', () => {
+      class TestSlotHost extends ElementNode {
+        $config() {
+          return this.config('test-slot-host', {
+            extends: ElementNode,
+            slots: ['content'],
+          });
+        }
+        createDOM(): HTMLElement {
+          return document.createElement('div');
+        }
+        updateDOM(): false {
+          return false;
+        }
+      }
+
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const root = $getRoot();
+          const host = $create(TestSlotHost);
+          const paragraph = $createParagraphNode();
+          const text = $createTextNode('slot text');
+          paragraph.append(text);
+          $setSlot(host, 'content', paragraph);
+          root.append(host);
+
+          text.select(0, text.getTextContentSize());
+          const selection = $getSelection();
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [
+          RichTextExtension,
+          defineExtension({name: '@test/slot-host', nodes: [TestSlotHost]}),
+        ],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const root = $getRoot();
+        const host = root.getFirstChild()!;
+        const slotValue = $getSlot(host, 'content');
+        expect(slotValue).not.toBeNull();
+        expect($isParagraphNode(slotValue)).toBe(false);
+        expect($isHeadingNode(slotValue)).toBe(true);
+        expect(slotValue!.getTextContent()).toBe('slot text');
+      });
+    });
+
+    test('Bare slot value with element-anchored selection (#8894)', () => {
+      class TestSlotHost extends ElementNode {
+        $config() {
+          return this.config('test-slot-host-2', {
+            extends: ElementNode,
+            slots: ['content'],
+          });
+        }
+        createDOM(): HTMLElement {
+          return document.createElement('div');
+        }
+        updateDOM(): false {
+          return false;
+        }
+      }
+
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const root = $getRoot();
+          const host = $create(TestSlotHost);
+          const paragraph = $createParagraphNode();
+          $setSlot(host, 'content', paragraph);
+          root.append(host);
+
+          paragraph.select(0, 0);
+          const selection = $getSelection();
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [
+          RichTextExtension,
+          defineExtension({name: '@test/slot-host-2', nodes: [TestSlotHost]}),
+        ],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const root = $getRoot();
+        const host = root.getFirstChild()!;
+        const slotValue = $getSlot(host, 'content');
+        expect($isHeadingNode(slotValue)).toBe(true);
+        const sel = $getSelection();
+        expect(sel).toMatchObject({
+          anchor: {key: slotValue!.__key, offset: 0, type: 'element'},
+          focus: {key: slotValue!.__key, offset: 0, type: 'element'},
+        });
       });
     });
   });

@@ -1796,6 +1796,12 @@ export class RangeSelection implements BaseSelection {
               }
               // always stop when a decorator is encountered
               return;
+            } else if ($isLineBreakNode(caret.origin)) {
+              // A LineBreakNode is a single deletable unit, same as a
+              // decorator: remove it directly instead of falling through to
+              // the slot-edge boundary check below with nothing deleted.
+              caret.origin.remove();
+              return;
             }
             break;
           }

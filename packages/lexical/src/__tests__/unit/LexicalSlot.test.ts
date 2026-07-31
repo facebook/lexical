@@ -3291,6 +3291,64 @@ describe('named-slots: block slot values (virtual shadow root)', () => {
     });
   });
 
+  test('backspace deletes trailing linebreaks in a bare block value one at a time (#8898)', () => {
+    using editor = createSlotEditor();
+    let lineKey = '';
+    editor.update(
+      () => {
+        const {line} = $createLineSlotHost();
+        lineKey = line.getKey();
+        const text = line.getFirstChild();
+        assert(text !== null && $isTextNode(text));
+        text.select(5, 5).insertLineBreak();
+        line.getLastChild()!.selectEnd().insertLineBreak();
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const line = $getNodeByKey(lineKey);
+      assert(line !== null && $isParagraphNode(line));
+      expect(line.getChildren().filter(c => $isLineBreakNode(c)).length).toBe(
+        2,
+      );
+    });
+    // Same element-mode anchor shape as the insertLineBreak tests above:
+    // deleteCharacter's sibling-caret exploration must delete the
+    // LineBreakNode it finds instead of falling through to the slot-edge
+    // boundary check with nothing deleted.
+    editor.update(
+      () => {
+        const line = $getNodeByKey(lineKey);
+        assert(line !== null && $isParagraphNode(line));
+        line.getLastChild()!.selectEnd().deleteCharacter(true);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const line = $getNodeByKey(lineKey);
+      assert(line !== null && $isParagraphNode(line));
+      expect(line.getChildren().filter(c => $isLineBreakNode(c)).length).toBe(
+        1,
+      );
+    });
+    editor.update(
+      () => {
+        const line = $getNodeByKey(lineKey);
+        assert(line !== null && $isParagraphNode(line));
+        line.getLastChild()!.selectEnd().deleteCharacter(true);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const line = $getNodeByKey(lineKey);
+      assert(line !== null && $isParagraphNode(line));
+      expect(line.getTextContent()).toBe('Title');
+      expect(line.getChildren().filter(c => $isLineBreakNode(c)).length).toBe(
+        0,
+      );
+    });
+  });
+
   test('the boundary still scopes selection and select-all', () => {
     using editor = createSlotEditor();
     let lineKey = '';

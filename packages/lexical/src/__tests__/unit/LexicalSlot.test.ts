@@ -3233,10 +3233,11 @@ describe('named-slots: block slot values (virtual shadow root)', () => {
       () => {
         const {line} = $createLineSlotHost();
         lineKey = line.getKey();
-        const text = line.getFirstChild();
-        assert(text !== null && $isTextNode(text));
-        text.select(5, 5).insertLineBreak();
-        line.getLastChild()!.selectEnd().insertLineBreak();
+        // Built directly rather than via two insertLineBreak() calls: a
+        // LineBreakNode with no next sibling resolves selectEnd() to an
+        // element-mode anchor directly on the slot value, the same shape
+        // deleteCharacter must handle below.
+        line.append($createLineBreakNode(), $createLineBreakNode());
       },
       {discrete: true},
     );
@@ -3247,7 +3248,6 @@ describe('named-slots: block slot values (virtual shadow root)', () => {
         2,
       );
     });
-    // Same element-mode anchor shape as the insertLineBreak tests above:
     // deleteCharacter's sibling-caret exploration must delete the
     // LineBreakNode it finds instead of falling through to the slot-edge
     // boundary check with nothing deleted.

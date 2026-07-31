@@ -42,15 +42,15 @@ import {getSelectedNode} from '../../utils/getSelectedNode';
 import {sanitizeUrl} from '../../utils/url';
 import {INSERT_INLINE_COMMAND} from '../CommentPlugin';
 import {
-  clearFormatting,
-  formatBulletList,
-  formatCheckList,
-  formatCode,
-  formatHeading,
-  formatNumberedList,
-  formatParagraph,
-  formatQuote,
-  updateFontSize,
+  $clearFormatting,
+  $formatBulletList,
+  $formatCheckList,
+  $formatCode,
+  $formatHeading,
+  $formatNumberedList,
+  $formatParagraph,
+  $formatQuote,
+  $updateFontSize,
   UpdateFontSizeType,
 } from '../ToolbarPlugin/utils';
 import {SHORTCUT_BINDINGS} from './shortcuts';
@@ -165,31 +165,21 @@ export const ShortcutsExtension = /* @__PURE__ */ defineExtension({
         COMMAND_PRIORITY_EDITOR,
       );
     return mergeRegister(
-      listen('NORMAL', e => formatParagraph(e)),
-      listen('HEADING1', e => formatHeading(e, $getBlockType(), 'h1')),
-      listen('HEADING2', e => formatHeading(e, $getBlockType(), 'h2')),
-      listen('HEADING3', e => formatHeading(e, $getBlockType(), 'h3')),
-      listen('NUMBERED_LIST', e => formatNumberedList(e, $getBlockType())),
-      listen('BULLET_LIST', e => formatBulletList(e, $getBlockType())),
-      listen('CHECK_LIST', e => formatCheckList(e, $getBlockType())),
-      listen('CODE_BLOCK', e => formatCode(e, $getBlockType())),
-      listen('QUOTE', e => formatQuote(e, $getBlockType())),
-      listen('ADD_COMMENT', e =>
-        e.dispatchCommand(INSERT_INLINE_COMMAND, undefined),
+      listen('NORMAL', () => $formatParagraph()),
+      listen('HEADING1', () => $formatHeading($getBlockType(), 'h1')),
+      listen('HEADING2', () => $formatHeading($getBlockType(), 'h2')),
+      listen('HEADING3', () => $formatHeading($getBlockType(), 'h3')),
+      listen('NUMBERED_LIST', () => $formatNumberedList($getBlockType())),
+      listen('BULLET_LIST', () => $formatBulletList($getBlockType())),
+      listen('CHECK_LIST', () => $formatCheckList($getBlockType())),
+      listen('CODE_BLOCK', () => $formatCode($getBlockType())),
+      listen('QUOTE', () => $formatQuote($getBlockType())),
+      listen('ADD_COMMENT', e => e.dispatchCommand(INSERT_INLINE_COMMAND)),
+      listen('INCREASE_FONT_SIZE', () =>
+        $updateFontSize(UpdateFontSizeType.increment, $getFontSizeInputValue()),
       ),
-      listen('INCREASE_FONT_SIZE', e =>
-        updateFontSize(
-          e,
-          UpdateFontSizeType.increment,
-          $getFontSizeInputValue(),
-        ),
-      ),
-      listen('DECREASE_FONT_SIZE', e =>
-        updateFontSize(
-          e,
-          UpdateFontSizeType.decrement,
-          $getFontSizeInputValue(),
-        ),
+      listen('DECREASE_FONT_SIZE', () =>
+        $updateFontSize(UpdateFontSizeType.decrement, $getFontSizeInputValue()),
       ),
       listen('INSERT_CODE_BLOCK', e =>
         e.dispatchCommand(FORMAT_TEXT_COMMAND, 'code'),
@@ -224,13 +214,9 @@ export const ShortcutsExtension = /* @__PURE__ */ defineExtension({
       listen('SUPERSCRIPT', e =>
         e.dispatchCommand(FORMAT_TEXT_COMMAND, 'superscript'),
       ),
-      listen('INDENT', e =>
-        e.dispatchCommand(INDENT_CONTENT_COMMAND, undefined),
-      ),
-      listen('OUTDENT', e =>
-        e.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined),
-      ),
-      listen('CLEAR_FORMATTING', e => clearFormatting(e)),
+      listen('INDENT', e => e.dispatchCommand(INDENT_CONTENT_COMMAND)),
+      listen('OUTDENT', e => e.dispatchCommand(OUTDENT_CONTENT_COMMAND)),
+      listen('CLEAR_FORMATTING', () => $clearFormatting()),
       listen('INSERT_LINK', e => {
         const selection = $getSelection();
         let isLink = false;

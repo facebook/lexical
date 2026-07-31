@@ -1565,7 +1565,10 @@ const ANY_MODIFIERS = {
   shiftKey: 'any',
 } as const;
 
-let keyDownShortcuts: null | CompiledKeyboardShortcuts<KeyDownShortcut> = null;
+const editorKeyDownShortcuts = new WeakMap<
+  LexicalEditor,
+  CompiledKeyboardShortcuts<KeyDownShortcut>
+>();
 
 /**
  * The keydown shortcuts that the editor handles natively, compiled to
@@ -1614,7 +1617,7 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
   // Only RangeSelection can use the native cut/copy
   const copyOrCut = (
     key: string,
-    command: LexicalCommand<KeyboardEvent>,
+    command: LexicalCommand<ClipboardEvent | KeyboardEvent | null>,
   ): KeyDownShortcut => ({
     key,
     modifiers: CONTROL_OR_META,
@@ -1735,8 +1738,10 @@ function $handleKeyDown(event: KeyboardEvent): boolean {
     }
   }
 
-  if (keyDownShortcuts === null) {
+  let keyDownShortcuts = editorKeyDownShortcuts.get(editor);
+  if (keyDownShortcuts === undefined) {
     keyDownShortcuts = compileKeyboardShortcuts(buildKeyDownShortcuts());
+    editorKeyDownShortcuts.set(editor, keyDownShortcuts);
   }
   const shortcut = keyDownShortcuts.match(event);
   if (shortcut) {

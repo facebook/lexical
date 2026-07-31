@@ -19,6 +19,7 @@
 
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {
+  type AnyLexicalCommand,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
   CUT_COMMAND,
@@ -42,7 +43,6 @@ import {
   KEY_SPACE_COMMAND,
   KEY_TAB_COMMAND,
   type KeyboardEventModifierMask,
-  type LexicalCommand,
   MOVE_TO_END,
   MOVE_TO_START,
   REDO_COMMAND,
@@ -52,7 +52,7 @@ import {
 import {describe, expect, test} from 'vitest';
 
 interface ExpectedDispatch {
-  command: LexicalCommand<unknown>;
+  command: AnyLexicalCommand;
   payload?: unknown;
   preventsDefault: boolean;
 }
@@ -73,7 +73,7 @@ function referenceKeyDown(
   const m = (key: string, mask: KeyboardEventModifierMask) =>
     isExactShortcutMatch(event, key, mask);
   const dispatched = (
-    command: LexicalCommand<unknown>,
+    command: AnyLexicalCommand,
     payload: unknown,
     preventsDefault = false,
   ) => ({command, payload, preventsDefault});
@@ -178,7 +178,7 @@ const GRID_KEYS: [string, string][] = [
   ['я', 'KeyZ'],
 ];
 
-const OBSERVED_COMMANDS: [string, LexicalCommand<unknown>][] = [
+const OBSERVED_COMMANDS: [string, AnyLexicalCommand][] = [
   ['KEY_ARROW_RIGHT_COMMAND', KEY_ARROW_RIGHT_COMMAND],
   ['KEY_ARROW_LEFT_COMMAND', KEY_ARROW_LEFT_COMMAND],
   ['KEY_ARROW_UP_COMMAND', KEY_ARROW_UP_COMMAND],
@@ -207,8 +207,7 @@ const OBSERVED_COMMANDS: [string, LexicalCommand<unknown>][] = [
 export function runKeyDownDispatchParityTests(isApple: boolean): void {
   describe(`$handleKeyDown dispatch parity (IS_APPLE=${isApple})`, () => {
     test('dispatches the same commands as the legacy predicate chain', () => {
-      const recorded: {command: LexicalCommand<unknown>; payload: unknown}[] =
-        [];
+      const recorded: {command: AnyLexicalCommand; payload: unknown}[] = [];
       const editor = buildEditorFromExtensions(
         defineExtension({
           name: 'keydown-parity-test',

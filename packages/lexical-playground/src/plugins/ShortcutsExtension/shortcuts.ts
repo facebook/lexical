@@ -8,49 +8,10 @@
 
 import type {KeyboardShortcutMatch} from 'lexical';
 
-import {CONTROL_OR_META, IS_APPLE} from 'lexical';
+import {formatKeyboardShortcut} from '@lexical/extension';
+import {CONTROL_OR_META} from 'lexical';
 
-//disable eslint sorting rule for quick reference to shortcuts
 /* eslint-disable sort-keys-fix/sort-keys-fix */
-export const SHORTCUTS = Object.freeze({
-  // (Ctrl|⌘) + (Alt|Option) + <key> shortcuts
-  NORMAL: IS_APPLE ? '⌘+Opt+0' : 'Ctrl+Alt+0',
-  HEADING1: IS_APPLE ? '⌘+Opt+1' : 'Ctrl+Alt+1',
-  HEADING2: IS_APPLE ? '⌘+Opt+2' : 'Ctrl+Alt+2',
-  HEADING3: IS_APPLE ? '⌘+Opt+3' : 'Ctrl+Alt+3',
-  NUMBERED_LIST: IS_APPLE ? '⌘+Shift+7' : 'Ctrl+Shift+7',
-  BULLET_LIST: IS_APPLE ? '⌘+Shift+8' : 'Ctrl+Shift+8',
-  CHECK_LIST: IS_APPLE ? '⌘+Shift+9' : 'Ctrl+Shift+9',
-  CODE_BLOCK: IS_APPLE ? '⌘+Opt+C' : 'Ctrl+Alt+C',
-  QUOTE: IS_APPLE ? '⌃+Shift+Q' : 'Ctrl+Shift+Q',
-  ADD_COMMENT: IS_APPLE ? '⌘+Opt+M' : 'Ctrl+Alt+M',
-
-  // (Ctrl|⌘) + Shift + <key> shortcuts
-  INCREASE_FONT_SIZE: IS_APPLE ? '⌘+Shift+.' : 'Ctrl+Shift+.',
-  DECREASE_FONT_SIZE: IS_APPLE ? '⌘+Shift+,' : 'Ctrl+Shift+,',
-  INSERT_CODE_BLOCK: IS_APPLE ? '⌘+Shift+C' : 'Ctrl+Shift+C',
-  STRIKETHROUGH: IS_APPLE ? '⌘+Shift+X' : 'Ctrl+Shift+X',
-  LOWERCASE: IS_APPLE ? '⌃+Shift+1' : 'Ctrl+Shift+1',
-  UPPERCASE: IS_APPLE ? '⌃+Shift+2' : 'Ctrl+Shift+2',
-  CAPITALIZE: IS_APPLE ? '⌃+Shift+3' : 'Ctrl+Shift+3',
-  CENTER_ALIGN: IS_APPLE ? '⌘+Shift+E' : 'Ctrl+Shift+E',
-  JUSTIFY_ALIGN: IS_APPLE ? '⌘+Shift+J' : 'Ctrl+Shift+J',
-  LEFT_ALIGN: IS_APPLE ? '⌘+Shift+L' : 'Ctrl+Shift+L',
-  RIGHT_ALIGN: IS_APPLE ? '⌘+Shift+R' : 'Ctrl+Shift+R',
-
-  // (Ctrl|⌘) + <key> shortcuts
-  SUBSCRIPT: IS_APPLE ? '⌘+,' : 'Ctrl+,',
-  SUPERSCRIPT: IS_APPLE ? '⌘+.' : 'Ctrl+.',
-  INDENT: IS_APPLE ? '⌘+]' : 'Ctrl+]',
-  OUTDENT: IS_APPLE ? '⌘+[' : 'Ctrl+[',
-  CLEAR_FORMATTING: IS_APPLE ? '⌘+\\' : 'Ctrl+\\',
-  REDO: IS_APPLE ? '⌘+Shift+Z' : 'Ctrl+Y',
-  UNDO: IS_APPLE ? '⌘+Z' : 'Ctrl+Z',
-  BOLD: IS_APPLE ? '⌘+B' : 'Ctrl+B',
-  ITALIC: IS_APPLE ? '⌘+I' : 'Ctrl+I',
-  UNDERLINE: IS_APPLE ? '⌘+U' : 'Ctrl+U',
-  INSERT_LINK: IS_APPLE ? '⌘+K' : 'Ctrl+K',
-});
 
 const CONTROL_OR_META_ALT = {...CONTROL_OR_META, altKey: true};
 const CONTROL_OR_META_SHIFT = {...CONTROL_OR_META, shiftKey: true};
@@ -58,7 +19,7 @@ const CONTROL_SHIFT = {ctrlKey: true, shiftKey: true};
 
 /**
  * The key bindings for the shortcuts that ShortcutsExtension handles (a
- * subset of the {@link SHORTCUTS} display strings above; the rest are
+ * subset of the {@link SHORTCUTS} display strings below; the rest are
  * handled by the rich-text and history extensions). Each binding is paired
  * with its command in the ShortcutsExtension and contributed to the
  * KeyboardShortcutsExtension table, which compiles them down to an O(1)
@@ -95,3 +56,48 @@ export const SHORTCUT_BINDINGS = Object.freeze({
   CLEAR_FORMATTING: {key: '\\', modifiers: CONTROL_OR_META},
   INSERT_LINK: {key: 'k', modifiers: CONTROL_OR_META},
 }) satisfies Record<string, KeyboardShortcutMatch>;
+
+const fmt = formatKeyboardShortcut;
+
+/**
+ * Human-readable display strings derived from {@link SHORTCUT_BINDINGS},
+ * used for button tooltips, aria-labels, and menu hints.
+ */
+export const SHORTCUTS = Object.freeze({
+  NORMAL: fmt(SHORTCUT_BINDINGS.NORMAL),
+  HEADING1: fmt(SHORTCUT_BINDINGS.HEADING1),
+  HEADING2: fmt(SHORTCUT_BINDINGS.HEADING2),
+  HEADING3: fmt(SHORTCUT_BINDINGS.HEADING3),
+  NUMBERED_LIST: fmt(SHORTCUT_BINDINGS.NUMBERED_LIST),
+  BULLET_LIST: fmt(SHORTCUT_BINDINGS.BULLET_LIST),
+  CHECK_LIST: fmt(SHORTCUT_BINDINGS.CHECK_LIST),
+  CODE_BLOCK: fmt(SHORTCUT_BINDINGS.CODE_BLOCK),
+  QUOTE: fmt(SHORTCUT_BINDINGS.QUOTE),
+  ADD_COMMENT: fmt(SHORTCUT_BINDINGS.ADD_COMMENT),
+
+  // Bindings use the shifted key value (> / <) for matching event.key,
+  // but display should show the physical key (. / ,)
+  INCREASE_FONT_SIZE: fmt({key: '.', modifiers: CONTROL_OR_META_SHIFT}),
+  DECREASE_FONT_SIZE: fmt({key: ',', modifiers: CONTROL_OR_META_SHIFT}),
+  INSERT_CODE_BLOCK: fmt(SHORTCUT_BINDINGS.INSERT_CODE_BLOCK),
+  STRIKETHROUGH: fmt(SHORTCUT_BINDINGS.STRIKETHROUGH),
+  LOWERCASE: fmt(SHORTCUT_BINDINGS.LOWERCASE),
+  UPPERCASE: fmt(SHORTCUT_BINDINGS.UPPERCASE),
+  CAPITALIZE: fmt(SHORTCUT_BINDINGS.CAPITALIZE),
+  CENTER_ALIGN: fmt(SHORTCUT_BINDINGS.CENTER_ALIGN),
+  JUSTIFY_ALIGN: fmt(SHORTCUT_BINDINGS.JUSTIFY_ALIGN),
+  LEFT_ALIGN: fmt(SHORTCUT_BINDINGS.LEFT_ALIGN),
+  RIGHT_ALIGN: fmt(SHORTCUT_BINDINGS.RIGHT_ALIGN),
+
+  SUBSCRIPT: fmt(SHORTCUT_BINDINGS.SUBSCRIPT),
+  SUPERSCRIPT: fmt(SHORTCUT_BINDINGS.SUPERSCRIPT),
+  INDENT: fmt(SHORTCUT_BINDINGS.INDENT),
+  OUTDENT: fmt(SHORTCUT_BINDINGS.OUTDENT),
+  CLEAR_FORMATTING: fmt(SHORTCUT_BINDINGS.CLEAR_FORMATTING),
+  INSERT_LINK: fmt(SHORTCUT_BINDINGS.INSERT_LINK),
+
+  // Core shortcuts handled by the editor, not by ShortcutsExtension
+  BOLD: fmt({key: 'b', modifiers: CONTROL_OR_META}),
+  ITALIC: fmt({key: 'i', modifiers: CONTROL_OR_META}),
+  UNDERLINE: fmt({key: 'u', modifiers: CONTROL_OR_META}),
+});

@@ -12,6 +12,7 @@ import {
   $extendCaretToRange,
   $findMatchingParent,
   $getPreviousSelection,
+  $getSlotHost,
   $hasAncestor,
   $isChildCaret,
   $isDecoratorNode,
@@ -187,6 +188,9 @@ export function $setBlocksType<T extends ElementNode>(
   // ListItemNode.replace override): both remap an element-anchored point
   // on the replaced block to {key: replacement, offset: prevSize + offset}.
   for (const prevNode of blockMap.values()) {
+    if ($getSlotHost(prevNode) !== null) {
+      continue;
+    }
     const element = $createElement();
     $afterCreateElement(prevNode, element);
     prevNode.replace(element, true);

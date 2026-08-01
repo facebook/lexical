@@ -31,6 +31,7 @@ import {
   $getSlotNames,
   $getSlotNameWithinHost,
   $isElementNode,
+  $isLineBreakNode,
   $isParagraphNode,
   $isRangeSelection,
   $isSlotHost,
@@ -3222,6 +3223,129 @@ describe('named-slots: block slot values (virtual shadow root)', () => {
       const first = line.getFirstChild();
       assert(first !== null);
       expect($isTextNode(first)).toBe(true);
+    });
+  });
+
+  test('repeated linebreaks into a bare block value stay in insertion order (#8897)', () => {
+    using editor = createSlotEditor();
+    let lineKey = '';
+    editor.update(
+      () => {
+        const {line} = $createLineSlotHost();
+        lineKey = line.getKey();
+        const text = line.getFirstChild();
+        assert(text !== null && $isTextNode(text));
+        text.select(5, 5).insertLineBreak();
+      },
+      {discrete: true},
+    );
+    // A LineBreakNode with no next sibling resolves selectEnd() to an
+    // element-mode anchor directly on the slot value, the same shape
+    // insertNodes' slot-value redirect branch handles for Cmd+A.
+    editor.update(
+      () => {
+        for (let i = 0; i < 3; i++) {
+          const line = $getNodeByKey(lineKey);
+          assert(line !== null && $isParagraphNode(line));
+          const last = line.getLastChild();
+          assert(last !== null);
+          last.selectEnd().insertLineBreak();
+        }
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const line = $getNodeByKey(lineKey);
+      assert(line !== null && $isParagraphNode(line));
+      const children = line.getChildren();
+      expect(children[0]!.getTextContent()).toBe('Title');
+      expect(children.filter(c => $isLineBreakNode(c)).length).toBe(4);
+    });
+  });
+
+  test('insertNodes at the end of a bare block value inserts at the end, not the start', () => {
+    using editor = createSlotEditor();
+    let lineKey = '';
+    editor.update(
+      () => {
+        const {line} = $createLineSlotHost();
+        lineKey = line.getKey();
+      },
+      {discrete: true},
+    );
+    editor.update(
+      () => {
+        const line = $getNodeByKey(lineKey);
+        assert(line !== null && $isParagraphNode(line));
+        // Element-mode anchor on the slot value itself, offset at the end.
+        line
+          .select(line.getChildrenSize(), line.getChildrenSize())
+          .insertNodes([$createTextNode('!')]);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const line = $getNodeByKey(lineKey);
+      assert(line !== null && $isParagraphNode(line));
+      expect(line.getTextContent()).toBe('Title!');
+    });
+  });
+
+  test('backspace deletes trailing linebreaks in a bare block value one at a time (#8898)', () => {
+    using editor = createSlotEditor();
+    let lineKey = '';
+    editor.update(
+      () => {
+        const {line} = $createLineSlotHost();
+        lineKey = line.getKey();
+        const text = line.getFirstChild();
+        assert(text !== null && $isTextNode(text));
+        text.select(5, 5).insertLineBreak();
+        line.getLastChild()!.selectEnd().insertLineBreak();
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const line = $getNodeByKey(lineKey);
+      assert(line !== null && $isParagraphNode(line));
+      expect(line.getChildren().filter(c => $isLineBreakNode(c)).length).toBe(
+        2,
+      );
+    });
+    // Same element-mode anchor shape as the insertLineBreak tests above:
+    // deleteCharacter's sibling-caret exploration must delete the
+    // LineBreakNode it finds instead of falling through to the slot-edge
+    // boundary check with nothing deleted.
+    editor.update(
+      () => {
+        const line = $getNodeByKey(lineKey);
+        assert(line !== null && $isParagraphNode(line));
+        line.getLastChild()!.selectEnd().deleteCharacter(true);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const line = $getNodeByKey(lineKey);
+      assert(line !== null && $isParagraphNode(line));
+      expect(line.getChildren().filter(c => $isLineBreakNode(c)).length).toBe(
+        1,
+      );
+    });
+    editor.update(
+      () => {
+        const line = $getNodeByKey(lineKey);
+        assert(line !== null && $isParagraphNode(line));
+        line.getLastChild()!.selectEnd().deleteCharacter(true);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const line = $getNodeByKey(lineKey);
+      assert(line !== null && $isParagraphNode(line));
+      expect(line.getTextContent()).toBe('Title');
+      expect(line.getChildren().filter(c => $isLineBreakNode(c)).length).toBe(
+        0,
+      );
     });
   });
 

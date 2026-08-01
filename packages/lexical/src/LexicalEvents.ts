@@ -7,10 +7,7 @@
  */
 
 import type {InputState, LexicalCommand, LexicalEditor} from './LexicalEditor';
-import type {
-  CompiledKeyboardShortcuts,
-  KeyboardShortcutMatch,
-} from './LexicalKeyboardShortcuts';
+import type {KeyboardShortcutMatch} from './LexicalKeyboardShortcuts';
 import type {NodeKey} from './LexicalNode';
 import type {ElementNode} from './nodes/LexicalElementNode';
 import type {TextNode} from './nodes/LexicalTextNode';
@@ -1554,7 +1551,8 @@ function onKeyDown(event: KeyboardEvent, editor: LexicalEditor): void {
   dispatchCommand(editor, KEY_DOWN_COMMAND, event);
 }
 
-interface KeyDownShortcut extends KeyboardShortcutMatch {
+/** @internal */
+export interface KeyDownShortcut extends KeyboardShortcutMatch {
   onMatch: (event: KeyboardEvent, editor: LexicalEditor) => void;
 }
 
@@ -1564,11 +1562,6 @@ const ANY_MODIFIERS = {
   metaKey: 'any',
   shiftKey: 'any',
 } as const;
-
-const editorKeyDownShortcuts = new WeakMap<
-  LexicalEditor,
-  CompiledKeyboardShortcuts<KeyDownShortcut>
->();
 
 /**
  * The keydown shortcuts that the editor handles natively, compiled to
@@ -1738,10 +1731,10 @@ function $handleKeyDown(event: KeyboardEvent): boolean {
     }
   }
 
-  let keyDownShortcuts = editorKeyDownShortcuts.get(editor);
-  if (keyDownShortcuts === undefined) {
+  let keyDownShortcuts = editor._keyDownShortcuts;
+  if (keyDownShortcuts === null) {
     keyDownShortcuts = compileKeyboardShortcuts(buildKeyDownShortcuts());
-    editorKeyDownShortcuts.set(editor, keyDownShortcuts);
+    editor._keyDownShortcuts = keyDownShortcuts;
   }
   const shortcut = keyDownShortcuts.match(event);
   if (shortcut) {

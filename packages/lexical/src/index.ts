@@ -190,7 +190,7 @@ export type {
   SerializedEditorState,
 } from './LexicalEditorState';
 export {$isEditorState} from './LexicalEditorState';
-export type {EventHandler} from './LexicalEvents';
+export type {EventHandler, KeyDownShortcut} from './LexicalEvents';
 export {stopLexicalPropagation} from './LexicalEvents';
 export type {CompiledKeyboardShortcuts} from './LexicalKeyboardShortcuts';
 export {

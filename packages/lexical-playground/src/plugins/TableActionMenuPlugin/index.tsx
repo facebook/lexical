@@ -668,7 +668,7 @@ function TableActionMenu({
         </span>
       </button>
     </div>,
-    document.body,
+    editor.getRootElement()?.ownerDocument?.body ?? document.body,
   );
 }
 

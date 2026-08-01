@@ -82,6 +82,7 @@ export class DecoratorNode<T>
   }
 }
 
+/** Returns true if the given node is a DecoratorNode. */
 export function $isDecoratorNode<T>(
   node: LexicalNode | null | undefined,
 ): node is DecoratorNode<T> {

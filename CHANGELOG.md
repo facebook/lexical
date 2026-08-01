@@ -1,3 +1,36 @@
+## v0.49.0 (2026-07-29)
+
+- lexical-markdown Bug Fix Preserve headings when typing list shortcuts (#8879) Steven Dang
+- lexical-rich-text Bug Fix Forward editorConfig to QuoteNode.updateDOM (#8882) Sha Halimi
+- lexical-table Bug Fix Table alignment fails when selecting in non-TL-BR direction (#8883) sahir
+- Breaking Changelexical Chore Remove redundant registerCommandregisterNodeTransform generics (#8877) mayrang
+- lexical-html Bug Fix Dispatch unrestricted CSS selector groups (#8873) Madan kumar
+- lexical-playground Bug Fix Deterministic history coalescing for flaky webkit undo tests (#8874) Bob Ippolito
+- lexical Performance Skip redundant selection restoration in removeTextFromCaretRange (#8872) mayrang
+- lexical Refactor Simplify RangeSelection.insertText via removeText decomposition (#8870) mayrang
+- lexical-list Chore Remove redundant decorator-adjacent backspace handler (#8871) mayrang
+- lexical-table Feature Skip colgroup element in table DOM with undefined col widths (#8850) Zachary Gallafent
+- lexical Bug Fix Create selection when clicking between block decorators on Firefox (#8862) mayrang
+- fix config() synthesized getType() recurses infinitely when inherited as own static (#8867 follow-up) (#8869) Sherry
+- lexicallexical-website Bug Fix Homepage crash from optimized dev build (#8861) Bob Ippolito
+- lexical Bug Fix run editor updates dispatched from a read-only context in a fresh writable update (#8863) Sherry
+- lexical Feature Editor operation benchmarks (#8856) mayrang
+- lexical Chore Migrate LexicalSelection tests to buildEditorFromExtensions (#8865) mayrang
+- fix config() synthesized getType() inherited by subclasses causes node-type collision (#8640) (#8867) Sherry
+- fix config() auto-synthesized clone() loses properties when called directly (#8640) (#8864) Sherry
+- lexical-tablelexical Feature Sticky scrollbar for overflowing tables (#8790) mayrang
+- lexical-code-shiki Bug Fix Deduplicate async loads and merge into history (#8854) Alexis
+- lexical-table Chore Remove dead code in table command handlers (#8857) mayrang
+- lexical-tablelexical-playground Chore Deprecate getShape() and migrate playground (#8853) mayrang
+- lexical-list Chore Rename isNestedListNode to isNestedListNode (#8843) Bob Ippolito
+- lexical-playground Bug Fix account for sticky toolbar in scroll padding (#8849) Bob Ippolito
+- Breaking Changeslexical Refactor Port node classes to the config() protocol (#8640) Bob Ippolito
+- lexical-table Chore Deprecate createTableSelection in favor of createTableSelectionFrom (#8855) mayrang
+- lexical-table Bug Fix Enable DELETELINECOMMAND in table cells (#8851) mayrang
+- lexical Bug Fix Scope bench vitest projects to exclude regular test files (#8852) mayrang
+- v0.48.0 (#8847) Bob Ippolito
+- v0.48.0 Lexical GitHub Actions Bot
+
 ## v0.48.0 (2026-07-16)
 
 - lexical-reactlexical-table Bug Fix Enable table copy in read-only mode (#8845) mayrang

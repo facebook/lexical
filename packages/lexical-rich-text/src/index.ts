@@ -216,7 +216,7 @@ export class QuoteNode extends ElementNode {
     addClassNamesToElement(element, config.theme.quote);
     return element;
   }
-  updateDOM(prevNode: this, dom: HTMLElement): boolean {
+  updateDOM(prevNode: this, dom: HTMLElement, config: EditorConfig): boolean {
     return false;
   }
 
@@ -573,6 +573,11 @@ function $isTargetWithinDecorator(target: HTMLElement): boolean {
 function $isSelectionAtEndOfRoot(selection: RangeSelection) {
   const focus = selection.focus;
   return focus.key === 'root' && focus.offset === $getRoot().getChildrenSize();
+}
+
+function $isSelectionAtStartOfRoot(selection: RangeSelection) {
+  const focus = selection.focus;
+  return focus.key === 'root' && focus.offset === 0;
 }
 
 function $isSelectionCollapsedAtFrontOfIndentedBlock(
@@ -1347,6 +1352,10 @@ export function registerRichText(
             return true;
           }
         } else if ($isRangeSelection(selection)) {
+          if ($isSelectionAtStartOfRoot(selection)) {
+            event.preventDefault();
+            return true;
+          }
           if (
             !event.shiftKey &&
             $tryBlockCursorShadowRootNavigation(selection, 'previous')

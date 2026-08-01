@@ -314,6 +314,7 @@ export interface InlineFormattableNode {
   toggleFormat(type: TextFormatType): unknown;
 }
 
+/** Returns true if the given node supports inline text formatting. */
 export function $isInlineFormattable(
   node: (LexicalNode & {__isInlineFormattable?: unknown}) | null | undefined,
 ): node is LexicalNode & InlineFormattableNode {
@@ -1391,10 +1392,12 @@ function convertTextFormatElement(domNode: HTMLElement): DOMConversionOutput {
   };
 }
 
+/** Creates a TextNode initialized with the given text, defaulting to empty. */
 export function $createTextNode(text = ''): TextNode {
   return $applyNodeReplacement(new TextNode(text));
 }
 
+/** Returns true if the given node is a TextNode. */
 export function $isTextNode(
   node: LexicalNode | null | undefined,
 ): node is TextNode {

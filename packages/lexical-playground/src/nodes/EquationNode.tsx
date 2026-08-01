@@ -11,6 +11,7 @@ import type {JSX} from 'react';
 import katex from 'katex';
 import {
   $applyNodeReplacement,
+  $getDocument,
   DecoratorNode,
   type DOMExportOutput,
   type EditorConfig,
@@ -67,7 +68,9 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM(_config: EditorConfig): HTMLElement {
-    const element = document.createElement(this.__inline ? 'span' : 'div');
+    const element = $getDocument().createElement(
+      this.__inline ? 'span' : 'div',
+    );
     // EquationNodes should implement `user-action:none` in their CSS to avoid issues with deletion on Android.
     element.className = 'editor-equation';
     element.setAttribute('role', 'math');
@@ -76,7 +79,9 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement(this.__inline ? 'span' : 'div');
+    const element = $getDocument().createElement(
+      this.__inline ? 'span' : 'div',
+    );
     // Encode the equation as base64 to avoid issues with special characters
     const equation = btoa(this.__equation);
     element.setAttribute('data-lexical-equation', equation);

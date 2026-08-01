@@ -8,6 +8,7 @@
 
 import {
   $applyNodeReplacement,
+  $getDocument,
   type EditorConfig,
   type LexicalNode,
   type NodeKey,
@@ -40,7 +41,7 @@ export class EmojiNode extends TextNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = document.createElement('span');
+    const dom = $getDocument().createElement('span');
     const inner = super.createDOM(config);
     dom.className = this.__className;
     inner.className = 'emoji-inner';

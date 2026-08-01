@@ -32,7 +32,13 @@ import {
   type Transformer,
   TRANSFORMERS,
 } from '@lexical/markdown';
-import {$createQuoteNode, HeadingNode, QuoteNode} from '@lexical/rich-text';
+import {
+  $createHeadingNode,
+  $createQuoteNode,
+  $isHeadingNode,
+  HeadingNode,
+  QuoteNode,
+} from '@lexical/rich-text';
 import {
   $addUpdateTag,
   $copyNode,
@@ -1098,6 +1104,55 @@ describe('Markdown', () => {
       '<h1><br></h1>',
     );
   });
+
+  it.each(['1. ', '- ', '* ', '+ '])(
+    'should preserve a heading when typing the "%s" list shortcut',
+    shortcut => {
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+      editor.update(
+        () => {
+          const heading = $createHeadingNode('h1');
+          const text = $createTextNode('Welcome to the playground');
+          heading.append(text);
+          $getRoot().append(heading);
+          text.select(0, 0);
+        },
+        {discrete: true},
+      );
+
+      for (const character of shortcut) {
+        editor.update(
+          () => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+              selection.insertText(character);
+            }
+          },
+          {discrete: true},
+        );
+      }
+
+      editor.read(() => {
+        const heading = $getRoot().getFirstChild();
+        expect($isHeadingNode(heading)).toBe(true);
+        expect(heading?.getTextContent()).toBe(
+          `${shortcut}Welcome to the playground`,
+        );
+      });
+    },
+  );
 
   it('can round-trip nested fenced code blocks (4 backticks wrapping 3 backticks)', () => {
     const markdown =

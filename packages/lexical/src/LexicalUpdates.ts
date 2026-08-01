@@ -93,6 +93,7 @@ const observerOptions = {
   subtree: true,
 };
 
+/** Returns true if the current editor update context is read-only. */
 export function isCurrentlyReadOnlyMode(): boolean {
   return (
     isReadOnlyMode ||
@@ -397,6 +398,7 @@ type InternalSerializedNode = {
   version: number;
 };
 
+/** Deserializes a SerializedLexicalNode JSON object into its corresponding LexicalNode instance. */
 export function $parseSerializedNode(
   serializedNode: SerializedLexicalNode,
 ): LexicalNode {

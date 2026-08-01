@@ -122,8 +122,12 @@ export default function DraggableBlockPlugin({
       setIsPickerOpen(false);
       setPickerState(null);
     };
-    return registerEventListener(document, 'mousedown', handleClickOutside);
-  }, [isPickerOpen]);
+    return registerEventListener(
+      anchorElem.ownerDocument,
+      'mousedown',
+      handleClickOutside,
+    );
+  }, [isPickerOpen, anchorElem]);
 
   const selectOption = useCallback(
     (option: ComponentPickerOption) => {
@@ -266,7 +270,7 @@ export default function DraggableBlockPlugin({
                 ))}
               </ul>
             </div>,
-            document.body,
+            anchorElem.ownerDocument.body,
           )
         : null}
       <DraggableBlockPlugin_EXPERIMENTAL

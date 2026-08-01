@@ -164,6 +164,54 @@ test.describe('HorizontalRule', () => {
     });
   });
 
+  test('Shows block cursor before a horizontal rule preceded by a paragraph', async ({
+    page,
+    isCollab,
+    isPlainText,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+
+    await page.keyboard.type('Before');
+
+    await selectFromInsertDropdown(page, '.horizontal-rule');
+    await waitForSelector(page, 'hr');
+
+    // Programmatically set a block cursor just before the HR
+    // (root offset 1), so the HR is preceded by an editable paragraph.
+    await getPageOrFrame(page).evaluate(() => {
+      const editor = window.lexicalEditor;
+      editor.update(
+        () => {
+          const root = editor.getEditorState()._nodeMap.get('root');
+          root.select(1, 1);
+        },
+        {discrete: true},
+      );
+    });
+
+    // The block cursor should render between the paragraph and the HR
+    await assertHTML(
+      page,
+      html`
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <span data-lexical-text="true">Before</span>
+        </p>
+        <div
+          class="PlaygroundEditorTheme__blockCursor"
+          contenteditable="false"
+          data-lexical-cursor="true"></div>
+        <hr
+          class="PlaygroundEditorTheme__hr"
+          contenteditable="false"
+          data-lexical-decorator="true" />
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+      `,
+    );
+  });
+
   test('Will add a horizontal rule at the end of a current TextNode and move selection to the new ParagraphNode.', async ({
     page,
     isPlainText,

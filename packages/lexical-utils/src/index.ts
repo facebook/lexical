@@ -846,6 +846,9 @@ export function objectKlassEquals<T>(
 // control this with the first boolean flag.
 export function eventFiles(
   event: DragEvent | PasteCommandType,
+  hasContent: (dataTransfer: DataTransfer) => boolean = dataTransfer =>
+    dataTransfer.types.includes('text/html') ||
+    dataTransfer.types.includes('text/plain'),
 ): [boolean, File[], boolean] {
   let dataTransfer: null | DataTransfer = null;
   if (objectKlassEquals(event, DragEvent)) {
@@ -860,9 +863,7 @@ export function eventFiles(
 
   const types = dataTransfer.types;
   const hasFiles = types.includes('Files');
-  const hasContent =
-    types.includes('text/html') || types.includes('text/plain');
-  return [hasFiles, Array.from(dataTransfer.files), hasContent];
+  return [hasFiles, Array.from(dataTransfer.files), hasContent(dataTransfer)];
 }
 
 /**

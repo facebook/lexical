@@ -1125,11 +1125,20 @@ function $promoteNodeSelectionToBlockEdge(
   return true;
 }
 
+const DEFAULT_PASTE_FILE_CONTENT_CHECK = (
+  dataTransfer: DataTransfer,
+): boolean =>
+  dataTransfer.types.includes('text/html') ||
+  dataTransfer.types.includes('text/plain');
+
 export function registerRichText(
   editor: LexicalEditor,
   escapeFormatTriggers: ReadonlySignal<EscapeFormatTriggerConfig> = signal(
     DEFAULT_ESCAPE_FORMAT_TRIGGERS,
   ),
+  pasteFileContentCheck: ReadonlySignal<
+    (dataTransfer: DataTransfer) => boolean
+  > = signal(DEFAULT_PASTE_FILE_CONTENT_CHECK),
 ): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
@@ -1778,7 +1787,10 @@ export function registerRichText(
     editor.registerCommand(
       PASTE_COMMAND,
       event => {
-        const [, files, hasTextContent] = eventFiles(event);
+        const [, files, hasTextContent] = eventFiles(
+          event,
+          pasteFileContentCheck.peek(),
+        );
         if (files.length > 0 && !hasTextContent) {
           editor.dispatchCommand(DRAG_DROP_PASTE, files);
           return true;

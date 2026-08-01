@@ -58,6 +58,7 @@ import {RichTextImportRules} from './RichTextImportExtension';
  */
 export interface RichTextConfig {
   escapeFormatTriggers: EscapeFormatTriggerConfig;
+  pasteFileContentCheck: (dataTransfer: DataTransfer) => boolean;
 }
 
 const DEFAULT_RICH_TEXT_CONFIG: RichTextConfig = {
@@ -66,6 +67,9 @@ const DEFAULT_RICH_TEXT_CONFIG: RichTextConfig = {
     lowercase: {enter: true, space: true, tab: true},
     uppercase: {enter: true, space: true, tab: true},
   },
+  pasteFileContentCheck: dataTransfer =>
+    dataTransfer.types.includes('text/html') ||
+    dataTransfer.types.includes('text/plain'),
 };
 
 function mergeTriggerConfig(
@@ -124,7 +128,11 @@ export const RichTextExtension = /* @__PURE__ */ defineExtension({
   nodes: () => [HeadingNode, QuoteNode],
   register: (editor, _config, state) =>
     effect(() =>
-      registerRichText(editor, state.getOutput().escapeFormatTriggers),
+      registerRichText(
+        editor,
+        state.getOutput().escapeFormatTriggers,
+        state.getOutput().pasteFileContentCheck,
+      ),
     ),
 });
 

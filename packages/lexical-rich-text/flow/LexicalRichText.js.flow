@@ -79,9 +79,10 @@ export type EscapeFormatTriggerConfig = {
 
 export type RichTextConfig = {
   escapeFormatTriggers: EscapeFormatTriggerConfig,
+  pasteFileContentCheck: (dataTransfer: DataTransfer) => boolean,
 };
 
-declare export function registerRichText(editor: LexicalEditor, escapeFormatTriggers?: EscapeFormatTriggerConfig): () => void;
+declare export function registerRichText(editor: LexicalEditor, escapeFormatTriggers?: EscapeFormatTriggerConfig, pasteFileContentCheck?: (dataTransfer: DataTransfer) => boolean): () => void;
 
 export type SerializedQuoteNode = {
   ...SerializedElementNode,

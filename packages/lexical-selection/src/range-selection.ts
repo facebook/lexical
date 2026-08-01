@@ -184,8 +184,11 @@ export function $setBlocksType<T extends ElementNode>(
       }
     }
   }
+  // Selection remapping is delegated to LexicalNode.replace (and the
+  // ListItemNode.replace override): both remap an element-anchored point
+  // on the replaced block to {key: replacement, offset: prevSize + offset}.
   for (const prevNode of blockMap.values()) {
-    if ($getSlotHost(prevNode) !== null && prevNode.getParent() === null) {
+    if ($getSlotHost(prevNode) !== null) {
       continue;
     }
     const element = $createElement();

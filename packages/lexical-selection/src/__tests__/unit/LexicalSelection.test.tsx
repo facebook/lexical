@@ -3560,9 +3560,7 @@ describe('LexicalSelection tests', () => {
           $setSlot(host, 'content', paragraph);
           root.append(host);
 
-          text.select(0, text.getTextContentSize());
-          const selection = $getSelection();
-          $setBlocksType(selection, () => $createHeadingNode('h1'));
+          $setBlocksType(text.select(0), () => $createHeadingNode('h1'));
         },
         dependencies: [
           RichTextExtension,

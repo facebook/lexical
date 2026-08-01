@@ -1635,6 +1635,22 @@ export class LexicalNode {
     errorOnInsertTextNodeOnRoot(this, replaceWith);
     const self = this.getLatest();
     const toReplaceKey = this.__key;
+    // A named-slot value has no parent (its up-link is __slotHost), so the
+    // getParentOrThrow below would throw an unhelpful generic error. Fail with
+    // an actionable one instead, mirroring the $removeFromParent guard for
+    // remove(): the slot assignment is managed by the node or extension that
+    // owns the slot, so generic tree surgery must go through $setSlot.
+    const slotHost = $getSlotHost(self);
+    if (slotHost !== null) {
+      invariant(
+        false,
+        'replace: node %s (type %s) is slotted into host %s (type %s); a slot value cannot be replaced through the tree API. Use $setSlot on its host to assign a replacement.',
+        toReplaceKey,
+        self.getType(),
+        slotHost.getKey(),
+        slotHost.getType(),
+      );
+    }
     const key = replaceWith.__key;
     const writableReplaceWith = replaceWith.getWritable();
     const writableParent = this.getParentOrThrow().getWritable();

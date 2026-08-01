@@ -415,6 +415,31 @@ describe('named-slots: core foundation', () => {
     );
   });
 
+  test('replace() on a slotted node throws (use $setSlot)', () => {
+    using editor = createSlotEditor();
+
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        $getRoot().append(host);
+        const slot = $createTestShadowRootNode();
+        $setSlot(host, 'title', slot);
+
+        // Without the slot-aware guard this would throw the generic
+        // getParentOrThrow invariant; the guard names the actual mistake
+        // (including the node and host types) and the fix ($setSlot on
+        // the host).
+        expect(() => slot.replace($createParagraphNode())).toThrow(
+          /\(type paragraph\)[\s\S]*\$setSlot/,
+        );
+        // Nothing was mutated by the failed replace.
+        expect($getSlot(host, 'title')).not.toBe(null);
+        expect($getSlot(host, 'title')!.is(slot)).toBe(true);
+      },
+      {discrete: true},
+    );
+  });
+
   test('remove() on a slotted node throws (use $removeSlot)', () => {
     using editor = createSlotEditor();
 

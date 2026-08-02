@@ -134,8 +134,6 @@ export {
   type NormalizedLexicalExtensionArgument,
   type NormalizedPeerDependency,
   type OutputComponentExtension,
-  registerKeyboardShortcuts,
-  type RegisterKeyboardShortcutsOptions,
   safeCast,
   shallowMergeConfig,
 } from 'lexical';

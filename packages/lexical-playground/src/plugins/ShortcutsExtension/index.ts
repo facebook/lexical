@@ -112,7 +112,7 @@ function $getBlockType(): string {
   const anchorNode = selection.anchor.getNode();
   const element = $findTopLevelElement(anchorNode);
   if ($isListNode(element)) {
-    const parentList = $getNearestNodeOfType<ListNode>(anchorNode, ListNode);
+    const parentList = $getNearestNodeOfType(anchorNode, ListNode);
     return parentList ? parentList.getListType() : element.getListType();
   }
   return $isHeadingNode(element) ? element.getTag() : element.getType();

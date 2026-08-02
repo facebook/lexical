@@ -685,10 +685,7 @@ export default function ToolbarPlugin({
       if (elementDOM !== null) {
         setSelectedElementKey(elementKey);
         if ($isListNode(element)) {
-          const parentList = $getNearestNodeOfType<ListNode>(
-            anchorNode,
-            ListNode,
-          );
+          const parentList = $getNearestNodeOfType(anchorNode, ListNode);
           const type = parentList
             ? parentList.getListType()
             : element.getListType();
@@ -764,10 +761,7 @@ export default function ToolbarPlugin({
     if ($isNodeSelection(selection)) {
       const nodes = selection.getNodes();
       for (const selectedNode of nodes) {
-        const parentList = $getNearestNodeOfType<ListNode>(
-          selectedNode,
-          ListNode,
-        );
+        const parentList = $getNearestNodeOfType(selectedNode, ListNode);
         if (parentList) {
           const type = parentList.getListType();
           updateToolbarState('blockType', type);

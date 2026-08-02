@@ -6,14 +6,17 @@
  *
  */
 
+import type {
+  KeyboardShortcut,
+  NamedKeyboardShortcuts,
+} from '@lexical/extension';
+
 import {
   buildEditorFromExtensions,
   compileKeyboardShortcuts,
   formatKeyboardShortcut,
   getExtensionDependencyFromEditor,
-  type KeyboardShortcut,
   KeyboardShortcutsExtension,
-  registerKeyboardShortcuts,
 } from '@lexical/extension';
 import {
   COMMAND_PRIORITY_EDITOR,
@@ -25,6 +28,7 @@ import {
   type KeyboardEventModifierMask,
   type KeyboardEventModifiers,
   type LexicalCommand,
+  mergeRegister,
 } from 'lexical';
 import {describe, expect, test, vi} from 'vitest';
 
@@ -142,7 +146,7 @@ describe('formatKeyboardShortcut', () => {
  * listener for each distinct command (returning `handled` for it).
  */
 function buildTestEditor(
-  shortcuts: KeyboardShortcut[],
+  shortcuts: NamedKeyboardShortcuts,
   listeners: [
     LexicalCommand<KeyboardEvent>,
     (event: KeyboardEvent) => boolean,
@@ -150,14 +154,14 @@ function buildTestEditor(
 ) {
   return buildEditorFromExtensions(
     defineExtension({
+      dependencies: [configExtension(KeyboardShortcutsExtension, {shortcuts})],
       name: 'keyboard-shortcuts-test',
-      register: editor => {
-        const cleanups = listeners.map(([command, listener]) =>
-          editor.registerCommand(command, listener, COMMAND_PRIORITY_EDITOR),
-        );
-        cleanups.push(registerKeyboardShortcuts(editor, shortcuts));
-        return () => cleanups.forEach(cleanup => cleanup());
-      },
+      register: editor =>
+        mergeRegister(
+          ...listeners.map(([command, listener]) =>
+            editor.registerCommand(command, listener, COMMAND_PRIORITY_EDITOR),
+          ),
+        ),
     }),
   );
 }
@@ -169,10 +173,10 @@ describe('registerKeyboardShortcuts', () => {
     const bold = vi.fn().mockReturnValue(true);
     const italic = vi.fn().mockReturnValue(true);
     const editor = buildTestEditor(
-      [
-        {command: BOLD_COMMAND, key: 'b', modifiers: {ctrlKey: true}},
-        {command: ITALIC_COMMAND, key: 'i', modifiers: {ctrlKey: true}},
-      ],
+      {
+        BOLD: {command: BOLD_COMMAND, key: 'b', modifiers: {ctrlKey: true}},
+        ITALIC: {command: ITALIC_COMMAND, key: 'i', modifiers: {ctrlKey: true}},
+      },
       [
         [BOLD_COMMAND, bold],
         [ITALIC_COMMAND, italic],
@@ -196,10 +200,19 @@ describe('registerKeyboardShortcuts', () => {
     const skipped = vi.fn().mockReturnValue(false);
     const handled = vi.fn().mockReturnValue(true);
     const editor = buildTestEditor(
-      [
-        {command: SKIPPED_COMMAND, key: 'k', modifiers: {ctrlKey: true}},
-        {command: HANDLED_COMMAND, key: 'k', modifiers: {ctrlKey: true}},
-      ],
+      {
+        SKIPPED: {
+          command: SKIPPED_COMMAND,
+          key: 'k',
+          modifiers: {ctrlKey: true},
+        },
+        // eslint-disable-next-line sort-keys-fix/sort-keys-fix -- intentionally after SKIPPED
+        HANDLED: {
+          command: HANDLED_COMMAND,
+          key: 'k',
+          modifiers: {ctrlKey: true},
+        },
+      },
       [
         [SKIPPED_COMMAND, skipped],
         [HANDLED_COMMAND, handled],
@@ -219,15 +232,19 @@ describe('registerKeyboardShortcuts', () => {
     const enabled = vi.fn().mockReturnValue(true);
     const $disabled = vi.fn().mockReturnValue(true);
     const editor = buildTestEditor(
-      [
-        {
+      {
+        DISABLED: {
           $disabled,
           command: DISABLED_COMMAND,
           key: 'k',
           modifiers: {ctrlKey: true},
         },
-        {command: ENABLED_COMMAND, key: 'k', modifiers: {ctrlKey: true}},
-      ],
+        ENABLED: {
+          command: ENABLED_COMMAND,
+          key: 'k',
+          modifiers: {ctrlKey: true},
+        },
+      },
       [
         [DISABLED_COMMAND, disabled],
         [ENABLED_COMMAND, enabled],
@@ -248,15 +265,20 @@ describe('registerKeyboardShortcuts', () => {
     );
     const handled = vi.fn().mockReturnValue(true);
     const editor = buildTestEditor(
-      [
-        {
+      {
+        SKIPPED: {
           $dispatch: (_command, _event, _$next) => false,
           command: SKIPPED_COMMAND,
           key: 'k',
           modifiers: {ctrlKey: true},
         },
-        {command: HANDLED_COMMAND, key: 'k', modifiers: {ctrlKey: true}},
-      ],
+        // eslint-disable-next-line sort-keys-fix/sort-keys-fix -- intentionally after SKIPPED
+        HANDLED: {
+          command: HANDLED_COMMAND,
+          key: 'k',
+          modifiers: {ctrlKey: true},
+        },
+      },
       [[HANDLED_COMMAND, handled]],
     );
     const event = keyboardEvent({ctrlKey: true, key: 'k'});
@@ -270,8 +292,8 @@ describe('registerKeyboardShortcuts', () => {
     const listener = vi.fn().mockReturnValue(true);
     const order: string[] = [];
     const editor = buildTestEditor(
-      [
-        {
+      {
+        WRAPPED: {
           $dispatch: (command, event, $next, editor2) => {
             expect(command).toBe(WRAPPED_COMMAND);
             expect(editor2).toBe(editor);
@@ -284,7 +306,7 @@ describe('registerKeyboardShortcuts', () => {
           key: 'k',
           modifiers: {ctrlKey: true},
         },
-      ],
+      },
       [
         [
           WRAPPED_COMMAND,

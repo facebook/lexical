@@ -199,8 +199,6 @@ export {
   CONTROL_OR_META,
   type KeyboardShortcut,
   type KeyboardShortcutMatch,
-  registerKeyboardShortcuts,
-  type RegisterKeyboardShortcutsOptions,
 } from './LexicalKeyboardShortcuts';
 export type {
   AbstractStaticNodeConfigRecord,

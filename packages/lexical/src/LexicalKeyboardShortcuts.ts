@@ -6,11 +6,7 @@
  *
  */
 
-import type {
-  CommandListenerPriority,
-  LexicalCommand,
-  LexicalEditor,
-} from './LexicalEditor';
+import type {LexicalCommand, LexicalEditor} from './LexicalEditor';
 import type {BaseSelection} from './LexicalSelection';
 import type {
   KeyboardEventModifierMask,
@@ -20,12 +16,10 @@ import type {
 import invariant from '@lexical/internal/invariant';
 
 import {IS_APPLE} from './environment';
-import {KEY_DOWN_COMMAND} from './LexicalCommands';
-import {COMMAND_PRIORITY_NORMAL} from './LexicalEditor';
-import {$getSelection} from './LexicalSelection';
-import {dispatchCommand} from './LexicalUtils';
 
 /**
+ * @experimental
+ *
  * The data that describes which keyboard events a shortcut matches: an
  * `event.key` value (case-insensitive) plus a
  * {@link KeyboardEventModifierMask}. The matching semantics are identical to
@@ -47,6 +41,8 @@ export interface KeyboardShortcutMatch {
 }
 
 /**
+ * @experimental
+ *
  * A keyboard shortcut is pure data: the key and modifiers to match, and the
  * command to dispatch (with the matched KeyboardEvent as its payload) when
  * it does. Keeping the action to a command keeps the mapping declarative —
@@ -105,6 +101,12 @@ export interface KeyboardShortcut extends KeyboardShortcutMatch {
     $next: () => boolean,
     editor: LexicalEditor,
   ) => boolean;
+  /**
+   * By default, shortcut keypresses that originate in nested editors
+   * but were not handled by that editor are ignored. Set to `true`
+   * when you want matching events to bubble up to this handler.
+   */
+  bubbleFromNestedEditors?: boolean;
 }
 
 /**
@@ -171,6 +173,8 @@ function pushEntry<S>(map: Map<string, S[]>, mapKey: string, shortcut: S) {
 }
 
 /**
+ * @experimental @internal
+ *
  * A shortcut table compiled for O(1) dispatch. Look-up is by a composite of
  * the event's modifier bitmask and its `key` (with a second look-up by
  * `code` for non-Latin layouts), so the cost of {@link match} /
@@ -243,6 +247,8 @@ export class CompiledKeyboardShortcuts<
 }
 
 /**
+ * @experimental @internal
+ *
  * Compile a table of keyboard shortcuts down to a form that dispatches
  * based on the pressed key and modifiers in O(1), instead of testing each
  * shortcut in sequence.
@@ -255,57 +261,4 @@ export function compileKeyboardShortcuts<S extends KeyboardShortcutMatch>(
     compiled.add(shortcut);
   }
   return compiled;
-}
-
-export interface RegisterKeyboardShortcutsOptions {
-  /** The {@link KEY_DOWN_COMMAND} priority (default {@link COMMAND_PRIORITY_NORMAL}) */
-  priority?: CommandListenerPriority;
-}
-
-/**
- * Compile the given shortcuts and register a single
- * {@link KEY_DOWN_COMMAND} listener that dispatches each matched shortcut's
- * command with the KeyboardEvent as its payload (unless its `$disabled`
- * predicate returns true for the current selection). When several
- * shortcuts match the same event they are tried in the given order until
- * one command dispatch is handled.
- *
- * @returns A cleanup function that unregisters the listener.
- */
-export function registerKeyboardShortcuts(
-  editor: LexicalEditor,
-  shortcuts: Iterable<KeyboardShortcut>,
-  options: RegisterKeyboardShortcutsOptions = {},
-): () => void {
-  const compiled = compileKeyboardShortcuts(shortcuts);
-  return editor.registerCommand(
-    KEY_DOWN_COMMAND,
-    (event, fromEditor) => {
-      let selection: undefined | null | BaseSelection;
-      for (const shortcut of compiled.matches(event)) {
-        if (shortcut.$disabled) {
-          if (selection === undefined) {
-            selection = $getSelection();
-          }
-          if (shortcut.$disabled(selection, fromEditor)) {
-            continue;
-          }
-        }
-        if (
-          shortcut.$dispatch
-            ? shortcut.$dispatch(
-                shortcut.command,
-                event,
-                () => dispatchCommand(fromEditor, shortcut.command, event),
-                fromEditor,
-              )
-            : dispatchCommand(fromEditor, shortcut.command, event)
-        ) {
-          return true;
-        }
-      }
-      return false;
-    },
-    options.priority ?? COMMAND_PRIORITY_NORMAL,
-  );
 }

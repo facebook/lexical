@@ -7,13 +7,18 @@
  */
 
 import {
-  COMMAND_PRIORITY_NORMAL,
+  $getSelection,
+  type BaseSelection,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
   type CommandListenerPriority,
+  type CommandListenerPriorityBefore,
+  compileKeyboardShortcuts,
   defineExtension,
   IS_APPLE,
+  KEY_DOWN_COMMAND,
   type KeyboardShortcut,
   type KeyboardShortcutMatch,
-  registerKeyboardShortcuts,
+  type LexicalEditor,
   safeCast,
   shallowMergeConfig,
 } from 'lexical';
@@ -67,21 +72,108 @@ export function formatKeyboardShortcut(
  * that shortcut, configuring it to null disables it, and new names add new
  * shortcuts.
  */
-export type NamedKeyboardShortcuts = Record<string, KeyboardShortcut | null>;
+export type NamedKeyboardShortcuts = Record<
+  string,
+  KeyboardShortcut | readonly KeyboardShortcut[] | null
+>;
 
 export interface KeyboardShortcutsConfig {
   /** When `true`, the shortcut listener is not registered */
   disabled: boolean;
-  /** The `KEY_DOWN_COMMAND` priority (default {@link COMMAND_PRIORITY_NORMAL}) */
-  priority: CommandListenerPriority;
+  /** The `KEY_DOWN_COMMAND` priority (default {@link COMMAND_PRIORITY_BEFORE_EDITOR}) */
+  priority: CommandListenerPriority | CommandListenerPriorityBefore;
   /** The named shortcut table, merged by name across the extension graph */
   shortcuts: NamedKeyboardShortcuts;
 }
 
 /**
+ * @experimental @internal
+ *
+ * Compile the given shortcuts and register a single
+ * {@link KEY_DOWN_COMMAND} listener that dispatches each matched shortcut's
+ * command with the KeyboardEvent as its payload (unless its `$disabled`
+ * predicate returns true for the current selection). When several
+ * shortcuts match the same event they are tried in the given order until
+ * one command dispatch is handled.
+ *
+ * @returns A cleanup function that unregisters the listener.
+ */
+function registerKeyboardShortcuts(
+  editor: LexicalEditor,
+  shortcuts: Iterable<KeyboardShortcut>,
+  priority: CommandListenerPriority | CommandListenerPriorityBefore,
+): () => void {
+  const compiled = compileKeyboardShortcuts(shortcuts);
+  return editor.registerCommand(
+    KEY_DOWN_COMMAND,
+    (event, fromEditor) => {
+      let selection: undefined | null | BaseSelection;
+      for (const shortcut of compiled.matches(event)) {
+        if (editor !== fromEditor && !shortcut.bubbleFromNestedEditors) {
+          continue;
+        }
+        if (shortcut.$disabled) {
+          if (selection === undefined) {
+            selection = $getSelection();
+          }
+          if (shortcut.$disabled(selection, fromEditor)) {
+            continue;
+          }
+        }
+        const $next = fromEditor.dispatchCommand.bind(
+          fromEditor,
+          shortcut.command,
+          event,
+        );
+        if (
+          shortcut.$dispatch
+            ? shortcut.$dispatch(shortcut.command, event, $next, fromEditor)
+            : $next()
+        ) {
+          return true;
+        }
+      }
+      return false;
+    },
+    priority,
+  );
+}
+
+function isReadonlyArray<T>(x: unknown): x is readonly T[] {
+  return Array.isArray(x);
+}
+
+function flattenKeyboardShortcuts(
+  shortcuts: readonly KeyboardShortcut[] | KeyboardShortcut | null,
+): readonly KeyboardShortcut[] {
+  return isReadonlyArray(shortcuts) ? shortcuts : shortcuts ? [shortcuts] : [];
+}
+
+function mergeNamedShortcuts(
+  config: NamedKeyboardShortcuts,
+  overrides: undefined | NamedKeyboardShortcuts,
+) {
+  if (!overrides) {
+    return config;
+  }
+  // Ensure that overrides are *first* in object entry iteration
+  const dest = {...overrides};
+  for (const [k, v0] of Object.entries(config)) {
+    const v1 = dest[k];
+    if (v1 === undefined) {
+      dest[k] = v0;
+    } else if (v0 && v1 && !isReadonlyArray(v1)) {
+      dest[k] = [v1, ...flattenKeyboardShortcuts(v0)];
+    }
+  }
+  return dest;
+}
+
+/**
+ * @experimental
+ *
  * Dispatches a table of keyboard shortcuts from a single compiled
- * `KEY_DOWN_COMMAND` listener, in O(1) per keypress (see
- * {@link registerKeyboardShortcuts}).
+ * `KEY_DOWN_COMMAND` listener, in O(1) per keypress.
  *
  * The table is merged across the whole extension graph by name: any
  * extension or app config can add shortcuts under new names, remap an
@@ -89,6 +181,9 @@ export interface KeyboardShortcutsConfig {
  * configuring it to null. The output exposes the config as signals, so the
  * table can also be remapped at runtime through the `shortcuts` signal
  * (the listener is recompiled on change).
+ *
+ * A mapping configured as null or an array always overrides all previous
+ * mappings of that name. The
  */
 export const KeyboardShortcutsExtension = /* @__PURE__ */ defineExtension({
   build(editor, config, state) {
@@ -96,14 +191,15 @@ export const KeyboardShortcutsExtension = /* @__PURE__ */ defineExtension({
   },
   config: /* @__PURE__ */ safeCast<KeyboardShortcutsConfig>({
     disabled: false,
-    priority: COMMAND_PRIORITY_NORMAL,
+    priority: COMMAND_PRIORITY_BEFORE_EDITOR,
     shortcuts: {},
   }),
   mergeConfig(config, overrides) {
     const merged = shallowMergeConfig(config, overrides);
-    if (overrides.shortcuts) {
-      merged.shortcuts = {...config.shortcuts, ...overrides.shortcuts};
-    }
+    merged.shortcuts = mergeNamedShortcuts(
+      config.shortcuts,
+      overrides.shortcuts,
+    );
     return merged;
   },
   name: '@lexical/extension/KeyboardShortcuts',
@@ -111,13 +207,13 @@ export const KeyboardShortcutsExtension = /* @__PURE__ */ defineExtension({
     const {disabled, priority, shortcuts} = state.getOutput();
     return effect(() => {
       if (!disabled.value) {
-        return registerKeyboardShortcuts(
-          editor,
-          Object.values(shortcuts.value).filter(
-            (shortcut): shortcut is KeyboardShortcut => shortcut !== null,
-          ),
-          {priority: priority.value},
-        );
+        const allShortcuts: KeyboardShortcut[] = [];
+        for (const shortcutConfig of Object.values(shortcuts.value)) {
+          for (const v of flattenKeyboardShortcuts(shortcutConfig)) {
+            allShortcuts.push(v);
+          }
+        }
+        return registerKeyboardShortcuts(editor, allShortcuts, priority.value);
       }
     });
   },

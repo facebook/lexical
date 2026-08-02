@@ -9,7 +9,7 @@
 import {
   $getSelection,
   type BaseSelection,
-  COMMAND_PRIORITY_BEFORE_EDITOR,
+  COMMAND_PRIORITY_NORMAL,
   type CommandListenerPriority,
   type CommandListenerPriorityBefore,
   compileKeyboardShortcuts,
@@ -80,7 +80,22 @@ export type NamedKeyboardShortcuts = Record<
 export interface KeyboardShortcutsConfig {
   /** When `true`, the shortcut listener is not registered */
   disabled: boolean;
-  /** The `KEY_DOWN_COMMAND` priority (default {@link COMMAND_PRIORITY_BEFORE_EDITOR}) */
+  /**
+   * The `KEY_DOWN_COMMAND` priority (default {@link COMMAND_PRIORITY_NORMAL}).
+   *
+   * This must be a priority *above* {@link COMMAND_PRIORITY_EDITOR}. Every
+   * editor registers the core `$handleKeyDown` at
+   * {@link COMMAND_PRIORITY_EDITOR} and it unconditionally reports the event
+   * as handled, so a shortcut listener at that priority or later is never
+   * reached. That also rules out
+   * {@link COMMAND_PRIORITY_BEFORE_EDITOR}: command dispatch walks priorities
+   * from {@link COMMAND_PRIORITY_CRITICAL} down to
+   * {@link COMMAND_PRIORITY_EDITOR} on the *outside* and the nested editor
+   * chain on the inside, so a nested editor's own `$handleKeyDown` ends the
+   * dispatch before any listener the parent has in the editor-priority queue —
+   * which would make {@link KeyboardShortcut.bubbleFromNestedEditors}
+   * impossible to satisfy.
+   */
   priority: CommandListenerPriority | CommandListenerPriorityBefore;
   /** The named shortcut table, merged by name across the extension graph */
   shortcuts: NamedKeyboardShortcuts;
@@ -149,6 +164,11 @@ function flattenKeyboardShortcuts(
   return isReadonlyArray(shortcuts) ? shortcuts : shortcuts ? [shortcuts] : [];
 }
 
+/**
+ * Merge by name, as {@link shallowMergeConfig} would, except that the
+ * overriding names come *first* in object entry iteration so that they are
+ * also the first to be offered a matching keypress.
+ */
 function mergeNamedShortcuts(
   config: NamedKeyboardShortcuts,
   overrides: undefined | NamedKeyboardShortcuts,
@@ -156,14 +176,10 @@ function mergeNamedShortcuts(
   if (!overrides) {
     return config;
   }
-  // Ensure that overrides are *first* in object entry iteration
   const dest = {...overrides};
   for (const [k, v0] of Object.entries(config)) {
-    const v1 = dest[k];
-    if (v1 === undefined) {
+    if (dest[k] === undefined) {
       dest[k] = v0;
-    } else if (v0 && v1 && !isReadonlyArray(v1)) {
-      dest[k] = [v1, ...flattenKeyboardShortcuts(v0)];
     }
   }
   return dest;
@@ -182,8 +198,10 @@ function mergeNamedShortcuts(
  * table can also be remapped at runtime through the `shortcuts` signal
  * (the listener is recompiled on change).
  *
- * A mapping configured as null or an array always overrides all previous
- * mappings of that name. The
+ * Configuring an existing name always replaces its mapping outright, and a
+ * name may be mapped to an array to give it several bindings at once. The
+ * overriding names are also matched first, ahead of the names they did not
+ * override, when more than one shortcut matches the same keypress.
  */
 export const KeyboardShortcutsExtension = /* @__PURE__ */ defineExtension({
   build(editor, config, state) {
@@ -191,7 +209,7 @@ export const KeyboardShortcutsExtension = /* @__PURE__ */ defineExtension({
   },
   config: /* @__PURE__ */ safeCast<KeyboardShortcutsConfig>({
     disabled: false,
-    priority: COMMAND_PRIORITY_BEFORE_EDITOR,
+    priority: COMMAND_PRIORITY_NORMAL,
     shortcuts: {},
   }),
   mergeConfig(config, overrides) {

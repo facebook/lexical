@@ -8,6 +8,7 @@
 
 import type {
   KeyboardShortcut,
+  KeyboardShortcutsConfig,
   NamedKeyboardShortcuts,
 } from '@lexical/extension';
 
@@ -17,9 +18,15 @@ import {
   formatKeyboardShortcut,
   getExtensionDependencyFromEditor,
   KeyboardShortcutsExtension,
+  NestedEditorExtension,
 } from '@lexical/extension';
 import {
+  COMMAND_PRIORITY_BEFORE_EDITOR,
+  COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_HIGH,
+  COMMAND_PRIORITY_LOW,
+  COMMAND_PRIORITY_NORMAL,
   configExtension,
   createCommand,
   defineExtension,
@@ -28,6 +35,7 @@ import {
   type KeyboardEventModifierMask,
   type KeyboardEventModifiers,
   type LexicalCommand,
+  type LexicalEditor,
   mergeRegister,
 } from 'lexical';
 import {describe, expect, test, vi} from 'vitest';
@@ -165,6 +173,62 @@ function buildTestEditor(
     }),
   );
 }
+
+/**
+ * Build an editor whose KeyboardShortcutsExtension is configured by each of
+ * `layers` in order, so that later layers are merged over earlier ones the
+ * way an app config is merged over the extensions it depends on.
+ */
+function buildLayeredEditor(
+  layers: Partial<KeyboardShortcutsConfig>[],
+  listeners: [
+    LexicalCommand<KeyboardEvent>,
+    (event: KeyboardEvent) => boolean,
+  ][],
+) {
+  return buildEditorFromExtensions(
+    defineExtension({
+      dependencies: layers.map(layer =>
+        configExtension(KeyboardShortcutsExtension, layer),
+      ),
+      name: 'layered-test',
+      register: editor =>
+        mergeRegister(
+          ...listeners.map(([command, listener]) =>
+            editor.registerCommand(command, listener, COMMAND_PRIORITY_EDITOR),
+          ),
+        ),
+    }),
+  );
+}
+
+/**
+ * A set of distinct commands whose listeners append their name to `calls` as
+ * they are dispatched, for asserting the order in which a keypress is offered
+ * to the shortcuts that match it.
+ */
+function commandRecorder() {
+  const calls: string[] = [];
+  const listeners: [
+    LexicalCommand<KeyboardEvent>,
+    (event: KeyboardEvent) => boolean,
+  ][] = [];
+  /** A Ctrl+K shortcut for a fresh command that records `name` when handled */
+  function ctrlKShortcut(name: string, handled = true): KeyboardShortcut {
+    const command = createCommand<KeyboardEvent>(`recorder/${name}`);
+    listeners.push([
+      command,
+      () => {
+        calls.push(name);
+        return handled;
+      },
+    ]);
+    return {command, key: 'k', modifiers: {ctrlKey: true}};
+  }
+  return {calls, ctrlKShortcut, listeners};
+}
+
+const ctrlK = () => keyboardEvent({ctrlKey: true, key: 'k'});
 
 describe('registerKeyboardShortcuts', () => {
   test('dispatches the matched shortcut command with the event as payload', () => {
@@ -332,33 +396,16 @@ describe('KeyboardShortcutsExtension', () => {
   ): KeyboardShortcut => ({command, key, modifiers});
 
   function buildExtensionEditor(
-    shortcuts: Record<string, KeyboardShortcut | null>,
+    shortcuts: NamedKeyboardShortcuts,
     listeners: [
       LexicalCommand<KeyboardEvent>,
       (event: KeyboardEvent) => boolean,
     ][],
-    overlay?: Record<string, KeyboardShortcut | null>,
+    overlay?: NamedKeyboardShortcuts,
   ) {
-    return buildEditorFromExtensions(
-      defineExtension({
-        dependencies: [
-          configExtension(KeyboardShortcutsExtension, {shortcuts}),
-          ...(overlay
-            ? [
-                configExtension(KeyboardShortcutsExtension, {
-                  shortcuts: overlay,
-                }),
-              ]
-            : []),
-        ],
-        name: 'extension-test',
-        register: editor => {
-          const cleanups = listeners.map(([command, listener]) =>
-            editor.registerCommand(command, listener, COMMAND_PRIORITY_EDITOR),
-          );
-          return () => cleanups.forEach(cleanup => cleanup());
-        },
-      }),
+    return buildLayeredEditor(
+      overlay ? [{shortcuts}, {shortcuts: overlay}] : [{shortcuts}],
+      listeners,
     );
   }
 
@@ -459,5 +506,417 @@ describe('KeyboardShortcutsExtension', () => {
     );
     expect(bold).toHaveBeenCalledTimes(1);
     editor.dispose();
+  });
+});
+
+describe('KeyboardShortcutsExtension shortcut table merge', () => {
+  test('a later layer replaces the mapping it overrides', () => {
+    const rec = commandRecorder();
+    const editor = buildLayeredEditor(
+      [
+        {shortcuts: {bold: rec.ctrlKShortcut('base', false)}},
+        {shortcuts: {bold: rec.ctrlKShortcut('override', false)}},
+      ],
+      rec.listeners,
+    );
+    // The override left the event unhandled, and the mapping it replaced is
+    // gone rather than being a fallback for it
+    editor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(rec.calls).toEqual(['override']);
+    editor.dispose();
+  });
+
+  test('only the last layer to configure a name survives', () => {
+    const rec = commandRecorder();
+    const editor = buildLayeredEditor(
+      [
+        {shortcuts: {bold: rec.ctrlKShortcut('first', false)}},
+        {shortcuts: {bold: rec.ctrlKShortcut('second', false)}},
+        {shortcuts: {bold: rec.ctrlKShortcut('third', false)}},
+      ],
+      rec.listeners,
+    );
+    editor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(rec.calls).toEqual(['third']);
+    editor.dispose();
+  });
+
+  test('null disables the name', () => {
+    const rec = commandRecorder();
+    const editor = buildLayeredEditor(
+      [
+        {shortcuts: {bold: rec.ctrlKShortcut('base', false)}},
+        {shortcuts: {bold: null}},
+      ],
+      rec.listeners,
+    );
+    editor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(rec.calls).toEqual([]);
+    editor.dispose();
+  });
+
+  test('an array replaces the mapping with several bindings', () => {
+    const rec = commandRecorder();
+    const replaced = rec.ctrlKShortcut('replaced', false);
+    const editor = buildLayeredEditor(
+      [
+        {shortcuts: {bold: rec.ctrlKShortcut('base', false)}},
+        {shortcuts: {bold: [replaced]}},
+      ],
+      rec.listeners,
+    );
+    editor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(rec.calls).toEqual(['replaced']);
+    editor.dispose();
+  });
+
+  test('an empty array disables the name like null does', () => {
+    const rec = commandRecorder();
+    const editor = buildLayeredEditor(
+      [
+        {shortcuts: {bold: rec.ctrlKShortcut('base', false)}},
+        {shortcuts: {bold: []}},
+      ],
+      rec.listeners,
+    );
+    editor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(rec.calls).toEqual([]);
+    editor.dispose();
+  });
+
+  test('a name mapped to an array registers every entry in order', () => {
+    const rec = commandRecorder();
+    const editor = buildLayeredEditor(
+      [
+        {
+          shortcuts: {
+            bold: [
+              rec.ctrlKShortcut('first', false),
+              rec.ctrlKShortcut('second', false),
+            ],
+          },
+        },
+      ],
+      rec.listeners,
+    );
+    editor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(rec.calls).toEqual(['first', 'second']);
+    editor.dispose();
+  });
+
+  test('names added by a later layer are matched before existing names', () => {
+    const rec = commandRecorder();
+    // 'zzz' sorts after 'aaa', so only the layer order can put it first
+    const editor = buildLayeredEditor(
+      [
+        {shortcuts: {aaa: rec.ctrlKShortcut('aaa', false)}},
+        {shortcuts: {zzz: rec.ctrlKShortcut('zzz', false)}},
+      ],
+      rec.listeners,
+    );
+    editor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(rec.calls).toEqual(['zzz', 'aaa']);
+    editor.dispose();
+  });
+
+  test('a layer that configures no shortcuts leaves the table alone', () => {
+    const rec = commandRecorder();
+    const editor = buildLayeredEditor(
+      [
+        {shortcuts: {bold: rec.ctrlKShortcut('base')}},
+        {priority: COMMAND_PRIORITY_CRITICAL},
+      ],
+      rec.listeners,
+    );
+    editor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(rec.calls).toEqual(['base']);
+    editor.dispose();
+  });
+
+  test('arrays assigned to the runtime signal are flattened too', () => {
+    const rec = commandRecorder();
+    // All commands must exist before the editor is built so their listeners
+    // are registered, even the ones only used after the signal is assigned
+    const base = rec.ctrlKShortcut('base', false);
+    const runtimeFirst = rec.ctrlKShortcut('runtimeFirst', false);
+    const runtimeSecond = rec.ctrlKShortcut('runtimeSecond', false);
+    const editor = buildLayeredEditor(
+      [{shortcuts: {bold: base}}],
+      rec.listeners,
+    );
+    const {output} = getExtensionDependencyFromEditor(
+      editor,
+      KeyboardShortcutsExtension,
+    );
+    output.shortcuts.value = {bold: [runtimeFirst, runtimeSecond]};
+    editor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(rec.calls).toEqual(['runtimeFirst', 'runtimeSecond']);
+    editor.dispose();
+  });
+});
+
+describe('KeyboardShortcutsExtension priority', () => {
+  test('defaults to COMMAND_PRIORITY_NORMAL, ahead of $handleKeyDown', () => {
+    const rec = commandRecorder();
+    const editor = buildLayeredEditor(
+      [{shortcuts: {bold: rec.ctrlKShortcut('bold')}}],
+      rec.listeners,
+    );
+    const {output} = getExtensionDependencyFromEditor(
+      editor,
+      KeyboardShortcutsExtension,
+    );
+    expect(output.priority.value).toBe(COMMAND_PRIORITY_NORMAL);
+    editor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(rec.calls).toEqual(['bold']);
+
+    // Every editor registers the core $handleKeyDown at
+    // COMMAND_PRIORITY_EDITOR and it always reports the event as handled, so
+    // a shortcut listener at that priority is never reached. (BEFORE_EDITOR
+    // is early enough for a lone editor, but not for nested ones — see
+    // 'bubbling requires a priority above COMMAND_PRIORITY_EDITOR'.)
+    rec.calls.length = 0;
+    output.priority.value = COMMAND_PRIORITY_EDITOR;
+    editor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(rec.calls).toEqual([]);
+    editor.dispose();
+  });
+
+  test('a configured priority is used for the KEY_DOWN_COMMAND listener', () => {
+    const rec = commandRecorder();
+    const editor = buildLayeredEditor(
+      [
+        {
+          priority: COMMAND_PRIORITY_LOW,
+          shortcuts: {bold: rec.ctrlKShortcut('bold')},
+        },
+      ],
+      rec.listeners,
+    );
+    const keyDown = editor.registerCommand(
+      KEY_DOWN_COMMAND,
+      () => {
+        rec.calls.push('high');
+        return true;
+      },
+      COMMAND_PRIORITY_HIGH,
+    );
+    editor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(rec.calls).toEqual(['high']);
+
+    const {output} = getExtensionDependencyFromEditor(
+      editor,
+      KeyboardShortcutsExtension,
+    );
+    rec.calls.length = 0;
+    output.priority.value = COMMAND_PRIORITY_CRITICAL;
+    editor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(rec.calls).toEqual(['bold']);
+
+    keyDown();
+    editor.dispose();
+  });
+
+  test('the last layer to configure a priority wins', () => {
+    const editor = buildLayeredEditor(
+      [{priority: COMMAND_PRIORITY_LOW}, {priority: COMMAND_PRIORITY_CRITICAL}],
+      [],
+    );
+    const {output} = getExtensionDependencyFromEditor(
+      editor,
+      KeyboardShortcutsExtension,
+    );
+    expect(output.priority.value).toBe(COMMAND_PRIORITY_CRITICAL);
+    editor.dispose();
+  });
+
+  test('disabled: true never registers the listener', () => {
+    const rec = commandRecorder();
+    const editor = buildLayeredEditor(
+      [{disabled: true, shortcuts: {bold: rec.ctrlKShortcut('bold')}}],
+      rec.listeners,
+    );
+    editor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(rec.calls).toEqual([]);
+    editor.dispose();
+  });
+});
+
+describe('KeyboardShortcutsExtension nested editors', () => {
+  const BOLD_COMMAND = createCommand<KeyboardEvent>('nested/BOLD');
+
+  /**
+   * A parent editor holding the shortcut table, and a nested editor with no
+   * shortcuts of its own so that its unhandled KEY_DOWN_COMMAND delegates to
+   * the parent. Both record BOLD_COMMAND dispatches, tagged with the editor
+   * they were dispatched on.
+   */
+  function buildNestedEditors(
+    shortcuts: NamedKeyboardShortcuts,
+    priority?: KeyboardShortcutsConfig['priority'],
+  ) {
+    const calls: string[] = [];
+    const registerRecorder = (editorName: string) => (editor: LexicalEditor) =>
+      editor.registerCommand(
+        BOLD_COMMAND,
+        () => {
+          calls.push(`bold@${editorName}`);
+          return true;
+        },
+        COMMAND_PRIORITY_EDITOR,
+      );
+    const parentEditor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          configExtension(KeyboardShortcutsExtension, {
+            ...(priority === undefined ? undefined : {priority}),
+            shortcuts,
+          }),
+        ],
+        name: 'parent',
+        register: registerRecorder('parent'),
+      }),
+    );
+    const childEditor = parentEditor.read(() =>
+      buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [NestedEditorExtension],
+          name: 'child',
+          register: registerRecorder('child'),
+        }),
+      ),
+    );
+    const dispose = () => {
+      childEditor.dispose();
+      parentEditor.dispose();
+    };
+    return {calls, childEditor, dispose, parentEditor};
+  }
+
+  const boldShortcut = (
+    overrides: Partial<KeyboardShortcut> = {},
+  ): KeyboardShortcut => ({
+    command: BOLD_COMMAND,
+    key: 'k',
+    modifiers: {ctrlKey: true},
+    ...overrides,
+  });
+
+  test('events bubbled up from a nested editor are ignored by default', () => {
+    const {calls, childEditor, dispose} = buildNestedEditors({
+      bold: boldShortcut(),
+    });
+    childEditor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(calls).toEqual([]);
+    dispose();
+  });
+
+  test('events from the registering editor are dispatched without the flag', () => {
+    const {calls, dispose, parentEditor} = buildNestedEditors({
+      bold: boldShortcut(),
+    });
+    parentEditor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(calls).toEqual(['bold@parent']);
+    dispose();
+  });
+
+  test('bubbleFromNestedEditors dispatches on the originating editor', () => {
+    const {calls, childEditor, dispose} = buildNestedEditors({
+      bold: boldShortcut({bubbleFromNestedEditors: true}),
+    });
+    childEditor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    // Dispatched on the child, not the editor the shortcut is registered on
+    expect(calls).toEqual(['bold@child']);
+    dispose();
+  });
+
+  test('a non-bubbling shortcut does not shadow a bubbling one on the same key', () => {
+    const IGNORED_COMMAND = createCommand<KeyboardEvent>('nested/IGNORED');
+    const ignored = vi.fn().mockReturnValue(true);
+    const {calls, childEditor, dispose, parentEditor} = buildNestedEditors({
+      ignored: {command: IGNORED_COMMAND, key: 'k', modifiers: {ctrlKey: true}},
+      // eslint-disable-next-line sort-keys-fix/sort-keys-fix -- intentionally after ignored
+      bold: boldShortcut({bubbleFromNestedEditors: true}),
+    });
+    const cleanup = parentEditor.registerCommand(
+      IGNORED_COMMAND,
+      ignored,
+      COMMAND_PRIORITY_EDITOR,
+    );
+    childEditor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(ignored).not.toHaveBeenCalled();
+    expect(calls).toEqual(['bold@child']);
+    cleanup();
+    dispose();
+  });
+
+  test('$disabled and $dispatch receive the originating editor', () => {
+    const $disabled = vi.fn().mockReturnValue(false);
+    const $dispatch = vi.fn(
+      (
+        _command: LexicalCommand<KeyboardEvent>,
+        _event: KeyboardEvent,
+        $next: () => boolean,
+        _editor: LexicalEditor,
+      ) => $next(),
+    );
+    const {calls, childEditor, dispose} = buildNestedEditors({
+      bold: boldShortcut({$disabled, $dispatch, bubbleFromNestedEditors: true}),
+    });
+    childEditor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(calls).toEqual(['bold@child']);
+    expect($disabled).toHaveBeenCalledTimes(1);
+    expect($disabled.mock.calls[0][1]).toBe(childEditor);
+    expect($dispatch).toHaveBeenCalledTimes(1);
+    expect($dispatch.mock.calls[0][3]).toBe(childEditor);
+    dispose();
+  });
+
+  test('$disabled is not consulted for events that will not bubble', () => {
+    const $disabled = vi.fn().mockReturnValue(false);
+    const {calls, childEditor, dispose} = buildNestedEditors({
+      bold: boldShortcut({$disabled}),
+    });
+    childEditor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+    expect(calls).toEqual([]);
+    expect($disabled).not.toHaveBeenCalled();
+    dispose();
+  });
+
+  test('bubbling requires a priority above COMMAND_PRIORITY_EDITOR', () => {
+    // Why the default is COMMAND_PRIORITY_NORMAL rather than
+    // COMMAND_PRIORITY_BEFORE_EDITOR: command dispatch walks priorities from
+    // CRITICAL down to EDITOR on the outside and the nested editor chain on
+    // the inside, and every editor registers the core $handleKeyDown at
+    // COMMAND_PRIORITY_EDITOR, which always reports the event as handled. So
+    // a nested editor's own $handleKeyDown ends the dispatch before anything
+    // the parent has in the editor-priority queue, and BEFORE_EDITOR is the
+    // front of exactly that queue.
+    const bubbling = {bold: boldShortcut({bubbleFromNestedEditors: true})};
+    for (const priority of [
+      COMMAND_PRIORITY_LOW,
+      COMMAND_PRIORITY_NORMAL,
+      COMMAND_PRIORITY_CRITICAL,
+    ] as const) {
+      const {calls, childEditor, dispose} = buildNestedEditors(
+        bubbling,
+        priority,
+      );
+      childEditor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+      expect(calls, `priority ${priority}`).toEqual(['bold@child']);
+      dispose();
+    }
+    for (const priority of [
+      COMMAND_PRIORITY_BEFORE_EDITOR,
+      COMMAND_PRIORITY_EDITOR,
+    ] as const) {
+      const {calls, childEditor, dispose} = buildNestedEditors(
+        bubbling,
+        priority,
+      );
+      childEditor.dispatchCommand(KEY_DOWN_COMMAND, ctrlK());
+      expect(calls, `priority ${priority}`).toEqual([]);
+      dispose();
+    }
   });
 });

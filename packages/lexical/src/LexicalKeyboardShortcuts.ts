@@ -105,6 +105,12 @@ export interface KeyboardShortcut extends KeyboardShortcutMatch {
    * By default, shortcut keypresses that originate in nested editors
    * but were not handled by that editor are ignored. Set to `true`
    * when you want matching events to bubble up to this handler.
+   *
+   * This only has an effect when the shortcut listener is registered at a
+   * priority above `COMMAND_PRIORITY_EDITOR`: the nested editor registers
+   * the core key-down handler at that priority and it always reports the
+   * event as handled, which ends the dispatch before it reaches the outer
+   * editor's editor-priority queue.
    */
   bubbleFromNestedEditors?: boolean;
 }

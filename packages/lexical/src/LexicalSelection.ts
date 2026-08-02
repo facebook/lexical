@@ -1108,45 +1108,32 @@ export class RangeSelection implements BaseSelection {
     // slot-scoped Cmd+A leaves the selection on the slot's element point)
     // has __parent === null, so the block-finding walk below would throw.
     // Redirect into the slot subtree by collapsing the selection at the
-    // slot's first child and re-running insertNodes.
+    // slot's first child and re-running insertNodes. Only a container
+    // (shadow-root) value needs this: a block-shaped value IS the block, so
+    // the block-finding walk below (which stops at a slot host, see
+    // $removeTextAndSplitBlock) already lands on it directly at the right
+    // offset.
     const anchorNode = this.anchor.getNode();
     if (
       this.anchor.type === 'element' &&
       $isElementNode(anchorNode) &&
+      anchorNode.isShadowRoot() &&
       $getSlotHostKey(anchorNode) !== null
     ) {
-      // A container (shadow-root) value redirects into its first child; an
-      // empty one has no child to redirect into (its caret target is the
-      // reconciler's terminating <br>), so seed a paragraph first —
-      // insertNodes removes the seed again when block content replaces it. A
-      // block-shaped value (virtual shadow root around a single block) needs
-      // no seeding: it IS the block, so the block-finding walk below lands
-      // on it directly.
-      let firstChild = anchorNode.isShadowRoot()
-        ? (anchorNode.getFirstChild() ??
-          anchorNode.append($createParagraphNode()).getFirstChild())
-        : anchorNode.getFirstChild();
-      // A shadow-root slot whose first child is a non-element (typically a
-      // decorator like HorizontalRuleNode) would re-enter this same branch
-      // forever: `firstChild.selectStart()` resolves back to the slot value's
-      // own element-mode caret (no sibling, parent = the slot value root),
-      // which matches the entry condition above. Seed a paragraph before the
+      // An empty container has no child to redirect into (its caret target
+      // is the reconciler's terminating <br>), so seed a paragraph first —
+      // insertNodes removes the seed again when block content replaces it.
+      let firstChild =
+        anchorNode.getFirstChild() ??
+        anchorNode.append($createParagraphNode()).getFirstChild();
+      // A first child that is a non-element (typically a decorator like
+      // HorizontalRuleNode) would re-enter this same branch forever:
+      // `firstChild.selectStart()` resolves back to the slot value's own
+      // element-mode caret (no sibling, parent = the slot value root), which
+      // matches the entry condition above. Seed a paragraph before the
       // non-element first child so the redirected selection lands in a block
       // and the recursion terminates.
-      //
-      // The seed paragraph is the redirect target only — if `nodes` carries
-      // inline content the recursion fills the paragraph in place, and if it
-      // carries block content the recursion's root/shadow-root branch
-      // (`splice` after `$wrapInlineNodes`) inserts the new blocks before the
-      // existing non-element first child while the seed sits at offset 0 as
-      // the new shadow-root first child. In either case the seed ends up
-      // hosting either the inserted content or an empty leading line, never
-      // a stranded paragraph next to the original non-element child.
-      if (
-        anchorNode.isShadowRoot() &&
-        firstChild !== null &&
-        !$isElementNode(firstChild)
-      ) {
+      if (firstChild !== null && !$isElementNode(firstChild)) {
         const seed = $createParagraphNode();
         firstChild.insertBefore(seed);
         firstChild = seed;
@@ -1795,6 +1782,12 @@ export class RangeSelection implements BaseSelection {
                 caret.origin.remove();
               }
               // always stop when a decorator is encountered
+              return;
+            } else if ($isLineBreakNode(caret.origin)) {
+              // A LineBreakNode is a single deletable unit, same as a
+              // decorator: remove it directly instead of falling through to
+              // the slot-edge boundary check below with nothing deleted.
+              caret.origin.remove();
               return;
             }
             break;

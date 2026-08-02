@@ -6,7 +6,7 @@
  *
  */
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {$createLinkNode, LinkExtension} from '@lexical/link';
 import {
   $createListItemNode,
@@ -35,20 +35,23 @@ import {
 } from '@lexical/selection';
 import {$createTableNodeWithDimensions} from '@lexical/table';
 import {
+  $create,
   $createLineBreakNode,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
   $getRoot,
   $getSelection,
+  $getSlot,
   $isElementNode,
   $isLineBreakNode,
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
+  $setSlot,
   type DecoratorNode,
-  type ElementNode,
+  ElementNode,
   type LexicalEditor,
   type LexicalNode,
   type ParagraphNode,
@@ -3528,6 +3531,51 @@ describe('LexicalSelection tests', () => {
         expect($isParagraphNode(rootChildren[0])).toBe(true);
         expect($isHeadingNode(rootChildren[1])).toBe(true);
         expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Bare slot value is skipped (#8894)', () => {
+      class TestSlotHost extends ElementNode {
+        $config() {
+          return this.config('test-slot-host', {
+            extends: ElementNode,
+            slots: ['content'],
+          });
+        }
+        createDOM(): HTMLElement {
+          return document.createElement('div');
+        }
+        updateDOM(): false {
+          return false;
+        }
+      }
+
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const root = $getRoot();
+          const host = $create(TestSlotHost);
+          const paragraph = $createParagraphNode();
+          const text = $createTextNode('slot text');
+          paragraph.append(text);
+          $setSlot(host, 'content', paragraph);
+          root.append(host);
+
+          $setBlocksType(text.select(0), () => $createHeadingNode('h1'));
+        },
+        dependencies: [
+          RichTextExtension,
+          defineExtension({name: '@test/slot-host', nodes: [TestSlotHost]}),
+        ],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const root = $getRoot();
+        const host = root.getFirstChild()!;
+        const paragraph = $assertNodeType(
+          $getSlot(host, 'content'),
+          $isParagraphNode,
+        );
+        expect(paragraph.getTextContent()).toBe('slot text');
       });
     });
   });

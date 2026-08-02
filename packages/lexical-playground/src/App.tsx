@@ -10,6 +10,7 @@ import {
   EditorModeAnnounceExtension,
   FocusManagerExtension,
   FocusTrapExtension,
+  HeadingAnnounceExtension,
   HistoryAnnounceExtension,
   RovingTabIndexExtension,
 } from '@lexical/a11y';
@@ -265,6 +266,7 @@ const AppExtension = /* @__PURE__ */ defineExtension({
     HistoryExtension,
     HistoryAnnounceExtension,
     EditorModeAnnounceExtension,
+    HeadingAnnounceExtension,
     KeywordsExtension,
     HashtagExtension,
     DateTimeExtension,

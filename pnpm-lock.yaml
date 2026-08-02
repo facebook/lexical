@@ -578,6 +578,9 @@ importers:
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension
+      '@lexical/rich-text':
+        specifier: workspace:*
+        version: link:../lexical-rich-text
       '@lexical/utils':
         specifier: workspace:*
         version: link:../lexical-utils

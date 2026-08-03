@@ -1125,20 +1125,41 @@ function $promoteNodeSelectionToBlockEdge(
   return true;
 }
 
-const DEFAULT_PASTE_FILE_CONTENT_CHECK = (
-  dataTransfer: DataTransfer,
-): boolean =>
-  dataTransfer.types.includes('text/html') ||
-  dataTransfer.types.includes('text/plain');
+/**
+ * Decides whether a paste event carrying files should be handled by
+ * dispatching {@link DRAG_DROP_PASTE} with those files, rather than falling
+ * through to the regular HTML paste handling.
+ *
+ * @param files - The files present on the clipboard, if any
+ * @param hasTextContent - Whether the clipboard also carries text/html or
+ * text/plain content
+ */
+export type ShouldHandlePasteAsFiles = (
+  files: File[],
+  hasTextContent: boolean,
+) => boolean;
+
+/**
+ * The historical behavior: files are only handled when the clipboard carries
+ * no text content at all. Note that browsers put a text/html fallback on the
+ * clipboard alongside the file when an image is copied via the context menu,
+ * so this default routes such images through the HTML importer.
+ */
+export function defaultShouldHandlePasteAsFiles(
+  files: File[],
+  hasTextContent: boolean,
+): boolean {
+  return files.length > 0 && !hasTextContent;
+}
 
 export function registerRichText(
   editor: LexicalEditor,
   escapeFormatTriggers: ReadonlySignal<EscapeFormatTriggerConfig> = signal(
     DEFAULT_ESCAPE_FORMAT_TRIGGERS,
   ),
-  pasteFileContentCheck: ReadonlySignal<
-    (dataTransfer: DataTransfer) => boolean
-  > = signal(DEFAULT_PASTE_FILE_CONTENT_CHECK),
+  shouldHandlePasteAsFiles: ReadonlySignal<ShouldHandlePasteAsFiles> = signal(
+    defaultShouldHandlePasteAsFiles,
+  ),
 ): () => void {
   const removeListener = mergeRegister(
     editor.registerCommand(
@@ -1787,11 +1808,8 @@ export function registerRichText(
     editor.registerCommand(
       PASTE_COMMAND,
       event => {
-        const [, files, hasTextContent] = eventFiles(
-          event,
-          pasteFileContentCheck.peek(),
-        );
-        if (files.length > 0 && !hasTextContent) {
+        const [, files, hasTextContent] = eventFiles(event);
+        if (shouldHandlePasteAsFiles.peek()(files, hasTextContent)) {
           editor.dispatchCommand(DRAG_DROP_PASTE, files);
           return true;
         }

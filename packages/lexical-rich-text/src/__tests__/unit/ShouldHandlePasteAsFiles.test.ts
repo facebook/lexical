@@ -58,7 +58,7 @@ function dispatchPasteAndCaptureFiles(
   return dispatchedFiles;
 }
 
-describe('RichTextExtension pasteFileContentCheck', () => {
+describe('RichTextExtension shouldHandlePasteAsFiles', () => {
   const fakeImage = new File(['fake-bytes'], 'photo.png', {
     type: 'image/png',
   });
@@ -88,8 +88,7 @@ describe('RichTextExtension pasteFileContentCheck', () => {
     using editor = buildEditorFromExtensions({
       dependencies: [
         configExtension(RichTextExtension, {
-          pasteFileContentCheck: dataTransfer =>
-            dataTransfer.types.includes('text/plain'),
+          shouldHandlePasteAsFiles: (files: File[]) => files.length > 0,
         }),
       ],
       name: 'test-override',
@@ -117,8 +116,7 @@ describe('RichTextExtension pasteFileContentCheck', () => {
       },
       dependencies: [
         configExtension(RichTextExtension, {
-          pasteFileContentCheck: dataTransfer =>
-            dataTransfer.types.includes('text/plain'),
+          shouldHandlePasteAsFiles: (files: File[]) => files.length > 0,
         }),
       ],
       name: 'test-no-file',
@@ -150,7 +148,7 @@ describe('RichTextExtension pasteFileContentCheck', () => {
     expect(dispatchedFiles?.[0]).toBe(fakeImage);
   });
 
-  test('pasteFileContentCheck can be modified as a signal after the editor is built', () => {
+  test('shouldHandlePasteAsFiles can be modified as a signal after the editor is built', () => {
     using editor = buildEditorFromExtensions({
       dependencies: [RichTextExtension],
       name: 'test-signal',
@@ -159,7 +157,8 @@ describe('RichTextExtension pasteFileContentCheck', () => {
     const dep = getExtensionDependencyFromEditor(editor, RichTextExtension);
     // Flip to "files always win" at runtime, mirroring the existing
     // escapeFormatTriggers signal-mutation test for this same extension.
-    dep.output.pasteFileContentCheck.value = () => false;
+    dep.output.shouldHandlePasteAsFiles.value = (files: File[]) =>
+      files.length > 0;
 
     const dataTransfer = createDataTransferWithFiles(
       {'text/html': '<img src="blob:fake">'},

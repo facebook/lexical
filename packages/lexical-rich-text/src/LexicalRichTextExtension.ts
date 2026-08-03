@@ -23,10 +23,12 @@ import {
 } from 'lexical';
 
 import {
+  defaultShouldHandlePasteAsFiles,
   type EscapeFormatTriggerConfig,
   HeadingNode,
   QuoteNode,
   registerRichText,
+  type ShouldHandlePasteAsFiles,
   type TriggerConfig,
 } from './index';
 import {RichTextImportRules} from './RichTextImportExtension';
@@ -58,7 +60,7 @@ import {RichTextImportRules} from './RichTextImportExtension';
  */
 export interface RichTextConfig {
   escapeFormatTriggers: EscapeFormatTriggerConfig;
-  pasteFileContentCheck: (dataTransfer: DataTransfer) => boolean;
+  shouldHandlePasteAsFiles: ShouldHandlePasteAsFiles;
 }
 
 const DEFAULT_RICH_TEXT_CONFIG: RichTextConfig = {
@@ -67,9 +69,7 @@ const DEFAULT_RICH_TEXT_CONFIG: RichTextConfig = {
     lowercase: {enter: true, space: true, tab: true},
     uppercase: {enter: true, space: true, tab: true},
   },
-  pasteFileContentCheck: dataTransfer =>
-    dataTransfer.types.includes('text/html') ||
-    dataTransfer.types.includes('text/plain'),
+  shouldHandlePasteAsFiles: defaultShouldHandlePasteAsFiles,
 };
 
 function mergeTriggerConfig(
@@ -127,13 +127,15 @@ export const RichTextExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/rich-text',
   nodes: () => [HeadingNode, QuoteNode],
   register: (editor, _config, state) =>
-    effect(() =>
-      registerRichText(
+    effect(() => {
+      const {escapeFormatTriggers, shouldHandlePasteAsFiles} =
+        state.getOutput();
+      return registerRichText(
         editor,
-        state.getOutput().escapeFormatTriggers,
-        state.getOutput().pasteFileContentCheck,
-      ),
-    ),
+        escapeFormatTriggers,
+        shouldHandlePasteAsFiles,
+      );
+    }),
 });
 
 /**

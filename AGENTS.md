@@ -40,9 +40,8 @@ For E2E testing workflow:
 - `pnpm run tsc` - Run TypeScript compiler
 - `pnpm run ci-check` - Run all checks (TypeScript, Flow, Prettier, ESLint)
 
-**Never commit changes to `scripts/error-codes/codes.json`.** Running ESLint
-over a file that adds an `invariant` rewrites it as a side effect, even
-without `--fix`. That edit is not yours to make — revert it to the state of
+**Never commit changes to `scripts/error-codes/codes.json`.**
+That edit is not yours to make — revert it to the state of
 `main` before staging, and never `git add` the file.
 
 ### Searching and refactoring

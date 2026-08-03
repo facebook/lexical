@@ -47,13 +47,27 @@ const UNIVERSAL_KEYS: Record<string, string | undefined> = {
 const APPLE_KEYS: Record<string, string | undefined> = {
   ...UNIVERSAL_KEYS,
   Alt: '\u2325',
+  ArrowDown: '\u2193',
+  ArrowLeft: '\u2190',
+  ArrowRight: '\u2192',
+  ArrowUp: '\u2191',
   Backspace: '\u232B',
+  CapsLock: '\u21EA',
   Ctrl: '\u2303',
+  Delete: '\u2326',
+  End: '\u2198',
   Enter: '\u21A9',
   Escape: '\u238B',
+  Home: '\u2196',
   Meta: '\u2318',
+  PageDown: '\u21DF',
+  PageUp: '\u21DE',
   Shift: '\u21E7',
   Tab: '\u21E5',
+};
+const SHIFT_APPLE_KEYS: Record<string, string | undefined> = {
+  ...APPLE_KEYS,
+  Tab: '\u21E4',
 };
 
 /**
@@ -69,7 +83,11 @@ export function formatKeyboardShortcut(
   const {isApple = IS_APPLE} = options;
   const {unshiftedKey, key, modifiers = {}} = shortcut;
   const segments: string[] = [];
-  const keyNames = IS_APPLE ? APPLE_KEYS : UNIVERSAL_KEYS;
+  const keyNames = isApple
+    ? modifiers.shiftKey
+      ? SHIFT_APPLE_KEYS
+      : APPLE_KEYS
+    : UNIVERSAL_KEYS;
   for (const [k, name] of MODIFIERS) {
     if (modifiers[k] === true) {
       // Apple omits the shift modifier in cases where unshifted key

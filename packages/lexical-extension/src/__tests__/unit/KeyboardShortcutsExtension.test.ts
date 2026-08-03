@@ -124,17 +124,17 @@ describe('formatKeyboardShortcut', () => {
   test('formats platform conventions', () => {
     const shortcut = {key: 'k', modifiers: {metaKey: true, shiftKey: true}};
     expect(formatKeyboardShortcut(shortcut, {isApple: true}).join('+')).toBe(
-      '⌘+Shift+K',
+      '⇧+⌘+K',
     );
     expect(formatKeyboardShortcut(shortcut, {isApple: false}).join('+')).toBe(
-      'Meta+Shift+K',
+      'Shift+Meta+K',
     );
     expect(
       formatKeyboardShortcut(
         {key: 'q', modifiers: {ctrlKey: true, shiftKey: true}},
         {isApple: true},
       ).join('+'),
-    ).toBe('⌃+Shift+Q');
+    ).toBe('⌃+⇧+Q');
     expect(
       formatKeyboardShortcut(
         {key: '0', modifiers: {altKey: true, ctrlKey: true}},

@@ -27,11 +27,7 @@ const IPAD_USER_AGENT =
   'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 ' +
   'Mobile/15E148 Safari/604.1';
 
-const IPAD_DESKTOP_USER_AGENT =
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ' +
-  'AppleWebKit/605.1.15 (KHTML, like Gecko)';
-
-const MAC_USER_AGENT =
+const MACINTOSH_USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ' +
   'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 ' +
   'Safari/605.1.15';
@@ -40,9 +36,6 @@ const WINDOWS_TOUCH_USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
   'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 ' +
   'Safari/537.36';
-
-const originalUserAgent = navigator.userAgent;
-const originalMaxTouchPoints = navigator.maxTouchPoints;
 
 function setNavigator(userAgent: string, maxTouchPoints: number): void {
   Object.defineProperty(navigator, 'userAgent', {
@@ -53,6 +46,13 @@ function setNavigator(userAgent: string, maxTouchPoints: number): void {
     configurable: true,
     get: () => maxTouchPoints,
   });
+}
+
+// Remove the own properties installed by setNavigator so lookups fall back
+// to the navigator prototype or other values provided by the test environment.
+function resetNavigator(): void {
+  Reflect.deleteProperty(navigator, 'userAgent');
+  Reflect.deleteProperty(navigator, 'maxTouchPoints');
 }
 
 async function getIsIOS(
@@ -68,7 +68,7 @@ async function getIsIOS(
 }
 
 afterEach(() => {
-  setNavigator(originalUserAgent, originalMaxTouchPoints);
+  resetNavigator();
   vi.resetModules();
 });
 
@@ -89,26 +89,26 @@ describe('IS_IOS', () => {
     {
       expected: true,
       maxTouchPoints: 5,
-      name: 'iPadOS desktop-class user agent with multi-touch',
-      userAgent: IPAD_DESKTOP_USER_AGENT,
+      name: 'iPadOS desktop-class Macintosh user agent with multi-touch',
+      userAgent: MACINTOSH_USER_AGENT,
     },
     {
       expected: true,
       maxTouchPoints: 2,
       name: 'Macintosh user agent at the multi-touch boundary',
-      userAgent: IPAD_DESKTOP_USER_AGENT,
+      userAgent: MACINTOSH_USER_AGENT,
     },
     {
       expected: false,
       maxTouchPoints: 1,
       name: 'Macintosh user agent without multi-touch',
-      userAgent: IPAD_DESKTOP_USER_AGENT,
+      userAgent: MACINTOSH_USER_AGENT,
     },
     {
       expected: false,
       maxTouchPoints: 0,
       name: 'macOS user agent without touch support',
-      userAgent: MAC_USER_AGENT,
+      userAgent: MACINTOSH_USER_AGENT,
     },
     {
       expected: false,

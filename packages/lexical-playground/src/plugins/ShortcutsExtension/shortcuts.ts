@@ -9,7 +9,7 @@
 import type {KeyboardShortcutMatch} from 'lexical';
 
 import {formatKeyboardShortcut} from '@lexical/extension';
-import {CONTROL_OR_META} from 'lexical';
+import {CONTROL_OR_META, IS_APPLE} from 'lexical';
 
 /* eslint-disable sort-keys-fix/sort-keys-fix */
 
@@ -37,8 +37,16 @@ export const SHORTCUT_BINDINGS = Object.freeze({
   QUOTE: {key: 'q', modifiers: CONTROL_SHIFT},
   ADD_COMMENT: {key: 'm', modifiers: CONTROL_OR_META_ALT},
 
-  INCREASE_FONT_SIZE: {key: '>', modifiers: CONTROL_OR_META_SHIFT},
-  DECREASE_FONT_SIZE: {key: '<', modifiers: CONTROL_OR_META_SHIFT},
+  INCREASE_FONT_SIZE: {
+    key: '>',
+    modifiers: CONTROL_OR_META_SHIFT,
+    unshiftedKey: '.',
+  },
+  DECREASE_FONT_SIZE: {
+    key: '<',
+    modifiers: CONTROL_OR_META_SHIFT,
+    unshiftedKey: ',',
+  },
   INSERT_CODE_BLOCK: {key: 'c', modifiers: CONTROL_OR_META_SHIFT},
   STRIKETHROUGH: {key: 'x', modifiers: CONTROL_OR_META_SHIFT},
   LOWERCASE: {key: '1', modifiers: CONTROL_SHIFT},
@@ -60,44 +68,24 @@ export const SHORTCUT_BINDINGS = Object.freeze({
 const fmt = formatKeyboardShortcut;
 
 /**
- * Human-readable display strings derived from {@link SHORTCUT_BINDINGS},
+ * Human-readable display string segments derived from {@link SHORTCUT_BINDINGS},
  * used for button tooltips, aria-labels, and menu hints.
  */
 export const SHORTCUTS = Object.freeze({
-  NORMAL: fmt(SHORTCUT_BINDINGS.NORMAL),
-  HEADING1: fmt(SHORTCUT_BINDINGS.HEADING1),
-  HEADING2: fmt(SHORTCUT_BINDINGS.HEADING2),
-  HEADING3: fmt(SHORTCUT_BINDINGS.HEADING3),
-  NUMBERED_LIST: fmt(SHORTCUT_BINDINGS.NUMBERED_LIST),
-  BULLET_LIST: fmt(SHORTCUT_BINDINGS.BULLET_LIST),
-  CHECK_LIST: fmt(SHORTCUT_BINDINGS.CHECK_LIST),
-  CODE_BLOCK: fmt(SHORTCUT_BINDINGS.CODE_BLOCK),
-  QUOTE: fmt(SHORTCUT_BINDINGS.QUOTE),
-  ADD_COMMENT: fmt(SHORTCUT_BINDINGS.ADD_COMMENT),
-
-  // Bindings use the shifted key value (> / <) for matching event.key,
-  // but display should show the physical key (. / ,)
-  INCREASE_FONT_SIZE: fmt({key: '.', modifiers: CONTROL_OR_META_SHIFT}),
-  DECREASE_FONT_SIZE: fmt({key: ',', modifiers: CONTROL_OR_META_SHIFT}),
-  INSERT_CODE_BLOCK: fmt(SHORTCUT_BINDINGS.INSERT_CODE_BLOCK),
-  STRIKETHROUGH: fmt(SHORTCUT_BINDINGS.STRIKETHROUGH),
-  LOWERCASE: fmt(SHORTCUT_BINDINGS.LOWERCASE),
-  UPPERCASE: fmt(SHORTCUT_BINDINGS.UPPERCASE),
-  CAPITALIZE: fmt(SHORTCUT_BINDINGS.CAPITALIZE),
-  CENTER_ALIGN: fmt(SHORTCUT_BINDINGS.CENTER_ALIGN),
-  JUSTIFY_ALIGN: fmt(SHORTCUT_BINDINGS.JUSTIFY_ALIGN),
-  LEFT_ALIGN: fmt(SHORTCUT_BINDINGS.LEFT_ALIGN),
-  RIGHT_ALIGN: fmt(SHORTCUT_BINDINGS.RIGHT_ALIGN),
-
-  SUBSCRIPT: fmt(SHORTCUT_BINDINGS.SUBSCRIPT),
-  SUPERSCRIPT: fmt(SHORTCUT_BINDINGS.SUPERSCRIPT),
-  INDENT: fmt(SHORTCUT_BINDINGS.INDENT),
-  OUTDENT: fmt(SHORTCUT_BINDINGS.OUTDENT),
-  CLEAR_FORMATTING: fmt(SHORTCUT_BINDINGS.CLEAR_FORMATTING),
-  INSERT_LINK: fmt(SHORTCUT_BINDINGS.INSERT_LINK),
-
+  ...(Object.fromEntries(
+    Object.entries(SHORTCUT_BINDINGS).map(([k, v]) => [k, fmt(v)]),
+  ) as {[K in keyof typeof SHORTCUT_BINDINGS]: string[]}),
   // Core shortcuts handled by the editor, not by ShortcutsExtension
   BOLD: fmt({key: 'b', modifiers: CONTROL_OR_META}),
   ITALIC: fmt({key: 'i', modifiers: CONTROL_OR_META}),
   UNDERLINE: fmt({key: 'u', modifiers: CONTROL_OR_META}),
 });
+
+const SEPARATOR = IS_APPLE ? '' : '+';
+
+/**
+ * Return the human-readable flat string for a key of {@link SHORTCUT_BINDINGS}
+ */
+export function shortcut(k: keyof typeof SHORTCUTS) {
+  return SHORTCUTS[k].join(SEPARATOR);
+}

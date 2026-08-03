@@ -38,6 +38,11 @@ export interface KeyboardShortcutMatch {
    * ignored. The default of `{}` matches only events with no modifiers.
    */
   modifiers?: KeyboardEventModifierMask;
+  /**
+   * The unshifted key to display to the user, only relevant when the shift
+   * modifier is true on non-Apple environments.
+   */
+  unshiftedKey?: string;
 }
 
 /**

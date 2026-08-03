@@ -67,7 +67,7 @@ const SHORTCUT_NAMES = Object.keys(SHORTCUT_BINDINGS) as ShortcutName[];
  * buttons) without touching the behavior registered by
  * {@link ShortcutsExtension}.
  */
-export const SHORTCUT_COMMANDS: Record<
+const SHORTCUT_COMMANDS: Record<
   ShortcutName,
   LexicalCommand<KeyboardEvent>
 > = Object.fromEntries(

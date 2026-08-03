@@ -123,28 +123,32 @@ describe('compileKeyboardShortcuts', () => {
 describe('formatKeyboardShortcut', () => {
   test('formats platform conventions', () => {
     const shortcut = {key: 'k', modifiers: {metaKey: true, shiftKey: true}};
-    expect(formatKeyboardShortcut(shortcut, {isApple: true})).toBe('⌘+Shift+K');
-    expect(formatKeyboardShortcut(shortcut, {isApple: false})).toBe(
+    expect(formatKeyboardShortcut(shortcut, {isApple: true}).join('+')).toBe(
+      '⌘+Shift+K',
+    );
+    expect(formatKeyboardShortcut(shortcut, {isApple: false}).join('+')).toBe(
       'Meta+Shift+K',
     );
     expect(
       formatKeyboardShortcut(
         {key: 'q', modifiers: {ctrlKey: true, shiftKey: true}},
         {isApple: true},
-      ),
+      ).join('+'),
     ).toBe('⌃+Shift+Q');
     expect(
       formatKeyboardShortcut(
         {key: '0', modifiers: {altKey: true, ctrlKey: true}},
         {isApple: false},
-      ),
+      ).join('+'),
     ).toBe('Ctrl+Alt+0');
-    expect(formatKeyboardShortcut({key: ' '}, {isApple: false})).toBe('Space');
+    expect(formatKeyboardShortcut({key: ' '}, {isApple: false}).join('+')).toBe(
+      'Space',
+    );
     expect(
       formatKeyboardShortcut(
         {key: 'ArrowLeft', modifiers: {shiftKey: 'any'}},
         {isApple: false},
-      ),
+      ).join('+'),
     ).toBe('ArrowLeft');
   });
 });

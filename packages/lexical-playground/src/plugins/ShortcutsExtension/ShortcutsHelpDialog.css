@@ -1,0 +1,44 @@
+.ShortcutsHelpDialog table {
+  width: 100%;
+}
+.ShortcutsHelpDialog__heading__action {
+  text-align: left;
+}
+.ShortcutsHelpDialog__heading__shortcut {
+  text-align: right;
+}
+.ShortcutsHelpDialog__action {
+  padding-right: 2em;
+}
+.ShortcutsHelpDialog__shortcut {
+  text-align: right;
+}
+.ShortcutsHelpDialog__shortcut kbd {
+  min-width: 1em;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 0.85em;
+  display: inline-block;
+  font-family:
+    -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Helvetica, Arial,
+    sans-serif;
+}
+.ShortcutsHelpDialog__shortcut[data-platform='other'] kbd {
+  font-weight: 600;
+  background-color: #f7f7f7;
+  color: #333333;
+  border: 1px solid #ccc;
+  border-bottom-width: 3px;
+  border-radius: 3px;
+  padding: 0.1em 0.4em;
+}
+.ShortcutsHelpDialog__shortcut[data-platform='other']
+  .ShortcutsHelpDialog__separator::before {
+  content: ' + ';
+  font-weight: normal;
+  color: #666; /* Gives the plus sign a slightly muted color */
+  margin: 0 0.2em;
+}
+.ShortcutsHelpDialog {
+  overflow: scroll;
+}

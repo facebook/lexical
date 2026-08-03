@@ -33,6 +33,29 @@ export interface FormatKeyboardShortcutOptions {
   separator?: string;
 }
 
+const MODIFIERS = [
+  ['ctrlKey', 'Ctrl'],
+  ['altKey', 'Alt'],
+  ['shiftKey', 'Shift'],
+  ['metaKey', 'Meta'],
+] as const;
+
+const UNIVERSAL_KEYS: Record<string, string | undefined> = {
+  ' ': 'Space',
+};
+
+const APPLE_KEYS: Record<string, string | undefined> = {
+  ...UNIVERSAL_KEYS,
+  Alt: '\u2325',
+  Backspace: '\u232B',
+  Ctrl: '\u2303',
+  Enter: '\u21A9',
+  Escape: '\u238B',
+  Meta: '\u2318',
+  Shift: '\u21E7',
+  Tab: '\u21E5',
+};
+
 /**
  * Format the key binding of a shortcut as a human readable string for
  * menus, tooltips, and help dialogs (e.g. `'⌘+Shift+K'` on Apple platforms
@@ -42,28 +65,27 @@ export interface FormatKeyboardShortcutOptions {
 export function formatKeyboardShortcut(
   shortcut: KeyboardShortcutMatch,
   options: FormatKeyboardShortcutOptions = {},
-): string {
-  const {isApple = IS_APPLE, separator = '+'} = options;
-  const {key, modifiers = {}} = shortcut;
+): string[] {
+  const {isApple = IS_APPLE} = options;
+  const {unshiftedKey, key, modifiers = {}} = shortcut;
   const segments: string[] = [];
-  if (modifiers.ctrlKey === true) {
-    segments.push(isApple ? '⌃' : 'Ctrl');
+  const keyNames = IS_APPLE ? APPLE_KEYS : UNIVERSAL_KEYS;
+  for (const [k, name] of MODIFIERS) {
+    if (modifiers[k] === true) {
+      // Apple omits the shift modifier in cases where unshifted key
+      // differs from the key, e.g. 'shift+/', is displayed as '?'
+      if (!(isApple && k === 'shiftKey' && unshiftedKey && key.length === 1)) {
+        segments.push(keyNames[name] || name);
+      }
+    }
   }
-  if (modifiers.metaKey === true) {
-    segments.push(isApple ? '⌘' : 'Meta');
-  }
-  if (modifiers.altKey === true) {
-    segments.push(isApple ? 'Opt' : 'Alt');
-  }
-  if (modifiers.shiftKey === true) {
-    segments.push('Shift');
-  }
-  if (key === ' ') {
-    segments.push('Space');
-  } else {
-    segments.push(key.length === 1 ? key.toUpperCase() : key);
-  }
-  return segments.join(separator);
+  segments.push(
+    keyNames[key] ||
+      (!isApple && modifiers.shiftKey === true && unshiftedKey) ||
+      (key.length === 1 && key.toUpperCase()) ||
+      key,
+  );
+  return segments;
 }
 
 /**

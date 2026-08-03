@@ -6,7 +6,10 @@
  *
  */
 
-import type {JSX} from 'react';
+import './ShortcutsHelpDialog.css';
+
+import {IS_APPLE} from 'lexical';
+import {Fragment, type JSX} from 'react';
 
 import {SHORTCUTS} from './shortcuts';
 
@@ -20,22 +23,32 @@ function humanize(key: string): string {
 }
 
 export default function ShortcutsHelpDialog(): JSX.Element {
-  const entries = Object.entries(SHORTCUTS);
   return (
     <div className="ShortcutsHelpDialog">
       <table>
         <thead>
           <tr>
-            <th>Action</th>
-            <th>Shortcut</th>
+            <th className="ShortcutsHelpDialog__heading__action">Action</th>
+            <th className="ShortcutsHelpDialog__heading__shortcut">Shortcut</th>
           </tr>
         </thead>
         <tbody>
-          {entries.map(([action, keys]) => (
+          {Object.entries(SHORTCUTS).map(([action, keys]) => (
             <tr key={action}>
-              <td>{humanize(action)}</td>
-              <td>
-                <kbd>{keys}</kbd>
+              <td className="ShortcutsHelpDialog__action">
+                {humanize(action)}
+              </td>
+              <td
+                className="ShortcutsHelpDialog__shortcut"
+                data-platform={IS_APPLE ? 'apple' : 'other'}>
+                {keys.map((v, i) => (
+                  <Fragment key={v}>
+                    {i > 0 && (
+                      <span className="ShortcutsHelpDialog__separator" />
+                    )}
+                    <kbd>{v}</kbd>
+                  </Fragment>
+                ))}
               </td>
             </tr>
           ))}

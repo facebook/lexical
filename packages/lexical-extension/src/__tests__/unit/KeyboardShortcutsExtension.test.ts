@@ -8,6 +8,7 @@
 
 import type {
   KeyboardShortcut,
+  KeyboardShortcutMatch,
   KeyboardShortcutsConfig,
   NamedKeyboardShortcuts,
 } from '@lexical/extension';
@@ -28,6 +29,8 @@ import {
   COMMAND_PRIORITY_LOW,
   COMMAND_PRIORITY_NORMAL,
   configExtension,
+  CONTROL_OR_ALT,
+  CONTROL_OR_META,
   createCommand,
   defineExtension,
   isExactShortcutMatch,
@@ -37,6 +40,7 @@ import {
   type LexicalCommand,
   type LexicalEditor,
   mergeRegister,
+  safeCast,
 } from 'lexical';
 import {describe, expect, test, vi} from 'vitest';
 
@@ -121,6 +125,69 @@ describe('compileKeyboardShortcuts', () => {
 });
 
 describe('formatKeyboardShortcut', () => {
+  test('CONTROL_OR_META', () => {
+    expect(
+      formatKeyboardShortcut(
+        {key: ' ', modifiers: CONTROL_OR_META},
+        {isApple: true},
+      ),
+    ).toEqual(['\u2318', 'Space']);
+    expect(
+      formatKeyboardShortcut(
+        {key: ' ', modifiers: CONTROL_OR_META},
+        {isApple: false},
+      ),
+    ).toEqual(['Ctrl', 'Space']);
+  });
+  test('CONTROL_OR_ALT', () => {
+    expect(
+      formatKeyboardShortcut(
+        {key: ' ', modifiers: CONTROL_OR_ALT},
+        {isApple: true},
+      ),
+    ).toEqual(['\u2325', 'Space']);
+    expect(
+      formatKeyboardShortcut(
+        {key: ' ', modifiers: CONTROL_OR_ALT},
+        {isApple: false},
+      ),
+    ).toEqual(['Ctrl', 'Space']);
+  });
+  test.for(
+    safeCast<[KeyboardShortcutMatch, string, string][]>([
+      [
+        {key: 'k', modifiers: {metaKey: true, shiftKey: true}},
+        '⇧+⌘+K',
+        'Shift+Meta+K',
+      ],
+      [
+        {key: 'q', modifiers: {ctrlKey: true, shiftKey: true}},
+        '\u2303+⇧+Q',
+        'Ctrl+Shift+Q',
+      ],
+      [
+        {key: 'q', modifiers: {...CONTROL_OR_META, shiftKey: true}},
+        '⇧+⌘+Q',
+        'Ctrl+Shift+Q',
+      ],
+      [
+        {key: 'Backspace', modifiers: {...CONTROL_OR_ALT}},
+        '\u2325+\u232B',
+        'Ctrl+Backspace',
+      ],
+      [{key: ' '}, 'Space', 'Space'],
+      [{key: 'ArrowLeft', modifiers: {shiftKey: 'any'}}, '\u2190', 'ArrowLeft'],
+    ]),
+  )(
+    'formatKeyboardShortcut(%o) -> apple: %s other: %s',
+    ([shortcut, apple, other]) => {
+      expect(
+        [true, false].map(isApple =>
+          formatKeyboardShortcut(shortcut, {isApple}).join('+'),
+        ),
+      ).toEqual([apple, other]);
+    },
+  );
   test('formats platform conventions', () => {
     const shortcut = {key: 'k', modifiers: {metaKey: true, shiftKey: true}};
     expect(formatKeyboardShortcut(shortcut, {isApple: true}).join('+')).toBe(

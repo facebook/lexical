@@ -23,6 +23,7 @@ import {
   $isRootNode,
   $isTabNode,
   $isTextNode,
+  CONTROL_OR_META,
   DecoratorNode,
   DEFAULT_EDITOR_DOM_CONFIG,
   type ElementFormatType,
@@ -42,6 +43,7 @@ import {
 import {
   COMPOSITION_START_CHAR,
   COMPOSITION_SUFFIX,
+  CONTROL_OR_OTHER_KEY,
   DOM_DOCUMENT_FRAGMENT_TYPE,
   DOM_DOCUMENT_TYPE,
   DOM_ELEMENT_TYPE,
@@ -1114,6 +1116,24 @@ export type KeyboardEventModifierMask = {
     | 'any';
 };
 
+export {CONTROL_OR_OTHER_KEY};
+
+/** @internal */
+export interface KeyboardEventControlOrOther {
+  [CONTROL_OR_OTHER_KEY]?: 'metaKey' | 'altKey';
+}
+
+/** @internal */
+export function keyboardEventMaskForPlatform(
+  mask: KeyboardEventModifierMask & KeyboardEventControlOrOther,
+  isApple: boolean,
+): KeyboardEventModifierMask {
+  const otherKey = mask[CONTROL_OR_OTHER_KEY];
+  return otherKey && isApple !== IS_APPLE
+    ? {...mask, ctrlKey: mask[otherKey], [otherKey]: mask.ctrlKey}
+    : mask;
+}
+
 function matchModifier(
   event: KeyboardEventModifiers,
   mask: KeyboardEventModifierMask,
@@ -1203,10 +1223,7 @@ export function isDelete(event: KeyboardEventModifiers): boolean {
 }
 
 export function isSelectAll(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'a', {
-    ctrlKey: !IS_APPLE,
-    metaKey: IS_APPLE,
-  });
+  return isExactShortcutMatch(event, 'a', CONTROL_OR_META);
 }
 
 /** Selects all content within the root. If a selection is provided, scopes to the nearest root or shadow root; otherwise creates a new RangeSelection spanning the entire root. */

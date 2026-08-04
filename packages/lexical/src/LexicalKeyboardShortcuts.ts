@@ -9,6 +9,7 @@
 import type {LexicalCommand, LexicalEditor} from './LexicalEditor';
 import type {BaseSelection} from './LexicalSelection';
 import type {
+  KeyboardEventControlOrOther,
   KeyboardEventModifierMask,
   KeyboardEventModifiers,
 } from './LexicalUtils';
@@ -16,6 +17,7 @@ import type {
 import invariant from '@lexical/internal/invariant';
 
 import {IS_APPLE} from './environment';
+import {CONTROL_OR_OTHER_KEY} from './LexicalConstants';
 
 /**
  * @experimental
@@ -124,7 +126,9 @@ export interface KeyboardShortcut extends KeyboardShortcutMatch {
  * The modifier mask for the primary shortcut modifier:
  * ⌘ (metaKey) on Apple platforms and Ctrl elsewhere.
  */
-export const CONTROL_OR_META: KeyboardEventModifierMask = {
+export const CONTROL_OR_META: KeyboardEventModifierMask &
+  KeyboardEventControlOrOther = {
+  [CONTROL_OR_OTHER_KEY]: 'metaKey',
   ctrlKey: !IS_APPLE,
   metaKey: IS_APPLE,
 };
@@ -134,7 +138,9 @@ export const CONTROL_OR_META: KeyboardEventModifierMask = {
  * Option (altKey) on Apple platforms and Ctrl elsewhere, conventionally
  * used for word-level editing and block-format shortcuts.
  */
-export const CONTROL_OR_ALT: KeyboardEventModifierMask = {
+export const CONTROL_OR_ALT: KeyboardEventModifierMask &
+  KeyboardEventControlOrOther = {
+  [CONTROL_OR_OTHER_KEY]: 'altKey',
   altKey: IS_APPLE,
   ctrlKey: !IS_APPLE,
 };

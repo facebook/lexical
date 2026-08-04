@@ -356,7 +356,7 @@ export function setScrollableTablesActive(
   active: boolean,
 ): void {
   if (active) {
-    if (__DEV__ && !editor._config.theme.tableScrollableWrapper) {
+    if (__DEV__ && editor._config.theme.tableScrollableWrapper === undefined) {
       console.warn(
         'TableNode: hasHorizontalScroll is active but theme.tableScrollableWrapper is not defined.',
       );

@@ -21,6 +21,8 @@ import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   type AnyLexicalCommand,
   COMMAND_PRIORITY_CRITICAL,
+  CONTROL_OR_ALT,
+  CONTROL_OR_META,
   COPY_COMMAND,
   CUT_COMMAND,
   defineExtension,
@@ -68,8 +70,6 @@ function referenceKeyDown(
   event: KeyboardEvent,
   isApple: boolean,
 ): ExpectedDispatch | null {
-  const CONTROL_OR_META = {ctrlKey: !isApple, metaKey: isApple};
-  const CONTROL_OR_ALT = {altKey: isApple, ctrlKey: !isApple};
   const m = (key: string, mask: KeyboardEventModifierMask) =>
     isExactShortcutMatch(event, key, mask);
   const dispatched = (

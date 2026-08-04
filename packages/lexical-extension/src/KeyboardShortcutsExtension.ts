@@ -16,6 +16,7 @@ import {
   defineExtension,
   IS_APPLE,
   KEY_DOWN_COMMAND,
+  keyboardEventMaskForPlatform,
   type KeyboardShortcut,
   type KeyboardShortcutMatch,
   type LexicalEditor,
@@ -81,7 +82,11 @@ export function formatKeyboardShortcut(
   options: FormatKeyboardShortcutOptions = {},
 ): string[] {
   const {isApple = IS_APPLE} = options;
-  const {unshiftedKey, key, modifiers = {}} = shortcut;
+  const {unshiftedKey, key} = shortcut;
+  const modifiers = keyboardEventMaskForPlatform(
+    shortcut.modifiers || {},
+    isApple,
+  );
   const segments: string[] = [];
   const keyNames = isApple
     ? modifiers.shiftKey
@@ -92,9 +97,10 @@ export function formatKeyboardShortcut(
     if (modifiers[k] === true) {
       // Apple omits the shift modifier in cases where unshifted key
       // differs from the key, e.g. 'shift+/', is displayed as '?'
-      if (!(isApple && k === 'shiftKey' && unshiftedKey && key.length === 1)) {
-        segments.push(keyNames[name] || name);
+      if (isApple && k === 'shiftKey' && unshiftedKey && key.length === 1) {
+        continue;
       }
+      segments.push(keyNames[name] || name);
     }
   }
   segments.push(

@@ -36,12 +36,12 @@ export function useReactDecorators(
   const decorators = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   // Same race as useDecorators: decorator portals can be skipped while the root
   // is detached; recompute when the root identity changes.
-  const [portalRev, setPortalRev] = useState(0);
+  const [rootElement, setRootElement] = useState(() => editor.getRootElement());
 
   useLayoutEffect(() => {
-    return editor.registerRootListener((rootElement, prevRootElement) => {
-      if (rootElement !== prevRootElement) {
-        setPortalRev(rev => rev + 1);
+    return editor.registerRootListener((nextRootElement, prevRootElement) => {
+      if (nextRootElement !== prevRootElement) {
+        setRootElement(nextRootElement);
       }
     });
   }, [editor]);
@@ -66,8 +66,5 @@ export function useReactDecorators(
     }
 
     return decoratedPortals;
-    // portalRev is intentional: decorators may be unchanged after a root remount
-    // while getElementByKey only becomes non-null once the root is attached.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- see portalRev above
-  }, [ErrorBoundary, decorators, editor, portalRev]);
+  }, [ErrorBoundary, decorators, editor, rootElement]);
 }

@@ -33,7 +33,7 @@ export function useDecorators(
   // decorate() / decorator listeners can run before setRootElement attaches the
   // contenteditable. Portals skip when getElementByKey is still null; without a
   // follow-up recompute they stay missing after the root remounts.
-  const [portalRev, setPortalRev] = useState(0);
+  const [rootElement, setRootElement] = useState(() => editor.getRootElement());
 
   // Subscribe to changes
   useLayoutEffect(() => {
@@ -53,9 +53,9 @@ export function useDecorators(
   }, [editor]);
 
   useLayoutEffect(() => {
-    return editor.registerRootListener((rootElement, prevRootElement) => {
-      if (rootElement !== prevRootElement) {
-        setPortalRev(rev => rev + 1);
+    return editor.registerRootListener((nextRootElement, prevRootElement) => {
+      if (nextRootElement !== prevRootElement) {
+        setRootElement(nextRootElement);
       }
     });
   }, [editor]);
@@ -80,8 +80,5 @@ export function useDecorators(
     }
 
     return decoratedPortals;
-    // portalRev is intentional: decorators may be unchanged after a root remount
-    // while getElementByKey only becomes non-null once the root is attached.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- see portalRev above
-  }, [ErrorBoundary, decorators, editor, portalRev]);
+  }, [ErrorBoundary, decorators, editor, rootElement]);
 }

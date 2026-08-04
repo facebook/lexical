@@ -338,6 +338,13 @@ re-applying it from `updateDOM` so an editable toggle reaches the island.
   presses) is provided by the opt-in
   [`SelectBlockExtension`](/docs/api/modules/lexical_extension#selectblockextension)
   from `@lexical/extension`.
+- **Generic block conversion skips slot values.** A slot value has no
+  parent — its up-link is `$getSlotHost` — so selection-driven block
+  converters (`$setBlocksType`, `$wrapNodes`, `$insertList` / `$removeList`,
+  the markdown block shortcuts) treat it as ineligible and do nothing rather
+  than replace it: the slot assignment is managed by the node or extension
+  that owns the slot. Calling `LexicalNode.replace` directly on a slot value
+  throws; reassign the slot with `$setSlot` on its host instead.
 - **A NodeSelection of an element carries its children.** Copy and export
   of a whole-host NodeSelection (e.g. a chrome click that selects "the whole
   Card") include the host's body children even though they aren't in the

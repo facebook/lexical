@@ -65,21 +65,41 @@ export const SHORTCUT_BINDINGS = Object.freeze({
   INSERT_LINK: {key: 'k', modifiers: CONTROL_OR_META},
 }) satisfies Record<string, KeyboardShortcutMatch>;
 
-const fmt = formatKeyboardShortcut;
+const BUILTIN_SHORTCUT_BINDINGS = Object.freeze({
+  // Core shortcuts handled by the editor, not by ShortcutsExtension
+  BOLD: {key: 'b', modifiers: CONTROL_OR_META},
+  ITALIC: {key: 'i', modifiers: CONTROL_OR_META},
+  UNDERLINE: {key: 'u', modifiers: CONTROL_OR_META},
+}) satisfies Record<string, KeyboardShortcutMatch>;
+
+function _getShortcuts(isApple: boolean) {
+  return Object.freeze({
+    ...(Object.fromEntries(
+      [
+        ...Object.entries(SHORTCUT_BINDINGS),
+        ...Object.entries(BUILTIN_SHORTCUT_BINDINGS),
+      ].map(([k, v]) => [k, formatKeyboardShortcut(v, {isApple})]),
+    ) as {
+      [K in
+        | keyof typeof SHORTCUT_BINDINGS
+        | keyof typeof BUILTIN_SHORTCUT_BINDINGS]: string[];
+    }),
+  });
+}
 
 /**
  * Human-readable display string segments derived from {@link SHORTCUT_BINDINGS},
  * used for button tooltips, aria-labels, and menu hints.
  */
-export const SHORTCUTS = Object.freeze({
-  ...(Object.fromEntries(
-    Object.entries(SHORTCUT_BINDINGS).map(([k, v]) => [k, fmt(v)]),
-  ) as {[K in keyof typeof SHORTCUT_BINDINGS]: string[]}),
-  // Core shortcuts handled by the editor, not by ShortcutsExtension
-  BOLD: fmt({key: 'b', modifiers: CONTROL_OR_META}),
-  ITALIC: fmt({key: 'i', modifiers: CONTROL_OR_META}),
-  UNDERLINE: fmt({key: 'u', modifiers: CONTROL_OR_META}),
-});
+export const SHORTCUTS = _getShortcuts(IS_APPLE);
+/**
+ * {@link SHORTCUTS} formatted for the other platform (!IS_APPLE)
+ */
+export const ALTERNATE_SHORTCUTS = _getShortcuts(!IS_APPLE);
+
+export function getShortcuts(isApple: boolean) {
+  return IS_APPLE === isApple ? SHORTCUTS : ALTERNATE_SHORTCUTS;
+}
 
 const SEPARATOR = IS_APPLE ? '' : '+';
 

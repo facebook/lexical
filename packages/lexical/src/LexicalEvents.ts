@@ -1562,6 +1562,10 @@ const ANY_MODIFIERS = {
   metaKey: 'any',
   shiftKey: 'any',
 } as const;
+const CTRL_KEY = {ctrlKey: true} as const;
+const META_KEY = {metaKey: true} as const;
+const SHIFT_KEY_ANY = {shiftKey: 'any'} as const;
+const ALT_SHIFT_KEY_ANY = {...SHIFT_KEY_ANY, altKey: 'any'} as const;
 
 /**
  * The keydown shortcuts that the editor handles natively, compiled to
@@ -1624,16 +1628,16 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
   });
   return [
     // moveForward / moveToEnd / moveBackward / moveToStart / moveUp / moveDown
-    dispatch('ArrowRight', {shiftKey: 'any'}, KEY_ARROW_RIGHT_COMMAND),
-    dispatch('ArrowRight', {...CONTROL_OR_META, shiftKey: 'any'}, MOVE_TO_END),
-    dispatch('ArrowLeft', {shiftKey: 'any'}, KEY_ARROW_LEFT_COMMAND),
-    dispatch('ArrowLeft', {...CONTROL_OR_META, shiftKey: 'any'}, MOVE_TO_START),
-    dispatch('ArrowUp', {altKey: 'any', shiftKey: 'any'}, KEY_ARROW_UP_COMMAND),
+    dispatch('ArrowRight', SHIFT_KEY_ANY, KEY_ARROW_RIGHT_COMMAND),
+    dispatch('ArrowRight', {...CONTROL_OR_META, ...SHIFT_KEY_ANY}, MOVE_TO_END),
+    dispatch('ArrowLeft', SHIFT_KEY_ANY, KEY_ARROW_LEFT_COMMAND),
     dispatch(
-      'ArrowDown',
-      {altKey: 'any', shiftKey: 'any'},
-      KEY_ARROW_DOWN_COMMAND,
+      'ArrowLeft',
+      {...CONTROL_OR_META, ...SHIFT_KEY_ANY},
+      MOVE_TO_START,
     ),
+    dispatch('ArrowUp', ALT_SHIFT_KEY_ANY, KEY_ARROW_UP_COMMAND),
+    dispatch('ArrowDown', ALT_SHIFT_KEY_ANY, KEY_ARROW_DOWN_COMMAND),
     // lineBreak / paragraph
     enter({...ANY_MODIFIERS, shiftKey: true}, true),
     enter({...ANY_MODIFIERS, shiftKey: false}, false),
@@ -1641,7 +1645,7 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
     // deleteBackward
     {
       key: 'Backspace',
-      modifiers: {shiftKey: 'any'},
+      modifiers: SHIFT_KEY_ANY,
       onMatch: (event, editor) => {
         if (dispatchCommand(editor, KEY_BACKSPACE_COMMAND, event)) {
           markHandledSelectionCommandInsertText(editor._inputState);
@@ -1657,21 +1661,16 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
     prevent('b', CONTROL_OR_META, FORMAT_TEXT_COMMAND, 'bold'),
     prevent('u', CONTROL_OR_META, FORMAT_TEXT_COMMAND, 'underline'),
     prevent('i', CONTROL_OR_META, FORMAT_TEXT_COMMAND, 'italic'),
-    dispatch('Tab', {shiftKey: 'any'}, KEY_TAB_COMMAND),
+    dispatch('Tab', SHIFT_KEY_ANY, KEY_TAB_COMMAND),
     // undo / redo
     prevent('z', CONTROL_OR_META, UNDO_COMMAND, undefined),
+    prevent('z', {...CONTROL_OR_META, shiftKey: true}, REDO_COMMAND, undefined),
     ...(IS_APPLE
       ? [
-          prevent(
-            'z',
-            {metaKey: true, shiftKey: true},
-            REDO_COMMAND,
-            undefined,
-          ),
           // openLineBreak
           {
             key: 'o',
-            modifiers: {ctrlKey: true},
+            modifiers: CTRL_KEY,
             onMatch: (event: KeyboardEvent, editor: LexicalEditor) => {
               event.preventDefault();
               editor._inputState.isInsertLineBreak = true;
@@ -1679,22 +1678,14 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
             },
           },
           // deleteBackward / deleteForward
-          prevent('h', {ctrlKey: true}, DELETE_CHARACTER_COMMAND, true),
-          prevent('d', {ctrlKey: true}, DELETE_CHARACTER_COMMAND, false),
+          prevent('h', CTRL_KEY, DELETE_CHARACTER_COMMAND, true),
+          prevent('d', CTRL_KEY, DELETE_CHARACTER_COMMAND, false),
           // deleteLineBackward / deleteLineForward
-          prevent('Backspace', {metaKey: true}, DELETE_LINE_COMMAND, true),
-          prevent('Delete', {metaKey: true}, DELETE_LINE_COMMAND, false),
-          prevent('k', {ctrlKey: true}, DELETE_LINE_COMMAND, false),
+          prevent('Backspace', META_KEY, DELETE_LINE_COMMAND, true),
+          prevent('Delete', META_KEY, DELETE_LINE_COMMAND, false),
+          prevent('k', CTRL_KEY, DELETE_LINE_COMMAND, false),
         ]
-      : [
-          prevent('y', {ctrlKey: true}, REDO_COMMAND, undefined),
-          prevent(
-            'z',
-            {ctrlKey: true, shiftKey: true},
-            REDO_COMMAND,
-            undefined,
-          ),
-        ]),
+      : [prevent('y', CTRL_KEY, REDO_COMMAND, undefined)]),
     // selectAll
     {
       key: 'a',

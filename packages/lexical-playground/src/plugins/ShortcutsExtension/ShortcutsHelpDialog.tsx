@@ -9,9 +9,9 @@
 import './ShortcutsHelpDialog.css';
 
 import {IS_APPLE} from 'lexical';
-import {Fragment, type JSX} from 'react';
+import {Fragment, type JSX, useLayoutEffect, useState} from 'react';
 
-import {SHORTCUTS} from './shortcuts';
+import {getShortcuts} from './shortcuts';
 
 function humanize(key: string): string {
   return key
@@ -22,9 +22,41 @@ function humanize(key: string): string {
     .replace(/^(\w)/, c => c.toUpperCase());
 }
 
+const PLATFORMS = [
+  {icon: 'apple', label: 'macOS', value: true},
+  {icon: 'windows', label: 'Windows / Linux', value: false},
+] as const;
+
 export default function ShortcutsHelpDialog(): JSX.Element {
+  const [isApple, setIsApple] = useState(false);
+  useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsApple(IS_APPLE);
+  }, []);
   return (
     <div className="ShortcutsHelpDialog">
+      <div
+        className="ShortcutsHelpDialog__platforms"
+        role="radiogroup"
+        aria-label="Keyboard layout">
+        {PLATFORMS.map(platform => (
+          <button
+            key={+platform.value}
+            type="button"
+            role="radio"
+            aria-checked={isApple === platform.value}
+            className="ShortcutsHelpDialog__platform"
+            onClick={e => {
+              e.preventDefault();
+              setIsApple(platform.value);
+            }}>
+            <i
+              className={`ShortcutsHelpDialog__platformIcon ${platform.icon}`}
+            />
+            {platform.label}
+          </button>
+        ))}
+      </div>
       <table>
         <thead>
           <tr>
@@ -33,14 +65,14 @@ export default function ShortcutsHelpDialog(): JSX.Element {
           </tr>
         </thead>
         <tbody>
-          {Object.entries(SHORTCUTS).map(([action, keys]) => (
+          {Object.entries(getShortcuts(isApple)).map(([action, keys]) => (
             <tr key={action}>
               <td className="ShortcutsHelpDialog__action">
                 {humanize(action)}
               </td>
               <td
                 className="ShortcutsHelpDialog__shortcut"
-                data-platform={IS_APPLE ? 'apple' : 'other'}>
+                data-platform={isApple ? 'apple' : 'other'}>
                 {keys.map((v, i) => (
                   <Fragment key={v}>
                     {i > 0 && (

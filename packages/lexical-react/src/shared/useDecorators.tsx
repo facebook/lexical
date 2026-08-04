@@ -30,6 +30,10 @@ export function useDecorators(
   const [decorators, setDecorators] = useState<Record<NodeKey, JSX.Element>>(
     () => editor.getDecorators<JSX.Element>(),
   );
+  // decorate() / decorator listeners can run before setRootElement attaches the
+  // contenteditable. Portals skip when getElementByKey is still null; without a
+  // follow-up recompute they stay missing after the root remounts.
+  const [portalRev, setPortalRev] = useState(0);
 
   // Subscribe to changes
   useLayoutEffect(() => {
@@ -46,6 +50,14 @@ export function useDecorators(
     // ensuring that we set the value.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDecorators(editor.getDecorators());
+  }, [editor]);
+
+  useLayoutEffect(() => {
+    return editor.registerRootListener((rootElement, prevRootElement) => {
+      if (rootElement !== prevRootElement) {
+        setPortalRev(rev => rev + 1);
+      }
+    });
   }, [editor]);
 
   // Return decorators defined as React Portals
@@ -68,5 +80,5 @@ export function useDecorators(
     }
 
     return decoratedPortals;
-  }, [ErrorBoundary, decorators, editor]);
+  }, [ErrorBoundary, decorators, editor, portalRev]);
 }

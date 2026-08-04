@@ -230,7 +230,11 @@ export function mergeLists(list1: ListNode, list2: ListNode): void {
     listItem1 &&
     listItem2 &&
     $isNestedListNode(listItem1) &&
-    $isNestedListNode(listItem2)
+    $isNestedListNode(listItem2) &&
+    // A nested <ul> must not swallow a nested <ol>, same rule as
+    // mergeNextSiblingListIfSameType applies at the top level.
+    listItem1.getFirstChild().getListType() ===
+      listItem2.getFirstChild().getListType()
   ) {
     mergeLists(listItem1.getFirstChild(), listItem2.getFirstChild());
     listItem2.remove();

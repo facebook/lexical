@@ -372,7 +372,11 @@ export class ListItemNode extends ElementNode {
       prevSibling &&
       nextSibling &&
       $isNestedListNode(prevSibling) &&
-      $isNestedListNode(nextSibling)
+      $isNestedListNode(nextSibling) &&
+      // Only join the surrounding sublists when they are the same kind of
+      // list, otherwise the second one loses its listType.
+      prevSibling.getFirstChild().getListType() ===
+        nextSibling.getFirstChild().getListType()
     ) {
       mergeLists(prevSibling.getFirstChild(), nextSibling.getFirstChild());
       nextSibling.remove();

@@ -80,5 +80,8 @@ export function useDecorators(
     }
 
     return decoratedPortals;
+    // portalRev is intentional: decorators may be unchanged after a root remount
+    // while getElementByKey only becomes non-null once the root is attached.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see portalRev above
   }, [ErrorBoundary, decorators, editor, portalRev]);
 }

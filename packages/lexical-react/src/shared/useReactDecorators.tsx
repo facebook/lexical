@@ -9,8 +9,16 @@
 import type {ErrorBoundaryType} from './types';
 import type {LexicalEditor} from 'lexical';
 
-import {type JSX, Suspense, useMemo, useSyncExternalStore} from 'react';
+import {
+  type JSX,
+  Suspense,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import {createPortal} from 'react-dom';
+
+import useLayoutEffect from './useLayoutEffect';
 
 /** @internal */
 export function useReactDecorators(
@@ -26,6 +34,17 @@ export function useReactDecorators(
     [editor],
   );
   const decorators = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  // Same race as useDecorators: decorator portals can be skipped while the root
+  // is detached; recompute when the root identity changes.
+  const [portalRev, setPortalRev] = useState(0);
+
+  useLayoutEffect(() => {
+    return editor.registerRootListener((rootElement, prevRootElement) => {
+      if (rootElement !== prevRootElement) {
+        setPortalRev(rev => rev + 1);
+      }
+    });
+  }, [editor]);
 
   // Return decorators defined as React Portals
   return useMemo(() => {
@@ -47,5 +66,8 @@ export function useReactDecorators(
     }
 
     return decoratedPortals;
-  }, [ErrorBoundary, decorators, editor]);
+    // portalRev is intentional: decorators may be unchanged after a root remount
+    // while getElementByKey only becomes non-null once the root is attached.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see portalRev above
+  }, [ErrorBoundary, decorators, editor, portalRev]);
 }

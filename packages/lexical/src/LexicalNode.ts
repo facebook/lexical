@@ -1681,7 +1681,13 @@ export class LexicalNode {
     }
     writableReplaceWith.__next = nextKey;
     writableReplaceWith.__parent = parentKey;
-    writableParent.__size = size;
+    // `size` was read before replaceWith was detached. When replaceWith was
+    // already a child of this same parent, two children collapse into one, so
+    // the restored size must account for the node that is not coming back.
+    writableParent.__size =
+      replaceWithOldParent !== null && replaceWithOldParent.is(writableParent)
+        ? size - 1
+        : size;
     // Snapshot replaceWith's children count before children transfer so
     // element-anchored selections on `this` can map to the equivalent offset
     // in writableReplaceWith.

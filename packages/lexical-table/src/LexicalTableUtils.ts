@@ -524,7 +524,7 @@ export function $insertTableColumnAtNode(
     return cell;
   }
   let loopRow: TableRowNode = gridFirstChild;
-  rowLoop: for (let i = 0; i < rowCount; i++) {
+  for (let i = 0; i < rowCount; i++) {
     if (i !== 0) {
       const currentRow = loopRow.getNextSibling();
       invariant(
@@ -550,29 +550,34 @@ export function $insertTableColumnAtNode(
       );
       continue;
     }
-    const {
-      cell: currentCell,
-      startColumn: currentStartColumn,
-      startRow: currentStartRow,
-    } = rowMap[insertAfterColumn];
+    const {cell: currentCell, startColumn: currentStartColumn} =
+      rowMap[insertAfterColumn];
     if (currentStartColumn + currentCell.__colSpan - 1 <= insertAfterColumn) {
-      let insertAfterCell: TableCellNode = currentCell;
-      let insertAfterCellRowStart = currentStartRow;
-      let prevCellIndex = insertAfterColumn;
-      while (insertAfterCellRowStart !== i && insertAfterCell.__rowSpan > 1) {
-        prevCellIndex -= currentCell.__colSpan;
-        if (prevCellIndex >= 0) {
-          const {cell: cell_, startRow: startRow_} = rowMap[prevCellIndex];
-          insertAfterCell = cell_;
-          insertAfterCellRowStart = startRow_;
-        } else {
-          loopRow.append($createTableCellNodeForInsertTableColumn(headerState));
-          continue rowLoop;
+      // Find the last cell this row actually owns at or before the insertion
+      // column. Grid positions covered by a rowSpan from an earlier row are not
+      // children of this row, so they can not be inserted after.
+      let insertAfterCell: null | TableCellNode = null;
+      for (let column = 0; column <= insertAfterColumn; column++) {
+        const currentCellMap = rowMap[column];
+        if (currentCellMap.startRow === i) {
+          insertAfterCell = currentCellMap.cell;
+        }
+        if (currentCellMap.cell.__colSpan > 1) {
+          column += currentCellMap.cell.__colSpan - 1;
         }
       }
-      insertAfterCell.insertAfter(
-        $createTableCellNodeForInsertTableColumn(headerState),
-      );
+      if (insertAfterCell === null) {
+        // Every grid column to the left is covered by a rowSpan from an earlier
+        // row, so the new cell is this row's first child.
+        $insertFirst(
+          loopRow,
+          $createTableCellNodeForInsertTableColumn(headerState),
+        );
+      } else {
+        insertAfterCell.insertAfter(
+          $createTableCellNodeForInsertTableColumn(headerState),
+        );
+      }
     } else {
       currentCell.setColSpan(currentCell.__colSpan + 1);
     }

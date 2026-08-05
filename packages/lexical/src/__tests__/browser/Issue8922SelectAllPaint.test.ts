@@ -126,6 +126,16 @@ function mountEditor(decorators: {leading: boolean; trailing: boolean}) {
   return {container, editor};
 }
 
+/**
+ * A real highlight covers thousands of pixels, while subpixel text
+ * antialiasing leaves a handful of same-hued fringes behind on some font
+ * stacks (Windows rasterizes the decorator's label into ~16 of them). Compare
+ * the before / after counts against a floor between those two scales rather
+ * than against zero, so the assertion tracks "the highlight appeared" instead
+ * of "nothing else in the fixture is ever bluish".
+ */
+const MIN_HIGHLIGHT_PIXELS = 200;
+
 /** Number of pixels painted in the `::selection` colour. */
 async function countSelectionPixels(): Promise<number> {
   // `save: false` resolves to the raw base64 string; with `save: true` it is
@@ -159,13 +169,15 @@ describe('select-all paints a highlight around boundary decorators (#8922)', () 
     ['decorators on both edges', {leading: true, trailing: true}],
   ] as const)('%s', async (_label, decorators) => {
     const {editor} = mountEditor(decorators);
-    expect(await countSelectionPixels()).toBe(0);
+    const before = await countSelectionPixels();
 
     editor.update(() => void $selectAll(), {discrete: true});
     // Let the compositor paint the new selection before sampling pixels.
     await new Promise(resolve => requestAnimationFrame(resolve));
     await new Promise(resolve => requestAnimationFrame(resolve));
+    const after = await countSelectionPixels();
 
-    expect(await countSelectionPixels()).toBeGreaterThan(0);
+    // Without the fix this delta is 0 — the browser paints no highlight at all.
+    expect(after - before).toBeGreaterThan(MIN_HIGHLIGHT_PIXELS);
   });
 });

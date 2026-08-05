@@ -13,12 +13,18 @@ import {
   getExtensionDependencyFromEditor,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
+import {PlainTextExtension} from '@lexical/plain-text';
 import {
   $createHeadingNode,
   type HeadingTagType,
   RichTextExtension,
 } from '@lexical/rich-text';
-import {$createTextNode, $getRoot, configExtension} from 'lexical';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  configExtension,
+} from 'lexical';
 import {afterEach, describe, expect, onTestFinished, test} from 'vitest';
 
 afterEach(() => {
@@ -221,5 +227,26 @@ describe('HeadingAnnounceExtension', () => {
     disabled.value = false;
     addHeading(editor, 'h2');
     expect(readLiveRegion()).toBe('Heading level 2');
+  });
+
+  test('builds in a plain text editor, and announces nothing', () => {
+    // Rich text is a peer, not a dependency. If it were a dependency, adding
+    // this announcer to a plain text editor would drag rich text in and the
+    // editor would refuse to build at all: "extension @lexical/plain-text
+    // conflicts with @lexical/rich-text".
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [HeadingAnnounceExtension, PlainTextExtension],
+        name: '[root]',
+      }),
+    );
+    mountRoot(editor);
+
+    // There are no headings to watch for, so there is nothing to say.
+    editor.update(() => void $getRoot().append($createParagraphNode()), {
+      discrete: true,
+    });
+
+    expect(readLiveRegion()).toBe('');
   });
 });

@@ -17,12 +17,13 @@ import {
   $isHeadingNode,
   HeadingNode,
   type HeadingTagType,
-  RichTextExtension,
+  type RichTextExtension,
 } from '@lexical/rich-text';
 import {
   $getNodeByKey,
   COMMAND_PRIORITY_LOW,
   createRefCountedRegistry,
+  declarePeerDependency,
   defineExtension,
   getActiveElementDeep,
   getComposedEventTarget,
@@ -780,13 +781,18 @@ export const HeadingAnnounceExtension = /* @__PURE__ */ defineExtension({
     destroyed: 'Heading level %s removed',
     disabled: false,
   }),
-  // RichTextExtension registers HeadingNode. Without it declared here,
-  // registering this announcer in an editor that has no headings throws
-  // "Node HeadingNode has not been registered" when the mutation listener is
-  // attached. Matches how AutoLinkExtension depends on LinkExtension, and
-  // CheckListExtension on ListExtension, for the same reason.
-  dependencies: [AriaLiveRegionExtension, RichTextExtension],
+  dependencies: [AriaLiveRegionExtension],
   name: '@lexical/a11y/HeadingAnnounce',
+  // Rich text is a PEER, not a dependency. Depending on it would pull it into
+  // whatever editor uses this announcer, and an editor built for plain text
+  // refuses to build with both: "extension @lexical/plain-text conflicts with
+  // @lexical/rich-text". Declaring it as a peer means rich text is set up
+  // first when it is present, and nothing is forced in when it is not.
+  peerDependencies: [
+    /* @__PURE__ */ declarePeerDependency<typeof RichTextExtension>(
+      '@lexical/rich-text',
+    ),
+  ],
   register(editor, _config, state) {
     const {created, destroyed, disabled} = state.getOutput();
     const {announce} = state.getDependency(AriaLiveRegionExtension).output;
@@ -794,8 +800,11 @@ export const HeadingAnnounceExtension = /* @__PURE__ */ defineExtension({
     // Gate on `disabled` from an effect so a disabled announcer registers no
     // listener at all. Peek the message signals at announce time so editing
     // them does not re-register.
+    // An editor without headings has no HeadingNode to watch, and asking for
+    // a mutation listener on an unregistered node throws. Nothing to announce
+    // there, so register nothing.
     return effect(() =>
-      disabled.value
+      disabled.value || !editor.hasNode(HeadingNode)
         ? undefined
         : editor.registerMutationListener(
             HeadingNode,

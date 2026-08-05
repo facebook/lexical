@@ -438,7 +438,11 @@ export class HeadingNode extends ElementNode {
     const newElement =
       isAtEnd || !selection
         ? $createParagraphNode()
-        : $createHeadingNode(this.getTag());
+        : // The heading is split in two, so the second half keeps the
+          // block format and style of the first, like ParagraphNode does.
+          $createHeadingNode(this.getTag())
+            .setFormat(this.getFormatType())
+            .setStyle(this.getStyle());
     const direction = this.getDirection();
     newElement.setDirection(direction);
     this.insertAfter(newElement, restoreSelection);

@@ -474,6 +474,16 @@ export interface LexicalPrivateDOM {
     | 'empty'
     | null
     | undefined;
+  /**
+   * Zero-size anchors parked immediately outside a leading / trailing block
+   * DecoratorNode child so the browser keeps painting the selection highlight
+   * for a range that starts or ends on this element's boundary. Maintained by
+   * `ElementDOMSlot.setDecoratorBoundaryAnchor` and cached here so the
+   * reconciler can diff the shape without re-reading the DOM.
+   */
+  __lexicalDecoratorBoundary?:
+    | {leading: HTMLImageElement | null; trailing: HTMLImageElement | null}
+    | undefined;
   __lexicalDir?: 'ltr' | 'rtl' | null | undefined;
   __lexicalUnmanaged?: boolean | undefined;
   /**

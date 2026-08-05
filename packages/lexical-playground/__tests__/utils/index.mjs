@@ -340,6 +340,19 @@ function removeSafariLinebreakImgHack(actualHtml) {
     : actualHtml;
 }
 
+/**
+ * The reconciler parks a zero-size, out-of-flow `<img>` outside a leading or
+ * trailing block DecoratorNode so browsers keep painting the selection
+ * highlight for a range that ends on that boundary (#8922). It is invisible
+ * scaffolding, so keep it out of the HTML the specs assert on.
+ */
+function removeDecoratorBoundaryAnchors(actualHtml) {
+  return actualHtml.replaceAll(
+    /<img (?:[^>]+ )?data-lexical-decorator-boundary="true"(?: [^>]+)?>/g,
+    '',
+  );
+}
+
 function removeDropTargetAttributes(actualHtml) {
   return actualHtml.replaceAll(/ data-drop-target-for-element="true"/g, '');
 }
@@ -371,11 +384,13 @@ async function assertHTMLOnPageOrFrame(
   return await expect(async () => {
     const actualHtml = removeStickyScrollbar(
       removeDropTargetAttributes(
-        removeSafariLinebreakImgHack(
-          await pageOrFrame
-            .locator('div[contenteditable="true"]')
-            .first()
-            .innerHTML(),
+        removeDecoratorBoundaryAnchors(
+          removeSafariLinebreakImgHack(
+            await pageOrFrame
+              .locator('div[contenteditable="true"]')
+              .first()
+              .innerHTML(),
+          ),
         ),
       ),
     );
@@ -534,6 +549,24 @@ async function assertSelectionOnPageOrFrame(page, expected) {
   const selection = await page.evaluate(() => {
     const rootElement = document.querySelector('div[contenteditable="true"]');
 
+    // The zero-size anchors the reconciler parks outside a leading / trailing
+    // block decorator (#8922) occupy a DOM child slot but no lexical one, so
+    // discount them from both paths and offsets.
+    const boundaryAnchorsBefore = (parent, index) => {
+      const children = parent.childNodes;
+      let count = 0;
+      for (let i = 0; i < index && i < children.length; i++) {
+        const child = children[i];
+        if (
+          child.nodeType === Node.ELEMENT_NODE &&
+          child.getAttribute('data-lexical-decorator-boundary') === 'true'
+        ) {
+          count++;
+        }
+      }
+      return count;
+    };
+
     const getPathFromNode = node => {
       const path = [];
       if (node === rootElement) {
@@ -544,13 +577,17 @@ async function assertSelectionOnPageOrFrame(page, expected) {
         if (parent === null || node === rootElement) {
           break;
         }
-        path.push(Array.from(parent.childNodes).indexOf(node));
+        const index = Array.from(parent.childNodes).indexOf(node);
+        path.push(index - boundaryAnchorsBefore(parent, index));
         node = parent;
       }
       return path.reverse();
     };
 
     const fixOffset = (node, offset) => {
+      if (node && node.nodeType === Node.ELEMENT_NODE) {
+        offset -= boundaryAnchorsBefore(node, offset);
+      }
       // If the selection offset is at the br of a webkit img+br linebreak
       // then move the offset to the img so the tests are consistent across
       // browsers

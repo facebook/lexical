@@ -71,6 +71,22 @@ function isManagedLineBreak(
   );
 }
 
+/**
+ * The zero-size selection anchors the reconciler parks outside a leading /
+ * trailing block decorator are keyless scaffolding, like the managed line
+ * break — a flush that observes one must not evict it as foreign DOM.
+ */
+function isDecoratorBoundaryAnchor(
+  dom: Node,
+  target: Node & LexicalPrivateDOM,
+): boolean {
+  const anchors = target.__lexicalDecoratorBoundary;
+  return (
+    anchors !== undefined &&
+    (dom === anchors.leading || dom === anchors.trailing)
+  );
+}
+
 function getLastSelection(editor: LexicalEditor): null | BaseSelection {
   return editor.read('latest', () => {
     const selection = $getSelection();
@@ -204,6 +220,7 @@ function flushMutations(
               addedDOM !== blockCursorElement &&
               node === null &&
               !isManagedLineBreak(addedDOM, parentDOM, editor) &&
+              !isDecoratorBoundaryAnchor(addedDOM, parentDOM) &&
               // @experimental named-slots. Slot containers are keyless
               // reconciler scaffolding: a flush that observes one being
               // parked in its host or relocated by an explicit mount must
@@ -248,6 +265,12 @@ function flushMutations(
                 blockCursorElement === removedDOM
               ) {
                 targetDOM.appendChild(removedDOM);
+                unremovedBRs++;
+              } else if (isDecoratorBoundaryAnchor(removedDOM, targetDOM)) {
+                // Position matters for these (leading vs trailing), so don't
+                // blindly re-append. `getDecoratorBoundaryAnchor` treats a
+                // detached anchor as absent, so the next reconcile of this
+                // element puts a fresh one on the right edge.
                 unremovedBRs++;
               }
             }

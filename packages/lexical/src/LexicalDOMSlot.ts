@@ -43,6 +43,49 @@ function isSlotContainerDOM(
   );
 }
 
+const IS_WEBKIT_BROWSER = IS_APPLE_WEBKIT || IS_IOS || IS_SAFARI;
+
+/**
+ * Browsers drop the selection highlight for a range whose endpoint is an
+ * element-boundary DOM position (`(element, 0)` or
+ * `(element, childNodes.length)`) sitting immediately next to a block-level
+ * `contenteditable=false` child. The whole selection goes invisible even though
+ * the DOM Range is intact, so a select-all in a document that starts or ends
+ * with a block DecoratorNode looks like it did nothing (#8922). WebKit drops it
+ * as soon as either endpoint has that shape — its own
+ * `document.execCommand('selectAll')` hits the same wall — and Chromium drops
+ * it when both endpoints do. Interior element points next to the same decorator
+ * paint fine everywhere; only the first / last child matters.
+ *
+ * Parking a zero-size, out-of-flow `<img>` on the outside of such a boundary
+ * decorator gives the browser an editable inline box to canonicalize the
+ * boundary position against, which restores the highlight — including over the
+ * decorator itself. `position: absolute` keeps it out of the inline flow so it
+ * contributes no line box and the element's layout is unchanged (an in-flow
+ * `<br>` or `<img>`, like the one
+ * {@link ElementDOMSlot.insertManagedLineBreak} uses for inline decorators,
+ * would add a stray blank line here).
+ */
+function $createDecoratorBoundaryAnchor(): HTMLImageElement {
+  const img = $getDocument().createElement('img');
+  img.setAttribute('data-lexical-decorator-boundary', 'true');
+  img.alt = '';
+  for (const [property, value] of [
+    ['position', 'absolute'],
+    ['width', '0px'],
+    ['height', '0px'],
+    ['border', '0px'],
+    ['margin', '0px'],
+    ['padding', '0px'],
+  ]) {
+    img.style.setProperty(property, value, 'important');
+  }
+  return img;
+}
+
+/** Which boundaries of an ElementNode's DOM carry a decorator anchor. */
+type DecoratorBoundaryEdge = 'leading' | 'trailing';
+
 /**
  * Base class for DOM slots — a pointer to the content-bearing element of a
  * node's DOM, plus optional `before` / `after` boundaries marking where the
@@ -260,7 +303,11 @@ export class ElementDOMSlot<
    * @internal
    */
   override getInsertionAnchor(): Node | null {
-    return super.getInsertionAnchor() || this.getManagedLineBreak();
+    return (
+      super.getInsertionAnchor() ||
+      this.getManagedLineBreak() ||
+      this.getDecoratorBoundaryAnchor('trailing')
+    );
   }
   /**
    * @internal
@@ -281,10 +328,81 @@ export class ElementDOMSlot<
       anchor = node;
       node = node.nextSibling;
     }
+    // The leading decorator boundary anchor is scaffolding too, and it is
+    // parked ahead of the first managed child, so step over it as well.
+    if (node !== null && node === this.getDecoratorBoundaryAnchor('leading')) {
+      anchor = node;
+      node = node.nextSibling;
+    }
     const firstChild = anchor ? anchor.nextSibling : this.element.firstChild;
     return firstChild !== null && firstChild === $getActiveBlockCursorElement()
       ? firstChild
       : anchor;
+  }
+  /**
+   * @internal
+   *
+   * The zero-size selection anchor parked outside a leading / trailing block
+   * decorator child, or `null` when this element has none on that edge. See
+   * {@link $createDecoratorBoundaryAnchor} for why it exists.
+   */
+  getDecoratorBoundaryAnchor(
+    edge: DecoratorBoundaryEdge,
+  ): HTMLImageElement | null {
+    const element: HTMLElement & LexicalPrivateDOM = this.element;
+    const anchors = element.__lexicalDecoratorBoundary;
+    const anchor = anchors ? anchors[edge] : null;
+    // The anchor lives inside a contenteditable, so the browser can evict it
+    // out from under us (e.g. while deleting the surrounding content). Treat a
+    // detached anchor as absent so the next reconcile re-creates it rather
+    // than throwing on `removeChild`.
+    if (anchor !== null && anchor.parentNode !== element) {
+      (anchors as {[k in DecoratorBoundaryEdge]: null})[edge] = null;
+      return null;
+    }
+    return anchor;
+  }
+  /**
+   * @internal
+   *
+   * Add or remove the selection anchor on one edge of this element. A no-op
+   * when the edge is already in the requested state, so the reconciler can call
+   * it unconditionally on every dirty non-inline element.
+   */
+  setDecoratorBoundaryAnchor(
+    edge: DecoratorBoundaryEdge,
+    enabled: boolean,
+  ): void {
+    const existing = this.getDecoratorBoundaryAnchor(edge);
+    if (enabled === (existing !== null)) {
+      return;
+    }
+    const element: HTMLElement & LexicalPrivateDOM = this.element;
+    const anchors = element.__lexicalDecoratorBoundary || {
+      leading: null,
+      trailing: null,
+    };
+    element.__lexicalDecoratorBoundary = anchors;
+    if (existing !== null) {
+      anchors[edge] = null;
+      element.removeChild(existing);
+      return;
+    }
+    const anchor = $createDecoratorBoundaryAnchor();
+    // The leading insertion point comes from `getFirstChildAnchor`, so it has
+    // to be read while the cache is still empty — otherwise it would step over
+    // the very node being inserted. The trailing one is `this.before`, the end
+    // of the managed range, which already sits after any managed line break.
+    if (edge === 'leading') {
+      const firstChildAnchor = this.getFirstChildAnchor();
+      element.insertBefore(
+        anchor,
+        firstChildAnchor ? firstChildAnchor.nextSibling : element.firstChild,
+      );
+    } else {
+      element.insertBefore(anchor, this.before);
+    }
+    anchors[edge] = anchor;
   }
   /**
    * @internal
@@ -305,9 +423,7 @@ export class ElementDOMSlot<
     if (lineBreakType === null) {
       this.removeManagedLineBreak();
     } else {
-      const webkitHack =
-        lineBreakType === 'decorator' &&
-        (IS_APPLE_WEBKIT || IS_IOS || IS_SAFARI);
+      const webkitHack = lineBreakType === 'decorator' && IS_WEBKIT_BROWSER;
       this.insertManagedLineBreak(webkitHack);
     }
   }
@@ -335,7 +451,9 @@ export class ElementDOMSlot<
       this.removeManagedLineBreak();
     }
     const element: HTMLElement & LexicalPrivateDOM = this.element;
-    const before = this.before;
+    // Stay inside the trailing decorator boundary anchor, which marks the very
+    // end of the managed range.
+    const before = this.before || this.getDecoratorBoundaryAnchor('trailing');
     const br = $getDocument().createElement('br');
     br.setAttribute('data-lexical-managed-linebreak', 'true');
     element.insertBefore(br, before);

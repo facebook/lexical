@@ -1136,7 +1136,21 @@ export function $isTextPointCaretSlice<D extends CaretDirection>(
 export function $extendCaretToRange<D extends CaretDirection>(
   anchor: PointCaret<D>,
 ): CaretRange<D> {
-  return $getCaretRange(anchor, $getSiblingCaret($getRoot(), anchor.direction));
+  const dir = anchor.direction;
+  // The naive focus, SiblingCaret(root, dir), is a sentinel with no real
+  // tree position (root has no siblings) — its getFlipped() would have to
+  // ask for root's parent, which doesn't exist, and throw. Anchor the
+  // focus on root's last real child in this direction instead, so it's a
+  // genuine, flippable end-of-document position.
+  //
+  // TS can't prove FlipDirection<FlipDirection<D>> reduces to D for a
+  // generic D (only for concrete 'next'/'previous' literals), even though
+  // flipping twice always returns the original direction at runtime.
+  const focus = $getChildCaret(
+    $getRoot(),
+    flipDirection(dir),
+  ).getFlipped() as unknown as NodeCaret<D>;
+  return $getCaretRange(anchor, focus);
 }
 
 /**

@@ -1699,15 +1699,23 @@ describe('LexicalCaret', () => {
       test('next direction: focus can be flipped and used to delete to end of document (regression for #8927)', () => {
         testEnv.editor.update(
           () => {
-            const p1 = $createParagraphNode().append($createTextNode('hello'));
-            const p2 = $createParagraphNode().append($createTextNode('world'));
+            const t1 = $createTextNode('hello');
+            const t2 = $createTextNode('world');
+            const p1 = $createParagraphNode().append(t1);
+            const p2 = $createParagraphNode().append(t2);
             $getRoot().clear().append(p1, p2);
-            const t = p1.getFirstChild() as TextNode;
-            const range = $extendCaretToRange($getTextPointCaret(t, 'next', 2));
-            expect(() => range.focus.getFlipped()).not.toThrow();
+            const range = $extendCaretToRange(
+              $getTextPointCaret(t1, 'next', 2),
+            );
+            expect(range.focus).toEqual($getSiblingCaret(p2, 'next'));
+            expect(range.focus.getFlipped()).toEqual(
+              $getChildCaret($getRoot(), 'previous'),
+            );
+            expect(range.focus.getFlipped().getFlipped()).toEqual(range.focus);
             $removeTextFromCaretRange(range);
+            expect($getRoot().getChildren()).toEqual([p1]);
+            expect($getRoot().getAllTextNodes()).toEqual([t1]);
             expect($getRoot().getTextContent()).toBe('he');
-            expect($getRoot().getChildrenSize()).toBe(1);
           },
           {discrete: true},
         );
@@ -1716,17 +1724,24 @@ describe('LexicalCaret', () => {
       test('previous direction: focus can be flipped and used to delete to start of document', () => {
         testEnv.editor.update(
           () => {
-            const p1 = $createParagraphNode().append($createTextNode('hello'));
-            const p2 = $createParagraphNode().append($createTextNode('world'));
+            const t1 = $createTextNode('hello');
+            const t2 = $createTextNode('world');
+            const p1 = $createParagraphNode().append(t1);
+            const p2 = $createParagraphNode().append(t2);
             $getRoot().clear().append(p1, p2);
-            const t = p2.getFirstChild() as TextNode;
+
             const range = $extendCaretToRange(
-              $getTextPointCaret(t, 'previous', 2),
+              $getTextPointCaret(t2, 'previous', 2),
             );
-            expect(() => range.focus.getFlipped()).not.toThrow();
+            expect(range.focus).toEqual($getSiblingCaret(p1, 'previous'));
+            expect(range.focus.getFlipped()).toEqual(
+              $getChildCaret($getRoot(), 'next'),
+            );
+            expect(range.focus.getFlipped().getFlipped()).toEqual(range.focus);
             $removeTextFromCaretRange(range);
+            expect($getRoot().getChildren()).toEqual([p2]);
+            expect($getRoot().getAllTextNodes()).toEqual([t2]);
             expect($getRoot().getTextContent()).toBe('rld');
-            expect($getRoot().getChildrenSize()).toBe(1);
           },
           {discrete: true},
         );
@@ -1734,16 +1749,22 @@ describe('LexicalCaret', () => {
 
       test("doesn't change which nodes plain iteration visits", () => {
         testEnv.editor.update(() => {
-          const p1 = $createParagraphNode().append($createTextNode('hello'));
-          const p2 = $createParagraphNode().append($createTextNode('world'));
+          const t1 = $createTextNode('hello');
+          const t2 = $createTextNode('world');
+          const p1 = $createParagraphNode().append(t1);
+          const p2 = $createParagraphNode().append(t2);
           $getRoot().clear().append(p1, p2);
-          const t = p1.getFirstChild() as TextNode;
-          const visited = Array.from(
-            $extendCaretToRange($getTextPointCaret(t, 'next', 2)),
-          ).map(caret => caret.origin.getTextContent());
+          const visited = [
+            ...$extendCaretToRange($getTextPointCaret(t1, 'next', 2)),
+          ];
           // Same sequence a plain for...of produced before this fix — the fix
           // only changes whether the focus can be flipped, not what iteration visits.
-          expect(visited).toEqual(['hello', 'world', 'world', 'world']);
+          expect(visited).toEqual([
+            $getSiblingCaret(p1, 'next'),
+            $getChildCaret(p2, 'next'),
+            $getSiblingCaret(t2, 'next'),
+            $getSiblingCaret(p2, 'next'),
+          ]);
         });
       });
 

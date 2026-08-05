@@ -1130,27 +1130,47 @@ export function $isTextPointCaretSlice<D extends CaretDirection>(
 }
 
 /**
+ * Return the caret if it's in the given direction, otherwise return
+ * caret.getFlipped().
+ *
+ * @param caret Any PointCaret
+ * @param direction The desired direction
+ * @returns A PointCaret in direction
+ */
+export function $getCaretInDirection<
+  Caret extends PointCaret<CaretDirection>,
+  D extends CaretDirection,
+>(
+  caret: Caret,
+  direction: D,
+):
+  | NodeCaret<D>
+  | (Caret extends TextPointCaret<TextNode, CaretDirection>
+      ? TextPointCaret<TextNode, D>
+      : never) {
+  return (caret.direction === direction ? caret : caret.getFlipped()) as
+    | NodeCaret<D>
+    | (Caret extends TextPointCaret<TextNode, CaretDirection>
+        ? TextPointCaret<TextNode, D>
+        : never);
+}
+
+/**
  * Construct a CaretRange that starts at anchor and goes to the end of the
  * document in the anchor caret's direction.
  */
 export function $extendCaretToRange<D extends CaretDirection>(
   anchor: PointCaret<D>,
 ): CaretRange<D> {
-  const dir = anchor.direction;
-  // The naive focus, SiblingCaret(root, dir), is a sentinel with no real
-  // tree position (root has no siblings) — its getFlipped() would have to
-  // ask for root's parent, which doesn't exist, and throw. Anchor the
-  // focus on root's last real child in this direction instead, so it's a
-  // genuine, flippable end-of-document position.
-  //
-  // TS can't prove FlipDirection<FlipDirection<D>> reduces to D for a
-  // generic D (only for concrete 'next'/'previous' literals), even though
-  // flipping twice always returns the original direction at runtime.
-  const focus = $getChildCaret(
-    $getRoot(),
-    flipDirection(dir),
-  ).getFlipped() as unknown as NodeCaret<D>;
-  return $getCaretRange(anchor, focus);
+  // Use an in-document point to represent the end,
+  // iteration is inclusive of the endpoint.
+  return $getCaretRange(
+    anchor,
+    $getCaretInDirection(
+      $getChildCaret($getRoot(), flipDirection(anchor.direction)),
+      anchor.direction,
+    ),
+  );
 }
 
 /**

@@ -7,63 +7,66 @@
  */
 
 import {LexicalComposer} from '@lexical/react/LexicalComposer';
-import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalErrorBoundary} from '@lexical/react/LexicalErrorBoundary';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
-  $applyNodeReplacement,
+  $create,
   $createParagraphNode,
+  $getDocument,
   $getEditor,
   $getNodeByKey,
   $getRoot,
+  $getState,
+  $setState,
+  createState,
   DecoratorNode,
   defineExtension,
   type EditorConfig,
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
+  type NodeStateVersion,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import * as React from 'react';
 import {act} from 'react';
 import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest';
 
+const labelState = createState('label', {
+  parse: v => (v ? String(v) : 'hello'),
+});
 class ReactDecoratorNode extends DecoratorNode<React.ReactNode> {
-  __label = 'hello';
-
   $config() {
     return this.config('react-decorator-portal-rev', {extends: DecoratorNode});
   }
 
   createDOM(_config: EditorConfig, editor: LexicalEditor): HTMLElement {
-    return (editor._window || window).document.createElement('div');
+    return $getDocument().createElement('div');
   }
 
   updateDOM(): boolean {
     return false;
   }
 
-  afterCloneFrom(prevNode: this): void {
-    super.afterCloneFrom(prevNode);
-    this.__label = prevNode.__label;
+  setLabel(label: string): this {
+    return $setState(this, labelState, label);
   }
 
-  setLabel(label: string): this {
-    const self = this.getWritable();
-    self.__label = label;
-    return self;
+  getLabel(version?: NodeStateVersion): string {
+    return $getState(this, labelState, version);
   }
 
   decorate(): React.ReactNode {
-    return <span data-testid="decorator-portal">{this.__label}</span>;
+    return <span data-testid="decorator-portal">{this.getLabel()}</span>;
   }
 }
 
 function $createReactDecoratorNode(label: string): ReactDecoratorNode {
-  return $applyNodeReplacement(new ReactDecoratorNode().setLabel(label));
+  return $create(ReactDecoratorNode).setLabel(label);
 }
 
 function $isReactDecoratorNode(
@@ -89,13 +92,8 @@ describe('useDecorators root remount', () => {
   });
 
   test('recreates decorator portals after root detach/attach without decorator map changes', async () => {
-    let editor: LexicalEditor | undefined;
-    let decoratorKey: NodeKey | undefined;
-
-    function GrabEditor() {
-      [editor] = useLexicalComposerContext();
-      return null;
-    }
+    let editor!: LexicalEditor;
+    let decoratorKey!: NodeKey;
 
     function App() {
       return (
@@ -114,7 +112,6 @@ describe('useDecorators root remount', () => {
             },
             theme: {},
           }}>
-          <GrabEditor />
           <RichTextPlugin
             contentEditable={<ContentEditable />}
             placeholder={null}
@@ -140,16 +137,17 @@ describe('useDecorators root remount', () => {
     // Detach the root, then refresh decorators while getElementByKey is null so
     // portal creation is skipped (same race as remount-before-root-attach).
     await act(async () => {
-      editor!.setRootElement(null);
+      editor.setRootElement(null);
     });
 
     await act(async () => {
       editor!.update(() => {
-        const node = $getNodeByKey(decoratorKey!);
-        if ($isReactDecoratorNode(node)) {
-          // Force a decorator refresh without changing rendered content.
-          node.setLabel('hello');
-        }
+        const node = $assertNodeType(
+          $getNodeByKey(decoratorKey!),
+          $isReactDecoratorNode,
+        );
+        // Force a decorator refresh without changing rendered content.
+        node.setLabel('hello');
       });
     });
 
@@ -162,11 +160,11 @@ describe('useDecorators root remount', () => {
     container!.appendChild(nextRoot);
 
     await act(async () => {
-      editor!.setRootElement(nextRoot);
+      editor.setRootElement(nextRoot);
     });
 
-    expect(editor!.getRootElement()).toBe(nextRoot);
-    expect(editor!.getRootElement()).not.toBe(previousRoot);
+    expect(editor.getRootElement()).toBe(nextRoot);
+    expect(editor.getRootElement()).not.toBe(previousRoot);
     expect(
       container!.querySelector('[data-testid="decorator-portal"]')?.textContent,
     ).toBe('hello');
@@ -190,8 +188,8 @@ describe('useReactDecorators root remount', () => {
   });
 
   test('recreates decorator portals after root detach/attach without decorator map changes', async () => {
-    let editor: LexicalEditor | undefined;
-    let decoratorKey: NodeKey | undefined;
+    let editor!: LexicalEditor;
+    let decoratorKey!: NodeKey;
 
     const extension = defineExtension({
       $initialEditorState: () => {
@@ -205,17 +203,8 @@ describe('useReactDecorators root remount', () => {
       nodes: [ReactDecoratorNode],
     });
 
-    function GrabEditor() {
-      [editor] = useLexicalComposerContext();
-      return null;
-    }
-
     function App() {
-      return (
-        <LexicalExtensionComposer extension={extension}>
-          <GrabEditor />
-        </LexicalExtensionComposer>
-      );
+      return <LexicalExtensionComposer extension={extension} />;
     }
 
     await act(async () => {
@@ -228,19 +217,20 @@ describe('useReactDecorators root remount', () => {
       container!.querySelector('[data-testid="decorator-portal"]')?.textContent,
     ).toBe('hello');
 
-    const previousRoot = editor!.getRootElement();
+    const previousRoot = editor.getRootElement();
     expect(previousRoot).not.toBeNull();
 
     await act(async () => {
-      editor!.setRootElement(null);
+      editor.setRootElement(null);
     });
 
     await act(async () => {
-      editor!.update(() => {
-        const node = $getNodeByKey(decoratorKey!);
-        if ($isReactDecoratorNode(node)) {
-          node.setLabel('hello');
-        }
+      editor.update(() => {
+        const node = $assertNodeType(
+          $getNodeByKey(decoratorKey),
+          $isReactDecoratorNode,
+        );
+        node.setLabel('hello');
       });
     });
 
@@ -253,11 +243,11 @@ describe('useReactDecorators root remount', () => {
     container!.appendChild(nextRoot);
 
     await act(async () => {
-      editor!.setRootElement(nextRoot);
+      editor.setRootElement(nextRoot);
     });
 
-    expect(editor!.getRootElement()).toBe(nextRoot);
-    expect(editor!.getRootElement()).not.toBe(previousRoot);
+    expect(editor.getRootElement()).toBe(nextRoot);
+    expect(editor.getRootElement()).not.toBe(previousRoot);
     expect(
       container!.querySelector('[data-testid="decorator-portal"]')?.textContent,
     ).toBe('hello');

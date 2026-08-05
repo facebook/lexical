@@ -808,7 +808,14 @@ export const HeadingAnnounceExtension = /* @__PURE__ */ defineExtension({
               let destroyedTag: HeadingTagType | null = null;
               for (const [key, mutation] of nodes) {
                 if (mutation === 'created' && createdTag === null) {
-                  createdTag = editor.read(() => $readHeadingTag(key));
+                  // Read the committed state directly. editor.read() flushes
+                  // pending updates first, and a mutation listener runs during
+                  // a commit - forcing a flush from inside one splits the
+                  // update in two, so a single edit becomes two history
+                  // entries and one undo only takes back half of it.
+                  createdTag = editor
+                    .getEditorState()
+                    .read(() => $readHeadingTag(key));
                 } else if (mutation === 'destroyed' && destroyedTag === null) {
                   destroyedTag = prevEditorState.read(() =>
                     $readHeadingTag(key),

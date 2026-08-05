@@ -98,7 +98,10 @@ async function expectSuccessfulExec(cmd, retriesLeft = MATURITY_RETRIES) {
   );
   try {
     return await exec(cmd, {env});
-  } catch (err) {
+  } catch (caught) {
+    // `.catch(err => ...)` used to hand this back as `any`; a catch binding is
+    // `unknown` under strict, so restore the shape the reporting below reads.
+    const err = /** @type {Record<string, unknown>} */ (caught);
     if (retriesLeft > 0 && isImmatureDependencyError(err)) {
       console.warn(
         `${cmd}: a dependency is short of the minimumReleaseAge cooldown, ` +

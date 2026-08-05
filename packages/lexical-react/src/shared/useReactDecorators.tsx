@@ -9,16 +9,10 @@
 import type {ErrorBoundaryType} from './types';
 import type {LexicalEditor} from 'lexical';
 
-import {
-  type JSX,
-  Suspense,
-  useMemo,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import {type JSX, Suspense, useMemo, useSyncExternalStore} from 'react';
 import {createPortal} from 'react-dom';
 
-import useLayoutEffect from './useLayoutEffect';
+import {useRootElement} from './useRootElement';
 
 /** @internal */
 export function useReactDecorators(
@@ -34,30 +28,20 @@ export function useReactDecorators(
     [editor],
   );
   const decorators = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-  // Same race as useDecorators: decorator portals can be skipped while the root
-  // is detached; recompute when the root identity changes.
-  const [rootElement, setRootElement] = useState(() => editor.getRootElement());
-
-  useLayoutEffect(() => {
-    return editor.registerRootListener((nextRootElement, prevRootElement) => {
-      if (nextRootElement !== prevRootElement) {
-        setRootElement(nextRootElement);
-      }
-    });
-  }, [editor]);
+  const rootElement = useRootElement(editor);
 
   // Return decorators defined as React Portals
   return useMemo(() => {
+    // Declare a dependency on rootElement for the lint
+    void rootElement;
+    const onError = (e: Error) => editor._onError(e);
     const decoratedPortals = [];
     for (const nodeKey in decorators) {
       const element = editor.getElementByKey(nodeKey);
 
       if (element !== null) {
         const reactDecorator = (
-          <ErrorBoundary
-            onError={e => {
-              editor._onError(e);
-            }}>
+          <ErrorBoundary onError={onError}>
             <Suspense fallback={null}>{decorators[nodeKey]}</Suspense>
           </ErrorBoundary>
         );

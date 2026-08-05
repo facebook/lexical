@@ -13,6 +13,7 @@ import {
   $isInlineElementOrDecoratorNode,
   $isLineBreakNode,
   $isTextNode,
+  $setDirectionFromDOM,
   addClassNamesToElement,
   type DOMConversionOutput,
   type DOMExportOutput,
@@ -370,6 +371,7 @@ export function $convertTableCellNodeElement(
   if (isValidVerticalAlign(verticalAlign)) {
     tableCellNode.__verticalAlign = verticalAlign;
   }
+  $setDirectionFromDOM(tableCellNode, domNode_);
 
   const style = domNode_.style;
   const textDecoration = ((style && style.textDecoration) || '').split(' ');

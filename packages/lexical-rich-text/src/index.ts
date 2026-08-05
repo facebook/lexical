@@ -1164,9 +1164,23 @@ export function registerRichText(
   const removeListener = mergeRegister(
     editor.registerCommand(
       CLICK_COMMAND,
-      () => {
+      event => {
         const selection = $getSelection();
         if ($isNodeSelection(selection)) {
+          // A click on an already-selected node is an interaction with that
+          // node (its own click handler may select it, open an editor, …),
+          // not a deselect gesture. Keep the selection when the click target
+          // is inside the selected node's DOM; clicking anywhere else still
+          // deselects (facebook/lexical#8907).
+          const eventTarget = event.target;
+          if (isHTMLElement(eventTarget)) {
+            for (const node of selection.getNodes()) {
+              const dom = editor.getElementByKey(node.getKey());
+              if (dom !== null && dom.contains(eventTarget)) {
+                return false;
+              }
+            }
+          }
           selection.clear();
           return true;
         }

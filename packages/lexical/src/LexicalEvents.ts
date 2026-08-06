@@ -1016,6 +1016,25 @@ function $handleBeforeInput(event: InputEvent): boolean {
   const focusNode = focus.getNode();
 
   if (inputType === 'insertText' || inputType === 'insertTranspose') {
+    // macOS/iOS dictation can revise an already-inserted word by firing an
+    // insertText event (data set) whose targetRange points at the word to
+    // replace — the same revision the insertReplacementText case below handles,
+    // but routed through insertText. The pre-switch applyDOMRange above only
+    // syncs the selection to the targetRange when the selection is collapsed,
+    // so a stale non-collapsed selection (left behind by a prior composition
+    // step) routes the text to the wrong place — deleting the misunderstood
+    // word and leaving a gap instead of revising it. The targetRange is
+    // authoritative for this revision, so apply it before inserting.
+    if (
+      inputType === 'insertText' &&
+      data != null &&
+      targetRange !== null &&
+      !targetRange.collapsed &&
+      !selection.isCollapsed() &&
+      !$isRootNode(anchorNode)
+    ) {
+      selection.applyDOMRange(targetRange);
+    }
     if (data === '\n') {
       event.preventDefault();
       dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, false);
@@ -1056,6 +1075,23 @@ function $handleBeforeInput(event: InputEvent): boolean {
     case 'insertFromYank':
     case 'insertFromDrop':
     case 'insertReplacementText': {
+      // macOS/iOS dictation, autocorrect and spellcheck "Replace" revise an
+      // already-inserted word with an insertReplacementText event whose
+      // targetRange identifies exactly which text the OS intends to replace.
+      // The pre-switch applyDOMRange above only syncs the selection to the
+      // targetRange when the selection is collapsed, so a stale non-collapsed
+      // selection (e.g. left over from a prior composition step) would route
+      // the replacement to the wrong text — deleting the misunderstood word
+      // and leaving a gap instead of replacing it. The targetRange is
+      // authoritative for this input type, so apply it before inserting.
+      if (
+        inputType === 'insertReplacementText' &&
+        targetRange !== null &&
+        !targetRange.collapsed &&
+        !$isRootNode(selection.anchor.getNode())
+      ) {
+        selection.applyDOMRange(targetRange);
+      }
       dispatchCommand(editor, CONTROLLED_TEXT_INSERTION_COMMAND, event);
       const textFromDataTransfer = event.dataTransfer
         ? event.dataTransfer.getData('text/plain')

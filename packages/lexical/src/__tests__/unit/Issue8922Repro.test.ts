@@ -226,12 +226,16 @@ describe('Issue #8922: select-all with a boundary block decorator', () => {
     );
 
     // Inline decorators paint fine at a boundary, so no anchor — the existing
-    // img+br managed line break is what they need.
+    // managed line break is what they need. Outside Safari that line break is
+    // a plain <br>; the Safari img+br shape is pinned by
+    // LexicalWebkitLinebreakImg.test.ts.
     expect(container.querySelectorAll(BOUNDARY_SELECTOR)).toHaveLength(0);
-    expect(
-      container.querySelectorAll('[data-lexical-managed-linebreak="true"]')
-        .length,
-    ).toBeGreaterThan(0);
+    const managedLinebreaks = Array.from(
+      container.querySelectorAll('[data-lexical-managed-linebreak="true"]'),
+      node => node.nodeName.toLowerCase(),
+    );
+    expect(managedLinebreaks.length).toBeGreaterThan(0);
+    expect(managedLinebreaks).not.toContain('img');
   });
 
   test('anchors do not shift the child offsets $selectAll resolves to', () => {

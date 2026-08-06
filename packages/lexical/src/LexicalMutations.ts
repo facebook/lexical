@@ -21,6 +21,7 @@ import {
   type TextNode,
 } from '.';
 import {IS_FIREFOX} from './environment';
+import {isDecoratorBoundaryAnchorDOM} from './LexicalDOMSlot';
 import {updateEditorSync} from './LexicalUpdates';
 import {
   $getNodeByKey,
@@ -68,22 +69,6 @@ function isManagedLineBreak(
       (dom === lexicalLineBreak ||
         (isBR && dom.previousSibling === lexicalLineBreak))) ||
     (isBR && getNodeKeyFromDOMNode(dom, editor) !== undefined)
-  );
-}
-
-/**
- * The zero-size selection anchors the reconciler parks outside a leading /
- * trailing block decorator are keyless scaffolding, like the managed line
- * break — a flush that observes one must not evict it as foreign DOM.
- */
-function isDecoratorBoundaryAnchor(
-  dom: Node,
-  target: Node & LexicalPrivateDOM,
-): boolean {
-  const anchors = target.__lexicalDecoratorBoundary;
-  return (
-    anchors !== undefined &&
-    (dom === anchors.leading || dom === anchors.trailing)
   );
 }
 
@@ -220,7 +205,11 @@ function flushMutations(
               addedDOM !== blockCursorElement &&
               node === null &&
               !isManagedLineBreak(addedDOM, parentDOM, editor) &&
-              !isDecoratorBoundaryAnchor(addedDOM, parentDOM) &&
+              // The zero-size selection anchors the reconciler parks outside
+              // a leading / trailing block decorator (#8922) are keyless
+              // scaffolding, like the managed line break — don't evict them
+              // as foreign DOM.
+              !isDecoratorBoundaryAnchorDOM(addedDOM) &&
               // @experimental named-slots. Slot containers are keyless
               // reconciler scaffolding: a flush that observes one being
               // parked in its host or relocated by an explicit mount must
@@ -266,11 +255,10 @@ function flushMutations(
               ) {
                 targetDOM.appendChild(removedDOM);
                 unremovedBRs++;
-              } else if (isDecoratorBoundaryAnchor(removedDOM, targetDOM)) {
+              } else if (isDecoratorBoundaryAnchorDOM(removedDOM)) {
                 // Position matters for these (leading vs trailing), so don't
-                // blindly re-append. `getDecoratorBoundaryAnchor` treats a
-                // detached anchor as absent, so the next reconcile of this
-                // element puts a fresh one on the right edge.
+                // blindly re-append — the next reconcile of this element puts
+                // a fresh anchor on the right edge.
                 unremovedBRs++;
               }
             }

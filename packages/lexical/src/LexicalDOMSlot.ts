@@ -83,6 +83,24 @@ function $createDecoratorBoundaryAnchor(): HTMLImageElement {
   return img;
 }
 
+/**
+ * @internal
+ *
+ * A decorator boundary anchor is identified by its attribute alone — the DOM
+ * is the source of truth (each edge's anchor has a fixed position in the
+ * managed range), so there is no per-element cache that could go stale when
+ * the browser evicts or moves one.
+ */
+export function isDecoratorBoundaryAnchorDOM(
+  node: Node | null,
+): node is HTMLImageElement {
+  return (
+    node !== null &&
+    node.nodeType === 1 &&
+    (node as Element).hasAttribute('data-lexical-decorator-boundary')
+  );
+}
+
 /** Which boundaries of an ElementNode's DOM carry a decorator anchor. */
 type DecoratorBoundaryEdge = 'leading' | 'trailing';
 
@@ -330,7 +348,7 @@ export class ElementDOMSlot<
     }
     // The leading decorator boundary anchor is scaffolding too, and it is
     // parked ahead of the first managed child, so step over it as well.
-    if (node !== null && node === this.getDecoratorBoundaryAnchor('leading')) {
+    if (isDecoratorBoundaryAnchorDOM(node)) {
       anchor = node;
       node = node.nextSibling;
     }
@@ -343,24 +361,32 @@ export class ElementDOMSlot<
    * @internal
    *
    * The zero-size selection anchor parked outside a leading / trailing block
-   * decorator child, or `null` when this element has none on that edge. See
-   * {@link $createDecoratorBoundaryAnchor} for why it exists.
+   * decorator child, or `null` when this element has none on that edge. Each
+   * edge's anchor has a fixed DOM position — leading: the head of the managed
+   * range (after the `after` boundary and any slot containers); trailing: the
+   * very end of the managed range (just inside the `before` boundary) — so
+   * this reads the DOM directly instead of maintaining a cache.
    */
   getDecoratorBoundaryAnchor(
     edge: DecoratorBoundaryEdge,
   ): HTMLImageElement | null {
-    const element: HTMLElement & LexicalPrivateDOM = this.element;
-    const anchors = element.__lexicalDecoratorBoundary;
-    const anchor = anchors ? anchors[edge] : null;
-    // The anchor lives inside a contenteditable, so the browser can evict it
-    // out from under us (e.g. while deleting the surrounding content). Treat a
-    // detached anchor as absent so the next reconcile re-creates it rather
-    // than throwing on `removeChild`.
-    if (anchor !== null && anchor.parentNode !== element) {
-      (anchors as {[k in DecoratorBoundaryEdge]: null})[edge] = null;
-      return null;
+    let node: Node | null;
+    if (edge === 'leading') {
+      const after = super.getFirstChildAnchor();
+      node = after ? after.nextSibling : this.element.firstChild;
+      while (isSlotContainerDOM(node)) {
+        node = node.nextSibling;
+      }
+    } else {
+      node = this.before ? this.before.previousSibling : this.element.lastChild;
+      // The transient block cursor is appended after the trailing anchor (a
+      // collapsed element selection at the end, beside the same boundary
+      // decorator) and can still be present during the next reconcile.
+      if (node !== null && node === $getActiveBlockCursorElement()) {
+        node = node.previousSibling;
+      }
     }
-    return anchor;
+    return isDecoratorBoundaryAnchorDOM(node) ? node : null;
   }
   /**
    * @internal
@@ -377,32 +403,19 @@ export class ElementDOMSlot<
     if (enabled === (existing !== null)) {
       return;
     }
-    const element: HTMLElement & LexicalPrivateDOM = this.element;
-    const anchors = element.__lexicalDecoratorBoundary || {
-      leading: null,
-      trailing: null,
-    };
-    element.__lexicalDecoratorBoundary = anchors;
     if (existing !== null) {
-      anchors[edge] = null;
-      element.removeChild(existing);
-      return;
-    }
-    const anchor = $createDecoratorBoundaryAnchor();
-    // The leading insertion point comes from `getFirstChildAnchor`, so it has
-    // to be read while the cache is still empty — otherwise it would step over
-    // the very node being inserted. The trailing one is `this.before`, the end
-    // of the managed range, which already sits after any managed line break.
-    if (edge === 'leading') {
+      this.element.removeChild(existing);
+    } else if (edge === 'leading') {
       const firstChildAnchor = this.getFirstChildAnchor();
-      element.insertBefore(
-        anchor,
-        firstChildAnchor ? firstChildAnchor.nextSibling : element.firstChild,
+      this.element.insertBefore(
+        $createDecoratorBoundaryAnchor(),
+        firstChildAnchor
+          ? firstChildAnchor.nextSibling
+          : this.element.firstChild,
       );
     } else {
-      element.insertBefore(anchor, this.before);
+      this.element.insertBefore($createDecoratorBoundaryAnchor(), this.before);
     }
-    anchors[edge] = anchor;
   }
   /**
    * @internal

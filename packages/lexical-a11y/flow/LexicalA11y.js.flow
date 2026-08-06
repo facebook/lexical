@@ -61,17 +61,6 @@ declare export var HistoryAnnounceExtension: LexicalExtension<
   void,
 >;
 
-export type HeadingAnnounceExtensionConfig = {
-  created: string,
-  destroyed: string,
-  disabled: boolean,
-};
-declare export var HeadingAnnounceExtension: LexicalExtension<
-  HeadingAnnounceExtensionConfig,
-  '@lexical/a11y/HeadingAnnounce',
-  NamedSignalsOutput<HeadingAnnounceExtensionConfig>,
-  void,
->;
 export type EditorModeAnnounceExtensionConfig = {
   editable: string,
   readOnly: string,

@@ -21,7 +21,6 @@
   "sideEffects": false,
   "dependencies": {
     "@lexical/extension": "workspace:*",
-    "@lexical/rich-text": "workspace:*",
     "@lexical/utils": "workspace:*",
     "lexical": "workspace:*"
   },

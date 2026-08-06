@@ -6,7 +6,7 @@
  *
  */
 
-import {HeadingAnnounceExtension} from '@lexical/a11y';
+import {AriaLiveRegionExtension} from '@lexical/a11y';
 import {
   buildEditorFromExtensions,
   defineExtension,
@@ -16,6 +16,7 @@ import {
 import {PlainTextExtension} from '@lexical/plain-text';
 import {
   $createHeadingNode,
+  HeadingAnnounceExtension,
   type HeadingTagType,
   RichTextExtension,
 } from '@lexical/rich-text';
@@ -82,7 +83,7 @@ describe('HeadingAnnounceExtension', () => {
   test('announces every heading level as it is created', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [HeadingAnnounceExtension, RichTextExtension],
+        dependencies: [RichTextExtension],
         name: '[root]',
       }),
     );
@@ -98,7 +99,7 @@ describe('HeadingAnnounceExtension', () => {
   test('announces the level a heading had when it is removed', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [HeadingAnnounceExtension, RichTextExtension],
+        dependencies: [RichTextExtension],
         name: '[root]',
       }),
     );
@@ -114,7 +115,7 @@ describe('HeadingAnnounceExtension', () => {
   test('stays silent while editing inside a heading', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [HeadingAnnounceExtension, RichTextExtension],
+        dependencies: [RichTextExtension],
         name: '[root]',
       }),
     );
@@ -139,7 +140,7 @@ describe('HeadingAnnounceExtension', () => {
   test('announces the new level when a heading changes level', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [HeadingAnnounceExtension, RichTextExtension],
+        dependencies: [RichTextExtension],
         name: '[root]',
       }),
     );
@@ -190,7 +191,7 @@ describe('HeadingAnnounceExtension', () => {
   test('reflects message signal changes at runtime', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [HeadingAnnounceExtension, RichTextExtension],
+        dependencies: [RichTextExtension],
         name: '[root]',
       }),
     );
@@ -209,7 +210,7 @@ describe('HeadingAnnounceExtension', () => {
   test('does not announce while disabled, and resumes when re-enabled', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [HeadingAnnounceExtension, RichTextExtension],
+        dependencies: [RichTextExtension],
         name: '[root]',
       }),
     );
@@ -229,14 +230,15 @@ describe('HeadingAnnounceExtension', () => {
     expect(readLiveRegion()).toBe('Heading level 2');
   });
 
-  test('builds in a plain text editor, and announces nothing', () => {
-    // Rich text is a peer, not a dependency. If it were a dependency, adding
-    // this announcer to a plain text editor would drag rich text in and the
-    // editor would refuse to build at all: "extension @lexical/plain-text
-    // conflicts with @lexical/rich-text".
+  test('leaves a plain text editor alone', () => {
+    // The announcer ships with rich text, so a plain text editor never gets
+    // it. Guards the dependency direction: @lexical/a11y must stay usable
+    // without @lexical/rich-text, or an editor built for plain text refuses
+    // to build - "extension @lexical/plain-text conflicts with
+    // @lexical/rich-text".
     using editor = buildEditorFromExtensions(
       defineExtension({
-        dependencies: [HeadingAnnounceExtension, PlainTextExtension],
+        dependencies: [AriaLiveRegionExtension, PlainTextExtension],
         name: '[root]',
       }),
     );

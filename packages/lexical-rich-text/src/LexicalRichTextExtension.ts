@@ -22,6 +22,7 @@ import {
   type TextFormatType,
 } from 'lexical';
 
+import {HeadingAnnounceExtension} from './HeadingAnnounceExtension';
 import {
   type EscapeFormatTriggerConfig,
   HeadingNode,
@@ -108,6 +109,9 @@ export const RichTextExtension = /* @__PURE__ */ defineExtension({
   config: /* @__PURE__ */ safeCast<RichTextConfig>(DEFAULT_RICH_TEXT_CONFIG),
   conflictsWith: ['@lexical/plain-text'],
   dependencies: [
+    // Accessibility is not opt-in: a rich text editor announces its heading
+    // changes unless the announcer is explicitly disabled.
+    HeadingAnnounceExtension,
     DragonExtension,
     NormalizeInlineElementsExtension,
     NormalizeTripleClickSelectionExtension,

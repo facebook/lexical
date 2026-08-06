@@ -91,9 +91,10 @@ function $createDecoratorBoundaryAnchor(): HTMLImageElement {
  * managed range), so there is no per-element cache that could go stale when
  * the browser evicts or moves one.
  */
+declare const DecoratorBoundaryAnchorDOMBrand: unique symbol;
 export function isDecoratorBoundaryAnchorDOM(
   node: Node | null,
-): node is HTMLImageElement {
+): node is Element & {[DecoratorBoundaryAnchorDOMBrand]: never} {
   return (
     node !== null &&
     node.nodeType === 1 &&
@@ -367,9 +368,7 @@ export class ElementDOMSlot<
    * very end of the managed range (just inside the `before` boundary) — so
    * this reads the DOM directly instead of maintaining a cache.
    */
-  getDecoratorBoundaryAnchor(
-    edge: DecoratorBoundaryEdge,
-  ): HTMLImageElement | null {
+  getDecoratorBoundaryAnchor(edge: DecoratorBoundaryEdge): Element | null {
     let node: Node | null;
     if (edge === 'leading') {
       const after = super.getFirstChildAnchor();

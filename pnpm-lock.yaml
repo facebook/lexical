@@ -578,9 +578,6 @@ importers:
       '@lexical/extension':
         specifier: workspace:*
         version: link:../lexical-extension
-      '@lexical/rich-text':
-        specifier: workspace:*
-        version: link:../lexical-rich-text
       '@lexical/utils':
         specifier: workspace:*
         version: link:../lexical-utils
@@ -1397,6 +1394,9 @@ importers:
 
   packages/lexical-rich-text:
     dependencies:
+      '@lexical/a11y':
+        specifier: workspace:*
+        version: link:../lexical-a11y
       '@lexical/clipboard':
         specifier: workspace:*
         version: link:../lexical-clipboard

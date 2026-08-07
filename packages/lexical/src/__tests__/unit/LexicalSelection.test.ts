@@ -1165,6 +1165,114 @@ describe('Regression tests for #8707', () => {
   });
 });
 
+describe('Regression tests for #8075', () => {
+  test('forward delete removes an empty block before a shadow root', () => {
+    using editor = buildEditorFromExtensions(selectionTestExtension);
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode();
+        const shadow = $createTestShadowRootNode().append(
+          $createParagraphNode().append($createTextNode('inside')),
+        );
+        $getRoot().clear().append(paragraph, shadow);
+        paragraph.selectStart();
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection), 'Expected RangeSelection');
+        selection.deleteCharacter(false);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      // The empty paragraph is gone and the shadow root is untouched.
+      expect(children).toHaveLength(1);
+      assert($isTestShadowRootNode(children[0]), 'Expected shadow root');
+      expect(children[0].getTextContent()).toBe('inside');
+    });
+  });
+
+  test('forward delete keeps a non-empty block before a shadow root', () => {
+    using editor = buildEditorFromExtensions(selectionTestExtension);
+    editor.update(
+      () => {
+        const paragraph = $createParagraphNode().append(
+          $createTextNode('before'),
+        );
+        const shadow = $createTestShadowRootNode().append(
+          $createParagraphNode().append($createTextNode('inside')),
+        );
+        $getRoot().clear().append(paragraph, shadow);
+        paragraph.selectEnd();
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection), 'Expected RangeSelection');
+        selection.deleteCharacter(false);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(2);
+      expect(children[0].getTextContent()).toBe('before');
+      assert($isTestShadowRootNode(children[1]), 'Expected shadow root');
+      expect(children[1].getTextContent()).toBe('inside');
+    });
+  });
+
+  test('forward delete from an empty block at the end of a shadow root does nothing', () => {
+    using editor = buildEditorFromExtensions(selectionTestExtension);
+    editor.update(
+      () => {
+        const inner = $createParagraphNode();
+        $getRoot()
+          .clear()
+          .append(
+            $createTestShadowRootNode().append(inner),
+            $createTestShadowRootNode().append(
+              $createParagraphNode().append($createTextNode('next')),
+            ),
+          );
+        inner.selectStart();
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const selection = $getSelection();
+        assert($isRangeSelection(selection), 'Expected RangeSelection');
+        selection.deleteCharacter(false);
+      },
+      {discrete: true},
+    );
+
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(2);
+      const shadow = children[0];
+      assert($isTestShadowRootNode(shadow), 'Expected shadow root');
+      // The empty block still belongs to the first shadow root; the
+      // following shadow root was not pulled into it.
+      expect(shadow.getChildrenSize()).toBe(1);
+      expect(shadow.getTextContent()).toBe('');
+      expect(children[1].getTextContent()).toBe('next');
+    });
+  });
+});
+
 describe('getNodes() and extract()', () => {
   let editor: LexicalEditorWithDispose;
   let paragraphNode: ParagraphNode;

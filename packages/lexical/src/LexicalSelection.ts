@@ -1680,7 +1680,28 @@ export class RangeSelection implements BaseSelection {
       const anchor = this.anchor;
       let anchorNode: TextNode | ElementNode | null = anchor.getNode();
       if (this.forwardDeletion(anchor, anchorNode, isBackward)) {
-        return;
+        // Forward deletion stops at an adjacent shadow root (e.g. a table)
+        // because its content must not be merged into the block at the
+        // anchor. When that block is empty there is nothing to merge, so we
+        // fall through to the caret walk below, which removes the empty block
+        // and leaves the shadow root in place — the same result backwards
+        // delete already produces. This is restricted to a shadow root that is
+        // a sibling of the anchor block, so deleting forwards at the end of a
+        // shadow root (e.g. the last block of a table cell) still bails out.
+        // See #8075.
+        const nextSibling = $isElementNode(anchorNode)
+          ? anchorNode.getNextSibling()
+          : null;
+        if (
+          !(
+            $isElementNode(anchorNode) &&
+            anchorNode.isEmpty() &&
+            $isElementNode(nextSibling) &&
+            nextSibling.isShadowRoot()
+          )
+        ) {
+          return;
+        }
       }
       const direction = isBackward ? 'previous' : 'next';
       const initialCaret = $caretFromPoint(anchor, direction);

@@ -3985,7 +3985,13 @@ export function $updateDOMSelection(
     }
   }
 
-  markSelectionChangeFromDOMUpdate(editor);
+  markSelectionChangeFromDOMUpdate(
+    editor,
+    nextAnchorNode,
+    nextAnchorOffset,
+    nextFocusNode,
+    nextFocusOffset,
+  );
 }
 
 /** Inserts nodes into the current selection, falling back to the previous selection or the end of the root. */

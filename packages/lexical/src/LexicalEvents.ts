@@ -331,6 +331,8 @@ function onSelectionChange(
   const inputState = editor._inputState;
   if (inputState.isSelectionChangeFromDOMUpdate) {
     inputState.isSelectionChangeFromDOMUpdate = false;
+    const appliedPoints = inputState.selectionChangeFromDOMUpdatePoints;
+    inputState.selectionChangeFromDOMUpdatePoints = null;
 
     // If native DOM selection is on a DOM element, then
     // we should continue as usual, as Lexical's selection
@@ -340,10 +342,21 @@ function onSelectionChange(
     // We also need to check if the offset is at the boundary,
     // because in this case, we might need to normalize to a
     // sibling instead.
+    //
+    // The skip is only safe when this event actually observes the selection
+    // the reconciler applied. The flag can outlive its own event — WebKit
+    // fires no selectionchange when the applied selection matches what the
+    // DOM already had — and then the next real user selection (e.g. a click
+    // into text after select-all) would be swallowed here.
     if (
       shouldSkipSelectionChange(anchorDOM, anchorOffset) &&
       shouldSkipSelectionChange(focusDOM, focusOffset) &&
-      !inputState.postDeleteSelectionToRestore
+      !inputState.postDeleteSelectionToRestore &&
+      (appliedPoints === null ||
+        (appliedPoints.anchorNode === anchorDOM &&
+          appliedPoints.anchorOffset === anchorOffset &&
+          appliedPoints.focusNode === focusDOM &&
+          appliedPoints.focusOffset === focusOffset))
     ) {
       return;
     }
@@ -2070,8 +2083,22 @@ function cleanActiveNestedEditorsMap(editor: LexicalEditor) {
 }
 
 /** @internal */
-export function markSelectionChangeFromDOMUpdate(editor: LexicalEditor): void {
-  editor._inputState.isSelectionChangeFromDOMUpdate = true;
+export function markSelectionChangeFromDOMUpdate(
+  editor: LexicalEditor,
+  anchorNode?: Node,
+  anchorOffset?: number,
+  focusNode?: Node,
+  focusOffset?: number,
+): void {
+  const inputState = editor._inputState;
+  inputState.isSelectionChangeFromDOMUpdate = true;
+  inputState.selectionChangeFromDOMUpdatePoints =
+    anchorNode !== undefined &&
+    anchorOffset !== undefined &&
+    focusNode !== undefined &&
+    focusOffset !== undefined
+      ? {anchorNode, anchorOffset, focusNode, focusOffset}
+      : null;
 }
 
 /** @internal */

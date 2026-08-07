@@ -220,6 +220,56 @@ function rejectOnPageError(page) {
 }
 
 /**
+ * Wait for one collab iframe to finish booting: its toolbar toggle reports a
+ * live provider ("Disconnect" is what it offers once connected) and the editor
+ * has rendered at least one paragraph.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {'left' | 'right'} name the iframe's name attribute
+ */
+export async function waitForCollabFrame(page, name) {
+  const frameLocator = page.frameLocator(`[name="${name}"]`);
+  await expect(frameLocator.locator('.action-button.connect')).toHaveAttribute(
+    'title',
+    /Disconnect/,
+    {timeout: 15000},
+  );
+  await expect(
+    frameLocator.locator('[data-lexical-editor="true"] p').first(),
+  ).toBeVisible({timeout: 15000});
+}
+
+/**
+ * Reload a single collab iframe and wait until it has booted and reconnected.
+ *
+ * A bare `contentDocument.location.reload()` returns as soon as the navigation
+ * is *scheduled*, so a following `assertHTML` has to absorb the whole reload —
+ * bundle fetch, editor mount, websocket connect and the initial Yjs sync —
+ * inside its own 5s polling budget. On a loaded CI runner that overruns, and
+ * the assertion fails while the frame is still booting (the contenteditable
+ * isn't in the DOM yet), which is an intermittent failure that has nothing to
+ * do with what the test is checking. Wait for the navigation to actually start
+ * and for the frame to come back up, so the assertion that follows measures the
+ * restored document rather than the page load.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {'left' | 'right'} name the iframe's name attribute
+ */
+export async function reloadCollabFrame(page, name) {
+  const navigated = page.waitForEvent(
+    'framenavigated',
+    frame => frame.name() === name,
+  );
+  await page.evaluate(frameName => {
+    document
+      .querySelector(`iframe[name="${frameName}"]`)
+      .contentDocument.location.reload();
+  }, name);
+  await navigated;
+  await waitForCollabFrame(page, name);
+}
+
+/**
  * @param {import('@playwright/test').Page} page
  * @param {Promise<never> | null} pageError a promise that rejects if the page
  *   throws an uncaught error, so a broken load fails fast instead of waiting
@@ -236,15 +286,7 @@ async function exposeLexicalEditor(page, pageError = null) {
     // boot/connect hiccup during setup doesn't fail the whole test.
     const waitForCollabFramesReady = () =>
       Promise.all(
-        ['left', 'right'].map(async name => {
-          const frameLocator = page.frameLocator(`[name="${name}"]`);
-          await expect(
-            frameLocator.locator('.action-button.connect'),
-          ).toHaveAttribute('title', /Disconnect/, {timeout: 15000});
-          await expect(
-            frameLocator.locator('[data-lexical-editor="true"] p'),
-          ).toBeVisible({timeout: 15000});
-        }),
+        ['left', 'right'].map(name => waitForCollabFrame(page, name)),
       );
     for (let attempt = 0; ; attempt++) {
       try {

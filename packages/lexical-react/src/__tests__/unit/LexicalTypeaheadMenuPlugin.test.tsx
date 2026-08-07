@@ -170,7 +170,10 @@ describe('LexicalTypeaheadMenuPlugin', () => {
     reactRoot = createRoot(container);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await act(async () => {
+      reactRoot.unmount();
+    });
     document.body.removeChild(container);
     vi.restoreAllMocks();
   });

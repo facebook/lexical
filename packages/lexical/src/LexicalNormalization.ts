@@ -96,14 +96,26 @@ export function $normalizeTextNode(textNode: TextNode): void {
   }
 }
 
-/** Descends element-type anchor and focus points of a RangeSelection toward the deepest text-type points, stopping at non-element leaf nodes. */
-export function $normalizeSelection(selection: RangeSelection): RangeSelection {
-  $normalizePoint(selection.anchor);
-  $normalizePoint(selection.focus);
+/**
+ * Descends element-type anchor and focus points of a RangeSelection toward the
+ * deepest text-type points, stopping at non-element leaf nodes.
+ *
+ * When `stopAtShadowRoot` is true the descent also stops before entering a
+ * shadow root. A selection that spans a shadow root as a whole (a table, a
+ * columns layout, …) is otherwise rewritten into a selection scoped inside it,
+ * which makes "select the widget" and "select the text in the widget"
+ * indistinguishable to the operations that follow.
+ */
+export function $normalizeSelection(
+  selection: RangeSelection,
+  stopAtShadowRoot: boolean = false,
+): RangeSelection {
+  $normalizePoint(selection.anchor, stopAtShadowRoot);
+  $normalizePoint(selection.focus, stopAtShadowRoot);
   return selection;
 }
 
-function $normalizePoint(point: PointType): void {
+function $normalizePoint(point: PointType, stopAtShadowRoot: boolean): void {
   while (point.type === 'element') {
     const node = point.getNode();
     const offset = point.offset;
@@ -125,6 +137,8 @@ function $normalizePoint(point: PointType): void {
       );
       break;
     } else if (!$isElementNode(nextNode)) {
+      break;
+    } else if (stopAtShadowRoot && nextNode.isShadowRoot()) {
       break;
     }
     point.set(

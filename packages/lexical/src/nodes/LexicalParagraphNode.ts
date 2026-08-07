@@ -17,9 +17,10 @@ import type {
   DOMExportOutput,
   LexicalNode,
 } from '../LexicalNode';
-import type {RangeSelection} from '../LexicalSelection';
+import type {BaseSelection, RangeSelection} from '../LexicalSelection';
 
 import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
+import {$isRangeSelection} from '../LexicalSelection';
 import {
   $applyNodeReplacement,
   $getDocument,
@@ -114,6 +115,33 @@ export class ParagraphNode extends ElementNode {
       }
     }
     return json as SerializedParagraphNode;
+  }
+
+  extractWithChild(
+    child: LexicalNode,
+    selection: BaseSelection | null,
+    destination: 'clone' | 'html',
+  ): boolean {
+    // A paragraph carries block-level state (alignment, indent, style) that
+    // only its own element can express. When the selection covers the whole
+    // paragraph the user copied the block, so the copy must include the
+    // paragraph itself — otherwise the children are spliced up into the
+    // payload and the alignment is silently dropped (#8101).
+    //
+    // A partial selection is a fragment of a line rather than a block, so it
+    // keeps producing inline-only content: that fragment must merge into the
+    // paste target instead of imposing its source block on it.
+    if (!$isRangeSelection(selection)) {
+      return false;
+    }
+    const anchorNode = selection.anchor.getNode();
+    const focusNode = selection.focus.getNode();
+    return (
+      this.isParentOf(anchorNode) &&
+      this.isParentOf(focusNode) &&
+      this.getTextContentSize() > 0 &&
+      selection.getTextContent().length === this.getTextContentSize()
+    );
   }
 
   // Mutation

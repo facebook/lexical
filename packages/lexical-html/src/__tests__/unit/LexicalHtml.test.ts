@@ -144,7 +144,12 @@ describe('HTML', () => {
       html = $generateHtmlFromNodes(editor, selection);
     });
 
-    expect(html).toBe('<span style="white-space: pre-wrap;">World</span>');
+    // The provided selection (the whole of p2) wins over the editor's own
+    // selection (p1). p2 is fully covered, so it serializes as a block and
+    // keeps any block-level state it carries (#8101).
+    expect(html).toBe(
+      '<p><span style="white-space: pre-wrap;">World</span></p>',
+    );
   });
 
   test(`[Lexical -> HTML]: Default selection (undefined) should serialize entire editor state`, () => {

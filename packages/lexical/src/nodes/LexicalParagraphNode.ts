@@ -17,9 +17,10 @@ import type {
   DOMExportOutput,
   LexicalNode,
 } from '../LexicalNode';
-import type {RangeSelection} from '../LexicalSelection';
+import type {BaseSelection, RangeSelection} from '../LexicalSelection';
 
 import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
+import {$isRangeSelection} from '../LexicalSelection';
 import {
   $applyNodeReplacement,
   $getDocument,
@@ -114,6 +115,40 @@ export class ParagraphNode extends ElementNode {
       }
     }
     return json as SerializedParagraphNode;
+  }
+
+  extractWithChild(
+    child: LexicalNode,
+    selection: BaseSelection | null,
+    destination: 'clone' | 'html',
+  ): boolean {
+    if (!$isRangeSelection(selection)) {
+      return false;
+    }
+    // Alignment, indent and inline style live on the paragraph element and
+    // nowhere else. Splicing the children up into the payload drops them
+    // silently (#8101), so a paragraph carrying any of that has to travel as a
+    // block. A paragraph carrying none of it serializes identically either
+    // way, so it is left alone and keeps producing inline-only content — the
+    // long-standing shape that clipboard consumers expect.
+    if (
+      this.getFormatType() === '' &&
+      this.getIndent() === 0 &&
+      this.getStyle() === ''
+    ) {
+      return false;
+    }
+    // A partial selection is a fragment of a line rather than a block: that
+    // fragment must merge into the paste target instead of imposing its source
+    // block on it.
+    const anchorNode = selection.anchor.getNode();
+    const focusNode = selection.focus.getNode();
+    return (
+      this.isParentOf(anchorNode) &&
+      this.isParentOf(focusNode) &&
+      this.getTextContentSize() > 0 &&
+      selection.getTextContent().length === this.getTextContentSize()
+    );
   }
 
   // Mutation

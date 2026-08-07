@@ -329,6 +329,56 @@ describe('CardNode named slots', () => {
     });
   });
 
+  // A Card is a shadow root, so a caret placed between two of them renders a
+  // block cursor rather than a text position. Backspace there has to delete
+  // the Card it sits against — including its named slots — the same way it
+  // deletes an adjacent block DecoratorNode (#8939).
+  it.for([
+    {isBackward: true, survivor: 'B'},
+    {isBackward: false, survivor: 'A'},
+  ])(
+    'block cursor between two Cards deletes one (isBackward: $isBackward)',
+    ({isBackward, survivor}) => {
+      using editor = buildEditorFromExtensions(CardTestExtension);
+
+      editor.update(
+        () => {
+          const a = $createCardNode();
+          const b = $createCardNode();
+          for (const [card, label] of [
+            [a, 'A'],
+            [b, 'B'],
+          ] as const) {
+            const title = $getSlot(card, 'title');
+            assert($isParagraphNode(title), 'title slot must be a paragraph');
+            title.append($createTextNode(label));
+          }
+          $getRoot().clear().append(a, b);
+          // The block cursor sits between the two Cards.
+          $getRoot().select(1, 1);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const selection = $getSelection();
+          assert($isRangeSelection(selection), 'Expected a RangeSelection');
+          selection.deleteCharacter(isBackward);
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        expect($getRoot().getChildrenSize()).toBe(1);
+        const card = $getRoot().getFirstChild();
+        assert($isCardNode(card), 'The other Card must survive');
+        // The slot went with the deleted host, and the survivor kept its own.
+        expect($getSlot(card, 'title')?.getTextContent()).toBe(survivor);
+      });
+    },
+  );
+
   // Mid-text deletion inside the bare title value rides core's
   // deleteCharacter: $getNearestRootOrShadowRoot treats the slotted value as
   // its own scope root (the slot link is a virtual shadow root), so the

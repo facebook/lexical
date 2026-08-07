@@ -2704,6 +2704,34 @@ describe('$convertSelectionToMarkdownString', () => {
     expect(result).toBe('Hello **Bold**');
   });
 
+  it('does not prefix a newline when the selection starts after the first block', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const firstText = $createTextNode('First');
+        const secondText = $createTextNode('Second');
+        const thirdText = $createTextNode('Third');
+        root.append(
+          $createParagraphNode().append(firstText),
+          $createParagraphNode().append(secondText),
+          $createParagraphNode().append(thirdText),
+        );
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(secondText, 'next', 0),
+            $getTextPointCaret(thirdText, 'next', 5),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
+    expect(result).toBe('Second\n\nThird');
+  });
+
   it('returns empty string for null selection', () => {
     const result = $convertSelectionToMarkdownString(TRANSFORMERS, null);
     expect(result).toBe('');

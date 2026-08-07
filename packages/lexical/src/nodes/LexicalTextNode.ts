@@ -50,6 +50,7 @@ import {
   $generateNodesFromRawText,
   $getSelection,
   $internalMakeRangeSelection,
+  $internalRefreshSelectionFormatAndStyle,
   $isRangeSelection,
   $updateElementSelectionOnCreateDeleteNode,
   adjustPointOffsetForMergedSibling,
@@ -894,7 +895,9 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
       ) {
         $setCompositionKey(key);
       }
+      const previousAnchorKey = selection.anchor.key;
       selection.setTextNodeRange(this, anchorOffset, this, focusOffset);
+      $internalRefreshSelectionFormatAndStyle(selection, previousAnchorKey);
     }
     return selection;
   }

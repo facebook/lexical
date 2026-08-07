@@ -234,7 +234,7 @@ export function $getComputedStyleForParent(
   // parentless too. Treat both like a missing DOM element rather than
   // throwing; every caller already handles null.
   const parent = $isRootNode(node) ? node : node.getParent();
-  return parent === null ? null : $getComputedStyleForElement(parent);
+  return parent && $getComputedStyleForElement(parent);
 }
 
 /**

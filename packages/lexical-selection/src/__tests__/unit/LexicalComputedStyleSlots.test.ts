@@ -13,37 +13,31 @@ import {
   $createTextNode,
   $getNodeByKeyOrThrow,
   $getRoot,
-  $isRangeSelection,
+  $isParagraphNode,
   $setSlot,
-  type ParagraphNode,
 } from 'lexical';
 import {
+  $assertNodeType,
   $createTestShadowRootNode,
   TestShadowRootNode,
 } from 'lexical/src/__tests__/utils';
-import {afterEach, assert, describe, expect, test} from 'vitest';
-
-const mounted: HTMLElement[] = [];
-
-afterEach(() => {
-  for (const element of mounted.splice(0)) {
-    element.remove();
-  }
-});
+import {describe, expect, test} from 'vitest';
 
 // `build` runs in its own update so that the nodes are reconciled to the DOM
 // before `check` reads their computed styles.
-function runInEditor(build: () => void, check: () => void): void {
+function runInEditor($build: () => void, $check: () => void): void {
   using editor = buildEditorFromExtensions({
+    $initialEditorState: $build,
+    afterRegistration: editor_ => {
+      const rootElement = document.createElement('div');
+      document.body.appendChild(rootElement);
+      editor_.setRootElement(rootElement);
+      return () => rootElement.remove();
+    },
     name: '@computed-style-slots-test',
     nodes: [TestShadowRootNode],
   });
-  const rootElement = document.createElement('div');
-  document.body.appendChild(rootElement);
-  mounted.push(rootElement);
-  editor.setRootElement(rootElement);
-  editor.update(build, {discrete: true});
-  editor.update(check, {discrete: true});
+  editor.update($check, {discrete: true});
 }
 
 // A named-slot value has no __parent — it links up to its host through
@@ -65,7 +59,12 @@ describe('computed styles and named slots', () => {
       },
       () => {
         expect(
-          $getComputedStyleForParent($getNodeByKeyOrThrow(slotParaKey)),
+          $getComputedStyleForParent(
+            $assertNodeType(
+              $getNodeByKeyOrThrow(slotParaKey),
+              $isParagraphNode,
+            ),
+          ),
         ).toBe(null);
       },
     );
@@ -82,9 +81,11 @@ describe('computed styles and named slots', () => {
         $setSlot(host, 'title', slotPara);
       },
       () => {
-        const slotPara = $getNodeByKeyOrThrow<ParagraphNode>(slotParaKey);
+        const slotPara = $assertNodeType(
+          $getNodeByKeyOrThrow(slotParaKey),
+          $isParagraphNode,
+        );
         const selection = slotPara.select();
-        assert($isRangeSelection(selection));
         expect($isParentRTL(selection.anchor.getNode())).toBe(false);
       },
     );
@@ -107,7 +108,10 @@ describe('computed styles and named slots', () => {
         $setSlot(host, 'title', slotRoot);
       },
       () => {
-        const slotPara = $getNodeByKeyOrThrow(slotParaKey);
+        const slotPara = $assertNodeType(
+          $getNodeByKeyOrThrow(slotParaKey),
+          $isParagraphNode,
+        );
         // The paragraph is inside the slot but is not the slot value, so it
         // has a parent and resolution is unchanged.
         expect(slotPara.getParent()!.getKey()).toBe(slotRootKey);

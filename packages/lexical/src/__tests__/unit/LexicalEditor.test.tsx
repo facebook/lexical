@@ -4214,5 +4214,42 @@ describe('LexicalEditor tests', () => {
       expect(range.endOffset).toBe(text.length);
       expect(onError).not.toHaveBeenCalled();
     });
+    // https://github.com/facebook/lexical/issues/8610
+    it('does not update the DOM selection on mount with skip-dom-selection', async () => {
+      const onError = vi.fn();
+      const newEditor = createTestEditor({
+        onError: onError,
+      });
+      const outside = document.createElement('div');
+      outside.textContent = 'outside the editor';
+      document.body.appendChild(outside);
+      const outsideText = outside.firstChild as Text;
+      const selection = getDOMSelection(window) as Selection;
+      selection.setBaseAndExtent(outsideText, 0, outsideText, 0);
+      try {
+        const text = 'initial content';
+        let textNode!: TextNode;
+        // This is the shape of an $initialEditorState update: it is committed
+        // before the editor has a root element, so the DOM selection is only
+        // ever applied by the setRootElement commit below.
+        await newEditor.update(
+          () => {
+            textNode = $createTextNode(text);
+            $getRoot().append($createParagraphNode().append(textNode));
+            textNode.select();
+          },
+          {tag: SKIP_DOM_SELECTION_TAG},
+        );
+        await newEditor.setRootElement(container);
+        expect(newEditor.getElementByKey(textNode.getKey())).not.toBe(null);
+        expect(selection.rangeCount).toBe(1);
+        const range = selection.getRangeAt(0);
+        expect(range.startContainer).toBe(outsideText);
+        expect(range.endContainer).toBe(outsideText);
+        expect(onError).not.toHaveBeenCalled();
+      } finally {
+        document.body.removeChild(outside);
+      }
+    });
   });
 });

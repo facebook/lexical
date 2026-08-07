@@ -58,6 +58,7 @@ import {
 import {
   FOCUS_TAG,
   HISTORY_MERGE_TAG,
+  SKIP_DOM_SELECTION_TAG,
   type UpdateTag,
 } from './LexicalUpdateTags';
 import {
@@ -1151,6 +1152,16 @@ export class LexicalEditor {
   _normalizedNodes: Set<NodeKey>;
   /** @internal */
   _updateTags: Set<UpdateTag>;
+  /**
+   * `true` when an update carrying {@link SKIP_DOM_SELECTION_TAG} was
+   * committed while the editor had no root element. Such a commit only
+   * reconciles to an EditorState, so the DOM selection is never touched and
+   * the tag is cleared with the rest of `_updateTags`. Remembering the request
+   * lets the first commit that does have a root element honor it — notably an
+   * `$initialEditorState` update, which always runs before `setRootElement`.
+   * @internal
+   */
+  _deferredSkipDOMSelection: boolean;
   /** @internal */
   _observer: null | MutationObserver;
   /** @internal */
@@ -1236,6 +1247,7 @@ export class LexicalEditor {
     this._dirtyElements = new Map();
     this._normalizedNodes = new Set();
     this._updateTags = new Set();
+    this._deferredSkipDOMSelection = false;
     // Handling of DOM mutations
     this._observer = null;
     // Used for identifying owning editors
@@ -1651,6 +1663,11 @@ export class LexicalEditor {
         initMutationObserver(this);
 
         this._updateTags.add(HISTORY_MERGE_TAG);
+        if (this._deferredSkipDOMSelection) {
+          // An update that ran before the editor was mounted asked not to
+          // move the DOM selection; this is the commit that would do it.
+          this._updateTags.add(SKIP_DOM_SELECTION_TAG);
+        }
 
         $commitPendingUpdates(this);
 

@@ -54,6 +54,11 @@ export const SKIP_SCROLL_INTO_VIEW_TAG = 'skip-scroll-into-view';
 /**
  * Indicates that the update should skip updating the DOM selection
  * This is useful when you want to make updates without changing the selection or focus
+ *
+ * An update that runs before the editor has a root element (such as an
+ * `$initialEditorState` initializer) is reconciled to an EditorState only, so
+ * the tag is applied to the later commit that first reconciles that state to
+ * the DOM.
  */
 export const SKIP_DOM_SELECTION_TAG = 'skip-dom-selection';
 

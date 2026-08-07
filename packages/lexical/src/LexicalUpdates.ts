@@ -700,6 +700,14 @@ function $commitPendingUpdatesImpl(
   // reconciles) would inherit the COLLABORATION tag and be skipped by
   // syncLexicalUpdateToYjs, desyncing the peers.
   editor._updateTags = new Set();
+  // Without a root element this commit reconciles to an EditorState only, so
+  // the DOM selection block below never runs and a SKIP_DOM_SELECTION_TAG
+  // would be cleared before the DOM ever sees this state. Carry the request
+  // over to the first commit that does have a root element — the one that
+  // reconciles an $initialEditorState into a freshly mounted contenteditable.
+  editor._deferredSkipDOMSelection =
+    rootElement === null &&
+    (editor._deferredSkipDOMSelection || tags.has(SKIP_DOM_SELECTION_TAG));
   $garbageCollectDetachedDecorators(editor, pendingEditorState);
 
   // ======

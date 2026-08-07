@@ -3438,6 +3438,48 @@ export function $internalCreateRangeSelection(
   return newSelection;
 }
 
+/**
+ * Re-reads the format and style that a collapsed insertion would use from the
+ * selection's anchor, after a programmatic move has repointed it at a
+ * different node.
+ *
+ * {@link $internalCreateSelection} already does this for every selection
+ * change that originates in the DOM (a click, an arrow key), which is why
+ * those keep the toolbar in sync. Moving the selection through the node APIs
+ * bypassed it, so the format and style of the old position leaked into the new
+ * one (#8817).
+ *
+ * Landing on the same node is not a move: a format toggled on a collapsed
+ * caret is armed for the next insertion and is deliberately not backed by the
+ * node yet, so it must survive being re-selected in place.
+ *
+ * @internal
+ */
+export function $internalRefreshSelectionFormatAndStyle(
+  selection: RangeSelection,
+  previousAnchorKey: NodeKey,
+): void {
+  const anchor = selection.anchor;
+  if (anchor.key === previousAnchorKey) {
+    return;
+  }
+  const anchorNode = anchor.getNode();
+  let format = 0;
+  let style = '';
+  if ($isTextNode(anchorNode)) {
+    format = anchorNode.getFormat();
+    style = anchorNode.getStyle();
+  } else if ($isElementNode(anchorNode)) {
+    format = anchorNode.getTextFormat();
+    style = anchorNode.getTextStyle();
+  }
+  if (selection.format !== format || selection.style !== style) {
+    selection.format = format;
+    selection.style = style;
+    selection.dirty = true;
+  }
+}
+
 function $validatePoint(name: 'anchor' | 'focus', point: PointType): void {
   const node = $getNodeByKey(point.key);
   invariant(

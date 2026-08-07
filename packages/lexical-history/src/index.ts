@@ -376,6 +376,58 @@ function createMergeActionGetter(
   };
 }
 
+/**
+ * Build the entry that reverses `historyStateEntry` and belongs on the
+ * opposite stack.
+ *
+ * With a single editor this is always `current`, since `current` tracks the
+ * live state of that editor. With a shared {@link HistoryState} the stacks
+ * interleave entries from several editors, so `current` may belong to an
+ * editor that is *not* about to change — pushing it would record a no-op and
+ * lose the state we are about to overwrite. In that case read the live state
+ * off the entry's own editor instead.
+ */
+function getInverseEntry(
+  historyStateEntry: HistoryStateEntry,
+  current: null | HistoryStateEntry,
+): null | HistoryStateEntry {
+  if (current !== null && current.editor === historyStateEntry.editor) {
+    return current;
+  }
+  const {editor} = historyStateEntry;
+  const editorState = editor.getEditorState();
+  // An empty EditorState can not be restored (setEditorState throws), so
+  // there is nothing to reverse to.
+  return editorState.isEmpty() ? null : {editor, editorState};
+}
+
+/**
+ * Build the entry that an update from `editor` pushes onto the undo stack.
+ *
+ * `current` is the state to restore when this update is undone, but with a
+ * shared {@link HistoryState} it may belong to a different editor — one that
+ * is not changing here, so restoring it would be a no-op and the state that is
+ * about to be overwritten would never make it onto the stack. Record this
+ * editor's own pre-update state in that case.
+ */
+function getUndoEntry(
+  editor: LexicalEditor,
+  prevEditorState: EditorState,
+  current: null | HistoryStateEntry,
+): null | HistoryStateEntry {
+  if (current === null) {
+    return null;
+  }
+  if (current.editor === editor) {
+    return {...current};
+  }
+  // An empty EditorState can not be restored (setEditorState throws). Skipping
+  // it mirrors the way the first update of an editor is not undoable.
+  return prevEditorState.isEmpty()
+    ? null
+    : {editor, editorState: prevEditorState};
+}
+
 function redo(
   editor: LexicalEditor,
   historyState: HistoryState,
@@ -386,13 +438,16 @@ function redo(
 
   if (redoStack.length !== 0) {
     const current = historyState.current;
-
-    if (current !== null) {
-      undoStack.push(current);
-      editor.dispatchCommand(CAN_UNDO_COMMAND, true);
-    }
-
     const historyStateEntry = redoStack.pop();
+
+    if (historyStateEntry) {
+      const inverseEntry = getInverseEntry(historyStateEntry, current);
+
+      if (inverseEntry !== null) {
+        undoStack.push(inverseEntry);
+        editor.dispatchCommand(CAN_UNDO_COMMAND, true);
+      }
+    }
 
     if (redoStack.length === 0) {
       editor.dispatchCommand(CAN_REDO_COMMAND, false);
@@ -425,9 +480,13 @@ function undo(
     const current = historyState.current;
     const historyStateEntry = undoStack.pop();
 
-    if (current !== null) {
-      redoStack.push(current);
-      editor.dispatchCommand(CAN_REDO_COMMAND, true);
+    if (historyStateEntry) {
+      const inverseEntry = getInverseEntry(historyStateEntry, current);
+
+      if (inverseEntry !== null) {
+        redoStack.push(inverseEntry);
+        editor.dispatchCommand(CAN_REDO_COMMAND, true);
+      }
     }
 
     if (undoStack.length === 0) {
@@ -538,10 +597,10 @@ export function registerHistory(
         editor.dispatchCommand(CAN_REDO_COMMAND, false);
       }
 
-      if (current !== null) {
-        undoStack.push({
-          ...current,
-        });
+      const undoEntry = getUndoEntry(editor, prevEditorState, current);
+
+      if (undoEntry !== null) {
+        undoStack.push(undoEntry);
         const cap = readMaxDepth();
         if (cap !== null && undoStack.length > cap) {
           // FIFO-evict the oldest entries so the stack stays at `cap`.

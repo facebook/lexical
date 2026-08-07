@@ -804,6 +804,56 @@ test.describe('HorizontalRule', () => {
     expect(isNodeSel).toBe(true);
   });
 
+  test('Clicking the empty space beside a horizontal rule selects it (#7758)', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await focusEditor(page);
+
+    await page.keyboard.type('Above');
+    await selectFromInsertDropdown(page, '.horizontal-rule');
+    await waitForSelector(page, 'hr');
+    await page.keyboard.type('Below');
+
+    // Click the empty space between the paragraph above and the rule. The
+    // browser resolves that point to a caret immediately before the rule,
+    // which reconciles to a block cursor instead of selecting the rule, so
+    // the caret looks like it is on the rule but types into the paragraph.
+    const clickPos = await getPageOrFrame(page).evaluate(() => {
+      const editor = document.querySelector('[contenteditable="true"]');
+      const hr = editor.querySelector('hr');
+      const hrRect = hr.getBoundingClientRect();
+      return {
+        x: Math.round(hrRect.left) + 8,
+        y: Math.round(hrRect.top) - 3,
+      };
+    });
+    await page.mouse.click(clickPos.x, clickPos.y);
+
+    const selState = await getPageOrFrame(page).evaluate(() => {
+      const state = window.lexicalEditor.getEditorState();
+      const sel = state._selection;
+      if (sel === null) {
+        return 'null';
+      }
+      if (!('_nodes' in sel)) {
+        return `range(${sel.anchor.key}:${sel.anchor.offset})`;
+      }
+      return state.read(() =>
+        Array.from(sel._nodes)
+          .map(key => state._nodeMap.get(key).getType())
+          .join(','),
+      );
+    });
+    expect(selState).toBe('horizontalrule');
+
+    await expect(getPageOrFrame(page).locator('hr')).toHaveClass(
+      /PlaygroundEditorTheme__hrSelected/,
+    );
+  });
+
   test('Clicking between consecutive block decorators creates selection (#6775)', async ({
     page,
     isPlainText,
@@ -850,9 +900,13 @@ test.describe('HorizontalRule', () => {
     await page.mouse.click(clickPos.x, clickPos.y);
 
     // Without the fix, Firefox leaves selection as null (rangeCount === 0).
-    // The fix computes the correct child offset from click coordinates.
+    // The fix computes the correct child offset from click coordinates; the
+    // horizontal rule extension then turns that offset into a selection of
+    // the rule the click landed beside (#7758), so the observable result of
+    // the coordinate fix is a node selection rather than a null selection.
     const selState = await getPageOrFrame(page).evaluate(() => {
-      const sel = window.lexicalEditor.getEditorState()._selection;
+      const state = window.lexicalEditor.getEditorState();
+      const sel = state._selection;
       if (sel === null) {
         return null;
       }
@@ -863,12 +917,16 @@ test.describe('HorizontalRule', () => {
           type: 'range',
         };
       }
-      return {type: 'node'};
+      return {
+        type: 'node',
+        types: state.read(() =>
+          Array.from(sel._nodes).map(key => state._nodeMap.get(key).getType()),
+        ),
+      };
     });
     expect(selState).not.toBeNull();
-    expect(selState.type).toBe('range');
-    expect(selState.anchorKey).toBe('root');
-    expect(selState.anchorType).toBe('element');
+    expect(selState.type).toBe('node');
+    expect(selState.types).toEqual(['horizontalrule']);
   });
 
   test('ArrowDown from block cursor between shadow root and decorator selects the decorator', async ({

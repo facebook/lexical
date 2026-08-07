@@ -14,8 +14,8 @@
 
 import {
 	buildEditorFromExtensions,
-	EditorStateExtension,
 	effect,
+	HMRExtension,
 	WatchEditableExtension
 } from '@lexical/extension';
 import { RichTextExtension } from '@lexical/rich-text';
@@ -30,8 +30,6 @@ import {
 	configExtension,
 	defineExtension,
 	HISTORY_MERGE_TAG,
-	safeCast,
-	type EditorState
 } from 'lexical';
 import { CheckListExtension } from '@lexical/list';
 import { withDOM } from '@lexical/headless/dom';
@@ -88,36 +86,6 @@ export function hydrate(editor: LexicalEditor, dom: HTMLElement) {
 	}
 }
 
-interface LexicalHMRState {
-	editable: boolean;
-	editorState: EditorState;
-}
-const HMR_KEY = 'lexicalHMR';
-
-const HMRExtension = defineExtension({
-	name: '@lexical/examples/hmr',
-	config: safeCast<{ hot: null | ViteHotContext }>({ hot: null }),
-	dependencies: [EditorStateExtension, WatchEditableExtension],
-	afterRegistration(editor, { hot }, state) {
-		if (hot) {
-			const lexicalHMR: undefined | LexicalHMRState = hot.data[HMR_KEY];
-			if (lexicalHMR) {
-				editor.setEditable(lexicalHMR.editable);
-				editor.setEditorState(lexicalHMR.editorState, { tag: HISTORY_MERGE_TAG });
-			}
-			const editorStateSignal = state.getDependency(EditorStateExtension).output;
-			const editableSignal = state.getDependency(WatchEditableExtension).output;
-			return effect(() => {
-				hot.data[HMR_KEY] = safeCast<LexicalHMRState>({
-					editable: editableSignal.value,
-					editorState: editorStateSignal.value
-				});
-			});
-		}
-		return () => {};
-	}
-});
-
 const ClickableWhenReadonlyExtension = defineExtension({
 	name: '@lexical/extension/ClickableOnlyWhenEditable',
 	dependencies: [WatchEditableExtension, ClickableLinkExtension],
@@ -146,8 +114,6 @@ export function buildEditor(
 			ClickableWhenReadonlyExtension,
 			configExtension(ClickableLinkExtension, { newTab: true }),
 			CheckListExtension,
-			EditorStateExtension,
-			WatchEditableExtension,
 			configExtension(HMRExtension, { hot })
 		]
 	});

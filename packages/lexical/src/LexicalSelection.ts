@@ -1068,8 +1068,29 @@ export class RangeSelection implements BaseSelection {
    */
   removeText(): void {
     const isCurrentSelection = $getSelection() === this;
+    const previousAnchorKey = this.anchor.key;
     const newRange = $removeTextFromCaretRange($caretRangeFromSelection(this));
     $updateRangeSelectionFromCaretRange(this, newRange);
+    // The caret can end up in a node it did not start in, e.g. backspacing
+    // an empty paragraph merges the caret into the end of the previous
+    // block. The pending format and style describe the node the caret left,
+    // so re-derive them from the node it landed on. This matches what
+    // $internalCreateRangeSelection does when a selection change resolves to
+    // a different anchor.
+    if (this.anchor.key !== previousAnchorKey && this.isCollapsed()) {
+      const anchorNode = this.anchor.getNode();
+      const format = $isTextNode(anchorNode)
+        ? anchorNode.getFormat()
+        : anchorNode.getTextFormat();
+      const style = $isTextNode(anchorNode)
+        ? anchorNode.getStyle()
+        : anchorNode.getTextStyle();
+      if (this.format !== format || this.style !== style) {
+        this.format = format;
+        this.style = style;
+        this.dirty = true;
+      }
+    }
     if (isCurrentSelection && $getSelection() !== this) {
       $setSelection(this);
     }

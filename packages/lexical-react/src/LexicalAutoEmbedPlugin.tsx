@@ -6,12 +6,6 @@
  *
  */
 
-import type {
-  AutoEmbedOption,
-  type EmbedConfig,
-  INSERT_EMBED_COMMAND,
-} from './LexicalAutoEmbedPluginUtils';
-
 import {$isLinkNode, AutoLinkNode, LinkNode} from '@lexical/link';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
@@ -31,6 +25,12 @@ import {
   type TextNode,
 } from 'lexical';
 import {type JSX, useCallback, useEffect, useMemo, useState} from 'react';
+
+import {
+  type AutoEmbedOption,
+  type EmbedConfig,
+  INSERT_EMBED_COMMAND,
+} from './LexicalAutoEmbedPluginUtils';
 
 export {
   AutoEmbedOption,

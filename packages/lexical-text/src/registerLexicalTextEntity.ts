@@ -48,8 +48,10 @@ export function registerLexicalTextEntity<T extends TextNode>(
   };
 
   const $replaceWithSimpleText = (node: TextNode): void => {
-    const textNode = $createTextNode(node.getTextContent());
-    textNode.setFormat(node.getFormat());
+    const textNode = $createTextNode(node.getTextContent())
+      .setFormat(node.getFormat())
+      .setStyle(node.getStyle())
+      .setDetail(node.getDetail());
     node.replace(textNode);
   };
 

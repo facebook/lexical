@@ -381,6 +381,18 @@ export function $createMarkdownLineBreakNode(
   return lineBreakNode;
 }
 
+/**
+ * Block-level shortcuts convert by replacing the enclosing block, which
+ * discards it. A QuoteNode holds inline content, so there is nowhere to nest
+ * the new block and the quote would simply be lost. Import already refuses:
+ * `$convertFromMarkdownString('> # x')` keeps the quote and leaves `# x` as
+ * literal text, so the shortcut declines too rather than dropping the quote
+ * out from under the caret. See #7407.
+ */
+function $isUnreplaceableBlock(parentNode: ElementNode): boolean {
+  return $isQuoteNode(parentNode);
+}
+
 const createBlockNode = (
   createNode: (match: string[]) => ElementNode,
 ): ElementTransformer['replace'] => {
@@ -417,7 +429,10 @@ function getIndent(whitespaces: string): number {
 
 const listReplace = (listType: ListType): ElementTransformer['replace'] => {
   return (parentNode, children, match, isImport) => {
-    if ($isHeadingNode(parentNode)) {
+    if (
+      $isHeadingNode(parentNode) ||
+      (!isImport && $isUnreplaceableBlock(parentNode))
+    ) {
       return false;
     }
 
@@ -536,6 +551,11 @@ const $listExport = (
   return output.join('\n');
 };
 
+const $replaceWithHeading = createBlockNode(match => {
+  const tag = ('h' + match[1].length) as HeadingTagType;
+  return $createHeadingNode(tag);
+});
+
 export const HEADING: ElementTransformer = {
   dependencies: [HeadingNode],
   export: (node, exportChildren) => {
@@ -546,10 +566,12 @@ export const HEADING: ElementTransformer = {
     return '#'.repeat(level) + ' ' + exportChildren(node);
   },
   regExp: HEADING_REGEX,
-  replace: createBlockNode(match => {
-    const tag = ('h' + match[1].length) as HeadingTagType;
-    return $createHeadingNode(tag);
-  }),
+  replace: (parentNode, children, match, isImport) => {
+    if (!isImport && $isUnreplaceableBlock(parentNode)) {
+      return false;
+    }
+    return $replaceWithHeading(parentNode, children, match, isImport);
+  },
   triggerOnEnter: true,
   type: 'element',
 };

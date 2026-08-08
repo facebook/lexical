@@ -979,6 +979,23 @@ function $handleBeforeInput(event: InputEvent): boolean {
   }
 
   if (!$isRangeSelection(selection)) {
+    if (inputType === 'historyUndo' || inputType === 'historyRedo') {
+      // Chromium and WebKit walk up the browser's undo scope, so they
+      // dispatch history undo/redo at the editor root when the focused
+      // control is outside of it and has exhausted its own history — e.g. the
+      // URL field of a floating link toolbar (#6714) — at which point the
+      // editor no longer has a selection. Returning without preventing the
+      // default lets the browser run its native history over a
+      // Lexical-managed contenteditable, rewriting the DOM behind the
+      // editor's back; the editor state is then rebuilt from that DOM into a
+      // document that was never in Lexical's history. `@lexical/history`
+      // restores a whole editor state, so it does not need a selection.
+      event.preventDefault();
+      dispatchCommand(
+        editor,
+        inputType === 'historyUndo' ? UNDO_COMMAND : REDO_COMMAND,
+      );
+    }
     return true;
   }
 

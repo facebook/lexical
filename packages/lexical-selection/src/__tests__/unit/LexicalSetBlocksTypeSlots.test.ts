@@ -20,6 +20,7 @@ import {
   $createTextNode,
   $getRoot,
   $getSlot,
+  $getSlotNames,
   $isParagraphNode,
   $setSlot,
 } from 'lexical';
@@ -75,6 +76,32 @@ describe('$setBlocksType and named slots', () => {
       expect(value).not.toBe(null);
       expect(value!.is(slotPara)).toBe(true);
       expect($isParagraphNode(value)).toBe(true);
+    });
+  });
+
+  // Slots are bound to their host node and are not necessarily portable
+  // across node types, so converting a slot host does not carry its slots
+  // onto the replacement block — they stay on (and are collected with) the
+  // replaced node. See the matching LexicalNode.replace semantics.
+  test('converting a slot host does not carry its slots onto the new block', () => {
+    runInEditor(() => {
+      const host = $createParagraphNode();
+      const bodyText = $createTextNode('body');
+      host.append(bodyText);
+      $getRoot().append(host);
+      const slotPara = $createParagraphNode().append($createTextNode('title'));
+      $setSlot(host, 'title', slotPara);
+      const selection = bodyText.select(0, 0);
+
+      $setBlocksType(selection, () => $createHeadingNode('h2'));
+
+      const heading = $getRoot().getLastChild();
+      expect($isHeadingNode(heading)).toBe(true);
+      expect(heading!.getTextContent()).toBe('body');
+      // The slots did not transfer; they remain on the detached host.
+      expect($getSlotNames(heading!)).toEqual([]);
+      expect(host.isAttached()).toBe(false);
+      expect($getSlot(host, 'title')!.is(slotPara)).toBe(true);
     });
   });
 

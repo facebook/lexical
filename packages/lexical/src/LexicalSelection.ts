@@ -1179,7 +1179,7 @@ export class RangeSelection implements BaseSelection {
       if ('__language' in nodes[0]) {
         this.insertText(nodes[0].getTextContent());
       } else {
-        const index = $removeTextAndSplitBlock(this);
+        const [, index] = $removeTextAndSplitBlock(this);
         firstBlock.splice(index, 0, nodes);
         last.selectEnd();
       }
@@ -1197,8 +1197,15 @@ export class RangeSelection implements BaseSelection {
         firstNode.constructor.name,
         firstNode.getType(),
       );
-      const index = $removeTextAndSplitBlock(this);
-      firstBlock.splice(index, 0, nodes);
+      // The split walk normally ends on firstBlock, but it stops early on an
+      // inline ElementNode that cannot be split, which is the only position
+      // that preserves the caret for content pasted inside such a node
+      // (#6477).
+      const [container, index] = $removeTextAndSplitBlock(this, true);
+      const insertionParent = $isElementNode(container)
+        ? container
+        : firstBlock;
+      insertionParent.splice(index, 0, nodes);
       last.selectEnd();
       return;
     }
@@ -1210,7 +1217,7 @@ export class RangeSelection implements BaseSelection {
     // stripped like the input value sanitization strips newlines, and
     // block-only decorators are dropped, having no single-line form).
     if ($isElementNode(firstBlock) && $getSlotHostKey(firstBlock) !== null) {
-      const index = $removeTextAndSplitBlock(this);
+      const [, index] = $removeTextAndSplitBlock(this);
       const inlineNodes = $extractInlineFromBlocks(nodes);
       firstBlock.splice(index, 0, inlineNodes);
       const lastInserted = inlineNodes[inlineNodes.length - 1];
@@ -1263,7 +1270,7 @@ export class RangeSelection implements BaseSelection {
       !firstBlock.isParentRequired() &&
       !$isRootOrShadowRoot(firstBlock.getParentOrThrow())
     ) {
-      const index = $removeTextAndSplitBlock(this);
+      const [, index] = $removeTextAndSplitBlock(this);
       const inlineNodes = $extractInlineFromBlocks(nodes);
       firstBlock.splice(index, 0, inlineNodes);
       const lastInserted = inlineNodes[inlineNodes.length - 1];
@@ -1354,7 +1361,7 @@ export class RangeSelection implements BaseSelection {
       paragraph.select();
       return paragraph;
     }
-    const index = $removeTextAndSplitBlock(this);
+    const [, index] = $removeTextAndSplitBlock(this);
     const block = $findMatchingParent(this.anchor.getNode(), INTERNAL_$isBlock);
     if (block !== null && $getSlotHostKey(block) !== null) {
       // The block IS the slot value: its virtual shadow root holds exactly
@@ -4085,7 +4092,19 @@ function $extractInlineFromBlocks(nodes: LexicalNode[]): LexicalNode[] {
   return inlineNodes;
 }
 
-function $removeTextAndSplitBlock(selection: RangeSelection): number {
+/**
+ * Removes the selected text and splits the ancestor chain at the anchor up to
+ * the nearest block, returning the node the caller should insert into and the
+ * index within it.
+ *
+ * @param stopAtUnsplittableInline - when true, stop the walk on an inline
+ * ElementNode that cannot be split instead of continuing past it, see
+ * {@link $splitNodeAtPoint}.
+ */
+function $removeTextAndSplitBlock(
+  selection: RangeSelection,
+  stopAtUnsplittableInline = false,
+): [container: LexicalNode, offset: number] {
   let selection_ = selection;
   if (!selection.isCollapsed()) {
     selection_.removeText();
@@ -4113,18 +4132,33 @@ function $removeTextAndSplitBlock(selection: RangeSelection): number {
   // to the document root.
   while (!INTERNAL_$isBlock(node) && $getSlotHostKey(node) === null) {
     const prevNode = node;
-    [node, offset] = $splitNodeAtPoint(node, offset);
+    [node, offset] = $splitNodeAtPoint(node, offset, stopAtUnsplittableInline);
     if (prevNode.is(node)) {
       break;
     }
   }
 
-  return offset;
+  return [node, offset];
 }
 
+/**
+ * Splits `node` at `offset`, returning the parent that now holds the two
+ * halves and the index between them.
+ *
+ * @param stopAtUnsplittableInline - an ElementNode is split by moving the
+ * children after `offset` into the node returned by its `insertNewAfter()`,
+ * but that returns null for any ElementNode that does not implement it (the
+ * base class default). Such a node cannot be split, and continuing the walk
+ * would move the insertion point past the whole node, so inline content
+ * pasted with the caret inside it would land after it instead of at the caret
+ * (#6477). When this is true the unsplittable node itself is returned so the
+ * caller inserts into it at `offset`; when false the previous behavior of
+ * ascending to the parent is kept.
+ */
 function $splitNodeAtPoint(
   node: LexicalNode,
   offset: number,
+  stopAtUnsplittableInline = false,
 ): [parent: ElementNode, offset: number] {
   const parent = node.getParent();
   if (!parent) {
@@ -4160,6 +4194,8 @@ function $splitNodeAtPoint(
     const newElement = node.insertNewAfter(insertPoint) as ElementNode | null;
     if (newElement) {
       newElement.append(firstToAppend, ...firstToAppend.getNextSiblings());
+    } else if (stopAtUnsplittableInline) {
+      return [node, offset];
     }
   }
   return [parent, node.getIndexWithinParent() + 1];

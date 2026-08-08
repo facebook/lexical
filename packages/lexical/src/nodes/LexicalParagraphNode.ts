@@ -136,10 +136,13 @@ export class ParagraphNode extends ElementNode {
   collapseAtStart(): boolean {
     const children = this.getChildren();
     // If we have an empty (trimmed) first paragraph and try and remove it,
-    // delete the paragraph as long as we have another sibling to go to
+    // delete the paragraph as long as we have another sibling to go to.
+    // Every child has to be blank text: a paragraph that merely starts with
+    // blank text still has content to lose, and a non-text child (an inline
+    // decorator, a line break) is content even when it contributes no text.
     if (
       children.length === 0 ||
-      ($isTextNode(children[0]) && children[0].getTextContent().trim() === '')
+      (children.every($isTextNode) && this.getTextContent().trim() === '')
     ) {
       const nextSibling = this.getNextSibling();
       if (nextSibling !== null) {

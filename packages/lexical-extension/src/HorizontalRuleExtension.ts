@@ -26,8 +26,12 @@ import {
   type DOMConversionOutput,
   type DOMExportOutput,
   type EditorConfig,
+  getDOMSelectionFromTarget,
+  getDOMSelectionPoints,
   isDOMNode,
+  isHTMLElement,
   type LexicalCommand,
+  type LexicalEditor,
   type LexicalNode,
   mergeRegister,
   type NodeKey,
@@ -117,6 +121,59 @@ export function $isHorizontalRuleNode(
   return node instanceof HorizontalRuleNode;
 }
 
+/**
+ * A horizontal rule is a block decorator, so the empty space between it and an
+ * adjacent block still belongs to the parent element. A click there is
+ * resolved by the browser to a collapsed caret immediately before or after the
+ * rule, which Lexical reconciles to a block cursor: the caret looks like it is
+ * on the rule but typing goes into the neighbouring block. Arrow keys select
+ * the rule from those positions, so find the rule the click landed beside and
+ * let the click handler do the same.
+ *
+ * The DOM selection is read rather than the Lexical selection because the
+ * `selectionchange` event that would update the editor state has not
+ * necessarily been processed by the time `click` fires — the browser has
+ * already moved the DOM caret on `mousedown`, so the DOM is the only source
+ * that reflects this click.
+ */
+function $getHorizontalRuleBesideClick(
+  editor: LexicalEditor,
+  event: MouseEvent,
+): null | HorizontalRuleNode {
+  const domSelection = getDOMSelectionFromTarget(event.target);
+  if (domSelection === null || !domSelection.isCollapsed) {
+    return null;
+  }
+  const rootElement = editor.getRootElement();
+  const {anchorNode, anchorOffset} = getDOMSelectionPoints(
+    domSelection,
+    rootElement,
+  );
+  if (!isHTMLElement(anchorNode)) {
+    return null;
+  }
+  // The block cursor is transient DOM that Lexical inserts beside decorators;
+  // it is not part of the Lexical tree, so drop it before indexing children.
+  const blockCursorElement = editor._blockCursorElement;
+  const childNodes = Array.prototype.filter.call(
+    anchorNode.childNodes,
+    (child: Node) => child !== blockCursorElement,
+  ) as Node[];
+  let offset = anchorOffset;
+  if (
+    blockCursorElement !== null &&
+    blockCursorElement.parentNode === anchorNode &&
+    Array.prototype.indexOf.call(anchorNode.childNodes, blockCursorElement) <
+      offset
+  ) {
+    offset -= 1;
+  }
+  const childDOM =
+    offset === childNodes.length ? childNodes[offset - 1] : childNodes[offset];
+  const node = childDOM === undefined ? null : $getNodeFromDOMNode(childDOM);
+  return $isHorizontalRuleNode(node) ? node : null;
+}
+
 function $toggleNodeSelection(
   node: LexicalNode,
   shiftKey: boolean = false,
@@ -189,6 +246,13 @@ export const HorizontalRuleExtension = /* @__PURE__ */ defineExtension({
               $toggleNodeSelection(node, event.shiftKey);
               return true;
             }
+          }
+          const besideNode = $getHorizontalRuleBesideClick(editor, event);
+          if (besideNode !== null) {
+            const nodeSelection = $createNodeSelection();
+            nodeSelection.add(besideNode.getKey());
+            $setSelection(nodeSelection);
+            return true;
           }
           return false;
         },

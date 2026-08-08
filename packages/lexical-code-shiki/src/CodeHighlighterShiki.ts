@@ -243,6 +243,17 @@ function $updateAndRetainSelection(
   }
 
   const anchor = selection.anchor;
+  // The selection is restored by walking this code node's children, so it can
+  // only be retained when it actually points inside this code node. When the
+  // selection lives elsewhere there is nothing to retain and restoring would
+  // drag the caret into the code block instead of leaving it where the user
+  // put it.
+  const anchorNode = anchor.getNode();
+  if (anchorNode !== node && !node.isParentOf(anchorNode)) {
+    updateFn();
+    return;
+  }
+
   const anchorOffset = anchor.offset;
   const isNewLineAnchor =
     anchor.type === 'element' &&
@@ -251,7 +262,6 @@ function $updateAndRetainSelection(
 
   // Calculating previous text offset (all text node prior to anchor + anchor own text offset)
   if (!isNewLineAnchor) {
-    const anchorNode = anchor.getNode();
     textOffset =
       anchorOffset +
       anchorNode.getPreviousSiblings().reduce((offset, _node) => {

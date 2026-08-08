@@ -70,6 +70,7 @@ import {
   isDOMTextNode,
   isHTMLElement,
   isInlineDomNode,
+  removeEmptyDOMAttribute,
   toggleTextFormatType,
 } from '../LexicalUtils';
 import {setDOMStyleFromCSS} from '../utils/setDOMStyle';
@@ -198,6 +199,7 @@ function setTextThemeClassNames(
       }
     }
   }
+  removeEmptyDOMAttribute(dom, 'class');
 }
 
 function diffComposedText(a: string, b: string): [number, number, string] {
@@ -650,6 +652,7 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
     const nextStyle = this.__style;
     if (prevStyle !== nextStyle) {
       setDOMStyleFromCSS(dom.style, nextStyle, prevStyle);
+      removeEmptyDOMAttribute(dom, 'style');
     }
     return false;
   }

@@ -1413,6 +1413,24 @@ export function $selectAll(selection?: RangeSelection | null): RangeSelection {
   }
 }
 
+/**
+ * Removes `class` or `style` from the element when the attribute is present
+ * but has an empty value.
+ *
+ * `classList.remove(...)` and `style.setProperty(prop, '')` do not remove the
+ * attribute once every token/declaration is gone, so clearing the last theme
+ * class or the last inline declaration leaves `class=""` / `style=""` behind
+ * in the editor DOM.
+ */
+export function removeEmptyDOMAttribute(
+  dom: HTMLElement,
+  attributeName: 'class' | 'style',
+): void {
+  if (dom.getAttribute(attributeName) === '') {
+    dom.removeAttribute(attributeName);
+  }
+}
+
 export function getCachedClassNameArray(
   classNamesTheme: EditorThemeClasses,
   classNameThemeType: string,

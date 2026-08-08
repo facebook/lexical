@@ -7,6 +7,7 @@
  */
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
+import {useLexicalAriaLiveRegion} from '@lexical/react/useLexicalAriaLiveRegion';
 import {getScrollParent} from '@lexical/utils';
 import {
   $getSelection,
@@ -76,6 +77,12 @@ export class MenuOption {
   ref?: RefObject<HTMLElement | null>;
   icon?: JSX.Element;
   title?: JSX.Element | string;
+  /**
+   * Spoken name for the option, when the visible content is not what should be
+   * read aloud. Set as `aria-label`, which replaces the element's contents for
+   * naming - so decorative glyphs and shorthand in `title` are not announced.
+   */
+  ariaLabel?: string;
 
   constructor(key: string) {
     this.key = key;
@@ -310,7 +317,8 @@ function MenuItem({
       className={className}
       ref={option.setRefElement}
       role="option"
-      aria-selected={isSelected}
+      aria-label={option.ariaLabel}
+      aria-selected={isSelected || undefined}
       id={'typeahead-item-' + index}
       onMouseEnter={onMouseEnter}
       onClick={onClick}>
@@ -318,6 +326,24 @@ function MenuItem({
       <span className="text">{option.title}</span>
     </li>
   );
+}
+
+/**
+ * Write only on change. A redundant setAttribute still emits a mutation, and
+ * on the focused element that is churn an assistive technology may react to.
+ */
+function setAttrIfChanged(
+  el: HTMLElement,
+  name: string,
+  value: string | null,
+): void {
+  if (value === null) {
+    if (el.hasAttribute(name)) {
+      el.removeAttribute(name);
+    }
+  } else if (el.getAttribute(name) !== value) {
+    el.setAttribute(name, value);
+  }
 }
 
 export function LexicalMenu<TOption extends MenuOption>({
@@ -331,7 +357,9 @@ export function LexicalMenu<TOption extends MenuOption>({
   shouldSplitNodeWithQuery = false,
   commandPriority = COMMAND_PRIORITY_LOW,
   preselectFirstItem = true,
+  ariaLabel,
 }: {
+  ariaLabel?: string;
   close: () => void;
   editor: LexicalEditor;
   anchorElementRef: RefObject<HTMLElement | null>;
@@ -400,8 +428,18 @@ export function LexicalMenu<TOption extends MenuOption>({
   const defaultMenuRenderFn = useCallback(() => {
     return anchorElementRef.current && options.length
       ? ReactDOM.createPortal(
-          <div className="typeahead-popover mentions-menu">
-            <ul>
+          // The <ul> IS the listbox. Two reasons it cannot merely be marked
+          // presentational: a listbox must directly own its options for the
+          // browser to compute set position at all, and the <ul> is the scroll
+          // container - scrollable elements are focusable, and presentational
+          // role conflict resolution ignores role="presentation" on anything
+          // focusable. Marking it up left the options inside a plain list,
+          // which is read as "list, list, list item" with no position.
+          <div className="typeahead-popover mentions-menu" role="presentation">
+            <ul
+              aria-label={ariaLabel ?? 'Typeahead menu'}
+              id="typeahead-listbox"
+              role="listbox">
               {options.map((option, i: number) => (
                 <MenuItem
                   index={i}
@@ -424,17 +462,94 @@ export function LexicalMenu<TOption extends MenuOption>({
       : null;
   }, [
     anchorElementRef,
+    ariaLabel,
     options,
     selectedIndex,
     selectOptionAndCleanUp,
     setHighlightedIndex,
   ]);
 
+  // Nothing in ARIA announces how many suggestions there are, and the moment
+  // it matters most is silent: when nothing matches, there is no list to
+  // describe. A sighted user watches the popup empty out and vanish, and
+  // watches it change length as they type even when the highlighted entry
+  // stays put. None of that reaches a screen reader on its own.
+  //
+  // Keyed on the count alone, so arrowing through the options does not talk
+  // over the option itself, and debounced so a burst of keystrokes produces
+  // one message once typing settles rather than a queue of stale counts.
+  const announce = useLexicalAriaLiveRegion();
+  const optionCount = options.length;
   useEffect(() => {
+    const timeout = setTimeout(() => {
+      try {
+        announce(
+          optionCount === 0
+            ? 'No results'
+            : optionCount === 1
+              ? '1 suggestion available'
+              : `${optionCount} suggestions available`,
+        );
+      } catch (_e) {
+        // The editor has no AriaLiveRegionExtension. The menu still works, it
+        // just cannot speak the count.
+      }
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [optionCount, announce]);
+
+  // The editor is NOT a combobox. It is a rich text field that briefly grows
+  // a suggestion list, and asserting role="combobox" on it has two costs: the
+  // user is told they are in a control they are not in, and because the role
+  // has to be put back afterwards, the change lands on the FOCUSED element -
+  // which a screen reader treats as a re-introduction, re-reading name, role
+  // and value as though focus had moved.
+  //
+  // So the role is never touched. ARIA 1.2 permits aria-activedescendant on
+  // role="textbox", and the option is reachable because the portalled listbox
+  // is explicitly owned. aria-expanded is deliberately absent too: it is not
+  // supported on textbox, and "collapsed" describes a widget that was never
+  // there.
+  //
+  // Net effect: during a whole typeahead session the only attributes that
+  // change on the focused element are aria-owns and aria-activedescendant.
+  const hasOptions = options.length > 0;
+  useEffect(() => {
+    const rootElem = editor.getRootElement();
+    if (rootElem === null) {
+      return;
+    }
+    // The menu is rendered into <body> rather than inside the editor, so that
+    // an ancestor with overflow: hidden cannot clip it. That leaves the
+    // options outside the editor's own DOM, and aria-activedescendant expects
+    // to point at something the editor contains. aria-owns declares the
+    // relationship the DOM no longer shows.
+    setAttrIfChanged(
+      rootElem,
+      'aria-owns',
+      hasOptions ? 'typeahead-listbox' : null,
+    );
+    // Restated from the current highlight rather than written only when the
+    // highlight moves. A menu that loads its options over the network opens
+    // with none, and when they arrive the highlight has not "changed" - it
+    // was clamped to -1 while the list was empty and lands back on 0 - so a
+    // write driven by change alone never happens and the option is never
+    // announced.
+    setAttrIfChanged(
+      rootElem,
+      'aria-activedescendant',
+      hasOptions && selectedIndex !== null && selectedIndex >= 0
+        ? 'typeahead-item-' + selectedIndex
+        : null,
+    );
+  }, [editor, hasOptions, selectedIndex]);
+
+  useEffect(() => {
+    const rootElem = editor.getRootElement();
     return () => {
-      const rootElem = editor.getRootElement();
       if (rootElem !== null) {
-        rootElem.removeAttribute('aria-activedescendant');
+        setAttrIfChanged(rootElem, 'aria-owns', null);
+        setAttrIfChanged(rootElem, 'aria-activedescendant', null);
       }
     };
   }, [editor]);
@@ -621,12 +736,14 @@ export function LexicalMenu<TOption extends MenuOption>({
 function setContainerDivAttributes(
   containerDiv: HTMLElement,
   className?: string,
+  ariaLabel?: string,
 ) {
   if (className != null) {
     containerDiv.className = className;
   }
-  containerDiv.setAttribute('aria-label', 'Typeahead menu');
-  containerDiv.setAttribute('role', 'listbox');
+  // Positioning wrapper only. The listbox role belongs on the element that
+  // directly parents the options - see defaultMenuRenderFn.
+  containerDiv.setAttribute('role', 'presentation');
   containerDiv.style.display = 'block';
   containerDiv.style.position = 'absolute';
 }
@@ -655,6 +772,7 @@ export function useMenuAnchorRef(
   className?: string,
   parent?: HTMLElement,
   shouldIncludePageYOffset__EXPERIMENTAL: boolean = true,
+  ariaLabel?: string,
 ): RefObject<HTMLElement | null> {
   const [editor] = useLexicalComposerContext();
   const resolvedParent: HTMLElement | ShadowRoot | undefined =
@@ -717,10 +835,16 @@ export function useMenuAnchorRef(
       }
 
       if (!containerDiv.isConnected) {
-        setContainerDivAttributes(containerDiv, className);
+        setContainerDivAttributes(containerDiv, className, ariaLabel);
         resolvedParent.append(containerDiv);
       }
       containerDiv.setAttribute('id', 'typeahead-menu');
+
+      // Points at the positioning container, not the listbox inside it.
+      // @lexical/table identifies an open typeahead by string-matching
+      // this exact value, so changing it stops arrow keys reaching the
+      // menu inside a table. aria-owns below carries the ownership that
+      // aria-activedescendant needs.
       rootElement.setAttribute('aria-controls', 'typeahead-menu');
     }
   }, [
@@ -729,6 +853,7 @@ export function useMenuAnchorRef(
     shouldIncludePageYOffset__EXPERIMENTAL,
     className,
     resolvedParent,
+    ariaLabel,
   ]);
 
   useEffect(() => {
@@ -772,7 +897,7 @@ export function useMenuAnchorRef(
     initialAnchorElement != null &&
     initialAnchorElement === anchorElementRef.current
   ) {
-    setContainerDivAttributes(initialAnchorElement, className);
+    setContainerDivAttributes(initialAnchorElement, className, ariaLabel);
     if (resolvedParent != null) {
       resolvedParent.append(initialAnchorElement);
     }

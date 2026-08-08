@@ -247,19 +247,30 @@ function $updateAndRetainSelection(
   }
 
   // If it was non-element anchor then we walk through child nodes
-  // and looking for a position of original text offset
-  node.getChildren().some(_node => {
-    const isText = $isTextNode(_node);
-    if (isText || $isLineBreakNode(_node)) {
-      const textContentSize = _node.getTextContentSize();
-      if (isText && textContentSize >= textOffset) {
-        _node.select(textOffset, textOffset);
-        return true;
+  // and looking for a position of original text offset. A LineBreakNode
+  // consumes one unit of the offset but can't host a text point, so when the
+  // offset lands on one we use an element point on the code node instead of
+  // letting the offset go negative and selecting the next text node at an
+  // out-of-range position.
+  const children = node.getChildren();
+  for (let index = 0; index < children.length; index++) {
+    const child = children[index];
+    if ($isTextNode(child)) {
+      const textContentSize = child.getTextContentSize();
+      if (textContentSize >= textOffset) {
+        child.select(textOffset, textOffset);
+        return;
       }
       textOffset -= textContentSize;
+    } else if ($isLineBreakNode(child)) {
+      if (textOffset === 0) {
+        node.select(index, index);
+        return;
+      }
+      textOffset -= 1;
     }
-    return false;
-  });
+  }
+  node.select(children.length, children.length);
 }
 
 // Finds minimal diff range between two nodes lists. It returns from/to range boundaries of prevNodes

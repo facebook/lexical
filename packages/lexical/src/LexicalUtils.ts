@@ -1373,7 +1373,7 @@ export function $selectAll(selection?: RangeSelection | null): RangeSelection {
     if ($isRootNode(anchorNode)) {
       anchor.set(anchorNode.getKey(), 0, 'element');
       focus.set(anchorNode.getKey(), anchorNode.getChildrenSize(), 'element');
-      $normalizeSelection(selection);
+      $normalizeSelection(selection, true);
       return selection;
     }
     const topParent = anchorNode.getTopLevelElementOrThrow();
@@ -1396,19 +1396,19 @@ export function $selectAll(selection?: RangeSelection | null): RangeSelection {
       if ($isElementNode(topParent)) {
         anchor.set(topParent.getKey(), 0, 'element');
         focus.set(topParent.getKey(), topParent.getChildrenSize(), 'element');
-        $normalizeSelection(selection);
+        $normalizeSelection(selection, true);
       }
       return selection;
     }
     const rootNode = parent;
     anchor.set(rootNode.getKey(), 0, 'element');
     focus.set(rootNode.getKey(), rootNode.getChildrenSize(), 'element');
-    $normalizeSelection(selection);
+    $normalizeSelection(selection, true);
     return selection;
   } else {
     // Create a new RangeSelection
     const newSelection = root.select(0, root.getChildrenSize());
-    $setSelection($normalizeSelection(newSelection));
+    $setSelection($normalizeSelection(newSelection, true));
     return newSelection;
   }
 }

@@ -108,7 +108,7 @@ export function useYjsCollaboration(
   const onBootstrap = useCallback(() => {
     const {root} = binding;
     if (shouldBootstrap && root.isEmpty() && root._xmlText._length === 0) {
-      initializeEditor(editor, initialEditorState);
+      bootstrapEditor(binding, editor, initialEditorState);
     }
   }, [binding, editor, initialEditorState, shouldBootstrap]);
 
@@ -244,7 +244,7 @@ export function useYjsCollaborationV2__EXPERIMENTAL(
   const onBootstrap = useCallback(() => {
     const {root} = binding;
     if (shouldBootstrap && root._length === 0) {
-      initializeEditor(editor);
+      bootstrapEditor(binding, editor);
     }
   }, [binding, editor, shouldBootstrap]);
 
@@ -633,6 +633,34 @@ function useYjsUndoManager(editor: LexicalEditor, undoManager: UndoManager) {
   }, [editor, undoManager]);
 
   return clearHistory;
+}
+
+/**
+ * Write the initial editor state into an empty shared document. The write is
+ * flagged on the binding so that the Yjs UndoManager created by
+ * `createUndoManager` skips the resulting transaction: bootstrapping is not a
+ * user edit and must not be undoable, which matches a non-collab editor where
+ * the initial state is applied with HISTORY_MERGE_TAG (#7110).
+ */
+function bootstrapEditor(
+  binding: BaseBinding,
+  editor: LexicalEditor,
+  initialEditorState?: InitialEditorStateType,
+): void {
+  binding.isBootstrapping = true;
+  try {
+    initializeEditor(editor, initialEditorState);
+  } finally {
+    // `editor.update` commits in a microtask, and the Yjs write happens in the
+    // update listener during that commit, so the flag has to outlive this call.
+    // Lexical schedules the commit with `queueMicrotask` from inside
+    // `editor.update`, so it is already queued ahead of this one. Resetting
+    // here rather than from the commit itself also means the flag can never get
+    // stuck when the update turns out to be a no-op.
+    queueMicrotask(() => {
+      binding.isBootstrapping = false;
+    });
+  }
 }
 
 function initializeEditor(

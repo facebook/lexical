@@ -95,6 +95,10 @@ export function createUndoManager(
   root: XmlText | XmlElement,
 ): UndoManager {
   return new YjsUndoManager(root, {
+    // Bootstrapping the initial editor state is not a user edit, so it must not
+    // become an undo entry (matching a non-collab editor, where the initial
+    // state is applied with HISTORY_MERGE_TAG). See #7110.
+    captureTransaction: () => !binding.isBootstrapping,
     trackedOrigins: new Set([binding, null]),
   });
 }

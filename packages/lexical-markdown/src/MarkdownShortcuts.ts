@@ -27,6 +27,7 @@ import {
   type LexicalEditor,
   type LexicalNode,
   mergeRegister,
+  type PointType,
   TEXT_TYPE_TO_FORMAT,
   type TextNode,
 } from 'lexical';
@@ -418,6 +419,40 @@ function getOpenTagStartIndex(
   return -1;
 }
 
+/**
+ * Offset of a text point measured from the start of its parent element rather
+ * than from the start of its own node.
+ *
+ * The "did the user type exactly one character?" heuristic compares the anchor
+ * offset before and after an update, but node transforms (hashtags, autolinks,
+ * ...) can split or merge the leaves around the caret within that same update.
+ * The anchor then lands in a different node and the two raw offsets are no
+ * longer comparable, so a single typed character can look like a large jump and
+ * the shortcut is skipped (#5366). Rebasing both offsets on the parent element
+ * keeps them comparable; when the leaves around the caret are unchanged this is
+ * the previous offset plus a constant on both sides, so the comparison is
+ * unaffected.
+ */
+function $getOffsetInParent(point: PointType): number {
+  const node = point.getNode();
+
+  if (!$isTextNode(node)) {
+    return point.offset;
+  }
+
+  let offset = point.offset;
+
+  for (
+    let sibling = node.getPreviousSibling();
+    sibling !== null;
+    sibling = sibling.getPreviousSibling()
+  ) {
+    offset += sibling.getTextContentSize();
+  }
+
+  return offset;
+}
+
 function isEqualSubString(
   stringA: string,
   aStart: number,
@@ -574,12 +609,18 @@ export function registerMarkdownShortcuts(
 
         const anchorNode = editorState._nodeMap.get(anchorKey);
 
+        if (!$isTextNode(anchorNode) || !dirtyLeaves.has(anchorKey)) {
+          return;
+        }
+
         if (
-          !$isTextNode(anchorNode) ||
-          !dirtyLeaves.has(anchorKey) ||
-          (!isCompositionEnd &&
-            anchorOffset !== 1 &&
-            anchorOffset > prevSelection.anchor.offset + 1)
+          !isCompositionEnd &&
+          anchorOffset !== 1 &&
+          editorState.read(() => $getOffsetInParent(selection.anchor)) >
+            prevEditorState.read(() =>
+              $getOffsetInParent(prevSelection.anchor),
+            ) +
+              1
         ) {
           return;
         }

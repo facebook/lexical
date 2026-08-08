@@ -512,6 +512,59 @@ describe('LexicalLinkNode tests', () => {
       expect(link.title).toBe('Lexical Website');
     });
 
+    // https://github.com/facebook/lexical/issues/5305
+    test('$toggleLink does not link the whole node from a collapsed selection', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const paragraph = $createParagraphNode();
+        const textNode = $createTextNode('. Try typing in ');
+        paragraph.append(textNode);
+        $getRoot().clear().append(paragraph);
+        // Caret inside the word "typing", nothing selected.
+        textNode.select(8, 8);
+        $toggleLink('https://lexical.dev/');
+      });
+
+      editor.read(() => {
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
+        expect(
+          paragraph
+            .getChildren()
+            .map(node => [node.getType(), node.getTextContent()]),
+        ).toEqual([['text', '. Try typing in ']]);
+      });
+    });
+
+    test('$toggleLink updates the enclosing link from a collapsed selection', async () => {
+      const {editor} = testEnv;
+      await editor.update(() => {
+        const paragraph = $createParagraphNode();
+        const textNode = $createTextNode('A link');
+        const linkNode = $createLinkNode('https://lexical.dev/');
+        linkNode.append(textNode);
+        paragraph.append(linkNode);
+        $getRoot().clear().append(paragraph);
+        textNode.select(0, 0);
+        $toggleLink('https://facebook.com/');
+      });
+
+      editor.read(() => {
+        const paragraph = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isParagraphNode,
+        );
+        const linkNode = paragraph.getFirstChild();
+        expect($isLinkNode(linkNode)).toBe(true);
+        expect($isLinkNode(linkNode) && linkNode.getURL()).toBe(
+          'https://facebook.com/',
+        );
+        expect(paragraph.getTextContent()).toBe('A link');
+      });
+    });
+
     test('$toggleLink correctly removes link when textnode has children(like marknode)', async () => {
       const {editor} = testEnv;
       await editor.update(() => {

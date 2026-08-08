@@ -818,6 +818,21 @@ export function $toggleLink(
     }
   }
 
+  if (selection.isCollapsed() && url !== null) {
+    // A collapsed selection covers no text, so there is nothing to turn into a
+    // link. `extract()` returns the whole node the caret happens to sit in,
+    // which would silently link far more than the caret (#5305). Updating an
+    // existing link is still meaningful, so only bail out when the caret is not
+    // already inside one.
+    const parentLink = $findMatchingParent(
+      selection.anchor.getNode(),
+      $isLinkNode,
+    );
+    if (parentLink === null) {
+      return;
+    }
+  }
+
   // Handle RangeSelection
   const nodes = selection.extract();
 

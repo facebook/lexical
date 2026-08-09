@@ -846,6 +846,19 @@ function triggerMutationListeners(
   }
 }
 
+/**
+ * The only listener maps whose callbacks may return a cleanup function
+ * ({@link RootListener} and {@link EditableListener}). The other maps are typed
+ * `=> void`, and TypeScript's void-return rule lets a `=> void` callback return
+ * any value — `arr.push(x)` returns a number, an `async` listener returns a
+ * Promise — so their return value must never be treated as an unregister
+ * callback.
+ */
+const CLEANUP_RETURN_LISTENERS: ReadonlySet<keyof MapListeners> = new Set([
+  'editable',
+  'root',
+]);
+
 export function triggerListeners<T extends keyof MapListeners>(
   type: T,
   editor: LexicalEditor,
@@ -860,12 +873,15 @@ export function triggerListeners<T extends keyof MapListeners>(
       (...args: MapListeners[T]) => void | undefined | (() => void),
       void | undefined | (() => void)
     >;
+    const supportsCleanup = CLEANUP_RETURN_LISTENERS.has(type);
     const listeners = Array.from(listenerMap);
     for (const [listener, unregister] of listeners) {
       if (unregister) {
         unregister();
       }
-      const nextUnregister = listener(...payload);
+      const result = listener(...payload);
+      const nextUnregister =
+        supportsCleanup && typeof result === 'function' ? result : undefined;
       if (listenerMap.has(listener)) {
         listenerMap.set(listener, nextUnregister);
       } else if (nextUnregister) {

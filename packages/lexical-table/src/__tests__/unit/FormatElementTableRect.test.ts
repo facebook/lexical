@@ -22,11 +22,12 @@ import {
   $setSelection,
   defineExtension,
   FORMAT_ELEMENT_COMMAND,
+  type InitialEditorStateType,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, test} from 'vitest';
 
-function buildTestEditor($initialEditorState = undefined) {
+function buildTestEditor($initialEditorState?: InitialEditorStateType) {
   return buildEditorFromExtensions(
     defineExtension({
       $initialEditorState,

@@ -640,7 +640,11 @@ export function $deleteTableRowAtSelection(): void {
   const {startRow: focusStartRow} = focusCellMap;
   const focusEndRow = focusStartRow + focusCell.__rowSpan - 1;
   if (gridMap.length === focusEndRow - anchorStartRow + 1) {
-    // Empty grid
+    // Empty grid. Move the selection out of the table before removing it,
+    // otherwise a TableSelection is left pointing at cells that no longer
+    // exist — $deleteTableColumnAtSelection and TableObserver.$clearText both
+    // call selectPrevious() here for the same reason.
+    grid.selectPrevious();
     grid.remove();
     return;
   }

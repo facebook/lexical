@@ -315,7 +315,15 @@ export function parseMarkdownHardLineBreak(
   line: string,
 ): [string, MarkdownHardLineBreak] | null {
   if (line.endsWith('\\')) {
-    return [line.slice(0, -1), '\\'];
+    // A trailing backslash is a hard line break only when it is not itself
+    // escaped. `foo\\` is an escaped backslash — a literal `\` followed by an
+    // ordinary (soft) line ending — so only an odd-length run counts.
+    // https://spec.commonmark.org/0.31.2/#backslash-escapes
+    let backslashes = 0;
+    for (let i = line.length - 1; i >= 0 && line[i] === '\\'; i--) {
+      backslashes++;
+    }
+    return backslashes % 2 === 1 ? [line.slice(0, -1), '\\'] : null;
   }
 
   const spaces = line.match(/^(.*?\S)( {2,})$/);

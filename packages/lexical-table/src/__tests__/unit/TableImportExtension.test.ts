@@ -126,6 +126,38 @@ describe('TableImportExtension', () => {
     });
   });
 
+  test('dir is imported for table, row, and cell', () => {
+    using editor = buildEditor();
+    importInto(
+      editor,
+      '<table dir="rtl"><tr dir="rtl"><td dir="rtl">a</td><th dir="ltr">b</th></tr></table>',
+    );
+    editor.read(() => {
+      const table = $rootTable();
+      expect(table.getDirection()).toBe('rtl');
+      const row = $rows(table)[0];
+      expect(row.getDirection()).toBe('rtl');
+      const cells = $cells(row);
+      expect(cells[0].getDirection()).toBe('rtl');
+      expect(cells[1].getDirection()).toBe('ltr');
+    });
+  });
+
+  test('an absent or invalid dir leaves the direction unset', () => {
+    using editor = buildEditor();
+    importInto(
+      editor,
+      '<table dir="auto"><tr><td dir="nonsense">a</td></tr></table>',
+    );
+    editor.read(() => {
+      const table = $rootTable();
+      expect(table.getDirection()).toBe(null);
+      const row = $rows(table)[0];
+      expect(row.getDirection()).toBe(null);
+      expect($cells(row)[0].getDirection()).toBe(null);
+    });
+  });
+
   test('deprecated TableImportExtension alias still imports tables', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({

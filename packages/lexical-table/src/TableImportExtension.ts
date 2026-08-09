@@ -22,6 +22,7 @@ import {
   $isInlineElementOrDecoratorNode,
   $isLineBreakNode,
   $isTextNode,
+  $setDirectionFromDOM,
   IS_BOLD,
   IS_ITALIC,
   IS_STRIKETHROUGH,
@@ -154,6 +155,7 @@ const TableRule = /* @__PURE__ */ defineImportRule({
         node.setColWidths(columns);
       }
     }
+    $setDirectionFromDOM(node, el);
     return [
       node.splice(
         0,
@@ -171,8 +173,9 @@ const TableRowRule = /* @__PURE__ */ defineImportRule({
     const height = PIXEL_VALUE_REG_EXP.test(el.style.height)
       ? parseFloat(el.style.height)
       : undefined;
+    const node = $setDirectionFromDOM($createTableRowNode(height), el);
     return [
-      $createTableRowNode(height).splice(
+      node.splice(
         0,
         0,
         $descendantsMatching(ctx.$importChildren(el), $isTableCellNode),
@@ -216,6 +219,7 @@ const TableCellRule = /* @__PURE__ */ defineImportRule({
       }
     }
     const cell = $createTableCellNode(headerState, el.colSpan, width);
+    $setDirectionFromDOM(cell, el);
     cell.__rowSpan = el.rowSpan;
     const backgroundColor = el.style.backgroundColor;
     if (backgroundColor !== '') {

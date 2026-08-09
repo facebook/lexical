@@ -159,7 +159,7 @@ describe('LexicalEditor listeners', () => {
   // `=> void`, so TypeScript lets them return any value. Those values must not
   // be treated as unregister callbacks — doing so threw
   // "unregister is not a function" out of the next commit.
-  describe('listeners that do not opt into the cleanup return', () => {
+  describe('listener return values', () => {
     function buildRichTextEditor() {
       return buildEditorFromExtensions({
         dependencies: [RichTextExtension],
@@ -201,16 +201,18 @@ describe('LexicalEditor listeners', () => {
       expect(seen).toEqual(['a', 'b']);
     });
 
-    test('an update listener returning a function is not called back', () => {
+    test('an update listener returning a function gets it called as cleanup', () => {
       using editor = buildRichTextEditor();
-      const returned = vi.fn();
-      const unregister = editor.registerUpdateListener(() => returned);
+      const cleanup = vi.fn();
+      const unregister = editor.registerUpdateListener(() => cleanup);
 
       editor.update(() => $appendParagraph('a'), {discrete: true});
+      // The cleanup from the first call runs before the second call.
+      expect(cleanup).toHaveBeenCalledTimes(0);
       editor.update(() => $appendParagraph('b'), {discrete: true});
+      expect(cleanup).toHaveBeenCalledTimes(1);
       unregister();
-
-      expect(returned).toHaveBeenCalledTimes(0);
+      expect(cleanup).toHaveBeenCalledTimes(2);
     });
   });
 });

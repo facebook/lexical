@@ -1775,17 +1775,29 @@ function getCorner(
   return [colName, rowName];
 }
 
-function getCornerOrThrow(
+/**
+ * Resolve the corner of `rect` that the anchor sits on.
+ *
+ * `$computeTableCellRectBoundary` grows the rect until it contains every
+ * merged cell that straddles an edge, so the anchor is not guaranteed to be at
+ * a corner of the result — a cell merged across the rect's edge pushes that
+ * edge past the anchor. Fall back the same way {@link $extractRectCorners}
+ * does: to the corner opposite the focus, and finally to the top-left.
+ */
+function getAnchorCorner(
   rect: TableCellRectBoundary,
-  cellValue: TableMapValueType,
+  anchorCellValue: TableMapValueType,
+  focusCellValue: TableMapValueType,
 ): Corner {
-  const corner = getCorner(rect, cellValue);
-  invariant(
-    corner !== null,
-    'getCornerOrThrow: cell %s is not at a corner of rect',
-    cellValue.cell.getKey(),
-  );
-  return corner;
+  const anchorCorner = getCorner(rect, anchorCellValue);
+  if (anchorCorner) {
+    return anchorCorner;
+  }
+  const focusCorner = getCorner(rect, focusCellValue);
+  if (focusCorner) {
+    return oppositeCorner(focusCorner);
+  }
+  return ['minColumn', 'minRow'];
 }
 
 function oppositeCorner([colName, rowName]: Corner): Corner {
@@ -1868,7 +1880,7 @@ function $adjustFocusInDirection(
   );
   const spans = $computeTableCellRectSpans(tableMap, rect);
   const {topSpan, leftSpan, bottomSpan, rightSpan} = spans;
-  const anchorCorner = getCornerOrThrow(rect, anchorCellValue);
+  const anchorCorner = getAnchorCorner(rect, anchorCellValue, focusCellValue);
   const [focusColumn, focusRow] = oppositeCorner(anchorCorner);
   let fCol = rect[focusColumn];
   let fRow = rect[focusRow];

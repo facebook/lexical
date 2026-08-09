@@ -302,10 +302,16 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
             null,
             null,
           );
-          const columnIndex = getCellColumnIndex(tableCellNode, tableMap);
-          if (columnIndex === undefined) {
+          const startColumn = getCellColumnIndex(tableCellNode, tableMap);
+          if (startColumn === undefined) {
             throw new Error('TableCellResizer: Table column not found.');
           }
+          // The right-edge resizer sits on the *last* grid column the cell
+          // covers, so that is the column whose width the drag changes.
+          // getCellColumnIndex returns the cell's start column, which is a
+          // different column as soon as the cell has a colSpan. updateRowHeight
+          // already resolves the matching last row for a rowSpan.
+          const columnIndex = startColumn + tableCellNode.getColSpan() - 1;
 
           const colWidths = tableNode.getColWidths();
           if (!colWidths) {

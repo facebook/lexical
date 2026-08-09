@@ -7424,6 +7424,12 @@ test.describe('Tables', () => {
       // Create another table and try to paste the first table into a cell
       await insertTable(page, 2, 2);
       // Resize outer table cell (92px default + 50px = 142px)
+      const spans = await getPageOrFrame(page).evaluate(() =>
+        Array.from(document.querySelectorAll('table > tr')).map(r =>
+          Array.from(r.children).map(c => `${c.tagName}:${c.colSpan}`),
+        ),
+      );
+      expect(spans).toEqual('DEBUG');
       await resizeTableCell(page, 'tr:nth-child(2) > th:nth-child(1)', 50);
       await click(
         page,
@@ -9427,6 +9433,41 @@ test.describe('Tables', () => {
     });
 
     await page.mouse.up();
+  });
+
+  test('Resizing the right edge of a horizontally merged cell resizes its last column', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    await insertTable(page, 3, 3);
+
+    // Merge grid columns 0 and 1 of the second row into one colspan=2 cell.
+    await click(page, '.PlaygroundEditorTheme__tableCell');
+    await selectCellsFromTableCords(
+      page,
+      {x: 0, y: 1},
+      {x: 1, y: 1},
+      true,
+      false,
+    );
+    await mergeTableCells(page);
+
+    // Drag the right edge of the merged cell (the <colgroup> is the table's
+    // first child, so the second row is nth-child(3)). That edge is the
+    // boundary of grid column 1, so column 1 is the one that grows.
+    await resizeTableCell(page, 'tr:nth-child(3) > th:nth-child(1)', 50);
+
+    const colWidths = await getPageOrFrame(page).evaluate(() =>
+      Array.from(document.querySelectorAll('table > colgroup > col')).map(
+        col => col.style.width,
+      ),
+    );
+    expect(colWidths).toEqual(['92px', '142px', '92px']);
   });
 
   test.describe('shift-selection tests', () => {

@@ -169,6 +169,13 @@ export class ListNode extends ElementNode {
       if (this.__listType === 'check') {
         element.setAttribute('__lexicalListType', 'check');
       }
+      // $convertListNode reads `dir` back off the <ol>/<ul>, so it has to be
+      // written here — this override does not call super.exportDOM, which is
+      // where ElementNode would otherwise emit it.
+      const direction = this.getDirection();
+      if (direction) {
+        element.dir = direction;
+      }
     }
     return {
       element,

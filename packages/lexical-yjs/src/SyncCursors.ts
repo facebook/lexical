@@ -912,6 +912,17 @@ export function syncCursorPositions(
       if (cursor === undefined) {
         cursor = createCursor(name, color);
         cursors.set(clientID, cursor);
+      } else if (cursor.name !== name || cursor.color !== color) {
+        // Awareness is mutable: a peer can rename itself or change colour at
+        // any time (the React plugin republishes local state whenever its
+        // `username` / `cursorColor` props change). The name and colour are
+        // baked into the caret DOM and the ::highlight() rule when the
+        // selection is built, so drop the stale selection here and let the
+        // code below rebuild it from the new values.
+        destroyCursor(binding, cursor);
+        cursor.name = name;
+        cursor.color = color;
+        cursor.selection = null;
       }
 
       if (focusing) {

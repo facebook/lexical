@@ -987,13 +987,19 @@ export function $unmergeCellNode(cellNode: TableCellNode): void {
     return rowStyle;
   });
 
+  // The cells the merged cell splits into are the same region of the table it
+  // was, so they keep its per-cell presentation. Only the header state is
+  // recomputed (above), because that describes the row/column rather than the
+  // cell.
+  const $createSplitCell = (headerState: TableCellHeaderState) =>
+    $createTableCellNode(headerState)
+      .setBackgroundColor(cell.getBackgroundColor())
+      .setVerticalAlign(cell.getVerticalAlign())
+      .append($createParagraphNode());
+
   if (colSpan > 1) {
     for (let i = 1; i < colSpan; i++) {
-      cell.insertAfter(
-        $createTableCellNode(colStyles[i] | rowStyles[0]).append(
-          $createParagraphNode(),
-        ),
-      );
+      cell.insertAfter($createSplitCell(colStyles[i] | rowStyles[0]));
     }
     cell.setColSpan(1);
   }
@@ -1023,17 +1029,13 @@ export function $unmergeCellNode(cellNode: TableCellNode): void {
         for (let j = colSpan - 1; j >= 0; j--) {
           $insertFirst(
             currentRowNode,
-            $createTableCellNode(colStyles[j] | rowStyles[i]).append(
-              $createParagraphNode(),
-            ),
+            $createSplitCell(colStyles[j] | rowStyles[i]),
           );
         }
       } else {
         for (let j = colSpan - 1; j >= 0; j--) {
           insertAfterCell.insertAfter(
-            $createTableCellNode(colStyles[j] | rowStyles[i]).append(
-              $createParagraphNode(),
-            ),
+            $createSplitCell(colStyles[j] | rowStyles[i]),
           );
         }
       }

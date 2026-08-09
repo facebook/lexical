@@ -381,6 +381,19 @@ export function $createMarkdownLineBreakNode(
   return lineBreakNode;
 }
 
+/**
+ * CommonMark: "If the leading code fence is indented N spaces, then up to N
+ * spaces of indentation are removed from each line of the content (if
+ * present)." https://spec.commonmark.org/0.31.2/#fenced-code-blocks
+ */
+function stripFenceIndent(line: string, indent: number): string {
+  let index = 0;
+  while (index < indent && (line[index] === ' ' || line[index] === '\t')) {
+    index++;
+  }
+  return line.slice(index);
+}
+
 const createBlockNode = (
   createNode: (match: string[]) => ElementNode,
 ): ElementTransformer['replace'] => {
@@ -704,12 +717,16 @@ export const CODE: MultilineElementTransformer = {
 
     const fence = startMatch[1] ? startMatch[1].trim() : '```';
     const language = startMatch[2] || undefined;
+    // `startMatch[1]` keeps the whitespace that precedes the opening fence.
+    const fenceIndent = startMatch[1]
+      ? startMatch[1].length - startMatch[1].trimStart().length
+      : 0;
 
     if (!children && linesInBetween) {
       if (linesInBetween.length === 1) {
         if (endMatch) {
           codeBlockNode = $createCodeNode(language);
-          code = linesInBetween[0];
+          code = stripFenceIndent(linesInBetween[0], fenceIndent);
         } else {
           codeBlockNode = $createCodeNode(language);
           code = linesInBetween[0].startsWith(' ')
@@ -734,7 +751,9 @@ export const CODE: MultilineElementTransformer = {
           linesInBetween.pop();
         }
 
-        code = linesInBetween.join('\n');
+        code = linesInBetween
+          .map(line => stripFenceIndent(line, fenceIndent))
+          .join('\n');
       }
 
       $setState(codeBlockNode, codeFenceState, fence);

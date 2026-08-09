@@ -787,8 +787,11 @@ export function $toggleLink(
           if (rel !== undefined) {
             existingLink.setRel(rel);
           }
+          if (title !== undefined) {
+            existingLink.setTitle(title);
+          }
         } else {
-          const linkNode = $createLinkNode(url, {rel, target});
+          const linkNode = $createLinkNode(url, {rel, target, title});
           node.insertBefore(linkNode);
           linkNode.append(node);
         }

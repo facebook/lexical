@@ -206,6 +206,32 @@ function $handleTab(shiftKey: boolean): null | LexicalCommand<void> {
   return indentOrOutdent;
 }
 
+/**
+ * Outdent the single line the collapsed caret sits on.
+ *
+ * `$getCodeLines` drops a trailing line when the selection ends exactly at its
+ * start — for a collapsed caret that is always true, so the caret's own line
+ * never reaches the outdent loop and the line has to be resolved from the
+ * anchor here. Applies the same rule as that loop: strip a leading TabNode, or
+ * `tabSize` leading spaces when the extension is configured for them.
+ */
+function $outdentLineAtCaret(
+  selection: RangeSelection,
+  tabSize: number | undefined,
+): void {
+  const anchorNode = selection.anchor.getNode();
+  // An element point (e.g. the caret on a blank line) has no line to outdent.
+  if (!$isCodeHighlightNode(anchorNode) && !$isTabNode(anchorNode)) {
+    return;
+  }
+  const firstOfLine = $getFirstCodeNodeOfLine(anchorNode);
+  if ($isTabNode(firstOfLine)) {
+    firstOfLine.remove();
+  } else if (tabSize !== undefined && $isCodeHighlightNode(firstOfLine)) {
+    $outdentLeadingSpaces(firstOfLine, tabSize, selection);
+  }
+}
+
 function $handleMultilineIndent(
   type: LexicalCommand<void>,
   tabSize?: number,
@@ -223,6 +249,8 @@ function $handleMultilineIndent(
   if (codeLinesLength === 0 && selection.isCollapsed()) {
     if (type === INDENT_CONTENT_COMMAND) {
       selection.insertNodes([$createTabNode()]);
+    } else {
+      $outdentLineAtCaret(selection, tabSize);
     }
     return true;
   }

@@ -662,8 +662,9 @@ interface HistoryExtensionInit {
  *
  * Config-derived signals (`delay`, `disabled`, `historyState`, `maxDepth`,
  * `now`) are writable so that peer extensions such as
- * {@link SharedHistoryExtension} can redirect them at runtime.  The `canUndo` / `canRedo` signals are
- * **readonly** for consumers — they are derived from the current
+ * {@link SharedHistoryExtension} can redirect them at runtime.
+ * The `canUndo` / `canRedo` signals are **readonly** for
+ * consumers — they are derived from the current
  * {@link HistoryState} and kept in sync automatically.
  */
 export interface HistoryExtensionOutput {

@@ -117,12 +117,17 @@ export function formatKeyboardShortcut(
  * applications can overlay the table: configuring an existing name remaps
  * that shortcut, configuring it to null disables it, and new names add new
  * shortcuts.
+ * @experimental
  */
 export type NamedKeyboardShortcuts = Record<
   string,
   KeyboardShortcut | readonly KeyboardShortcut[] | null
 >;
 
+/**
+ * Configuration for {@link KeyboardShortcutsExtension}.
+ * @experiemental
+ */
 export interface KeyboardShortcutsConfig {
   /** When `true`, the shortcut listener is not registered */
   disabled: boolean;

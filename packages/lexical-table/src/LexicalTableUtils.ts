@@ -1591,6 +1591,10 @@ export function $insertTableIntoGrid(
       if (backgroundColor !== null && backgroundColor !== undefined) {
         cell.setBackgroundColor(backgroundColor);
       }
+      const verticalAlign = templateCell.getVerticalAlign();
+      if (verticalAlign !== undefined) {
+        cell.setVerticalAlign(verticalAlign);
+      }
       const originalChildren = cell.getChildren();
       templateCell.getChildren().forEach(child => {
         if ($isTextNode(child)) {

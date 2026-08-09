@@ -516,6 +516,52 @@ describe('TableExtension', () => {
         ]);
       });
     });
+
+    test('pasting a table carries the cell backgroundColor and verticalAlign', () => {
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          const table = $createTableNode();
+          const row = $createTableRowNode();
+          const cell = $createTableCellNode();
+          cell.append($createParagraphNode().append($createTextNode('old')));
+          row.append(cell);
+          table.append(row);
+          root.append(table);
+          cell.selectStart();
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const template = $createTableNode();
+          const row = $createTableRowNode();
+          const cell = $createTableCellNode()
+            .setBackgroundColor('rgb(255, 0, 0)')
+            .setVerticalAlign('middle');
+          cell.append($createParagraphNode().append($createTextNode('new')));
+          row.append(cell);
+          template.append(row);
+          const selection = $getSelection();
+          assert(selection !== null, 'Expected a selection');
+          $insertGeneratedNodes(editor, [template], selection);
+        },
+        {discrete: true},
+      );
+
+      editor.read('latest', () => {
+        const table = $getRoot().getFirstChild();
+        assert($isTableNode(table), 'Expected table node');
+        const row = table.getFirstChild();
+        assert($isTableRowNode(row), 'Expected row node');
+        const cell = row.getFirstChild();
+        assert($isTableCellNode(cell), 'Expected cell node');
+        expect(cell.getTextContent()).toBe('new');
+        expect(cell.getBackgroundColor()).toBe('rgb(255, 0, 0)');
+        expect(cell.getVerticalAlign()).toBe('middle');
+      });
+    });
   });
 
   describe('colWidths', () => {

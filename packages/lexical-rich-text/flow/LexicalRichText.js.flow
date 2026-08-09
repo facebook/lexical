@@ -77,11 +77,16 @@ export type EscapeFormatTriggerConfig = {
   [K in TextFormatType]?: TriggerConfig | null,
 };
 
+export type ShouldHandlePasteAsFiles = (files: Array<File>, hasTextContent: boolean) => boolean;
+
 export type RichTextConfig = {
   escapeFormatTriggers: EscapeFormatTriggerConfig,
+  shouldHandlePasteAsFiles: ShouldHandlePasteAsFiles,
 };
 
-declare export function registerRichText(editor: LexicalEditor, escapeFormatTriggers?: EscapeFormatTriggerConfig): () => void;
+declare export function registerRichText(editor: LexicalEditor, escapeFormatTriggers?: EscapeFormatTriggerConfig, shouldHandlePasteAsFiles?: ShouldHandlePasteAsFiles): () => void;
+
+declare export function defaultShouldHandlePasteAsFiles(files: Array<File>, hasTextContent: boolean): boolean;
 
 export type SerializedQuoteNode = {
   ...SerializedElementNode,

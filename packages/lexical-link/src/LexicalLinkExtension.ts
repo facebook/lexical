@@ -83,13 +83,13 @@ export function registerLink(
           }
           return false;
         } else {
-          const {url, target, rel, title} = payload;
-          $toggleLink(url, {
-            ...attributes,
-            rel,
-            target,
-            title,
-          });
+          // Only the attributes the payload actually carries may override the
+          // configured defaults. Destructuring `rel`/`target`/`title` and
+          // spreading them unconditionally would write `undefined` over every
+          // configured value, since an explicit `undefined` still shadows a
+          // spread key.
+          const {url, ...payloadAttributes} = payload;
+          $toggleLink(url, {...attributes, ...payloadAttributes});
           return true;
         }
       },

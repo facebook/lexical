@@ -658,9 +658,19 @@ export const CODE: MultilineElementTransformer = {
         const endMatch = line.match(multilineEndRegex);
         const linesInBetween = lines.slice(startLineIndex + 1, i);
 
-        const afterFullMatch = currentLine.slice(startMatch[0].length);
-        if (afterFullMatch.length > 0) {
-          linesInBetween.unshift(afterFullMatch);
+        // Everything after the opening fence is the info string, and only its
+        // first word is the language. When a language was captured, whatever
+        // follows it on that line is metadata (```js title="x", ```ts {1,3})
+        // and must not be prepended to the block's content.
+        // https://spec.commonmark.org/0.31.2/#fenced-code-blocks
+        //
+        // With no language captured the fence carries no info string, so the
+        // remainder is kept as content (``` code) as before.
+        if (!startMatch[2]) {
+          const afterFullMatch = currentLine.slice(startMatch[0].length);
+          if (afterFullMatch.length > 0) {
+            linesInBetween.unshift(afterFullMatch);
+          }
         }
 
         CODE.replace(

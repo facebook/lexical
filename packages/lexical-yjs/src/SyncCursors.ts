@@ -242,19 +242,28 @@ function createRelativePositionV2(
     return createRelativePositionFromTypeIndex(yType, adjustedOffset, assoc);
   } else if (point.type === 'element') {
     invariant($isElementNode(node), 'Element point must be an element node');
-    let i = 0;
+    // `offset` counts lexical children, but the index handed to yjs counts
+    // yjs children, and normalizeNodeContent collapses a run of adjacent
+    // TextNodes into a single XmlText child. Advance a lexical cursor to
+    // `offset` while counting each text run as one yjs child, mirroring
+    // $getNodeAndOffsetV2, which consumes one yjs offset per child and then
+    // skips the remainder of a text run.
+    let yIndex = 0;
+    let lexicalIndex = 0;
     let child = node.getFirstChild();
-    while (child !== null && i < offset) {
+    while (child !== null && lexicalIndex < offset) {
+      let nextSibling = child.getNextSibling();
+      lexicalIndex++;
       if ($isTextNode(child)) {
-        let nextSibling = child.getNextSibling();
         while ($isTextNode(nextSibling)) {
           nextSibling = nextSibling.getNextSibling();
+          lexicalIndex++;
         }
       }
-      i++;
-      child = child.getNextSibling();
+      yIndex++;
+      child = nextSibling;
     }
-    return createRelativePositionFromTypeIndex(yType, i, assoc);
+    return createRelativePositionFromTypeIndex(yType, yIndex, assoc);
   }
   return null;
 }

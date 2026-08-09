@@ -8,35 +8,26 @@
 
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {$generateNodesFromDOMViaExtension} from '@lexical/html';
-import {$dfs} from '@lexical/utils';
-import {
-  $getRoot,
-  $insertNodes,
-  defineExtension,
-  type LexicalEditor,
-} from 'lexical';
+import {$getRoot, $insertNodes, $nodesOfType, defineExtension} from 'lexical';
 import {describe, expect, it} from 'vitest';
 
-import {$isDateTimeNode} from '../../src/nodes/DateTimeNode/DateTimeNode';
+import {DateTimeNode} from '../../src/nodes/DateTimeNode/DateTimeNode';
 import {PlaygroundImportExtension} from '../../src/nodes/PlaygroundImportExtension';
 import {DateTimeExtension} from '../../src/plugins/DateTimeExtension';
 
-const DateTimeImportTestExtension = /* @__PURE__ */ defineExtension({
+const DateTimeImportTestExtension = defineExtension({
   $initialEditorState: null,
   dependencies: [PlaygroundImportExtension, DateTimeExtension],
   name: '[test-datetime-import]',
 });
 
-type ImportResult = {
+interface ImportResult {
   hasDateTimeNode: boolean;
-  serializes: boolean;
   text: string;
-};
+}
 
 function importHtml(html: string): ImportResult {
-  using editor: LexicalEditor & Disposable = buildEditorFromExtensions(
-    DateTimeImportTestExtension,
-  );
+  using editor = buildEditorFromExtensions(DateTimeImportTestExtension);
   editor.update(
     () => {
       $getRoot().clear().select();
@@ -46,16 +37,10 @@ function importHtml(html: string): ImportResult {
     {discrete: true},
   );
 
-  let serializes = true;
-  try {
-    editor.getEditorState().toJSON();
-  } catch {
-    serializes = false;
-  }
+  expect(() => editor.getEditorState().toJSON()).not.toThrow();
 
   return editor.read(() => ({
-    hasDateTimeNode: $dfs().some(({node}) => $isDateTimeNode(node)),
-    serializes,
+    hasDateTimeNode: $nodesOfType(DateTimeNode).length > 0,
     text: $getRoot().getTextContent(),
   }));
 }
@@ -68,16 +53,17 @@ describe('DateTime HTML import', () => {
 
     expect(result.hasDateTimeNode).toBe(false);
     expect(result.text).toBe('some text');
-    expect(result.serializes).toBe(true);
   });
 
   it('still imports a parseable date', () => {
+    // Use a date in the local time zone and locale
+    const may29 = new Date(2026, 4, 29);
     const result = importHtml(
-      '<p><span data-lexical-datetime="2026-05-29T00:00:00.000Z">May 29</span></p>',
+      `<p><span data-lexical-datetime="${may29.toISOString()}">May 29</span></p>`,
     );
 
     expect(result.hasDateTimeNode).toBe(true);
-    expect(result.serializes).toBe(true);
+    expect(result.text).toBe(may29.toDateString());
   });
 
   it('matches how the Google Docs rule already handles an unparseable date', () => {
@@ -87,6 +73,5 @@ describe('DateTime HTML import', () => {
 
     expect(result.hasDateTimeNode).toBe(false);
     expect(result.text).toBe('gd text');
-    expect(result.serializes).toBe(true);
   });
 });

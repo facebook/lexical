@@ -696,6 +696,12 @@ function $maybeMoveSelectionPastTrailingAcceptanceBoundary(
   if (anchorNode.getTextContentSize() === offset) {
     const nextSibling = anchorNode.getNextSibling();
     if (characterToSearchFor === '\n') {
+      // iOS fires insertReplacementText *before* the Enter's insertParagraph, so no
+      // acceptance boundary exists yet; moving here lands the caret in the block that
+      // already followed, and Enter then splits that one instead.
+      if (IS_IOS) {
+        return;
+      }
       if ($isLineBreakNode(nextSibling)) {
         nextSibling.selectEnd();
       } else if (!nextSibling) {

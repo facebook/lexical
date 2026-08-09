@@ -192,13 +192,23 @@ export function $generateDOMFromNodes<T extends HTMLElement | DocumentFragment>(
     const root = $getRoot();
     const domConfig = $getSessionDOMRenderConfig(editor);
 
-    // A RangeSelection wholly inside a slot subtree never includes its host
+    // A selection wholly inside a slot subtree never includes its host
     // (slots are shadow-root isolated), so a root-children walk would miss
     // the selected nodes entirely and export an empty payload. Walk the
     // selection's slot frame instead; outside slots this is the root.
-    const slotFrame = $isRangeSelection(selection)
-      ? $getSlotFrame(selection.anchor.getNode())
-      : null;
+    //
+    // NodeSelection participates here too — a click that selects a decorator
+    // nested in a slot needs the same frame redirect, otherwise this export
+    // silently produces empty HTML while the JSON channel is correct. This
+    // mirrors $generateJSONFromSelectedNodes in @lexical/clipboard, which
+    // anchors on the first selected node for the same reason.
+    const slotFrameAnchor = $isRangeSelection(selection)
+      ? selection.anchor.getNode()
+      : $isNodeSelection(selection)
+        ? (selection.getNodes()[0] ?? null)
+        : null;
+    const slotFrame =
+      slotFrameAnchor !== null ? $getSlotFrame(slotFrameAnchor) : null;
     const parentElementAppend = container.append.bind(container);
     for (const topLevelNode of ($isElementNode(slotFrame)
       ? slotFrame

@@ -371,5 +371,34 @@ describe('LexicalAutoLinkExtension tests', () => {
         expect($getAutoLink().getTitle()).toBe('title-b.com');
       });
     });
+
+    test('an attribute refresh is not reported as a url change', () => {
+      const changes: [string | null, string | null][] = [];
+      using editor = buildEditorFromExtensions({
+        $initialEditorState() {
+          $getRoot().append(
+            $createParagraphNode().append($createTextNode('https://a.com')),
+          );
+        },
+        dependencies: [
+          TestLexicalAutoLinkExtension,
+          configExtension(AutoLinkExtension, {
+            changeHandlers: [
+              (url, prevUrl) => {
+                changes.push([url, prevUrl]);
+              },
+            ],
+            matchers: [ATTRIBUTE_MATCHER],
+          }),
+        ],
+        name: '[test change handler]',
+      });
+      changes.length = 0;
+      retypeAsB(editor);
+
+      // ChangeHandler is documented as (url, prevUrl). Every reported pair must
+      // be a url, never a rel/target/title carried over from the same edit.
+      expect(changes).toEqual([['https://b.com', 'https://a.com']]);
+    });
   });
 });

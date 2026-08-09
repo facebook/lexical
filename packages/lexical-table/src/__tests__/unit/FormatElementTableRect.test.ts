@@ -23,55 +23,43 @@ import {
   defineExtension,
   FORMAT_ELEMENT_COMMAND,
 } from 'lexical';
-import {afterEach, assert, beforeEach, describe, expect, test} from 'vitest';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
+import {assert, describe, expect, test} from 'vitest';
 
-let container: HTMLDivElement;
-let editor: ReturnType<typeof buildEditorFromExtensions>;
-
-beforeEach(() => {
-  container = document.createElement('div');
-  document.body.appendChild(container);
-  editor = buildEditorFromExtensions(
+function buildTestEditor($initialEditorState = undefined) {
+  return buildEditorFromExtensions(
     defineExtension({
+      $initialEditorState,
+      afterRegistration(editor, config, state) {
+        // The FORMAT_ELEMENT_COMMAND handler is registered by the table selection
+        // observer, which needs the editor to have a root element.
+        const container = document.createElement('div');
+        document.body.appendChild(container);
+        editor.setRootElement(container);
+        return () => document.body.removeChild(container);
+      },
       dependencies: [TableExtension],
       name: 'format-element-rect-host',
     }),
   );
-  // The FORMAT_ELEMENT_COMMAND handler is registered by the table selection
-  // observer, which needs the editor to have a root element.
-  editor.setRootElement(container);
-});
-
-afterEach(() => {
-  editor.dispose();
-  document.body.removeChild(container);
-});
-
-function $table() {
-  const table = $getRoot().getFirstChild();
-  assert($isTableNode(table), 'expected a TableNode at the root');
-  return table;
 }
 
 describe('FORMAT_ELEMENT_COMMAND over a table selection', () => {
   test('formats every cell the selection contains, including one pulled in by a merge', () => {
-    editor.update(
-      () => {
-        const table = $createTableNodeWithDimensions(3, 3, false);
-        $getRoot().clear().append(table);
-        const [map] = $computeTableMapSkipCellCheck(table, null, null);
-        // Merge grid columns 0 and 1 of row 1. The merged cell straddles the
-        // left edge of the rect the next selection describes, so the rect has
-        // to grow to column 0 to contain it.
-        const merged = $mergeCells([map[1][0].cell, map[1][1].cell]);
-        assert(merged !== null, 'expected the cells to merge');
-      },
-      {discrete: true},
-    );
+    using editor = buildTestEditor(() => {
+      const table = $createTableNodeWithDimensions(3, 3, false);
+      $getRoot().append(table);
+      const [map] = $computeTableMapSkipCellCheck(table, null, null);
+      // Merge grid columns 0 and 1 of row 1. The merged cell straddles the
+      // left edge of the rect the next selection describes, so the rect has
+      // to grow to column 0 to contain it.
+      const merged = $mergeCells([map[1][0].cell, map[1][1].cell]);
+      assert(merged !== null, 'expected the cells to merge');
+    });
 
     editor.update(
       () => {
-        const table = $table();
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
         const [map] = $computeTableMapSkipCellCheck(table, null, null);
         // Anchor at (row 0, column 1), focus at (row 1, column 2).
         $setSelection(
@@ -81,14 +69,9 @@ describe('FORMAT_ELEMENT_COMMAND over a table selection', () => {
       {discrete: true},
     );
 
-    editor.update(
-      () => {
-        editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
-      },
-      {discrete: true},
-    );
+    editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
 
-    editor.read('latest', () => {
+    editor.read('force-commit', () => {
       const selection = $getSelection();
       assert(selection !== null, 'expected a selection');
       const selectedCells = selection.getNodes().filter($isTableCellNode);

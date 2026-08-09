@@ -2353,6 +2353,50 @@ function $shrinkSelectionToRoot(
  * unresolvable anchor — the selection is left collapsed, so the deletion
  * becomes a no-op for that keystroke.
  */
+/**
+ * Model-only stand-in for the native caret measurement, used when the editor has
+ * no window (a headless editor).
+ *
+ * Only `character` is handled: a single code unit within the focus's own text
+ * node, which `$updateCaretSelectionForUnicodeCharacter` then widens to a whole
+ * code point in `deleteCharacter`. Word and line boundaries depend on the
+ * engine's text segmentation and have no model equivalent, and crossing a block
+ * boundary is left to `$collapseAtStart`, which already owns that merge.
+ */
+function $extendSelectionForDeletionInModel(
+  selection: RangeSelection,
+  isBackward: boolean,
+  granularity: 'character' | 'word' | 'lineboundary',
+): void {
+  if (granularity !== 'character') {
+    return;
+  }
+  const focus = selection.focus;
+  if (focus.type !== 'text') {
+    return;
+  }
+  const text = focus.getNode().getTextContent();
+  const offset = focus.offset;
+  let nextOffset = isBackward ? offset - 1 : offset + 1;
+  if (nextOffset < 0 || nextOffset > text.length) {
+    return;
+  }
+  // Step over a whole surrogate pair rather than splitting one, which would
+  // leave a lone surrogate in the text.
+  if (isBackward) {
+    const code = text.charCodeAt(nextOffset);
+    if (code >= 0xdc00 && code <= 0xdfff && nextOffset > 0) {
+      nextOffset -= 1;
+    }
+  } else {
+    const code = text.charCodeAt(nextOffset - 1);
+    if (code >= 0xd800 && code <= 0xdbff && nextOffset < text.length) {
+      nextOffset += 1;
+    }
+  }
+  focus.set(focus.key, nextOffset, 'text');
+}
+
 function $extendSelectionForDeletion(
   selection: RangeSelection,
   isBackward: boolean,
@@ -2370,7 +2414,15 @@ function $extendSelectionForDeletion(
     return;
   }
   const editor = getActiveEditor();
-  const domSelection = getDOMSelection(getWindow(editor));
+  const editorWindow = editor._window;
+  if (editorWindow === null) {
+    // A headless editor has no window, so there is no native caret to measure
+    // against. `getWindow` would throw here, which is why `deleteCharacter`
+    // was unusable outside the browser (#4210). Extend in the model instead.
+    $extendSelectionForDeletionInModel(selection, isBackward, granularity);
+    return;
+  }
+  const domSelection = getDOMSelection(editorWindow);
   if (!domSelection || typeof domSelection.modify !== 'function') {
     return;
   }

@@ -658,10 +658,12 @@ export const CODE: MultilineElementTransformer = {
         const endMatch = line.match(multilineEndRegex);
         const linesInBetween = lines.slice(startLineIndex + 1, i);
 
-        const afterFullMatch = currentLine.slice(startMatch[0].length);
-        if (afterFullMatch.length > 0) {
-          linesInBetween.unshift(afterFullMatch);
-        }
+        // `replace` follows the default $importMultiline contract, where
+        // linesInBetween[0] is always the remainder of the opening fence line
+        // and is discarded when blank. Unshift it unconditionally so a code
+        // block that genuinely starts with a blank line keeps that line
+        // instead of having it mistaken for this (empty) remainder.
+        linesInBetween.unshift(currentLine.slice(startMatch[0].length));
 
         CODE.replace(
           rootNode,
@@ -676,10 +678,7 @@ export const CODE: MultilineElementTransformer = {
     }
 
     const linesInBetween = lines.slice(startLineIndex + 1);
-    const afterFullMatch = currentLine.slice(startMatch[0].length);
-    if (afterFullMatch.length > 0) {
-      linesInBetween.unshift(afterFullMatch);
-    }
+    linesInBetween.unshift(currentLine.slice(startMatch[0].length));
 
     CODE.replace(rootNode, null, startMatch, null, linesInBetween, true);
     return [true, lines.length - 1];

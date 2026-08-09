@@ -90,7 +90,7 @@ export function $createMentionNode(
   mentionName: string,
   textContent?: string,
 ): MentionNode {
-  const mentionNode = new MentionNode(mentionName, (textContent = mentionName));
+  const mentionNode = new MentionNode(mentionName, textContent);
   mentionNode.setMode('segmented').toggleDirectionless();
   return $applyNodeReplacement(mentionNode);
 }

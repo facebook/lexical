@@ -59,6 +59,21 @@ function $isSelectingEmptyListItem(
 }
 
 /**
+ * Build the ListNode that replaces `list` when its type is changed. The
+ * replacement stands in for the same list, so it is a copy — carrying the
+ * direction, format, style, indent and start the original was given — rather
+ * than a default-constructed ListNode. Every other place a ListNode is
+ * replaced by an equivalent one ({@link $handleIndent},
+ * {@link $handleOutdent}, {@link ListItemNode.replace}, …) uses `$copyNode`
+ * for the same reason.
+ */
+function $newListFrom(list: ElementNode, listType: ListType): ListNode {
+  return $isListNode(list)
+    ? $copyNode(list).setListType(listType)
+    : $createListNode(listType);
+}
+
+/**
  * Inserts a new ListNode. If the selection's anchor node is an empty ListItemNode and is a child of
  * the root/shadow root, it will replace the ListItemNode with a ListNode and the old ListItemNode.
  * Otherwise it will replace its parent with a new ListNode and re-insert the ListItemNode and any previous children.
@@ -87,9 +102,8 @@ export function $insertList(listType: ListType): void {
           nodes = paragraph.select().getNodes();
         }
       } else if ($isSelectingEmptyListItem(anchorNode, nodes)) {
-        const list = $createListNode(listType);
-
         if ($isRootOrShadowRoot(anchorNodeParent)) {
+          const list = $createListNode(listType);
           anchorNode.replace(list);
           const listItem = $createListItemNode();
           if ($isElementNode(anchorNode)) {
@@ -104,6 +118,7 @@ export function $insertList(listType: ListType): void {
           // owns the slot, so converting it is a no-op rather than a
           // replace (which would throw).
           if ($getSlotHost(parent) === null) {
+            const list = $newListFrom(parent, listType);
             append(list, parent.getChildren());
             parent.replace(list);
           }
@@ -145,7 +160,7 @@ export function $insertList(listType: ListType): void {
           // assignment is managed by the node or extension that owns the
           // slot.
           if (!handled.has(parentKey) && $getSlotHost(parent) === null) {
-            const newListNode = $createListNode(listType);
+            const newListNode = $newListFrom(parent, listType);
             append(newListNode, parent.getChildren());
             parent.replace(newListNode);
             handled.add(parentKey);

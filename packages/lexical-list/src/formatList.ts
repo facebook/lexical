@@ -305,6 +305,17 @@ export function $removeList(): void {
           .setTextStyle(selection.style)
           .setTextFormat(selection.format);
 
+        // The paragraph stands in for the list item, so it keeps the item's own
+        // element state. $createListOrMerge does the mirror image of this on the
+        // way in — it copies the block's format and indent onto the list item it
+        // creates — and the importers and ListItemNode.exportDOM round-trip the
+        // direction and style, so dropping them here loses state the user set.
+        paragraph
+          .setFormat(listItemNode.getFormatType())
+          .setIndent(listItemNode.getIndent())
+          .setDirection(listItemNode.getDirection())
+          .setStyle(listItemNode.getStyle());
+
         append(paragraph, listItemNode.getChildren());
 
         insertionPoint.insertAfter(paragraph);

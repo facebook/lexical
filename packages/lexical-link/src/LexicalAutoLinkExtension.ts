@@ -486,6 +486,15 @@ function handleLinkEdit(
       linkNode.setTarget(match.attributes.target || null);
       onChange(match.attributes.target || null, target);
     }
+
+    // `title` is the third member of LinkAttributes and the creation path
+    // ($createAutoLinkNode(match.url, match.attributes)) already applies it,
+    // so the edit path has to refresh it too or it goes stale.
+    const title = linkNode.getTitle();
+    if (title !== match.attributes.title) {
+      linkNode.setTitle(match.attributes.title || null);
+      onChange(match.attributes.title || null, title);
+    }
   }
 }
 

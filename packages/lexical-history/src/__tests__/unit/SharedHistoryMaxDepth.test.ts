@@ -58,11 +58,11 @@ describe('SharedHistoryExtension forwards the parent history signals', () => {
 
     // Premise: the parent really carries the configured cap, and the child's
     // own default differs from it.
-    expect(parentHistory.output.maxDepth.value).toBe(PARENT_MAX_DEPTH);
+    expect(parentHistory.output.maxDepth.peek()).toBe(PARENT_MAX_DEPTH);
 
     // The child pushes onto the parent's shared undoStack, so it has to apply
     // the parent's cap rather than its own default.
-    expect(childHistory.output.maxDepth.value).toBe(PARENT_MAX_DEPTH);
+    expect(childHistory.output.maxDepth.peek()).toBe(PARENT_MAX_DEPTH);
   });
 
   test('the already-forwarded signals still arrive', () => {
@@ -83,11 +83,17 @@ describe('SharedHistoryExtension forwards the parent history signals', () => {
       child,
       HistoryExtension,
     );
-
-    expect(childHistory.output.delay.value).toBe(PARENT_DELAY);
-    expect(childHistory.output.now.value).toBe(parentHistory.output.now.value);
-    expect(childHistory.output.historyState.value).toBe(
-      parentHistory.output.historyState.value,
+    const keys = [
+      'delay',
+      'historyState',
+      'now',
+      'maxDepth',
+      'disabled',
+    ] as const;
+    expect(
+      Object.fromEntries(keys.map(k => [k, childHistory.output[k].peek()])),
+    ).toEqual(
+      Object.fromEntries(keys.map(k => [k, parentHistory.output[k].peek()])),
     );
   });
 });

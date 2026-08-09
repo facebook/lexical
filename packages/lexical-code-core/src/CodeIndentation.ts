@@ -392,10 +392,15 @@ function $handleShiftLines(
     return true;
   }
 
+  // A LineBreakNode sibling means the adjacent line is blank, so it has no
+  // node of its own to anchor the move to — $getFirstCodeNodeOfLine /
+  // $getLastCodeNodeOfLine hand that linebreak straight back, and it belongs
+  // to a *different* line. Anchoring on it splices the moving line into the
+  // line on the far side of the blank one, merging the two.
+  const adjacentLineIsBlank = $isLineBreakNode(sibling);
   const maybeInsertionPoint =
-    $isCodeHighlightNode(sibling) ||
-    $isTabNode(sibling) ||
-    $isLineBreakNode(sibling)
+    !adjacentLineIsBlank &&
+    ($isCodeHighlightNode(sibling) || $isTabNode(sibling))
       ? arrowIsUp
         ? $getFirstCodeNodeOfLine(sibling)
         : $getLastCodeNodeOfLine(sibling)
@@ -404,7 +409,15 @@ function $handleShiftLines(
     maybeInsertionPoint != null ? maybeInsertionPoint : sibling;
   linebreak.remove();
   range.forEach(node => node.remove());
-  if (type === KEY_ARROW_UP_COMMAND) {
+  if (adjacentLineIsBlank) {
+    // The blank line's position is immediately after the sibling linebreak,
+    // in both directions.
+    range.forEach(node => {
+      insertionPoint.insertAfter(node);
+      insertionPoint = node;
+    });
+    insertionPoint.insertAfter(linebreak);
+  } else if (type === KEY_ARROW_UP_COMMAND) {
     range.forEach(node => insertionPoint.insertBefore(node));
     insertionPoint.insertBefore(linebreak);
   } else {

@@ -470,36 +470,37 @@ export function LexicalMenu<TOption extends MenuOption>({
         KEY_ARROW_DOWN_COMMAND,
         payload => {
           const event = payload;
-          if (options !== null && options.length) {
-            const newSelectedIndex =
-              selectedIndex === null
-                ? 0
-                : selectedIndex !== options.length - 1
-                  ? selectedIndex + 1
-                  : 0;
+          if (options === null || !options.length) {
+            // There is nothing to move through, and an empty option list
+            // renders no menu, so the key has to keep propagating to whatever
+            // would otherwise move the caret.
+            return false;
+          }
+          const newSelectedIndex =
+            selectedIndex === null
+              ? 0
+              : selectedIndex !== options.length - 1
+                ? selectedIndex + 1
+                : 0;
 
-            updateSelectedIndex(newSelectedIndex);
+          updateSelectedIndex(newSelectedIndex);
 
-            const option = options[newSelectedIndex];
-            if (!option) {
-              updateSelectedIndex(-1);
-              event.preventDefault();
-              event.stopImmediatePropagation();
-              return true;
-            }
-
-            if (option.ref && option.ref.current) {
-              editor.dispatchCommand(
-                SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND,
-                {
-                  index: newSelectedIndex,
-                  option,
-                },
-              );
-            }
+          const option = options[newSelectedIndex];
+          if (!option) {
+            updateSelectedIndex(-1);
             event.preventDefault();
             event.stopImmediatePropagation();
+            return true;
           }
+
+          if (option.ref && option.ref.current) {
+            editor.dispatchCommand(SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND, {
+              index: newSelectedIndex,
+              option,
+            });
+          }
+          event.preventDefault();
+          event.stopImmediatePropagation();
           return true;
         },
         commandPriority,
@@ -508,30 +509,32 @@ export function LexicalMenu<TOption extends MenuOption>({
         KEY_ARROW_UP_COMMAND,
         payload => {
           const event = payload;
-          if (options !== null && options.length) {
-            const newSelectedIndex =
-              selectedIndex === null
-                ? options.length - 1
-                : selectedIndex !== 0
-                  ? selectedIndex - 1
-                  : options.length - 1;
+          if (options === null || !options.length) {
+            // See KEY_ARROW_DOWN_COMMAND above.
+            return false;
+          }
+          const newSelectedIndex =
+            selectedIndex === null
+              ? options.length - 1
+              : selectedIndex !== 0
+                ? selectedIndex - 1
+                : options.length - 1;
 
-            updateSelectedIndex(newSelectedIndex);
+          updateSelectedIndex(newSelectedIndex);
 
-            const option = options[newSelectedIndex];
-            if (!option) {
-              updateSelectedIndex(-1);
-              event.preventDefault();
-              event.stopImmediatePropagation();
-              return true;
-            }
-
-            if (option.ref && option.ref.current) {
-              scrollIntoViewIfNeeded(option.ref.current);
-            }
+          const option = options[newSelectedIndex];
+          if (!option) {
+            updateSelectedIndex(-1);
             event.preventDefault();
             event.stopImmediatePropagation();
+            return true;
           }
+
+          if (option.ref && option.ref.current) {
+            scrollIntoViewIfNeeded(option.ref.current);
+          }
+          event.preventDefault();
+          event.stopImmediatePropagation();
           return true;
         },
         commandPriority,

@@ -23,6 +23,7 @@ import {
   $isTableSelection,
   $mergeCells,
   INSERT_TABLE_COMMAND,
+  TableCellHeaderStates,
   type TableCellNode,
   TableExtension,
   type TableNode,
@@ -513,6 +514,93 @@ describe('TableExtension', () => {
         expect(texts).toEqual([
           ['A', 'B'],
           ['D', 'E'],
+        ]);
+      });
+    });
+  });
+
+  describe('$tableTransform padding', () => {
+    test('a short header row is padded with header cells', () => {
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          const table = $createTableNode();
+          // First row is a header row but is one cell short.
+          const headerRow = $createTableRowNode();
+          headerRow.append(
+            $createTableCellNode(TableCellHeaderStates.ROW).append(
+              $createParagraphNode().append($createTextNode('h')),
+            ),
+          );
+          table.append(headerRow);
+          const bodyRow = $createTableRowNode();
+          for (const text of ['a', 'b']) {
+            bodyRow.append(
+              $createTableCellNode().append(
+                $createParagraphNode().append($createTextNode(text)),
+              ),
+            );
+          }
+          table.append(bodyRow);
+          root.append(table);
+        },
+        {discrete: true},
+      );
+
+      editor.read('latest', () => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        const rows = table.getChildren().filter($isTableRowNode);
+        const tags = rows.map(row =>
+          row
+            .getChildren()
+            .filter($isTableCellNode)
+            .map(cell => cell.getTag()),
+        );
+        expect(tags).toEqual([
+          ['th', 'th'],
+          ['td', 'td'],
+        ]);
+      });
+    });
+
+    test('a short body row is padded with body cells', () => {
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          const table = $createTableNode();
+          const headerRow = $createTableRowNode();
+          for (const text of ['h1', 'h2']) {
+            headerRow.append(
+              $createTableCellNode(TableCellHeaderStates.ROW).append(
+                $createParagraphNode().append($createTextNode(text)),
+              ),
+            );
+          }
+          table.append(headerRow);
+          const bodyRow = $createTableRowNode();
+          bodyRow.append(
+            $createTableCellNode().append(
+              $createParagraphNode().append($createTextNode('a')),
+            ),
+          );
+          table.append(bodyRow);
+          root.append(table);
+        },
+        {discrete: true},
+      );
+
+      editor.read('latest', () => {
+        const table = $assertNodeType($getRoot().getFirstChild(), $isTableNode);
+        const rows = table.getChildren().filter($isTableRowNode);
+        const tags = rows.map(row =>
+          row
+            .getChildren()
+            .filter($isTableCellNode)
+            .map(cell => cell.getTag()),
+        );
+        expect(tags).toEqual([
+          ['th', 'th'],
+          ['td', 'td'],
         ]);
       });
     });

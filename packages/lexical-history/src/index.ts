@@ -589,6 +589,16 @@ export function registerHistory(
       CLEAR_EDITOR_COMMAND,
       () => {
         clearHistory(historyState, onHistoryStateChange);
+        // Same observable result as CLEAR_HISTORY_COMMAND below: the stacks
+        // are empty, so undo and redo are unavailable and listeners have to
+        // be told. Nothing else re-dispatches these — `current` is null now,
+        // so the next applyChange pushes nothing — and the buttons would
+        // stay enabled on a no-op until a second edit.
+        // Still returns false: unlike CLEAR_HISTORY_COMMAND this command is
+        // not fully handled here, and the listener that clears the editor
+        // content must still run.
+        editor.dispatchCommand(CAN_REDO_COMMAND, false);
+        editor.dispatchCommand(CAN_UNDO_COMMAND, false);
         return false;
       },
       COMMAND_PRIORITY_EDITOR,

@@ -89,6 +89,11 @@ export function registerLink(
           // configured value, since an explicit `undefined` still shadows a
           // spread key.
           const {url, ...payloadAttributes} = payload;
+          // Same gate as the string payload above: validateUrl is documented
+          // as rejecting URLs for this command, not for one of its two shapes.
+          if (validateUrl !== undefined && !validateUrl(url)) {
+            return false;
+          }
           $toggleLink(url, {...attributes, ...payloadAttributes});
           return true;
         }

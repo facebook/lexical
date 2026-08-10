@@ -59,7 +59,7 @@
 }
 .Modal__content {
   padding-top: 20px;
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 .Modal__modal:focus {
   outline: none;

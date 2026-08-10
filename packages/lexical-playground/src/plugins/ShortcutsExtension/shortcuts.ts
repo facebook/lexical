@@ -70,6 +70,18 @@ const BUILTIN_SHORTCUT_BINDINGS = Object.freeze({
   BOLD: {key: 'b', modifiers: CONTROL_OR_META},
   ITALIC: {key: 'i', modifiers: CONTROL_OR_META},
   UNDERLINE: {key: 'u', modifiers: CONTROL_OR_META},
+  UNDO: {key: 'z', modifiers: CONTROL_OR_META},
+  REDO: {key: 'z', modifiers: {...CONTROL_OR_META, shiftKey: true}},
+}) satisfies Record<string, KeyboardShortcutMatch>;
+const BUILTIN_SHORTCUT_BINDINGS_APPLE = Object.freeze({}) satisfies Record<
+  string,
+  KeyboardShortcutMatch
+>;
+const BUILTIN_SHORTCUT_BINDINGS_OTHER = Object.freeze({
+  REDO: {
+    key: 'y',
+    modifiers: {ctrlKey: true},
+  },
 }) satisfies Record<string, KeyboardShortcutMatch>;
 
 function _getShortcuts(isApple: boolean) {
@@ -78,6 +90,11 @@ function _getShortcuts(isApple: boolean) {
       [
         ...Object.entries(SHORTCUT_BINDINGS),
         ...Object.entries(BUILTIN_SHORTCUT_BINDINGS),
+        ...Object.entries(
+          isApple
+            ? BUILTIN_SHORTCUT_BINDINGS_APPLE
+            : BUILTIN_SHORTCUT_BINDINGS_OTHER,
+        ),
       ].map(([k, v]) => [k, formatKeyboardShortcut(v, {isApple})]),
     ) as {
       [K in

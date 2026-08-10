@@ -237,14 +237,18 @@ export class CompiledKeyboardShortcuts<
    * @see {@link match} for the single-result fast path.
    */
   matches(event: KeyboardEventModifiers): S[] {
+    const key = event.key;
+    if (!key) {
+      return [];
+    }
     const bits = getEventModifierBits(event);
-    const byKey = this.byKey.get(`${bits}:${event.key.toLowerCase()}`);
+    const byKey = this.byKey.get(`${bits}:${key.toLowerCase()}`);
     const matches = byKey ? byKey.slice() : [];
     // The code fallback only applies when event.key is not a single ASCII
     // character, otherwise it would break remapped layouts (Dvorak, etc.)
     if (
       this.byCode.size > 0 &&
-      !(event.key.length === 1 && event.key.charCodeAt(0) <= 127)
+      !(key.length === 1 && key.charCodeAt(0) <= 127)
     ) {
       const byCode = this.byCode.get(`${bits}:${event.code}`);
       if (byCode) {

@@ -89,7 +89,7 @@ export function formatKeyboardShortcut(
   );
   const segments: string[] = [];
   const keyNames = isApple
-    ? modifiers.shiftKey
+    ? modifiers.shiftKey === true
       ? SHIFT_APPLE_KEYS
       : APPLE_KEYS
     : UNIVERSAL_KEYS;

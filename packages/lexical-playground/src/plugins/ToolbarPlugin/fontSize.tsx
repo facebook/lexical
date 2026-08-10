@@ -150,7 +150,7 @@ export default function FontSize({
         }}
         className="toolbar-item font-decrement"
         aria-label="Decrease font size"
-        title={`Decrease font size (${shortcut('DECREASE_FONT_SIZE')}`}>
+        title={`Decrease font size (${shortcut('DECREASE_FONT_SIZE')})`}>
         <i className="format minus-icon" />
       </button>
 

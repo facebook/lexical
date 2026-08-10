@@ -1052,6 +1052,9 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
     // Then handle all other parts
     const splitNodes: TextNode[] = [writableNode];
     let textSize = firstPart.length;
+    // Segmented nodes are downgraded to normal above, every other mode is
+    // kept so all of the parts match the node that was split.
+    const mode = writableNode.__mode;
 
     for (let i = 1; i < partsLength; i++) {
       const part = parts[i];
@@ -1060,6 +1063,7 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
       sibling.__format = format;
       sibling.__style = style;
       sibling.__detail = detail;
+      sibling.__mode = mode;
       sibling.__state = $cloneNodeState(self, sibling);
       const siblingKey = sibling.__key;
       const nextTextSize = textSize + partSize;

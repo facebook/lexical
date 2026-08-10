@@ -39,6 +39,13 @@ export interface BaseBinding {
   id: string;
   nodeProperties: Map<string, {[property: string]: unknown}>; // node type to property to default value
   excludedProperties: ExcludedProperties;
+  /**
+   * True only while the initial editor state is being written into an empty
+   * shared document (the `shouldBootstrap` path). Bootstrapping is not a user
+   * edit, so the {@link UndoManager} returned by `createUndoManager` does not
+   * capture transactions produced while this is set.
+   */
+  isBootstrapping: boolean;
 }
 
 export interface Binding extends BaseBinding {
@@ -78,6 +85,7 @@ function createBaseBinding(
     editor,
     excludedProperties: excludedProperties || new Map(),
     id,
+    isBootstrapping: false,
     nodeProperties: new Map(),
   };
   initializeNodeProperties(binding);

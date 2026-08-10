@@ -3972,18 +3972,54 @@ describe('LexicalEditor tests', () => {
           children: [
             {
               children: [],
-              direction: null,
-              format: '',
-              indent: 0,
               type: 'paragraph',
-              version: 1,
             },
           ],
-          direction: null,
-          format: '',
-          indent: 0,
           type: 'root',
-          version: 1,
+        },
+      };
+
+      newEditor.setEditorState(
+        newEditor.parseEditorState(JSON.stringify(json)),
+      );
+
+      newEditor.read(() => {
+        const paragraph = $getRoot().getFirstChild();
+        expect(paragraph instanceof CustomParagraphNode).toBe(true);
+        expect(paragraph!.getType()).toBe('custom-paragraph');
+      });
+
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    it('applies the replacement on import for `with` without `withKlass`', async () => {
+      class CustomParagraphNode extends ParagraphNode {
+        $config() {
+          return this.config('custom-paragraph', {extends: ParagraphNode});
+        }
+      }
+      const onError = vi.fn();
+
+      const newEditor = createTestEditor({
+        nodes: [
+          CustomParagraphNode,
+          {
+            replace: ParagraphNode,
+            with: () => new CustomParagraphNode(),
+          },
+        ],
+        onError: onError,
+      });
+
+      const json = {
+        root: {
+          children: [
+            {
+              children: [],
+              type: 'paragraph',
+            },
+          ],
+          type: 'root',
         },
       };
 

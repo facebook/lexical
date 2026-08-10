@@ -3407,7 +3407,8 @@ export function getStaticNodeConfig(
       }
       klass.importJSON =
         (ownNodeConfig && ownNodeConfig.$importJSON) ||
-        (serializedNode => new klass().updateFromJSON(serializedNode));
+        (serializedNode =>
+          $applyNodeReplacement(new klass()).updateFromJSON(serializedNode));
     }
     if (!hasOwnStaticMethod(klass, 'importDOM') && ownNodeConfig) {
       const {importDOM} = ownNodeConfig;

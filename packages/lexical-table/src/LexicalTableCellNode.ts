@@ -262,10 +262,15 @@ export class TableCellNode extends ElementNode {
   toggleHeaderStyle(headerStateToToggle: TableCellHeaderState): this {
     const self = this.getWritable();
 
+    // The test is bitwise ("does it already have all of these bits") so the
+    // mutation has to be too. `+=`/`-=` happen to agree for a single-bit
+    // argument, but for BOTH they overflow the enum: toggling BOTH on a cell
+    // that only has ROW produced __headerState 4, which is neither ROW, COLUMN,
+    // BOTH nor NO_STATUS.
     if ((self.__headerState & headerStateToToggle) === headerStateToToggle) {
-      self.__headerState -= headerStateToToggle;
+      self.__headerState &= ~headerStateToToggle;
     } else {
-      self.__headerState += headerStateToToggle;
+      self.__headerState |= headerStateToToggle;
     }
 
     return self;

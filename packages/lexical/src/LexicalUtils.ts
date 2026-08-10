@@ -3273,9 +3273,11 @@ export function getStaticNodeConfig(
           String(klass.length),
         );
       }
+      // TODO: replace $applyNodeReplacement with $create once `withKlass` is required.
       klass.importJSON =
         (ownNodeConfig && ownNodeConfig.$importJSON) ||
-        (serializedNode => new klass().updateFromJSON(serializedNode));
+        (serializedNode =>
+          $applyNodeReplacement(new klass()).updateFromJSON(serializedNode));
     }
     if (!hasOwnStaticMethod(klass, 'importDOM') && ownNodeConfig) {
       const {importDOM} = ownNodeConfig;

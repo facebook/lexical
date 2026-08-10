@@ -16,16 +16,23 @@ import {
   $createParagraphNode,
   $getRoot,
   $insertNodes,
-  $isElementNode,
+  $nodesOfType,
   $selectAll,
   $setSelection,
   defineExtension,
-  type LexicalNode,
 } from 'lexical';
-import {expectHtmlToBeEqual, html} from 'lexical/src/__tests__/utils';
-import {assert, describe, expect, it} from 'vitest';
+import {
+  $assertNodeType,
+  expectHtmlToBeEqual,
+  html,
+} from 'lexical/src/__tests__/utils';
+import {describe, expect, it} from 'vitest';
 
-import {$createMentionNode, $isMentionNode} from '../../src/nodes/MentionNode';
+import {
+  $createMentionNode,
+  $isMentionNode,
+  MentionNode,
+} from '../../src/nodes/MentionNode';
 import {PlaygroundImportExtension} from '../../src/nodes/PlaygroundImportExtension';
 import {MentionsExtension} from '../../src/plugins/MentionsExtension';
 
@@ -34,22 +41,6 @@ const MentionTestExtension = defineExtension({
   dependencies: [PlaygroundImportExtension, MentionsExtension],
   name: '[test]',
 });
-
-function $findFirst(
-  predicate: (node: LexicalNode) => boolean,
-): LexicalNode | null {
-  const stack: LexicalNode[] = [...$getRoot().getChildren()];
-  while (stack.length > 0) {
-    const node = stack.shift()!;
-    if (predicate(node)) {
-      return node;
-    }
-    if ($isElementNode(node)) {
-      stack.push(...node.getChildren());
-    }
-  }
-  return null;
-}
 
 /**
  * Insert a mention, then apply `$patchStyleText` / `formatText` to the whole
@@ -136,8 +127,10 @@ describe('MentionNode HTML export', () => {
       {discrete: true},
     );
     editor.read(() => {
-      const node = $findFirst($isMentionNode);
-      assert($isMentionNode(node), 'expected a MentionNode');
+      const node = $assertNodeType(
+        $nodesOfType(MentionNode)[0],
+        $isMentionNode,
+      );
       expect(node.getTextContent()).toBe('Luke Skywalker');
     });
   });

@@ -486,6 +486,24 @@ function internalMarkParentElementsAsDirty(
 }
 
 /**
+ * @internal
+ *
+ * Latch the "this document uses slots" flag. The editor keeps it for its
+ * lifetime, and the EditorState currently being built carries it so that a
+ * state handed to another editor via `setEditorState` brings the flag with it.
+ *
+ * The state marked here is the *active* one. Inside `editor.update()` that is
+ * `editor._pendingEditorState`, but `parseEditorState` builds a detached
+ * EditorState and leaves `_pendingEditorState` untouched, so keying off
+ * pending would miss the parsed state entirely (and could stamp the flag onto
+ * an unrelated pending state).
+ */
+export function $markSlotsUsed(): void {
+  getActiveEditor()._slotsUsed = true;
+  getActiveEditorState()._slotsUsed = true;
+}
+
+/**
  * Removes a node from its parent, updating all necessary pointers and links.
  * @internal
  *

@@ -12,6 +12,7 @@ import {
   $createParagraphNode,
   $getRoot,
   defineExtension,
+  isHTMLElement,
   type LexicalEditor,
   type TextFormatType,
 } from 'lexical';
@@ -25,6 +26,9 @@ import {
 
 const RubyTestExtension = /* @__PURE__ */ defineExtension({
   $initialEditorState: null,
+  afterRegistration: editor => {
+    editor.setRootElement(document.createElement('div'));
+  },
   dependencies: [RichTextExtension],
   name: '[test-ruby]',
   nodes: [RubyNode],
@@ -33,14 +37,13 @@ const RubyTestExtension = /* @__PURE__ */ defineExtension({
 
 type RubyDOM = {inner: HTMLElement; wrapper: HTMLElement};
 
-function makeEditor(): [LexicalEditor & Disposable, HTMLElement] {
-  const editor = buildEditorFromExtensions(RubyTestExtension);
-  const rootElement = document.createElement('div');
-  editor.setRootElement(rootElement);
-  return [editor, rootElement];
+function makeEditor() {
+  return buildEditorFromExtensions(RubyTestExtension);
 }
 
-function getRubyDOM(rootElement: HTMLElement): RubyDOM {
+function getRubyDOM(editor: LexicalEditor): RubyDOM {
+  const rootElement = editor.getRootElement();
+  assert(isHTMLElement(rootElement), 'editor must have a root element');
   const wrapper = rootElement.querySelector<HTMLElement>('[role="group"]');
   assert(wrapper !== null, 'ruby wrapper');
   const inner = wrapper.firstElementChild as HTMLElement | null;
@@ -59,8 +62,7 @@ function describeRuby({inner, wrapper}: RubyDOM) {
 
 /** Build a ruby node in its final state, so only createDOM runs. */
 function renderFresh(style: string, format: null | TextFormatType) {
-  const [editor, rootElement] = makeEditor();
-  using _ = editor;
+  using editor = makeEditor();
   editor.update(
     () => {
       const ruby = $createRubyNode('kanji', 'kana').setStyle(style);
@@ -71,13 +73,12 @@ function renderFresh(style: string, format: null | TextFormatType) {
     },
     {discrete: true},
   );
-  return describeRuby(getRubyDOM(rootElement));
+  return describeRuby(getRubyDOM(editor));
 }
 
 /** Build a plain ruby node and then mutate it, so updateDOM runs. */
 function renderThenUpdate(style: string, format: null | TextFormatType) {
-  const [editor, rootElement] = makeEditor();
-  using _ = editor;
+  using editor = makeEditor();
   editor.update(
     () => {
       const ruby = $createRubyNode('kanji', 'kana').setStyle('color: red');
@@ -96,7 +97,7 @@ function renderThenUpdate(style: string, format: null | TextFormatType) {
     },
     {discrete: true},
   );
-  return describeRuby(getRubyDOM(rootElement));
+  return describeRuby(getRubyDOM(editor));
 }
 
 describe('RubyNode.updateDOM', () => {
@@ -115,8 +116,7 @@ describe('RubyNode.updateDOM', () => {
   });
 
   it('leaves the annotation and the accessible name on the wrapper', () => {
-    const [editor, rootElement] = makeEditor();
-    using _ = editor;
+    using editor = makeEditor();
     editor.update(
       () => {
         const ruby = $createRubyNode('kanji', 'kana');
@@ -132,7 +132,7 @@ describe('RubyNode.updateDOM', () => {
       },
       {discrete: true},
     );
-    const {inner, wrapper} = getRubyDOM(rootElement);
+    const {inner, wrapper} = getRubyDOM(editor);
     expect(inner.dataset.rubyAnnotation).toBe('kana2');
     expect(wrapper.getAttribute('aria-label')).toBe('kanji (kana2)');
   });

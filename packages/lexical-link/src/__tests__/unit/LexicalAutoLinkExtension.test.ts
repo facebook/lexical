@@ -24,8 +24,10 @@ import {
   configExtension,
   defineExtension,
   ElementNode,
+  type LexicalEditor,
   type LexicalNode,
 } from 'lexical';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, test} from 'vitest';
 
 class ExcludedParentNode extends ElementNode {
@@ -324,18 +326,20 @@ describe('LexicalAutoLinkExtension tests', () => {
     }
 
     function $getAutoLink(): AutoLinkNode {
-      const paragraph = $getRoot().getFirstChild();
-      assert($isParagraphNode(paragraph), 'expected a ParagraphNode');
-      const autoLink = paragraph.getFirstChild();
-      assert($isAutoLinkNode(autoLink), 'expected an AutoLinkNode');
-      return autoLink;
+      const paragraph = $assertNodeType(
+        $getRoot().getFirstChild(),
+        $isParagraphNode,
+      );
+      return $assertNodeType(paragraph.getFirstChild(), $isAutoLinkNode);
     }
 
-    function retypeAsB(editor: ReturnType<typeof buildEditor>) {
+    function retypeAsB(editor: LexicalEditor) {
       editor.update(
         () => {
-          const textNode = $getAutoLink().getFirstChild();
-          assert($isTextNode(textNode), 'expected a TextNode');
+          const textNode = $assertNodeType(
+            $getAutoLink().getFirstChild(),
+            $isTextNode,
+          );
           textNode.setTextContent('https://b.com');
         },
         {discrete: true},

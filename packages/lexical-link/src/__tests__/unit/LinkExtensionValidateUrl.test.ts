@@ -16,7 +16,8 @@ import {
   $isTextNode,
   configExtension,
 } from 'lexical';
-import {assert, describe, expect, it} from 'vitest';
+import {$assertNodeType} from 'lexical/src/__tests__/utils';
+import {describe, expect, it} from 'vitest';
 
 const ALLOWED = 'https://lexical.dev/';
 // Rejected by the configured policy below (https-only), which is the shape
@@ -42,14 +43,15 @@ function makeExtension(validateUrl?: (url: string) => boolean) {
 }
 
 function $selectHello(): void {
-  const textNode = $getRoot().getLastDescendant();
-  assert($isTextNode(textNode), 'Expected a TextNode');
+  const textNode = $assertNodeType($getRoot().getLastDescendant(), $isTextNode);
   textNode.select(0, textNode.getTextContentSize());
 }
 
 function $hasLink(): boolean {
-  const paragraph = $getRoot().getFirstChild();
-  assert($isParagraphNode(paragraph), 'Expected a ParagraphNode');
+  const paragraph = $assertNodeType(
+    $getRoot().getFirstChild(),
+    $isParagraphNode,
+  );
   return $isLinkNode(paragraph.getFirstChild());
 }
 

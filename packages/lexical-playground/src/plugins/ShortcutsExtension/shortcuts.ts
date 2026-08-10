@@ -84,23 +84,31 @@ const BUILTIN_SHORTCUT_BINDINGS_OTHER = Object.freeze({
   },
 }) satisfies Record<string, KeyboardShortcutMatch>;
 
+type TypedEntries<T> = {[K in keyof T]: [K, T[K]]}[keyof T][];
+function typedEntries<T extends object>(o: T): TypedEntries<T> {
+  return Object.entries(o) as TypedEntries<T>;
+}
+
+type ShortcutKey =
+  | keyof typeof SHORTCUT_BINDINGS
+  | keyof typeof BUILTIN_SHORTCUT_BINDINGS
+  | keyof typeof BUILTIN_SHORTCUT_BINDINGS_APPLE
+  | keyof typeof BUILTIN_SHORTCUT_BINDINGS_OTHER;
+
 function _getShortcuts(isApple: boolean) {
+  const entries: [ShortcutKey, KeyboardShortcutMatch][] = [
+    ...typedEntries(SHORTCUT_BINDINGS),
+    ...typedEntries(BUILTIN_SHORTCUT_BINDINGS),
+    ...typedEntries(
+      isApple
+        ? BUILTIN_SHORTCUT_BINDINGS_APPLE
+        : BUILTIN_SHORTCUT_BINDINGS_OTHER,
+    ),
+  ];
   return Object.freeze({
     ...(Object.fromEntries(
-      [
-        ...Object.entries(SHORTCUT_BINDINGS),
-        ...Object.entries(BUILTIN_SHORTCUT_BINDINGS),
-        ...Object.entries(
-          isApple
-            ? BUILTIN_SHORTCUT_BINDINGS_APPLE
-            : BUILTIN_SHORTCUT_BINDINGS_OTHER,
-        ),
-      ].map(([k, v]) => [k, formatKeyboardShortcut(v, {isApple})]),
-    ) as {
-      [K in
-        | keyof typeof SHORTCUT_BINDINGS
-        | keyof typeof BUILTIN_SHORTCUT_BINDINGS]: string[];
-    }),
+      entries.map(([k, v]) => [k, formatKeyboardShortcut(v, {isApple})]),
+    ) as Record<ShortcutKey, string[]>),
   });
 }
 

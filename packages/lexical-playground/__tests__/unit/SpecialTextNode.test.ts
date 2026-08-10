@@ -6,8 +6,14 @@
  *
  */
 
-import {$createParagraphNode, $getRoot, $isTextNode} from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  $createParagraphNode,
+  $getRoot,
+  $isTextNode,
+  isHTMLElement,
+  type LexicalEditor,
+} from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
 import {
@@ -15,62 +21,66 @@ import {
   SpecialTextNode,
 } from '../../src/nodes/SpecialTextNode';
 
+function buildEditor() {
+  return buildEditorFromExtensions({
+    afterRegistration: editor => {
+      editor.setRootElement(document.createElement('div'));
+      return () => editor.setRootElement(null);
+    },
+    name: 'test',
+    nodes: [SpecialTextNode],
+    theme: {specialText: 'PlaygroundSpecialText'},
+  });
+}
+
 describe('SpecialTextNode', () => {
-  initializeUnitTest(
-    testEnv => {
-      function $appendSpecialText(text: string): void {
-        $getRoot()
-          .clear()
-          .append($createParagraphNode().append($createSpecialTextNode(text)));
-      }
+  function $appendSpecialText(text: string): void {
+    $getRoot()
+      .clear()
+      .append($createParagraphNode().append($createSpecialTextNode(text)));
+  }
 
-      function $getSpecialText(): SpecialTextNode {
-        const node = $getRoot().getLastDescendant();
-        assert(
-          $isTextNode(node) && node instanceof SpecialTextNode,
-          'SpecialTextNode',
-        );
-        return node;
-      }
+  function $getSpecialText(): SpecialTextNode {
+    const node = $getRoot().getLastDescendant();
+    assert(
+      $isTextNode(node) && node instanceof SpecialTextNode,
+      'SpecialTextNode',
+    );
+    return node;
+  }
 
-      function getRenderedText(): string {
-        const dom = testEnv.container.querySelector('.PlaygroundSpecialText');
-        expect(dom).not.toBe(null);
-        return (dom as HTMLElement).textContent ?? '';
-      }
+  function getRenderedText(editor: LexicalEditor): string {
+    const rootElement = editor.getRootElement();
+    assert(isHTMLElement(rootElement), 'editor must have a rootElement');
+    const dom = rootElement.querySelector('.PlaygroundSpecialText');
+    assert(
+      isHTMLElement(dom),
+      'rootElement must have a .PlaygroundSpecialText descendant',
+    );
+    return dom.textContent;
+  }
 
-      it('re-renders the text when it changes', async () => {
-        const {editor} = testEnv;
-        await editor.update(() => $appendSpecialText('foo'), {discrete: true});
-        expect(getRenderedText()).toBe('foo');
+  it('re-renders the text when it changes', () => {
+    using editor = buildEditor();
+    editor.update(() => $appendSpecialText('foo'), {discrete: true});
+    expect(getRenderedText(editor)).toBe('foo');
 
-        await editor.update(
-          () => void $getSpecialText().setTextContent('bar'),
-          {
-            discrete: true,
-          },
-        );
-        expect(getRenderedText()).toBe('bar');
-      });
+    editor.update(() => void $getSpecialText().setTextContent('bar'), {
+      discrete: true,
+    });
+    expect(getRenderedText(editor)).toBe('bar');
+  });
 
-      it('renders the text verbatim when it is bracketed', async () => {
-        const {editor} = testEnv;
-        await editor.update(() => $appendSpecialText('[foo]'), {
-          discrete: true,
-        });
-        expect(getRenderedText()).toBe('[foo]');
+  it('renders the text verbatim when it is bracketed', () => {
+    using editor = buildEditor();
+    editor.update(() => $appendSpecialText('[foo]'), {
+      discrete: true,
+    });
+    expect(getRenderedText(editor)).toBe('[foo]');
 
-        await editor.update(
-          () => void $getSpecialText().setTextContent('[bar]'),
-          {discrete: true},
-        );
-        expect(getRenderedText()).toBe('[bar]');
-      });
-    },
-    {
-      namespace: 'test',
-      nodes: [SpecialTextNode],
-      theme: {specialText: 'PlaygroundSpecialText'},
-    },
-  );
+    editor.update(() => void $getSpecialText().setTextContent('[bar]'), {
+      discrete: true,
+    });
+    expect(getRenderedText(editor)).toBe('[bar]');
+  });
 });

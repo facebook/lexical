@@ -28,6 +28,7 @@ const RubyTestExtension = /* @__PURE__ */ defineExtension({
   $initialEditorState: null,
   afterRegistration: editor => {
     editor.setRootElement(document.createElement('div'));
+    return () => editor.setRootElement(null);
   },
   dependencies: [RichTextExtension],
   name: '[test-ruby]',

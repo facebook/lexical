@@ -80,7 +80,15 @@ export function CollaborationPlugin({
   rootName,
 }: CollaborationPluginProps): JSX.Element {
   const isBindingInitialized = useRef(false);
-  const isProviderInitialized = useRef(false);
+  // The inputs that produced the current Provider. A ref rather than the effect
+  // deps alone because the effect must be idempotent: React StrictMode (and
+  // React 18+ remounts in general) re-runs the effect with unchanged inputs and
+  // must not create a second Provider.
+  const providerInputs = useRef<null | {
+    id: string;
+    providerFactory: ProviderFactory;
+    yjsDocMap: Map<string, Doc>;
+  }>(null);
 
   const collabContext = useCollaborationContext(username, cursorColor);
   const {yjsDocMap, name, color} = collabContext;
@@ -93,11 +101,17 @@ export function CollaborationPlugin({
   const [doc, setDoc] = useState<Doc>();
 
   useEffect(() => {
-    if (isProviderInitialized.current) {
+    const prevInputs = providerInputs.current;
+    if (
+      prevInputs !== null &&
+      prevInputs.id === id &&
+      prevInputs.providerFactory === providerFactory &&
+      prevInputs.yjsDocMap === yjsDocMap
+    ) {
       return;
     }
 
-    isProviderInitialized.current = true;
+    providerInputs.current = {id, providerFactory, yjsDocMap};
 
     const newProvider = providerFactory(id, yjsDocMap);
     setProvider(newProvider);

@@ -18,6 +18,7 @@ import {
   getDOMShadowRoots,
   getRootOwnerDocument,
   isDOMShadowRoot,
+  isHTMLElement,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_ENTER_COMMAND,
@@ -470,36 +471,37 @@ export function LexicalMenu<TOption extends MenuOption>({
         KEY_ARROW_DOWN_COMMAND,
         payload => {
           const event = payload;
-          if (options !== null && options.length) {
-            const newSelectedIndex =
-              selectedIndex === null
-                ? 0
-                : selectedIndex !== options.length - 1
-                  ? selectedIndex + 1
-                  : 0;
+          if (options === null || !options.length) {
+            // There is nothing to move through, and an empty option list
+            // renders no menu, so the key has to keep propagating to whatever
+            // would otherwise move the caret.
+            return false;
+          }
+          const newSelectedIndex =
+            selectedIndex === null
+              ? 0
+              : selectedIndex !== options.length - 1
+                ? selectedIndex + 1
+                : 0;
 
-            updateSelectedIndex(newSelectedIndex);
+          updateSelectedIndex(newSelectedIndex);
 
-            const option = options[newSelectedIndex];
-            if (!option) {
-              updateSelectedIndex(-1);
-              event.preventDefault();
-              event.stopImmediatePropagation();
-              return true;
-            }
-
-            if (option.ref && option.ref.current) {
-              editor.dispatchCommand(
-                SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND,
-                {
-                  index: newSelectedIndex,
-                  option,
-                },
-              );
-            }
+          const option = options[newSelectedIndex];
+          if (!option) {
+            updateSelectedIndex(-1);
             event.preventDefault();
             event.stopImmediatePropagation();
+            return true;
           }
+
+          if (option.ref && option.ref.current) {
+            editor.dispatchCommand(SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND, {
+              index: newSelectedIndex,
+              option,
+            });
+          }
+          event.preventDefault();
+          event.stopImmediatePropagation();
           return true;
         },
         commandPriority,
@@ -508,30 +510,32 @@ export function LexicalMenu<TOption extends MenuOption>({
         KEY_ARROW_UP_COMMAND,
         payload => {
           const event = payload;
-          if (options !== null && options.length) {
-            const newSelectedIndex =
-              selectedIndex === null
-                ? options.length - 1
-                : selectedIndex !== 0
-                  ? selectedIndex - 1
-                  : options.length - 1;
+          if (options === null || !options.length) {
+            // See KEY_ARROW_DOWN_COMMAND above.
+            return false;
+          }
+          const newSelectedIndex =
+            selectedIndex === null
+              ? options.length - 1
+              : selectedIndex !== 0
+                ? selectedIndex - 1
+                : options.length - 1;
 
-            updateSelectedIndex(newSelectedIndex);
+          updateSelectedIndex(newSelectedIndex);
 
-            const option = options[newSelectedIndex];
-            if (!option) {
-              updateSelectedIndex(-1);
-              event.preventDefault();
-              event.stopImmediatePropagation();
-              return true;
-            }
-
-            if (option.ref && option.ref.current) {
-              scrollIntoViewIfNeeded(option.ref.current);
-            }
+          const option = options[newSelectedIndex];
+          if (!option) {
+            updateSelectedIndex(-1);
             event.preventDefault();
             event.stopImmediatePropagation();
+            return true;
           }
+
+          if (option.ref && option.ref.current) {
+            scrollIntoViewIfNeeded(option.ref.current);
+          }
+          event.preventDefault();
+          event.stopImmediatePropagation();
           return true;
         },
         commandPriority,
@@ -631,6 +635,43 @@ function setContainerDivAttributes(
   containerDiv.style.position = 'absolute';
 }
 
+/**
+ * The anchor is absolutely positioned, so its `top`/`left` are resolved
+ * against its containing block. That is the initial containing block — i.e.
+ * document coordinates, which is why the page scroll offsets are added — only
+ * while the anchor's ancestors are all statically positioned, as is the case
+ * for the default `document.body` parent. A `parent` passed to
+ * {@link useMenuAnchorRef} is usually positioned so that it can contain the
+ * menu, and document coordinates then place the menu at the parent's own
+ * offset instead of at the caret.
+ *
+ * @returns The viewport coordinates of the origin that the anchor's `top`/
+ *   `left` are measured from, or `null` when that origin is the initial
+ *   containing block and document coordinates apply.
+ */
+function getContainingBlockOrigin(
+  containerDiv: HTMLElement,
+): null | {left: number; top: number} {
+  const {offsetParent} = containerDiv;
+  if (!isHTMLElement(offsetParent)) {
+    return null;
+  }
+  const view = offsetParent.ownerDocument.defaultView;
+  // `offsetParent` falls back to the body when nothing above the anchor is
+  // positioned, in which case the containing block is still the initial one.
+  if (
+    view === null ||
+    view.getComputedStyle(offsetParent).position === 'static'
+  ) {
+    return null;
+  }
+  const rect = offsetParent.getBoundingClientRect();
+  return {
+    left: rect.left + offsetParent.clientLeft - offsetParent.scrollLeft,
+    top: rect.top + offsetParent.clientTop - offsetParent.scrollTop,
+  };
+}
+
 function resolveMenuParent(
   editor: LexicalEditor,
 ): HTMLElement | ShadowRoot | undefined {
@@ -675,15 +716,22 @@ export function useMenuAnchorRef(
     if (rootElement !== null && resolution !== null) {
       const {left, top, width, height} = resolution.getRect();
       const anchorHeight = anchorElementRef.current.offsetHeight; // use to position under anchor
-      containerDiv.style.top = `${
-        top +
-        anchorHeight +
-        3 +
-        // eslint-disable-next-line no-restricted-syntax
-        (shouldIncludePageYOffset__EXPERIMENTAL ? window.pageYOffset : 0)
-      }px`;
-      // eslint-disable-next-line no-restricted-syntax
-      containerDiv.style.left = `${left + window.pageXOffset}px`;
+      // `left`/`top` from getRect() are viewport coordinates; translate them
+      // into the coordinate space the anchor is actually positioned in.
+      const origin = getContainingBlockOrigin(containerDiv);
+      const toAnchorLeft = (viewportLeft: number) =>
+        origin !== null
+          ? viewportLeft - origin.left
+          : // eslint-disable-next-line no-restricted-syntax
+            viewportLeft + window.pageXOffset;
+      const toAnchorTop = (viewportTop: number) =>
+        origin !== null
+          ? viewportTop - origin.top
+          : viewportTop +
+            // eslint-disable-next-line no-restricted-syntax
+            (shouldIncludePageYOffset__EXPERIMENTAL ? window.pageYOffset : 0);
+      containerDiv.style.top = `${toAnchorTop(top + anchorHeight + 3)}px`;
+      containerDiv.style.left = `${toAnchorLeft(left)}px`;
       containerDiv.style.height = `${height}px`;
       containerDiv.style.width = `${width}px`;
       if (menuEle !== null) {
@@ -695,10 +743,9 @@ export function useMenuAnchorRef(
         const rootElementRect = rootElement.getBoundingClientRect();
 
         if (left + menuWidth > rootElementRect.right) {
-          containerDiv.style.left = `${
-            // eslint-disable-next-line no-restricted-syntax
-            rootElementRect.right - menuWidth + window.pageXOffset
-          }px`;
+          containerDiv.style.left = `${toAnchorLeft(
+            rootElementRect.right - menuWidth,
+          )}px`;
         }
         if (
           // eslint-disable-next-line no-restricted-syntax
@@ -706,13 +753,7 @@ export function useMenuAnchorRef(
             top + menuHeight > rootElementRect.bottom) &&
           top - rootElementRect.top > menuHeight + height
         ) {
-          containerDiv.style.top = `${
-            top -
-            menuHeight -
-            height +
-            // eslint-disable-next-line no-restricted-syntax
-            (shouldIncludePageYOffset__EXPERIMENTAL ? window.pageYOffset : 0)
-          }px`;
+          containerDiv.style.top = `${toAnchorTop(top - menuHeight - height)}px`;
         }
       }
 

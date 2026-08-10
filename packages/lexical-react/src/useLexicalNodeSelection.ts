@@ -84,6 +84,13 @@ export function useLexicalNodeSelection(
         let selection = $getSelection();
 
         if (!$isNodeSelection(selection)) {
+          if (!selected) {
+            // There is no NodeSelection to remove the node from. Creating one
+            // would replace whatever selection the user has -- a RangeSelection
+            // covering this node, typically, since isSelected() is true for
+            // those too -- with an empty NodeSelection, discarding their caret.
+            return;
+          }
           selection = $createNodeSelection();
           $setSelection(selection);
         }

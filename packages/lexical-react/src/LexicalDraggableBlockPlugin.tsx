@@ -574,11 +574,15 @@ function useDraggableBlockMenu(
     isDraggingBlockRef.current = false;
     hideTargetLine(targetLineRef.current);
 
-    // Firefox-specific fix: Use editor.focus() to properly restore both focus and
-    // selection after drag ends. This ensures cursor visibility immediately.
-    if (IS_FIREFOX) {
-      // editor.focus() handles both focus restoration and selection update properly
-      editor.focus();
+    const rootElement = editor.getRootElement();
+    if (rootElement !== null && getActiveElement(rootElement) !== rootElement) {
+      rootElement.focus({preventScroll: true});
+      editor.update(() => {
+        const selection = $getSelection();
+        if (selection !== null && !selection.dirty) {
+          selection.dirty = true;
+        }
+      });
     }
   }
   return createPortal(

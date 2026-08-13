@@ -1070,6 +1070,51 @@ function $exitNodeSelectionToward(
 }
 
 /**
+ * Convert a contiguous NodeSelection to a RangeSelection that covers the same
+ * siblings, then extend its focus by one character in the requested logical
+ * direction. Discontiguous NodeSelections cannot be represented as a range
+ * without selecting the nodes between them, so they retain the existing
+ * collapse behavior in the arrow handlers.
+ */
+function $extendAdjacentNodeSelection(
+  selection: NodeSelection,
+  direction: CaretDirection,
+): boolean {
+  const nodes = selection
+    .getNodes()
+    .slice()
+    .sort((a, b) =>
+      $comparePointCaretNext(
+        $getSiblingCaret(a, 'next'),
+        $getSiblingCaret(b, 'next'),
+      ),
+    );
+  if (nodes.length === 0) {
+    return false;
+  }
+  const parent = nodes[0].getParent();
+  if (parent === null) {
+    return false;
+  }
+  const firstIndex = nodes[0].getIndexWithinParent();
+  for (let i = 0; i < nodes.length; i++) {
+    if (
+      nodes[i].getParent() !== parent ||
+      nodes[i].getIndexWithinParent() !== firstIndex + i
+    ) {
+      return false;
+    }
+  }
+  const lastIndex = firstIndex + nodes.length;
+  const rangeSelection =
+    direction === 'next'
+      ? parent.select(firstIndex, lastIndex)
+      : parent.select(lastIndex, firstIndex);
+  rangeSelection.modify('extend', direction === 'previous', 'character');
+  return true;
+}
+
+/**
  * Collapse a NodeSelection to a caret at the surrounding block's edge for
  * MOVE_TO_START / MOVE_TO_END. Picks the document-order first node for
  * MOVE_TO_START (`isBackward = true`) or last for MOVE_TO_END, walks up
@@ -1395,6 +1440,13 @@ export function registerRichText(
           // back to being a range selection.
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
+            if (
+              event.shiftKey &&
+              $extendAdjacentNodeSelection(selection, 'previous')
+            ) {
+              event.preventDefault();
+              return true;
+            }
             event.preventDefault();
             $exitNodeSelectionToward(nodes[0], 'previous');
             return true;
@@ -1436,6 +1488,13 @@ export function registerRichText(
           // back to being a range selection.
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
+            if (
+              event.shiftKey &&
+              $extendAdjacentNodeSelection(selection, 'next')
+            ) {
+              event.preventDefault();
+              return true;
+            }
             event.preventDefault();
             $exitNodeSelectionToward(nodes[0], 'next');
             return true;
@@ -1480,11 +1539,16 @@ export function registerRichText(
           // back to being a range selection.
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
+            const direction = $isParentRTL(nodes[0]) ? 'next' : 'previous';
+            if (
+              event.shiftKey &&
+              $extendAdjacentNodeSelection(selection, direction)
+            ) {
+              event.preventDefault();
+              return true;
+            }
             event.preventDefault();
-            $exitNodeSelectionToward(
-              nodes[0],
-              $isParentRTL(nodes[0]) ? 'next' : 'previous',
-            );
+            $exitNodeSelectionToward(nodes[0], direction);
             return true;
           }
         }
@@ -1528,11 +1592,16 @@ export function registerRichText(
           // back to being a range selection.
           const nodes = selection.getNodes();
           if (nodes.length > 0) {
+            const direction = $isParentRTL(nodes[0]) ? 'previous' : 'next';
+            if (
+              event.shiftKey &&
+              $extendAdjacentNodeSelection(selection, direction)
+            ) {
+              event.preventDefault();
+              return true;
+            }
             event.preventDefault();
-            $exitNodeSelectionToward(
-              nodes[0],
-              $isParentRTL(nodes[0]) ? 'previous' : 'next',
-            );
+            $exitNodeSelectionToward(nodes[0], direction);
             return true;
           }
         }

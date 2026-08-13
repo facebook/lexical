@@ -898,6 +898,7 @@ type LastChildState = 'line-break' | 'decorator' | 'empty';
 function $isLastChildLineBreakOrDecorator(
   element: null | ElementNode,
   nodeMap: NodeMap,
+  slotsOccupyDOMSlot: boolean,
 ): null | LastChildState {
   if (element) {
     const lastKey = element.__last;
@@ -911,14 +912,28 @@ function $isLastChildLineBreakOrDecorator(
             : null;
       }
     }
-    // A host with slots but no linked-list children is not empty (the slots
-    // carry its content). The 'empty' line break exists to give a truly empty
-    // block a caret target; on a slots-only host that <br> would instead be a
-    // stray caret target in the host's own child area, after the slot
-    // containers — text typed there leaks out of the slot. Skip it.
-    return $readSlots(element).size > 0 ? null : 'empty';
+    // A host whose named slots occupy the same DOMSlot as its linked-list
+    // children is not empty. Adding a line break there would create a stray
+    // caret target after the slot containers. A custom getDOMSlot can redirect
+    // linked-list children elsewhere, though; that separate empty child area
+    // still needs its own caret target.
+    return slotsOccupyDOMSlot ? null : 'empty';
   }
   return null;
+}
+
+function $slotsOccupyDOMSlot(
+  element: ElementNode,
+  slotElement: HTMLElement,
+): boolean {
+  for (const slotKey of $readSlots(element).values()) {
+    const slotDOM = activeEditor._keyToDOMMap.get(slotKey);
+    const slotContainer = slotDOM === undefined ? null : slotDOM.parentElement;
+    if (slotContainer != null && slotElement.contains(slotContainer)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function $isBlockDecoratorChild(
@@ -972,6 +987,7 @@ function $reconcileElementTerminatingLineBreak(
   const nextLineBreak = $isLastChildLineBreakOrDecorator(
     nextElement,
     activeNextNodeMap,
+    $slotsOccupyDOMSlot(nextElement, slotElement),
   );
   if (prevLineBreak !== nextLineBreak) {
     slot.setManagedLineBreak(nextLineBreak);

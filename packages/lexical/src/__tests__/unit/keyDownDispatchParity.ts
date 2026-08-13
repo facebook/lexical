@@ -80,11 +80,19 @@ function referenceKeyDown(
 
   if (m('ArrowRight', {shiftKey: 'any'})) {
     return dispatched(KEY_ARROW_RIGHT_COMMAND, EVENT);
-  } else if (m('ArrowRight', {...CONTROL_OR_META, shiftKey: 'any'})) {
+  } else if (
+    isApple
+      ? m('ArrowRight', {metaKey: true, shiftKey: 'any'})
+      : m('End', {shiftKey: 'any'})
+  ) {
     return dispatched(MOVE_TO_END, EVENT);
   } else if (m('ArrowLeft', {shiftKey: 'any'})) {
     return dispatched(KEY_ARROW_LEFT_COMMAND, EVENT);
-  } else if (m('ArrowLeft', {...CONTROL_OR_META, shiftKey: 'any'})) {
+  } else if (
+    isApple
+      ? m('ArrowLeft', {metaKey: true, shiftKey: 'any'})
+      : m('Home', {shiftKey: 'any'})
+  ) {
     return dispatched(MOVE_TO_START, EVENT);
   } else if (m('ArrowUp', {altKey: 'any', shiftKey: 'any'})) {
     return dispatched(KEY_ARROW_UP_COMMAND, EVENT);

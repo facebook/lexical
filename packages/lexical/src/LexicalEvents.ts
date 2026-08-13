@@ -1648,13 +1648,7 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
   return [
     // moveForward / moveToEnd / moveBackward / moveToStart / moveUp / moveDown
     dispatch('ArrowRight', SHIFT_KEY_ANY, KEY_ARROW_RIGHT_COMMAND),
-    dispatch('ArrowRight', {...CONTROL_OR_META, ...SHIFT_KEY_ANY}, MOVE_TO_END),
     dispatch('ArrowLeft', SHIFT_KEY_ANY, KEY_ARROW_LEFT_COMMAND),
-    dispatch(
-      'ArrowLeft',
-      {...CONTROL_OR_META, ...SHIFT_KEY_ANY},
-      MOVE_TO_START,
-    ),
     dispatch('ArrowUp', ALT_SHIFT_KEY_ANY, KEY_ARROW_UP_COMMAND),
     dispatch('ArrowDown', ALT_SHIFT_KEY_ANY, KEY_ARROW_DOWN_COMMAND),
     // lineBreak / paragraph
@@ -1696,6 +1690,18 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
               dispatchCommand(editor, INSERT_LINE_BREAK_COMMAND, true);
             },
           },
+          // moveToStart / moveToEnd mac
+          dispatch(
+            'ArrowLeft',
+            {metaKey: true, ...SHIFT_KEY_ANY},
+            MOVE_TO_START,
+          ),
+          dispatch(
+            'ArrowRight',
+            {metaKey: true, ...SHIFT_KEY_ANY},
+            MOVE_TO_END,
+          ),
+
           // deleteBackward / deleteForward
           prevent('h', CTRL_KEY, DELETE_CHARACTER_COMMAND, true),
           prevent('d', CTRL_KEY, DELETE_CHARACTER_COMMAND, false),
@@ -1704,7 +1710,11 @@ function buildKeyDownShortcuts(): KeyDownShortcut[] {
           prevent('Delete', META_KEY, DELETE_LINE_COMMAND, false),
           prevent('k', CTRL_KEY, DELETE_LINE_COMMAND, false),
         ]
-      : [prevent('y', CTRL_KEY, REDO_COMMAND, undefined)]),
+      : [
+          dispatch('Home', SHIFT_KEY_ANY, MOVE_TO_START),
+          dispatch('End', SHIFT_KEY_ANY, MOVE_TO_END),
+          prevent('y', CTRL_KEY, REDO_COMMAND, undefined),
+        ]),
     // selectAll
     {
       key: 'a',

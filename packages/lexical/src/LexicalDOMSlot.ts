@@ -431,11 +431,19 @@ export class ElementDOMSlot<
     lineBreakType: null | 'empty' | 'line-break' | 'decorator',
   ): void {
     const element: HTMLElement & LexicalPrivateDOM = this.element;
-    element.__lexicalLastChildKind = lineBreakType;
-    if (lineBreakType === null) {
+    const nextLineBreakType =
+      lineBreakType === 'empty' &&
+      Array.from(element.children).some(isSlotContainerDOM)
+        ? null
+        : lineBreakType;
+    if (element.__lexicalLastChildKind === nextLineBreakType) {
+      return;
+    }
+    element.__lexicalLastChildKind = nextLineBreakType;
+    if (nextLineBreakType === null) {
       this.removeManagedLineBreak();
     } else {
-      const webkitHack = lineBreakType === 'decorator' && IS_WEBKIT_BROWSER;
+      const webkitHack = nextLineBreakType === 'decorator' && IS_WEBKIT_BROWSER;
       this.insertManagedLineBreak(webkitHack);
     }
   }

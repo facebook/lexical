@@ -898,7 +898,6 @@ type LastChildState = 'line-break' | 'decorator' | 'empty';
 function $isLastChildLineBreakOrDecorator(
   element: null | ElementNode,
   nodeMap: NodeMap,
-  slotsOccupyDOMSlot: boolean,
 ): null | LastChildState {
   if (element) {
     const lastKey = element.__last;
@@ -912,28 +911,9 @@ function $isLastChildLineBreakOrDecorator(
             : null;
       }
     }
-    // A host whose named slots occupy the same DOMSlot as its linked-list
-    // children is not empty. Adding a line break there would create a stray
-    // caret target after the slot containers. A custom getDOMSlot can redirect
-    // linked-list children elsewhere, though; that separate empty child area
-    // still needs its own caret target.
-    return slotsOccupyDOMSlot ? null : 'empty';
+    return 'empty';
   }
   return null;
-}
-
-function $slotsOccupyDOMSlot(
-  element: ElementNode,
-  slotElement: HTMLElement,
-): boolean {
-  for (const slotKey of $readSlots(element).values()) {
-    const slotDOM = activeEditor._keyToDOMMap.get(slotKey);
-    const slotContainer = slotDOM === undefined ? null : slotDOM.parentElement;
-    if (slotContainer != null && slotElement.contains(slotContainer)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 function $isBlockDecoratorChild(
@@ -977,21 +957,14 @@ function $reconcileElementTerminatingLineBreak(
   nextElement: ElementNode,
   dom: HTMLElement & LexicalPrivateDOM,
 ): void {
-  // Read previous render's last-child kind from the slot element's cache
-  // so the prev-state DecoratorNode reference's isInline() (which routes
-  // through getLatest() and would throw once the key is detached from the
-  // active node map) is never called.
   const slot = $getDOMSlot(nextElement, dom, activeEditor);
-  const slotElement: HTMLElement & LexicalPrivateDOM = slot.element;
-  const prevLineBreak = slotElement.__lexicalLastChildKind ?? null;
   const nextLineBreak = $isLastChildLineBreakOrDecorator(
     nextElement,
     activeNextNodeMap,
-    $slotsOccupyDOMSlot(nextElement, slotElement),
   );
-  if (prevLineBreak !== nextLineBreak) {
-    slot.setManagedLineBreak(nextLineBreak);
-  }
+  // ElementDOMSlot normalizes the empty state against the actual content
+  // range, including named-slot containers, and caches the result.
+  slot.setManagedLineBreak(nextLineBreak);
 }
 
 function reconcileTextFormat(element: ElementNode): void {

@@ -1452,6 +1452,29 @@ describe('named-slots: core foundation', () => {
     // A truly empty host (no slots, no children) still gets the br — the
     // gate is scoped to slots-only hosts.
     expect(directBr(editor.getElementByKey(emptyHostKey)!)).not.toBe(undefined);
+
+    editor.update(
+      () => {
+        $removeSlot(
+          $assertNodeType($getNodeByKey(slotHostKey), $isElementNode),
+          'title',
+        );
+      },
+      {discrete: true},
+    );
+    expect(directBr(editor.getElementByKey(slotHostKey)!)).not.toBe(undefined);
+
+    editor.update(
+      () => {
+        $setSlot(
+          $assertNodeType($getNodeByKey(slotHostKey), $isElementNode),
+          'title',
+          $slotContainer('New title'),
+        );
+      },
+      {discrete: true},
+    );
+    expect(directBr(editor.getElementByKey(slotHostKey)!)).toBeUndefined();
   });
 
   test('descendant navigation stays children-only (slots stay out of selection)', () => {

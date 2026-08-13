@@ -26,7 +26,6 @@ import {
   getParentElement,
   getRegisteredSubtypeMap,
   getTextDirection,
-  IS_APPLE,
   isExactShortcutMatch,
   isSelectionWithinEditor,
   LineBreakNode,
@@ -341,7 +340,7 @@ describe('LexicalUtils tests', () => {
     });
 
     test('isMoveToEnd() / isMoveToStart() accept Shift modifier', () => {
-      const modifier = IS_APPLE ? {metaKey: true} : {ctrlKey: true};
+      const modifier = {metaKey: true};
 
       const rightWithoutShift = new KeyboardEvent('keydown', {
         ...modifier,
@@ -378,6 +377,27 @@ describe('LexicalUtils tests', () => {
         key: 'ArrowRight',
       });
       expect(isMoveToEnd(rightWithAlt)).toBe(false);
+    });
+
+    test('isMoveToEnd() / isMoveToStart() reject plain Ctrl+Arrow (#8958)', () => {
+      const ctrlLeft = new KeyboardEvent('keydown', {
+        ctrlKey: true,
+        key: 'ArrowLeft',
+      });
+      const ctrlRight = new KeyboardEvent('keydown', {
+        ctrlKey: true,
+        key: 'ArrowRight',
+      });
+
+      expect(isMoveToStart(ctrlLeft)).toBe(false);
+      expect(isMoveToEnd(ctrlRight)).toBe(false);
+
+      const cmdCtrlLeft = new KeyboardEvent('keydown', {
+        ctrlKey: true,
+        key: 'ArrowLeft',
+        metaKey: true,
+      });
+      expect(isMoveToStart(cmdCtrlLeft)).toBe(false);
     });
 
     test('isTokenOrSegmented()', async () => {

@@ -431,9 +431,13 @@ export class ElementDOMSlot<
     lineBreakType: null | 'empty' | 'line-break' | 'decorator',
   ): void {
     const element: HTMLElement & LexicalPrivateDOM = this.element;
+    // Slot containers are a contiguous prefix of the managed range, so only
+    // its first node needs to be inspected. This also excludes containers
+    // outside an `after` boundary.
+    const firstNode =
+      this.after === null ? element.firstChild : this.after.nextSibling;
     const nextLineBreakType =
-      lineBreakType === 'empty' &&
-      Array.from(element.children).some(isSlotContainerDOM)
+      lineBreakType === 'empty' && isSlotContainerDOM(firstNode)
         ? null
         : lineBreakType;
     if (element.__lexicalLastChildKind === nextLineBreakType) {

@@ -202,7 +202,6 @@ test.describe('DraggableBlock', () => {
   }) => {
     test.skip(isCollab);
     test.skip(isPlainText);
-    test.skip(browserName === 'firefox');
 
     await focusEditor(page);
     await page.keyboard.type('Before');

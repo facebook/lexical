@@ -1996,6 +1996,10 @@ export {
   RichTextImportExtension,
 } from './LexicalRichTextExtension';
 export {
+  QuoteAnnounceExtension,
+  type QuoteAnnounceExtensionConfig,
+} from './QuoteAnnounceExtension';
+export {
   RichTextImportRules,
   ShadowRootQuoteRule,
 } from './RichTextImportExtension';

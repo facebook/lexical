@@ -15,10 +15,10 @@ import {
   $createTableRowNode,
   $createTableSelectionFrom,
   $deleteTableRowAtSelection,
+  $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
   $isTableSelection,
-  type TableCellNode,
   type TableMapType,
   type TableNode,
   type TableSelection,
@@ -32,10 +32,9 @@ import {
   $isRangeSelection,
   $isTextNode,
   $setSelection,
-  type RangeSelection,
 } from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
-import {beforeEach, describe, expect, test} from 'vitest';
+import {$assertNodeType, initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {assert, beforeEach, describe, expect, test} from 'vitest';
 
 describe('table selection', () => {
   initializeUnitTest(testEnv => {
@@ -374,8 +373,8 @@ describe('regression #8075', () => {
   initializeUnitTest(testEnv => {
     function $deleteForward(): void {
       const selection = $getSelection();
-      expect($isRangeSelection(selection)).toBe(true);
-      (selection as RangeSelection).deleteCharacter(false);
+      assert($isRangeSelection(selection));
+      selection.deleteCharacter(false);
     }
 
     test('forward delete removes an empty paragraph before a table', () => {
@@ -425,10 +424,10 @@ describe('regression #8075', () => {
           const table = $createTableNodeWithDimensions(1, 2, false);
           $getRoot().clear().append(table);
           const row = table.getFirstChild();
-          if (!$isTableRowNode(row)) {
-            throw new Error('Expected a TableRowNode');
-          }
-          const cell = row.getFirstChildOrThrow<TableCellNode>();
+          const cell = $assertNodeType(
+            $assertNodeType(row, $isTableRowNode).getFirstChild(),
+            $isTableCellNode,
+          );
           const paragraph = $createParagraphNode();
           cell.clear().append(paragraph);
           paragraph.selectStart();

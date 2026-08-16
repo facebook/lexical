@@ -19,25 +19,17 @@ import {
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
-import {initializeUnitTest} from '../utils';
+import {$assertNodeType, initializeUnitTest} from '../utils';
 
 const EMPTY_ATTRIBUTES_HTML =
   '<p dir="auto"><span data-lexical-text="true">abc</span></p>';
 
 function $getParagraph(): ElementNode {
-  const paragraph = $getRoot().getFirstChildOrThrow();
-  if (!$isElementNode(paragraph)) {
-    throw new Error('Expected a ParagraphNode');
-  }
-  return paragraph;
+  return $assertNodeType($getRoot().getFirstChild(), $isElementNode);
 }
 
 function $getText(): TextNode {
-  const textNode = $getParagraph().getFirstChild();
-  if (!$isTextNode(textNode)) {
-    throw new Error('Expected a TextNode');
-  }
-  return textNode;
+  return $assertNodeType($getParagraph().getFirstChild(), $isTextNode);
 }
 
 // Regression tests for #5307. `classList.remove()` and

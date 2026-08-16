@@ -22,6 +22,7 @@ import {
   type TextFormatType,
 } from 'lexical';
 
+import {HeadingAnnounceExtension} from './HeadingAnnounceExtension';
 import {
   defaultShouldHandlePasteAsFiles,
   type EscapeFormatTriggerConfig,
@@ -112,6 +113,7 @@ export const RichTextExtension = /* @__PURE__ */ defineExtension({
   config: /* @__PURE__ */ safeCast<RichTextConfig>(DEFAULT_RICH_TEXT_CONFIG),
   conflictsWith: ['@lexical/plain-text'],
   dependencies: [
+    HeadingAnnounceExtension,
     DragonExtension,
     NormalizeInlineElementsExtension,
     NormalizeTripleClickSelectionExtension,

@@ -7,70 +7,68 @@
  */
 
 import {
+  buildEditorFromExtensions,
+  type LexicalEditorWithDispose,
+} from '@lexical/extension';
+import {RichTextExtension} from '@lexical/rich-text';
+import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  type EditorThemeClasses,
+  defineExtension,
 } from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
-import {describe, expect, it} from 'vitest';
+import {assert, describe, expect, it} from 'vitest';
 
 import {$createKeywordNode, KeywordNode} from '../../src/nodes/KeywordNode';
 
-const theme: EditorThemeClasses = {
-  text: {
-    bold: 'theme-bold',
-    underline: 'theme-underline',
-  },
-};
+const KeywordThemeTestExtension = /* @__PURE__ */ defineExtension({
+  $initialEditorState: null,
+  dependencies: [RichTextExtension],
+  name: '[test-keyword-theme]',
+  nodes: [KeywordNode],
+  theme: {text: {bold: 'theme-bold', underline: 'theme-underline'}},
+});
+
+function makeEditor(): LexicalEditorWithDispose {
+  const editor = buildEditorFromExtensions(KeywordThemeTestExtension);
+  editor.setRootElement(document.createElement('div'));
+  return editor;
+}
+
+function $appendKeyword(format: 'bold' | 'underline'): void {
+  $getRoot()
+    .clear()
+    .append(
+      $createParagraphNode().append(
+        $createTextNode('hey '),
+        $createKeywordNode('congrats').setFormat(format),
+      ),
+    );
+}
+
+function keywordClasses(editor: LexicalEditorWithDispose): string[] {
+  const dom = editor.getRootElement()?.querySelector<HTMLElement>('.keyword');
+  assert(dom != null, 'keyword DOM');
+  return Array.from(dom.classList).sort();
+}
 
 describe('KeywordNode', () => {
-  initializeUnitTest(
-    testEnv => {
-      function $appendKeyword(format: 'bold' | 'underline'): void {
-        $getRoot()
-          .clear()
-          .append(
-            $createParagraphNode().append(
-              $createTextNode('hey '),
-              $createKeywordNode('congrats').setFormat(format),
-            ),
-          );
-      }
+  it('keeps the theme class of the text format it was created with', () => {
+    const editor = makeEditor();
+    using _ = editor;
+    editor.update(() => $appendKeyword('underline'), {discrete: true});
 
-      function getKeywordDOM(): HTMLElement {
-        const dom = testEnv.container.querySelector('.keyword');
-        expect(dom).not.toBe(null);
-        return dom as HTMLElement;
-      }
+    expect(keywordClasses(editor)).toEqual(['keyword', 'theme-underline']);
+  });
 
-      it('keeps the theme class of the text format it was created with', async () => {
-        const {editor} = testEnv;
-        await editor.update(() => $appendKeyword('underline'), {
-          discrete: true,
-        });
+  it('keeps the theme class across a re-render of the keyword', () => {
+    const editor = makeEditor();
+    using _ = editor;
+    editor.update(() => $appendKeyword('bold'), {discrete: true});
+    // Re-create the node so createDOM() runs again, which is what a paste, an
+    // undo/redo across the node, or a reload does.
+    editor.update(() => $appendKeyword('bold'), {discrete: true});
 
-        const dom = getKeywordDOM();
-        expect(Array.from(dom.classList).sort()).toEqual([
-          'keyword',
-          'theme-underline',
-        ]);
-      });
-
-      it('keeps the theme class across a re-render of the keyword', async () => {
-        const {editor} = testEnv;
-        await editor.update(() => $appendKeyword('bold'), {discrete: true});
-        // Re-create the node so that createDOM() runs again, which is what a
-        // paste, an undo/redo across the node, or a reload does.
-        await editor.update(() => $appendKeyword('bold'), {discrete: true});
-
-        const dom = getKeywordDOM();
-        expect(Array.from(dom.classList).sort()).toEqual([
-          'keyword',
-          'theme-bold',
-        ]);
-      });
-    },
-    {namespace: 'test', nodes: [KeywordNode], theme},
-  );
+    expect(keywordClasses(editor)).toEqual(['keyword', 'theme-bold']);
+  });
 });

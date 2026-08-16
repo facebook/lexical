@@ -6,14 +6,16 @@
  *
  */
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  buildEditorFromExtensions,
+  type LexicalEditorWithDispose,
+} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
   $createParagraphNode,
   $getRoot,
   $isTextNode,
   defineExtension,
-  type LexicalEditor,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
@@ -29,22 +31,23 @@ const MentionThemeTestExtension = /* @__PURE__ */ defineExtension({
   theme: {text: {underline: 'theme-underline'}},
 });
 
-function makeEditor(): [LexicalEditor & Disposable, HTMLElement] {
+function makeEditor(): LexicalEditorWithDispose {
   const editor = buildEditorFromExtensions(MentionThemeTestExtension);
-  const rootElement = document.createElement('div');
-  editor.setRootElement(rootElement);
-  return [editor, rootElement];
+  editor.setRootElement(document.createElement('div'));
+  return editor;
 }
 
-function mentionClasses(rootElement: HTMLElement): string[] {
-  const dom = rootElement.querySelector<HTMLElement>('[data-lexical-text]');
-  assert(dom !== null, 'mention DOM');
+function mentionClasses(editor: LexicalEditorWithDispose): string[] {
+  const dom = editor
+    .getRootElement()
+    ?.querySelector<HTMLElement>('[data-lexical-text]');
+  assert(dom != null, 'mention DOM');
   return Array.from(dom.classList).sort();
 }
 
 describe('MentionNode theme classes', () => {
   it('keeps the theme class of the format it was created with', () => {
-    const [editor, rootElement] = makeEditor();
+    const editor = makeEditor();
     using _ = editor;
     editor.update(
       () => {
@@ -54,11 +57,11 @@ describe('MentionNode theme classes', () => {
       {discrete: true},
     );
 
-    expect(mentionClasses(rootElement)).toEqual(['mention', 'theme-underline']);
+    expect(mentionClasses(editor)).toEqual(['mention', 'theme-underline']);
   });
 
   it('keeps the theme class when a format change rebuilds the element', () => {
-    const [editor, rootElement] = makeEditor();
+    const editor = makeEditor();
     using _ = editor;
     editor.update(
       () => {
@@ -76,7 +79,7 @@ describe('MentionNode theme classes', () => {
       },
       {discrete: true},
     );
-    expect(mentionClasses(rootElement)).toEqual(['mention', 'theme-underline']);
+    expect(mentionClasses(editor)).toEqual(['mention', 'theme-underline']);
 
     // Bold changes the tag, so TextNode.updateDOM returns true and the
     // reconciler rebuilds the element through createDOM.
@@ -96,6 +99,6 @@ describe('MentionNode theme classes', () => {
         return mention.hasFormat('underline');
       }),
     ).toBe(true);
-    expect(mentionClasses(rootElement)).toEqual(['mention', 'theme-underline']);
+    expect(mentionClasses(editor)).toEqual(['mention', 'theme-underline']);
   });
 });

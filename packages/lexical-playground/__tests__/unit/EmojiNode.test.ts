@@ -7,75 +7,81 @@
  */
 
 import {
+  buildEditorFromExtensions,
+  type LexicalEditorWithDispose,
+} from '@lexical/extension';
+import {RichTextExtension} from '@lexical/rich-text';
+import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
   $isTextNode,
-  type EditorThemeClasses,
+  defineExtension,
 } from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, it} from 'vitest';
 
 import {$createEmojiNode, EmojiNode} from '../../src/nodes/EmojiNode';
 
-const theme: EditorThemeClasses = {
-  text: {
-    bold: 'theme-bold',
-    underline: 'theme-underline',
-  },
-};
+const EmojiThemeTestExtension = /* @__PURE__ */ defineExtension({
+  $initialEditorState: null,
+  dependencies: [RichTextExtension],
+  name: '[test-emoji-theme]',
+  nodes: [EmojiNode],
+  theme: {text: {bold: 'theme-bold', underline: 'theme-underline'}},
+});
+
+function makeEditor(): LexicalEditorWithDispose {
+  const editor = buildEditorFromExtensions(EmojiThemeTestExtension);
+  editor.setRootElement(document.createElement('div'));
+  return editor;
+}
+
+function $appendEmoji(): EmojiNode {
+  const emoji = $createEmojiNode('emoji happysmile', '🙂');
+  $getRoot()
+    .clear()
+    .append($createParagraphNode().append($createTextNode('hi '), emoji));
+  return emoji;
+}
+
+function $getEmoji(): EmojiNode {
+  const emoji = $getRoot().getLastDescendant();
+  assert($isTextNode(emoji) && emoji instanceof EmojiNode, 'EmojiNode');
+  return emoji;
+}
+
+function emojiDOM(editor: LexicalEditorWithDispose): HTMLElement {
+  const dom = editor.getRootElement()?.querySelector<HTMLElement>('.emoji');
+  assert(dom != null, 'emoji DOM');
+  return dom;
+}
 
 describe('EmojiNode', () => {
-  initializeUnitTest(
-    testEnv => {
-      function $appendEmoji(): EmojiNode {
-        const emoji = $createEmojiNode('emoji happysmile', '🙂');
-        $getRoot()
-          .clear()
-          .append($createParagraphNode().append($createTextNode('hi '), emoji));
-        return emoji;
-      }
+  it('renders a tag-changing format applied after the emoji exists', () => {
+    const editor = makeEditor();
+    using _ = editor;
+    editor.update(() => void $appendEmoji(), {discrete: true});
+    expect(emojiDOM(editor).querySelector('strong')).toBe(null);
 
-      function $getEmoji(): EmojiNode {
-        const emoji = $getRoot().getLastDescendant();
-        assert($isTextNode(emoji) && emoji instanceof EmojiNode, 'EmojiNode');
-        return emoji;
-      }
+    // Formatting a selection that covers the emoji formats the whole token
+    // node, so the emoji really does become bold in the state.
+    editor.update(() => void $getEmoji().setFormat('bold'), {discrete: true});
 
-      function getEmojiDOM(): HTMLElement {
-        const dom = testEnv.container.querySelector('.emoji');
-        expect(dom).not.toBe(null);
-        return dom as HTMLElement;
-      }
+    expect(editor.read(() => $getEmoji().hasFormat('bold'))).toBe(true);
+    expect(emojiDOM(editor).querySelector('strong')).not.toBe(null);
+  });
 
-      it('renders a tag-changing format applied after the emoji exists', async () => {
-        const {editor} = testEnv;
-        await editor.update(() => void $appendEmoji(), {discrete: true});
-        expect(getEmojiDOM().querySelector('strong')).toBe(null);
+  it('keeps the theme class of a class-only format on the inner element', () => {
+    const editor = makeEditor();
+    using _ = editor;
+    editor.update(() => void $appendEmoji().setFormat('underline'), {
+      discrete: true,
+    });
 
-        // Formatting a selection that covers the emoji formats the whole
-        // token node, so the emoji really does become bold in the state.
-        await editor.update(() => void $getEmoji().setFormat('bold'), {
-          discrete: true,
-        });
-
-        expect(editor.read(() => $getEmoji().hasFormat('bold'))).toBe(true);
-        expect(getEmojiDOM().querySelector('strong')).not.toBe(null);
-      });
-
-      it('keeps the theme class of a class-only format on the inner element', async () => {
-        const {editor} = testEnv;
-        await editor.update(() => void $appendEmoji().setFormat('underline'), {
-          discrete: true,
-        });
-
-        const inner = getEmojiDOM().firstElementChild as HTMLElement;
-        expect(Array.from(inner.classList).sort()).toEqual([
-          'emoji-inner',
-          'theme-underline',
-        ]);
-      });
-    },
-    {namespace: 'test', nodes: [EmojiNode], theme},
-  );
+    const inner = emojiDOM(editor).firstElementChild as HTMLElement;
+    expect(Array.from(inner.classList).sort()).toEqual([
+      'emoji-inner',
+      'theme-underline',
+    ]);
+  });
 });

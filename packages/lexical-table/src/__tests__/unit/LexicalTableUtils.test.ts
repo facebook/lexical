@@ -76,6 +76,7 @@ beforeEach(() => {
     defineExtension({
       dependencies: [TableExtension],
       name: 'LexicalTableUtils-test',
+      theme: {tableScrollableWrapper: ''},
     }),
   );
   editor.update(

@@ -7,8 +7,8 @@
  */
 
 import {
+  CONTROL_OR_META,
   defineExtension,
-  IS_APPLE,
   isExactShortcutMatch,
   isHTMLElement,
   registerEventListener,
@@ -22,7 +22,7 @@ import {effect} from './signals';
 function captureKeydown(e: KeyboardEvent) {
   const target = e.target;
   if (
-    isExactShortcutMatch(e, 'a', {ctrlKey: !IS_APPLE, metaKey: IS_APPLE}) &&
+    isExactShortcutMatch(e, 'a', CONTROL_OR_META) &&
     isHTMLElement(target) &&
     (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')
   ) {

@@ -2024,6 +2024,10 @@ export function registerRichText(
 }
 
 export {
+  HeadingAnnounceExtension,
+  type HeadingAnnounceExtensionConfig,
+} from './HeadingAnnounceExtension';
+export {
   type RichTextConfig,
   RichTextExtension,
   RichTextImportExtension,

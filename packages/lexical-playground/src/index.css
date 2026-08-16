@@ -682,6 +682,11 @@ i.star {
   mask-image: url(images/icons/star.svg);
 }
 
+i.keyboard-shortcuts {
+  -webkit-mask-image: url(images/icons/keyboard.svg);
+  mask-image: url(images/icons/keyboard.svg);
+}
+
 i.mic {
   -webkit-mask-image: url(images/icons/mic.svg);
   mask-image: url(images/icons/mic.svg);

@@ -23,6 +23,7 @@ import {
   $isRootNode,
   $isTabNode,
   $isTextNode,
+  CONTROL_OR_META,
   DecoratorNode,
   DEFAULT_EDITOR_DOM_CONFIG,
   type ElementFormatType,
@@ -42,6 +43,7 @@ import {
 import {
   COMPOSITION_START_CHAR,
   COMPOSITION_SUFFIX,
+  CONTROL_OR_OTHER_KEY,
   DOM_DOCUMENT_FRAGMENT_TYPE,
   DOM_DOCUMENT_TYPE,
   DOM_ELEMENT_TYPE,
@@ -1126,11 +1128,29 @@ export type KeyboardEventModifiers = Pick<
  * not be pressed.
  */
 export type KeyboardEventModifierMask = {
-  [K in Exclude<keyof KeyboardEventModifiers, 'key'>]?:
+  [K in Exclude<keyof KeyboardEventModifiers, 'key' | 'code'>]?:
     | boolean
     | undefined
     | 'any';
 };
+
+export {CONTROL_OR_OTHER_KEY};
+
+/** @internal */
+export interface KeyboardEventControlOrOther {
+  [CONTROL_OR_OTHER_KEY]?: 'metaKey' | 'altKey';
+}
+
+/** @internal */
+export function keyboardEventMaskForPlatform(
+  mask: KeyboardEventModifierMask & KeyboardEventControlOrOther,
+  isApple: boolean,
+): KeyboardEventModifierMask {
+  const otherKey = mask[CONTROL_OR_OTHER_KEY];
+  return otherKey && isApple !== IS_APPLE
+    ? {...mask, ctrlKey: mask[otherKey], [otherKey]: mask.ctrlKey}
+    : mask;
+}
 
 function matchModifier(
   event: KeyboardEventModifiers,
@@ -1204,160 +1224,8 @@ export function isExactShortcutMatch(
   return event.code === expectedCode;
 }
 
-const CONTROL_OR_META = {ctrlKey: !IS_APPLE, metaKey: IS_APPLE};
-const CONTROL_OR_ALT = {altKey: IS_APPLE, ctrlKey: !IS_APPLE};
-
-export function isTab(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Tab', {
-    shiftKey: 'any',
-  });
-}
-
-export function isBold(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'b', CONTROL_OR_META);
-}
-
-export function isItalic(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'i', CONTROL_OR_META);
-}
-
-export function isUnderline(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'u', CONTROL_OR_META);
-}
-
-export function isParagraph(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Enter', {
-    altKey: 'any',
-    ctrlKey: 'any',
-    metaKey: 'any',
-  });
-}
-
-export function isLineBreak(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Enter', {
-    altKey: 'any',
-    ctrlKey: 'any',
-    metaKey: 'any',
-    shiftKey: true,
-  });
-}
-
-// Inserts a new line after the selection
-
-export function isOpenLineBreak(event: KeyboardEventModifiers): boolean {
-  // 79 = KeyO
-  return IS_APPLE && isExactShortcutMatch(event, 'o', {ctrlKey: true});
-}
-
-export function isDeleteWordBackward(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Backspace', CONTROL_OR_ALT);
-}
-
-export function isDeleteWordForward(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Delete', CONTROL_OR_ALT);
-}
-
-export function isDeleteLineBackward(event: KeyboardEventModifiers): boolean {
-  return IS_APPLE && isExactShortcutMatch(event, 'Backspace', {metaKey: true});
-}
-
-export function isDeleteLineForward(event: KeyboardEventModifiers): boolean {
-  return (
-    IS_APPLE &&
-    (isExactShortcutMatch(event, 'Delete', {metaKey: true}) ||
-      isExactShortcutMatch(event, 'k', {ctrlKey: true}))
-  );
-}
-
-export function isDeleteBackward(event: KeyboardEventModifiers): boolean {
-  return (
-    isExactShortcutMatch(event, 'Backspace', {shiftKey: 'any'}) ||
-    (IS_APPLE && isExactShortcutMatch(event, 'h', {ctrlKey: true}))
-  );
-}
-
-export function isDeleteForward(event: KeyboardEventModifiers): boolean {
-  return (
-    isExactShortcutMatch(event, 'Delete', {}) ||
-    (IS_APPLE && isExactShortcutMatch(event, 'd', {ctrlKey: true}))
-  );
-}
-
-export function isUndo(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'z', CONTROL_OR_META);
-}
-
-export function isRedo(event: KeyboardEventModifiers): boolean {
-  if (IS_APPLE) {
-    return isExactShortcutMatch(event, 'z', {metaKey: true, shiftKey: true});
-  }
-  return (
-    isExactShortcutMatch(event, 'y', {ctrlKey: true}) ||
-    isExactShortcutMatch(event, 'z', {ctrlKey: true, shiftKey: true})
-  );
-}
-
-export function isCopy(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'c', CONTROL_OR_META);
-}
-
-export function isCut(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'x', CONTROL_OR_META);
-}
-
-export function isMoveBackward(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowLeft', {
-    shiftKey: 'any',
-  });
-}
-
-export function isMoveToStart(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowLeft', {
-    ...CONTROL_OR_META,
-    shiftKey: 'any',
-  });
-}
-
-export function isMoveForward(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowRight', {
-    shiftKey: 'any',
-  });
-}
-
-export function isMoveToEnd(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowRight', {
-    ...CONTROL_OR_META,
-    shiftKey: 'any',
-  });
-}
-
-export function isMoveUp(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowUp', {
-    altKey: 'any',
-    shiftKey: 'any',
-  });
-}
-
-export function isMoveDown(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowDown', {
-    altKey: 'any',
-    shiftKey: 'any',
-  });
-}
-
 export function isModifier(event: KeyboardEventModifiers): boolean {
   return event.ctrlKey || event.shiftKey || event.altKey || event.metaKey;
-}
-
-export function isSpace(event: KeyboardEventModifiers): boolean {
-  return event.key === ' ';
-}
-
-export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
-  if (IS_APPLE) {
-    return metaKey;
-  }
-  return ctrlKey;
 }
 
 export function isBackspace(event: KeyboardEventModifiers): boolean {
@@ -3423,9 +3291,11 @@ export function getStaticNodeConfig(
           String(klass.length),
         );
       }
+      // TODO: replace $applyNodeReplacement with $create once `withKlass` is required.
       klass.importJSON =
         (ownNodeConfig && ownNodeConfig.$importJSON) ||
-        (serializedNode => new klass().updateFromJSON(serializedNode));
+        (serializedNode =>
+          $applyNodeReplacement(new klass()).updateFromJSON(serializedNode));
     }
     if (!hasOwnStaticMethod(klass, 'importDOM') && ownNodeConfig) {
       const {importDOM} = ownNodeConfig;

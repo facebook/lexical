@@ -39,6 +39,7 @@ function buildEditor() {
       // required.
       dependencies: [TableExtension],
       name: 'table-host',
+      theme: {tableScrollableWrapper: ''},
     }),
   );
 }

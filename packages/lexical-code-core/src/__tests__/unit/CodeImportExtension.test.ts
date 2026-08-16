@@ -143,6 +143,7 @@ describe('CodeImportExtension', () => {
         // <table> rule out-prioritizes TableExtension's generic one.
         dependencies: [TableExtension, CodeExtension],
         name: 'table-code-host',
+        theme: {tableScrollableWrapper: ''},
       }),
     );
     importInto(

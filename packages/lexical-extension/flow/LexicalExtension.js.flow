@@ -203,6 +203,7 @@ export type TabIndentationConfig = {
   maxIndent: null | number;
 }
 declare export var TabIndentationExtension: LexicalExtension<TabIndentationConfig, "@lexical/extension/TabIndentation", NamedSignalsOutput<TabIndentationConfig>, void>;
+declare export var WatchEditableExtension: LexicalExtension<ExtensionConfigBase, "@lexical/extension/WatchEditable", Signal<boolean>, void>;
 declare export function watchedSignal<T>(
   getSnapshot: () => T,
   register: (self: Signal<T>) => () => void,

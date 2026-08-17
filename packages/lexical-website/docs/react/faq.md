@@ -88,7 +88,7 @@ The `hot` config accepts any object with a `data: Record<string, unknown>` prope
 
 When `HistoryExtension` is present as a peer, undo/redo stacks are preserved automatically. The extension does not declare `HistoryExtension` as a dependency — it detects it at runtime via peer dependency lookup.
 
-Editors with distinct `namespace` values are isolated automatically — no `id` needed. When two editors share both the same `import.meta.hot` context and the same `namespace`, pass a stable `id` string to keep their states independent:
+Editors with distinct `namespace` values — set via `namespace` in `defineExtension` or `createEditor` — are isolated automatically, so no `id` is needed. When two editors share both the same `import.meta.hot` context and the same `namespace`, pass a stable `id` string to keep their states independent:
 
 ```ts
 configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'main'})

@@ -31,6 +31,11 @@ const __DEV__ = process.env.NODE_ENV !== 'production';
  * Minimal interface for bundler HMR contexts. Satisfied by Vite's
  * `ViteHotContext` and similar bundler HMR contexts. Only the `data`
  * property is read and written; other HMR lifecycle methods are not required.
+ *
+ * Webpack and Parcel expose `module.hot` instead of `import.meta.hot`. Their
+ * `module.hot.data` is populated by dispose handlers and is not directly
+ * mutable, so `module.hot` cannot be passed here — a custom adapter using
+ * `module.hot.addDisposeHandler` is required for those bundlers.
  */
 export interface HotContext {
   readonly data: Record<string, unknown>;
@@ -46,12 +51,16 @@ export interface HMRConfig {
   /**
    * Stable identifier for this editor instance. Must be stable across HMR
    * reloads — do not use `useId()`, `Math.random()`, or any per-mount
-   * identifier. Only needed when multiple editors share both the same
-   * `import.meta.hot` context and the same `namespace` (set via
+   * identifier (these generate a new value on every mount and will fail to
+   * match the key from the previous HMR cycle, preventing state restoration).
+   * Only needed when multiple editors share both the same `import.meta.hot`
+   * context and the same `namespace` (set via
    * `defineExtension({ namespace: '...' })` or
    * `createEditor({ namespace: '...' })`); editors with distinct namespaces
    * are isolated automatically. Must be a non-empty string when provided;
-   * passing `''` triggers a dev warning and is treated as no `id`.
+   * passing `''` triggers a dev warning and is treated as no `id`. Neither
+   * `namespace` nor `id` should contain a colon (`:`), as that character is
+   * used as a key separator internally.
    */
   id?: string;
 }
@@ -156,9 +165,10 @@ function restoreHistoryState(
  * Replacement (HMR) cycles. When `HistoryExtension` is present as a peer,
  * undo/redo stacks are preserved as well.
  *
- * Passing `hot: null` is a safe no-op and is the recommended pattern for
- * production builds. If a saved state cannot be parsed, the extension warns
- * in dev and falls back to `$initialEditorState` rather than throwing.
+ * Passing `hot: null` is a safe no-op, so `import.meta.hot ?? null` works
+ * correctly in both development and production without a build-time
+ * conditional. If a saved state cannot be parsed, the extension warns in dev
+ * and falls back to `$initialEditorState` rather than throwing.
  *
  * @example
  * Basic usage
@@ -191,8 +201,8 @@ function restoreHistoryState(
  * defineExtension({ name: '[sidebar]', namespace: 'sidebar', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null})] })
  *
  * // Same namespace — use `id` to distinguish
- * configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'first'})
- * configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'second'})
+ * defineExtension({ name: '[first]', namespace: 'shared', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'first'})] })
+ * defineExtension({ name: '[second]', namespace: 'shared', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'second'})] })
  * ```
  */
 export const HMRExtension = /* @__PURE__ */ defineExtension({

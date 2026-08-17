@@ -91,8 +91,8 @@ When `HistoryExtension` is present as a peer, undo/redo stacks are preserved aut
 Editors with distinct `namespace` values — set via `namespace` in `defineExtension` or `createEditor` — are isolated automatically, so no `id` is needed. When two editors share both the same `import.meta.hot` context and the same `namespace`, pass a stable `id` string to keep their states independent:
 
 ```ts
-configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'main'})
-configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'sidebar'})
+defineExtension({ name: '[main]', namespace: 'shared', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'main'})] })
+defineExtension({ name: '[sidebar]', namespace: 'shared', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'sidebar'})] })
 ```
 
 ### Fast Refresh compatibility

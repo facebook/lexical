@@ -37,8 +37,10 @@ import {
   $createTabNode,
   $extendCaretToRange,
   $findMatchingParent,
+  $flushSyncAfterUpdate,
   $formatText,
   $getCaretRange,
+  $getCaretRangeInDirection,
   $getChildCaret,
   $getCollapsedCaretRange,
   $getDocument,
@@ -64,6 +66,7 @@ import {
   $needsBlockCursorBeside,
   $normalizeCaret,
   $normalizeSelection__EXPERIMENTAL,
+  $rewindSiblingCaret,
   $selectAll,
   $setDirectionFromDOM,
   $setFormatFromDOM,
@@ -1071,46 +1074,44 @@ function $exitNodeSelectionToward(
 
 /**
  * Convert a contiguous NodeSelection to a RangeSelection that covers the same
- * siblings, then extend its focus by one character in the requested logical
- * direction. Discontiguous NodeSelections cannot be represented as a range
+ * siblings. Discontiguous NodeSelections cannot be represented as a range
  * without selecting the nodes between them, so they retain the existing
  * collapse behavior in the arrow handlers.
  */
-function $extendAdjacentNodeSelection(
+function $convertContiguousNodeSelection(
   selection: NodeSelection,
   direction: CaretDirection,
 ): boolean {
-  const nodes = selection
+  const carets = selection
     .getNodes()
-    .slice()
-    .sort((a, b) =>
-      $comparePointCaretNext(
-        $getSiblingCaret(a, 'next'),
-        $getSiblingCaret(b, 'next'),
-      ),
-    );
-  if (nodes.length === 0) {
+    .map(node => $getSiblingCaret(node, 'next'))
+    .sort($comparePointCaretNext);
+  // At least one node
+  const firstCaret = carets[0];
+  const lastCaret = carets[carets.length - 1];
+  if (!firstCaret || !lastCaret) {
     return false;
   }
-  const parent = nodes[0].getParent();
-  if (parent === null) {
-    return false;
-  }
-  const firstIndex = nodes[0].getIndexWithinParent();
-  for (let i = 0; i < nodes.length; i++) {
-    if (
-      nodes[i].getParent() !== parent ||
-      nodes[i].getIndexWithinParent() !== firstIndex + i
-    ) {
+  // Check that all nodes are contiguous
+  for (let i = 0; i < carets.length - 1; i++) {
+    if (!carets[i + 1].origin.is(carets[i].getNodeAtCaret())) {
       return false;
     }
   }
-  const lastIndex = firstIndex + nodes.length;
-  const rangeSelection =
-    direction === 'next'
-      ? parent.select(firstIndex, lastIndex)
-      : parent.select(lastIndex, firstIndex);
-  rangeSelection.modify('extend', direction === 'previous', 'character');
+  $setSelectionFromCaretRange(
+    $getCaretRangeInDirection(
+      $getCaretRange($rewindSiblingCaret(firstCaret), lastCaret),
+      direction,
+    ),
+  );
+  // The arrow handlers fall through to the RangeSelection paths after this,
+  // and the vertical ones leave the extension to the browser's default action
+  // for this keydown. That action reads the DOM selection, but this update
+  // would otherwise be committed in a microtask, and Firefox does not pick up
+  // a selection that lands after the keydown listeners return — it would
+  // extend nothing on the first press. Commit synchronously so every browser
+  // extends the converted selection.
+  $flushSyncAfterUpdate();
   return true;
 }
 
@@ -1434,7 +1435,7 @@ export function registerRichText(
     editor.registerCommand(
       KEY_ARROW_UP_COMMAND,
       event => {
-        const selection = $getSelection();
+        let selection = $getSelection();
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
@@ -1442,16 +1443,18 @@ export function registerRichText(
           if (nodes.length > 0) {
             if (
               event.shiftKey &&
-              $extendAdjacentNodeSelection(selection, 'previous')
+              $convertContiguousNodeSelection(selection, 'previous')
             ) {
+              // Fallthrough
+              selection = $getSelection();
+            } else {
               event.preventDefault();
+              $exitNodeSelectionToward(nodes[0], 'previous');
               return true;
             }
-            event.preventDefault();
-            $exitNodeSelectionToward(nodes[0], 'previous');
-            return true;
           }
-        } else if ($isRangeSelection(selection)) {
+        }
+        if ($isRangeSelection(selection)) {
           if ($isSelectionAtStartOfRoot(selection)) {
             event.preventDefault();
             return true;
@@ -1482,7 +1485,7 @@ export function registerRichText(
     editor.registerCommand(
       KEY_ARROW_DOWN_COMMAND,
       event => {
-        const selection = $getSelection();
+        let selection = $getSelection();
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
@@ -1490,16 +1493,18 @@ export function registerRichText(
           if (nodes.length > 0) {
             if (
               event.shiftKey &&
-              $extendAdjacentNodeSelection(selection, 'next')
+              $convertContiguousNodeSelection(selection, 'next')
             ) {
+              // Fallthrough
+              selection = $getSelection();
+            } else {
               event.preventDefault();
+              $exitNodeSelectionToward(nodes[0], 'next');
               return true;
             }
-            event.preventDefault();
-            $exitNodeSelectionToward(nodes[0], 'next');
-            return true;
           }
-        } else if ($isRangeSelection(selection)) {
+        }
+        if ($isRangeSelection(selection)) {
           if ($isSelectionAtEndOfRoot(selection)) {
             event.preventDefault();
             return true;
@@ -1533,7 +1538,7 @@ export function registerRichText(
     editor.registerCommand(
       KEY_ARROW_LEFT_COMMAND,
       event => {
-        const selection = $getSelection();
+        let selection = $getSelection();
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
@@ -1542,14 +1547,15 @@ export function registerRichText(
             const direction = $isParentRTL(nodes[0]) ? 'next' : 'previous';
             if (
               event.shiftKey &&
-              $extendAdjacentNodeSelection(selection, direction)
+              $convertContiguousNodeSelection(selection, direction)
             ) {
+              // Fallthrough
+              selection = $getSelection();
+            } else {
               event.preventDefault();
+              $exitNodeSelectionToward(nodes[0], direction);
               return true;
             }
-            event.preventDefault();
-            $exitNodeSelectionToward(nodes[0], direction);
-            return true;
           }
         }
         if (!$isRangeSelection(selection)) {
@@ -1586,7 +1592,7 @@ export function registerRichText(
     editor.registerCommand(
       KEY_ARROW_RIGHT_COMMAND,
       event => {
-        const selection = $getSelection();
+        let selection = $getSelection();
         if ($isNodeSelection(selection)) {
           // If selection is on a node, let's try and move selection
           // back to being a range selection.
@@ -1595,14 +1601,15 @@ export function registerRichText(
             const direction = $isParentRTL(nodes[0]) ? 'previous' : 'next';
             if (
               event.shiftKey &&
-              $extendAdjacentNodeSelection(selection, direction)
+              $convertContiguousNodeSelection(selection, direction)
             ) {
+              // Fallthrough
+              selection = $getSelection();
+            } else {
               event.preventDefault();
+              $exitNodeSelectionToward(nodes[0], direction);
               return true;
             }
-            event.preventDefault();
-            $exitNodeSelectionToward(nodes[0], direction);
-            return true;
           }
         }
         if (!$isRangeSelection(selection)) {

@@ -138,7 +138,7 @@ declare export function getPeerDependencyFromEditorOrThrow<
 ): LexicalExtensionDependency<Extension>;
 
 export type HotContext = {
-  +data: {[string]: mixed},
+  readonly data: {[string]: unknown},
 };
 
 export type HMRConfig = {

@@ -46,11 +46,10 @@ export interface HMRConfig {
   /**
    * Stable identifier for this editor instance. Must be stable across HMR
    * reloads — do not use `useId()`, `Math.random()`, or any per-mount
-   * identifier. Optional for a single-editor setup; recommended when multiple
-   * editors share the same `import.meta.hot` context, to prevent their saved
-   * states from overwriting each other (omitting `id` in that case triggers a
-   * dev warning). Must be a non-empty string when provided; passing `''`
-   * triggers a dev warning.
+   * identifier. Only needed when multiple editors share both the same
+   * `import.meta.hot` context and the same `namespace`; editors with distinct
+   * namespaces are isolated automatically. Must be a non-empty string when
+   * provided; passing `''` triggers a dev warning.
    */
   id?: string;
 }
@@ -58,6 +57,15 @@ export interface HMRConfig {
 const HMR_KEY = 'lexicalHMR';
 const HMR_COUNT_KEY = 'lexicalHMR__count';
 const HISTORY_EXTENSION_NAME = '@lexical/history/History';
+
+function getHMRKey(id: string | undefined, namespace: string): string {
+  const base = `${HMR_KEY}:${namespace}`;
+  return id !== undefined ? `${base}:${id}` : base;
+}
+
+function getHMRCountKey(namespace: string): string {
+  return `${HMR_COUNT_KEY}:${namespace}`;
+}
 
 interface SerializedHistoryState {
   current: SerializedEditorState | null;
@@ -71,10 +79,6 @@ interface HMRSavedState {
   // Unknown because isValidHMRSavedState does not inspect this field;
   // callers must guard with isValidSerializedHistoryState before use.
   historyStateJSON: unknown;
-}
-
-function getHMRKey(id: string | undefined): string {
-  return id !== undefined ? `${HMR_KEY}:${id}` : HMR_KEY;
 }
 
 function getSavedHMRState(hot: HotContext, key: string): unknown {
@@ -175,9 +179,17 @@ function restoreHistoryState(
  *
  * @example
  * Multiple editors sharing an HMR context
+ * Editors with distinct `namespace` values are isolated automatically. Only
+ * add `id` when two editors share both the same `import.meta.hot` context
+ * and the same `namespace`.
  * ```ts
- * configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'main'})
- * configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'sidebar'})
+ * // Different namespaces — automatic isolation, no `id` needed
+ * defineExtension({ namespace: 'main', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null})] })
+ * defineExtension({ namespace: 'sidebar', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null})] })
+ *
+ * // Same namespace — use `id` to distinguish
+ * configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'first'})
+ * configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'second'})
  * ```
  */
 export const HMRExtension = /* @__PURE__ */ defineExtension({
@@ -186,7 +198,8 @@ export const HMRExtension = /* @__PURE__ */ defineExtension({
       return () => {};
     }
 
-    const hmrKey = getHMRKey(id);
+    const namespace = editor._config.namespace;
+    const hmrKey = getHMRKey(id, namespace);
 
     if (__DEV__) {
       if (id === '') {
@@ -195,13 +208,15 @@ export const HMRExtension = /* @__PURE__ */ defineExtension({
             'Use a stable non-empty string literal (e.g. `"main"`, `"sidebar"`).',
         );
       } else if (id === undefined) {
-        const raw = hot.data[HMR_COUNT_KEY];
+        const countKey = getHMRCountKey(namespace);
+        const raw = hot.data[countKey];
         const count = (typeof raw === 'number' ? raw : 0) + 1;
-        hot.data[HMR_COUNT_KEY] = count;
+        hot.data[countKey] = count;
         if (count > 1) {
           console.warn(
-            'HMR: Multiple editors share the same HMR context without a unique `id`. ' +
-              'Provide `HMRConfig.id` to keep their states independent.',
+            'HMR: Multiple editors share the same HMR context and namespace without a unique `id`. ' +
+              'Provide `HMRConfig.id` to keep their states independent, ' +
+              'or give each editor a distinct `namespace`.',
           );
         }
       }
@@ -281,10 +296,11 @@ export const HMRExtension = /* @__PURE__ */ defineExtension({
 
     return () => {
       if (__DEV__ && id === undefined) {
-        const raw = hot.data[HMR_COUNT_KEY];
+        const countKey = getHMRCountKey(namespace);
+        const raw = hot.data[countKey];
         const count = typeof raw === 'number' ? raw : 0;
         if (count > 0) {
-          hot.data[HMR_COUNT_KEY] = count - 1;
+          hot.data[countKey] = count - 1;
         }
       }
       stopSaveEffect();

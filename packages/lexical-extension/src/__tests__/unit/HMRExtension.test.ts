@@ -34,6 +34,12 @@ function $setupContent(text: string) {
     .append($createParagraphNode().append($createTextNode(text)));
 }
 
+// Stable namespace shared by all test helpers so HMR keys are consistent
+// across createEditor / createEditorNoHistory / createEditorNoInitialState.
+const TEST_NAMESPACE = 'hmr-test';
+// Must match `lexicalHMR:${TEST_NAMESPACE}` produced by getHMRKey in HMRExtension.ts
+const TEST_HMR_KEY = `lexicalHMR:${TEST_NAMESPACE}`;
+
 function createEditor(hot: HotContext | null, id?: string) {
   return buildEditorFromExtensions(
     defineExtension({
@@ -43,6 +49,7 @@ function createEditor(hot: HotContext | null, id?: string) {
         configExtension(HMRExtension, {hot, id}),
       ],
       name: 'hmr-test',
+      namespace: TEST_NAMESPACE,
     }),
   );
 }
@@ -53,6 +60,7 @@ function createEditorNoHistory(hot: HotContext) {
       $initialEditorState: () => $setupContent('initial'),
       dependencies: [configExtension(HMRExtension, {hot})],
       name: 'hmr-no-history-test',
+      namespace: TEST_NAMESPACE,
     }),
   );
 }
@@ -62,6 +70,7 @@ function createEditorNoInitialState(hot: HotContext) {
     defineExtension({
       dependencies: [configExtension(HMRExtension, {hot})],
       name: 'hmr-no-initial-state-test',
+      namespace: TEST_NAMESPACE,
     }),
   );
 }
@@ -161,10 +170,9 @@ describe('HMRExtension', () => {
 
   test('starts fresh when saved state is corrupted', () => {
     const hot = createMockHotContext();
-    // Must match HMR_KEY in HMRExtension.ts
     // editorStateJSON passes shape check but contains an unknown node type
     // that causes parseEditorState to throw
-    hot.data.lexicalHMR = {
+    hot.data[TEST_HMR_KEY] = {
       editable: true,
       editorStateJSON: {
         root: {
@@ -198,8 +206,7 @@ describe('HMRExtension', () => {
     const hot = createMockHotContext();
     // Old extension format (editorState: live EditorState, historyState: ...)
     // editable: false proves the entire payload is rejected — not just the wrong fields
-    // Must match HMR_KEY in HMRExtension.ts
-    hot.data.lexicalHMR = {
+    hot.data[TEST_HMR_KEY] = {
       editable: false,
       editorState: {_nodeMap: new Map()},
       historyState: null,
@@ -222,8 +229,7 @@ describe('HMRExtension', () => {
     const emptyStateJSON = bareEditor.getEditorState().toJSON();
     bareEditor.dispose();
 
-    // Must match HMR_KEY in HMRExtension.ts
-    hot.data.lexicalHMR = {
+    hot.data[TEST_HMR_KEY] = {
       editable: false,
       editorStateJSON: emptyStateJSON,
       historyStateJSON: null,
@@ -262,10 +268,12 @@ describe('HMRExtension', () => {
       });
     }
 
-    // Underlying hot.data keys must be distinct
-    expect(hot.data['lexicalHMR:a']).toBeDefined();
-    expect(hot.data['lexicalHMR:b']).toBeDefined();
-    expect(hot.data['lexicalHMR:a']).not.toBe(hot.data['lexicalHMR:b']);
+    // Underlying hot.data keys must be distinct and include namespace
+    expect(hot.data[`lexicalHMR:${TEST_NAMESPACE}:a`]).toBeDefined();
+    expect(hot.data[`lexicalHMR:${TEST_NAMESPACE}:b`]).toBeDefined();
+    expect(hot.data[`lexicalHMR:${TEST_NAMESPACE}:a`]).not.toBe(
+      hot.data[`lexicalHMR:${TEST_NAMESPACE}:b`],
+    );
   });
 
   test('preserves independent undo/redo history for multiple editors sharing one HotContext', () => {
@@ -314,7 +322,7 @@ describe('HMRExtension', () => {
     }
 
     // Corrupt only the history — leave editorStateJSON intact
-    const saved = hot.data.lexicalHMR as {historyStateJSON: unknown};
+    const saved = hot.data[TEST_HMR_KEY] as {historyStateJSON: unknown};
     saved.historyStateJSON = {
       current: 'not-a-state',
       redoStack: [],
@@ -341,7 +349,7 @@ describe('HMRExtension', () => {
     }
   });
 
-  test('warns in dev when multiple editors share HotContext without id', () => {
+  test('warns in dev when multiple editors share HotContext and namespace without id', () => {
     const hot = createMockHotContext();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -375,6 +383,68 @@ describe('HMRExtension', () => {
     try {
       using _e1 = createEditor(hot, 'a');
       using _e2 = createEditor(hot, 'b');
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test('isolates two editors by namespace without requiring id', () => {
+    const hot = createMockHotContext();
+
+    function createEditorWithNamespace(ns: string) {
+      return buildEditorFromExtensions(
+        defineExtension({
+          $initialEditorState: () => $setupContent('initial'),
+          dependencies: [configExtension(HMRExtension, {hot})],
+          name: `editor-${ns}`,
+          namespace: ns,
+        }),
+      );
+    }
+
+    {
+      using main = createEditorWithNamespace('main-ns');
+      using sidebar = createEditorWithNamespace('sidebar-ns');
+      main.update(() => $setupContent('main-content'), {discrete: true});
+      sidebar.update(() => $setupContent('sidebar-content'), {discrete: true});
+    }
+
+    {
+      using main = createEditorWithNamespace('main-ns');
+      using sidebar = createEditorWithNamespace('sidebar-ns');
+      main.read(() => {
+        expect($getRoot().getTextContent()).toBe('main-content');
+      });
+      sidebar.read(() => {
+        expect($getRoot().getTextContent()).toBe('sidebar-content');
+      });
+    }
+
+    // Distinct namespace-based keys, no id needed
+    expect(hot.data['lexicalHMR:main-ns']).toBeDefined();
+    expect(hot.data['lexicalHMR:sidebar-ns']).toBeDefined();
+  });
+
+  test('does not warn when multiple editors have distinct namespaces and no id', () => {
+    const hot = createMockHotContext();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      using _e1 = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [configExtension(HMRExtension, {hot})],
+          name: 'ns-a-editor',
+          namespace: 'ns-a',
+        }),
+      );
+      using _e2 = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [configExtension(HMRExtension, {hot})],
+          name: 'ns-b-editor',
+          namespace: 'ns-b',
+        }),
+      );
       expect(warn).not.toHaveBeenCalled();
     } finally {
       warn.mockRestore();
@@ -422,8 +492,7 @@ describe('HMRExtension', () => {
   test('preserves editable flag even when saved state fails to parse', () => {
     const hot = createMockHotContext();
     // editable: false proves setEditable fires before parseEditorState throws
-    // Must match HMR_KEY in HMRExtension.ts
-    hot.data.lexicalHMR = {
+    hot.data[TEST_HMR_KEY] = {
       editable: false,
       editorStateJSON: {
         root: {
@@ -468,7 +537,7 @@ describe('HMRExtension', () => {
 
     // Corrupt only undoStack shape — isValidSerializedHistoryState returns false,
     // history block is skipped silently (no warning, no createEmptyHistoryState call)
-    const saved = hot.data.lexicalHMR as {historyStateJSON: unknown};
+    const saved = hot.data[TEST_HMR_KEY] as {historyStateJSON: unknown};
     saved.historyStateJSON = {
       current: null,
       redoStack: [],
@@ -547,7 +616,7 @@ describe('HMRExtension', () => {
     // historyStateJSON with a non-null value serves as the sentinel:
     // if validPrev fires, hot.data retains this value;
     // if the effect overwrites without validPrev, historyPeer is absent so it becomes null.
-    hot.data.lexicalHMR = {
+    hot.data[TEST_HMR_KEY] = {
       editable: true,
       editorStateJSON: emptyStateJSON,
       historyStateJSON: {redoStack: [], undoStack: []},
@@ -555,7 +624,7 @@ describe('HMRExtension', () => {
 
     using _editor = createEditorNoInitialState(hot);
 
-    const saved = hot.data.lexicalHMR as {historyStateJSON: unknown};
+    const saved = hot.data[TEST_HMR_KEY] as {historyStateJSON: unknown};
     expect(saved.historyStateJSON).toEqual({redoStack: [], undoStack: []});
   });
 });

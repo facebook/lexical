@@ -74,6 +74,7 @@ import {HistoryExtension} from '@lexical/history';
 const editor = buildEditorFromExtensions(
   defineExtension({
     name: '[root]',
+    namespace: 'my-editor',
     dependencies: [
       RichTextExtension,
       HistoryExtension,
@@ -83,11 +84,11 @@ const editor = buildEditorFromExtensions(
 );
 ```
 
-The `hot` config accepts any object with a `data: Record<string, unknown>` property — this is satisfied by Vite's `import.meta.hot`, SvelteKit, and similar bundlers. Pass `null` in production or when HMR is not available; the extension becomes a no-op.
+The `hot` config accepts any object with a `data: Record<string, unknown>` property — this is satisfied by Vite's `import.meta.hot` and similar bundler HMR APIs. Pass `null` in production or when HMR is not available; the extension becomes a no-op.
 
 When `HistoryExtension` is present as a peer, undo/redo stacks are preserved automatically. The extension does not declare `HistoryExtension` as a dependency — it detects it at runtime via peer dependency lookup.
 
-When multiple editors share the same `import.meta.hot` context, pass a stable `id` string to keep their states independent:
+Editors with distinct `namespace` values are isolated automatically — no `id` needed. When two editors share both the same `import.meta.hot` context and the same `namespace`, pass a stable `id` string to keep their states independent:
 
 ```ts
 configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'main'})

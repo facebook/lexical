@@ -47,9 +47,11 @@ export interface HMRConfig {
    * Stable identifier for this editor instance. Must be stable across HMR
    * reloads — do not use `useId()`, `Math.random()`, or any per-mount
    * identifier. Only needed when multiple editors share both the same
-   * `import.meta.hot` context and the same `namespace`; editors with distinct
-   * namespaces are isolated automatically. Must be a non-empty string when
-   * provided; passing `''` triggers a dev warning.
+   * `import.meta.hot` context and the same `namespace` (set via
+   * `defineExtension({ namespace: '...' })` or
+   * `createEditor({ namespace: '...' })`); editors with distinct namespaces
+   * are isolated automatically. Must be a non-empty string when provided;
+   * passing `''` triggers a dev warning and is treated as no `id`.
    */
   id?: string;
 }
@@ -168,6 +170,7 @@ function restoreHistoryState(
  * const editor = buildEditorFromExtensions(
  *   defineExtension({
  *     name: '[root]',
+ *     namespace: 'my-editor',
  *     dependencies: [
  *       RichTextExtension,
  *       HistoryExtension,
@@ -184,8 +187,8 @@ function restoreHistoryState(
  * and the same `namespace`.
  * ```ts
  * // Different namespaces — automatic isolation, no `id` needed
- * defineExtension({ namespace: 'main', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null})] })
- * defineExtension({ namespace: 'sidebar', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null})] })
+ * defineExtension({ name: '[main]', namespace: 'main', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null})] })
+ * defineExtension({ name: '[sidebar]', namespace: 'sidebar', dependencies: [configExtension(HMRExtension, {hot: import.meta.hot ?? null})] })
  *
  * // Same namespace — use `id` to distinguish
  * configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'first'})
@@ -193,21 +196,24 @@ function restoreHistoryState(
  * ```
  */
 export const HMRExtension = /* @__PURE__ */ defineExtension({
-  afterRegistration(editor, {hot, id}, state) {
+  afterRegistration(editor, {hot, id: configId}, state) {
     if (!hot) {
       return () => {};
     }
 
     const namespace = editor._config.namespace;
+    // Normalize '' to undefined: empty string is invalid and treated as no id.
+    const id = configId === '' ? undefined : configId;
     const hmrKey = getHMRKey(id, namespace);
 
     if (__DEV__) {
-      if (id === '') {
+      if (configId === '') {
         console.warn(
           'HMR: `id` must not be an empty string. ' +
             'Use a stable non-empty string literal (e.g. `"main"`, `"sidebar"`).',
         );
-      } else if (id === undefined) {
+      }
+      if (id === undefined) {
         const countKey = getHMRCountKey(namespace);
         const raw = hot.data[countKey];
         const count = (typeof raw === 'number' ? raw : 0) + 1;

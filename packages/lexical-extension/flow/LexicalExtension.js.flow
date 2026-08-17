@@ -137,6 +137,17 @@ declare export function getPeerDependencyFromEditorOrThrow<
   extensionName: Extension['name'],
 ): LexicalExtensionDependency<Extension>;
 
+export type HotContext = {
+  +data: {[string]: mixed},
+};
+
+export type HMRConfig = {
+  hot: HotContext | null,
+  id?: string,
+};
+
+declare export var HMRExtension: LexicalExtension<HMRConfig, "@lexical/extension/HMR", void, void>;
+
 export type SerializedHorizontalRuleNode = SerializedLexicalNode;
 declare export class HorizontalRuleNode extends DecoratorNode<React.Node> {
   createDOM(): HTMLElement;

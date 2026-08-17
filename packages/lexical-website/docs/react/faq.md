@@ -64,26 +64,35 @@ During development, HMR re-executes modules on every code change. Because Lexica
 
 ### HMRExtension
 
-`@lexical/extension` exports an `HMRExtension` that preserves editor state, editable flag, and undo/redo history across HMR cycles. It works by saving the current state to the bundler's HMR data store and restoring it (with prototype swaps on all existing nodes) when the new editor instance is created.
+`@lexical/extension` exports an `HMRExtension` that preserves editor state, editable flag, and undo/redo history across HMR cycles. It works by serializing state to the bundler's HMR data store and calling `editor.parseEditorState(json)` on the new instance, which rebinds all nodes to the updated class constructors.
 
 ```ts
-import {buildEditorFromExtensions, configExtension, HMRExtension} from '@lexical/extension';
+import {buildEditorFromExtensions, configExtension, defineExtension, HMRExtension} from '@lexical/extension';
 import {RichTextExtension} from '@lexical/rich-text';
 import {HistoryExtension} from '@lexical/history';
 
-const editor = buildEditorFromExtensions({
-  name: '[root]',
-  dependencies: [
-    RichTextExtension,
-    HistoryExtension,
-    configExtension(HMRExtension, {hot: import.meta.hot ?? null}),
-  ],
-});
+const editor = buildEditorFromExtensions(
+  defineExtension({
+    name: '[root]',
+    dependencies: [
+      RichTextExtension,
+      HistoryExtension,
+      configExtension(HMRExtension, {hot: import.meta.hot ?? null}),
+    ],
+  }),
+);
 ```
 
 The `hot` config accepts any object with a `data: Record<string, unknown>` property — this is satisfied by Vite's `import.meta.hot`, SvelteKit, and similar bundlers. Pass `null` in production or when HMR is not available; the extension becomes a no-op.
 
 When `HistoryExtension` is present as a peer, undo/redo stacks are preserved automatically. The extension does not declare `HistoryExtension` as a dependency — it detects it at runtime via peer dependency lookup.
+
+When multiple editors share the same `import.meta.hot` context, pass a stable `id` string to keep their states independent:
+
+```ts
+configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'main'})
+configExtension(HMRExtension, {hot: import.meta.hot ?? null, id: 'sidebar'})
+```
 
 ### Fast Refresh compatibility
 

@@ -1,8 +1,8 @@
 # Lexical HMR Example
 
 A minimal [Vite](https://vitejs.dev/) + React app that demonstrates
-`HMRExtension` from `@lexical/extension`. Editor content, the editable flag,
-and undo/redo history are preserved across hot module reloads.
+`HMRExtension` from `@lexical/extension`. Editor content, the editable flag, and undo/redo history (via
+`HistoryExtension`) are preserved across hot module reloads.
 
 ## Running
 

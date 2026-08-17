@@ -28,6 +28,7 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   configExtension,
+  CONTROL_OR_META,
   createCommand,
   defineExtension,
   IS_APPLE,
@@ -64,12 +65,6 @@ export interface MatchPoints {
   focusOffset: number;
   format: number;
 }
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const CONTROL_OR_META = {ctrlKey: !IS_APPLE, metaKey: IS_APPLE};
 
 // ---------------------------------------------------------------------------
 // Pure functions

@@ -6,12 +6,12 @@
  *
  */
 
-import {
-  createEmptyHistoryState,
-  type HistoryExtension,
-  type HistoryState,
-  type HistoryStateEntry,
+import type {
+  HistoryExtension,
+  HistoryState,
+  HistoryStateEntry,
 } from '@lexical/history';
+
 import {
   defineExtension,
   HISTORY_MERGE_TAG,
@@ -258,8 +258,11 @@ export const HMRExtension = /* @__PURE__ */ defineExtension({
                   editor,
                 );
               } catch (e) {
-                historyPeer.output.historyState.value =
-                  createEmptyHistoryState();
+                historyPeer.output.historyState.value = {
+                  current: null,
+                  redoStack: [],
+                  undoStack: [],
+                };
                 if (__DEV__) {
                   console.warn(
                     'HMR: Could not restore undo/redo history. History cleared.',

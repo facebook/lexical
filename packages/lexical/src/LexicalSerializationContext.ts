@@ -224,6 +224,24 @@ export function $compactSerializedNode(
 }
 
 /**
+ * EXPERIMENTAL
+ *
+ * Export one node's JSON with the active serialization context applied: any
+ * installed override runs (and may replace the node or return `null` to omit
+ * it), and what survives is compacted when the context asks for it.
+ *
+ * Use this instead of calling `node.exportJSON()` directly when writing a
+ * serialization walk of your own — it is what `editorState.toJSON()` and the
+ * `@lexical/clipboard` selection export both call, so a context set with
+ * {@link $withSerializationContext} governs every one of them alike.
+ */
+export function $exportNodeJSON(
+  node: LexicalNode,
+): SerializedLexicalNode | null {
+  return $applySerializationContext(node, false);
+}
+
+/**
  * Apply the active serialization context to one node: consult the installed
  * override (which may replace or omit the node), then compact what survives
  * when the context asks for it. Returns `null` when the node was omitted.

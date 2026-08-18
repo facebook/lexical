@@ -302,6 +302,7 @@ export {
 } from './LexicalSelection';
 export {
   $compactSerializedNode,
+  $exportNodeJSON,
   $getSerializationContextValue,
   $withSerializationContext,
   type AnySerializationStateConfigPair,

@@ -17,6 +17,7 @@ import {
   $caretFromPoint,
   $caretRangeFromSelection,
   $comparePointCaretNext,
+  $exportNodeJSON,
   $getCaretRange,
   $getCaretRangeInDirection,
   $getChildCaret,
@@ -478,8 +479,16 @@ export interface BaseSerializedNode {
   version?: number;
 }
 
-function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {
-  const serializedNode = node.exportJSON();
+function $exportNodeToJSON<T extends LexicalNode>(
+  node: T,
+): BaseSerializedNode | null {
+  // Route through the serialization context so a selection export honors the
+  // same overrides and compaction as editorState.toJSON(); null means an
+  // override omitted this node.
+  const serializedNode = $exportNodeJSON(node);
+  if (serializedNode === null) {
+    return null;
+  }
   const nodeClass = node.constructor;
 
   if (serializedNode.type !== nodeClass.getType()) {
@@ -527,7 +536,11 @@ function $appendNodesToJSON(
   }
   const children = $isElementNode(target) ? target.getChildren() : [];
 
-  const serializedNode = exportNodeToJSON(target);
+  const serializedNode = $exportNodeToJSON(target);
+  if (serializedNode === null) {
+    // An override omitted this node, and with it its subtree.
+    return false;
+  }
   if ($isTextNode(target) && target.getTextContentSize() === 0) {
     // If an uncollapsed selection ends or starts at the end of a line of specialized,
     // TextNodes, such as code tokens, we will get a 'blank' TextNode here, i.e., one

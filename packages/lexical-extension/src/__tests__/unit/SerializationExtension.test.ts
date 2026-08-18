@@ -58,12 +58,12 @@ function exportRoot(
   editor: ReturnType<typeof buildEditor>,
   options?: {compact?: boolean},
 ): SerializedJSON {
-  const {exportJSON} = getExtensionDependencyFromEditor(
+  const {$exportJSON} = getExtensionDependencyFromEditor(
     editor,
     SerializationExtension,
   ).output;
   return editor.read(
-    () => exportJSON(undefined, options).root as unknown as SerializedJSON,
+    () => $exportJSON(undefined, options).root as unknown as SerializedJSON,
   );
 }
 

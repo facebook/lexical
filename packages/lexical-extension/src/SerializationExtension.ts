@@ -108,7 +108,7 @@ export interface SerializationExtensionOutput {
    * Serialize an editor state (the editor's current one by default) with this
    * extension's overrides and compaction applied.
    */
-  exportJSON: (
+  $exportJSON: (
     editorState?: EditorState,
     options?: ExportJSONOptions,
   ) => SerializedEditorState;
@@ -145,7 +145,7 @@ function compileOverrides(overrides: readonly AnySerializationOverride[]) {
   if (overrides.length === 0) {
     return null;
   }
-  return (
+  const $applyOverrides = (
     node: LexicalNode,
     $default: () => SerializedLexicalNode,
   ): SerializedLexicalNode | null => {
@@ -167,6 +167,7 @@ function compileOverrides(overrides: readonly AnySerializationOverride[]) {
     }
     return $next();
   };
+  return $applyOverrides;
 }
 
 /**
@@ -191,7 +192,7 @@ export const SerializationExtension = /* @__PURE__ */ defineExtension({
   build(editor, config): SerializationExtensionOutput {
     const override = compileOverrides(config.overrides);
     return {
-      exportJSON(editorState = editor.getEditorState(), options = {}) {
+      $exportJSON(editorState = editor.getEditorState(), options = {}) {
         const compact =
           options.compact === undefined ? config.compact : options.compact;
         return $withSerializationContext([
@@ -201,6 +202,9 @@ export const SerializationExtension = /* @__PURE__ */ defineExtension({
       },
     };
   },
-  config: /* @__PURE__ */ safeCast<SerializationConfig>({compact: false, overrides: []}),
+  config: /* @__PURE__ */ safeCast<SerializationConfig>({
+    compact: false,
+    overrides: [],
+  }),
   name: '@lexical/extension/Serialization',
 });

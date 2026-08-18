@@ -88,8 +88,13 @@ export type NodeMap = Map<NodeKey, LexicalNode>;
 export type SerializedLexicalNode = {
   /** The type string used by the Node class */
   type: string;
-  /** A numeric version for this schema, defaulting to 1, but not generally recommended for use */
-  version: number;
+  /**
+   * @deprecated A numeric schema version. Nothing reads it: parsing ignores it
+   * entirely, so it is not required on JSON being imported. `exportJSON` still
+   * writes it (as `1`) so the output stays readable by older versions, which is
+   * the only reason it remains.
+   */
+  version?: number;
   /**
    * Any state persisted with the NodeState API that is not
    * configured for flat storage
@@ -435,8 +440,14 @@ export type GetStaticNodeOwnConfig<T extends LexicalNode> =
  * a more generic type to be compatible with subclassing.
  */
 export type LexicalExportJSON<T extends LexicalNode> = Prettify<
-  Omit<ReturnType<T['exportJSON']>, 'type'> & {
+  Omit<ReturnType<T['exportJSON']>, 'type' | 'version'> & {
     type: GetStaticNodeType<T>;
+    /**
+     * Optional on {@link SerializedLexicalNode} because parsing ignores it, but
+     * always present here: `exportJSON` writes it so the output remains
+     * readable by older versions.
+     */
+    version: number;
   } & NodeStateJSON<T>
 >;
 

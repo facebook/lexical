@@ -474,7 +474,8 @@ export interface BaseSerializedNode {
    */
   $slots?: Record<string, BaseSerializedNode>;
   type: string;
-  version: number;
+  /** @deprecated Ignored when parsing; see {@link SerializedLexicalNode.version}. */
+  version?: number;
 }
 
 function exportNodeToJSON<T extends LexicalNode>(node: T): BaseSerializedNode {

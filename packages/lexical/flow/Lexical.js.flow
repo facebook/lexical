@@ -1382,7 +1382,7 @@ declare export function createRefCountedRegistry<Key, Options = void>(
 type InternalSerializedNode = {
   children?: InternalSerializedNode[],
   type: string,
-  version: number,
+  version?: number,
 };
 
 declare export function $parseSerializedNode(
@@ -1395,7 +1395,9 @@ declare export function $applyNodeReplacement<N extends LexicalNode>(
 
 export type SerializedLexicalNode = {
   type: string,
-  version: number,
+  // Deprecated: ignored when parsing, written by exportJSON for backwards
+  // compatible output.
+  version?: number,
   ...
 };
 

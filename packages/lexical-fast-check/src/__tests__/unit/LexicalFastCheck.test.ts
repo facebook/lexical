@@ -189,7 +189,6 @@ describe('@lexical/fast-check', () => {
           const once = importExport(klass, {
             ...props,
             type,
-            version: 1,
           } as SerializedLexicalNode);
           // export ∘ import is a fixed point: re-importing what we exported and
           // exporting again yields the same JSON (tolerant of default-omission).
@@ -218,18 +217,18 @@ describe('@lexical/fast-check', () => {
   });
 
   test('compact TextNode JSON imports and exports with valid defaults', () => {
-    // Every node-specific property omitted: each must come back as its
+    // Every node-specific property omitted — including `version`, which is
+    // deprecated: nothing reads it on the way in, and exportJSON always writes
+    // it for backwards-compatible output. Each property must come back as its
     // schema default rather than undefined.
-    const exported = importExport(TextNode, {
-      type: 'text',
-      version: 1,
-    } as SerializedLexicalNode);
+    const exported = importExport(TextNode, {type: 'text'});
     expect(exported).toMatchObject({
       detail: 0,
       format: 0,
       mode: 'normal',
       style: '',
       text: '',
+      version: 1,
     });
   });
 
@@ -237,7 +236,6 @@ describe('@lexical/fast-check', () => {
     const exported = importExport(TextNode, {
       text: 'hello',
       type: 'text',
-      version: 1,
     } as SerializedLexicalNode);
     expect(exported).toMatchObject({
       detail: 0,
@@ -261,7 +259,6 @@ describe('@lexical/fast-check', () => {
         const exported = importExport(TextNode, {
           ...props,
           type: 'text',
-          version: 1,
         } as SerializedLexicalNode);
         // parsing never throws and always lands inside each property's domain
         expect(typeof exported.text).toBe('string');

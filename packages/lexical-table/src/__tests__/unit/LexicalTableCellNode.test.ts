@@ -47,7 +47,6 @@ describe('LexicalTableCellNode tests', () => {
           headerState: TableCellHeaderStates.NO_STATUS,
           rowSpan: -3,
           type: 'tablecell',
-          version: 1,
           verticalAlign: 'nonsense',
           width: 0,
         } as unknown as SerializedTableCellNode;

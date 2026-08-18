@@ -395,7 +395,8 @@ type InternalSerializedNode = {
   children?: InternalSerializedNode[];
   $slots?: Record<string, InternalSerializedNode>;
   type: string;
-  version: number;
+  /** @deprecated Ignored when parsing; see {@link SerializedLexicalNode.version}. */
+  version?: number;
 };
 
 /** Deserializes a SerializedLexicalNode JSON object into its corresponding LexicalNode instance. */

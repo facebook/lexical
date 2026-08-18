@@ -258,14 +258,17 @@ export {
   enumValue,
   nullable,
   numberValue,
+  type NumberValueOptions,
   objectValue,
   optional,
   type Parse,
+  rawValue,
   type SerializationSchema,
   type SerializationSchemaFields,
   type SerializationSchemaMeta,
   type SerializationSchemaShape,
   stringValue,
+  unionValue,
   withSetter,
 } from './LexicalSchema';
 export type {

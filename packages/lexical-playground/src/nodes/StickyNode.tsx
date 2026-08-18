@@ -27,10 +27,10 @@ import {
   type LexicalEditor,
   type LexicalEditorWithDispose,
   type LexicalNode,
-  type LexicalUpdateJSON,
   type NodeKey,
   numberValue,
   objectValue,
+  rawValue,
   type SerializedEditor,
   type SerializedLexicalNode,
   type SerializedPartial,
@@ -47,6 +47,7 @@ const StickyComponent = React.lazy(() => import('./StickyComponent'));
 type StickyNoteColor = 'pink' | 'yellow';
 
 const stickyNodeSchema = objectValue({
+  caption: rawValue<SerializedEditor>(),
   color: enumValue(['yellow', 'pink']),
   xOffset: numberValue(),
   yOffset: numberValue(),
@@ -114,19 +115,23 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     );
   }
 
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedStickyNode>>,
-  ): this {
-    const stickyNode = super.updateFromJSON(serializedNode);
-    const caption = serializedNode.caption;
+  /**
+   * Apply a serialized nested caption editor. The nested editor's own
+   * `parseEditorState` owns validation of the payload, which is why the `json`
+   * schema declares the property with {@link rawValue} rather than describing
+   * its shape. An empty parsed state is ignored so it does not clobber the
+   * caption the node was created with.
+   */
+  setCaption(caption: SerializedEditor | undefined): this {
+    const self = this.getWritable();
     if (caption) {
-      const nestedEditor = stickyNode.__caption;
+      const nestedEditor = self.__caption;
       const editorState = nestedEditor.parseEditorState(caption.editorState);
       if (!editorState.isEmpty()) {
         nestedEditor.setEditorState(editorState);
       }
     }
-    return stickyNode;
+    return self;
   }
 
   constructor(

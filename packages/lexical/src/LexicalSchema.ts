@@ -26,13 +26,41 @@ export type Parse<T> = (value: unknown) => T;
  */
 export type SerializationSchemaMeta =
   | {readonly kind: 'string'}
-  | {readonly kind: 'number'}
+  | {
+      readonly kind: 'number';
+      /** The inclusive lower bound of the domain, when constrained. */
+      readonly min?: number;
+      /** The inclusive upper bound of the domain, when constrained. */
+      readonly max?: number;
+      /** Whether the domain is restricted to integers. */
+      readonly integer?: boolean;
+    }
   | {readonly kind: 'boolean'}
   | {readonly kind: 'enum'; readonly values: readonly unknown[]}
   | {readonly kind: 'array'; readonly item: AnySerializationSchema}
   | {readonly kind: 'nullable'; readonly inner: AnySerializationSchema}
-  | {readonly kind: 'optional'; readonly inner: AnySerializationSchema}
+  | {
+      readonly kind: 'optional';
+      readonly inner: AnySerializationSchema;
+      /** Whether a value equal to `inner`'s default is treated as absent. */
+      readonly omitDefault?: boolean;
+    }
+  | {
+      readonly kind: 'union';
+      readonly members: readonly AnySerializationSchema[];
+    }
+  | {readonly kind: 'raw'}
   | {readonly kind: 'object'; readonly fields: SerializationSchemaFields};
+
+/** Domain constraints for {@link numberValue}. */
+export interface NumberValueOptions {
+  /** Reject values below this bound (inclusive). */
+  readonly min?: number;
+  /** Reject values above this bound (inclusive). */
+  readonly max?: number;
+  /** Reject values that are not integers. */
+  readonly integer?: boolean;
+}
 
 /**
  * A `SerializationSchema` is a {@link Parse} (so it can be called directly to coerce a value
@@ -104,13 +132,21 @@ export function stringValue(defaultValue = ''): SerializationSchema<string> {
  * `-Infinity` are all treated as out of domain since they can not be
  * round-tripped through JSON.
  */
-export function numberValue(defaultValue = 0): SerializationSchema<number> {
+export function numberValue(
+  defaultValue = 0,
+  options: NumberValueOptions = {},
+): SerializationSchema<number> {
+  const {min, max, integer} = options;
   return makeSchema(
     value =>
-      typeof value === 'number' && Number.isFinite(value)
+      typeof value === 'number' &&
+      Number.isFinite(value) &&
+      (min === undefined || value >= min) &&
+      (max === undefined || value <= max) &&
+      (!integer || Number.isInteger(value))
         ? value
         : defaultValue,
-    {kind: 'number'},
+    {integer, kind: 'number', max, min},
   );
 }
 
@@ -187,20 +223,93 @@ export function nullable<T>(
  * that may be absent and, when absent, should stay absent (an exported `T |
  * undefined` property is omitted from the JSON rather than persisted).
  *
+ * Pass `{omitDefault: true}` when an in-band value equal to `inner`'s default
+ * means "absent" rather than "explicitly this value" — the historical
+ * `serializedNode.width || undefined` idiom, where a falsy `0` is not a real
+ * width. Such a value (and any out-of-domain input, which `inner` coerces to
+ * its default) yields `undefined`, so it is omitted from the exported JSON
+ * instead of being persisted as the default.
+ *
  * @example
  * ```ts
  * const parseWidth = optional(numberValue());
  * //    ^? SerializationSchema<number | undefined>
  * parseWidth(120);       // 120
  * parseWidth(undefined); // undefined (the recoverable default)
+ *
+ * const parseCellWidth = optional(numberValue(), {omitDefault: true});
+ * parseCellWidth(0);     // undefined (0 is not a real width)
+ * parseCellWidth('x');   // undefined (coerced to the default, then omitted)
  * ```
  */
 export function optional<T>(
   inner: SerializationSchema<T>,
+  options: {readonly omitDefault?: boolean} = {},
 ): SerializationSchema<T | undefined> {
-  return makeSchema(value => (value === undefined ? undefined : inner(value)), {
-    inner,
-    kind: 'optional',
+  const {omitDefault} = options;
+  return makeSchema(
+    value => {
+      if (value === undefined) {
+        return undefined;
+      }
+      const parsed = inner(value);
+      return omitDefault && parsed === inner.defaultValue ? undefined : parsed;
+    },
+    {inner, kind: 'optional', omitDefault},
+  );
+}
+
+/**
+ * Combinator for a value whose domain is the union of several schemas, such as
+ * a dimension that is either a number or the literal `'inherit'`.
+ *
+ * A {@link SerializationSchema} is total — it always returns a value — so a
+ * member is considered to accept `value` when parsing leaves it unchanged
+ * (`member(value) === value`). The first accepting member wins; if none does,
+ * the result is `defaultValue` when given, otherwise the first member's
+ * default. Membership is therefore decided by identity, which suits unions of
+ * primitives (the case this exists for) but not unions of object shapes.
+ *
+ * @example
+ * ```ts
+ * const parseDimension = unionValue([numberValue(), enumValue(['inherit'])], 'inherit');
+ * //    ^? SerializationSchema<number | 'inherit'>
+ * parseDimension(640);       // 640
+ * parseDimension('inherit'); // 'inherit'
+ * parseDimension('banana');  // 'inherit' (no member accepts it)
+ * ```
+ */
+export function unionValue<const T>(
+  members: readonly SerializationSchema<T>[],
+  defaultValue: T = members[0].defaultValue,
+): SerializationSchema<T> {
+  return makeSchema(
+    value => {
+      for (let i = 0; i < members.length; i++) {
+        if (members[i](value) === value) {
+          return value as T;
+        }
+      }
+      return defaultValue;
+    },
+    {kind: 'union', members: members as readonly AnySerializationSchema[]},
+  );
+}
+
+/**
+ * Build a {@link SerializationSchema} for a value this schema deliberately does not
+ * validate, because something else owns its domain — the motivating case is a
+ * nested {@link SerializedEditor}, which the nested editor's own
+ * `parseEditorState` validates when the property is applied.
+ *
+ * The value is passed through unchanged and `undefined` is the recoverable
+ * default, so declaring the property still routes it through the node's setter
+ * (and keeps it visible to schema-walking tooling) without pretending to
+ * validate its contents.
+ */
+export function rawValue<T>(): SerializationSchema<T | undefined> {
+  return makeSchema(value => (value === undefined ? undefined : (value as T)), {
+    kind: 'raw',
   });
 }
 

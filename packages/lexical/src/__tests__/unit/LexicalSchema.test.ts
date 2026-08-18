@@ -17,9 +17,11 @@ import {
   numberValue,
   objectValue,
   optional,
+  rawValue,
   type SerializedPartial,
   type SerializedTextNode,
   stringValue,
+  unionValue,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
@@ -247,6 +249,90 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
         expect(textNodes[0].getMode()).toBe('normal');
         expect(textNodes[0].getStyle()).toBe('');
       });
+    });
+  });
+
+  describe('numberValue domain options', () => {
+    test('min rejects values below the bound', () => {
+      const span = numberValue(1, {min: 1});
+      expect(span(3)).toBe(3);
+      expect(span(0)).toBe(1);
+      expect(span(-4)).toBe(1);
+      expect(span(undefined)).toBe(1);
+      expect(span.defaultValue).toBe(1);
+    });
+    test('integer rejects fractional values', () => {
+      const span = numberValue(1, {integer: true, min: 1});
+      expect(span(2)).toBe(2);
+      expect(span(2.5)).toBe(1);
+    });
+    test('max rejects values above the bound', () => {
+      const pct = numberValue(0, {max: 100, min: 0});
+      expect(pct(100)).toBe(100);
+      expect(pct(101)).toBe(0);
+    });
+    test('the domain is recorded on meta', () => {
+      expect(numberValue(1, {integer: true, min: 1}).meta).toEqual({
+        integer: true,
+        kind: 'number',
+        max: undefined,
+        min: 1,
+      });
+    });
+  });
+
+  describe('optional({omitDefault})', () => {
+    test('treats a default-valued input as absent', () => {
+      const width = optional(numberValue(), {omitDefault: true});
+      expect(width(120)).toBe(120);
+      expect(width(0)).toBeUndefined();
+      expect(width('nonsense')).toBeUndefined();
+      expect(width(undefined)).toBeUndefined();
+      expect(width.defaultValue).toBeUndefined();
+    });
+    test('matches the `value || undefined` idiom it replaces', () => {
+      const width = optional(numberValue(), {omitDefault: true});
+      for (const value of [0, 120, -3, undefined]) {
+        expect(width(value)).toBe((value as number) || undefined);
+      }
+    });
+    test('without the option a default-valued input is kept', () => {
+      expect(optional(numberValue())(0)).toBe(0);
+    });
+  });
+
+  describe('unionValue', () => {
+    const dimension = unionValue<number | 'inherit'>(
+      [numberValue(), enumValue(['inherit'])],
+      'inherit',
+    );
+    test('accepts a value from either member', () => {
+      expect(dimension(640)).toBe(640);
+      expect(dimension('inherit')).toBe('inherit');
+    });
+    test('falls back when no member accepts the value', () => {
+      expect(dimension('banana')).toBe('inherit');
+      expect(dimension(undefined)).toBe('inherit');
+      expect(dimension.defaultValue).toBe('inherit');
+    });
+    test('defaults to the first member default when none is given', () => {
+      expect(
+        unionValue<number | 'x'>([numberValue(7), enumValue(['x'])])(null),
+      ).toBe(7);
+    });
+    test('records its members on meta', () => {
+      expect(dimension.meta.kind).toBe('union');
+    });
+  });
+
+  describe('rawValue', () => {
+    test('passes an unvalidated value through', () => {
+      const raw = rawValue<{editorState: unknown}>();
+      const value = {editorState: {root: {}}};
+      expect(raw(value)).toBe(value);
+      expect(raw(undefined)).toBeUndefined();
+      expect(raw.defaultValue).toBeUndefined();
+      expect(raw.meta.kind).toBe('raw');
     });
   });
 });

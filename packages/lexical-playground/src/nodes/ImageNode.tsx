@@ -36,12 +36,12 @@ import {
   type EditorConfig,
   type LexicalEditorWithDispose,
   type LexicalNode,
-  type LexicalUpdateJSON,
   type NodeKey,
   numberValue,
   objectValue,
   optional,
   type RangeSelection,
+  rawValue,
   type SerializedEditor,
   type SerializedLexicalNode,
   type SerializedPartial,
@@ -133,6 +133,7 @@ export type SerializedImageNode = Spread<
 
 const imageNodeSchema = objectValue({
   altText: stringValue(),
+  caption: rawValue<SerializedEditor>(),
   height: optional(numberValue()),
   maxWidth: optional(numberValue()),
   showCaption: booleanValue(),
@@ -187,20 +188,23 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     }).updateFromJSON(serializedNode);
   }
 
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedImageNode>>,
-  ): this {
-    const node = super.updateFromJSON(serializedNode);
-    const {caption} = serializedNode;
-
+  /**
+   * Apply a serialized nested caption editor. The nested editor's own
+   * `parseEditorState` owns validation of the payload, which is why the `json`
+   * schema declares the property with {@link rawValue} rather than describing
+   * its shape. An empty parsed state is ignored so it does not clobber the
+   * caption the node was created with.
+   */
+  setCaption(caption: SerializedEditor | undefined): this {
+    const self = this.getWritable();
     if (caption) {
-      const nestedEditor = node.__caption;
+      const nestedEditor = self.__caption;
       const editorState = nestedEditor.parseEditorState(caption.editorState);
       if (!editorState.isEmpty()) {
         nestedEditor.setEditorState(editorState);
       }
     }
-    return node;
+    return self;
   }
 
   exportDOM(): DOMExportOutput {

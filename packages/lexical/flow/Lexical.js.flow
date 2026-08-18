@@ -1797,16 +1797,37 @@ export type SerializationSchemaMeta = {
   readonly inner?: AnySerializationSchema,
   readonly item?: AnySerializationSchema,
   readonly fields?: SerializationSchemaFields,
+  readonly members?: ReadonlyArray<AnySerializationSchema>,
+  readonly min?: number,
+  readonly max?: number,
+  readonly integer?: boolean,
+  readonly omitDefault?: boolean,
+};
+export type NumberValueOptions = {
+  readonly min?: number,
+  readonly max?: number,
+  readonly integer?: boolean,
 };
 declare export function stringValue(defaultValue?: string): SerializationSchema<string>;
-declare export function numberValue(defaultValue?: number): SerializationSchema<number>;
+declare export function numberValue(
+  defaultValue?: number,
+  options?: NumberValueOptions,
+): SerializationSchema<number>;
 declare export function booleanValue(defaultValue?: boolean): SerializationSchema<boolean>;
 declare export function enumValue<T>(
   values: ReadonlyArray<T>,
   defaultValue?: T,
 ): SerializationSchema<T>;
 declare export function nullable<T>(inner: SerializationSchema<T>): SerializationSchema<T | null>;
-declare export function optional<T>(inner: SerializationSchema<T>): SerializationSchema<T | void>;
+declare export function optional<T>(
+  inner: SerializationSchema<T>,
+  options?: {readonly omitDefault?: boolean},
+): SerializationSchema<T | void>;
+declare export function unionValue<T>(
+  members: ReadonlyArray<SerializationSchema<T>>,
+  defaultValue?: T,
+): SerializationSchema<T>;
+declare export function rawValue<T>(): SerializationSchema<T | void>;
 declare export function arrayValue<T>(item: SerializationSchema<T>): SerializationSchema<T[]>;
 declare export function objectValue<T>(fields: SerializationSchemaShape<T>): SerializationSchema<T>;
 declare export function withSetter<T>(

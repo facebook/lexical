@@ -13,14 +13,17 @@ import {
   DecoratorNode,
   type DOMExportOutput,
   type EditorConfig,
+  enumValue,
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
+  numberValue,
   objectValue,
   type SerializedLexicalNode,
   type SerializedPartial,
   type Spread,
   stringValue,
+  unionValue,
 } from 'lexical';
 import * as React from 'react';
 
@@ -28,8 +31,21 @@ type Dimension = number | 'inherit';
 
 const ExcalidrawComponent = React.lazy(() => import('./ExcalidrawComponent'));
 
+/**
+ * `Dimension` is `number | 'inherit'`, so width/height are described with
+ * {@link unionValue}. This also closes a hole in the previous
+ * `serializedNode.width ?? 'inherit'` parsing, which stored any non-nullish
+ * value (including a string like `'banana'`) verbatim.
+ */
+const dimensionSchema = unionValue<Dimension>(
+  [numberValue(), enumValue(['inherit'])],
+  'inherit',
+);
+
 const excalidrawNodeSchema = objectValue({
   data: stringValue(),
+  height: dimensionSchema,
+  width: dimensionSchema,
 });
 
 export type SerializedExcalidrawNode = Spread<
@@ -67,11 +83,7 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     serializedNode: SerializedPartial<SerializedExcalidrawNode>,
   ): ExcalidrawNode {
     const {data} = excalidrawNodeSchema(serializedNode);
-    return new ExcalidrawNode(
-      data,
-      serializedNode.width ?? 'inherit',
-      serializedNode.height ?? 'inherit',
-    ).updateFromJSON(serializedNode);
+    return new ExcalidrawNode(data).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedExcalidrawNode {

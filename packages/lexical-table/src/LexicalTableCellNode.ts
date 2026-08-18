@@ -19,19 +19,20 @@ import {
   type DOMExportOutput,
   type EditorConfig,
   ElementNode,
+  enumValue,
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
   type NodeKey,
   nullable,
   numberValue,
   objectValue,
+  optional,
   type ParagraphNode,
   type SerializedElementNode,
-  type SerializedPartial,
   type Spread,
   stringValue,
+  withSetter,
 } from 'lexical';
 
 import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
@@ -48,7 +49,24 @@ export type TableCellHeaderState =
 
 const tableCellNodeSchema = objectValue({
   backgroundColor: nullable(stringValue()),
-  headerState: numberValue(TableCellHeaderStates.NO_STATUS),
+  // A span is a positive integer; 0 (the historical `|| 1` case), a negative,
+  // or a fractional span is out of domain and falls back to 1.
+  colSpan: numberValue(1, {integer: true, min: 1}),
+  // headerState is applied through setHeaderStyles (with its default BOTH
+  // mask) rather than the conventional set<Prop> name.
+  headerState: withSetter(
+    numberValue(TableCellHeaderStates.NO_STATUS),
+    'setHeaderStyles',
+  ),
+  rowSpan: numberValue(1, {integer: true, min: 1}),
+  // The domain exportJSON already enforces via isValidVerticalAlign; anything
+  // else (including the historical falsy `|| undefined` case) is absent.
+  // `undefined` leads the list so it is the default: passing it explicitly as
+  // enumValue's second argument would instead select values[0].
+  verticalAlign: enumValue([undefined, 'middle', 'bottom']),
+  // A width of 0 is not a real width, matching the historical
+  // `serializedNode.width || undefined`.
+  width: optional(numberValue(), {omitDefault: true}),
 });
 
 export type SerializedTableCellNode = Spread<
@@ -103,28 +121,6 @@ export class TableCellNode extends ElementNode {
     this.__colSpan = node.__colSpan;
     this.__headerState = node.__headerState;
     this.__width = node.__width;
-  }
-
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<
-      SerializedPartial<SerializedTableCellNode>
-    >,
-  ): this {
-    const {headerState, backgroundColor} = tableCellNodeSchema(serializedNode);
-    return (
-      super
-        .updateFromJSON(serializedNode)
-        .setHeaderStyles(headerState)
-        // colSpan/rowSpan keep their `|| 1` semantics (0 -> 1), which a
-        // numberValue schema would not preserve (it lets 0 through).
-        .setColSpan(serializedNode.colSpan || 1)
-        .setRowSpan(serializedNode.rowSpan || 1)
-        // width/verticalAlign keep their `|| undefined` semantics (falsy, e.g.
-        // 0 or '', collapses to undefined), which optional(...) would not do.
-        .setWidth(serializedNode.width || undefined)
-        .setBackgroundColor(backgroundColor)
-        .setVerticalAlign(serializedNode.verticalAlign || undefined)
-    );
   }
 
   constructor(

@@ -144,8 +144,12 @@ function metaArbitrary(meta: SerializationSchemaMeta): fc.Arbitrary<unknown> {
   switch (meta.kind) {
     case 'string':
       return fc.string();
-    case 'number':
-      return fc.integer();
+    case 'number': {
+      const {min, max, integer} = meta;
+      return integer
+        ? fc.integer({max, min})
+        : fc.double({max, min, noDefaultInfinity: true, noNaN: true});
+    }
     case 'boolean':
       return fc.boolean();
     case 'enum':
@@ -156,6 +160,14 @@ function metaArbitrary(meta: SerializationSchemaMeta): fc.Arbitrary<unknown> {
       return fc.option(metaArbitrary(meta.inner.meta), {nil: null});
     case 'optional':
       return fc.option(metaArbitrary(meta.inner.meta), {nil: undefined});
+    case 'union':
+      return fc.oneof(
+        ...meta.members.map(member => metaArbitrary(member.meta)),
+      );
+    case 'raw':
+      // The schema deliberately does not describe this value's domain (its
+      // owner validates it), so there is nothing to generate from.
+      return fc.constant(undefined);
     case 'object': {
       const fields: {[key: string]: fc.Arbitrary<unknown>} = {};
       for (const key of Object.keys(meta.fields)) {

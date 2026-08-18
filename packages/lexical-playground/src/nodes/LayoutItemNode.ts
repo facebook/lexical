@@ -6,7 +6,12 @@
  *
  */
 
-import type {EditorConfig, LexicalNode, SerializedElementNode} from 'lexical';
+import type {
+  EditorConfig,
+  LexicalNode,
+  SerializedElementNode,
+  SerializedPartial,
+} from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
 import {$isParagraphNode, ElementNode} from 'lexical';
@@ -55,7 +60,9 @@ export class LayoutItemNode extends ElementNode {
     return false;
   }
 
-  static importJSON(serializedNode: SerializedLayoutItemNode): LayoutItemNode {
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedLayoutItemNode>,
+  ): LayoutItemNode {
     return $createLayoutItemNode().updateFromJSON(serializedNode);
   }
 

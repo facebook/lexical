@@ -6,7 +6,12 @@
  *
  */
 
-import type {DOMConversionMap, DOMConversionOutput, NodeKey} from 'lexical';
+import type {
+  DOMConversionMap,
+  DOMConversionOutput,
+  NodeKey,
+  SerializedPartial,
+} from 'lexical';
 import type {JSX} from 'react';
 
 import {
@@ -22,11 +27,7 @@ import {
   mergeRegister,
   removeClassNamesFromElement,
 } from '@lexical/utils';
-import {
-  $applyNodeReplacement,
-  CLICK_COMMAND,
-  COMMAND_PRIORITY_LOW,
-} from 'lexical';
+import {$create, CLICK_COMMAND, COMMAND_PRIORITY_LOW} from 'lexical';
 import * as React from 'react';
 import {useEffect} from 'react';
 
@@ -92,7 +93,7 @@ export class HorizontalRuleNode extends BaseHorizontalRuleNode {
   }
 
   static importJSON(
-    serializedNode: SerializedHorizontalRuleNode,
+    serializedNode: SerializedPartial<SerializedHorizontalRuleNode>,
   ): HorizontalRuleNode {
     return $createHorizontalRuleNode().updateFromJSON(serializedNode);
   }
@@ -119,5 +120,5 @@ function $convertHorizontalRuleElement(): DOMConversionOutput {
  * @deprecated A pure Lexical implementation is available in `@lexical/extension` as HorizontalRuleExtension
  */
 export function $createHorizontalRuleNode(): HorizontalRuleNode {
-  return $applyNodeReplacement(new HorizontalRuleNode());
+  return $create(HorizontalRuleNode);
 }

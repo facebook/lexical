@@ -19,6 +19,7 @@ import {
   Spread,
   StateConfigValue,
   type StateValueOrUpdater,
+  stringValue,
 } from 'lexical';
 import * as React from 'react';
 
@@ -85,9 +86,7 @@ function parseOptions(json: unknown): Options {
   return options;
 }
 
-const questionState = createState('question', {
-  parse: v => (typeof v === 'string' ? v : ''),
-});
+const questionState = createState('question', {parse: stringValue()});
 const optionsState = createState('options', {
   isEqual: (a, b) =>
     a.length === b.length && JSON.stringify(a) === JSON.stringify(b),

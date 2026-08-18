@@ -14,7 +14,6 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
-  LexicalUpdateJSON,
   NodeKey,
   ParagraphNode,
   RangeSelection,
@@ -37,7 +36,11 @@ import {
   addClassNamesToElement,
   ElementNode,
   isHTMLElement,
+  nullable,
+  objectValue,
+  optional,
   setDOMStyleFromCSS,
+  stringValue,
 } from 'lexical';
 
 import {
@@ -54,6 +57,16 @@ export type SerializedCodeNode = Spread<
   },
   SerializedElementNode
 >;
+
+/**
+ * The schema for the node-specific properties of a {@link SerializedCodeNode}
+ * (those it adds over a {@link SerializedElementNode}). It is the single source
+ * of truth for parsing those properties — see {@link CodeNode.updateFromJSON}.
+ */
+export const codeNodeSchema = objectValue({
+  language: optional(nullable(stringValue())),
+  theme: optional(stringValue()),
+});
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
 /** @internal Configurable through the extensions. */
@@ -88,15 +101,7 @@ export class CodeNode extends ElementNode {
   /** @internal */
   __isSyntaxHighlightSupported: boolean;
 
-  static getType(): string {
-    return 'code';
-  }
-
-  static clone(node: CodeNode): CodeNode {
-    return new CodeNode(node.__language, node.__key);
-  }
-
-  constructor(language?: string | null | undefined, key?: NodeKey) {
+  constructor(language: string | null | undefined = undefined, key?: NodeKey) {
     super(key);
     this.__language = language || undefined;
     this.__isSyntaxHighlightSupported = false;
@@ -274,15 +279,8 @@ export class CodeNode extends ElementNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedCodeNode): CodeNode {
-    return $createCodeNode().updateFromJSON(serializedNode);
-  }
-
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedCodeNode>): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setLanguage(serializedNode.language)
-      .setTheme(serializedNode.theme);
+  $config() {
+    return this.config('code', {json: codeNodeSchema});
   }
 
   exportJSON(): SerializedCodeNode {

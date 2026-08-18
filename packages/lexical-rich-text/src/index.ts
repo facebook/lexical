@@ -16,13 +16,13 @@ import type {
   LexicalCommand,
   LexicalEditor,
   LexicalNode,
-  LexicalUpdateJSON,
   NodeKey,
   NodeSelection,
   ParagraphNode,
   PasteCommandType,
   RangeSelection,
   SerializedElementNode,
+  SerializedPartial,
   Spread,
   TextFormatType,
 } from 'lexical';
@@ -52,8 +52,8 @@ import {
   objectKlassEquals,
 } from '@lexical/utils';
 import {
-  $applyNodeReplacement,
   $comparePointCaretNext,
+  $create,
   $createParagraphNode,
   $createRangeSelection,
   $createTabNode,
@@ -88,6 +88,7 @@ import {
   DRAGSTART_COMMAND,
   DROP_COMMAND,
   ElementNode,
+  enumValue,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   INDENT_CONTENT_COMMAND,
@@ -111,6 +112,7 @@ import {
   KEY_TAB_COMMAND,
   MOVE_TO_END,
   MOVE_TO_START,
+  objectValue,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
   PASTE_TAG,
@@ -186,7 +188,9 @@ export class QuoteNode extends ElementNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedQuoteNode): QuoteNode {
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedQuoteNode>,
+  ): QuoteNode {
     return $createQuoteNode().updateFromJSON(serializedNode);
   }
 
@@ -214,7 +218,7 @@ export class QuoteNode extends ElementNode {
 }
 
 export function $createQuoteNode(): QuoteNode {
-  return $applyNodeReplacement(new QuoteNode());
+  return $create(QuoteNode);
 }
 
 export function $isQuoteNode(
@@ -225,18 +229,19 @@ export function $isQuoteNode(
 
 export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
+/**
+ * The schema for the node-specific properties of a {@link SerializedHeadingNode}
+ * (those it adds over a {@link SerializedElementNode}). It is the single source
+ * of truth for parsing those properties — see {@link HeadingNode.updateFromJSON}.
+ */
+export const headingNodeSchema = objectValue({
+  tag: enumValue(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']),
+});
+
 /** @noInheritDoc */
 export class HeadingNode extends ElementNode {
   /** @internal */
   __tag: HeadingTagType;
-
-  static getType(): string {
-    return 'heading';
-  }
-
-  static clone(node: HeadingNode): HeadingNode {
-    return new HeadingNode(node.__tag, node.__key);
-  }
 
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
@@ -354,16 +359,8 @@ export class HeadingNode extends ElementNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedHeadingNode): HeadingNode {
-    return $createHeadingNode(serializedNode.tag).updateFromJSON(
-      serializedNode,
-    );
-  }
-
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedHeadingNode>,
-  ): this {
-    return super.updateFromJSON(serializedNode).setTag(serializedNode.tag);
+  $config() {
+    return this.config('heading', {json: headingNodeSchema});
   }
 
   exportJSON(): SerializedHeadingNode {
@@ -452,7 +449,7 @@ function $convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
 export function $createHeadingNode(
   headingTag: HeadingTagType = 'h1',
 ): HeadingNode {
-  return $applyNodeReplacement(new HeadingNode(headingTag));
+  return $create(HeadingNode).setTag(headingTag);
 }
 
 export function $isHeadingNode(

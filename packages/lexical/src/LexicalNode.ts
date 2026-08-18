@@ -38,6 +38,7 @@ import {
   type RequiredNodeStateConfig,
 } from './LexicalNodeState';
 import {CACHED_TEXT_SIZE_KEY} from './LexicalReconciler';
+import {type AnySerializationSchema} from './LexicalSchema';
 import {
   $getSelection,
   $isNodeSelection,
@@ -52,6 +53,7 @@ import {
   getActiveEditorState,
 } from './LexicalUpdates';
 import {
+  $applyJSONSetters,
   $cloneWithProperties,
   $getCompositionKey,
   $getNodeByKey,
@@ -165,14 +167,40 @@ export interface StaticNodeConfigValue<
    * types for your node class might be missing some of that.
    */
   readonly extends?: Klass<LexicalNode>;
+  /**
+   * EXPERIMENTAL
+   *
+   * A {@link SerializationSchema} describing this node's serialized JSON (the
+   * node-specific properties it adds over its parent's, not including
+   * `type`/`version`/`children` or node state). When provided it is the single
+   * source of truth for parsing those properties — a node's `updateFromJSON`
+   * can apply it — and, because the schema is introspectable, tooling such as
+   * `@lexical/fast-check` can use it to generate example serializations.
+   *
+   * It is named `json` rather than `schema` to avoid ambiguity with other kinds
+   * of node schema (e.g. a schema of allowed children).
+   */
+  readonly json?: AnySerializationSchema;
 }
 
 /**
  * This is the type of LexicalNode.$config() that can be
  * overridden by subclasses.
+ *
+ * Concrete nodes are keyed by their string `type`. An abstract base class
+ * (such as ElementNode or DecoratorNode) may also declare configuration it
+ * shares with its concrete subclasses — for example a serialized-JSON
+ * {@link SerializationSchema} — under a well-known symbol key, by convention
+ * `Symbol.for(<NodeClassName>)` (e.g. `Symbol.for('ElementNode')`). The
+ * descriptive, globally-registered symbol keeps the config easy to find in a
+ * debugger or dev tools and can never collide with a real node `type`.
  */
 export type BaseStaticNodeConfig = {
   readonly [K in string]?: StaticNodeConfigValue<LexicalNode, string>;
+} & {
+  readonly [key: symbol]:
+    | StaticNodeConfigValue<LexicalNode, string>
+    | undefined;
 };
 
 /**
@@ -241,6 +269,21 @@ export type LexicalUpdateJSON<T extends SerializedLexicalNode> = Omit<
   T,
   'children' | 'type' | 'version'
 >;
+
+/**
+ * The serialized form of a node as accepted by the parsing methods
+ * ({@link LexicalNode.importJSON} and {@link LexicalNode.updateFromJSON}).
+ *
+ * The base `SerializedLexicalNode` identity (`type`, `version`, and the node
+ * state key) is preserved, but every node-specific property is made optional
+ * via `Partial`. Parsing is generally untrusted and must tolerate missing or
+ * out-of-domain values, so implementations are expected to substitute sensible
+ * defaults — see the {@link Parse} helpers such as {@link stringValue},
+ * {@link numberValue}, and {@link enumValue}. This also enables a "compact"
+ * serialization variant in which any property left at its default is omitted.
+ */
+export type SerializedPartial<T extends SerializedLexicalNode> =
+  SerializedLexicalNode & Partial<T>;
 
 /** @internal */
 export interface LexicalPrivateDOM {
@@ -552,14 +595,28 @@ export class LexicalNode {
    * aids in type inference. See {@link LexicalNode.$config}
    * for example usage.
    */
+  config<Config extends StaticNodeConfigValue<this, string>>(
+    type: symbol,
+    config: Config,
+  ): BaseStaticNodeConfig;
   config<Type extends string, Config extends StaticNodeConfigValue<this, Type>>(
     type: Type,
     config: Config,
-  ): StaticNodeConfigRecord<Type, Config> {
+  ): StaticNodeConfigRecord<Type, Config>;
+  config(
+    type: string | symbol,
+    config: AnyStaticNodeConfigValue,
+  ): BaseStaticNodeConfig {
     const parentKlass =
       config.extends || Object.getPrototypeOf(this.constructor);
-    Object.assign(config, {extends: parentKlass, type});
-    return {[type]: config} as StaticNodeConfigRecord<Type, Config>;
+    Object.assign(config, {extends: parentKlass});
+    // A concrete node records its string `type`; an abstract base class is
+    // keyed by a well-known symbol (e.g. Symbol.for('ElementNode')) and has no
+    // concrete node `type`.
+    if (typeof type === 'string') {
+      Object.assign(config, {type});
+    }
+    return {[type]: config} as BaseStaticNodeConfig;
   }
 
   /**
@@ -1276,7 +1333,10 @@ export class LexicalNode {
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
   ): this {
-    return $updateStateFromJSON(this, serializedNode);
+    return $applyJSONSetters(
+      $updateStateFromJSON(this, serializedNode),
+      serializedNode,
+    );
   }
 
   /**

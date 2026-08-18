@@ -47,8 +47,6 @@ declare export class TableCellNode extends ElementNode {
   __headerState: TableCellHeaderState;
   __width?: number;
   __backgroundColor: null | string;
-  static getType(): string;
-  static clone(node: TableCellNode): TableCellNode;
   constructor(
     headerState?: TableCellHeaderState,
     colSpan?: number,

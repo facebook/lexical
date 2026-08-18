@@ -26,6 +26,7 @@ import {
   DecoratorNode,
   defineExtension,
   FORMAT_TEXT_COMMAND,
+  numberValue,
   TEXT_TYPE_TO_FORMAT,
   toggleTextFormatType,
 } from 'lexical';
@@ -37,9 +38,7 @@ export type SerializedDecoratorTextNode = Spread<
   SerializedLexicalNode
 >;
 
-const formatState = createState('format', {
-  parse: value => (typeof value === 'number' ? value : 0),
-});
+const formatState = createState('format', {parse: numberValue()});
 
 export class DecoratorTextNode extends DecoratorNode<unknown> {
   $config() {

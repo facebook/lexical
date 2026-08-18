@@ -205,6 +205,7 @@ export type {
   NodeKey,
   NodeMap,
   SerializedLexicalNode,
+  SerializedPartial,
   StaticNodeConfig,
   StaticNodeConfigRecord,
   StaticNodeConfigValue,
@@ -227,6 +228,23 @@ export {
   type ValueOrUpdater,
 } from './LexicalNodeState';
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
+export {
+  type AnySerializationSchema,
+  arrayValue,
+  booleanValue,
+  enumValue,
+  nullable,
+  numberValue,
+  objectValue,
+  optional,
+  type Parse,
+  type SerializationSchema,
+  type SerializationSchemaFields,
+  type SerializationSchemaMeta,
+  type SerializationSchemaShape,
+  stringValue,
+  withSetter,
+} from './LexicalSchema';
 export type {
   BaseSelection,
   ElementPointType as ElementPoint,

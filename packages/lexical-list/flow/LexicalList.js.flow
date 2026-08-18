@@ -15,6 +15,7 @@ import type {
   RangeSelection,
   LexicalCommand,
   SerializedElementNode,
+  SerializedPartial,
   LexicalExtension,
   ExtensionConfigBase,
 } from 'lexical';
@@ -67,7 +68,9 @@ declare export class ListItemNode extends ElementNode {
   getChecked(): boolean | void;
   setChecked(boolean): this;
   toggleChecked(): void;
-  static importJSON(serializedNode: SerializedListItemNode): ListItemNode;
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedListItemNode>,
+  ): ListItemNode;
 }
 declare export class ListNode extends ElementNode {
   __tag: ListNodeTagType;
@@ -77,7 +80,9 @@ declare export class ListNode extends ElementNode {
   getTag(): ListNodeTagType;
   getStart(): number;
   getListType(): ListType;
-  static importJSON(serializedNode: SerializedListNode): ListNode;
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedListNode>,
+  ): ListNode;
 }
 declare export function outdentList(): void;
 /** @deprecated use {@link $removeList} from an update or command listener */

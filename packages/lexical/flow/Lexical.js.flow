@@ -709,8 +709,6 @@ declare export class TextNode extends LexicalNode {
   __style: string;
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
-  static getType(): string;
-  static clone(node: $FlowFixMe): TextNode;
   constructor(text: string, key?: NodeKey): void;
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
@@ -753,7 +751,6 @@ declare export class TextNode extends LexicalNode {
   splitText(...splitOffsets: Array<number>): Array<TextNode>;
   mergeWithSibling(target: TextNode): TextNode;
   isTextEntity(): boolean;
-  static importJSON(serializedTextNode: SerializedTextNode): TextNode;
   exportJSON(): SerializedTextNode;
 }
 declare export function $createTextNode(text?: string): TextNode;
@@ -778,7 +775,9 @@ declare export class TabNode extends TextNode {
   static clone(node: TabNode): TabNode;
   constructor(key?: NodeKey): void;
   static importDOM(): DOMConversionMap | null;
-  static importJSON(serializedTabNode: SerializedTabNode): TabNode;
+  static importJSON(
+    serializedTabNode: SerializedPartial<SerializedTabNode>,
+  ): TabNode;
   exportJSON(): SerializedTabNode;
 }
 
@@ -795,7 +794,7 @@ declare export class LineBreakNode extends LexicalNode {
   updateDOM(): false;
   isInline(): true;
   static importJSON(
-    serializedLineBreakNode: SerializedLineBreakNode,
+    serializedLineBreakNode: SerializedPartial<SerializedLineBreakNode>,
   ): LineBreakNode;
   exportJSON(): SerializedLexicalNode;
 }
@@ -988,7 +987,7 @@ declare export class ParagraphNode extends ElementNode {
   ): ParagraphNode;
   collapseAtStart(): boolean;
   static importJSON(
-    serializedParagraphNode: SerializedParagraphNode,
+    serializedParagraphNode: SerializedPartial<SerializedParagraphNode>,
   ): ParagraphNode;
   exportJSON(): SerializedElementNode;
 }
@@ -1093,6 +1092,9 @@ export type SerializedLexicalNode = {
   version: number,
   ...
 };
+
+export type SerializedPartial<T: SerializedLexicalNode> = SerializedLexicalNode &
+  Partial<T>;
 
 export type SerializedTextNode = {
   ...SerializedLexicalNode,
@@ -1456,6 +1458,7 @@ declare export class StateConfig<K extends string, V> {
   readonly isEqual: (a: V, b: V) => boolean;
   readonly defaultValue: V;
   readonly resetOnCopyNode: boolean;
+  readonly schema?: AnySerializationSchema;
   constructor(key: K, stateValueConfig: StateValueConfig<V>): this;
 }
 
@@ -1465,6 +1468,34 @@ export type StateValueConfig<V> = {
   isEqual?: (a: V, b: V) => boolean;
   resetOnCopyNode?: boolean;
 }
+
+export type Parse<T> = (value: unknown) => T;
+export type SerializationSchema<T> = Parse<T>;
+export type AnySerializationSchema = SerializationSchema<unknown>;
+export type SerializationSchemaFields = {+[key: string]: AnySerializationSchema};
+export type SerializationSchemaShape<T> = {+[key: string]: AnySerializationSchema};
+export type SerializationSchemaMeta = {
+  +kind: string,
+  +values?: $ReadOnlyArray<unknown>,
+  +inner?: AnySerializationSchema,
+  +item?: AnySerializationSchema,
+  +fields?: SerializationSchemaFields,
+};
+declare export function stringValue(defaultValue?: string): SerializationSchema<string>;
+declare export function numberValue(defaultValue?: number): SerializationSchema<number>;
+declare export function booleanValue(defaultValue?: boolean): SerializationSchema<boolean>;
+declare export function enumValue<T>(
+  values: $ReadOnlyArray<T>,
+  defaultValue?: T,
+): SerializationSchema<T>;
+declare export function nullable<T>(inner: SerializationSchema<T>): SerializationSchema<T | null>;
+declare export function optional<T>(inner: SerializationSchema<T>): SerializationSchema<T | void>;
+declare export function arrayValue<T>(item: SerializationSchema<T>): SerializationSchema<T[]>;
+declare export function objectValue<T>(fields: SerializationSchemaShape<T>): SerializationSchema<T>;
+declare export function withSetter<T>(
+  schema: SerializationSchema<T>,
+  setter: string,
+): SerializationSchema<T>;
 
 export type UnionToIntersection<T> = (
   // $FlowFixMe[unclear-type]

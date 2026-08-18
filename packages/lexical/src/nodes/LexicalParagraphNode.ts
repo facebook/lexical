@@ -17,6 +17,7 @@ import type {
   DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
+  SerializedPartial,
 } from '../LexicalNode';
 import type {RangeSelection} from '../LexicalSelection';
 import type {
@@ -26,7 +27,7 @@ import type {
 
 import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {
-  $applyNodeReplacement,
+  $create,
   $setDirectionFromDOM,
   $setFormatFromDOM,
   getCachedClassNameArray,
@@ -104,7 +105,9 @@ export class ParagraphNode extends ElementNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedParagraphNode): ParagraphNode {
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedParagraphNode>,
+  ): ParagraphNode {
     return $createParagraphNode().updateFromJSON(serializedNode);
   }
 
@@ -187,7 +190,7 @@ function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
 }
 
 export function $createParagraphNode(): ParagraphNode {
-  return $applyNodeReplacement(new ParagraphNode());
+  return $create(ParagraphNode);
 }
 
 export function $isParagraphNode(

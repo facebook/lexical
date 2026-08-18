@@ -14,10 +14,12 @@ import {
   removeClassNamesFromElement,
 } from '@lexical/utils';
 import {
-  $applyNodeReplacement,
+  $create,
   $getEditor,
   $getNearestNodeFromDOMNode,
+  arrayValue,
   BaseSelection,
+  booleanValue,
   DOMConversionMap,
   DOMConversionOutput,
   DOMExportOutput,
@@ -27,12 +29,16 @@ import {
   ElementNode,
   LexicalEditor,
   LexicalNode,
-  LexicalUpdateJSON,
   NodeKey,
+  numberValue,
+  objectValue,
+  optional,
   SerializedElementNode,
+  SerializedPartial,
   setDOMStyleFromCSS,
   setDOMUnmanaged,
   Spread,
+  withSetter,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
@@ -62,6 +68,13 @@ export type SerializedTableNode = Spread<
   },
   SerializedElementNode
 >;
+
+const tableNodeSchema = objectValue({
+  colWidths: optional(arrayValue(numberValue())),
+  frozenColumnCount: withSetter(numberValue(), 'setFrozenColumns'),
+  frozenRowCount: withSetter(numberValue(), 'setFrozenRows'),
+  rowStriping: booleanValue(),
+});
 
 function updateColgroup(
   dom: HTMLTableElement,
@@ -219,17 +232,14 @@ export class TableNode extends ElementNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedTableNode): TableNode {
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedTableNode>,
+  ): TableNode {
     return $createTableNode().updateFromJSON(serializedNode);
   }
 
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedTableNode>): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setRowStriping(serializedNode.rowStriping || false)
-      .setFrozenColumns(serializedNode.frozenColumnCount || 0)
-      .setFrozenRows(serializedNode.frozenRowCount || 0)
-      .setColWidths(serializedNode.colWidths);
+  $config() {
+    return this.config('table', {json: tableNodeSchema});
   }
 
   constructor(key?: NodeKey) {
@@ -668,7 +678,7 @@ export function $convertTableElement(
 }
 
 export function $createTableNode(): TableNode {
-  return $applyNodeReplacement(new TableNode());
+  return $create(TableNode);
 }
 
 export function $isTableNode(

@@ -9,14 +9,13 @@
 import type {
   ElementFormatType,
   LexicalNode,
-  LexicalUpdateJSON,
   NodeKey,
   SerializedLexicalNode,
   Spread,
 } from 'lexical';
 import type {JSX} from 'react';
 
-import {DecoratorNode} from 'lexical';
+import {DecoratorNode, enumValue, objectValue} from 'lexical';
 
 export type SerializedDecoratorBlockNode = Spread<
   {
@@ -24,6 +23,17 @@ export type SerializedDecoratorBlockNode = Spread<
   },
   SerializedLexicalNode
 >;
+
+/**
+ * The schema for the node-specific properties of a
+ * {@link SerializedDecoratorBlockNode}. DecoratorBlockNode is an abstract base
+ * (it has no concrete node type) so it publishes its schema on `$config` under
+ * the well-known `Symbol.for('DecoratorBlockNode')` key; concrete subclasses
+ * compose it with their own.
+ */
+export const decoratorBlockNodeSchema = objectValue({
+  format: enumValue(['', 'left', 'start', 'center', 'right', 'end', 'justify']),
+});
 
 export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
   __format: ElementFormatType;
@@ -45,12 +55,10 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
     };
   }
 
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedDecoratorBlockNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setFormat(serializedNode.format || '');
+  $config() {
+    return this.config(Symbol.for('DecoratorBlockNode'), {
+      json: decoratorBlockNodeSchema,
+    });
   }
 
   canIndent(): false {

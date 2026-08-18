@@ -13,6 +13,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  SerializedPartial,
   Spread,
 } from 'lexical';
 import type {JSX} from 'react';
@@ -22,7 +23,12 @@ import {
   DecoratorBlockNode,
   SerializedDecoratorBlockNode,
 } from '@lexical/react/LexicalDecoratorBlockNode';
+import {objectValue, stringValue} from 'lexical';
 import * as React from 'react';
+
+const youTubeNodeSchema = objectValue({
+  videoID: stringValue(),
+});
 
 type YouTubeComponentProps = Readonly<{
   className: Readonly<{
@@ -76,10 +82,18 @@ export class YouTubeNode extends DecoratorBlockNode {
     return new YouTubeNode(node.__id, node.__format, node.__key);
   }
 
-  static importJSON(serializedNode: SerializedYouTubeNode): YouTubeNode {
-    return $createYouTubeNode(serializedNode.videoID).updateFromJSON(
-      serializedNode,
-    );
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedYouTubeNode>,
+  ): YouTubeNode {
+    const {videoID} = youTubeNodeSchema(serializedNode);
+    return $createYouTubeNode(videoID).updateFromJSON(serializedNode);
+  }
+
+  $config() {
+    return this.config('youtube', {
+      extends: DecoratorBlockNode,
+      json: youTubeNodeSchema,
+    });
   }
 
   exportJSON(): SerializedYouTubeNode {

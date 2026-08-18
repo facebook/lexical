@@ -9,26 +9,13 @@
 import type {EditorConfig, LexicalNode, SerializedTextNode} from 'lexical';
 
 import {registerLexicalTextEntity} from '@lexical/text';
-import {
-  $applyNodeReplacement,
-  defineExtension,
-  mergeRegister,
-  TextNode,
-} from 'lexical';
+import {$create, defineExtension, mergeRegister, TextNode} from 'lexical';
 
 export type SerializedKeywordNode = SerializedTextNode;
 
 export class KeywordNode extends TextNode {
-  static getType(): string {
-    return 'keyword';
-  }
-
-  static clone(node: KeywordNode): KeywordNode {
-    return new KeywordNode(node.__text, node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedKeywordNode): KeywordNode {
-    return $createKeywordNode().updateFromJSON(serializedNode);
+  $config() {
+    return this.config('keyword', {extends: TextNode});
   }
 
   createDOM(config: EditorConfig): HTMLElement {
@@ -52,7 +39,7 @@ export class KeywordNode extends TextNode {
 }
 
 export function $createKeywordNode(keyword: string = ''): KeywordNode {
-  return $applyNodeReplacement(new KeywordNode(keyword));
+  return $create(KeywordNode).setTextContent(keyword);
 }
 
 export function $isKeywordNode(node: LexicalNode | null | undefined): boolean {

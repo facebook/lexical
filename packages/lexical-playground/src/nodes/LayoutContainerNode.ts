@@ -10,14 +10,14 @@ import type {
   DOMExportOutput,
   EditorConfig,
   LexicalNode,
-  LexicalUpdateJSON,
   NodeKey,
   SerializedElementNode,
+  SerializedPartial,
   Spread,
 } from 'lexical';
 
 import {addClassNamesToElement} from '@lexical/utils';
-import {ElementNode} from 'lexical';
+import {ElementNode, objectValue, stringValue} from 'lexical';
 
 export type SerializedLayoutContainerNode = Spread<
   {
@@ -25,6 +25,10 @@ export type SerializedLayoutContainerNode = Spread<
   },
   SerializedElementNode
 >;
+
+const layoutContainerNodeSchema = objectValue({
+  templateColumns: stringValue(),
+});
 
 export class LayoutContainerNode extends ElementNode {
   __templateColumns: string;
@@ -65,16 +69,16 @@ export class LayoutContainerNode extends ElementNode {
     return false;
   }
 
-  static importJSON(json: SerializedLayoutContainerNode): LayoutContainerNode {
+  static importJSON(
+    json: SerializedPartial<SerializedLayoutContainerNode>,
+  ): LayoutContainerNode {
     return $createLayoutContainerNode().updateFromJSON(json);
   }
 
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedLayoutContainerNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setTemplateColumns(serializedNode.templateColumns);
+  $config() {
+    return this.config('layout-container', {
+      json: layoutContainerNodeSchema,
+    });
   }
 
   isShadowRoot(): boolean {

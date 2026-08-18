@@ -13,16 +13,21 @@ import type {
   LexicalNode,
   NodeKey,
   SerializedLexicalNode,
+  SerializedPartial,
   Spread,
 } from 'lexical';
 import type {JSX} from 'react';
 
-import {DecoratorNode} from 'lexical';
+import {DecoratorNode, objectValue, stringValue} from 'lexical';
 import * as React from 'react';
 
 type Dimension = number | 'inherit';
 
 const ExcalidrawComponent = React.lazy(() => import('./ExcalidrawComponent'));
+
+const excalidrawNodeSchema = objectValue({
+  data: stringValue(),
+});
 
 export type SerializedExcalidrawNode = Spread<
   {
@@ -51,12 +56,19 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     );
   }
 
-  static importJSON(serializedNode: SerializedExcalidrawNode): ExcalidrawNode {
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedExcalidrawNode>,
+  ): ExcalidrawNode {
+    const {data} = excalidrawNodeSchema(serializedNode);
     return new ExcalidrawNode(
-      serializedNode.data,
+      data,
       serializedNode.width ?? 'inherit',
       serializedNode.height ?? 'inherit',
     ).updateFromJSON(serializedNode);
+  }
+
+  $config() {
+    return this.config('excalidraw', {json: excalidrawNodeSchema});
   }
 
   exportJSON(): SerializedExcalidrawNode {

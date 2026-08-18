@@ -12,10 +12,17 @@ import {
   type EditorConfig,
   type LexicalNode,
   type NodeKey,
+  objectValue,
+  type SerializedPartial,
   type SerializedTextNode,
   type Spread,
+  stringValue,
   TextNode,
 } from 'lexical';
+
+const mentionNodeSchema = objectValue({
+  mentionName: stringValue(),
+});
 
 export type SerializedMentionNode = Spread<
   {
@@ -35,10 +42,18 @@ export class MentionNode extends TextNode {
   static clone(node: MentionNode): MentionNode {
     return new MentionNode(node.__mention, node.__text, node.__key);
   }
-  static importJSON(serializedNode: SerializedMentionNode): MentionNode {
-    return $createMentionNode(serializedNode.mentionName).updateFromJSON(
-      serializedNode,
-    );
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedMentionNode>,
+  ): MentionNode {
+    const {mentionName} = mentionNodeSchema(serializedNode);
+    return $createMentionNode(mentionName).updateFromJSON(serializedNode);
+  }
+
+  $config() {
+    return this.config('mention', {
+      extends: TextNode,
+      json: mentionNodeSchema,
+    });
   }
 
   constructor(mentionName: string, text?: string, key?: NodeKey) {

@@ -10,17 +10,20 @@ import type {
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
-  LexicalUpdateJSON,
   NodeKey,
   SerializedTextNode,
   Spread,
 } from 'lexical';
 
 import {
-  $applyNodeReplacement,
+  $create,
   addClassNamesToElement,
   ElementNode,
+  nullable,
+  objectValue,
+  optional,
   removeClassNamesFromElement,
+  stringValue,
   TextNode,
 } from 'lexical';
 
@@ -32,6 +35,16 @@ type SerializedCodeHighlightNode = Spread<
   },
   SerializedTextNode
 >;
+
+/**
+ * The schema for the node-specific properties of a
+ * {@link SerializedCodeHighlightNode} (those it adds over a
+ * {@link SerializedTextNode}). It is the single source of truth for parsing
+ * those properties — see {@link CodeHighlightNode.updateFromJSON}.
+ */
+export const codeHighlightNodeSchema = objectValue({
+  highlightType: optional(nullable(stringValue())),
+});
 
 /** @noInheritDoc */
 export class CodeHighlightNode extends TextNode {
@@ -45,18 +58,6 @@ export class CodeHighlightNode extends TextNode {
   ) {
     super(text, key);
     this.__highlightType = highlightType;
-  }
-
-  static getType(): string {
-    return 'code-highlight';
-  }
-
-  static clone(node: CodeHighlightNode): CodeHighlightNode {
-    return new CodeHighlightNode(
-      node.__text,
-      node.__highlightType || undefined,
-      node.__key,
-    );
   }
 
   afterCloneFrom(prevNode: this): void {
@@ -110,18 +111,8 @@ export class CodeHighlightNode extends TextNode {
     return update;
   }
 
-  static importJSON(
-    serializedNode: SerializedCodeHighlightNode,
-  ): CodeHighlightNode {
-    return $createCodeHighlightNode().updateFromJSON(serializedNode);
-  }
-
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedCodeHighlightNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setHighlightType(serializedNode.highlightType);
+  $config() {
+    return this.config('code-highlight', {json: codeHighlightNodeSchema});
   }
 
   exportJSON(): SerializedCodeHighlightNode {
@@ -161,7 +152,9 @@ export function $createCodeHighlightNode(
   text: string = '',
   highlightType?: string | null | undefined,
 ): CodeHighlightNode {
-  return $applyNodeReplacement(new CodeHighlightNode(text, highlightType));
+  return $create(CodeHighlightNode)
+    .setTextContent(text)
+    .setHighlightType(highlightType);
 }
 
 export function $isCodeHighlightNode(

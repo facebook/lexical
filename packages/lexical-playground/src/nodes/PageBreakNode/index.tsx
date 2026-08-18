@@ -20,6 +20,7 @@ import {
   LexicalNode,
   NodeKey,
   SerializedLexicalNode,
+  SerializedPartial,
 } from 'lexical';
 import * as React from 'react';
 import {useEffect} from 'react';
@@ -72,7 +73,9 @@ export class PageBreakNode extends DecoratorNode<JSX.Element> {
     return new PageBreakNode(node.__key);
   }
 
-  static importJSON(serializedNode: SerializedPageBreakNode): PageBreakNode {
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedPageBreakNode>,
+  ): PageBreakNode {
     return $createPageBreakNode().updateFromJSON(serializedNode);
   }
 

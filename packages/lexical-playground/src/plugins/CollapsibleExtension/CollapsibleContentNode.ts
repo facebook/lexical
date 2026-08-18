@@ -14,6 +14,7 @@ import {
   LexicalEditor,
   LexicalNode,
   SerializedElementNode,
+  type SerializedPartial,
 } from 'lexical';
 
 import {$isCollapsibleContainerNode} from './CollapsibleContainerNode';
@@ -74,7 +75,7 @@ export class CollapsibleContentNode extends ElementNode {
   }
 
   static importJSON(
-    serializedNode: SerializedCollapsibleContentNode,
+    serializedNode: SerializedPartial<SerializedCollapsibleContentNode>,
   ): CollapsibleContentNode {
     return $createCollapsibleContentNode().updateFromJSON(serializedNode);
   }

@@ -6,18 +6,25 @@
  *
  */
 
-import type {BaseSelection, LexicalUpdateJSON, Spread} from 'lexical';
-
-import {$descendantsMatching, addClassNamesToElement} from '@lexical/utils';
-import {
-  $applyNodeReplacement,
+import type {
+  BaseSelection,
   DOMConversionMap,
   DOMConversionOutput,
   EditorConfig,
-  ElementNode,
   LexicalNode,
   NodeKey,
   SerializedElementNode,
+  SerializedPartial,
+  Spread,
+} from 'lexical';
+
+import {$descendantsMatching, addClassNamesToElement} from '@lexical/utils';
+import {
+  $create,
+  ElementNode,
+  numberValue,
+  objectValue,
+  optional,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
@@ -29,6 +36,10 @@ export type SerializedTableRowNode = Spread<
   },
   SerializedElementNode
 >;
+
+const tableRowNodeSchema = objectValue({
+  height: optional(numberValue()),
+});
 
 /** @noInheritDoc */
 export class TableRowNode extends ElementNode {
@@ -57,16 +68,14 @@ export class TableRowNode extends ElementNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedTableRowNode): TableRowNode {
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedTableRowNode>,
+  ): TableRowNode {
     return $createTableRowNode().updateFromJSON(serializedNode);
   }
 
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedTableRowNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setHeight(serializedNode.height);
+  $config() {
+    return this.config('tablerow', {json: tableRowNodeSchema});
   }
 
   constructor(height?: number, key?: NodeKey) {
@@ -144,7 +153,7 @@ export function $convertTableRowElement(domNode: Node): DOMConversionOutput {
 }
 
 export function $createTableRowNode(height?: number): TableRowNode {
-  return $applyNodeReplacement(new TableRowNode(height));
+  return $create(TableRowNode).setHeight(height);
 }
 
 export function $isTableRowNode(

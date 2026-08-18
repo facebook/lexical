@@ -13,7 +13,6 @@ import type {
   EditorConfig,
   LexicalCommand,
   LexicalNode,
-  LexicalUpdateJSON,
   NodeKey,
   Point,
   PointCaret,
@@ -44,9 +43,14 @@ import {
   $rewindSiblingCaret,
   $setPointFromCaret,
   $setSelection,
+  booleanValue,
   createCommand,
   ElementNode,
+  nullable,
+  objectValue,
   Spread,
+  stringValue,
+  withSetter,
 } from 'lexical';
 
 export type LinkAttributes = {
@@ -76,6 +80,13 @@ const SUPPORTED_URL_PROTOCOLS = new Set([
   'tel:',
 ]);
 
+const linkNodeSchema = objectValue({
+  rel: nullable(stringValue()),
+  target: nullable(stringValue()),
+  title: nullable(stringValue()),
+  url: withSetter(stringValue(), 'setURL'),
+});
+
 /** @noInheritDoc */
 export class LinkNode extends ElementNode {
   /** @internal */
@@ -86,18 +97,6 @@ export class LinkNode extends ElementNode {
   __rel: null | string;
   /** @internal */
   __title: null | string;
-
-  static getType(): string {
-    return 'link';
-  }
-
-  static clone(node: LinkNode): LinkNode {
-    return new LinkNode(
-      node.__url,
-      {rel: node.__rel, target: node.__target, title: node.__title},
-      node.__key,
-    );
-  }
 
   constructor(
     url: string = '',
@@ -168,17 +167,8 @@ export class LinkNode extends ElementNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedLinkNode): LinkNode {
-    return $createLinkNode().updateFromJSON(serializedNode);
-  }
-
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedLinkNode>): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setURL(serializedNode.url)
-      .setRel(serializedNode.rel || null)
-      .setTarget(serializedNode.target || null)
-      .setTitle(serializedNode.title || null);
+  $config() {
+    return this.config('link', {json: linkNodeSchema});
   }
 
   sanitizeUrl(url: string): string {
@@ -470,6 +460,10 @@ export type SerializedAutoLinkNode = Spread<
   SerializedLinkNode
 >;
 
+const autoLinkNodeSchema = objectValue({
+  isUnlinked: booleanValue(),
+});
+
 // Custom node type to override `canInsertTextAfter` that will
 // allow typing within the link
 export class AutoLinkNode extends LinkNode {
@@ -492,23 +486,6 @@ export class AutoLinkNode extends LinkNode {
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
     this.__isUnlinked = prevNode.__isUnlinked;
-  }
-
-  static getType(): string {
-    return 'autolink';
-  }
-
-  static clone(node: AutoLinkNode): AutoLinkNode {
-    return new AutoLinkNode(
-      node.__url,
-      {
-        isUnlinked: node.__isUnlinked,
-        rel: node.__rel,
-        target: node.__target,
-        title: node.__title,
-      },
-      node.__key,
-    );
   }
 
   shouldMergeAdjacentLink(_otherLink: LinkNode): boolean {
@@ -544,16 +521,8 @@ export class AutoLinkNode extends LinkNode {
     );
   }
 
-  static importJSON(serializedNode: SerializedAutoLinkNode): AutoLinkNode {
-    return $createAutoLinkNode().updateFromJSON(serializedNode);
-  }
-
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedAutoLinkNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setIsUnlinked(serializedNode.isUnlinked || false);
+  $config() {
+    return this.config('autolink', {json: autoLinkNodeSchema});
   }
 
   static importDOM(): null {

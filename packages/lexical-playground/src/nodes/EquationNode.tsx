@@ -11,15 +11,28 @@ import type {
   LexicalNode,
   NodeKey,
   SerializedLexicalNode,
+  SerializedPartial,
   Spread,
 } from 'lexical';
 import type {JSX} from 'react';
 
 import katex from 'katex';
-import {$applyNodeReplacement, DecoratorNode, DOMExportOutput} from 'lexical';
+import {
+  $applyNodeReplacement,
+  booleanValue,
+  DecoratorNode,
+  DOMExportOutput,
+  objectValue,
+  stringValue,
+} from 'lexical';
 import * as React from 'react';
 
 const EquationComponent = React.lazy(() => import('./EquationComponent'));
+
+const equationNodeSchema = objectValue({
+  equation: stringValue(),
+  inline: booleanValue(),
+});
 
 export type SerializedEquationNode = Spread<
   {
@@ -53,11 +66,15 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     this.__inline = prevNode.__inline;
   }
 
-  static importJSON(serializedNode: SerializedEquationNode): EquationNode {
-    return $createEquationNode(
-      serializedNode.equation,
-      serializedNode.inline,
-    ).updateFromJSON(serializedNode);
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedEquationNode>,
+  ): EquationNode {
+    const {equation, inline} = equationNodeSchema(serializedNode);
+    return $createEquationNode(equation, inline).updateFromJSON(serializedNode);
+  }
+
+  $config() {
+    return this.config('equation', {json: equationNodeSchema});
   }
 
   exportJSON(): SerializedEquationNode {

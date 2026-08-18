@@ -14,7 +14,6 @@ import type {
   EditorConfig,
   EditorThemeClasses,
   LexicalNode,
-  LexicalUpdateJSON,
   NodeKey,
   ParagraphNode,
   RangeSelection,
@@ -29,8 +28,8 @@ import {
   removeClassNamesFromElement,
 } from '@lexical/utils';
 import {
-  $applyNodeReplacement,
   $copyNode,
+  $create,
   $createParagraphNode,
   $getSelection,
   $getSiblingCaret,
@@ -41,12 +40,16 @@ import {
   $rewindSiblingCaret,
   $setDirectionFromDOM,
   $setFormatFromDOM,
+  booleanValue,
   buildImportMap,
   ElementNode,
   getStyleObjectFromCSS,
   isHTMLElement,
   LexicalEditor,
   normalizeClassNames,
+  numberValue,
+  objectValue,
+  optional,
   setDOMStyleFromCSS,
 } from 'lexical';
 
@@ -61,6 +64,11 @@ export type SerializedListItemNode = Spread<
   },
   SerializedElementNode
 >;
+
+const listItemNodeSchema = objectValue({
+  checked: optional(booleanValue()),
+  value: numberValue(1),
+});
 
 function applyMarkerStyles(
   dom: HTMLElement,
@@ -146,6 +154,7 @@ export class ListItemNode extends ElementNode {
           priority: 0,
         }),
       }),
+      json: listItemNodeSchema,
     });
   }
 
@@ -199,15 +208,6 @@ export class ListItemNode extends ElementNode {
     const element: HTMLLIElement = dom;
     this.updateListItemDOM(prevNode, element, config);
     return false;
-  }
-
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedListItemNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setValue(serializedNode.value)
-      .setChecked(serializedNode.checked);
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
@@ -709,7 +709,7 @@ function setFormatFromChildren(
  * @returns The new List Item.
  */
 export function $createListItemNode(checked?: boolean): ListItemNode {
-  return $applyNodeReplacement(new ListItemNode(undefined, checked));
+  return $create(ListItemNode).setChecked(checked);
 }
 
 /**

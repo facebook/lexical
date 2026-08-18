@@ -6,14 +6,18 @@
  *
  */
 
-import type {DOMConversionMap, NodeKey} from '../LexicalNode';
+import type {
+  DOMConversionMap,
+  NodeKey,
+  SerializedPartial,
+} from '../LexicalNode';
 
 import invariant from '@lexical/internal/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
 import {EditorConfig} from '../LexicalEditor';
 import {LexicalNode} from '../LexicalNode';
-import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
+import {$create, getCachedClassNameArray} from '../LexicalUtils';
 import {
   SerializedTextNode,
   TextDetailType,
@@ -53,7 +57,9 @@ export class TabNode extends TextNode {
     return dom;
   }
 
-  static importJSON(serializedTabNode: SerializedTabNode): TabNode {
+  static importJSON(
+    serializedTabNode: SerializedPartial<SerializedTabNode>,
+  ): TabNode {
     return $createTabNode().updateFromJSON(serializedTabNode);
   }
 
@@ -106,7 +112,7 @@ export class TabNode extends TextNode {
 }
 
 export function $createTabNode(): TabNode {
-  return $applyNodeReplacement(new TabNode());
+  return $create(TabNode);
 }
 
 export function $isTabNode(

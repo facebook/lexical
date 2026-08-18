@@ -10,7 +10,6 @@ import type {
   BaseSelection,
   EditorConfig,
   LexicalNode,
-  LexicalUpdateJSON,
   NodeKey,
   RangeSelection,
   SerializedElementNode,
@@ -21,7 +20,15 @@ import {
   addClassNamesToElement,
   removeClassNamesFromElement,
 } from '@lexical/utils';
-import {$applyNodeReplacement, $isRangeSelection, ElementNode} from 'lexical';
+import {
+  $create,
+  $isRangeSelection,
+  arrayValue,
+  ElementNode,
+  objectValue,
+  stringValue,
+  withSetter,
+} from 'lexical';
 
 export type SerializedMarkNode = Spread<
   {
@@ -30,20 +37,21 @@ export type SerializedMarkNode = Spread<
   SerializedElementNode
 >;
 
+/**
+ * The schema for the node-specific properties of a {@link SerializedMarkNode}
+ * (those it adds over a {@link SerializedElementNode}). It is the single source
+ * of truth for parsing those properties — see {@link MarkNode.updateFromJSON}.
+ */
+export const markNodeSchema = objectValue({
+  ids: withSetter(arrayValue(stringValue()), 'setIDs'),
+});
+
 const NO_IDS: readonly string[] = [];
 
 /** @noInheritDoc */
 export class MarkNode extends ElementNode {
   /** @internal */
   __ids: readonly string[];
-
-  static getType(): string {
-    return 'mark';
-  }
-
-  static clone(node: MarkNode): MarkNode {
-    return new MarkNode(node.__ids, node.__key);
-  }
 
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
@@ -54,12 +62,8 @@ export class MarkNode extends ElementNode {
     return null;
   }
 
-  static importJSON(serializedNode: SerializedMarkNode): MarkNode {
-    return $createMarkNode().updateFromJSON(serializedNode);
-  }
-
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedMarkNode>): this {
-    return super.updateFromJSON(serializedNode).setIDs(serializedNode.ids);
+  $config() {
+    return this.config('mark', {json: markNodeSchema});
   }
 
   exportJSON(): SerializedMarkNode {
@@ -190,7 +194,7 @@ export class MarkNode extends ElementNode {
 }
 
 export function $createMarkNode(ids: readonly string[] = NO_IDS): MarkNode {
-  return $applyNodeReplacement(new MarkNode(ids));
+  return $create(MarkNode).setIDs(ids);
 }
 
 export function $isMarkNode(node: LexicalNode | null): node is MarkNode {

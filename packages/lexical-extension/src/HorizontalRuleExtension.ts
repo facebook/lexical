@@ -16,6 +16,7 @@ import type {
   NodeKey,
   NodeSelection,
   SerializedLexicalNode,
+  SerializedPartial,
 } from 'lexical';
 
 import {$insertNodeToNearestRoot} from '@lexical/utils';
@@ -58,7 +59,7 @@ export class HorizontalRuleNode extends DecoratorNode<unknown> {
   }
 
   static importJSON(
-    serializedNode: SerializedHorizontalRuleNode,
+    serializedNode: SerializedPartial<SerializedHorizontalRuleNode>,
   ): HorizontalRuleNode {
     return $createHorizontalRuleNode().updateFromJSON(serializedNode);
   }

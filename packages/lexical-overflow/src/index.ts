@@ -13,7 +13,7 @@ import type {
   SerializedElementNode,
 } from 'lexical';
 
-import {$applyNodeReplacement, defineExtension, ElementNode} from 'lexical';
+import {$create, defineExtension, ElementNode} from 'lexical';
 
 export type SerializedOverflowNode = SerializedElementNode;
 
@@ -58,7 +58,7 @@ export class OverflowNode extends ElementNode {
 }
 
 export function $createOverflowNode(): OverflowNode {
-  return $applyNodeReplacement(new OverflowNode());
+  return $create(OverflowNode);
 }
 
 export function $isOverflowNode(

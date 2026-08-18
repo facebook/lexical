@@ -16,6 +16,7 @@
     "**/node_modules/**",
     "./packages/*/*.js",
     "./packages/lexical-devtools/**",
+    "./packages/lexical-fast-check/**",
     "./packages/lexical-playground/**",
     "./packages/lexical-website/**"
   ],

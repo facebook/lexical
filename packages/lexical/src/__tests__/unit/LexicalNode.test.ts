@@ -22,6 +22,7 @@ import {
   EditorConfig,
   ElementNode,
   LexicalEditor,
+  LexicalExportJSON,
   NodeKey,
   ParagraphNode,
   RangeSelection,
@@ -35,11 +36,12 @@ import {
   beforeEach,
   describe,
   expect,
+  expectTypeOf,
   test,
   vi,
 } from 'vitest';
 
-import {LexicalNode} from '../../LexicalNode';
+import {type GetStaticNodeType, LexicalNode} from '../../LexicalNode';
 import {$createParagraphNode} from '../../nodes/LexicalParagraphNode';
 import {$createTextNode} from '../../nodes/LexicalTextNode';
 import {
@@ -1532,7 +1534,7 @@ describe('LexicalNode tests', () => {
                 text: 'codegen!',
                 type: 'custom-text',
                 version: 1,
-              });
+              } as SerializedTextNode);
               expect(node).toBeInstanceOf(CustomTextNode);
               expect(node.getType()).toBe('custom-text');
               expect(node.getTextContent()).toBe('codegen!');
@@ -2053,6 +2055,17 @@ describe('replace(other, includeChildren) selection mapping', () => {
         expect(sel.anchor.offset).toBe(2);
       });
     });
+  });
+});
+
+describe('LexicalNode.$config() inferred types', () => {
+  test('GetStaticNodeType / LexicalExportJSON recover the literal node type', () => {
+    // Left to inference (not widened to BaseStaticNodeConfig), $config()'s
+    // return type lets GetStaticNodeType recover the literal node `type`, so
+    // LexicalExportJSON can build the full serialized type from it. Annotating
+    // `$config(): BaseStaticNodeConfig` would collapse both to `string`.
+    expectTypeOf<GetStaticNodeType<TextNode>>().toEqualTypeOf<'text'>();
+    expectTypeOf<LexicalExportJSON<TextNode>['type']>().toEqualTypeOf<'text'>();
   });
 });
 

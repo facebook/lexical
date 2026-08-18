@@ -12,14 +12,11 @@ import type {
   DOMConversionOutput,
   NodeKey,
   SerializedLexicalNode,
+  SerializedPartial,
 } from '../LexicalNode';
 
 import {LexicalNode} from '../LexicalNode';
-import {
-  $applyNodeReplacement,
-  isBlockDomNode,
-  isDOMTextNode,
-} from '../LexicalUtils';
+import {$create, isBlockDomNode, isDOMTextNode} from '../LexicalUtils';
 
 export type SerializedLineBreakNode = SerializedLexicalNode;
 
@@ -70,7 +67,7 @@ export class LineBreakNode extends LexicalNode {
   }
 
   static importJSON(
-    serializedLineBreakNode: SerializedLineBreakNode,
+    serializedLineBreakNode: SerializedPartial<SerializedLineBreakNode>,
   ): LineBreakNode {
     return $createLineBreakNode().updateFromJSON(serializedLineBreakNode);
   }
@@ -81,7 +78,7 @@ function $convertLineBreakElement(node: Node): DOMConversionOutput {
 }
 
 export function $createLineBreakNode(): LineBreakNode {
-  return $applyNodeReplacement(new LineBreakNode());
+  return $create(LineBreakNode);
 }
 
 export function $isLineBreakNode(

@@ -7,7 +7,7 @@
  */
 
 import {
-  $applyNodeReplacement,
+  $create,
   addClassNamesToElement,
   type EditorConfig,
   type LexicalNode,
@@ -41,7 +41,7 @@ export class HashtagNode extends TextNode {
  * @returns - The HashtagNode with the embedded text.
  */
 export function $createHashtagNode(text = ''): HashtagNode {
-  return $applyNodeReplacement(new HashtagNode(text));
+  return $create(HashtagNode).setTextContent(text);
 }
 
 /**

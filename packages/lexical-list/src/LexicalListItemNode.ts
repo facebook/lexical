@@ -8,8 +8,8 @@
 
 import invariant from '@lexical/internal/invariant';
 import {
-  $applyNodeReplacement,
   $copyNode,
+  $create,
   $createParagraphNode,
   $getDocument,
   $getSelection,
@@ -24,6 +24,7 @@ import {
   $setFormatFromDOM,
   addClassNamesToElement,
   type BaseSelection,
+  booleanValue,
   buildImportMap,
   type DOMConversionOutput,
   type DOMExportOutput,
@@ -34,9 +35,11 @@ import {
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
   type NodeKey,
   normalizeClassNames,
+  numberValue,
+  objectValue,
+  optional,
   type ParagraphNode,
   type RangeSelection,
   removeClassNamesFromElement,
@@ -56,6 +59,11 @@ export type SerializedListItemNode = Spread<
   },
   SerializedElementNode
 >;
+
+const listItemNodeSchema = objectValue({
+  checked: optional(booleanValue()),
+  value: numberValue(1),
+});
 
 function applyMarkerStyles(
   dom: HTMLElement,
@@ -141,6 +149,7 @@ export class ListItemNode extends ElementNode {
           priority: 0,
         }),
       }),
+      json: listItemNodeSchema,
     });
   }
 
@@ -194,15 +203,6 @@ export class ListItemNode extends ElementNode {
     const element: HTMLLIElement = dom;
     this.updateListItemDOM(prevNode, element, config);
     return false;
-  }
-
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedListItemNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setValue(serializedNode.value)
-      .setChecked(serializedNode.checked);
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
@@ -696,7 +696,7 @@ function setFormatFromChildren(
  * @returns The new List Item.
  */
 export function $createListItemNode(checked?: boolean): ListItemNode {
-  return $applyNodeReplacement(new ListItemNode(undefined, checked));
+  return $create(ListItemNode).setChecked(checked);
 }
 
 /**

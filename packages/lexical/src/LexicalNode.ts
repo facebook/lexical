@@ -37,6 +37,7 @@ import {
   type RequiredNodeStateConfig,
 } from './LexicalNodeState';
 import {CACHED_TEXT_SIZE_KEY} from './LexicalReconciler';
+import {type AnySerializationSchema} from './LexicalSchema';
 import {
   $getSelection,
   $isNodeSelection,
@@ -59,6 +60,7 @@ import {
   getActiveEditorState,
 } from './LexicalUpdates';
 import {
+  $applyJSONSetters,
   $cloneWithProperties,
   $getCompositionKey,
   $getNodeByKey,
@@ -205,6 +207,20 @@ export interface StaticNodeConfigValue<
    * types for your node class might be missing some of that.
    */
   readonly extends?: Klass<LexicalNode>;
+  /**
+   * EXPERIMENTAL
+   *
+   * A {@link SerializationSchema} describing this node's serialized JSON (the
+   * node-specific properties it adds over its parent's, not including
+   * `type`/`version`/`children` or node state). When provided it is the single
+   * source of truth for parsing those properties — a node's `updateFromJSON`
+   * can apply it — and, because the schema is introspectable, tooling such as
+   * `@lexical/fast-check` can use it to generate example serializations.
+   *
+   * It is named `json` rather than `schema` to avoid ambiguity with other kinds
+   * of node schema (e.g. a schema of allowed children).
+   */
+  readonly json?: AnySerializationSchema;
 }
 
 /**
@@ -431,6 +447,21 @@ export type LexicalUpdateJSON<T extends SerializedLexicalNode> = Omit<
   T,
   'children' | 'type' | 'version'
 >;
+
+/**
+ * The serialized form of a node as accepted by the parsing methods
+ * ({@link LexicalNode.importJSON} and {@link LexicalNode.updateFromJSON}).
+ *
+ * The base `SerializedLexicalNode` identity (`type`, `version`, and the node
+ * state key) is preserved, but every node-specific property is made optional
+ * via `Partial`. Parsing is generally untrusted and must tolerate missing or
+ * out-of-domain values, so implementations are expected to substitute sensible
+ * defaults — see the {@link Parse} helpers such as {@link stringValue},
+ * {@link numberValue}, and {@link enumValue}. This also enables a "compact"
+ * serialization variant in which any property left at its default is omitted.
+ */
+export type SerializedPartial<T extends SerializedLexicalNode> =
+  SerializedLexicalNode & Partial<T>;
 
 /** @internal */
 export interface LexicalPrivateDOM {
@@ -1584,7 +1615,10 @@ export class LexicalNode {
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
   ): this {
-    return $updateStateFromJSON(this, serializedNode);
+    return $applyJSONSetters(
+      $updateStateFromJSON(this, serializedNode),
+      serializedNode,
+    );
   }
 
   /**

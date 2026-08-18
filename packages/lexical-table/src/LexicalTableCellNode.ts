@@ -24,9 +24,14 @@ import {
   type LexicalNode,
   type LexicalUpdateJSON,
   type NodeKey,
+  nullable,
+  numberValue,
+  objectValue,
   type ParagraphNode,
   type SerializedElementNode,
+  type SerializedPartial,
   type Spread,
+  stringValue,
 } from 'lexical';
 
 import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
@@ -40,6 +45,11 @@ export const TableCellHeaderStates = {
 
 export type TableCellHeaderState =
   (typeof TableCellHeaderStates)[keyof typeof TableCellHeaderStates];
+
+const tableCellNodeSchema = objectValue({
+  backgroundColor: nullable(stringValue()),
+  headerState: numberValue(TableCellHeaderStates.NO_STATUS),
+});
 
 export type SerializedTableCellNode = Spread<
   {
@@ -81,6 +91,7 @@ export class TableCellNode extends ElementNode {
           priority: 0,
         }),
       },
+      json: tableCellNodeSchema,
     });
   }
 
@@ -95,16 +106,25 @@ export class TableCellNode extends ElementNode {
   }
 
   updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedTableCellNode>,
+    serializedNode: LexicalUpdateJSON<
+      SerializedPartial<SerializedTableCellNode>
+    >,
   ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setHeaderStyles(serializedNode.headerState)
-      .setColSpan(serializedNode.colSpan || 1)
-      .setRowSpan(serializedNode.rowSpan || 1)
-      .setWidth(serializedNode.width || undefined)
-      .setBackgroundColor(serializedNode.backgroundColor || null)
-      .setVerticalAlign(serializedNode.verticalAlign || undefined);
+    const {headerState, backgroundColor} = tableCellNodeSchema(serializedNode);
+    return (
+      super
+        .updateFromJSON(serializedNode)
+        .setHeaderStyles(headerState)
+        // colSpan/rowSpan keep their `|| 1` semantics (0 -> 1), which a
+        // numberValue schema would not preserve (it lets 0 through).
+        .setColSpan(serializedNode.colSpan || 1)
+        .setRowSpan(serializedNode.rowSpan || 1)
+        // width/verticalAlign keep their `|| undefined` semantics (falsy, e.g.
+        // 0 or '', collapses to undefined), which optional(...) would not do.
+        .setWidth(serializedNode.width || undefined)
+        .setBackgroundColor(backgroundColor)
+        .setVerticalAlign(serializedNode.verticalAlign || undefined)
+    );
   }
 
   constructor(

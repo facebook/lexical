@@ -19,10 +19,17 @@ import {
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
+  objectValue,
+  type SerializedPartial,
   type Spread,
+  stringValue,
 } from 'lexical';
 import * as React from 'react';
 import {type JSX, useCallback, useEffect, useRef, useState} from 'react';
+
+const tweetNodeSchema = objectValue({
+  id: stringValue(),
+});
 
 const WIDGET_SCRIPT_URL = 'https://platform.twitter.com/widgets.js';
 
@@ -123,15 +130,21 @@ export class TweetNode extends DecoratorBlockNode {
   __id: string;
 
   $config() {
-    return this.config('tweet', {extends: DecoratorBlockNode});
+    return this.config('tweet', {
+      extends: DecoratorBlockNode,
+      json: tweetNodeSchema,
+    });
   }
 
   static clone(node: TweetNode): TweetNode {
     return new TweetNode(node.__id, node.__format, node.__key);
   }
 
-  static importJSON(serializedNode: SerializedTweetNode): TweetNode {
-    return $createTweetNode(serializedNode.id).updateFromJSON(serializedNode);
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedTweetNode>,
+  ): TweetNode {
+    const {id} = tweetNodeSchema(serializedNode);
+    return $createTweetNode(id).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedTweetNode {

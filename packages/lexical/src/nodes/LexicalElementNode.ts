@@ -10,7 +10,6 @@ import type {
   BaseStaticNodeConfig,
   KlassConstructor,
   LexicalEditor,
-  LexicalUpdateJSON,
   Spread,
   TextFormatType,
 } from 'lexical';
@@ -34,6 +33,12 @@ import {
   type SlotChildNode,
   type SlotHostNode,
 } from '../LexicalNode';
+import {
+  enumValue,
+  numberValue,
+  objectValue,
+  stringValue,
+} from '../LexicalSchema';
 import {
   $getSelection,
   $internalMakeRangeSelection,
@@ -73,6 +78,20 @@ export type SerializedElementNode<
   },
   SerializedLexicalNode
 >;
+
+/**
+ * The schema for the node-specific properties of a
+ * {@link SerializedElementNode} (those it adds over a
+ * {@link SerializedLexicalNode}). It is the single source of truth for parsing
+ * those properties, applied by the base {@link LexicalNode.updateFromJSON}.
+ */
+export const elementNodeSchema = objectValue({
+  direction: enumValue([null, 'ltr', 'rtl']),
+  format: enumValue(['', 'left', 'start', 'center', 'right', 'end', 'justify']),
+  indent: numberValue(),
+  textFormat: numberValue(),
+  textStyle: stringValue(),
+});
 
 export type ElementFormatType =
   | 'left'
@@ -167,6 +186,7 @@ export class ElementNode
        */
       $transform: $normalizeShadowRootChildren,
       extends: LexicalNode,
+      json: elementNodeSchema,
     });
   }
 
@@ -876,17 +896,7 @@ export class ElementNode
     }
     return json;
   }
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedElementNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setFormat(serializedNode.format)
-      .setIndent(serializedNode.indent)
-      .setDirection(serializedNode.direction)
-      .setTextFormat(serializedNode.textFormat || 0)
-      .setTextStyle(serializedNode.textStyle || '');
-  }
+
   // These are intended to be extends for specific element heuristics.
   insertNewAfter(
     selection: RangeSelection,

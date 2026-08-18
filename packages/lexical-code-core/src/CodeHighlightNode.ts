@@ -7,17 +7,20 @@
  */
 
 import {
-  $applyNodeReplacement,
+  $create,
   addClassNamesToElement,
   type EditorConfig,
   type EditorThemeClasses,
   type ElementNode,
   type LexicalNode,
-  type LexicalUpdateJSON,
   type NodeKey,
+  nullable,
+  objectValue,
+  optional,
   removeClassNamesFromElement,
   type SerializedTextNode,
   type Spread,
+  stringValue,
   TextNode,
 } from 'lexical';
 
@@ -29,6 +32,16 @@ type SerializedCodeHighlightNode = Spread<
   },
   SerializedTextNode
 >;
+
+/**
+ * The schema for the node-specific properties of a
+ * {@link SerializedCodeHighlightNode} (those it adds over a
+ * {@link SerializedTextNode}). It is the single source of truth for parsing
+ * those properties — see {@link CodeHighlightNode.updateFromJSON}.
+ */
+export const codeHighlightNodeSchema = objectValue({
+  highlightType: optional(nullable(stringValue())),
+});
 
 /** @noInheritDoc */
 export class CodeHighlightNode extends TextNode {
@@ -45,7 +58,10 @@ export class CodeHighlightNode extends TextNode {
   }
 
   $config() {
-    return this.config('code-highlight', {extends: TextNode});
+    return this.config('code-highlight', {
+      extends: TextNode,
+      json: codeHighlightNodeSchema,
+    });
   }
 
   afterCloneFrom(prevNode: this): void {
@@ -99,14 +115,6 @@ export class CodeHighlightNode extends TextNode {
     return update;
   }
 
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedCodeHighlightNode>,
-  ): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setHighlightType(serializedNode.highlightType);
-  }
-
   exportJSON(): SerializedCodeHighlightNode {
     return {
       ...super.exportJSON(),
@@ -144,7 +152,9 @@ export function $createCodeHighlightNode(
   text: string = '',
   highlightType?: string | null | undefined,
 ): CodeHighlightNode {
-  return $applyNodeReplacement(new CodeHighlightNode(text, highlightType));
+  return $create(CodeHighlightNode)
+    .setTextContent(text)
+    .setHighlightType(highlightType);
 }
 
 export function $isCodeHighlightNode(

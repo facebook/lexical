@@ -14,7 +14,7 @@ import {
   type SerializedLexicalNode,
 } from '../LexicalNode';
 import {
-  $applyNodeReplacement,
+  $create,
   $getDocument,
   isBlockDomNode,
   isDOMTextNode,
@@ -66,7 +66,7 @@ function $convertLineBreakElement(node: Node): DOMConversionOutput {
 
 /** Creates a LineBreakNode representing a soft line break (Shift+Enter). */
 export function $createLineBreakNode(): LineBreakNode {
-  return $applyNodeReplacement(new LineBreakNode());
+  return $create(LineBreakNode);
 }
 
 /** Returns true if the given node is a LineBreakNode. */

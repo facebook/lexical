@@ -13,8 +13,11 @@ import {
   type EditorConfig,
   type LexicalNode,
   type NodeKey,
+  objectValue,
+  type SerializedPartial,
   type SerializedTextNode,
   type Spread,
+  stringValue,
   type TextFormatType,
   TextNode,
 } from 'lexical';
@@ -28,6 +31,10 @@ const FORMAT_WRAPPER_TAGS: readonly (readonly [TextFormatType, string])[] = [
   ['underline', 'u'],
 ];
 
+const mentionNodeSchema = objectValue({
+  mentionName: stringValue(),
+});
+
 export type SerializedMentionNode = Spread<
   {
     mentionName: string;
@@ -40,16 +47,20 @@ export class MentionNode extends TextNode {
   __mention: string;
 
   $config() {
-    return this.config('mention', {extends: TextNode});
+    return this.config('mention', {
+      extends: TextNode,
+      json: mentionNodeSchema,
+    });
   }
 
   static clone(node: MentionNode): MentionNode {
     return new MentionNode(node.__mention, node.__text, node.__key);
   }
-  static importJSON(serializedNode: SerializedMentionNode): MentionNode {
-    return $createMentionNode(serializedNode.mentionName).updateFromJSON(
-      serializedNode,
-    );
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedMentionNode>,
+  ): MentionNode {
+    const {mentionName} = mentionNodeSchema(serializedNode);
+    return $createMentionNode(mentionName).updateFromJSON(serializedNode);
   }
 
   constructor(mentionName: string, text?: string, key?: NodeKey) {

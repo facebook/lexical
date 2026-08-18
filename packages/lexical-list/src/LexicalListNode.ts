@@ -7,7 +7,7 @@
  */
 
 import {
-  $applyNodeReplacement,
+  $create,
   $createTextNode,
   $getDocument,
   $isElementNode,
@@ -19,12 +19,14 @@ import {
   type EditorConfig,
   type EditorThemeClasses,
   ElementNode,
+  enumValue,
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
   type NodeKey,
   normalizeClassNames,
+  numberValue,
+  objectValue,
   removeClassNamesFromElement,
   type SerializedElementNode,
   type Spread,
@@ -49,6 +51,11 @@ export type SerializedListNode = Spread<
 export type ListType = 'number' | 'bullet' | 'check';
 
 export type ListNodeTagType = 'ul' | 'ol';
+
+const listNodeSchema = objectValue({
+  listType: enumValue(['number', 'bullet', 'check']),
+  start: numberValue(1),
+});
 
 /** @noInheritDoc */
 export class ListNode extends ElementNode {
@@ -77,6 +84,7 @@ export class ListNode extends ElementNode {
           priority: 0,
         }),
       }),
+      json: listNodeSchema,
     });
   }
 
@@ -151,13 +159,6 @@ export class ListNode extends ElementNode {
     }
 
     return false;
-  }
-
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedListNode>): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setListType(serializedNode.listType)
-      .setStart(serializedNode.start);
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
@@ -377,7 +378,7 @@ export function $createListNode(
   listType: ListType = 'number',
   start = 1,
 ): ListNode {
-  return $applyNodeReplacement(new ListNode(listType, start));
+  return $create(ListNode).setListType(listType).setStart(start);
 }
 
 /**

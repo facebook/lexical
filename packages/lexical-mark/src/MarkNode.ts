@@ -7,20 +7,23 @@
  */
 
 import {
-  $applyNodeReplacement,
+  $create,
   $getDocument,
   $isRangeSelection,
   addClassNamesToElement,
+  arrayValue,
   type BaseSelection,
   type EditorConfig,
   ElementNode,
   type LexicalNode,
-  type LexicalUpdateJSON,
   type NodeKey,
+  objectValue,
   type RangeSelection,
   removeClassNamesFromElement,
   type SerializedElementNode,
   type Spread,
+  stringValue,
+  withSetter,
 } from 'lexical';
 
 export type SerializedMarkNode = Spread<
@@ -30,6 +33,15 @@ export type SerializedMarkNode = Spread<
   SerializedElementNode
 >;
 
+/**
+ * The schema for the node-specific properties of a {@link SerializedMarkNode}
+ * (those it adds over a {@link SerializedElementNode}). It is the single source
+ * of truth for parsing those properties — see {@link MarkNode.updateFromJSON}.
+ */
+export const markNodeSchema = objectValue({
+  ids: withSetter(arrayValue(stringValue()), 'setIDs'),
+});
+
 const NO_IDS: readonly string[] = [];
 
 /** @noInheritDoc */
@@ -38,16 +50,12 @@ export class MarkNode extends ElementNode {
   __ids: readonly string[];
 
   $config() {
-    return this.config('mark', {extends: ElementNode});
+    return this.config('mark', {extends: ElementNode, json: markNodeSchema});
   }
 
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
     this.__ids = prevNode.__ids;
-  }
-
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedMarkNode>): this {
-    return super.updateFromJSON(serializedNode).setIDs(serializedNode.ids);
   }
 
   exportJSON(): SerializedMarkNode {
@@ -181,7 +189,7 @@ export class MarkNode extends ElementNode {
 }
 
 export function $createMarkNode(ids: readonly string[] = NO_IDS): MarkNode {
-  return $applyNodeReplacement(new MarkNode(ids));
+  return $create(MarkNode).setIDs(ids);
 }
 
 export function $isMarkNode(node: LexicalNode | null): node is MarkNode {

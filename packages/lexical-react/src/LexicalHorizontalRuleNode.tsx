@@ -15,7 +15,7 @@ import {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {
-  $applyNodeReplacement,
+  $create,
   addClassNamesToElement,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
@@ -109,5 +109,5 @@ function $convertHorizontalRuleElement(): DOMConversionOutput {
  * @deprecated A pure Lexical implementation is available in `@lexical/extension` as HorizontalRuleExtension
  */
 export function $createHorizontalRuleNode(): HorizontalRuleNode {
-  return $applyNodeReplacement(new HorizontalRuleNode());
+  return $create(HorizontalRuleNode);
 }

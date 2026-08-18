@@ -219,6 +219,7 @@ export type {
   NodeKey,
   NodeMap,
   SerializedLexicalNode,
+  SerializedPartial,
   SlotChildNode,
   SlotHostNode,
   StaticNodeConfig,
@@ -250,6 +251,23 @@ export {
 export {$normalizeSelection as $normalizeSelection__EXPERIMENTAL} from './LexicalNormalization';
 export type {RefCountedRegistry} from './LexicalRefCountedRegistry';
 export {createRefCountedRegistry} from './LexicalRefCountedRegistry';
+export {
+  type AnySerializationSchema,
+  arrayValue,
+  booleanValue,
+  enumValue,
+  nullable,
+  numberValue,
+  objectValue,
+  optional,
+  type Parse,
+  type SerializationSchema,
+  type SerializationSchemaFields,
+  type SerializationSchemaMeta,
+  type SerializationSchemaShape,
+  stringValue,
+  withSetter,
+} from './LexicalSchema';
 export type {
   BaseSelection,
   ElementPointType as ElementPoint,

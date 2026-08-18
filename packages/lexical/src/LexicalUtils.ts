@@ -84,7 +84,9 @@ import {
   type NodeMap,
   type StaticNodeConfigValue,
 } from './LexicalNode';
+import {$setState, type AnyStateConfig} from './LexicalNodeState';
 import {$normalizeSelection} from './LexicalNormalization';
+import {type AnySerializationSchema} from './LexicalSchema';
 import {
   $clampRangeSelectionToSlotFrame,
   type BaseSelection,
@@ -3143,6 +3145,149 @@ const IS_UNOPTIMIZED_DEV_BUILD =
   // Class name mangling is another signal that this may be unreliable
   TextNode.name === 'TextNode';
 
+/**
+ * A precompiled step for applying one of a node's serialized top-level
+ * properties in {@link LexicalNode.updateFromJSON}: either a `json` schema field
+ * applied through a named setter (`set<Prop>` by default, or the name recorded
+ * with `withSetter`), or a flat NodeState applied through the single
+ * {@link $setState} entry point. Compiled once per class and cached so the base
+ * updateFromJSON iterates an array and applies each directly, without walking
+ * the class chain or materializing an intermediate parsed object on every call.
+ */
+type CompiledSetter =
+  | {
+      readonly kind: 'field';
+      readonly key: string;
+      readonly schema: AnySerializationSchema;
+      readonly setterName: string;
+    }
+  | {
+      readonly kind: 'state';
+      readonly key: string;
+      readonly stateConfig: AnyStateConfig;
+    };
+
+const EMPTY_SETTERS: readonly CompiledSetter[] = [];
+const compiledSettersByClass = new Map<
+  Klass<LexicalNode>,
+  readonly CompiledSetter[]
+>();
+
+/** The default setter name for a serialized property, e.g. `foo` → `setFoo`. */
+function defaultSetterName(key: string): string {
+  return `set${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+}
+
+function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
+  // Collect the class chain (klass first, then its ancestors up to but not
+  // including the abstract LexicalNode base, which declares no properties).
+  const chain: Klass<LexicalNode>[] = [];
+  for (
+    let current: Klass<LexicalNode> = klass;
+    current.prototype instanceof LexicalNode;
+    current = Object.getPrototypeOf(current) as Klass<LexicalNode>
+  ) {
+    chain.push(current);
+  }
+  // Walk ancestors first so base properties apply before subclass properties,
+  // and a subclass field (keyed by serialized property name) overrides an
+  // ancestor's.
+  const prototype = klass.prototype as unknown as Record<string, unknown>;
+  const fields = new Map<string, CompiledSetter>();
+  const states = new Map<string, CompiledSetter>();
+  for (let i = chain.length - 1; i >= 0; i--) {
+    const {ownNodeConfig} = getStaticNodeConfig(chain[i]);
+    if (!ownNodeConfig) {
+      continue;
+    }
+    const {json} = ownNodeConfig;
+    if (json && json.meta.kind === 'object') {
+      const {fields: schemaFields} = json.meta;
+      for (const key of Object.keys(schemaFields)) {
+        const schema = schemaFields[key];
+        const setterName = schema.setter || defaultSetterName(key);
+        if (typeof prototype[setterName] === 'function') {
+          fields.set(key, {key, kind: 'field', schema, setterName});
+        } else if (__DEV__) {
+          // A property with no matching setter is applied elsewhere (e.g. by a
+          // required-argument constructor) and skipped here — unless an explicit
+          // setter name was declared, which is then a programmer error.
+          invariant(
+            schema.setter === undefined,
+            '%s: json schema field "%s" declares setter %s() which is not a method',
+            klass.name,
+            key,
+            setterName,
+          );
+        }
+      }
+    }
+    // Flat NodeStates are serialized at the top level alongside schema fields
+    // (non-flat states live under NODE_STATE_KEY and are applied by
+    // $updateStateFromJSON). They are applied through the single $setState entry
+    // point rather than a per-property setter.
+    if (ownNodeConfig.stateConfigs) {
+      for (const required of ownNodeConfig.stateConfigs) {
+        if ('stateConfig' in required && required.flat) {
+          const {stateConfig} = required;
+          states.set(stateConfig.key, {
+            key: stateConfig.key,
+            kind: 'state',
+            stateConfig,
+          });
+        }
+      }
+    }
+  }
+  if (fields.size === 0 && states.size === 0) {
+    return EMPTY_SETTERS;
+  }
+  // Apply flat states before named setters, matching the previous ordering in
+  // which $updateStateFromJSON ran before a node's own setters.
+  return [...states.values(), ...fields.values()];
+}
+
+/**
+ * Apply a node's compiled `json` serialization schema (see {@link compileSetters})
+ * by calling each property's setter with its parsed value, returning the
+ * (writable) node. Used by the base {@link LexicalNode.updateFromJSON} so a node
+ * that declares a `json` schema needs no `updateFromJSON` boilerplate.
+ *
+ * @internal
+ */
+export function $applyJSONSetters<T extends LexicalNode>(
+  node: T,
+  serializedNode: {readonly [key: string]: unknown},
+): T {
+  const klass = node.constructor as Klass<LexicalNode>;
+  let setters = compiledSettersByClass.get(klass);
+  if (setters === undefined) {
+    // Populate the cache (and inject static methods) on first use.
+    getStaticNodeConfig(klass);
+    setters = compiledSettersByClass.get(klass) || EMPTY_SETTERS;
+  }
+  let self = node;
+  for (let i = 0; i < setters.length; i++) {
+    const entry = setters[i];
+    if (entry.kind === 'state') {
+      // Only apply a flat state that is actually present so a partial update
+      // doesn't reset it to its default.
+      if (entry.key in serializedNode) {
+        self = $setState(
+          self,
+          entry.stateConfig,
+          entry.stateConfig.parse(serializedNode[entry.key]),
+        );
+      }
+    } else {
+      self = (self as unknown as Record<string, (value: unknown) => T>)[
+        entry.setterName
+      ](entry.schema(serializedNode[entry.key]));
+    }
+  }
+  return self;
+}
+
 /** @internal */
 export function getStaticNodeConfig(
   klass: Klass<LexicalNode>,
@@ -3288,6 +3433,12 @@ export function getStaticNodeConfig(
   }
   const result = {klass, ownNodeConfig, ownNodeType};
   STATIC_NODE_CONFIG_CACHE.set(klass, result);
+  // After the cache is populated: compileSetters walks this class chain (which
+  // includes klass) and re-enters getStaticNodeConfig, which must hit the cache
+  // rather than recurse.
+  if (!compiledSettersByClass.has(klass)) {
+    compiledSettersByClass.set(klass, compileSetters(klass));
+  }
   return result;
 }
 

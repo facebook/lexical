@@ -28,13 +28,16 @@ import {
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
   type NodeKey,
+  nullable,
+  objectValue,
+  optional,
   type ParagraphNode,
   type RangeSelection,
   type SerializedElementNode,
   setDOMStyleFromCSS,
   type Spread,
+  stringValue,
   type TabNode,
 } from 'lexical';
 
@@ -52,6 +55,16 @@ export type SerializedCodeNode = Spread<
   },
   SerializedElementNode
 >;
+
+/**
+ * The schema for the node-specific properties of a {@link SerializedCodeNode}
+ * (those it adds over a {@link SerializedElementNode}). It is the single source
+ * of truth for parsing those properties — see {@link CodeNode.updateFromJSON}.
+ */
+export const codeNodeSchema = objectValue({
+  language: optional(nullable(stringValue())),
+  theme: optional(stringValue()),
+});
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
 /** @internal Configurable through the extensions. */
@@ -153,6 +166,7 @@ export class CodeNode extends ElementNode {
           return null;
         },
       },
+      json: codeNodeSchema,
     });
   }
 
@@ -268,13 +282,6 @@ export class CodeNode extends ElementNode {
       setDOMStyleFromCSS(element.style, style);
     }
     return {element};
-  }
-
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedCodeNode>): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setLanguage(serializedNode.language)
-      .setTheme(serializedNode.theme);
   }
 
   exportJSON(): SerializedCodeNode {

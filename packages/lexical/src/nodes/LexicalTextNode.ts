@@ -41,11 +41,17 @@ import {
   type DOMConversionOutput,
   type DOMExportOutput,
   LexicalNode,
-  type LexicalUpdateJSON,
   type NodeKey,
   type SerializedLexicalNode,
 } from '../LexicalNode';
 import {$cloneNodeState} from '../LexicalNodeState';
+import {
+  enumValue,
+  numberValue,
+  objectValue,
+  stringValue,
+  withSetter,
+} from '../LexicalSchema';
 import {
   $generateNodesFromRawText,
   $getSelection,
@@ -105,6 +111,21 @@ export type TextModeType = 'normal' | 'token' | 'segmented';
 export type TextMark = {end: null | number; id: string; start: null | number};
 
 export type TextMarks = TextMark[];
+
+/**
+ * The schema for the node-specific properties of a {@link SerializedTextNode}.
+ * It is the single source of truth for parsing those properties (see
+ * {@link TextNode.updateFromJSON}) and is declared on the node via `$config`
+ * so tooling can generate example serializations.
+ */
+export const textNodeSchema = objectValue({
+  detail: numberValue(),
+  format: numberValue(),
+  mode: enumValue(['normal', 'token', 'segmented']),
+  style: stringValue(),
+  // TextNode applies `text` with setTextContent rather than the default setText.
+  text: withSetter(stringValue(), 'setTextContent'),
+});
 
 function getElementOuterTag(node: TextNode, format: number): string | null {
   if (format & IS_CODE) {
@@ -393,6 +414,7 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
           priority: 0,
         }),
       },
+      json: textNodeSchema,
     });
   }
 
@@ -652,16 +674,6 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
       setDOMStyleFromCSS(dom.style, nextStyle, prevStyle);
     }
     return false;
-  }
-
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedTextNode>): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setTextContent(serializedNode.text)
-      .setFormat(serializedNode.format)
-      .setDetail(serializedNode.detail)
-      .setMode(serializedNode.mode)
-      .setStyle(serializedNode.style);
   }
 
   // This improves Lexical's basic text output in copy+paste plus

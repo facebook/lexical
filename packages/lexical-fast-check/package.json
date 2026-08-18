@@ -1,0 +1,24 @@
+{
+  "name": "@lexical/fast-check",
+  "description": "fast-check arbitraries derived from Lexical node JSON schemas, for property-based tests. Internal test utility; not published.",
+  "version": "0.45.0",
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facebook/lexical.git",
+    "directory": "packages/lexical-fast-check"
+  },
+  "sideEffects": false,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "fast-check": "^4.8.0",
+    "lexical": "workspace:*"
+  }
+}

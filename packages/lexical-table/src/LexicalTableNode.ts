@@ -13,13 +13,15 @@ import {getPeerDependencyFromEditor} from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
 import {$descendantsMatching} from '@lexical/utils';
 import {
-  $applyNodeReplacement,
+  $create,
   $getDocument,
   $getEditor,
   $getNearestNodeFromDOMNode,
   $setDirectionFromDOM,
   addClassNamesToElement,
+  arrayValue,
   type BaseSelection,
+  booleanValue,
   type DOMConversionOutput,
   type DOMExportOutput,
   type EditorConfig,
@@ -29,13 +31,16 @@ import {
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
   type NodeKey,
+  numberValue,
+  objectValue,
+  optional,
   removeClassNamesFromElement,
   type SerializedElementNode,
   setDOMStyleFromCSS,
   setDOMUnmanaged,
   type Spread,
+  withSetter,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
@@ -64,6 +69,13 @@ export type SerializedTableNode = Spread<
   },
   SerializedElementNode
 >;
+
+const tableNodeSchema = objectValue({
+  colWidths: optional(arrayValue(numberValue())),
+  frozenColumnCount: withSetter(numberValue(), 'setFrozenColumns'),
+  frozenRowCount: withSetter(numberValue(), 'setFrozenRows'),
+  rowStriping: booleanValue(),
+});
 
 function $updateColgroup(
   dom: HTMLTableElement,
@@ -389,6 +401,7 @@ export class TableNode extends ElementNode {
           priority: 1,
         }),
       },
+      json: tableNodeSchema,
     });
   }
 
@@ -411,15 +424,6 @@ export class TableNode extends ElementNode {
     this.__rowStriping = prevNode.__rowStriping;
     this.__frozenColumnCount = prevNode.__frozenColumnCount;
     this.__frozenRowCount = prevNode.__frozenRowCount;
-  }
-
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedTableNode>): this {
-    return super
-      .updateFromJSON(serializedNode)
-      .setRowStriping(serializedNode.rowStriping || false)
-      .setFrozenColumns(serializedNode.frozenColumnCount || 0)
-      .setFrozenRows(serializedNode.frozenRowCount || 0)
-      .setColWidths(serializedNode.colWidths);
   }
 
   exportJSON(): SerializedTableNode {
@@ -870,7 +874,7 @@ export function $convertTableElement(
 }
 
 export function $createTableNode(): TableNode {
-  return $applyNodeReplacement(new TableNode());
+  return $create(TableNode);
 }
 
 export function $isTableNode(

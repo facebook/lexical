@@ -31,6 +31,7 @@ import {
   $applyNodeReplacement,
   $caretFromPoint,
   $comparePointCaretNext,
+  $create,
   $createNodeSelection,
   $createParagraphNode,
   $createRangeSelection,
@@ -96,6 +97,7 @@ import {
   DROP_COMMAND,
   type EditorConfig,
   ElementNode,
+  enumValue,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   getDOMSelection,
@@ -121,12 +123,12 @@ import {
   type LexicalCommand,
   type LexicalEditor,
   type LexicalNode,
-  type LexicalUpdateJSON,
   mergeRegister,
   MOVE_TO_END,
   MOVE_TO_START,
   type NodeKey,
   type NodeSelection,
+  objectValue,
   OUTDENT_CONTENT_COMMAND,
   type ParagraphNode,
   PASTE_COMMAND,
@@ -307,6 +309,15 @@ export function $isQuoteNode(
 
 export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
+/**
+ * The schema for the node-specific properties of a {@link SerializedHeadingNode}
+ * (those it adds over a {@link SerializedElementNode}). It is the single source
+ * of truth for parsing those properties — see {@link HeadingNode.updateFromJSON}.
+ */
+export const headingNodeSchema = objectValue({
+  tag: enumValue(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']),
+});
+
 /** @noInheritDoc */
 export class HeadingNode extends ElementNode {
   /** @internal */
@@ -348,6 +359,7 @@ export class HeadingNode extends ElementNode {
           return null;
         },
       },
+      json: headingNodeSchema,
     });
   }
 
@@ -411,12 +423,6 @@ export class HeadingNode extends ElementNode {
     return {
       element,
     };
-  }
-
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedHeadingNode>,
-  ): this {
-    return super.updateFromJSON(serializedNode).setTag(serializedNode.tag);
   }
 
   exportJSON(): SerializedHeadingNode {
@@ -509,7 +515,7 @@ function $convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
 export function $createHeadingNode(
   headingTag: HeadingTagType = 'h1',
 ): HeadingNode {
-  return $applyNodeReplacement(new HeadingNode(headingTag));
+  return $create(HeadingNode).setTag(headingTag);
 }
 
 export function $isHeadingNode(

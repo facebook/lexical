@@ -28,6 +28,7 @@ import {
   $getRoot,
   $isElementNode,
   $isParagraphNode,
+  booleanValue,
   configExtension,
   DecoratorNode,
   defineExtension,
@@ -37,10 +38,15 @@ import {
   type LexicalNode,
   type LexicalUpdateJSON,
   type NodeKey,
+  numberValue,
+  objectValue,
+  optional,
   type RangeSelection,
   type SerializedEditor,
   type SerializedLexicalNode,
+  type SerializedPartial,
   type Spread,
+  stringValue,
 } from 'lexical';
 import * as React from 'react';
 
@@ -125,6 +131,15 @@ export type SerializedImageNode = Spread<
   SerializedLexicalNode
 >;
 
+const imageNodeSchema = objectValue({
+  altText: stringValue(),
+  height: optional(numberValue()),
+  maxWidth: optional(numberValue()),
+  showCaption: booleanValue(),
+  src: stringValue(),
+  width: optional(numberValue()),
+});
+
 export class ImageNode extends DecoratorNode<JSX.Element> {
   __src: string;
   __altText: string;
@@ -137,7 +152,10 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   __captionsEnabled: boolean;
 
   $config() {
-    return this.config('image', {extends: DecoratorNode});
+    return this.config('image', {
+      extends: DecoratorNode,
+      json: imageNodeSchema,
+    });
   }
 
   static clone(node: ImageNode): ImageNode {
@@ -154,8 +172,11 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     );
   }
 
-  static importJSON(serializedNode: SerializedImageNode): ImageNode {
-    const {altText, height, width, maxWidth, src, showCaption} = serializedNode;
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedImageNode>,
+  ): ImageNode {
+    const {altText, height, width, maxWidth, src, showCaption} =
+      imageNodeSchema(serializedNode);
     return $createImageNode({
       altText,
       height,
@@ -166,14 +187,18 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     }).updateFromJSON(serializedNode);
   }
 
-  updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedImageNode>): this {
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedImageNode>>,
+  ): this {
     const node = super.updateFromJSON(serializedNode);
     const {caption} = serializedNode;
 
-    const nestedEditor = node.__caption;
-    const editorState = nestedEditor.parseEditorState(caption.editorState);
-    if (!editorState.isEmpty()) {
-      nestedEditor.setEditorState(editorState);
+    if (caption) {
+      const nestedEditor = node.__caption;
+      const editorState = nestedEditor.parseEditorState(caption.editorState);
+      if (!editorState.isEmpty()) {
+        nestedEditor.setEditorState(editorState);
+      }
     }
     return node;
   }

@@ -12,6 +12,7 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
+  SerializedPartial,
   Spread,
 } from 'lexical';
 import type {JSX} from 'react';
@@ -21,7 +22,12 @@ import {
   DecoratorBlockNode,
   type SerializedDecoratorBlockNode,
 } from '@lexical/react/LexicalDecoratorBlockNode';
+import {objectValue, stringValue} from 'lexical';
 import * as React from 'react';
+
+const figmaNodeSchema = objectValue({
+  documentID: stringValue(),
+});
 
 type FigmaComponentProps = Readonly<{
   className: Readonly<{
@@ -66,17 +72,21 @@ export class FigmaNode extends DecoratorBlockNode {
   __id: string;
 
   $config() {
-    return this.config('figma', {extends: DecoratorBlockNode});
+    return this.config('figma', {
+      extends: DecoratorBlockNode,
+      json: figmaNodeSchema,
+    });
   }
 
   static clone(node: FigmaNode): FigmaNode {
     return new FigmaNode(node.__id, node.__format, node.__key);
   }
 
-  static importJSON(serializedNode: SerializedFigmaNode): FigmaNode {
-    return $createFigmaNode(serializedNode.documentID).updateFromJSON(
-      serializedNode,
-    );
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedFigmaNode>,
+  ): FigmaNode {
+    const {documentID} = figmaNodeSchema(serializedNode);
+    return $createFigmaNode(documentID).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedFigmaNode {

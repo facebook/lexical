@@ -21,7 +21,7 @@ import type {RangeSelection} from '../LexicalSelection';
 
 import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {
-  $applyNodeReplacement,
+  $create,
   $getDocument,
   $setDirectionFromDOM,
   $setFormatFromDOM,
@@ -179,7 +179,7 @@ function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
 
 /** Creates a ParagraphNode, the default block-level container for text. */
 export function $createParagraphNode(): ParagraphNode {
-  return $applyNodeReplacement(new ParagraphNode());
+  return $create(ParagraphNode);
 }
 
 /** Returns true if the given node is a ParagraphNode. */

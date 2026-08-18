@@ -12,7 +12,7 @@ import type {LexicalNode, NodeKey} from '../LexicalNode';
 import invariant from '@lexical/internal/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
-import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
+import {$create, getCachedClassNameArray} from '../LexicalUtils';
 import {
   type SerializedTextNode,
   type TextDetailType,
@@ -97,7 +97,7 @@ export class TabNode extends TextNode {
 
 /** Creates a TabNode representing a horizontal tab character. */
 export function $createTabNode(): TabNode {
-  return $applyNodeReplacement(new TabNode());
+  return $create(TabNode);
 }
 
 /** Returns true if the given node is a TabNode. */

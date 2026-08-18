@@ -23,13 +23,17 @@ import {
   DecoratorNode,
   defineExtension,
   type EditorConfig,
+  enumValue,
   type LexicalEditor,
   type LexicalEditorWithDispose,
   type LexicalNode,
   type LexicalUpdateJSON,
   type NodeKey,
+  numberValue,
+  objectValue,
   type SerializedEditor,
   type SerializedLexicalNode,
+  type SerializedPartial,
   type Spread,
 } from 'lexical';
 import * as React from 'react';
@@ -41,6 +45,12 @@ import ContentEditable from '../ui/ContentEditable';
 const StickyComponent = React.lazy(() => import('./StickyComponent'));
 
 type StickyNoteColor = 'pink' | 'yellow';
+
+const stickyNodeSchema = objectValue({
+  color: enumValue(['yellow', 'pink']),
+  xOffset: numberValue(),
+  yOffset: numberValue(),
+});
 
 export type SerializedStickyNode = Spread<
   {
@@ -80,7 +90,10 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
   __caption: LexicalEditorWithDispose;
 
   $config() {
-    return this.config('sticky', {extends: DecoratorNode});
+    return this.config('sticky', {
+      extends: DecoratorNode,
+      json: stickyNodeSchema,
+    });
   }
 
   static clone(node: StickyNode): StickyNode {
@@ -92,23 +105,26 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
       node.__key,
     );
   }
-  static importJSON(serializedNode: SerializedStickyNode): StickyNode {
-    return new StickyNode(
-      serializedNode.xOffset,
-      serializedNode.yOffset,
-      serializedNode.color,
-    ).updateFromJSON(serializedNode);
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedStickyNode>,
+  ): StickyNode {
+    const {xOffset, yOffset, color} = stickyNodeSchema(serializedNode);
+    return new StickyNode(xOffset, yOffset, color).updateFromJSON(
+      serializedNode,
+    );
   }
 
   updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedStickyNode>,
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedStickyNode>>,
   ): this {
     const stickyNode = super.updateFromJSON(serializedNode);
     const caption = serializedNode.caption;
-    const nestedEditor = stickyNode.__caption;
-    const editorState = nestedEditor.parseEditorState(caption.editorState);
-    if (!editorState.isEmpty()) {
-      nestedEditor.setEditorState(editorState);
+    if (caption) {
+      const nestedEditor = stickyNode.__caption;
+      const editorState = nestedEditor.parseEditorState(caption.editorState);
+      if (!editorState.isEmpty()) {
+        nestedEditor.setEditorState(editorState);
+      }
     }
     return stickyNode;
   }

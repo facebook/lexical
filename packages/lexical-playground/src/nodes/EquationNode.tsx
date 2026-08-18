@@ -12,17 +12,26 @@ import katex from 'katex';
 import {
   $applyNodeReplacement,
   $getDocument,
+  booleanValue,
   DecoratorNode,
   type DOMExportOutput,
   type EditorConfig,
   type LexicalNode,
   type NodeKey,
+  objectValue,
   type SerializedLexicalNode,
+  type SerializedPartial,
   type Spread,
+  stringValue,
 } from 'lexical';
 import * as React from 'react';
 
 const EquationComponent = React.lazy(() => import('./EquationComponent'));
+
+const equationNodeSchema = objectValue({
+  equation: stringValue(),
+  inline: booleanValue(),
+});
 
 export type SerializedEquationNode = Spread<
   {
@@ -62,7 +71,10 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
   __inline: boolean;
 
   $config() {
-    return this.config('equation', {extends: DecoratorNode});
+    return this.config('equation', {
+      extends: DecoratorNode,
+      json: equationNodeSchema,
+    });
   }
 
   constructor(equation: string = '', inline?: boolean, key?: NodeKey) {
@@ -77,11 +89,11 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     this.__inline = prevNode.__inline;
   }
 
-  static importJSON(serializedNode: SerializedEquationNode): EquationNode {
-    return $createEquationNode(
-      serializedNode.equation,
-      serializedNode.inline,
-    ).updateFromJSON(serializedNode);
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedEquationNode>,
+  ): EquationNode {
+    const {equation, inline} = equationNodeSchema(serializedNode);
+    return $createEquationNode(equation, inline).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedEquationNode {

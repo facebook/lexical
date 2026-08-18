@@ -12,10 +12,19 @@ import {
   type EditorConfig,
   type LexicalNode,
   type NodeKey,
+  objectValue,
+  type SerializedPartial,
   type SerializedTextNode,
   type Spread,
+  stringValue,
   TextNode,
 } from 'lexical';
+
+const emojiNodeSchema = objectValue({
+  className: stringValue(),
+});
+
+const parseText = stringValue();
 
 export type SerializedEmojiNode = Spread<
   {
@@ -28,7 +37,10 @@ export class EmojiNode extends TextNode {
   __className: string;
 
   $config() {
-    return this.config('emoji', {extends: TextNode});
+    return this.config('emoji', {
+      extends: TextNode,
+      json: emojiNodeSchema,
+    });
   }
 
   static clone(node: EmojiNode): EmojiNode {
@@ -58,11 +70,12 @@ export class EmojiNode extends TextNode {
     return false;
   }
 
-  static importJSON(serializedNode: SerializedEmojiNode): EmojiNode {
-    return $createEmojiNode(
-      serializedNode.className,
-      serializedNode.text,
-    ).updateFromJSON(serializedNode);
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedEmojiNode>,
+  ): EmojiNode {
+    const {className} = emojiNodeSchema(serializedNode);
+    const text = parseText(serializedNode.text);
+    return $createEmojiNode(className, text).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedEmojiNode {

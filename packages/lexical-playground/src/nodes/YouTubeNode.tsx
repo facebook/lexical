@@ -21,9 +21,16 @@ import {
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
+  objectValue,
+  type SerializedPartial,
   type Spread,
+  stringValue,
 } from 'lexical';
 import * as React from 'react';
+
+const youTubeNodeSchema = objectValue({
+  videoID: stringValue(),
+});
 
 type YouTubeComponentProps = Readonly<{
   className: Readonly<{
@@ -70,17 +77,21 @@ export class YouTubeNode extends DecoratorBlockNode {
   __id: string;
 
   $config() {
-    return this.config('youtube', {extends: DecoratorBlockNode});
+    return this.config('youtube', {
+      extends: DecoratorBlockNode,
+      json: youTubeNodeSchema,
+    });
   }
 
   static clone(node: YouTubeNode): YouTubeNode {
     return new YouTubeNode(node.__id, node.__format, node.__key);
   }
 
-  static importJSON(serializedNode: SerializedYouTubeNode): YouTubeNode {
-    return $createYouTubeNode(serializedNode.videoID).updateFromJSON(
-      serializedNode,
-    );
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedYouTubeNode>,
+  ): YouTubeNode {
+    const {videoID} = youTubeNodeSchema(serializedNode);
+    return $createYouTubeNode(videoID).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedYouTubeNode {

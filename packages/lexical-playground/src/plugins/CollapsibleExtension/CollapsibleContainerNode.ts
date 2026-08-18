@@ -11,6 +11,7 @@ import {
   $getSiblingCaret,
   $isElementNode,
   $rewindSiblingCaret,
+  booleanValue,
   type DOMExportOutput,
   type EditorConfig,
   ElementNode,
@@ -20,12 +21,18 @@ import {
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
+  objectValue,
   type RangeSelection,
   type SerializedElementNode,
+  type SerializedPartial,
   type Spread,
 } from 'lexical';
 
 import {setDomHiddenUntilFound} from './CollapsibleUtils';
+
+const collapsibleContainerNodeSchema = objectValue({
+  open: booleanValue(),
+});
 
 type SerializedCollapsibleContainerNode = Spread<
   {
@@ -43,7 +50,10 @@ export class CollapsibleContainerNode extends ElementNode {
   }
 
   $config() {
-    return this.config('collapsible-container', {extends: ElementNode});
+    return this.config('collapsible-container', {
+      extends: ElementNode,
+      json: collapsibleContainerNodeSchema,
+    });
   }
 
   static clone(node: CollapsibleContainerNode): CollapsibleContainerNode {
@@ -127,11 +137,10 @@ export class CollapsibleContainerNode extends ElementNode {
   }
 
   static importJSON(
-    serializedNode: SerializedCollapsibleContainerNode,
+    serializedNode: SerializedPartial<SerializedCollapsibleContainerNode>,
   ): CollapsibleContainerNode {
-    return $createCollapsibleContainerNode(serializedNode.open).updateFromJSON(
-      serializedNode,
-    );
+    const {open} = collapsibleContainerNodeSchema(serializedNode);
+    return $createCollapsibleContainerNode(open).updateFromJSON(serializedNode);
   }
 
   exportDOM(): DOMExportOutput {

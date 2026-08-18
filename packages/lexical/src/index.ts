@@ -300,6 +300,18 @@ export {
   type RawTextVisitor,
   tokenizeRawText,
 } from './LexicalSelection';
+export {
+  $compactSerializedNode,
+  $getSerializationContextValue,
+  $withSerializationContext,
+  type AnySerializationStateConfigPair,
+  createSerializationState,
+  SerializationContextCompact,
+  SerializationContextNodeTransforms,
+  type SerializationNodeTransform,
+  type SerializationStateConfig,
+  type SerializationStateConfigPair,
+} from './LexicalSerializationContext';
 export type {SlotName} from './LexicalSlot';
 export {
   $getSlot,

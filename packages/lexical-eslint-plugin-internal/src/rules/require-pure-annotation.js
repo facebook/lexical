@@ -25,6 +25,7 @@ const DEFAULT_FUNCTIONS = [
   'createContextState',
   'createImportState',
   'createRenderState',
+  'createSerializationState',
   'createState',
   'declarePeerDependency',
   'defineExtension',

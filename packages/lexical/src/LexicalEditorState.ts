@@ -13,6 +13,7 @@ import type {BaseSelection} from './LexicalSelection';
 import invariant from '@lexical/internal/invariant';
 
 import {cloneMap} from './LexicalGenMap';
+import {$applySerializationContext} from './LexicalSerializationContext';
 import {$getSlot, $getSlotNames} from './LexicalSlot';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
@@ -61,16 +62,25 @@ export function createEmptyEditorState(): EditorState {
 
 function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
   node: LexicalNode,
-): SerializedNode {
-  const serializedNode = node.exportJSON();
+  isRoot = false,
+): SerializedNode | null {
+  const exported = node.exportJSON();
   const nodeClass = node.constructor;
 
-  if (serializedNode.type !== nodeClass.getType()) {
+  if (exported.type !== nodeClass.getType()) {
     invariant(
       false,
       'LexicalNode: Node %s does not match the serialized type. Check if .exportJSON() is implemented and it is returning the correct type.',
       nodeClass.name,
     );
+  }
+
+  // The active serialization context decides what this node contributes: a
+  // transform may replace or omit it, and the compact form drops properties
+  // that parsing would restore from their schema default anyway.
+  const serializedNode = $applySerializationContext(node, exported, isRoot);
+  if (serializedNode === null) {
+    return null;
   }
 
   if ($isElementNode(node)) {
@@ -89,7 +99,9 @@ function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
       const serializedChildNode = $exportNodeToJSON(child);
-      serializedChildren.push(serializedChildNode);
+      if (serializedChildNode !== null) {
+        serializedChildren.push(serializedChildNode);
+      }
     }
   }
 
@@ -106,7 +118,10 @@ function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
         nodeClass.name,
         name,
       );
-      serializedSlots[name] = $exportNodeToJSON(slotNode);
+      const serializedSlotNode = $exportNodeToJSON(slotNode);
+      if (serializedSlotNode !== null) {
+        serializedSlots[name] = serializedSlotNode;
+      }
     }
     (
       serializedNode as SerializedLexicalNode & {
@@ -188,7 +203,7 @@ export class EditorState {
   }
   toJSON(): SerializedEditorState {
     return readEditorState(null, this, () => ({
-      root: $exportNodeToJSON($getRoot()),
+      root: $exportNodeToJSON($getRoot(), true) as SerializedRootNode,
     }));
   }
 }

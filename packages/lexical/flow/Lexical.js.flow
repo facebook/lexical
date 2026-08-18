@@ -1784,6 +1784,39 @@ export type StateValueConfig<V> = {
   resetOnCopyNode?: boolean;
 }
 
+/**
+ * Serialization context (JSON export)
+ */
+export type SerializationStateConfig<V> = {
+  readonly name: string,
+  readonly defaultValue: V,
+};
+export type SerializationStateConfigPair<V> = [SerializationStateConfig<V>, V];
+// $FlowFixMe[unclear-type] the pair is heterogeneous by construction
+export type AnySerializationStateConfigPair = SerializationStateConfigPair<any>;
+export type SerializationNodeTransform = (
+  node: LexicalNode,
+  json: SerializedLexicalNode,
+) => SerializedLexicalNode | null;
+declare export function createSerializationState<V>(
+  name: string,
+  defaultValue: V,
+): SerializationStateConfig<V>;
+declare export var SerializationContextCompact: SerializationStateConfig<boolean>;
+declare export var SerializationContextNodeTransforms: SerializationStateConfig<
+  ReadonlyArray<SerializationNodeTransform>,
+>;
+declare export function $getSerializationContextValue<V>(
+  cfg: SerializationStateConfig<V>,
+): V;
+declare export function $withSerializationContext(
+  pairs: ReadonlyArray<AnySerializationStateConfigPair>,
+): <T>(f: () => T) => T;
+declare export function $compactSerializedNode(
+  node: LexicalNode,
+  json: SerializedLexicalNode,
+): SerializedLexicalNode;
+
 export type Parse<T> = (value: unknown) => T;
 export type SerializationSchema<T> = Parse<T>;
 export type AnySerializationSchema = SerializationSchema<unknown>;

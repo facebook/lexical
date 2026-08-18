@@ -232,7 +232,8 @@
       "serialize-javascript": ">=7.0.5",
       "sharp": "link:./stubs/empty",
       "tmp": ">=0.2.6",
-      "yjs": "$yjs"
+      "yjs": "$yjs",
+      "qs": ">=6.15.2"
     }
   }
 }

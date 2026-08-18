@@ -10,6 +10,8 @@ import type {Klass} from './LexicalEditor';
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 import type {AnySerializationSchema} from './LexicalSchema';
 
+import invariant from '@lexical/internal/invariant';
+
 import {iterStaticNodeConfigChain} from './LexicalUtils';
 
 /**
@@ -59,17 +61,19 @@ export function createSerializationState<V>(
 /**
  * EXPERIMENTAL
  *
- * A hook that inspects each node as it is serialized. Return the JSON to use
- * for the node (the given `json`, or a replacement), or `null` to omit the
- * node — and, with it, its subtree — from the output entirely.
+ * Middleware deciding what a node contributes to a JSON export, in the same
+ * style as the DOM render overrides of `@lexical/html`: call `$next()` to get
+ * the JSON the default implementation (or a lower-priority override) would
+ * produce and enhance it, return something else entirely to replace it, or
+ * return `null` to omit the node — and with it its subtree.
  *
- * Transforms run in order; the first one to return `null` omits the node, and
- * each subsequent transform sees the JSON the previous one returned. The root
- * is never passed to a transform, since a document must have one.
+ * Only one is installed at a time. Rather than hand-writing it, declare
+ * per-node overrides with `jsonOverride` and let `SerializationExtension`
+ * compile them into this; it owns matching nodes and chaining `$next`.
  */
-export type SerializationNodeTransform = (
+export type SerializationOverrideFn = (
   node: LexicalNode,
-  json: SerializedLexicalNode,
+  $next: () => SerializedLexicalNode,
 ) => SerializedLexicalNode | null;
 
 /**
@@ -89,12 +93,14 @@ export const SerializationContextCompact =
 /**
  * EXPERIMENTAL
  *
- * The {@link SerializationNodeTransform}s to apply while serializing.
+ * The {@link SerializationOverrideFn} to consult for each node, normally
+ * compiled from `jsonOverride` declarations by `SerializationExtension`.
  */
-export const SerializationContextNodeTransforms =
-  /* @__PURE__ */ createSerializationState<
-    readonly SerializationNodeTransform[]
-  >('nodeTransforms', []);
+export const SerializationContextOverride =
+  /* @__PURE__ */ createSerializationState<null | SerializationOverrideFn>(
+    'override',
+    null,
+  );
 
 type SerializationContextRecord = ReadonlyMap<
   SerializationStateConfig<unknown>,
@@ -218,27 +224,26 @@ export function $compactSerializedNode(
 }
 
 /**
- * Apply the active serialization context to one node's exported JSON: run the
- * node transforms, then compact the result when the context asks for it.
- * Returns `null` when a transform omitted the node.
+ * Apply the active serialization context to one node: consult the installed
+ * override (which may replace or omit the node), then compact what survives
+ * when the context asks for it. Returns `null` when the node was omitted.
  *
  * @internal
  */
 export function $applySerializationContext(
   node: LexicalNode,
-  json: SerializedLexicalNode,
   isRoot: boolean,
 ): SerializedLexicalNode | null {
-  let result: SerializedLexicalNode | null = json;
-  if (!isRoot) {
-    for (const transform of $getSerializationContextValue(
-      SerializationContextNodeTransforms,
-    )) {
-      result = transform(node, result);
-      if (result === null) {
-        return null;
-      }
-    }
+  const override = $getSerializationContextValue(SerializationContextOverride);
+  const result = override
+    ? override(node, () => node.exportJSON())
+    : node.exportJSON();
+  if (result === null) {
+    invariant(
+      !isRoot,
+      'LexicalSerializationContext: a serialization override omitted the root node, but a document must have one',
+    );
+    return null;
   }
   return $getSerializationContextValue(SerializationContextCompact)
     ? $compactSerializedNode(node, result)

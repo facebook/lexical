@@ -15,7 +15,7 @@ import {
   createEditor,
   type LexicalEditor,
   SerializationContextCompact,
-  SerializationContextNodeTransforms,
+  SerializationContextOverride,
   type SerializedLexicalNode,
 } from 'lexical';
 import {beforeEach, describe, expect, test} from 'vitest';
@@ -125,30 +125,36 @@ describe('serialization context', () => {
     expect(fromCompact.toJSON()).toEqual(fromLegacy.toJSON());
   });
 
-  test('a node transform can omit a node and its subtree', () => {
+  test('an override can omit a node and its subtree', () => {
     const root = toJSON([
       [
-        SerializationContextNodeTransforms,
-        [
-          (node: import('lexical').LexicalNode, json: SerializedLexicalNode) =>
-            $isTextNode(node) && node.getTextContent() === 'bold' ? null : json,
-        ],
+        SerializationContextOverride,
+        (
+          node: import('lexical').LexicalNode,
+          $next: () => SerializedLexicalNode,
+        ) =>
+          $isTextNode(node) && node.getTextContent() === 'bold'
+            ? null
+            : $next(),
       ],
     ]);
     const paragraph = root.children![0];
     expect(paragraph.children!.map(child => child.text)).toEqual(['plain']);
   });
 
-  test('a node transform can replace a node', () => {
+  test('an override can enhance what $next() produced', () => {
     const root = toJSON([
       [
-        SerializationContextNodeTransforms,
-        [
-          (node: import('lexical').LexicalNode, json: SerializedLexicalNode) =>
-            $isTextNode(node) && node.getTextContent() === 'bold'
-              ? {...json, text: 'REDACTED'}
-              : json,
-        ],
+        SerializationContextOverride,
+        (
+          node: import('lexical').LexicalNode,
+          $next: () => SerializedLexicalNode,
+        ) => {
+          const json = $next();
+          return $isTextNode(node) && node.getTextContent() === 'bold'
+            ? {...json, text: 'REDACTED'}
+            : json;
+        },
       ],
     ]);
     const paragraph = root.children![0];
@@ -158,18 +164,32 @@ describe('serialization context', () => {
     ]);
   });
 
-  test('transforms and compaction compose, and the root is never omitted', () => {
+  test('overrides and compaction compose', () => {
     const root = toJSON([
       [SerializationContextCompact, true],
       [
-        SerializationContextNodeTransforms,
-        [() => null as SerializedLexicalNode | null],
+        SerializationContextOverride,
+        (
+          node: import('lexical').LexicalNode,
+          $next: () => SerializedLexicalNode,
+        ) => ($isTextNode(node) ? null : $next()),
       ],
     ]);
-    // the transform omitted everything below it, but the root survives
+    // every text node omitted, and what survives is still compacted
     expect(root.type).toBe('root');
     expect(root).not.toHaveProperty('version');
-    expect(root.children).toEqual([]);
+    expect(root.children![0].children).toEqual([]);
+  });
+
+  test('omitting the root is an error, since a document must have one', () => {
+    expect(() =>
+      toJSON([
+        [
+          SerializationContextOverride,
+          () => null as SerializedLexicalNode | null,
+        ],
+      ]),
+    ).toThrow(/omitted the root node/);
   });
 
   test('the context does not leak outside its callback', () => {

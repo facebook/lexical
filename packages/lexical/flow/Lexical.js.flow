@@ -1794,17 +1794,17 @@ export type SerializationStateConfig<V> = {
 export type SerializationStateConfigPair<V> = [SerializationStateConfig<V>, V];
 // $FlowFixMe[unclear-type] the pair is heterogeneous by construction
 export type AnySerializationStateConfigPair = SerializationStateConfigPair<any>;
-export type SerializationNodeTransform = (
+export type SerializationOverrideFn = (
   node: LexicalNode,
-  json: SerializedLexicalNode,
+  $next: () => SerializedLexicalNode,
 ) => SerializedLexicalNode | null;
 declare export function createSerializationState<V>(
   name: string,
   defaultValue: V,
 ): SerializationStateConfig<V>;
 declare export var SerializationContextCompact: SerializationStateConfig<boolean>;
-declare export var SerializationContextNodeTransforms: SerializationStateConfig<
-  ReadonlyArray<SerializationNodeTransform>,
+declare export var SerializationContextOverride: SerializationStateConfig<
+  null | SerializationOverrideFn,
 >;
 declare export function $getSerializationContextValue<V>(
   cfg: SerializationStateConfig<V>,

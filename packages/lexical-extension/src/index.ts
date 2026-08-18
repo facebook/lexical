@@ -91,6 +91,16 @@ export {
 } from './SelectBlockExtension';
 export {SelectionAlwaysOnDisplayExtension} from './SelectionAlwaysOnDisplayExtension';
 export {
+  type AnySerializationOverride,
+  type ExportJSONOptions,
+  jsonOverride,
+  type NodeMatch,
+  type SerializationConfig,
+  SerializationExtension,
+  type SerializationExtensionOutput,
+  type SerializationOverride,
+} from './SerializationExtension';
+export {
   batch,
   computed,
   effect,

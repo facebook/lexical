@@ -307,8 +307,8 @@ export {
   type AnySerializationStateConfigPair,
   createSerializationState,
   SerializationContextCompact,
-  SerializationContextNodeTransforms,
-  type SerializationNodeTransform,
+  SerializationContextOverride,
+  type SerializationOverrideFn,
   type SerializationStateConfig,
   type SerializationStateConfigPair,
 } from './LexicalSerializationContext';

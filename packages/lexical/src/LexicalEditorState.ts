@@ -64,23 +64,22 @@ function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
   node: LexicalNode,
   isRoot = false,
 ): SerializedNode | null {
-  const exported = node.exportJSON();
   const nodeClass = node.constructor;
 
-  if (exported.type !== nodeClass.getType()) {
+  // The active serialization context decides what this node contributes: an
+  // override may replace or omit it, and the compact form drops properties
+  // that parsing would restore from their schema default anyway.
+  const serializedNode = $applySerializationContext(node, isRoot);
+  if (serializedNode === null) {
+    return null;
+  }
+
+  if (serializedNode.type !== nodeClass.getType()) {
     invariant(
       false,
       'LexicalNode: Node %s does not match the serialized type. Check if .exportJSON() is implemented and it is returning the correct type.',
       nodeClass.name,
     );
-  }
-
-  // The active serialization context decides what this node contributes: a
-  // transform may replace or omit it, and the compact form drops properties
-  // that parsing would restore from their schema default anyway.
-  const serializedNode = $applySerializationContext(node, exported, isRoot);
-  if (serializedNode === null) {
-    return null;
   }
 
   if ($isElementNode(node)) {

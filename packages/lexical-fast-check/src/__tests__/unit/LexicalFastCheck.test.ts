@@ -201,6 +201,53 @@ describe('@lexical/fast-check', () => {
     });
   });
 
+  test('nodeArbitrary generates absent properties, not only complete records', () => {
+    // The parsers face SerializedPartial: any node-specific property may be
+    // missing (an older document, or a compact export that omitted a
+    // default-valued property). A fixed seed keeps this deterministic.
+    const samples = fc.sample(nodeArbitrary(TextNode), {
+      numRuns: 200,
+      seed: 42,
+    });
+    const keys = Object.keys(composeNodeSerializationSchema(TextNode));
+    expect(keys.length).toBeGreaterThan(0);
+    for (const key of keys) {
+      expect(samples.some(props => !(key in props))).toBe(true);
+      expect(samples.some(props => key in props)).toBe(true);
+    }
+  });
+
+  test('compact TextNode JSON imports and exports with valid defaults', () => {
+    // Every node-specific property omitted: each must come back as its
+    // schema default rather than undefined.
+    const exported = importExport(TextNode, {
+      type: 'text',
+      version: 1,
+    } as SerializedLexicalNode);
+    expect(exported).toMatchObject({
+      detail: 0,
+      format: 0,
+      mode: 'normal',
+      style: '',
+      text: '',
+    });
+  });
+
+  test('a partially compact TextNode keeps the properties it does carry', () => {
+    const exported = importExport(TextNode, {
+      text: 'hello',
+      type: 'text',
+      version: 1,
+    } as SerializedLexicalNode);
+    expect(exported).toMatchObject({
+      detail: 0,
+      format: 0,
+      mode: 'normal',
+      style: '',
+      text: 'hello',
+    });
+  });
+
   test('TextNode tolerates out-of-domain property values', () => {
     const garbage = fc.record({
       detail: fc.anything(),

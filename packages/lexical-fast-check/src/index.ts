@@ -128,6 +128,13 @@ function isNodeClass(value: unknown): value is Klass<LexicalNode> {
  * — so an element-based node generates the properties it gets from ElementNode
  * as well as its own. Spread the result with `type`/`version` to feed
  * `importJSON`.
+ *
+ * Every property is generated independently as present or absent
+ * (`requiredKeys: []`), because that is the domain the parsers actually face:
+ * a `SerializedPartial` may omit any node-specific property — older documents
+ * predate a property, and a compact export omits one whose value equals its
+ * default. Generating complete records only would leave the defaulting path
+ * (the whole point of a schema carrying a `defaultValue`) untested.
  */
 export function nodeArbitrary(
   klass: Klass<LexicalNode>,
@@ -137,7 +144,7 @@ export function nodeArbitrary(
   for (const key of Object.keys(fields)) {
     record[key] = metaArbitrary(fields[key].meta);
   }
-  return fc.record(record);
+  return fc.record(record, {requiredKeys: []});
 }
 
 function metaArbitrary(meta: SerializationSchemaMeta): fc.Arbitrary<unknown> {

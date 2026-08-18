@@ -12,7 +12,7 @@ import {
   $isTableCellNode,
   TableCellHeaderStates,
 } from '@lexical/table';
-import {$createTextNode, $getRoot, DOMConversionOutput} from 'lexical';
+import {$createTextNode, $getRoot, type DOMConversionOutput} from 'lexical';
 import {
   $runDOMConversion,
   expectHtmlToBeEqual,
@@ -104,7 +104,7 @@ describe('LexicalTableCellNode tests', () => {
       const {editor} = testEnv;
       const parser = new DOMParser();
 
-      const cases: Array<[string, string]> = [
+      const cases: [string, string][] = [
         [
           html`
             <table>
@@ -118,7 +118,6 @@ describe('LexicalTableCellNode tests', () => {
           `,
           html`
             <table>
-              <colgroup><col /></colgroup>
               <tbody>
                 <tr>
                   <td
@@ -150,7 +149,6 @@ describe('LexicalTableCellNode tests', () => {
           `,
           html`
             <table>
-              <colgroup><col /></colgroup>
               <tbody>
                 <tr>
                   <td
@@ -183,7 +181,6 @@ describe('LexicalTableCellNode tests', () => {
           `,
           html`
             <table>
-              <colgroup><col /></colgroup>
               <tbody>
                 <tr>
                   <td

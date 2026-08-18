@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {$applyNodeReplacement, EditorConfig, ParagraphNode} from 'lexical';
+import {$applyNodeReplacement, type EditorConfig, ParagraphNode} from 'lexical';
 
 export class CustomParagraphNode extends ParagraphNode {
   $config() {

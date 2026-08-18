@@ -6,13 +6,10 @@
  *
  */
 
-import type {EditorConfig} from 'lexical';
-
-import {$getRoot} from 'lexical';
+import {$createCodeNode} from '@lexical/code-core';
+import {$getRoot, type EditorConfig} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {describe, expect, it} from 'vitest';
-
-import {$createCodeNode} from '../../CodeNode';
 
 const editorConfig = {
   namespace: '',

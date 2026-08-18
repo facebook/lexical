@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import 'katex/dist/katex.css';
 
 import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
@@ -23,12 +21,16 @@ import {
   configExtension,
   createCommand,
   defineExtension,
-  LexicalCommand,
-  LexicalEditor,
+  type LexicalCommand,
+  type LexicalEditor,
 } from 'lexical';
-import {useCallback} from 'react';
+import {type JSX, useCallback} from 'react';
 
-import {$createEquationNode, EquationNode} from '../../nodes/EquationNode';
+import {
+  $createEquationNode,
+  decodeEquation,
+  EquationNode,
+} from '../../nodes/EquationNode';
 import KatexEquationAlterer from '../../ui/KatexEquationAlterer';
 
 type CommandPayload = {
@@ -37,14 +39,14 @@ type CommandPayload = {
 };
 
 export const INSERT_EQUATION_COMMAND: LexicalCommand<CommandPayload> =
-  createCommand('INSERT_EQUATION_COMMAND');
+  /* @__PURE__ */ createCommand('INSERT_EQUATION_COMMAND');
 
 function $convertEquationElement(el: HTMLElement) {
   const encoded = el.getAttribute('data-lexical-equation');
   if (!encoded) {
     return null;
   }
-  const equation = atob(encoded);
+  const equation = decodeEquation(encoded);
   if (!equation) {
     return null;
   }
@@ -52,7 +54,7 @@ function $convertEquationElement(el: HTMLElement) {
   return $createEquationNode(equation, inline);
 }
 
-const EquationImportRule = defineImportRule({
+const EquationImportRule = /* @__PURE__ */ defineImportRule({
   $import: (_ctx, el, $next) => {
     const node = $convertEquationElement(el);
     return node ? [node] : $next();
@@ -61,14 +63,16 @@ const EquationImportRule = defineImportRule({
   name: '@lexical/playground/equation',
 });
 
-export const EquationsExtension = defineExtension({
+export const EquationsExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
-    configExtension(DOMImportExtension, {rules: [EquationImportRule]}),
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      rules: [EquationImportRule],
+    }),
   ],
   name: '@lexical/playground/Equations',
   nodes: [EquationNode],
   register: editor =>
-    editor.registerCommand<CommandPayload>(
+    editor.registerCommand(
       INSERT_EQUATION_COMMAND,
       payload => {
         const {equation, inline} = payload;

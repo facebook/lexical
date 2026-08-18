@@ -5,12 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  RangeSelection,
+  type RangeSelection,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 

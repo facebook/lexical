@@ -8,9 +8,9 @@
 
 import {ContentEditableElement} from '@lexical/react/LexicalContentEditable';
 import {axe, toHaveNoViolations} from 'jest-axe';
-import {createEditor, LexicalEditor} from 'lexical';
+import {createEditor, type LexicalEditor} from 'lexical';
 import {act} from 'react';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 describe('ContentEditableElement tests', () => {
@@ -242,6 +242,39 @@ describe('ContentEditableElement tests', () => {
 
     const results = await axe(container!);
     expect(results).toHaveNoViolations();
+  });
+
+  it('renders tabindex="-1" when not editable', async () => {
+    editor.setEditable(false);
+    await act(async () => {
+      reactRoot.render(
+        <ContentEditableElement editor={editor} role="textbox" />,
+      );
+    });
+    const element = container!.querySelector('[role="textbox"]')!;
+    expect(element.getAttribute('tabindex')).toBe('-1');
+    expect(element.getAttribute('contenteditable')).toBe('false');
+  });
+
+  it('does not render tabindex when editable', async () => {
+    await act(async () => {
+      reactRoot.render(
+        <ContentEditableElement editor={editor} role="textbox" />,
+      );
+    });
+    const element = container!.querySelector('[role="textbox"]')!;
+    expect(element.getAttribute('tabindex')).toBeNull();
+  });
+
+  it('allows custom tabIndex to override default when not editable', async () => {
+    editor.setEditable(false);
+    await act(async () => {
+      reactRoot.render(
+        <ContentEditableElement editor={editor} role="textbox" tabIndex={0} />,
+      );
+    });
+    const element = container!.querySelector('[role="textbox"]')!;
+    expect(element.getAttribute('tabindex')).toBe('0');
   });
 
   it('should have no accessibility violations when not editable', async () => {

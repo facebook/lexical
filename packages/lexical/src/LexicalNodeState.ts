@@ -6,6 +6,13 @@
  *
  */
 
+import type {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
+import type {
+  AnyStaticNodeConfigValue,
+  GetStaticNodeOwnConfig,
+  GetStaticNodeType,
+} from './LexicalNode';
+
 import invariant from '@lexical/internal/invariant';
 
 import {
@@ -17,13 +24,30 @@ import {
   NODE_STATE_KEY,
   type SerializedLexicalNode,
   type Spread,
-  type StaticNodeConfigRecord,
 } from '.';
-import {PROTOTYPE_CONFIG_METHOD} from './LexicalConstants';
 import {errorOnReadOnly} from './LexicalUpdates';
-import {getRegisteredNodeOrThrow, getStaticNodeConfig} from './LexicalUtils';
+import {
+  getRegisteredNodeOrThrow,
+  iterStaticNodeConfigChain,
+} from './LexicalUtils';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
+
+/**
+ * Read the state directly from the given object without `node.getLatest()`.
+ * Safe to use outside of editor state context or to read a previous version,
+ * equivalent to reading the property directly.
+ */
+export const NODE_STATE_DIRECT = 'direct';
+/**
+ * Use `node.getLatest()` before reading the state, per the lexical convention
+ * of only working with the latest version of a node.
+ */
+export const NODE_STATE_LATEST = 'latest';
+
+export type NodeStateVersion =
+  | typeof NODE_STATE_DIRECT
+  | typeof NODE_STATE_LATEST;
 
 /**
  * Get the value type (V) from a StateConfig
@@ -104,22 +128,46 @@ export type CollectStateJSON<
   {[K in keyof Tuple]: RequiredNodeStateConfigJSON<Tuple[K], Flat>}[number]
 >;
 
-type GetStaticNodeConfig<T extends LexicalNode> =
-  ReturnType<T[typeof PROTOTYPE_CONFIG_METHOD]> extends infer Record
-    ? Record extends StaticNodeConfigRecord<infer Type, infer Config>
-      ? Config & {readonly type: Type}
-      : never
+// Read a node's own config out of its $config() record. Preferentially read it
+// from the STATIC_NODE_CONFIG accessor (see {@link GetStaticNodeOwnConfig}),
+// which resolves the most-derived own config directly — including for an
+// abstract base class keyed by a symbol, which has no string `type` to index by.
+// A record produced by the {@link BaseStaticNodeConfig} fallback (a node that
+// declares no `extends`, or a legacy node) sets no accessor; for those we fall
+// back to resolving the own `type` (see {@link GetStaticNodeType}) and indexing
+// by it. The own type is read through a mapped type (`{[P in Type]: ...}[Type]`)
+// so that the indexed access resolves against the concrete key literal rather
+// than the record's broad string index signature when `T` is still generic.
+type GetStaticNodeConfig<T extends LexicalNode> = [
+  GetStaticNodeOwnConfig<T>,
+] extends [never]
+  ? GetStaticNodeType<T> extends infer Type extends string
+    ? string extends Type
+      ? never
+      : {
+            [P in Type]: NonNullable<
+              ReturnType<T[typeof PROTOTYPE_CONFIG_METHOD]>[P]
+            >;
+          }[Type] extends infer Config extends AnyStaticNodeConfigValue
+        ? Config & {readonly type: Type}
+        : never
+    : never
+  : GetStaticNodeOwnConfig<T> extends infer Config extends
+        AnyStaticNodeConfigValue
+    ? Config & {readonly type: GetStaticNodeType<T>}
     : never;
 type GetStaticNodeConfigs<T extends LexicalNode> =
   GetStaticNodeConfig<T> extends infer OwnConfig
-    ? OwnConfig extends never
+    ? // `[X] extends [never]` checks for never without distributing (a naked
+      // `never` would otherwise collapse the whole conditional to never). A node
+      // with no $config — e.g. a legacy node keyed only by static getType() —
+      // yields never here and contributes no state configs.
+      [OwnConfig] extends [never]
       ? []
       : OwnConfig extends {extends: Klass<infer Parent>}
-        ? GetStaticNodeConfig<Parent> extends infer ParentNodeConfig
-          ? ParentNodeConfig extends never
-            ? [OwnConfig]
-            : [OwnConfig, ...GetStaticNodeConfigs<Parent>]
-          : OwnConfig
+        ? [GetStaticNodeConfig<Parent>] extends [never]
+          ? [OwnConfig]
+          : [OwnConfig, ...GetStaticNodeConfigs<Parent>]
         : [OwnConfig]
     : [];
 
@@ -316,26 +364,27 @@ export function createState<K extends symbol | string, V>(
  * state on the given node, and will return `stateConfig.defaultValue` if the
  * state has never been set on this node.
  *
- * The `version` parameter is optional and should generally be `'latest'`,
+ * The `version` parameter is optional and should generally be {@link NODE_STATE_LATEST},
  * consistent with the behavior of other node methods and functions,
  * but for certain use cases such as `updateDOM` you may have a need to
- * use `'direct'` to read the state from a previous version of the node.
+ * use {@link NODE_STATE_DIRECT} to read the state from a previous version of the node.
  *
- * For very advanced use cases, you can expect that 'direct' does not
+ * For very advanced use cases, you can expect that {@link NODE_STATE_DIRECT} does not
  * require an editor state, just like directly accessing other properties
  * of a node without an accessor (e.g. `textNode.__text`).
  *
  * @param node Any LexicalNode
  * @param stateConfig The configuration of the state to read
- * @param version The default value 'latest' will read the latest version of the node state, 'direct' will read the version that is stored on this LexicalNode which not reflect the version used in the current editor state
+ * @param version The default value {@link NODE_STATE_LATEST} will read the latest version of the node state, {@link NODE_STATE_DIRECT} will read the version that is stored on this LexicalNode which not reflect the version used in the current editor state
  * @returns The current value from the state, or the default value provided by the configuration.
  */
 export function $getState<K extends string, V>(
   node: LexicalNode,
   stateConfig: StateConfig<K, V>,
-  version: 'latest' | 'direct' = 'latest',
+  version: NodeStateVersion = NODE_STATE_LATEST,
 ): V {
-  const latestOrDirectNode = version === 'latest' ? node.getLatest() : node;
+  const latestOrDirectNode =
+    version === NODE_STATE_LATEST ? node.getLatest() : node;
   const state = latestOrDirectNode.__state;
   if (state) {
     $checkCollision(node, stateConfig, state);
@@ -346,11 +395,11 @@ export function $getState<K extends string, V>(
 
 /**
  * Given two versions of a node and a stateConfig, compare their state values
- * using `$getState(nodeVersion, stateConfig, 'direct')`.
+ * using `$getState(nodeVersion, stateConfig, NODE_STATE_DIRECT)`.
  * If the values are equal according to `stateConfig.isEqual`, return `null`,
  * otherwise return `[value, prevValue]`.
  *
- * This is useful for implementing updateDOM. Note that the `'direct'`
+ * This is useful for implementing updateDOM. Note that the `NODE_STATE_DIRECT`
  * version argument is used for both nodes.
  *
  * @param node Any LexicalNode
@@ -363,8 +412,8 @@ export function $getStateChange<T extends LexicalNode, K extends string, V>(
   prevNode: T,
   stateConfig: StateConfig<K, V>,
 ): null | [value: V, prevValue: V] {
-  const value = $getState(node, stateConfig, 'direct');
-  const prevValue = $getState(prevNode, stateConfig, 'direct');
+  const value = $getState(node, stateConfig, NODE_STATE_DIRECT);
+  const prevValue = $getState(prevNode, stateConfig, NODE_STATE_DIRECT);
   return stateConfig.isEqual(value, prevValue) ? null : [value, prevValue];
 }
 
@@ -463,13 +512,9 @@ export function createSharedNodeState(
 ): SharedNodeState {
   const sharedConfigMap = new Map<string, AnyStateConfig>();
   const flatKeys = new Set<string>();
-  for (
-    let klass =
-      typeof nodeConfig === 'function' ? nodeConfig : nodeConfig.replace;
-    klass.prototype && klass.prototype.getType !== undefined;
-    klass = Object.getPrototypeOf(klass)
-  ) {
-    const {ownNodeConfig} = getStaticNodeConfig(klass);
+  for (const {ownNodeConfig} of iterStaticNodeConfigChain(
+    typeof nodeConfig === 'function' ? nodeConfig : nodeConfig.replace,
+  )) {
     if (ownNodeConfig && ownNodeConfig.stateConfigs) {
       for (const requiredStateConfig of ownNodeConfig.stateConfigs) {
         let stateConfig: AnyStateConfig;

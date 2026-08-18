@@ -6,21 +6,18 @@
  *
  */
 
-import type {
-  EditorConfig,
-  EditorThemeClasses,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  SerializedTextNode,
-  Spread,
-} from 'lexical';
-
 import {
   $applyNodeReplacement,
   addClassNamesToElement,
-  ElementNode,
+  type EditorConfig,
+  type EditorThemeClasses,
+  type ElementNode,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
   removeClassNamesFromElement,
+  type SerializedTextNode,
+  type Spread,
   TextNode,
 } from 'lexical';
 

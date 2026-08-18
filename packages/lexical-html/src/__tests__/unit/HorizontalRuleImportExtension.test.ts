@@ -10,6 +10,7 @@ import {
   $isHorizontalRuleNode,
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
+  HorizontalRuleExtension,
 } from '@lexical/extension';
 import {
   CoreImportExtension,
@@ -30,9 +31,10 @@ import {assert, describe, expect, test} from 'vitest';
 function buildEditor() {
   return buildEditorFromExtensions(
     defineExtension({
-      // Leaf importer extensions no longer pull `CoreImportExtension`
-      // in by themselves — the application is expected to add it once.
-      dependencies: [CoreImportExtension, HorizontalRuleImportExtension],
+      // The `<hr>` rule ships with `CoreImportRules`, gated on
+      // `HorizontalRuleNode` registration — no dedicated import
+      // extension required.
+      dependencies: [CoreImportExtension, HorizontalRuleExtension],
       name: 'hr-host',
     }),
   );
@@ -76,6 +78,38 @@ describe('HorizontalRuleImportExtension', () => {
       assert($isParagraphNode(children[2]), 'expected paragraph');
       expect(children[0].getTextContent()).toBe('before');
       expect(children[2].getTextContent()).toBe('after');
+    });
+  });
+
+  test('<hr> is dropped when HorizontalRuleNode is not registered', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [CoreImportExtension],
+        name: 'hr-gated-host',
+      }),
+    );
+    importInto(editor, '<p>before</p><hr><p>after</p>');
+    editor.read(() => {
+      const children = $getRoot().getChildren();
+      expect(children).toHaveLength(2);
+      assert($isParagraphNode(children[0]), 'expected paragraph');
+      assert($isParagraphNode(children[1]), 'expected paragraph');
+      expect(children[0].getTextContent()).toBe('before');
+      expect(children[1].getTextContent()).toBe('after');
+    });
+  });
+
+  test('deprecated HorizontalRuleImportExtension alias still imports <hr>', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [HorizontalRuleImportExtension],
+        name: 'hr-alias-host',
+      }),
+    );
+    importInto(editor, '<hr>');
+    editor.read(() => {
+      const node = $getRoot().getFirstChild();
+      assert($isHorizontalRuleNode(node), 'expected HorizontalRuleNode');
     });
   });
 });

@@ -14,13 +14,13 @@ import {HistoryPlugin} from '@lexical/react/LexicalHistoryPlugin';
 import {RichTextPlugin} from '@lexical/react/LexicalRichTextPlugin';
 import {
   $isTextNode,
-  DOMConversionMap,
-  DOMExportOutput,
-  DOMExportOutputMap,
+  type DOMConversionMap,
+  type DOMExportOutput,
+  type DOMExportOutputMap,
   isHTMLElement,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
   ParagraphNode,
   TextNode,
 } from 'lexical';
@@ -82,9 +82,19 @@ const getExtraStyles = (element: HTMLElement): string => {
 const constructImportMap = (): DOMConversionMap => {
   const importMap: DOMConversionMap = {};
 
+  // With the $config() protocol a node's static methods (including importDOM)
+  // are generated on first static access rather than declared up front, so read
+  // getType() to ensure TextNode.importDOM is populated before we wrap its
+  // importers here (this runs before any editor, and therefore registration,
+  // exists).
+  TextNode.getType();
+  const importDOMFn = TextNode.importDOM;
+
   // Wrap all TextNode importers with a function that also imports
   // the custom styles implemented by the playground
-  for (const [tag, fn] of Object.entries(TextNode.importDOM() || {})) {
+  for (const [tag, fn] of Object.entries(
+    importDOMFn ? importDOMFn() || {} : {},
+  )) {
     importMap[tag] = importNode => {
       const importer = fn(importNode);
       if (!importer) {

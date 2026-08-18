@@ -6,7 +6,12 @@
  *
  */
 import {
+  moveToEditorBeginning,
+  moveToEditorEnd,
+} from '../keyboardShortcuts/index.mjs';
+import {
   assertHTML,
+  assertSelection,
   click,
   focusEditor,
   html,
@@ -37,7 +42,9 @@ test('Layout - removes layout completely when both columns are empty and backspa
   await assertHTML(
     page,
     html`
-      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <br data-lexical-managed-linebreak="true" />
+      </p>
       <div
         class="PlaygroundEditorTheme__layoutContainer"
         dir="auto"
@@ -46,16 +53,22 @@ test('Layout - removes layout completely when both columns are empty and backspa
           class="PlaygroundEditorTheme__layoutItem"
           dir="auto"
           data-lexical-layout-item="true">
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         </div>
         <div
           class="PlaygroundEditorTheme__layoutItem"
           dir="auto"
           data-lexical-layout-item="true">
-          <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+          <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+            <br data-lexical-managed-linebreak="true" />
+          </p>
         </div>
       </div>
-      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <br data-lexical-managed-linebreak="true" />
+      </p>
     `,
   );
 
@@ -68,8 +81,118 @@ test('Layout - removes layout completely when both columns are empty and backspa
   await assertHTML(
     page,
     html`
-      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
-      <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <br data-lexical-managed-linebreak="true" />
+      </p>
+      <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+        <br data-lexical-managed-linebreak="true" />
+      </p>
     `,
   );
 });
+
+for (const key of ['ArrowRight', 'ArrowDown']) {
+  test(`Layout - ${key} key should exit from the layout if the selection is at the end of the element`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    await initialize({page});
+    await focusEditor(page);
+
+    await page.keyboard.type('/');
+    await click(page, '.typeahead-popover .icon.columns');
+    await click(page, '.Modal__modal .Modal__content .Button__root');
+
+    // remove empty paragraphs around the layout
+    await moveToEditorEnd(page);
+    await page.keyboard.press('Backspace');
+    await moveToEditorBeginning(page);
+    await page.keyboard.press('Backspace');
+
+    // Focus on second column
+    await click(
+      page,
+      '.PlaygroundEditorTheme__layoutContainer .PlaygroundEditorTheme__layoutItem:nth-child(2)',
+    );
+    await page.keyboard.type('[site](https://lexical.dev)');
+
+    // selection at the edge element node
+    await assertSelection(page, {
+      anchorOffset: 1,
+      anchorPath: [0, 1, 0],
+      focusOffset: 1,
+      focusPath: [0, 1, 0],
+    });
+    await assertHTML(
+      page,
+      html`
+        <div
+          class="PlaygroundEditorTheme__layoutContainer"
+          dir="auto"
+          style="grid-template-columns: 1fr 1fr">
+          <div
+            class="PlaygroundEditorTheme__layoutItem"
+            dir="auto"
+            data-lexical-layout-item="true">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <br data-lexical-managed-linebreak="true" />
+            </p>
+          </div>
+          <div
+            class="PlaygroundEditorTheme__layoutItem"
+            dir="auto"
+            data-lexical-layout-item="true">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <a class="PlaygroundEditorTheme__link" href="https://lexical.dev">
+                <span data-lexical-text="true">site</span>
+              </a>
+            </p>
+          </div>
+        </div>
+      `,
+    );
+
+    await page.keyboard.press(key);
+
+    // selection at the new paragraph
+    await assertSelection(page, {
+      anchorOffset: 0,
+      anchorPath: [1],
+      focusOffset: 0,
+      focusPath: [1],
+    });
+    await assertHTML(
+      page,
+      html`
+        <div
+          class="PlaygroundEditorTheme__layoutContainer"
+          dir="auto"
+          style="grid-template-columns: 1fr 1fr">
+          <div
+            class="PlaygroundEditorTheme__layoutItem"
+            dir="auto"
+            data-lexical-layout-item="true">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <br data-lexical-managed-linebreak="true" />
+            </p>
+          </div>
+          <div
+            class="PlaygroundEditorTheme__layoutItem"
+            dir="auto"
+            data-lexical-layout-item="true">
+            <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+              <a class="PlaygroundEditorTheme__link" href="https://lexical.dev">
+                <span data-lexical-text="true">site</span>
+              </a>
+            </p>
+          </div>
+        </div>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
+      `,
+    );
+  });
+}

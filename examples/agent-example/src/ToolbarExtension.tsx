@@ -29,7 +29,7 @@ import {
   defineExtension,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
-  LexicalEditor,
+  type LexicalEditor,
   mergeRegister,
   REDO_COMMAND,
   UNDO_COMMAND,

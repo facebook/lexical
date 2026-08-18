@@ -19,7 +19,7 @@ import {
   $toggleLink,
   AutoLinkNode,
   LinkExtension,
-  LinkNode,
+  TOGGLE_LINK_COMMAND,
 } from '@lexical/link';
 import {RichTextExtension} from '@lexical/rich-text';
 import {
@@ -31,9 +31,8 @@ import {
   $isRangeSelection,
   $isTextNode,
   configExtension,
-  LexicalEditorWithDispose,
+  type LexicalEditorWithDispose,
   PASTE_COMMAND,
-  TextNode,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
@@ -51,12 +50,14 @@ describe('Link', () => {
     using editor = buildEditorFromExtensions(extension);
     editor.update(
       () => {
-        const textNode: TextNode = $getRoot().getLastDescendant()!;
+        const textNode = $getRoot().getLastDescendant();
+        assert($isTextNode(textNode), 'Expected a TextNode');
         textNode.select(0);
         expect($isLinkNode(textNode.getParent())).toBe(false);
         $toggleLink('https://lexical.dev/');
         expect($isLinkNode(textNode.getParent())).toBe(true);
-        let linkNode: LinkNode = textNode.getParent()!;
+        let linkNode = textNode.getParent();
+        assert($isLinkNode(linkNode), 'Expected a LinkNode');
         expect(linkNode.getURL()).toBe('https://lexical.dev/');
         expect(linkNode.getTarget()).toBe(null);
         expect($getRoot().getTextContent()).toBe('Hello');
@@ -69,7 +70,8 @@ describe('Link', () => {
           title: 'title',
           url: 'https://lexical.dev/',
         });
-        linkNode = textNode.getParent()!;
+        linkNode = textNode.getParent();
+        assert($isLinkNode(linkNode), 'Expected a LinkNode');
         expect(linkNode.getURL()).toBe('https://lexical.dev/');
         expect(linkNode.getTarget()).toBe('_blank');
         expect(linkNode.getRel()).toBe('noopener');
@@ -108,8 +110,8 @@ describe('Link', () => {
         assert($isParagraphNode(p), 'Expecting a ParagraphNode in the root');
         const children = p.getChildren();
         expect(children.length).toBe(1);
-        expect($isLinkNode(children[0])).toBe(true);
-        const link = children[0] as LinkNode;
+        const link = children[0];
+        assert($isLinkNode(link), 'Expected a LinkNode');
         expect(link.getURL()).toBe('https://lexical.dev/');
         expect(link.getTarget()).toBe('_blank');
         expect(link.getRel()).toBe('noreferrer');
@@ -422,6 +424,97 @@ describe('Link', () => {
         assert($isLinkNode(link), 'Expected a LinkNode');
         expect(link.getURL()).toBe(pasteUrl);
         expect(link.getTextContent()).toBe('click here');
+      });
+    });
+  });
+
+  describe('TOGGLE_LINK_COMMAND with configured attributes', () => {
+    const configuredExtension = defineExtension({
+      $initialEditorState: () => {
+        const p = $createParagraphNode();
+        p.append($createTextNode('Hello'));
+        $getRoot().append(p);
+      },
+      dependencies: [
+        configExtension(LinkExtension, {
+          attributes: {
+            rel: 'noopener',
+            target: '_blank',
+            title: 'Configured title',
+          },
+        }),
+        RichTextExtension,
+      ],
+      name: '[root-attributes]',
+    });
+
+    function $selectHello() {
+      const textNode = $getRoot().getLastDescendant();
+      assert($isTextNode(textNode), 'Expected a TextNode');
+      textNode.select(0, textNode.getTextContentSize());
+    }
+
+    function $getLink() {
+      const p = $getRoot().getFirstChild();
+      assert($isParagraphNode(p), 'Expected a ParagraphNode');
+      const link = p.getFirstChild();
+      assert($isLinkNode(link), 'Expected a LinkNode');
+      return link;
+    }
+
+    it('applies the configured attributes for a string payload', () => {
+      using editor = buildEditorFromExtensions(configuredExtension);
+      editor.update(
+        () => {
+          $selectHello();
+          editor.dispatchCommand(TOGGLE_LINK_COMMAND, 'https://lexical.dev/');
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const link = $getLink();
+        expect(link.getRel()).toBe('noopener');
+        expect(link.getTarget()).toBe('_blank');
+        expect(link.getTitle()).toBe('Configured title');
+      });
+    });
+
+    it('applies the configured attributes for an object payload', () => {
+      using editor = buildEditorFromExtensions(configuredExtension);
+      editor.update(
+        () => {
+          $selectHello();
+          editor.dispatchCommand(TOGGLE_LINK_COMMAND, {
+            url: 'https://lexical.dev/',
+          });
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const link = $getLink();
+        expect(link.getRel()).toBe('noopener');
+        expect(link.getTarget()).toBe('_blank');
+        expect(link.getTitle()).toBe('Configured title');
+      });
+    });
+
+    it('lets the object payload override the configured attributes', () => {
+      using editor = buildEditorFromExtensions(configuredExtension);
+      editor.update(
+        () => {
+          $selectHello();
+          editor.dispatchCommand(TOGGLE_LINK_COMMAND, {
+            target: null,
+            url: 'https://lexical.dev/',
+          });
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        const link = $getLink();
+        expect(link.getRel()).toBe('noopener');
+        expect(link.getTarget()).toBe(null);
+        expect(link.getTitle()).toBe('Configured title');
       });
     });
   });

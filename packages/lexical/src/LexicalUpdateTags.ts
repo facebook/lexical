@@ -32,6 +32,11 @@ export const HISTORY_MERGE_TAG = 'history-merge';
 export const PASTE_TAG = 'paste';
 
 /**
+ * Indicates that the update is related to a cut operation
+ */
+export const CUT_TAG = 'cut';
+
+/**
  * Indicates that the update is related to collaborative editing
  */
 export const COLLABORATION_TAG = 'collaboration';
@@ -48,7 +53,12 @@ export const SKIP_SCROLL_INTO_VIEW_TAG = 'skip-scroll-into-view';
 
 /**
  * Indicates that the update should skip updating the DOM selection
- * This is useful when you want to make updates without changing the selection or focus
+ * This is useful when you want to make updates without changing the selection or focus.
+ *
+ * Note: this tag has no effect on the initial editor state setup (e.g. an `editorState`
+ * supplied via `createEditor` or `$initialEditorState`). If you need the editor to not
+ * scroll to or focus the initial selection on first mount, call `$setSelection(null)`
+ * inside your initial state setup function instead.
  */
 export const SKIP_DOM_SELECTION_TAG = 'skip-dom-selection';
 
@@ -78,6 +88,7 @@ export const COMPOSITION_END_TAG = 'composition-end';
  */
 export type UpdateTag =
   | typeof COLLABORATION_TAG
+  | typeof CUT_TAG
   | typeof FOCUS_TAG
   | typeof HISTORIC_TAG
   | typeof HISTORY_MERGE_TAG

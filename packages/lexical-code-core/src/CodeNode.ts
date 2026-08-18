@@ -7,20 +7,6 @@
  */
 
 import type {CodeExtension} from './CodeExtension';
-import type {
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  LexicalEditor,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  ParagraphNode,
-  RangeSelection,
-  SerializedElementNode,
-  Spread,
-  TabNode,
-} from 'lexical';
 
 import {getPeerDependencyFromEditor} from '@lexical/extension';
 import warnOnlyOnce from '@lexical/internal/warnOnlyOnce';
@@ -29,14 +15,27 @@ import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTabNode,
+  $getDocument,
   $getEditor,
   $isLineBreakNode,
   $isTabNode,
   $isTextNode,
   addClassNamesToElement,
+  type DOMConversionOutput,
+  type DOMExportOutput,
+  type EditorConfig,
   ElementNode,
   isHTMLElement,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type ParagraphNode,
+  type RangeSelection,
+  type SerializedElementNode,
   setDOMStyleFromCSS,
+  type Spread,
+  type TabNode,
 } from 'lexical';
 
 import {
@@ -176,7 +175,7 @@ export class CodeNode extends ElementNode {
 
   // View
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('code');
+    const element = $getDocument().createElement('code');
     addClassNamesToElement(element, config.theme.code);
     element.setAttribute('spellcheck', 'false');
     const language = this.getLanguage();
@@ -247,7 +246,7 @@ export class CodeNode extends ElementNode {
   }
 
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const element = document.createElement('pre');
+    const element = $getDocument().createElement('pre');
     addClassNamesToElement(element, editor._config.theme.code);
     element.setAttribute('spellcheck', 'false');
     const language = this.getLanguage();

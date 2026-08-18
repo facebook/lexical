@@ -1,0 +1,455 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
+import {
+  $createListItemNode,
+  $createListNode,
+  $isListNode,
+  ListExtension,
+  type ListType,
+} from '@lexical/list';
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $getSelection,
+  $isParagraphNode,
+  $isRangeSelection,
+  KEY_BACKSPACE_COMMAND,
+} from 'lexical';
+import {
+  $createTestDecoratorNode,
+  invariant,
+  TestDecoratorNode,
+} from 'lexical/src/__tests__/utils';
+import {assert, describe, expect, test} from 'vitest';
+
+class IsolatedTestDecoratorNode extends TestDecoratorNode {
+  $config() {
+    return this.config('isolated_test_decorator', {
+      extends: TestDecoratorNode,
+    });
+  }
+  isIsolated(): boolean {
+    return true;
+  }
+}
+
+function $createIsolatedTestDecoratorNode(): IsolatedTestDecoratorNode {
+  return new IsolatedTestDecoratorNode().setIsInline(false);
+}
+
+function backspaceEvent(): KeyboardEvent {
+  return new KeyboardEvent('keydown', {cancelable: true, key: 'Backspace'});
+}
+
+const testExtension = defineExtension({
+  dependencies: [ListExtension],
+  name: '[root]',
+  nodes: [TestDecoratorNode, IsolatedTestDecoratorNode],
+});
+
+describe('registerList — Backspace adjacent to DecoratorNode (#5072)', () => {
+  describe('preserves the decorator and demotes the first list item', () => {
+    test.for<{name: string; listType: ListType; inline: boolean}>([
+      {
+        inline: false,
+        listType: 'bullet',
+        name: 'block decorator + bullet list',
+      },
+      {
+        inline: false,
+        listType: 'number',
+        name: 'block decorator + numbered list',
+      },
+      {
+        inline: false,
+        listType: 'check',
+        name: 'block decorator + check list',
+      },
+      {
+        inline: true,
+        listType: 'bullet',
+        name: 'inline keyboard-selectable decorator + bullet list',
+      },
+    ])('$name', ({listType, inline}) => {
+      using editor = buildEditorFromExtensions(testExtension);
+
+      let handled = false;
+      const event = backspaceEvent();
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const decorator = $createTestDecoratorNode().setIsInline(inline);
+          const firstItem = $createListItemNode().append(
+            $createTextNode('first'),
+          );
+          const list = $createListNode(listType).append(
+            firstItem,
+            $createListItemNode().append($createTextNode('second')),
+          );
+          root.append(decorator, list);
+          firstItem.select(0, 0);
+          handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
+        },
+        {discrete: true},
+      );
+
+      expect(handled).toBe(true);
+      expect(event.defaultPrevented).toBe(true);
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        expect(children).toHaveLength(3);
+        if (inline) {
+          assert(
+            $isParagraphNode(children[0]),
+            'Expected leading ParagraphNode wrapping inline TestDecoratorNode',
+          );
+          expect(
+            children[0].getChildren().map(n => n instanceof TestDecoratorNode),
+          ).toEqual([true]);
+        } else {
+          invariant(
+            children[0] instanceof TestDecoratorNode,
+            'Expected leading TestDecoratorNode',
+          );
+        }
+        const paragraph = children[1];
+        invariant(
+          $isParagraphNode(paragraph),
+          'Expected demoted ParagraphNode',
+        );
+        expect(paragraph.getTextContent()).toBe('first');
+        const tail = children[2];
+        invariant($isListNode(tail), 'Expected trailing ListNode');
+        expect(tail.getListType()).toBe(listType);
+        expect(tail.getChildrenSize()).toBe(1);
+        expect(tail.getTextContent()).toBe('second');
+
+        const selection = $getSelection();
+        invariant($isRangeSelection(selection), 'Expected RangeSelection');
+        expect(selection.isCollapsed()).toBe(true);
+        expect(selection.anchor.key).toBe(
+          paragraph.getFirstChildOrThrow().getKey(),
+        );
+        expect(selection.anchor.offset).toBe(0);
+      });
+    });
+
+    test('block decorator + single-item list — list is removed', () => {
+      using editor = buildEditorFromExtensions(testExtension);
+
+      let handled = false;
+      const event = backspaceEvent();
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const decorator = $createTestDecoratorNode().setIsInline(false);
+          const onlyItem = $createListItemNode().append(
+            $createTextNode('only'),
+          );
+          const list = $createListNode('bullet').append(onlyItem);
+          root.append(decorator, list);
+          onlyItem.select(0, 0);
+          handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
+        },
+        {discrete: true},
+      );
+
+      expect(handled).toBe(true);
+      expect(event.defaultPrevented).toBe(true);
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        expect(children).toHaveLength(2);
+        invariant(
+          children[0] instanceof TestDecoratorNode,
+          'Expected leading TestDecoratorNode',
+        );
+        invariant(
+          $isParagraphNode(children[1]),
+          'Expected demoted ParagraphNode',
+        );
+        expect(children[1].getTextContent()).toBe('only');
+      });
+    });
+
+    test('two adjacent block decorators + list — both preserved', () => {
+      using editor = buildEditorFromExtensions(testExtension);
+
+      let handled = false;
+      const event = backspaceEvent();
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const first = $createTestDecoratorNode().setIsInline(false);
+          const second = $createTestDecoratorNode().setIsInline(false);
+          const helloItem = $createListItemNode().append(
+            $createTextNode('hello'),
+          );
+          const list = $createListNode('bullet').append(helloItem);
+          root.append(first, second, list);
+          helloItem.select(0, 0);
+          handled = editor.dispatchCommand(KEY_BACKSPACE_COMMAND, event);
+        },
+        {discrete: true},
+      );
+
+      expect(handled).toBe(true);
+      expect(event.defaultPrevented).toBe(true);
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        expect(children).toHaveLength(3);
+        invariant(
+          children[0] instanceof TestDecoratorNode,
+          'Expected first TestDecoratorNode',
+        );
+        invariant(
+          children[1] instanceof TestDecoratorNode,
+          'Expected second TestDecoratorNode',
+        );
+        invariant(
+          $isParagraphNode(children[2]),
+          'Expected demoted ParagraphNode',
+        );
+        expect(children[2].getTextContent()).toBe('hello');
+      });
+    });
+  });
+
+  describe('first item converts to paragraph via collapseAtStart', () => {
+    test('no decorator before the list', () => {
+      using editor = buildEditorFromExtensions(testExtension);
+
+      let handled = false;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode().append(
+            $createTextNode('intro'),
+          );
+          const firstItem = $createListItemNode().append(
+            $createTextNode('first'),
+          );
+          const list = $createListNode('bullet').append(firstItem);
+          root.append(paragraph, list);
+          firstItem.select(0, 0);
+          handled = editor.dispatchCommand(
+            KEY_BACKSPACE_COMMAND,
+            backspaceEvent(),
+          );
+        },
+        {discrete: true},
+      );
+
+      expect(handled).toBe(true);
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        expect(children).toHaveLength(2);
+        invariant(
+          $isParagraphNode(children[0]),
+          'Expected intro ParagraphNode',
+        );
+        expect(children[0].getTextContent()).toBe('intro');
+        invariant(
+          $isParagraphNode(children[1]),
+          'Expected converted ParagraphNode',
+        );
+        expect(children[1].getTextContent()).toBe('first');
+      });
+    });
+
+    test('caret on the second list item — converts to paragraph via collapseAtStart', () => {
+      using editor = buildEditorFromExtensions(testExtension);
+
+      let handled = false;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const decorator = $createTestDecoratorNode().setIsInline(false);
+          const secondItem = $createListItemNode().append(
+            $createTextNode('second'),
+          );
+          const list = $createListNode('bullet').append(
+            $createListItemNode().append($createTextNode('first')),
+            secondItem,
+          );
+          root.append(decorator, list);
+          secondItem.select(0, 0);
+          handled = editor.dispatchCommand(
+            KEY_BACKSPACE_COMMAND,
+            backspaceEvent(),
+          );
+        },
+        {discrete: true},
+      );
+
+      expect(handled).toBe(true);
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        const list = children[1];
+        invariant($isListNode(list), 'Expected ListNode at index 1');
+        expect(list.getChildrenSize()).toBe(1);
+        invariant(
+          $isParagraphNode(children[2]),
+          'Expected converted ParagraphNode',
+        );
+        expect(children[2].getTextContent()).toBe('second');
+      });
+    });
+
+    test('caret in the middle of the first list item', () => {
+      using editor = buildEditorFromExtensions(testExtension);
+
+      let handled = true;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const decorator = $createTestDecoratorNode().setIsInline(false);
+          const text = $createTextNode('first');
+          const list = $createListNode('bullet').append(
+            $createListItemNode().append(text),
+          );
+          root.append(decorator, list);
+          text.select(2, 2);
+          handled = editor.dispatchCommand(
+            KEY_BACKSPACE_COMMAND,
+            backspaceEvent(),
+          );
+        },
+        {discrete: true},
+      );
+
+      expect(handled).toBe(false);
+
+      editor.read(() => {
+        invariant(
+          $isListNode($getRoot().getChildAtIndex(1)),
+          'Expected ListNode at index 1',
+        );
+      });
+    });
+
+    test('nested list — outdents inner item', () => {
+      using editor = buildEditorFromExtensions(testExtension);
+
+      let handled = false;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const decorator = $createTestDecoratorNode().setIsInline(false);
+          const innerLi = $createListItemNode().append(
+            $createTextNode('nested'),
+          );
+          const innerList = $createListNode('bullet').append(innerLi);
+          const outerLi = $createListItemNode().append(innerList);
+          const outerList = $createListNode('bullet').append(outerLi);
+          root.append(decorator, outerList);
+          innerLi.select(0, 0);
+          handled = editor.dispatchCommand(
+            KEY_BACKSPACE_COMMAND,
+            backspaceEvent(),
+          );
+        },
+        {discrete: true},
+      );
+
+      expect(handled).toBe(true);
+    });
+
+    test('isolated decorator before the list', () => {
+      using editor = buildEditorFromExtensions(testExtension);
+
+      let handled = false;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const decorator = $createIsolatedTestDecoratorNode();
+          const firstItem = $createListItemNode().append(
+            $createTextNode('first'),
+          );
+          const list = $createListNode('bullet').append(firstItem);
+          root.append(decorator, list);
+          firstItem.select(0, 0);
+          handled = editor.dispatchCommand(
+            KEY_BACKSPACE_COMMAND,
+            backspaceEvent(),
+          );
+        },
+        {discrete: true},
+      );
+
+      expect(handled).toBe(true);
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        expect(children).toHaveLength(2);
+        expect(children[0]).toBeInstanceOf(IsolatedTestDecoratorNode);
+        invariant(
+          $isParagraphNode(children[1]),
+          'Expected converted ParagraphNode',
+        );
+        expect(children[1].getTextContent()).toBe('first');
+      });
+    });
+
+    test('empty first list item — converts to empty paragraph', () => {
+      using editor = buildEditorFromExtensions(testExtension);
+
+      let handled = false;
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          const decorator = $createTestDecoratorNode().setIsInline(false);
+          const emptyItem = $createListItemNode();
+          const list = $createListNode('bullet').append(
+            emptyItem,
+            $createListItemNode().append($createTextNode('second')),
+          );
+          root.append(decorator, list);
+          emptyItem.select();
+          handled = editor.dispatchCommand(
+            KEY_BACKSPACE_COMMAND,
+            backspaceEvent(),
+          );
+        },
+        {discrete: true},
+      );
+
+      expect(handled).toBe(true);
+
+      editor.read(() => {
+        const children = $getRoot().getChildren();
+        expect(children).toHaveLength(3);
+        expect(children[0]).toBeInstanceOf(TestDecoratorNode);
+        invariant(
+          $isParagraphNode(children[1]),
+          'Expected empty ParagraphNode',
+        );
+        expect(children[1].getTextContent()).toBe('');
+        invariant($isListNode(children[2]), 'Expected remaining ListNode');
+        expect(children[2].getFirstChildOrThrow().getTextContent()).toBe(
+          'second',
+        );
+      });
+    });
+  });
+});

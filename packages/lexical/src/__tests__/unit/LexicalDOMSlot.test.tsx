@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
   buildEditorFromExtensions,
   defineExtension,
@@ -15,14 +14,19 @@ import {
   $applyNodeReplacement,
   $createTextNode,
   $getRoot,
+  $isElementNode,
   ElementNode,
-  LexicalEditor,
-  TextNode,
+  type LexicalEditor,
+  type TextNode,
 } from 'lexical';
 import {afterEach, beforeEach, describe, expect, test} from 'vitest';
 
 import {ElementDOMSlot} from '../../LexicalDOMSlot';
-import {$createTestDecoratorNode, TestDecoratorNode} from '../utils';
+import {
+  $assertNodeType,
+  $createTestDecoratorNode,
+  TestDecoratorNode,
+} from '../utils';
 
 describe('ElementDOMSlot class', () => {
   function makeElement(): HTMLElement {
@@ -119,6 +123,19 @@ describe('ElementDOMSlot class', () => {
     const original = new ElementDOMSlot(el);
     const updated = original.withElement(el);
     expect(updated).toBe(original);
+  });
+
+  test('setManagedLineBreak ignores slot containers before the managed range', () => {
+    const el = makeElement();
+    const slotContainer = document.createElement('div');
+    slotContainer.setAttribute('data-lexical-slot', 'title');
+    const after = document.createElement('span');
+    el.append(slotContainer, after);
+    const slot = new ElementDOMSlot(el, null, after);
+
+    inEditor(() => slot.setManagedLineBreak('empty'));
+
+    expect(slot.getManagedLineBreak()).not.toBe(null);
   });
 
   test('insertChild appends when before is null', () => {
@@ -313,7 +330,7 @@ describe('ElementDOMSlot integration: leading decoration (slot.after)', () => {
 
   class LeadingDecorElementNode extends ElementNode {
     $config() {
-      return this.config('leading-decor', {});
+      return this.config('leading-decor', {extends: ElementNode});
     }
     createDOM() {
       const el = document.createElement('div');
@@ -520,7 +537,7 @@ describe('ElementDOMSlot integration: trailing decoration (slot.before)', () => 
 
   class TrailingDecorElementNode extends ElementNode {
     $config() {
-      return this.config('trailing-decor', {});
+      return this.config('trailing-decor', {extends: ElementNode});
     }
     createDOM() {
       const el = document.createElement('div');
@@ -669,7 +686,7 @@ describe('ElementDOMSlot block cursor handling', () => {
   // `getDOMSlot().withElement(...)`, so the keyed DOM is a wrapper.
   class InnerWrapElementNode extends ElementNode {
     $config() {
-      return this.config('inner-wrap', {});
+      return this.config('inner-wrap', {extends: ElementNode});
     }
     createDOM(): HTMLElement {
       const el = document.createElement('div');
@@ -715,7 +732,7 @@ describe('ElementDOMSlot block cursor handling', () => {
     editor.update(
       () => {
         const wrap = $createInnerWrapNode();
-        // setIsInline(false) makes this a block decorator (needsBlockCursor).
+        // setIsInline(false) makes this a block decorator ($needsBlockCursorBeside).
         wrap.append($createTestDecoratorNode().setIsInline(false));
         $getRoot().clear().append(wrap);
         wrap.select(0, 0);
@@ -751,7 +768,10 @@ describe('ElementDOMSlot block cursor handling', () => {
     // selection — the scenario from the issue.
     editor.update(
       () => {
-        const wrap = $getRoot().getFirstChildOrThrow<ElementNode>();
+        const wrap = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        );
         wrap.getFirstChildOrThrow().insertBefore($createTextNode('inserted'));
       },
       {discrete: true},

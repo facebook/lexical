@@ -6,11 +6,10 @@
  *
  */
 
-import type {JSX} from 'react';
+import type {JSX, ReactNode} from 'react';
 
 import './FlashMessage.css';
 
-import {ReactNode} from 'react';
 import {createPortal} from 'react-dom';
 
 export interface FlashMessageProps {

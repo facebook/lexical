@@ -1,0 +1,120 @@
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * These styles are injected *inside* the shadow root (see App.tsx), because a
+ * shadow tree does not inherit the document's stylesheets.
+ */
+
+.editor-inner {
+  background: #fff;
+  position: relative;
+}
+
+.editor-input {
+  min-height: 280px;
+  font-size: 16px;
+  caret-color: #444;
+  position: relative;
+  tab-size: 1;
+  outline: 0;
+  padding: 15px 20px;
+  line-height: 1.5;
+  color: #000;
+}
+
+.editor-placeholder {
+  color: #999;
+  overflow: hidden;
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  font-size: 16px;
+  /* Match the editor's line-height so the placeholder's text baseline
+     aligns with the first typed character. Without this the placeholder
+     used the browser default (~1.2) and sat slightly above the input. */
+  line-height: 1.5;
+  user-select: none;
+  pointer-events: none;
+}
+
+.editor-paragraph {
+  margin: 0 0 8px 0;
+}
+
+.editor-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.editor-heading-h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.editor-heading-h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+}
+
+.editor-heading-h3 {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.editor-quote {
+  margin: 0 0 8px 16px;
+  border-left: 4px solid #ccc;
+  padding-left: 12px;
+  color: #555;
+}
+
+.editor-list-ol,
+.editor-list-ul {
+  padding: 0;
+  margin: 0 0 8px 16px;
+}
+
+.editor-listitem {
+  margin: 0 0 4px 16px;
+}
+
+.editor-nested-listitem {
+  list-style-type: none;
+}
+
+.editor-link {
+  color: rgb(33, 111, 219);
+  text-decoration: none;
+}
+
+.editor-text-bold {
+  font-weight: bold;
+}
+
+.editor-text-italic {
+  font-style: italic;
+}
+
+.editor-text-underline {
+  text-decoration: underline;
+}
+
+.editor-text-strikethrough {
+  text-decoration: line-through;
+}
+
+.editor-text-underline-strikethrough {
+  text-decoration: underline line-through;
+}
+
+.editor-text-code {
+  background-color: rgb(240, 242, 245);
+  padding: 1px 0.25rem;
+  font-family: Menlo, Consolas, Monaco, monospace;
+  font-size: 94%;
+}

@@ -39,8 +39,8 @@ import {InitialStateExtension} from './InitialStateExtension';
 /** @internal Use a well-known symbol for dev tools purposes */
 export const builderSymbol = Symbol.for('@lexical/extension/LexicalBuilder');
 
-type BuildCreateEditorArgs = Omit<CreateEditorArgs, 'onError'> &
-  Pick<InitialEditorConfig, 'onError' | '$initialEditorState'>;
+type BuildCreateEditorArgs = Omit<CreateEditorArgs, 'onError' | 'onWarn'> &
+  Pick<InitialEditorConfig, 'onError' | 'onWarn' | '$initialEditorState'>;
 
 /**
  * Build a LexicalEditor by combining together one or more extensions, optionally
@@ -178,6 +178,7 @@ export class LexicalBuilder {
     const {
       $initialEditorState: _$initialEditorState,
       onError,
+      onWarn,
       ...editorConfig
     } = this.buildCreateEditorArgs();
     const editor = Object.assign(
@@ -187,6 +188,13 @@ export class LexicalBuilder {
           ? {
               onError: err => {
                 onError(err, editor);
+              },
+            }
+          : {}),
+        ...(onWarn
+          ? {
+              onWarn: err => {
+                onWarn(err, editor);
               },
             }
           : {}),
@@ -236,6 +244,10 @@ export class LexicalBuilder {
     }
   }
 
+  /**
+   * @param configs - Ownership passes to the builder, which retains the array
+   *   and may append to it. Callers must pass an array nobody else holds.
+   */
   addEdge(
     fromExtensionName: string,
     toExtensionName: string,
@@ -243,7 +255,17 @@ export class LexicalBuilder {
   ) {
     const outgoing = this.outgoingConfigEdges.get(fromExtensionName);
     if (outgoing) {
-      outgoing.set(toExtensionName, configs);
+      // An extension may reach the same dependency more than once (e.g. two
+      // configExtension entries for it, or both a direct and a peer
+      // dependency). Every config has to be kept in the order it was seen,
+      // otherwise all but the last would be silently discarded instead of
+      // merged.
+      const existing = outgoing.get(toExtensionName);
+      if (existing) {
+        existing.push(...configs);
+      } else {
+        outgoing.set(toExtensionName, configs);
+      }
     } else {
       this.outgoingConfigEdges.set(
         fromExtensionName,
@@ -417,6 +439,9 @@ export class LexicalBuilder {
       const {extension} = extensionRep;
       if (extension.onError !== undefined) {
         config.onError = extension.onError;
+      }
+      if (extension.onWarn !== undefined) {
+        config.onWarn = extension.onWarn;
       }
       if (extension.disableEvents !== undefined) {
         config.disableEvents = extension.disableEvents;

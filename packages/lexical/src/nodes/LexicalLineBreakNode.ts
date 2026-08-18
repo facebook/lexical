@@ -7,11 +7,15 @@
  */
 
 import type {KlassConstructor} from '../LexicalEditor';
-import type {DOMConversionOutput, SerializedLexicalNode} from '../LexicalNode';
 
-import {LexicalNode} from '../LexicalNode';
+import {
+  type DOMConversionOutput,
+  LexicalNode,
+  type SerializedLexicalNode,
+} from '../LexicalNode';
 import {
   $applyNodeReplacement,
+  $getDocument,
   isBlockDomNode,
   isDOMTextNode,
 } from '../LexicalUtils';
@@ -44,7 +48,7 @@ export class LineBreakNode extends LexicalNode {
   }
 
   createDOM(): HTMLElement {
-    return document.createElement('br');
+    return $getDocument().createElement('br');
   }
 
   updateDOM(): false {
@@ -60,10 +64,12 @@ function $convertLineBreakElement(node: Node): DOMConversionOutput {
   return {node: $createLineBreakNode()};
 }
 
+/** Creates a LineBreakNode representing a soft line break (Shift+Enter). */
 export function $createLineBreakNode(): LineBreakNode {
   return $applyNodeReplacement(new LineBreakNode());
 }
 
+/** Returns true if the given node is a LineBreakNode. */
 export function $isLineBreakNode(
   node: LexicalNode | null | undefined,
 ): node is LineBreakNode {

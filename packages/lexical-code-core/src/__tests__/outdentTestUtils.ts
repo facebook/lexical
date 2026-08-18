@@ -6,10 +6,7 @@
  *
  */
 
-import type {CodeNode} from '@lexical/code-core';
-import type {LexicalEditor, PointCaret} from 'lexical';
-
-import {$createCodeNode} from '@lexical/code-core';
+import {$createCodeNode, type CodeNode} from '@lexical/code-core';
 import {
   $getChildCaret,
   $getCollapsedCaretRange,
@@ -21,7 +18,9 @@ import {
   $isRangeSelection,
   $isTextNode,
   $setSelectionFromCaretRange,
+  type LexicalEditor,
   OUTDENT_CONTENT_COMMAND,
+  type PointCaret,
 } from 'lexical';
 import {assert} from 'vitest';
 
@@ -71,7 +70,7 @@ export function $runOutdentScenario(
       point = $getSiblingCaret(matching, 'next');
     }
     $setSelectionFromCaretRange($getCollapsedCaretRange(point));
-    editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+    editor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
   });
 
   return editor.read(() => {

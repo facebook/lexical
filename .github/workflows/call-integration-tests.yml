@@ -14,8 +14,11 @@ jobs:
     env:
       CI: true
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: ${{ matrix.node-version }}
+      - uses: ./.github/actions/setup-playwright
         with:
           node-version: ${{ matrix.node-version }}
       - run: pnpm run test-integration

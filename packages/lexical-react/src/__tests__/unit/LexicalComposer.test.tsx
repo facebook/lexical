@@ -12,11 +12,11 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
 import * as React from 'react';
 import {act} from 'react';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 describe('LexicalComposer tests', () => {
@@ -64,6 +64,45 @@ describe('LexicalComposer tests', () => {
     await act(async () => {
       reactRoot.render(<App />);
     });
+  });
+
+  it('forwards initialConfig.onWarn to the editor as a (error, editor) handler', async () => {
+    const onWarn = vi.fn();
+    let capturedEditor: LexicalEditor | null = null;
+
+    function CaptureEditor() {
+      capturedEditor = useLexicalComposerContext()[0];
+      return null;
+    }
+
+    function App() {
+      return (
+        <LexicalComposer
+          initialConfig={{
+            namespace: '',
+            nodes: [],
+            onError: err => {
+              throw err;
+            },
+            onWarn,
+          }}>
+          <CaptureEditor />
+        </LexicalComposer>
+      );
+    }
+
+    await act(async () => {
+      reactRoot.render(<App />);
+    });
+
+    expect(capturedEditor).not.toBeNull();
+    // The composer must forward onWarn into the core editor; without the
+    // passthrough, `_onWarn` falls back to the default and the embedder's
+    // handler never fires.
+    const error = new Error('test warning');
+    capturedEditor!._onWarn(error);
+    expect(onWarn).toHaveBeenCalledTimes(1);
+    expect(onWarn).toHaveBeenCalledWith(error, capturedEditor);
   });
 
   describe('LexicalComposerContext editor identity', () => {
@@ -118,7 +157,7 @@ describe('LexicalComposer tests', () => {
           // otherwise you could see 'initial stateinitial state'.
           expect([
             i,
-            editor.getEditorState().read(() => $getRoot().getTextContent()),
+            editor.read('latest', () => $getRoot().getTextContent()),
           ]).toEqual([i, 'initial state']);
         });
         // Only one context is created in both cases though!

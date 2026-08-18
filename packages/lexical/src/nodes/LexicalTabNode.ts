@@ -6,18 +6,17 @@
  *
  */
 
-import type {NodeKey} from '../LexicalNode';
+import type {EditorConfig} from '../LexicalEditor';
+import type {LexicalNode, NodeKey} from '../LexicalNode';
 
 import invariant from '@lexical/internal/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
-import {EditorConfig} from '../LexicalEditor';
-import {LexicalNode} from '../LexicalNode';
 import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
 import {
-  SerializedTextNode,
-  TextDetailType,
-  TextModeType,
+  type SerializedTextNode,
+  type TextDetailType,
+  type TextModeType,
   TextNode,
 } from './LexicalTextNode';
 
@@ -87,24 +86,21 @@ export class TabNode extends TextNode {
     return this;
   }
 
-  // The `false` literal return types (rather than the inherited `boolean`) are
-  // load-bearing: a TabNode never permits adjacent text insertion, and they
-  // also keep TabNode nominally distinct from its structurally-identical
-  // TextNode base so that `$isTabNode()` can narrow a `TextNode` to the
-  // remaining non-tab case instead of collapsing it to `never`.
-  canInsertTextBefore(): false {
+  canInsertTextBefore(): boolean {
     return false;
   }
 
-  canInsertTextAfter(): false {
+  canInsertTextAfter(): boolean {
     return false;
   }
 }
 
+/** Creates a TabNode representing a horizontal tab character. */
 export function $createTabNode(): TabNode {
   return $applyNodeReplacement(new TabNode());
 }
 
+/** Returns true if the given node is a TabNode. */
 export function $isTabNode(
   node: LexicalNode | null | undefined,
 ): node is TabNode {

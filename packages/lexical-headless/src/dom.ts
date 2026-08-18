@@ -14,6 +14,7 @@ function createWindow(): typeof globalThis.window & HappyDOMWindow {
 }
 
 function destroyWindow(window: HappyDOMWindow): void {
+  // eslint-disable-next-line no-restricted-syntax
   void window.happyDOM.close();
 }
 

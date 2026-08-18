@@ -6,23 +6,14 @@
  *
  */
 
-import type {
-  BaseSelection,
-  DecoratorNode,
-  ElementNode,
-  LexicalNode,
-  NodeKey,
-  Point,
-  RangeSelection,
-  TextNode,
-} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
 import {
   $caretFromPoint,
   $extendCaretToRange,
   $findMatchingParent,
   $getPreviousSelection,
+  $getSlotFrame,
+  $getSlotHost,
   $hasAncestor,
   $isChildCaret,
   $isDecoratorNode,
@@ -31,10 +22,23 @@ import {
   $isLeafNode,
   $isRangeSelection,
   $isRootOrShadowRoot,
+  $isTabNode,
   $isTextNode,
+  $isTextPointCaret,
   $setSelection,
+  type BaseSelection,
+  type CaretDirection,
+  type DecoratorNode,
+  type ElementNode,
+  flipDirection,
   getStyleObjectFromCSS,
   INTERNAL_$isBlock,
+  type LexicalNode,
+  type NodeKey,
+  type Point,
+  type PointCaret,
+  type RangeSelection,
+  type TextNode,
 } from 'lexical';
 
 import {$getComputedStyleForElement, $getComputedStyleForParent} from './utils';
@@ -53,28 +57,72 @@ export function $copyBlockFormatIndent(
   }
 }
 
-function $isPointAtBlockStart(point: Point, block: ElementNode): boolean {
-  if (point.offset !== 0) {
+/**
+ * Determine whether a point sits at the leading ('previous') or trailing
+ * ('next') edge of `element`'s content — i.e. there is no content between the
+ * point and that edge of the element.
+ *
+ * This is the caret-based generalization of {@link $isAtNodeEnd}. An empty
+ * `element` is considered to be at both of its edges. `@lexical/utils`
+ * re-exports this as the direction-specific `$isAtStartOfNode` /
+ * `$isAtEndOfNode` helpers.
+ *
+ * @param point - The point to test.
+ * @param element - The ancestor element whose edge is tested.
+ * @param direction - 'previous' for the start of `element`, 'next' for the end.
+ */
+export function $isAtEdgeOfElement(
+  point: Point,
+  element: ElementNode,
+  direction: CaretDirection,
+): boolean {
+  // An extendable TextPointCaret has text remaining in `direction`, so the
+  // point is in the middle of a TextNode rather than at the element edge.
+  let caret: PointCaret<typeof direction> | null = $caretFromPoint(
+    point,
+    direction,
+  );
+  if ($isExtendableTextPointCaret(caret)) {
     return false;
   }
-  let node: LexicalNode = point.getNode();
-  // When an ElementNode is empty it's not possible to distinguish if
-  // the selection's intent is the entire block or the edge so we consider
-  // it to be the entire block
+  // Walk up towards element: the point is at the edge only when nothing
+  // precedes it in `direction` at every level up to element. The match is read
+  // from getParentAtCaret (origin.getParent()) rather than from a CaretRange
+  // iteration, because iterating ascends via getParentCaret, which stops at the
+  // document root and at shadow-root/slot boundaries — so it would never yield
+  // `element` when `element` is itself such a boundary (e.g. a named slot's
+  // value, a shadow root).
+  for (; caret; caret = caret.getParentCaret()) {
+    const parent = caret.getParentAtCaret();
+    if (!parent || caret.getNodeAtCaret()) {
+      return false;
+    }
+    if (element.is(parent)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Determine whether a point sits at the edge of a block in the given
+ * direction: 'previous' for the start of the block, 'next' for the end.
+ *
+ * Unlike {@link $isAtEdgeOfElement}, an empty block is treated as not being at
+ * the edge: when an ElementNode is empty it's not possible to distinguish if
+ * the selection's intent is the entire block or the edge so we consider it to
+ * be the entire block.
+ */
+function $isPointAtBlockEdge(
+  point: Point,
+  block: ElementNode,
+  direction: CaretDirection,
+): boolean {
+  const node = point.getNode();
   if ($isElementNode(node) && node.isEmpty()) {
     return false;
   }
-  while (!node.is(block)) {
-    if (node.getPreviousSibling() !== null) {
-      return false;
-    }
-    const parent = node.getParent();
-    if (parent === null) {
-      return false;
-    }
-    node = parent;
-  }
-  return true;
+  return $isAtEdgeOfElement(point, block, direction);
 }
 
 /**
@@ -97,7 +145,7 @@ export function $setBlocksType<T extends ElementNode>(
   // Selections tend to not include their containing blocks so we effectively
   // expand it here
   const anchorAndFocus = selection.getStartEndPoints();
-  let skipFocusAtBlockStart = false;
+  let skipFocus = false;
   let focusBlock: ElementNode | DecoratorNode<unknown> | null = null;
   const blockMap = new Map<NodeKey, ElementNode>();
   if (anchorAndFocus) {
@@ -107,20 +155,26 @@ export function $setBlocksType<T extends ElementNode>(
       INTERNAL_$isBlock,
     );
     focusBlock = $findMatchingParent(focus.getNode(), INTERNAL_$isBlock);
-    skipFocusAtBlockStart =
+    // The focus is the moving edge of the selection, travelling in `direction`
+    // (towards the end of the document for a forward selection). When a
+    // selection overshoots, its focus lands at the leading edge of focusBlock
+    // in that direction — the edge opposite to travel — so focusBlock holds
+    // none of the selection and is skipped.
+    const direction = selection.isBackward() ? 'previous' : 'next';
+    skipFocus =
       $isElementNode(focusBlock) &&
       !focusBlock.is(anchorBlock) &&
-      $isPointAtBlockStart(focus, focusBlock);
+      $isPointAtBlockEdge(focus, focusBlock, flipDirection(direction));
     if ($isElementNode(anchorBlock)) {
       blockMap.set(anchorBlock.getKey(), anchorBlock);
     }
-    if ($isElementNode(focusBlock) && !skipFocusAtBlockStart) {
+    if ($isElementNode(focusBlock) && !skipFocus) {
       blockMap.set(focusBlock.getKey(), focusBlock);
     }
   }
   for (const node of selection.getNodes()) {
     if ($isElementNode(node) && INTERNAL_$isBlock(node)) {
-      if (skipFocusAtBlockStart && node.is(focusBlock)) {
+      if (skipFocus && node.is(focusBlock)) {
         continue;
       }
       blockMap.set(node.getKey(), node);
@@ -135,6 +189,9 @@ export function $setBlocksType<T extends ElementNode>(
   // ListItemNode.replace override): both remap an element-anchored point
   // on the replaced block to {key: replacement, offset: prevSize + offset}.
   for (const prevNode of blockMap.values()) {
+    if ($getSlotHost(prevNode) !== null) {
+      continue;
+    }
     const element = $createElement();
     $afterCreateElement(prevNode, element);
     prevNode.replace(element, true);
@@ -150,7 +207,9 @@ function $removeParentEmptyElements(startingNode: ElementNode): void {
 
   while (node !== null && !$isRootOrShadowRoot(node)) {
     const latest = node.getLatest();
-    const parentNode: ElementNode | null = node.getParent<ElementNode>();
+    // Annotation breaks a circular inference through the loop (TS7022),
+    // remove when the deprecated generic signatures from #8661 are removed
+    const parentNode: ElementNode | null = node.getParent();
 
     if (latest.getChildrenSize() === 0) {
       node.remove(true);
@@ -176,6 +235,20 @@ export function $wrapNodes(
   const anchor = anchorAndFocus ? anchorAndFocus[0] : null;
   const nodes = selection.getNodes();
   const nodesLength = nodes.length;
+
+  // A selection inside a bare-block named-slot value has nothing eligible to
+  // wrap: the slot value is the only block in its virtual scope and its slot
+  // assignment is managed by the node or extension that owns the slot, so
+  // this is a no-op (same rule as $setBlocksType). A shadow-root slot value
+  // is root-like and wraps its own subtree below, as usual. (A selection
+  // never crosses a slot boundary, so checking the anchor covers the whole
+  // selection.)
+  if (anchor !== null) {
+    const slotFrame = $getSlotFrame(anchor.getNode());
+    if (slotFrame !== null && !$isRootOrShadowRoot(slotFrame)) {
+      return;
+    }
+  }
 
   if (
     anchor !== null &&
@@ -273,17 +346,18 @@ export function $wrapNodesImpl(
   // either insertAfter/insertBefore/append the corresponding
   // elements to. This is made more complicated due to nested
   // structures.
-  let target = $isElementNode(firstNode)
+  const firstNodeBlock = $isElementNode(firstNode)
     ? firstNode
     : firstNode.getParentOrThrow();
-
-  if (target.isInline()) {
-    target = target.getParentOrThrow();
-  }
+  let target: LexicalNode = firstNodeBlock.isInline()
+    ? firstNodeBlock.getParentOrThrow()
+    : firstNodeBlock;
 
   let targetIsPrevSibling = false;
   while (target !== null) {
-    const prevSibling = target.getPreviousSibling<ElementNode>();
+    // Annotation breaks a circular inference through the loop (TS7022),
+    // remove when the deprecated generic signatures from #8661 are removed
+    const prevSibling: LexicalNode | null = target.getPreviousSibling();
 
     if (prevSibling !== null) {
       target = prevSibling;
@@ -384,7 +458,10 @@ export function $wrapNodesImpl(
         }
       }
     } else {
-      const firstChild = target.getFirstChild();
+      // Capture the narrowed type, the reassignment of target below would
+      // otherwise widen it back to LexicalNode
+      const rootTarget = target;
+      const firstChild = rootTarget.getFirstChild();
 
       if ($isElementNode(firstChild)) {
         target = firstChild;
@@ -392,11 +469,11 @@ export function $wrapNodesImpl(
 
       if (firstChild === null) {
         if (wrappingElement) {
-          target.append(wrappingElement);
+          rootTarget.append(wrappingElement);
         } else {
           for (let i = 0; i < elements.length; i++) {
             const element = elements[i];
-            target.append(element);
+            rootTarget.append(element);
             lastElement = element;
           }
         }
@@ -490,6 +567,20 @@ export function $shouldOverrideDefaultCharacterSelection(
   );
   if ($isExtendableTextPointCaret(focusCaret)) {
     return false;
+  }
+  // At an unmergeable TextNode boundary adjacent to another plain TextNode,
+  // override so Lexical's modify() can pre-normalize across inline-grid/flex
+  // spans (#7301). Restricted to unmergeable nodes to avoid disrupting
+  // format-affinity at normal bold/italic boundaries.
+  if (
+    $isTextPointCaret(focusCaret) &&
+    !$isTabNode(focusCaret.origin) &&
+    focusCaret.origin.isUnmergeable()
+  ) {
+    const sibling = focusCaret.getNodeAtCaret();
+    if ($isTextNode(sibling) && !$isTabNode(sibling)) {
+      return true;
+    }
   }
   for (const nextCaret of $extendCaretToRange(focusCaret)) {
     if ($isChildCaret(nextCaret)) {

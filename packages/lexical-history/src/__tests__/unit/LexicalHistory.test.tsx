@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
@@ -50,15 +48,16 @@ import {
   createState,
   DecoratorNode,
   defineExtension,
-  EditorConfig,
+  type EditorConfig,
   HISTORY_MERGE_TAG,
   type KlassConstructor,
-  LexicalEditor,
-  LexicalEditorWithDispose,
-  LexicalNode,
+  type LexicalEditor,
+  type LexicalEditorWithDispose,
+  type LexicalNode,
+  NODE_STATE_DIRECT,
   type NodeKey,
   REDO_COMMAND,
-  SerializedElementNode,
+  type SerializedElementNode,
   type SerializedTextNode,
   type Spread,
   TextNode,
@@ -70,8 +69,8 @@ import {
   html,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
-import {act} from 'react';
-import {createRoot, Root} from 'react-dom/client';
+import {act, type JSX} from 'react';
+import {createRoot, type Root} from 'react-dom/client';
 import {
   afterEach,
   assert,
@@ -96,15 +95,20 @@ class CustomTextNode extends TextNode {
   declare ['constructor']: KlassConstructor<typeof CustomTextNode>;
 
   __classes: Set<string>;
-  constructor(text: string, classes: Iterable<string>, key?: NodeKey) {
+  constructor(
+    text: string = '',
+    classes: Iterable<string> = [],
+    key?: NodeKey,
+  ) {
     super(text, key);
     this.__classes = new Set(classes);
   }
-  static getType(): 'custom-text' {
-    return 'custom-text';
+  $config() {
+    return this.config('custom-text', {extends: TextNode});
   }
-  static clone(node: CustomTextNode): CustomTextNode {
-    return new CustomTextNode(node.__text, node.__classes, node.__key);
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__classes = new Set(prevNode.__classes);
   }
   addClass(className: string): this {
     const self = this.getWritable();
@@ -124,8 +128,10 @@ class CustomTextNode extends TextNode {
   getClasses(): ReadonlySet<string> {
     return this.getLatest().__classes;
   }
-  static importJSON({text, classes}: SerializedCustomTextNode): CustomTextNode {
-    return $createCustomTextNode(text, classes);
+  updateFromJSON(serializedNode: SerializedCustomTextNode): this {
+    return super
+      .updateFromJSON(serializedNode)
+      .setClasses(serializedNode.classes);
   }
   exportJSON(): SerializedCustomTextNode {
     return {
@@ -190,8 +196,9 @@ const ChildEditorExtension = defineExtension({
           const prevNode = $getNodeByKey(key, prevEditorState);
           const curNode = $getNodeByKey(key, curEditorState);
           const prevEditor =
-            prevNode && $getState(prevNode, EditorKey, 'direct');
-          const curEditor = curNode && $getState(curNode, EditorKey, 'direct');
+            prevNode && $getState(prevNode, EditorKey, NODE_STATE_DIRECT);
+          const curEditor =
+            curNode && $getState(curNode, EditorKey, NODE_STATE_DIRECT);
           if (prevEditor && prevEditor !== curEditor) {
             prevEditor.setRootElement(null);
           }
@@ -254,7 +261,7 @@ describe('LexicalHistory tests', () => {
       reactRoot.render(<Test key="smth" />);
     });
 
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       CAN_REDO_COMMAND,
       payload => {
         canRedo = payload;
@@ -263,7 +270,7 @@ describe('LexicalHistory tests', () => {
       COMMAND_PRIORITY_CRITICAL,
     );
 
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       CAN_UNDO_COMMAND,
       payload => {
         canUndo = payload;
@@ -273,7 +280,7 @@ describe('LexicalHistory tests', () => {
     );
 
     await act(async () => {
-      editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+      editor.dispatchCommand(CLEAR_HISTORY_COMMAND);
     });
 
     expect(canRedo).toBe(false);
@@ -336,7 +343,7 @@ describe('LexicalHistory tests', () => {
 
     await act(async () => {
       await editor.update(() => {
-        editor.dispatchCommand(UNDO_COMMAND, undefined);
+        editor.dispatchCommand(UNDO_COMMAND);
       });
     });
 
@@ -353,7 +360,7 @@ describe('LexicalHistory tests', () => {
       reactRoot.render(<Test key="smth" />);
     });
 
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       CAN_REDO_COMMAND,
       payload => {
         canRedo = payload;
@@ -362,7 +369,7 @@ describe('LexicalHistory tests', () => {
       COMMAND_PRIORITY_CRITICAL,
     );
 
-    editor.registerCommand<boolean>(
+    editor.registerCommand(
       CAN_UNDO_COMMAND,
       payload => {
         canUndo = payload;
@@ -393,7 +400,7 @@ describe('LexicalHistory tests', () => {
     // undo
     await act(async () => {
       await editor.update(() => {
-        editor.dispatchCommand(UNDO_COMMAND, undefined);
+        editor.dispatchCommand(UNDO_COMMAND);
       });
     });
     expect(canRedo).toBe(true);
@@ -402,7 +409,7 @@ describe('LexicalHistory tests', () => {
     // redo
     await act(async () => {
       await editor.update(() => {
-        editor.dispatchCommand(REDO_COMMAND, undefined);
+        editor.dispatchCommand(REDO_COMMAND);
       });
     });
     expect(canRedo).toBe(false);
@@ -411,7 +418,7 @@ describe('LexicalHistory tests', () => {
     // undo
     await act(async () => {
       await editor.update(() => {
-        editor.dispatchCommand(UNDO_COMMAND, undefined);
+        editor.dispatchCommand(UNDO_COMMAND);
       });
     });
     expect(canRedo).toBe(true);
@@ -470,7 +477,7 @@ describe('LexicalHistory tests', () => {
     });
 
     expect(sharedHistory.undoStack.length).toBe(2);
-    await editor_.dispatchCommand(UNDO_COMMAND, undefined);
+    await editor_.dispatchCommand(UNDO_COMMAND);
     expect($isNodeSelection(editor_.getEditorState()._selection)).toBe(true);
   });
 
@@ -585,7 +592,7 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
   test('canRedo becomes true after undo, canUndo goes false', () => {
     using editor = makeEditorWithOneUndoEntry();
     const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
     expect(output.canUndo.peek()).toBe(false);
     expect(output.canRedo.peek()).toBe(true);
   });
@@ -593,8 +600,8 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
   test('canRedo clears after redo, canUndo returns true', () => {
     using editor = makeEditorWithOneUndoEntry();
     const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
-    editor.dispatchCommand(REDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
+    editor.dispatchCommand(REDO_COMMAND);
     expect(output.canUndo.peek()).toBe(true);
     expect(output.canRedo.peek()).toBe(false);
   });
@@ -603,7 +610,7 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
     using editor = makeEditorWithOneUndoEntry();
     const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
     expect(output.canUndo.peek()).toBe(true);
-    editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+    editor.dispatchCommand(CLEAR_HISTORY_COMMAND);
     expect(output.canUndo.peek()).toBe(false);
     expect(output.canRedo.peek()).toBe(false);
   });
@@ -613,7 +620,7 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
     const {output} = getExtensionDependencyFromEditor(editor, HistoryExtension);
     // Wrap UNDO dispatch in editor.update so that the HISTORIC_TAG from
     // undo's setEditorState does not leak into the subsequent edit.
-    editor.update(() => editor.dispatchCommand(UNDO_COMMAND, undefined), {
+    editor.update(() => editor.dispatchCommand(UNDO_COMMAND), {
       discrete: true,
     });
     expect(output.canRedo.peek()).toBe(true);
@@ -638,7 +645,7 @@ describe('HistoryExtension canUndo/canRedo signals', () => {
 
   test('canRedo is true immediately when initialized with a non-empty redoStack', () => {
     using donor = makeEditorWithOneUndoEntry();
-    donor.dispatchCommand(UNDO_COMMAND, undefined);
+    donor.dispatchCommand(UNDO_COMMAND);
     const donorHistory = getExtensionDependencyFromEditor(
       donor,
       HistoryExtension,
@@ -781,7 +788,7 @@ describe('SharedHistoryExtension', () => {
           data-lexical-editor="true">
           <p dir="auto"><span data-lexical-text="true">Child editor</span></p>
         </div>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
     );
     editor.read(() => {
@@ -806,7 +813,7 @@ describe('SharedHistoryExtension', () => {
             <span data-lexical-text="true">Child editor. Updated!</span>
           </p>
         </div>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
     );
     expect(
@@ -821,8 +828,8 @@ describe('SharedHistoryExtension', () => {
       ).output.historyState.peek(),
     );
 
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
+    editor.dispatchCommand(UNDO_COMMAND);
     editor.read(() => {
       expect($getChildEditor().read(() => $getRoot().getTextContent())).toEqual(
         'Child editor',
@@ -839,10 +846,10 @@ describe('SharedHistoryExtension', () => {
           data-lexical-editor="true">
           <p dir="auto"><span data-lexical-text="true">Child editor</span></p>
         </div>
-        <p dir="auto"><br /></p>
+        <p dir="auto"><br data-lexical-managed-linebreak="true" /></p>
       `,
     );
-    editor.update(() => editor.dispatchCommand(UNDO_COMMAND, undefined), {
+    editor.update(() => editor.dispatchCommand(UNDO_COMMAND), {
       discrete: true,
     });
     expectHtmlToBeEqual(

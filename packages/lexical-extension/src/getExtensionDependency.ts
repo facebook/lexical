@@ -5,13 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {
-  AnyLexicalExtension,
-  LexicalExtensionDependency,
-  LexicalExtensionOutput,
-} from 'lexical';
 
-import {$getEditor} from 'lexical';
+import {
+  $getEditor,
+  type AnyLexicalExtension,
+  type LexicalExtensionDependency,
+  type LexicalExtensionOutput,
+} from 'lexical';
 
 import {getExtensionDependencyFromEditor} from './getExtensionDependencyFromEditor';
 import {getPeerDependencyFromEditor} from './getPeerDependencyFromEditor';

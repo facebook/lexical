@@ -6,34 +6,16 @@
  *
  */
 
-import type {
-  BaseSelection,
-  DOMConversionOutput,
-  EditorConfig,
-  LexicalCommand,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  Point,
-  PointCaret,
-  PointType,
-  RangeSelection,
-  SerializedElementNode,
-} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
-import {
-  $findMatchingParent,
-  $insertNodeToNearestRootAtCaret,
-  addClassNamesToElement,
-  isHTMLAnchorElement,
-} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $caretFromPoint,
   $copyNode,
+  $findMatchingParent,
   $getChildCaret,
+  $getDocument,
   $getSelection,
+  $insertNodeToNearestRootAtCaret,
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
@@ -43,9 +25,23 @@ import {
   $rewindSiblingCaret,
   $setPointFromCaret,
   $setSelection,
+  addClassNamesToElement,
+  type BaseSelection,
   createCommand,
+  type DOMConversionOutput,
+  type EditorConfig,
   ElementNode,
-  Spread,
+  isHTMLAnchorElement,
+  type LexicalCommand,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type Point,
+  type PointCaret,
+  type PointType,
+  type RangeSelection,
+  type SerializedElementNode,
+  type Spread,
 } from 'lexical';
 
 export type LinkAttributes = {
@@ -120,7 +116,7 @@ export class LinkNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig): LinkHTMLElementType {
-    const element = document.createElement('a');
+    const element = $getDocument().createElement('a');
     this.updateLinkDOM(null, element, config);
     addClassNamesToElement(element, config.theme.link);
     return element;
@@ -168,6 +164,7 @@ export class LinkNode extends ElementNode {
   }
 
   sanitizeUrl(url: string): string {
+    const rawUrl = url;
     url = formatUrl(url);
     try {
       const parsedUrl = new URL(formatUrl(url));
@@ -176,7 +173,37 @@ export class LinkNode extends ElementNode {
         return 'about:blank';
       }
     } catch {
-      return url;
+      // `new URL()` threw, so we could not verify the protocol via the
+      // parser. Preserve fail-secure behavior: default unparseable URLs to
+      // `about:blank` and only allow through inputs that positively match an
+      // allowlisted scheme.
+      //
+      // Check the ORIGINAL input, not the `formatUrl()` output: `formatUrl()`
+      // prepends `https://` to anything it does not recognize as already
+      // having a scheme, which would mask a control-character-obfuscated
+      // scheme (e.g. `java\x00script:` becomes `https://java\x00script:`).
+      //
+      // Before extracting the scheme, strip C0 control characters, DEL and
+      // whitespace, mirroring how browsers ignore these when resolving a
+      // scheme. Without this, control-character-obfuscated schemes that throw
+      // in `new URL()` but are still navigated by some browsers would slip
+      // past a naive scheme check and retain their original, attacker-
+      // controlled value. Stripping C0 control characters and DEL is the
+      // intended, security-relevant behavior here.
+      // eslint-disable-next-line no-control-regex
+      const normalizedUrl = rawUrl.replace(/[\u0000-\u001F\u007F\s]/g, '');
+      const schemeMatch = normalizedUrl.match(/^([a-z][a-z0-9+.-]*):/i);
+      if (
+        schemeMatch != null &&
+        !SUPPORTED_URL_PROTOCOLS.has(`${schemeMatch[1].toLowerCase()}:`)
+      ) {
+        // An explicit, non-allowlisted scheme survived normalization (e.g.
+        // `javascript:`, `data:`) — neutralize it. Inputs with no scheme
+        // (relative URLs such as `/path` or `#anchor`) or an allowlisted
+        // scheme are left unchanged: they cannot carry a dangerous scheme
+        // and are handled elsewhere.
+        return 'about:blank';
+      }
     }
     return url;
   }
@@ -269,8 +296,8 @@ export class LinkNode extends ElementNode {
     const focusNode = selection.focus.getNode();
 
     return (
-      this.isParentOf(anchorNode) &&
-      this.isParentOf(focusNode) &&
+      (this.is(anchorNode) || this.isParentOf(anchorNode)) &&
+      (this.is(focusNode) || this.isParentOf(focusNode)) &&
       selection.getTextContent().length > 0
     );
   }
@@ -500,7 +527,7 @@ export class AutoLinkNode extends LinkNode {
 
   createDOM(config: EditorConfig): LinkHTMLElementType {
     if (this.__isUnlinked) {
-      return document.createElement('span');
+      return $getDocument().createElement('span');
     } else {
       return super.createDOM(config);
     }
@@ -532,19 +559,12 @@ export class AutoLinkNode extends LinkNode {
     };
   }
 
-  insertNewAfter(
-    _: RangeSelection,
-    restoreSelection = true,
-  ): null | ElementNode {
-    const linkNode = $createAutoLinkNode(this.__url, {
-      isUnlinked: this.__isUnlinked,
-      rel: this.__rel,
-      target: this.__target,
-      title: this.__title,
-    });
-    this.insertAfter(linkNode, restoreSelection);
-    return linkNode;
-  }
+  // insertNewAfter is deliberately not overridden: LinkNode's implementation
+  // uses $copyNode, which runs clone() + afterCloneFrom() and so carries the
+  // element props (format/indent/style/dir/textFormat/textStyle) and NodeState
+  // as well as the link attributes. Enumerating properties by hand here
+  // dropped all of those, and rebuilt the node as a base AutoLinkNode even for
+  // a subclass. AutoLinkNode.afterCloneFrom already carries __isUnlinked.
 }
 
 /**
@@ -574,7 +594,7 @@ export function $isAutoLinkNode(
 
 export const TOGGLE_LINK_COMMAND: LexicalCommand<
   string | ({url: string} & LinkAttributes) | null
-> = createCommand('TOGGLE_LINK_COMMAND');
+> = /* @__PURE__ */ createCommand('TOGGLE_LINK_COMMAND');
 
 function $getPointNode(point: Point, offset: number): LexicalNode | null {
   if (point.type === 'element') {
@@ -760,8 +780,11 @@ export function $toggleLink(
           if (rel !== undefined) {
             existingLink.setRel(rel);
           }
+          if (title !== undefined) {
+            existingLink.setTitle(title);
+          }
         } else {
-          const linkNode = $createLinkNode(url, {rel, target});
+          const linkNode = $createLinkNode(url, {rel, target, title});
           node.insertBefore(linkNode);
           linkNode.append(node);
         }

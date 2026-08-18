@@ -6,9 +6,9 @@
  *
  */
 
-import {getEditorPropertyFromDOMNode} from 'lexical';
+import type {LexicalHTMLElement} from '../types';
 
-import {LexicalHTMLElement} from '../types';
+import {getEditorPropertyFromDOMNode} from 'lexical';
 
 export function isLexicalNode(
   node: LexicalHTMLElement | Element,

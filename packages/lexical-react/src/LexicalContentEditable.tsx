@@ -7,19 +7,25 @@
  */
 
 import type {LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
 
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {forwardRef, Ref, useLayoutEffect, useState} from 'react';
+import {forwardRef, type JSX, type Ref, useState} from 'react';
 
 import {
   ContentEditableElement,
   type ContentEditableElementProps,
 } from './shared/LexicalContentEditableElement';
 import {useCanShowPlaceholder} from './shared/useCanShowPlaceholder';
+import useLayoutEffect from './shared/useLayoutEffect';
 
 export {ContentEditableElement, type ContentEditableElementProps};
 
+/**
+ * Props for the {@link ContentEditable} component. These are the
+ * {@link ContentEditableElementProps} (minus `editor`, which is read from
+ * context) plus an optional `placeholder`; when a `placeholder` is provided an
+ * `aria-placeholder` string is also required for accessibility.
+ */
 export type ContentEditableProps = Omit<ContentEditableElementProps, 'editor'> &
   (
     | {
@@ -35,14 +41,12 @@ export type ContentEditableProps = Omit<ContentEditableElementProps, 'editor'> &
   );
 
 /**
- * @deprecated This type has been renamed to `ContentEditableProps` to provide a clearer and more descriptive name.
- * For backward compatibility, this type is still exported as `Props`, but it is recommended to migrate to using `ContentEditableProps` instead.
- *
- * This alias is maintained for compatibility purposes but may be removed in future versions.
- * Please update your codebase to use `ContentEditableProps` to ensure long-term maintainability.
+ * The editable surface of a Lexical editor: the `contentEditable` element that
+ * users type into. Render it inside a {@link LexicalComposer} (it reads the
+ * editor from context) and pass it to {@link RichTextPlugin} or
+ * {@link PlainTextPlugin}. An optional `placeholder` is shown while the editor
+ * is empty. The `ref` is forwarded to the underlying `<div>`.
  */
-export type Props = ContentEditableProps;
-
 export const ContentEditable = forwardRef(ContentEditableImpl);
 
 function ContentEditableImpl(
@@ -73,7 +77,6 @@ function Placeholder({
 
   const [isEditable, setEditable] = useState(editor.isEditable());
   useLayoutEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEditable(editor.isEditable());
     return editor.registerEditableListener(currentIsEditable => {
       setEditable(currentIsEditable);

@@ -6,9 +6,9 @@
  *
  */
 
+import type {LexicalHTMLElement} from '../../../types';
 import type {LexicalEditor} from 'lexical';
 
-import {LexicalHTMLElement} from '../../../types';
 import queryLexicalNodes from './queryLexicalNodes';
 
 export function queryLexicalEditorByKey(

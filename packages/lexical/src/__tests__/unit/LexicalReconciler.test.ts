@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
 import {$createLinkNode, LinkExtension} from '@lexical/link';
@@ -17,6 +16,7 @@ import {
   $createTextNode,
   $getNodeByKey,
   $getRoot,
+  $isDecoratorNode,
   $isElementNode,
   $isParagraphNode,
   $isTextNode,
@@ -31,6 +31,7 @@ import {afterEach, describe, expect, test, vi} from 'vitest';
 
 import {$getReconciledDirection} from '../../LexicalReconciler';
 import {
+  $assertNodeType,
   $createTestDecoratorNode,
   $createTestElementNode,
   initializeUnitTest,
@@ -54,8 +55,10 @@ describe('LexicalReconciler', () => {
 
       const directions = editor.read(() => {
         return $getRoot()
-          .getChildren<ParagraphNode>()
-          .map(child => $getReconciledDirection(child));
+          .getChildren()
+          .map(child =>
+            $getReconciledDirection($assertNodeType(child, $isElementNode)),
+          );
       });
       expect(directions).toEqual(['auto', 'auto', 'auto']);
     });
@@ -75,8 +78,10 @@ describe('LexicalReconciler', () => {
 
       const directions = editor.read(() => {
         return $getRoot()
-          .getChildren<ParagraphNode>()
-          .map(child => $getReconciledDirection(child));
+          .getChildren()
+          .map(child =>
+            $getReconciledDirection($assertNodeType(child, $isElementNode)),
+          );
       });
       expect(directions).toEqual([null, null, null]);
     });
@@ -107,8 +112,10 @@ describe('LexicalReconciler', () => {
 
       const directions = editor.read(() => {
         return $getRoot()
-          .getChildren<ParagraphNode>()
-          .map(child => $getReconciledDirection(child));
+          .getChildren()
+          .map(child =>
+            $getReconciledDirection($assertNodeType(child, $isElementNode)),
+          );
       });
       expect(directions).toEqual(['rtl', 'ltr', 'ltr', 'rtl', 'auto']);
     });
@@ -130,8 +137,10 @@ describe('LexicalReconciler', () => {
 
       const directions = editor.read(() => {
         return $getRoot()
-          .getChildren<ParagraphNode>()
-          .map(child => $getReconciledDirection(child));
+          .getChildren()
+          .map(child =>
+            $getReconciledDirection($assertNodeType(child, $isElementNode)),
+          );
       });
       expect(directions).toEqual(['ltr', null, null]);
     });
@@ -151,8 +160,10 @@ describe('LexicalReconciler', () => {
 
       let directions = editor.read(() => {
         return $getRoot()
-          .getChildren<ParagraphNode>()
-          .map(child => $getReconciledDirection(child));
+          .getChildren()
+          .map(child =>
+            $getReconciledDirection($assertNodeType(child, $isElementNode)),
+          );
       });
       expect(directions).toEqual(['auto', 'ltr']);
 
@@ -163,8 +174,10 @@ describe('LexicalReconciler', () => {
 
       directions = editor.read(() => {
         return $getRoot()
-          .getChildren<ParagraphNode>()
-          .map(child => $getReconciledDirection(child));
+          .getChildren()
+          .map(child =>
+            $getReconciledDirection($assertNodeType(child, $isElementNode)),
+          );
       });
       expect(directions).toEqual([null, 'ltr']);
 
@@ -175,8 +188,10 @@ describe('LexicalReconciler', () => {
 
       directions = editor.read(() => {
         return $getRoot()
-          .getChildren<ParagraphNode>()
-          .map(child => $getReconciledDirection(child));
+          .getChildren()
+          .map(child =>
+            $getReconciledDirection($assertNodeType(child, $isElementNode)),
+          );
       });
       expect(directions).toEqual(['auto', 'ltr']);
     });
@@ -210,9 +225,13 @@ describe('LexicalReconciler', () => {
         );
 
         await editor.update(() => {
-          const decorator = $getRoot()
-            .getFirstChildOrThrow<ParagraphNode>()
-            .getFirstChildOrThrow<TestDecoratorNode>();
+          const decorator = $assertNodeType(
+            $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isElementNode,
+            ).getFirstChild(),
+            $isDecoratorNode,
+          );
           const wrapper = $createTestElementNode();
           decorator.insertBefore(wrapper);
           wrapper.append(decorator);
@@ -243,9 +262,13 @@ describe('LexicalReconciler', () => {
           const root = $getRoot();
           const newParagraph = $createParagraphNode();
           root.append(newParagraph);
-          const element = root
-            .getFirstChildOrThrow<ParagraphNode>()
-            .getFirstChildOrThrow<TestElementNode>();
+          const element = $assertNodeType(
+            $assertNodeType(
+              root.getFirstChild(),
+              $isElementNode,
+            ).getFirstChild(),
+            $isElementNode,
+          );
           newParagraph.append(element);
         });
 
@@ -278,9 +301,13 @@ describe('LexicalReconciler', () => {
           const root = $getRoot();
           const newParagraph = $createParagraphNode();
           root.append(newParagraph);
-          const outer = root
-            .getFirstChildOrThrow<ParagraphNode>()
-            .getFirstChildOrThrow<TestElementNode>();
+          const outer = $assertNodeType(
+            $assertNodeType(
+              root.getFirstChild(),
+              $isElementNode,
+            ).getFirstChild(),
+            $isElementNode,
+          );
           newParagraph.append(outer);
         });
 
@@ -298,7 +325,7 @@ describe('LexicalReconciler', () => {
         });
 
         const decorateSpy = vi.spyOn(TestDecoratorNode.prototype, 'decorate');
-        const events: Array<{klass: string; mutation: NodeMutation}> = [];
+        const events: {klass: string; mutation: NodeMutation}[] = [];
         const recordMutations =
           (klass: string) => (nodes: Map<string, NodeMutation>) => {
             for (const m of nodes.values()) {
@@ -317,9 +344,13 @@ describe('LexicalReconciler', () => {
         );
 
         await editor.update(() => {
-          const decorator = $getRoot()
-            .getFirstChildOrThrow<ParagraphNode>()
-            .getFirstChildOrThrow<TestDecoratorNode>();
+          const decorator = $assertNodeType(
+            $assertNodeType(
+              $getRoot().getFirstChild(),
+              $isElementNode,
+            ).getFirstChild(),
+            $isDecoratorNode,
+          );
           const wrapper = $createTestElementNode();
           decorator.insertBefore(wrapper);
           wrapper.append(decorator);
@@ -356,9 +387,15 @@ describe('LexicalReconciler', () => {
         // Should not throw — slot=null call sites fall back to the regular
         // create path when reuse would be unsafe.
         await editor.update(() => {
-          const [pX, pY] = $getRoot().getChildren<ParagraphNode>();
-          const a = pX.getFirstChildOrThrow<TestDecoratorNode>();
-          const b = pY.getFirstChildOrThrow<TestDecoratorNode>();
+          const children = $getRoot().getChildren();
+          const pX = $assertNodeType(children[0], $isElementNode);
+          const pY = $assertNodeType(children[1], $isElementNode);
+          const a = $assertNodeType(
+            pX.getFirstChild(),
+            (node): node is TestDecoratorNode =>
+              node instanceof TestDecoratorNode,
+          );
+          const b = $assertNodeType(pY.getFirstChild(), $isDecoratorNode);
           a.setIsInline(false); // forces updateDOM=true on a
           pY.append(a);
           pX.append(b);
@@ -394,9 +431,9 @@ describe('LexicalReconciler', () => {
         await editor.update(() => {
           const root = $getRoot();
           // Reorder [a, b, c] → [c, a, b] within the same parent.
-          const c = root.getLastChildOrThrow<ParagraphNode>();
+          const c = $assertNodeType(root.getLastChild(), $isElementNode);
           c.remove();
-          root.getFirstChildOrThrow<ParagraphNode>().insertBefore(c);
+          $assertNodeType(root.getFirstChild(), $isElementNode).insertBefore(c);
         });
 
         expect(editor.getElementByKey(keyA)).toBe(domA);
@@ -424,7 +461,10 @@ describe('LexicalReconciler', () => {
       editor.setRootElement(document.createElement('div'));
 
       editor.read(() => {
-        const para = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+        const para = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        );
         const dom = editor.getElementByKey(para.getKey());
         // The resolved CSS variable would only cascade after the element is
         // attached and styled. Emitting `var(...)` defers resolution to the
@@ -455,14 +495,20 @@ describe('LexicalReconciler', () => {
 
       editor.update(
         () => {
-          const para = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+          const para = $assertNodeType(
+            $getRoot().getFirstChild(),
+            $isElementNode,
+          );
           para.setIndent(0);
         },
         {discrete: true},
       );
 
       editor.read(() => {
-        const para = $getRoot().getFirstChildOrThrow<ParagraphNode>();
+        const para = $assertNodeType(
+          $getRoot().getFirstChild(),
+          $isElementNode,
+        );
         const dom = editor.getElementByKey(para.getKey());
         expect(dom!.style.paddingInlineStart).toBe('');
       });
@@ -486,7 +532,7 @@ describe('LexicalReconciler', () => {
     // TableNode that wrap their keyed DOM in a scrollable container.
     class BlockWrapperElementNode extends ElementNode {
       $config() {
-        return this.config('audit_block_wrapper', {});
+        return this.config('audit_block_wrapper', {extends: ElementNode});
       }
       createDOM(): HTMLElement {
         const el = document.createElement('div');
@@ -1482,11 +1528,8 @@ describe('LexicalReconciler', () => {
     // up a later dirty sibling's format instead.
     test('AUDIT-4: $bubbleChildFirstText misses cache on elements with wrapping DOM', () => {
       class WrapperElementNode extends ElementNode {
-        static getType(): string {
-          return 'audit_wrapper';
-        }
-        static clone(node: WrapperElementNode): WrapperElementNode {
-          return new WrapperElementNode(node.__key);
+        $config() {
+          return this.config('audit_wrapper', {extends: ElementNode});
         }
         createDOM(): HTMLElement {
           const el = document.createElement('main');
@@ -1505,9 +1548,6 @@ describe('LexicalReconciler', () => {
           return true;
         }
         exportJSON(): SerializedElementNode {
-          throw new Error('Not implemented');
-        }
-        static importJSON(): WrapperElementNode {
           throw new Error('Not implemented');
         }
       }

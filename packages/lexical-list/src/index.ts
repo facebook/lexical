@@ -6,14 +6,6 @@
  *
  */
 
-import type {SerializedListItemNode} from './LexicalListItemNode';
-import type {
-  ListNodeTagType,
-  ListType,
-  SerializedListNode,
-} from './LexicalListNode';
-import type {LexicalEditor} from 'lexical';
-
 import {INSERT_CHECK_LIST_COMMAND, registerCheckList} from './checkList';
 import {
   $handleListInsertParagraph,
@@ -24,8 +16,16 @@ import {
   $createListItemNode,
   $isListItemNode,
   ListItemNode,
+  type SerializedListItemNode,
 } from './LexicalListItemNode';
-import {$createListNode, $isListNode, ListNode} from './LexicalListNode';
+import {
+  $createListNode,
+  $isListNode,
+  ListNode,
+  type ListNodeTagType,
+  type ListType,
+  type SerializedListNode,
+} from './LexicalListNode';
 import {$getListDepth} from './utils';
 
 export {
@@ -33,12 +33,9 @@ export {
   CheckListExtension,
   type ListConfig,
   ListExtension,
-} from './LexicalListExtension';
-export {
   ListImportExtension,
-  ListImportRules,
-  ListSchema,
-} from './ListImportExtension';
+} from './LexicalListExtension';
+export {ListImportRules, ListSchema} from './ListImportExtension';
 export {
   INSERT_ORDERED_LIST_COMMAND,
   INSERT_UNORDERED_LIST_COMMAND,
@@ -67,32 +64,3 @@ export {
   SerializedListItemNode,
   SerializedListNode,
 };
-
-/**
- * @deprecated use {@link $insertList} from an update or command listener.
- *
- * Inserts a new ListNode. If the selection's anchor node is an empty ListItemNode and is a child of
- * the root/shadow root, it will replace the ListItemNode with a ListNode and the old ListItemNode.
- * Otherwise it will replace its parent with a new ListNode and re-insert the ListItemNode and any previous children.
- * If the selection's anchor node is not an empty ListItemNode, it will add a new ListNode or merge an existing ListNode,
- * unless the the node is a leaf node, in which case it will attempt to find a ListNode up the branch and replace it with
- * a new ListNode, or create a new ListNode at the nearest root/shadow root.
- * @param editor - The lexical editor.
- * @param listType - The type of list, "number" | "bullet" | "check".
- */
-export function insertList(editor: LexicalEditor, listType: ListType): void {
-  editor.update(() => $insertList(listType));
-}
-
-/**
- * @deprecated use {@link $removeList} from an update or command listener.
- *
- * Searches for the nearest ancestral ListNode and removes it. If selection is an empty ListItemNode
- * it will remove the whole list, including the ListItemNode. For each ListItemNode in the ListNode,
- * removeList will also generate new ParagraphNodes in the removed ListNode's place. Any child node
- * inside a ListItemNode will be appended to the new ParagraphNodes.
- * @param editor - The lexical editor.
- */
-export function removeList(editor: LexicalEditor): void {
-  editor.update(() => $removeList());
-}

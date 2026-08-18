@@ -7,31 +7,30 @@
  */
 
 import {
-  addClassNamesToElement,
-  isHTMLElement,
-  removeClassNamesFromElement,
-} from '@lexical/utils';
-import {
   $applyNodeReplacement,
   $createTextNode,
+  $getDocument,
   $isElementNode,
   $setDirectionFromDOM,
+  addClassNamesToElement,
   buildImportMap,
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  EditorThemeClasses,
+  type DOMConversionOutput,
+  type DOMExportOutput,
+  type EditorConfig,
+  type EditorThemeClasses,
   ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
+  isHTMLElement,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
   normalizeClassNames,
-  SerializedElementNode,
-  Spread,
+  removeClassNamesFromElement,
+  type SerializedElementNode,
+  type Spread,
 } from 'lexical';
 
-import {$createListItemNode, $isListItemNode, ListItemNode} from '.';
+import {$createListItemNode, $isListItemNode, type ListItemNode} from '.';
 import {
   mergeNextSiblingListIfSameType,
   updateChildrenListItemValue,
@@ -125,7 +124,7 @@ export class ListNode extends ElementNode {
 
   createDOM(config: EditorConfig, _editor?: LexicalEditor): HTMLElement {
     const tag = this.__tag;
-    const dom = document.createElement(tag);
+    const dom = $getDocument().createElement(tag);
 
     if (this.__start !== 1) {
       dom.setAttribute('start', String(this.__start));

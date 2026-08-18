@@ -6,21 +6,11 @@
  *
  */
 
-import type {
-  DOMConversionOutput,
-  DOMExportOutput,
-  EditorConfig,
-  LexicalCommand,
-  LexicalNode,
-  NodeKey,
-  NodeSelection,
-  SerializedLexicalNode,
-} from 'lexical';
-
 import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   $create,
   $createNodeSelection,
+  $getDocument,
   $getNodeFromDOMNode,
   $getSelection,
   $isNodeSelection,
@@ -33,19 +23,42 @@ import {
   createCommand,
   DecoratorNode,
   defineExtension,
+  type DOMConversionOutput,
+  type DOMExportOutput,
+  type EditorConfig,
   isDOMNode,
+  type LexicalCommand,
+  type LexicalNode,
   mergeRegister,
+  type NodeKey,
+  type NodeSelection,
   removeClassNamesFromElement,
+  type SerializedLexicalNode,
 } from 'lexical';
 
 import {EditorStateExtension} from './EditorStateExtension';
 import {NodeSelectionExtension} from './NodeSelectionExtension';
-import {batch, effect, ReadonlySignal, Signal, signal} from './signals';
+import {
+  batch,
+  effect,
+  type ReadonlySignal,
+  type Signal,
+  signal,
+} from './signals';
 
+/**
+ * The serialized form of a {@link HorizontalRuleNode}. It has no extra fields
+ * beyond the base serialized node.
+ */
 export type SerializedHorizontalRuleNode = SerializedLexicalNode;
 
+/**
+ * Command that inserts a {@link HorizontalRuleNode} at the current selection.
+ * Dispatch it with
+ * `editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND)`.
+ */
 export const INSERT_HORIZONTAL_RULE_COMMAND: LexicalCommand<void> =
-  createCommand('INSERT_HORIZONTAL_RULE_COMMAND');
+  /* @__PURE__ */ createCommand('INSERT_HORIZONTAL_RULE_COMMAND');
 
 export class HorizontalRuleNode extends DecoratorNode<unknown> {
   $config() {
@@ -65,11 +78,11 @@ export class HorizontalRuleNode extends DecoratorNode<unknown> {
   }
 
   exportDOM(): DOMExportOutput {
-    return {element: document.createElement('hr')};
+    return {element: $getDocument().createElement('hr')};
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('hr');
+    const element = $getDocument().createElement('hr');
     addClassNamesToElement(element, config.theme.hr);
     return element;
   }
@@ -95,6 +108,9 @@ export function $createHorizontalRuleNode(): HorizontalRuleNode {
   return $create(HorizontalRuleNode);
 }
 
+/**
+ * @returns `true` if `node` is a {@link HorizontalRuleNode}, narrowing its type.
+ */
 export function $isHorizontalRuleNode(
   node: LexicalNode | null | undefined,
 ): node is HorizontalRuleNode {
@@ -126,7 +142,7 @@ function $toggleNodeSelection(
  * An extension for HorizontalRuleNode that provides an implementation that
  * works without any React dependency.
  */
-export const HorizontalRuleExtension = defineExtension({
+export const HorizontalRuleExtension = /* @__PURE__ */ defineExtension({
   dependencies: [EditorStateExtension, NodeSelectionExtension],
   name: '@lexical/extension/HorizontalRule',
   nodes: () => [HorizontalRuleNode],

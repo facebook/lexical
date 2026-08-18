@@ -6,13 +6,14 @@
  *
  */
 
-import type {EditorConfig, LexicalNode, SerializedTextNode} from 'lexical';
-
 import {registerLexicalTextEntity} from '@lexical/text';
 import {
   $applyNodeReplacement,
   defineExtension,
+  type EditorConfig,
+  type LexicalNode,
   mergeRegister,
+  type SerializedTextNode,
   TextNode,
 } from 'lexical';
 
@@ -74,7 +75,7 @@ function getKeywordMatch(text: string) {
   };
 }
 
-export const KeywordsExtension = defineExtension({
+export const KeywordsExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/LexicalKeywords',
   nodes: () => [KeywordNode],
   register(editor) {

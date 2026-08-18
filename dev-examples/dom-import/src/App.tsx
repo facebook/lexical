@@ -7,7 +7,6 @@
  */
 
 import {ClipboardDOMImportExtension} from '@lexical/clipboard';
-import {CodeImportExtension} from '@lexical/code-core';
 import {CodeShikiExtension} from '@lexical/code-shiki';
 import {
   AutoFocusExtension,
@@ -16,20 +15,12 @@ import {
   TabIndentationExtension,
 } from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
-import {
-  CoreImportExtension,
-  HorizontalRuleImportExtension,
-} from '@lexical/html';
-import {LinkExtension, LinkImportExtension} from '@lexical/link';
-import {
-  CheckListExtension,
-  ListExtension,
-  ListImportExtension,
-} from '@lexical/list';
+import {LinkExtension} from '@lexical/link';
+import {CheckListExtension, ListExtension} from '@lexical/list';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
-import {RichTextExtension, RichTextImportExtension} from '@lexical/rich-text';
-import {TableExtension, TableImportExtension} from '@lexical/table';
+import {RichTextExtension} from '@lexical/rich-text';
+import {TableExtension} from '@lexical/table';
 import {defineExtension} from 'lexical';
 
 import ExampleTheme from './ExampleTheme';
@@ -62,14 +53,6 @@ const editorExtension = defineExtension({
     CodeShikiExtension,
     MarkdownShortcutsExtension,
     ToolbarExtension,
-    // DOMImportExtension pipeline — rules contributed per node package.
-    CoreImportExtension,
-    RichTextImportExtension,
-    ListImportExtension,
-    LinkImportExtension,
-    TableImportExtension,
-    HorizontalRuleImportExtension,
-    CodeImportExtension,
     // Word-only overlay, installed conditionally by a preprocess.
     WordPasteExtension,
     // Route real `text/html` pastes through the DOMImportExtension

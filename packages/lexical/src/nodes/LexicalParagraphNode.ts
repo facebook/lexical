@@ -18,21 +18,22 @@ import type {
   LexicalNode,
 } from '../LexicalNode';
 import type {RangeSelection} from '../LexicalSelection';
-import type {
-  ElementFormatType,
-  SerializedElementNode,
-} from './LexicalElementNode';
 
 import {ELEMENT_TYPE_TO_FORMAT} from '../LexicalConstants';
 import {
   $applyNodeReplacement,
+  $getDocument,
   $setDirectionFromDOM,
   $setFormatFromDOM,
   getCachedClassNameArray,
   isHTMLElement,
   setNodeIndentFromDOM,
 } from '../LexicalUtils';
-import {ElementNode} from './LexicalElementNode';
+import {
+  type ElementFormatType,
+  ElementNode,
+  type SerializedElementNode,
+} from './LexicalElementNode';
 import {$isTextNode} from './LexicalTextNode';
 
 export type SerializedParagraphNode = Spread<
@@ -63,7 +64,7 @@ export class ParagraphNode extends ElementNode {
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = document.createElement('p');
+    const dom = $getDocument().createElement('p');
     const classNames = getCachedClassNameArray(config.theme, 'paragraph');
     if (classNames !== undefined) {
       const domClassList = dom.classList;
@@ -84,7 +85,7 @@ export class ParagraphNode extends ElementNode {
 
     if (isHTMLElement(element)) {
       if (this.isEmpty()) {
-        element.append(document.createElement('br'));
+        element.append($getDocument().createElement('br'));
       }
 
       const formatType = this.getFormatType();
@@ -176,10 +177,12 @@ function $convertParagraphElement(element: HTMLElement): DOMConversionOutput {
   return {node};
 }
 
+/** Creates a ParagraphNode, the default block-level container for text. */
 export function $createParagraphNode(): ParagraphNode {
   return $applyNodeReplacement(new ParagraphNode());
 }
 
+/** Returns true if the given node is a ParagraphNode. */
 export function $isParagraphNode(
   node: LexicalNode | null | undefined,
 ): node is ParagraphNode {

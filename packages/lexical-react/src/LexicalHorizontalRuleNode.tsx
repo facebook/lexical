@@ -6,9 +6,6 @@
  *
  */
 
-import type {DOMConversionOutput, NodeKey} from 'lexical';
-import type {JSX} from 'react';
-
 import {
   $isHorizontalRuleNode,
   HorizontalRuleNode as BaseHorizontalRuleNode,
@@ -18,17 +15,18 @@ import {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
 import {
-  addClassNamesToElement,
-  mergeRegister,
-  removeClassNamesFromElement,
-} from '@lexical/utils';
-import {
   $applyNodeReplacement,
+  addClassNamesToElement,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
+  type DOMConversionOutput,
+  getComposedEventTarget,
+  mergeRegister,
+  type NodeKey,
+  removeClassNamesFromElement,
 } from 'lexical';
 import * as React from 'react';
-import {useEffect} from 'react';
+import {type JSX, useEffect} from 'react';
 
 export {
   $isHorizontalRuleNode,
@@ -48,7 +46,7 @@ function HorizontalRuleComponent({nodeKey}: {nodeKey: NodeKey}) {
         (event: MouseEvent) => {
           const hrElem = editor.getElementByKey(nodeKey);
 
-          if (event.target === hrElem) {
+          if (getComposedEventTarget(event) === hrElem) {
             if (!event.shiftKey) {
               clearSelection();
             }

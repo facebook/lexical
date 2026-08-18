@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {DOMOverrideOptions} from '@lexical/html';
 
 import {$isCodeNode} from '@lexical/code-core';
 import {effect, namedSignals} from '@lexical/extension';
@@ -13,20 +12,23 @@ import {
   $setRenderContextValue,
   createRenderState,
   domOverride,
+  type DOMOverrideOptions,
   DOMRenderExtension,
 } from '@lexical/html';
 import {ListItemNode} from '@lexical/list';
 import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {$canShowPlaceholder} from '@lexical/text';
-import {$findMatchingParent, mergeRegister} from '@lexical/utils';
 import {
+  $findMatchingParent,
+  $getDocument,
   $isTabNode,
   configExtension,
   defineExtension,
-  ElementNode,
+  type ElementNode,
   getStyleObjectFromCSS,
   isHTMLElement,
   LineBreakNode,
+  mergeRegister,
   ParagraphNode,
   safeCast,
   TabNode,
@@ -93,7 +95,7 @@ export interface VisibleNonPrintingConfig {
 /**
  * Editor render context state mirroring the extension's `disabled` signal.
  */
-export const VisibleNonPrintingDisabled = createRenderState(
+export const VisibleNonPrintingDisabled = /* @__PURE__ */ createRenderState(
   'visibleNonPrintingDisabled',
   () => false,
 );
@@ -117,13 +119,13 @@ const disabledForEditor = {
   disabledForEditor: ctx => ctx.get(VisibleNonPrintingDisabled),
 } satisfies DOMOverrideOptions;
 
-export const VisibleNonPrintingExtension = defineExtension({
+export const VisibleNonPrintingExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config) => namedSignals(config),
-  config: safeCast<VisibleNonPrintingConfig>({disabled: false}),
+  config: /* @__PURE__ */ safeCast<VisibleNonPrintingConfig>({disabled: false}),
   dependencies: [
-    configExtension(DOMRenderExtension, {
+    /* @__PURE__ */ configExtension(DOMRenderExtension, {
       overrides: [
-        domOverride(
+        /* @__PURE__ */ domOverride(
           [LineBreakNode],
           {
             $createDOM: (node, $next) => {
@@ -131,7 +133,7 @@ export const VisibleNonPrintingExtension = defineExtension({
               if ($skipForCodeChild(node)) {
                 return inner;
               }
-              const wrapper = document.createElement('span');
+              const wrapper = $getDocument().createElement('span');
               wrapper.setAttribute(VISIBLE_NON_PRINTING_LINEBREAK_ATTR, 'true');
               wrapper.appendChild(inner);
               return wrapper;
@@ -150,7 +152,7 @@ export const VisibleNonPrintingExtension = defineExtension({
           },
           disabledForEditor,
         ),
-        domOverride<ElementNode>(
+        /* @__PURE__ */ domOverride<ElementNode>(
           [ParagraphNode, HeadingNode, ListItemNode, QuoteNode],
           {
             $decorateDOM: (node, _prevNode, dom) => {
@@ -166,7 +168,7 @@ export const VisibleNonPrintingExtension = defineExtension({
           },
           disabledForEditor,
         ),
-        domOverride(
+        /* @__PURE__ */ domOverride(
           [TextNode, TabNode],
           {
             $decorateDOM: (node, _prev, dom) => {
@@ -211,9 +213,9 @@ export const VisibleNonPrintingExtension = defineExtension({
         }
         nextRoot.setAttribute(VISIBLE_NON_PRINTING_ACTIVE_ATTR, 'true');
         const syncEmptyRootAttr = () => {
-          const showPlaceholder = editor
-            .getEditorState()
-            .read(() => $canShowPlaceholder(editor.isComposing()));
+          const showPlaceholder = editor.read('latest', () =>
+            $canShowPlaceholder(editor.isComposing()),
+          );
           nextRoot.toggleAttribute(
             VISIBLE_NON_PRINTING_EMPTY_ROOT_ATTR,
             showPlaceholder,

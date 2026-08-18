@@ -6,16 +6,13 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-import type {JSX} from 'react';
-
-import {$createCodeNode, $isCodeNode} from '@lexical/code';
+import {$createCodeNode, $isCodeNode, CodeIndentExtension} from '@lexical/code';
 import {getPeerDependencyFromEditor} from '@lexical/extension';
 import {
   editorStateFromSerializedDocument,
   exportFile,
   importFile,
-  SerializedDocument,
+  type SerializedDocument,
   serializedDocumentFromEditorState,
 } from '@lexical/file';
 import {
@@ -30,7 +27,6 @@ import {
 } from '@lexical/markdown';
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {mergeRegister} from '@lexical/utils';
 import {CONNECTED_COMMAND, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
 import {
   $createParagraphNode,
@@ -39,12 +35,13 @@ import {
   $isParagraphNode,
   CLEAR_EDITOR_COMMAND,
   CLEAR_HISTORY_COMMAND,
-  COLLABORATION_TAG,
   COMMAND_PRIORITY_EDITOR,
-  HISTORIC_TAG,
+  type LexicalEditor,
+  mergeRegister,
   RootNode,
 } from 'lexical';
 import {
+  type JSX,
   startTransition,
   useActionState,
   useEffect,
@@ -61,50 +58,13 @@ import {docFromHash, docToHash} from '../../utils/docSerialization';
 import {formatCodeWithPrettier} from '../CodeActionMenuPlugin/formatCodeWithPrettier';
 import {PLAYGROUND_TRANSFORMERS} from '../MarkdownTransformers';
 import {PagesExtension} from '../PagesExtension';
+import ShortcutsHelpDialog from '../ShortcutsExtension/ShortcutsHelpDialog';
 import {
   SPEECH_TO_TEXT_COMMAND,
   SUPPORT_SPEECH_RECOGNITION,
 } from '../SpeechToTextPlugin';
 import {RenderContextTerse} from '../TerseExportExtension';
 import {SHOW_VERSIONS_COMMAND} from '../VersionsPlugin';
-
-async function sendEditorState(editor: LexicalEditor): Promise<void> {
-  const stringifiedEditorState = JSON.stringify(editor.getEditorState());
-  try {
-    await fetch('http://localhost:1235/setEditorState', {
-      body: stringifiedEditorState,
-      headers: {
-        Accept: 'application/json',
-        'Content-type': 'application/json',
-      },
-      method: 'POST',
-    });
-  } catch {
-    // NO-OP
-  }
-}
-
-async function validateEditorState(editor: LexicalEditor): Promise<void> {
-  const stringifiedEditorState = JSON.stringify(editor.getEditorState());
-  let response = null;
-  try {
-    response = await fetch('http://localhost:1235/validateEditorState', {
-      body: stringifiedEditorState,
-      headers: {
-        Accept: 'application/json',
-        'Content-type': 'application/json',
-      },
-      method: 'POST',
-    });
-  } catch {
-    // NO-OP
-  }
-  if (response !== null && response.status === 403) {
-    throw new Error(
-      'Editor state validation failed! Server did not accept changes.',
-    );
-  }
-}
 
 async function shareDoc(doc: SerializedDocument): Promise<void> {
   const url = new URL(window.location.toString());
@@ -231,9 +191,15 @@ export default function ActionsPlugin({
       editor,
       PagesExtension.name,
     )?.output.disabled;
+    const escapeWithArrows = getPeerDependencyFromEditor<
+      typeof CodeIndentExtension
+    >(editor, CodeIndentExtension.name)?.output.escapeWithArrows;
     const isCodeBlockEditor = mode !== 'wysiwyg';
     if (pagesDisabled !== undefined) {
       pagesDisabled.value = isCodeBlockEditor;
+    }
+    if (escapeWithArrows !== undefined) {
+      escapeWithArrows.value = !isCodeBlockEditor;
     }
 
     if (isCodeBlockEditor) {
@@ -261,7 +227,7 @@ export default function ActionsPlugin({
     docFromHash(window.location.hash).then(doc => {
       if (doc && doc.source === 'Playground') {
         editor.setEditorState(editorStateFromSerializedDocument(editor, doc));
-        editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+        editor.dispatchCommand(CLEAR_HISTORY_COMMAND);
       }
     });
   }, [editor]);
@@ -270,7 +236,7 @@ export default function ActionsPlugin({
       editor.registerEditableListener(editable => {
         setIsEditable(editable);
       }),
-      editor.registerCommand<boolean>(
+      editor.registerCommand(
         CONNECTED_COMMAND,
         payload => {
           const isConnected = payload;
@@ -283,36 +249,24 @@ export default function ActionsPlugin({
   }, [editor]);
 
   useEffect(() => {
-    return editor.registerUpdateListener(
-      ({dirtyElements, prevEditorState, tags}) => {
-        // If we are in read only mode, send the editor state
-        // to server and ask for validation if possible.
-        if (
-          !isEditable &&
-          dirtyElements.size > 0 &&
-          !tags.has(HISTORIC_TAG) &&
-          !tags.has(COLLABORATION_TAG)
-        ) {
-          validateEditorState(editor);
-        }
-        editor.getEditorState().read(() => {
-          const root = $getRoot();
-          const children = root.getChildren();
+    return editor.registerUpdateListener(() => {
+      editor.read('latest', () => {
+        const root = $getRoot();
+        const children = root.getChildren();
 
-          if (children.length > 1) {
-            setIsEditorEmpty(false);
+        if (children.length > 1) {
+          setIsEditorEmpty(false);
+        } else {
+          if ($isParagraphNode(children[0])) {
+            const paragraphChildren = children[0].getChildren();
+            setIsEditorEmpty(paragraphChildren.length === 0);
           } else {
-            if ($isParagraphNode(children[0])) {
-              const paragraphChildren = children[0].getChildren();
-              setIsEditorEmpty(paragraphChildren.length === 0);
-            } else {
-              setIsEditorEmpty(false);
-            }
+            setIsEditorEmpty(false);
           }
-        });
-      },
-    );
-  }, [editor, isEditable]);
+        }
+      });
+    });
+  }, [editor]);
 
   const toggleMode = (targetMode: 'html' | 'markdown') => {
     startTransition(() => {
@@ -332,6 +286,16 @@ export default function ActionsPlugin({
 
   return (
     <div className="actions">
+      <button
+        className="action-button"
+        title="Keyboard shortcuts"
+        aria-label="Show keyboard shortcuts"
+        onClick={() =>
+          showModal('Keyboard shortcuts', () => <ShortcutsHelpDialog />)
+        }>
+        <i className="keyboard-shortcuts" />
+      </button>
+
       {SUPPORT_SPEECH_RECOGNITION && (
         <button
           onClick={() => {
@@ -401,10 +365,6 @@ export default function ActionsPlugin({
       <button
         className={`action-button ${!isEditable ? 'unlock' : 'lock'}`}
         onClick={() => {
-          // Send latest editor state to commenting validation server
-          if (isEditable) {
-            sendEditorState(editor);
-          }
           editor.setEditable(!editor.isEditable());
         }}
         title="Read-Only Mode"
@@ -450,7 +410,7 @@ export default function ActionsPlugin({
             <button
               className="action-button versions"
               onClick={() => {
-                editor.dispatchCommand(SHOW_VERSIONS_COMMAND, undefined);
+                editor.dispatchCommand(SHOW_VERSIONS_COMMAND);
               }}>
               <i className="versions" />
             </button>
@@ -475,7 +435,7 @@ function ShowClearDialog({
       <div className="Modal__content">
         <Button
           onClick={() => {
-            editor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
+            editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
             editor.focus();
             onClose();
           }}>

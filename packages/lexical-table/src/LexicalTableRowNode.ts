@@ -6,17 +6,21 @@
  *
  */
 
-import type {BaseSelection, LexicalUpdateJSON, Spread} from 'lexical';
-
-import {$descendantsMatching, addClassNamesToElement} from '@lexical/utils';
+import {$descendantsMatching} from '@lexical/utils';
 import {
   $applyNodeReplacement,
-  DOMConversionOutput,
-  EditorConfig,
+  $getDocument,
+  $setDirectionFromDOM,
+  addClassNamesToElement,
+  type BaseSelection,
+  type DOMConversionOutput,
+  type EditorConfig,
   ElementNode,
-  LexicalNode,
-  NodeKey,
-  SerializedElementNode,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type SerializedElementNode,
+  type Spread,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
@@ -75,7 +79,7 @@ export class TableRowNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('tr');
+    const element = $getDocument().createElement('tr');
 
     if (this.__height) {
       element.style.height = `${this.__height}px`;
@@ -131,7 +135,7 @@ export function $convertTableRowElement(domNode: Node): DOMConversionOutput {
 
   return {
     after: children => $descendantsMatching(children, $isTableCellNode),
-    node: $createTableRowNode(height),
+    node: $setDirectionFromDOM($createTableRowNode(height), domNode_),
   };
 }
 

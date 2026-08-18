@@ -24,7 +24,7 @@ import {
   configExtension,
   createCommand,
   defineExtension,
-  LexicalCommand,
+  type LexicalCommand,
 } from 'lexical';
 
 import {
@@ -37,12 +37,20 @@ type CommandPayload = {
 };
 
 export const INSERT_DATETIME_COMMAND: LexicalCommand<CommandPayload> =
-  createCommand('INSERT_DATETIME_COMMAND');
+  /* @__PURE__ */ createCommand('INSERT_DATETIME_COMMAND');
 
-const DateTimeRule = defineImportRule({
-  $import: (ctx, el) => {
+const DateTimeRule = /* @__PURE__ */ defineImportRule({
+  $import: (ctx, el, $next) => {
     const dateTimeValue = el.getAttribute('data-lexical-datetime')!;
-    const node = $createDateTimeNode(new Date(Date.parse(dateTimeValue)));
+    const parsedDate = Date.parse(dateTimeValue);
+    // An unparseable attribute would build a node around an Invalid Date,
+    // whose dateTime state cannot be serialized (toISOString throws). Fall
+    // through and keep the element's own content instead, the same way
+    // GoogleDocsDateRule below does.
+    if (isNaN(parsedDate)) {
+      return $next();
+    }
+    const node = $createDateTimeNode(new Date(parsedDate));
     const [firstChild] = ctx.$importChildren(el);
     if ($isTextNode(firstChild)) {
       node.setFormat(firstChild.getFormat());
@@ -53,7 +61,7 @@ const DateTimeRule = defineImportRule({
   name: '@lexical/playground/datetime',
 });
 
-const GoogleDocsDateRule = defineImportRule({
+const GoogleDocsDateRule = /* @__PURE__ */ defineImportRule({
   $import: (_ctx, el, $next) => {
     let parsed: {dat_df?: {dfie_ts?: {tv?: {tv_s?: number}}; dfie_dt?: string}};
     try {
@@ -78,7 +86,7 @@ const GoogleDocsDateRule = defineImportRule({
   name: '@lexical/playground/datetime-google-docs',
 });
 
-export const DateTimeExtension = defineExtension({
+export const DateTimeExtension = /* @__PURE__ */ defineExtension({
   // Depend on CoreImportExtension so this extension's rules are merged after
   // the core rules (later-merged rules win dispatch). Without this the core
   // inline-format `<span>` rule could out-prioritize the `<span
@@ -86,14 +94,14 @@ export const DateTimeExtension = defineExtension({
   // extension relative to the import baseline.
   dependencies: [
     CoreImportExtension,
-    configExtension(DOMImportExtension, {
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
       rules: [DateTimeRule, GoogleDocsDateRule],
     }),
   ],
   name: '@lexical/playground/DateTime',
   nodes: [DateTimeNode],
   register: editor =>
-    editor.registerCommand<CommandPayload>(
+    editor.registerCommand(
       INSERT_DATETIME_COMMAND,
       payload => {
         const {dateTime} = payload;

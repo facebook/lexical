@@ -6,41 +6,42 @@
  *
  */
 
-import type {ListItemNode} from './LexicalListItemNode';
-import type {LexicalCommand, LexicalEditor} from 'lexical';
+import type {Signal} from '@lexical/extension';
 
-import {Signal} from '@lexical/extension';
-import {
-  $findMatchingParent,
-  calculateZoomLevel,
-  isHTMLElement,
-  mergeRegister,
-} from '@lexical/utils';
+import {calculateZoomLevel} from '@lexical/utils';
 import {
   $addUpdateTag,
+  $findMatchingParent,
   $getNearestNodeFromDOMNode,
   $getSelection,
   $isElementNode,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
   createCommand,
+  type ElementNode,
+  getActiveElement,
   getNearestEditorFromDOMNode,
+  isHTMLElement,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_UP_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_SPACE_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
+  mergeRegister,
+  registerEventListener,
+  registerEventListeners,
   SKIP_DOM_SELECTION_TAG,
   SKIP_SELECTION_FOCUS_TAG,
 } from 'lexical';
 
 import {$insertList} from './formatList';
-import {$isListItemNode} from './LexicalListItemNode';
+import {$isListItemNode, type ListItemNode} from './LexicalListItemNode';
 import {$isListNode} from './LexicalListNode';
 
-export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> = createCommand(
-  'INSERT_CHECK_LIST_COMMAND',
-);
+export const INSERT_CHECK_LIST_COMMAND: LexicalCommand<void> =
+  /* @__PURE__ */ createCommand('INSERT_CHECK_LIST_COMMAND');
 
 /**
  * Registers the checklist plugin with the editor.
@@ -120,24 +121,24 @@ export function registerCheckList(
       },
       COMMAND_PRIORITY_LOW,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_ARROW_DOWN_COMMAND,
       event => {
         return handleArrowUpOrDown(event, editor, false);
       },
       COMMAND_PRIORITY_LOW,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_ARROW_UP_COMMAND,
       event => {
         return handleArrowUpOrDown(event, editor, true);
       },
       COMMAND_PRIORITY_LOW,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_ESCAPE_COMMAND,
       () => {
-        const activeItem = getActiveCheckListItem();
+        const activeItem = getActiveCheckListItem(editor);
 
         if (activeItem != null) {
           const rootElement = editor.getRootElement();
@@ -153,10 +154,10 @@ export function registerCheckList(
       },
       COMMAND_PRIORITY_LOW,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_SPACE_COMMAND,
       event => {
-        const activeItem = getActiveCheckListItem();
+        const activeItem = getActiveCheckListItem(editor);
 
         if (activeItem != null && editor.isEditable()) {
           editor.update(() => {
@@ -174,10 +175,10 @@ export function registerCheckList(
       },
       COMMAND_PRIORITY_LOW,
     ),
-    editor.registerCommand<KeyboardEvent>(
+    editor.registerCommand(
       KEY_ARROW_LEFT_COMMAND,
       event => {
-        return editor.getEditorState().read(() => {
+        return editor.read('latest', () => {
           const selection = $getSelection();
 
           if ($isRangeSelection(selection) && selection.isCollapsed()) {
@@ -199,7 +200,13 @@ export function registerCheckList(
                 ) {
                   const domNode = editor.getElementByKey(elementNode.__key);
 
-                  if (domNode != null && document.activeElement !== domNode) {
+                  // getActiveElement rather than document.activeElement, which
+                  // reports the shadow host in a shadow root (so this would
+                  // otherwise always re-focus and swallow the arrow key).
+                  if (
+                    domNode != null &&
+                    getActiveElement(domNode) !== domNode
+                  ) {
                     domNode.focus();
                     event.preventDefault();
                     return true;
@@ -217,51 +224,36 @@ export function registerCheckList(
 
     editor.registerRootListener(rootElement => {
       if (rootElement !== null) {
-        rootElement.addEventListener('click', configHandleClick);
-        rootElement.addEventListener('pointerup', configHandlePointerUp);
-        // Use capture so we run before other listeners that might move focus.
-        rootElement.addEventListener(
-          'pointerdown',
-          configHandleSelectDefaults,
-          {
-            capture: true,
-          },
-        );
-        // Some browsers / integrations still generate mousedown events; handle them too.
-        rootElement.addEventListener('mousedown', configHandleSelectDefaults, {
-          capture: true,
-        });
-        // Intercept touchstart to stop the mobile browser from placing the caret
-        // and opening the keyboard when tapping the checklist marker.
-        rootElement.addEventListener('touchstart', configHandleSelectDefaults, {
-          capture: true,
-          passive: false,
-        });
-        return () => {
-          rootElement.removeEventListener('click', configHandleClick);
-          rootElement.removeEventListener('pointerup', configHandlePointerUp);
-          rootElement.removeEventListener(
-            'pointerdown',
-            configHandleSelectDefaults,
+        return mergeRegister(
+          registerEventListeners(rootElement, {
+            click: configHandleClick,
+            pointerup: configHandlePointerUp,
+          }),
+          // Use capture so we run before other listeners that might move focus.
+          // Some browsers / integrations still generate mousedown events as well
+          // as pointerdown, so handle both.
+          registerEventListeners(
+            rootElement,
             {
-              capture: true,
+              mousedown: configHandleSelectDefaults,
+              pointerdown: configHandleSelectDefaults,
             },
-          );
-          rootElement.removeEventListener(
-            'mousedown',
-            configHandleSelectDefaults,
-            {
-              capture: true,
-            },
-          );
-          rootElement.removeEventListener(
+            {capture: true},
+          ),
+          // Intercept touchstart to stop the mobile browser from placing the
+          // caret and opening the keyboard when tapping the checklist marker.
+          // passive:false lets the handler call preventDefault, so it needs its
+          // own options and can't share the capture-only group above.
+          registerEventListener(
+            rootElement,
             'touchstart',
             configHandleSelectDefaults,
             {
               capture: true,
+              passive: false,
             },
-          );
-        };
+          ),
+        );
       }
     }),
   );
@@ -316,8 +308,9 @@ function handleCheckItemEvent(
   const clientXInPixels = clientX / zoom;
 
   // Use getComputedStyle if available, otherwise fallback to 0px width
-  const beforeStyles = window.getComputedStyle
-    ? window.getComputedStyle(target, '::before')
+  const targetView = target.ownerDocument.defaultView;
+  const beforeStyles = targetView
+    ? targetView.getComputedStyle(target, '::before')
     : ({width: '0px'} as CSSStyleDeclaration);
   const beforeWidthInPixels = parseFloat(beforeStyles.width);
 
@@ -387,8 +380,12 @@ function handleSelectDefaults(
   });
 }
 
-function getActiveCheckListItem(): HTMLElement | null {
-  const activeElement = document.activeElement;
+function getActiveCheckListItem(editor: LexicalEditor): HTMLElement | null {
+  // getActiveElement scoped to the editor's root rather than
+  // document.activeElement, which reports the shadow host when the editor is
+  // in a shadow root (so the focused <li> would otherwise be invisible here).
+  const rootElement = editor.getRootElement();
+  const activeElement = rootElement ? getActiveElement(rootElement) : null;
 
   return isHTMLElement(activeElement) &&
     activeElement.tagName === 'LI' &&
@@ -404,7 +401,7 @@ function findCheckListItemSibling(
   backward: boolean,
 ): ListItemNode | null {
   let sibling = backward ? node.getPreviousSibling() : node.getNextSibling();
-  let parent: ListItemNode | null = node;
+  let parent: ElementNode | null = node;
 
   // Going up in a tree to get non-null sibling
   while (sibling == null && $isListItemNode(parent)) {
@@ -439,7 +436,7 @@ function handleArrowUpOrDown(
   editor: LexicalEditor,
   backward: boolean,
 ) {
-  const activeItem = getActiveCheckListItem();
+  const activeItem = getActiveCheckListItem(editor);
 
   if (activeItem != null) {
     editor.update(() => {

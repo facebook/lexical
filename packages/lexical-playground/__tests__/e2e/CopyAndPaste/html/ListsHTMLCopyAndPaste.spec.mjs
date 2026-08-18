@@ -460,7 +460,9 @@ test.describe('HTML Lists CopyAndPaste', () => {
             <span data-lexical-text="true">four</span>
           </li>
         </ul>
-        <p class="PlaygroundEditorTheme__paragraph" dir="auto"><br /></p>
+        <p class="PlaygroundEditorTheme__paragraph" dir="auto">
+          <br data-lexical-managed-linebreak="true" />
+        </p>
       `,
     );
   });

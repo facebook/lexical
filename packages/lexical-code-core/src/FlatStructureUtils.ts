@@ -6,17 +6,6 @@
  *
  */
 
-import type {CodeHighlightNode} from './CodeHighlightNode';
-import type {
-  CaretDirection,
-  LexicalNode,
-  LineBreakNode,
-  RangeSelection,
-  SiblingCaret,
-  TabNode,
-  TextNode,
-} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
 import {
   $createLineBreakNode,
@@ -25,13 +14,21 @@ import {
   $isElementNode,
   $isLineBreakNode,
   $isTabNode,
+  type CaretDirection,
   getTextDirection,
+  type LexicalNode,
+  type LineBreakNode,
+  type RangeSelection,
+  type SiblingCaret,
+  type TabNode,
+  type TextNode,
   tokenizeRawText,
 } from 'lexical';
 
 import {
   $createCodeHighlightNode,
   $isCodeHighlightNode,
+  type CodeHighlightNode,
 } from './CodeHighlightNode';
 
 // The anchor is generic (rather than the narrower
@@ -127,16 +124,20 @@ export function $getStartOfCodeInLine(
 
   while (true) {
     if (nodeOffset === 0) {
-      node = node.getPreviousSibling();
-      if (node === null) {
+      // Annotation breaks a circular inference through the loop (TS7022),
+      // remove when the deprecated generic signatures from #8661 are removed
+      const prevSibling: LexicalNode | null = node.getPreviousSibling();
+      if (prevSibling === null) {
+        node = null;
         break;
       }
       invariant(
-        $isCodeHighlightNode(node) ||
-          $isTabNode(node) ||
-          $isLineBreakNode(node),
+        $isCodeHighlightNode(prevSibling) ||
+          $isTabNode(prevSibling) ||
+          $isLineBreakNode(prevSibling),
         'Expected a valid Code Node: CodeHighlightNode, TabNode, LineBreakNode',
       );
+      node = prevSibling;
       if ($isLineBreakNode(node)) {
         last = {
           node,

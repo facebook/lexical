@@ -126,7 +126,7 @@ export default function transformErrorMessages(babel, opts) {
               extractCodes ?? false,
             );
 
-            /** @type {babel.types.CallExpression} */
+            /** @type {import('@babel/core').types.CallExpression} */
             let callExpression;
             if (noMinify || prodErrorId === undefined) {
               // Error minification is disabled for this build.

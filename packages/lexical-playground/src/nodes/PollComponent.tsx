@@ -6,29 +6,32 @@
  *
  */
 
-import type {Option, Options, PollNode} from './PollNode';
-import type {JSX} from 'react';
-
 import './PollNode.css';
 
 import {useCollaborationContext} from '@lexical/react/LexicalCollaborationContext';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {useLexicalNodeSelection} from '@lexical/react/useLexicalNodeSelection';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
   $isNodeSelection,
-  BaseSelection,
+  type BaseSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
-  NodeKey,
+  mergeRegister,
+  type NodeKey,
 } from 'lexical';
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {type JSX, useEffect, useMemo, useRef, useState} from 'react';
 
 import Button from '../ui/Button';
 import joinClasses from '../utils/joinClasses';
-import {$isPollNode, createPollOption} from './PollNode';
+import {
+  $isPollNode,
+  createPollOption,
+  type Option,
+  type Options,
+  type PollNode,
+} from './PollNode';
 
 function getTotalVotes(options: Options): number {
   return options.reduce((totalVotes, next) => {
@@ -94,8 +97,7 @@ function PollOptionComponent({
           onChange={e => {
             const target = e.target;
             const value = target.value;
-            const selectionStart = target.selectionStart;
-            const selectionEnd = target.selectionEnd;
+            const {selectionStart, selectionEnd} = target;
             withPollNode(
               node => {
                 node.setOptionText(option, value);
@@ -147,7 +149,7 @@ export default function PollComponent({
       editor.registerUpdateListener(({editorState}) => {
         setSelection(editorState.read(() => $getSelection()));
       }),
-      editor.registerCommand<MouseEvent>(
+      editor.registerCommand(
         CLICK_COMMAND,
         payload => {
           const event = payload;

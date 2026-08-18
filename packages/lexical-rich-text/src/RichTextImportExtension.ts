@@ -6,12 +6,10 @@
  *
  */
 
-import {defineImportRule, DOMImportExtension, sel} from '@lexical/html';
+import {BlockSchema, defineImportRule, sel} from '@lexical/html';
 import {
   $setDirectionFromDOM,
   $setFormatFromDOM,
-  configExtension,
-  defineExtension,
   isHTMLElement,
   setNodeIndentFromDOM,
 } from 'lexical';
@@ -21,7 +19,6 @@ import {
   $createQuoteNode,
   type HeadingTagType,
 } from './index';
-import {RichTextExtension} from './LexicalRichTextExtension';
 
 /**
  * Heuristic copied (in spirit) from the legacy `isGoogleDocsTitle`:
@@ -37,7 +34,7 @@ function isGoogleDocsTitleSpan(node: Node): boolean {
   );
 }
 
-const HeadingRule = defineImportRule({
+const HeadingRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const tag = el.nodeName.toLowerCase() as HeadingTagType;
     const node = $createHeadingNode(tag);
@@ -50,7 +47,7 @@ const HeadingRule = defineImportRule({
   name: '@lexical/rich-text/heading',
 });
 
-const QuoteRule = defineImportRule({
+const QuoteRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     const node = $createQuoteNode();
     $setFormatFromDOM(node, el);
@@ -63,13 +60,44 @@ const QuoteRule = defineImportRule({
 });
 
 /**
+ * Opt-in replacement for the default `<blockquote>` rule that imports the
+ * quote as a shadow root {@link QuoteNode} (see `quoteShadowRootState`).
+ * Block-level children such as `<p>` are preserved as blocks and runs of
+ * inline content are wrapped in paragraphs (`BlockSchema`), so structured
+ * blockquote HTML round-trips faithfully instead of being flattened to
+ * inline content.
+ *
+ * Not part of {@link RichTextImportRules}; without it `<blockquote>`
+ * import behavior is unchanged. To opt in, register it with a higher
+ * priority than the default rules, e.g.:
+ * ```ts
+ * configExtension(DOMImportExtension, {rules: [ShadowRootQuoteRule]})
+ * ```
+ * (rules from later configuration take priority, so this shadows the
+ * default `@lexical/rich-text/blockquote` rule).
+ *
+ * @experimental
+ */
+export const ShadowRootQuoteRule = /* @__PURE__ */ defineImportRule({
+  $import: (ctx, el) => {
+    const node = $createQuoteNode({shadowRoot: true});
+    $setFormatFromDOM(node, el);
+    setNodeIndentFromDOM(el, node);
+    $setDirectionFromDOM(node, el);
+    return [node.splice(0, 0, ctx.$importChildren(el, {schema: BlockSchema}))];
+  },
+  match: sel.tag('blockquote'),
+  name: '@lexical/rich-text/blockquote-shadow-root',
+});
+
+/**
  * Google-Docs paragraph wrapper around a title span: drop the paragraph,
  * let the span rule below promote to a heading. The body deliberately
  * returns the children unwrapped (no schema, no own node) so the
  * descendant rules — including {@link GoogleDocsTitleSpanRule} — fire and
  * produce the heading at this level.
  */
-const GoogleDocsTitleParagraphRule = defineImportRule({
+const GoogleDocsTitleParagraphRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el, $next) => {
     const first = el.firstChild;
     if (first && isGoogleDocsTitleSpan(first)) {
@@ -81,7 +109,7 @@ const GoogleDocsTitleParagraphRule = defineImportRule({
   name: '@lexical/rich-text/google-docs-title-p',
 });
 
-const GoogleDocsTitleSpanRule = defineImportRule({
+const GoogleDocsTitleSpanRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el, $next) =>
     el.style.fontSize !== '26pt'
       ? $next()
@@ -97,6 +125,11 @@ const GoogleDocsTitleSpanRule = defineImportRule({
  * so they precede the generic `<p>` and `<span>` rules from
  * {@link CoreImportRules}.
  *
+ * Registered by {@link RichTextExtension} itself (together with
+ * `CoreImportExtension`), so any editor that uses the rich-text
+ * extension can import these tags through the `DOMImportExtension`
+ * pipeline without further configuration.
+ *
  * @experimental
  */
 export const RichTextImportRules = [
@@ -105,20 +138,3 @@ export const RichTextImportRules = [
   GoogleDocsTitleParagraphRule,
   GoogleDocsTitleSpanRule,
 ];
-
-/**
- * Bundles {@link RichTextImportRules} together with the runtime
- * {@link RichTextExtension}. The application is expected to already
- * have `CoreImportExtension` (or some equivalent) in its dependency
- * graph — the core/text/paragraph/inline-format rules are a shared
- * baseline, not something this leaf importer should re-declare.
- *
- * @experimental
- */
-export const RichTextImportExtension = defineExtension({
-  dependencies: [
-    RichTextExtension,
-    configExtension(DOMImportExtension, {rules: RichTextImportRules}),
-  ],
-  name: '@lexical/rich-text/Import',
-});

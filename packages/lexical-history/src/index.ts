@@ -6,18 +6,15 @@
  *
  */
 
-import type {EditorState, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
-
 import {
   batch,
   effect,
   getPeerDependencyFromEditor,
   namedSignals,
-  ReadonlySignal,
-  Signal,
+  type ReadonlySignal,
+  type Signal,
   signal,
 } from '@lexical/extension';
-import {mergeRegister} from '@lexical/utils';
 import {
   $isRangeSelection,
   $isRootNode,
@@ -30,10 +27,17 @@ import {
   COMPOSITION_END_TAG,
   COMPOSITION_START_TAG,
   configExtension,
+  CUT_TAG,
   defineExtension,
+  type EditorState,
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,
+  type LexicalEditor,
+  type LexicalNode,
+  mergeRegister,
+  type NodeKey,
+  PASTE_TAG,
   REDO_COMMAND,
   safeCast,
   UNDO_COMMAND,
@@ -55,10 +59,17 @@ export type HistoryStateEntry = {
   editor: LexicalEditor;
   editorState: EditorState;
 };
+/**
+ * The undo/redo history maintained by the history plugin: the `current` entry
+ * plus the `undoStack` and `redoStack` of previous and future
+ * {@link HistoryStateEntry}s. Create an empty one with
+ * {@link createEmptyHistoryState} and pass it to the history plugin to share
+ * history across editors.
+ */
 export type HistoryState = {
   current: null | HistoryStateEntry;
-  redoStack: Array<HistoryStateEntry>;
-  undoStack: Array<HistoryStateEntry>;
+  redoStack: HistoryStateEntry[];
+  undoStack: HistoryStateEntry[];
 };
 
 type IntentionallyMarkedAsDirtyElement = boolean;
@@ -67,7 +78,7 @@ function getDirtyNodes(
   editorState: EditorState,
   dirtyLeaves: Set<NodeKey>,
   dirtyElements: Map<NodeKey, IntentionallyMarkedAsDirtyElement>,
-): Array<LexicalNode> {
+): LexicalNode[] {
   const nodeMap = editorState._nodeMap;
   const nodes = [];
 
@@ -284,13 +295,23 @@ function createMergeActionGetter(
       prevEditorState = compositionStartState;
     }
 
-    const changeType = getChangeType(
-      prevEditorState,
-      nextEditorState,
-      dirtyLeaves,
-      dirtyElements,
-      editor.isComposing(),
-    );
+    // A paste or cut is never a continuation of the surrounding typing, so
+    // classify it as OTHER. This both prevents it from merging into the
+    // preceding keystrokes and, because it becomes `prevChangeType`, stops the
+    // following keystrokes from merging into it — giving the clipboard
+    // operation its own undo entry (see #8609). Centralizing this here means any
+    // update carrying these tags gets an undo boundary, regardless of which
+    // handler produced it.
+    const changeType =
+      tags.has(PASTE_TAG) || tags.has(CUT_TAG)
+        ? OTHER
+        : getChangeType(
+            prevEditorState,
+            nextEditorState,
+            dirtyLeaves,
+            dirtyElements,
+            editor.isComposing(),
+          );
 
     const mergeAction = (() => {
       const isSameEditor =
@@ -639,10 +660,11 @@ interface HistoryExtensionInit {
 /**
  * The output signals exposed by {@link HistoryExtension}.
  *
- * Config-derived signals (`delay`, `disabled`, `historyState`, `now`) are
- * writable so that peer extensions such as {@link SharedHistoryExtension} can
- * redirect them at runtime.  The `canUndo` / `canRedo` signals are
- * **readonly** for consumers — they are derived from the current
+ * Config-derived signals (`delay`, `disabled`, `historyState`, `maxDepth`,
+ * `now`) are writable so that peer extensions such as
+ * {@link SharedHistoryExtension} can redirect them at runtime.
+ * The `canUndo` / `canRedo` signals are **readonly** for
+ * consumers — they are derived from the current
  * {@link HistoryState} and kept in sync automatically.
  */
 export interface HistoryExtensionOutput {
@@ -676,7 +698,7 @@ export interface HistoryExtensionOutput {
  * Registers necessary listeners to manage undo/redo history stack and related
  * editor commands, via the \@lexical/history module.
  */
-export const HistoryExtension = defineExtension({
+export const HistoryExtension = /* @__PURE__ */ defineExtension({
   build: (
     editor,
     {delay, createInitialHistoryState, disabled, maxDepth, now},
@@ -698,7 +720,7 @@ export const HistoryExtension = defineExtension({
       ...state.getInitResult(),
     };
   },
-  config: safeCast<HistoryConfig>({
+  config: /* @__PURE__ */ safeCast<HistoryConfig>({
     createInitialHistoryState: createEmptyHistoryState,
     delay: 300,
     disabled: typeof window === 'undefined',
@@ -768,18 +790,18 @@ export interface SharedHistoryConfig {
  * editor commands, via the \@lexical/history module, only if the parent editor
  * has a history plugin implementation.
  */
-export const SharedHistoryExtension = defineExtension({
+export const SharedHistoryExtension = /* @__PURE__ */ defineExtension({
   build: (editor, {disabled, parentEditor}) =>
     namedSignals({
       disabled,
       parentEditor: parentEditor || editor._parentEditor,
     }),
-  config: safeCast<SharedHistoryConfig>({
+  config: /* @__PURE__ */ safeCast<SharedHistoryConfig>({
     disabled: false,
     parentEditor: null,
   }),
   dependencies: [
-    configExtension(HistoryExtension, {
+    /* @__PURE__ */ configExtension(HistoryExtension, {
       disabled: true,
     }),
   ],
@@ -798,6 +820,10 @@ export const SharedHistoryExtension = defineExtension({
           output.delay.value = parentOutput.delay.value;
           output.historyState.value = parentOutput.historyState.value;
           output.now.value = parentOutput.now.value;
+          // The cap must come from the parent too: the child pushes onto the
+          // parent's shared undoStack, so applying the child's own (default
+          // null) maxDepth would silently void the limit the app configured.
+          output.maxDepth.value = parentOutput.maxDepth.value;
           // Note that toggling the parent history will force this to be changed
           output.disabled.value = parentOutput.disabled.value;
         });

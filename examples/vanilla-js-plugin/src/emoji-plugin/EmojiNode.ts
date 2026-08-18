@@ -6,9 +6,13 @@
  *
  */
 
-import type {EditorConfig, NodeKey, SerializedTextNode, Spread} from 'lexical';
-
-import {TextNode} from 'lexical';
+import {
+  type EditorConfig,
+  type NodeKey,
+  type SerializedTextNode,
+  type Spread,
+  TextNode,
+} from 'lexical';
 
 export type SerializedEmojiNode = Spread<
   {

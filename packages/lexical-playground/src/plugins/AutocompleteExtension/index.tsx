@@ -10,12 +10,11 @@ import {
   effect,
   IMEExtension,
   namedSignals,
+  RootElementExtension,
   shallowMergeConfig,
   WatchEditableExtension,
-  watchedSignal,
 } from '@lexical/extension';
 import {$isAtNodeEnd} from '@lexical/selection';
-import {mergeRegister} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -29,11 +28,14 @@ import {
   COMPOSITION_START_COMMAND,
   defineExtension,
   type EditorState,
+  getActiveElement,
   isHTMLElement,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_TAB_COMMAND,
   type LexicalEditor,
+  mergeRegister,
   type NodeKey,
+  registerEventListener,
   safeCast,
   setDOMUnmanaged,
 } from 'lexical';
@@ -277,7 +279,7 @@ function syncGhost(
   if (!dom) {
     return;
   }
-  const ghost = document.createElement('span');
+  const ghost = dom.ownerDocument.createElement('span');
   ghost.setAttribute(AUTOCOMPLETE_GHOST_ATTR, 'true');
   ghost.setAttribute('contenteditable', 'false');
   ghost.className = 'PlaygroundEditorTheme__autocomplete';
@@ -335,27 +337,21 @@ function mergeAutocompleteConfig(
   return merged;
 }
 
-export const AutocompleteExtension = defineExtension({
+export const AutocompleteExtension = /* @__PURE__ */ defineExtension({
   build: (editor, config) => namedSignals(config),
-  config: safeCast<AutocompleteConfig>({
+  config: /* @__PURE__ */ safeCast<AutocompleteConfig>({
     compositionIdleDebounceMs: DEFAULT_COMPOSITION_IDLE_DEBOUNCE_MS,
     detectLanguage: defaultDetectLanguage,
     dictionaries: defaultDictionaries,
     disabled: false,
   }),
-  dependencies: [IMEExtension, WatchEditableExtension],
+  dependencies: [IMEExtension, RootElementExtension, WatchEditableExtension],
   mergeConfig: mergeAutocompleteConfig,
   name: '@lexical/playground/autocomplete',
   register: (editor: LexicalEditor, config, state) => {
     const ime = state.getDependency(IMEExtension).output;
     const editableSignal = state.getDependency(WatchEditableExtension).output;
-    const rootElemSignal = watchedSignal(
-      () => editor.getRootElement(),
-      signal =>
-        editor.registerRootListener(rootElem => {
-          signal.value = rootElem;
-        }),
-    );
+    const rootElemSignal = state.getDependency(RootElementExtension).output;
     let activeTextNodeKey: NodeKey | null = null;
     let lastMatch: string | null = null;
     let lastSuggestion: string | null = null;
@@ -397,7 +393,10 @@ export const AutocompleteExtension = defineExtension({
     // extension registration.
     function isEditorFocused(): boolean {
       const rootElem = editor.getRootElement();
-      const active = rootElem && rootElem.ownerDocument.activeElement;
+      // getActiveElement rather than ownerDocument.activeElement, which reports
+      // the shadow host (not contained in rootElem) when the editor is in a
+      // shadow root.
+      const active = rootElem ? getActiveElement(rootElem) : null;
       return rootElem != null && active != null && rootElem.contains(active);
     }
 
@@ -540,31 +539,24 @@ export const AutocompleteExtension = defineExtension({
       if (!isEditorFocused()) {
         return;
       }
-      editor.getEditorState().read(
-        () => {
-          const selection = $getSelection();
-          const [hasMatch, match] = $search(selection);
-          if (
-            !hasMatch ||
-            match !== lastMatch ||
-            !$isRangeSelection(selection)
-          ) {
-            return;
-          }
-          const node = selection.getNodes()[0];
-          if (!$isTextNode(node)) {
-            return;
-          }
-          activeTextNodeKey = node.getKey();
-          lastSuggestion = newSuggestion;
-          syncGhost(
-            editor,
-            activeTextNodeKey,
-            formatSuggestionText(newSuggestion),
-          );
-        },
-        {editor},
-      );
+      editor.read('latest', () => {
+        const selection = $getSelection();
+        const [hasMatch, match] = $search(selection);
+        if (!hasMatch || match !== lastMatch || !$isRangeSelection(selection)) {
+          return;
+        }
+        const node = selection.getNodes()[0];
+        if (!$isTextNode(node)) {
+          return;
+        }
+        activeTextNodeKey = node.getKey();
+        lastSuggestion = newSuggestion;
+        syncGhost(
+          editor,
+          activeTextNodeKey,
+          formatSuggestionText(newSuggestion),
+        );
+      });
     }
 
     function handleUpdate({
@@ -735,9 +727,13 @@ export const AutocompleteExtension = defineExtension({
       for (const loader of Object.values(output.dictionaries.value)) {
         loadDictionary(loader);
       }
-      rootElem.addEventListener('compositionupdate', onCompositionUpdateDOM);
-      rootElem.addEventListener('compositionend', onCompositionEndDOM);
       return mergeRegister(
+        registerEventListener(
+          rootElem,
+          'compositionupdate',
+          onCompositionUpdateDOM,
+        ),
+        registerEventListener(rootElem, 'compositionend', onCompositionEndDOM),
         editor.registerUpdateListener(handleUpdate),
         // Drop the ghost as soon as the editor loses focus, rather than
         // waiting for the next update.
@@ -772,14 +768,7 @@ export const AutocompleteExtension = defineExtension({
           COMMAND_PRIORITY_LOW,
         ),
         addSwipeRightListener(rootElem, handleSwipeRight),
-        () => {
-          clearPendingCompositionTimer();
-          rootElem.removeEventListener(
-            'compositionupdate',
-            onCompositionUpdateDOM,
-          );
-          rootElem.removeEventListener('compositionend', onCompositionEndDOM);
-        },
+        clearPendingCompositionTimer,
         // Tear down on dispose: clear any ghost still attached so a fresh
         // build doesn't see leftover decoration.
         dismiss,

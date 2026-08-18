@@ -6,23 +6,14 @@
  *
  */
 
-import type {JSX} from 'react';
-
+import {getExtensionDependencyFromEditor, signal} from '@lexical/extension';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
-import {
-  CollaborationPlugin,
-  CollaborationPluginV2__EXPERIMENTAL,
-} from '@lexical/react/LexicalCollaborationPlugin';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
-import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
-import {CAN_USE_DOM} from '@lexical/utils';
-import {useEffect, useMemo, useState} from 'react';
-import {Doc} from 'yjs';
+import {useSignalValue} from '@lexical/react/useExtensionSignalValue';
+import {CAN_USE_DOM, registerEventListener} from 'lexical';
+import {type JSX, useCallback, useEffect, useMemo, useState} from 'react';
 
-import {
-  createWebsocketProvider,
-  createWebsocketProviderWithDoc,
-} from './collaboration';
+import {createWebsocketProvider} from './collaboration';
 import {useSettings} from './context/SettingsContext';
 import {useSynchronizeSettings} from './hooks/useSynchronizeSettings';
 import ActionsPlugin from './plugins/ActionsPlugin';
@@ -37,7 +28,8 @@ import {ExcalidrawPlugin} from './plugins/ExcalidrawExtension';
 import FloatingLinkEditorPlugin from './plugins/FloatingLinkEditorPlugin';
 import FloatingTextFormatToolbarPlugin from './plugins/FloatingTextFormatToolbarPlugin';
 import {MentionsPlugin} from './plugins/MentionsExtension';
-import ShortcutsPlugin from './plugins/ShortcutsPlugin';
+import FloatingRubyEditorPlugin from './plugins/RubyExtension/FloatingRubyEditor';
+import {ShortcutsExtension} from './plugins/ShortcutsExtension';
 import SpeechToTextPlugin from './plugins/SpeechToTextPlugin';
 import TableCellActionMenuPlugin from './plugins/TableActionMenuPlugin';
 import TableCellResizer from './plugins/TableCellResizer';
@@ -47,14 +39,7 @@ import TableOfContentsPlugin from './plugins/TableOfContentsPlugin';
 import TableScrollShadowPlugin from './plugins/TableScrollShadowPlugin';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import TreeViewPlugin from './plugins/TreeViewPlugin';
-import {VersionsPlugin} from './plugins/VersionsPlugin';
 import ContentEditable from './ui/ContentEditable';
-
-const COLLAB_DOC_ID = 'main';
-
-const skipCollaborationInit =
-  // @ts-expect-error
-  window.parent != null && window.parent.frames.right === window;
 
 export default function Editor(): JSX.Element {
   const {
@@ -86,7 +71,30 @@ export default function Editor(): JSX.Element {
     useState<boolean>(false);
   const [editor] = useLexicalComposerContext();
   const [activeEditor, setActiveEditor] = useState(editor);
-  const [isLinkEditMode, setIsLinkEditMode] = useState<boolean>(false);
+  // The link edit mode state lives on the ShortcutsExtension output so the
+  // insert-link keyboard shortcut can set it without any React coupling
+  // (the extension is only present in rich text configurations)
+  const isLinkEditModeSignal = useMemo(
+    () =>
+      isRichText
+        ? getExtensionDependencyFromEditor(editor, ShortcutsExtension).output
+            .isLinkEditMode
+        : signal(false),
+    [editor, isRichText],
+  );
+  const isLinkEditMode = useSignalValue(isLinkEditModeSignal);
+  const setIsLinkEditMode = useCallback(
+    (nextIsLinkEditMode: boolean) => {
+      if (isRichText) {
+        getExtensionDependencyFromEditor(
+          editor,
+          ShortcutsExtension,
+        ).output.isLinkEditMode.value = nextIsLinkEditMode;
+      }
+    },
+    [editor, isRichText],
+  );
+  const [isRubyEditMode, setIsRubyEditMode] = useState<boolean>(false);
 
   const onRef = (_floatingAnchorElem: HTMLDivElement) => {
     if (_floatingAnchorElem !== null) {
@@ -104,11 +112,7 @@ export default function Editor(): JSX.Element {
       }
     };
     updateViewPortWidth();
-    window.addEventListener('resize', updateViewPortWidth);
-
-    return () => {
-      window.removeEventListener('resize', updateViewPortWidth);
-    };
+    return registerEventListener(window, 'resize', updateViewPortWidth);
   }, [isSmallWidthViewport]);
 
   return (
@@ -119,12 +123,7 @@ export default function Editor(): JSX.Element {
           activeEditor={activeEditor}
           setActiveEditor={setActiveEditor}
           setIsLinkEditMode={setIsLinkEditMode}
-        />
-      )}
-      {isRichText && (
-        <ShortcutsPlugin
-          editor={activeEditor}
-          setIsLinkEditMode={setIsLinkEditMode}
+          setIsRubyEditMode={setIsRubyEditMode}
         />
       )}
       <div
@@ -143,23 +142,6 @@ export default function Editor(): JSX.Element {
         )}
         {isRichText ? (
           <>
-            {isCollab ? (
-              useCollabV2 ? (
-                <>
-                  <CollabV2
-                    id={COLLAB_DOC_ID}
-                    shouldBootstrap={!skipCollaborationInit}
-                  />
-                  <VersionsPlugin id={COLLAB_DOC_ID} />
-                </>
-              ) : (
-                <CollaborationPlugin
-                  id={COLLAB_DOC_ID}
-                  providerFactory={createWebsocketProvider}
-                  shouldBootstrap={!skipCollaborationInit}
-                />
-              )
-            ) : null}
             <div className="editor-scroller">
               <div className="editor" ref={onRef}>
                 <ContentEditable placeholder={placeholder} />
@@ -169,13 +151,17 @@ export default function Editor(): JSX.Element {
             <TableCellResizer />
             <TableScrollShadowPlugin />
             <ExcalidrawPlugin />
-            <TabIndentationPlugin maxIndent={7} />
             {floatingAnchorElem && (
               <>
                 <FloatingLinkEditorPlugin
                   anchorElem={floatingAnchorElem}
                   isLinkEditMode={isLinkEditMode}
                   setIsLinkEditMode={setIsLinkEditMode}
+                />
+                <FloatingRubyEditorPlugin
+                  anchorElem={floatingAnchorElem}
+                  isRubyEditMode={isRubyEditMode}
+                  setIsRubyEditMode={setIsRubyEditMode}
                 />
                 <TableCellActionMenuPlugin
                   anchorElem={floatingAnchorElem}
@@ -191,6 +177,7 @@ export default function Editor(): JSX.Element {
                 <FloatingTextFormatToolbarPlugin
                   anchorElem={floatingAnchorElem}
                   setIsLinkEditMode={setIsLinkEditMode}
+                  isRubyEditMode={isRubyEditMode}
                 />
               </>
             )}
@@ -213,29 +200,5 @@ export default function Editor(): JSX.Element {
       </div>
       {showTreeView && <TreeViewPlugin />}
     </>
-  );
-}
-
-function CollabV2({
-  id,
-  shouldBootstrap,
-}: {
-  id: string;
-  shouldBootstrap: boolean;
-}) {
-  // VersionsPlugin needs GC disabled.
-  const doc = useMemo(() => new Doc({gc: false}), []);
-
-  const provider = useMemo(() => {
-    return createWebsocketProviderWithDoc('main', doc);
-  }, [doc]);
-
-  return (
-    <CollaborationPluginV2__EXPERIMENTAL
-      id={id}
-      doc={doc}
-      provider={provider}
-      __shouldBootstrapUnsafe={shouldBootstrap}
-    />
   );
 }

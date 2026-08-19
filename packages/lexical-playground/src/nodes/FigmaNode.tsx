@@ -12,7 +12,6 @@ import type {
   LexicalEditor,
   LexicalNode,
   NodeKey,
-  SerializedPartial,
   Spread,
 } from 'lexical';
 import type {JSX} from 'react';
@@ -82,13 +81,6 @@ export class FigmaNode extends DecoratorBlockNode {
     return new FigmaNode(node.__id, node.__format, node.__key);
   }
 
-  static importJSON(
-    serializedNode: SerializedPartial<SerializedFigmaNode>,
-  ): FigmaNode {
-    const {documentID} = figmaNodeSchema(serializedNode);
-    return $createFigmaNode(documentID).updateFromJSON(serializedNode);
-  }
-
   exportJSON(): SerializedFigmaNode {
     return {
       ...super.exportJSON(),
@@ -96,7 +88,13 @@ export class FigmaNode extends DecoratorBlockNode {
     };
   }
 
-  constructor(id: string, format?: ElementFormatType, key?: NodeKey) {
+  setDocumentID(documentID: string): this {
+    const self = this.getWritable();
+    self.__id = documentID;
+    return self;
+  }
+
+  constructor(id: string = '', format?: ElementFormatType, key?: NodeKey) {
     super(format, key);
     this.__id = id;
   }

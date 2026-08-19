@@ -24,7 +24,6 @@ import {
   objectValue,
   type RangeSelection,
   type SerializedElementNode,
-  type SerializedPartial,
   type Spread,
 } from 'lexical';
 
@@ -44,7 +43,7 @@ type SerializedCollapsibleContainerNode = Spread<
 export class CollapsibleContainerNode extends ElementNode {
   __open: boolean;
 
-  constructor(open: boolean, key?: NodeKey) {
+  constructor(open: boolean = false, key?: NodeKey) {
     super(key);
     this.__open = open;
   }
@@ -134,13 +133,6 @@ export class CollapsibleContainerNode extends ElementNode {
     }
 
     return false;
-  }
-
-  static importJSON(
-    serializedNode: SerializedPartial<SerializedCollapsibleContainerNode>,
-  ): CollapsibleContainerNode {
-    const {open} = collapsibleContainerNodeSchema(serializedNode);
-    return $createCollapsibleContainerNode(open).updateFromJSON(serializedNode);
   }
 
   exportDOM(): DOMExportOutput {

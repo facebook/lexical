@@ -44,7 +44,6 @@ import {
   rawValue,
   type SerializedEditor,
   type SerializedLexicalNode,
-  type SerializedPartial,
   type Spread,
   stringValue,
 } from 'lexical';
@@ -173,21 +172,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     );
   }
 
-  static importJSON(
-    serializedNode: SerializedPartial<SerializedImageNode>,
-  ): ImageNode {
-    const {altText, height, width, maxWidth, src, showCaption} =
-      imageNodeSchema(serializedNode);
-    return $createImageNode({
-      altText,
-      height,
-      maxWidth,
-      showCaption,
-      src,
-      width,
-    }).updateFromJSON(serializedNode);
-  }
-
   /**
    * Apply a serialized nested caption editor. The nested editor's own
    * `parseEditorState` owns validation of the payload, which is why the `json`
@@ -252,10 +236,42 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     return {element: imgElement};
   }
 
+  setSrc(src: string): this {
+    const self = this.getWritable();
+    self.__src = src;
+    return self;
+  }
+
+  setAltText(altText: string): this {
+    const self = this.getWritable();
+    self.__altText = altText;
+    return self;
+  }
+
+  setMaxWidth(maxWidth: number | undefined): this {
+    const self = this.getWritable();
+    self.__maxWidth = maxWidth === undefined ? self.__maxWidth : maxWidth;
+    return self;
+  }
+
+  // `width`/`height` are absent from the JSON when the image is unsized, which
+  // is stored as the sentinel 'inherit'.
+  setWidth(width: number | undefined): this {
+    const self = this.getWritable();
+    self.__width = width === undefined ? 'inherit' : width;
+    return self;
+  }
+
+  setHeight(height: number | undefined): this {
+    const self = this.getWritable();
+    self.__height = height === undefined ? 'inherit' : height;
+    return self;
+  }
+
   constructor(
-    src: string,
-    altText: string,
-    maxWidth: number,
+    src: string = '',
+    altText: string = '',
+    maxWidth: number = 0,
     width?: 'inherit' | number,
     height?: 'inherit' | number,
     showCaption?: boolean,

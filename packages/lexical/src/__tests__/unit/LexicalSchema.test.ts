@@ -190,6 +190,7 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
           mode: 'bogus',
           style: 42,
           text: 99,
+          // deliberately out of domain, so the double cast is required
         } as unknown as LexicalUpdateJSON<
           SerializedPartial<SerializedTextNode>
         >);
@@ -205,16 +206,13 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
       const {editor} = testEnv;
       editor.update(() => {
         const node = $createTextNode('initial');
-        // Node-specific properties are accepted by the base updateFromJSON via
-        // a cast (the signature regresses to the base type when a node drops its
-        // own updateFromJSON override, as with the injected static importJSON).
         node.updateFromJSON({
           detail: 0,
           format: 1,
           mode: 'token',
           style: 'color: red',
           text: 'hello',
-        } as LexicalUpdateJSON<SerializedPartial<SerializedTextNode>>);
+        });
         expect(node.getTextContent()).toBe('hello');
         expect(node.getFormat()).toBe(1);
         expect(node.getMode()).toBe('token');

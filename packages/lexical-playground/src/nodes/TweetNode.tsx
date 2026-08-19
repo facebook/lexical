@@ -20,7 +20,6 @@ import {
   type LexicalNode,
   type NodeKey,
   objectValue,
-  type SerializedPartial,
   type Spread,
   stringValue,
 } from 'lexical';
@@ -140,13 +139,6 @@ export class TweetNode extends DecoratorBlockNode {
     return new TweetNode(node.__id, node.__format, node.__key);
   }
 
-  static importJSON(
-    serializedNode: SerializedPartial<SerializedTweetNode>,
-  ): TweetNode {
-    const {id} = tweetNodeSchema(serializedNode);
-    return $createTweetNode(id).updateFromJSON(serializedNode);
-  }
-
   exportJSON(): SerializedTweetNode {
     return {
       ...super.exportJSON(),
@@ -162,7 +154,13 @@ export class TweetNode extends DecoratorBlockNode {
     return {element};
   }
 
-  constructor(id: string, format?: ElementFormatType, key?: NodeKey) {
+  setId(id: string): this {
+    const self = this.getWritable();
+    self.__id = id;
+    return self;
+  }
+
+  constructor(id: string = '', format?: ElementFormatType, key?: NodeKey) {
     super(format, key);
     this.__id = id;
   }

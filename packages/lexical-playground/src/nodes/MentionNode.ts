@@ -14,7 +14,6 @@ import {
   type LexicalNode,
   type NodeKey,
   objectValue,
-  type SerializedPartial,
   type SerializedTextNode,
   type Spread,
   stringValue,
@@ -56,14 +55,14 @@ export class MentionNode extends TextNode {
   static clone(node: MentionNode): MentionNode {
     return new MentionNode(node.__mention, node.__text, node.__key);
   }
-  static importJSON(
-    serializedNode: SerializedPartial<SerializedMentionNode>,
-  ): MentionNode {
-    const {mentionName} = mentionNodeSchema(serializedNode);
-    return $createMentionNode(mentionName).updateFromJSON(serializedNode);
+
+  setMentionName(mentionName: string): this {
+    const self = this.getWritable();
+    self.__mention = mentionName;
+    return self;
   }
 
-  constructor(mentionName: string, text?: string, key?: NodeKey) {
+  constructor(mentionName: string = '', text?: string, key?: NodeKey) {
     super(text ?? mentionName, key);
     this.__mention = mentionName;
   }

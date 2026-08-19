@@ -49,7 +49,7 @@ describe('LexicalTableCellNode tests', () => {
           type: 'tablecell',
           verticalAlign: 'nonsense',
           width: 0,
-        } as unknown as SerializedTableCellNode;
+        } as SerializedTableCellNode;
         const cell = TableCellNode.importJSON(json);
         invariant($isTableCellNode(cell), 'expected a TableCellNode');
         expect(cell.getColSpan()).toBe(1);

@@ -12,17 +12,28 @@ import {
   $getRoot,
   $isTextNode,
   $withSerializationContext,
+  type AnySerializationStateConfigPair,
   createEditor,
   type LexicalEditor,
   SerializationContextCompact,
   SerializationContextOverride,
+  type SerializedElementNode,
   type SerializedLexicalNode,
+  type SerializedRootNode,
+  type SerializedTextNode,
 } from 'lexical';
 import {beforeEach, describe, expect, test} from 'vitest';
 
-type SerializedJSON = Record<string, unknown> & {
-  children?: SerializedJSON[];
-};
+// The walk only ever produces elements where this is used, but serialized
+// JSON carries no discriminator beyond `type`, so the shape is asserted here
+// rather than at every call site.
+function childrenOf(node: SerializedLexicalNode): SerializedLexicalNode[] {
+  return (node as SerializedElementNode).children;
+}
+
+function textsOf(node: SerializedLexicalNode): (string | undefined)[] {
+  return childrenOf(node).map(child => (child as SerializedTextNode).text);
+}
 
 describe('serialization context', () => {
   let editor: LexicalEditor;
@@ -50,20 +61,19 @@ describe('serialization context', () => {
   });
 
   function toJSON(
-    pairs: Parameters<typeof $withSerializationContext>[0] = [],
-  ): SerializedJSON {
-    return editor.read(
-      () =>
-        $withSerializationContext(pairs)(
-          () => editor.getEditorState().toJSON().root,
-        ) as unknown as SerializedJSON,
+    pairs: readonly AnySerializationStateConfigPair[] = [],
+  ): SerializedRootNode {
+    return editor.read(() =>
+      $withSerializationContext(pairs)(
+        () => editor.getEditorState().toJSON().root,
+      ),
     );
   }
 
   test('legacy is the default and is unchanged', () => {
     const root = toJSON();
-    const paragraph = root.children![0];
-    const [plain, bold] = paragraph.children!;
+    const paragraph = childrenOf(root)[0];
+    const [plain, bold] = childrenOf(paragraph);
     // every property written out, including the deprecated `version`
     expect(root.version).toBe(1);
     expect(paragraph).toMatchObject({
@@ -87,8 +97,8 @@ describe('serialization context', () => {
 
   test('compact omits version and every default-valued property', () => {
     const root = toJSON([[SerializationContextCompact, true]]);
-    const paragraph = root.children![0];
-    const [plain, bold] = paragraph.children!;
+    const paragraph = childrenOf(root)[0];
+    const [plain, bold] = childrenOf(paragraph);
     expect(root).not.toHaveProperty('version');
     // a paragraph with no formatting keeps only its structure
     expect(Object.keys(paragraph).sort()).toEqual(['children', 'type']);
@@ -138,8 +148,7 @@ describe('serialization context', () => {
             : $next(),
       ],
     ]);
-    const paragraph = root.children![0];
-    expect(paragraph.children!.map(child => child.text)).toEqual(['plain']);
+    expect(textsOf(childrenOf(root)[0])).toEqual(['plain']);
   });
 
   test('an override can enhance what $next() produced', () => {
@@ -157,11 +166,7 @@ describe('serialization context', () => {
         },
       ],
     ]);
-    const paragraph = root.children![0];
-    expect(paragraph.children!.map(child => child.text)).toEqual([
-      'plain',
-      'REDACTED',
-    ]);
+    expect(textsOf(childrenOf(root)[0])).toEqual(['plain', 'REDACTED']);
   });
 
   test('overrides and compaction compose', () => {
@@ -178,16 +183,11 @@ describe('serialization context', () => {
     // every text node omitted, and what survives is still compacted
     expect(root.type).toBe('root');
     expect(root).not.toHaveProperty('version');
-    expect(root.children![0].children).toEqual([]);
+    expect(childrenOf(childrenOf(root)[0])).toEqual([]);
   });
 
   test('the root cannot be omitted; an omission for it is ignored', () => {
-    const root = toJSON([
-      [
-        SerializationContextOverride,
-        () => null as SerializedLexicalNode | null,
-      ],
-    ]);
+    const root = toJSON([[SerializationContextOverride, () => null]]);
     // every other node was omitted, but the root exported normally
     expect(root.type).toBe('root');
     expect(root.children).toEqual([]);
@@ -208,7 +208,7 @@ describe('serialization context', () => {
     ]);
     // the replacement said "no children" and the walk respected it — the
     // paragraph's real text is not leaked into the export
-    expect(root.children![0].children).toEqual([]);
+    expect(childrenOf(childrenOf(root)[0])).toEqual([]);
     expect(JSON.stringify(root)).not.toContain('plain');
   });
 
@@ -225,15 +225,12 @@ describe('serialization context', () => {
     ]);
     // {...$next()} copies the children array by reference, so the walk still
     // fills it with the live children
-    expect(root.children![0].extra).toBe(true);
-    expect(root.children![0].children!.map(child => child.text)).toEqual([
-      'plain',
-      'bold',
-    ]);
+    expect(childrenOf(root)[0]).toMatchObject({extra: true});
+    expect(textsOf(childrenOf(root)[0])).toEqual(['plain', 'bold']);
   });
 
   test('the context does not leak outside its callback', () => {
     toJSON([[SerializationContextCompact, true]]);
-    expect(toJSON().children![0].version).toBe(1);
+    expect(childrenOf(toJSON())[0].version).toBe(1);
   });
 });

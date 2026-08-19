@@ -143,13 +143,10 @@ function compilePredicate(
     return matchesEverything;
   }
   const predicates = nodes.map((match): NodePredicate => {
-    // A node class is told from a type guard by whether an object inheriting
-    // its prototype is a LexicalNode. Probing via Object.create (once, at
-    // compile time) also covers the abstract base class itself, whose own
-    // prototype is not an instance of it; a guard's prototype is a plain
-    // object (or absent, for arrow functions), so the probe is false.
-    const {prototype} = match as Klass<LexicalNode>;
-    return prototype != null && $isLexicalNode(Object.create(prototype))
+    // A node class is told from a type guard by its prototype, as elsewhere in
+    // the codebase: a node class has a LexicalNode prototype, while a guard's
+    // is a plain object (or absent, for an arrow function).
+    return $isLexicalNode((match as Klass<LexicalNode>).prototype)
       ? node => node instanceof (match as Klass<LexicalNode>)
       : (match as NodePredicate);
   });

@@ -84,7 +84,7 @@ describe('LexicalListNode tests', () => {
         // listType (outside the declared ListType), which the constructor has
         // always normalized.
         const legacy = (listType: string) =>
-          ({listType}) as unknown as LexicalUpdateJSON<
+          ({listType}) as LexicalUpdateJSON<
             SerializedPartial<SerializedListNode>
           >;
         const bullet = $createListNode().updateFromJSON(legacy('ul'));

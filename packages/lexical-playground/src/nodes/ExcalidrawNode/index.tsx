@@ -21,7 +21,6 @@ import {
   objectValue,
   type SerializationSchema,
   type SerializedLexicalNode,
-  type SerializedPartial,
   type Spread,
   stringValue,
   unionValue,
@@ -79,13 +78,6 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     this.__data = prevNode.__data;
     this.__width = prevNode.__width;
     this.__height = prevNode.__height;
-  }
-
-  static importJSON(
-    serializedNode: SerializedPartial<SerializedExcalidrawNode>,
-  ): ExcalidrawNode {
-    const {data} = excalidrawNodeSchema(serializedNode);
-    return new ExcalidrawNode(data).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedExcalidrawNode {

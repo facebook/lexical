@@ -3190,6 +3190,8 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
   // properties, and a subclass field (keyed by serialized property name)
   // overrides an ancestor's.
   const chain = [...iterStaticNodeConfigChain(klass)];
+  // A class instance type has no index signature, so reading a setter by
+  // name needs the widening cast.
   const prototype = klass.prototype as unknown as Record<string, unknown>;
   const fields = new Map<string, CompiledSetter>();
   const states = new Map<string, CompiledSetter>();

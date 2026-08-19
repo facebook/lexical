@@ -163,10 +163,7 @@ describe('slot clipboard export', () => {
       ])(() => $generateJSONFromSelectedNodes(editor, null));
       expect(serialized.nodes).toHaveLength(1);
       expect(JSON.stringify(serialized.nodes)).toContain('HostChild');
-      expect(
-        (serialized.nodes[0] as SerializedElementNode & {$slots?: unknown})
-          .$slots,
-      ).toEqual({});
+      expect(serialized.nodes[0].$slots).toEqual({});
     });
   });
 

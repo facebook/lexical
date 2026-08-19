@@ -21,13 +21,13 @@ import {
   $createTextNode,
   $getRoot,
   $isTextNode,
+  type SerializedElementNode,
   type SerializedLexicalNode,
+  type SerializedRootNode,
   type SerializedTextNode,
   TextNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
-
-type SerializedJSON = Record<string, unknown> & {children?: SerializedJSON[]};
 
 function buildEditor(
   config: Partial<JSONConfig> = {},
@@ -60,18 +60,25 @@ function buildEditor(
 function exportRoot(
   editor: LexicalEditorWithDispose,
   options?: {compact?: boolean},
-): SerializedJSON {
+): SerializedRootNode {
   const {$exportJSON} = getExtensionDependencyFromEditor(
     editor,
     JSONExtension,
   ).output;
-  return editor.read(
-    () => $exportJSON(undefined, options).root as unknown as SerializedJSON,
-  );
+  return editor.read(() => $exportJSON(undefined, options).root);
 }
 
-function texts(root: SerializedJSON): unknown[] {
-  return root.children![0].children!.map(child => child.text);
+// The walk only ever produces elements where these are used, but serialized
+// JSON carries no discriminator beyond `type`, so the shape is asserted here
+// rather than at every call site.
+function childrenOf(node: SerializedLexicalNode): SerializedLexicalNode[] {
+  return (node as SerializedElementNode).children;
+}
+
+function texts(root: SerializedRootNode): (string | undefined)[] {
+  return childrenOf(childrenOf(root)[0]).map(
+    child => (child as SerializedTextNode).text,
+  );
 }
 
 describe('JSONExtension', () => {
@@ -79,14 +86,14 @@ describe('JSONExtension', () => {
     using editor = buildEditor();
     const root = exportRoot(editor);
     expect(root.version).toBe(1);
-    expect(root.children![0]).toMatchObject({indent: 0, type: 'paragraph'});
+    expect(root.children[0]).toMatchObject({indent: 0, type: 'paragraph'});
   });
 
   test('config `compact` drops version and default-valued properties', () => {
     using editor = buildEditor({compact: true});
     const root = exportRoot(editor);
     expect(root).not.toHaveProperty('version');
-    expect(Object.keys(root.children![0]).sort()).toEqual(['children', 'type']);
+    expect(Object.keys(root.children[0]).sort()).toEqual(['children', 'type']);
   });
 
   test('the per-call option wins over the configured default', () => {
@@ -261,13 +268,12 @@ describe('JSONExtension', () => {
       compact: true,
       overrides: [
         jsonOverride([$isTextNode], {
-          $exportJSON: (node, $next) =>
-            ({...$next(), text: 'x'}) as SerializedLexicalNode,
+          $exportJSON: (node, $next) => ({...$next(), text: 'x'}),
         }),
       ],
     });
     const root = exportRoot(editor);
-    expect(root.children![0].children).toEqual([
+    expect(childrenOf(root.children[0])).toEqual([
       {text: 'x', type: 'text'},
       // the bold sibling keeps the one property that differs from its default
       {format: 1, text: 'x', type: 'text'},

@@ -132,11 +132,8 @@ export class ListNode extends ElementNode {
 
   setListType(type: ListType): this {
     const writable = this.getWritable();
-    // Normalize the legacy tag-form values ('ul'/'ol') the constructor also
-    // accepts, so legacy serialized documents keep their list style.
-    const listType = TAG_TO_LIST_TYPE[type] || type;
-    writable.__listType = listType;
-    writable.__tag = listType === 'number' ? 'ol' : 'ul';
+    writable.__listType = type;
+    writable.__tag = type === 'number' ? 'ol' : 'ul';
     return writable;
   }
 

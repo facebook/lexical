@@ -20,7 +20,6 @@ import {
   type NodeKey,
   objectValue,
   type SerializedLexicalNode,
-  type SerializedPartial,
   type Spread,
   stringValue,
 } from 'lexical';
@@ -87,13 +86,6 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
     super.afterCloneFrom(prevNode);
     this.__equation = prevNode.__equation;
     this.__inline = prevNode.__inline;
-  }
-
-  static importJSON(
-    serializedNode: SerializedPartial<SerializedEquationNode>,
-  ): EquationNode {
-    const {equation, inline} = equationNodeSchema(serializedNode);
-    return $createEquationNode(equation, inline).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedEquationNode {

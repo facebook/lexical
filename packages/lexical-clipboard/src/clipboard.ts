@@ -478,22 +478,6 @@ export interface BaseSerializedNode {
   version?: number;
 }
 
-function $exportNodeToJSON<T extends LexicalNode>(
-  node: T,
-): null | {serializedNode: BaseSerializedNode; recurseChildren: boolean} {
-  // Route through the serialization context so a selection export honors the
-  // same overrides and compaction as editorState.toJSON(); null means an
-  // override omitted this node. The default export is validated by the
-  // context; a replacement is authoritative and is not recursed into.
-  const applied = $applySerializationContext(node, false);
-  return applied === null
-    ? null
-    : {
-        recurseChildren: applied.recurseChildren,
-        serializedNode: applied.serializedNode as BaseSerializedNode,
-      };
-}
-
 function $appendNodesToJSON(
   editor: LexicalEditor,
   selection: BaseSelection | null,
@@ -514,12 +498,17 @@ function $appendNodesToJSON(
   if (selection !== null && $isTextNode(target)) {
     target = $sliceSelectedTextNodeContent(selection, target, 'clone');
   }
-  const applied = $exportNodeToJSON(target);
+  // Route through the serialization context so a selection export honors the
+  // same overrides and compaction as editorState.toJSON(); null means an
+  // override omitted this node, and with it its subtree. The default export is
+  // validated by the context; a replacement is authoritative and is not
+  // recursed into.
+  const applied = $applySerializationContext(target, false);
   if (applied === null) {
-    // An override omitted this node, and with it its subtree.
     return false;
   }
-  const {recurseChildren, serializedNode} = applied;
+  const {recurseChildren} = applied;
+  const serializedNode: BaseSerializedNode = applied.serializedNode;
   const children =
     recurseChildren && $isElementNode(target) ? target.getChildren() : [];
   if ($isTextNode(target) && target.getTextContentSize() === 0) {

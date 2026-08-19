@@ -17,10 +17,13 @@ import {
   $isTextNode,
   $selectAll,
   $withSerializationContext,
+  type AnySerializationStateConfigPair,
   type LexicalNode,
   SerializationContextCompact,
   SerializationContextOverride,
   type SerializedLexicalNode,
+  type SerializedPartial,
+  type SerializedTextNode,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
@@ -39,11 +42,13 @@ const extension = defineExtension({
   name: '[selection-serialization]',
 });
 
-type SerializedJSON = Record<string, unknown> & {children?: SerializedJSON[]};
+// The selection covers only text nodes, and a compact export omits any
+// property equal to its default, so the payload is a partial text node.
+type SelectedTextJSON = SerializedPartial<SerializedTextNode>;
 
 function selectionJSON(
-  pairs: Parameters<typeof $withSerializationContext>[0] = [],
-): SerializedJSON[] {
+  pairs: readonly AnySerializationStateConfigPair[] = [],
+): SelectedTextJSON[] {
   using editor = buildEditorFromExtensions({
     dependencies: [extension],
     name: '[root]',
@@ -52,14 +57,16 @@ function selectionJSON(
       throw err;
     },
   });
-  let nodes: SerializedJSON[] = [];
+  let nodes: SelectedTextJSON[] = [];
   editor.update(
     () => {
       $selectAll();
       nodes = $withSerializationContext(pairs)(
         () =>
-          $generateJSONFromSelectedNodes(editor, $getSelection())
-            .nodes as unknown as SerializedJSON[],
+          $generateJSONFromSelectedNodes<SelectedTextJSON>(
+            editor,
+            $getSelection(),
+          ).nodes,
       );
     },
     {discrete: true},
@@ -69,7 +76,7 @@ function selectionJSON(
 
 // A RangeSelection over a paragraph's contents yields its text nodes at the
 // top level of the payload, with no paragraph wrapper.
-function texts(nodes: SerializedJSON[]): unknown[] {
+function texts(nodes: SelectedTextJSON[]): (string | undefined)[] {
   return nodes.map(node => node.text);
 }
 

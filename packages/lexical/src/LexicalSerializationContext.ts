@@ -235,7 +235,7 @@ export function $compactSerializedNode(
     node.constructor as Klass<LexicalNode>,
   );
   const compact: Record<string, unknown> = {};
-  const source = json as unknown as Record<string, unknown>;
+  const source: Record<string, unknown> = json;
   for (const key of Object.keys(source)) {
     if (key === 'version' && source[key] === 1) {
       continue;
@@ -248,7 +248,7 @@ export function $compactSerializedNode(
       delete compact[key];
     }
   }
-  return compact as unknown as SerializedLexicalNode;
+  return compact as SerializedLexicalNode;
 }
 
 /**

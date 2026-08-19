@@ -13,7 +13,6 @@ import {
   type LexicalNode,
   type NodeKey,
   objectValue,
-  type SerializedPartial,
   type SerializedTextNode,
   type Spread,
   stringValue,
@@ -23,8 +22,6 @@ import {
 const emojiNodeSchema = /* @__PURE__ */ objectValue({
   className: /* @__PURE__ */ stringValue(),
 });
-
-const parseText = /* @__PURE__ */ stringValue();
 
 export type SerializedEmojiNode = Spread<
   {
@@ -47,7 +44,13 @@ export class EmojiNode extends TextNode {
     return new EmojiNode(node.__className, node.__text, node.__key);
   }
 
-  constructor(className: string, text: string, key?: NodeKey) {
+  setClassName(className: string): this {
+    const self = this.getWritable();
+    self.__className = className;
+    return self;
+  }
+
+  constructor(className: string = '', text: string = '', key?: NodeKey) {
     super(text, key);
     this.__className = className;
   }
@@ -68,14 +71,6 @@ export class EmojiNode extends TextNode {
     }
     super.updateDOM(prevNode, inner as HTMLElement, config);
     return false;
-  }
-
-  static importJSON(
-    serializedNode: SerializedPartial<SerializedEmojiNode>,
-  ): EmojiNode {
-    const {className} = emojiNodeSchema(serializedNode);
-    const text = parseText(serializedNode.text);
-    return $createEmojiNode(className, text).updateFromJSON(serializedNode);
   }
 
   exportJSON(): SerializedEmojiNode {

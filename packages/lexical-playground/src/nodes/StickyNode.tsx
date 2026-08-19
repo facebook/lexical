@@ -33,7 +33,6 @@ import {
   rawValue,
   type SerializedEditor,
   type SerializedLexicalNode,
-  type SerializedPartial,
   type Spread,
 } from 'lexical';
 import * as React from 'react';
@@ -106,14 +105,6 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
       node.__key,
     );
   }
-  static importJSON(
-    serializedNode: SerializedPartial<SerializedStickyNode>,
-  ): StickyNode {
-    const {xOffset, yOffset, color} = stickyNodeSchema(serializedNode);
-    return new StickyNode(xOffset, yOffset, color).updateFromJSON(
-      serializedNode,
-    );
-  }
 
   /**
    * Apply a serialized nested caption editor. The nested editor's own
@@ -134,10 +125,28 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     return self;
   }
 
+  setXOffset(xOffset: number): this {
+    const self = this.getWritable();
+    self.__x = xOffset;
+    return self;
+  }
+
+  setYOffset(yOffset: number): this {
+    const self = this.getWritable();
+    self.__y = yOffset;
+    return self;
+  }
+
+  setColor(color: 'pink' | 'yellow'): this {
+    const self = this.getWritable();
+    self.__color = color;
+    return self;
+  }
+
   constructor(
-    x: number,
-    y: number,
-    color: 'pink' | 'yellow',
+    x: number = 0,
+    y: number = 0,
+    color: 'pink' | 'yellow' = 'yellow',
     caption?: LexicalEditorWithDispose,
     key?: NodeKey,
   ) {

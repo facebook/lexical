@@ -22,7 +22,6 @@ import {
   type LexicalNode,
   type NodeKey,
   objectValue,
-  type SerializedPartial,
   type Spread,
   stringValue,
 } from 'lexical';
@@ -87,13 +86,6 @@ export class YouTubeNode extends DecoratorBlockNode {
     return new YouTubeNode(node.__id, node.__format, node.__key);
   }
 
-  static importJSON(
-    serializedNode: SerializedPartial<SerializedYouTubeNode>,
-  ): YouTubeNode {
-    const {videoID} = youTubeNodeSchema(serializedNode);
-    return $createYouTubeNode(videoID).updateFromJSON(serializedNode);
-  }
-
   exportJSON(): SerializedYouTubeNode {
     return {
       ...super.exportJSON(),
@@ -101,7 +93,13 @@ export class YouTubeNode extends DecoratorBlockNode {
     };
   }
 
-  constructor(id: string, format?: ElementFormatType, key?: NodeKey) {
+  setVideoID(videoID: string): this {
+    const self = this.getWritable();
+    self.__id = videoID;
+    return self;
+  }
+
+  constructor(id: string = '', format?: ElementFormatType, key?: NodeKey) {
     super(format, key);
     this.__id = id;
   }

@@ -16,7 +16,6 @@ import {
   type NodeKey,
   objectValue,
   type SerializedElementNode,
-  type SerializedPartial,
   type Spread,
   stringValue,
 } from 'lexical';
@@ -35,7 +34,7 @@ const layoutContainerNodeSchema = /* @__PURE__ */ objectValue({
 export class LayoutContainerNode extends ElementNode {
   __templateColumns: string;
 
-  constructor(templateColumns: string, key?: NodeKey) {
+  constructor(templateColumns: string = '', key?: NodeKey) {
     super(key);
     this.__templateColumns = templateColumns;
   }
@@ -72,12 +71,6 @@ export class LayoutContainerNode extends ElementNode {
       dom.style.gridTemplateColumns = this.__templateColumns;
     }
     return false;
-  }
-
-  static importJSON(
-    json: SerializedPartial<SerializedLayoutContainerNode>,
-  ): LayoutContainerNode {
-    return $createLayoutContainerNode().updateFromJSON(json);
   }
 
   isShadowRoot(): boolean {

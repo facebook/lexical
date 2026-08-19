@@ -271,6 +271,8 @@
       ],
       "@lexical/extension/src": ["./packages/lexical-extension/src"],
       "@lexical/extension/src/*": ["./packages/lexical-extension/src/*"],
+      "@lexical/fast-check/src": ["./packages/lexical-fast-check/src"],
+      "@lexical/fast-check/src/*": ["./packages/lexical-fast-check/src/*"],
       "@lexical/file/src": ["./packages/lexical-file/src"],
       "@lexical/file/src/*": ["./packages/lexical-file/src/*"],
       "@lexical/hashtag/src": ["./packages/lexical-hashtag/src"],

@@ -75,6 +75,7 @@ import {
   $setState,
   $setTextFormat,
   addClassNamesToElement,
+  booleanValue,
   CAN_USE_BEFORE_INPUT,
   type CaretDirection,
   CLICK_COMMAND,
@@ -176,7 +177,7 @@ export type SerializedQuoteNode = Spread<
  * change to the legacy behavior (and nothing extra is serialized).
  */
 export const quoteShadowRootState = /* @__PURE__ */ createState('shadowRoot', {
-  parse: Boolean,
+  parse: /* @__PURE__ */ booleanValue(),
 });
 
 /** @noInheritDoc */

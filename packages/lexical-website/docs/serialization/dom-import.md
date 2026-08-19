@@ -833,6 +833,27 @@ const $installWordOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
 };
 ```
 
+That is the pattern, not something you have to write for Word lists
+specifically: `@lexical/list` ships this exact preprocess as
+`$installWordListPasteOverlay`. It is opt-in — `ListExtension` does not
+install it, so an editor that never pastes from Word does not bundle it:
+
+```ts
+import {DOMImportExtension} from '@lexical/html';
+import {$installWordListPasteOverlay, ListExtension} from '@lexical/list';
+import {configExtension, defineExtension} from 'lexical';
+
+defineExtension({
+  dependencies: [
+    ListExtension,
+    configExtension(DOMImportExtension, {
+      preprocess: [$installWordListPasteOverlay],
+    }),
+  ],
+  name: 'my-editor',
+});
+```
+
 See `packages/lexical-list/src/__tests__/unit/ListImportExtension.test.ts`
 ("MS Word paste — preprocess-installed overlay") for a worked unit
 test, and [`dev-examples/dom-import`](https://github.com/facebook/lexical/tree/main/dev-examples/dom-import)

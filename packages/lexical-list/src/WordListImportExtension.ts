@@ -38,27 +38,14 @@ const WORD_GENERATOR_RE = /Microsoft Word/i;
  */
 const MSO_LIST_DATA_ATTR = 'data-mso-list';
 
-function readMsoListAttr(el: Element): string {
-  return (
-    el.getAttribute(MSO_LIST_DATA_ATTR) ||
-    getStyleObjectFromCSS(el.getAttribute('style') || '')['mso-list'] ||
-    ''
-  );
-}
-
 function readWordListLevel(el: HTMLElement): number {
   // mso-list looks like "l<N> level<M> lfo<X>"; pluck the level number.
-  const m = readMsoListAttr(el).match(/level(\d+)/);
+  const m = (el.getAttribute(MSO_LIST_DATA_ATTR) || '').match(/level(\d+)/);
   return m ? parseInt(m[1], 10) : 1;
 }
 
-function findMarkerSpan(el: HTMLElement): HTMLElement | null {
-  for (const span of Array.from(el.querySelectorAll('span'))) {
-    if (readMsoListAttr(span) === 'Ignore') {
-      return span;
-    }
-  }
-  return null;
+function findMarkerSpan(el: HTMLElement): Element | null {
+  return el.querySelector(`span[${MSO_LIST_DATA_ATTR}="Ignore"]`);
 }
 
 function readWordMarker(el: HTMLElement): string {

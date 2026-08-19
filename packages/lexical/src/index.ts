@@ -268,6 +268,7 @@ export {
   type SerializationSchemaMeta,
   type SerializationSchemaShape,
   stringValue,
+  transformValue,
   unionValue,
   withSetter,
 } from './LexicalSchema';

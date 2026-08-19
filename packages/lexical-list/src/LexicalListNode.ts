@@ -29,10 +29,10 @@ import {
   numberValue,
   objectValue,
   removeClassNamesFromElement,
-  type SerializationSchema,
   type SerializedElementNode,
   type SerializedPartial,
   type Spread,
+  transformValue,
 } from 'lexical';
 
 import {$createListItemNode, $isListItemNode, type ListItemNode} from '.';
@@ -55,17 +55,18 @@ export type ListType = 'number' | 'bullet' | 'check';
 
 export type ListNodeTagType = 'ul' | 'ol';
 
+const TAG_TO_LIST_TYPE: Record<string, ListType> = {
+  ol: 'number',
+  ul: 'bullet',
+};
+
 const listNodeSchema = /* @__PURE__ */ objectValue({
-  // 'ul'/'ol' are the legacy tag-form listType some older documents carry;
-  // setListType normalizes them. The cast reconciles the widened parse domain
-  // with the declared ListType property.
-  listType: /* @__PURE__ */ enumValue([
-    'number',
-    'bullet',
-    'check',
-    'ul',
-    'ol',
-  ]) as unknown as SerializationSchema<ListType>,
+  // 'ul'/'ol' are the legacy tag-form listType some older documents carry,
+  // normalized to the modern form.
+  listType: /* @__PURE__ */ transformValue(
+    /* @__PURE__ */ enumValue(['number', 'bullet', 'check', 'ul', 'ol']),
+    listType => TAG_TO_LIST_TYPE[listType] || listType,
+  ),
   start: /* @__PURE__ */ numberValue(1),
 });
 
@@ -387,11 +388,6 @@ function $convertListNode(
     node,
   };
 }
-
-const TAG_TO_LIST_TYPE: Record<string, ListType> = {
-  ol: 'number',
-  ul: 'bullet',
-};
 
 /**
  * Creates a ListNode of listType.

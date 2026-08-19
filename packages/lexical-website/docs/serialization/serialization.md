@@ -557,6 +557,7 @@ Each property's schema is built from composable helpers exported by
 - `optional(inner, {omitDefault}?)` — the property may be `undefined`
 - `arrayValue(item)` — an array of `item` values
 - `unionValue(members, defaultValue)` — the first member schema whose domain contains the value wins
+- `transformValue(inner, transform)` — normalizes what `inner` parsed into the stored domain (e.g. the legacy `format: 'bold'` shorthand folded into its numeric form); introspection still describes `inner`'s accepted input domain
 - `rawValue()` — an escape hatch that passes the value through unparsed
 - `objectValue(fields)` — the record of properties, used for the `json` declaration itself
 - `withSetter(schema, 'methodName')` — names the method that applies the parsed value when it is not the conventional `set<Property>` (e.g. `text` is applied with `setTextContent`)

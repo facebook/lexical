@@ -343,6 +343,47 @@ export function unionValue<const T>(
 }
 
 /**
+ * Combinator that normalizes the value another {@link SerializationSchema} parsed, for
+ * serialized properties whose accepted domain is wider than the stored one —
+ * the motivating case is a legacy shorthand that older documents carry
+ * (`format: 'bold'`) being folded into the stored numeric form. `inner` still
+ * owns the domain: it validates the untrusted input (falling back to its
+ * default as usual), and `transform` then maps every value it can produce
+ * into the target domain, so the node's setter only ever sees normalized
+ * values.
+ *
+ * `transform` must be pure and total over `inner`'s outputs: it runs once
+ * when the schema is built to derive the {@link SerializationSchema.defaultValue}
+ * (the transform of `inner`'s default) and once per parsed value. The `meta`
+ * (and any setter recorded with {@link withSetter}) are inherited from
+ * `inner`, so introspection describes the accepted input domain — tooling
+ * that generates example JSON keeps generating the legacy forms, which is
+ * exactly what a parser test wants to exercise.
+ *
+ * @example
+ * ```ts
+ * const parseFormat = transformValue(
+ *   unionValue<number | TextFormatType>(
+ *     [numberValue(), enumValue(Object.keys(TEXT_TYPE_TO_FORMAT) as TextFormatType[])],
+ *     0,
+ *   ),
+ *   value => (typeof value === 'string' ? TEXT_TYPE_TO_FORMAT[value] : value),
+ * );
+ * //    ^? SerializationSchema<number>
+ * parseFormat(1);      // 1
+ * parseFormat('bold'); // IS_BOLD
+ * parseFormat('junk'); // 0 (inner falls back to its default)
+ * ```
+ * @__NO_SIDE_EFFECTS__
+ */
+export function transformValue<In, Out>(
+  inner: SerializationSchema<In>,
+  transform: (value: In) => Out,
+): SerializationSchema<Out> {
+  return makeSchema(value => transform(inner(value)), inner.meta, inner.setter);
+}
+
+/**
  * Build a {@link SerializationSchema} for a value this schema deliberately does not
  * validate, because something else owns its domain — the motivating case is a
  * nested {@link SerializedEditor}, which the nested editor's own

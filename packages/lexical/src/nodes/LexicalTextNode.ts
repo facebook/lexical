@@ -51,8 +51,8 @@ import {
   enumValue,
   numberValue,
   objectValue,
-  type SerializationSchema,
   stringValue,
+  transformValue,
   unionValue,
   withSetter,
 } from '../LexicalSchema';
@@ -120,25 +120,30 @@ export type TextMarks = TextMark[];
 // SerializedTextNode; declared on the node via `$config`.
 const textNodeSchema = /* @__PURE__ */ objectValue({
   // `format` and `detail` also accept the legacy string names that
-  // setFormat/setDetail convert (e.g. `format: 'bold'`), which hand-authored
-  // and older documents carry. The cast reconciles the widened parse domain
-  // with the numeric serialized property type.
-  detail: /* @__PURE__ */ unionValue<number | 'directionless' | 'unmergeable'>(
-    [
-      /* @__PURE__ */ numberValue(),
-      /* @__PURE__ */ enumValue(['directionless', 'unmergeable']),
-    ],
-    0,
-  ) as SerializationSchema<number>,
-  format: /* @__PURE__ */ unionValue<number | TextFormatType>(
-    [
-      /* @__PURE__ */ numberValue(),
-      /* @__PURE__ */ enumValue(
-        Object.keys(TEXT_TYPE_TO_FORMAT) as TextFormatType[],
-      ),
-    ],
-    0,
-  ) as SerializationSchema<number>,
+  // hand-authored and older documents carry (e.g. `format: 'bold'`),
+  // normalized to the stored numeric form.
+  detail: /* @__PURE__ */ transformValue(
+    /* @__PURE__ */ unionValue<number | 'directionless' | 'unmergeable'>(
+      [
+        /* @__PURE__ */ numberValue(),
+        /* @__PURE__ */ enumValue(['directionless', 'unmergeable']),
+      ],
+      0,
+    ),
+    value => (typeof value === 'string' ? DETAIL_TYPE_TO_DETAIL[value] : value),
+  ),
+  format: /* @__PURE__ */ transformValue(
+    /* @__PURE__ */ unionValue<number | TextFormatType>(
+      [
+        /* @__PURE__ */ numberValue(),
+        /* @__PURE__ */ enumValue(
+          Object.keys(TEXT_TYPE_TO_FORMAT) as TextFormatType[],
+        ),
+      ],
+      0,
+    ),
+    value => (typeof value === 'string' ? TEXT_TYPE_TO_FORMAT[value] : value),
+  ),
   mode: /* @__PURE__ */ enumValue(['normal', 'token', 'segmented']),
   style: /* @__PURE__ */ stringValue(),
   // TextNode applies `text` with setTextContent rather than the default setText.

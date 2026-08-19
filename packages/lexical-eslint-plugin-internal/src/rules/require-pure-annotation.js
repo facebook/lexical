@@ -43,6 +43,7 @@ const DEFAULT_FUNCTIONS = [
   'rawValue',
   'safeCast',
   'stringValue',
+  'transformValue',
   'unionValue',
   'withSetter',
 ];

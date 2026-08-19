@@ -22,6 +22,7 @@ import {
   type SerializedPartial,
   type SerializedTextNode,
   stringValue,
+  transformValue,
   unionValue,
   withSetter,
 } from 'lexical';
@@ -376,6 +377,39 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
     });
     test('records its members on meta', () => {
       expect(dimension.meta.kind).toBe('union');
+    });
+  });
+
+  describe('transformValue', () => {
+    const NAME_TO_BIT: Record<string, number> = {bold: 1, italic: 2};
+    const format = transformValue(
+      unionValue<number | 'bold' | 'italic'>(
+        [numberValue(), enumValue(['bold', 'italic'])],
+        0,
+      ),
+      value => (typeof value === 'string' ? NAME_TO_BIT[value] : value),
+    );
+    test('normalizes accepted values into the target domain', () => {
+      expect(format(4)).toBe(4);
+      expect(format('bold')).toBe(1);
+      expect(format('italic')).toBe(2);
+      // out of domain -> inner's default, transformed
+      expect(format('junk')).toBe(0);
+      expect(format(undefined)).toBe(0);
+    });
+    test('defaultValue is the transformed inner default', () => {
+      expect(format.defaultValue).toBe(0);
+      const upper = transformValue(stringValue('a'), s => s.toUpperCase());
+      expect(upper.defaultValue).toBe('A');
+      expect(upper('bc')).toBe('BC');
+    });
+    test('meta and setter are inherited from the inner schema', () => {
+      // Introspection describes the accepted input domain, so generated
+      // examples keep exercising the legacy forms.
+      const inner = withSetter(stringValue(), 'setFoo');
+      const t = transformValue(inner, s => s.length);
+      expect(t.meta).toBe(inner.meta);
+      expect(t.setter).toBe('setFoo');
     });
   });
 

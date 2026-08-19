@@ -848,9 +848,14 @@ export function objectKlassEquals<T>(
   object: unknown,
   objectClass: ObjectKlass<T>,
 ): object is T {
-  return object !== null
-    ? Object.getPrototypeOf(object).constructor.name === objectClass.name
-    : false;
+  if (object == null) {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(object);
+  if (prototype == null || prototype.constructor == null) {
+    return false;
+  }
+  return prototype.constructor.name === objectClass.name;
 }
 
 // Clipboard may contain files that we aren't allowed to read. While the event is arguably useless,

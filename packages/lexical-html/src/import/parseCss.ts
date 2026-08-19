@@ -191,13 +191,16 @@ export function parseSelector(
     return buildSelector(groups[0].tags, groups[0].predicates);
   }
 
-  // Comma-separated list. Merge tag sets and OR-combine the per-group
-  // refinement predicates so that each candidate node satisfies *some*
+  // Comma-separated list. Merge tag sets only when every group is tag-
+  // restricted; an unrestricted group requires wildcard dispatch. OR-combine
+  // the per-group refinement predicates so each candidate satisfies some
   // group entirely.
   const tags = new Set<string>();
-  for (const g of groups) {
-    for (const t of g.tags) {
-      tags.add(t);
+  if (groups.every(g => g.tags.size > 0)) {
+    for (const g of groups) {
+      for (const t of g.tags) {
+        tags.add(t);
+      }
     }
   }
   const orPredicate: Predicate = (node, captures) => {

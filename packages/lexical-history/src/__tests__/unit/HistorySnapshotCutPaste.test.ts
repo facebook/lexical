@@ -97,11 +97,11 @@ describe.each([
     editor.update(() => $type('d'), {discrete: true});
 
     // Undo removes only the trailing keystroke...
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
     expect(editor.read(() => $getRoot().getTextContent())).toBe('abcX');
 
     // ...then the tagged change, leaving the earlier typing intact.
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
     expect(editor.read(() => $getRoot().getTextContent())).toBe('abc');
   });
 });
@@ -172,7 +172,7 @@ describe('rich-text paste is isolated from the preceding typing (#8609)', () => 
     editor.dispatchCommand(PASTE_COMMAND, clipboardEvent('paste', 'X'));
     expect(editor.read(() => $getRoot().getTextContent())).toBe('abcX');
 
-    editor.dispatchCommand(UNDO_COMMAND, undefined);
+    editor.dispatchCommand(UNDO_COMMAND);
     expect(editor.read(() => $getRoot().getTextContent())).toBe('abc');
   });
 });

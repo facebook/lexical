@@ -137,7 +137,7 @@ const NestedListNodeBrand: unique symbol = Symbol.for(
  * @param node - The node to be checked.
  * @returns true if the node is a ListItemNode and has a ListNode child, false otherwise.
  */
-export function isNestedListNode(
+export function $isNestedListNode(
   node: LexicalNode | null | undefined,
 ): node is Spread<
   {getFirstChild(): ListNode; [NestedListNodeBrand]: never},
@@ -201,5 +201,9 @@ export function $getNewListStart(
   list: ListNode,
   listItem: ListItemNode,
 ): number {
-  return list.getStart() + listItem.getIndexWithinParent();
+  // The split-off list continues from the number the split point was rendered
+  // with. That is the item's value, not its index: `updateChildrenListItemValue`
+  // deliberately does not advance the counter for items that only wrap a nested
+  // list, so index and value diverge as soon as the list has a sublist.
+  return listItem.getValue();
 }

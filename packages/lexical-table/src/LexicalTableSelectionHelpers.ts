@@ -43,6 +43,7 @@ import {
   type ChildCaret,
   COMMAND_PRIORITY_HIGH,
   CONTROLLED_TEXT_INSERTION_COMMAND,
+  COPY_COMMAND,
   CUT_COMMAND,
   DELETE_CHARACTER_COMMAND,
   DELETE_LINE_COMMAND,
@@ -52,6 +53,7 @@ import {
   FOCUS_COMMAND,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
+  getActiveElement,
   getComposedEventTarget,
   getDOMSelection,
   getDOMSelectionPoints,
@@ -70,7 +72,6 @@ import {
   KEY_DELETE_COMMAND,
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
-  type LexicalCommand,
   type LexicalEditor,
   type LexicalNode,
   type NodeKey,
@@ -252,7 +253,7 @@ export function registerTableWindowHandlers(
             observer.$clearHighlight(false);
           }
           $setSelection(null);
-          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+          editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
         }
         if (!selectionInfo) {
           return;
@@ -353,7 +354,7 @@ function $handleTableClick(
           override,
           tableKey: tableObserver.tableNodeKey,
         });
-        editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+        editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
       }
     };
 
@@ -671,7 +672,7 @@ export function applyTableHandlers(
     ),
   );
 
-  const deleteTextHandler = (command: LexicalCommand<boolean>) => () => {
+  const $deleteTextHandler = () => {
     const selection = $getSelection();
 
     if (!$isSelectionInTable(selection, tableNode)) {
@@ -682,56 +683,6 @@ export function applyTableHandlers(
       tableObserver.$clearText();
 
       return true;
-    } else if ($isRangeSelection(selection)) {
-      const tableCellNode = $findParentTableCellNodeInTable(
-        tableNode,
-        selection.anchor.getNode(),
-      );
-
-      if (!$isTableCellNode(tableCellNode)) {
-        return false;
-      }
-
-      const anchorNode = selection.anchor.getNode();
-      const focusNode = selection.focus.getNode();
-      const isAnchorInside = tableNode.isParentOf(anchorNode);
-      const isFocusInside = tableNode.isParentOf(focusNode);
-
-      const selectionContainsPartialTable =
-        (isAnchorInside && !isFocusInside) ||
-        (isFocusInside && !isAnchorInside);
-
-      if (selectionContainsPartialTable) {
-        tableObserver.$clearText();
-        return true;
-      }
-
-      const nearestElementNode = $findMatchingParent(
-        selection.anchor.getNode(),
-        n => $isElementNode(n),
-      );
-
-      const topLevelCellElementNode =
-        nearestElementNode &&
-        $findMatchingParent(
-          nearestElementNode,
-          n => $isElementNode(n) && $isTableCellNode(n.getParent()),
-        );
-
-      if (
-        !$isElementNode(topLevelCellElementNode) ||
-        !$isElementNode(nearestElementNode)
-      ) {
-        return false;
-      }
-
-      if (
-        command === DELETE_LINE_COMMAND &&
-        topLevelCellElementNode.getPreviousSibling() === null
-      ) {
-        // TODO: Fix Delete Line in Table Cells.
-        return true;
-      }
     }
 
     return false;
@@ -741,7 +692,7 @@ export function applyTableHandlers(
     tableObserver.listenersToRemove.add(
       editor.registerCommand(
         command,
-        deleteTextHandler(command),
+        $deleteTextHandler,
         COMMAND_PRIORITY_HIGH,
       ),
     );
@@ -858,6 +809,39 @@ export function applyTableHandlers(
     }),
   );
 
+  // In read-only mode (contentEditable=false), Firefox fires the native copy
+  // event on the document rather than on the root element, so the core
+  // PASS_THROUGH copy listener never sees it. We intercept at the document
+  // level and forward to COPY_COMMAND. Unlike the paste listener above, we
+  // skip events whose target is inside the rootElement — those are already
+  // handled by the core copy listener which runs regardless of isEditable.
+  tableObserver.listenersToRemove.add(
+    registerEventListener(doc, 'copy', (event: ClipboardEvent) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+      const target = getComposedEventTarget(event);
+      if (
+        target === rootElement ||
+        (isDOMNode(target) && rootElement.contains(target))
+      ) {
+        return;
+      }
+      const shouldIntercept = editor.read('latest', () => {
+        const selection = $getSelection();
+        return (
+          rootElement.contains(getActiveElement(rootElement)) &&
+          $isTableSelection(selection) &&
+          $isSelectionInTable(selection, tableNode)
+        );
+      });
+      if (shouldIntercept) {
+        event.preventDefault();
+        editor.dispatchCommand(COPY_COMMAND, event);
+      }
+    }),
+  );
+
   tableObserver.listenersToRemove.add(
     editor.registerCommand(
       FORMAT_TEXT_COMMAND,
@@ -872,15 +856,6 @@ export function applyTableHandlers(
           tableObserver.$formatCells(payload);
 
           return true;
-        } else if ($isRangeSelection(selection)) {
-          const tableCellNode = $findMatchingParent(
-            selection.anchor.getNode(),
-            n => $isTableCellNode(n),
-          );
-
-          if (!$isTableCellNode(tableCellNode)) {
-            return false;
-          }
         }
 
         return false;
@@ -907,30 +882,30 @@ export function applyTableHandlers(
           return false;
         }
 
-        // Align the table if the entire table is selected
-        if ($isFullTableSelection(selection, tableNode)) {
-          tableNode.setFormat(formatType);
-          return true;
-        }
-
         const [tableMap, anchorCell, focusCell] = $computeTableMap(
           tableNode,
           anchorNode,
           focusNode,
         );
-        const maxRow = Math.max(
-          anchorCell.startRow + anchorCell.cell.__rowSpan - 1,
-          focusCell.startRow + focusCell.cell.__rowSpan - 1,
-        );
-        const maxColumn = Math.max(
-          anchorCell.startColumn + anchorCell.cell.__colSpan - 1,
-          focusCell.startColumn + focusCell.cell.__colSpan - 1,
-        );
-        const minRow = Math.min(anchorCell.startRow, focusCell.startRow);
-        const minColumn = Math.min(
-          anchorCell.startColumn,
-          focusCell.startColumn,
-        );
+        // The same rect TableSelection.getNodes() walks. A naive min/max over
+        // the two cells' own spans is not enough: a merged cell that straddles
+        // the boundary pulls the rect outwards, and $computeTableCellRectBoundary
+        // iterates until it stops growing. Using the smaller rect here left the
+        // cells that only the expansion brings in selected and highlighted but
+        // unformatted.
+        const {minColumn, maxColumn, minRow, maxRow} =
+          $computeTableCellRectBoundary(tableMap, anchorCell, focusCell);
+
+        if (
+          minRow === 0 &&
+          minColumn === 0 &&
+          maxRow === tableMap.length - 1 &&
+          maxColumn === tableMap[0].length - 1
+        ) {
+          tableNode.setFormat(formatType);
+          return true;
+        }
+
         const visited = new Set<TableCellNode>();
         for (let i = minRow; i <= maxRow; i++) {
           for (let j = minColumn; j <= maxColumn; j++) {
@@ -1944,24 +1919,6 @@ function $isSelectionInTable(
     return isAnchorInside && isFocusInside;
   }
 
-  return false;
-}
-
-function $isFullTableSelection(
-  selection: null | BaseSelection,
-  tableNode: TableNode,
-): boolean {
-  if ($isTableSelection(selection)) {
-    const anchorNode = selection.anchor.getNode() as TableCellNode;
-    const focusNode = selection.focus.getNode() as TableCellNode;
-    if (tableNode && anchorNode && focusNode) {
-      const [map] = $computeTableMap(tableNode, anchorNode, focusNode);
-      return (
-        anchorNode.getKey() === map[0][0].cell.getKey() &&
-        focusNode.getKey() === map[map.length - 1].at(-1)!.cell.getKey()
-      );
-    }
-  }
   return false;
 }
 

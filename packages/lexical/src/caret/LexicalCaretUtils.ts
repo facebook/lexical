@@ -22,6 +22,7 @@ import {
   $getNodeByKeyOrThrow,
   $isRootOrShadowRoot,
   $isShadowRootNode,
+  $removeFromParent,
   $setSelection,
   INTERNAL_$isBlock,
 } from '../LexicalUtils';
@@ -36,6 +37,7 @@ import {
 import {
   $comparePointCaretNext,
   $getAdjacentChildCaret,
+  $getCaretInDirection,
   $getCaretRange,
   $getChildCaret,
   $getCollapsedCaretRange,
@@ -254,8 +256,7 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
 
   // Mark the start of each ElementNode
   const seenStart = new Set<NodeKey>();
-  // Queue removals since removing the only child can cascade to having
-  // a parent remove itself which will affect iteration
+  // Queue removals to avoid mutating the tree during iteration
   const removedNodes: LexicalNode[] = [];
   for (const caret of range.iterNodeCarets(rootMode)) {
     if ($isChildCaret(caret)) {
@@ -267,8 +268,29 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
       }
     }
   }
+  // Use $removeFromParent instead of node.remove() to skip redundant
+  // per-node selection restoration — selection is rebuilt from
+  // anchor/focus candidates below.
+  const removedParents = new Set<ElementNode>();
   for (const node of removedNodes) {
-    node.remove();
+    const parent = node.getParent();
+    // Track parents not in seenStart — those in seenStart are traversal
+    // boundaries handled by block-merge logic below.
+    if (parent !== null && !seenStart.has(parent.getKey())) {
+      removedParents.add(parent);
+    }
+    $removeFromParent(node);
+  }
+  // Remove inline wrappers (canBeEmpty=false) that became empty
+  for (const parent of removedParents) {
+    if (
+      !parent.canBeEmpty() &&
+      !$isRootOrShadowRoot(parent) &&
+      parent.isEmpty() &&
+      parent.isAttached()
+    ) {
+      parent.remove();
+    }
   }
 
   // Splice text at the anchor and/or origin.
@@ -569,32 +591,6 @@ export function $isExtendableTextPointCaret<D extends CaretDirection>(
     $isTextPointCaret(caret) &&
     caret.offset !== $getTextNodeOffset(caret.origin, caret.direction)
   );
-}
-
-/**
- * Return the caret if it's in the given direction, otherwise return
- * caret.getFlipped().
- *
- * @param caret Any PointCaret
- * @param direction The desired direction
- * @returns A PointCaret in direction
- */
-export function $getCaretInDirection<
-  Caret extends PointCaret<CaretDirection>,
-  D extends CaretDirection,
->(
-  caret: Caret,
-  direction: D,
-):
-  | NodeCaret<D>
-  | (Caret extends TextPointCaret<TextNode, CaretDirection>
-      ? TextPointCaret<TextNode, D>
-      : never) {
-  return (caret.direction === direction ? caret : caret.getFlipped()) as
-    | NodeCaret<D>
-    | (Caret extends TextPointCaret<TextNode, CaretDirection>
-        ? TextPointCaret<TextNode, D>
-        : never);
 }
 
 /**

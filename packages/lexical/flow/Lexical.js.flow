@@ -10,8 +10,16 @@
 /**
  * LexicalCommands
  */
+export opaque type LexicalCommand<P> = Readonly<{type?: string}>;
 
-export type LexicalCommand<P> = Readonly<{type?: string}>;
+// $FlowFixMe[unclear-type]
+export type AnyLexicalCommand = LexicalCommand<any>;
+
+export type CommandPayloadType<TCommand> =
+  TCommand extends LexicalCommand<infer P> ? P : empty;
+
+export type CommandPayloadArgs<P> =
+  [P extends void ? true : empty] extends [empty] ? [payload: P] : [payload?: P];
 
 declare export var SELECTION_CHANGE_COMMAND: LexicalCommand<void>;
 declare export var CLICK_COMMAND: LexicalCommand<MouseEvent>;
@@ -287,7 +295,7 @@ declare export class LexicalEditor {
     klass: Class<T>,
     listener: Transform<T>,
   ): () => void;
-  dispatchCommand<P>(command: LexicalCommand<P>, payload: P): boolean;
+  dispatchCommand<P>(command: LexicalCommand<P>, ...args: CommandPayloadArgs<P>): boolean;
   hasNode(node: Class<LexicalNode>): boolean;
   hasNodes(nodes: Class<LexicalNode>[]): boolean;
   getKey(): string;
@@ -487,6 +495,7 @@ declare export class LexicalNode {
   static getType(): string;
   static clone(data: $FlowFixMe): LexicalNode;
   static importDOM(): DOMConversionMap | null;
+  static importJSON(serializedNode: $FlowFixMe): LexicalNode;
   constructor(key?: NodeKey): void;
   exportDOM(editor: LexicalEditor): DOMExportOutput;
   exportJSON(): SerializedLexicalNode;
@@ -782,9 +791,7 @@ declare export class TextNode extends LexicalNode {
   __style: string;
   __mode: 0 | 1 | 2 | 3;
   __detail: number;
-  static getType(): string;
-  static clone(node: $FlowFixMe): TextNode;
-  constructor(text: string, key?: NodeKey): void;
+  constructor(text?: string, key?: NodeKey): void;
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
   getFormat(): number;
@@ -858,10 +865,7 @@ declare export function $isTabNode(
 ): node is TabNode;
 
 declare export class TabNode extends TextNode {
-  static getType(): string;
-  static clone(node: TabNode): TabNode;
   constructor(key?: NodeKey): void;
-  static importDOM(): DOMConversionMap | null;
   static importJSON(serializedTabNode: SerializedTabNode): TabNode;
   exportJSON(): SerializedTabNode;
 }
@@ -871,8 +875,6 @@ declare export class TabNode extends TextNode {
  */
 
 declare export class LineBreakNode extends LexicalNode {
-  static getType(): string;
-  static clone(node: LineBreakNode): LineBreakNode;
   constructor(key?: NodeKey): void;
   getTextContent(): '\n';
   createDOM(): HTMLElement;
@@ -894,8 +896,7 @@ declare export function $isLineBreakNode(
 
 declare export class RootNode extends ElementNode {
   __cachedText: null | string;
-  static getType(): string;
-  static clone(): RootNode;
+  static importJSON(serializedNode: SerializedRootNode): RootNode;
   constructor(): void;
   getTextContent(): string;
   select(_anchorOffset?: number, _focusOffset?: number): RangeSelection;
@@ -1125,8 +1126,6 @@ declare export function $isLexicalNode(
  * LexicalParagraphNode
  */
 declare export class ParagraphNode extends ElementNode {
-  static getType(): string;
-  static clone(node: ParagraphNode): ParagraphNode;
   constructor(key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
   insertNewAfter(

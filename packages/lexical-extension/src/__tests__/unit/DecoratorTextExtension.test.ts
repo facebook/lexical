@@ -7,6 +7,8 @@
  */
 
 import {
+  $applyFormatToDom,
+  applyFormatToDom,
   buildEditorFromExtensions,
   DecoratorTextExtension,
   DecoratorTextNode,
@@ -27,6 +29,12 @@ import {
 import {assert, describe, expect, test} from 'vitest';
 
 const BOLD = TEXT_TYPE_TO_FORMAT.bold;
+
+test('$applyFormatToDom is a compatibility alias for applyFormatToDom', () => {
+  // The `$` prefix shipped in 0.47 by mistake (the implementation reads no
+  // editor state); the alias must survive for compatibility with 0.47.
+  expect($applyFormatToDom).toBe(applyFormatToDom);
+});
 
 describe('DecoratorTextExtension FORMAT_TEXT_COMMAND', () => {
   test('aligns DecoratorTextNode to not-bold when TextNode is bold', () => {

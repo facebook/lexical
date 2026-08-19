@@ -44,7 +44,7 @@ describe('LexicalTabNode tests', () => {
       });
 
       await editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold');
-      await editor.dispatchCommand(INSERT_TAB_COMMAND, undefined);
+      await editor.dispatchCommand(INSERT_TAB_COMMAND);
 
       await editor.read(() => {
         const root = $getRoot();
@@ -85,8 +85,8 @@ describe('LexicalTabNode tests', () => {
         textNode.select(1, 1);
       });
 
-      await editor.dispatchCommand(INSERT_TAB_COMMAND, undefined);
-      await editor.dispatchCommand(INSERT_TAB_COMMAND, undefined);
+      await editor.dispatchCommand(INSERT_TAB_COMMAND);
+      await editor.dispatchCommand(INSERT_TAB_COMMAND);
 
       await editor.update(() => {
         const root = $getRoot();

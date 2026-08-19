@@ -82,7 +82,11 @@ const elementExcludedProperties = new Set<string>([
   '__last',
   '__size',
 ]);
-const rootExcludedProperties = new Set<string>(['__cachedText']);
+const rootExcludedProperties = new Set<string>([
+  '__cachedText',
+  '__textFormat',
+  '__textStyle',
+]);
 const textExcludedProperties = new Set<string>(['__text']);
 
 // @experimental named-slots. Writes the slots Y.Map onto a host shared type.
@@ -553,9 +557,12 @@ export function $syncPropertiesFromYjs(
         writableNode = lexicalNode.getWritable();
       }
 
-      writableNode[property as string & keyof typeof writableNode] =
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        nextValue as any;
+      // Generic property writer. `property` is never a read-only node field
+      // here (e.g. `__type` is intrinsic and, being equal on both sides, is
+      // filtered out by the `prevValue !== nextValue` guard above), so cast
+      // through a mutable record to write it.
+      (writableNode as unknown as Record<string, unknown>)[property] =
+        nextValue;
     }
   }
 }

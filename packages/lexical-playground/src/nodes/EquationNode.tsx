@@ -11,6 +11,7 @@ import type {JSX} from 'react';
 import katex from 'katex';
 import {
   $applyNodeReplacement,
+  $getDocument,
   DecoratorNode,
   type DOMExportOutput,
   type EditorConfig,
@@ -31,16 +32,37 @@ export type SerializedEquationNode = Spread<
   SerializedLexicalNode
 >;
 
+/**
+ * btoa/atob only handle Latin-1, so go through the UTF-8 bytes -- the same way
+ * docSerialization does. An equation is free-form LaTeX and routinely holds
+ * code points above U+00FF (`\text{α}`, CJK, an emoji), which btoa throws on.
+ * Pure ASCII encodes byte for byte, so previously exported HTML still decodes.
+ */
+export function encodeEquation(equation: string): string {
+  const bytes = new TextEncoder().encode(equation);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+/** Inverse of {@link encodeEquation}. */
+export function decodeEquation(encoded: string): string {
+  const binary = atob(encoded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new TextDecoder().decode(bytes);
+}
+
 export class EquationNode extends DecoratorNode<JSX.Element> {
   __equation: string;
   __inline: boolean;
 
-  static getType(): string {
-    return 'equation';
-  }
-
-  static clone(node: EquationNode): EquationNode {
-    return new EquationNode(node.__equation, node.__inline, node.__key);
+  $config() {
+    return this.config('equation', {extends: DecoratorNode});
   }
 
   constructor(equation: string = '', inline?: boolean, key?: NodeKey) {
@@ -71,7 +93,9 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM(_config: EditorConfig): HTMLElement {
-    const element = document.createElement(this.__inline ? 'span' : 'div');
+    const element = $getDocument().createElement(
+      this.__inline ? 'span' : 'div',
+    );
     // EquationNodes should implement `user-action:none` in their CSS to avoid issues with deletion on Android.
     element.className = 'editor-equation';
     element.setAttribute('role', 'math');
@@ -80,9 +104,11 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
   }
 
   exportDOM(): DOMExportOutput {
-    const element = document.createElement(this.__inline ? 'span' : 'div');
+    const element = $getDocument().createElement(
+      this.__inline ? 'span' : 'div',
+    );
     // Encode the equation as base64 to avoid issues with special characters
-    const equation = btoa(this.__equation);
+    const equation = encodeEquation(this.__equation);
     element.setAttribute('data-lexical-equation', equation);
     element.setAttribute('data-lexical-inline', `${this.__inline}`);
     katex.render(this.__equation, element, {

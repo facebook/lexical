@@ -20,16 +20,8 @@ import {
 export type SerializedKeywordNode = SerializedTextNode;
 
 export class KeywordNode extends TextNode {
-  static getType(): string {
-    return 'keyword';
-  }
-
-  static clone(node: KeywordNode): KeywordNode {
-    return new KeywordNode(node.__text, node.__key);
-  }
-
-  static importJSON(serializedNode: SerializedKeywordNode): KeywordNode {
-    return $createKeywordNode().updateFromJSON(serializedNode);
+  $config() {
+    return this.config('keyword', {extends: TextNode});
   }
 
   createDOM(config: EditorConfig): HTMLElement {

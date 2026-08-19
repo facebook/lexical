@@ -17,7 +17,7 @@ import {
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {
   type Binding,
-  createBinding,
+  createYjsBinding,
   type ExcludedProperties,
   type Provider,
   type SyncCursorPositionsFn,
@@ -52,6 +52,8 @@ type CollaborationPluginProps = {
    * Fallback to legacy method if not enabled or not supported.
    */
   selectionHighlight?: boolean;
+  /** Customize the Yjs shared-type key used for the root `XmlText`. Defaults to `'root'`. */
+  rootName?: string;
 };
 
 /**
@@ -75,6 +77,7 @@ export function CollaborationPlugin({
   awarenessData,
   syncCursorPositionsFn,
   selectionHighlight,
+  rootName,
 }: CollaborationPluginProps): JSX.Element {
   const isBindingInitialized = useRef(false);
   const isProviderInitialized = useRef(false);
@@ -116,22 +119,27 @@ export function CollaborationPlugin({
       return;
     }
 
-    isBindingInitialized.current = true;
+    const resolvedDoc = doc || yjsDocMap.get(id);
+    if (!resolvedDoc) {
+      return;
+    }
 
-    const newBinding = createBinding(
+    isBindingInitialized.current = true;
+    const newBinding = createYjsBinding({
+      doc: resolvedDoc,
+      docMap: yjsDocMap,
       editor,
-      provider,
-      id,
-      doc || yjsDocMap.get(id),
-      yjsDocMap,
       excludedProperties,
-    );
+      id,
+      rootName,
+    });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setBinding(newBinding);
 
     return () => {
       newBinding.root.destroy(newBinding);
     };
-  }, [editor, provider, id, yjsDocMap, doc, excludedProperties]);
+  }, [editor, provider, id, yjsDocMap, doc, excludedProperties, rootName]);
 
   if (!provider || !binding) {
     return <></>;
@@ -232,6 +240,8 @@ type CollaborationPluginV2Props = {
    * Fallback to legacy method if not enabled or not supported.
    */
   selectionHighlight?: boolean;
+  /** Customize the Yjs shared-type key used for the root `XmlElement`. Defaults to `'root-v2'`. */
+  rootName?: string;
 };
 
 /**
@@ -254,6 +264,7 @@ export function CollaborationPluginV2__EXPERIMENTAL({
   excludedProperties,
   awarenessData,
   selectionHighlight,
+  rootName,
 }: CollaborationPluginV2Props): JSX.Element {
   const collabContext = useCollaborationContext(username, cursorColor);
   const {yjsDocMap, name, color} = collabContext;
@@ -273,6 +284,7 @@ export function CollaborationPluginV2__EXPERIMENTAL({
       __shouldBootstrapUnsafe,
       awarenessData,
       excludedProperties,
+      rootName,
       selectionHighlight,
     },
   );

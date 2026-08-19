@@ -305,6 +305,21 @@ describe('table selection', () => {
       });
     });
 
+    describe('getShape', () => {
+      test('returns correct shape for non-merged table', () => {
+        testEnv.editor.update(
+          () => {
+            const shape = tableSelection.getShape();
+            expect(shape.fromX).toBe(0);
+            expect(shape.fromY).toBe(0);
+            expect(shape.toX).toBe(1);
+            expect(shape.toY).toBe(1);
+          },
+          {discrete: true},
+        );
+      });
+    });
+
     describe('regression #7140', () => {
       test('selection points to missing nodes after deleting table rows', () => {
         testEnv.editor.update(() => {

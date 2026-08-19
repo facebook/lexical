@@ -340,7 +340,7 @@ export class TableObserver {
     $updateDOMForSelection(editor, grid, null);
     if (setEmptySelection && $getSelection() !== null) {
       $setSelection(null);
-      editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+      editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
     }
   }
 
@@ -463,7 +463,7 @@ export class TableObserver {
           );
 
           $setSelection(this.tableSelection);
-          editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+          editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
           $updateDOMForSelection(editor, this.table, this.tableSelection);
           return true;
         }
@@ -562,7 +562,7 @@ export class TableObserver {
 
     $setSelection(selection);
 
-    this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+    this.editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
   }
 
   $clearText() {
@@ -599,7 +599,7 @@ export class TableObserver {
       tableNode.remove();
       // Handle case when table was the only node
       if ($isRootNode(parent) && parent.isEmpty()) {
-        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_PARAGRAPH_COMMAND);
       }
       return;
     }
@@ -622,6 +622,6 @@ export class TableObserver {
 
     $setSelection(null);
 
-    editor.dispatchCommand(SELECTION_CHANGE_COMMAND, undefined);
+    editor.dispatchCommand(SELECTION_CHANGE_COMMAND);
   }
 }

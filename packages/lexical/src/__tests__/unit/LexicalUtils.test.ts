@@ -26,7 +26,6 @@ import {
   getParentElement,
   getRegisteredSubtypeMap,
   getTextDirection,
-  IS_APPLE,
   isExactShortcutMatch,
   isSelectionWithinEditor,
   LineBreakNode,
@@ -53,8 +52,6 @@ import {
   getCachedTypeToNodeMap,
   getStaticNodeConfig,
   isArray,
-  isMoveToEnd,
-  isMoveToStart,
   iterStaticNodeConfigChain,
   scheduleMicroTask,
   scrollIntoViewIfNeeded,
@@ -340,46 +337,6 @@ describe('LexicalUtils tests', () => {
       );
     });
 
-    test('isMoveToEnd() / isMoveToStart() accept Shift modifier', () => {
-      const modifier = IS_APPLE ? {metaKey: true} : {ctrlKey: true};
-
-      const rightWithoutShift = new KeyboardEvent('keydown', {
-        ...modifier,
-        key: 'ArrowRight',
-      });
-      const rightWithShift = new KeyboardEvent('keydown', {
-        ...modifier,
-        key: 'ArrowRight',
-        shiftKey: true,
-      });
-      const leftWithoutShift = new KeyboardEvent('keydown', {
-        ...modifier,
-        key: 'ArrowLeft',
-      });
-      const leftWithShift = new KeyboardEvent('keydown', {
-        ...modifier,
-        key: 'ArrowLeft',
-        shiftKey: true,
-      });
-
-      expect(isMoveToEnd(rightWithoutShift)).toBe(true);
-      expect(isMoveToEnd(rightWithShift)).toBe(true);
-      expect(isMoveToStart(leftWithoutShift)).toBe(true);
-      expect(isMoveToStart(leftWithShift)).toBe(true);
-
-      // Wrong direction rejected
-      expect(isMoveToEnd(leftWithoutShift)).toBe(false);
-      expect(isMoveToStart(rightWithoutShift)).toBe(false);
-
-      // Extra Alt modifier rejected
-      const rightWithAlt = new KeyboardEvent('keydown', {
-        ...modifier,
-        altKey: true,
-        key: 'ArrowRight',
-      });
-      expect(isMoveToEnd(rightWithAlt)).toBe(false);
-    });
-
     test('isTokenOrSegmented()', async () => {
       const {editor} = testEnv;
 
@@ -605,6 +562,31 @@ describe('LexicalUtils tests', () => {
       } finally {
         scrollBySpy.mockRestore();
         doc.documentElement.style.scrollPaddingTop = '';
+      }
+    });
+
+    test('scrollIntoViewIfNeeded ignores a selection rect that lies entirely above the editor', () => {
+      const {editor} = testEnv;
+      const rootElement = editor.getRootElement()!;
+
+      // Safari returns a degenerate/out-of-bounds rect for a collapsed caret in
+      // RTL text (and reports it as type "Range", which routes execution into
+      // this scroll path). The caret is reported above the editor's own box;
+      // scrolling to it jumps the viewport up on every keystroke. See #2495.
+      const scrollBySpy = vi
+        .spyOn(window, 'scrollBy')
+        .mockImplementation(() => {});
+      const rootRectSpy = vi
+        .spyOn(rootElement, 'getBoundingClientRect')
+        .mockReturnValue(new DOMRect(0, 200, 300, 400));
+
+      try {
+        const bogusRect = new DOMRect(0, -40, 0, 18); // top -40, bottom -22
+        scrollIntoViewIfNeeded(editor, bogusRect, rootElement);
+        expect(scrollBySpy).not.toHaveBeenCalled();
+      } finally {
+        scrollBySpy.mockRestore();
+        rootRectSpy.mockRestore();
       }
     });
   });

@@ -17,6 +17,7 @@ import {PlainTextExtension} from '@lexical/plain-text';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 import {
+  $getDocument,
   $setSelection,
   configExtension,
   DecoratorNode,
@@ -78,8 +79,8 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
   __color: StickyNoteColor;
   __caption: LexicalEditorWithDispose;
 
-  static getType(): string {
-    return 'sticky';
+  $config() {
+    return this.config('sticky', {extends: DecoratorNode});
   }
 
   static clone(node: StickyNode): StickyNode {
@@ -138,7 +139,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const div = document.createElement('div');
+    const div = $getDocument().createElement('div');
     div.style.display = 'contents';
     return div;
   }
@@ -170,7 +171,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
         nodeKey={this.getKey()}
         caption={this.__caption}
       />,
-      document.body,
+      editor.getRootElement()?.ownerDocument?.body ?? document.body,
     );
   }
 

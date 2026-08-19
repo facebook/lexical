@@ -58,12 +58,14 @@ import {
   getDOMSelection,
   HISTORY_MERGE_TAG,
   type Klass,
+  type LexicalCommand,
   type LexicalEditor,
   type LexicalNode,
   type LexicalNodeReplacement,
   mergeRegister,
   ParagraphNode,
   RootNode,
+  safeCast,
   SKIP_DOM_SELECTION_TAG,
   TextNode,
   type UpdateListenerPayload,
@@ -81,7 +83,16 @@ import {
 } from 'react';
 import {createPortal} from 'react-dom';
 import {createRoot, type Root} from 'react-dom/client';
-import {afterEach, assert, beforeEach, describe, expect, it, vi} from 'vitest';
+import {
+  afterEach,
+  assert,
+  assertType,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import {emptyFunction} from '../../LexicalUtils';
 import {
@@ -1395,7 +1406,7 @@ describe('LexicalEditor tests', () => {
     });
 
     for (let i = 0; i < 150; i++) {
-      editor.dispatchCommand(BURST_COMMAND, undefined);
+      editor.dispatchCommand(BURST_COMMAND);
       // Yield only microtasks: commits flush, but the macrotask budget reset
       // never gets a chance to run within the burst.
       for (let j = 0; j < 4; j++) {
@@ -1432,7 +1443,7 @@ describe('LexicalEditor tests', () => {
     await new Promise(resolve => setTimeout(resolve, 0));
 
     const unregisterMutation = editor.registerMutationListener(TextNode, () => {
-      editor.dispatchCommand(NOOP_COMMAND, undefined);
+      editor.dispatchCommand(NOOP_COMMAND);
     });
     // Unbounded: flips the text content again on every commit, forever.
     const unregisterUpdate = editor.registerUpdateListener(() => {
@@ -1476,6 +1487,54 @@ describe('LexicalEditor tests', () => {
       await Promise.resolve();
     }
     expect(errorListener).toHaveBeenCalledTimes(0);
+  });
+
+  it('applies (and warns in DEV) when a command dispatched from a read-only context mutates the editor', async () => {
+    init();
+
+    const READONLY_MUTATE_COMMAND = createCommand<void>(
+      'READONLY_MUTATE_COMMAND',
+    );
+    // A listener that mutates the editor state, mirroring the real-world case
+    // (e.g. CLEAR_EDITOR_COMMAND building a fresh paragraph).
+    const unregister = editor.registerCommand(
+      READONLY_MUTATE_COMMAND,
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('mutated')));
+        return true;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    );
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      // Dispatching from inside editor.read() (a read-only context) is the
+      // application anti-pattern. Previously the mutating listener ran inline
+      // against the frozen node map and threw (caught by _onError, silently
+      // dropping the mutation). It should now be deferred to a writable update
+      // so the mutation actually applies, and warn in DEV.
+      editor.read(() => {
+        editor.dispatchCommand(READONLY_MUTATE_COMMAND);
+      });
+      // Deferred update flushes on the next tick.
+      await Promise.resolve();
+
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toMatch(/read-only context/);
+      editor.read(() => {
+        expect($getRoot().getTextContent()).toBe('mutated');
+      });
+
+      // A top-level (writable) dispatch must NOT warn and applies inline.
+      warnSpy.mockClear();
+      editor.dispatchCommand(READONLY_MUTATE_COMMAND);
+      expect(warnSpy).toHaveBeenCalledTimes(0);
+    } finally {
+      warnSpy.mockRestore();
+      unregister();
+    }
   });
 
   it('Should be able to update an editor state without a root element', () => {
@@ -3374,6 +3433,85 @@ describe('LexicalEditor tests', () => {
     expect(calls).toHaveLength(0);
   });
 
+  it('has an invariant payload type for commands', () => {
+    const EVENT_COMMAND = createCommand<Event>('EVENT_COMMAND');
+    const MOUSE_EVENT_COMMAND = createCommand<MouseEvent>(
+      'MOUSE_EVENT_COMMAND',
+    );
+    const MAYBE_MOUSE_EVENT_COMMAND = createCommand<undefined | MouseEvent>(
+      'MAYBE_MOUSE_EVENT_COMMAND',
+    );
+    const VOID_COMMAND = createCommand<void>('VOID_COMMAND');
+    // Test expected correct paths
+    editor.dispatchCommand(EVENT_COMMAND, new Event('test_event'));
+    editor.dispatchCommand(MOUSE_EVENT_COMMAND, new MouseEvent('mouse'));
+    editor.dispatchCommand(MAYBE_MOUSE_EVENT_COMMAND, new MouseEvent('mouse'));
+    editor.dispatchCommand(MAYBE_MOUSE_EVENT_COMMAND);
+    editor.dispatchCommand(VOID_COMMAND, undefined);
+    editor.dispatchCommand(VOID_COMMAND);
+    // Test expected inference
+    editor.registerCommand(
+      EVENT_COMMAND,
+      e => {
+        assertType<Event>(e);
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    editor.registerCommand(
+      MOUSE_EVENT_COMMAND,
+      e => {
+        assertType<MouseEvent>(e);
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    editor.registerCommand(
+      MAYBE_MOUSE_EVENT_COMMAND,
+      e => {
+        assertType<undefined | MouseEvent>(e);
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    editor.registerCommand(
+      VOID_COMMAND,
+      e => {
+        assertType<void>(e);
+        return false;
+      },
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    // Verify that types can't be narrowed with annotations
+    editor.registerCommand(
+      // @ts-expect-error
+      EVENT_COMMAND,
+      (e: MouseEvent) => false,
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    editor.registerCommand<LexicalCommand<MouseEvent>>(
+      // @ts-expect-error
+      EVENT_COMMAND,
+      (e: MouseEvent) => false,
+      COMMAND_PRIORITY_EDITOR,
+    )();
+    // Verify that types can't be widened with annotations
+    // @ts-expect-error
+    safeCast<LexicalCommand<Event>>(MOUSE_EVENT_COMMAND);
+    // @ts-expect-error
+    safeCast<LexicalCommand<unknown>>(MOUSE_EVENT_COMMAND);
+    // @ts-expect-error
+    safeCast<LexicalCommand<undefined>>(MAYBE_MOUSE_EVENT_COMMAND);
+    // @ts-expect-error
+    safeCast<LexicalCommand<MouseEvent>>(MAYBE_MOUSE_EVENT_COMMAND);
+    editor.registerCommand(
+      // @ts-expect-error
+      EVENT_COMMAND,
+      (e: MouseEvent) => false,
+      COMMAND_PRIORITY_EDITOR,
+    )();
+  });
+
   it('allows using the same listener for multiple node types', async () => {
     init();
 
@@ -3804,6 +3942,98 @@ describe('LexicalEditor tests', () => {
 
       expect(onError).not.toHaveBeenCalled();
       removeTransform();
+    });
+
+    it('applies the replacement when deserializing a base node type via parseEditorState (#8640 regression)', async () => {
+      class CustomParagraphNode extends ParagraphNode {
+        $config() {
+          return this.config('custom-paragraph', {extends: ParagraphNode});
+        }
+      }
+      const onError = vi.fn();
+
+      const newEditor = createTestEditor({
+        nodes: [
+          CustomParagraphNode,
+          {
+            replace: ParagraphNode,
+            with: () => new CustomParagraphNode(),
+            withKlass: CustomParagraphNode,
+          },
+        ],
+        onError: onError,
+      });
+
+      // Serialized state whose paragraph uses the default type ("paragraph"), as
+      // an older persisted document (or one produced without the replacement)
+      // would contain.
+      const json = {
+        root: {
+          children: [
+            {
+              children: [],
+              type: 'paragraph',
+            },
+          ],
+          type: 'root',
+        },
+      };
+
+      newEditor.setEditorState(
+        newEditor.parseEditorState(JSON.stringify(json)),
+      );
+
+      newEditor.read(() => {
+        const paragraph = $getRoot().getFirstChild();
+        expect(paragraph instanceof CustomParagraphNode).toBe(true);
+        expect(paragraph!.getType()).toBe('custom-paragraph');
+      });
+
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    it('applies the replacement on import for `with` without `withKlass`', async () => {
+      class CustomParagraphNode extends ParagraphNode {
+        $config() {
+          return this.config('custom-paragraph', {extends: ParagraphNode});
+        }
+      }
+      const onError = vi.fn();
+
+      const newEditor = createTestEditor({
+        nodes: [
+          CustomParagraphNode,
+          {
+            replace: ParagraphNode,
+            with: () => new CustomParagraphNode(),
+          },
+        ],
+        onError: onError,
+      });
+
+      const json = {
+        root: {
+          children: [
+            {
+              children: [],
+              type: 'paragraph',
+            },
+          ],
+          type: 'root',
+        },
+      };
+
+      newEditor.setEditorState(
+        newEditor.parseEditorState(JSON.stringify(json)),
+      );
+
+      newEditor.read(() => {
+        const paragraph = $getRoot().getFirstChild();
+        expect(paragraph instanceof CustomParagraphNode).toBe(true);
+        expect(paragraph!.getType()).toBe('custom-paragraph');
+      });
+
+      expect(onError).not.toHaveBeenCalled();
     });
   });
 

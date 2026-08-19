@@ -11,6 +11,13 @@ import {
   configExtension,
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
+import {
+  $getImportContextValue,
+  $getRenderContextValue,
+  $withImportContext,
+  contextValue,
+  createImportState,
+} from '@lexical/html';
 import {$isLinkNode} from '@lexical/link';
 import {$isListNode} from '@lexical/list';
 import {$isHeadingNode, $isQuoteNode} from '@lexical/rich-text';
@@ -31,6 +38,7 @@ import {
   type TextNode,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
+import {defaultHandlers} from 'mdast-util-to-markdown';
 import {assert, describe, expect, it} from 'vitest';
 
 import {
@@ -41,6 +49,7 @@ import {
   $convertToMdast,
   $generateNodesFromMarkdownString,
   $generateNodesFromMdast,
+  ImportContextMarkdown,
   MdastAutolinkLiteralExtension,
   MdastCommonMarkExtension,
   MdastExportExtension,
@@ -50,6 +59,7 @@ import {
   MdastStrikethroughExtension,
   MdastTableExtension,
   MdastTaskListExtension,
+  RenderContextMarkdownSelection,
 } from '../../index';
 
 function createEditor(withTable = false): LexicalEditorWithDispose {
@@ -656,6 +666,120 @@ describe('@lexical/mdast import/export', () => {
           textNodes => textNodes[1].select(0, 4),
         ),
       ).toBe('[link](https://example.com)');
+    });
+
+    it('exposes the selection to contributed to-markdown handlers', () => {
+      // A contributed root handler whose output depends on the export's
+      // scope (e.g. appending end-of-document data like footnote
+      // definitions) reads the selection through the render context:
+      // null on a whole-document export, the BaseSelection on a selection
+      // export.
+      const probe: boolean[] = [];
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastExportExtension,
+            configExtension(MdastImportExtension, {
+              toMarkdownExtensions: [
+                {
+                  handlers: {
+                    root: (node, parent, state, info) => {
+                      probe.push(
+                        $getRenderContextValue(
+                          RenderContextMarkdownSelection,
+                        ) !== null,
+                      );
+                      return defaultHandlers.root(node, parent, state, info);
+                    },
+                  },
+                },
+              ],
+            }),
+          ],
+          name: '[selection-option]',
+        }),
+      );
+      editor.update(
+        () => {
+          $convertFromMarkdownString('hello world');
+          $getRoot().getAllTextNodes()[0].select(0, 5);
+        },
+        {discrete: true},
+      );
+      editor.read(() => {
+        expect($convertToMarkdownString()).toBe('hello world');
+        expect($convertSelectionToMarkdownString()).toBe('hello');
+      });
+      expect(probe).toEqual([false, true]);
+    });
+  });
+
+  describe('import context', () => {
+    // The mdast walk runs under the same import-context mechanism the DOM
+    // rules use: handlers read ambient state with $getImportContextValue
+    // and layer state for their subtree with $withImportContext — nested
+    // handlers (and DOM-rule sessions opened for raw HTML) see the layer,
+    // siblings outside it do not.
+    const probeState = createImportState('mdastProbe', () => 'default');
+
+    it('runs handlers under ImportContextMarkdown with nested layering', () => {
+      const seen: [string, boolean, string][] = [];
+      using editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [
+            MdastCommonMarkExtension,
+            MdastExportExtension,
+            configExtension(MdastImportExtension, {
+              importRules: [
+                {
+                  $import: (node, ctx) => {
+                    seen.push([
+                      'emphasis',
+                      $getImportContextValue(ImportContextMarkdown),
+                      $getImportContextValue(probeState),
+                    ]);
+                    return $withImportContext([
+                      contextValue(probeState, 'layered'),
+                    ])(() => ctx.importChildren(node));
+                  },
+                  type: 'emphasis',
+                },
+                {
+                  $import: (node, ctx) => {
+                    seen.push([
+                      'strong',
+                      $getImportContextValue(ImportContextMarkdown),
+                      $getImportContextValue(probeState),
+                    ]);
+                    return ctx.importChildren(node);
+                  },
+                  type: 'strong',
+                },
+              ],
+            }),
+          ],
+          name: '[import-context]',
+        }),
+      );
+      editor.update(
+        () => {
+          $convertFromMarkdownString('*em **inner*** and **outer**');
+        },
+        {discrete: true},
+      );
+      expect(seen).toEqual([
+        // Every handler sees ImportContextMarkdown; the probe layer applies
+        // to the emphasis subtree only.
+        ['emphasis', true, 'default'],
+        ['strong', true, 'layered'],
+        ['strong', true, 'default'],
+      ]);
+      // The context does not leak outside the import operation.
+      editor.read(() => {
+        expect($getImportContextValue(ImportContextMarkdown)).toBe(false);
+        expect($getImportContextValue(probeState)).toBe('default');
+      });
     });
   });
 

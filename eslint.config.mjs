@@ -82,6 +82,7 @@ export default [
       '**/.wxt/',
       '**/*.www.cjs',
       '**/typedoc-sidebar.cjs',
+      '**/.next/',
     ],
   },
 
@@ -353,7 +354,7 @@ export default [
             'createBinding',
           ],
           isLexicalProvider: ['updateEditor', 'updateEditorSync'],
-          isSafeDollarFunction: '$createRootNode',
+          isSafeDollarFunction: ['$createRootNode', '$createCollabElementNode'],
         }),
       ],
       '@typescript-eslint/array-type': [ERROR, {default: 'array'}],

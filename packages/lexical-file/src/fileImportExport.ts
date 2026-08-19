@@ -72,7 +72,7 @@ export function editorStateFromSerializedDocument(
 export function importFile(editor: LexicalEditor) {
   readTextFileFromSystem(text => {
     editor.setEditorState(editorStateFromSerializedDocument(editor, text));
-    editor.dispatchCommand(CLEAR_HISTORY_COMMAND, undefined);
+    editor.dispatchCommand(CLEAR_HISTORY_COMMAND);
   });
 }
 

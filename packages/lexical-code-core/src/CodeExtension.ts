@@ -43,12 +43,14 @@ export const CodeExtension = /* @__PURE__ */ defineExtension({
   nodes: () => [CodeNode, CodeHighlightNode],
   register(editor) {
     return mergeRegister(
-      editor.registerCommand<KeyboardEvent>(
+      editor.registerCommand(
         KEY_ENTER_COMMAND,
         event => {
           const selection = $getSelection();
           if ($isRangeSelection(selection) && $exitCodeNodeOnEnter(selection)) {
-            event.preventDefault();
+            if (event !== null) {
+              event.preventDefault();
+            }
             return true;
           }
           return false;

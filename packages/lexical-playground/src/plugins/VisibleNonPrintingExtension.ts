@@ -20,6 +20,7 @@ import {HeadingNode, QuoteNode} from '@lexical/rich-text';
 import {$canShowPlaceholder} from '@lexical/text';
 import {
   $findMatchingParent,
+  $getDocument,
   $isTabNode,
   configExtension,
   defineExtension,
@@ -132,7 +133,7 @@ export const VisibleNonPrintingExtension = /* @__PURE__ */ defineExtension({
               if ($skipForCodeChild(node)) {
                 return inner;
               }
-              const wrapper = document.createElement('span');
+              const wrapper = $getDocument().createElement('span');
               wrapper.setAttribute(VISIBLE_NON_PRINTING_LINEBREAK_ATTR, 'true');
               wrapper.appendChild(inner);
               return wrapper;

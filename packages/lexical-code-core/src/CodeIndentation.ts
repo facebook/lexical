@@ -542,7 +542,7 @@ export function registerCodeIndentation(
           return false;
         }
         event.preventDefault();
-        editor.dispatchCommand(command, undefined);
+        editor.dispatchCommand(command);
         return true;
       },
       COMMAND_PRIORITY_LOW,

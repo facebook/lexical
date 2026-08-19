@@ -60,7 +60,7 @@ export const PollExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/Poll',
   nodes: [PollNode],
   register: editor =>
-    editor.registerCommand<string>(
+    editor.registerCommand(
       INSERT_POLL_COMMAND,
       payload => {
         const pollNode = $createPollNode(payload, [

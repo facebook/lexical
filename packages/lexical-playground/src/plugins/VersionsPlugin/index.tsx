@@ -97,10 +97,7 @@ export function VersionsPlugin({id}: {id: string}) {
         ),
         editor.registerEditableListener(isEditable => {
           if (isEditable && isDiffMode) {
-            editor.dispatchCommand(
-              CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
-              undefined,
-            );
+            editor.dispatchCommand(CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL);
           }
         }),
       ),
@@ -233,7 +230,6 @@ function VersionsModal({
               onClick={() => {
                 editor.dispatchCommand(
                   CLEAR_DIFF_VERSIONS_COMMAND__EXPERIMENTAL,
-                  undefined,
                 );
                 onClose();
               }}>

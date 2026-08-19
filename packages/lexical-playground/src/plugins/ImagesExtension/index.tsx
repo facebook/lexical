@@ -303,7 +303,7 @@ export const ImagesExtension = /* @__PURE__ */ defineExtension({
   nodes: [ImageNode],
   register: editor =>
     mergeRegister(
-      editor.registerCommand<InsertImagePayload>(
+      editor.registerCommand(
         INSERT_IMAGE_COMMAND,
         payload => {
           const imageNode = $createImageNode(payload);
@@ -316,17 +316,17 @@ export const ImagesExtension = /* @__PURE__ */ defineExtension({
         },
         COMMAND_PRIORITY_EDITOR,
       ),
-      editor.registerCommand<DragEvent>(
+      editor.registerCommand(
         DRAGSTART_COMMAND,
         event => $onDragStart(event),
         COMMAND_PRIORITY_HIGH,
       ),
-      editor.registerCommand<DragEvent>(
+      editor.registerCommand(
         DRAGOVER_COMMAND,
         event => $onDragover(event),
         COMMAND_PRIORITY_LOW,
       ),
-      editor.registerCommand<DragEvent>(
+      editor.registerCommand(
         DROP_COMMAND,
         event => $onDrop(event, editor),
         COMMAND_PRIORITY_HIGH,
@@ -336,6 +336,8 @@ export const ImagesExtension = /* @__PURE__ */ defineExtension({
 
 const TRANSPARENT_IMAGE =
   'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+// Detached element for setDragImage() visual feedback — not inserted into
+// any DOM tree, so it does not need shadow-root-aware $getDocument().
 const img = document.createElement('img');
 img.src = TRANSPARENT_IMAGE;
 

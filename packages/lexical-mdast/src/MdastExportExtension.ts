@@ -42,7 +42,10 @@ export interface MdastExportExtensionOutput {
    * skipped, partially selected text nodes are sliced to the selected
    * range, and elements are kept when they or any descendant are selected.
    * Returns `''` for a null or collapsed selection. Must be called inside
-   * an `editor.read()` or `editor.update()`.
+   * an `editor.read()` or `editor.update()`. The export runs under
+   * {@link RenderContextMarkdownSelection} carrying the selection, so
+   * contributed export rules and to-markdown handlers can scope their
+   * output to a selection export.
    */
   $convertSelectionToMarkdownString(selection?: BaseSelection | null): string;
 }

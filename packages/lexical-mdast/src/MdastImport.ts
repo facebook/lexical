@@ -16,6 +16,11 @@ import type {ElementNode, LexicalNode} from 'lexical';
 import type {Root} from 'mdast';
 
 import {
+  $withImportContext,
+  contextValue,
+  createImportState,
+} from '@lexical/html';
+import {
   $createLineBreakNode,
   $createParagraphNode,
   $createTabNode,
@@ -27,6 +32,20 @@ import {
 import {fromMarkdown} from 'mdast-util-from-markdown';
 
 import {$append, $isBlockLevelNode, $prepend} from './handlers';
+
+/**
+ * Import context state that is true for the whole of a Markdown/mdast
+ * import: inside every {@link MdastImportHandler} and inside any DOM-rule
+ * session it opens (raw HTML routed through the DOM import rules inherits
+ * the surrounding import context), so a DOM rule can distinguish a Markdown
+ * import from an HTML paste of the same markup (read it with `ctx.get`, or
+ * `$getImportContextValue` from an mdast handler).
+ * @experimental
+ */
+export const ImportContextMarkdown = /* @__PURE__ */ createImportState(
+  'isMarkdownImport',
+  Boolean,
+);
 
 /**
  * Splits `value` into a run of `TextNode`s via {@link tokenizeRawText}:
@@ -147,7 +166,23 @@ export function createNodeImporter(
     return out;
   }
 
-  return {$importChildren, $importNode};
+  // The walk runs under an import context (the same ContextRecord
+  // mechanism the DOM import rules use, chained to the editor's
+  // DOMImportExtension contextDefaults when present) so handlers can read
+  // ambient state with $getImportContextValue and layer state for their
+  // subtree with $withImportContext around ctx.importChildren — and any
+  // DOM-rule session a handler opens (raw HTML) inherits it. Entering an
+  // already-active markdown context is a no-op, so only the outermost
+  // entry pays for the scope.
+  const $inMarkdownContext = <T>(f: () => T): T =>
+    $withImportContext([contextValue(ImportContextMarkdown, true)])(f);
+
+  return {
+    $importChildren: (parent: MdastParent, format: number) =>
+      $inMarkdownContext(() => $importChildren(parent, format)),
+    $importNode: (node: MdastNode, format: number) =>
+      $inMarkdownContext(() => $importNode(node, format)),
+  };
 }
 
 /**

@@ -560,7 +560,10 @@ export function $insertTableColumnAtNode(
       let insertAfterCellRowStart = currentStartRow;
       let prevCellIndex = insertAfterColumn;
       while (insertAfterCellRowStart !== i && insertAfterCell.__rowSpan > 1) {
-        prevCellIndex -= currentCell.__colSpan;
+        // prevCellIndex always sits on the last grid column of insertAfterCell,
+        // so stepping to the column before it means subtracting *that* cell's
+        // colSpan, not the colSpan of the cell we started from.
+        prevCellIndex -= insertAfterCell.__colSpan;
         if (prevCellIndex >= 0) {
           const {cell: cell_, startRow: startRow_} = rowMap[prevCellIndex];
           insertAfterCell = cell_;
@@ -948,6 +951,13 @@ export function $unmergeCell(): void {
   return $unmergeCellNode(cellNode);
 }
 
+/**
+ * Unmerges the given cell, splitting it back into individual cells.
+ * Unlike {@link $unmergeCell}, this does not depend on the current
+ * selection. No-op if the cell is not merged.
+ *
+ * @param cellNode The merged cell to split.
+ */
 export function $unmergeCellNode(cellNode: TableCellNode): void {
   const [cell, row, grid] = $getNodeTriplet(cellNode);
   const colSpan = cell.__colSpan;
@@ -1190,6 +1200,10 @@ export function $computeTableCellRectSpans(
   return {bottomSpan, leftSpan, rightSpan, topSpan};
 }
 
+/**
+ * Compute the bounding rectangle of two table cells in a table map,
+ * expanding iteratively to include any merged cells that overlap the boundary.
+ */
 export function $computeTableCellRectBoundary(
   map: TableMapType,
   cellAMap: TableMapValueType,
@@ -1336,6 +1350,43 @@ export function $moveTableColumn(
     const [movedWidth] = newWidths.splice(originColumn, 1);
     newWidths.splice(targetColumn, 0, movedWidth);
     tableNode.setColWidths(newWidths);
+  }
+}
+
+/**
+ * Moves a row from one position to another within a simple (non-merged) table.
+ *
+ * @param tableNode The table node to modify.
+ * @param originRow The index of the row to move.
+ * @param targetRow The index to move the row to.
+ */
+export function $moveTableRow(
+  tableNode: TableNode,
+  originRow: number,
+  targetRow: number,
+): void {
+  if (originRow === targetRow) {
+    return;
+  }
+  const rows = tableNode.getChildren().filter($isTableRowNode);
+  const rowCount = rows.length;
+  if (
+    originRow < 0 ||
+    originRow >= rowCount ||
+    targetRow < 0 ||
+    targetRow >= rowCount
+  ) {
+    return;
+  }
+  if (!$isSimpleTable(tableNode)) {
+    return;
+  }
+  const originRowNode = rows[originRow];
+  const targetRowNode = rows[targetRow];
+  if (targetRow > originRow) {
+    targetRowNode.insertAfter(originRowNode);
+  } else {
+    targetRowNode.insertBefore(originRowNode);
   }
 }
 

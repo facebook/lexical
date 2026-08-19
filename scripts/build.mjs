@@ -323,20 +323,32 @@ async function build(
         configFile: false,
         exclude: '**/node_modules/**',
         extensions,
+        // JSX only parses in .jsx/.tsx files. Applying preset-react
+        // unconditionally would enable the jsx syntax plugin for plain .ts
+        // too, where `<T>` in a generic arrow function (`<T>(x: T) => ...`)
+        // is ambiguous with an opening JSX element and fails to parse.
+        overrides: [
+          {
+            presets: [
+              // Pin development:false so the automatic runtime always emits the
+              // production `jsx`/`jsxs` helpers, never `jsxDEV`. Babel 8 flipped the
+              // default to infer development mode from the environment, which made
+              // the dev builds import `react/jsx-dev-runtime`; consumers that bundle
+              // those dev builds (e.g. the Docusaurus website SSG) then crash with
+              // "jsxDEV is not a function".
+              [
+                '@babel/preset-react',
+                {development: false, runtime: 'automatic'},
+              ],
+            ],
+            test: /\.[jt]sx$/,
+          },
+        ],
         plugins: [
           [transformErrorMessages, {extractCodes, noMinify: !isProd}],
           '@babel/plugin-transform-optional-catch-binding',
         ],
-        presets: [
-          '@babel/preset-typescript',
-          // Pin development:false so the automatic runtime always emits the
-          // production `jsx`/`jsxs` helpers, never `jsxDEV`. Babel 8 flipped the
-          // default to infer development mode from the environment, which made
-          // the dev builds import `react/jsx-dev-runtime`; consumers that bundle
-          // those dev builds (e.g. the Docusaurus website SSG) then crash with
-          // "jsxDEV is not a function".
-          ['@babel/preset-react', {development: false, runtime: 'automatic'}],
-        ],
+        presets: ['@babel/preset-typescript'],
       }),
       commonjs(),
       json(),

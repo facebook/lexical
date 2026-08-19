@@ -23,7 +23,7 @@ export const FigmaExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/Figma',
   nodes: [FigmaNode],
   register: editor =>
-    editor.registerCommand<string>(
+    editor.registerCommand(
       INSERT_FIGMA_COMMAND,
       payload => {
         const figmaNode = $createFigmaNode(payload);

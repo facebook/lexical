@@ -103,6 +103,7 @@ import {PollExtension} from './plugins/PollExtension';
 import {PullQuoteExtension} from './plugins/PullQuoteExtension';
 import {ReactReviewExtension} from './plugins/ReviewExtension';
 import {RubyExtension} from './plugins/RubyExtension';
+import {ShortcutsExtension} from './plugins/ShortcutsExtension';
 import {SpecialTextExtension} from './plugins/SpecialTextExtension';
 import {TabFocusExtension} from './plugins/TabFocusExtension';
 import {TerseExportExtension} from './plugins/TerseExportExtension';
@@ -221,7 +222,9 @@ const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
     // tracks this node set automatically (kept out of the always-on
     // PlaygroundImportExtension so plain-text mode doesn't pull in
     // RichTextExtension, which conflicts with PlainTextExtension).
-    TableExtension,
+    /* @__PURE__ */ configExtension(TableExtension, {
+      hasStickyScrollbar: true,
+    }),
     ImagesExtension,
     HorizontalRuleExtension,
     PageBreakExtension,
@@ -247,6 +250,7 @@ const PlaygroundRichTextExtension = /* @__PURE__ */ defineExtension({
     ReactFindReplaceExtension,
     PullQuoteExtension,
     RubyExtension,
+    ShortcutsExtension,
     /* @__PURE__ */ configExtension(TabIndentationExtension, {maxIndent: 7}),
   ],
   name: '@lexical/playground/RichText',
@@ -273,7 +277,7 @@ const AppExtension = /* @__PURE__ */ defineExtension({
     MentionsExtension,
     /* @__PURE__ */ configExtension(LinkExtension, {validateUrl}),
     PlaygroundAutoLinkExtension,
-    ClickableLinkExtension,
+    /* @__PURE__ */ configExtension(ClickableLinkExtension, {newTab: true}),
     SelectionAlwaysOnDisplayExtension,
     /* @__PURE__ */ configExtension(SelectBlockExtension, {
       cascadeSelection: true,

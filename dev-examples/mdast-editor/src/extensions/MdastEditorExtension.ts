@@ -8,15 +8,21 @@
 
 import type {ReadonlySignal} from '@lexical/extension';
 
+import {
+  ClipboardDOMImportExtension,
+  GetClipboardDataExtension,
+} from '@lexical/clipboard';
 import {CodeShikiExtension} from '@lexical/code-shiki';
 import {
   computed,
   EditorStateExtension,
   TabIndentationExtension,
+  WatchEditableExtension,
 } from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
 import {CheckListExtension, ListExtension} from '@lexical/list';
 import {
+  $convertSelectionToMarkdownString,
   $convertToMarkdownString,
   MdastCommonMarkExtension,
   MdastExportExtension,
@@ -25,20 +31,38 @@ import {
 } from '@lexical/mdast';
 import {
   $createHeadingNode,
+  $isQuoteNode,
   type HeadingTagType,
   RichTextExtension,
 } from '@lexical/rich-text';
 import {$setBlocksType} from '@lexical/selection';
 import {mergeRegister} from '@lexical/utils';
 import {
+  $caretFromPoint,
   $createParagraphNode,
+  $getCollapsedCaretRange,
   $getSelection,
+  $getSiblingCaret,
+  $isChildCaret,
   $isRangeSelection,
+  $setSelectionFromCaretRange,
+  COMMAND_PRIORITY_BEFORE_EDITOR,
   COMMAND_PRIORITY_EDITOR,
+  configExtension,
   createCommand,
   defineExtension,
+  INSERT_PARAGRAPH_COMMAND,
   type LexicalCommand,
 } from 'lexical';
+
+import {HtmlTextFormatExtension} from './HtmlTextFormatExtension';
+import {MdastAlertExtension} from './MdastAlertExtension';
+import {
+  $isCollapsibleNode,
+  MdastCollapsibleExtension,
+} from './MdastCollapsibleExtension';
+import {MdastFootnoteExtension} from './MdastFootnoteExtension';
+import {MdastKbdExtension} from './MdastKbdExtension';
 
 /**
  * Reformats the current selection's blocks as a paragraph. Toolbars
@@ -57,6 +81,14 @@ export const FORMAT_HEADING_COMMAND: LexicalCommand<HeadingTagType> =
   createCommand('FORMAT_HEADING_COMMAND');
 
 export interface MdastEditorOutput {
+  /**
+   * A signal mirroring `editor.isEditable()`. The toolbar reads it to
+   * disable everything that would change the document while the editor is
+   * read-only — where the only allowed changes are to the selection. (The
+   * Markdown source pane has its own, independent lock: either side can be
+   * read-only while the other stays editable.)
+   */
+  isEditable: ReadonlySignal<boolean>;
   /** A signal observing the editor's contents as a Markdown string. */
   markdown: ReadonlySignal<string>;
 }
@@ -78,6 +110,7 @@ export const MdastEditorExtension = defineExtension({
   build(editor, _config, state): MdastEditorOutput {
     const editorState = state.getDependency(EditorStateExtension).output;
     return {
+      isEditable: state.getDependency(WatchEditableExtension).output,
       markdown: computed(() =>
         editorState.value.read(() => $convertToMarkdownString(), {editor}),
       ),
@@ -91,6 +124,22 @@ export const MdastEditorExtension = defineExtension({
     MdastGfmExtension,
     MdastExportExtension,
     MdastShortcutsExtension,
+    // Example custom construct: a collapsible section whose summary line is
+    // edited in a named slot, encoded in Markdown as a GFM-style raw
+    // `<details><summary>` block.
+    MdastCollapsibleExtension,
+    // The inline counterpart: keyboard keys as GitHub's `<kbd>` idiom.
+    MdastKbdExtension,
+    // Markdown-syntax-driven construct: GitHub alerts (`> [!NOTE]`) as
+    // NodeState on the ordinary QuoteNode + a DOMRenderExtension override.
+    MdastAlertExtension,
+    // GFM footnotes: `[^label]` refs inline, definitions in a FootnotesNode
+    // on a root slot, appended to the Markdown via a to-markdown root
+    // handler.
+    MdastFootnoteExtension,
+    // Text formats Markdown can't express (underline, highlight, sub/sup,
+    // inline color) round-trip as inline HTML.
+    HtmlTextFormatExtension,
     // Shiki syntax highlighting for the code blocks (brings its own
     // CodeExtension / CodeIndentExtension dependencies).
     CodeShikiExtension,
@@ -100,6 +149,26 @@ export const MdastEditorExtension = defineExtension({
     HistoryExtension,
     TabIndentationExtension,
     EditorStateExtension,
+    WatchEditableExtension,
+    // Route HTML paste through the same DOMImportExtension rules that
+    // serve Markdown import (the default clipboard handler still uses the
+    // legacy `$generateNodesFromDOM`), so pasted `<details>`, `<kbd>`, and
+    // GitHub alert markup import through the example's rules too.
+    ClipboardDOMImportExtension,
+    // Copy operations also put the selection's Markdown serialization on
+    // the clipboard as text/markdown, so Markdown-aware targets can take
+    // the source form (footnote definitions included — the selection
+    // export appends the ones its refs point at).
+    configExtension(GetClipboardDataExtension, {
+      $exportMimeType: {
+        'text/markdown': [
+          selection =>
+            selection === null
+              ? null
+              : $convertSelectionToMarkdownString(selection),
+        ],
+      },
+    }),
   ],
   name: '@lexical/dev-mdast-editor-example/MdastEditor',
   register(editor) {
@@ -108,7 +177,7 @@ export const MdastEditorExtension = defineExtension({
         FORMAT_PARAGRAPH_COMMAND,
         () => {
           const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
+          if (editor.isEditable() && $isRangeSelection(selection)) {
             $setBlocksType(selection, () => $createParagraphNode());
           }
           return true;
@@ -119,12 +188,39 @@ export const MdastEditorExtension = defineExtension({
         FORMAT_HEADING_COMMAND,
         tag => {
           const selection = $getSelection();
-          if ($isRangeSelection(selection)) {
+          if (editor.isEditable() && $isRangeSelection(selection)) {
             $setBlocksType(selection, () => $createHeadingNode(tag));
           }
           return true;
         },
         COMMAND_PRIORITY_EDITOR,
+      ),
+      // Remove the empty paragraph and exit the node before creating a
+      // new one if enter is pressed from an terminal empty paragraph
+      // in a CollapsibleNode or QuoteNode
+      editor.registerCommand(
+        INSERT_PARAGRAPH_COMMAND,
+        () => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection) && selection.isCollapsed()) {
+            const caret = $caretFromPoint(selection.focus, 'next');
+            if (
+              $isChildCaret(caret) &&
+              caret.origin.isEmpty() &&
+              caret.origin.isLastChild()
+            ) {
+              const parent = caret.origin.getParent();
+              if ($isCollapsibleNode(parent) || $isQuoteNode(parent)) {
+                caret.origin.remove();
+                $setSelectionFromCaretRange(
+                  $getCollapsedCaretRange($getSiblingCaret(parent, 'next')),
+                );
+              }
+            }
+          }
+          return false;
+        },
+        COMMAND_PRIORITY_BEFORE_EDITOR,
       ),
     );
   },

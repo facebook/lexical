@@ -785,6 +785,7 @@ function $createNode(key: NodeKey, slot: DOMSlot | null): HTMLElement {
     }
     if (!node.isInline()) {
       $reconcileElementTerminatingLineBreak(null, node, dom);
+      $reconcileDecoratorBoundaryAnchors(node, dom);
     }
   } else {
     const text = node.getTextContent();
@@ -910,14 +911,44 @@ function $isLastChildLineBreakOrDecorator(
             : null;
       }
     }
-    // A host with slots but no linked-list children is not empty (the slots
-    // carry its content). The 'empty' line break exists to give a truly empty
-    // block a caret target; on a slots-only host that <br> would instead be a
-    // stray caret target in the host's own child area, after the slot
-    // containers — text typed there leaks out of the slot. Skip it.
-    return $readSlots(element).size > 0 ? null : 'empty';
+    return 'empty';
   }
   return null;
+}
+
+function $isBlockDecoratorChild(
+  key: null | NodeKey,
+  nodeMap: NodeMap,
+): boolean {
+  if (!key) {
+    return false;
+  }
+  const node = nodeMap.get(key);
+  return $isDecoratorNode(node) && !node.isInline();
+}
+
+/**
+ * Browsers drop the selection highlight for the whole document when a range
+ * endpoint lands on an element boundary that is immediately adjacent to a
+ * block-level `contenteditable=false` child — e.g. select-all in a document
+ * whose first or last block is a DecoratorNode (#8922). Keep a zero-size
+ * out-of-flow anchor parked outside each such boundary child so the browser has
+ * an editable inline box to resolve the boundary position against. Interior
+ * decorators are unaffected, so only the first / last child is considered.
+ */
+function $reconcileDecoratorBoundaryAnchors(
+  nextElement: ElementNode,
+  dom: HTMLElement & LexicalPrivateDOM,
+): void {
+  const slot = $getDOMSlot(nextElement, dom, activeEditor);
+  slot.setDecoratorBoundaryAnchor(
+    'leading',
+    $isBlockDecoratorChild(nextElement.__first, activeNextNodeMap),
+  );
+  slot.setDecoratorBoundaryAnchor(
+    'trailing',
+    $isBlockDecoratorChild(nextElement.__last, activeNextNodeMap),
+  );
 }
 
 // If we end an element with a LineBreakNode, then we need to add an additional <br>
@@ -926,20 +957,14 @@ function $reconcileElementTerminatingLineBreak(
   nextElement: ElementNode,
   dom: HTMLElement & LexicalPrivateDOM,
 ): void {
-  // Read previous render's last-child kind from the slot element's cache
-  // so the prev-state DecoratorNode reference's isInline() (which routes
-  // through getLatest() and would throw once the key is detached from the
-  // active node map) is never called.
   const slot = $getDOMSlot(nextElement, dom, activeEditor);
-  const slotElement: HTMLElement & LexicalPrivateDOM = slot.element;
-  const prevLineBreak = slotElement.__lexicalLastChildKind ?? null;
   const nextLineBreak = $isLastChildLineBreakOrDecorator(
     nextElement,
     activeNextNodeMap,
   );
-  if (prevLineBreak !== nextLineBreak) {
-    slot.setManagedLineBreak(nextLineBreak);
-  }
+  // ElementDOMSlot normalizes the empty state against the actual content
+  // range, including named-slot containers, and caches the result.
+  slot.setManagedLineBreak(nextLineBreak);
 }
 
 function reconcileTextFormat(element: ElementNode): void {
@@ -1780,8 +1805,14 @@ function $reconcileNode(
     if (isDirty) {
       const outerBefore = subTreeTextContent;
       $reconcileChildrenWithDirection(prevNode, nextNode, dom);
-      if (!$isRootNode(nextNode) && !nextNode.isInline()) {
-        $reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
+      if (!nextNode.isInline()) {
+        if (!$isRootNode(nextNode)) {
+          $reconcileElementTerminatingLineBreak(prevNode, nextNode, dom);
+        }
+        // Unlike the terminating line break this applies to the root too — a
+        // leading / trailing block decorator at the top level is exactly the
+        // shape that breaks select-all.
+        $reconcileDecoratorBoundaryAnchors(nextNode, dom);
       }
       // Fold slot text slots-first, ahead of the child text the children
       // reconcile just wrote, matching `ElementNode.getTextContent` and the

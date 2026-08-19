@@ -27,8 +27,8 @@ import {
 import * as React from 'react';
 import {type JSX, useCallback, useEffect, useRef, useState} from 'react';
 
-const tweetNodeSchema = objectValue({
-  id: stringValue(),
+const tweetNodeSchema = /* @__PURE__ */ objectValue({
+  id: /* @__PURE__ */ stringValue(),
 });
 
 const WIDGET_SCRIPT_URL = 'https://platform.twitter.com/widgets.js';

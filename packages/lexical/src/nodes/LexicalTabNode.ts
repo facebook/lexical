@@ -12,6 +12,12 @@ import type {LexicalNode, NodeKey} from '../LexicalNode';
 import invariant from '@lexical/internal/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
+import {
+  numberValue,
+  objectValue,
+  stringValue,
+  withSetter,
+} from '../LexicalSchema';
 import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
 import {
   type SerializedTextNode,
@@ -25,7 +31,17 @@ export type SerializedTabNode = SerializedTextNode;
 /** @noInheritDoc */
 export class TabNode extends TextNode {
   $config() {
-    return this.config('tab', {extends: TextNode});
+    return this.config('tab', {
+      extends: TextNode,
+      // Override the inherited TextNode field schemas whose defaults this
+      // node's setters reject: an absent `detail` must restore IS_UNMERGEABLE
+      // (setDetail throws on anything else) and an absent `text` must restore
+      // the canonical '\t'.
+      json: objectValue({
+        detail: numberValue(IS_UNMERGEABLE),
+        text: withSetter(stringValue('\t'), 'setTextContent'),
+      }),
+    });
   }
 
   // `key` carries an explicit `undefined` default (rather than the usual `?`)

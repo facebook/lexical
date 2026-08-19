@@ -6,6 +6,8 @@
  *
  */
 
+import invariant from '@lexical/internal/invariant';
+
 /**
  * A function that validates an untrusted `value` (such as a property parsed
  * from JSON) and coerces it into the expected type `T`, returning a default
@@ -38,7 +40,12 @@ export type SerializationSchemaMeta =
   | {readonly kind: 'boolean'}
   | {readonly kind: 'enum'; readonly values: readonly unknown[]}
   | {readonly kind: 'array'; readonly item: AnySerializationSchema}
-  | {readonly kind: 'nullable'; readonly inner: AnySerializationSchema}
+  | {
+      readonly kind: 'nullable';
+      readonly inner: AnySerializationSchema;
+      /** Whether a value equal to `inner`'s default is treated as `null`. */
+      readonly defaultAsNull?: boolean;
+    }
   | {
       readonly kind: 'optional';
       readonly inner: AnySerializationSchema;
@@ -107,17 +114,17 @@ function makeSchema<T>(
   meta: SerializationSchemaMeta,
   setter?: string,
 ): SerializationSchema<T> {
-  return Object.assign(
-    parse,
-    setter === undefined
-      ? {defaultValue: parse(undefined), meta}
-      : {defaultValue: parse(undefined), meta, setter},
-  ) as SerializationSchema<T>;
+  return Object.assign(parse, {
+    defaultValue: parse(undefined),
+    meta,
+    setter,
+  }) as SerializationSchema<T>;
 }
 
 /**
  * Build a {@link SerializationSchema} that returns `value` when it is a `string`, otherwise
  * returns `defaultValue` (the empty string by default).
+ * @__NO_SIDE_EFFECTS__
  */
 export function stringValue(defaultValue = ''): SerializationSchema<string> {
   return makeSchema(
@@ -131,6 +138,7 @@ export function stringValue(defaultValue = ''): SerializationSchema<string> {
  * otherwise returns `defaultValue` (`0` by default). `NaN`, `Infinity`, and
  * `-Infinity` are all treated as out of domain since they can not be
  * round-tripped through JSON.
+ * @__NO_SIDE_EFFECTS__
  */
 export function numberValue(
   defaultValue = 0,
@@ -153,6 +161,7 @@ export function numberValue(
 /**
  * Build a {@link SerializationSchema} that returns `value` when it is a `boolean`, otherwise
  * returns `defaultValue` (`false` by default).
+ * @__NO_SIDE_EFFECTS__
  */
 export function booleanValue(
   defaultValue = false,
@@ -174,11 +183,16 @@ export function booleanValue(
  * explicit type argument, e.g. `enumValue<TextModeType>([...])`, to instead
  * assert the values against a known domain type.)
  *
+ * `defaultValue` is a default parameter, so passing an explicit `undefined`
+ * selects `values[0]` rather than an `undefined` default; to make `undefined`
+ * the default, list it first in `values` instead.
+ *
  * @example
  * ```ts
  * const parseMode = enumValue(['normal', 'token', 'segmented']);
  * //    ^? SerializationSchema<'normal' | 'token' | 'segmented'>, default 'normal'
  * ```
+ * @__NO_SIDE_EFFECTS__
  */
 export function enumValue<const T>(
   values: readonly T[],
@@ -198,22 +212,38 @@ export function enumValue<const T>(
  * result for an untrusted value, unlike `value || null`, which can pass a
  * non-`T` (or falsy) value straight through with the wrong type.
  *
+ * Pass `{defaultAsNull: true}` when an in-band value equal to `inner`'s
+ * default also means "no value" — the historical `serializedNode.rel || null`
+ * idiom, where an empty string is not a real `rel`. Equality is by identity,
+ * so this is only meaningful for primitive-valued inner schemas.
+ *
  * @example
  * ```ts
- * const parseRel = nullable(stringValue());
+ * const parseRel = nullable(stringValue(), {defaultAsNull: true});
  * //    ^? SerializationSchema<string | null>
  * parseRel('noopener'); // 'noopener'
+ * parseRel('');         // null ('' is stringValue's default)
  * parseRel(null);       // null
  * parseRel(undefined);  // null (the recoverable default)
  * ```
+ * @__NO_SIDE_EFFECTS__
  */
 export function nullable<T>(
   inner: SerializationSchema<T>,
+  options: {readonly defaultAsNull?: boolean} = {},
 ): SerializationSchema<T | null> {
-  return makeSchema(value => (value == null ? null : inner(value)), {
-    inner,
-    kind: 'nullable',
-  });
+  const {defaultAsNull} = options;
+  return makeSchema(
+    value => {
+      if (value == null) {
+        return null;
+      }
+      const parsed = inner(value);
+      return defaultAsNull && parsed === inner.defaultValue ? null : parsed;
+    },
+    {defaultAsNull, inner, kind: 'nullable'},
+    inner.setter,
+  );
 }
 
 /**
@@ -228,7 +258,9 @@ export function nullable<T>(
  * `serializedNode.width || undefined` idiom, where a falsy `0` is not a real
  * width. Such a value (and any out-of-domain input, which `inner` coerces to
  * its default) yields `undefined`, so it is omitted from the exported JSON
- * instead of being persisted as the default.
+ * instead of being persisted as the default. Equality is by identity
+ * (`===`), so this is only meaningful for primitive-valued inner schemas — an
+ * array or object default is a fresh value per parse and never compares equal.
  *
  * @example
  * ```ts
@@ -241,6 +273,7 @@ export function nullable<T>(
  * parseCellWidth(0);     // undefined (0 is not a real width)
  * parseCellWidth('x');   // undefined (coerced to the default, then omitted)
  * ```
+ * @__NO_SIDE_EFFECTS__
  */
 export function optional<T>(
   inner: SerializationSchema<T>,
@@ -256,6 +289,7 @@ export function optional<T>(
       return omitDefault && parsed === inner.defaultValue ? undefined : parsed;
     },
     {inner, kind: 'optional', omitDefault},
+    inner.setter,
   );
 }
 
@@ -270,6 +304,11 @@ export function optional<T>(
  * default. Membership is therefore decided by identity, which suits unions of
  * primitives (the case this exists for) but not unions of object shapes.
  *
+ * Because acceptance is "parsing leaves it unchanged", a member whose
+ * `defaultValue` lies outside its own constrained domain (e.g.
+ * `numberValue(0, {min: 1})`) will falsely accept that default value; give
+ * such members an in-domain default when combining them here.
+ *
  * @example
  * ```ts
  * const parseDimension = unionValue([numberValue(), enumValue(['inherit'])], 'inherit');
@@ -278,11 +317,18 @@ export function optional<T>(
  * parseDimension('inherit'); // 'inherit'
  * parseDimension('banana');  // 'inherit' (no member accepts it)
  * ```
+ * @__NO_SIDE_EFFECTS__
  */
 export function unionValue<const T>(
   members: readonly SerializationSchema<T>[],
-  defaultValue: T = members[0].defaultValue,
+  defaultValue?: T,
 ): SerializationSchema<T> {
+  invariant(
+    members.length > 0,
+    'unionValue: at least one member schema is required',
+  );
+  const fallback =
+    defaultValue !== undefined ? defaultValue : members[0].defaultValue;
   return makeSchema(
     value => {
       for (let i = 0; i < members.length; i++) {
@@ -290,7 +336,7 @@ export function unionValue<const T>(
           return value as T;
         }
       }
-      return defaultValue;
+      return fallback;
     },
     {kind: 'union', members: members as readonly AnySerializationSchema[]},
   );
@@ -306,6 +352,7 @@ export function unionValue<const T>(
  * default, so declaring the property still routes it through the node's setter
  * (and keeps it visible to schema-walking tooling) without pretending to
  * validate its contents.
+ * @__NO_SIDE_EFFECTS__
  */
 export function rawValue<T>(): SerializationSchema<T | undefined> {
   return makeSchema(value => (value === undefined ? undefined : (value as T)), {
@@ -325,6 +372,7 @@ export function rawValue<T>(): SerializationSchema<T | undefined> {
  * parseIds(['a', 'b']); // ['a', 'b']
  * parseIds('nope');     // []
  * ```
+ * @__NO_SIDE_EFFECTS__
  */
 export function arrayValue<T>(
   item: SerializationSchema<T>,
@@ -332,6 +380,7 @@ export function arrayValue<T>(
   return makeSchema(
     value => (Array.isArray(value) ? value.map(entry => item(entry)) : []),
     {item, kind: 'array'},
+    item.setter,
   );
 }
 
@@ -356,6 +405,7 @@ export function arrayValue<T>(
  *   text: stringValue(),
  * });
  * ```
+ * @__NO_SIDE_EFFECTS__
  */
 export function objectValue<T extends {readonly [key: string]: unknown}>(
   fields: SerializationSchemaShape<T>,
@@ -391,6 +441,7 @@ export function objectValue<T extends {readonly [key: string]: unknown}>(
  *   text: withSetter(stringValue(), 'setTextContent'),
  * });
  * ```
+ * @__NO_SIDE_EFFECTS__
  */
 export function withSetter<T>(
   schema: SerializationSchema<T>,

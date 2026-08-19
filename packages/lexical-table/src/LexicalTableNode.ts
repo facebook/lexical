@@ -72,11 +72,19 @@ export type SerializedTableNode = Spread<
   SerializedElementNode
 >;
 
-const tableNodeSchema = objectValue({
-  colWidths: optional(arrayValue(numberValue())),
-  frozenColumnCount: withSetter(numberValue(), 'setFrozenColumns'),
-  frozenRowCount: withSetter(numberValue(), 'setFrozenRows'),
-  rowStriping: booleanValue(),
+const tableNodeSchema = /* @__PURE__ */ objectValue({
+  colWidths: /* @__PURE__ */ optional(
+    /* @__PURE__ */ arrayValue(/* @__PURE__ */ numberValue()),
+  ),
+  frozenColumnCount: /* @__PURE__ */ withSetter(
+    /* @__PURE__ */ numberValue(),
+    'setFrozenColumns',
+  ),
+  frozenRowCount: /* @__PURE__ */ withSetter(
+    /* @__PURE__ */ numberValue(),
+    'setFrozenRows',
+  ),
+  rowStriping: /* @__PURE__ */ booleanValue(),
 });
 
 function $updateColgroup(
@@ -382,7 +390,17 @@ export function setScrollableTablesActive(
   }
 }
 
+// Narrows the accepted JSON at the type level only; the runtime
+// implementation is the schema-driven LexicalNode.updateFromJSON.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface TableNode {
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedTableNode>>,
+  ): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class TableNode extends ElementNode {
   /** @internal */
   __rowStriping: boolean = false;
@@ -405,17 +423,6 @@ export class TableNode extends ElementNode {
       },
       json: tableNodeSchema,
     });
-  }
-
-  /**
-   * The base implementation applies this node's `json` schema; this override
-   * only narrows the accepted JSON to the node's serialized shape (where any
-   * node-specific property may be omitted).
-   */
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedTableNode>>,
-  ): this {
-    return super.updateFromJSON(serializedNode);
   }
 
   getColWidths(): readonly number[] | undefined {

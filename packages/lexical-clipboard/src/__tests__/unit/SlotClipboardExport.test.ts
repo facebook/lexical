@@ -28,9 +28,13 @@ import {
   $isTextNode,
   $setSelection,
   $setSlot,
+  $withSerializationContext,
   defineExtension,
   ElementNode,
+  type LexicalNode,
+  SerializationContextOverride,
   type SerializedElementNode,
+  type SerializedLexicalNode,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
 
@@ -125,6 +129,44 @@ describe('slot clipboard export', () => {
       expect(() => $generateJSONFromSelectedNodes(editor, null)).toThrow(
         /did not serialize to exactly the slot value node/,
       );
+    });
+  });
+
+  test('an override-omitted slot value skips the entry without throwing', () => {
+    // A serialization override that omits the slot value is a deliberate
+    // omission — the slot entry is skipped, matching editorState.toJSON() —
+    // unlike the unsupported excludeFromCopy combination above, which must
+    // still fail loudly.
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[slot-omit]',
+        nodes: [PlainShadowRootNode],
+      }),
+    );
+    editor.update(
+      () => {
+        const host = $createParagraphNode();
+        host.append($createTextNode('HostChild'));
+        $getRoot().append(host);
+        $setSlot(host, 'media', $createPlainShadowRootNode());
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const serialized = $withSerializationContext([
+        [
+          SerializationContextOverride,
+          (node: LexicalNode, $next: () => SerializedLexicalNode) =>
+            node instanceof PlainShadowRootNode ? null : $next(),
+        ],
+      ])(() => $generateJSONFromSelectedNodes(editor, null));
+      expect(serialized.nodes).toHaveLength(1);
+      expect(JSON.stringify(serialized.nodes)).toContain('HostChild');
+      expect(
+        (serialized.nodes[0] as SerializedElementNode & {$slots?: unknown})
+          .$slots,
+      ).toEqual({});
     });
   });
 

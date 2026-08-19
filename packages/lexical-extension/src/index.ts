@@ -53,6 +53,16 @@ export {
   InitialStateExtension,
 } from './InitialStateExtension';
 export {
+  type AnySerializationOverride,
+  type ExportJSONOptions,
+  type JSONConfig,
+  JSONExtension,
+  type JSONExtensionOutput,
+  jsonOverride,
+  type NodeMatch,
+  type SerializationOverride,
+} from './JSONExtension';
+export {
   formatKeyboardShortcut,
   type FormatKeyboardShortcutOptions,
   type KeyboardShortcutsConfig,
@@ -90,16 +100,6 @@ export {
   SelectBlockExtension,
 } from './SelectBlockExtension';
 export {SelectionAlwaysOnDisplayExtension} from './SelectionAlwaysOnDisplayExtension';
-export {
-  type AnySerializationOverride,
-  type ExportJSONOptions,
-  jsonOverride,
-  type NodeMatch,
-  type SerializationConfig,
-  SerializationExtension,
-  type SerializationExtensionOutput,
-  type SerializationOverride,
-} from './SerializationExtension';
 export {
   batch,
   computed,

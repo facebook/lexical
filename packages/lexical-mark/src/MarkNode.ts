@@ -35,35 +35,34 @@ export type SerializedMarkNode = Spread<
   SerializedElementNode
 >;
 
-/**
- * The schema for the node-specific properties of a {@link SerializedMarkNode}
- * (those it adds over a {@link SerializedElementNode}). It is the single source
- * of truth for parsing those properties — see {@link MarkNode.updateFromJSON}.
- */
-export const markNodeSchema = objectValue({
-  ids: withSetter(arrayValue(stringValue()), 'setIDs'),
+// Single source of truth for parsing the node-specific properties of a
+// SerializedMarkNode (those it adds over a SerializedElementNode).
+const markNodeSchema = /* @__PURE__ */ objectValue({
+  ids: /* @__PURE__ */ withSetter(
+    /* @__PURE__ */ arrayValue(/* @__PURE__ */ stringValue()),
+    'setIDs',
+  ),
 });
 
 const NO_IDS: readonly string[] = [];
 
+// Narrows the accepted JSON at the type level only; the runtime
+// implementation is the schema-driven LexicalNode.updateFromJSON.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface MarkNode {
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedMarkNode>>,
+  ): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class MarkNode extends ElementNode {
   /** @internal */
   __ids: readonly string[];
 
   $config() {
     return this.config('mark', {extends: ElementNode, json: markNodeSchema});
-  }
-
-  /**
-   * The base implementation applies this node's `json` schema; this override
-   * only narrows the accepted JSON to the node's serialized shape (where any
-   * node-specific property may be omitted).
-   */
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedMarkNode>>,
-  ): this {
-    return super.updateFromJSON(serializedNode);
   }
 
   afterCloneFrom(prevNode: this): void {

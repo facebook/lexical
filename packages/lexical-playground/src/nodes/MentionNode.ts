@@ -31,8 +31,8 @@ const FORMAT_WRAPPER_TAGS: readonly (readonly [TextFormatType, string])[] = [
   ['underline', 'u'],
 ];
 
-const mentionNodeSchema = objectValue({
-  mentionName: stringValue(),
+const mentionNodeSchema = /* @__PURE__ */ objectValue({
+  mentionName: /* @__PURE__ */ stringValue(),
 });
 
 export type SerializedMentionNode = Spread<

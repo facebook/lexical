@@ -62,9 +62,9 @@ export type SerializedListItemNode = Spread<
   SerializedElementNode
 >;
 
-const listItemNodeSchema = objectValue({
-  checked: optional(booleanValue()),
-  value: numberValue(1),
+const listItemNodeSchema = /* @__PURE__ */ objectValue({
+  checked: /* @__PURE__ */ optional(/* @__PURE__ */ booleanValue()),
+  value: /* @__PURE__ */ numberValue(1),
 });
 
 function applyMarkerStyles(
@@ -93,7 +93,19 @@ function applyMarkerStyles(
   }
 }
 
+// Narrows the accepted JSON at the type level only; the runtime
+// implementation is the schema-driven LexicalNode.updateFromJSON.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface ListItemNode {
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<
+      SerializedPartial<SerializedListItemNode>
+    >,
+  ): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class ListItemNode extends ElementNode {
   /** @internal */
   __value: number;
@@ -153,19 +165,6 @@ export class ListItemNode extends ElementNode {
       }),
       json: listItemNodeSchema,
     });
-  }
-
-  /**
-   * The base implementation applies this node's `json` schema; this override
-   * only narrows the accepted JSON to the node's serialized shape (where any
-   * node-specific property may be omitted).
-   */
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<
-      SerializedPartial<SerializedListItemNode>
-    >,
-  ): this {
-    return super.updateFromJSON(serializedNode);
   }
 
   constructor(

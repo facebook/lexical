@@ -10,53 +10,12 @@ import type {
   AnySerializationSchema,
   Klass,
   LexicalNode,
-  SerializationSchema,
   SerializationSchemaFields,
   SerializationSchemaMeta,
 } from 'lexical';
 
 import * as fc from 'fast-check';
-import {$isLexicalNode, getStaticNodeConfig} from 'lexical';
-
-/**
- * Derive a {@link https://fast-check.dev | fast-check} arbitrary that generates
- * valid values for `schema` by walking its introspectable `meta`. Because the
- * schema is the same one the node uses to parse its JSON, the generated values
- * are exactly what the node's parser accepts — so a single declaration powers
- * both parsing and example generation in tests.
- *
- * @example
- * ```ts
- * fc.assert(
- *   fc.property(serializationSchemaArbitrary(textNodeSchema), (fields) => {
- *     // `fields` is a valid set of SerializedTextNode properties
- *   }),
- * );
- * ```
- */
-export function serializationSchemaArbitrary<T>(
-  schema: SerializationSchema<T>,
-): fc.Arbitrary<T> {
-  return metaArbitrary(schema.meta) as fc.Arbitrary<T>;
-}
-
-/**
- * Derive an arbitrary for a full serialized node of the given `type` (and
- * `version`) from its `schema`, suitable for feeding to `importJSON`.
- */
-export function serializedNodeArbitrary<
-  T extends {readonly [k: string]: unknown},
->(
-  schema: SerializationSchema<T>,
-  type: string,
-  version = 1,
-): fc.Arbitrary<T & {type: string; version: number}> {
-  return serializationSchemaArbitrary(schema).map(fields => ({
-    ...fields,
-    type,
-    version,
-  }));
-}
+import {getStaticNodeConfig, iterStaticNodeConfigChain} from 'lexical';
 
 /**
  * Read the {@link SerializationSchema} a node class declares on its `$config` (the `schema`
@@ -77,21 +36,23 @@ export function nodeSerializationSchema(
  * schema under a well-known `Symbol.for('ElementNode')` key). Properties are
  * merged base-first so a subclass's schema overrides its ancestor's. Flat node
  * states (which serialize at the top level like schema fields) are included
- * when their value has an introspectable schema. The result describes every
- * node-specific property of the class's serialized JSON.
+ * when their value has an introspectable schema; a flat state re-declared by a
+ * subclass keeps the ancestor's config, matching the shared node state built
+ * by `createSharedNodeState`. The result describes every node-specific
+ * property of the class's serialized JSON, mirroring what the base
+ * `updateFromJSON` applies.
  */
 export function composeNodeSerializationSchema(
   klass: Klass<LexicalNode>,
 ): SerializationSchemaFields {
-  const chain: Klass<LexicalNode>[] = [];
-  let current: unknown = klass;
-  while (isNodeClass(current)) {
-    chain.push(current);
-    current = Object.getPrototypeOf(current);
-  }
+  // Walk the same config chain the core compiles its setters from
+  // (iterStaticNodeConfigChain honors an explicit `extends` and severed
+  // static prototype chains, e.g. Babel's loose class transform).
+  const chain = [...iterStaticNodeConfigChain(klass)];
   const fields: {[key: string]: AnySerializationSchema} = {};
+  const states: {[key: string]: AnySerializationSchema} = {};
   for (let i = chain.length - 1; i >= 0; i--) {
-    const {ownNodeConfig} = getStaticNodeConfig(chain[i]);
+    const {ownNodeConfig} = chain[i];
     if (!ownNodeConfig) {
       continue;
     }
@@ -105,21 +66,15 @@ export function composeNodeSerializationSchema(
           'stateConfig' in required &&
           required.flat &&
           required.stateConfig.schema &&
-          typeof required.stateConfig.key === 'string'
+          typeof required.stateConfig.key === 'string' &&
+          !(required.stateConfig.key in states)
         ) {
-          fields[required.stateConfig.key] = required.stateConfig.schema;
+          states[required.stateConfig.key] = required.stateConfig.schema;
         }
       }
     }
   }
-  return fields;
-}
-
-// A class is a Lexical node class if its prototype is a LexicalNode — i.e.
-// `value.prototype instanceof LexicalNode`, which $isLexicalNode performs
-// without needing the (non-value-exported) LexicalNode class.
-function isNodeClass(value: unknown): value is Klass<LexicalNode> {
-  return typeof value === 'function' && $isLexicalNode(value.prototype);
+  return {...states, ...fields};
 }
 
 /**
@@ -127,7 +82,9 @@ function isNodeClass(value: unknown): value is Klass<LexicalNode> {
  * serialized JSON, composing the schemas it inherits ({@link composeNodeSerializationSchema})
  * — so an element-based node generates the properties it gets from ElementNode
  * as well as its own. Spread the result with `type`/`version` to feed
- * `importJSON`.
+ * `importJSON`. Because each property's schema is the same one the node uses
+ * to parse its JSON, the generated values are exactly what the node's parser
+ * accepts — a single declaration powers both parsing and example generation.
  *
  * Every property is generated independently as present or absent
  * (`requiredKeys: []`), because that is the domain the parsers actually face:

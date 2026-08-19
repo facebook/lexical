@@ -81,18 +81,23 @@ export type SerializedElementNode<
   SerializedLexicalNode
 >;
 
-/**
- * The schema for the node-specific properties of a
- * {@link SerializedElementNode} (those it adds over a
- * {@link SerializedLexicalNode}). It is the single source of truth for parsing
- * those properties, applied by the base {@link LexicalNode.updateFromJSON}.
- */
-export const elementNodeSchema = objectValue({
-  direction: enumValue([null, 'ltr', 'rtl']),
-  format: enumValue(['', 'left', 'start', 'center', 'right', 'end', 'justify']),
-  indent: numberValue(),
-  textFormat: numberValue(),
-  textStyle: stringValue(),
+// Single source of truth for parsing the node-specific properties of a
+// SerializedElementNode (those it adds over a SerializedLexicalNode), applied
+// by the base LexicalNode.updateFromJSON.
+const elementNodeSchema = /* @__PURE__ */ objectValue({
+  direction: /* @__PURE__ */ enumValue([null, 'ltr', 'rtl']),
+  format: /* @__PURE__ */ enumValue([
+    '',
+    'left',
+    'start',
+    'center',
+    'right',
+    'end',
+    'justify',
+  ]),
+  indent: /* @__PURE__ */ numberValue(),
+  textFormat: /* @__PURE__ */ numberValue(),
+  textStyle: /* @__PURE__ */ stringValue(),
 });
 
 export type ElementFormatType =
@@ -135,6 +140,11 @@ function $normalizeShadowRootChildren(node: ElementNode): void {
 export interface ElementNode {
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
+  // Narrows the accepted JSON at the type level only; the runtime
+  // implementation is the schema-driven LexicalNode.updateFromJSON.
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedElementNode>>,
+  ): this;
 }
 
 /** @noInheritDoc */
@@ -190,17 +200,6 @@ export class ElementNode
       extends: LexicalNode,
       json: elementNodeSchema,
     });
-  }
-
-  /**
-   * The base implementation applies this node's `json` schema; this override
-   * only narrows the accepted JSON to the node's serialized shape (where any
-   * node-specific property may be omitted).
-   */
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedElementNode>>,
-  ): this {
-    return super.updateFromJSON(serializedNode);
   }
 
   constructor(key?: NodeKey) {

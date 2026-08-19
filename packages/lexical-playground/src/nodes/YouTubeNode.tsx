@@ -28,8 +28,8 @@ import {
 } from 'lexical';
 import * as React from 'react';
 
-const youTubeNodeSchema = objectValue({
-  videoID: stringValue(),
+const youTubeNodeSchema = /* @__PURE__ */ objectValue({
+  videoID: /* @__PURE__ */ stringValue(),
 });
 
 type YouTubeComponentProps = Readonly<{

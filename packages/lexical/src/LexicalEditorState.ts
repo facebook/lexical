@@ -68,31 +68,18 @@ function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
 
   // The active serialization context decides what this node contributes: an
   // override may replace or omit it, and the compact form drops properties
-  // that parsing would restore from their schema default anyway.
-  const serializedNode = $applySerializationContext(node, isRoot);
-  if (serializedNode === null) {
+  // that parsing would restore from their schema default anyway. The default
+  // (non-overridden) export is validated by the context; a replacement is
+  // authoritative and is not recursed into.
+  const applied = $applySerializationContext(node, isRoot);
+  if (applied === null) {
     return null;
   }
+  const {recurseChildren, serializedNode} = applied;
 
-  if (serializedNode.type !== nodeClass.getType()) {
-    invariant(
-      false,
-      'LexicalNode: Node %s does not match the serialized type. Check if .exportJSON() is implemented and it is returning the correct type.',
-      nodeClass.name,
-    );
-  }
-
-  if ($isElementNode(node)) {
+  if (recurseChildren && $isElementNode(node)) {
     const serializedChildren = (serializedNode as SerializedElementNode)
       .children;
-    if (!Array.isArray(serializedChildren)) {
-      invariant(
-        false,
-        'LexicalNode: Node %s is an element but .exportJSON() does not have a children array.',
-        nodeClass.name,
-      );
-    }
-
     const children = node.getChildren();
 
     for (let i = 0; i < children.length; i++) {
@@ -105,8 +92,10 @@ function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
   }
 
   // Slots ride in a separate Map on every LexicalNode (an ElementNode or a
-  // DecoratorNode host), so serialize them outside the element branch.
-  const slotNames = $getSlotNames(node);
+  // DecoratorNode host), so serialize them outside the element branch. Like
+  // children, they are only attached to the node's own export, never to a
+  // replacement.
+  const slotNames = recurseChildren ? $getSlotNames(node) : [];
   if (slotNames.length > 0) {
     const serializedSlots: Record<string, SerializedLexicalNode> = {};
     for (const name of slotNames) {

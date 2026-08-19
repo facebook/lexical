@@ -3159,7 +3159,9 @@ type CompiledSetter =
       readonly kind: 'field';
       readonly key: string;
       readonly schema: AnySerializationSchema;
-      readonly setterName: string;
+      // Resolved once at compile time so applying a field is a direct call
+      // rather than a per-node string-keyed method lookup.
+      readonly setter: (this: LexicalNode, value: unknown) => LexicalNode;
     }
   | {
       readonly kind: 'state';
@@ -3168,7 +3170,9 @@ type CompiledSetter =
     };
 
 const EMPTY_SETTERS: readonly CompiledSetter[] = [];
-const compiledSettersByClass = new Map<
+// A WeakMap, like the adjacent STATIC_NODE_CONFIG_CACHE, so dynamically
+// created node classes (tests, HMR reloads) stay collectable.
+const compiledSettersByClass = new WeakMap<
   Klass<LexicalNode>,
   readonly CompiledSetter[]
 >();
@@ -3179,24 +3183,18 @@ function defaultSetterName(key: string): string {
 }
 
 function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
-  // Collect the class chain (klass first, then its ancestors up to but not
-  // including the abstract LexicalNode base, which declares no properties).
-  const chain: Klass<LexicalNode>[] = [];
-  for (
-    let current: Klass<LexicalNode> = klass;
-    current.prototype instanceof LexicalNode;
-    current = Object.getPrototypeOf(current) as Klass<LexicalNode>
-  ) {
-    chain.push(current);
-  }
-  // Walk ancestors first so base properties apply before subclass properties,
-  // and a subclass field (keyed by serialized property name) overrides an
-  // ancestor's.
+  // Walk the same config chain every other schema consumer walks
+  // (iterStaticNodeConfigChain honors an explicit `extends` and severed static
+  // prototype chains, e.g. Babel's loose class transform), collected first so
+  // it can be applied ancestors-first: base properties apply before subclass
+  // properties, and a subclass field (keyed by serialized property name)
+  // overrides an ancestor's.
+  const chain = [...iterStaticNodeConfigChain(klass)];
   const prototype = klass.prototype as unknown as Record<string, unknown>;
   const fields = new Map<string, CompiledSetter>();
   const states = new Map<string, CompiledSetter>();
   for (let i = chain.length - 1; i >= 0; i--) {
-    const {ownNodeConfig} = getStaticNodeConfig(chain[i]);
+    const {ownNodeConfig} = chain[i];
     if (!ownNodeConfig) {
       continue;
     }
@@ -3206,8 +3204,17 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
       for (const key of Object.keys(schemaFields)) {
         const schema = schemaFields[key];
         const setterName = schema.setter || defaultSetterName(key);
-        if (typeof prototype[setterName] === 'function') {
-          fields.set(key, {key, kind: 'field', schema, setterName});
+        const setter = prototype[setterName];
+        if (typeof setter === 'function') {
+          fields.set(key, {
+            key,
+            kind: 'field',
+            schema,
+            setter: setter as (
+              this: LexicalNode,
+              value: unknown,
+            ) => LexicalNode,
+          });
         } else if (__DEV__) {
           // A property with no matching setter is applied elsewhere (e.g. by a
           // required-argument constructor) and skipped here — unless an explicit
@@ -3225,16 +3232,21 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
     // Flat NodeStates are serialized at the top level alongside schema fields
     // (non-flat states live under NODE_STATE_KEY and are applied by
     // $updateStateFromJSON). They are applied through the single $setState entry
-    // point rather than a per-property setter.
+    // point rather than a per-property setter. When a subclass re-declares an
+    // ancestor's flat state the ancestor's config wins, matching the shared
+    // node state built by createSharedNodeState (which would otherwise flag a
+    // collision in DEV).
     if (ownNodeConfig.stateConfigs) {
       for (const required of ownNodeConfig.stateConfigs) {
         if ('stateConfig' in required && required.flat) {
           const {stateConfig} = required;
-          states.set(stateConfig.key, {
-            key: stateConfig.key,
-            kind: 'state',
-            stateConfig,
-          });
+          if (!states.has(stateConfig.key)) {
+            states.set(stateConfig.key, {
+              key: stateConfig.key,
+              kind: 'state',
+              stateConfig,
+            });
+          }
         }
       }
     }
@@ -3273,16 +3285,16 @@ export function $applyJSONSetters<T extends LexicalNode>(
       // Only apply a flat state that is actually present so a partial update
       // doesn't reset it to its default.
       if (entry.key in serializedNode) {
-        self = $setState(
-          self,
-          entry.stateConfig,
-          entry.stateConfig.parse(serializedNode[entry.key]),
-        );
+        const parsed = entry.stateConfig.parse(serializedNode[entry.key]);
+        // Wrapped in an updater thunk so a parse that returns a function
+        // value is stored verbatim instead of being invoked as an updater.
+        self = $setState(self, entry.stateConfig, () => parsed);
       }
     } else {
-      self = (self as unknown as Record<string, (value: unknown) => T>)[
-        entry.setterName
-      ](entry.schema(serializedNode[entry.key]));
+      self = entry.setter.call(
+        self,
+        entry.schema(serializedNode[entry.key]),
+      ) as T;
     }
   }
   return self;
@@ -3435,9 +3447,16 @@ export function getStaticNodeConfig(
   STATIC_NODE_CONFIG_CACHE.set(klass, result);
   // After the cache is populated: compileSetters walks this class chain (which
   // includes klass) and re-enters getStaticNodeConfig, which must hit the cache
-  // rather than recurse.
+  // rather than recurse. If compilation throws (a DEV misconfiguration), drop
+  // the cache entry so the error is not sticky: a later call retries instead
+  // of silently applying zero setters.
   if (!compiledSettersByClass.has(klass)) {
-    compiledSettersByClass.set(klass, compileSetters(klass));
+    try {
+      compiledSettersByClass.set(klass, compileSetters(klass));
+    } catch (error) {
+      STATIC_NODE_CONFIG_CACHE.delete(klass);
+      throw error;
+    }
   }
   return result;
 }

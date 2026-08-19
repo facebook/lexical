@@ -29,6 +29,7 @@ import {
   numberValue,
   objectValue,
   removeClassNamesFromElement,
+  type SerializationSchema,
   type SerializedElementNode,
   type SerializedPartial,
   type Spread,
@@ -54,12 +55,31 @@ export type ListType = 'number' | 'bullet' | 'check';
 
 export type ListNodeTagType = 'ul' | 'ol';
 
-const listNodeSchema = objectValue({
-  listType: enumValue(['number', 'bullet', 'check']),
-  start: numberValue(1),
+const listNodeSchema = /* @__PURE__ */ objectValue({
+  // 'ul'/'ol' are the legacy tag-form listType some older documents carry;
+  // setListType normalizes them. The cast reconciles the widened parse domain
+  // with the declared ListType property.
+  listType: /* @__PURE__ */ enumValue([
+    'number',
+    'bullet',
+    'check',
+    'ul',
+    'ol',
+  ]) as unknown as SerializationSchema<ListType>,
+  start: /* @__PURE__ */ numberValue(1),
 });
 
+// Narrows the accepted JSON at the type level only; the runtime
+// implementation is the schema-driven LexicalNode.updateFromJSON.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface ListNode {
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedListNode>>,
+  ): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class ListNode extends ElementNode {
   /** @internal */
   __tag: ListNodeTagType;
@@ -90,17 +110,6 @@ export class ListNode extends ElementNode {
     });
   }
 
-  /**
-   * The base implementation applies this node's `json` schema; this override
-   * only narrows the accepted JSON to the node's serialized shape (where any
-   * node-specific property may be omitted).
-   */
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedListNode>>,
-  ): this {
-    return super.updateFromJSON(serializedNode);
-  }
-
   constructor(listType: ListType = 'number', start: number = 1, key?: NodeKey) {
     super(key);
     const _listType = TAG_TO_LIST_TYPE[listType] || listType;
@@ -122,8 +131,11 @@ export class ListNode extends ElementNode {
 
   setListType(type: ListType): this {
     const writable = this.getWritable();
-    writable.__listType = type;
-    writable.__tag = type === 'number' ? 'ol' : 'ul';
+    // Normalize the legacy tag-form values ('ul'/'ol') the constructor also
+    // accepts, so legacy serialized documents keep their list style.
+    const listType = TAG_TO_LIST_TYPE[type] || type;
+    writable.__listType = listType;
+    writable.__tag = listType === 'number' ? 'ol' : 'ul';
     return writable;
   }
 

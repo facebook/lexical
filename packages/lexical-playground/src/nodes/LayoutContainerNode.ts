@@ -28,8 +28,8 @@ export type SerializedLayoutContainerNode = Spread<
   SerializedElementNode
 >;
 
-const layoutContainerNodeSchema = objectValue({
-  templateColumns: stringValue(),
+const layoutContainerNodeSchema = /* @__PURE__ */ objectValue({
+  templateColumns: /* @__PURE__ */ stringValue(),
 });
 
 export class LayoutContainerNode extends ElementNode {

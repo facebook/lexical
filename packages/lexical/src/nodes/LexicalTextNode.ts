@@ -51,7 +51,9 @@ import {
   enumValue,
   numberValue,
   objectValue,
+  type SerializationSchema,
   stringValue,
+  unionValue,
   withSetter,
 } from '../LexicalSchema';
 import {
@@ -114,19 +116,36 @@ export type TextMark = {end: null | number; id: string; start: null | number};
 
 export type TextMarks = TextMark[];
 
-/**
- * The schema for the node-specific properties of a {@link SerializedTextNode}.
- * It is the single source of truth for parsing those properties (see
- * {@link TextNode.updateFromJSON}) and is declared on the node via `$config`
- * so tooling can generate example serializations.
- */
-export const textNodeSchema = objectValue({
-  detail: numberValue(),
-  format: numberValue(),
-  mode: enumValue(['normal', 'token', 'segmented']),
-  style: stringValue(),
+// Single source of truth for parsing the node-specific properties of a
+// SerializedTextNode; declared on the node via `$config`.
+const textNodeSchema = /* @__PURE__ */ objectValue({
+  // `format` and `detail` also accept the legacy string names that
+  // setFormat/setDetail convert (e.g. `format: 'bold'`), which hand-authored
+  // and older documents carry. The cast reconciles the widened parse domain
+  // with the numeric serialized property type.
+  detail: /* @__PURE__ */ unionValue<number | 'directionless' | 'unmergeable'>(
+    [
+      /* @__PURE__ */ numberValue(),
+      /* @__PURE__ */ enumValue(['directionless', 'unmergeable']),
+    ],
+    0,
+  ) as SerializationSchema<number>,
+  format: /* @__PURE__ */ unionValue<number | TextFormatType>(
+    [
+      /* @__PURE__ */ numberValue(),
+      /* @__PURE__ */ enumValue(
+        Object.keys(TEXT_TYPE_TO_FORMAT) as TextFormatType[],
+      ),
+    ],
+    0,
+  ) as SerializationSchema<number>,
+  mode: /* @__PURE__ */ enumValue(['normal', 'token', 'segmented']),
+  style: /* @__PURE__ */ stringValue(),
   // TextNode applies `text` with setTextContent rather than the default setText.
-  text: withSetter(stringValue(), 'setTextContent'),
+  text: /* @__PURE__ */ withSetter(
+    /* @__PURE__ */ stringValue(),
+    'setTextContent',
+  ),
 });
 
 function getElementOuterTag(node: TextNode, format: number): string | null {
@@ -325,6 +344,11 @@ function $wrapElementWith(
 export interface TextNode {
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
+  // Narrows the accepted JSON at the type level only; the runtime
+  // implementation is the schema-driven LexicalNode.updateFromJSON.
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedTextNode>>,
+  ): this;
 }
 
 export interface InlineFormattableNode {
@@ -418,17 +442,6 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
       },
       json: textNodeSchema,
     });
-  }
-
-  /**
-   * The base implementation applies this node's `json` schema; this override
-   * only narrows the accepted JSON to the node's serialized shape (where any
-   * node-specific property may be omitted).
-   */
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedTextNode>>,
-  ): this {
-    return super.updateFromJSON(serializedNode);
   }
 
   afterCloneFrom(prevNode: this): void {

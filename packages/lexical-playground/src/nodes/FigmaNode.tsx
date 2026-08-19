@@ -25,8 +25,8 @@ import {
 import {objectValue, stringValue} from 'lexical';
 import * as React from 'react';
 
-const figmaNodeSchema = objectValue({
-  documentID: stringValue(),
+const figmaNodeSchema = /* @__PURE__ */ objectValue({
+  documentID: /* @__PURE__ */ stringValue(),
 });
 
 type FigmaComponentProps = Readonly<{

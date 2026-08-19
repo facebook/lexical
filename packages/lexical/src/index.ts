@@ -301,11 +301,13 @@ export {
   tokenizeRawText,
 } from './LexicalSelection';
 export {
+  $applySerializationContext,
   $compactSerializedNode,
   $exportNodeJSON,
   $getSerializationContextValue,
   $withSerializationContext,
   type AnySerializationStateConfigPair,
+  type AppliedSerialization,
   createSerializationState,
   SerializationContextCompact,
   SerializationContextOverride,

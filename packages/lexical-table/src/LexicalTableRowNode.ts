@@ -37,11 +37,23 @@ export type SerializedTableRowNode = Spread<
   SerializedElementNode
 >;
 
-const tableRowNodeSchema = objectValue({
-  height: optional(numberValue()),
+const tableRowNodeSchema = /* @__PURE__ */ objectValue({
+  height: /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
 });
 
+// Narrows the accepted JSON at the type level only; the runtime
+// implementation is the schema-driven LexicalNode.updateFromJSON.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface TableRowNode {
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<
+      SerializedPartial<SerializedTableRowNode>
+    >,
+  ): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class TableRowNode extends ElementNode {
   /** @internal */
   __height?: number;
@@ -57,19 +69,6 @@ export class TableRowNode extends ElementNode {
       },
       json: tableRowNodeSchema,
     });
-  }
-
-  /**
-   * The base implementation applies this node's `json` schema; this override
-   * only narrows the accepted JSON to the node's serialized shape (where any
-   * node-specific property may be omitted).
-   */
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<
-      SerializedPartial<SerializedTableRowNode>
-    >,
-  ): this {
-    return super.updateFromJSON(serializedNode);
   }
 
   afterCloneFrom(prevNode: this): void {

@@ -58,14 +58,13 @@ export type SerializedCodeNode = Spread<
   SerializedElementNode
 >;
 
-/**
- * The schema for the node-specific properties of a {@link SerializedCodeNode}
- * (those it adds over a {@link SerializedElementNode}). It is the single source
- * of truth for parsing those properties — see {@link CodeNode.updateFromJSON}.
- */
-export const codeNodeSchema = objectValue({
-  language: optional(nullable(stringValue())),
-  theme: optional(stringValue()),
+// Single source of truth for parsing the node-specific properties of a
+// SerializedCodeNode (those it adds over a SerializedElementNode).
+const codeNodeSchema = /* @__PURE__ */ objectValue({
+  language: /* @__PURE__ */ optional(
+    /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue()),
+  ),
+  theme: /* @__PURE__ */ optional(/* @__PURE__ */ stringValue()),
 });
 
 export const DEFAULT_CODE_LANGUAGE = 'javascript';
@@ -92,7 +91,17 @@ const noExtensionDeprecation = warnOnlyOnce(
   'Using CodeNode without CodeExtension is deprecated',
 );
 
+// Narrows the accepted JSON at the type level only; the runtime
+// implementation is the schema-driven LexicalNode.updateFromJSON.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface CodeNode {
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedCodeNode>>,
+  ): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class CodeNode extends ElementNode {
   /** @internal */
   __language: string | null | undefined;
@@ -170,17 +179,6 @@ export class CodeNode extends ElementNode {
       },
       json: codeNodeSchema,
     });
-  }
-
-  /**
-   * The base implementation applies this node's `json` schema; this override
-   * only narrows the accepted JSON to the node's serialized shape (where any
-   * node-specific property may be omitted).
-   */
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedCodeNode>>,
-  ): this {
-    return super.updateFromJSON(serializedNode);
   }
 
   // `language` carries an explicit `undefined` default so the constructor

@@ -14,10 +14,10 @@ import invariant from '@lexical/internal/invariant';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
+  $applySerializationContext,
   $caretFromPoint,
   $caretRangeFromSelection,
   $comparePointCaretNext,
-  $exportNodeJSON,
   $getCaretRange,
   $getCaretRangeInDirection,
   $getChildCaret,
@@ -56,7 +56,6 @@ import {
   type RangeSelection,
   safeCast,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
-  type SerializedElementNode,
   shallowMergeConfig,
 } from 'lexical';
 
@@ -481,37 +480,18 @@ export interface BaseSerializedNode {
 
 function $exportNodeToJSON<T extends LexicalNode>(
   node: T,
-): BaseSerializedNode | null {
+): null | {serializedNode: BaseSerializedNode; recurseChildren: boolean} {
   // Route through the serialization context so a selection export honors the
   // same overrides and compaction as editorState.toJSON(); null means an
-  // override omitted this node.
-  const serializedNode = $exportNodeJSON(node);
-  if (serializedNode === null) {
-    return null;
-  }
-  const nodeClass = node.constructor;
-
-  if (serializedNode.type !== nodeClass.getType()) {
-    invariant(
-      false,
-      'LexicalNode: Node %s does not implement .exportJSON().',
-      nodeClass.name,
-    );
-  }
-
-  if ($isElementNode(node)) {
-    const serializedChildren = (serializedNode as SerializedElementNode)
-      .children;
-    if (!Array.isArray(serializedChildren)) {
-      invariant(
-        false,
-        'LexicalNode: Node %s is an element but .exportJSON() does not have a children array.',
-        nodeClass.name,
-      );
-    }
-  }
-
-  return serializedNode;
+  // override omitted this node. The default export is validated by the
+  // context; a replacement is authoritative and is not recursed into.
+  const applied = $applySerializationContext(node, false);
+  return applied === null
+    ? null
+    : {
+        recurseChildren: applied.recurseChildren,
+        serializedNode: applied.serializedNode as BaseSerializedNode,
+      };
 }
 
 function $appendNodesToJSON(
@@ -534,13 +514,14 @@ function $appendNodesToJSON(
   if (selection !== null && $isTextNode(target)) {
     target = $sliceSelectedTextNodeContent(selection, target, 'clone');
   }
-  const children = $isElementNode(target) ? target.getChildren() : [];
-
-  const serializedNode = $exportNodeToJSON(target);
-  if (serializedNode === null) {
+  const applied = $exportNodeToJSON(target);
+  if (applied === null) {
     // An override omitted this node, and with it its subtree.
     return false;
   }
+  const {recurseChildren, serializedNode} = applied;
+  const children =
+    recurseChildren && $isElementNode(target) ? target.getChildren() : [];
   if ($isTextNode(target) && target.getTextContentSize() === 0) {
     // If an uncollapsed selection ends or starts at the end of a line of specialized,
     // TextNodes, such as code tokens, we will get a 'blank' TextNode here, i.e., one
@@ -586,7 +567,7 @@ function $appendNodesToJSON(
   // same condition as the push below (and as the HTML exporter): only emit
   // slots for a host that is itself emitted, so a host outside the selection
   // is never walked — its slots must not influence (or break) this export.
-  if (shouldInclude && !shouldExclude) {
+  if (shouldInclude && !shouldExclude && recurseChildren) {
     const slotNames = $getSlotNames(target);
     if (slotNames.length > 0) {
       const serializedSlots: Record<string, BaseSerializedNode> = {};
@@ -600,6 +581,16 @@ function $appendNodesToJSON(
         );
         const slotArray: BaseSerializedNode[] = [];
         $appendNodesToJSON(editor, null, slotNode, slotArray);
+        if (
+          slotArray.length === 0 &&
+          !($isElementNode(slotNode) && slotNode.excludeFromCopy('clone'))
+        ) {
+          // A serialization override omitted the slot value; skip the entry,
+          // matching how editorState.toJSON() exports the same document. An
+          // excluded slot value is not an omission: it falls through to the
+          // invariant below, which rejects that unsupported combination.
+          continue;
+        }
         // A whole-slot export must serialize to exactly the slot node. A slot
         // value that overrides excludeFromCopy would otherwise make
         // $appendNodesToJSON splice up its children (or emit nothing), leaving

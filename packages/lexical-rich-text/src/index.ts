@@ -310,16 +310,23 @@ export function $isQuoteNode(
 
 export type HeadingTagType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
-/**
- * The schema for the node-specific properties of a {@link SerializedHeadingNode}
- * (those it adds over a {@link SerializedElementNode}). It is the single source
- * of truth for parsing those properties — see {@link HeadingNode.updateFromJSON}.
- */
-export const headingNodeSchema = objectValue({
-  tag: enumValue(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']),
+// Single source of truth for parsing the node-specific properties of a
+// SerializedHeadingNode (those it adds over a SerializedElementNode).
+const headingNodeSchema = /* @__PURE__ */ objectValue({
+  tag: /* @__PURE__ */ enumValue(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']),
 });
 
+// Narrows the accepted JSON at the type level only; the runtime
+// implementation is the schema-driven LexicalNode.updateFromJSON.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface HeadingNode {
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedHeadingNode>>,
+  ): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class HeadingNode extends ElementNode {
   /** @internal */
   __tag: HeadingTagType;
@@ -362,17 +369,6 @@ export class HeadingNode extends ElementNode {
       },
       json: headingNodeSchema,
     });
-  }
-
-  /**
-   * The base implementation applies this node's `json` schema; this override
-   * only narrows the accepted JSON to the node's serialized shape (where any
-   * node-specific property may be omitted).
-   */
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedHeadingNode>>,
-  ): this {
-    return super.updateFromJSON(serializedNode);
   }
 
   afterCloneFrom(prevNode: this): void {

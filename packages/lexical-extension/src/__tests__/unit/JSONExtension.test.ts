@@ -9,10 +9,11 @@
 import {
   buildEditorFromExtensions,
   configExtension,
+  defineExtension,
   getExtensionDependencyFromEditor,
+  type JSONConfig,
+  JSONExtension,
   jsonOverride,
-  type SerializationConfig,
-  SerializationExtension,
 } from '@lexical/extension';
 import {
   $createParagraphNode,
@@ -27,9 +28,9 @@ import {describe, expect, onTestFinished, test} from 'vitest';
 
 type SerializedJSON = Record<string, unknown> & {children?: SerializedJSON[]};
 
-function buildEditor(config: Partial<SerializationConfig> = {}) {
+function buildEditor(config: Partial<JSONConfig> = {}) {
   const editor = buildEditorFromExtensions({
-    dependencies: [configExtension(SerializationExtension, config)],
+    dependencies: [configExtension(JSONExtension, config)],
     name: '[root]',
     namespace: '',
     onError: err => {
@@ -60,7 +61,7 @@ function exportRoot(
 ): SerializedJSON {
   const {$exportJSON} = getExtensionDependencyFromEditor(
     editor,
-    SerializationExtension,
+    JSONExtension,
   ).output;
   return editor.read(
     () => $exportJSON(undefined, options).root as unknown as SerializedJSON,
@@ -71,7 +72,7 @@ function texts(root: SerializedJSON): unknown[] {
   return root.children![0].children!.map(child => child.text);
 }
 
-describe('SerializationExtension', () => {
+describe('JSONExtension', () => {
   test('defaults to the legacy form', () => {
     const root = exportRoot(buildEditor());
     expect(root.version).toBe(1);
@@ -156,10 +157,56 @@ describe('SerializationExtension', () => {
         ],
       }),
     );
-    // the second override runs first (it is nearer the default), and the first
-    // one wraps whatever it returned
-    expect(order.slice(0, 2)).toEqual(['inner', 'outer']);
+    // the chain is lazy: the first override runs, and its $next() call is what
+    // invokes the second one
+    expect(order.slice(0, 2)).toEqual(['outer', 'inner']);
     expect(texts(root)).toEqual(['outer(inner)', 'outer(inner)']);
+  });
+
+  test('a replacement without $next never runs lower layers or exportJSON', () => {
+    class ThrowingTextNode extends TextNode {
+      $config() {
+        return this.config('throwing-text', {extends: TextNode});
+      }
+      exportJSON(): SerializedTextNode {
+        throw new Error('cannot serialize');
+      }
+    }
+    const editor = buildEditorFromExtensions({
+      dependencies: [
+        configExtension(JSONExtension, {
+          overrides: [
+            jsonOverride([ThrowingTextNode], {
+              $exportJSON: node => ({
+                text: node.getTextContent(),
+                type: 'text',
+                version: 1,
+              }),
+            }),
+          ],
+        }),
+      ],
+      name: '[root]',
+      namespace: '',
+      nodes: [ThrowingTextNode],
+      onError: err => {
+        throw err;
+      },
+    });
+    onTestFinished(() => editor.dispose());
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(new ThrowingTextNode('shielded')),
+          );
+      },
+      {discrete: true},
+    );
+    // the override replaces the node without calling $next, so the throwing
+    // exportJSON must never execute
+    expect(texts(exportRoot(editor))).toEqual(['shielded']);
   });
 
   test('a lower-priority omission wins over a higher-priority enhancement', () => {
@@ -176,6 +223,43 @@ describe('SerializationExtension', () => {
       }),
     );
     expect(texts(root)).toEqual([]);
+  });
+
+  test('overrides configured by independent extensions concatenate', () => {
+    const marker = (name: string) =>
+      configExtension(JSONExtension, {
+        overrides: [
+          jsonOverride([$isTextNode], {
+            $exportJSON: (node, $next) => {
+              const inner = $next() as SerializedTextNode;
+              return {...inner, text: `${name}(${inner.text})`};
+            },
+          }),
+        ],
+      });
+    const editor = buildEditorFromExtensions({
+      dependencies: [
+        defineExtension({dependencies: [marker('first')], name: 'first'}),
+        defineExtension({dependencies: [marker('second')], name: 'second'}),
+      ],
+      name: '[root]',
+      namespace: '',
+      onError: err => {
+        throw err;
+      },
+    });
+    onTestFinished(() => editor.dispose());
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('plain')));
+      },
+      {discrete: true},
+    );
+    // both extensions' overrides run: the default shallow config merge would
+    // have replaced the first extension's list with the second's
+    expect(texts(exportRoot(editor))).toEqual(['first(second(plain))']);
   });
 
   test('compaction still applies to what overrides produce', () => {

@@ -46,11 +46,11 @@ const StickyComponent = React.lazy(() => import('./StickyComponent'));
 
 type StickyNoteColor = 'pink' | 'yellow';
 
-const stickyNodeSchema = objectValue({
-  caption: rawValue<SerializedEditor>(),
-  color: enumValue(['yellow', 'pink']),
-  xOffset: numberValue(),
-  yOffset: numberValue(),
+const stickyNodeSchema = /* @__PURE__ */ objectValue({
+  caption: /* @__PURE__ */ rawValue<SerializedEditor>(),
+  color: /* @__PURE__ */ enumValue(['yellow', 'pink']),
+  xOffset: /* @__PURE__ */ numberValue(),
+  yOffset: /* @__PURE__ */ numberValue(),
 });
 
 export type SerializedStickyNode = Spread<

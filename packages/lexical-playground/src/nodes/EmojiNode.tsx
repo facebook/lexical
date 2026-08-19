@@ -20,11 +20,11 @@ import {
   TextNode,
 } from 'lexical';
 
-const emojiNodeSchema = objectValue({
-  className: stringValue(),
+const emojiNodeSchema = /* @__PURE__ */ objectValue({
+  className: /* @__PURE__ */ stringValue(),
 });
 
-const parseText = stringValue();
+const parseText = /* @__PURE__ */ stringValue();
 
 export type SerializedEmojiNode = Spread<
   {

@@ -9,6 +9,7 @@
 import {
   $createTextNode,
   $getRoot,
+  $isTabNode,
   arrayValue,
   booleanValue,
   enumValue,
@@ -22,6 +23,7 @@ import {
   type SerializedTextNode,
   stringValue,
   unionValue,
+  withSetter,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
 
@@ -250,6 +252,58 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
         expect(textNodes[0].getStyle()).toBe('');
       });
     });
+
+    test('TextNode accepts the legacy string names for format and detail', () => {
+      // Hand-authored and older documents carry e.g. `format: 'bold'`, which
+      // setFormat/setDetail have always converted from.
+      const {editor} = testEnv;
+      editor.update(() => {
+        const node = $createTextNode('x');
+        node.updateFromJSON({
+          detail: 'directionless',
+          format: 'bold',
+        } as unknown as LexicalUpdateJSON<
+          SerializedPartial<SerializedTextNode>
+        >);
+        expect(node.hasFormat('bold')).toBe(true);
+        expect(node.isDirectionless()).toBe(true);
+      });
+    });
+
+    test('TabNode imports fully compact JSON', () => {
+      // TabNode's own schema must override the inherited TextNode field
+      // defaults: applying `detail: 0` or `text: ''` would throw in its
+      // setters, so `{type: 'tab'}` alone must restore the canonical tab.
+      const {editor} = testEnv;
+      const editorState = editor.parseEditorState(
+        JSON.stringify({
+          root: {
+            children: [
+              {
+                children: [
+                  {type: 'tab', version: 1},
+                  // Out-of-domain values fall back to the same canonical state
+                  {detail: 'bogus', text: 'xyz', type: 'tab', version: 1},
+                ],
+                type: 'paragraph',
+                version: 1,
+              },
+            ],
+            type: 'root',
+            version: 1,
+          },
+        }),
+      );
+      editorState.read(() => {
+        const textNodes = $getRoot().getAllTextNodes();
+        expect(textNodes).toHaveLength(2);
+        for (const node of textNodes) {
+          expect($isTabNode(node)).toBe(true);
+          expect(node.getTextContent()).toBe('\t');
+          expect(node.isUnmergeable()).toBe(true);
+        }
+      });
+    });
   });
 
   describe('numberValue domain options', () => {
@@ -333,6 +387,21 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
       expect(raw(undefined)).toBeUndefined();
       expect(raw.defaultValue).toBeUndefined();
       expect(raw.meta.kind).toBe('raw');
+    });
+  });
+
+  describe('withSetter propagation through combinators', () => {
+    test('optional, nullable, and arrayValue keep the inner setter name', () => {
+      // A field like `language: optional(nullable(stringValue()))` must apply
+      // through the setter recorded anywhere inside the combinator stack.
+      const inner = withSetter(stringValue(), 'setFoo');
+      expect(optional(inner).setter).toBe('setFoo');
+      expect(nullable(inner).setter).toBe('setFoo');
+      expect(arrayValue(inner).setter).toBe('setFoo');
+      expect(optional(nullable(inner)).setter).toBe('setFoo');
+      expect(withSetter(optional(stringValue()), 'setBar').setter).toBe(
+        'setBar',
+      );
     });
   });
 });

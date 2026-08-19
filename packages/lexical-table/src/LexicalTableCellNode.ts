@@ -49,26 +49,28 @@ export const TableCellHeaderStates = {
 export type TableCellHeaderState =
   (typeof TableCellHeaderStates)[keyof typeof TableCellHeaderStates];
 
-const tableCellNodeSchema = objectValue({
-  backgroundColor: nullable(stringValue()),
+const tableCellNodeSchema = /* @__PURE__ */ objectValue({
+  backgroundColor: /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue()),
   // A span is a positive integer; 0 (the historical `|| 1` case), a negative,
   // or a fractional span is out of domain and falls back to 1.
-  colSpan: numberValue(1, {integer: true, min: 1}),
+  colSpan: /* @__PURE__ */ numberValue(1, {integer: true, min: 1}),
   // headerState is applied through setHeaderStyles (with its default BOTH
   // mask) rather than the conventional set<Prop> name.
-  headerState: withSetter(
-    numberValue(TableCellHeaderStates.NO_STATUS),
+  headerState: /* @__PURE__ */ withSetter(
+    /* @__PURE__ */ numberValue(TableCellHeaderStates.NO_STATUS),
     'setHeaderStyles',
   ),
-  rowSpan: numberValue(1, {integer: true, min: 1}),
+  rowSpan: /* @__PURE__ */ numberValue(1, {integer: true, min: 1}),
   // The domain exportJSON already enforces via isValidVerticalAlign; anything
   // else (including the historical falsy `|| undefined` case) is absent.
   // `undefined` leads the list so it is the default: passing it explicitly as
   // enumValue's second argument would instead select values[0].
-  verticalAlign: enumValue([undefined, 'middle', 'bottom']),
+  verticalAlign: /* @__PURE__ */ enumValue([undefined, 'middle', 'bottom']),
   // A width of 0 is not a real width, matching the historical
   // `serializedNode.width || undefined`.
-  width: optional(numberValue(), {omitDefault: true}),
+  width: /* @__PURE__ */ optional(/* @__PURE__ */ numberValue(), {
+    omitDefault: true,
+  }),
 });
 
 export type SerializedTableCellNode = Spread<
@@ -83,7 +85,19 @@ export type SerializedTableCellNode = Spread<
   SerializedElementNode
 >;
 
+// Narrows the accepted JSON at the type level only; the runtime
+// implementation is the schema-driven LexicalNode.updateFromJSON.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface TableCellNode {
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<
+      SerializedPartial<SerializedTableCellNode>
+    >,
+  ): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class TableCellNode extends ElementNode {
   /** @internal */
   __colSpan: number;
@@ -113,19 +127,6 @@ export class TableCellNode extends ElementNode {
       },
       json: tableCellNodeSchema,
     });
-  }
-
-  /**
-   * The base implementation applies this node's `json` schema; this override
-   * only narrows the accepted JSON to the node's serialized shape (where any
-   * node-specific property may be omitted).
-   */
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<
-      SerializedPartial<SerializedTableCellNode>
-    >,
-  ): this {
-    return super.updateFromJSON(serializedNode);
   }
 
   afterCloneFrom(node: this): void {

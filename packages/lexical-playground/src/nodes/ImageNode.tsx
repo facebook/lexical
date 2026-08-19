@@ -131,14 +131,14 @@ export type SerializedImageNode = Spread<
   SerializedLexicalNode
 >;
 
-const imageNodeSchema = objectValue({
-  altText: stringValue(),
-  caption: rawValue<SerializedEditor>(),
-  height: optional(numberValue()),
-  maxWidth: optional(numberValue()),
-  showCaption: booleanValue(),
-  src: stringValue(),
-  width: optional(numberValue()),
+const imageNodeSchema = /* @__PURE__ */ objectValue({
+  altText: /* @__PURE__ */ stringValue(),
+  caption: /* @__PURE__ */ rawValue<SerializedEditor>(),
+  height: /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
+  maxWidth: /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
+  showCaption: /* @__PURE__ */ booleanValue(),
+  src: /* @__PURE__ */ stringValue(),
+  width: /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
 });
 
 export class ImageNode extends DecoratorNode<JSX.Element> {

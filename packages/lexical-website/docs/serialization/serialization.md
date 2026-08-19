@@ -370,6 +370,9 @@ generated for you. Flat state keys are lifted to the top level of the
 serialized node and the rest are nested under `'$'` — see
 [Flat serialization with `$config`](../concepts/node-state.md#flat-serialization-with-config)
 and the [legacy-property upgrade recipe](../concepts/node-state.md#upgrading-a-legacy-json-property-to-nodestate).
+A `$config` node can also declare a
+[declarative `json` schema](#declarative-json-schemas-with-config) so
+parsing of its node-specific properties is generated too.
 
 :::
 
@@ -486,6 +489,162 @@ newNode.updateFromJSON(serializedNode);
 ```
 
 :::
+
+### Declarative JSON schemas with `$config`
+
+:::caution Experimental
+
+The schema and export-context APIs in this section and the next are
+experimental: the details may still change in a minor release based on
+feedback.
+
+:::
+
+Instead of writing `importJSON` and `updateFromJSON` by hand, a node that
+uses [`$config`](../concepts/nodes.mdx#creating-custom-nodes-with-config-and-nodestate)
+can declare a schema for its node-specific serialized properties with the
+`json` property. The schema is the single source of truth for parsing those
+properties: the base `updateFromJSON` applies it automatically, `$config`
+synthesizes `importJSON` when the constructor has no required arguments, and
+every built-in node in Lexical now declares one. Most custom nodes need no
+JSON parsing code at all — only `exportJSON` remains hand-written.
+
+```ts
+import {enumValue, numberValue, objectValue} from 'lexical';
+
+class CounterNode extends ElementNode {
+  __count = 0;
+  __variant: 'a' | 'b' = 'a';
+
+  $config() {
+    return this.config('counter', {
+      extends: ElementNode,
+      json: objectValue({
+        count: numberValue(),
+        variant: enumValue(['a', 'b']),
+      }),
+    });
+  }
+
+  setCount(count: number): this {
+    const self = this.getWritable();
+    self.__count = count;
+    return self;
+  }
+
+  setVariant(variant: 'a' | 'b'): this {
+    const self = this.getWritable();
+    self.__variant = variant;
+    return self;
+  }
+
+  exportJSON(): SerializedCounterNode {
+    return {
+      ...super.exportJSON(),
+      count: this.__count,
+      variant: this.__variant,
+    };
+  }
+}
+```
+
+Each property's schema is built from composable helpers exported by
+`lexical`:
+
+- `stringValue(defaultValue = '')`, `numberValue(defaultValue = 0, {min, max, integer}?)`, and `booleanValue(defaultValue = false)` — primitive values with defaults
+- `enumValue(values, defaultValue = values[0])` — one of a fixed set of values
+- `nullable(inner, {defaultAsNull}?)` — the property may also be `null`
+- `optional(inner, {omitDefault}?)` — the property may be `undefined`
+- `arrayValue(item)` — an array of `item` values
+- `unionValue(members, defaultValue)` — the first member schema whose domain contains the value wins
+- `rawValue()` — an escape hatch that passes the value through unparsed
+- `objectValue(fields)` — the record of properties, used for the `json` declaration itself
+- `withSetter(schema, 'methodName')` — names the method that applies the parsed value when it is not the conventional `set<Property>` (e.g. `text` is applied with `setTextContent`)
+
+Parsing is total: a missing or out-of-domain value falls back to the
+schema's default instead of throwing, which is the domain importers actually
+face (older documents predate a property; a compact export omits a property
+whose value is its default). Each parsed property is applied through the
+node's setter — `set<Property>`, or the name given with `withSetter` — so
+subclass overrides of those setters are honored, and a subclass schema field
+with the same serialized property name overrides its ancestor's.
+
+Because the node itself declares the schema, tooling can introspect it. The
+`@lexical/fast-check` package derives property-based test generators
+directly from a node class (`nodeArbitrary(TextNode)`), so a single
+declaration powers both parsing and example generation in tests.
+
+### Compact JSON and export overrides
+
+By default `exportJSON` writes every property, producing the historical
+("legacy") format, and a bare `editorState.toJSON()` always does — existing
+persistence pipelines are unaffected until you opt in. With schemas
+declared, Lexical can also write a *compact* form: a property whose value is
+strictly equal to its schema default is omitted, as is the deprecated
+`version` property when it is `1`. Parsing restores the defaults, so both
+forms describe the same document; the compact form is typically much
+smaller.
+
+The compact form and per-node export overrides are configured with
+`JSONExtension` from `@lexical/extension`:
+
+```ts
+import {
+  buildEditorFromExtensions,
+  configExtension,
+  getExtensionDependencyFromEditor,
+  JSONExtension,
+  jsonOverride,
+} from '@lexical/extension';
+
+const editor = buildEditorFromExtensions({
+  name: 'example',
+  dependencies: [
+    configExtension(JSONExtension, {
+      compact: true,
+      overrides: [
+        // Never serialize comment threads
+        jsonOverride([CommentNode], {$exportJSON: () => null}),
+        // Redact text content but keep formatting
+        jsonOverride([TextNode], {
+          $exportJSON: (node, $next) => ({
+            ...$next(),
+            text: '█'.repeat(node.getTextContentSize()),
+          }),
+        }),
+      ],
+    }),
+  ],
+});
+
+const {$exportJSON, $withSerialization} = getExtensionDependencyFromEditor(
+  editor,
+  JSONExtension,
+).output;
+
+const json = editor.read(() => $exportJSON());
+```
+
+An override is middleware for a set of matchers (node classes, `$is*` type
+guards, or `'*'` for every node): call `$next()` for the JSON the node would
+otherwise produce and enhance it, return your own JSON to replace it (a
+replacement is authoritative — the walk does not append the node's live
+children), or return `null` to omit the node and its entire subtree (the
+root itself is never omitted). Overrides run highest priority first, and
+`overrides` configured by independent extensions concatenate rather than
+replace each other.
+
+The extension's output provides:
+
+- `$exportJSON(editorState?, options?)` — serialize an editor state (the
+  editor's current one by default) with the configured overrides and
+  compaction. `options.compact` overrides the configured `compact` for that
+  one call, e.g. to explicitly produce the legacy format for a consumer
+  that still requires it.
+- `$withSerialization(fn)` — run `fn` with the configured serialization
+  context installed, so JSON exports the extension does not own — an
+  `editorState.toJSON()` call, or the `@lexical/clipboard` selection export
+  inside a copy handler — also honor the configuration.
 
 ### Versioning & Breaking Changes
 

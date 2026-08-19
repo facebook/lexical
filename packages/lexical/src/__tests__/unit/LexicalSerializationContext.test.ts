@@ -181,15 +181,55 @@ describe('serialization context', () => {
     expect(root.children![0].children).toEqual([]);
   });
 
-  test('omitting the root is an error, since a document must have one', () => {
-    expect(() =>
-      toJSON([
-        [
-          SerializationContextOverride,
-          () => null as SerializedLexicalNode | null,
-        ],
-      ]),
-    ).toThrow(/omitted the root node/);
+  test('the root cannot be omitted; an omission for it is ignored', () => {
+    const root = toJSON([
+      [
+        SerializationContextOverride,
+        () => null as SerializedLexicalNode | null,
+      ],
+    ]);
+    // every other node was omitted, but the root exported normally
+    expect(root.type).toBe('root');
+    expect(root.children).toEqual([]);
+  });
+
+  test('a replacement is authoritative: live children are not appended', () => {
+    const root = toJSON([
+      [
+        SerializationContextOverride,
+        (
+          node: import('lexical').LexicalNode,
+          $next: () => SerializedLexicalNode,
+        ) =>
+          node.getType() === 'paragraph'
+            ? {children: [], type: 'paragraph', version: 1}
+            : $next(),
+      ],
+    ]);
+    // the replacement said "no children" and the walk respected it — the
+    // paragraph's real text is not leaked into the export
+    expect(root.children![0].children).toEqual([]);
+    expect(JSON.stringify(root)).not.toContain('plain');
+  });
+
+  test('an enhancement keeps recursion: spread preserves the children array', () => {
+    const root = toJSON([
+      [
+        SerializationContextOverride,
+        (
+          node: import('lexical').LexicalNode,
+          $next: () => SerializedLexicalNode,
+        ) =>
+          node.getType() === 'paragraph' ? {...$next(), extra: true} : $next(),
+      ],
+    ]);
+    // {...$next()} copies the children array by reference, so the walk still
+    // fills it with the live children
+    expect(root.children![0].extra).toBe(true);
+    expect(root.children![0].children!.map(child => child.text)).toEqual([
+      'plain',
+      'bold',
+    ]);
   });
 
   test('the context does not leak outside its callback', () => {

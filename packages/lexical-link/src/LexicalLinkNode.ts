@@ -77,14 +77,32 @@ const SUPPORTED_URL_PROTOCOLS = new Set([
   'tel:',
 ]);
 
-const linkNodeSchema = objectValue({
-  rel: nullable(stringValue()),
-  target: nullable(stringValue()),
-  title: nullable(stringValue()),
-  url: withSetter(stringValue(), 'setURL'),
+const linkNodeSchema = /* @__PURE__ */ objectValue({
+  // defaultAsNull preserves the legacy `value || null` semantics: an empty
+  // string (or junk that coerces to it) imports as null, not ''.
+  rel: /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue(), {
+    defaultAsNull: true,
+  }),
+  target: /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue(), {
+    defaultAsNull: true,
+  }),
+  title: /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue(), {
+    defaultAsNull: true,
+  }),
+  url: /* @__PURE__ */ withSetter(/* @__PURE__ */ stringValue(), 'setURL'),
 });
 
+// Narrows the accepted JSON at the type level only; the runtime
+// implementation is the schema-driven LexicalNode.updateFromJSON.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface LinkNode {
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedLinkNode>>,
+  ): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class LinkNode extends ElementNode {
   /** @internal */
   __url: string;
@@ -106,17 +124,6 @@ export class LinkNode extends ElementNode {
       },
       json: linkNodeSchema,
     });
-  }
-
-  /**
-   * The base implementation applies this node's `json` schema; this override
-   * only narrows the accepted JSON to the node's serialized shape (where any
-   * node-specific property may be omitted).
-   */
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedLinkNode>>,
-  ): this {
-    return super.updateFromJSON(serializedNode);
   }
 
   constructor(
@@ -499,12 +506,24 @@ export type SerializedAutoLinkNode = Spread<
   SerializedLinkNode
 >;
 
-const autoLinkNodeSchema = objectValue({
-  isUnlinked: booleanValue(),
+const autoLinkNodeSchema = /* @__PURE__ */ objectValue({
+  isUnlinked: /* @__PURE__ */ booleanValue(),
 });
+
+// Narrows the accepted JSON at the type level only; the runtime
+// implementation is the schema-driven LexicalNode.updateFromJSON.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface AutoLinkNode {
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<
+      SerializedPartial<SerializedAutoLinkNode>
+    >,
+  ): this;
+}
 
 // Custom node type to override `canInsertTextAfter` that will
 // allow typing within the link
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class AutoLinkNode extends LinkNode {
   /** @internal */
   /** Indicates whether the autolink was ever unlinked. **/
@@ -532,19 +551,6 @@ export class AutoLinkNode extends LinkNode {
       extends: LinkNode,
       json: autoLinkNodeSchema,
     });
-  }
-
-  /**
-   * The base implementation applies this node's `json` schema; this override
-   * only narrows the accepted JSON to the node's serialized shape (where any
-   * node-specific property may be omitted).
-   */
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<
-      SerializedPartial<SerializedAutoLinkNode>
-    >,
-  ): this {
-    return super.updateFromJSON(serializedNode);
   }
 
   shouldMergeAdjacentLink(_otherLink: LinkNode): boolean {

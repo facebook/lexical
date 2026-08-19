@@ -70,7 +70,7 @@ declare export function $writeDragSourceToDataTransfer(
 interface BaseSerializedNode {
   children?: BaseSerializedNode[];
   type: string;
-  version: number;
+  version?: number;
 }
 
 declare export function $generateJSONFromSelectedNodes<

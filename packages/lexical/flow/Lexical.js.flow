@@ -833,6 +833,7 @@ declare export class TextNode extends LexicalNode {
   splitText(...splitOffsets: number[]): TextNode[];
   mergeWithSibling(target: TextNode): TextNode;
   isTextEntity(): boolean;
+  static importJSON(serializedTextNode: SerializedTextNode): TextNode;
   exportJSON(): SerializedTextNode;
 }
 export interface InlineFormattableNode {
@@ -1816,6 +1817,17 @@ declare export function $compactSerializedNode(
   node: LexicalNode,
   json: SerializedLexicalNode,
 ): SerializedLexicalNode;
+export type AppliedSerialization = {
+  readonly serializedNode: SerializedLexicalNode,
+  readonly recurseChildren: boolean,
+};
+declare export function $applySerializationContext(
+  node: LexicalNode,
+  isRoot: boolean,
+): AppliedSerialization | null;
+declare export function $exportNodeJSON(
+  node: LexicalNode,
+): SerializedLexicalNode | null;
 
 export type Parse<T> = (value: unknown) => T;
 export type SerializationSchema<T> = Parse<T>;
@@ -1853,7 +1865,10 @@ declare export function enumValue<T>(
   values: ReadonlyArray<T>,
   defaultValue?: T,
 ): SerializationSchema<T>;
-declare export function nullable<T>(inner: SerializationSchema<T>): SerializationSchema<T | null>;
+declare export function nullable<T>(
+  inner: SerializationSchema<T>,
+  options?: {readonly defaultAsNull?: boolean},
+): SerializationSchema<T | null>;
 declare export function optional<T>(
   inner: SerializationSchema<T>,
   options?: {readonly omitDefault?: boolean},

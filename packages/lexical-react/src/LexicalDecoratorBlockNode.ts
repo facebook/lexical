@@ -33,16 +33,33 @@ export type SerializedDecoratorBlockNode = Spread<
   SerializedLexicalNode
 >;
 
-/**
- * The schema for the node-specific properties of a
- * {@link SerializedDecoratorBlockNode}. DecoratorBlockNode is an abstract base
- * (it has no concrete node type) so it publishes its schema on `$config` under
- * the well-known `Symbol.for('DecoratorBlockNode')` key; concrete subclasses
- * compose it with their own.
- */
-export const decoratorBlockNodeSchema = objectValue({
-  format: enumValue(['', 'left', 'start', 'center', 'right', 'end', 'justify']),
+// Single source of truth for parsing the node-specific properties of a
+// SerializedDecoratorBlockNode. DecoratorBlockNode is an abstract base (it has
+// no concrete node type) so it publishes its schema on `$config` under the
+// well-known `Symbol.for('DecoratorBlockNode')` key; concrete subclasses
+// compose it with their own.
+const decoratorBlockNodeSchema = /* @__PURE__ */ objectValue({
+  format: /* @__PURE__ */ enumValue([
+    '',
+    'left',
+    'start',
+    'center',
+    'right',
+    'end',
+    'justify',
+  ]),
 });
+
+// Narrows the accepted JSON at the type level only; the runtime
+// implementation is the schema-driven LexicalNode.updateFromJSON.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface DecoratorBlockNode {
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<
+      SerializedPartial<SerializedDecoratorBlockNode>
+    >,
+  ): this;
+}
 
 /**
  * A base class for block-level {@link DecoratorNode}s (decorator nodes rendered
@@ -51,26 +68,13 @@ export const decoratorBlockNodeSchema = objectValue({
  * block embeds such as images, videos, or tweets, typically pairing it with
  * {@link BlockWithAlignableContents} to handle selection and alignment.
  */
-
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
   __format: ElementFormatType;
 
   constructor(format?: ElementFormatType, key?: NodeKey) {
     super(key);
     this.__format = format || '';
-  }
-
-  /**
-   * The base implementation applies this node's `json` schema; this override
-   * only narrows the accepted JSON to the node's serialized shape (where any
-   * node-specific property may be omitted).
-   */
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<
-      SerializedPartial<SerializedDecoratorBlockNode>
-    >,
-  ): this {
-    return super.updateFromJSON(serializedNode);
   }
 
   afterCloneFrom(prevNode: this): void {

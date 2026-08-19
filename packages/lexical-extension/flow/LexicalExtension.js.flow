@@ -26,6 +26,7 @@ import type {
   EditorUpdateOptions,
   EditorSetOptions,
   InitialEditorConfig,
+  SerializedEditorState,
   SerializedLexicalNode,
   TextFormatType
 } from 'lexical';
@@ -255,3 +256,43 @@ declare export function registerTabIndentation(
   editor: LexicalEditor,
   maxIndent?: number | ReadonlySignal<null | number>,
 ): () => void;
+
+/**
+ * JSONExtension
+ */
+export type NodeMatch<T extends LexicalNode> =
+  | Class<T>
+  | ((node: LexicalNode) => boolean);
+export type SerializationOverride<T extends LexicalNode> = {
+  readonly nodes: '*' | ReadonlyArray<NodeMatch<T>>;
+  readonly $exportJSON: (
+    node: T,
+    $next: () => SerializedLexicalNode,
+  ) => SerializedLexicalNode | null;
+};
+// $FlowFixMe[unclear-type]
+export type AnySerializationOverride = SerializationOverride<any>;
+declare export function jsonOverride<T extends LexicalNode>(
+  nodes: '*' | ReadonlyArray<NodeMatch<T>>,
+  config: {
+    readonly $exportJSON: (
+      node: T,
+      $next: () => SerializedLexicalNode,
+    ) => SerializedLexicalNode | null;
+  },
+): SerializationOverride<T>;
+export type JSONConfig = {
+  compact: boolean;
+  overrides: ReadonlyArray<AnySerializationOverride>;
+};
+export type ExportJSONOptions = {
+  readonly compact?: boolean;
+};
+export type JSONExtensionOutput = {
+  readonly $exportJSON: (
+    editorState?: EditorState,
+    options?: ExportJSONOptions,
+  ) => SerializedEditorState;
+  readonly $withSerialization: <T>(fn: () => T) => T;
+};
+declare export var JSONExtension: LexicalExtension<JSONConfig, "@lexical/extension/JSON", JSONExtensionOutput, void>;

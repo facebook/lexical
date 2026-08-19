@@ -19,13 +19,11 @@ import {
   enumValue,
   type Klass,
   type LexicalNode,
-  type LexicalUpdateJSON,
   numberValue,
   objectValue,
   ParagraphNode,
   type SerializedElementNode,
   type SerializedLexicalNode,
-  type SerializedPartial,
   type Spread,
   TextNode,
 } from 'lexical';
@@ -42,29 +40,20 @@ const mergeNodeSchema = objectValue({
 
 // A custom element node that declares its OWN schema field; composeNodeSerializationSchema
 // must merge it with the schema it inherits from the abstract ElementNode base.
+// It carries no static or JSON boilerplate: `$config` synthesizes
+// getType/clone/importJSON, afterCloneFrom copies the property, and the base
+// updateFromJSON applies `variant` through setVariant via the schema.
 class MergeNode extends ElementNode {
   __variant: 'a' | 'b' | 'c' = 'a';
-  static getType(): string {
-    return 'merge-test';
-  }
-  static clone(node: MergeNode): MergeNode {
-    const merged = new MergeNode(node.__key);
-    merged.__variant = node.__variant;
-    return merged;
-  }
-  static importJSON(
-    serialized: SerializedPartial<SerializedMergeNode>,
-  ): MergeNode {
-    return new MergeNode().updateFromJSON(serialized);
-  }
   $config() {
-    return this.config('merge-test', {json: mergeNodeSchema});
+    return this.config('merge-test', {
+      extends: ElementNode,
+      json: mergeNodeSchema,
+    });
   }
-  updateFromJSON(
-    serialized: LexicalUpdateJSON<SerializedPartial<SerializedMergeNode>>,
-  ): this {
-    const {variant} = mergeNodeSchema(serialized);
-    return super.updateFromJSON(serialized).setVariant(variant);
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__variant = prevNode.__variant;
   }
   exportJSON(): SerializedMergeNode {
     return {...super.exportJSON(), variant: this.__variant};
@@ -92,6 +81,7 @@ const countState = createState('count', {parse: numberValue()});
 class FlatStateNode extends ElementNode {
   $config() {
     return this.config('flat-state-test', {
+      extends: ElementNode,
       stateConfigs: [{flat: true, stateConfig: countState}],
     });
   }

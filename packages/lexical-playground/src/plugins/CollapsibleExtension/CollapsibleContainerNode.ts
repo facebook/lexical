@@ -30,8 +30,8 @@ import {
 
 import {setDomHiddenUntilFound} from './CollapsibleUtils';
 
-const collapsibleContainerNodeSchema = objectValue({
-  open: booleanValue(),
+const collapsibleContainerNodeSchema = /* @__PURE__ */ objectValue({
+  open: /* @__PURE__ */ booleanValue(),
 });
 
 type SerializedCollapsibleContainerNode = Spread<

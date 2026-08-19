@@ -35,17 +35,27 @@ type SerializedCodeHighlightNode = Spread<
   SerializedTextNode
 >;
 
-/**
- * The schema for the node-specific properties of a
- * {@link SerializedCodeHighlightNode} (those it adds over a
- * {@link SerializedTextNode}). It is the single source of truth for parsing
- * those properties — see {@link CodeHighlightNode.updateFromJSON}.
- */
-export const codeHighlightNodeSchema = objectValue({
-  highlightType: optional(nullable(stringValue())),
+// Single source of truth for parsing the node-specific properties of a
+// SerializedCodeHighlightNode (those it adds over a SerializedTextNode).
+const codeHighlightNodeSchema = /* @__PURE__ */ objectValue({
+  highlightType: /* @__PURE__ */ optional(
+    /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue()),
+  ),
 });
 
+// Narrows the accepted JSON at the type level only; the runtime
+// implementation is the schema-driven LexicalNode.updateFromJSON.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface CodeHighlightNode {
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<
+      SerializedPartial<SerializedCodeHighlightNode>
+    >,
+  ): this;
+}
+
 /** @noInheritDoc */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class CodeHighlightNode extends TextNode {
   /** @internal */
   __highlightType: string | null | undefined;
@@ -64,19 +74,6 @@ export class CodeHighlightNode extends TextNode {
       extends: TextNode,
       json: codeHighlightNodeSchema,
     });
-  }
-
-  /**
-   * The base implementation applies this node's `json` schema; this override
-   * only narrows the accepted JSON to the node's serialized shape (where any
-   * node-specific property may be omitted).
-   */
-  updateFromJSON(
-    serializedNode: LexicalUpdateJSON<
-      SerializedPartial<SerializedCodeHighlightNode>
-    >,
-  ): this {
-    return super.updateFromJSON(serializedNode);
   }
 
   afterCloneFrom(prevNode: this): void {

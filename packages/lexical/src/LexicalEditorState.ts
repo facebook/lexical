@@ -13,7 +13,7 @@ import type {BaseSelection} from './LexicalSelection';
 import invariant from '@lexical/internal/invariant';
 
 import {cloneMap} from './LexicalGenMap';
-import {$applySerializationContext} from './LexicalSerializationContext';
+import {$applySerializationContext} from './LexicalSerializedExport';
 import {$getSlot, $getSlotNames} from './LexicalSlot';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';

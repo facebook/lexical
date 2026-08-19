@@ -301,13 +301,10 @@ export {
   tokenizeRawText,
 } from './LexicalSelection';
 export {
-  $applySerializationContext,
   $compactSerializedNode,
-  $exportNodeJSON,
   $getSerializationContextValue,
   $withSerializationContext,
   type AnySerializationStateConfigPair,
-  type AppliedSerialization,
   createSerializationState,
   SerializationContextCompact,
   SerializationContextOverride,
@@ -315,6 +312,11 @@ export {
   type SerializationStateConfig,
   type SerializationStateConfigPair,
 } from './LexicalSerializationContext';
+export {
+  $applySerializationContext,
+  $exportNodeJSON,
+  type AppliedSerialization,
+} from './LexicalSerializedExport';
 export type {SlotName} from './LexicalSlot';
 export {
   $getSlot,

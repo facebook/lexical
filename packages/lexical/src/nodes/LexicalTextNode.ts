@@ -123,7 +123,7 @@ const textNodeSchema = /* @__PURE__ */ objectValue({
   // hand-authored and older documents carry (e.g. `format: 'bold'`),
   // normalized to the stored numeric form.
   detail: /* @__PURE__ */ transformValue(
-    /* @__PURE__ */ unionValue<number | 'directionless' | 'unmergeable'>(
+    /* @__PURE__ */ unionValue(
       [
         /* @__PURE__ */ numberValue(),
         /* @__PURE__ */ enumValue(['directionless', 'unmergeable']),
@@ -133,7 +133,7 @@ const textNodeSchema = /* @__PURE__ */ objectValue({
     value => (typeof value === 'string' ? DETAIL_TYPE_TO_DETAIL[value] : value),
   ),
   format: /* @__PURE__ */ transformValue(
-    /* @__PURE__ */ unionValue<number | TextFormatType>(
+    /* @__PURE__ */ unionValue(
       [
         /* @__PURE__ */ numberValue(),
         /* @__PURE__ */ enumValue(

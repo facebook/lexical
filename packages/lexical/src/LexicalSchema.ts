@@ -99,6 +99,10 @@ export interface SerializationSchema<T> {
 /** A {@link SerializationSchema} for an unknown type, used where the type is not relevant. */
 export type AnySerializationSchema = SerializationSchema<unknown>;
 
+/** The value type a {@link SerializationSchema} parses to. */
+export type SerializationSchemaValue<S> =
+  S extends SerializationSchema<infer T> ? T : never;
+
 /** A record of named {@link SerializationSchema}s, as used by {@link objectValue}. */
 export type SerializationSchemaFields = {
   readonly [key: string]: AnySerializationSchema;
@@ -295,7 +299,9 @@ export function optional<T>(
 
 /**
  * Combinator for a value whose domain is the union of several schemas, such as
- * a dimension that is either a number or the literal `'inherit'`.
+ * a dimension that is either a number or the literal `'inherit'`. The domain
+ * is inferred as the union of the members' value types; annotate the result
+ * when you want to assert a narrower intended domain instead.
  *
  * A {@link SerializationSchema} is total — it always returns a value — so a
  * member is considered to accept `value` when parsing leaves it unchanged
@@ -319,17 +325,18 @@ export function optional<T>(
  * ```
  * @__NO_SIDE_EFFECTS__
  */
-export function unionValue<const T>(
-  members: readonly SerializationSchema<T>[],
-  defaultValue?: T,
-): SerializationSchema<T> {
+export function unionValue<const M extends readonly AnySerializationSchema[]>(
+  members: M,
+  defaultValue?: SerializationSchemaValue<M[number]>,
+): SerializationSchema<SerializationSchemaValue<M[number]>> {
+  type T = SerializationSchemaValue<M[number]>;
   invariant(
     members.length > 0,
     'unionValue: at least one member schema is required',
   );
   const fallback =
-    defaultValue !== undefined ? defaultValue : members[0].defaultValue;
-  return makeSchema(
+    defaultValue !== undefined ? defaultValue : (members[0].defaultValue as T);
+  return makeSchema<T>(
     value => {
       for (let i = 0; i < members.length; i++) {
         if (members[i](value) === value) {
@@ -338,7 +345,7 @@ export function unionValue<const T>(
       }
       return fallback;
     },
-    {kind: 'union', members: members as readonly AnySerializationSchema[]},
+    {kind: 'union', members},
   );
 }
 
@@ -363,7 +370,7 @@ export function unionValue<const T>(
  * @example
  * ```ts
  * const parseFormat = transformValue(
- *   unionValue<number | TextFormatType>(
+ *   unionValue(
  *     [numberValue(), enumValue(Object.keys(TEXT_TYPE_TO_FORMAT) as TextFormatType[])],
  *     0,
  *   ),

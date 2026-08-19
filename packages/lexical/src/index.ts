@@ -267,6 +267,7 @@ export {
   type SerializationSchemaFields,
   type SerializationSchemaMeta,
   type SerializationSchemaShape,
+  type SerializationSchemaValue,
   stringValue,
   transformValue,
   unionValue,

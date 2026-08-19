@@ -1873,10 +1873,12 @@ declare export function optional<T>(
   inner: SerializationSchema<T>,
   options?: {readonly omitDefault?: boolean},
 ): SerializationSchema<T | void>;
-declare export function unionValue<T>(
-  members: ReadonlyArray<SerializationSchema<T>>,
-  defaultValue?: T,
-): SerializationSchema<T>;
+export type SerializationSchemaValue<S> =
+  S extends SerializationSchema<infer T> ? T : empty;
+declare export function unionValue<M extends ReadonlyArray<AnySerializationSchema>>(
+  members: M,
+  defaultValue?: SerializationSchemaValue<M[number]>,
+): SerializationSchema<SerializationSchemaValue<M[number]>>;
 declare export function transformValue<In, Out>(
   inner: SerializationSchema<In>,
   transform: (value: In) => Out,

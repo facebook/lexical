@@ -19,6 +19,7 @@ import {
   type NodeKey,
   numberValue,
   objectValue,
+  type SerializationSchema,
   type SerializedLexicalNode,
   type SerializedPartial,
   type Spread,
@@ -37,10 +38,11 @@ const ExcalidrawComponent = React.lazy(() => import('./ExcalidrawComponent'));
  * `serializedNode.width ?? 'inherit'` parsing, which stored any non-nullish
  * value (including a string like `'banana'`) verbatim.
  */
-const dimensionSchema = /* @__PURE__ */ unionValue<Dimension>(
-  [/* @__PURE__ */ numberValue(), /* @__PURE__ */ enumValue(['inherit'])],
-  'inherit',
-);
+const dimensionSchema: SerializationSchema<Dimension> =
+  /* @__PURE__ */ unionValue(
+    [/* @__PURE__ */ numberValue(), /* @__PURE__ */ enumValue(['inherit'])],
+    'inherit',
+  );
 
 const excalidrawNodeSchema = /* @__PURE__ */ objectValue({
   data: /* @__PURE__ */ stringValue(),

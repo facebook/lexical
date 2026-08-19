@@ -357,7 +357,7 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
   });
 
   describe('unionValue', () => {
-    const dimension = unionValue<number | 'inherit'>(
+    const dimension = unionValue(
       [numberValue(), enumValue(['inherit'])],
       'inherit',
     );
@@ -371,9 +371,7 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
       expect(dimension.defaultValue).toBe('inherit');
     });
     test('defaults to the first member default when none is given', () => {
-      expect(
-        unionValue<number | 'x'>([numberValue(7), enumValue(['x'])])(null),
-      ).toBe(7);
+      expect(unionValue([numberValue(7), enumValue(['x'])])(null)).toBe(7);
     });
     test('records its members on meta', () => {
       expect(dimension.meta.kind).toBe('union');
@@ -382,11 +380,9 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
 
   describe('transformValue', () => {
     const NAME_TO_BIT: Record<string, number> = {bold: 1, italic: 2};
+    // The union's domain is inferred from its members; no type argument.
     const format = transformValue(
-      unionValue<number | 'bold' | 'italic'>(
-        [numberValue(), enumValue(['bold', 'italic'])],
-        0,
-      ),
+      unionValue([numberValue(), enumValue(['bold', 'italic'])], 0),
       value => (typeof value === 'string' ? NAME_TO_BIT[value] : value),
     );
     test('normalizes accepted values into the target domain', () => {

@@ -14,6 +14,8 @@ import {
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
+  getTableElement,
+  getTableObserverFromTableElement,
   TableExtension,
 } from '@lexical/table';
 import {
@@ -367,6 +369,77 @@ describe('LexicalTableSelectionHelpers', () => {
       editor.dispatchCommand(DELETE_LINE_COMMAND, false);
       expect(propagated).toBe(true);
       unregister();
+    });
+  });
+
+  describe('regression #9073', () => {
+    let editor: LexicalEditorWithDispose;
+    let container: HTMLDivElement;
+
+    beforeEach(() => {
+      container = document.createElement('div');
+      document.body.appendChild(container);
+      editor = buildEditorFromExtensions(
+        defineExtension({
+          dependencies: [TableExtension],
+          name: 'regression-9073-test',
+          theme: {tableScrollableWrapper: ''},
+        }),
+      );
+      editor.setRootElement(container);
+    });
+
+    afterEach(() => {
+      editor.dispose();
+      document.body.removeChild(container);
+    });
+
+    test('the table MutationObserver is disconnected by removeListeners', async () => {
+      editor.update(
+        () => {
+          $getRoot()
+            .clear()
+            .append($createTableNodeWithDimensions(2, 2, false));
+        },
+        {discrete: true},
+      );
+
+      const tableElement = editor.read(() => {
+        const tableNode = $assertNodeType(
+          $getRoot().getLastChild(),
+          $isTableNode,
+        );
+        return getTableElement(
+          tableNode,
+          editor.getElementByKey(tableNode.getKey()),
+        );
+      });
+      if (tableElement === null) {
+        throw new Error('Expected the table to be mounted');
+      }
+      const tableObserver = getTableObserverFromTableElement(tableElement);
+      if (tableObserver === null) {
+        throw new Error('Expected a TableObserver for the table');
+      }
+
+      let lookups = 0;
+      const $lookup = tableObserver.$lookup.bind(tableObserver);
+      tableObserver.$lookup = () => {
+        lookups++;
+        return $lookup();
+      };
+
+      tableObserver.removeListeners();
+
+      // A detached table can still be mutated after teardown -- a framework
+      // cleanup removing a class, say. The MutationObserver must be
+      // disconnected by then, or its callback runs against an editor that no
+      // longer has the element mapped and throws from a microtask, where
+      // neither onError nor an error boundary can catch it.
+      tableElement.classList.add('after-teardown');
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(lookups).toBe(0);
     });
   });
 });

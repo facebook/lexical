@@ -6,36 +6,36 @@
  *
  */
 
-import {configExtension} from '@lexical/extension';
 import {
   createImportState,
   defineImportRule,
   defineOverlayRules,
   type DOMImportContext,
-  DOMImportExtension,
   type DOMPreprocessFn,
   ImportOverlays,
   InlineSchema,
   sel,
 } from '@lexical/html';
-import {
-  $createListItemNode,
-  $createListNode,
-  type ListNode,
-} from '@lexical/list';
-import {defineExtension, getStyleObjectFromCSS, isHTMLElement} from 'lexical';
+import {getStyleObjectFromCSS, isHTMLElement} from 'lexical';
+
+import {$createListItemNode} from './LexicalListItemNode';
+import {$createListNode, type ListNode} from './LexicalListNode';
 
 const WORD_LIST_CLASS_RE = /^MsoListParagraph(CxSp(First|Middle|Last))?$/;
 const WORD_NUMBERED_RE = /^[A-Za-z0-9]+[.)]/;
 const WORD_GENERATOR_RE = /Microsoft Word/i;
 
-// The default `$inlineStylesFromStyleSheets` preprocess mutates each
-// element's inline style through CSSStyleDeclaration.setProperty, which
-// makes JSDOM (and real browsers) re-serialize the style attribute and
-// drop unknown properties like `mso-list`. The Word preprocess runs
-// FIRST (it's appended to the stack so it's on top), so it stashes
-// `mso-list` onto a `data-*` attribute that survives the later
-// stylesheet-inlining pass.
+/**
+ * `mso-list` is a Microsoft non-standard CSS property, so neither
+ * browsers nor JSDOM surface it through `el.style`. Worse, the default
+ * `$inlineStylesFromStyleSheets` preprocess writes each element's
+ * inline style through `CSSStyleDeclaration.setProperty`, which
+ * re-serializes the `style` attribute and drops the unknown property
+ * altogether. {@link $installWordListPasteOverlay} runs first (it is
+ * pushed onto the preprocess stack, so it sits on top) and snapshots
+ * `mso-list` onto this `data-*` attribute, which survives the later
+ * stylesheet-inlining pass.
+ */
 const MSO_LIST_DATA_ATTR = 'data-mso-list';
 
 function readMsoListAttr(el: Element): string {
@@ -47,11 +47,12 @@ function readMsoListAttr(el: Element): string {
 }
 
 function readWordListLevel(el: HTMLElement): number {
+  // mso-list looks like "l<N> level<M> lfo<X>"; pluck the level number.
   const m = readMsoListAttr(el).match(/level(\d+)/);
   return m ? parseInt(m[1], 10) : 1;
 }
 
-function $findMarkerSpan(el: HTMLElement): HTMLElement | null {
+function findMarkerSpan(el: HTMLElement): HTMLElement | null {
   for (const span of Array.from(el.querySelectorAll('span'))) {
     if (readMsoListAttr(span) === 'Ignore') {
       return span;
@@ -60,8 +61,8 @@ function $findMarkerSpan(el: HTMLElement): HTMLElement | null {
   return null;
 }
 
-function $readWordMarker(el: HTMLElement): string {
-  const span = $findMarkerSpan(el);
+function readWordMarker(el: HTMLElement): string {
+  const span = findMarkerSpan(el);
   return span ? (span.textContent || '').trim() : '';
 }
 
@@ -69,10 +70,10 @@ function classifyWordListType(marker: string): 'number' | 'bullet' {
   return WORD_NUMBERED_RE.test(marker) ? 'number' : 'bullet';
 }
 
-function $stripWordMarker(el: HTMLElement): void {
+function stripWordMarker(el: HTMLElement): void {
   // The marker span is wrapped in an outer <span> directly under the
   // <p>; remove that outer wrapper.
-  const inner = $findMarkerSpan(el);
+  const inner = findMarkerSpan(el);
   if (!inner) {
     return;
   }
@@ -109,21 +110,23 @@ function $buildWordListTree(
       stack.pop();
     }
     if (item.level > stack[stack.length - 1].level) {
-      // Lexical's nested-list convention (see `$isNestedListNode` in
-      // @lexical/list): a sublist lives inside its OWN ListItemNode
-      // wrapper that is a sibling of the items above it, not inside
-      // the previous content item. The wrapper has no own content,
-      // just the sublist as its first child.
+      // Lexical's nested-list convention (see `$isNestedListNode`): a
+      // sublist lives inside its OWN ListItemNode wrapper that is a
+      // sibling of the items above it, not inside the previous content
+      // item. The wrapper has no own content, just the sublist as its
+      // first child.
       const sub = $createListNode(classifyWordListType(item.marker));
-      const wrapper = $createListItemNode();
-      wrapper.append(sub);
-      stack[stack.length - 1].list.append(wrapper);
+      stack[stack.length - 1].list.append($createListItemNode().append(sub));
       stack.push({level: item.level, list: sub});
     }
-    $stripWordMarker(item.el);
-    const li = $createListItemNode();
-    li.splice(0, 0, ctx.$importChildren(item.el, {schema: InlineSchema}));
-    stack[stack.length - 1].list.append(li);
+    stripWordMarker(item.el);
+    stack[stack.length - 1].list.append(
+      $createListItemNode().splice(
+        0,
+        0,
+        ctx.$importChildren(item.el, {schema: InlineSchema}),
+      ),
+    );
   }
   return root;
 }
@@ -132,17 +135,17 @@ function $buildWordListTree(
  * Per-import session WeakSet tracking `<p class="MsoListParagraph*">`
  * elements already absorbed by an earlier sibling's list-construction
  * pass, so the framework's normal child iteration treats them as
- * no-ops. The state's default is `null`; the rule lazily initializes
- * a fresh WeakSet into the session on first use, since
- * `createImportState`'s default factory is called once at state
- * creation and the result is shared (see ImportContext.ts).
+ * no-ops. The default is `null` and the rule lazily installs a fresh
+ * WeakSet per session, because `createImportState`'s default factory
+ * runs once at state creation and its result is shared across sessions.
  */
-const WordListConsumed = createImportState<WeakSet<Element> | null>(
-  'word/consumed-list-items',
-  () => null,
-);
+const WordListConsumed =
+  /* @__PURE__ */ createImportState<WeakSet<Element> | null>(
+    '@lexical/list/word-consumed-list-items',
+    () => null,
+  );
 
-const WordListParagraphRule = defineImportRule({
+const WordListParagraphRule = /* @__PURE__ */ defineImportRule({
   $import: (ctx, el) => {
     let consumed = ctx.session.get(WordListConsumed);
     if (consumed === null) {
@@ -159,8 +162,9 @@ const WordListParagraphRule = defineImportRule({
       items.push({
         el: cur,
         level: readWordListLevel(cur),
-        marker: $readWordMarker(cur),
+        marker: readWordMarker(cur),
       });
+      // MsoListParagraph (no CxSp suffix) is a single-item run.
       if (
         cur.classList.contains('MsoListParagraphCxSpLast') ||
         cur.className === 'MsoListParagraph'
@@ -171,7 +175,7 @@ const WordListParagraphRule = defineImportRule({
     }
     return [$buildWordListTree(ctx, items)];
   },
-  match: sel
+  match: /* @__PURE__ */ sel
     .tag('p')
     .classAny(
       'MsoListParagraph',
@@ -179,27 +183,63 @@ const WordListParagraphRule = defineImportRule({
       'MsoListParagraphCxSpMiddle',
       'MsoListParagraphCxSpLast',
     ),
-  name: 'word/list-paragraph',
+  name: '@lexical/list/word-list-paragraph',
 });
 
-// <o:p> is Office's "paragraph end" marker; always produces nothing.
-const WordOPRule = defineImportRule({
+// <o:p> is Office's "paragraph end" marker, emitted inside every Word
+// paragraph including the list ones; it always produces nothing.
+const WordOfficeParagraphRule = /* @__PURE__ */ defineImportRule({
   $import: () => [],
-  match: sel.tag('o:p'),
-  name: 'word/o-p',
+  match: /* @__PURE__ */ sel.tag('o:p'),
+  name: '@lexical/list/word-o-p',
 });
 
-const WordPasteOverlay = defineOverlayRules([
-  WordOPRule,
+const WordListPasteOverlay = /* @__PURE__ */ defineOverlayRules([
+  WordOfficeParagraphRule,
   WordListParagraphRule,
 ]);
 
-const $installWordOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
+/**
+ * MS Word pastes have no `<ol>`/`<ul>`/`<li>` at all: a list is a flat
+ * run of `<p class="MsoListParagraph*">` siblings whose marker ("1.",
+ * "·", "a)") lives in a nested `<span style="mso-list:Ignore">`, with
+ * `style="mso-list:l<N> level<M> lfo<X>"` on the paragraph naming the
+ * list and its nesting depth.
+ *
+ * This preprocess looks once for
+ * `<meta name="Generator" content="Microsoft Word…">` and, only when it
+ * matches, snapshots the `mso-list` declarations (see
+ * {@link MSO_LIST_DATA_ATTR}) and pushes a Word-specific overlay onto
+ * {@link ImportOverlays}. The overlay's rule walks forward through
+ * siblings to collect a complete run and rebuilds it as a nested
+ * {@link ListNode} tree. Pastes from other sources pay only the
+ * detection cost.
+ *
+ * Opt in through the `DOMImportExtension` config — {@link ListExtension}
+ * does not install it, so an editor that never pastes from Word does not
+ * bundle it:
+ *
+ * ```ts
+ * defineExtension({
+ *   dependencies: [
+ *     ListExtension,
+ *     configExtension(DOMImportExtension, {
+ *       preprocess: [$installWordListPasteOverlay],
+ *     }),
+ *   ],
+ *   name: 'my-editor',
+ * });
+ * ```
+ *
+ * @experimental
+ */
+export const $installWordListPasteOverlay: DOMPreprocessFn = (
+  dom,
+  ctx,
+  $next,
+) => {
   const meta = dom.querySelector('meta[name="Generator"]');
   if (meta && WORD_GENERATOR_RE.test(meta.getAttribute('content') || '')) {
-    // Snapshot `mso-list` onto data-mso-list before the later
-    // stylesheet-inlining preprocess re-serializes the style attribute
-    // and drops unknown CSS properties.
     for (const el of Array.from(dom.querySelectorAll('[style*="mso-list"]'))) {
       const msoList = getStyleObjectFromCSS(el.getAttribute('style') || '')[
         'mso-list'
@@ -208,22 +248,7 @@ const $installWordOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
         el.setAttribute(MSO_LIST_DATA_ATTR, msoList);
       }
     }
-    ctx.session.update(ImportOverlays, prev => [...prev, WordPasteOverlay]);
+    ctx.session.update(ImportOverlays, prev => [...prev, WordListPasteOverlay]);
   }
   $next();
 };
-
-/**
- * Extension that registers a DOM preprocess hook: if the input
- * carries `<meta name="Generator" content="Microsoft Word…">`, push a
- * Word-specific overlay onto {@link ImportOverlays} so the rest of the
- * walk picks it up. Pastes from other sources pay nothing.
- */
-export const WordPasteExtension = defineExtension({
-  dependencies: [
-    configExtension(DOMImportExtension, {
-      preprocess: [$installWordOverlay],
-    }),
-  ],
-  name: '@lexical/examples/word-paste',
-});

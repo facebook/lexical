@@ -14,6 +14,7 @@ import {
   type JSONConfig,
   JSONExtension,
   jsonOverride,
+  type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {
   $createParagraphNode,
@@ -24,11 +25,13 @@ import {
   type SerializedTextNode,
   TextNode,
 } from 'lexical';
-import {describe, expect, onTestFinished, test} from 'vitest';
+import {describe, expect, test} from 'vitest';
 
 type SerializedJSON = Record<string, unknown> & {children?: SerializedJSON[]};
 
-function buildEditor(config: Partial<JSONConfig> = {}) {
+function buildEditor(
+  config: Partial<JSONConfig> = {},
+): LexicalEditorWithDispose {
   const editor = buildEditorFromExtensions({
     dependencies: [configExtension(JSONExtension, config)],
     name: '[root]',
@@ -37,7 +40,6 @@ function buildEditor(config: Partial<JSONConfig> = {}) {
       throw err;
     },
   });
-  onTestFinished(() => editor.dispose());
   editor.update(
     () => {
       $getRoot()
@@ -56,7 +58,7 @@ function buildEditor(config: Partial<JSONConfig> = {}) {
 }
 
 function exportRoot(
-  editor: ReturnType<typeof buildEditor>,
+  editor: LexicalEditorWithDispose,
   options?: {compact?: boolean},
 ): SerializedJSON {
   const {$exportJSON} = getExtensionDependencyFromEditor(
@@ -74,89 +76,85 @@ function texts(root: SerializedJSON): unknown[] {
 
 describe('JSONExtension', () => {
   test('defaults to the legacy form', () => {
-    const root = exportRoot(buildEditor());
+    using editor = buildEditor();
+    const root = exportRoot(editor);
     expect(root.version).toBe(1);
     expect(root.children![0]).toMatchObject({indent: 0, type: 'paragraph'});
   });
 
   test('config `compact` drops version and default-valued properties', () => {
-    const root = exportRoot(buildEditor({compact: true}));
+    using editor = buildEditor({compact: true});
+    const root = exportRoot(editor);
     expect(root).not.toHaveProperty('version');
     expect(Object.keys(root.children![0]).sort()).toEqual(['children', 'type']);
   });
 
   test('the per-call option wins over the configured default', () => {
-    const compactEditor = buildEditor({compact: true});
+    using compactEditor = buildEditor({compact: true});
     expect(exportRoot(compactEditor, {compact: false}).version).toBe(1);
-    const legacyEditor = buildEditor();
+    using legacyEditor = buildEditor();
     expect(exportRoot(legacyEditor, {compact: true})).not.toHaveProperty(
       'version',
     );
   });
 
   test('an override matched by node class omits matching nodes', () => {
-    const root = exportRoot(
-      buildEditor({
-        overrides: [jsonOverride([TextNode], {$exportJSON: () => null})],
-      }),
-    );
-    expect(texts(root)).toEqual([]);
+    using editor = buildEditor({
+      overrides: [jsonOverride([TextNode], {$exportJSON: () => null})],
+    });
+    expect(texts(exportRoot(editor))).toEqual([]);
   });
 
   test('an override matched by type guard can replace a node', () => {
-    const root = exportRoot(
-      buildEditor({
-        overrides: [
-          jsonOverride([$isTextNode], {
-            $exportJSON: (node, $next) =>
-              node.getTextContent() === 'secret'
-                ? {...$next(), text: 'REDACTED'}
-                : $next(),
-          }),
-        ],
-      }),
-    );
-    expect(texts(root)).toEqual(['plain', 'REDACTED']);
+    using editor = buildEditor({
+      overrides: [
+        jsonOverride([$isTextNode], {
+          $exportJSON: (node, $next) =>
+            node.getTextContent() === 'secret'
+              ? {...$next(), text: 'REDACTED'}
+              : $next(),
+        }),
+      ],
+    });
+    expect(texts(exportRoot(editor))).toEqual(['plain', 'REDACTED']);
   });
 
   test("'*' matches every node", () => {
     const seen: string[] = [];
-    exportRoot(
-      buildEditor({
-        overrides: [
-          jsonOverride('*', {
-            $exportJSON: (node, $next) => {
-              seen.push(node.getType());
-              return $next();
-            },
-          }),
-        ],
-      }),
-    );
+    using editor = buildEditor({
+      overrides: [
+        jsonOverride('*', {
+          $exportJSON: (node, $next) => {
+            seen.push(node.getType());
+            return $next();
+          },
+        }),
+      ],
+    });
+    exportRoot(editor);
     expect(seen.sort()).toEqual(['paragraph', 'root', 'text', 'text']);
   });
 
   test('overrides chain through $next, first listed outermost', () => {
     const order: string[] = [];
-    const root = exportRoot(
-      buildEditor({
-        overrides: [
-          jsonOverride([TextNode], {
-            $exportJSON: (node, $next) => {
-              order.push('outer');
-              const inner = $next() as SerializedTextNode;
-              return {...inner, text: `outer(${inner.text})`};
-            },
-          }),
-          jsonOverride([TextNode], {
-            $exportJSON: (node, $next) => {
-              order.push('inner');
-              return {...$next(), text: `inner`};
-            },
-          }),
-        ],
-      }),
-    );
+    using editor = buildEditor({
+      overrides: [
+        jsonOverride([TextNode], {
+          $exportJSON: (node, $next) => {
+            order.push('outer');
+            const inner = $next() as SerializedTextNode;
+            return {...inner, text: `outer(${inner.text})`};
+          },
+        }),
+        jsonOverride([TextNode], {
+          $exportJSON: (node, $next) => {
+            order.push('inner');
+            return {...$next(), text: `inner`};
+          },
+        }),
+      ],
+    });
+    const root = exportRoot(editor);
     // the chain is lazy: the first override runs, and its $next() call is what
     // invokes the second one
     expect(order.slice(0, 2)).toEqual(['outer', 'inner']);
@@ -172,7 +170,7 @@ describe('JSONExtension', () => {
         throw new Error('cannot serialize');
       }
     }
-    const editor = buildEditorFromExtensions({
+    using editor = buildEditorFromExtensions({
       dependencies: [
         configExtension(JSONExtension, {
           overrides: [
@@ -193,7 +191,6 @@ describe('JSONExtension', () => {
         throw err;
       },
     });
-    onTestFinished(() => editor.dispose());
     editor.update(
       () => {
         $getRoot()
@@ -210,19 +207,17 @@ describe('JSONExtension', () => {
   });
 
   test('a lower-priority omission wins over a higher-priority enhancement', () => {
-    const root = exportRoot(
-      buildEditor({
-        overrides: [
-          jsonOverride('*', {
-            $exportJSON: (node, $next) => $next(),
-          }),
-          jsonOverride([$isTextNode], {
-            $exportJSON: () => null,
-          }),
-        ],
-      }),
-    );
-    expect(texts(root)).toEqual([]);
+    using editor = buildEditor({
+      overrides: [
+        jsonOverride('*', {
+          $exportJSON: (node, $next) => $next(),
+        }),
+        jsonOverride([$isTextNode], {
+          $exportJSON: () => null,
+        }),
+      ],
+    });
+    expect(texts(exportRoot(editor))).toEqual([]);
   });
 
   test('overrides configured by independent extensions concatenate', () => {
@@ -237,7 +232,7 @@ describe('JSONExtension', () => {
           }),
         ],
       });
-    const editor = buildEditorFromExtensions({
+    using editor = buildEditorFromExtensions({
       dependencies: [
         defineExtension({dependencies: [marker('first')], name: 'first'}),
         defineExtension({dependencies: [marker('second')], name: 'second'}),
@@ -248,7 +243,6 @@ describe('JSONExtension', () => {
         throw err;
       },
     });
-    onTestFinished(() => editor.dispose());
     editor.update(
       () => {
         $getRoot()
@@ -263,17 +257,16 @@ describe('JSONExtension', () => {
   });
 
   test('compaction still applies to what overrides produce', () => {
-    const root = exportRoot(
-      buildEditor({
-        compact: true,
-        overrides: [
-          jsonOverride([$isTextNode], {
-            $exportJSON: (node, $next) =>
-              ({...$next(), text: 'x'}) as SerializedLexicalNode,
-          }),
-        ],
-      }),
-    );
+    using editor = buildEditor({
+      compact: true,
+      overrides: [
+        jsonOverride([$isTextNode], {
+          $exportJSON: (node, $next) =>
+            ({...$next(), text: 'x'}) as SerializedLexicalNode,
+        }),
+      ],
+    });
+    const root = exportRoot(editor);
     expect(root.children![0].children).toEqual([
       {text: 'x', type: 'text'},
       // the bold sibling keeps the one property that differs from its default

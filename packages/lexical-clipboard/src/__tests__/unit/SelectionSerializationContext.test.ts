@@ -22,7 +22,7 @@ import {
   SerializationContextOverride,
   type SerializedLexicalNode,
 } from 'lexical';
-import {describe, expect, onTestFinished, test} from 'vitest';
+import {describe, expect, test} from 'vitest';
 
 const extension = defineExtension({
   $initialEditorState: () => {
@@ -44,7 +44,7 @@ type SerializedJSON = Record<string, unknown> & {children?: SerializedJSON[]};
 function selectionJSON(
   pairs: Parameters<typeof $withSerializationContext>[0] = [],
 ): SerializedJSON[] {
-  const editor = buildEditorFromExtensions({
+  using editor = buildEditorFromExtensions({
     dependencies: [extension],
     name: '[root]',
     namespace: '',
@@ -52,7 +52,6 @@ function selectionJSON(
       throw err;
     },
   });
-  onTestFinished(() => editor.dispose());
   let nodes: SerializedJSON[] = [];
   editor.update(
     () => {

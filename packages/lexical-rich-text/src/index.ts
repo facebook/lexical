@@ -31,7 +31,6 @@ import {
   $applyNodeReplacement,
   $caretFromPoint,
   $comparePointCaretNext,
-  $create,
   $createNodeSelection,
   $createParagraphNode,
   $createRangeSelection,
@@ -123,6 +122,7 @@ import {
   type LexicalCommand,
   type LexicalEditor,
   type LexicalNode,
+  type LexicalUpdateJSON,
   mergeRegister,
   MOVE_TO_END,
   MOVE_TO_START,
@@ -137,6 +137,7 @@ import {
   REMOVE_TEXT_COMMAND,
   SELECT_ALL_COMMAND,
   type SerializedElementNode,
+  type SerializedPartial,
   SET_TEXT_FORMAT_COMMAND,
   setNodeIndentFromDOM,
   type Spread,
@@ -363,6 +364,17 @@ export class HeadingNode extends ElementNode {
     });
   }
 
+  /**
+   * The base implementation applies this node's `json` schema; this override
+   * only narrows the accepted JSON to the node's serialized shape (where any
+   * node-specific property may be omitted).
+   */
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedHeadingNode>>,
+  ): this {
+    return super.updateFromJSON(serializedNode);
+  }
+
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
     this.__tag = prevNode.__tag;
@@ -515,7 +527,7 @@ function $convertBlockquoteElement(element: HTMLElement): DOMConversionOutput {
 export function $createHeadingNode(
   headingTag: HeadingTagType = 'h1',
 ): HeadingNode {
-  return $create(HeadingNode).setTag(headingTag);
+  return $applyNodeReplacement(new HeadingNode(headingTag));
 }
 
 export function $isHeadingNode(

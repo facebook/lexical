@@ -7,7 +7,7 @@
  */
 
 import {
-  $create,
+  $applyNodeReplacement,
   $getDocument,
   addClassNamesToElement,
   type EditorConfig,
@@ -56,7 +56,7 @@ export class SpecialTextNode extends TextNode {
  * @returns A new SpecialTextNode instance.
  */
 export function $createSpecialTextNode(text = ''): SpecialTextNode {
-  return $create(SpecialTextNode).setTextContent(text);
+  return $applyNodeReplacement(new SpecialTextNode(text));
 }
 
 /**

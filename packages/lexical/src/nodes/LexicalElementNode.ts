@@ -28,8 +28,10 @@ import {
   $isEphemeral,
   type DOMExportOutput,
   LexicalNode,
+  type LexicalUpdateJSON,
   type NodeKey,
   type SerializedLexicalNode,
+  type SerializedPartial,
   type SlotChildNode,
   type SlotHostNode,
 } from '../LexicalNode';
@@ -188,6 +190,17 @@ export class ElementNode
       extends: LexicalNode,
       json: elementNodeSchema,
     });
+  }
+
+  /**
+   * The base implementation applies this node's `json` schema; this override
+   * only narrows the accepted JSON to the node's serialized shape (where any
+   * node-specific property may be omitted).
+   */
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedElementNode>>,
+  ): this {
+    return super.updateFromJSON(serializedNode);
   }
 
   constructor(key?: NodeKey) {

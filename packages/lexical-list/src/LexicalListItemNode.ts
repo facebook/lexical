@@ -8,8 +8,8 @@
 
 import invariant from '@lexical/internal/invariant';
 import {
+  $applyNodeReplacement,
   $copyNode,
-  $create,
   $createParagraphNode,
   $getDocument,
   $getSelection,
@@ -35,6 +35,7 @@ import {
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
+  type LexicalUpdateJSON,
   type NodeKey,
   normalizeClassNames,
   numberValue,
@@ -44,6 +45,7 @@ import {
   type RangeSelection,
   removeClassNamesFromElement,
   type SerializedElementNode,
+  type SerializedPartial,
   setDOMStyleFromCSS,
   type Spread,
 } from 'lexical';
@@ -151,6 +153,19 @@ export class ListItemNode extends ElementNode {
       }),
       json: listItemNodeSchema,
     });
+  }
+
+  /**
+   * The base implementation applies this node's `json` schema; this override
+   * only narrows the accepted JSON to the node's serialized shape (where any
+   * node-specific property may be omitted).
+   */
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<
+      SerializedPartial<SerializedListItemNode>
+    >,
+  ): this {
+    return super.updateFromJSON(serializedNode);
   }
 
   constructor(
@@ -696,7 +711,7 @@ function setFormatFromChildren(
  * @returns The new List Item.
  */
 export function $createListItemNode(checked?: boolean): ListItemNode {
-  return $create(ListItemNode).setChecked(checked);
+  return $applyNodeReplacement(new ListItemNode(undefined, checked));
 }
 
 /**

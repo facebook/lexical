@@ -41,8 +41,10 @@ import {
   type DOMConversionOutput,
   type DOMExportOutput,
   LexicalNode,
+  type LexicalUpdateJSON,
   type NodeKey,
   type SerializedLexicalNode,
+  type SerializedPartial,
 } from '../LexicalNode';
 import {$cloneNodeState} from '../LexicalNodeState';
 import {
@@ -416,6 +418,17 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
       },
       json: textNodeSchema,
     });
+  }
+
+  /**
+   * The base implementation applies this node's `json` schema; this override
+   * only narrows the accepted JSON to the node's serialized shape (where any
+   * node-specific property may be omitted).
+   */
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedTextNode>>,
+  ): this {
+    return super.updateFromJSON(serializedNode);
   }
 
   afterCloneFrom(prevNode: this): void {

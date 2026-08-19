@@ -13,7 +13,7 @@ import {getPeerDependencyFromEditor} from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
 import {$descendantsMatching} from '@lexical/utils';
 import {
-  $create,
+  $applyNodeReplacement,
   $getDocument,
   $getEditor,
   $getNearestNodeFromDOMNode,
@@ -31,12 +31,14 @@ import {
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
+  type LexicalUpdateJSON,
   type NodeKey,
   numberValue,
   objectValue,
   optional,
   removeClassNamesFromElement,
   type SerializedElementNode,
+  type SerializedPartial,
   setDOMStyleFromCSS,
   setDOMUnmanaged,
   type Spread,
@@ -403,6 +405,17 @@ export class TableNode extends ElementNode {
       },
       json: tableNodeSchema,
     });
+  }
+
+  /**
+   * The base implementation applies this node's `json` schema; this override
+   * only narrows the accepted JSON to the node's serialized shape (where any
+   * node-specific property may be omitted).
+   */
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedTableNode>>,
+  ): this {
+    return super.updateFromJSON(serializedNode);
   }
 
   getColWidths(): readonly number[] | undefined {
@@ -874,7 +887,7 @@ export function $convertTableElement(
 }
 
 export function $createTableNode(): TableNode {
-  return $create(TableNode);
+  return $applyNodeReplacement(new TableNode());
 }
 
 export function $isTableNode(

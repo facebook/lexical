@@ -7,7 +7,7 @@
  */
 
 import {
-  $create,
+  $applyNodeReplacement,
   $getDocument,
   defineExtension,
   type EditorConfig,
@@ -60,7 +60,7 @@ export class OverflowNode extends ElementNode {
 }
 
 export function $createOverflowNode(): OverflowNode {
-  return $create(OverflowNode);
+  return $applyNodeReplacement(new OverflowNode());
 }
 
 export function $isOverflowNode(

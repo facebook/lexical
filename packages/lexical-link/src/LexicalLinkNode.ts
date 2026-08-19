@@ -35,6 +35,7 @@ import {
   isHTMLAnchorElement,
   type LexicalCommand,
   type LexicalNode,
+  type LexicalUpdateJSON,
   type NodeKey,
   nullable,
   objectValue,
@@ -43,6 +44,7 @@ import {
   type PointType,
   type RangeSelection,
   type SerializedElementNode,
+  type SerializedPartial,
   type Spread,
   stringValue,
   withSetter,
@@ -104,6 +106,17 @@ export class LinkNode extends ElementNode {
       },
       json: linkNodeSchema,
     });
+  }
+
+  /**
+   * The base implementation applies this node's `json` schema; this override
+   * only narrows the accepted JSON to the node's serialized shape (where any
+   * node-specific property may be omitted).
+   */
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedLinkNode>>,
+  ): this {
+    return super.updateFromJSON(serializedNode);
   }
 
   constructor(
@@ -519,6 +532,19 @@ export class AutoLinkNode extends LinkNode {
       extends: LinkNode,
       json: autoLinkNodeSchema,
     });
+  }
+
+  /**
+   * The base implementation applies this node's `json` schema; this override
+   * only narrows the accepted JSON to the node's serialized shape (where any
+   * node-specific property may be omitted).
+   */
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<
+      SerializedPartial<SerializedAutoLinkNode>
+    >,
+  ): this {
+    return super.updateFromJSON(serializedNode);
   }
 
   shouldMergeAdjacentLink(_otherLink: LinkNode): boolean {

@@ -7,7 +7,7 @@
  */
 
 import {
-  $create,
+  $applyNodeReplacement,
   $getDocument,
   $isRangeSelection,
   addClassNamesToElement,
@@ -16,11 +16,13 @@ import {
   type EditorConfig,
   ElementNode,
   type LexicalNode,
+  type LexicalUpdateJSON,
   type NodeKey,
   objectValue,
   type RangeSelection,
   removeClassNamesFromElement,
   type SerializedElementNode,
+  type SerializedPartial,
   type Spread,
   stringValue,
   withSetter,
@@ -51,6 +53,17 @@ export class MarkNode extends ElementNode {
 
   $config() {
     return this.config('mark', {extends: ElementNode, json: markNodeSchema});
+  }
+
+  /**
+   * The base implementation applies this node's `json` schema; this override
+   * only narrows the accepted JSON to the node's serialized shape (where any
+   * node-specific property may be omitted).
+   */
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedMarkNode>>,
+  ): this {
+    return super.updateFromJSON(serializedNode);
   }
 
   afterCloneFrom(prevNode: this): void {
@@ -189,7 +202,7 @@ export class MarkNode extends ElementNode {
 }
 
 export function $createMarkNode(ids: readonly string[] = NO_IDS): MarkNode {
-  return $create(MarkNode).setIDs(ids);
+  return $applyNodeReplacement(new MarkNode(ids));
 }
 
 export function $isMarkNode(node: LexicalNode | null): node is MarkNode {

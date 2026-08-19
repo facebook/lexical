@@ -14,9 +14,11 @@ import {
   type ElementFormatType,
   enumValue,
   type LexicalNode,
+  type LexicalUpdateJSON,
   type NodeKey,
   objectValue,
   type SerializedLexicalNode,
+  type SerializedPartial,
   type Spread,
 } from 'lexical';
 
@@ -56,6 +58,19 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
   constructor(format?: ElementFormatType, key?: NodeKey) {
     super(key);
     this.__format = format || '';
+  }
+
+  /**
+   * The base implementation applies this node's `json` schema; this override
+   * only narrows the accepted JSON to the node's serialized shape (where any
+   * node-specific property may be omitted).
+   */
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<
+      SerializedPartial<SerializedDecoratorBlockNode>
+    >,
+  ): this {
+    return super.updateFromJSON(serializedNode);
   }
 
   afterCloneFrom(prevNode: this): void {

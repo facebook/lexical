@@ -8,7 +8,7 @@
 
 import {registerLexicalTextEntity} from '@lexical/text';
 import {
-  $create,
+  $applyNodeReplacement,
   defineExtension,
   type EditorConfig,
   type LexicalNode,
@@ -45,7 +45,7 @@ export class KeywordNode extends TextNode {
 }
 
 export function $createKeywordNode(keyword: string = ''): KeywordNode {
-  return $create(KeywordNode).setTextContent(keyword);
+  return $applyNodeReplacement(new KeywordNode(keyword));
 }
 
 export function $isKeywordNode(node: LexicalNode | null | undefined): boolean {

@@ -8,7 +8,7 @@
 
 import {$descendantsMatching} from '@lexical/utils';
 import {
-  $create,
+  $applyNodeReplacement,
   $getDocument,
   $setDirectionFromDOM,
   addClassNamesToElement,
@@ -17,11 +17,13 @@ import {
   type EditorConfig,
   ElementNode,
   type LexicalNode,
+  type LexicalUpdateJSON,
   type NodeKey,
   numberValue,
   objectValue,
   optional,
   type SerializedElementNode,
+  type SerializedPartial,
   type Spread,
 } from 'lexical';
 
@@ -55,6 +57,19 @@ export class TableRowNode extends ElementNode {
       },
       json: tableRowNodeSchema,
     });
+  }
+
+  /**
+   * The base implementation applies this node's `json` schema; this override
+   * only narrows the accepted JSON to the node's serialized shape (where any
+   * node-specific property may be omitted).
+   */
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<
+      SerializedPartial<SerializedTableRowNode>
+    >,
+  ): this {
+    return super.updateFromJSON(serializedNode);
   }
 
   afterCloneFrom(prevNode: this): void {
@@ -139,7 +154,7 @@ export function $convertTableRowElement(domNode: Node): DOMConversionOutput {
 }
 
 export function $createTableRowNode(height?: number): TableRowNode {
-  return $create(TableRowNode).setHeight(height);
+  return $applyNodeReplacement(new TableRowNode(height));
 }
 
 export function $isTableRowNode(

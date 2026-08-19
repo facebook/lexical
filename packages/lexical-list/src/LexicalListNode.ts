@@ -7,7 +7,7 @@
  */
 
 import {
-  $create,
+  $applyNodeReplacement,
   $createTextNode,
   $getDocument,
   $isElementNode,
@@ -23,12 +23,14 @@ import {
   isHTMLElement,
   type LexicalEditor,
   type LexicalNode,
+  type LexicalUpdateJSON,
   type NodeKey,
   normalizeClassNames,
   numberValue,
   objectValue,
   removeClassNamesFromElement,
   type SerializedElementNode,
+  type SerializedPartial,
   type Spread,
 } from 'lexical';
 
@@ -86,6 +88,17 @@ export class ListNode extends ElementNode {
       }),
       json: listNodeSchema,
     });
+  }
+
+  /**
+   * The base implementation applies this node's `json` schema; this override
+   * only narrows the accepted JSON to the node's serialized shape (where any
+   * node-specific property may be omitted).
+   */
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedListNode>>,
+  ): this {
+    return super.updateFromJSON(serializedNode);
   }
 
   constructor(listType: ListType = 'number', start: number = 1, key?: NodeKey) {
@@ -378,7 +391,7 @@ export function $createListNode(
   listType: ListType = 'number',
   start = 1,
 ): ListNode {
-  return $create(ListNode).setListType(listType).setStart(start);
+  return $applyNodeReplacement(new ListNode(listType, start));
 }
 
 /**

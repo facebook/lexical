@@ -7,17 +7,19 @@
  */
 
 import {
-  $create,
+  $applyNodeReplacement,
   addClassNamesToElement,
   type EditorConfig,
   type EditorThemeClasses,
   type ElementNode,
   type LexicalNode,
+  type LexicalUpdateJSON,
   type NodeKey,
   nullable,
   objectValue,
   optional,
   removeClassNamesFromElement,
+  type SerializedPartial,
   type SerializedTextNode,
   type Spread,
   stringValue,
@@ -62,6 +64,19 @@ export class CodeHighlightNode extends TextNode {
       extends: TextNode,
       json: codeHighlightNodeSchema,
     });
+  }
+
+  /**
+   * The base implementation applies this node's `json` schema; this override
+   * only narrows the accepted JSON to the node's serialized shape (where any
+   * node-specific property may be omitted).
+   */
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<
+      SerializedPartial<SerializedCodeHighlightNode>
+    >,
+  ): this {
+    return super.updateFromJSON(serializedNode);
   }
 
   afterCloneFrom(prevNode: this): void {
@@ -152,9 +167,7 @@ export function $createCodeHighlightNode(
   text: string = '',
   highlightType?: string | null | undefined,
 ): CodeHighlightNode {
-  return $create(CodeHighlightNode)
-    .setTextContent(text)
-    .setHighlightType(highlightType);
+  return $applyNodeReplacement(new CodeHighlightNode(text, highlightType));
 }
 
 export function $isCodeHighlightNode(

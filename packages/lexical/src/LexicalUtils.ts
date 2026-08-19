@@ -3182,6 +3182,114 @@ function defaultSetterName(key: string): string {
   return `set${key.charAt(0).toUpperCase()}${key.slice(1)}`;
 }
 
+/** The default getter name for a serialized property, e.g. `foo` → `getFoo`. */
+function defaultGetterName(key: string): string {
+  return `get${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+}
+
+/**
+ * The mirror of {@link CompiledSetter} for the export direction: one of a
+ * node's serialized properties read back through a named getter (`get<Prop>`
+ * by default, or the name recorded with `withGetter`). Compiled once per class
+ * so {@link LexicalNode.exportJSON} writes an object without walking the class
+ * chain on every call.
+ */
+interface CompiledGetter {
+  readonly key: string;
+  // Resolved once at compile time, like the setter counterpart.
+  readonly getter: (this: LexicalNode) => unknown;
+}
+
+const EMPTY_GETTERS: readonly CompiledGetter[] = [];
+const compiledGettersByClass = new WeakMap<
+  Klass<LexicalNode>,
+  readonly CompiledGetter[]
+>();
+
+function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
+  // Walked most-derived first, unlike compileSetters: the serialized property
+  // order this produces is the one the hand-written exportJSON methods it
+  // replaces produced (a subclass's own properties, then its ancestors', with
+  // `type`/`version` last), which some tests compare as strings.
+  const chain = [...iterStaticNodeConfigChain(klass)];
+  const prototype = klass.prototype as unknown as Record<string, unknown>;
+  const fields = new Map<string, CompiledGetter>();
+  for (const {ownNodeConfig} of chain) {
+    const json = ownNodeConfig && ownNodeConfig.json;
+    if (!json || json.meta.kind !== 'object') {
+      continue;
+    }
+    const {fields: schemaFields} = json.meta;
+    for (const key of Object.keys(schemaFields)) {
+      if (fields.has(key)) {
+        // A subclass field of the same name was already resolved and wins.
+        continue;
+      }
+      const schema = schemaFields[key];
+      const getterName = schema.getter || defaultGetterName(key);
+      const getter = prototype[getterName];
+      if (getterName.startsWith('__')) {
+        // withField: read the node's own field rather than call a method,
+        // still through getLatest() so the current version is observed.
+        fields.set(key, {
+          getter: function (this: LexicalNode) {
+            return (this.getLatest() as unknown as Record<string, unknown>)[
+              getterName
+            ];
+          },
+          key,
+        });
+      } else if (typeof getter === 'function') {
+        fields.set(key, {
+          getter: getter as (this: LexicalNode) => unknown,
+          key,
+        });
+      } else if (__DEV__) {
+        // A property with no matching getter is written by an exportJSON
+        // override instead — unless a name was declared explicitly, which is
+        // then a programmer error.
+        invariant(
+          schema.getter === undefined,
+          '%s: json schema field "%s" declares getter %s() which is not a method',
+          klass.name,
+          key,
+          getterName,
+        );
+      }
+    }
+  }
+  return fields.size === 0 ? EMPTY_GETTERS : [...fields.values()];
+}
+
+/**
+ * Write the serialized properties a node's `json` schema declares, reading each
+ * through its getter. A getter that returns `undefined` omits the property:
+ * absent and explicitly-undefined are indistinguishable once the JSON is
+ * stringified, so this is how an optional (or conditionally persisted)
+ * property is expressed.
+ *
+ * @internal
+ */
+export function $writeJSONGetters(
+  node: LexicalNode,
+  json: {[key: string]: unknown},
+): void {
+  const klass = node.constructor as Klass<LexicalNode>;
+  let getters = compiledGettersByClass.get(klass);
+  if (getters === undefined) {
+    // Populate the cache (and inject static methods) on first use.
+    getStaticNodeConfig(klass);
+    getters = compiledGettersByClass.get(klass) || EMPTY_GETTERS;
+  }
+  for (let i = 0; i < getters.length; i++) {
+    const entry = getters[i];
+    const value = entry.getter.call(node);
+    if (value !== undefined) {
+      json[entry.key] = value;
+    }
+  }
+}
+
 function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
   // Walk the same config chain every other schema consumer walks
   // (iterStaticNodeConfigChain honors an explicit `extends` and severed static
@@ -3455,8 +3563,10 @@ export function getStaticNodeConfig(
   if (!compiledSettersByClass.has(klass)) {
     try {
       compiledSettersByClass.set(klass, compileSetters(klass));
+      compiledGettersByClass.set(klass, compileGetters(klass));
     } catch (error) {
       STATIC_NODE_CONFIG_CACHE.delete(klass);
+      compiledSettersByClass.delete(klass);
       throw error;
     }
   }

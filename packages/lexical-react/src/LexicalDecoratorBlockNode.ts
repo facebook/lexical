@@ -54,6 +54,9 @@ const decoratorBlockNodeSchema = /* @__PURE__ */ objectValue({
 // implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface DecoratorBlockNode {
+  // The serialized shape this node exports; the runtime implementation is
+  // the schema-driven LexicalNode.exportJSON.
+  exportJSON(): SerializedDecoratorBlockNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<
       SerializedPartial<SerializedDecoratorBlockNode>
@@ -80,13 +83,6 @@ export class DecoratorBlockNode extends DecoratorNode<JSX.Element> {
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
     this.__format = prevNode.__format;
-  }
-
-  exportJSON(): SerializedDecoratorBlockNode {
-    return {
-      ...super.exportJSON(),
-      format: this.__format || '',
-    };
   }
 
   $config() {

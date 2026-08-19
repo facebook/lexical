@@ -81,13 +81,6 @@ export class LayoutContainerNode extends ElementNode {
     return false;
   }
 
-  exportJSON(): SerializedLayoutContainerNode {
-    return {
-      ...super.exportJSON(),
-      templateColumns: this.__templateColumns,
-    };
-  }
-
   getTemplateColumns(): string {
     return this.getLatest().__templateColumns;
   }

@@ -121,7 +121,6 @@ describe('LexicalCodeNode tests', () => {
           format: '',
           indent: 0,
           language: 'javascript',
-          theme: undefined,
           type: 'code',
           version: 1,
         });

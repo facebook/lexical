@@ -97,6 +97,9 @@ function applyMarkerStyles(
 // implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface ListItemNode {
+  // The serialized shape this node exports; the runtime implementation is
+  // the schema-driven LexicalNode.exportJSON.
+  exportJSON(): SerializedListItemNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<
       SerializedPartial<SerializedListItemNode>
@@ -252,14 +255,6 @@ export class ListItemNode extends ElementNode {
 
     return {
       element,
-    };
-  }
-
-  exportJSON(): SerializedListItemNode {
-    return {
-      ...super.exportJSON(),
-      checked: this.getChecked(),
-      value: this.getValue(),
     };
   }
 

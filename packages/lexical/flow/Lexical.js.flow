@@ -1890,6 +1890,22 @@ declare export function withSetter<T>(
   schema: SerializationSchema<T>,
   setter: string,
 ): SerializationSchema<T>;
+export type SchemaAccessors = {
+  readonly getter?: string,
+  readonly setter?: string,
+};
+declare export function withGetter<T>(
+  schema: SerializationSchema<T>,
+  getter: string,
+): SerializationSchema<T>;
+declare export function withField<T>(
+  schema: SerializationSchema<T>,
+  field: string,
+): SerializationSchema<T>;
+declare export function withAccessors<T>(
+  schema: SerializationSchema<T>,
+  accessors: SchemaAccessors,
+): SerializationSchema<T>;
 
 export type UnionToIntersection<T> = (
   // $FlowFixMe[unclear-type]

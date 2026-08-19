@@ -47,7 +47,7 @@ import {
   type SerializedPartial,
   type Spread,
   stringValue,
-  withSetter,
+  withAccessors,
 } from 'lexical';
 
 export type LinkAttributes = {
@@ -89,13 +89,19 @@ const linkNodeSchema = /* @__PURE__ */ objectValue({
   title: /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue(), {
     defaultAsNull: true,
   }),
-  url: /* @__PURE__ */ withSetter(/* @__PURE__ */ stringValue(), 'setURL'),
+  url: /* @__PURE__ */ withAccessors(/* @__PURE__ */ stringValue(), {
+    getter: 'getURL',
+    setter: 'setURL',
+  }),
 });
 
 // Narrows the accepted JSON at the type level only; the runtime
 // implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface LinkNode {
+  // The serialized shape this node exports; the runtime implementation is
+  // the schema-driven LexicalNode.exportJSON.
+  exportJSON(): SerializedLinkNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedLinkNode>>,
   ): this;
@@ -229,16 +235,6 @@ export class LinkNode extends ElementNode {
       }
     }
     return url;
-  }
-
-  exportJSON(): SerializedLinkNode | SerializedAutoLinkNode {
-    return {
-      ...super.exportJSON(),
-      rel: this.getRel(),
-      target: this.getTarget(),
-      title: this.getTitle(),
-      url: this.getURL(),
-    };
   }
 
   getURL(): string {
@@ -514,6 +510,9 @@ const autoLinkNodeSchema = /* @__PURE__ */ objectValue({
 // implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface AutoLinkNode {
+  // The serialized shape this node exports; the runtime implementation is
+  // the schema-driven LexicalNode.exportJSON.
+  exportJSON(): SerializedAutoLinkNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<
       SerializedPartial<SerializedAutoLinkNode>
@@ -584,13 +583,6 @@ export class AutoLinkNode extends LinkNode {
       super.updateDOM(prevNode, anchor, config) ||
       prevNode.__isUnlinked !== this.__isUnlinked
     );
-  }
-
-  exportJSON(): SerializedAutoLinkNode {
-    return {
-      ...super.exportJSON(),
-      isUnlinked: this.__isUnlinked,
-    };
   }
 
   // insertNewAfter is deliberately not overridden: LinkNode's implementation

@@ -42,7 +42,8 @@ import {
   setDOMStyleFromCSS,
   setDOMUnmanaged,
   type Spread,
-  withSetter,
+  withAccessors,
+  withGetter,
 } from 'lexical';
 
 import {PIXEL_VALUE_REG_EXP} from './constants';
@@ -76,15 +77,18 @@ const tableNodeSchema = /* @__PURE__ */ objectValue({
   colWidths: /* @__PURE__ */ optional(
     /* @__PURE__ */ arrayValue(/* @__PURE__ */ numberValue()),
   ),
-  frozenColumnCount: /* @__PURE__ */ withSetter(
+  frozenColumnCount: /* @__PURE__ */ withAccessors(
     /* @__PURE__ */ numberValue(),
-    'setFrozenColumns',
+    {getter: '$getSerializedFrozenColumnCount', setter: 'setFrozenColumns'},
   ),
-  frozenRowCount: /* @__PURE__ */ withSetter(
-    /* @__PURE__ */ numberValue(),
-    'setFrozenRows',
+  frozenRowCount: /* @__PURE__ */ withAccessors(/* @__PURE__ */ numberValue(), {
+    getter: '$getSerializedFrozenRowCount',
+    setter: 'setFrozenRows',
+  }),
+  rowStriping: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ booleanValue(),
+    '$getSerializedRowStriping',
   ),
-  rowStriping: /* @__PURE__ */ booleanValue(),
 });
 
 function $updateColgroup(
@@ -394,6 +398,9 @@ export function setScrollableTablesActive(
 // implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface TableNode {
+  // The serialized shape this node exports; the runtime implementation is
+  // the schema-driven LexicalNode.exportJSON.
+  exportJSON(): SerializedTableNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedTableNode>>,
   ): this;
@@ -425,6 +432,21 @@ export class TableNode extends ElementNode {
     });
   }
 
+  /** @internal These three are omitted from the JSON when falsy. */
+  $getSerializedFrozenColumnCount(): number | undefined {
+    return this.getLatest().__frozenColumnCount || undefined;
+  }
+
+  /** @internal */
+  $getSerializedFrozenRowCount(): number | undefined {
+    return this.getLatest().__frozenRowCount || undefined;
+  }
+
+  /** @internal */
+  $getSerializedRowStriping(): boolean | undefined {
+    return this.getLatest().__rowStriping || undefined;
+  }
+
   getColWidths(): readonly number[] | undefined {
     const self = this.getLatest();
     return self.__colWidths;
@@ -444,18 +466,6 @@ export class TableNode extends ElementNode {
     this.__rowStriping = prevNode.__rowStriping;
     this.__frozenColumnCount = prevNode.__frozenColumnCount;
     this.__frozenRowCount = prevNode.__frozenRowCount;
-  }
-
-  exportJSON(): SerializedTableNode {
-    return {
-      ...super.exportJSON(),
-      colWidths: this.getColWidths(),
-      frozenColumnCount: this.__frozenColumnCount
-        ? this.__frozenColumnCount
-        : undefined,
-      frozenRowCount: this.__frozenRowCount ? this.__frozenRowCount : undefined,
-      rowStriping: this.__rowStriping ? this.__rowStriping : undefined,
-    };
   }
 
   extractWithChild(

@@ -33,6 +33,7 @@ import {
   type SerializedPartial,
   type Spread,
   transformValue,
+  withGetter,
 } from 'lexical';
 
 import {$createListItemNode, $isListItemNode, type ListItemNode} from '.';
@@ -68,12 +69,21 @@ const listNodeSchema = /* @__PURE__ */ objectValue({
     listType => TAG_TO_LIST_TYPE[listType] || listType,
   ),
   start: /* @__PURE__ */ numberValue(1),
+  // Derived from listType rather than stored, so it is written on export and
+  // ignored on import (there is deliberately no setTag).
+  tag: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ enumValue(['ul', 'ol']),
+    'getTag',
+  ),
 });
 
 // Narrows the accepted JSON at the type level only; the runtime
 // implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface ListNode {
+  // The serialized shape this node exports; the runtime implementation is
+  // the schema-driven LexicalNode.exportJSON.
+  exportJSON(): SerializedListNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedListNode>>,
   ): this;
@@ -196,15 +206,6 @@ export class ListNode extends ElementNode {
     }
     return {
       element,
-    };
-  }
-
-  exportJSON(): SerializedListNode {
-    return {
-      ...super.exportJSON(),
-      listType: this.getListType(),
-      start: this.getStart(),
-      tag: this.getTag(),
     };
   }
 

@@ -22,12 +22,16 @@ import {
   objectValue,
   type Spread,
   stringValue,
+  withAccessors,
 } from 'lexical';
 import * as React from 'react';
 import {type JSX, useCallback, useEffect, useRef, useState} from 'react';
 
 const tweetNodeSchema = /* @__PURE__ */ objectValue({
-  id: /* @__PURE__ */ stringValue(),
+  id: /* @__PURE__ */ withAccessors(/* @__PURE__ */ stringValue(), {
+    getter: '__id',
+    setter: 'setId',
+  }),
 });
 
 const WIDGET_SCRIPT_URL = 'https://platform.twitter.com/widgets.js';
@@ -137,13 +141,6 @@ export class TweetNode extends DecoratorBlockNode {
 
   static clone(node: TweetNode): TweetNode {
     return new TweetNode(node.__id, node.__format, node.__key);
-  }
-
-  exportJSON(): SerializedTweetNode {
-    return {
-      ...super.exportJSON(),
-      id: this.getId(),
-    };
   }
 
   exportDOM(): DOMExportOutput {

@@ -95,6 +95,9 @@ const noExtensionDeprecation = warnOnlyOnce(
 // implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface CodeNode {
+  // The serialized shape this node exports; the runtime implementation is
+  // the schema-driven LexicalNode.exportJSON.
+  exportJSON(): SerializedCodeNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedCodeNode>>,
   ): this;
@@ -293,14 +296,6 @@ export class CodeNode extends ElementNode {
       setDOMStyleFromCSS(element.style, style);
     }
     return {element};
-  }
-
-  exportJSON(): SerializedCodeNode {
-    return {
-      ...super.exportJSON(),
-      language: this.getLanguage(),
-      theme: this.getTheme(),
-    };
   }
 
   // Mutation

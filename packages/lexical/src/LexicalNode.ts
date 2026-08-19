@@ -71,6 +71,7 @@ import {
   $setCompositionKey,
   $setNodeKey,
   $setSelection,
+  $writeJSONGetters,
   errorOnInsertTextNodeOnRoot,
   getRegisteredNode,
   getStaticNodeConfig,
@@ -1568,14 +1569,23 @@ export class LexicalNode {
    * if you're serializing to JSON for persistent storage somewhere.
    * See [Serialization & Deserialization](https://lexical.dev/docs/concepts/serialization#lexical---html).
    *
+   * The base implementation writes every property the node's `json` schema
+   * declares (its own and those it inherits), reading each through its getter —
+   * `get<Prop>` by default, or the name recorded with `withGetter`. A getter
+   * that returns `undefined` omits its property. Override this only for output
+   * a schema can not describe, and call `super.exportJSON()` when you do.
+   *
    * */
   exportJSON(): SerializedLexicalNode {
+    const json: {[key: string]: unknown} = {};
+    $writeJSONGetters(this, json);
     const state = this.__state ? this.__state.toJSON() : undefined;
     return {
+      ...json,
       type: this.__type,
       version: 1,
       ...state,
-    };
+    } as SerializedLexicalNode;
   }
 
   /**

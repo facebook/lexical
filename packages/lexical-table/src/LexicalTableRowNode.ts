@@ -45,6 +45,9 @@ const tableRowNodeSchema = /* @__PURE__ */ objectValue({
 // implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface TableRowNode {
+  // The serialized shape this node exports; the runtime implementation is
+  // the schema-driven LexicalNode.exportJSON.
+  exportJSON(): SerializedTableRowNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<
       SerializedPartial<SerializedTableRowNode>
@@ -81,14 +84,6 @@ export class TableRowNode extends ElementNode {
   constructor(height: number | undefined = undefined, key?: NodeKey) {
     super(key);
     this.__height = height;
-  }
-
-  exportJSON(): SerializedTableRowNode {
-    const height = this.getHeight();
-    return {
-      ...super.exportJSON(),
-      ...(height === undefined ? undefined : {height}),
-    };
   }
 
   createDOM(config: EditorConfig): HTMLElement {

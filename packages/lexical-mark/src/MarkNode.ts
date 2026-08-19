@@ -25,7 +25,7 @@ import {
   type SerializedPartial,
   type Spread,
   stringValue,
-  withSetter,
+  withAccessors,
 } from 'lexical';
 
 export type SerializedMarkNode = Spread<
@@ -38,9 +38,9 @@ export type SerializedMarkNode = Spread<
 // Single source of truth for parsing the node-specific properties of a
 // SerializedMarkNode (those it adds over a SerializedElementNode).
 const markNodeSchema = /* @__PURE__ */ objectValue({
-  ids: /* @__PURE__ */ withSetter(
+  ids: /* @__PURE__ */ withAccessors(
     /* @__PURE__ */ arrayValue(/* @__PURE__ */ stringValue()),
-    'setIDs',
+    {getter: 'getIDs', setter: 'setIDs'},
   ),
 });
 
@@ -50,6 +50,9 @@ const NO_IDS: readonly string[] = [];
 // implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface MarkNode {
+  // The serialized shape this node exports; the runtime implementation is
+  // the schema-driven LexicalNode.exportJSON.
+  exportJSON(): SerializedMarkNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedMarkNode>>,
   ): this;
@@ -68,13 +71,6 @@ export class MarkNode extends ElementNode {
   afterCloneFrom(prevNode: this): void {
     super.afterCloneFrom(prevNode);
     this.__ids = prevNode.__ids;
-  }
-
-  exportJSON(): SerializedMarkNode {
-    return {
-      ...super.exportJSON(),
-      ids: this.getIDs(),
-    };
   }
 
   constructor(ids: readonly string[] = NO_IDS, key?: NodeKey) {

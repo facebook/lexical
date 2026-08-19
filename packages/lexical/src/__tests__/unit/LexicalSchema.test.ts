@@ -7,6 +7,7 @@
  */
 
 import {
+  $createParagraphNode,
   $createTextNode,
   $getRoot,
   $isTabNode,
@@ -24,6 +25,9 @@ import {
   stringValue,
   transformValue,
   unionValue,
+  withAccessors,
+  withField,
+  withGetter,
   withSetter,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
@@ -418,6 +422,57 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
     });
   });
 
+  describe('exportJSON is written from the schema', () => {
+    initializeUnitTest(testEnv => {
+      test('a getter returning undefined omits its property', () => {
+        const {editor} = testEnv;
+        editor.update(() => {
+          // ElementNode only persists textFormat/textStyle when there are no
+          // TextNode children to recompute them from, which it expresses by
+          // returning undefined from the getters its schema names.
+          const paragraph = $createParagraphNode();
+          paragraph.append($createTextNode('x').setFormat(1));
+          expect(paragraph.$getSerializedTextFormat()).toBeUndefined();
+          expect(paragraph.$getSerializedTextStyle()).toBeUndefined();
+          // and a node that does carry them writes them out
+          const styled = $createParagraphNode().setTextStyle('color: red');
+          expect(styled.$getSerializedTextStyle()).toBe('color: red');
+          expect(styled.exportJSON()).toMatchObject({textStyle: 'color: red'});
+        });
+      });
+
+      test('a property is read through the getter its schema names', () => {
+        const {editor} = testEnv;
+        editor.update(() => {
+          // `text` is declared with getTextContent, not the default getText,
+          // and ElementNode's `format` with getFormatType (a string) rather
+          // than the numeric getFormat.
+          expect($createTextNode('hi').exportJSON()).toMatchObject({
+            text: 'hi',
+            type: 'text',
+          });
+          expect($createParagraphNode().exportJSON()).toMatchObject({
+            format: '',
+            type: 'paragraph',
+          });
+        });
+      });
+
+      test('export round-trips through import for every schema property', () => {
+        const {editor} = testEnv;
+        editor.update(() => {
+          const node = $createTextNode('round trip')
+            .setFormat(1)
+            .setStyle('color: red')
+            .setMode('token');
+          const json = node.exportJSON();
+          const restored = $createTextNode('').updateFromJSON(json);
+          expect(restored.exportJSON()).toEqual(json);
+        });
+      });
+    });
+  });
+
   describe('withSetter propagation through combinators', () => {
     test('optional, nullable, and arrayValue keep the inner setter name', () => {
       // A field like `language: optional(nullable(stringValue()))` must apply
@@ -430,6 +485,21 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
       expect(withSetter(optional(stringValue()), 'setBar').setter).toBe(
         'setBar',
       );
+    });
+
+    test('withAccessors records both directions at once', () => {
+      const schema = withAccessors(stringValue(), {
+        getter: 'getFoo',
+        setter: 'setFoo',
+      });
+      expect(schema.getter).toBe('getFoo');
+      expect(schema.setter).toBe('setFoo');
+      // each direction can also be layered on independently
+      const layered = withGetter(withSetter(stringValue(), 'setA'), 'getA');
+      expect(layered.getter).toBe('getA');
+      expect(layered.setter).toBe('setA');
+      // withField is a getter that reads the node's own field
+      expect(withField(stringValue(), '__foo').getter).toBe('__foo');
     });
   });
 });

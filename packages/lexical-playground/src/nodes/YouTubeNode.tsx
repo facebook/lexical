@@ -24,11 +24,15 @@ import {
   objectValue,
   type Spread,
   stringValue,
+  withAccessors,
 } from 'lexical';
 import * as React from 'react';
 
 const youTubeNodeSchema = /* @__PURE__ */ objectValue({
-  videoID: /* @__PURE__ */ stringValue(),
+  videoID: /* @__PURE__ */ withAccessors(/* @__PURE__ */ stringValue(), {
+    getter: '__id',
+    setter: 'setVideoID',
+  }),
 });
 
 type YouTubeComponentProps = Readonly<{
@@ -84,13 +88,6 @@ export class YouTubeNode extends DecoratorBlockNode {
 
   static clone(node: YouTubeNode): YouTubeNode {
     return new YouTubeNode(node.__id, node.__format, node.__key);
-  }
-
-  exportJSON(): SerializedYouTubeNode {
-    return {
-      ...super.exportJSON(),
-      videoID: this.__id,
-    };
   }
 
   setVideoID(videoID: string): this {

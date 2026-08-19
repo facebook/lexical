@@ -40,6 +40,7 @@ import {
   numberValue,
   objectValue,
   stringValue,
+  withGetter,
 } from '../LexicalSchema';
 import {
   $getSelection,
@@ -86,18 +87,31 @@ export type SerializedElementNode<
 // by the base LexicalNode.updateFromJSON.
 const elementNodeSchema = /* @__PURE__ */ objectValue({
   direction: /* @__PURE__ */ enumValue([null, 'ltr', 'rtl']),
-  format: /* @__PURE__ */ enumValue([
-    '',
-    'left',
-    'start',
-    'center',
-    'right',
-    'end',
-    'justify',
-  ]),
+  // The serialized `format` is the ElementFormatType string, not the numeric
+  // format getFormat() returns.
+  format: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ enumValue([
+      '',
+      'left',
+      'start',
+      'center',
+      'right',
+      'end',
+      'justify',
+    ]),
+    'getFormatType',
+  ),
   indent: /* @__PURE__ */ numberValue(),
-  textFormat: /* @__PURE__ */ numberValue(),
-  textStyle: /* @__PURE__ */ stringValue(),
+  // Persisted only in the narrow case below, so they are read through getters
+  // that return undefined (and are therefore omitted) otherwise.
+  textFormat: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ numberValue(),
+    '$getSerializedTextFormat',
+  ),
+  textStyle: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ stringValue(),
+    '$getSerializedTextStyle',
+  ),
 });
 
 export type ElementFormatType =
@@ -879,34 +893,42 @@ export class ElementNode
     return {element};
   }
   // JSON serialization
-  exportJSON(): SerializedElementNode {
-    const json: SerializedElementNode = {
-      children: [],
-      direction: this.getDirection(),
-      format: this.getFormatType(),
-      indent: this.getIndent(),
-      // As an exception here we invoke super at the end for historical reasons.
-      // Namely, to preserve the order of the properties and not to break the tests
-      // that use the serialized string representation.
-      ...super.exportJSON(),
-    };
+  /**
+   * Whether `textFormat`/`textStyle` are persisted at all: only when there are
+   * no TextNode children from which they would be set on reconcile (#7968).
+   *
+   * @internal
+   */
+  $shouldSerializeTextStyles(): boolean {
+    return !$isRootOrShadowRoot(this) && !this.getChildren().some($isTextNode);
+  }
+
+  /** @internal Serialized `textFormat`, or undefined to omit it. */
+  $getSerializedTextFormat(): number | undefined {
     const textFormat = this.getTextFormat();
+    return textFormat !== 0 && this.$shouldSerializeTextStyles()
+      ? textFormat
+      : undefined;
+  }
+
+  /** @internal Serialized `textStyle`, or undefined to omit it. */
+  $getSerializedTextStyle(): string | undefined {
     const textStyle = this.getTextStyle();
-    // Only persist for cases when there are no TextNode children from which
-    // these would be set on reconcile (#7968)
-    if (
-      (textFormat !== 0 || textStyle !== '') &&
-      !$isRootOrShadowRoot(this) &&
-      !this.getChildren().some($isTextNode)
-    ) {
-      if (textFormat !== 0) {
-        json.textFormat = textFormat;
-      }
-      if (textStyle !== '') {
-        json.textStyle = textStyle;
-      }
-    }
-    return json;
+    return textStyle !== '' && this.$shouldSerializeTextStyles()
+      ? textStyle
+      : undefined;
+  }
+
+  exportJSON(): SerializedElementNode {
+    // `children` is structural rather than schema-declared (the export walk
+    // fills it), and leads for consistency with the historical property order.
+    // The declared properties themselves are written by the base
+    // implementation's compiled schema getters, which TypeScript cannot see,
+    // hence the widening cast.
+    return {
+      children: [],
+      ...super.exportJSON(),
+    } as unknown as SerializedElementNode;
   }
 
   // These are intended to be extends for specific element heuristics.

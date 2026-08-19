@@ -560,7 +560,8 @@ Each property's schema is built from composable helpers exported by
 - `transformValue(inner, transform)` — normalizes what `inner` parsed into the stored domain (e.g. the legacy `format: 'bold'` shorthand folded into its numeric form); introspection still describes `inner`'s accepted input domain
 - `rawValue()` — an escape hatch that passes the value through unparsed
 - `objectValue(fields)` — the record of properties, used for the `json` declaration itself
-- `withSetter(schema, 'methodName')` — names the method that applies the parsed value when it is not the conventional `set<Property>` (e.g. `text` is applied with `setTextContent`)
+- `withSetter(schema, 'methodName')` / `withGetter(schema, 'methodName')` / `withAccessors(schema, {getter, setter})` — name the methods a property is applied and read through when they are not the conventional `set<Property>`/`get<Property>` (e.g. `text` uses `setTextContent`/`getTextContent`)
+- `withField(schema, '__field')` — read the value straight from the node's own field, for a property the node stores but exposes no getter for
 
 Parsing is total: a missing or out-of-domain value falls back to the
 schema's default instead of throwing, which is the domain importers actually
@@ -569,6 +570,14 @@ whose value is its default). Each parsed property is applied through the
 node's setter — `set<Property>`, or the name given with `withSetter` — so
 subclass overrides of those setters are honored, and a subclass schema field
 with the same serialized property name overrides its ancestor's.
+
+The same declaration drives the export direction: the base `exportJSON` writes
+every declared property, reading each through its getter, so a node needs no
+`exportJSON` of its own either. A getter that returns `undefined` omits its
+property — absent and explicitly-`undefined` are indistinguishable once the
+JSON is stringified, so that is how an optional or conditionally-persisted
+property is expressed. Override `exportJSON` only for output a schema cannot
+describe, and call `super.exportJSON()` when you do.
 
 Because the node itself declares the schema, tooling can introspect it. The
 `@lexical/fast-check` package derives property-based test generators

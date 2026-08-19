@@ -54,7 +54,7 @@ import {
   stringValue,
   transformValue,
   unionValue,
-  withSetter,
+  withAccessors,
 } from '../LexicalSchema';
 import {
   $generateNodesFromRawText,
@@ -146,11 +146,12 @@ const textNodeSchema = /* @__PURE__ */ objectValue({
   ),
   mode: /* @__PURE__ */ enumValue(['normal', 'token', 'segmented']),
   style: /* @__PURE__ */ stringValue(),
-  // TextNode applies `text` with setTextContent rather than the default setText.
-  text: /* @__PURE__ */ withSetter(
-    /* @__PURE__ */ stringValue(),
-    'setTextContent',
-  ),
+  // TextNode reads and writes `text` through the TextContent accessors rather
+  // than the default getText/setText.
+  text: /* @__PURE__ */ withAccessors(/* @__PURE__ */ stringValue(), {
+    getter: 'getTextContent',
+    setter: 'setTextContent',
+  }),
 });
 
 function getElementOuterTag(node: TextNode, format: number): string | null {
@@ -347,6 +348,9 @@ function $wrapElementWith(
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface TextNode {
+  // The serialized shape this node exports; the runtime implementation is
+  // the schema-driven LexicalNode.exportJSON.
+  exportJSON(): SerializedTextNode;
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
   // Narrows the accepted JSON at the type level only; the runtime
@@ -745,20 +749,6 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
 
     return {
       element,
-    };
-  }
-
-  exportJSON(): SerializedTextNode {
-    return {
-      detail: this.getDetail(),
-      format: this.getFormat(),
-      mode: this.getMode(),
-      style: this.getStyle(),
-      text: this.getTextContent(),
-      // As an exception here we invoke super at the end for historical reasons.
-      // Namely, to preserve the order of the properties and not to break the tests
-      // that use the serialized string representation.
-      ...super.exportJSON(),
     };
   }
 

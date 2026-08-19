@@ -263,6 +263,7 @@ export {
   optional,
   type Parse,
   rawValue,
+  type SchemaAccessors,
   type SerializationSchema,
   type SerializationSchemaFields,
   type SerializationSchemaMeta,
@@ -271,6 +272,9 @@ export {
   stringValue,
   transformValue,
   unionValue,
+  withAccessors,
+  withField,
+  withGetter,
   withSetter,
 } from './LexicalSchema';
 export type {

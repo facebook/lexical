@@ -181,6 +181,14 @@ export const quoteShadowRootState = /* @__PURE__ */ createState('shadowRoot', {
 });
 
 /** @noInheritDoc */
+// The serialized shape this node exports; the runtime implementation is the
+// schema-driven LexicalNode.exportJSON.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface QuoteNode {
+  exportJSON(): SerializedQuoteNode;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class QuoteNode extends ElementNode {
   $config() {
     return this.config('quote', {
@@ -251,10 +259,6 @@ export class QuoteNode extends ElementNode {
     };
   }
 
-  exportJSON(): SerializedQuoteNode {
-    return super.exportJSON();
-  }
-
   static importJSON(serializedNode: SerializedQuoteNode): QuoteNode {
     return $createQuoteNode().updateFromJSON(serializedNode);
   }
@@ -321,6 +325,9 @@ const headingNodeSchema = /* @__PURE__ */ objectValue({
 // implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface HeadingNode {
+  // The serialized shape this node exports; the runtime implementation is
+  // the schema-driven LexicalNode.exportJSON.
+  exportJSON(): SerializedHeadingNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedHeadingNode>>,
   ): this;
@@ -431,13 +438,6 @@ export class HeadingNode extends ElementNode {
 
     return {
       element,
-    };
-  }
-
-  exportJSON(): SerializedHeadingNode {
-    return {
-      ...super.exportJSON(),
-      tag: this.getTag(),
     };
   }
 

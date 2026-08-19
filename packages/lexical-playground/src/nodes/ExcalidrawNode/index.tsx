@@ -24,6 +24,8 @@ import {
   type Spread,
   stringValue,
   unionValue,
+  withAccessors,
+  withGetter,
 } from 'lexical';
 import * as React from 'react';
 
@@ -44,9 +46,12 @@ const dimensionSchema: SerializationSchema<Dimension> =
   );
 
 const excalidrawNodeSchema = /* @__PURE__ */ objectValue({
-  data: /* @__PURE__ */ stringValue(),
-  height: dimensionSchema,
-  width: dimensionSchema,
+  data: /* @__PURE__ */ withAccessors(/* @__PURE__ */ stringValue(), {
+    getter: '__data',
+    setter: 'setData',
+  }),
+  height: /* @__PURE__ */ withGetter(dimensionSchema, '$getSerializedHeight'),
+  width: /* @__PURE__ */ withGetter(dimensionSchema, '$getSerializedWidth'),
 });
 
 export type SerializedExcalidrawNode = Spread<
@@ -78,15 +83,6 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
     this.__data = prevNode.__data;
     this.__width = prevNode.__width;
     this.__height = prevNode.__height;
-  }
-
-  exportJSON(): SerializedExcalidrawNode {
-    return {
-      ...super.exportJSON(),
-      data: this.__data,
-      height: this.__height === 'inherit' ? undefined : this.__height,
-      width: this.__width === 'inherit' ? undefined : this.__width,
-    };
   }
 
   constructor(
@@ -136,6 +132,18 @@ export class ExcalidrawNode extends DecoratorNode<JSX.Element> {
 
     element.setAttribute('data-lexical-excalidraw-json', this.__data);
     return {element};
+  }
+
+  /** @internal The 'inherit' sentinel is omitted from the JSON. */
+  $getSerializedWidth(): number | undefined {
+    const width = this.getWidth();
+    return width === 'inherit' ? undefined : width;
+  }
+
+  /** @internal */
+  $getSerializedHeight(): number | undefined {
+    const height = this.getHeight();
+    return height === 'inherit' ? undefined : height;
   }
 
   setData(data: string): this {

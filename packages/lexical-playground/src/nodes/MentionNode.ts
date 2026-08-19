@@ -19,6 +19,7 @@ import {
   stringValue,
   type TextFormatType,
   TextNode,
+  withAccessors,
 } from 'lexical';
 
 // The element TextNode.exportDOM wraps its output with, one per text format,
@@ -31,7 +32,10 @@ const FORMAT_WRAPPER_TAGS: readonly (readonly [TextFormatType, string])[] = [
 ];
 
 const mentionNodeSchema = /* @__PURE__ */ objectValue({
-  mentionName: /* @__PURE__ */ stringValue(),
+  mentionName: /* @__PURE__ */ withAccessors(/* @__PURE__ */ stringValue(), {
+    getter: '__mention',
+    setter: 'setMentionName',
+  }),
 });
 
 export type SerializedMentionNode = Spread<
@@ -42,6 +46,14 @@ export type SerializedMentionNode = Spread<
 >;
 
 const mentionBackgroundColor = 'rgba(24, 119, 232, 0.2)';
+// The serialized shape this node exports; the runtime implementation is the
+// schema-driven LexicalNode.exportJSON.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface MentionNode {
+  exportJSON(): SerializedMentionNode;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class MentionNode extends TextNode {
   __mention: string;
 
@@ -65,13 +77,6 @@ export class MentionNode extends TextNode {
   constructor(mentionName: string = '', text?: string, key?: NodeKey) {
     super(text ?? mentionName, key);
     this.__mention = mentionName;
-  }
-
-  exportJSON(): SerializedMentionNode {
-    return {
-      ...super.exportJSON(),
-      mentionName: this.__mention,
-    };
   }
 
   createDOM(config: EditorConfig): HTMLElement {

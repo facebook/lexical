@@ -34,7 +34,8 @@ import {
   type SerializedPartial,
   type Spread,
   stringValue,
-  withSetter,
+  withAccessors,
+  withGetter,
 } from 'lexical';
 
 import {COLUMN_WIDTH, PIXEL_VALUE_REG_EXP} from './constants';
@@ -56,16 +57,19 @@ const tableCellNodeSchema = /* @__PURE__ */ objectValue({
   colSpan: /* @__PURE__ */ numberValue(1, {integer: true, min: 1}),
   // headerState is applied through setHeaderStyles (with its default BOTH
   // mask) rather than the conventional set<Prop> name.
-  headerState: /* @__PURE__ */ withSetter(
+  headerState: /* @__PURE__ */ withAccessors(
     /* @__PURE__ */ numberValue(TableCellHeaderStates.NO_STATUS),
-    'setHeaderStyles',
+    {getter: '__headerState', setter: 'setHeaderStyles'},
   ),
   rowSpan: /* @__PURE__ */ numberValue(1, {integer: true, min: 1}),
   // The domain exportJSON already enforces via isValidVerticalAlign; anything
   // else (including the historical falsy `|| undefined` case) is absent.
   // `undefined` leads the list so it is the default: passing it explicitly as
   // enumValue's second argument would instead select values[0].
-  verticalAlign: /* @__PURE__ */ enumValue([undefined, 'middle', 'bottom']),
+  verticalAlign: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ enumValue([undefined, 'middle', 'bottom']),
+    '$getSerializedVerticalAlign',
+  ),
   // A width of 0 is not a real width, matching the historical
   // `serializedNode.width || undefined`.
   width: /* @__PURE__ */ optional(/* @__PURE__ */ numberValue(), {
@@ -89,6 +93,9 @@ export type SerializedTableCellNode = Spread<
 // implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface TableCellNode {
+  // The serialized shape this node exports; the runtime implementation is
+  // the schema-driven LexicalNode.exportJSON.
+  exportJSON(): SerializedTableCellNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<
       SerializedPartial<SerializedTableCellNode>
@@ -210,20 +217,6 @@ export class TableCellNode extends ElementNode {
     return output;
   }
 
-  exportJSON(): SerializedTableCellNode {
-    return {
-      ...super.exportJSON(),
-      ...(isValidVerticalAlign(this.__verticalAlign) && {
-        verticalAlign: this.__verticalAlign,
-      }),
-      backgroundColor: this.getBackgroundColor(),
-      colSpan: this.__colSpan,
-      headerState: this.__headerState,
-      rowSpan: this.__rowSpan,
-      width: this.getWidth(),
-    };
-  }
-
   getColSpan(): number {
     return this.getLatest().__colSpan;
   }
@@ -269,6 +262,12 @@ export class TableCellNode extends ElementNode {
 
   getWidth(): number | undefined {
     return this.getLatest().__width;
+  }
+
+  /** @internal Serialized `verticalAlign`, or undefined to omit it. */
+  $getSerializedVerticalAlign(): string | undefined {
+    const verticalAlign = this.getLatest().__verticalAlign;
+    return isValidVerticalAlign(verticalAlign) ? verticalAlign : undefined;
   }
 
   getBackgroundColor(): null | string {

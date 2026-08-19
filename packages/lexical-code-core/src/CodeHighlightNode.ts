@@ -47,6 +47,9 @@ const codeHighlightNodeSchema = /* @__PURE__ */ objectValue({
 // implementation is the schema-driven LexicalNode.updateFromJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface CodeHighlightNode {
+  // The serialized shape this node exports; the runtime implementation is
+  // the schema-driven LexicalNode.exportJSON.
+  exportJSON(): SerializedCodeHighlightNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<
       SerializedPartial<SerializedCodeHighlightNode>
@@ -125,13 +128,6 @@ export class CodeHighlightNode extends TextNode {
       }
     }
     return update;
-  }
-
-  exportJSON(): SerializedCodeHighlightNode {
-    return {
-      ...super.exportJSON(),
-      highlightType: this.getHighlightType(),
-    };
   }
 
   // Prevent formatting (bold, underline, etc)

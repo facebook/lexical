@@ -40,6 +40,14 @@ type SerializedCollapsibleContainerNode = Spread<
   SerializedElementNode
 >;
 
+// The serialized shape this node exports; the runtime implementation is the
+// schema-driven LexicalNode.exportJSON.
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+export interface CollapsibleContainerNode {
+  exportJSON(): SerializedCollapsibleContainerNode;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class CollapsibleContainerNode extends ElementNode {
   __open: boolean;
 
@@ -146,13 +154,6 @@ export class CollapsibleContainerNode extends ElementNode {
       element.setAttribute('open', '');
     }
     return {element};
-  }
-
-  exportJSON(): SerializedCollapsibleContainerNode {
-    return {
-      ...super.exportJSON(),
-      open: this.__open,
-    };
   }
 
   setOpen(open: boolean): this {

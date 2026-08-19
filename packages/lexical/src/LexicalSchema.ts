@@ -94,6 +94,21 @@ export interface SerializationSchema<T> {
    * (e.g. TextNode's `text` → `setTextContent`).
    */
   readonly setter?: string;
+  /**
+   * The name of the node getter that reads this property's value when the base
+   * {@link LexicalNode.exportJSON} walks a node's `json` schema. When omitted,
+   * the getter name defaults to `get<Prop>` (e.g. `foo` → `getFoo`). Use
+   * {@link withGetter} to record a name that doesn't follow that convention
+   * (e.g. TextNode's `text` → `getTextContent`). A getter that returns
+   * `undefined` omits the property from the exported JSON.
+   */
+  readonly getter?: string;
+}
+
+/** The node accessors a {@link SerializationSchema} field is applied through. */
+export interface SchemaAccessors {
+  readonly getter?: string;
+  readonly setter?: string;
 }
 
 /** A {@link SerializationSchema} for an unknown type, used where the type is not relevant. */
@@ -116,12 +131,13 @@ export type SerializationSchemaShape<T> = {
 function makeSchema<T>(
   parse: Parse<T>,
   meta: SerializationSchemaMeta,
-  setter?: string,
+  accessors: SchemaAccessors = {},
 ): SerializationSchema<T> {
   return Object.assign(parse, {
     defaultValue: parse(undefined),
+    getter: accessors.getter,
     meta,
-    setter,
+    setter: accessors.setter,
   }) as SerializationSchema<T>;
 }
 
@@ -246,7 +262,7 @@ export function nullable<T>(
       return defaultAsNull && parsed === inner.defaultValue ? null : parsed;
     },
     {defaultAsNull, inner, kind: 'nullable'},
-    inner.setter,
+    inner,
   );
 }
 
@@ -293,7 +309,7 @@ export function optional<T>(
       return omitDefault && parsed === inner.defaultValue ? undefined : parsed;
     },
     {inner, kind: 'optional', omitDefault},
-    inner.setter,
+    inner,
   );
 }
 
@@ -387,7 +403,7 @@ export function transformValue<In, Out>(
   inner: SerializationSchema<In>,
   transform: (value: In) => Out,
 ): SerializationSchema<Out> {
-  return makeSchema(value => transform(inner(value)), inner.meta, inner.setter);
+  return makeSchema(value => transform(inner(value)), inner.meta, inner);
 }
 
 /**
@@ -428,7 +444,7 @@ export function arrayValue<T>(
   return makeSchema(
     value => (Array.isArray(value) ? value.map(entry => item(entry)) : []),
     {item, kind: 'array'},
-    item.setter,
+    item,
   );
 }
 
@@ -495,5 +511,89 @@ export function withSetter<T>(
   schema: SerializationSchema<T>,
   setter: string,
 ): SerializationSchema<T> {
-  return makeSchema(value => schema(value), schema.meta, setter);
+  return makeSchema(value => schema(value), schema.meta, {
+    getter: schema.getter,
+    setter,
+  });
+}
+
+/**
+ * Return a copy of `schema` that records the name of the node getter used to
+ * read its value when the base {@link LexicalNode.exportJSON} walks a node's
+ * `json` schema. Use this for an {@link objectValue} field whose getter does
+ * not follow the default `get<Prop>` naming.
+ *
+ * The getter may return `undefined` to omit the property from the exported
+ * JSON entirely, which is how an optional property (or one a node only
+ * persists conditionally) is expressed.
+ *
+ * @example
+ * ```ts
+ * objectValue({
+ *   // read with node.getTextContent() rather than the default node.getText()
+ *   text: withGetter(stringValue(), 'getTextContent'),
+ * });
+ * ```
+ * @__NO_SIDE_EFFECTS__
+ */
+export function withGetter<T>(
+  schema: SerializationSchema<T>,
+  getter: string,
+): SerializationSchema<T> {
+  return makeSchema(value => schema(value), schema.meta, {
+    getter,
+    setter: schema.setter,
+  });
+}
+
+/**
+ * Return a copy of `schema` that reads its value straight from a node's
+ * internal field (always `__`-prefixed, per the convention every Lexical node
+ * field follows) rather than through a getter method, for a property the node
+ * stores but exposes no getter for. The read still goes through
+ * `getLatest()`, so it observes the current version of the node like a getter
+ * would.
+ *
+ * @example
+ * ```ts
+ * objectValue({
+ *   // read as node.getLatest().__id, since the node has no getId()
+ *   id: withField(stringValue(), '__id'),
+ * });
+ * ```
+ * @__NO_SIDE_EFFECTS__
+ */
+export function withField<T>(
+  schema: SerializationSchema<T>,
+  field: `__${string}`,
+): SerializationSchema<T> {
+  return withGetter(schema, field);
+}
+
+/**
+ * Return a copy of `schema` that records both accessor names at once, which is
+ * the common case for a property whose node methods do not follow the default
+ * `get<Prop>`/`set<Prop>` naming. Equivalent to composing {@link withGetter}
+ * and {@link withSetter}; either may be omitted to keep the default (or an
+ * already recorded) name for that direction.
+ *
+ * @example
+ * ```ts
+ * objectValue({
+ *   text: withAccessors(stringValue(), {
+ *     getter: 'getTextContent',
+ *     setter: 'setTextContent',
+ *   }),
+ * });
+ * ```
+ * @__NO_SIDE_EFFECTS__
+ */
+export function withAccessors<T>(
+  schema: SerializationSchema<T>,
+  accessors: SchemaAccessors,
+): SerializationSchema<T> {
+  return makeSchema(value => schema(value), schema.meta, {
+    getter: accessors.getter || schema.getter,
+    setter: accessors.setter || schema.setter,
+  });
 }

@@ -14,6 +14,7 @@
   <a href="https://www.npmjs.com/package/lexical"><img alt="NPM Version" src="https://img.shields.io/npm/v/lexical?color=43be15&label="/></a>
   <a href="https://www.npmjs.com/package/lexical"><img alt="NPM Downloads" src="https://img.shields.io/npm/dw/lexical"/></a>
   <a href="https://github.com/facebook/lexical/actions/workflows/tests.yml"><img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/facebook/lexical/tests.yml"/></a>
+<a href="https://inspect.software/software/facebook/lexical"><img src="https://raw.githubusercontent.com/inspect-software/badges/main/v1/f/facebook/lexical.svg" alt="inspect.software score badge for facebook/lexical" /></a>
   <a href="https://discord.gg/KmG4wQnnD9"><img alt="Discord" src="https://img.shields.io/discord/953974421008293909"/></a>
 </p>
 

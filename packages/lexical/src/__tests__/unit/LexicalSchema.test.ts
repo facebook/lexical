@@ -273,6 +273,42 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
       });
     });
 
+    test('TabNode ignores JSON for its fixed properties', () => {
+      // text/detail/mode are derived for a tab (setTextContent normalizes, and
+      // setDetail/setMode reject anything else), so a hand-authored or foreign
+      // value for them must be ignored rather than reach a setter that throws.
+      const {editor} = testEnv;
+      for (const bad of [
+        {mode: 'token'},
+        {detail: 0},
+        {text: 'xyz'},
+        {detail: 'directionless', mode: 'segmented', text: ''},
+      ]) {
+        const state = editor.parseEditorState(
+          JSON.stringify({
+            root: {
+              children: [
+                {
+                  children: [{type: 'tab', version: 1, ...bad}],
+                  type: 'paragraph',
+                  version: 1,
+                },
+              ],
+              type: 'root',
+              version: 1,
+            },
+          }),
+        );
+        state.read(() => {
+          const [tab] = $getRoot().getAllTextNodes();
+          expect($isTabNode(tab)).toBe(true);
+          expect(tab.getTextContent()).toBe('\t');
+          expect(tab.isUnmergeable()).toBe(true);
+          expect(tab.getMode()).toBe('normal');
+        });
+      }
+    });
+
     test('TabNode imports fully compact JSON', () => {
       // TabNode's own schema must override the inherited TextNode field
       // defaults: applying `detail: 0` or `text: ''` would throw in its

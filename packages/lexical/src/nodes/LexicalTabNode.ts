@@ -13,6 +13,7 @@ import invariant from '@lexical/internal/invariant';
 
 import {IS_UNMERGEABLE} from '../LexicalConstants';
 import {
+  enumValue,
   numberValue,
   objectValue,
   stringValue,
@@ -33,17 +34,21 @@ export class TabNode extends TextNode {
   $config() {
     return this.config('tab', {
       extends: TextNode,
-      // Override the inherited TextNode field schemas whose defaults this
-      // node's setters reject: an absent `detail` must restore IS_UNMERGEABLE
-      // (setDetail throws on anything else) and an absent `text` must restore
-      // the canonical '\t'.
+      // A tab's content, detail and mode are fixed rather than stored:
+      // setTextContent normalizes any input to '\t', and setDetail/setMode
+      // reject anything but IS_UNMERGEABLE/'normal'. They are therefore
+      // derived on import — declaring that (rather than relying on defaults)
+      // both keeps a hand-authored or foreign `{detail: 0}` / `{mode:
+      // 'token'}` from reaching a setter that throws, and lets the compact
+      // form omit them.
       json: objectValue({
-        detail: numberValue(IS_UNMERGEABLE),
-        // Overriding an inherited field replaces it outright, so both
-        // directions are named here rather than inherited from TextNode.
+        detail: withAccessors(numberValue(IS_UNMERGEABLE), {setter: null}),
+        mode: withAccessors(enumValue(['normal']), {setter: null}),
+        // Overriding an inherited field replaces it outright, so the getter is
+        // named here rather than inherited from TextNode.
         text: withAccessors(stringValue('\t'), {
           getter: 'getTextContent',
-          setter: 'setTextContent',
+          setter: null,
         }),
       }),
     });

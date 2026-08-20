@@ -1578,14 +1578,25 @@ export class LexicalNode {
    * */
   exportJSON(): SerializedLexicalNode {
     const json: {[key: string]: unknown} = {};
+    this.$exportJSONInto(json);
+    return json as unknown as SerializedLexicalNode;
+  }
+
+  /**
+   * Write this node's serialized properties into `json`, which lets a subclass
+   * seed structural properties first (ElementNode's `children`) and keeps the
+   * whole class chain to a single object rather than a spread per level.
+   *
+   * @internal
+   */
+  $exportJSONInto(json: {[key: string]: unknown}): void {
     $writeJSONGetters(this, json);
+    json.type = this.__type;
+    json.version = 1;
     const state = this.__state ? this.__state.toJSON() : undefined;
-    return {
-      ...json,
-      type: this.__type,
-      version: 1,
-      ...state,
-    } as SerializedLexicalNode;
+    if (state !== undefined) {
+      Object.assign(json, state);
+    }
   }
 
   /**

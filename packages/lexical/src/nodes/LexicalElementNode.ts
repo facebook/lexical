@@ -900,7 +900,22 @@ export class ElementNode
    * @internal
    */
   $shouldSerializeTextStyles(): boolean {
-    return !$isRootOrShadowRoot(this) && !this.getChildren().some($isTextNode);
+    if ($isRootOrShadowRoot(this)) {
+      return false;
+    }
+    // Walked rather than materialized with getChildren(): this runs for both
+    // textFormat and textStyle on every element of every export, and it exits
+    // at the first TextNode.
+    for (
+      let child = this.getFirstChild();
+      child !== null;
+      child = child.getNextSibling()
+    ) {
+      if ($isTextNode(child)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /** @internal Serialized `textFormat`, or undefined to omit it. */
@@ -925,10 +940,9 @@ export class ElementNode
     // The declared properties themselves are written by the base
     // implementation's compiled schema getters, which TypeScript cannot see,
     // hence the widening cast.
-    return {
-      children: [],
-      ...super.exportJSON(),
-    } as unknown as SerializedElementNode;
+    const json: {[key: string]: unknown} = {children: []};
+    this.$exportJSONInto(json);
+    return json as unknown as SerializedElementNode;
   }
 
   // These are intended to be extends for specific element heuristics.

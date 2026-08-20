@@ -8,14 +8,13 @@
 
 import type {Klass} from './LexicalEditor';
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
-import type {AnySerializationSchema} from './LexicalSchema';
 
 import {
   $validatedExportJSON,
   type AppliedSerialization,
   setSerializationInterceptor,
 } from './LexicalSerializedExport';
-import {iterStaticNodeConfigChain} from './LexicalUtils';
+import {getComposedSchema} from './LexicalUtils';
 
 /**
  * A value that can be varied for the duration of a JSON export, created with
@@ -177,53 +176,51 @@ export function $withSerializationContext(
   };
 }
 
+/**
+ * How one serialized property is compacted: dropped outright when the parser
+ * ignores it (a derived property, declared `{setter: null}` — writing it costs
+ * bytes nothing will ever read), otherwise dropped when its value is strictly
+ * equal to the schema default parsing would restore.
+ */
+interface CompactField {
+  readonly derived: boolean;
+  readonly defaultValue: unknown;
+}
+
 // Keyed by node class like the adjacent STATIC_NODE_CONFIG_CACHE: a WeakMap so
-// dynamically created classes (tests, HMR reloads) stay collectable. The
-// cached entries array avoids a per-node Object.entries on the compact path.
-const composedFieldEntriesByClass = new WeakMap<
+// dynamically created classes (tests, HMR reloads) stay collectable.
+const compactFieldsByClass = new WeakMap<
   Klass<LexicalNode>,
-  readonly (readonly [string, AnySerializationSchema])[]
+  ReadonlyMap<string, CompactField>
 >();
 
 /**
- * The `json` schema fields a node has, including those it inherits from its
- * ancestors (an ElementNode subclass gets `direction`/`format`/… from the
- * schema ElementNode publishes). Compiled once per class.
- *
- * @internal
+ * What the compact form may drop for a node class, derived from the same
+ * composed `json` schema the setters and getters are compiled from.
  */
-function getComposedSchemaFieldEntries(
+function getCompactFields(
   klass: Klass<LexicalNode>,
-): readonly (readonly [string, AnySerializationSchema])[] {
-  let entries = composedFieldEntriesByClass.get(klass);
-  if (entries === undefined) {
-    // A Map rather than an object literal: `'toString' in {}` is true, so an
-    // object would silently exclude fields named after Object.prototype
-    // members (and `__proto__` would re-parent it rather than record a field).
-    const fields = new Map<string, AnySerializationSchema>();
-    for (const {ownNodeConfig} of iterStaticNodeConfigChain(klass)) {
-      const json = ownNodeConfig && ownNodeConfig.json;
-      if (json && json.meta.kind === 'object') {
-        // Ancestors are visited last but must not override a subclass field,
-        // so only fill in what is still missing.
-        for (const [key, schema] of Object.entries(json.meta.fields)) {
-          if (!fields.has(key)) {
-            fields.set(key, schema);
-          }
-        }
-      }
+): ReadonlyMap<string, CompactField> {
+  let compact = compactFieldsByClass.get(klass);
+  if (compact === undefined) {
+    const fields = new Map<string, CompactField>();
+    for (const [key, schema] of getComposedSchema(klass).fieldsDerivedFirst) {
+      fields.set(key, {
+        defaultValue: schema.defaultValue,
+        derived: schema.setter === null,
+      });
     }
-    entries = [...fields];
-    composedFieldEntriesByClass.set(klass, entries);
+    compact = fields;
+    compactFieldsByClass.set(klass, compact);
   }
-  return entries;
+  return compact;
 }
 
 /**
  * Produce the compact form of one node's JSON: drop the deprecated `version`
  * when it is `1` (a `version` other than `1` is a migration marker some nodes
- * branch on, so it is preserved), and drop any node-specific property whose
- * value is strictly equal to its schema default.
+ * branch on, so it is preserved), drop any property the parser derives rather
+ * than reads, and drop any whose value is strictly equal to its schema default.
  *
  * `children` and `$slots` are structural rather than schema-declared, so they
  * are never dropped here; the walk owns them.
@@ -234,24 +231,26 @@ export function $compactSerializedNode(
   node: LexicalNode,
   json: SerializedLexicalNode,
 ): SerializedLexicalNode {
-  const entries = getComposedSchemaFieldEntries(
-    node.constructor as Klass<LexicalNode>,
-  );
+  const fields = getCompactFields(node.constructor as Klass<LexicalNode>);
+  const source = json as unknown as Record<string, unknown>;
+  // One pass: copy through only what survives, rather than cloning everything
+  // and then deleting (which also puts the result into dictionary mode).
   const compact: Record<string, unknown> = {};
-  const source: Record<string, unknown> = json;
   for (const key of Object.keys(source)) {
-    if (key === 'version' && source[key] === 1) {
+    const value = source[key];
+    if (key === 'version' && value === 1) {
       continue;
     }
-    compact[key] = source[key];
-  }
-  for (let i = 0; i < entries.length; i++) {
-    const [key, schema] = entries[i];
-    if (key in compact && compact[key] === schema.defaultValue) {
-      delete compact[key];
+    const field = fields.get(key);
+    if (
+      field !== undefined &&
+      (field.derived || value === field.defaultValue)
+    ) {
+      continue;
     }
+    compact[key] = value;
   }
-  return compact as SerializedLexicalNode;
+  return compact as unknown as SerializedLexicalNode;
 }
 
 /**
@@ -265,6 +264,12 @@ function $applyActiveSerializationContext(
   node: LexicalNode,
   isRoot: boolean,
 ): AppliedSerialization | null {
+  if (activeContext === null) {
+    // Installed for the process once any context is used, but most exports run
+    // outside one: skip the override lookup, the memo closure and the identity
+    // comparisons and just take the default path.
+    return {recurseChildren: true, serializedNode: $validatedExportJSON(node)};
+  }
   const override = $getSerializationContextValue(SerializationContextOverride);
   // Memoized so repeated $next() calls are stable, the sanity checks run at
   // most once, and we can tell afterwards whether the result came from the

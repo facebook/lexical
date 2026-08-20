@@ -15,7 +15,7 @@ import type {
 } from 'lexical';
 
 import * as fc from 'fast-check';
-import {getStaticNodeConfig, iterStaticNodeConfigChain} from 'lexical';
+import {getComposedSchemaFields, getStaticNodeConfig} from 'lexical';
 
 /**
  * Read the {@link SerializationSchema} a node class declares on its `$config` (the `schema`
@@ -45,40 +45,10 @@ export function nodeSerializationSchema(
 export function composeNodeSerializationSchema(
   klass: Klass<LexicalNode>,
 ): SerializationSchemaFields {
-  // Walk the same config chain the core compiles its setters from
-  // (iterStaticNodeConfigChain honors an explicit `extends` and severed
-  // static prototype chains, e.g. Babel's loose class transform).
-  const chain = [...iterStaticNodeConfigChain(klass)];
-  // Maps rather than object literals: `'toString' in {}` is true, so an
-  // object would silently exclude fields named after Object.prototype members.
-  const fields = new Map<string, AnySerializationSchema>();
-  const states = new Map<string, AnySerializationSchema>();
-  for (let i = chain.length - 1; i >= 0; i--) {
-    const {ownNodeConfig} = chain[i];
-    if (!ownNodeConfig) {
-      continue;
-    }
-    const {json, stateConfigs} = ownNodeConfig;
-    if (json && json.meta.kind === 'object') {
-      for (const [key, schema] of Object.entries(json.meta.fields)) {
-        fields.set(key, schema);
-      }
-    }
-    if (stateConfigs) {
-      for (const required of stateConfigs) {
-        if (
-          'stateConfig' in required &&
-          required.flat &&
-          required.stateConfig.schema &&
-          typeof required.stateConfig.key === 'string' &&
-          !states.has(required.stateConfig.key)
-        ) {
-          states.set(required.stateConfig.key, required.stateConfig.schema);
-        }
-      }
-    }
-  }
-  return {...Object.fromEntries(states), ...Object.fromEntries(fields)};
+  // The core composes this once per class for its own compiled setters and
+  // getters; deriving from the same primitive is what keeps the properties
+  // this generates in step with the ones a node actually parses and writes.
+  return getComposedSchemaFields(klass);
 }
 
 /**

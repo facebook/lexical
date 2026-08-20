@@ -16,7 +16,7 @@ import {
   numberValue,
   objectValue,
   stringValue,
-  withSetter,
+  withAccessors,
 } from '../LexicalSchema';
 import {$applyNodeReplacement, getCachedClassNameArray} from '../LexicalUtils';
 import {
@@ -39,7 +39,12 @@ export class TabNode extends TextNode {
       // the canonical '\t'.
       json: objectValue({
         detail: numberValue(IS_UNMERGEABLE),
-        text: withSetter(stringValue('\t'), 'setTextContent'),
+        // Overriding an inherited field replaces it outright, so both
+        // directions are named here rather than inherited from TextNode.
+        text: withAccessors(stringValue('\t'), {
+          getter: 'getTextContent',
+          setter: 'setTextContent',
+        }),
       }),
     });
   }

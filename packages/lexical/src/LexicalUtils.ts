@@ -3188,6 +3188,147 @@ function defaultGetterName(key: string): string {
 }
 
 /**
+ * The `json` schema fields and flat NodeStates a node class serializes,
+ * composed across its config chain. Every consumer of "what does this class
+ * serialize" derives from this one walk so they cannot disagree about
+ * precedence: a subclass field overrides an ancestor's, while a re-declared
+ * flat state keeps the ancestor's config (matching createSharedNodeState).
+ *
+ * @internal
+ */
+export interface ComposedSchema {
+  /**
+   * Fields ordered most-derived first — the order properties are written in,
+   * which the hand-written exportJSON methods this replaces also produced for
+   * the core classes, and which some tests compare as strings.
+   */
+  readonly fieldsDerivedFirst: readonly (readonly [
+    string,
+    AnySerializationSchema,
+  ])[];
+  /**
+   * The same fields ordered ancestors first — the order setters are applied
+   * in, so a base property is set before the subclass properties that may
+   * depend on it.
+   */
+  readonly fieldsBaseFirst: readonly (readonly [
+    string,
+    AnySerializationSchema,
+  ])[];
+  /** Flat NodeStates, ancestors first. */
+  readonly flatStates: readonly AnyStateConfig[];
+}
+
+const EMPTY_COMPOSED_SCHEMA: ComposedSchema = {
+  fieldsBaseFirst: [],
+  fieldsDerivedFirst: [],
+  flatStates: [],
+};
+
+const composedSchemaByClass = new WeakMap<Klass<LexicalNode>, ComposedSchema>();
+
+function composeSchema(klass: Klass<LexicalNode>): ComposedSchema {
+  // One walk of the config chain (iterStaticNodeConfigChain honors an explicit
+  // `extends` and severed static prototype chains, e.g. Babel's loose class
+  // transform), collected per class so both orderings fall out of it.
+  const fieldGroups: (readonly (readonly [
+    string,
+    AnySerializationSchema,
+  ])[])[] = [];
+  const stateGroups: (readonly AnyStateConfig[])[] = [];
+  for (const {ownNodeConfig} of iterStaticNodeConfigChain(klass)) {
+    const json = ownNodeConfig && ownNodeConfig.json;
+    fieldGroups.push(
+      json && json.meta.kind === 'object'
+        ? (Object.entries(json.meta.fields) as (readonly [
+            string,
+            AnySerializationSchema,
+          ])[])
+        : [],
+    );
+    const flat: AnyStateConfig[] = [];
+    if (ownNodeConfig && ownNodeConfig.stateConfigs) {
+      for (const required of ownNodeConfig.stateConfigs) {
+        if ('stateConfig' in required && required.flat) {
+          flat.push(required.stateConfig);
+        }
+      }
+    }
+    stateGroups.push(flat);
+  }
+  // Most-derived first, first write wins, so a subclass field overrides an
+  // ancestor's and keeps the subclass's position.
+  const derivedFirst = new Map<string, AnySerializationSchema>();
+  for (const group of fieldGroups) {
+    for (const [key, schema] of group) {
+      if (!derivedFirst.has(key)) {
+        derivedFirst.set(key, schema);
+      }
+    }
+  }
+  // The same winning schemas in ancestors-first order.
+  const baseFirst = new Map<string, AnySerializationSchema>();
+  const flatStates = new Map<string, AnyStateConfig>();
+  for (let i = fieldGroups.length - 1; i >= 0; i--) {
+    for (const [key] of fieldGroups[i]) {
+      const schema = derivedFirst.get(key);
+      if (schema !== undefined && !baseFirst.has(key)) {
+        baseFirst.set(key, schema);
+      }
+    }
+    for (const stateConfig of stateGroups[i]) {
+      if (!flatStates.has(stateConfig.key)) {
+        flatStates.set(stateConfig.key, stateConfig);
+      }
+    }
+  }
+  return derivedFirst.size === 0 && flatStates.size === 0
+    ? EMPTY_COMPOSED_SCHEMA
+    : {
+        fieldsBaseFirst: [...baseFirst],
+        fieldsDerivedFirst: [...derivedFirst],
+        flatStates: [...flatStates.values()],
+      };
+}
+
+/**
+ * The composed `json` schema of a node class, compiled once per class.
+ *
+ * @internal
+ */
+export function getComposedSchema(klass: Klass<LexicalNode>): ComposedSchema {
+  let composed = composedSchemaByClass.get(klass);
+  if (composed === undefined) {
+    composed = composeSchema(klass);
+    composedSchemaByClass.set(klass, composed);
+  }
+  return composed;
+}
+
+/**
+ * Every node-specific property of a class's serialized JSON — its composed
+ * `json` schema fields plus any flat NodeState whose value schema is
+ * introspectable — keyed by serialized property name.
+ *
+ * @internal
+ */
+export function getComposedSchemaFields(
+  klass: Klass<LexicalNode>,
+): Record<string, AnySerializationSchema> {
+  const {fieldsDerivedFirst, flatStates} = getComposedSchema(klass);
+  const fields: Record<string, AnySerializationSchema> = {};
+  for (const stateConfig of flatStates) {
+    if (stateConfig.schema) {
+      fields[stateConfig.key] = stateConfig.schema;
+    }
+  }
+  for (const [key, schema] of fieldsDerivedFirst) {
+    fields[key] = schema;
+  }
+  return fields;
+}
+
+/**
  * The mirror of {@link CompiledSetter} for the export direction: one of a
  * node's serialized properties read back through a named getter (`get<Prop>`
  * by default, or the name recorded with `withGetter`). Compiled once per class
@@ -3207,26 +3348,14 @@ const compiledGettersByClass = new WeakMap<
 >();
 
 function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
-  // Walked most-derived first, unlike compileSetters: the serialized property
-  // order this produces is the one the hand-written exportJSON methods it
-  // replaces produced (a subclass's own properties, then its ancestors', with
-  // `type`/`version` last), which some tests compare as strings.
-  const chain = [...iterStaticNodeConfigChain(klass)];
   const prototype = klass.prototype as unknown as Record<string, unknown>;
   const fields = new Map<string, CompiledGetter>();
   const unresolved = new Map<string, string>();
-  for (const {ownNodeConfig} of chain) {
-    const json = ownNodeConfig && ownNodeConfig.json;
-    if (!json || json.meta.kind !== 'object') {
-      continue;
-    }
-    const {fields: schemaFields} = json.meta;
-    for (const key of Object.keys(schemaFields)) {
-      if (fields.has(key)) {
-        // A subclass field of the same name was already resolved and wins.
-        continue;
-      }
-      const schema = schemaFields[key];
+  {
+    // Most-derived first: the serialized property order this produces is the
+    // one the hand-written exportJSON methods it replaces produced for the
+    // core classes, which some tests compare as strings.
+    for (const [key, schema] of getComposedSchema(klass).fieldsDerivedFirst) {
       if (schema.getter === null) {
         // Declared import-only; the property is written by an exportJSON
         // override, or not written at all.
@@ -3250,13 +3379,11 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
           getter: getter as (this: LexicalNode) => unknown,
           key,
         });
-      } else if (__DEV__) {
-        // Record the name to report if no class in the chain resolves this
-        // key: a subclass may override a field for the parse direction only,
-        // leaving the ancestor's getter to export it (TabNode's `text`).
-        if (!unresolved.has(key)) {
-          unresolved.set(key, getterName);
-        }
+      } else if (__DEV__ && !unresolved.has(key)) {
+        // Reported after the walk: a subclass may override a field for the
+        // parse direction only, leaving the ancestor's getter to export it
+        // (TabNode's `text`).
+        unresolved.set(key, getterName);
       }
     }
   }
@@ -3307,74 +3434,43 @@ export function $writeJSONGetters(
 }
 
 function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
-  // Walk the same config chain every other schema consumer walks
-  // (iterStaticNodeConfigChain honors an explicit `extends` and severed static
-  // prototype chains, e.g. Babel's loose class transform), collected first so
-  // it can be applied ancestors-first: base properties apply before subclass
-  // properties, and a subclass field (keyed by serialized property name)
-  // overrides an ancestor's.
-  const chain = [...iterStaticNodeConfigChain(klass)];
   // A class instance type has no index signature, so reading a setter by
   // name needs the widening cast.
   const prototype = klass.prototype as unknown as Record<string, unknown>;
   const fields = new Map<string, CompiledSetter>();
-  const states = new Map<string, CompiledSetter>();
   const unresolved = new Map<string, string>();
-  for (let i = chain.length - 1; i >= 0; i--) {
-    const {ownNodeConfig} = chain[i];
-    if (!ownNodeConfig) {
+  const {fieldsBaseFirst, flatStates} = getComposedSchema(klass);
+  // Applied ancestors-first: a base property is set before the subclass
+  // properties that may depend on it.
+  for (const [key, schema] of fieldsBaseFirst) {
+    if (schema.setter === null) {
+      // Declared export-only: the value is derived from other properties on
+      // the way in (ListNode's `tag` follows from `listType`).
       continue;
     }
-    const {json} = ownNodeConfig;
-    if (json && json.meta.kind === 'object') {
-      const {fields: schemaFields} = json.meta;
-      for (const key of Object.keys(schemaFields)) {
-        const schema = schemaFields[key];
-        if (schema.setter === null) {
-          // Declared export-only: the value is derived from other properties
-          // on the way in (ListNode's `tag` follows from `listType`).
-          continue;
-        }
-        const setterName = schema.setter || defaultSetterName(key);
-        const setter = prototype[setterName];
-        if (typeof setter === 'function') {
-          fields.set(key, {
-            key,
-            kind: 'field',
-            schema,
-            setter: setter as (
-              this: LexicalNode,
-              value: unknown,
-            ) => LexicalNode,
-          });
-        } else if (__DEV__ && !unresolved.has(key)) {
-          // Reported after the walk: an ancestor may still resolve this key.
-          unresolved.set(key, setterName);
-        }
-      }
-    }
-    // Flat NodeStates are serialized at the top level alongside schema fields
-    // (non-flat states live under NODE_STATE_KEY and are applied by
-    // $updateStateFromJSON). They are applied through the single $setState entry
-    // point rather than a per-property setter. When a subclass re-declares an
-    // ancestor's flat state the ancestor's config wins, matching the shared
-    // node state built by createSharedNodeState (which would otherwise flag a
-    // collision in DEV).
-    if (ownNodeConfig.stateConfigs) {
-      for (const required of ownNodeConfig.stateConfigs) {
-        if ('stateConfig' in required && required.flat) {
-          const {stateConfig} = required;
-          if (!states.has(stateConfig.key)) {
-            states.set(stateConfig.key, {
-              key: stateConfig.key,
-              kind: 'state',
-              stateConfig,
-            });
-          }
-        }
-      }
+    const setterName = schema.setter || defaultSetterName(key);
+    const setter = prototype[setterName];
+    if (typeof setter === 'function') {
+      fields.set(key, {
+        key,
+        kind: 'field',
+        schema,
+        setter: setter as (this: LexicalNode, value: unknown) => LexicalNode,
+      });
+    } else if (__DEV__ && !unresolved.has(key)) {
+      // Reported after the walk: an ancestor may still resolve this key.
+      unresolved.set(key, setterName);
     }
   }
+  // Flat NodeStates are serialized at the top level alongside schema fields
+  // (non-flat states live under NODE_STATE_KEY and are applied by
+  // $updateStateFromJSON). They are applied through the single $setState entry
+  // point rather than a per-property setter.
+  const states: CompiledSetter[] = flatStates.map(stateConfig => ({
+    key: stateConfig.key,
+    kind: 'state' as const,
+    stateConfig,
+  }));
   if (__DEV__) {
     for (const [key, setterName] of unresolved) {
       // A field no class in the chain can apply would be silently dropped from
@@ -3388,12 +3484,12 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
       );
     }
   }
-  if (fields.size === 0 && states.size === 0) {
+  if (fields.size === 0 && states.length === 0) {
     return EMPTY_SETTERS;
   }
   // Apply flat states before named setters, matching the previous ordering in
   // which $updateStateFromJSON ran before a node's own setters.
-  return [...states.values(), ...fields.values()];
+  return [...states, ...fields.values()];
 }
 
 /**

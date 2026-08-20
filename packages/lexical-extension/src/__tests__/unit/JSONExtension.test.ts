@@ -17,6 +17,11 @@ import {
   type LexicalEditorWithDispose,
 } from '@lexical/extension';
 import {
+  $createListItemNode,
+  $createListNode,
+  ListExtension,
+} from '@lexical/list';
+import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -261,6 +266,51 @@ describe('JSONExtension', () => {
     // both extensions' overrides run: the default shallow config merge would
     // have replaced the first extension's list with the second's
     expect(texts(exportRoot(editor))).toEqual(['first(second(plain))']);
+  });
+
+  test('compaction drops a property the parser derives rather than reads', () => {
+    // ListNode's `tag` follows from `listType` on the way in (it declares
+    // {setter: null}), so writing it in the compact form costs bytes nothing
+    // will ever read.
+    using editor = buildEditorFromExtensions({
+      dependencies: [
+        configExtension(JSONExtension, {compact: true}),
+        ListExtension,
+      ],
+      name: '[root]',
+      namespace: '',
+      onError: err => {
+        throw err;
+      },
+    });
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createListNode('bullet').append($createListItemNode()));
+      },
+      {discrete: true},
+    );
+    const {$exportJSON} = getExtensionDependencyFromEditor(
+      editor,
+      JSONExtension,
+    ).output;
+    const list = editor.read(
+      () =>
+        ($exportJSON().root as unknown as SerializedElementNode)
+          .children[0] as unknown as Record<string, unknown>,
+    );
+    expect(list).toMatchObject({listType: 'bullet', type: 'list'});
+    expect('tag' in list).toBe(false);
+    // the legacy form still writes it, as it always has
+    const legacy = editor.read(
+      () =>
+        (
+          $exportJSON(undefined, {compact: false})
+            .root as unknown as SerializedElementNode
+        ).children[0] as unknown as Record<string, unknown>,
+    );
+    expect(legacy).toMatchObject({tag: 'ul'});
   });
 
   test('compaction still applies to what overrides produce', () => {

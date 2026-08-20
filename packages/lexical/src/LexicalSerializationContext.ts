@@ -10,11 +10,11 @@ import type {Klass} from './LexicalEditor';
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
 import {
+  $withContext,
   type AnyContextConfigPairOrUpdater,
   type ContextConfig,
-  contextFromPairs,
-  type ContextRecord,
   createContextState,
+  getContextRecord,
   getContextValue,
 } from './LexicalContextRecord';
 import {
@@ -131,19 +131,14 @@ export const SerializationContextOverride =
     null,
   );
 
-type SerializationContextRecord = ContextRecord<
-  typeof SerializationContextSymbol
->;
-
-// Serialization is a synchronous depth-first walk, so the active context is
-// module scope with strict stack discipline rather than something attached to
-// the editor — `editorState.toJSON()` runs with no active editor at all, which
-// is why this cannot use the editor-scoped layer `@lexical/html` builds on the
-// same records. There is exactly one export in flight at a time. Note that a
-// nested editor serialized during exportJSON (e.g. an image caption) runs
-// under the outer document's context — deliberate, so that e.g. a redaction
-// override cannot be bypassed by nesting.
-let activeContext: undefined | SerializationContextRecord = undefined;
+/**
+ * The scope JSON export contexts are installed under. A placeholder rather
+ * than the editor, for two reasons: `editorState.toJSON()` runs with the
+ * active editor set to `null`, and an export deliberately spans editors so a
+ * nested one (an image caption) inherits the outer document's context — a
+ * redaction override cannot be bypassed by nesting.
+ */
+const SerializationScope = Symbol.for('@lexical/SerializationScope');
 
 /**
  * Read a serialization context value. Outside of an export (or for a config
@@ -157,7 +152,7 @@ export function $getSerializationContextValue<V>(
   // The tag is a phantom type, so it cannot be inferred from `cfg` and is
   // pinned here.
   return getContextValue<typeof SerializationContextSymbol, V>(
-    activeContext,
+    getContextRecord(SerializationContextSymbol, SerializationScope),
     cfg,
   );
 }
@@ -186,27 +181,17 @@ export function $withSerializationContext(
   // serialization context do not carry it. Installing here — before any
   // context can become active — keeps that dispatch exhaustive.
   setSerializationInterceptor($applyActiveSerializationContext);
-  return f => {
-    const previous = activeContext;
-    // A child record chains off the previous one, so unset values read through
-    // to it; when no pair changes a value the parent is returned unchanged and
-    // nothing is allocated.
-    const next = contextFromPairs(
-      pairs as readonly AnyContextConfigPairOrUpdater<
-        typeof SerializationContextSymbol
-      >[],
-      previous,
-    );
-    if (next === previous) {
-      return f();
-    }
-    activeContext = next;
-    try {
-      return f();
-    } finally {
-      activeContext = previous;
-    }
-  };
+  // A child record chains off the enclosing one, so unset values read through
+  // to it; when no pair changes a value no layer is installed at all.
+  return $withContext<
+    typeof SerializationContextSymbol,
+    typeof SerializationScope
+  >(SerializationContextSymbol)(
+    pairs as readonly AnyContextConfigPairOrUpdater<
+      typeof SerializationContextSymbol
+    >[],
+    SerializationScope,
+  );
 }
 
 /**
@@ -297,7 +282,10 @@ function $applyActiveSerializationContext(
   node: LexicalNode,
   isRoot: boolean,
 ): AppliedSerialization | null {
-  if (activeContext === null) {
+  if (
+    getContextRecord(SerializationContextSymbol, SerializationScope) ===
+    undefined
+  ) {
     // Installed for the process once any context is used, but most exports run
     // outside one: skip the override lookup, the memo closure and the identity
     // comparisons and just take the default path.

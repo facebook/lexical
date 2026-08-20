@@ -135,6 +135,8 @@ export {
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
 export {
+  $withContext,
+  $withFullContext,
   type AnyContextConfigPairOrUpdater,
   type ContextConfig,
   type ContextConfigPair,
@@ -142,9 +144,11 @@ export {
   contextFromPairs,
   type ContextPairOrUpdater,
   type ContextRecord,
+  type ContextScope,
   contextUpdater,
   contextValue,
   createContextState,
+  getContextRecord,
   getContextValue,
   getOwnContextValue,
   popOwnContextValue,

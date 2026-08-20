@@ -32,7 +32,7 @@ import {
   type SerializedTextNode,
   TextNode,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {describe, expect, onTestFinished, test} from 'vitest';
 
 function buildEditor(
   config: Partial<JSONConfig> = {},
@@ -266,6 +266,51 @@ describe('JSONExtension', () => {
     // both extensions' overrides run: the default shallow config merge would
     // have replaced the first extension's list with the second's
     expect(texts(exportRoot(editor))).toEqual(['first(second(plain))']);
+  });
+
+  test('an override reaches a nested editor', () => {
+    // The export context is scoped to the export, not to an editor, so a
+    // nested editor (an image caption, a sticky note) inherits it: a
+    // redaction override cannot be bypassed by nesting. This also pins that
+    // `editorState.toJSON()` — which runs with the active editor set to null —
+    // still sees the context installed around it.
+    using editor = buildEditor({
+      overrides: [
+        jsonOverride([$isTextNode], {
+          $exportJSON: (node, $next) => {
+            const inner = $next() as SerializedTextNode;
+            return {...inner, text: 'REDACTED'};
+          },
+        }),
+      ],
+    });
+    const nested = buildEditorFromExtensions({
+      name: '[nested]',
+      namespace: '',
+      onError: err => {
+        throw err;
+      },
+    });
+    onTestFinished(() => nested.dispose());
+    nested.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('SECRET')));
+      },
+      {discrete: true},
+    );
+    const {$withSerialization} = getExtensionDependencyFromEditor(
+      editor,
+      JSONExtension,
+    ).output;
+    const nestedJSON = editor.read(() =>
+      $withSerialization(() =>
+        JSON.stringify(nested.getEditorState().toJSON()),
+      ),
+    );
+    expect(nestedJSON).not.toContain('SECRET');
+    expect(nestedJSON).toContain('REDACTED');
   });
 
   test('compaction drops a property the parser derives rather than reads', () => {

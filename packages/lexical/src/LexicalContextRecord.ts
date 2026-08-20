@@ -6,7 +6,10 @@
  *
  */
 
+import type {LexicalEditor} from './LexicalEditor';
+
 import {createState, type StateConfig} from './LexicalNodeState';
+import {$getEditor} from './LexicalUtils';
 
 /**
  * A phantom brand: it has no runtime existence, so a config carries its
@@ -227,4 +230,90 @@ export function createContextState<Tag extends symbol, V>(
     isEqual,
     parse: getDefaultValue,
   }) as ContextConfig<Tag, V>;
+}
+
+/**
+ * What an active {@link ContextRecord} is scoped to. Usually the editor whose
+ * pipeline is running, but a pipeline with no editor of its own uses a
+ * placeholder symbol instead: `EditorState.toJSON()` runs with the active
+ * editor set to `null`, and a JSON export deliberately spans editors so a
+ * nested one (an image caption) inherits the outer document's context.
+ *
+ * @experimental
+ */
+export type ContextScope = LexicalEditor | symbol;
+
+interface ScopedContextRecord {
+  readonly scope: ContextScope;
+  readonly record: ContextRecord<symbol>;
+}
+
+// Scoped per context symbol rather than one shared scope for all of them, so
+// installing a context for one pipeline cannot hide another pipeline's.
+let activeContexts: undefined | {readonly [sym: symbol]: ScopedContextRecord} =
+  undefined;
+
+/**
+ * @experimental
+ *
+ * @param sym The symbol for this ContextRecord (e.g. DOMRenderContextSymbol)
+ * @param scope The editor (or placeholder) the context is scoped to
+ * @returns The current context or undefined
+ */
+export function getContextRecord<Ctx extends symbol>(
+  sym: Ctx,
+  scope: ContextScope,
+): undefined | ContextRecord<Ctx> {
+  const entry = activeContexts && activeContexts[sym];
+  return entry && entry.scope === scope ? entry.record : undefined;
+}
+
+/**
+ * @internal
+ * @experimental
+ * @__NO_SIDE_EFFECTS__
+ */
+export function $withFullContext<Ctx extends symbol, T>(
+  sym: Ctx,
+  contextRecord: ContextRecord<Ctx>,
+  f: () => T,
+  scope: ContextScope = $getEditor(),
+): T {
+  const previous = activeContexts;
+  try {
+    activeContexts = {...previous, [sym]: {record: contextRecord, scope}};
+    return f();
+  } finally {
+    activeContexts = previous;
+  }
+}
+
+/**
+ * @internal
+ * @experimental
+ * @__NO_SIDE_EFFECTS__
+ */
+export function $withContext<
+  Ctx extends symbol,
+  Scope extends ContextScope = LexicalEditor,
+>(
+  sym: Ctx,
+  $defaults: (scope: Scope) => undefined | ContextRecord<Ctx> = () => undefined,
+) {
+  return (
+    cfg: readonly AnyContextConfigPairOrUpdater<Ctx>[],
+    scope: Scope = $getEditor() as Scope,
+  ): (<T>(f: () => T) => T) => {
+    return f => {
+      const parentContextRecord = getContextRecord(sym, scope);
+      const contextRecord = contextFromPairs(
+        cfg,
+        parentContextRecord || $defaults(scope),
+      );
+      if (!contextRecord || contextRecord === parentContextRecord) {
+        return f();
+      }
+      return $withFullContext(sym, contextRecord, f, scope);
+    };
+  };
 }

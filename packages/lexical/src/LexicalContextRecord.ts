@@ -9,6 +9,15 @@
 import {createState, type StateConfig} from './LexicalNodeState';
 
 /**
+ * A phantom brand: it has no runtime existence, so a config carries its
+ * context's symbol purely in the type. Keeping the tag in *value* position
+ * (rather than as a mapped key) is what lets a call site whose tag cannot be
+ * inferred still type-check — the inferred fallback is `symbol`, and
+ * `{[contextTag]?: SomeSymbol}` is assignable to `{[contextTag]?: symbol}`.
+ */
+declare const contextTag: unique symbol;
+
+/**
  * @experimental
  *
  * Context with a phantom type for its purpose (such as
@@ -29,7 +38,7 @@ export type ContextRecord<_K extends symbol> = Record<string | symbol, unknown>;
  * but for managing context during a pipeline rather than individual node state.
  */
 export type ContextConfig<Sym extends symbol, V> = StateConfig<symbol, V> & {
-  readonly [K in Sym]?: true;
+  readonly [contextTag]?: Sym;
 };
 
 /**
@@ -207,13 +216,15 @@ export function contextUpdater<Ctx extends symbol, V>(
  * @__NO_SIDE_EFFECTS__
  */
 export function createContextState<Tag extends symbol, V>(
-  tag: Tag,
+  _tag: Tag,
   name: string,
   getDefaultValue: () => V,
   isEqual?: (a: V, b: V) => boolean,
 ): ContextConfig<Tag, V> {
-  return Object.assign(
-    createState(Symbol(name), {isEqual, parse: getDefaultValue}),
-    {[tag]: true} as const,
-  );
+  // `_tag` is type-only: the brand it names has no runtime representation, so
+  // the config is just a StateConfig at runtime.
+  return createState(Symbol(name), {
+    isEqual,
+    parse: getDefaultValue,
+  }) as ContextConfig<Tag, V>;
 }

@@ -14,9 +14,9 @@ import {
   type ContextConfig,
   contextFromPairs,
   type ContextRecord,
+  createContextState,
   getContextValue,
 } from './LexicalContextRecord';
-import {createState} from './LexicalNodeState';
 import {
   $validatedExportJSON,
   type AppliedSerialization,
@@ -74,9 +74,11 @@ export function createSerializationState<V>(
   name: string,
   defaultValue: V,
 ): SerializationStateConfig<V> {
-  return Object.assign(createState(Symbol(name), {parse: () => defaultValue}), {
-    [SerializationContextSymbol]: true,
-  } as const);
+  return createContextState(
+    SerializationContextSymbol,
+    name,
+    () => defaultValue,
+  );
 }
 
 /**

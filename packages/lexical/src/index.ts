@@ -144,7 +144,10 @@ export {
   type ContextRecord,
   contextUpdater,
   contextValue,
+  createContextState,
   getContextValue,
+  getOwnContextValue,
+  popOwnContextValue,
 } from './LexicalContextRecord';
 export type {DOMSlot} from './LexicalDOMSlot';
 export type {ElementDOMSlot} from './LexicalDOMSlot';

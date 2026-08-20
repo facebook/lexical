@@ -20,6 +20,7 @@ import {
   objectValue,
   optional,
   rawValue,
+  type SerializedLexicalNode,
   type SerializedPartial,
   type SerializedTextNode,
   stringValue,
@@ -30,7 +31,7 @@ import {
   withGetter,
   withSetter,
 } from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {describe, expect, expectTypeOf, test} from 'vitest';
 
 import {initializeUnitTest} from '../utils';
 
@@ -610,5 +611,24 @@ describe('defaults and untrusted input', () => {
     expect(schema(JSON.parse('{"toString":"mine"}'))).toEqual({
       toString: 'mine',
     });
+  });
+});
+
+describe('the export and parse shapes differ only where parsing is looser', () => {
+  test('version is required on export and optional on parse', () => {
+    // exportJSON always writes it, and downstream code reads it off an
+    // exported node (`if (node.version < 2)`), so narrowing it there would
+    // break every such consumer. Parsing ignores it, and compact JSON omits
+    // it, so the parse shape relaxes it.
+    expectTypeOf<SerializedLexicalNode['version']>().toEqualTypeOf<number>();
+    expectTypeOf<
+      SerializedPartial<SerializedLexicalNode>['version']
+    >().toEqualTypeOf<number | undefined>();
+    // a slot value is parsed by the same rules, so it relaxes the same way
+    expectTypeOf<
+      NonNullable<
+        SerializedPartial<SerializedLexicalNode>['$slots']
+      >[string]['version']
+    >().toEqualTypeOf<number | undefined>();
   });
 });

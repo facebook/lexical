@@ -6,7 +6,11 @@
  *
  */
 
-import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
+import type {
+  LexicalNode,
+  SerializedLexicalNode,
+  SerializedPartial,
+} from './LexicalNode';
 
 import devInvariant from '@lexical/internal/devInvariant';
 import invariant from '@lexical/internal/invariant';
@@ -401,7 +405,7 @@ type InternalSerializedNode = {
 
 /** Deserializes a SerializedLexicalNode JSON object into its corresponding LexicalNode instance. */
 export function $parseSerializedNode(
-  serializedNode: SerializedLexicalNode,
+  serializedNode: SerializedPartial<SerializedLexicalNode>,
 ): LexicalNode {
   const internalSerializedNode: InternalSerializedNode = serializedNode;
   return $parseSerializedNodeImpl(

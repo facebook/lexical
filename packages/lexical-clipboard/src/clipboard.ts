@@ -475,6 +475,24 @@ export interface BaseSerializedNode {
   $slots?: Record<string, BaseSerializedNode>;
   type: string;
   /** @deprecated Ignored when parsing; see {@link SerializedLexicalNode.version}. */
+  version: number;
+}
+
+/**
+ * The same payload as {@link BaseSerializedNode} with the deprecated `version`
+ * relaxed, mirroring {@link SerializedPartial} in core. Parsing ignores
+ * `version`, and a compact export omits it, so this is the shape the clipboard
+ * accepts and the loosest shape it can produce. A `BaseSerializedNode` is one
+ * of these, so every existing caller still type-checks.
+ *
+ * @experimental
+ */
+export interface BasePartialSerializedNode {
+  children?: BasePartialSerializedNode[];
+  /** @experimental named-slots */
+  $slots?: Record<string, BasePartialSerializedNode>;
+  type: string;
+  /** @deprecated Ignored when parsing; see {@link SerializedLexicalNode.version}. */
   version?: number;
 }
 
@@ -482,7 +500,7 @@ function $appendNodesToJSON(
   editor: LexicalEditor,
   selection: BaseSelection | null,
   currentNode: LexicalNode,
-  targetArray: BaseSerializedNode[] = [],
+  targetArray: BasePartialSerializedNode[] = [],
 ): boolean {
   let shouldInclude =
     selection !== null ? currentNode.isSelected(selection) : true;
@@ -508,7 +526,7 @@ function $appendNodesToJSON(
     return false;
   }
   const {recurseChildren} = applied;
-  const serializedNode: BaseSerializedNode = applied.serializedNode;
+  const serializedNode: BasePartialSerializedNode = applied.serializedNode;
   const children = $isElementNode(target) ? target.getChildren() : [];
   // Where the recursion below writes. Normally the node's own children array,
   // which the walk owns. When an override replaced this node its JSON is
@@ -517,7 +535,7 @@ function $appendNodesToJSON(
   // node's place, exactly as an excluded element's children are. Descending
   // either way matters: the recursion is also how a selection reaches nodes
   // *inside* an element it merely passes through.
-  let childTarget: BaseSerializedNode[] = [];
+  let childTarget: BasePartialSerializedNode[] = [];
   if (recurseChildren && $isElementNode(target)) {
     // $validatedExportJSON checks this for the node's own export, but an
     // override that enhances it can drop the array on the way through.
@@ -576,7 +594,7 @@ function $appendNodesToJSON(
   if (shouldInclude && !shouldExclude && recurseChildren) {
     const slotNames = $getSlotNames(target);
     if (slotNames.length > 0) {
-      const serializedSlots: Record<string, BaseSerializedNode> = {};
+      const serializedSlots: Record<string, BasePartialSerializedNode> = {};
       for (const name of slotNames) {
         const slotNode = $getSlot(target, name);
         invariant(
@@ -587,7 +605,7 @@ function $appendNodesToJSON(
         );
         const slotExcluded =
           $isElementNode(slotNode) && slotNode.excludeFromCopy('clone');
-        const slotArray: BaseSerializedNode[] = [];
+        const slotArray: BasePartialSerializedNode[] = [];
         $appendNodesToJSON(editor, null, slotNode, slotArray);
         if (slotArray.length === 0 && !slotExcluded) {
           // A serialization override omitted the slot value; skip the entry,
@@ -619,8 +637,8 @@ function $appendNodesToJSON(
       // parse back to nothing.
       if (Object.keys(serializedSlots).length > 0) {
         (
-          serializedNode as BaseSerializedNode & {
-            $slots?: Record<string, BaseSerializedNode>;
+          serializedNode as BasePartialSerializedNode & {
+            $slots?: Record<string, BasePartialSerializedNode>;
           }
         ).$slots = serializedSlots;
       }
@@ -650,7 +668,7 @@ function $appendNodesToJSON(
  * @returns an object with the editor namespace and a list of serializable nodes as JavaScript objects.
  */
 export function $generateJSONFromSelectedNodes<
-  SerializedNode extends BaseSerializedNode,
+  SerializedNode extends BasePartialSerializedNode,
 >(
   editor: LexicalEditor,
   selection: BaseSelection | null,
@@ -704,7 +722,7 @@ export function $generateJSONFromSelectedNodes<
  * @returns an Array of Lexical Node objects.
  */
 export function $generateNodesFromSerializedNodes(
-  serializedNodes: BaseSerializedNode[],
+  serializedNodes: BasePartialSerializedNode[],
 ): LexicalNode[] {
   const nodes = [];
   for (const serializedNode of serializedNodes) {

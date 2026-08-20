@@ -23,6 +23,7 @@ import {
   type LexicalUpdateJSON,
   NODE_STATE_KEY,
   type SerializedLexicalNode,
+  type SerializedPartial,
   type Spread,
 } from '.';
 import {type AnySerializationSchema} from './LexicalSchema';
@@ -924,7 +925,7 @@ export function $getSharedNodeState<T extends LexicalNode>(
  */
 export function $updateStateFromJSON<T extends LexicalNode>(
   node: T,
-  serialized: LexicalUpdateJSON<SerializedLexicalNode>,
+  serialized: LexicalUpdateJSON<SerializedPartial<SerializedLexicalNode>>,
 ): T {
   const writable = node.getWritable();
   // Only the nested NodeState (under NODE_STATE_KEY) is applied here; flat

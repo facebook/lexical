@@ -1396,14 +1396,19 @@ declare export function $applyNodeReplacement<N extends LexicalNode>(
 
 export type SerializedLexicalNode = {
   type: string,
-  // Deprecated: ignored when parsing, written by exportJSON for backwards
-  // compatible output.
-  version?: number,
+  // Deprecated: ignored when parsing, but always written by exportJSON for
+  // backwards compatible output — hence required here and optional on
+  // SerializedPartial, the shape parsing accepts.
+  version: number,
   ...
 };
 
-export type SerializedPartial<T extends SerializedLexicalNode> = SerializedLexicalNode &
-  Partial<T>;
+export type SerializedPartial<T extends SerializedLexicalNode> = {
+  ...Partial<T>,
+  type: string,
+  version?: number,
+  ...
+};
 
 export type SerializedTextNode = {
   ...SerializedLexicalNode,

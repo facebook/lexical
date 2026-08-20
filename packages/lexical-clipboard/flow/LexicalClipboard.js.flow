@@ -70,11 +70,19 @@ declare export function $writeDragSourceToDataTransfer(
 interface BaseSerializedNode {
   children?: BaseSerializedNode[];
   type: string;
+  version: number;
+}
+
+// The same payload with the deprecated `version` relaxed: parsing ignores it
+// and a compact export omits it.
+interface BasePartialSerializedNode {
+  children?: BasePartialSerializedNode[];
+  type: string;
   version?: number;
 }
 
 declare export function $generateJSONFromSelectedNodes<
-  SerializedNode extends BaseSerializedNode,
+  SerializedNode extends BasePartialSerializedNode,
 >(
   editor: LexicalEditor,
   selection: BaseSelection | null,
@@ -84,7 +92,7 @@ declare export function $generateJSONFromSelectedNodes<
 };
 
 declare export function $generateNodesFromSerializedNodes(
-  serializedNodes: BaseSerializedNode[],
+  serializedNodes: BasePartialSerializedNode[],
 ): LexicalNode[];
 
 declare export function copyToClipboard(

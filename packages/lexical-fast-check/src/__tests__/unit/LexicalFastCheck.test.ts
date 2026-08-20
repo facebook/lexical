@@ -24,6 +24,7 @@ import {
   ParagraphNode,
   type SerializedElementNode,
   type SerializedLexicalNode,
+  type SerializedPartial,
   type Spread,
   TextNode,
 } from 'lexical';
@@ -111,7 +112,7 @@ describe('@lexical/fast-check', () => {
 
   function importExport(
     klass: TestNodeClass,
-    serialized: SerializedLexicalNode,
+    serialized: SerializedPartial<SerializedLexicalNode>,
   ): Record<string, unknown> {
     let exported: Record<string, unknown> = {};
     editor.update(
@@ -182,7 +183,7 @@ describe('@lexical/fast-check', () => {
           const once = importExport(klass, {
             ...props,
             type,
-          } as SerializedLexicalNode);
+          } as SerializedPartial<SerializedLexicalNode>);
           // export ∘ import is a fixed point: re-importing what we exported and
           // exporting again yields the same JSON (tolerant of default-omission).
           expect(importExport(klass, once as SerializedLexicalNode)).toEqual(
@@ -229,7 +230,7 @@ describe('@lexical/fast-check', () => {
     const exported = importExport(TextNode, {
       text: 'hello',
       type: 'text',
-    } as SerializedLexicalNode);
+    } as SerializedPartial<SerializedLexicalNode>);
     expect(exported).toMatchObject({
       detail: 0,
       format: 0,
@@ -252,7 +253,7 @@ describe('@lexical/fast-check', () => {
         const exported = importExport(TextNode, {
           ...props,
           type: 'text',
-        } as SerializedLexicalNode);
+        } as SerializedPartial<SerializedLexicalNode>);
         // parsing never throws and always lands inside each property's domain
         expect(typeof exported.text).toBe('string');
         expect(typeof exported.format).toBe('number');

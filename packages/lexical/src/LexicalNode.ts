@@ -91,11 +91,12 @@ export type SerializedLexicalNode = {
   type: string;
   /**
    * @deprecated A numeric schema version. Nothing reads it: parsing ignores it
-   * entirely, so it is not required on JSON being imported. `exportJSON` still
-   * writes it (as `1`) so the output stays readable by older versions, which is
-   * the only reason it remains.
+   * entirely, which is why {@link SerializedPartial} — the type JSON being
+   * imported is accepted as — makes it optional. `exportJSON` still writes it
+   * (as `1`) so the output stays readable by older versions, which is the only
+   * reason it remains, and why it is still required here.
    */
-  version?: number;
+  version: number;
   /**
    * Any state persisted with the NodeState API that is not
    * configured for flat storage
@@ -149,7 +150,9 @@ export interface StaticNodeConfigValue<
    * An alternative to the static importJSON() method
    * that provides better type inference.
    */
-  readonly $importJSON?: (serializedNode: SerializedLexicalNode) => T;
+  readonly $importJSON?: (
+    serializedNode: SerializedPartial<SerializedLexicalNode>,
+  ) => T;
   /**
    * An alternative to the static importDOM() method
    */
@@ -454,26 +457,40 @@ export type LexicalExportJSON<T extends LexicalNode> = Prettify<
 
 /**
  * Omit the children, type, and version properties from the given SerializedLexicalNode definition.
+ *
+ * Constrained to the *parse* shape rather than {@link SerializedLexicalNode},
+ * so a {@link SerializedPartial} — where the deprecated `version` is optional,
+ * as it is in compact JSON — is a valid argument.
  */
-export type LexicalUpdateJSON<T extends SerializedLexicalNode> = Omit<
-  T,
-  'children' | 'type' | 'version'
->;
+export type LexicalUpdateJSON<
+  T extends SerializedPartial<SerializedLexicalNode>,
+> = Omit<T, 'children' | 'type' | 'version'>;
 
 /**
  * The serialized form of a node as accepted by the parsing methods
  * ({@link LexicalNode.importJSON} and {@link LexicalNode.updateFromJSON}).
  *
- * The base `SerializedLexicalNode` identity (`type`, `version`, and the node
- * state key) is preserved, but every node-specific property is made optional
- * via `Partial`. Parsing is generally untrusted and must tolerate missing or
- * out-of-domain values, so implementations are expected to substitute sensible
- * defaults — see the {@link Parse} helpers such as {@link stringValue},
- * {@link numberValue}, and {@link enumValue}. This also enables a "compact"
- * serialization variant in which any property left at its default is omitted.
+ * Only `type` identifies the node here: every node-specific property is made
+ * optional via `Partial`, and the deprecated `version` with them, since
+ * parsing ignores it. Parsing is generally untrusted and must tolerate missing
+ * or out-of-domain values, so implementations are expected to substitute
+ * sensible defaults — see the {@link Parse} helpers such as
+ * {@link stringValue}, {@link numberValue}, and {@link enumValue}. This also
+ * enables a "compact" serialization variant in which any property left at its
+ * default is omitted.
+ *
+ * The export direction keeps `version` required: `exportJSON` always writes
+ * it, so narrowing it on {@link SerializedLexicalNode} itself would break
+ * every consumer that reads it off an exported node.
  */
-export type SerializedPartial<T extends SerializedLexicalNode> =
-  SerializedLexicalNode & Partial<T>;
+export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
+  SerializedLexicalNode & Partial<T>,
+  '$slots' | 'version'
+> & {
+  /** Slot values are parsed by the same rules, so they relax the same way. */
+  $slots?: Record<string, SerializedPartial<SerializedLexicalNode>>;
+  version?: number;
+};
 
 /** @internal */
 export interface LexicalPrivateDOM {
@@ -1607,7 +1624,8 @@ export class LexicalNode {
    *
    * */
   static importJSON(
-    _serializedNode: SerializedLexicalNode & Record<string, unknown>,
+    _serializedNode: SerializedPartial<SerializedLexicalNode> &
+      Record<string, unknown>,
   ): LexicalNode {
     invariant(
       false,
@@ -1645,7 +1663,7 @@ export class LexicalNode {
    * ```
    **/
   updateFromJSON(
-    serializedNode: LexicalUpdateJSON<SerializedLexicalNode>,
+    serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedLexicalNode>>,
   ): this {
     return $applyJSONSetters(
       $updateStateFromJSON(this, serializedNode),

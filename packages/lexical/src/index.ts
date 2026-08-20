@@ -134,6 +134,18 @@ export {
   NODE_STATE_KEY,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
+export {
+  type AnyContextConfigPairOrUpdater,
+  type ContextConfig,
+  type ContextConfigPair,
+  type ContextConfigUpdater,
+  contextFromPairs,
+  type ContextPairOrUpdater,
+  type ContextRecord,
+  contextUpdater,
+  contextValue,
+  getContextValue,
+} from './LexicalContextRecord';
 export type {DOMSlot} from './LexicalDOMSlot';
 export type {ElementDOMSlot} from './LexicalDOMSlot';
 export type {

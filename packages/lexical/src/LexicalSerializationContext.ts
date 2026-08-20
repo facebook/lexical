@@ -10,11 +10,29 @@ import type {Klass} from './LexicalEditor';
 import type {LexicalNode, SerializedLexicalNode} from './LexicalNode';
 
 import {
+  type AnyContextConfigPairOrUpdater,
+  type ContextConfig,
+  contextFromPairs,
+  type ContextRecord,
+  getContextValue,
+} from './LexicalContextRecord';
+import {createState} from './LexicalNodeState';
+import {
   $validatedExportJSON,
   type AppliedSerialization,
   setSerializationInterceptor,
 } from './LexicalSerializedExport';
 import {getComposedSchema} from './LexicalUtils';
+
+/**
+ * Tags a {@link SerializationStateConfig} so it cannot be mixed up with the
+ * DOM render or import contexts, which share the same record machinery.
+ *
+ * @experimental
+ */
+export const SerializationContextSymbol: unique symbol = Symbol.for(
+  '@lexical/SerializationContext',
+);
 
 /**
  * A value that can be varied for the duration of a JSON export, created with
@@ -27,10 +45,10 @@ import {getComposedSchema} from './LexicalUtils';
  *
  * @experimental
  */
-export interface SerializationStateConfig<V> {
-  readonly name: string;
-  readonly defaultValue: V;
-}
+export type SerializationStateConfig<V> = ContextConfig<
+  typeof SerializationContextSymbol,
+  V
+>;
 
 /**
  * A {@link SerializationStateConfig} paired with the value to use for it.
@@ -56,7 +74,9 @@ export function createSerializationState<V>(
   name: string,
   defaultValue: V,
 ): SerializationStateConfig<V> {
-  return {defaultValue, name};
+  return Object.assign(createState(Symbol(name), {parse: () => defaultValue}), {
+    [SerializationContextSymbol]: true,
+  } as const);
 }
 
 /**
@@ -109,18 +129,19 @@ export const SerializationContextOverride =
     null,
   );
 
-type SerializationContextRecord = ReadonlyMap<
-  SerializationStateConfig<unknown>,
-  unknown
+type SerializationContextRecord = ContextRecord<
+  typeof SerializationContextSymbol
 >;
 
 // Serialization is a synchronous depth-first walk, so the active context is
 // module scope with strict stack discipline rather than something attached to
-// the editor: there is exactly one export in flight at a time. Note that this
-// also means a nested editor serialized during exportJSON (e.g. an image
-// caption) runs under the outer document's context — deliberate, so that e.g.
-// a redaction override cannot be bypassed by nesting.
-let activeContext: null | SerializationContextRecord = null;
+// the editor — `editorState.toJSON()` runs with no active editor at all, which
+// is why this cannot use the editor-scoped layer `@lexical/html` builds on the
+// same records. There is exactly one export in flight at a time. Note that a
+// nested editor serialized during exportJSON (e.g. an image caption) runs
+// under the outer document's context — deliberate, so that e.g. a redaction
+// override cannot be bypassed by nesting.
+let activeContext: undefined | SerializationContextRecord = undefined;
 
 /**
  * Read a serialization context value. Outside of an export (or for a config
@@ -131,10 +152,12 @@ let activeContext: null | SerializationContextRecord = null;
 export function $getSerializationContextValue<V>(
   cfg: SerializationStateConfig<V>,
 ): V {
-  return activeContext &&
-    activeContext.has(cfg as SerializationStateConfig<unknown>)
-    ? (activeContext.get(cfg as SerializationStateConfig<unknown>) as V)
-    : cfg.defaultValue;
+  // The tag is a phantom type, so it cannot be inferred from `cfg` and is
+  // pinned here.
+  return getContextValue<typeof SerializationContextSymbol, V>(
+    activeContext,
+    cfg,
+  );
 }
 
 /**
@@ -163,9 +186,17 @@ export function $withSerializationContext(
   setSerializationInterceptor($applyActiveSerializationContext);
   return f => {
     const previous = activeContext;
-    const next = new Map(previous);
-    for (const [cfg, value] of pairs) {
-      next.set(cfg, value);
+    // A child record chains off the previous one, so unset values read through
+    // to it; when no pair changes a value the parent is returned unchanged and
+    // nothing is allocated.
+    const next = contextFromPairs(
+      pairs as readonly AnyContextConfigPairOrUpdater<
+        typeof SerializationContextSymbol
+      >[],
+      previous,
+    );
+    if (next === previous) {
+      return f();
     }
     activeContext = next;
     try {

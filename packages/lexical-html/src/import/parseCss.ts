@@ -79,11 +79,6 @@ class Cursor {
 interface ParsedSimpleSelector {
   readonly tags: Set<string>;
   readonly predicates: Predicate[];
-  /**
-   * True when the group came from an explicit `*`, which is the one way a
-   * group can legitimately end up with no tag and no refinement.
-   */
-  readonly isUniversal: boolean;
 }
 
 function parseSimpleSelector(c: Cursor): ParsedSimpleSelector {
@@ -149,7 +144,15 @@ function parseSimpleSelector(c: Cursor): ParsedSimpleSelector {
     predicates.push(buildClassAllPredicate(classes));
   }
 
-  return {isUniversal, predicates, tags};
+  // Neither tag nor refinement is only legitimate when the group came from a
+  // lone `*`. Otherwise the source is empty or its list has a hole, and
+  // accepting it would silently turn a typo into a universal selector.
+  c.assert(
+    isUniversal || tags.size > 0 || predicates.length > 0,
+    'expected a selector',
+  );
+
+  return {predicates, tags};
 }
 
 /**
@@ -175,15 +178,7 @@ export function parseSelector(
   const groups: ParsedSimpleSelector[] = [];
 
   while (true) {
-    const group = parseSimpleSelector(c);
-    // A group with neither tag nor refinement is only legitimate when it came
-    // from a lone `*`. Otherwise the source is empty or has a hole in its list,
-    // and accepting it would silently turn a typo into a universal selector.
-    c.assert(
-      group.isUniversal || group.tags.size > 0 || group.predicates.length > 0,
-      'expected a selector',
-    );
-    groups.push(group);
+    groups.push(parseSimpleSelector(c));
     c.skipWhitespace();
     if (c.eof()) {
       break;

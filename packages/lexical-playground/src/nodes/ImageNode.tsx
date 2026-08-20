@@ -46,6 +46,8 @@ import {
   type SerializedLexicalNode,
   type Spread,
   stringValue,
+  withField,
+  withGetter,
 } from 'lexical';
 import * as React from 'react';
 
@@ -132,12 +134,29 @@ export type SerializedImageNode = Spread<
 
 const imageNodeSchema = /* @__PURE__ */ objectValue({
   altText: /* @__PURE__ */ stringValue(),
-  caption: /* @__PURE__ */ rawValue<SerializedEditor>(),
-  height: /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
-  maxWidth: /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
-  showCaption: /* @__PURE__ */ booleanValue(),
+  caption: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ rawValue<SerializedEditor>(),
+    '$getSerializedCaption',
+  ),
+  // An unsized dimension is the 'inherit' sentinel, which has always
+  // serialized as 0 (and parses back through `|| 'inherit'`).
+  height: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
+    '$getSerializedHeight',
+  ),
+  maxWidth: /* @__PURE__ */ withField(
+    /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
+    '__maxWidth',
+  ),
+  showCaption: /* @__PURE__ */ withField(
+    /* @__PURE__ */ booleanValue(),
+    '__showCaption',
+  ),
   src: /* @__PURE__ */ stringValue(),
-  width: /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
+  width: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
+    '$getSerializedWidth',
+  ),
 });
 
 export class ImageNode extends DecoratorNode<JSX.Element> {
@@ -170,6 +189,23 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       node.__captionsEnabled,
       node.__key,
     );
+  }
+
+  /** @internal The nested caption editor's own serialized state. */
+  $getSerializedCaption(): SerializedEditor {
+    return this.getLatest().__caption.toJSON();
+  }
+
+  /** @internal 'inherit' has always serialized as 0. */
+  $getSerializedWidth(): number {
+    const width = this.getLatest().__width;
+    return width === 'inherit' ? 0 : width;
+  }
+
+  /** @internal */
+  $getSerializedHeight(): number {
+    const height = this.getLatest().__height;
+    return height === 'inherit' ? 0 : height;
   }
 
   /**
@@ -256,15 +292,18 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
 
   // `width`/`height` are absent from the JSON when the image is unsized, which
   // is stored as the sentinel 'inherit'.
+  // An unsized image serializes as 0 (and older documents may omit the
+  // property), both of which restore the 'inherit' sentinel — the same
+  // mapping the constructor's `width || 'inherit'` has always applied.
   setWidth(width: number | undefined): this {
     const self = this.getWritable();
-    self.__width = width === undefined ? 'inherit' : width;
+    self.__width = width || 'inherit';
     return self;
   }
 
   setHeight(height: number | undefined): this {
     const self = this.getWritable();
-    self.__height = height === undefined ? 'inherit' : height;
+    self.__height = height || 'inherit';
     return self;
   }
 
@@ -289,19 +328,6 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     this.__caption =
       caption || buildEditorFromExtensions(CaptionEditorExtension);
     this.__captionsEnabled = captionsEnabled !== false;
-  }
-
-  exportJSON(): SerializedImageNode {
-    return {
-      ...super.exportJSON(),
-      altText: this.getAltText(),
-      caption: this.__caption.toJSON(),
-      height: this.__height === 'inherit' ? 0 : this.__height,
-      maxWidth: this.__maxWidth,
-      showCaption: this.__showCaption,
-      src: this.getSrc(),
-      width: this.__width === 'inherit' ? 0 : this.__width,
-    };
   }
 
   setWidthAndHeight(

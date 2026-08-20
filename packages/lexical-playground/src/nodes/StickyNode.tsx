@@ -34,6 +34,8 @@ import {
   type SerializedEditor,
   type SerializedLexicalNode,
   type Spread,
+  withAccessors,
+  withGetter,
 } from 'lexical';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
@@ -46,10 +48,22 @@ const StickyComponent = React.lazy(() => import('./StickyComponent'));
 type StickyNoteColor = 'pink' | 'yellow';
 
 const stickyNodeSchema = /* @__PURE__ */ objectValue({
-  caption: /* @__PURE__ */ rawValue<SerializedEditor>(),
-  color: /* @__PURE__ */ enumValue(['yellow', 'pink']),
-  xOffset: /* @__PURE__ */ numberValue(),
-  yOffset: /* @__PURE__ */ numberValue(),
+  caption: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ rawValue<SerializedEditor>(),
+    '$getSerializedCaption',
+  ),
+  color: /* @__PURE__ */ withAccessors(
+    /* @__PURE__ */ enumValue(['yellow', 'pink']),
+    {getter: '__color', setter: 'setColor'},
+  ),
+  xOffset: /* @__PURE__ */ withAccessors(/* @__PURE__ */ numberValue(), {
+    getter: '__x',
+    setter: 'setXOffset',
+  }),
+  yOffset: /* @__PURE__ */ withAccessors(/* @__PURE__ */ numberValue(), {
+    getter: '__y',
+    setter: 'setYOffset',
+  }),
 });
 
 export type SerializedStickyNode = Spread<
@@ -106,6 +120,11 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     );
   }
 
+  /** @internal The nested caption editor's own serialized state. */
+  $getSerializedCaption(): SerializedEditor {
+    return this.getLatest().__caption.toJSON();
+  }
+
   /**
    * Apply a serialized nested caption editor. The nested editor's own
    * `parseEditorState` owns validation of the payload, which is why the `json`
@@ -156,16 +175,6 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     this.__caption =
       caption || buildEditorFromExtensions(StickyEditorExtension);
     this.__color = color;
-  }
-
-  exportJSON(): SerializedStickyNode {
-    return {
-      ...super.exportJSON(),
-      caption: this.__caption.toJSON(),
-      color: this.__color,
-      xOffset: this.__x,
-      yOffset: this.__y,
-    };
   }
 
   createDOM(config: EditorConfig): HTMLElement {

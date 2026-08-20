@@ -101,7 +101,10 @@ const elementNodeSchema = /* @__PURE__ */ objectValue({
     ]),
     'getFormatType',
   ),
-  indent: /* @__PURE__ */ numberValue(),
+  // Bounded because the domain is real, not cosmetic: ListItemNode.setIndent
+  // walks one level per step and rejects a negative, so an unbounded number
+  // from untrusted JSON either hangs the parse or aborts the whole document.
+  indent: /* @__PURE__ */ numberValue(0, {integer: true, max: 128, min: 0}),
   // Persisted only in the narrow case below, so they are read through getters
   // that return undefined (and are therefore omitted) otherwise.
   textFormat: /* @__PURE__ */ withGetter(

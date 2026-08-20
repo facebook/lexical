@@ -561,3 +561,54 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
     });
   });
 });
+
+describe('defaults and untrusted input', () => {
+  test('a declared fallback survives a member that accepts undefined', () => {
+    // `parse(undefined)` is how most combinators name their default, but here
+    // `undefined` is in-domain, so deriving it would discard the fallback.
+    expect(unionValue([rawValue(), numberValue()], 5).defaultValue).toBe(5);
+    expect(
+      unionValue([optional(numberValue()), enumValue(['inherit'])], 'inherit')
+        .defaultValue,
+    ).toBe('inherit');
+    expect(
+      enumValue([undefined, 'middle', 'bottom'], 'middle').defaultValue,
+    ).toBe('middle');
+  });
+
+  test('a union accepts exactly what its members accept', () => {
+    // Set membership is SameValueZero, so a member can return NaN unchanged;
+    // an identity test would read that as a rejection.
+    const schema = unionValue([enumValue([NaN, 1]), numberValue()], 1);
+    expect(schema(NaN)).toBeNaN();
+  });
+
+  test('a union carries its members accessor names', () => {
+    const schema = unionValue([
+      withAccessors(numberValue(), {getter: 'getDim', setter: 'setDim'}),
+      enumValue(['inherit']),
+    ]);
+    expect(schema.getter).toBe('getDim');
+    expect(schema.setter).toBe('setDim');
+  });
+
+  test('a reference-typed default cannot be mutated into every node', () => {
+    // StateConfig hands this very object to $getState for a node with no
+    // state of its own, so a push here would be visible from every node.
+    const schema = arrayValue(stringValue());
+    expect(() => schema.defaultValue.push('leak')).toThrow();
+    expect(schema.defaultValue).toEqual([]);
+    // a parsed value is a fresh array and stays writable
+    expect(() => schema(['a']).push('b')).not.toThrow();
+  });
+
+  test('objectValue reads own properties only', () => {
+    // `source` is parsed JSON, so an inherited member would otherwise be
+    // handed to a node setter for JSON that never carried the key.
+    const schema = objectValue({toString: rawValue<string>()});
+    expect(schema(JSON.parse('{}'))).toEqual({toString: undefined});
+    expect(schema(JSON.parse('{"toString":"mine"}'))).toEqual({
+      toString: 'mine',
+    });
+  });
+});

@@ -234,6 +234,42 @@ describe('serialization context', () => {
     expect(childrenOf(toJSON())[0].version).toBe(1);
   });
 
+  test('the marker is stripped from JSON an override kept but omitted', () => {
+    const kept: SerializedLexicalNode[] = [];
+    toJSON([
+      [
+        SerializationContextOverride,
+        (node: LexicalNode, $next: () => SerializedLexicalNode) => {
+          const json = $next();
+          kept.push(json);
+          return $isTextNode(node) ? null : json;
+        },
+      ],
+    ]);
+    // the omitted node's JSON is still in the override's hands, so the walk
+    // has to clean it up on that path too
+    expect(kept.length).toBeGreaterThan(2);
+    for (const json of kept) {
+      expect(Object.getOwnPropertySymbols(json)).toEqual([]);
+    }
+  });
+
+  test('an enhancement that drops children fails by name, not on undefined', () => {
+    expect(() =>
+      toJSON([
+        [
+          SerializationContextOverride,
+          (node: LexicalNode, $next: () => SerializedLexicalNode) => {
+            const {children: _children, ...rest} = $next() as {
+              children?: unknown;
+            };
+            return rest as SerializedLexicalNode;
+          },
+        ],
+      ]),
+    ).toThrow(/is an element but the JSON exported for it has no children/);
+  });
+
   test('a same-type replacement is compacted, a foreign-type one is not', () => {
     // A TabNode's `text`, `detail` and `mode` are all derived, so compacting
     // this replacement with the tab's own table would strip a text node down

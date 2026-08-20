@@ -9,6 +9,7 @@
 import {
   $isLexicalNode,
   $withSerializationContext,
+  type AnySerializationStateConfigPair,
   defineExtension,
   type EditorState,
   type Klass,
@@ -143,11 +144,12 @@ function compilePredicate(
     return matchesEverything;
   }
   const predicates = nodes.map((match): NodePredicate => {
-    // A node class is told from a type guard by its prototype, as elsewhere in
-    // the codebase: a node class has a LexicalNode prototype, while a guard's
-    // is a plain object (or absent, for an arrow function). The one class this
-    // cannot recognize is the abstract `LexicalNode` itself, whose prototype is
-    // not an instance of it — match every node with `'*'` instead.
+    // A node class is told from a type guard by its prototype, exactly as
+    // @lexical/html's DOM-override matcher does: a node class has a
+    // LexicalNode prototype, while a guard's is a plain object (or absent, for
+    // an arrow function). The one class this cannot recognize is the abstract
+    // `LexicalNode` itself, whose prototype is not an instance of it — match
+    // every node with `'*'` instead.
     return $isLexicalNode((match as Klass<LexicalNode>).prototype)
       ? node => node instanceof (match as Klass<LexicalNode>)
       : (match as NodePredicate);
@@ -243,11 +245,24 @@ function compileOverrides(overrides: readonly AnySerializationOverride[]) {
 export const JSONExtension = /* @__PURE__ */ defineExtension({
   build(editor, config): JSONExtensionOutput {
     const override = compileOverrides(config.overrides);
+    // An editor that declares no overrides of its own contributes none —
+    // writing `null` would install "no override" over an enclosing context and
+    // let a nested export escape the outer document's redaction, which is the
+    // one thing that context is scoped across editors to prevent.
+    const overridePairs: readonly AnySerializationStateConfigPair[] =
+      override === null ? [] : [[SerializationContextOverride, override]];
+    // Both configurations are fixed at build time, so the context closures are
+    // built once here rather than per export call.
+    const $withCompact = $withSerializationContext([
+      [SerializationContextCompact, true],
+      ...overridePairs,
+    ]);
+    const $withLegacy = $withSerializationContext([
+      [SerializationContextCompact, false],
+      ...overridePairs,
+    ]);
     const $withConfigured = (compact: boolean) =>
-      $withSerializationContext([
-        [SerializationContextCompact, compact],
-        [SerializationContextOverride, override],
-      ]);
+      compact ? $withCompact : $withLegacy;
     return {
       $exportJSON(editorState = editor.getEditorState(), options = {}) {
         const compact =

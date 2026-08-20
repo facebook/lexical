@@ -8,6 +8,8 @@
 
 import invariant from '@lexical/internal/invariant';
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 /**
  * A function that validates an untrusted `value` (such as a property parsed
  * from JSON) and coerces it into the expected type `T`, returning a default
@@ -142,13 +144,34 @@ function makeSchema<T>(
   parse: Parse<T>,
   meta: SerializationSchemaMeta,
   accessors: SchemaAccessors = {},
+  // Parsing `undefined` is how most combinators name their own default, but a
+  // schema whose domain *contains* `undefined` — an enum listing it, a union
+  // with an optional member — would derive `undefined` and silently discard
+  // the fallback its caller declared, so those pass it explicitly.
+  defaultValue: T = parse(undefined),
 ): SerializationSchema<T> {
+  if (defaultValue !== null && typeof defaultValue === 'object') {
+    // The default is metadata every parse shares, and StateConfig hands it
+    // straight to $getState for a node that has none of its own. Freezing it
+    // turns "mutate one node's default and corrupt every node in the process"
+    // into a loud error; a parsed value is a fresh object and is untouched.
+    Object.freeze(defaultValue);
+  }
   return Object.assign(parse, {
-    defaultValue: parse(undefined),
+    defaultValue,
     getter: accessors.getter,
     meta,
     setter: accessors.setter,
   }) as SerializationSchema<T>;
+}
+
+/**
+ * `source` is untrusted parsed JSON, whose prototype is `Object.prototype`: a
+ * plain `key in source` (or `source[key]`) would report an inherited member —
+ * `toString`, `constructor` — as a present value and hand it to a node setter.
+ */
+function hasOwnKey(source: object, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(source, key);
 }
 
 /**
@@ -232,6 +255,10 @@ export function enumValue<const T>(
   return makeSchema(
     value => (allowed.has(value) ? (value as T) : defaultValue),
     {kind: 'enum', values},
+    {},
+    // `undefined` may itself be one of the values, in which case parsing it
+    // returns it rather than the declared fallback.
+    defaultValue,
   );
 }
 
@@ -365,14 +392,39 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
   return makeSchema<T>(
     value => {
       for (let i = 0; i < members.length; i++) {
-        if (members[i](value) === value) {
+        // Object.is, not ===, so the union accepts exactly what its members
+        // accept: `enumValue([NaN])` returns NaN unchanged, and `===` would
+        // read that as a rejection.
+        if (Object.is(members[i](value), value)) {
           return value as T;
         }
       }
       return fallback;
     },
     {kind: 'union', members},
+    // A union describes one property, so — like nullable/optional, and unlike
+    // arrayValue, whose item describes an element — it carries its members'
+    // accessor names. The first member to name one wins.
+    unionAccessors(members),
+    // A member that accepts `undefined` (an optional or raw one) would
+    // otherwise make `undefined` the derived default, discarding `fallback`.
+    fallback,
   );
+}
+
+function unionAccessors(
+  members: readonly AnySerializationSchema[],
+): SchemaAccessors {
+  const accessors: {getter?: string | null; setter?: string | null} = {};
+  for (const member of members) {
+    if (accessors.getter === undefined) {
+      accessors.getter = member.getter;
+    }
+    if (accessors.setter === undefined) {
+      accessors.setter = member.setter;
+    }
+  }
+  return accessors;
 }
 
 /**
@@ -486,16 +538,29 @@ export function objectValue<T extends {readonly [key: string]: unknown}>(
   fields: SerializationSchemaShape<T>,
 ): SerializationSchema<T> {
   const entries = Object.entries(fields) as [string, AnySerializationSchema][];
+  if (__DEV__) {
+    for (const [key] of entries) {
+      // `result[key] = ...` on a plain object would invoke Object.prototype's
+      // `__proto__` setter and reparent the result instead of writing a
+      // property, so this name cannot describe a serialized field.
+      invariant(
+        key !== '__proto__',
+        'objectValue: "__proto__" is not a valid field name',
+      );
+    }
+  }
   return makeSchema(
     value => {
-      const source: {readonly [key: string]: unknown} =
-        value != null && typeof value === 'object'
-          ? (value as {readonly [key: string]: unknown})
-          : {};
+      const source: object =
+        value !== null && typeof value === 'object' ? value : {};
       const result: {[key: string]: unknown} = {};
       for (let i = 0; i < entries.length; i++) {
         const [key, schema] = entries[i];
-        result[key] = schema(source[key]);
+        result[key] = schema(
+          hasOwnKey(source, key)
+            ? (source as {readonly [key: string]: unknown})[key]
+            : undefined,
+        );
       }
       return result as T;
     },

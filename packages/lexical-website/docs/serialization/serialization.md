@@ -510,11 +510,33 @@ required arguments, and every built-in node in Lexical now declares one. Most
 custom nodes need no JSON serialization code at all.
 
 ```ts
-import {enumValue, numberValue, objectValue} from 'lexical';
+import {
+  $getDocument,
+  ElementNode,
+  enumValue,
+  numberValue,
+  objectValue,
+} from 'lexical';
 
 class CounterNode extends ElementNode {
   __count = 0;
   __variant: 'a' | 'b' = 'a';
+
+  // Node properties live on the node, so a clone has to carry them across —
+  // this is required of any custom node, schema or not.
+  afterCloneFrom(prevNode: this): void {
+    super.afterCloneFrom(prevNode);
+    this.__count = prevNode.__count;
+    this.__variant = prevNode.__variant;
+  }
+
+  createDOM(): HTMLElement {
+    return $getDocument().createElement('div');
+  }
+
+  updateDOM(): boolean {
+    return false;
+  }
 
   $config() {
     return this.config('counter', {
@@ -548,9 +570,10 @@ class CounterNode extends ElementNode {
 }
 ```
 
-That is the whole node: `count` and `variant` are parsed through `setCount`
-and `setVariant` and written through `getCount` and `getVariant`, so neither
-`updateFromJSON` nor `exportJSON` has to be written at all.
+`count` and `variant` are parsed through `setCount` and `setVariant` and
+written through `getCount` and `getVariant`, so neither `updateFromJSON` nor
+`exportJSON` has to be written at all — the rest of the class is the ordinary
+node boilerplate the schema does not touch.
 
 Each property's schema is built from composable helpers exported by
 `lexical`:

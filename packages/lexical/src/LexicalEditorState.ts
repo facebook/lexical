@@ -81,6 +81,15 @@ function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
     const serializedChildren = (serializedNode as SerializedElementNode)
       .children;
     const children = node.getChildren();
+    // $validatedExportJSON checks this for the node's own export, but an
+    // override that enhances it can drop the array on the way through — say a
+    // `const {children, ...rest} = $next()`. Say so, rather than failing on
+    // `undefined.push` several frames deeper.
+    invariant(
+      Array.isArray(serializedChildren),
+      'LexicalNode: Node %s is an element but the JSON exported for it has no children array.',
+      nodeClass.name,
+    );
 
     for (let i = 0; i < children.length; i++) {
       const child = children[i];

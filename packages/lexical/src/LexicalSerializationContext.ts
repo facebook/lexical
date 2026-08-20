@@ -90,11 +90,19 @@ export function createSerializationState<V>(
  * an omission returned for it is ignored and the root exports normally.
  *
  * Enhancing means returning what `$next()` produced, whether spread
- * (`{...$next(), redacted: true}`) or returned as-is; the walk still owns the
- * node's children and slots and fills them in. Anything else is a replacement
- * and is authoritative, subtree included: the walk appends neither children
- * nor slots to it, and leaves it uncompacted when its `type` is not the node's
- * own, since the node's schema says nothing about another type's properties.
+ * (`{...$next(), redacted: true}`), assigned onto (`Object.assign({}, $next())`)
+ * or returned as-is; the walk still owns the node's children and slots and
+ * fills them in. Anything else is a replacement and is authoritative, subtree
+ * included: the walk appends neither children nor slots to it, and leaves it
+ * uncompacted when its `type` is not the node's own, since the node's schema
+ * says nothing about another type's properties.
+ *
+ * The distinction is carried on the object `$next()` returns, so it survives
+ * spread and `Object.assign` but not a structural copy — `structuredClone`,
+ * `JSON.parse(JSON.stringify(...))` and deep-clone helpers all produce a
+ * *replacement*, and an element cloned that way exports with an empty
+ * `children`. Enhance by spreading, and deep-copy only the parts you mean to
+ * rewrite.
  *
  * Write it as a pure mapping from node to JSON. A walk may consult it for a
  * node it does not end up emitting — the `@lexical/clipboard` selection export
@@ -324,6 +332,19 @@ function $applyActiveSerializationContext(
     return {recurseChildren: true, serializedNode: $validatedExportJSON(node)};
   }
   const override = $getSerializationContextValue(SerializationContextOverride);
+  const compact = $getSerializationContextValue(SerializationContextCompact);
+  if (override === null) {
+    // Nothing can replace the JSON, so the walk owns the subtree by
+    // construction: skip the memo closure and the marker entirely. This is the
+    // common configuration — a context set only to ask for the compact form.
+    const serializedNode = $validatedExportJSON(node);
+    return {
+      recurseChildren: true,
+      serializedNode: compact
+        ? $compactSerializedNode(node, serializedNode)
+        : serializedNode,
+    };
+  }
   // Memoized so repeated $next() calls are stable and the sanity checks run at
   // most once.
   let defaultResult: MarkedSerializedNode | undefined;
@@ -334,11 +355,14 @@ function $applyActiveSerializationContext(
     }
     return defaultResult;
   };
-  let result: MarkedSerializedNode | null = override
-    ? override(node, $default)
-    : $default();
+  let result: MarkedSerializedNode | null = override(node, $default);
   if (result === null) {
     if (!isRoot) {
+      // The override may have called $next() and kept its result, so the
+      // marker has to come off even on the path that discards it.
+      if (defaultResult !== undefined) {
+        delete defaultResult[DEFAULT_EXPORT_MARKER];
+      }
       return null;
     }
     // A document must have a root, so an omission returned for it is ignored.
@@ -359,8 +383,7 @@ function $applyActiveSerializationContext(
   // is written as-is; the legacy form is always valid, and dropping its
   // properties by this node's table would corrupt it.
   const serializedNode =
-    $getSerializationContextValue(SerializationContextCompact) &&
-    result.type === node.getType()
+    compact && result.type === node.getType()
       ? $compactSerializedNode(node, result)
       : result;
   return {recurseChildren, serializedNode};

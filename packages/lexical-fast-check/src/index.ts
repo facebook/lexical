@@ -18,7 +18,7 @@ import * as fc from 'fast-check';
 import {getComposedSchemaFields, getStaticNodeConfig} from 'lexical';
 
 /**
- * Read the {@link SerializationSchema} a node class declares on its `$config` (the `schema`
+ * Read the {@link SerializationSchema} a node class declares on its `$config` (the `json`
  * field), if any. This is the introspection entry point for tooling: the node
  * is the single source of truth and this returns the schema it published. The
  * `$config` is read from the prototype, so no editor or instance is required.

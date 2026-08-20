@@ -3238,6 +3238,17 @@ function composeSchema(klass: Klass<LexicalNode>): ComposedSchema {
   const stateGroups: (readonly AnyStateConfig[])[] = [];
   for (const {ownNodeConfig} of iterStaticNodeConfigChain(klass)) {
     const json = ownNodeConfig && ownNodeConfig.json;
+    if (__DEV__ && json) {
+      // `json` is typed as any schema, but only an objectValue names fields.
+      // Anything else contributes nothing, which would silently turn off the
+      // node's whole serialization — the one thing declaring `json` is for.
+      invariant(
+        json.meta.kind === 'object',
+        '%s: $config json must be an objectValue(...), got %s',
+        klass.name,
+        json.meta.kind,
+      );
+    }
     fieldGroups.push(
       json && json.meta.kind === 'object'
         ? (Object.entries(json.meta.fields) as (readonly [
@@ -3350,12 +3361,17 @@ const compiledGettersByClass = new WeakMap<
 function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
   const prototype = klass.prototype as unknown as Record<string, unknown>;
   const fields = new Map<string, CompiledGetter>();
-  // Most-derived first: the serialized property order this produces is the
-  // one the hand-written exportJSON methods it replaces produced for the
-  // core classes, which some tests compare as strings. Composition already
-  // resolved each key to exactly one schema, so a subclass that re-declares an
-  // inherited field replaces it outright, accessor names included — TabNode
-  // repeats `getter: 'getTextContent'` for that reason.
+  // Most-derived first, which reproduces the order TextNode and ElementNode's
+  // hand-written exportJSON produced for their own fields. It does *not*
+  // reproduce it for a subclass: `{...super.exportJSON(), ownProps}` put the
+  // subclass's properties last, and they now come first, with `type`/`version`
+  // appended by $exportJSONInto. The JSON is equivalent — key order carries no
+  // meaning — but `JSON.stringify(editorState.toJSON())` is byte-different for
+  // an existing document, so anything comparing serialized strings sees a
+  // change. Composition already resolved each key to exactly one schema, so a
+  // subclass that re-declares an inherited field replaces it outright,
+  // accessor names included — TabNode repeats `getter: 'getTextContent'` for
+  // that reason.
   for (const [key, schema] of getComposedSchema(klass).fieldsDerivedFirst) {
     if (schema.getter === null) {
       // Declared import-only; the property is written by an exportJSON
@@ -3365,36 +3381,42 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
     const getterName = schema.getter || defaultGetterName(key);
     if (getterName.startsWith('__')) {
       // withField: read the node's own field rather than call a method,
-      // still through getLatest() so the current version is observed.
+      // still through getLatest() so the current version is observed. The
+      // field only exists once a node is constructed, so unlike the method
+      // below it is checked on first read rather than here.
       fields.set(key, {
         getter: function (this: LexicalNode) {
-          return (this.getLatest() as unknown as Record<string, unknown>)[
-            getterName
-          ];
+          const latest = this.getLatest() as unknown as Record<string, unknown>;
+          if (__DEV__) {
+            invariant(
+              getterName in latest,
+              '%s: json schema field "%s" reads a field %s that the node does not have',
+              klass.name,
+              key,
+              getterName,
+            );
+          }
+          return latest[getterName];
         },
         key,
       });
       continue;
     }
     const getter = prototype[getterName];
-    if (__DEV__) {
-      // A field the class cannot read would be silently missing from every
-      // export, so it is a programmer error whether the name was declared or
-      // came from the convention.
-      invariant(
-        typeof getter === 'function',
-        '%s: json schema field "%s" has no getter %s(); name one with withGetter or declare {getter: null} if it is deliberately not exported',
-        klass.name,
-        key,
-        getterName,
-      );
-    }
-    if (typeof getter === 'function') {
-      fields.set(key, {
-        getter: getter as (this: LexicalNode) => unknown,
-        key,
-      });
-    }
+    // A field the class cannot read would be silently missing from every
+    // export — data loss, not a degraded experience — so this fails in every
+    // build, not only in DEV. It runs once per class at registration.
+    invariant(
+      typeof getter === 'function',
+      '%s: json schema field "%s" has no getter %s(); name one with withGetter or declare {getter: null} if it is deliberately not exported',
+      klass.name,
+      key,
+      getterName,
+    );
+    fields.set(key, {
+      getter: getter as (this: LexicalNode) => unknown,
+      key,
+    });
   }
   return fields.size === 0 ? EMPTY_GETTERS : [...fields.values()];
 }
@@ -3444,25 +3466,22 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
     }
     const setterName = schema.setter || defaultSetterName(key);
     const setter = prototype[setterName];
-    if (__DEV__) {
-      // A field the class cannot apply would be silently dropped from every
-      // import — it exports but never comes back.
-      invariant(
-        typeof setter === 'function',
-        '%s: json schema field "%s" has no setter %s(); name one with withSetter or declare {setter: null} if it is derived on import',
-        klass.name,
-        key,
-        setterName,
-      );
-    }
-    if (typeof setter === 'function') {
-      fields.set(key, {
-        key,
-        kind: 'field',
-        schema,
-        setter: setter as (this: LexicalNode, value: unknown) => LexicalNode,
-      });
-    }
+    // A field the class cannot apply would be silently dropped from every
+    // import — it exports but never comes back — so, like the getter mirror,
+    // this fails in every build rather than only in DEV.
+    invariant(
+      typeof setter === 'function',
+      '%s: json schema field "%s" has no setter %s(); name one with withSetter or declare {setter: null} if it is derived on import',
+      klass.name,
+      key,
+      setterName,
+    );
+    fields.set(key, {
+      key,
+      kind: 'field',
+      schema,
+      setter: setter as (this: LexicalNode, value: unknown) => LexicalNode,
+    });
   }
   // Flat NodeStates are serialized at the top level alongside schema fields
   // (non-flat states live under NODE_STATE_KEY and are applied by
@@ -3505,8 +3524,11 @@ export function $applyJSONSetters<T extends LexicalNode>(
     const entry = setters[i];
     if (entry.kind === 'state') {
       // Only apply a flat state that is actually present so a partial update
-      // doesn't reset it to its default.
-      if (entry.key in serializedNode) {
+      // doesn't reset it to its default. An own-property check, not `in`:
+      // `serializedNode` came from JSON.parse, so `in` would find every
+      // Object.prototype member and treat a state keyed 'constructor' or
+      // 'toString' as present in JSON that never carried it.
+      if (hasOwn(serializedNode, entry.key)) {
         const parsed = entry.stateConfig.parse(serializedNode[entry.key]);
         // Wrapped in an updater thunk so a parse that returns a function
         // value is stored verbatim instead of being invoked as an updater.
@@ -3515,14 +3537,20 @@ export function $applyJSONSetters<T extends LexicalNode>(
     } else {
       const next = entry.setter.call(
         self,
-        entry.schema(serializedNode[entry.key]),
+        entry.schema(
+          hasOwn(serializedNode, entry.key)
+            ? serializedNode[entry.key]
+            : undefined,
+        ),
       );
       // Lexical setters conventionally return the writable node so calls can
       // be chained, but a `void` setter is perfectly valid — it has already
       // mutated the node through getWritable(). Only follow a return value
       // that is actually a node, so such a setter doesn't strand the rest of
-      // the schema on `undefined`.
-      if ($isLexicalNode(next)) {
+      // the schema on `undefined`. The identity check short-circuits every
+      // call after the first: getWritable() returns the same object for the
+      // rest of the update.
+      if (next !== self && $isLexicalNode(next)) {
         self = next as T;
       }
     }

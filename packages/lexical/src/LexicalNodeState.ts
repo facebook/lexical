@@ -346,7 +346,7 @@ export class StateConfig<K extends string | symbol, V> {
     const parseMeta = (stateValueConfig.parse as {meta?: {kind?: unknown}})
       .meta;
     this.schema =
-      parseMeta !== undefined && typeof parseMeta.kind === 'string'
+      parseMeta != null && typeof parseMeta.kind === 'string'
         ? (stateValueConfig.parse as unknown as AnySerializationSchema)
         : undefined;
   }

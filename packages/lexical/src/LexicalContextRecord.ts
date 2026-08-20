@@ -234,9 +234,12 @@ export function getContextRecord<Ctx extends symbol>(
 }
 
 /**
+ * Not `@__NO_SIDE_EFFECTS__`: this installs a layer on the module-scope active
+ * context and runs `f` inside it. A bundler told it were pure could drop a
+ * call whose result is unused and never run `f` at all.
+ *
  * @internal
  * @experimental
- * @__NO_SIDE_EFFECTS__
  */
 export function $withFullContext<Ctx extends symbol, T>(
   sym: Ctx,

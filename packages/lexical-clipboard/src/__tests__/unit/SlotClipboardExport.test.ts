@@ -461,3 +461,81 @@ describe('slot clipboard export', () => {
     });
   });
 });
+
+describe('selection export under a replacing override', () => {
+  test('a replacement on a passed-through element keeps the selected text', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({$initialEditorState: null, name: '[replace-walk]'}),
+    );
+    editor.update(
+      () => {
+        const p = $createParagraphNode();
+        p.append($createTextNode('hello world'));
+        $getRoot().append(p);
+        const sel = $createRangeSelection();
+        sel.anchor.set(p.getFirstChildOrThrow().getKey(), 0, 'text');
+        sel.focus.set(p.getFirstChildOrThrow().getKey(), 5, 'text');
+        $setSelection(sel);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const serialized = $withSerializationContext([
+        [
+          SerializationContextOverride,
+          (node: LexicalNode, $next: () => SerializedLexicalNode) =>
+            node.getType() === 'paragraph'
+              ? {children: [], type: 'paragraph', version: 1}
+              : $next(),
+        ],
+      ])(() => $generateJSONFromSelectedNodes(editor, $getSelection()));
+      // the paragraph itself is not selected, so it is not emitted — but the
+      // selected text inside it still has to reach the clipboard, and the
+      // replacement's own (empty) subtree must not be spliced up in its place
+      expect(serialized.nodes).toHaveLength(1);
+      expect(serialized.nodes[0]).toMatchObject({text: 'hello', type: 'text'});
+    });
+  });
+
+  test('a replacement subtree is not spliced up for an unselected node', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({$initialEditorState: null, name: '[replace-splice]'}),
+    );
+    editor.update(
+      () => {
+        const first = $createParagraphNode().append($createTextNode('before'));
+        const second = $createParagraphNode().append($createTextNode('after'));
+        $getRoot().append(first, second);
+        const sel = $createRangeSelection();
+        const t = second.getFirstChildOrThrow();
+        sel.anchor.set(t.getKey(), 0, 'text');
+        sel.focus.set(t.getKey(), 5, 'text');
+        $setSelection(sel);
+      },
+      {discrete: true},
+    );
+    editor.read(() => {
+      const serialized = $withSerializationContext([
+        [
+          SerializationContextOverride,
+          (node: LexicalNode, $next: () => SerializedLexicalNode) =>
+            node.getTextContent() === 'before'
+              ? {
+                  children: [
+                    {text: 'INJECTED', type: 'text', version: 1},
+                    {text: 'ALSO', type: 'text', version: 1},
+                  ],
+                  type: 'paragraph',
+                  version: 1,
+                }
+              : $next(),
+        ],
+      ])(() => $generateJSONFromSelectedNodes(editor, $getSelection()));
+      // the first paragraph is outside the selection: its replacement's
+      // authored children were never filtered by any selection and must not
+      // ride along on the clipboard
+      expect(JSON.stringify(serialized.nodes)).not.toContain('INJECTED');
+      expect(JSON.stringify(serialized.nodes)).not.toContain('ALSO');
+    });
+  });
+});

@@ -259,7 +259,9 @@ export class QuoteNode extends ElementNode {
     };
   }
 
-  static importJSON(serializedNode: SerializedQuoteNode): QuoteNode {
+  static importJSON(
+    serializedNode: SerializedPartial<SerializedQuoteNode>,
+  ): QuoteNode {
     return $createQuoteNode().updateFromJSON(serializedNode);
   }
 

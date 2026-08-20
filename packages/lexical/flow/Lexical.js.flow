@@ -1876,7 +1876,15 @@ declare export function $applySerializationContext(
 ): AppliedSerialization | null;
 
 export type Parse<T> = (value: unknown) => T;
-export type SerializationSchema<T> = Parse<T>;
+// A callable carrying its own metadata, so introspecting tooling
+// (getComposedSchemaFields, @lexical/fast-check) can read `meta` and
+// `defaultValue` off a schema rather than only calling it.
+export type SerializationSchema<T> = Parse<T> & {
+  readonly defaultValue: T,
+  readonly meta: SerializationSchemaMeta,
+  readonly getter?: string | null,
+  readonly setter?: string | null,
+};
 export type AnySerializationSchema = SerializationSchema<unknown>;
 export type SerializationSchemaFields = {
   readonly [key: string]: AnySerializationSchema,

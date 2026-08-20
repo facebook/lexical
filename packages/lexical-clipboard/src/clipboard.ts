@@ -509,8 +509,25 @@ function $appendNodesToJSON(
   }
   const {recurseChildren} = applied;
   const serializedNode: BaseSerializedNode = applied.serializedNode;
-  const children =
-    recurseChildren && $isElementNode(target) ? target.getChildren() : [];
+  const children = $isElementNode(target) ? target.getChildren() : [];
+  // Where the recursion below writes. Normally the node's own children array,
+  // which the walk owns. When an override replaced this node its JSON is
+  // authoritative, subtree included, so selected descendants must not be
+  // appended to it — they go to a scratch array that is spliced up in this
+  // node's place, exactly as an excluded element's children are. Descending
+  // either way matters: the recursion is also how a selection reaches nodes
+  // *inside* an element it merely passes through.
+  let childTarget: BaseSerializedNode[] = [];
+  if (recurseChildren && $isElementNode(target)) {
+    // $validatedExportJSON checks this for the node's own export, but an
+    // override that enhances it can drop the array on the way through.
+    invariant(
+      Array.isArray(serializedNode.children),
+      'LexicalNode: Node %s is an element but the JSON exported for it has no children array.',
+      target.constructor.name,
+    );
+    childTarget = serializedNode.children;
+  }
   if ($isTextNode(target) && target.getTextContentSize() === 0) {
     // If an uncollapsed selection ends or starts at the end of a line of specialized,
     // TextNodes, such as code tokens, we will get a 'blank' TextNode here, i.e., one
@@ -536,7 +553,7 @@ function $appendNodesToJSON(
       editor,
       childSelection,
       childNode,
-      serializedNode.children,
+      childTarget,
     );
 
     if (
@@ -612,10 +629,12 @@ function $appendNodesToJSON(
 
   if (shouldInclude && !shouldExclude) {
     targetArray.push(serializedNode);
-  } else if (Array.isArray(serializedNode.children)) {
-    for (let i = 0; i < serializedNode.children.length; i++) {
-      const serializedChildNode = serializedNode.children[i];
-      targetArray.push(serializedChildNode);
+  } else {
+    // Splice up whatever the recursion collected in this node's place — the
+    // selected descendants, never an override's authoritative subtree, which
+    // no selection ever filtered.
+    for (let i = 0; i < childTarget.length; i++) {
+      targetArray.push(childTarget[i]);
     }
   }
 

@@ -48,16 +48,17 @@ export function $validatedExportJSON(node: LexicalNode): SerializedLexicalNode {
 /**
  * What the active serialization context decided for one node.
  *
- * @internal
+ * @experimental
  */
 export interface AppliedSerialization {
   /** The JSON this node contributes (possibly replaced and/or compacted). */
   readonly serializedNode: SerializedLexicalNode;
   /**
-   * Whether the walk should serialize the node's live children (and slots)
-   * into `serializedNode`. True only when `serializedNode`'s `children` array
-   * came from the node's own `exportJSON()`; a replacement supplied by an
-   * override is authoritative, including whatever subtree it carries.
+   * Whether the walk owns this node's subtree — whether it should serialize
+   * the node's live children and slots into `serializedNode`. True when
+   * `serializedNode` is the node's own `exportJSON()` or an enhancement of it
+   * (an override that spread `$next()`); false when an override supplied JSON
+   * of its own, which is authoritative including whatever subtree it carries.
    */
   readonly recurseChildren: boolean;
 }
@@ -83,14 +84,25 @@ export function setSerializationInterceptor(
 }
 
 /**
- * Apply the active serialization context to one node: consult the installed
- * override (which may replace or omit the node), then compact what survives
- * when the context asks for it. Returns `null` when the node was omitted;
- * the root is never omitted (an override's omission is ignored for it).
+ * Export one node's JSON with the active serialization context applied: any
+ * installed override runs (and may replace the node, or return `null` to omit
+ * it and its subtree), and what survives is compacted when the context asks
+ * for it. Returns `null` when the node was omitted; pass `isRoot` for a
+ * document's root, which cannot be omitted (an override's omission is ignored
+ * for it).
+ *
+ * Use this instead of calling `node.exportJSON()` directly when writing a
+ * serialization walk of your own — it is what `editorState.toJSON()` and the
+ * `@lexical/clipboard` selection export both call, so a context set with
+ * {@link $withSerializationContext} governs every one of them alike. Fill the
+ * returned `serializedNode`'s `children` (and slots) from the node's live
+ * subtree only when `recurseChildren` says so; otherwise an override supplied
+ * that JSON and it is authoritative, subtree included.
+ *
  * Until `$withSerializationContext` has run, this is exactly the node's own
  * validated `exportJSON()`.
  *
- * @internal
+ * @experimental
  */
 export function $applySerializationContext(
   node: LexicalNode,
@@ -99,26 +111,4 @@ export function $applySerializationContext(
   return serializationInterceptor
     ? serializationInterceptor(node, isRoot)
     : {recurseChildren: true, serializedNode: $validatedExportJSON(node)};
-}
-
-/**
- * Export one node's JSON with the active serialization context applied: any
- * installed override runs (and may replace the node or return `null` to omit
- * it), and what survives is compacted when the context asks for it.
- *
- * Use this instead of calling `node.exportJSON()` directly when writing a
- * serialization walk of your own — it is what `editorState.toJSON()` and the
- * `@lexical/clipboard` selection export both call, so a context set with
- * {@link $withSerializationContext} governs every one of them alike. Note
- * that when the returned JSON was replaced by an override it is authoritative,
- * including any `children` it carries; only JSON produced by the node's own
- * `exportJSON()` expects the walk to fill its `children`.
- *
- * @experimental
- */
-export function $exportNodeJSON(
-  node: LexicalNode,
-): SerializedLexicalNode | null {
-  const applied = $applySerializationContext(node, false);
-  return applied === null ? null : applied.serializedNode;
 }

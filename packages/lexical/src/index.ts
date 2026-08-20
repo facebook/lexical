@@ -339,7 +339,6 @@ export {
 } from './LexicalSerializationContext';
 export {
   $applySerializationContext,
-  $exportNodeJSON,
   type AppliedSerialization,
 } from './LexicalSerializedExport';
 export type {SlotName} from './LexicalSlot';

@@ -111,11 +111,16 @@ function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
         serializedSlots[name] = serializedSlotNode;
       }
     }
-    (
-      serializedNode as SerializedLexicalNode & {
-        $slots?: Record<string, SerializedLexicalNode>;
-      }
-    ).$slots = serializedSlots;
+    // An override may have omitted every slot value, in which case the host
+    // has no slots to write: an empty `$slots` object would be bytes that
+    // parse back to nothing.
+    if (Object.keys(serializedSlots).length > 0) {
+      (
+        serializedNode as SerializedLexicalNode & {
+          $slots?: Record<string, SerializedLexicalNode>;
+        }
+      ).$slots = serializedSlots;
+    }
   }
 
   // @ts-expect-error

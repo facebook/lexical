@@ -113,5 +113,16 @@ function metaArbitrary(meta: SerializationSchemaMeta): fc.Arbitrary<unknown> {
       }
       return fc.record(fields);
     }
+    default:
+      // Unreachable for the schemas `lexical` defines — the switch is
+      // exhaustive over SerializationSchemaMeta — but a hand-rolled schema
+      // (or one from a newer core) can carry a kind this build has never
+      // heard of. Say so, rather than returning undefined and failing inside
+      // fast-check's record builder.
+      throw new Error(
+        `nodeArbitrary: unsupported serialization schema kind ${String(
+          (meta as {kind?: unknown}).kind,
+        )}`,
+      );
   }
 }

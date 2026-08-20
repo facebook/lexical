@@ -3350,55 +3350,50 @@ const compiledGettersByClass = new WeakMap<
 function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
   const prototype = klass.prototype as unknown as Record<string, unknown>;
   const fields = new Map<string, CompiledGetter>();
-  const unresolved = new Map<string, string>();
-  {
-    // Most-derived first: the serialized property order this produces is the
-    // one the hand-written exportJSON methods it replaces produced for the
-    // core classes, which some tests compare as strings.
-    for (const [key, schema] of getComposedSchema(klass).fieldsDerivedFirst) {
-      if (schema.getter === null) {
-        // Declared import-only; the property is written by an exportJSON
-        // override, or not written at all.
-        continue;
-      }
-      const getterName = schema.getter || defaultGetterName(key);
-      const getter = prototype[getterName];
-      if (getterName.startsWith('__')) {
-        // withField: read the node's own field rather than call a method,
-        // still through getLatest() so the current version is observed.
-        fields.set(key, {
-          getter: function (this: LexicalNode) {
-            return (this.getLatest() as unknown as Record<string, unknown>)[
-              getterName
-            ];
-          },
-          key,
-        });
-      } else if (typeof getter === 'function') {
-        fields.set(key, {
-          getter: getter as (this: LexicalNode) => unknown,
-          key,
-        });
-      } else if (__DEV__ && !unresolved.has(key)) {
-        // Reported after the walk: a subclass may override a field for the
-        // parse direction only, leaving the ancestor's getter to export it
-        // (TabNode's `text`).
-        unresolved.set(key, getterName);
-      }
+  // Most-derived first: the serialized property order this produces is the
+  // one the hand-written exportJSON methods it replaces produced for the
+  // core classes, which some tests compare as strings. Composition already
+  // resolved each key to exactly one schema, so a subclass that re-declares an
+  // inherited field replaces it outright, accessor names included — TabNode
+  // repeats `getter: 'getTextContent'` for that reason.
+  for (const [key, schema] of getComposedSchema(klass).fieldsDerivedFirst) {
+    if (schema.getter === null) {
+      // Declared import-only; the property is written by an exportJSON
+      // override, or not written at all.
+      continue;
     }
-  }
-  if (__DEV__) {
-    for (const [key, getterName] of unresolved) {
-      // A field no class in the chain can read would be silently missing from
-      // every export, so it is a programmer error whether the name was
-      // declared or came from the convention.
+    const getterName = schema.getter || defaultGetterName(key);
+    if (getterName.startsWith('__')) {
+      // withField: read the node's own field rather than call a method,
+      // still through getLatest() so the current version is observed.
+      fields.set(key, {
+        getter: function (this: LexicalNode) {
+          return (this.getLatest() as unknown as Record<string, unknown>)[
+            getterName
+          ];
+        },
+        key,
+      });
+      continue;
+    }
+    const getter = prototype[getterName];
+    if (__DEV__) {
+      // A field the class cannot read would be silently missing from every
+      // export, so it is a programmer error whether the name was declared or
+      // came from the convention.
       invariant(
-        fields.has(key),
+        typeof getter === 'function',
         '%s: json schema field "%s" has no getter %s(); name one with withGetter or declare {getter: null} if it is deliberately not exported',
         klass.name,
         key,
         getterName,
       );
+    }
+    if (typeof getter === 'function') {
+      fields.set(key, {
+        getter: getter as (this: LexicalNode) => unknown,
+        key,
+      });
     }
   }
   return fields.size === 0 ? EMPTY_GETTERS : [...fields.values()];
@@ -3438,7 +3433,6 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
   // name needs the widening cast.
   const prototype = klass.prototype as unknown as Record<string, unknown>;
   const fields = new Map<string, CompiledSetter>();
-  const unresolved = new Map<string, string>();
   const {fieldsBaseFirst, flatStates} = getComposedSchema(klass);
   // Applied ancestors-first: a base property is set before the subclass
   // properties that may depend on it.
@@ -3450,6 +3444,17 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
     }
     const setterName = schema.setter || defaultSetterName(key);
     const setter = prototype[setterName];
+    if (__DEV__) {
+      // A field the class cannot apply would be silently dropped from every
+      // import — it exports but never comes back.
+      invariant(
+        typeof setter === 'function',
+        '%s: json schema field "%s" has no setter %s(); name one with withSetter or declare {setter: null} if it is derived on import',
+        klass.name,
+        key,
+        setterName,
+      );
+    }
     if (typeof setter === 'function') {
       fields.set(key, {
         key,
@@ -3457,9 +3462,6 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
         schema,
         setter: setter as (this: LexicalNode, value: unknown) => LexicalNode,
       });
-    } else if (__DEV__ && !unresolved.has(key)) {
-      // Reported after the walk: an ancestor may still resolve this key.
-      unresolved.set(key, setterName);
     }
   }
   // Flat NodeStates are serialized at the top level alongside schema fields
@@ -3471,19 +3473,6 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
     kind: 'state' as const,
     stateConfig,
   }));
-  if (__DEV__) {
-    for (const [key, setterName] of unresolved) {
-      // A field no class in the chain can apply would be silently dropped from
-      // every import — it exports but never comes back.
-      invariant(
-        fields.has(key),
-        '%s: json schema field "%s" has no setter %s(); name one with withSetter or declare {setter: null} if it is derived on import',
-        klass.name,
-        key,
-        setterName,
-      );
-    }
-  }
   if (fields.size === 0 && states.length === 0) {
     return EMPTY_SETTERS;
   }
@@ -3524,10 +3513,18 @@ export function $applyJSONSetters<T extends LexicalNode>(
         self = $setState(self, entry.stateConfig, () => parsed);
       }
     } else {
-      self = entry.setter.call(
+      const next = entry.setter.call(
         self,
         entry.schema(serializedNode[entry.key]),
-      ) as T;
+      );
+      // Lexical setters conventionally return the writable node so calls can
+      // be chained, but a `void` setter is perfectly valid — it has already
+      // mutated the node through getWritable(). Only follow a return value
+      // that is actually a node, so such a setter doesn't strand the rest of
+      // the schema on `undefined`.
+      if ($isLexicalNode(next)) {
+        self = next as T;
+      }
     }
   }
   return self;

@@ -568,37 +568,45 @@ function $appendNodesToJSON(
           target.constructor.name,
           name,
         );
+        const slotExcluded =
+          $isElementNode(slotNode) && slotNode.excludeFromCopy('clone');
         const slotArray: BaseSerializedNode[] = [];
         $appendNodesToJSON(editor, null, slotNode, slotArray);
-        if (
-          slotArray.length === 0 &&
-          !($isElementNode(slotNode) && slotNode.excludeFromCopy('clone'))
-        ) {
+        if (slotArray.length === 0 && !slotExcluded) {
           // A serialization override omitted the slot value; skip the entry,
-          // matching how editorState.toJSON() exports the same document. An
-          // excluded slot value is not an omission: it falls through to the
-          // invariant below, which rejects that unsupported combination.
+          // matching how editorState.toJSON() exports the same document. That
+          // is the only other way to reach zero entries here: the recursion
+          // above passes a null selection, so nothing is deselected, and
+          // $setSlot only accepts a non-inline ElementNode or DecoratorNode,
+          // so the empty-TextNode reset cannot apply. An excluded slot value
+          // is not an omission: it falls through to the invariant below,
+          // which rejects that unsupported combination.
           continue;
         }
-        // A whole-slot export must serialize to exactly the slot node. A slot
-        // value that overrides excludeFromCopy would otherwise make
-        // $appendNodesToJSON splice up its children (or emit nothing), leaving
-        // a dangling/undefined slot entry that breaks on paste.
+        // A whole-slot export must serialize to exactly one node — whatever
+        // the slot value contributes, including JSON an override substituted
+        // for it. A slot value that overrides excludeFromCopy would instead
+        // make $appendNodesToJSON splice up its children (or emit nothing),
+        // leaving a dangling/undefined slot entry that breaks on paste.
         invariant(
-          slotArray.length === 1 && slotArray[0].type === slotNode.getType(),
-          'LexicalNode: slot "%s" on %s did not serialize to exactly the slot value node (got %s of type %s); a slot value must not be excluded from copy.',
+          slotArray.length === 1 && !slotExcluded,
+          'LexicalNode: slot "%s" on %s did not serialize to exactly the slot value node (got %s nodes); a slot value must not be excluded from copy.',
           name,
           target.constructor.name,
           String(slotArray.length),
-          String(slotArray.length > 0 ? slotArray[0].type : 'none'),
         );
         serializedSlots[name] = slotArray[0];
       }
-      (
-        serializedNode as BaseSerializedNode & {
-          $slots?: Record<string, BaseSerializedNode>;
-        }
-      ).$slots = serializedSlots;
+      // An override may have omitted every slot value, in which case the host
+      // has no slots to write: an empty `$slots` object would be bytes that
+      // parse back to nothing.
+      if (Object.keys(serializedSlots).length > 0) {
+        (
+          serializedNode as BaseSerializedNode & {
+            $slots?: Record<string, BaseSerializedNode>;
+          }
+        ).$slots = serializedSlots;
+      }
     }
   }
 

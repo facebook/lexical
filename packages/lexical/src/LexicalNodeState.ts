@@ -340,8 +340,13 @@ export class StateConfig<K extends string | symbol, V> {
     this.resetOnCopyNode = stateValueConfig.resetOnCopyNode || false;
     // Binding above strips a schema's own properties from this.parse, so keep a
     // reference to the original when it carries introspectable schema metadata.
+    // `meta.kind` rather than `meta` alone: an unrelated parse function that
+    // happens to carry a `meta` property is not a schema, and publishing it as
+    // one would hand introspecting tools a shape they cannot read.
+    const parseMeta = (stateValueConfig.parse as {meta?: {kind?: unknown}})
+      .meta;
     this.schema =
-      'meta' in stateValueConfig.parse
+      parseMeta !== undefined && typeof parseMeta.kind === 'string'
         ? (stateValueConfig.parse as unknown as AnySerializationSchema)
         : undefined;
   }

@@ -85,11 +85,22 @@ export function createSerializationState<V>(
  * Middleware deciding what a node contributes to a JSON export, in the same
  * style as the DOM render overrides of `@lexical/html`: call `$next()` to get
  * the JSON the default implementation (or a lower-priority override) would
- * produce and enhance it, return your own JSON to replace it (a replacement is
- * authoritative, including its `children` — the walk does not append the live
- * children to a replaced element), or return `null` to omit the node — and
- * with it its subtree. The root node cannot be omitted; an omission returned
- * for it is ignored and the root exports normally.
+ * produce and enhance it, return your own JSON to replace it, or return `null`
+ * to omit the node — and with it its subtree. The root node cannot be omitted;
+ * an omission returned for it is ignored and the root exports normally.
+ *
+ * Enhancing means returning what `$next()` produced, whether spread
+ * (`{...$next(), redacted: true}`) or returned as-is; the walk still owns the
+ * node's children and slots and fills them in. Anything else is a replacement
+ * and is authoritative, subtree included: the walk appends neither children
+ * nor slots to it, and leaves it uncompacted when its `type` is not the node's
+ * own, since the node's schema says nothing about another type's properties.
+ *
+ * Write it as a pure mapping from node to JSON. A walk may consult it for a
+ * node it does not end up emitting — the `@lexical/clipboard` selection export
+ * walks past unselected nodes to reach the selected ones inside them — so an
+ * override that counts what it sees, or keeps other state, will not count what
+ * the document contains.
  *
  * Only one is installed at a time. Rather than hand-writing it, declare
  * per-node overrides with `jsonOverride` and let `JSONExtension` compile them
@@ -243,6 +254,12 @@ function getCompactFields(
  * `children` and `$slots` are structural rather than schema-declared, so they
  * are never dropped here; the walk owns them.
  *
+ * What may be dropped comes from `node`'s own class, so `json` must be JSON
+ * that describes `node` — its own export, or an enhancement of it. JSON an
+ * override substituted for a *different* node type must not be passed here:
+ * this table would read its properties as that other class's derived or
+ * default-valued ones and drop them.
+ *
  * @experimental
  */
 export function $compactSerializedNode(
@@ -272,6 +289,21 @@ export function $compactSerializedNode(
 }
 
 /**
+ * Marks the JSON `$next()` handed to an override, so the walk can tell an
+ * *enhancement* of the node's own export from an authoritative *replacement*.
+ * A symbol key is copied by object spread — which is how an override enhances,
+ * `{...$next(), extra}` — but is absent from an object the override built
+ * itself, so the distinction is a fact rather than a guess about the result's
+ * shape. It is deleted again before anything escapes this function, so it never
+ * reaches the exported document, `JSON.stringify` or a test matcher.
+ */
+const DEFAULT_EXPORT_MARKER: unique symbol = Symbol('$next');
+
+type MarkedSerializedNode = SerializedLexicalNode & {
+  [DEFAULT_EXPORT_MARKER]?: true;
+};
+
+/**
  * The interceptor `$applySerializationContext` dispatches to once
  * `$withSerializationContext` has installed it: consult the installed
  * override (which may replace or omit the node), then compact what survives
@@ -292,15 +324,19 @@ function $applyActiveSerializationContext(
     return {recurseChildren: true, serializedNode: $validatedExportJSON(node)};
   }
   const override = $getSerializationContextValue(SerializationContextOverride);
-  // Memoized so repeated $next() calls are stable, the sanity checks run at
-  // most once, and we can tell afterwards whether the result came from the
-  // node's own exportJSON.
-  let defaultResult: SerializedLexicalNode | undefined;
-  const $default = () =>
-    defaultResult === undefined
-      ? (defaultResult = $validatedExportJSON(node))
-      : defaultResult;
-  let result = override ? override(node, $default) : $default();
+  // Memoized so repeated $next() calls are stable and the sanity checks run at
+  // most once.
+  let defaultResult: MarkedSerializedNode | undefined;
+  const $default = (): SerializedLexicalNode => {
+    if (defaultResult === undefined) {
+      defaultResult = $validatedExportJSON(node);
+      defaultResult[DEFAULT_EXPORT_MARKER] = true;
+    }
+    return defaultResult;
+  };
+  let result: MarkedSerializedNode | null = override
+    ? override(node, $default)
+    : $default();
   if (result === null) {
     if (!isRoot) {
       return null;
@@ -308,25 +344,24 @@ function $applyActiveSerializationContext(
     // A document must have a root, so an omission returned for it is ignored.
     result = $default();
   }
-  const serializedNode = $getSerializationContextValue(
-    SerializationContextCompact,
-  )
-    ? $compactSerializedNode(node, result)
-    : result;
-  // Compaction copies properties, so `children` keeps its identity: recursion
-  // is safe exactly when the result is the node's own export, or carries the
-  // very children array that export created. Comparing `children` is only
-  // meaningful when there is one — for a node with no children (a decorator,
-  // which may still host slots) two replacements both read `undefined`, so
-  // that comparison would wrongly treat a replacement as the node's own.
-  const defaultChildren =
-    defaultResult === undefined
-      ? undefined
-      : (defaultResult as {children?: unknown}).children;
-  const recurseChildren =
-    defaultResult !== undefined &&
-    (result === defaultResult ||
-      (Array.isArray(defaultChildren) &&
-        (result as {children?: unknown}).children === defaultChildren));
+  // The result still carries the marker exactly when it is the node's own
+  // export or a spread of it, which is what makes the walk — rather than the
+  // override — the owner of this node's children and slots.
+  const recurseChildren = result[DEFAULT_EXPORT_MARKER] === true;
+  delete result[DEFAULT_EXPORT_MARKER];
+  if (defaultResult !== undefined && defaultResult !== result) {
+    // A replacement may still embed `$next()` (as a child, say), so the
+    // discarded default has to be cleaned up too.
+    delete defaultResult[DEFAULT_EXPORT_MARKER];
+  }
+  // Compaction reads `node`'s own schema, so it only applies to JSON that
+  // still describes `node`. An override that substitutes JSON of another type
+  // is written as-is; the legacy form is always valid, and dropping its
+  // properties by this node's table would corrupt it.
+  const serializedNode =
+    $getSerializationContextValue(SerializationContextCompact) &&
+    result.type === node.getType()
+      ? $compactSerializedNode(node, result)
+      : result;
   return {recurseChildren, serializedNode};
 }

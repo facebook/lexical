@@ -500,14 +500,14 @@ feedback.
 
 :::
 
-Instead of writing `importJSON` and `updateFromJSON` by hand, a node that
-uses [`$config`](../concepts/nodes.mdx#creating-custom-nodes-with-config-and-nodestate)
+Instead of writing `importJSON`, `updateFromJSON` and `exportJSON` by hand, a
+node that uses [`$config`](../concepts/nodes.mdx#creating-custom-nodes-with-config-and-nodestate)
 can declare a schema for its node-specific serialized properties with the
-`json` property. The schema is the single source of truth for parsing those
-properties: the base `updateFromJSON` applies it automatically, `$config`
-synthesizes `importJSON` when the constructor has no required arguments, and
-every built-in node in Lexical now declares one. Most custom nodes need no
-JSON parsing code at all — only `exportJSON` remains hand-written.
+`json` property. The schema is the single source of truth for both directions:
+the base `updateFromJSON` applies it automatically, the base `exportJSON`
+writes from it, `$config` synthesizes `importJSON` when the constructor has no
+required arguments, and every built-in node in Lexical now declares one. Most
+custom nodes need no JSON serialization code at all.
 
 ```ts
 import {enumValue, numberValue, objectValue} from 'lexical';
@@ -538,15 +538,19 @@ class CounterNode extends ElementNode {
     return self;
   }
 
-  exportJSON(): SerializedCounterNode {
-    return {
-      ...super.exportJSON(),
-      count: this.__count,
-      variant: this.__variant,
-    };
+  getCount(): number {
+    return this.getLatest().__count;
+  }
+
+  getVariant(): 'a' | 'b' {
+    return this.getLatest().__variant;
   }
 }
 ```
+
+That is the whole node: `count` and `variant` are parsed through `setCount`
+and `setVariant` and written through `getCount` and `getVariant`, so neither
+`updateFromJSON` nor `exportJSON` has to be written at all.
 
 Each property's schema is built from composable helpers exported by
 `lexical`:
@@ -560,7 +564,7 @@ Each property's schema is built from composable helpers exported by
 - `transformValue(inner, transform)` — normalizes what `inner` parsed into the stored domain (e.g. the legacy `format: 'bold'` shorthand folded into its numeric form); introspection still describes `inner`'s accepted input domain
 - `rawValue()` — an escape hatch that passes the value through unparsed
 - `objectValue(fields)` — the record of properties, used for the `json` declaration itself
-- `withSetter(schema, 'methodName')` / `withGetter(schema, 'methodName')` / `withAccessors(schema, {getter, setter})` — name the methods a property is applied and read through when they are not the conventional `set<Property>`/`get<Property>` (e.g. `text` uses `setTextContent`/`getTextContent`)
+- `withSetter(schema, 'methodName')` / `withGetter(schema, 'methodName')` / `withAccessors(schema, {getter, setter})` — name the methods a property is applied and read through when they are not the conventional `set<Property>`/`get<Property>` (e.g. `text` uses `setTextContent`/`getTextContent`). Pass `null` instead of a name for a property that has no such direction: `{setter: null}` declares a *derived* property, written on export but computed rather than read on import (`ListNode`'s `tag` follows from its `listType`), and `{getter: null}` declares one that is parsed but never written. A property whose accessor cannot be resolved is an error at editor-creation time rather than a silently dropped value, so declaring `null` is how you opt out on purpose
 - `withField(schema, '__field')` — read the value straight from the node's own field, for a property the node stores but exposes no getter for
 
 Parsing is total: a missing or out-of-domain value falls back to the

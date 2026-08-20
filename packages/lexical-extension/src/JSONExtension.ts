@@ -145,7 +145,9 @@ function compilePredicate(
   const predicates = nodes.map((match): NodePredicate => {
     // A node class is told from a type guard by its prototype, as elsewhere in
     // the codebase: a node class has a LexicalNode prototype, while a guard's
-    // is a plain object (or absent, for an arrow function).
+    // is a plain object (or absent, for an arrow function). The one class this
+    // cannot recognize is the abstract `LexicalNode` itself, whose prototype is
+    // not an instance of it — match every node with `'*'` instead.
     return $isLexicalNode((match as Klass<LexicalNode>).prototype)
       ? node => node instanceof (match as Klass<LexicalNode>)
       : (match as NodePredicate);

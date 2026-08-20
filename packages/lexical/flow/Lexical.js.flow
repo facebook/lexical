@@ -1786,9 +1786,8 @@ export type StateValueConfig<V> = {
 }
 
 /**
- * Serialization context (JSON export)
+ * Context records (DOM render/import, JSON export)
  */
-declare export var SerializationContextSymbol: symbol;
 export type ContextRecord<K> = {[string | symbol]: unknown};
 export type ContextConfig<Sym, V> = StateConfig<symbol, V>;
 export type ContextConfigPair<Ctx, V> = [ContextConfig<Ctx, V>, V];
@@ -1817,10 +1816,39 @@ declare export function contextUpdater<Ctx, V>(
   cfg: ContextConfig<Ctx, V>,
   updater: (prev: V) => V,
 ): ContextConfigUpdater<Ctx, V>;
-export type SerializationStateConfig<V> = ContextConfig<
-  typeof SerializationContextSymbol,
-  V,
->;
+declare export function getOwnContextValue<Ctx, V>(
+  contextRecord: ContextRecord<Ctx>,
+  cfg: ContextConfig<Ctx, V>,
+): void | V;
+declare export function popOwnContextValue<Ctx, V>(
+  contextRecord: ContextRecord<Ctx>,
+  cfg: ContextConfig<Ctx, V>,
+): void | V;
+declare export function createContextState<Tag, V>(
+  tag: Tag,
+  name: string,
+  getDefaultValue: () => V,
+  isEqual?: (a: V, b: V) => boolean,
+): ContextConfig<Tag, V>;
+export type ContextScope = LexicalEditor | symbol;
+declare export function getContextRecord<Ctx>(
+  sym: Ctx,
+  scope: ContextScope,
+): void | ContextRecord<Ctx>;
+declare export function $withFullContext<Ctx, T>(
+  sym: Ctx,
+  contextRecord: ContextRecord<Ctx>,
+  f: () => T,
+  scope?: ContextScope,
+): T;
+declare export function $withContext<Ctx, Scope>(
+  sym: Ctx,
+  $defaults?: (scope: Scope) => void | ContextRecord<Ctx>,
+): (
+  cfg: ReadonlyArray<AnyContextConfigPairOrUpdater<Ctx>>,
+  scope?: Scope,
+) => <T>(f: () => T) => T;
+export type SerializationStateConfig<V> = ContextConfig<symbol, V>;
 export type SerializationStateConfigPair<V> = [SerializationStateConfig<V>, V];
 // $FlowFixMe[unclear-type] the pair is heterogeneous by construction
 export type AnySerializationStateConfigPair = SerializationStateConfigPair<any>;
@@ -1854,9 +1882,6 @@ declare export function $applySerializationContext(
   node: LexicalNode,
   isRoot: boolean,
 ): AppliedSerialization | null;
-declare export function $exportNodeJSON(
-  node: LexicalNode,
-): SerializedLexicalNode | null;
 
 export type Parse<T> = (value: unknown) => T;
 export type SerializationSchema<T> = Parse<T>;
@@ -1917,15 +1942,15 @@ declare export function arrayValue<T>(item: SerializationSchema<T>): Serializati
 declare export function objectValue<T>(fields: SerializationSchemaShape<T>): SerializationSchema<T>;
 declare export function withSetter<T>(
   schema: SerializationSchema<T>,
-  setter: string,
+  setter: string | null,
 ): SerializationSchema<T>;
 export type SchemaAccessors = {
-  readonly getter?: string,
-  readonly setter?: string,
+  readonly getter?: string | null,
+  readonly setter?: string | null,
 };
 declare export function withGetter<T>(
   schema: SerializationSchema<T>,
-  getter: string,
+  getter: string | null,
 ): SerializationSchema<T>;
 declare export function withField<T>(
   schema: SerializationSchema<T>,
@@ -1935,6 +1960,17 @@ declare export function withAccessors<T>(
   schema: SerializationSchema<T>,
   accessors: SchemaAccessors,
 ): SerializationSchema<T>;
+export type ComposedSchema = {
+  readonly fieldsDerivedFirst: ReadonlyArray<[string, AnySerializationSchema]>,
+  readonly fieldsBaseFirst: ReadonlyArray<[string, AnySerializationSchema]>,
+  readonly flatStates: ReadonlyArray<AnyStateConfig>,
+};
+declare export function getComposedSchema(
+  klass: Class<LexicalNode>,
+): ComposedSchema;
+declare export function getComposedSchemaFields(
+  klass: Class<LexicalNode>,
+): {[key: string]: AnySerializationSchema};
 
 export type UnionToIntersection<T> = (
   // $FlowFixMe[unclear-type]

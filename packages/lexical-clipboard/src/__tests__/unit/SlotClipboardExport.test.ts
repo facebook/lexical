@@ -163,7 +163,9 @@ describe('slot clipboard export', () => {
       ])(() => $generateJSONFromSelectedNodes(editor, null));
       expect(serialized.nodes).toHaveLength(1);
       expect(JSON.stringify(serialized.nodes)).toContain('HostChild');
-      expect(serialized.nodes[0].$slots).toEqual({});
+      // the host's only slot was omitted, so it has no slots to write — an
+      // empty `$slots` object would be bytes that parse back to nothing
+      expect(serialized.nodes[0].$slots).toBeUndefined();
     });
   });
 

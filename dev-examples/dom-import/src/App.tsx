@@ -15,12 +15,11 @@ import {
   TabIndentationExtension,
 } from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';
-import {DOMImportExtension} from '@lexical/html';
 import {LinkExtension} from '@lexical/link';
 import {
-  $installWordListPasteOverlay,
   CheckListExtension,
   ListExtension,
+  WordListImportExtension,
 } from '@lexical/list';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
 import {LexicalExtensionComposer} from '@lexical/react/LexicalExtensionComposer';
@@ -59,9 +58,7 @@ const editorExtension = defineExtension({
     ToolbarExtension,
     // Word list handling is opt-in: the preprocess installs the
     // overlay only when the paste carries Word's Generator meta tag.
-    configExtension(DOMImportExtension, {
-      preprocess: [$installWordListPasteOverlay],
-    }),
+    WordListImportExtension,
     // Route real `text/html` pastes through the DOMImportExtension
     // pipeline so the rules / overlays above actually fire on pastes,
     // not just on the "Import HTML" dialog.

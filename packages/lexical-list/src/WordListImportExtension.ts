@@ -11,13 +11,20 @@ import {
   defineImportRule,
   defineOverlayRules,
   type DOMImportContext,
+  DOMImportExtension,
   type DOMPreprocessFn,
   ImportOverlays,
   InlineSchema,
   sel,
 } from '@lexical/html';
-import {getStyleObjectFromCSS, isHTMLElement} from 'lexical';
+import {
+  configExtension,
+  defineExtension,
+  getStyleObjectFromCSS,
+  isHTMLElement,
+} from 'lexical';
 
+import {ListExtension} from './LexicalListExtension';
 import {$createListItemNode} from './LexicalListItemNode';
 import {$createListNode, type ListNode} from './LexicalListNode';
 
@@ -202,29 +209,9 @@ const WordListPasteOverlay = /* @__PURE__ */ defineOverlayRules([
  * {@link ListNode} tree. Pastes from other sources pay only the
  * detection cost.
  *
- * Opt in through the `DOMImportExtension` config — {@link ListExtension}
- * does not install it, so an editor that never pastes from Word does not
- * bundle it:
- *
- * ```ts
- * defineExtension({
- *   dependencies: [
- *     ListExtension,
- *     configExtension(DOMImportExtension, {
- *       preprocess: [$installWordListPasteOverlay],
- *     }),
- *   ],
- *   name: 'my-editor',
- * });
- * ```
- *
- * @experimental
+ * Installed by {@link WordListImportExtension}.
  */
-export const $installWordListPasteOverlay: DOMPreprocessFn = (
-  dom,
-  ctx,
-  $next,
-) => {
+const $installWordListPasteOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
   const meta = dom.querySelector('meta[name="Generator"]');
   if (meta && WORD_GENERATOR_RE.test(meta.getAttribute('content') || '')) {
     for (const el of Array.from(dom.querySelectorAll('[style*="mso-list"]'))) {
@@ -239,3 +226,28 @@ export const $installWordListPasteOverlay: DOMPreprocessFn = (
   }
   $next();
 };
+
+/**
+ * Word list paste support for {@link ListNode}: opt in by adding this to
+ * an editor's dependencies. {@link ListExtension} does not depend on it,
+ * so an editor that never pastes from Word does not bundle any of it.
+ *
+ * ```ts
+ * defineExtension({
+ *   dependencies: [WordListImportExtension],
+ *   name: 'my-editor',
+ * });
+ * ```
+ *
+ * @experimental
+ */
+export const WordListImportExtension = /* @__PURE__ */ defineExtension({
+  dependencies: [
+    // The overlay builds ListNodes, so the nodes have to be registered.
+    ListExtension,
+    /* @__PURE__ */ configExtension(DOMImportExtension, {
+      preprocess: [$installWordListPasteOverlay],
+    }),
+  ],
+  name: '@lexical/list/WordListImport',
+});

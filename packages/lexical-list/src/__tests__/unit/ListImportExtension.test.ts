@@ -8,19 +8,18 @@
 
 import {
   buildEditorFromExtensions,
-  configExtension,
   getExtensionDependencyFromEditor,
   HorizontalRuleExtension,
 } from '@lexical/extension';
 import {DOMImportExtension} from '@lexical/html';
 import {
-  $installWordListPasteOverlay,
   $isListItemNode,
   $isListNode,
   ListExtension,
   ListImportExtension,
   type ListItemNode,
   type ListNode,
+  WordListImportExtension,
 } from '@lexical/list';
 import {JSDOM} from 'jsdom';
 import {
@@ -162,22 +161,17 @@ describe('ListImportExtension', () => {
 // or <li> elements. The <p>'s carry style='mso-list:l<N> level<M> lfo<X>'
 // where <N> identifies the list and <M> the nesting depth.
 //
-// `$installWordListPasteOverlay` (shipped by this package, opt-in) is the
-// preprocess that handles this: it only installs the Word overlay when the
-// generator meta tag is present, so pastes from other sources pay nothing,
-// and the overlay's rule walks forward through siblings to collect a
-// complete list run and rebuild it as a nested list tree.
+// `WordListImportExtension` (shipped by this package, opt-in) installs the
+// preprocess that handles this: the overlay goes on only when the generator
+// meta tag is present, so pastes from other sources pay nothing, and its
+// rule walks forward through siblings to collect a complete list run and
+// rebuild it as a nested list tree.
 // ----------------------------------------------------------------------------
 
 function buildWordPasteEditor() {
   return buildEditorFromExtensions(
     defineExtension({
-      dependencies: [
-        ListExtension,
-        configExtension(DOMImportExtension, {
-          preprocess: [$installWordListPasteOverlay],
-        }),
-      ],
+      dependencies: [WordListImportExtension],
       name: 'word-paste-host',
     }),
   );

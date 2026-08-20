@@ -835,21 +835,15 @@ const $installWordOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
 
 That is the pattern, not something you have to write for Word lists
 specifically: `@lexical/list` ships this exact preprocess as
-`$installWordListPasteOverlay`. It is opt-in — `ListExtension` does not
-install it, so an editor that never pastes from Word does not bundle it:
+`WordListImportExtension`. It is opt-in — `ListExtension` does not depend
+on it, so an editor that never pastes from Word does not bundle it:
 
 ```ts
-import {DOMImportExtension} from '@lexical/html';
-import {$installWordListPasteOverlay, ListExtension} from '@lexical/list';
-import {configExtension, defineExtension} from 'lexical';
+import {WordListImportExtension} from '@lexical/list';
+import {defineExtension} from 'lexical';
 
 defineExtension({
-  dependencies: [
-    ListExtension,
-    configExtension(DOMImportExtension, {
-      preprocess: [$installWordListPasteOverlay],
-    }),
-  ],
+  dependencies: [WordListImportExtension],
   name: 'my-editor',
 });
 ```

@@ -162,15 +162,21 @@ function makeSchema<T>(
     getter: accessors.getter,
     meta,
     setter: accessors.setter,
-  }) as SerializationSchema<T>;
+  });
 }
 
 /**
  * `source` is untrusted parsed JSON, whose prototype is `Object.prototype`: a
  * plain `key in source` (or `source[key]`) would report an inherited member —
  * `toString`, `constructor` — as a present value and hand it to a node setter.
+ *
+ * A type predicate rather than a `boolean`, so a caller reads the value off the
+ * narrowed `source` instead of casting an unindexable `object`.
  */
-function hasOwnKey(source: object, key: string): boolean {
+function hasOwnKey<K extends string>(
+  source: object,
+  key: K,
+): source is {readonly [P in K]: unknown} {
   return Object.prototype.hasOwnProperty.call(source, key);
 }
 
@@ -556,11 +562,7 @@ export function objectValue<T extends {readonly [key: string]: unknown}>(
       const result: {[key: string]: unknown} = {};
       for (let i = 0; i < entries.length; i++) {
         const [key, schema] = entries[i];
-        result[key] = schema(
-          hasOwnKey(source, key)
-            ? (source as {readonly [key: string]: unknown})[key]
-            : undefined,
-        );
+        result[key] = schema(hasOwnKey(source, key) ? source[key] : undefined);
       }
       return result as T;
     },

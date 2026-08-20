@@ -124,11 +124,7 @@ function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
     // has no slots to write: an empty `$slots` object would be bytes that
     // parse back to nothing.
     if (Object.keys(serializedSlots).length > 0) {
-      (
-        serializedNode as SerializedLexicalNode & {
-          $slots?: Record<string, SerializedLexicalNode>;
-        }
-      ).$slots = serializedSlots;
+      serializedNode.$slots = serializedSlots;
     }
   }
 

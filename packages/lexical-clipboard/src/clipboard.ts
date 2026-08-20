@@ -636,11 +636,7 @@ function $appendNodesToJSON(
       // has no slots to write: an empty `$slots` object would be bytes that
       // parse back to nothing.
       if (Object.keys(serializedSlots).length > 0) {
-        (
-          serializedNode as BasePartialSerializedNode & {
-            $slots?: Record<string, BasePartialSerializedNode>;
-          }
-        ).$slots = serializedSlots;
+        serializedNode.$slots = serializedSlots;
       }
     }
   }

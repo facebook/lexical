@@ -354,7 +354,7 @@ describe('serialization context: slot hosts', () => {
   }
 
   function slotsOf(node: SerializedLexicalNode) {
-    return (node as SerializedLexicalNode & {$slots?: object}).$slots;
+    return node.$slots;
   }
 
   test('an enhancing override keeps the slots of a decorator host', () => {

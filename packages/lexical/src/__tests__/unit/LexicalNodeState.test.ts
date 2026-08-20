@@ -919,12 +919,9 @@ describe('flat NodeState through a node replacement', () => {
     );
 
     const json = editor.getEditorState().toJSON();
-    const exported = json.root.children[0] as unknown as Record<
-      string,
-      unknown
-    >;
+    const exported = json.root.children[0];
     // written top-level, not nested under the NodeState key
-    expect(exported.replacedFlatKey).toBe('hello');
+    expect(exported).toMatchObject({replacedFlatKey: 'hello'});
     expect(exported[NODE_STATE_KEY]).toBeUndefined();
 
     const reparsed = editor.parseEditorState(JSON.stringify(json));

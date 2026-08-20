@@ -45,6 +45,9 @@ const DEFAULT_FUNCTIONS = [
   'stringValue',
   'transformValue',
   'unionValue',
+  'withAccessors',
+  'withField',
+  'withGetter',
   'withSetter',
 ];
 

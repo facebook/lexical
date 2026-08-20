@@ -473,14 +473,36 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
     });
   });
 
+  describe('accessor resolution', () => {
+    test('an array field does not inherit its item schema accessors', () => {
+      // The item schema describes an element, so a name recorded on it belongs
+      // to the element, not to the array-valued property.
+      const item = withAccessors(stringValue(), {
+        getter: 'getId',
+        setter: 'setId',
+      });
+      expect(arrayValue(item).getter).toBeUndefined();
+      expect(arrayValue(item).setter).toBeUndefined();
+    });
+
+    test('null states that a direction is deliberately unsupported', () => {
+      const derived = withAccessors(stringValue(), {setter: null});
+      expect(derived.setter).toBeNull();
+      // and it survives further wrapping
+      expect(optional(derived).setter).toBeNull();
+      expect(withGetter(derived, 'getFoo').setter).toBeNull();
+    });
+  });
+
   describe('withSetter propagation through combinators', () => {
-    test('optional, nullable, and arrayValue keep the inner setter name', () => {
+    test('optional and nullable keep the inner setter name', () => {
       // A field like `language: optional(nullable(stringValue()))` must apply
       // through the setter recorded anywhere inside the combinator stack.
+      // arrayValue is deliberately excluded: it wraps an *element*, so the
+      // element's accessors are not the array property's.
       const inner = withSetter(stringValue(), 'setFoo');
       expect(optional(inner).setter).toBe('setFoo');
       expect(nullable(inner).setter).toBe('setFoo');
-      expect(arrayValue(inner).setter).toBe('setFoo');
       expect(optional(nullable(inner)).setter).toBe('setFoo');
       expect(withSetter(optional(stringValue()), 'setBar').setter).toBe(
         'setBar',

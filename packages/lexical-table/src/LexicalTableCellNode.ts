@@ -51,7 +51,11 @@ export type TableCellHeaderState =
   (typeof TableCellHeaderStates)[keyof typeof TableCellHeaderStates];
 
 const tableCellNodeSchema = /* @__PURE__ */ objectValue({
-  backgroundColor: /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue()),
+  // defaultAsNull preserves the legacy `backgroundColor || null` semantics:
+  // an empty string means "no background", which exportDOM checks for.
+  backgroundColor: /* @__PURE__ */ nullable(/* @__PURE__ */ stringValue(), {
+    defaultAsNull: true,
+  }),
   // A span is a positive integer; 0 (the historical `|| 1` case), a negative,
   // or a fractional span is out of domain and falls back to 1.
   colSpan: /* @__PURE__ */ numberValue(1, {integer: true, min: 1}),

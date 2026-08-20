@@ -3214,6 +3214,7 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
   const chain = [...iterStaticNodeConfigChain(klass)];
   const prototype = klass.prototype as unknown as Record<string, unknown>;
   const fields = new Map<string, CompiledGetter>();
+  const unresolved = new Map<string, string>();
   for (const {ownNodeConfig} of chain) {
     const json = ownNodeConfig && ownNodeConfig.json;
     if (!json || json.meta.kind !== 'object') {
@@ -3226,6 +3227,11 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
         continue;
       }
       const schema = schemaFields[key];
+      if (schema.getter === null) {
+        // Declared import-only; the property is written by an exportJSON
+        // override, or not written at all.
+        continue;
+      }
       const getterName = schema.getter || defaultGetterName(key);
       const getter = prototype[getterName];
       if (getterName.startsWith('__')) {
@@ -3245,17 +3251,27 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
           key,
         });
       } else if (__DEV__) {
-        // A property with no matching getter is written by an exportJSON
-        // override instead — unless a name was declared explicitly, which is
-        // then a programmer error.
-        invariant(
-          schema.getter === undefined,
-          '%s: json schema field "%s" declares getter %s() which is not a method',
-          klass.name,
-          key,
-          getterName,
-        );
+        // Record the name to report if no class in the chain resolves this
+        // key: a subclass may override a field for the parse direction only,
+        // leaving the ancestor's getter to export it (TabNode's `text`).
+        if (!unresolved.has(key)) {
+          unresolved.set(key, getterName);
+        }
       }
+    }
+  }
+  if (__DEV__) {
+    for (const [key, getterName] of unresolved) {
+      // A field no class in the chain can read would be silently missing from
+      // every export, so it is a programmer error whether the name was
+      // declared or came from the convention.
+      invariant(
+        fields.has(key),
+        '%s: json schema field "%s" has no getter %s(); name one with withGetter or declare {getter: null} if it is deliberately not exported',
+        klass.name,
+        key,
+        getterName,
+      );
     }
   }
   return fields.size === 0 ? EMPTY_GETTERS : [...fields.values()];
@@ -3303,6 +3319,7 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
   const prototype = klass.prototype as unknown as Record<string, unknown>;
   const fields = new Map<string, CompiledSetter>();
   const states = new Map<string, CompiledSetter>();
+  const unresolved = new Map<string, string>();
   for (let i = chain.length - 1; i >= 0; i--) {
     const {ownNodeConfig} = chain[i];
     if (!ownNodeConfig) {
@@ -3313,6 +3330,11 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
       const {fields: schemaFields} = json.meta;
       for (const key of Object.keys(schemaFields)) {
         const schema = schemaFields[key];
+        if (schema.setter === null) {
+          // Declared export-only: the value is derived from other properties
+          // on the way in (ListNode's `tag` follows from `listType`).
+          continue;
+        }
         const setterName = schema.setter || defaultSetterName(key);
         const setter = prototype[setterName];
         if (typeof setter === 'function') {
@@ -3325,17 +3347,9 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
               value: unknown,
             ) => LexicalNode,
           });
-        } else if (__DEV__) {
-          // A property with no matching setter is applied elsewhere (e.g. by a
-          // required-argument constructor) and skipped here — unless an explicit
-          // setter name was declared, which is then a programmer error.
-          invariant(
-            schema.setter === undefined,
-            '%s: json schema field "%s" declares setter %s() which is not a method',
-            klass.name,
-            key,
-            setterName,
-          );
+        } else if (__DEV__ && !unresolved.has(key)) {
+          // Reported after the walk: an ancestor may still resolve this key.
+          unresolved.set(key, setterName);
         }
       }
     }
@@ -3359,6 +3373,19 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
           }
         }
       }
+    }
+  }
+  if (__DEV__) {
+    for (const [key, setterName] of unresolved) {
+      // A field no class in the chain can apply would be silently dropped from
+      // every import — it exports but never comes back.
+      invariant(
+        fields.has(key),
+        '%s: json schema field "%s" has no setter %s(); name one with withSetter or declare {setter: null} if it is derived on import',
+        klass.name,
+        key,
+        setterName,
+      );
     }
   }
   if (fields.size === 0 && states.size === 0) {

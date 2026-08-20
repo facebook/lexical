@@ -46,7 +46,9 @@ const dimensionSchema: SerializationSchema<Dimension> =
   );
 
 const excalidrawNodeSchema = /* @__PURE__ */ objectValue({
-  data: /* @__PURE__ */ withAccessors(/* @__PURE__ */ stringValue(), {
+  // '[]' is the empty-scene default the constructor uses; an absent or
+  // out-of-domain `data` must not become '' (JSON.parse('') throws).
+  data: /* @__PURE__ */ withAccessors(/* @__PURE__ */ stringValue('[]'), {
     getter: '__data',
     setter: 'setData',
   }),

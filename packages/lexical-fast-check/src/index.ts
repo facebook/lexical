@@ -49,8 +49,10 @@ export function composeNodeSerializationSchema(
   // (iterStaticNodeConfigChain honors an explicit `extends` and severed
   // static prototype chains, e.g. Babel's loose class transform).
   const chain = [...iterStaticNodeConfigChain(klass)];
-  const fields: {[key: string]: AnySerializationSchema} = {};
-  const states: {[key: string]: AnySerializationSchema} = {};
+  // Maps rather than object literals: `'toString' in {}` is true, so an
+  // object would silently exclude fields named after Object.prototype members.
+  const fields = new Map<string, AnySerializationSchema>();
+  const states = new Map<string, AnySerializationSchema>();
   for (let i = chain.length - 1; i >= 0; i--) {
     const {ownNodeConfig} = chain[i];
     if (!ownNodeConfig) {
@@ -58,7 +60,9 @@ export function composeNodeSerializationSchema(
     }
     const {json, stateConfigs} = ownNodeConfig;
     if (json && json.meta.kind === 'object') {
-      Object.assign(fields, json.meta.fields);
+      for (const [key, schema] of Object.entries(json.meta.fields)) {
+        fields.set(key, schema);
+      }
     }
     if (stateConfigs) {
       for (const required of stateConfigs) {
@@ -67,14 +71,14 @@ export function composeNodeSerializationSchema(
           required.flat &&
           required.stateConfig.schema &&
           typeof required.stateConfig.key === 'string' &&
-          !(required.stateConfig.key in states)
+          !states.has(required.stateConfig.key)
         ) {
-          states[required.stateConfig.key] = required.stateConfig.schema;
+          states.set(required.stateConfig.key, required.stateConfig.schema);
         }
       }
     }
   }
-  return {...states, ...fields};
+  return {...Object.fromEntries(states), ...Object.fromEntries(fields)};
 }
 
 /**

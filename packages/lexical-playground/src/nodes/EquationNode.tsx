@@ -22,7 +22,7 @@ import {
   type SerializedLexicalNode,
   type Spread,
   stringValue,
-  withGetter,
+  withAccessors,
 } from 'lexical';
 import * as React from 'react';
 
@@ -30,10 +30,10 @@ const EquationComponent = React.lazy(() => import('./EquationComponent'));
 
 const equationNodeSchema = /* @__PURE__ */ objectValue({
   equation: /* @__PURE__ */ stringValue(),
-  inline: /* @__PURE__ */ withGetter(
-    /* @__PURE__ */ booleanValue(),
-    'isInline',
-  ),
+  inline: /* @__PURE__ */ withAccessors(/* @__PURE__ */ booleanValue(), {
+    getter: 'isInline',
+    setter: 'setInline',
+  }),
 });
 
 export type SerializedEquationNode = Spread<
@@ -145,6 +145,12 @@ export class EquationNode extends DecoratorNode<JSX.Element> {
 
   getEquation(): string {
     return this.getLatest().__equation;
+  }
+
+  setInline(inline: boolean): this {
+    const self = this.getWritable();
+    self.__inline = inline;
+    return self;
   }
 
   setEquation(equation: string): this {

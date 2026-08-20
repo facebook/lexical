@@ -58,6 +58,9 @@ class MergeNode extends ElementNode {
   exportJSON(): SerializedMergeNode {
     return {...super.exportJSON(), variant: this.__variant};
   }
+  getVariant(): 'a' | 'b' | 'c' {
+    return this.getLatest().__variant;
+  }
   setVariant(variant: 'a' | 'b' | 'c'): this {
     const self = this.getWritable();
     self.__variant = variant;

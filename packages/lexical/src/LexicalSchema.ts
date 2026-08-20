@@ -93,7 +93,7 @@ export interface SerializationSchema<T> {
    * {@link withSetter} to record a name that doesn't follow that convention
    * (e.g. TextNode's `text` → `setTextContent`).
    */
-  readonly setter?: string;
+  readonly setter?: string | null;
   /**
    * The name of the node getter that reads this property's value when the base
    * {@link LexicalNode.exportJSON} walks a node's `json` schema. When omitted,
@@ -102,13 +102,23 @@ export interface SerializationSchema<T> {
    * (e.g. TextNode's `text` → `getTextContent`). A getter that returns
    * `undefined` omits the property from the exported JSON.
    */
-  readonly getter?: string;
+  readonly getter?: string | null;
 }
 
-/** The node accessors a {@link SerializationSchema} field is applied through. */
+/**
+ * The node accessors a {@link SerializationSchema} field is applied through.
+ *
+ * A name resolves to a method on the node (or, for a getter, to the node's own
+ * `__`-prefixed field). `null` states that the direction is deliberately
+ * unsupported — an export-only property computed from others (`setter: null`,
+ * as ListNode's `tag` is derived from `listType`) or an import-only one
+ * (`getter: null`). Leaving a direction undefined uses the conventional
+ * `get<Prop>`/`set<Prop>` name, which must exist: a name that resolves to
+ * nothing would silently drop the property, so it fails in DEV instead.
+ */
 export interface SchemaAccessors {
-  readonly getter?: string;
-  readonly setter?: string;
+  readonly getter?: string | null;
+  readonly setter?: string | null;
 }
 
 /** A {@link SerializationSchema} for an unknown type, used where the type is not relevant. */
@@ -444,7 +454,8 @@ export function arrayValue<T>(
   return makeSchema(
     value => (Array.isArray(value) ? value.map(entry => item(entry)) : []),
     {item, kind: 'array'},
-    item,
+    // Deliberately not `item`: the item schema describes an element, so its
+    // accessors belong to the element, not to the array-valued property.
   );
 }
 
@@ -509,7 +520,7 @@ export function objectValue<T extends {readonly [key: string]: unknown}>(
  */
 export function withSetter<T>(
   schema: SerializationSchema<T>,
-  setter: string,
+  setter: string | null,
 ): SerializationSchema<T> {
   return makeSchema(value => schema(value), schema.meta, {
     getter: schema.getter,
@@ -538,7 +549,7 @@ export function withSetter<T>(
  */
 export function withGetter<T>(
   schema: SerializationSchema<T>,
-  getter: string,
+  getter: string | null,
 ): SerializationSchema<T> {
   return makeSchema(value => schema(value), schema.meta, {
     getter,
@@ -593,7 +604,7 @@ export function withAccessors<T>(
   accessors: SchemaAccessors,
 ): SerializationSchema<T> {
   return makeSchema(value => schema(value), schema.meta, {
-    getter: accessors.getter || schema.getter,
-    setter: accessors.setter || schema.setter,
+    getter: accessors.getter === undefined ? schema.getter : accessors.getter,
+    setter: accessors.setter === undefined ? schema.setter : accessors.setter,
   });
 }

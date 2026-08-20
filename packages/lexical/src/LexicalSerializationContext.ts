@@ -197,20 +197,23 @@ function getComposedSchemaFieldEntries(
 ): readonly (readonly [string, AnySerializationSchema])[] {
   let entries = composedFieldEntriesByClass.get(klass);
   if (entries === undefined) {
-    const fields: Record<string, AnySerializationSchema> = {};
+    // A Map rather than an object literal: `'toString' in {}` is true, so an
+    // object would silently exclude fields named after Object.prototype
+    // members (and `__proto__` would re-parent it rather than record a field).
+    const fields = new Map<string, AnySerializationSchema>();
     for (const {ownNodeConfig} of iterStaticNodeConfigChain(klass)) {
       const json = ownNodeConfig && ownNodeConfig.json;
       if (json && json.meta.kind === 'object') {
         // Ancestors are visited last but must not override a subclass field,
         // so only fill in what is still missing.
         for (const [key, schema] of Object.entries(json.meta.fields)) {
-          if (!(key in fields)) {
-            fields[key] = schema;
+          if (!fields.has(key)) {
+            fields.set(key, schema);
           }
         }
       }
     }
-    entries = Object.entries(fields);
+    entries = [...fields];
     composedFieldEntriesByClass.set(klass, entries);
   }
   return entries;
@@ -285,11 +288,19 @@ function $applyActiveSerializationContext(
     ? $compactSerializedNode(node, result)
     : result;
   // Compaction copies properties, so `children` keeps its identity: recursion
-  // is safe exactly when the children array is the one exportJSON created.
+  // is safe exactly when the result is the node's own export, or carries the
+  // very children array that export created. Comparing `children` is only
+  // meaningful when there is one — for a node with no children (a decorator,
+  // which may still host slots) two replacements both read `undefined`, so
+  // that comparison would wrongly treat a replacement as the node's own.
+  const defaultChildren =
+    defaultResult === undefined
+      ? undefined
+      : (defaultResult as {children?: unknown}).children;
   const recurseChildren =
     defaultResult !== undefined &&
     (result === defaultResult ||
-      (result as {children?: unknown}).children ===
-        (defaultResult as {children?: unknown}).children);
+      (Array.isArray(defaultChildren) &&
+        (result as {children?: unknown}).children === defaultChildren));
   return {recurseChildren, serializedNode};
 }

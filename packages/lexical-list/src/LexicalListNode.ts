@@ -33,7 +33,7 @@ import {
   type SerializedPartial,
   type Spread,
   transformValue,
-  withGetter,
+  withAccessors,
 } from 'lexical';
 
 import {$createListItemNode, $isListItemNode, type ListItemNode} from '.';
@@ -69,12 +69,12 @@ const listNodeSchema = /* @__PURE__ */ objectValue({
     listType => TAG_TO_LIST_TYPE[listType] || listType,
   ),
   start: /* @__PURE__ */ numberValue(1),
-  // Derived from listType rather than stored, so it is written on export and
-  // ignored on import (there is deliberately no setTag).
-  tag: /* @__PURE__ */ withGetter(
-    /* @__PURE__ */ enumValue(['ul', 'ol']),
-    'getTag',
-  ),
+  // Derived from listType rather than stored: written on export, and
+  // deliberately not applied on import.
+  tag: /* @__PURE__ */ withAccessors(/* @__PURE__ */ enumValue(['ul', 'ol']), {
+    getter: 'getTag',
+    setter: null,
+  }),
 });
 
 // Narrows the accepted JSON at the type level only; the runtime

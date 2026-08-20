@@ -310,7 +310,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   constructor(
     src: string = '',
     altText: string = '',
-    maxWidth: number = 0,
+    maxWidth: number = 500,
     width?: 'inherit' | number,
     height?: 'inherit' | number,
     showCaption?: boolean,

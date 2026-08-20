@@ -102,41 +102,6 @@ export function getContextValue<Ctx extends symbol, V>(
     : cfg.defaultValue;
 }
 
-/**
- * @experimental
- *
- * Get the value without a default
- *
- * @param contextRecord The ContextRecord
- * @param cfg The configuration
- * @returns The current value in this context or `undefined` if not set
- */
-export function getOwnContextValue<Ctx extends symbol, V>(
-  contextRecord: ContextRecord<Ctx>,
-  cfg: ContextConfig<Ctx, V>,
-): undefined | V {
-  const {key} = cfg;
-  return key in contextRecord ? (contextRecord[key] as V) : undefined;
-}
-
-/**
- * @experimental
- *
- * Read and delete cfg from this layer of context
- *
- * @param contextRecord The ContextRecord
- * @param cfg The configuration
- * @returns The value of the configuration that was removed
- */
-export function popOwnContextValue<Ctx extends symbol, V>(
-  contextRecord: ContextRecord<Ctx>,
-  cfg: ContextConfig<Ctx, V>,
-): undefined | V {
-  const rval = getOwnContextValue(contextRecord, cfg);
-  delete contextRecord[cfg.key];
-  return rval;
-}
-
 function toPair<Ctx extends symbol, V>(
   contextRecord: undefined | ContextRecord<Ctx>,
   pairOrUpdater: ContextConfigPair<Ctx, V> | ContextConfigUpdater<Ctx, V>,

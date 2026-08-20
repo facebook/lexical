@@ -19,6 +19,4 @@ export {
   createContextState,
   getContextRecord,
   getContextValue,
-  getOwnContextValue,
-  popOwnContextValue,
 } from 'lexical';

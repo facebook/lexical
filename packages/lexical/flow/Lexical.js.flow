@@ -1816,14 +1816,6 @@ declare export function contextUpdater<Ctx, V>(
   cfg: ContextConfig<Ctx, V>,
   updater: (prev: V) => V,
 ): ContextConfigUpdater<Ctx, V>;
-declare export function getOwnContextValue<Ctx, V>(
-  contextRecord: ContextRecord<Ctx>,
-  cfg: ContextConfig<Ctx, V>,
-): void | V;
-declare export function popOwnContextValue<Ctx, V>(
-  contextRecord: ContextRecord<Ctx>,
-  cfg: ContextConfig<Ctx, V>,
-): void | V;
 declare export function createContextState<Tag, V>(
   tag: Tag,
   name: string,

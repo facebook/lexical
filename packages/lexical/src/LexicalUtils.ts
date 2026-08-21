@@ -1226,6 +1226,61 @@ export function isSelectAll(event: KeyboardEventModifiers): boolean {
   return isExactShortcutMatch(event, 'a', CONTROL_OR_META);
 }
 
+/**
+ * `$selectAll` places its points at the element level and then normalizes them
+ * down towards text points. When every point descends into the *same* shadow
+ * root — a document whose only top-level node is a columns layout, say — the
+ * result stops describing "select everything" and starts describing "select the
+ * text inside the widget". A delete then empties the widget in place instead of
+ * removing it (#6938), because the range never covers the widget itself.
+ *
+ * Keeping the element-level points in that case leaves the shadow root inside
+ * the selection. A selection that merely *starts* in a shadow root, such as a
+ * select-all anchored in a leading table, still normalizes as before: it already
+ * extends past the shadow root, so the widget is covered either way.
+ */
+function $getRootChildAncestor(node: LexicalNode): LexicalNode | null {
+  let current: LexicalNode | null = node;
+  while (current !== null) {
+    const parent: ElementNode | null = current.getParent();
+    if (parent === null) {
+      // A detached node, or a slot value whose up-link is its slot host.
+      return null;
+    }
+    if ($isRootNode(parent)) {
+      return current;
+    }
+    current = parent;
+  }
+  return null;
+}
+
+function $normalizeSelectionForSelectAll(
+  selection: RangeSelection,
+): RangeSelection {
+  const {anchor, focus} = selection;
+  const anchorKey = anchor.key;
+  const anchorOffset = anchor.offset;
+  const anchorType = anchor.type;
+  const focusKey = focus.key;
+  const focusOffset = focus.offset;
+  const focusType = focus.type;
+  $normalizeSelection(selection);
+  // `getTopLevelElement` stops at the nearest shadow root, which for a nested
+  // widget is one of its inner scopes (a layout item rather than the layout
+  // container), so walk all the way out to the child of the RootNode instead.
+  const anchorTop = $getRootChildAncestor(anchor.getNode());
+  if (
+    $isElementNode(anchorTop) &&
+    anchorTop.isShadowRoot() &&
+    anchorTop.is($getRootChildAncestor(focus.getNode()))
+  ) {
+    anchor.set(anchorKey, anchorOffset, anchorType);
+    focus.set(focusKey, focusOffset, focusType);
+  }
+  return selection;
+}
+
 /** Selects all content within the root. If a selection is provided, scopes to the nearest root or shadow root; otherwise creates a new RangeSelection spanning the entire root. */
 export function $selectAll(selection?: RangeSelection | null): RangeSelection {
   const root = $getRoot();
@@ -1241,7 +1296,7 @@ export function $selectAll(selection?: RangeSelection | null): RangeSelection {
     if ($isRootNode(anchorNode)) {
       anchor.set(anchorNode.getKey(), 0, 'element');
       focus.set(anchorNode.getKey(), anchorNode.getChildrenSize(), 'element');
-      $normalizeSelection(selection);
+      $normalizeSelectionForSelectAll(selection);
       return selection;
     }
     const topParent = anchorNode.getTopLevelElementOrThrow();
@@ -1264,20 +1319,38 @@ export function $selectAll(selection?: RangeSelection | null): RangeSelection {
       if ($isElementNode(topParent)) {
         anchor.set(topParent.getKey(), 0, 'element');
         focus.set(topParent.getKey(), topParent.getChildrenSize(), 'element');
-        $normalizeSelection(selection);
+        $normalizeSelectionForSelectAll(selection);
       }
       return selection;
     }
     const rootNode = parent;
     anchor.set(rootNode.getKey(), 0, 'element');
     focus.set(rootNode.getKey(), rootNode.getChildrenSize(), 'element');
-    $normalizeSelection(selection);
+    $normalizeSelectionForSelectAll(selection);
     return selection;
   } else {
     // Create a new RangeSelection
     const newSelection = root.select(0, root.getChildrenSize());
-    $setSelection($normalizeSelection(newSelection));
+    $setSelection($normalizeSelectionForSelectAll(newSelection));
     return newSelection;
+  }
+}
+
+/**
+ * Removes `class` or `style` from the element when the attribute is present
+ * but has an empty value.
+ *
+ * `classList.remove(...)` and `style.setProperty(prop, '')` do not remove the
+ * attribute once every token/declaration is gone, so clearing the last theme
+ * class or the last inline declaration leaves `class=""` / `style=""` behind
+ * in the editor DOM.
+ */
+export function removeEmptyDOMAttribute(
+  dom: HTMLElement,
+  attributeName: 'class' | 'style',
+): void {
+  if (dom.getAttribute(attributeName) === '') {
+    dom.removeAttribute(attributeName);
   }
 }
 

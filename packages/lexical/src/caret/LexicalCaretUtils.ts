@@ -20,6 +20,7 @@ import {$getSlotNames} from '../LexicalSlot';
 import {
   $copyNode,
   $getNodeByKeyOrThrow,
+  $getRoot,
   $isRootOrShadowRoot,
   $isShadowRootNode,
   $removeFromParent,
@@ -406,6 +407,16 @@ export function $removeTextFromCaretRange<D extends CaretDirection>(
         element.remove(true);
       }
     }
+  }
+
+  // A range that covers every top-level node (a select-all over a document
+  // that is a single shadow root, for example) removes them all and leaves
+  // the root with nothing to put a caret in. Restore the empty paragraph the
+  // root would otherwise be missing, matching the result of deleting a
+  // document made of ordinary paragraphs.
+  const rootNode = $getRoot();
+  if (rootNode.isEmpty()) {
+    rootNode.append($createParagraphNode());
   }
 
   // note this caret can be in either direction

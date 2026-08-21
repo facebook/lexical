@@ -50,6 +50,7 @@ import {
   $generateNodesFromRawText,
   $getSelection,
   $internalMakeRangeSelection,
+  $internalRefreshSelectionFormatAndStyle,
   $isRangeSelection,
   $updateElementSelectionOnCreateDeleteNode,
   adjustPointOffsetForMergedSibling,
@@ -70,6 +71,7 @@ import {
   isDOMTextNode,
   isHTMLElement,
   isInlineDomNode,
+  removeEmptyDOMAttribute,
   toggleTextFormatType,
 } from '../LexicalUtils';
 import {setDOMStyleFromCSS} from '../utils/setDOMStyle';
@@ -198,6 +200,7 @@ function setTextThemeClassNames(
       }
     }
   }
+  removeEmptyDOMAttribute(dom, 'class');
 }
 
 function diffComposedText(a: string, b: string): [number, number, string] {
@@ -650,6 +653,7 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
     const nextStyle = this.__style;
     if (prevStyle !== nextStyle) {
       setDOMStyleFromCSS(dom.style, nextStyle, prevStyle);
+      removeEmptyDOMAttribute(dom, 'style');
     }
     return false;
   }
@@ -894,7 +898,9 @@ export class TextNode extends LexicalNode implements InlineFormattableNode {
       ) {
         $setCompositionKey(key);
       }
+      const previousAnchorKey = selection.anchor.key;
       selection.setTextNodeRange(this, anchorOffset, this, focusOffset);
+      $internalRefreshSelectionFormatAndStyle(selection, previousAnchorKey);
     }
     return selection;
   }

@@ -11,9 +11,12 @@ import {
   $computeTableMapSkipCellCheck,
   $createTableCellNode,
   $createTableNode,
+  $createTableNodeWithDimensions,
   $createTableRowNode,
   $createTableSelectionFrom,
   $deleteTableRowAtSelection,
+  $isTableCellNode,
+  $isTableNode,
   $isTableRowNode,
   $isTableSelection,
   type TableMapType,
@@ -26,11 +29,12 @@ import {
   $getRoot,
   $getSelection,
   $isParagraphNode,
+  $isRangeSelection,
   $isTextNode,
   $setSelection,
 } from 'lexical';
-import {initializeUnitTest} from 'lexical/src/__tests__/utils';
-import {beforeEach, describe, expect, test} from 'vitest';
+import {$assertNodeType, initializeUnitTest} from 'lexical/src/__tests__/utils';
+import {assert, beforeEach, describe, expect, test} from 'vitest';
 
 describe('table selection', () => {
   initializeUnitTest(testEnv => {
@@ -360,6 +364,89 @@ describe('table selection', () => {
             expect(nodes).toEqual([]);
           }
         });
+      });
+    });
+  });
+});
+
+describe('regression #8075', () => {
+  initializeUnitTest(testEnv => {
+    function $deleteForward(): void {
+      const selection = $getSelection();
+      assert($isRangeSelection(selection));
+      selection.deleteCharacter(false);
+    }
+
+    test('forward delete removes an empty paragraph before a table', () => {
+      testEnv.editor.update(
+        () => {
+          const paragraph = $createParagraphNode();
+          $getRoot()
+            .clear()
+            .append(paragraph, $createTableNodeWithDimensions(2, 2, false));
+          paragraph.selectStart();
+        },
+        {discrete: true},
+      );
+      testEnv.editor.update($deleteForward, {discrete: true});
+      testEnv.editor.read(() => {
+        const children = $getRoot().getChildren();
+        expect(children).toHaveLength(1);
+        expect($isTableNode(children[0])).toBe(true);
+      });
+    });
+
+    test('forward delete does not merge a table into a non-empty paragraph', () => {
+      testEnv.editor.update(
+        () => {
+          const paragraph = $createParagraphNode().append(
+            $createTextNode('before'),
+          );
+          $getRoot()
+            .clear()
+            .append(paragraph, $createTableNodeWithDimensions(2, 2, false));
+          paragraph.selectEnd();
+        },
+        {discrete: true},
+      );
+      testEnv.editor.update($deleteForward, {discrete: true});
+      testEnv.editor.read(() => {
+        const children = $getRoot().getChildren();
+        expect(children).toHaveLength(2);
+        expect(children[0].getTextContent()).toBe('before');
+        expect($isTableNode(children[1])).toBe(true);
+      });
+    });
+
+    test('forward delete from an empty paragraph in a table cell does nothing', () => {
+      testEnv.editor.update(
+        () => {
+          const table = $createTableNodeWithDimensions(1, 2, false);
+          $getRoot().clear().append(table);
+          const row = table.getFirstChild();
+          const cell = $assertNodeType(
+            $assertNodeType(row, $isTableRowNode).getFirstChild(),
+            $isTableCellNode,
+          );
+          const paragraph = $createParagraphNode();
+          cell.clear().append(paragraph);
+          paragraph.selectStart();
+        },
+        {discrete: true},
+      );
+      testEnv.editor.update($deleteForward, {discrete: true});
+      testEnv.editor.read(() => {
+        const table = $getRoot().getFirstChild();
+        if (!$isTableNode(table)) {
+          throw new Error('Expected a TableNode');
+        }
+        const row = table.getFirstChild();
+        if (!$isTableRowNode(row)) {
+          throw new Error('Expected a TableRowNode');
+        }
+        // The next cell was not pulled into the empty one.
+        expect(row.getChildrenSize()).toBe(2);
+        expect(row.getFirstChildOrThrow().getTextContent()).toBe('');
       });
     });
   });

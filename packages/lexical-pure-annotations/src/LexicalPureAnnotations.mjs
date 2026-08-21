@@ -95,8 +95,12 @@ export const INLINE_FACTORY_FORMS = new Map(
   Array.from(INLINE_FACTORIES, ([name, spec]) => [name, spec.form]),
 );
 
-/** The annotation inserted before a module-scope factory call. */
-const ANNOTATION = '/* @__PURE__ */ ';
+/**
+ * The annotation inserted before a module-scope factory call. No trailing
+ * space: a block comment is a token separator on its own, so the space would
+ * only be there to be stripped again by the minifier.
+ */
+const ANNOTATION = '/* @__PURE__ */';
 
 /** Matches the contents of a comment that is already a pure annotation. */
 const PURE_ANNOTATION_RE = /[#@]__PURE__/;

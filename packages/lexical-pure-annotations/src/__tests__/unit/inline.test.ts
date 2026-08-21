@@ -117,7 +117,7 @@ describe('inlining', () => {
     const result = inline(
       [
         `import {defineExtension} from 'lexical';`,
-        `export const E = ${PURE} defineExtension({name: 'e'});`,
+        `export const E = ${PURE}defineExtension({name: 'e'});`,
       ].join('\n'),
     )!;
     expect(result.code).toContain(`export const E = {name: 'e'};`);
@@ -152,7 +152,7 @@ describe('inlining', () => {
       ].join('\n'),
     )!;
     expect(result.inlined).toBe(0);
-    expect(result.code).toContain(`${PURE} defineExtension({name: 'e'});`);
+    expect(result.code).toContain(`${PURE}defineExtension({name: 'e'});`);
   });
 
   it('removes the import once nothing calls the factory any more', () => {
@@ -178,7 +178,7 @@ describe('inlining', () => {
     ).toBe(
       [
         `import {createCommand} from 'lexical';`,
-        `export const C = ${PURE} createCommand('C');`,
+        `export const C = ${PURE}createCommand('C');`,
         `export const E = {name: 'e'};`,
       ].join('\n'),
     );
@@ -287,7 +287,7 @@ describe('inlining', () => {
       ].join('\n'),
     )!;
     expect(unmarked.inlined).toBe(0);
-    expect(unmarked.code).toContain(`${PURE} defineExtension({name: 'e'})`);
+    expect(unmarked.code).toContain(`${PURE}defineExtension({name: 'e'})`);
 
     const marked = inline(
       [
@@ -333,7 +333,7 @@ describe('inlining', () => {
     ].join('\n');
     const result = transformPureAnnotations(code, {filename: 'test.ts'})!;
     expect(result.inlined).toBe(0);
-    expect(result.code).toContain(`${PURE} safeCast(`);
+    expect(result.code).toContain(`${PURE}safeCast(`);
   });
 
   it('only inlines factories that resolve to Lexical', () => {

@@ -42,12 +42,12 @@ describe('transformPureAnnotations', () => {
   it('annotates a module-scope call', () => {
     expect(
       transform(mod(`export const E = defineExtension({name: 'e'});`)),
-    ).toBe(mod(`export const E = ${PURE} defineExtension({name: 'e'});`));
+    ).toBe(mod(`export const E = ${PURE}defineExtension({name: 'e'});`));
   });
 
   it('annotates a call whose initializer is on its own line', () => {
     expect(transform(mod(`export const C =`, `  createCommand('C');`))).toBe(
-      mod(`export const C =`, `  ${PURE} createCommand('C');`),
+      mod(`export const C =`, `  ${PURE}createCommand('C');`),
     );
   });
 
@@ -60,7 +60,7 @@ describe('transformPureAnnotations', () => {
       ),
     ).toBe(
       mod(
-        `export const E = ${PURE} defineExtension({config: ${PURE} safeCast({a: 1}), name: 'e'});`,
+        `export const E = ${PURE}defineExtension({config: ${PURE}safeCast({a: 1}), name: 'e'});`,
       ),
     );
   });
@@ -68,7 +68,7 @@ describe('transformPureAnnotations', () => {
   it('annotates calls nested in an array', () => {
     expect(
       transform(mod(`const deps = [configExtension(Other, {x: 1})];`)),
-    ).toBe(mod(`const deps = [${PURE} configExtension(Other, {x: 1})];`));
+    ).toBe(mod(`const deps = [${PURE}configExtension(Other, {x: 1})];`));
   });
 
   it('reports how many annotations it inserted', () => {
@@ -83,7 +83,7 @@ describe('transformPureAnnotations', () => {
     expect(transformPureAnnotations(`export const x = 1;`)).toBeNull();
     expect(
       transformPureAnnotations(
-        mod(`export const E = ${PURE} defineExtension({});`),
+        mod(`export const E = ${PURE}defineExtension({});`),
       ),
     ).toBeNull();
   });
@@ -92,7 +92,7 @@ describe('transformPureAnnotations', () => {
     expect(
       transformPureAnnotations(
         mod(
-          `export const E = ${PURE} defineExtension({name: 'e'});`,
+          `export const E = ${PURE}defineExtension({name: 'e'});`,
           `export const C = /* #__PURE__ */ createCommand('C');`,
         ),
       ),
@@ -103,7 +103,7 @@ describe('transformPureAnnotations', () => {
     // An annotation that does not directly precede a call expression has no
     // effect on any bundler, so the call still needs its own.
     expect(transform(mod(PURE, `export const C = createCommand('C');`))).toBe(
-      mod(PURE, `export const C = ${PURE} createCommand('C');`),
+      mod(PURE, `export const C = ${PURE}createCommand('C');`),
     );
   });
 
@@ -144,7 +144,7 @@ describe('transformPureAnnotations', () => {
     expect(result!.code).toBe(
       [
         `import {createCommand, myFactory} from 'lexical';`,
-        `const x = ${PURE} myFactory();`,
+        `const x = ${PURE}myFactory();`,
         `const y = createCommand('y');`,
       ].join('\n'),
     );
@@ -158,7 +158,7 @@ describe('transformPureAnnotations', () => {
           `export const identity = <T,>(value: T): T => value;`,
         ),
       ),
-    ).toContain(`${PURE} safeCast<Config>({})`);
+    ).toContain(`${PURE}safeCast<Config>({})`);
   });
 
   it('parses TSX', () => {
@@ -170,7 +170,7 @@ describe('transformPureAnnotations', () => {
         ),
         'test.tsx',
       ),
-    ).toContain(`${PURE} defineExtension`);
+    ).toContain(`${PURE}defineExtension`);
   });
 
   it('parses JSX in a .js file', () => {
@@ -179,7 +179,7 @@ describe('transformPureAnnotations', () => {
         mod(`const el = <div />;`, `export const C = createCommand('C');`),
         'test.js',
       ),
-    ).toContain(`${PURE} createCommand`);
+    ).toContain(`${PURE}createCommand`);
   });
 
   it('generates a source map by default and skips it on request', () => {
@@ -248,7 +248,7 @@ describe('which calls count as a factory', () => {
       `}`,
       `export const MY_COMMAND = createCommand('MY_COMMAND');`,
     ].join('\n');
-    expect(transform(code)).toContain(`= ${PURE} createCommand('MY_COMMAND')`);
+    expect(transform(code)).toContain(`= ${PURE}createCommand('MY_COMMAND')`);
   });
 
   it('annotates an aliased import from a Lexical package', () => {
@@ -259,7 +259,7 @@ describe('which calls count as a factory', () => {
           `export const E = define({name: 'e'});`,
         ].join('\n'),
       ),
-    ).toContain(`= ${PURE} define({name: 'e'})`);
+    ).toContain(`= ${PURE}define({name: 'e'})`);
   });
 
   it('follows a relative import to check the declaration', () => {
@@ -274,7 +274,7 @@ describe('which calls count as a factory', () => {
       functions: ['definePureThing', 'defineImpureThing'],
     };
     const result = transformPureAnnotations(code, options);
-    expect(result!.code).toContain(`= ${PURE} definePureThing(`);
+    expect(result!.code).toContain(`= ${PURE}definePureThing(`);
     expect(result!.code).toContain(`= defineImpureThing(`);
     expect(result!.count).toBe(1);
 
@@ -292,7 +292,7 @@ describe('which calls count as a factory', () => {
     expect(transformPureAnnotations(code)).toBeNull();
     expect(
       transformPureAnnotations(code, {sources: /^@my-org\//})!.code,
-    ).toContain(`= ${PURE} defineExtension(`);
+    ).toContain(`= ${PURE}defineExtension(`);
   });
 });
 
@@ -312,7 +312,7 @@ describe('pureAnnotations', () => {
       '/pkg/src/Commands.ts',
     );
     expect(result!.code).toContain(
-      `export const C = ${PURE} createCommand('C')`,
+      `export const C = ${PURE}createCommand('C')`,
     );
     expect(result!.map!.mappings).toEqual(expect.any(String));
   });
@@ -328,7 +328,7 @@ describe('pureAnnotations', () => {
       mod(`export const C = createCommand('C');`),
       '/pkg/src/Commands.tsx?v=1',
     );
-    expect(result!.code).toContain(`${PURE} createCommand`);
+    expect(result!.code).toContain(`${PURE}createCommand`);
   });
 
   it('only transforms script modules by default', () => {

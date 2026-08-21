@@ -12,6 +12,8 @@ import invariant from '@lexical/internal/invariant';
 
 import {$isElementNode} from '.';
 
+const __DEV__ = process.env.NODE_ENV !== 'production';
+
 /**
  * Whether the export in progress is writing the compact form. A module-scope
  * flag rather than something threaded through every walk: `editorState.toJSON()`
@@ -32,6 +34,10 @@ let compactExport = false;
  * It can only be read by a Lexical new enough to restore them, so keep writing
  * the legacy form until every reader is upgraded.
  *
+ * `f` must be synchronous. The form is restored as soon as it returns, so an
+ * `async` callback would give up the form at its first `await` and export in
+ * whatever form is ambient when it resumes.
+ *
  * @example
  * ```ts
  * const compactJSON = $withCompactExport(true, () => editorState.toJSON());
@@ -41,12 +47,31 @@ let compactExport = false;
  */
 export function $withCompactExport<T>(compact: boolean, f: () => T): T {
   const previous = compactExport;
+  let result: T;
   try {
     compactExport = compact;
-    return f();
+    result = f();
   } finally {
     compactExport = previous;
   }
+  if (__DEV__) {
+    // An async callback type-checks (T is simply a Promise), and the export it
+    // awaits would silently run in the ambient form instead of this one, so
+    // say what happened rather than returning quietly wrong output.
+    invariant(
+      !isThenable(result),
+      '$withCompactExport: f returned a thenable. The export form is restored synchronously, so an async callback gives it up at its first await; export inside a synchronous callback instead.',
+    );
+  }
+  return result;
+}
+
+function isThenable(value: unknown): boolean {
+  return (
+    value !== null &&
+    (typeof value === 'object' || typeof value === 'function') &&
+    typeof (value as {then?: unknown}).then === 'function'
+  );
 }
 
 /**

@@ -3361,13 +3361,6 @@ export function getComposedSchemaFields(
 }
 
 /**
- * The mirror of {@link CompiledSetter} for the export direction: one of a
- * node's serialized properties read back through a named getter (`get<Prop>`
- * by default, or the name recorded with `withGetter`). Compiled once per class
- * so {@link LexicalNode.exportJSON} writes an object without walking the class
- * chain on every call.
- */
-/**
  * What the compact form may drop for one property, resolved with the accessor
  * so writing the compact form needs no second pass over the schema: a derived
  * property (`{setter: null}`) is bytes nothing will ever read, and a value
@@ -3384,6 +3377,13 @@ interface CompactRule {
   readonly isDefault: (value: unknown) => boolean;
 }
 
+/**
+ * The mirror of {@link CompiledSetter} for the export direction: one of a
+ * node's serialized properties read back through a named getter (`get<Prop>`
+ * by default, or the name recorded with `withGetter`). Compiled once per class
+ * so {@link LexicalNode.exportJSON} writes an object without walking the class
+ * chain on every call.
+ */
 type CompiledGetter = CompactRule &
   (
     | {
@@ -3428,12 +3428,26 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
       // override, or not written at all.
       continue;
     }
-    const getterName = schema.getter || defaultGetterName(key);
+    // `=== undefined`, not `||`: an empty recorded name is a mistake, not a
+    // request for the conventional one, and resolving it silently would apply
+    // some other accessor that happens to exist.
+    const getterName =
+      schema.getter === undefined ? defaultGetterName(key) : schema.getter;
     if (getterName.startsWith('__')) {
       // withField: the property *is* this node field, so reading it is a
       // property access — no method call, and no getLatest() (see
       // $writeJSONGetters). The field only exists on a constructed node, so
       // unlike the method below it is checked on first read.
+      //
+      // `__proto__` names the prototype rather than a field, so reading it
+      // would write the node's whole prototype chain into the JSON (and throw
+      // on stringify); the setter mirror rejects it for the same reason.
+      invariant(
+        getterName !== '__proto__',
+        '%s: json schema field "%s" cannot be read from __proto__',
+        klass.name,
+        key,
+      );
       fields.set(key, {
         derived: schema.setter === null,
         field: getterName,
@@ -3474,6 +3488,47 @@ function ownFieldRecord(node: LexicalNode): Record<string, unknown> {
   return node as unknown as Record<string, unknown>;
 }
 
+const validatedOwnFields = new WeakSet<Klass<LexicalNode>>();
+
+/**
+ * Check every field name a class's `json` schema declares (`withField`, or an
+ * accessor named `__something`) against a real instance of it. A misspelled
+ * one is silent, total loss of that property — nothing is ever exported, and
+ * importing writes a field the node does not read — so it is worth catching in
+ * both directions and regardless of what the field currently holds.
+ *
+ * Unlike the method-name checks in {@link compileGetters} / {@link compileSetters},
+ * this one is DEV-only. A field exists on a constructed node, not on the
+ * prototype, so it cannot be resolved when the class is registered: the check
+ * needs an instance, which means it can only run on a serialization path, and
+ * it would reject a node that legitimately leaves a declared field unassigned.
+ * Registration-time checks have neither cost — they run once, on the class
+ * alone — which is why those fail in every build and this does not. Running it
+ * once per class keeps it off the per-node path in DEV too.
+ */
+function validateOwnFields(
+  klass: Klass<LexicalNode>,
+  node: LexicalNode,
+  entries: readonly (CompiledGetter | CompiledSetter)[],
+): void {
+  if (validatedOwnFields.has(klass)) {
+    return;
+  }
+  validatedOwnFields.add(klass);
+  const fields = ownFieldRecord(node);
+  for (const entry of entries) {
+    if (entry.kind === 'ownField') {
+      invariant(
+        hasOwn(fields, entry.field),
+        '%s: json schema field "%s" names a node field %s that the node does not have',
+        klass.name,
+        entry.key,
+        entry.field,
+      );
+    }
+  }
+}
+
 /**
  * Write the serialized properties a node's `json` schema declares, reading each
  * through its getter. A getter that returns `undefined` omits the property:
@@ -3509,6 +3564,9 @@ export function $writeJSONGetters(
     getStaticNodeConfig(klass);
     getters = compiledGettersByClass.get(klass) || EMPTY_GETTERS;
   }
+  if (__DEV__) {
+    validateOwnFields(klass, node, getters);
+  }
   for (let i = 0; i < getters.length; i++) {
     const entry = getters[i];
     if (compact && entry.derived) {
@@ -3518,20 +3576,7 @@ export function $writeJSONGetters(
     }
     let value: unknown;
     if (entry.kind === 'ownField') {
-      const fields = ownFieldRecord(node);
-      value = fields[entry.field];
-      if (__DEV__ && value === undefined) {
-        // A value that is present proves the field is, so this only runs on
-        // the path that would otherwise silently omit the property — which is
-        // exactly what a misspelled field name looks like.
-        invariant(
-          entry.field in fields,
-          '%s: json schema field "%s" reads a field %s that the node does not have',
-          klass.name,
-          entry.key,
-          entry.field,
-        );
-      }
+      value = ownFieldRecord(node)[entry.field];
     } else {
       value = entry.getter.call(node);
     }
@@ -3555,7 +3600,9 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
       // the way in (ListNode's `tag` follows from `listType`).
       continue;
     }
-    const setterName = schema.setter || defaultSetterName(key);
+    // `=== undefined` rather than `||`, as in the getter mirror.
+    const setterName =
+      schema.setter === undefined ? defaultSetterName(key) : schema.setter;
     if (setterName.startsWith('__')) {
       // withField: the property *is* this node field, so applying it is an
       // assignment — no method call, and no getWritable(), since the node
@@ -3628,6 +3675,9 @@ export function $applyJSONSetters<T extends LexicalNode>(
     getStaticNodeConfig(klass);
     setters = compiledSettersByClass.get(klass) || EMPTY_SETTERS;
   }
+  if (__DEV__) {
+    validateOwnFields(klass, node, setters);
+  }
   let self = node;
   for (let i = 0; i < setters.length; i++) {
     const entry = setters[i];
@@ -3662,7 +3712,19 @@ export function $applyJSONSetters<T extends LexicalNode>(
       // the schema on `undefined`. The identity check short-circuits every
       // call after the first: getWritable() returns the same object for the
       // rest of the update.
-      if (next !== self && $isLexicalNode(next)) {
+      //
+      // Following it also requires the same logical node. A setter that
+      // returns some *other* node would otherwise redirect every remaining
+      // property onto it — and because the compiled setters are detached
+      // prototype references applied with `.call`, they would run on the
+      // foreign node rather than failing — writing this node's properties
+      // somewhere else and returning it from a method declared to return
+      // `this`.
+      if (
+        next !== self &&
+        $isLexicalNode(next) &&
+        next.getKey() === self.getKey()
+      ) {
         self = next as T;
       }
     }

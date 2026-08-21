@@ -48,6 +48,7 @@ import {
   type SerializedPartial,
   setDOMStyleFromCSS,
   type Spread,
+  transformValue,
 } from 'lexical';
 
 import {$createListNode, $isListNode, type ListNode, type ListType} from './';
@@ -62,8 +63,25 @@ export type SerializedListItemNode = Spread<
   SerializedElementNode
 >;
 
+/**
+ * The deepest list nesting `setIndent` will walk to. Each level it steps
+ * through nests or unwraps a whole list, so this bounds work an untrusted
+ * `indent` could otherwise make unbounded.
+ */
+const MAX_LIST_ITEM_INDENT = 128;
+
 const listItemNodeSchema = /* @__PURE__ */ objectValue({
   checked: /* @__PURE__ */ optional(/* @__PURE__ */ booleanValue()),
+  // Overrides the inherited ElementNode field to bound it. This indent is
+  // structural — applying it nests or unwraps one whole list per level — so an
+  // unbounded value out of untrusted JSON would build millions of nodes. Since
+  // a schema falls back to its *default* for an out-of-domain value, clamping
+  // is a transform rather than `numberValue`'s `max`, which would read an
+  // over-deep item as indent 0 instead of as deeply nested.
+  indent: /* @__PURE__ */ transformValue(
+    /* @__PURE__ */ numberValue(0, {integer: true, min: 0}),
+    value => Math.min(value, MAX_LIST_ITEM_INDENT),
+  ),
   value: /* @__PURE__ */ numberValue(1),
 });
 
@@ -106,13 +124,6 @@ export interface ListItemNode {
     >,
   ): this;
 }
-
-/**
- * The deepest list nesting `setIndent` will walk to. Each level it steps
- * through nests or unwraps a whole list, so this bounds work an untrusted
- * `indent` could otherwise make unbounded.
- */
-const MAX_LIST_ITEM_INDENT = 128;
 
 /** @noInheritDoc */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -501,11 +512,12 @@ export class ListItemNode extends ElementNode {
     invariant(typeof indent === 'number', 'Invalid indent value.');
     indent = Math.floor(indent);
     invariant(indent >= 0, 'Indent value must be non-negative.');
-    // Unlike ElementNode's, this indent is structural: each step of the walk
-    // below nests or unwraps a whole list level. An unbounded value from
-    // untrusted JSON would build millions of nodes, so the target is clamped —
-    // a list nested deeper than this is already pathological.
-    const target = Math.min(indent, MAX_LIST_ITEM_INDENT);
+    // Deliberately not clamped here: the bound belongs on the parse path (see
+    // listItemNodeSchema), because clamping the target of a walk that starts
+    // from the node's *current* indent would outdent an item that is already
+    // nested deeper than the bound — making `item.setIndent(item.getIndent())`
+    // destroy structure rather than do nothing.
+    const target = indent;
     let currentIndent = this.getIndent();
     while (currentIndent !== target) {
       if (currentIndent < target) {

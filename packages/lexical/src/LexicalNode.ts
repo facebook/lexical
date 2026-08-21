@@ -1674,14 +1674,13 @@ export class LexicalNode {
    *   }
    * }
    * ```
-   **/
-  /**
-   * Apply serialized JSON to this node. The whole `json` schema is applied, so
-   * a property the JSON omits is set to its schema default rather than left as
-   * it is — that is what lets the compact form omit a default-valued property
-   * and have parsing restore it. (A flat NodeState is the exception: it is
-   * applied only when present.) Pass the node's complete serialized form
-   * unless you mean to reset what you leave out.
+   *
+   * The whole `json` schema is applied, so a property the JSON omits is set to
+   * its schema default rather than left as it is — that is what lets the
+   * compact form omit a default-valued property and have parsing restore it.
+   * (A flat NodeState is the exception: it is applied only when present.) Pass
+   * the node's complete serialized form unless you mean to reset what you
+   * leave out.
    */
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedLexicalNode>>,

@@ -941,12 +941,113 @@ describe('numberValue accepts a stringified number', () => {
     expect(numberValue(3).defaultValue).toBe(3);
   });
 
-  test('a union cannot accept through a converting member', () => {
-    // Membership is "parsing leaves the value unchanged", so a member that
-    // converts never wins — which is why a conversion belongs outside.
+  test('a union accepts through a converting member', () => {
+    // A member accepts when parsing lands anywhere but its own default, so one
+    // that normalizes its input composes here just as it behaves alone — and
+    // the union yields what that member parsed, not the raw value.
     const schema = unionValue([numberValue(), enumValue(['auto'])], 'auto');
-    expect(schema('2')).toBe('auto');
+    expect(schema('2')).toBe(2);
     expect(schema(2)).toBe(2);
+    expect(schema('auto')).toBe('auto');
+    // Still out of every member's domain, so still the declared fallback.
+    expect(schema('banana')).toBe('auto');
     expect(transformValue(schema, v => (v === 'auto' ? 0 : v))('auto')).toBe(0);
+  });
+
+  test('the union reads a stringified number for a real node property', () => {
+    // TextNode's format is a union, so this is the shape the coercion has to
+    // survive to reach a document that stringified its numbers.
+    const format = transformValue(
+      unionValue([numberValue(), enumValue(['bold', 'italic'])], 0),
+      value =>
+        typeof value === 'string' ? {bold: 1, italic: 2}[value] : value,
+    );
+    expect(format('1')).toBe(1);
+    expect(format(1)).toBe(1);
+    expect(format('bold')).toBe(1);
+    expect(format('junk')).toBe(0);
+  });
+});
+
+describe('a default is metadata, so nothing hands out a mutable one', () => {
+  test('a nested reference default is frozen too, not just the outer one', () => {
+    // A value nested in an objectValue default is shared by every node with
+    // none of its own exactly as the outer value is, so a shallow freeze would
+    // leave the same hazard one level down.
+    const schema = objectValue({
+      items: arrayValue(stringValue()),
+      n: numberValue(),
+    });
+    expect(Object.isFrozen(schema.defaultValue)).toBe(true);
+    expect(Object.isFrozen(schema.defaultValue.items)).toBe(true);
+    expect(() => schema.defaultValue.items.push('boom')).toThrow();
+  });
+
+  test('a union yields a fresh parse rather than a member default', () => {
+    // Every other combinator allocates per parse; this one used to return the
+    // member's frozen defaultValue by reference for an accepted value.
+    const schema = unionValue([arrayValue(stringValue())]);
+    const parsed = schema(['a']);
+    expect(parsed).toEqual(['a']);
+    expect(Object.isFrozen(parsed)).toBe(false);
+    expect(schema([])).not.toBe(schema([]));
+  });
+
+  test('transformValue does not freeze the value its transform returned', () => {
+    // The transform is the caller's function, so what it produces is theirs —
+    // possibly a module constant they also use elsewhere.
+    const shared = {a: 1};
+    transformValue(stringValue(), () => shared);
+    expect(Object.isFrozen(shared)).toBe(false);
+  });
+});
+
+describe('schema(undefined) is always the schema default', () => {
+  test('enumValue reads an absent value as its default, not as a member', () => {
+    // An absent JSON property parses as undefined. Reading that as the in-band
+    // undefined would make defaultValue a value parsing never restores, and
+    // compaction drops a default-valued property expecting exactly that.
+    const schema = enumValue([undefined, 'middle', 'bottom'], 'middle');
+    expect(schema.defaultValue).toBe('middle');
+    expect(schema(undefined)).toBe('middle');
+    expect(schema('bottom')).toBe('bottom');
+    // Unchanged when undefined leads the list, so it is also the default.
+    const leading = enumValue([undefined, 'middle']);
+    expect(leading.defaultValue).toBeUndefined();
+    expect(leading(undefined)).toBeUndefined();
+  });
+});
+
+describe('isEqual is total over the values a getter can return', () => {
+  test('an array with holes is not equal to a dense one of the same length', () => {
+    const schema = arrayValue(stringValue());
+    assert(schema.isEqual !== undefined);
+    expect(schema.isEqual(new Array(3), ['a', 'b', 'c'])).toBe(false);
+    expect(schema.isEqual(['a', 'b'], ['a', 'b'])).toBe(true);
+  });
+
+  test('an object carrying undeclared keys is not equal to the default', () => {
+    // Those keys say something; reporting equality would drop them from the
+    // export, and a flat NodeState borrows this comparator to decide that.
+    const schema = objectValue({x: numberValue()});
+    assert(schema.isEqual !== undefined);
+    expect(schema.isEqual({x: 0}, schema.defaultValue)).toBe(true);
+    expect(
+      schema.isEqual({extra: 'keep', x: 0} as never, schema.defaultValue),
+    ).toBe(false);
+    // An array is an object, but not one this schema describes.
+    expect(schema.isEqual([] as never, schema.defaultValue)).toBe(false);
+  });
+
+  test('transformValue takes an isEqual for a reference-typed output', () => {
+    // Not inherited from inner, whose comparator is defined on a domain the
+    // transform may have left entirely.
+    const plain = transformValue(arrayValue(stringValue()), value => value);
+    expect(plain.isEqual).toBeUndefined();
+    const compared = transformValue(arrayValue(stringValue()), value => value, {
+      isEqual: (a, b) => a.join() === b.join(),
+    });
+    assert(compared.isEqual !== undefined);
+    expect(compared.isEqual([], compared.defaultValue)).toBe(true);
   });
 });

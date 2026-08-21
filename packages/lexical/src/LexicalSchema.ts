@@ -201,13 +201,13 @@ function makeSchema<T>(
 ): SerializationSchema<T> {
   const derived = defaultValue === undefined;
   const resolved: T = derived ? parse(undefined) : defaultValue;
-  if (derived && resolved !== null && typeof resolved === 'object') {
+  if (derived) {
     // The default is metadata every parse shares, and StateConfig hands it
     // straight to $getState for a node that has none of its own. Freezing it
     // turns "mutate one node's default and corrupt every node in the process"
     // into a loud error; a parsed value is a fresh object and is untouched.
     // Only a default this call derived: one the caller passed in is theirs.
-    Object.freeze(resolved);
+    deepFreeze(resolved);
   }
   return Object.assign(parse, {
     defaultValue: resolved,
@@ -216,6 +216,23 @@ function makeSchema<T>(
     meta,
     setter: accessors.setter,
   });
+}
+
+/**
+ * Freeze a derived default and everything reachable from it. Freezing only the
+ * outer value would leave an array or object *nested* in an {@link objectValue}
+ * default writable, and a nested value is shared by every node that has none of
+ * its own exactly as the outer one is — so it is the same hazard one level
+ * down. Already-frozen values are skipped, which also terminates a cycle.
+ */
+function deepFreeze(value: unknown): void {
+  if (value === null || typeof value !== 'object' || Object.isFrozen(value)) {
+    return;
+  }
+  Object.freeze(value);
+  for (const inner of Object.values(value)) {
+    deepFreeze(inner);
+  }
 }
 
 /**
@@ -248,6 +265,30 @@ function hasOwnKey<K extends string>(
   key: K,
 ): source is {readonly [P in K]: unknown} {
   return Object.prototype.hasOwnProperty.call(source, key);
+}
+
+/**
+ * {@link isRecord} narrowed to what an {@link objectValue} describes. An array
+ * is an object too, and comparing one field-wise against an object default
+ * would report `[]` and `{}` as the same value.
+ */
+function isPlainRecord(
+  value: unknown,
+): value is {readonly [key: string]: unknown} {
+  return isRecord(value) && !Array.isArray(value);
+}
+
+/** Whether `source` carries an own key that `fields` does not describe. */
+function hasUndeclaredKey(
+  source: {readonly [key: string]: unknown},
+  fields: object,
+): boolean {
+  for (const key of Object.keys(source)) {
+    if (!hasOwnKey(fields, key)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -354,11 +395,18 @@ export function enumValue<const T>(
 ): SerializationSchema<T> {
   const allowed = new Set<unknown>(values);
   return makeSchema(
-    value => (allowed.has(value) ? (value as T) : defaultValue),
+    // `undefined` is checked before membership even when it is one of the
+    // values: an absent JSON property parses as `undefined`, so reading it as
+    // the in-band value rather than the fallback would break
+    // `schema(undefined) === schema.defaultValue` — the equality compaction
+    // relies on when it drops a default-valued property expecting parsing to
+    // restore it. (When `undefined` *is* the default the two agree anyway.)
+    value =>
+      value !== undefined && allowed.has(value) ? (value as T) : defaultValue,
     {kind: 'enum', values},
     {},
-    // `undefined` may itself be one of the values, in which case parsing it
-    // returns it rather than the declared fallback.
+    // Passed explicitly because `undefined` may itself be the declared default,
+    // which makeSchema would otherwise read as "derive it from parse".
     defaultValue,
   );
 }
@@ -372,8 +420,10 @@ export function enumValue<const T>(
  *
  * Pass `{defaultAsNull: true}` when an in-band value equal to `inner`'s
  * default also means "no value" — the historical `serializedNode.rel || null`
- * idiom, where an empty string is not a real `rel`. Equality is by identity,
- * so this is only meaningful for primitive-valued inner schemas.
+ * idiom, where an empty string is not a real `rel`. Equality is `inner`'s own
+ * (see {@link SerializationSchema.isEqual}), so a reference-typed default is
+ * compared by content: `nullable(arrayValue(...), {defaultAsNull: true})`
+ * reads an explicitly empty array as `null`.
  *
  * @example
  * ```ts
@@ -418,9 +468,10 @@ export function nullable<T>(
  * `serializedNode.width || undefined` idiom, where a falsy `0` is not a real
  * width. Such a value (and any out-of-domain input, which `inner` coerces to
  * its default) yields `undefined`, so it is omitted from the exported JSON
- * instead of being persisted as the default. Equality is by identity
- * (`===`), so this is only meaningful for primitive-valued inner schemas — an
- * array or object default is a fresh value per parse and never compares equal.
+ * instead of being persisted as the default. Equality is `inner`'s own (see
+ * {@link SerializationSchema.isEqual}), so a reference-typed default is
+ * compared by content: `optional(arrayValue(...), {omitDefault: true})` omits
+ * an explicitly empty array rather than persisting it.
  *
  * @example
  * ```ts
@@ -461,23 +512,27 @@ export function optional<T>(
  * is inferred as the union of the members' value types; annotate the result
  * when you want to assert a narrower intended domain instead.
  *
- * A {@link SerializationSchema} is total — it always returns a value — so a
- * member is considered to accept `value` when parsing leaves it unchanged
- * (`member(value) === value`). The first accepting member wins; if none does,
- * the result is `defaultValue` when given, otherwise the first member's
- * default. Membership is therefore decided by identity, which suits unions of
- * primitives (the case this exists for) but not unions of object shapes.
+ * A {@link SerializationSchema} is total — it always returns a value, falling
+ * back to its own default rather than reporting a rejection — so a member is
+ * considered to accept `value` when parsing it lands anywhere *other* than that
+ * member's default, or when the value is itself that default (the one case a
+ * total schema cannot distinguish from a fallback). The first accepting member
+ * wins and the union yields what that member parsed, so a member that
+ * normalizes its input — {@link numberValue} reading a stringified number —
+ * composes here the same way it behaves alone. If no member accepts, the result
+ * is `defaultValue` when given, otherwise the first member's default.
  *
- * Because acceptance is "parsing leaves it unchanged", a member whose
- * `defaultValue` lies outside its own constrained domain (e.g.
- * `numberValue(0, {min: 1})`) will falsely accept that default value; give
- * such members an in-domain default when combining them here.
+ * Because a value equal to a member's default is always accepted, a member
+ * whose `defaultValue` lies outside its own constrained domain (e.g.
+ * `numberValue(0, {min: 1})`) will accept that out-of-domain value; give such
+ * members an in-domain default when combining them here.
  *
  * @example
  * ```ts
  * const parseDimension = unionValue([numberValue(), enumValue(['inherit'])], 'inherit');
  * //    ^? SerializationSchema<number | 'inherit'>
  * parseDimension(640);       // 640
+ * parseDimension('640');     // 640 (numberValue reads a stringified number)
  * parseDimension('inherit'); // 'inherit'
  * parseDimension('banana');  // 'inherit' (no member accepts it)
  * ```
@@ -503,11 +558,19 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
         return fallback;
       }
       for (let i = 0; i < members.length; i++) {
-        // Object.is, not ===, so the union accepts exactly what its members
-        // accept: `enumValue([NaN])` returns NaN unchanged, and `===` would
-        // read that as a rejection.
-        if (Object.is(members[i](value), value)) {
-          return value as T;
+        const member = members[i];
+        const parsed = member(value);
+        // Landing on the member's default is the one result that is ambiguous:
+        // it means either "this value is the default" or "this value was out of
+        // domain and I fell back". Comparing the *input* against the default
+        // separates them, and every other result is proof the member recognized
+        // the value — including one it normalized on the way, which is why the
+        // parsed value is what gets returned.
+        if (
+          !isSchemaDefault(member, parsed) ||
+          isSchemaEqual(member, value, member.defaultValue)
+        ) {
+          return parsed as T;
         }
       }
       return fallback;
@@ -556,6 +619,13 @@ function unionAccessors(
  * that generates example JSON keeps generating the legacy forms, which is
  * exactly what a parser test wants to exercise.
  *
+ * `inner`'s {@link SerializationSchema.isEqual | isEqual} is *not* inherited:
+ * it compares values of `inner`'s domain, and the transformed domain may be a
+ * different type entirely. Pass `{isEqual}` when the output domain is
+ * reference-typed, or a transformed array/object property can never compact
+ * away and, used as a `createState` parse, dirties its node on every write of
+ * an equal value.
+ *
  * @example
  * ```ts
  * const parseFormat = transformValue(
@@ -575,8 +645,19 @@ function unionAccessors(
 export function transformValue<In, Out>(
   inner: SerializationSchema<In>,
   transform: (value: In) => Out,
+  options: {readonly isEqual?: (a: Out, b: Out) => boolean} = {},
 ): SerializationSchema<Out> {
-  return makeSchema(value => transform(inner(value)), inner.meta, inner);
+  return makeSchema(
+    value => transform(inner(value)),
+    inner.meta,
+    inner,
+    // Derived here rather than by makeSchema calling `parse(undefined)`, which
+    // is the same value: `transform` is the caller's function, so what it
+    // returns is the caller's to keep — possibly a module constant it also uses
+    // elsewhere — and a default makeSchema derives is one it freezes.
+    transform(inner.defaultValue),
+    options.isEqual,
+  );
 }
 
 /**
@@ -625,12 +706,20 @@ export function arrayValue<T>(
     // default and such a property could never be compacted. Compare by
     // content, element-wise through the item schema.
     // Total, not just defined on the parsed domain: the export path hands this
-    // whatever the node's getter returned, which nothing validated.
-    (a, b) =>
-      Array.isArray(a) &&
-      Array.isArray(b) &&
-      a.length === b.length &&
-      a.every((entry, i) => isSchemaEqual(item, entry, b[i])),
+    // whatever the node's getter returned, which nothing validated. An index
+    // loop rather than `every`, which skips the holes of a sparse array and
+    // would report `new Array(3)` as equal to any three-element array.
+    (a, b) => {
+      if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
+        return false;
+      }
+      for (let i = 0; i < a.length; i++) {
+        if (!isSchemaEqual(item, a[i], b[i])) {
+          return false;
+        }
+      }
+      return true;
+    },
   );
 }
 
@@ -688,10 +777,14 @@ export function objectValue<T extends {readonly [key: string]: unknown}>(
     undefined,
     // As with arrayValue: a parse returns a fresh object, so compare the
     // declared fields rather than the reference — and total, since the export
-    // path hands this an unvalidated getter result.
+    // path hands this an unvalidated getter result. A value carrying keys this
+    // schema does not declare is *not* equal to the default: those keys say
+    // something, and reporting equality would drop them from the export.
     (a, b) =>
-      isRecord(a) &&
-      isRecord(b) &&
+      isPlainRecord(a) &&
+      isPlainRecord(b) &&
+      !hasUndeclaredKey(a, fields) &&
+      !hasUndeclaredKey(b, fields) &&
       entries.every(([key, schema]) => isSchemaEqual(schema, a[key], b[key])),
   );
 }
@@ -715,15 +808,7 @@ export function withSetter<T>(
   schema: SerializationSchema<T>,
   setter: string | null,
 ): SerializationSchema<T> {
-  return makeSchema(
-    value => schema(value),
-    schema.meta,
-    {getter: schema.getter, setter},
-    // Naming an accessor says nothing about the domain, so the copy keeps the
-    // original's default and equality rather than re-deriving them.
-    schema.defaultValue,
-    schema.isEqual,
-  );
+  return withAccessors(schema, {setter});
 }
 
 /**
@@ -749,13 +834,7 @@ export function withGetter<T>(
   schema: SerializationSchema<T>,
   getter: string | null,
 ): SerializationSchema<T> {
-  return makeSchema(
-    value => schema(value),
-    schema.meta,
-    {getter, setter: schema.setter},
-    schema.defaultValue,
-    schema.isEqual,
-  );
+  return withAccessors(schema, {getter});
 }
 
 /**
@@ -823,6 +902,10 @@ export function withAccessors<T>(
       getter: accessors.getter === undefined ? schema.getter : accessors.getter,
       setter: accessors.setter === undefined ? schema.setter : accessors.setter,
     },
+    // Naming an accessor says nothing about the domain, so the copy keeps the
+    // original's default and equality rather than re-deriving them. This is
+    // also the one place that copy is built: withSetter, withGetter and
+    // withField all delegate here.
     schema.defaultValue,
     schema.isEqual,
   );

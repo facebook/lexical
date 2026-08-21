@@ -1860,6 +1860,7 @@ declare export function unionValue<M extends ReadonlyArray<AnySerializationSchem
 declare export function transformValue<In, Out>(
   inner: SerializationSchema<In>,
   transform: (value: In) => Out,
+  options?: {readonly isEqual?: (a: Out, b: Out) => boolean},
 ): SerializationSchema<Out>;
 declare export function rawValue<T>(): SerializationSchema<T | void>;
 declare export function arrayValue<T>(item: SerializationSchema<T>): SerializationSchema<T[]>;
@@ -1876,8 +1877,10 @@ declare export function withGetter<T>(
   schema: SerializationSchema<T>,
   getter: string | null,
 ): SerializationSchema<T>;
-// A `__`-prefixed field name, which marks the property as a node field read
-// and written directly rather than through accessor methods.
+// The field name must be `__`-prefixed, which is what marks the property as a
+// node field read and written directly rather than through accessor methods.
+// Flow has no template literal type to say so — TypeScript spells this
+// `` `__${string}` `` — so the constraint is only enforced at runtime here.
 declare export function withField<T>(
   schema: SerializationSchema<T>,
   field: string,
@@ -1886,14 +1889,6 @@ declare export function withAccessors<T>(
   schema: SerializationSchema<T>,
   accessors: SchemaAccessors,
 ): SerializationSchema<T>;
-export type ComposedSchema = {
-  readonly fieldsDerivedFirst: ReadonlyArray<[string, AnySerializationSchema]>,
-  readonly fieldsBaseFirst: ReadonlyArray<[string, AnySerializationSchema]>,
-  readonly flatStates: ReadonlyArray<AnyStateConfig>,
-};
-declare export function getComposedSchema(
-  klass: Class<LexicalNode>,
-): ComposedSchema;
 declare export function getComposedSchemaFields(
   klass: Class<LexicalNode>,
 ): {[key: string]: AnySerializationSchema};

@@ -372,7 +372,11 @@ export class StateConfig<K extends string | symbol, V> {
  *
  * It tests `meta.kind`, not `meta` alone: an unrelated parse function that
  * happens to own a `meta` property is not a schema, and publishing it as one
- * would hand introspecting tools a shape they cannot read.
+ * would hand introspecting tools a shape they cannot read. `defaultValue` is
+ * required for the same reason from the other direction — it is what this
+ * state's default is *taken from* below, so a function matching on `meta` but
+ * carrying no default would silently replace `parse(undefined)` with
+ * `undefined`, and every node with no value of its own would read as unset.
  */
 function isIntrospectableSchema<V>(
   parse: StateValueConfig<V>['parse'],
@@ -382,7 +386,8 @@ function isIntrospectableSchema<V>(
     typeof parse.meta === 'object' &&
     parse.meta !== null &&
     'kind' in parse.meta &&
-    typeof parse.meta.kind === 'string'
+    typeof parse.meta.kind === 'string' &&
+    'defaultValue' in parse
   );
 }
 

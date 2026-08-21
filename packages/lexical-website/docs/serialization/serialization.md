@@ -583,8 +583,8 @@ Each property's schema is built from composable helpers exported by
 - `nullable(inner, {defaultAsNull}?)` — the property may also be `null`
 - `optional(inner, {omitDefault}?)` — the property may be `undefined`
 - `arrayValue(item)` — an array of `item` values. Like `objectValue`, it compares by content rather than by reference (see `isEqual` below), so an array-valued property equal to its default still compacts away
-- `unionValue(members, defaultValue)` — the first member schema whose domain contains the value wins
-- `transformValue(inner, transform)` — normalizes what `inner` parsed into the stored domain (e.g. the legacy `format: 'bold'` shorthand folded into its numeric form); introspection still describes `inner`'s accepted input domain
+- `unionValue(members, defaultValue)` — the first member schema whose domain contains the value wins, and the union yields what that member parsed. A member that normalizes its input composes here the same way it behaves alone, so `unionValue([numberValue(), enumValue(['inherit'])], 'inherit')` reads `"640"` as `640` and `"inherit"` as `'inherit'`
+- `transformValue(inner, transform, {isEqual}?)` — normalizes what `inner` parsed into the stored domain (e.g. the legacy `format: 'bold'` shorthand folded into its numeric form); introspection still describes `inner`'s accepted input domain. `inner`'s `isEqual` is not inherited, since the transformed domain may be a different type entirely — pass one when the output domain is reference-typed
 - `rawValue()` — an escape hatch that passes the value through unparsed
 - `objectValue(fields)` — the record of properties, used for the `json` declaration itself
 - `withSetter(schema, 'methodName')` / `withGetter(schema, 'methodName')` / `withAccessors(schema, {getter, setter})` — name the methods a property is applied and read through when they are not the conventional `set<Property>`/`get<Property>` (e.g. `text` uses `setTextContent`/`getTextContent`). Pass `null` instead of a name for a property that has no such direction: `{setter: null}` declares a *derived* property, written on export but computed rather than read on import (`ListNode`'s `tag` follows from its `listType`), and `{getter: null}` declares one that is parsed but never written. A property whose accessor cannot be resolved is an error at editor-creation time rather than a silently dropped value, so declaring `null` is how you opt out on purpose
@@ -596,7 +596,9 @@ declare an `isEqual` that compares by content — otherwise a property equal to
 its default could never be omitted, since no two parses are the same object.
 The same rule drives `optional({omitDefault})` and `nullable({defaultAsNull})`,
 and a schema of your own can declare `isEqual` for a domain with the same
-problem.
+problem. A default is also deeply frozen, since it is one value shared by every
+node that has none of its own — including as `createState`'s default, which
+`$getState` hands back directly.
 
 Parsing is total: a missing or out-of-domain value falls back to the
 schema's default instead of throwing, which is the domain importers actually

@@ -14,9 +14,12 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
+  $isNodeSelection,
   $isRangeSelection,
   $setSelection,
   KEY_ARROW_DOWN_COMMAND,
+  KEY_ARROW_LEFT_COMMAND,
+  KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
   type LexicalEditor,
 } from 'lexical';
@@ -117,5 +120,62 @@ describe('block cursor root boundary navigation (#8886)', () => {
     expect(handled).toBe(true);
     expect(event.defaultPrevented).toBe(true);
     expectBlockCursorAt(editor, 3);
+  });
+});
+
+describe('block cursor root boundary navigation (#7999)', () => {
+  test('ArrowRight at the block cursor after the last block stays put', () => {
+    using editor = createBoundaryEditor();
+
+    editor.update(() => $getRoot().select(3, 3), {discrete: true});
+    expectBlockCursorAt(editor, 3);
+
+    const event = makeArrowEvent('ArrowRight');
+    const handled = editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
+    expect(handled).toBe(true);
+    expect(event.defaultPrevented).toBe(true);
+    expectBlockCursorAt(editor, 3);
+  });
+
+  test('ArrowLeft at the block cursor before the first block stays put', () => {
+    using editor = createBoundaryEditor();
+
+    editor.update(() => $getRoot().select(0, 0), {discrete: true});
+    expectBlockCursorAt(editor, 0);
+
+    const event = makeArrowEvent('ArrowLeft');
+    const handled = editor.dispatchCommand(KEY_ARROW_LEFT_COMMAND, event);
+    expect(handled).toBe(true);
+    expect(event.defaultPrevented).toBe(true);
+    expectBlockCursorAt(editor, 0);
+  });
+
+  test('ArrowRight at the block cursor before the last block is not consumed', () => {
+    using editor = createBoundaryEditor();
+
+    // root:2 sits between the paragraph and the trailing decorator, so there
+    // is still a block to move into.
+    editor.update(() => $getRoot().select(2, 2), {discrete: true});
+
+    const event = makeArrowEvent('ArrowRight');
+    editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
+    // The pre-existing decorator navigation still runs and selects the
+    // trailing decorator rather than leaving the caret at the root.
+    editor.read(() => {
+      const s = $getSelection();
+      assert($isNodeSelection(s));
+      expect(s.getNodes()).toEqual([$getRoot().getChildAtIndex(2)]);
+    });
+  });
+
+  test('ArrowRight with a non-collapsed selection at the root edge is not consumed', () => {
+    using editor = createBoundaryEditor();
+
+    editor.update(() => $getRoot().select(0, 3), {discrete: true});
+
+    const event = makeArrowEvent('ArrowRight');
+    const handled = editor.dispatchCommand(KEY_ARROW_RIGHT_COMMAND, event);
+    expect(handled).toBe(false);
+    expect(event.defaultPrevented).toBe(false);
   });
 });

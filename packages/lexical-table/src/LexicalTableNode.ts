@@ -575,6 +575,20 @@ export class TableNode extends ElementNode {
   exportDOM(editor: LexicalEditor): DOMExportOutput {
     const superExport = super.exportDOM(editor);
     const {element} = superExport;
+    const exportedElement =
+      !isHTMLTableElement(element) && isHTMLElement(element)
+        ? element.querySelector('table')
+        : element;
+    // ElementNode.exportDOM writes `dir` onto whatever createDOM returned,
+    // which is the scroll wrapper when scrollable tables are active. That
+    // wrapper is not part of the export, so the direction has to be re-applied
+    // to the <table> itself — that is where $convertTableElement reads it back.
+    if (isHTMLTableElement(exportedElement) && exportedElement !== element) {
+      const direction = this.getDirection();
+      if (direction) {
+        exportedElement.dir = direction;
+      }
+    }
     return {
       after: tableElement => {
         if (superExport.after) {
@@ -647,10 +661,7 @@ export class TableNode extends ElementNode {
         }
         return tableElement;
       },
-      element:
-        !isHTMLTableElement(element) && isHTMLElement(element)
-          ? element.querySelector('table')
-          : element,
+      element: exportedElement,
     };
   }
 

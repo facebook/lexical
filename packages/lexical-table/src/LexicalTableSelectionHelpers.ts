@@ -14,6 +14,7 @@ import invariant from '@lexical/internal/invariant';
 import {objectKlassEquals} from '@lexical/utils';
 import {
   $caretFromPoint,
+  $comparePointCaretNext,
   $createParagraphNode,
   $createRangeSelectionFromDom,
   $createTextNode,
@@ -21,6 +22,7 @@ import {
   $findMatchingParent,
   $getAdjacentChildCaret,
   $getChildCaret,
+  $getCommonAncestor,
   $getNearestNodeFromDOMNode,
   $getNodeByKey,
   $getNodeByKeyOrThrow,
@@ -1770,17 +1772,29 @@ function getCorner(
   return [colName, rowName];
 }
 
-function getCornerOrThrow(
+/**
+ * Resolve the corner of `rect` that the anchor sits on.
+ *
+ * `$computeTableCellRectBoundary` grows the rect until it contains every
+ * merged cell that straddles an edge, so the anchor is not guaranteed to be at
+ * a corner of the result — a cell merged across the rect's edge pushes that
+ * edge past the anchor. Fall back the same way {@link $extractRectCorners}
+ * does: to the corner opposite the focus, and finally to the top-left.
+ */
+function getAnchorCorner(
   rect: TableCellRectBoundary,
-  cellValue: TableMapValueType,
+  anchorCellValue: TableMapValueType,
+  focusCellValue: TableMapValueType,
 ): Corner {
-  const corner = getCorner(rect, cellValue);
-  invariant(
-    corner !== null,
-    'getCornerOrThrow: cell %s is not at a corner of rect',
-    cellValue.cell.getKey(),
-  );
-  return corner;
+  const anchorCorner = getCorner(rect, anchorCellValue);
+  if (anchorCorner) {
+    return anchorCorner;
+  }
+  const focusCorner = getCorner(rect, focusCellValue);
+  if (focusCorner) {
+    return oppositeCorner(focusCorner);
+  }
+  return ['minColumn', 'minRow'];
 }
 
 function oppositeCorner([colName, rowName]: Corner): Corner {
@@ -1863,7 +1877,7 @@ function $adjustFocusInDirection(
   );
   const spans = $computeTableCellRectSpans(tableMap, rect);
   const {topSpan, leftSpan, bottomSpan, rightSpan} = spans;
-  const anchorCorner = getCornerOrThrow(rect, anchorCellValue);
+  const anchorCorner = getAnchorCorner(rect, anchorCellValue, focusCellValue);
   const [focusColumn, focusRow] = oppositeCorner(anchorCorner);
   let fCol = rect[focusColumn];
   let fRow = rect[focusRow];
@@ -2095,6 +2109,27 @@ function $findNextTableCell<D extends CaretDirection>(
   return null;
 }
 
+/**
+ * True when the selection focus sits before `tableNode` in document order —
+ * the only side an ArrowDown can move the caret into the table from.
+ */
+function $isSelectionBeforeTable(
+  selection: null | BaseSelection,
+  tableNode: TableNode,
+): boolean {
+  if (!$isRangeSelection(selection)) {
+    return false;
+  }
+  const focusCaret = $caretFromPoint(selection.focus, 'next');
+  // A ChildCaret is ordered at the table's 'enter' (pre-order) position, so
+  // any caret strictly before it is outside of and above the table.
+  const tableCaret = $getChildCaret(tableNode, 'next');
+  return (
+    $getCommonAncestor(focusCaret.origin, tableCaret.origin) !== null &&
+    $comparePointCaretNext(focusCaret, tableCaret) < 0
+  );
+}
+
 function $handleArrowKey(
   editor: LexicalEditor,
   event: KeyboardEvent,
@@ -2282,7 +2317,17 @@ function $handleArrowKey(
         }
       }
     }
-    if (direction === 'down' && $isScrollableTablesActive(editor)) {
+    if (
+      direction === 'down' &&
+      $isScrollableTablesActive(editor) &&
+      // Only arm the workaround when ArrowDown could actually move the caret
+      // into the table. From a caret after the table (e.g. the block cursor
+      // below a trailing table) ArrowDown moves nothing, so the flag would
+      // survive to be consumed by an unrelated later selection change — an
+      // ArrowUp back into the last row would then be snapped to the first
+      // cell.
+      $isSelectionBeforeTable(selection, tableNode)
+    ) {
       // Enable Firefox workaround
       tableObservers.setShouldCheckSelectionForTable(tableNode.getKey());
     }

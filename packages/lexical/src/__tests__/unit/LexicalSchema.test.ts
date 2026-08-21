@@ -885,15 +885,39 @@ describe('review fixes', () => {
 });
 
 describe('numberValue accepts a stringified number', () => {
-  test('a string that reads as a finite number is converted', () => {
+  test('a string spelled as a JSON number is converted', () => {
     // Lexical writes numbers, but a hand-authored fixture, a converter or a
     // backend that stringified its numbers can hand one back as a string.
     const parse = numberValue(0);
     expect(parse('2')).toBe(2);
-    expect(parse(' 2 ')).toBe(2);
+    expect(parse('0')).toBe(0);
     expect(parse('1e3')).toBe(1000);
+    expect(parse('1E3')).toBe(1000);
+    expect(parse('1e-3')).toBe(0.001);
     expect(parse('2.5')).toBe(2.5);
     expect(parse('-4')).toBe(-4);
+    expect(parse('-0.5')).toBe(-0.5);
+  });
+
+  test('only the JSON grammar is read', () => {
+    // Number() would take all of these; JSON.stringify writes none of them, so
+    // they are not evidence of a number that was stringified.
+    const parse = numberValue(7);
+    for (const value of [
+      '0x10', // 16
+      '0b11', // 3
+      '0o17', // 15
+      '1_000', // NaN, but a valid numeric literal in source
+      '+1', // 1
+      '05', // 5
+      '.5', // 0.5
+      '5.', // 5
+      ' 2 ', // 2, leading/trailing whitespace ignored
+      '\n2', // 2
+      '2n', // NaN
+    ]) {
+      expect(parse(value)).toBe(7);
+    }
   });
 
   test('anything that does not read as a finite number is out of domain', () => {

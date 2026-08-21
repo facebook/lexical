@@ -263,17 +263,29 @@ export function stringValue(defaultValue = ''): SerializationSchema<string> {
 }
 
 /**
+ * The JSON number grammar, anchored, for reading a stringified number back as
+ * the number it spells. `Number()` alone is far more permissive than JSON:
+ * it reads `'0x10'` as 16, `'0b11'` as 3, `'Infinity'` as `Infinity`, `''` and
+ * `'  '` as 0, and ignores surrounding whitespace. None of those are shapes a
+ * JSON encoder produces, so none of them are evidence of a number that was
+ * stringified — they are out-of-domain input, and fall back to the default.
+ */
+const JSON_NUMBER = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
+
+/**
  * Build a {@link SerializationSchema} that returns `value` when it is a finite `number`,
  * otherwise returns `defaultValue` (`0` by default). `NaN`, `Infinity`, and
  * `-Infinity` are all treated as out of domain since they can not be
  * round-tripped through JSON.
  *
- * A string that reads as a finite number is accepted and converted, so a
- * document that stored `"120"` where Lexical writes `120` — a hand-authored
- * fixture, a converter, or a backend that stringified its numbers — keeps its
- * value instead of silently falling back to the default. The domain is still
+ * A string spelled as a JSON number is accepted and converted, so a document
+ * that stored `"120"` where Lexical writes `120` — a hand-authored fixture, a
+ * converter, or a backend that stringified its numbers — keeps its value
+ * instead of silently falling back to the default. The domain is still
  * numbers: that is what the schema reports and what parsing returns, a string
- * is only an input encoding of it.
+ * is only an input encoding of it. Only the JSON grammar is read, so notations
+ * that JSON itself can not produce (`"0x10"`, `"1_000"`, `"+1"`, `"Infinity"`)
+ * stay out of domain.
  *
  * @__NO_SIDE_EFFECTS__
  */
@@ -284,10 +296,8 @@ export function numberValue(
   const {min, max, integer} = options;
   return makeSchema(
     value => {
-      // `Number('')` and `Number(' ')` are 0, which would read blank as zero
-      // rather than as the absence of a value.
       const parsed =
-        typeof value === 'string' && value.trim() !== ''
+        typeof value === 'string' && JSON_NUMBER.test(value)
           ? Number(value)
           : value;
       return typeof parsed === 'number' &&

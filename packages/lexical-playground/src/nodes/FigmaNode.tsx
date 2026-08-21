@@ -25,7 +25,9 @@ import {objectValue, stringValue, withGetter} from 'lexical';
 import * as React from 'react';
 
 const figmaNodeSchema = /* @__PURE__ */ objectValue({
-  documentID: /* @__PURE__ */ withGetter(/* @__PURE__ */ stringValue(), '__id'),
+  documentID: /* @__PURE__ */ withGetter(/* @__PURE__ */ stringValue(), {
+    field: '__id',
+  }),
 });
 
 type FigmaComponentProps = Readonly<{

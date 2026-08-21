@@ -38,7 +38,7 @@ import {
 } from 'lexical';
 import {assert, describe, expect, expectTypeOf, test} from 'vitest';
 
-import {isSchemaDefault} from '../../LexicalSchema';
+import {isSchemaDefault, isSchemaField} from '../../LexicalSchema';
 import {initializeUnitTest} from '../utils';
 
 describe('LexicalSchema value schemas', () => {
@@ -566,7 +566,9 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
       expect(layered.getter).toBe('getA');
       expect(layered.setter).toBe('setA');
       // withField is a getter that reads the node's own field
-      expect(withField(stringValue(), '__foo').getter).toBe('__foo');
+      expect(withField(stringValue(), '__foo').getter).toEqual({
+        field: '__foo',
+      });
     });
   });
 });
@@ -776,8 +778,15 @@ describe('withField compiles to direct field access', () => {
     // A codegen pass emitting a specialized parser reads the accessor names
     // off the schema; the `__` prefix is what marks one as a field.
     const schema = withField(stringValue(), '__label');
-    expect(schema.getter).toBe('__label');
-    expect(schema.setter).toBe('__label');
+    // Both directions name the same field, and each says so explicitly rather
+    // than leaving the kind to be inferred from the name.
+    expect(schema.getter).toEqual({field: '__label'});
+    expect(schema.setter).toEqual({field: '__label'});
+    expect(isSchemaField(schema.getter)).toBe(true);
+    // A method name is a plain string, so the two can never be confused.
+    expect(isSchemaField(withGetter(stringValue(), 'getLabel').getter)).toBe(
+      false,
+    );
   });
 });
 
@@ -1106,7 +1115,7 @@ describe('a misspelled field name is caught in both directions', () => {
         json: objectValue({
           label: withAccessors(stringValue(), {
             getter: null,
-            setter: '__lable',
+            setter: {field: '__lable'},
           }),
         }),
       });

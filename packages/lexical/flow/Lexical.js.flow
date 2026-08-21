@@ -1865,22 +1865,26 @@ declare export function transformValue<In, Out>(
 declare export function rawValue<T>(): SerializationSchema<T | void>;
 declare export function arrayValue<T>(item: SerializationSchema<T>): SerializationSchema<T[]>;
 declare export function objectValue<T>(fields: SerializationSchemaShape<T>): SerializationSchema<T>;
+// A node field, read and written directly rather than through a method.
+export type SchemaField = {readonly field: string};
+// One direction of a schema field: a method name, a node field, or null for a
+// direction that is deliberately unsupported.
+export type SchemaAccessor = string | SchemaField | null;
+export type SchemaAccessors = {
+  readonly getter?: SchemaAccessor,
+  readonly setter?: SchemaAccessor,
+};
+declare export function isSchemaField(
+  accessor: SchemaAccessor | void,
+): implies accessor is SchemaField;
 declare export function withSetter<T>(
   schema: SerializationSchema<T>,
-  setter: string | null,
+  setter: SchemaAccessor,
 ): SerializationSchema<T>;
-export type SchemaAccessors = {
-  readonly getter?: string | null,
-  readonly setter?: string | null,
-};
 declare export function withGetter<T>(
   schema: SerializationSchema<T>,
-  getter: string | null,
+  getter: SchemaAccessor,
 ): SerializationSchema<T>;
-// The field name must be `__`-prefixed, which is what marks the property as a
-// node field read and written directly rather than through accessor methods.
-// Flow has no template literal type to say so — TypeScript spells this
-// `` `__${string}` `` — so the constraint is only enforced at runtime here.
 declare export function withField<T>(
   schema: SerializationSchema<T>,
   field: string,

@@ -93,18 +93,20 @@ export interface SerializationSchema<T> {
    * When omitted, the setter name defaults to `set<Prop>` for the property this
    * schema is bound to in an {@link objectValue} (e.g. `foo` → `setFoo`). Use
    * {@link withSetter} to record a name that doesn't follow that convention
-   * (e.g. TextNode's `text` → `setTextContent`).
+   * (e.g. TextNode's `text` → `setTextContent`), or a {@link SchemaField} to
+   * write the value straight to a node field.
    */
-  readonly setter?: string | null;
+  readonly setter?: SchemaAccessor;
   /**
    * The name of the node getter that reads this property's value when the base
    * {@link LexicalNode.exportJSON} walks a node's `json` schema. When omitted,
    * the getter name defaults to `get<Prop>` (e.g. `foo` → `getFoo`). Use
    * {@link withGetter} to record a name that doesn't follow that convention
-   * (e.g. TextNode's `text` → `getTextContent`). A getter that returns
+   * (e.g. TextNode's `text` → `getTextContent`), or a {@link SchemaField} to
+   * read the value straight from a node field. A getter that returns
    * `undefined` omits the property from the exported JSON.
    */
-  readonly getter?: string | null;
+  readonly getter?: SchemaAccessor;
   /**
    * Whether two values of this schema's domain say the same thing, for the
    * comparisons that treat a value as absent: compaction dropping a property
@@ -156,19 +158,48 @@ export function isSchemaDefault<T>(
 }
 
 /**
+ * Declares that a serialized property *is* a node field, read and written
+ * directly rather than through an accessor method. The kind is stated rather
+ * than inferred from the name: a field and a method are different things to
+ * reach for, and deciding between them by looking at the string would make a
+ * node's field naming part of this API's contract.
+ */
+export interface SchemaField {
+  readonly field: string;
+}
+
+/**
+ * One direction of a {@link SerializationSchema} field: a method name, a
+ * {@link SchemaField} naming a node field, or `null` for a direction that is
+ * deliberately unsupported.
+ */
+export type SchemaAccessor = string | SchemaField | null;
+
+/**
  * The node accessors a {@link SerializationSchema} field is applied through.
  *
- * A name resolves to a method on the node (or, for a getter, to the node's own
- * `__`-prefixed field). `null` states that the direction is deliberately
+ * A string resolves to a method on the node; `{field}` resolves to one of the
+ * node's own fields. `null` states that the direction is deliberately
  * unsupported — an export-only property computed from others (`setter: null`,
  * as ListNode's `tag` is derived from `listType`) or an import-only one
  * (`getter: null`). Leaving a direction undefined uses the conventional
  * `get<Prop>`/`set<Prop>` name, which must exist: a name that resolves to
- * nothing would silently drop the property, so it fails in DEV instead.
+ * nothing would silently drop the property, so it fails at registration.
+ *
+ * The two directions are independent, and a node may reasonably mix them:
+ * TableCellNode reads `headerState` straight off the field but applies it
+ * through `setHeaderStyles`, which supplies a default mask.
  */
 export interface SchemaAccessors {
-  readonly getter?: string | null;
-  readonly setter?: string | null;
+  readonly getter?: SchemaAccessor;
+  readonly setter?: SchemaAccessor;
+}
+
+/** Whether an accessor names a node field rather than a method. */
+export function isSchemaField(
+  accessor: SchemaAccessor | undefined,
+): accessor is SchemaField {
+  return typeof accessor === 'object' && accessor !== null;
 }
 
 /** A {@link SerializationSchema} for an unknown type, used where the type is not relevant. */
@@ -589,7 +620,7 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
 function unionAccessors(
   members: readonly AnySerializationSchema[],
 ): SchemaAccessors {
-  const accessors: {getter?: string | null; setter?: string | null} = {};
+  const accessors: {getter?: SchemaAccessor; setter?: SchemaAccessor} = {};
   for (const member of members) {
     if (accessors.getter === undefined) {
       accessors.getter = member.getter;
@@ -806,7 +837,7 @@ export function objectValue<T extends {readonly [key: string]: unknown}>(
  */
 export function withSetter<T>(
   schema: SerializationSchema<T>,
-  setter: string | null,
+  setter: SchemaAccessor,
 ): SerializationSchema<T> {
   return withAccessors(schema, {setter});
 }
@@ -832,15 +863,14 @@ export function withSetter<T>(
  */
 export function withGetter<T>(
   schema: SerializationSchema<T>,
-  getter: string | null,
+  getter: SchemaAccessor,
 ): SerializationSchema<T> {
   return withAccessors(schema, {getter});
 }
 
 /**
  * Return a copy of `schema` that declares the serialized property to *be* a
- * node field (always `__`-prefixed, per the convention every Lexical node
- * field follows) rather than a pair of accessor methods.
+ * node field rather than a pair of accessor methods.
  *
  * This is the fast path in both directions: exporting reads the field, and
  * importing assigns it, with no method call on either side — and no version
@@ -848,9 +878,10 @@ export function withGetter<T>(
  * construction and the node being exported is one the walk already resolved
  * from the EditorState. Because the name is recorded on the schema, an introspecting
  * tool (a codegen pass emitting a specialized parser for a hot node type) can
- * see that a property is a plain field and compile it to a direct assignment;
- * the `__` prefix is what marks an accessor name as a field rather than a
- * method.
+ * see that a property is a plain field and compile it to a direct assignment.
+ * Use {@link withAccessors} with a `{field}` on one side only when the two
+ * directions differ — reading the field but writing through a method that
+ * normalizes, as TableCellNode's `headerState` does.
  *
  * The trade-off is that a field access is exactly that: normalization,
  * validation or bookkeeping a `set<Prop>` method would do is skipped, and a
@@ -868,9 +899,10 @@ export function withGetter<T>(
  */
 export function withField<T>(
   schema: SerializationSchema<T>,
-  field: `__${string}`,
+  field: string,
 ): SerializationSchema<T> {
-  return withAccessors(schema, {getter: field, setter: field});
+  const accessor: SchemaField = {field};
+  return withAccessors(schema, {getter: accessor, setter: accessor});
 }
 
 /**

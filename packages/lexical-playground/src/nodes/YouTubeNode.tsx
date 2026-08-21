@@ -29,7 +29,9 @@ import {
 import * as React from 'react';
 
 const youTubeNodeSchema = /* @__PURE__ */ objectValue({
-  videoID: /* @__PURE__ */ withGetter(/* @__PURE__ */ stringValue(), '__id'),
+  videoID: /* @__PURE__ */ withGetter(/* @__PURE__ */ stringValue(), {
+    field: '__id',
+  }),
 });
 
 type YouTubeComponentProps = Readonly<{

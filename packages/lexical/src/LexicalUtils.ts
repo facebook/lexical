@@ -86,7 +86,11 @@ import {
 } from './LexicalNode';
 import {$setState, type AnyStateConfig} from './LexicalNodeState';
 import {$normalizeSelection} from './LexicalNormalization';
-import {type AnySerializationSchema, isSchemaDefault} from './LexicalSchema';
+import {
+  type AnySerializationSchema,
+  isSchemaDefault,
+  isSchemaField,
+} from './LexicalSchema';
 import {
   $clampRangeSelectionToSlotFrame,
   type BaseSelection,
@@ -3473,7 +3477,8 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
   // accessor names included — TabNode repeats `getter: 'getTextContent'` for
   // that reason.
   for (const [key, schema] of getComposedSchema(klass).fieldsDerivedFirst) {
-    if (schema.getter === null) {
+    const declared = schema.getter;
+    if (declared === null) {
       // Declared import-only; the property is written by an exportJSON
       // override, or not written at all.
       continue;
@@ -3481,9 +3486,9 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
     // `=== undefined`, not `||`: an empty recorded name is a mistake, not a
     // request for the conventional one, and resolving it silently would apply
     // some other accessor that happens to exist.
-    const getterName =
-      schema.getter === undefined ? defaultGetterName(key) : schema.getter;
-    if (getterName.startsWith('__')) {
+    const getter = declared === undefined ? defaultGetterName(key) : declared;
+    if (isSchemaField(getter)) {
+      const getterName = getter.field;
       // withField: the property *is* this node field, so reading it is a
       // property access — no method call, and no getLatest() (see
       // $writeJSONGetters). The field only exists on a constructed node, so
@@ -3507,20 +3512,20 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
       });
       continue;
     }
-    const getter = prototype[getterName];
+    const method = prototype[getter];
     // A field the class cannot read would be silently missing from every
     // export — data loss, not a degraded experience — so this fails in every
     // build, not only in DEV. It runs once per class at registration.
     invariant(
-      typeof getter === 'function',
+      typeof method === 'function',
       '%s: json schema field "%s" has no getter %s(); name one with withGetter or declare {getter: null} if it is deliberately not exported',
       klass.name,
       key,
-      getterName,
+      getter,
     );
     fields.set(key, {
       derived: schema.setter === null,
-      getter: getter as (this: LexicalNode) => unknown,
+      getter: method as (this: LexicalNode) => unknown,
       isDefault: value => isSchemaDefault(schema, value),
       key,
       kind: 'method',
@@ -3648,15 +3653,16 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
   // Applied ancestors-first: a base property is set before the subclass
   // properties that may depend on it.
   for (const [key, schema] of fieldsBaseFirst) {
-    if (schema.setter === null) {
+    const declared = schema.setter;
+    if (declared === null) {
       // Declared export-only: the value is derived from other properties on
       // the way in (ListNode's `tag` follows from `listType`).
       continue;
     }
     // `=== undefined` rather than `||`, as in the getter mirror.
-    const setterName =
-      schema.setter === undefined ? defaultSetterName(key) : schema.setter;
-    if (setterName.startsWith('__')) {
+    const setter = declared === undefined ? defaultSetterName(key) : declared;
+    if (isSchemaField(setter)) {
+      const setterName = setter.field;
       // withField: the property *is* this node field, so applying it is an
       // assignment — no method call, and no getWritable(), since the node
       // $applyJSONSetters walks is writable by construction.
@@ -3674,22 +3680,22 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
       fields.set(key, {field: setterName, key, kind: 'ownField', schema});
       continue;
     }
-    const setter = prototype[setterName];
+    const method = prototype[setter];
     // A field the class cannot apply would be silently dropped from every
     // import — it exports but never comes back — so, like the getter mirror,
     // this fails in every build rather than only in DEV.
     invariant(
-      typeof setter === 'function',
+      typeof method === 'function',
       '%s: json schema field "%s" has no setter %s(); name one with withSetter or declare {setter: null} if it is derived on import',
       klass.name,
       key,
-      setterName,
+      setter,
     );
     fields.set(key, {
       key,
       kind: 'field',
       schema,
-      setter: setter as (this: LexicalNode, value: unknown) => LexicalNode,
+      setter: method as (this: LexicalNode, value: unknown) => LexicalNode,
     });
   }
   // Flat NodeStates are serialized at the top level alongside schema fields

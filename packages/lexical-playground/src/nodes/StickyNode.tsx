@@ -53,10 +53,14 @@ const stickyNodeSchema = /* @__PURE__ */ objectValue({
   ),
   color: /* @__PURE__ */ withGetter(
     /* @__PURE__ */ enumValue(['yellow', 'pink']),
-    '__color',
+    {field: '__color'},
   ),
-  xOffset: /* @__PURE__ */ withGetter(/* @__PURE__ */ numberValue(), '__x'),
-  yOffset: /* @__PURE__ */ withGetter(/* @__PURE__ */ numberValue(), '__y'),
+  xOffset: /* @__PURE__ */ withGetter(/* @__PURE__ */ numberValue(), {
+    field: '__x',
+  }),
+  yOffset: /* @__PURE__ */ withGetter(/* @__PURE__ */ numberValue(), {
+    field: '__y',
+  }),
 });
 
 export type SerializedStickyNode = Spread<

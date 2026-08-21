@@ -63,7 +63,7 @@ const tableCellNodeSchema = /* @__PURE__ */ objectValue({
   // mask) rather than the conventional set<Prop> name.
   headerState: /* @__PURE__ */ withAccessors(
     /* @__PURE__ */ numberValue(TableCellHeaderStates.NO_STATUS),
-    {getter: '__headerState', setter: 'setHeaderStyles'},
+    {getter: {field: '__headerState'}, setter: 'setHeaderStyles'},
   ),
   rowSpan: /* @__PURE__ */ numberValue(1, {integer: true, min: 1}),
   // The domain exportJSON already enforces via isValidVerticalAlign; anything

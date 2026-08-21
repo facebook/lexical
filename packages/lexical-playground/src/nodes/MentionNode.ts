@@ -32,10 +32,9 @@ const FORMAT_WRAPPER_TAGS: readonly (readonly [TextFormatType, string])[] = [
 ];
 
 const mentionNodeSchema = /* @__PURE__ */ objectValue({
-  mentionName: /* @__PURE__ */ withGetter(
-    /* @__PURE__ */ stringValue(),
-    '__mention',
-  ),
+  mentionName: /* @__PURE__ */ withGetter(/* @__PURE__ */ stringValue(), {
+    field: '__mention',
+  }),
 });
 
 export type SerializedMentionNode = Spread<

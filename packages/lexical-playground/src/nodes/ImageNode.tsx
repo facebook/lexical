@@ -149,7 +149,7 @@ const imageNodeSchema = /* @__PURE__ */ objectValue({
   // constructor's default" rather than as a value to store.
   maxWidth: /* @__PURE__ */ withGetter(
     /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
-    '__maxWidth',
+    {field: '__maxWidth'},
   ),
   showCaption: /* @__PURE__ */ withField(
     /* @__PURE__ */ booleanValue(),

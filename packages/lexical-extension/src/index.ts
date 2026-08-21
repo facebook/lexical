@@ -39,6 +39,7 @@ export {
   getPeerDependencyFromEditor,
   getPeerDependencyFromEditorOrThrow,
 } from './getPeerDependencyFromEditor';
+export {type HMRConfig, HMRExtension, type HotContext} from './HMRExtension';
 export {
   $createHorizontalRuleNode,
   $isHorizontalRuleNode,

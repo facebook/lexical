@@ -47,6 +47,6 @@ export default function lexicalMonorepoPlugin(): Plugin[] {
     // `dist` instead: those bundles are already annotated and the transform
     // is idempotent. `inline` is safe to turn on here because the Lexical
     // being built is always this checkout's.
-    pureAnnotations({inline: true}),
+    pureAnnotations({inline: true, strict: true}),
   ];
 }

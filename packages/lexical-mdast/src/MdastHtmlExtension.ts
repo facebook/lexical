@@ -517,9 +517,7 @@ const HtmlChildPlaceholderRule = defineImportRule({
     }
     return [...batch];
   },
-  match: /* @__PURE__ */ sel
-    .tag('template', 'span')
-    .attr('data-mdast-child', true),
+  match: sel.tag('template', 'span').attr('data-mdast-child', true),
   name: '@lexical/mdast/html-child-placeholder',
 });
 
@@ -612,7 +610,7 @@ const HtmlInlineRootRule = defineImportRule({
     ctx.get(htmlInlineResult).nodes = ctx.$importChildren(el);
     return [];
   },
-  match: /* @__PURE__ */ sel.tag('span').attr('data-mdast-inline-root', true),
+  match: sel.tag('span').attr('data-mdast-inline-root', true),
   name: '@lexical/mdast/html-inline-root',
 });
 

@@ -90,8 +90,22 @@ a call inside a function body, where the build never injects one — are left
 alone.
 
 When adding a new factory of this kind, annotate its definition with
-`@__NO_SIDE_EFFECTS__` and add its name to `PURE_FACTORY_FUNCTIONS` in
-`packages/lexical-pure-annotations/src/LexicalPureAnnotations.mjs`.
+`@__NO_SIDE_EFFECTS__`. That alone is enough for calls in the same package to
+be annotated; add its name to `PURE_FACTORY_FUNCTIONS` in
+`packages/lexical-pure-annotations/src/LexicalPureAnnotations.mjs` so that
+calls in code that imports it by package name are too. An object whose
+methods build values and touch nothing else (like `@lexical/html`'s `sel`) is
+marked `@lexical-pure-namespace` instead, so that `sel.tag('p')` is annotated
+the way a factory call is.
+
+The build runs with `strict`, which fails on a call inside one of these
+definitions that nothing has established is side-effect free — such a call
+pins the definition into every bundle that imports the module, however well
+annotated the definition itself is. If it stops you, either make the call
+lazy (a `nodes: () => [...]` callback is not evaluated at module scope), or
+declare the function side-effect free so its calls are annotated too. A
+third-party factory that cannot be declared is annotated by hand at the call
+site, which is what the remaining hand-written annotations in the tree are.
 
 A factory whose body is a trivial expression over its own arguments (like
 `safeCast`, `defineExtension`, or `configExtension`) is additionally marked

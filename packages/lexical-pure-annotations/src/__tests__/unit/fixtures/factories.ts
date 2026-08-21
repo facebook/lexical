@@ -36,3 +36,19 @@ export function defineOverloadedThing(thing: number): number;
 export function defineOverloadedThing(thing: unknown): unknown {
   return thing;
 }
+
+/**
+ * An object whose methods build values and touch nothing else, the way
+ * `@lexical/html`'s `sel` does. The marker is what lets a module that
+ * imports it relatively have its `pureThings.of(...)` calls annotated.
+ *
+ * @lexical-pure-namespace
+ */
+export const pureThings = {
+  named(name: string): {name: string} {
+    return {name};
+  },
+  of<T>(value: T): {value: T} {
+    return {value};
+  },
+};

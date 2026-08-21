@@ -13,7 +13,8 @@
 // guaranteed to put it back.
 import {
   PURE_FACTORY_FUNCTIONS,
-  pureFactoryNames,
+  pureCallNames,
+  rootObjectName,
 } from '../../../lexical-pure-annotations/src/LexicalPureAnnotations.mjs';
 
 /**
@@ -61,8 +62,8 @@ const rule = {
     const sourceCode = context.sourceCode;
     const [options] = context.options;
     const functions = (options && options.functions) || PURE_FACTORY_FUNCTIONS;
-    /** @type {undefined | ReadonlySet<string>} */
-    let factoryNames;
+    /** @type {undefined | {functions: ReadonlySet<string>, namespaces: ReadonlySet<string>}} */
+    let resolved;
     /**
      * The names the build would annotate in this module, resolved by the
      * transform itself: imported from a Lexical package, declared here as
@@ -72,29 +73,53 @@ const rule = {
      *
      * @returns {ReadonlySet<string>}
      */
-    function resolvedFactoryNames() {
-      if (factoryNames === undefined) {
+    function resolvedNames() {
+      if (resolved === undefined) {
         try {
-          factoryNames = pureFactoryNames(sourceCode.getText(), {
+          resolved = pureCallNames(sourceCode.getText(), {
             filename: context.filename,
             functions,
           });
         } catch {
           // Syntax the transform's parser does not cover: say nothing rather
           // than remove an annotation on a guess.
-          factoryNames = new Set();
+          resolved = {functions: new Set(), namespaces: new Set()};
         }
       }
-      return factoryNames;
+      return resolved;
+    }
+
+    /**
+     * The build annotates the outermost call of a chain, and one annotation
+     * there covers the whole chain, so only that call's annotation is
+     * redundant — and reporting the inner ones would report the same comment
+     * more than once.
+     *
+     * @param {import('eslint').Rule.Node} node
+     * @returns {boolean}
+     */
+    function isOutermostCall(node) {
+      const {parent} = node;
+      return !(
+        parent &&
+        parent.type === 'MemberExpression' &&
+        parent.object === node &&
+        parent.parent &&
+        parent.parent.type === 'CallExpression' &&
+        parent.parent.callee === parent
+      );
     }
 
     return {
       CallExpression(node) {
         const {callee} = node;
-        if (callee.type !== 'Identifier') {
+        if (
+          callee.type !== 'Identifier' &&
+          callee.type !== 'MemberExpression'
+        ) {
           return;
         }
-        if (!isModuleScopeEvaluation(node)) {
+        if (!isModuleScopeEvaluation(node) || !isOutermostCall(node)) {
           return;
         }
         const comments = sourceCode.getCommentsBefore(node);
@@ -106,11 +131,19 @@ const rule = {
         ) {
           return;
         }
-        if (!resolvedFactoryNames().has(callee.name)) {
+        const {functions: factories, namespaces} = resolvedNames();
+        const root =
+          callee.type === 'Identifier' ? callee.name : rootObjectName(callee);
+        if (
+          root === null ||
+          !(callee.type === 'Identifier'
+            ? factories.has(root)
+            : namespaces.has(root))
+        ) {
           return;
         }
         context.report({
-          data: {name: callee.name},
+          data: {name: root},
           fix(fixer) {
             // Everything from the annotation up to the call is the comment
             // and the whitespace after it.

@@ -32,6 +32,28 @@ Calls inside function bodies, class fields, and static blocks are left alone —
 they are not evaluated when the module is initialized, so an annotation there
 has no effect on tree-shaking.
 
+## Guaranteeing a definition can be dropped
+
+An annotated definition is only droppable when everything it is built from is
+too, so a single unannotated call in its arguments quietly pins it into every
+bundle that imports the module. With `strict: true` that is a build error
+naming the call rather than something you find later in a bundle analyzer:
+
+```
+@lexical/pure-annotations: 1 call(s) evaluated inside a definition in
+src/MdastFootnoteExtension.ts are not known to be side-effect free, so the
+definition cannot be tree-shaken:
+  1145:25 gfmFootnoteFromMarkdown(...) inside defineExtension(...)
+Make the call lazy, or declare the function side-effect free
+(@__NO_SIDE_EFFECTS__ plus the transform's `functions`/`namespaces` options)
+so that its calls are annotated too.
+```
+
+Calls that only run later (a `nodes: () => [...]` callback, a `register`
+method body) are not counted, and neither are the built-ins every bundler
+already knows are pure (`new Map(...)`, `new Set(...)`, `Object`, `Symbol`,
+…). Lexical's own build runs with `strict` on.
+
 ## Usage
 
 ### Vite
@@ -88,11 +110,21 @@ in the module and annotates the call when that binding is:
   `PURE_FACTORY_FUNCTIONS` is declared `@__NO_SIDE_EFFECTS__` in those
   packages, so the import is evidence enough. Aliased imports
   (`import {defineExtension as define}`) are resolved too;
-- **declared in the same module with `@__NO_SIDE_EFFECTS__`** — how the
-  factory modules themselves are written; or
-- **imported from a relative module that declares it `@__NO_SIDE_EFFECTS__`**
-  — the imported file is read and parsed to check (turn this off with
-  `relativeImports: false`).
+- **declared in the same module with `@__NO_SIDE_EFFECTS__`**, or **imported
+  from a relative module that declares it that way** — the imported file is
+  read and parsed to check (turn this off with `relativeImports: false`).
+  Such a declaration is evidence on its own, so a factory of your own does
+  not have to be named in `functions`: mark it and its module-scope calls are
+  annotated; or
+- **a method of a pure namespace** — an object whose methods build values and
+  touch nothing else, like `@lexical/html`'s `sel`, so that
+  `sel.tag('span').attr('data-x', true)` is annotated the way a factory call
+  is. The names are `PURE_NAMESPACES` (configurable with `namespaces`) when
+  imported from a Lexical package, and any object marked
+  `@lexical-pure-namespace` where it is declared, including through a
+  relative import or a local alias. Only the outermost call of a chain is
+  annotated — rollup, terser and esbuild all drop the whole chain from that
+  one.
 
 Anything else is left alone. Your own `safeCast` from `./utils`, or a
 `createCommand` from some other library, will not be annotated just because it
@@ -167,7 +199,9 @@ return what the table claims.
 | --- | --- | --- |
 | `inline` | `false` | Replace calls to the trivial factories with the literal they would have returned (see above). |
 | `functions` | `PURE_FACTORY_FUNCTIONS` | Names of the factories whose module-scope calls are annotated. Pass your own list (or `[...PURE_FACTORY_FUNCTIONS, 'myFactory']`) to cover factories of your own. |
+| `namespaces` | `PURE_NAMESPACES` | Names of objects whose method calls are annotated (see above). |
 | `sources` | `[/^lexical$/, /^@lexical\//]` | `RegExp` (or array) of module specifiers whose exports are trusted to be the factories without reading them. |
+| `strict` | `false` | Throw when a call evaluated inside one of the definitions is not known to be side-effect free (see above). |
 | `relativeImports` | `true` | Whether to read relatively imported modules to look for a `@__NO_SIDE_EFFECTS__` declaration. |
 | `include` | every `.js`/`.jsx`/`.ts`/`.tsx`/`.mjs`/`.cjs`/`.mts`/`.cts` module | `RegExp` (or array) matched against the module id with any query string removed. |
 | `exclude` | none | `RegExp` (or array) of module ids to skip. |

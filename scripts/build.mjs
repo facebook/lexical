@@ -368,7 +368,11 @@ async function build(
       // expression over their arguments with that expression. It is off by
       // default in the published plugin because it reproduces those bodies,
       // but here the Lexical being built is this one.
-      pureAnnotations({inline: true}),
+      //
+      // `strict` fails the build on a call inside one of those definitions
+      // that nothing has established is side-effect free, because such a
+      // call pins the definition into every bundle that imports the module.
+      pureAnnotations({inline: true, strict: true}),
       commonjs(),
       json(),
       replace(

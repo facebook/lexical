@@ -50,6 +50,12 @@ export interface TransformPureAnnotationsOptions {
    * publishes.
    */
   inline?: boolean;
+  /**
+   * Imported objects whose method calls are side-effect free, so that
+   * `sel.tag('p').attr('data-x', true)` is annotated the way a call to a
+   * factory function is. Defaults to {@link PURE_NAMESPACES}.
+   */
+  namespaces?: Iterable<string>;
   /** Extra `@babel/parser` plugins to parse the module with. */
   parserPlugins?: readonly unknown[];
   /**
@@ -67,6 +73,14 @@ export interface TransformPureAnnotationsOptions {
    * `__NO_SIDE_EFFECTS__`.
    */
   sources?: RegExp | readonly RegExp[];
+  /**
+   * Throw when a call evaluated inside one of the definitions is not known
+   * to be side-effect free. Such a call pins the definition into every
+   * bundle that imports the module, however well annotated the definition
+   * itself is, so this turns a silent loss of tree-shaking into a build
+   * error naming the call. Off by default.
+   */
+  strict?: boolean;
 }
 
 export interface PureAnnotationsResult {
@@ -121,6 +135,14 @@ export const PURE_FACTORY_FUNCTIONS: readonly string[] =
   impl.PURE_FACTORY_FUNCTIONS;
 
 /**
+ * Objects imported from a Lexical package whose method calls are
+ * side-effect free, so that a module-scope `sel.tag('p')` is annotated the
+ * way a factory call is. Only the outermost call of a chain is annotated:
+ * rollup, terser and esbuild all drop the whole chain from that one.
+ */
+export const PURE_NAMESPACES: readonly string[] = impl.PURE_NAMESPACES;
+
+/**
  * The factories that `inline` replaces with a literal, and the form each one
  * takes: `identity` returns its single argument and `args` returns all of its
  * arguments as an array. Each is marked `@lexical-inline <form>` where it is
@@ -143,17 +165,22 @@ export function transformPureAnnotations(
 
 /**
  * The local names in `code` whose module-scope calls the transform would
- * annotate: imported from a Lexical package, declared in the module as
- * side-effect free, or imported from a relative module that declares it that
- * way. For tooling that needs the same decision without rewriting the module
- * — a lint rule that removes a hand-written annotation only where the build
- * puts one back. Throws on source it cannot parse.
+ * annotate: `functions` are called directly, `namespaces` are objects whose
+ * method calls are annotated. A name qualifies by being imported from a
+ * Lexical package, declared in the module as side-effect free, or imported
+ * from a relative module that declares it that way. For tooling that needs
+ * the same decision without rewriting the module — a lint rule that removes
+ * a hand-written annotation only where the build puts one back. Throws on
+ * source it cannot parse.
  */
-export function pureFactoryNames(
+export function pureCallNames(
   code: string,
   options?: TransformPureAnnotationsOptions,
-): ReadonlySet<string> {
-  return impl.pureFactoryNames(code, options);
+): {
+  functions: ReadonlySet<string>;
+  namespaces: ReadonlySet<string>;
+} {
+  return impl.pureCallNames(code, options);
 }
 
 /**

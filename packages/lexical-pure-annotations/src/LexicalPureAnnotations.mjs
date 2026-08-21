@@ -88,8 +88,42 @@ const INLINE_FACTORIES = new Map([
 const INLINE_MARKER_RE =
   /^[^\S\n]*\*?[^\S\n]*@lexical-inline(?:[^\S\n]+(\S+))?[^\S\n]*$/m;
 
+/**
+ * An error the author has to act on — a malformed marker, or a call this
+ * transform cannot prove is safe — as opposed to source it cannot parse.
+ * The plugin passes an unparseable module through with a warning; these it
+ * rethrows, because ignoring them would silently produce the bundle the
+ * author was trying to avoid.
+ */
+export class PureAnnotationsError extends Error {
+  /** @param {string} message */
+  constructor(message) {
+    super(message);
+    this.name = 'PureAnnotationsError';
+  }
+}
+
+// The tag that declares an object's methods side-effect free, so that a
+// namespace reached through a relative import or a local alias — as
+// @lexical/html's own modules reach `selBase` — is recognized without
+// having to be listed in the table above.
+const NAMESPACE_MARKER_RE =
+  /^[^\S\n]*\*?[^\S\n]*@lexical-pure-namespace[^\S\n]*$/m;
+
 /** The forms a `@lexical-inline` marker may name. */
 const INLINE_FORMS = new Set(['args', 'identity']);
+
+/**
+ * Imported objects whose method calls are side-effect free, so that a
+ * module-scope call like `sel.tag('p').attr('data-x', true)` is annotated
+ * the same way a call to a factory function is. Only the outermost call of
+ * a chain is annotated: rollup, terser and esbuild all drop the whole chain
+ * from that one annotation.
+ *
+ * As with the factories, the name is only trusted when it is imported from
+ * a Lexical package.
+ */
+export const PURE_NAMESPACES = ['sel'];
 
 /**
  * The form each inlinable factory is replaced with, for the tests that keep
@@ -137,6 +171,9 @@ const DEFAULT_SOURCES = [/^lexical$/, /^@lexical\//];
 /** Matches the annotation a definition uses to declare itself pure. */
 const NO_SIDE_EFFECTS_RE = /[#@]__NO_SIDE_EFFECTS__/;
 
+/** An import of a module next to this one, which may declare a namespace. */
+const RELATIVE_IMPORT_RE = /\bfrom\s*['"]\./;
+
 /**
  * Expression types that read the same with or without the parentheses the
  * call they replace was written with: they are a single delimited token, so
@@ -177,6 +214,27 @@ const RESOLVE_EXTENSIONS = [
  * initialized. A `__PURE__` annotation only affects tree-shaking of
  * module-scope evaluation, so the walk never descends into these.
  */
+/**
+ * Built-ins whose construction or call has no side effects. Bundlers know
+ * this for themselves (rollup's known globals, esbuild's primitive
+ * handling), so requiring an annotation on `new Map([...])` inside a
+ * definition would be noise.
+ */
+const PURE_GLOBALS = new Set([
+  'Array',
+  'BigInt',
+  'Boolean',
+  'Map',
+  'Number',
+  'Object',
+  'RegExp',
+  'Set',
+  'String',
+  'Symbol',
+  'WeakMap',
+  'WeakSet',
+]);
+
 const DEFERRED_TYPES = new Set([
   'ArrowFunctionExpression',
   'ClassAccessorProperty',
@@ -263,22 +321,48 @@ function hasPureAnnotation(code, offset) {
 }
 
 /**
+ * The identifier a member-expression callee is rooted at, so that every call
+ * in `sel.tag('p').attr('x')` resolves to `sel`.
+ *
+ * @param {any} callee
+ * @returns {null | string} the name, or null when the callee is not rooted
+ *   at a plain identifier
+ */
+export function rootObjectName(callee) {
+  for (let node = callee; node; ) {
+    if (node.type === 'Identifier') {
+      return node.name;
+    } else if (node.type === 'MemberExpression') {
+      node = node.object;
+    } else if (node.type === 'CallExpression') {
+      node = node.callee;
+    } else {
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
  * Walk every node that is evaluated when the module is initialized, calling
- * `visitor` with each module-scope call to one of `functions` and where it
- * sits: `discarded` when the call's value is thrown away (it is the whole of
- * an expression statement), and `statementStart` when it begins one, both of
- * which constrain what it can be replaced with.
+ * `visitor` with each module-scope call to one of the factories, or to a
+ * method of one of the namespaces, and where it sits: `discarded` when the
+ * call's value is thrown away (it is the whole of an expression statement),
+ * and `statementStart` when it begins one, both of which constrain what it
+ * can be replaced with. `namespace` marks a method call, which is annotated
+ * but never replaced.
  *
  * @param {any} node
- * @param {ReadonlyMap<string, any> | ReadonlySet<string>} functions
- * @param {(node: any, position: {discarded: boolean, statementStart: boolean}) => void} visitor
+ * @param {{functions: ReadonlyMap<string, any> | ReadonlySet<string>, namespaces?: ReadonlySet<string>}} names
+ * @param {(node: any, position: {discarded: boolean, namespace?: boolean, statementStart: boolean}) => void} visitor
  * @param {{discarded: boolean, statementStarts: Set<number>}} [state]
  */
-function visitModuleScopeCalls(node, functions, visitor, state) {
+function visitModuleScopeCalls(node, names, visitor, state) {
+  const {functions, namespaces} = names;
   const walkState = state || {discarded: false, statementStarts: new Set()};
   if (Array.isArray(node)) {
     for (const child of node) {
-      visitModuleScopeCalls(child, functions, visitor, {
+      visitModuleScopeCalls(child, names, visitor, {
         discarded: false,
         statementStarts: walkState.statementStarts,
       });
@@ -298,22 +382,25 @@ function visitModuleScopeCalls(node, functions, visitor, state) {
     // block, whatever it is nested in.
     walkState.statementStarts.add(node.expression.start);
   }
-  if (
-    node.type === 'CallExpression' &&
-    node.callee &&
-    node.callee.type === 'Identifier' &&
-    functions.has(node.callee.name)
-  ) {
-    visitor(node, {
+  if (node.type === 'CallExpression' && node.callee) {
+    const position = {
       discarded: walkState.discarded,
       statementStart: walkState.statementStarts.has(node.start),
-    });
+    };
+    if (node.callee.type === 'Identifier' && functions.has(node.callee.name)) {
+      visitor(node, position);
+    } else if (namespaces !== undefined && namespaces.size > 0) {
+      const root = rootObjectName(node.callee);
+      if (root !== null && namespaces.has(root)) {
+        visitor(node, {...position, namespace: true});
+      }
+    }
   }
   for (const key of Object.keys(node)) {
     if (!SKIPPED_KEYS.has(key)) {
       const value = node[key];
       if (value && typeof value === 'object') {
-        visitModuleScopeCalls(value, functions, visitor, {
+        visitModuleScopeCalls(value, names, visitor, {
           discarded:
             node.type === 'ExpressionStatement' && key === 'expression',
           statementStarts: walkState.statementStarts,
@@ -563,7 +650,7 @@ function inlineCall(magicString, code, node, spec, statementStart) {
  * behavior, only what a bundler is allowed to drop).
  */
 const resolvedFileCache = new Map();
-const pureDeclarationCache = new Map();
+const declarationCache = new Map();
 
 /**
  * The form named by a declaration's `@lexical-inline` marker, if it has one.
@@ -585,7 +672,7 @@ function inlineMarkerForm(comments, filename) {
         const form = match[1] || '';
         if (!INLINE_FORMS.has(form)) {
           const where = filename ? ` in ${filename}` : '';
-          throw new Error(
+          throw new PureAnnotationsError(
             `@lexical/pure-annotations: unknown @lexical-inline form ` +
               `${form ? `"${form}"` : '(none given)'}${where}. Write ` +
               `\`@lexical-inline <form>\` with one of: ` +
@@ -724,7 +811,20 @@ function resolveRelativeSpecifier(filename, specifier) {
  * @returns {ReadonlyMap<string, null | string>}
  */
 function pureDeclaredNamesOfFile(filename, parserPlugins) {
-  const cached = pureDeclarationCache.get(filename);
+  return declarationsOfFile(filename, parserPlugins).functions;
+}
+
+/**
+ * What a module next to this one declares: the functions it says are
+ * side-effect free, and the objects it marks as pure namespaces. Parsed
+ * once per file for the life of the process — see the cache note above.
+ *
+ * @param {string} filename
+ * @param {undefined | ReadonlyArray<any>} parserPlugins
+ * @returns {{functions: ReadonlyMap<string, null | string>, namespaces: ReadonlySet<string>}}
+ */
+function declarationsOfFile(filename, parserPlugins) {
+  const cached = declarationCache.get(filename);
   if (cached !== undefined) {
     return cached;
   }
@@ -741,10 +841,15 @@ function pureDeclaredNamesOfFile(filename, parserPlugins) {
     // reading the declarations happens outside this catch so that its error
     // reaches the build.
   }
-  const names =
-    program === null ? new Map() : pureDeclaredNames(program, filename);
-  pureDeclarationCache.set(filename, names);
-  return names;
+  const declarations =
+    program === null
+      ? {functions: new Map(), namespaces: new Set()}
+      : {
+          functions: pureDeclaredNames(program, filename),
+          namespaces: namespaceDeclaredNames(program),
+        };
+  declarationCache.set(filename, declarations);
+  return declarations;
 }
 
 /**
@@ -796,9 +901,12 @@ function collectFactoryNames(program, functions, opts) {
     names.set(local, {inline, name});
   }
   for (const [name, markerForm] of pureDeclaredNames(program, opts.filename)) {
-    if (functions.has(name)) {
-      add(name, name, markerForm, false);
-    }
+    // A declaration in this module carries its own evidence, so it does not
+    // have to be one of the known factory names: marking your own factory
+    // `__NO_SIDE_EFFECTS__` is enough for the build to annotate its calls.
+    // (A relatively imported one still has to be listed in `functions`, so
+    // that a build does not parse every module it imports looking for one.)
+    add(name, name, markerForm, false);
   }
   for (const statement of program.body) {
     if (statement.type !== 'ImportDeclaration') {
@@ -817,13 +925,14 @@ function collectFactoryNames(program, functions, opts) {
     for (const specifier of statement.specifiers) {
       if (
         specifier.type !== 'ImportSpecifier' ||
-        specifier.imported.type !== 'Identifier' ||
-        !functions.has(specifier.imported.name)
+        specifier.imported.type !== 'Identifier'
       ) {
         continue;
       }
       if (trusted) {
-        add(specifier.local.name, specifier.imported.name, null, true);
+        if (functions.has(specifier.imported.name)) {
+          add(specifier.local.name, specifier.imported.name, null, true);
+        }
         continue;
       }
       const resolved = resolveRelativeSpecifier(
@@ -847,10 +956,26 @@ function collectFactoryNames(program, functions, opts) {
 /**
  * @param {string} code
  * @param {ReadonlySet<string>} functions
- * @returns {boolean} true when the source mentions any of the factories at all
+ * @param {ReadonlySet<string>} namespaces
+ * @returns {boolean} true when the source mentions any of the names at all
  */
-function mayNeedAnnotations(code, functions) {
+function mayNeedAnnotations(code, functions, namespaces) {
+  if (
+    code.includes('__NO_SIDE_EFFECTS__') ||
+    code.includes('@lexical-pure-namespace') ||
+    RELATIVE_IMPORT_RE.test(code)
+  ) {
+    // Modules that may annotate calls for reasons other than the names in
+    // the list: a declaration of their own, or a relatively imported
+    // namespace, which is only known by reading that module.
+    return true;
+  }
   for (const name of functions) {
+    if (code.includes(name)) {
+      return true;
+    }
+  }
+  for (const name of namespaces) {
     if (code.includes(name)) {
       return true;
     }
@@ -872,10 +997,15 @@ function mayNeedAnnotations(code, functions) {
  *   plugins, for syntax the defaults do not cover.
  * @property {boolean} [relativeImports] Set to false to skip reading
  *   relatively imported modules to look for a NO_SIDE_EFFECTS declaration.
+ * @property {Iterable<string>} [namespaces] Imported objects whose
+ *   method calls are side-effect free, defaults to PURE_NAMESPACES.
  * @property {boolean} [sourceMap] Set to false to skip source map generation.
  * @property {RegExp | ReadonlyArray<RegExp>} [sources] Module specifiers
  *   whose exports are trusted to be the factories, defaults to `lexical` and
  *   `@lexical/*`.
+ * @property {boolean} [strict] Throw when a call evaluated inside one of the
+ *   definitions is not known to be side-effect free, since it pins the
+ *   definition into every bundle that imports the module.
  */
 
 /**
@@ -888,30 +1018,265 @@ function mayNeedAnnotations(code, functions) {
  */
 
 /**
+ * The names this module declares with a `@lexical-pure-namespace` marker:
+ * objects whose methods are side-effect free.
+ *
+ * @param {any} program
+ * @returns {Set<string>}
+ */
+function namespaceDeclaredNames(program) {
+  /** @type {Set<string>} */
+  const names = new Set();
+  /** @param {undefined | ReadonlyArray<any>} comments */
+  const marked = comments =>
+    (comments || []).some(comment => NAMESPACE_MARKER_RE.test(comment.value));
+  for (const statement of program.body) {
+    const declaration =
+      statement.type === 'ExportNamedDeclaration' && statement.declaration
+        ? statement.declaration
+        : statement;
+    const outer = marked(statement.leadingComments);
+    if (declaration.type !== 'VariableDeclaration') {
+      continue;
+    }
+    for (const declarator of declaration.declarations) {
+      if (
+        declarator.id.type === 'Identifier' &&
+        (outer ||
+          marked(declaration.leadingComments) ||
+          marked(declarator.leadingComments) ||
+          (declarator.init && marked(declarator.init.leadingComments)))
+      ) {
+        names.add(declarator.id.name);
+      }
+    }
+  }
+  return names;
+}
+
+/**
+ * The `@lexical-pure-namespace` names a relatively imported module declares.
+ *
+ * @param {string} filename
+ * @param {undefined | ReadonlyArray<any>} parserPlugins
+ * @returns {ReadonlySet<string>}
+ */
+function namespaceNamesOfFile(filename, parserPlugins) {
+  return declarationsOfFile(filename, parserPlugins).namespaces;
+}
+
+/**
+ * The local names in this module bound to one of the side-effect-free
+ * namespaces, imported from a trusted Lexical package. A relative import is
+ * not enough here: unlike a factory function, whose declaration can say
+ * `__NO_SIDE_EFFECTS__` for itself, an object's methods are only known to
+ * be pure by the table above.
+ *
+ * @param {any} program
+ * @param {ReadonlySet<string>} namespaces
+ * @param {TransformPureAnnotationsOptions} opts
+ * @returns {Set<string>} local names
+ */
+function collectNamespaceNames(program, namespaces, opts) {
+  /** @type {Set<string>} */
+  const names = new Set();
+  const sources = toRegExpArray(opts.sources, DEFAULT_SOURCES);
+  for (const name of namespaceDeclaredNames(program)) {
+    names.add(name);
+  }
+  for (const statement of program.body) {
+    if (statement.type !== 'ImportDeclaration') {
+      continue;
+    }
+    const source = statement.source.value;
+    const trusted = matchesAny(sources, source);
+    const relative =
+      !trusted &&
+      opts.relativeImports !== false &&
+      typeof opts.filename === 'string' &&
+      source.startsWith('.');
+    if (!trusted && !relative) {
+      continue;
+    }
+    /** @type {undefined | ReadonlySet<string>} */
+    let declared;
+    for (const specifier of statement.specifiers) {
+      if (
+        specifier.type !== 'ImportSpecifier' ||
+        specifier.imported.type !== 'Identifier'
+      ) {
+        continue;
+      }
+      if (trusted) {
+        if (namespaces.has(specifier.imported.name)) {
+          names.add(specifier.local.name);
+        }
+        continue;
+      }
+      if (declared === undefined) {
+        const resolved = resolveRelativeSpecifier(
+          /** @type {string} */ (opts.filename),
+          source,
+        );
+        declared =
+          resolved === null
+            ? new Set()
+            : namespaceNamesOfFile(resolved, opts.parserPlugins);
+      }
+      if (declared.has(specifier.imported.name)) {
+        names.add(specifier.local.name);
+      }
+    }
+  }
+  // `const sel = selBase;` — an alias is the same object. One pass is
+  // enough for the aliases these modules actually write.
+  for (const statement of program.body) {
+    if (statement.type !== 'VariableDeclaration') {
+      continue;
+    }
+    for (const declarator of statement.declarations) {
+      if (
+        declarator.id.type === 'Identifier' &&
+        declarator.init &&
+        declarator.init.type === 'Identifier' &&
+        names.has(declarator.init.name)
+      ) {
+        names.add(declarator.id.name);
+      }
+    }
+  }
+  return names;
+}
+
+/**
+ * Every call evaluated inside `node`'s arguments, in the order they appear.
+ * Calls in a deferred position (a callback, a method body) are not: they do
+ * not run when the module is initialized, so they pin nothing.
+ *
+ * @param {any} node a call expression
+ * @param {(call: any) => void} visit
+ */
+function visitEvaluatedCalls(node, visit) {
+  /** @param {any} value */
+  const walk = value => {
+    if (Array.isArray(value)) {
+      value.forEach(walk);
+      return;
+    }
+    if (
+      !value ||
+      typeof value !== 'object' ||
+      typeof value.type !== 'string' ||
+      DEFERRED_TYPES.has(value.type)
+    ) {
+      return;
+    }
+    if (
+      value.type === 'CallExpression' ||
+      value.type === 'NewExpression' ||
+      value.type === 'TaggedTemplateExpression'
+    ) {
+      visit(value);
+    }
+    for (const key of Object.keys(value)) {
+      if (!SKIPPED_KEYS.has(key)) {
+        walk(value[key]);
+      }
+    }
+  };
+  node.arguments.forEach(walk);
+}
+
+/**
+ * A call in the arguments of an extension, command, or rule definition is
+ * evaluated when the module is initialized, and an unannotated one pins the
+ * whole definition into every bundle that imports the module — the
+ * definition is only droppable when everything it is built from is too.
+ *
+ * With `strict`, that is an error naming the call rather than a definition
+ * that quietly stops tree-shaking.
+ *
+ * @param {string} code
+ * @param {undefined | string} filename
+ * @param {ReadonlyArray<any>} factoryCalls
+ * @param {ReadonlySet<number>} covered offsets this transform annotates or
+ *   replaces
+ */
+function assertArgumentsArePure(code, filename, factoryCalls, covered) {
+  /** @type {Array<string>} */
+  const violations = [];
+  /** @type {Set<number>} */
+  const reported = new Set();
+  for (const call of factoryCalls) {
+    visitEvaluatedCalls(call, inner => {
+      const callee = inner.callee || inner.tag;
+      if (
+        covered.has(inner.start) ||
+        hasPureAnnotation(code, inner.start) ||
+        reported.has(inner.start) ||
+        (callee.type === 'Identifier' && PURE_GLOBALS.has(callee.name))
+      ) {
+        return;
+      }
+      reported.add(inner.start);
+      const text = code.slice(callee.start, callee.end).replace(/\s+/g, ' ');
+      const where = inner.loc
+        ? `${inner.loc.start.line}:${inner.loc.start.column + 1}`
+        : '?';
+      violations.push(
+        `  ${where} ${text}(...) inside ${code.slice(
+          call.callee.start,
+          call.callee.end,
+        )}(...)`,
+      );
+    });
+  }
+  if (violations.length > 0) {
+    throw new PureAnnotationsError(
+      `@lexical/pure-annotations: ${violations.length} call(s) evaluated ` +
+        `inside a definition in ${filename || '<unknown>'} are not known to ` +
+        `be side-effect free, so the definition cannot be tree-shaken:\n` +
+        `${violations.join('\n')}\n` +
+        `Make the call lazy, or declare the function side-effect free ` +
+        `(@__NO_SIDE_EFFECTS__ plus the transform's \`functions\`/` +
+        `\`namespaces\` options) so that its calls are annotated too.`,
+    );
+  }
+}
+
+/**
  * The local names in `code` whose module-scope calls this transform would
  * annotate — the same decision {@link transformPureAnnotations} makes, for
  * tooling that needs to ask about a module without rewriting it (Lexical's
  * `no-pure-annotation` ESLint rule removes a hand-written annotation only
  * for a name this returns, so that the build is guaranteed to put it back).
  *
+ * `functions` are called directly, `namespaces` are the objects whose method
+ * calls (`sel.tag('p').attr('x')`) are annotated.
+ *
  * @param {string} code
  * @param {TransformPureAnnotationsOptions} [options]
- * @returns {Set<string>} the local names in this module that refer to a
- *   side-effect-free factory
+ * @returns {{functions: Set<string>, namespaces: Set<string>}}
  */
-export function pureFactoryNames(code, options) {
+export function pureCallNames(code, options) {
   const opts = options || {};
   const functions = new Set(opts.functions || PURE_FACTORY_FUNCTIONS);
-  if (functions.size === 0) {
-    return new Set();
-  }
   const ast = parse(code, {
     errorRecovery: false,
     plugins: parserPluginsFor(opts.filename, opts.parserPlugins),
     sourceFilename: opts.filename,
     sourceType: 'module',
   });
-  return new Set(collectFactoryNames(ast.program, functions, opts).keys());
+  return {
+    functions: new Set(
+      collectFactoryNames(ast.program, functions, opts).keys(),
+    ),
+    namespaces: collectNamespaceNames(
+      ast.program,
+      new Set(opts.namespaces || PURE_NAMESPACES),
+      opts,
+    ),
+  };
 }
 
 /**
@@ -928,7 +1293,8 @@ export function pureFactoryNames(code, options) {
 export function transformPureAnnotations(code, options) {
   const opts = options || {};
   const functions = new Set(opts.functions || PURE_FACTORY_FUNCTIONS);
-  if (functions.size === 0 || !mayNeedAnnotations(code, functions)) {
+  const namespaceSet = new Set(opts.namespaces || PURE_NAMESPACES);
+  if (!mayNeedAnnotations(code, functions, namespaceSet)) {
     return null;
   }
   const ast = parse(code, {
@@ -941,28 +1307,52 @@ export function transformPureAnnotations(code, options) {
   // from Lexical (or to a declaration that says it is side-effect free) are
   // annotated; a same-named local helper is left alone.
   const factoryNames = collectFactoryNames(ast.program, functions, opts);
-  if (factoryNames.size === 0) {
+  const namespaceNames = collectNamespaceNames(ast.program, namespaceSet, opts);
+  if (factoryNames.size === 0 && namespaceNames.size === 0) {
     return null;
   }
-  /** @type {Array<number>} */
-  const offsets = [];
+  /** @type {Set<number>} */
+  const annotated = new Set();
   /** @type {Array<[any, {form: string}, boolean]>} */
   const inlined = [];
-  visitModuleScopeCalls(ast.program, factoryNames, (node, position) => {
-    const factory = /** @type {{inline: undefined | any, name: string}} */ (
-      factoryNames.get(node.callee.name)
-    );
-    const spec = opts.inline === true ? factory.inline : undefined;
-    if (
-      spec !== undefined &&
-      !position.discarded &&
-      canInlineCall(node, spec)
-    ) {
-      inlined.push([node, spec, position.statementStart]);
-    } else if (!hasPureAnnotation(code, node.start)) {
-      offsets.push(node.start);
+  /** @type {Array<any>} */
+  const factoryCalls = [];
+  visitModuleScopeCalls(
+    ast.program,
+    {functions: factoryNames, namespaces: namespaceNames},
+    (node, position) => {
+      if (position.namespace === true) {
+        // Every call in a chain starts at the same offset, and one
+        // annotation there covers the whole chain.
+        if (!hasPureAnnotation(code, node.start)) {
+          annotated.add(node.start);
+        }
+        return;
+      }
+      factoryCalls.push(node);
+      const factory = /** @type {{inline: undefined | any, name: string}} */ (
+        factoryNames.get(node.callee.name)
+      );
+      const spec = opts.inline === true ? factory.inline : undefined;
+      if (
+        spec !== undefined &&
+        !position.discarded &&
+        canInlineCall(node, spec)
+      ) {
+        inlined.push([node, spec, position.statementStart]);
+      } else if (!hasPureAnnotation(code, node.start)) {
+        annotated.add(node.start);
+      }
+    },
+  );
+  const offsets = Array.from(annotated);
+  if (opts.strict === true) {
+    const covered = new Set(annotated);
+    for (const [node] of inlined) {
+      covered.add(node.start);
     }
-  });
+    assertArgumentsArePure(code, opts.filename, factoryCalls, covered);
+  }
   if (offsets.length === 0 && inlined.length === 0) {
     return null;
   }
@@ -1040,10 +1430,15 @@ function cleanModuleId(id) {
  *   plugins, for syntax the defaults do not cover.
  * @property {boolean} [relativeImports] Set to false to skip reading
  *   relatively imported modules to look for a NO_SIDE_EFFECTS declaration.
+ * @property {Iterable<string>} [namespaces] Imported objects whose
+ *   method calls are side-effect free, defaults to PURE_NAMESPACES.
  * @property {boolean} [sourceMap] Set to false to skip source map generation.
  * @property {RegExp | ReadonlyArray<RegExp>} [sources] Module specifiers
  *   whose exports are trusted to be the factories, defaults to `lexical` and
  *   `@lexical/*`.
+ * @property {boolean} [strict] Throw when a call evaluated inside one of the
+ *   definitions is not known to be side-effect free, since it pins the
+ *   definition into every bundle that imports the module.
  */
 
 /**
@@ -1080,12 +1475,19 @@ export function pureAnnotations(options) {
           filename,
           functions,
           inline: opts.inline,
+          namespaces: opts.namespaces,
           parserPlugins: opts.parserPlugins,
           relativeImports: opts.relativeImports,
           sourceMap: opts.sourceMap,
           sources: opts.sources,
+          strict: opts.strict,
         });
       } catch (err) {
+        if (err instanceof PureAnnotationsError) {
+          // Not something to shrug off: the module says one thing and means
+          // another, or a definition cannot be tree-shaken.
+          throw err;
+        }
         // A module this plugin cannot parse is a module it has nothing to
         // say about; warn rather than failing the consumer's build.
         if (this && typeof this.warn === 'function') {

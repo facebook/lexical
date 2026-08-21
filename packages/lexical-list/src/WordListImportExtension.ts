@@ -168,7 +168,7 @@ const WordListParagraphRule = defineImportRule({
     }
     return [$buildWordListTree(ctx, items)];
   },
-  match: /* @__PURE__ */ sel
+  match: sel
     .tag('p')
     .classAny(
       'MsoListParagraph',
@@ -183,7 +183,7 @@ const WordListParagraphRule = defineImportRule({
 // paragraph including the list ones; it always produces nothing.
 const WordOfficeParagraphRule = defineImportRule({
   $import: () => [],
-  match: /* @__PURE__ */ sel.tag('o:p'),
+  match: sel.tag('o:p'),
   name: '@lexical/list/word-o-p',
 });
 

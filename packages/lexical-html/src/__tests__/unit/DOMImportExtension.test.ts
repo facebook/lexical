@@ -433,6 +433,17 @@ describe('DOMImportExtension', () => {
     expect(importedTags('p, .foo, article')).toEqual(['p', 'div', 'article']);
   });
 
+  test('CSS parser rejects an empty selector or a hole in a selector list', () => {
+    for (const selector of ['', '   ', 'h1,', ',h1', 'h1,,h2', 'h1, ,h2']) {
+      expect(() => parseSelector(selector)).toThrow(/expected a selector/);
+    }
+    // A lone `*` is the one group that legitimately has neither tag nor
+    // refinement, so it and any list containing it still parse.
+    expect(() => parseSelector('*')).not.toThrow();
+    expect(() => parseSelector('h1, *')).not.toThrow();
+    expect(() => parseSelector('*.foo')).not.toThrow();
+  });
+
   test('isElementOfTag narrows correctly without instanceof', () => {
     const dom = new JSDOM(
       '<!doctype html><html><body><a href="x"></a><p></p></body></html>',

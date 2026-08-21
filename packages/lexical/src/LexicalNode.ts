@@ -450,11 +450,12 @@ export type LexicalExportJSON<T extends LexicalNode> = Prettify<
   Omit<ReturnType<T['exportJSON']>, 'type' | 'version'> & {
     type: GetStaticNodeType<T>;
     /**
-     * Written by `exportJSON` so the output remains readable by older
-     * versions — except in the compact form, which omits it along with
-     * everything else parsing restores on its own.
+     * Written by `exportJSON()` so the output remains readable by older
+     * versions, and omitted by `exportJSON(true)` along with everything else
+     * parsing restores on its own — hence optional, matching
+     * {@link SerializedLexicalNode.version}.
      */
-    version: number;
+    version?: number;
   } & NodeStateJSON<T>
 >;
 

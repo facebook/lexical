@@ -125,6 +125,17 @@ export interface SerializationSchema<T> {
    * in `T` and every `AnySerializationSchema` position would reject it.
    */
   isEqual?(a: T, b: T): boolean;
+  /**
+   * Whether `value` is in this schema's domain, for {@link unionValue} deciding
+   * which member a value belongs to.
+   *
+   * A schema is total — it always returns a value — so membership normally has
+   * to be inferred from the parse: landing anywhere but the default means the
+   * value was recognized. That inference cannot see a value the schema
+   * *normalizes into* its own default, which is why a schema that accepts more
+   * than its own value type says so directly.
+   */
+  accepts?(value: unknown): boolean;
 }
 
 /**
@@ -229,6 +240,7 @@ function makeSchema<T>(
   // the fallback its caller declared, so those pass it explicitly.
   defaultValue?: T,
   isEqual?: (a: T, b: T) => boolean,
+  accepts?: (value: unknown) => boolean,
 ): SerializationSchema<T> {
   const derived = defaultValue === undefined;
   const resolved: T = derived ? parse(undefined) : defaultValue;
@@ -241,6 +253,7 @@ function makeSchema<T>(
     deepFreeze(resolved);
   }
   return Object.assign(parse, {
+    accepts,
     defaultValue: resolved,
     getter: accessors.getter,
     isEqual,
@@ -366,21 +379,30 @@ export function numberValue(
   options: NumberValueOptions = {},
 ): SerializationSchema<number> {
   const {min, max, integer} = options;
+  const coerce = (value: unknown): unknown =>
+    typeof value === 'string' && JSON_NUMBER.test(value)
+      ? Number(value)
+      : value;
+  const inDomain = (parsed: unknown): parsed is number =>
+    typeof parsed === 'number' &&
+    Number.isFinite(parsed) &&
+    (min === undefined || parsed >= min) &&
+    (max === undefined || parsed <= max) &&
+    (!integer || Number.isInteger(parsed));
   return makeSchema(
     value => {
-      const parsed =
-        typeof value === 'string' && JSON_NUMBER.test(value)
-          ? Number(value)
-          : value;
-      return typeof parsed === 'number' &&
-        Number.isFinite(parsed) &&
-        (min === undefined || parsed >= min) &&
-        (max === undefined || parsed <= max) &&
-        (!integer || Number.isInteger(parsed))
-        ? parsed
-        : defaultValue;
+      const parsed = coerce(value);
+      return inDomain(parsed) ? parsed : defaultValue;
     },
     {integer, kind: 'number', max, min},
+    undefined,
+    undefined,
+    undefined,
+    // Declared because this domain spans two value types: a union member has
+    // no other way to tell `'0'` — a stringified number, in domain, which
+    // parsing normalizes to the default — from `'banana'`, which is out of
+    // domain and lands on the default too.
+    value => inDomain(coerce(value)),
   );
 }
 
@@ -590,13 +612,24 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
       }
       for (let i = 0; i < members.length; i++) {
         const member = members[i];
+        // A member that knows its own domain answers directly; that is the
+        // only way to recognize a value it normalizes *into* its default,
+        // which the inference below reads as a fallback.
+        const {accepts} = member;
+        if (accepts !== undefined) {
+          if (accepts(value)) {
+            return member(value) as T;
+          }
+          continue;
+        }
         const parsed = member(value);
         // Landing on the member's default is the one result that is ambiguous:
         // it means either "this value is the default" or "this value was out of
         // domain and I fell back". Comparing the *input* against the default
-        // separates them, and every other result is proof the member recognized
-        // the value — including one it normalized on the way, which is why the
-        // parsed value is what gets returned.
+        // separates them for a member whose domain is a single value type, and
+        // every other result is proof the member recognized the value —
+        // including one it normalized, which is why the parsed value is what
+        // gets returned.
         if (
           !isSchemaDefault(member, parsed) ||
           isSchemaEqual(member, value, member.defaultValue)
@@ -727,7 +760,19 @@ export function arrayValue<T>(
   item: SerializationSchema<T>,
 ): SerializationSchema<T[]> {
   return makeSchema(
-    value => (Array.isArray(value) ? value.map(entry => item(entry)) : []),
+    value => {
+      if (!Array.isArray(value)) {
+        return [];
+      }
+      // An index loop rather than `map`, which preserves the holes of a sparse
+      // array: the item schema would never see them, and a property typed as
+      // the item's domain would serialize them as `null`.
+      const result = new Array<T>(value.length);
+      for (let i = 0; i < value.length; i++) {
+        result[i] = item(value[i]);
+      }
+      return result;
+    },
     {item, kind: 'array'},
     // Deliberately not `item`: the item schema describes an element, so its
     // accessors belong to the element, not to the array-valued property.

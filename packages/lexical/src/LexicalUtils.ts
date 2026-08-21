@@ -3571,8 +3571,15 @@ function validateOwnFields(record: NodeClassRecord, node: LexicalNode): void {
   }
   const {klass} = record.config;
   const fields = ownFieldRecord(node);
-  for (const entries of [record.getters, record.setters]) {
-    for (const entry of entries || EMPTY_GETTERS) {
+  const {getters, setters} = record;
+  if (getters === undefined || setters === undefined) {
+    // One table is still being compiled (the $config() re-entrancy window), so
+    // half the names are not available yet. Skip without recording the class as
+    // validated, or the unseen direction would never be checked again.
+    return;
+  }
+  for (const entries of [getters, setters]) {
+    for (const entry of entries) {
       if (entry.kind === 'ownField') {
         invariant(
           hasOwn(fields, entry.field),
@@ -3866,26 +3873,26 @@ function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
   // registered — where the error names the class that is misconfigured — and
   // not later, out of an autosave or a copy handler.
   //
-  // Dropping the record on the way out keeps that error attributable: without
-  // it a second createEditor() would find the cached record, never reach this
-  // block again, and register the broken class in silence, leaving the throw
-  // to whichever serialization call happened to come first.
+  // Everything that can throw is inside the try, injection included: that is
+  // where the DEV clone-arity invariant lives. Dropping the record on the way
+  // out is what keeps the error attributable — without it a second
+  // createEditor() finds the cached record, never reaches this block again,
+  // and registers the broken class in silence, leaving the throw to whichever
+  // serialization call happens to come first.
+  //
+  // Injection goes last within the try because a class cannot be un-mutated:
+  // nothing compiled above reads a synthesized static (compileSetters and
+  // compileGetters resolve names off `klass.prototype` and walk the config
+  // chain, never `klass.getType` or `klass.clone`), so ordering it here leaves
+  // the class untouched on every failure path rather than half-registered.
   try {
     record.setters = compileSetters(klass);
     record.getters = compileGetters(klass);
+    injectSynthesizedStatics(klass, isAbstract, ownNodeType, ownNodeConfig);
   } catch (error) {
     NODE_CLASS_CACHE.delete(klass);
     throw error;
   }
-  // Injected last, so that every throw above — the caller's own $config(), the
-  // DEV clone-arity invariant, a schema naming an accessor that does not
-  // exist — leaves the class exactly as it was found. Nothing above reads a
-  // synthesized static: compileSetters and compileGetters resolve names off
-  // `klass.prototype` and walk the config chain, never `klass.getType` or
-  // `klass.clone`. Assigning them earlier would make the rollback a half
-  // measure, since a class cannot be un-mutated: it would answer getType()
-  // with a real type while every path through the cache re-threw.
-  injectSynthesizedStatics(klass, isAbstract, ownNodeType, ownNodeConfig);
   return record;
 }
 

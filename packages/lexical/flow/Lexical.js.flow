@@ -1797,9 +1797,10 @@ export type Parse<T> = (value: unknown) => T;
 export type SerializationSchema<T> = Parse<T> & {
   readonly defaultValue: T,
   readonly meta: SerializationSchemaMeta,
-  readonly getter?: string | null,
-  readonly setter?: string | null,
+  readonly getter?: SchemaAccessor,
+  readonly setter?: SchemaAccessor,
   readonly isEqual?: (a: T, b: T) => boolean,
+  readonly accepts?: (value: mixed) => boolean,
 };
 declare export function $exportNodeJSON(
   node: LexicalNode,

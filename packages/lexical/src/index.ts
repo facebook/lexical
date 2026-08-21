@@ -256,6 +256,7 @@ export {
   arrayValue,
   booleanValue,
   enumValue,
+  isSchemaField,
   nullable,
   numberValue,
   type NumberValueOptions,

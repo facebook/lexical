@@ -1165,3 +1165,41 @@ describe('a misspelled field name is caught in both directions', () => {
     );
   });
 });
+
+describe('a union member knows its own domain', () => {
+  const dimension = unionValue(
+    [numberValue(), enumValue(['inherit'])],
+    'inherit',
+  );
+
+  test('a value a member normalizes into its default is still that member', () => {
+    // The ambiguous case: numberValue reads '0' as 0, which is also what it
+    // returns for a value it did not recognize. Inferring membership from the
+    // parse alone reads this as a fallback and skips to the next member.
+    expect(dimension('0')).toBe(0);
+    expect(dimension('-0')).toBe(-0);
+    expect(dimension(0)).toBe(0);
+    // Still not a number, so still the union's fallback.
+    expect(dimension('banana')).toBe('inherit');
+    expect(dimension('inherit')).toBe('inherit');
+  });
+
+  test('a bounded member rejects what falls outside its bounds', () => {
+    const span = unionValue([numberValue(1, {integer: true, min: 1})], 1);
+    expect(span('4')).toBe(4);
+    expect(span('0')).toBe(1);
+    expect(span('1.5')).toBe(1);
+  });
+});
+
+describe('a sparse array is parsed, not passed through', () => {
+  test('holes go through the item schema like any other element', () => {
+    // `map` preserves holes, so the item schema would never see them and a
+    // string[] property would serialize them as null.
+    const schema = arrayValue(stringValue());
+    const parsed = schema(new Array(3));
+    expect(parsed).toEqual(['', '', '']);
+    expect(0 in parsed).toBe(true);
+    expect(schema(['a', 42, null])).toEqual(['a', '', '']);
+  });
+});

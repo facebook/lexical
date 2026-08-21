@@ -75,6 +75,7 @@ import {
   $setState,
   $setTextFormat,
   addClassNamesToElement,
+  booleanValue,
   CAN_USE_BEFORE_INPUT,
   type CaretDirection,
   CLICK_COMMAND,
@@ -176,11 +177,10 @@ export type SerializedQuoteNode = Spread<
  * change to the legacy behavior (and nothing extra is serialized).
  */
 export const quoteShadowRootState = /* @__PURE__ */ createState('shadowRoot', {
-  // Deliberately `Boolean` rather than `booleanValue()`: this state predates
-  // the schema and has always coerced, so a stored `1` or `"true"` means true.
-  // Narrowing it would silently turn such a quote back into a plain one, and
-  // $normalizeShadowRootChildren would then restructure its children.
-  parse: Boolean,
+  // `booleanValue()`, not `Boolean`: the state's own serializer only ever
+  // writes `true`/`false`, so anything else was never produced by Lexical and
+  // is out of domain rather than a legacy form to coerce.
+  parse: /* @__PURE__ */ booleanValue(),
 });
 
 /** @noInheritDoc */

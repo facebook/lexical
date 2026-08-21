@@ -1894,6 +1894,19 @@ export class RangeSelection implements BaseSelection {
       }
       $ensureRootHasParagraph();
     }
+    // A full-range (e.g. select-all) delete can empty the whole document down
+    // to a single non-paragraph block -- a heading, quote, list, or nested
+    // list -- which then lingers empty while keeping its type instead of
+    // collapsing to a plain paragraph like an empty editor. `collapseAtStart`
+    // above only covers backwards deletion of a heading/quote, so handle the
+    // forward-delete and list cases here. This lives in `deleteCharacter`
+    // rather than in the shared `removeText`/`$removeTextFromCaretRange`
+    // primitive on purpose: `insertText` also routes through `removeText` to
+    // clear the old selection before inserting (as the Prettier "format" flow
+    // does on a lone code block), and that replacement must keep its block.
+    if (!wasCollapsed && this.isCollapsed()) {
+      $collapseEmptiedRootToParagraph(this);
+    }
   }
 
   /**
@@ -2273,6 +2286,54 @@ function $collapseAtStart(
     }
   }
   return false;
+}
+
+/**
+ * After a full-range delete, collapse a document that is left as a single
+ * empty non-paragraph block (heading, quote, list, nested list, ...) down to a
+ * single empty paragraph, matching the empty-editor state. Bails out unless the
+ * root's only content is that one block sitting on a single, empty branch --
+ * any sibling content, decorator, shadow root, or surviving text leaves the
+ * block untouched.
+ */
+function $collapseEmptiedRootToParagraph(selection: RangeSelection): void {
+  const anchorNode = selection.anchor.getNode();
+  const block = $isElementNode(anchorNode)
+    ? anchorNode
+    : anchorNode.getParent();
+  if (
+    !block ||
+    !$isElementNode(block) ||
+    $isParagraphNode(block) ||
+    $isRootOrShadowRoot(block) ||
+    !block.isEmpty()
+  ) {
+    return;
+  }
+  // Walk up to the top-level block (the direct child of the root), bailing on
+  // anything that means this is not a plain, fully-emptied document.
+  let topLevel: ElementNode = block;
+  for (
+    let parent = block.getParent();
+    parent !== null && !$isRootNode(parent);
+    parent = parent.getParent()
+  ) {
+    if (
+      $isRootOrShadowRoot(parent) ||
+      !$isElementNode(parent) ||
+      parent.getChildrenSize() !== 1
+    ) {
+      return;
+    }
+    topLevel = parent;
+  }
+  const root = topLevel.getParent();
+  if (!$isRootNode(root) || root.getChildrenSize() !== 1) {
+    return;
+  }
+  const paragraph = $createParagraphNode();
+  topLevel.replace(paragraph);
+  paragraph.selectStart();
 }
 
 function $swapPoints(selection: RangeSelection): void {

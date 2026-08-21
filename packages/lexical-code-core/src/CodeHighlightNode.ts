@@ -49,7 +49,7 @@ const codeHighlightNodeSchema = /* @__PURE__ */ objectValue({
 export interface CodeHighlightNode {
   // The serialized shape this node exports; the runtime implementation is
   // the schema-driven LexicalNode.exportJSON.
-  exportJSON(): SerializedCodeHighlightNode;
+  exportJSON(compact?: boolean): SerializedCodeHighlightNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<
       SerializedPartial<SerializedCodeHighlightNode>

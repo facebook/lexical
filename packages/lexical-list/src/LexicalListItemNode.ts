@@ -99,13 +99,20 @@ function applyMarkerStyles(
 export interface ListItemNode {
   // The serialized shape this node exports; the runtime implementation is
   // the schema-driven LexicalNode.exportJSON.
-  exportJSON(): SerializedListItemNode;
+  exportJSON(compact?: boolean): SerializedListItemNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<
       SerializedPartial<SerializedListItemNode>
     >,
   ): this;
 }
+
+/**
+ * The deepest list nesting `setIndent` will walk to. Each level it steps
+ * through nests or unwraps a whole list, so this bounds work an untrusted
+ * `indent` could otherwise make unbounded.
+ */
+const MAX_LIST_ITEM_INDENT = 128;
 
 /** @noInheritDoc */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -494,9 +501,14 @@ export class ListItemNode extends ElementNode {
     invariant(typeof indent === 'number', 'Invalid indent value.');
     indent = Math.floor(indent);
     invariant(indent >= 0, 'Indent value must be non-negative.');
+    // Unlike ElementNode's, this indent is structural: each step of the walk
+    // below nests or unwraps a whole list level. An unbounded value from
+    // untrusted JSON would build millions of nodes, so the target is clamped —
+    // a list nested deeper than this is already pathological.
+    const target = Math.min(indent, MAX_LIST_ITEM_INDENT);
     let currentIndent = this.getIndent();
-    while (currentIndent !== indent) {
-      if (currentIndent < indent) {
+    while (currentIndent !== target) {
+      if (currentIndent < target) {
         $handleIndent(this);
         currentIndent++;
       } else {

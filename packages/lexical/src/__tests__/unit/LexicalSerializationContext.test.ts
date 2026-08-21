@@ -11,6 +11,7 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
+  $isElementNode,
   $setSlot,
   $withCompactExport,
   createEditor,
@@ -19,7 +20,7 @@ import {
   type SerializedLexicalNode,
   type SerializedRootNode,
 } from 'lexical';
-import {beforeEach, describe, expect, test} from 'vitest';
+import {assert, beforeEach, describe, expect, test} from 'vitest';
 
 import {
   $createTestDecoratorNode,
@@ -129,6 +130,42 @@ describe('compact export', () => {
       ]);
     }
     expect(fromCompact.toJSON()).toEqual(fromLegacy.toJSON());
+  });
+
+  test('a formatted first text child survives compaction (#7971)', () => {
+    // ParagraphNode back-fills textFormat/textStyle from its first text child
+    // for backwards compatibility. That value is computed, not restored from a
+    // schema default, so dropping it in the compact form would make the two
+    // forms describe different documents.
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append(
+              $createTextNode('bold').setFormat('bold').setStyle('color: red'),
+            ),
+          );
+      },
+      {discrete: true},
+    );
+    const legacy = toJSON();
+    const compact = toJSON(true);
+    expect(childrenOf(compact)[0]).toMatchObject({
+      textFormat: 1,
+      textStyle: 'color: red',
+    });
+    const fromLegacy = editor.parseEditorState({root: legacy} as never);
+    const fromCompact = editor.parseEditorState({root: compact} as never);
+    for (const state of [fromLegacy, fromCompact]) {
+      expect(
+        state.read(() => {
+          const paragraph = $getRoot().getFirstChildOrThrow();
+          assert($isElementNode(paragraph));
+          return [paragraph.getTextFormat(), paragraph.getTextStyle()];
+        }),
+      ).toEqual([1, 'color: red']);
+    }
   });
 
   test('the form does not leak outside its callback', () => {

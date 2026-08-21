@@ -83,7 +83,7 @@ const listNodeSchema = /* @__PURE__ */ objectValue({
 export interface ListNode {
   // The serialized shape this node exports; the runtime implementation is
   // the schema-driven LexicalNode.exportJSON.
-  exportJSON(): SerializedListNode;
+  exportJSON(compact?: boolean): SerializedListNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedListNode>>,
   ): this;

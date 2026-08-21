@@ -47,7 +47,7 @@ const tableRowNodeSchema = /* @__PURE__ */ objectValue({
 export interface TableRowNode {
   // The serialized shape this node exports; the runtime implementation is
   // the schema-driven LexicalNode.exportJSON.
-  exportJSON(): SerializedTableRowNode;
+  exportJSON(compact?: boolean): SerializedTableRowNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<
       SerializedPartial<SerializedTableRowNode>

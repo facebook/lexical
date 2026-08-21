@@ -28,6 +28,7 @@ import {
 } from '.';
 import {
   type AnySerializationSchema,
+  isSchemaEqual,
   type SerializationSchema,
 } from './LexicalSchema';
 import {errorOnReadOnly} from './LexicalUpdates';
@@ -333,20 +334,35 @@ export class StateConfig<K extends string | symbol, V> {
   readonly schema?: AnySerializationSchema;
   constructor(key: K, stateValueConfig: StateValueConfig<V>) {
     this.key = key;
+    // Binding below strips a schema's own properties from this.parse, so
+    // resolve it first and keep the original when it carries introspectable
+    // metadata.
+    const schema = isIntrospectableSchema(stateValueConfig.parse)
+      ? stateValueConfig.parse
+      : undefined;
+    this.schema = schema;
     this.parse = stateValueConfig.parse.bind(stateValueConfig);
     this.unparse = (stateValueConfig.unparse || coerceToJSON).bind(
       stateValueConfig,
     );
-    this.isEqual = (stateValueConfig.isEqual || Object.is).bind(
-      stateValueConfig,
-    );
-    this.defaultValue = this.parse(undefined);
+    // A schema already knows its own domain, so a `parse` that is one supplies
+    // the equality and the default this state compares against — unless the
+    // caller declared its own. Without this a reference-typed schema
+    // (arrayValue/objectValue, which return a fresh value per parse) would fall
+    // back to Object.is: NodeState.toJSON would never recognize the default and
+    // would write it into every node, and $setState would dirty the node on
+    // every write of an equal value.
+    this.isEqual = stateValueConfig.isEqual
+      ? stateValueConfig.isEqual.bind(stateValueConfig)
+      : schema !== undefined && schema.isEqual !== undefined
+        ? (a, b) => isSchemaEqual(schema, a, b)
+        : Object.is;
+    // The schema's default is frozen when it is reference-typed, which matters
+    // because $getState hands this very value to every node that has none of
+    // its own.
+    this.defaultValue =
+      schema !== undefined ? schema.defaultValue : this.parse(undefined);
     this.resetOnCopyNode = stateValueConfig.resetOnCopyNode || false;
-    // Binding above strips a schema's own properties from this.parse, so keep a
-    // reference to the original when it carries introspectable schema metadata.
-    this.schema = isIntrospectableSchema(stateValueConfig.parse)
-      ? stateValueConfig.parse
-      : undefined;
   }
 }
 

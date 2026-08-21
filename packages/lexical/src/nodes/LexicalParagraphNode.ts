@@ -101,22 +101,25 @@ export class ParagraphNode extends ElementNode {
 
   exportJSON(compact = false): SerializedParagraphNode {
     const json = super.exportJSON(compact);
-    // Provide backwards compatible values, see #7971 — but only for the
-    // legacy form. The compact form is read by a parser that restores both
-    // from their schema defaults, which is the same thing this computes, so
-    // writing them would be bytes with nothing to say.
-    if (
-      !compact &&
-      (json.textFormat === undefined || json.textStyle === undefined)
-    ) {
+    // Provide backwards compatible values, see #7971. These are computed from
+    // the first text child rather than restored from a schema default, so the
+    // compact form has to write them too — omitting them would make the two
+    // forms describe different documents. It still drops the ones that *are*
+    // the default, which is what the parser would restore anyway.
+    if (json.textFormat === undefined || json.textStyle === undefined) {
       // Compute the same value that the reconciler would
       const firstTextNode = this.getChildren().find($isTextNode);
-      if (firstTextNode) {
-        json.textFormat = firstTextNode.getFormat();
-        json.textStyle = firstTextNode.getStyle();
-      } else {
-        json.textFormat = this.getTextFormat();
-        json.textStyle = this.getTextStyle();
+      const textFormat = firstTextNode
+        ? firstTextNode.getFormat()
+        : this.getTextFormat();
+      const textStyle = firstTextNode
+        ? firstTextNode.getStyle()
+        : this.getTextStyle();
+      if (!compact || textFormat !== 0) {
+        json.textFormat = textFormat;
+      }
+      if (!compact || textStyle !== '') {
+        json.textStyle = textStyle;
       }
     }
     return json as SerializedParagraphNode;

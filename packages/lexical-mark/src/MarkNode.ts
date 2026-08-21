@@ -52,7 +52,7 @@ const NO_IDS: readonly string[] = [];
 export interface MarkNode {
   // The serialized shape this node exports; the runtime implementation is
   // the schema-driven LexicalNode.exportJSON.
-  exportJSON(): SerializedMarkNode;
+  exportJSON(compact?: boolean): SerializedMarkNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedMarkNode>>,
   ): this;

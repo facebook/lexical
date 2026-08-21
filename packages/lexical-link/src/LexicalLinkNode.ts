@@ -101,7 +101,7 @@ const linkNodeSchema = /* @__PURE__ */ objectValue({
 export interface LinkNode {
   // The serialized shape this node exports; the runtime implementation is
   // the schema-driven LexicalNode.exportJSON.
-  exportJSON(): SerializedLinkNode;
+  exportJSON(compact?: boolean): SerializedLinkNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedLinkNode>>,
   ): this;
@@ -512,7 +512,7 @@ const autoLinkNodeSchema = /* @__PURE__ */ objectValue({
 export interface AutoLinkNode {
   // The serialized shape this node exports; the runtime implementation is
   // the schema-driven LexicalNode.exportJSON.
-  exportJSON(): SerializedAutoLinkNode;
+  exportJSON(compact?: boolean): SerializedAutoLinkNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<
       SerializedPartial<SerializedAutoLinkNode>

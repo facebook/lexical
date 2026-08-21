@@ -16,6 +16,7 @@ import {
   $withCompactExport,
   arrayValue,
   booleanValue,
+  createState,
   ElementNode,
   enumValue,
   type LexicalUpdateJSON,
@@ -37,6 +38,7 @@ import {
 } from 'lexical';
 import {assert, describe, expect, expectTypeOf, test} from 'vitest';
 
+import {isSchemaDefault} from '../../LexicalSchema';
 import {initializeUnitTest} from '../utils';
 
 describe('LexicalSchema value schemas', () => {
@@ -825,5 +827,57 @@ describe('reference-typed defaults compact by content', () => {
           .map(n => (n as TagsNode).__tags),
       ),
     ).toEqual([[], ['a']]);
+  });
+});
+
+describe('review fixes', () => {
+  test('a caller-supplied default is not frozen', () => {
+    // Only a default this factory derived is metadata it owns; one passed in
+    // still belongs to the caller.
+    const shared = {cols: 2};
+    enumValue([shared, null], shared);
+    expect(Object.isFrozen(shared)).toBe(false);
+    // a derived reference default is still frozen
+    expect(Object.isFrozen(arrayValue(stringValue()).defaultValue)).toBe(true);
+  });
+
+  test('equality is total: an unvalidated getter result cannot throw', () => {
+    // The export path hands isEqual whatever a node getter returned, which
+    // nothing validated.
+    const ids = arrayValue(stringValue());
+    const point = objectValue({x: numberValue()});
+    for (const value of [null, undefined, 7, 'x']) {
+      expect(() => isSchemaDefault(ids, value as never)).not.toThrow();
+      expect(() => isSchemaDefault(point, value as never)).not.toThrow();
+    }
+  });
+
+  test('optional and nullable keep the inner content comparison', () => {
+    const ids = arrayValue(stringValue());
+    expect(optional(ids, {omitDefault: true})([])).toBeUndefined();
+    expect(nullable(ids, {defaultAsNull: true})([])).toBeNull();
+    // and the nil cases still compare by identity
+    expect(optional(ids).isEqual!(undefined, undefined)).toBe(true);
+    expect(optional(ids).isEqual!(undefined, [])).toBe(false);
+  });
+
+  test('a union parses undefined to the fallback it declared', () => {
+    // A member that accepts undefined would otherwise win and return it,
+    // contradicting defaultValue — which compaction compares against.
+    const schema = unionValue(
+      [optional(numberValue()), enumValue(['inherit'])],
+      'inherit',
+    );
+    expect(schema.defaultValue).toBe('inherit');
+    expect(schema(undefined)).toBe('inherit');
+    expect(schema(640)).toBe(640);
+  });
+
+  test('a state built from a schema adopts its equality and default', () => {
+    const idsState = createState('ids', {parse: arrayValue(stringValue())});
+    expect(idsState.isEqual([], idsState.defaultValue)).toBe(true);
+    expect(idsState.isEqual(['a'], [])).toBe(false);
+    // and the shared default cannot be mutated into every node
+    expect(() => idsState.defaultValue.push('leak')).toThrow();
   });
 });

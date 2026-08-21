@@ -400,7 +400,7 @@ export function setScrollableTablesActive(
 export interface TableNode {
   // The serialized shape this node exports; the runtime implementation is
   // the schema-driven LexicalNode.exportJSON.
-  exportJSON(): SerializedTableNode;
+  exportJSON(compact?: boolean): SerializedTableNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedTableNode>>,
   ): this;

@@ -196,18 +196,21 @@ function makeSchema<T>(
   // schema whose domain *contains* `undefined` — an enum listing it, a union
   // with an optional member — would derive `undefined` and silently discard
   // the fallback its caller declared, so those pass it explicitly.
-  defaultValue: T = parse(undefined),
+  defaultValue?: T,
   isEqual?: (a: T, b: T) => boolean,
 ): SerializationSchema<T> {
-  if (defaultValue !== null && typeof defaultValue === 'object') {
+  const derived = defaultValue === undefined;
+  const resolved: T = derived ? parse(undefined) : defaultValue;
+  if (derived && resolved !== null && typeof resolved === 'object') {
     // The default is metadata every parse shares, and StateConfig hands it
     // straight to $getState for a node that has none of its own. Freezing it
     // turns "mutate one node's default and corrupt every node in the process"
     // into a loud error; a parsed value is a fresh object and is untouched.
-    Object.freeze(defaultValue);
+    // Only a default this call derived: one the caller passed in is theirs.
+    Object.freeze(resolved);
   }
   return Object.assign(parse, {
-    defaultValue,
+    defaultValue: resolved,
     getter: accessors.getter,
     isEqual,
     meta,
@@ -223,6 +226,23 @@ function makeSchema<T>(
  * A type predicate rather than a `boolean`, so a caller reads the value off the
  * narrowed `source` instead of casting an unindexable `object`.
  */
+function isRecord(value: unknown): value is {readonly [key: string]: unknown} {
+  return typeof value === 'object' && value !== null;
+}
+
+/**
+ * Carry `inner`'s equality onto a wrapper that adds a nil to its domain: the
+ * two describe the same property, and identity already answers the nil cases.
+ */
+function liftIsEqual<T>(
+  inner: SerializationSchema<T>,
+): undefined | ((a: T | null | undefined, b: T | null | undefined) => boolean) {
+  const {isEqual} = inner;
+  return isEqual === undefined
+    ? undefined
+    : (a, b) => (a == null || b == null ? a === b : isEqual(a, b));
+}
+
 function hasOwnKey<K extends string>(
   source: object,
   key: K,
@@ -356,6 +376,8 @@ export function nullable<T>(
     },
     {defaultAsNull, inner, kind: 'nullable'},
     inner,
+    undefined,
+    liftIsEqual(inner),
   );
 }
 
@@ -403,6 +425,8 @@ export function optional<T>(
     },
     {inner, kind: 'optional', omitDefault},
     inner,
+    undefined,
+    liftIsEqual(inner),
   );
 }
 
@@ -447,6 +471,12 @@ export function unionValue<const M extends readonly AnySerializationSchema[]>(
     defaultValue !== undefined ? defaultValue : (members[0].defaultValue as T);
   return makeSchema<T>(
     value => {
+      if (value === undefined) {
+        // A member that accepts `undefined` (an optional or raw one) would
+        // otherwise win here and return it, contradicting `defaultValue` —
+        // which compaction and `omitDefault` both compare against.
+        return fallback;
+      }
       for (let i = 0; i < members.length; i++) {
         // Object.is, not ===, so the union accepts exactly what its members
         // accept: `enumValue([NaN])` returns NaN unchanged, and `===` would
@@ -569,7 +599,11 @@ export function arrayValue<T>(
     // A parse returns a fresh array, so identity would never match the empty
     // default and such a property could never be compacted. Compare by
     // content, element-wise through the item schema.
+    // Total, not just defined on the parsed domain: the export path hands this
+    // whatever the node's getter returned, which nothing validated.
     (a, b) =>
+      Array.isArray(a) &&
+      Array.isArray(b) &&
       a.length === b.length &&
       a.every((entry, i) => isSchemaEqual(item, entry, b[i])),
   );
@@ -628,15 +662,12 @@ export function objectValue<T extends {readonly [key: string]: unknown}>(
     undefined,
     undefined,
     // As with arrayValue: a parse returns a fresh object, so compare the
-    // declared fields rather than the reference.
+    // declared fields rather than the reference — and total, since the export
+    // path hands this an unvalidated getter result.
     (a, b) =>
-      entries.every(([key, schema]) =>
-        isSchemaEqual(
-          schema,
-          (a as {readonly [k: string]: unknown})[key],
-          (b as {readonly [k: string]: unknown})[key],
-        ),
-      ),
+      isRecord(a) &&
+      isRecord(b) &&
+      entries.every(([key, schema]) => isSchemaEqual(schema, a[key], b[key])),
   );
 }
 

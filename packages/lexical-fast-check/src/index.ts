@@ -18,10 +18,15 @@ import * as fc from 'fast-check';
 import {getComposedSchemaFields, getStaticNodeConfig} from 'lexical';
 
 /**
- * Read the {@link SerializationSchema} a node class declares on its `$config` (the `json`
- * field), if any. This is the introspection entry point for tooling: the node
- * is the single source of truth and this returns the schema it published. The
- * `$config` is read from the prototype, so no editor or instance is required.
+ * Read the {@link SerializationSchema} a node class declares on its `$config`
+ * (the `json` field), if any. This is the introspection entry point for
+ * tooling: the node is the single source of truth and this returns the schema
+ * it published.
+ *
+ * No editor or node instance is required, but this is not a side-effect-free
+ * read: resolving the config injects the class's synthesized statics and
+ * compiles its accessor tables, so a class whose schema names an accessor it
+ * does not have throws here rather than returning `undefined`.
  */
 export function nodeSerializationSchema(
   klass: Klass<LexicalNode>,

@@ -50,7 +50,7 @@ const mentionBackgroundColor = 'rgba(24, 119, 232, 0.2)';
 // schema-driven LexicalNode.exportJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface MentionNode {
-  exportJSON(): SerializedMentionNode;
+  exportJSON(compact?: boolean): SerializedMentionNode;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging

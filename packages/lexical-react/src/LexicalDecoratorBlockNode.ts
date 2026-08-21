@@ -56,7 +56,7 @@ const decoratorBlockNodeSchema = /* @__PURE__ */ objectValue({
 export interface DecoratorBlockNode {
   // The serialized shape this node exports; the runtime implementation is
   // the schema-driven LexicalNode.exportJSON.
-  exportJSON(): SerializedDecoratorBlockNode;
+  exportJSON(compact?: boolean): SerializedDecoratorBlockNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<
       SerializedPartial<SerializedDecoratorBlockNode>

@@ -40,7 +40,7 @@ declare export class LinkNode extends ElementNode {
   __title: null | string;
   constructor(url?: string, attributes?: LinkAttributes, key?: NodeKey): void;
   createDOM(config: EditorConfig): HTMLElement;
-  exportJSON(): SerializedLinkNode;
+  exportJSON(compact?: boolean): SerializedLinkNode;
   getURL(): string;
   setURL(url: string): void;
   getTarget(): null | string;

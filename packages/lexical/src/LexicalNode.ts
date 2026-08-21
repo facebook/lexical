@@ -92,9 +92,13 @@ export type SerializedLexicalNode = {
   /**
    * @deprecated A numeric schema version. Nothing reads it: parsing ignores it
    * entirely, which is why {@link SerializedPartial} — the type JSON being
-   * imported is accepted as — makes it optional. `exportJSON` still writes it
-   * (as `1`) so the output stays readable by older versions, which is the only
-   * reason it remains, and why it is still required here.
+   * imported is accepted as — makes it optional. `exportJSON` writes it (as
+   * `1`) so the output stays readable by older versions, which is the only
+   * reason it remains, and why it is required here.
+   *
+   * The one exception is `exportJSON(true)`: the compact form omits it along
+   * with everything else parsing restores on its own. That form is described
+   * by {@link SerializedPartial}, not by this type.
    */
   version: number;
   /**
@@ -447,9 +451,9 @@ export type LexicalExportJSON<T extends LexicalNode> = Prettify<
   Omit<ReturnType<T['exportJSON']>, 'type' | 'version'> & {
     type: GetStaticNodeType<T>;
     /**
-     * Optional on {@link SerializedLexicalNode} because parsing ignores it, but
-     * always present here: `exportJSON` writes it so the output remains
-     * readable by older versions.
+     * Written by `exportJSON` so the output remains readable by older
+     * versions — except in the compact form, which omits it along with
+     * everything else parsing restores on its own.
      */
     version: number;
   } & NodeStateJSON<T>
@@ -1671,6 +1675,14 @@ export class LexicalNode {
    * }
    * ```
    **/
+  /**
+   * Apply serialized JSON to this node. The whole `json` schema is applied, so
+   * a property the JSON omits is set to its schema default rather than left as
+   * it is — that is what lets the compact form omit a default-valued property
+   * and have parsing restore it. (A flat NodeState is the exception: it is
+   * applied only when present.) Pass the node's complete serialized form
+   * unless you mean to reset what you leave out.
+   */
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedLexicalNode>>,
   ): this {

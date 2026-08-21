@@ -101,10 +101,13 @@ const elementNodeSchema = /* @__PURE__ */ objectValue({
     ]),
     'getFormatType',
   ),
-  // Bounded because the domain is real, not cosmetic: ListItemNode.setIndent
-  // walks one level per step and rejects a negative, so an unbounded number
-  // from untrusted JSON either hangs the parse or aborts the whole document.
-  indent: /* @__PURE__ */ numberValue(0, {integer: true, max: 128, min: 0}),
+  // A whole, non-negative number: `setIndent` floors and rejects a negative,
+  // so those are out of domain and parse to 0. Deliberately not capped —
+  // `numberValue` falls back to its default rather than clamping, so a maximum
+  // here would silently flatten a legitimately deep document to indent 0. The
+  // unbounded walk that motivated a cap is ListItemNode.setIndent's, and it is
+  // bounded there.
+  indent: /* @__PURE__ */ numberValue(0, {integer: true, min: 0}),
   // Persisted only in the narrow case below, so they are read through getters
   // that return undefined (and are therefore omitted) otherwise.
   textFormat: /* @__PURE__ */ withGetter(
@@ -906,9 +909,10 @@ export class ElementNode
     if ($isRootOrShadowRoot(this)) {
       return false;
     }
-    // Walked rather than materialized with getChildren(): this runs for both
-    // textFormat and textStyle on every element of every export, and it exits
-    // at the first TextNode.
+    // Walked rather than materialized with getChildren(), and it exits at the
+    // first TextNode. Both callers below test their own value first, so an
+    // element with a default textFormat/textStyle — every element that has
+    // many non-text children in practice — never reaches this at all.
     for (
       let child = this.getFirstChild();
       child !== null;

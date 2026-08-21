@@ -99,7 +99,7 @@ export type SerializedTableCellNode = Spread<
 export interface TableCellNode {
   // The serialized shape this node exports; the runtime implementation is
   // the schema-driven LexicalNode.exportJSON.
-  exportJSON(): SerializedTableCellNode;
+  exportJSON(compact?: boolean): SerializedTableCellNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<
       SerializedPartial<SerializedTableCellNode>

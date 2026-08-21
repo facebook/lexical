@@ -3302,6 +3302,18 @@ function composeSchema(klass: Klass<LexicalNode>): ComposedSchema {
       }
     }
   }
+  if (__DEV__) {
+    for (const key of flatStates.keys()) {
+      // Export writes the flat state over the field, import applies the field
+      // over the state, so such a property would flip on every round trip.
+      invariant(
+        !derivedFirst.has(key),
+        '%s: "%s" is declared both as a json schema field and as a flat NodeState; it must be one or the other',
+        klass.name,
+        key,
+      );
+    }
+  }
   return derivedFirst.size === 0 && flatStates.size === 0
     ? EMPTY_COMPOSED_SCHEMA
     : {
@@ -3507,7 +3519,11 @@ export function $writeJSONGetters(
     let value: unknown;
     if (entry.kind === 'ownField') {
       const fields = ownFieldRecord(node);
-      if (__DEV__) {
+      value = fields[entry.field];
+      if (__DEV__ && value === undefined) {
+        // A value that is present proves the field is, so this only runs on
+        // the path that would otherwise silently omit the property — which is
+        // exactly what a misspelled field name looks like.
         invariant(
           entry.field in fields,
           '%s: json schema field "%s" reads a field %s that the node does not have',
@@ -3516,7 +3532,6 @@ export function $writeJSONGetters(
           entry.field,
         );
       }
-      value = fields[entry.field];
     } else {
       value = entry.getter.call(node);
     }
@@ -3545,6 +3560,17 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
       // withField: the property *is* this node field, so applying it is an
       // assignment — no method call, and no getWritable(), since the node
       // $applyJSONSetters walks is writable by construction.
+      //
+      // `__proto__` would reparent the node rather than write a property, so
+      // it is never a field name; the rest is checked on the prototype, where
+      // a class field declared with an initializer is not visible, so the
+      // getter mirror does the per-instance check.
+      invariant(
+        setterName !== '__proto__',
+        '%s: json schema field "%s" cannot be applied to __proto__',
+        klass.name,
+        key,
+      );
       fields.set(key, {field: setterName, key, kind: 'ownField', schema});
       continue;
     }

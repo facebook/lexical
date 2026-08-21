@@ -21,17 +21,6 @@ import {$isElementNode} from '.';
 let compactExport = false;
 
 /**
- * Whether {@link $withCompactExport} is currently asking for the compact form.
- * A node that writes its own `exportJSON` receives this as its argument and
- * does not need to read it.
- *
- * @experimental
- */
-export function $isCompactExport(): boolean {
-  return compactExport;
-}
-
-/**
  * Run `f` writing the compact form of the document (or, with `false`, the
  * legacy form), for any export it performs: `editorState.toJSON()`, the
  * `@lexical/clipboard` selection export, and the nested editors those

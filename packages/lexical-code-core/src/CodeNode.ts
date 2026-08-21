@@ -97,7 +97,7 @@ const noExtensionDeprecation = warnOnlyOnce(
 export interface CodeNode {
   // The serialized shape this node exports; the runtime implementation is
   // the schema-driven LexicalNode.exportJSON.
-  exportJSON(): SerializedCodeNode;
+  exportJSON(compact?: boolean): SerializedCodeNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedCodeNode>>,
   ): this;

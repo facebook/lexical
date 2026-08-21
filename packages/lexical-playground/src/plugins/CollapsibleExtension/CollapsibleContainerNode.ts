@@ -44,7 +44,7 @@ type SerializedCollapsibleContainerNode = Spread<
 // schema-driven LexicalNode.exportJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface CollapsibleContainerNode {
-  exportJSON(): SerializedCollapsibleContainerNode;
+  exportJSON(compact?: boolean): SerializedCollapsibleContainerNode;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging

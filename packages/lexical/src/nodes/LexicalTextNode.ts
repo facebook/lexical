@@ -350,7 +350,7 @@ function $wrapElementWith(
 export interface TextNode {
   // The serialized shape this node exports; the runtime implementation is
   // the schema-driven LexicalNode.exportJSON.
-  exportJSON(): SerializedTextNode;
+  exportJSON(compact?: boolean): SerializedTextNode;
   getTopLevelElement(): ElementNode | null;
   getTopLevelElementOrThrow(): ElementNode;
   // Narrows the accepted JSON at the type level only; the runtime

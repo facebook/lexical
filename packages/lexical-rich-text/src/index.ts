@@ -75,7 +75,6 @@ import {
   $setState,
   $setTextFormat,
   addClassNamesToElement,
-  booleanValue,
   CAN_USE_BEFORE_INPUT,
   type CaretDirection,
   CLICK_COMMAND,
@@ -177,7 +176,11 @@ export type SerializedQuoteNode = Spread<
  * change to the legacy behavior (and nothing extra is serialized).
  */
 export const quoteShadowRootState = /* @__PURE__ */ createState('shadowRoot', {
-  parse: /* @__PURE__ */ booleanValue(),
+  // Deliberately `Boolean` rather than `booleanValue()`: this state predates
+  // the schema and has always coerced, so a stored `1` or `"true"` means true.
+  // Narrowing it would silently turn such a quote back into a plain one, and
+  // $normalizeShadowRootChildren would then restructure its children.
+  parse: Boolean,
 });
 
 /** @noInheritDoc */
@@ -185,7 +188,7 @@ export const quoteShadowRootState = /* @__PURE__ */ createState('shadowRoot', {
 // schema-driven LexicalNode.exportJSON.
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface QuoteNode {
-  exportJSON(): SerializedQuoteNode;
+  exportJSON(compact?: boolean): SerializedQuoteNode;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
@@ -329,7 +332,7 @@ const headingNodeSchema = /* @__PURE__ */ objectValue({
 export interface HeadingNode {
   // The serialized shape this node exports; the runtime implementation is
   // the schema-driven LexicalNode.exportJSON.
-  exportJSON(): SerializedHeadingNode;
+  exportJSON(compact?: boolean): SerializedHeadingNode;
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedPartial<SerializedHeadingNode>>,
   ): this;

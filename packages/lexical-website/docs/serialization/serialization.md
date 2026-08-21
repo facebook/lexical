@@ -578,7 +578,7 @@ node boilerplate the schema does not touch.
 Each property's schema is built from composable helpers exported by
 `lexical`:
 
-- `stringValue(defaultValue = '')`, `numberValue(defaultValue = 0, {min, max, integer}?)`, and `booleanValue(defaultValue = false)` — primitive values with defaults
+- `stringValue(defaultValue = '')`, `numberValue(defaultValue = 0, {min, max, integer}?)`, and `booleanValue(defaultValue = false)` — primitive values with defaults. `numberValue` also reads a string that parses as a finite number (`"120"` → `120`), so a document that stringified its numbers keeps them; the domain it reports is still `number`
 - `enumValue(values, defaultValue = values[0])` — one of a fixed set of values
 - `nullable(inner, {defaultAsNull}?)` — the property may also be `null`
 - `optional(inner, {omitDefault}?)` — the property may be `undefined`

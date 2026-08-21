@@ -267,6 +267,14 @@ export function stringValue(defaultValue = ''): SerializationSchema<string> {
  * otherwise returns `defaultValue` (`0` by default). `NaN`, `Infinity`, and
  * `-Infinity` are all treated as out of domain since they can not be
  * round-tripped through JSON.
+ *
+ * A string that reads as a finite number is accepted and converted, so a
+ * document that stored `"120"` where Lexical writes `120` — a hand-authored
+ * fixture, a converter, or a backend that stringified its numbers — keeps its
+ * value instead of silently falling back to the default. The domain is still
+ * numbers: that is what the schema reports and what parsing returns, a string
+ * is only an input encoding of it.
+ *
  * @__NO_SIDE_EFFECTS__
  */
 export function numberValue(
@@ -275,14 +283,21 @@ export function numberValue(
 ): SerializationSchema<number> {
   const {min, max, integer} = options;
   return makeSchema(
-    value =>
-      typeof value === 'number' &&
-      Number.isFinite(value) &&
-      (min === undefined || value >= min) &&
-      (max === undefined || value <= max) &&
-      (!integer || Number.isInteger(value))
-        ? value
-        : defaultValue,
+    value => {
+      // `Number('')` and `Number(' ')` are 0, which would read blank as zero
+      // rather than as the absence of a value.
+      const parsed =
+        typeof value === 'string' && value.trim() !== ''
+          ? Number(value)
+          : value;
+      return typeof parsed === 'number' &&
+        Number.isFinite(parsed) &&
+        (min === undefined || parsed >= min) &&
+        (max === undefined || parsed <= max) &&
+        (!integer || Number.isInteger(parsed))
+        ? parsed
+        : defaultValue;
+    },
     {integer, kind: 'number', max, min},
   );
 }

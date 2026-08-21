@@ -61,9 +61,11 @@ describe('LexicalSchema value schemas', () => {
     expect(parse(42)).toBe(42);
     expect(parse(0)).toBe(0);
     expect(parse(-1.5)).toBe(-1.5);
+    // a stringified number is an input encoding of the same domain
+    expect(parse('42')).toBe(42);
     // out of domain -> default
     expect(parse(undefined)).toBe(0);
-    expect(parse('42')).toBe(0);
+    expect(parse('forty-two')).toBe(0);
     expect(parse(NaN)).toBe(0);
     expect(parse(Infinity)).toBe(0);
     expect(parse(-Infinity)).toBe(0);
@@ -879,5 +881,48 @@ describe('review fixes', () => {
     expect(idsState.isEqual(['a'], [])).toBe(false);
     // and the shared default cannot be mutated into every node
     expect(() => idsState.defaultValue.push('leak')).toThrow();
+  });
+});
+
+describe('numberValue accepts a stringified number', () => {
+  test('a string that reads as a finite number is converted', () => {
+    // Lexical writes numbers, but a hand-authored fixture, a converter or a
+    // backend that stringified its numbers can hand one back as a string.
+    const parse = numberValue(0);
+    expect(parse('2')).toBe(2);
+    expect(parse(' 2 ')).toBe(2);
+    expect(parse('1e3')).toBe(1000);
+    expect(parse('2.5')).toBe(2.5);
+    expect(parse('-4')).toBe(-4);
+  });
+
+  test('anything that does not read as a finite number is out of domain', () => {
+    const parse = numberValue(7);
+    // blank is the absence of a value, not Number('') === 0
+    for (const value of ['', '   ', 'abc', 'Infinity', 'NaN', true, null, []]) {
+      expect(parse(value)).toBe(7);
+    }
+  });
+
+  test('the bounds apply to the converted value', () => {
+    const span = numberValue(1, {integer: true, min: 1});
+    expect(span('2')).toBe(2);
+    expect(span('0')).toBe(1);
+    expect(span('2.5')).toBe(1);
+  });
+
+  test('the reported domain is still numbers', () => {
+    // A string is an input encoding, not part of the domain tooling generates.
+    expect(numberValue().meta).toMatchObject({kind: 'number'});
+    expect(numberValue(3).defaultValue).toBe(3);
+  });
+
+  test('a union cannot accept through a converting member', () => {
+    // Membership is "parsing leaves the value unchanged", so a member that
+    // converts never wins — which is why a conversion belongs outside.
+    const schema = unionValue([numberValue(), enumValue(['auto'])], 'auto');
+    expect(schema('2')).toBe('auto');
+    expect(schema(2)).toBe(2);
+    expect(transformValue(schema, v => (v === 'auto' ? 0 : v))('auto')).toBe(0);
   });
 });

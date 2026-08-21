@@ -623,12 +623,13 @@ describe('defaults and untrusted input', () => {
 });
 
 describe('the export and parse shapes differ only where parsing is looser', () => {
-  test('version is required on export and optional on parse', () => {
-    // exportJSON always writes it, and downstream code reads it off an
-    // exported node (`if (node.version < 2)`), so narrowing it there would
-    // break every such consumer. Parsing ignores it, and compact JSON omits
-    // it, so the parse shape relaxes it.
-    expectTypeOf<SerializedLexicalNode['version']>().toEqualTypeOf<number>();
+  test('version is optional in both directions', () => {
+    // Nothing reads it: parsing ignores it, and `exportJSON(true)` does not
+    // write it, so requiring it on the export shape would promise a property
+    // that is genuinely absent half the time.
+    expectTypeOf<SerializedLexicalNode['version']>().toEqualTypeOf<
+      number | undefined
+    >();
     expectTypeOf<
       SerializedPartial<SerializedLexicalNode>['version']
     >().toEqualTypeOf<number | undefined>();
@@ -638,6 +639,20 @@ describe('the export and parse shapes differ only where parsing is looser', () =
         SerializedPartial<SerializedLexicalNode>['$slots']
       >[string]['version']
     >().toEqualTypeOf<number | undefined>();
+  });
+
+  initializeUnitTest(testEnv => {
+    test('exportJSON(true) type-checks as the value it actually returns', () => {
+      // The compact form omits version; while it was required, reading it off
+      // the result type-checked as a number and was undefined at runtime.
+      testEnv.editor.update(() => {
+        const node = $createParagraphNode();
+        const compact = node.exportJSON(true);
+        expectTypeOf(compact.version).toEqualTypeOf<number | undefined>();
+        expect(compact).not.toHaveProperty('version');
+        expect(node.exportJSON()).toHaveProperty('version', 1);
+      });
+    });
   });
 });
 

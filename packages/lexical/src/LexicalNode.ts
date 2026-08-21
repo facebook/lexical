@@ -90,17 +90,16 @@ export type SerializedLexicalNode = {
   /** The type string used by the Node class */
   type: string;
   /**
-   * @deprecated A numeric schema version. Nothing reads it: parsing ignores it
-   * entirely, which is why {@link SerializedPartial} — the type JSON being
-   * imported is accepted as — makes it optional. `exportJSON` writes it (as
-   * `1`) so the output stays readable by older versions, which is the only
-   * reason it remains, and why it is required here.
+   * @deprecated A numeric schema version. Nothing reads it — parsing ignores
+   * it entirely — and nothing should: it is optional in both directions, so
+   * neither an exporter nor a parser may assume it is there.
    *
-   * The one exception is `exportJSON(true)`: the compact form omits it along
-   * with everything else parsing restores on its own. That form is described
-   * by {@link SerializedPartial}, not by this type.
+   * `exportJSON()` still writes it as `1` so the output stays readable by
+   * older versions, which is the only reason it remains. `exportJSON(true)`
+   * omits it along with everything else parsing restores on its own, which is
+   * why it cannot be required here.
    */
-  version: number;
+  version?: number;
   /**
    * Any state persisted with the NodeState API that is not
    * configured for flat storage
@@ -463,8 +462,8 @@ export type LexicalExportJSON<T extends LexicalNode> = Prettify<
  * Omit the children, type, and version properties from the given SerializedLexicalNode definition.
  *
  * Constrained to the *parse* shape rather than {@link SerializedLexicalNode},
- * so a {@link SerializedPartial} — where the deprecated `version` is optional,
- * as it is in compact JSON — is a valid argument.
+ * so a {@link SerializedPartial} — where every node-specific property is
+ * optional, as they are in compact JSON — is a valid argument.
  */
 export type LexicalUpdateJSON<
   T extends SerializedPartial<SerializedLexicalNode>,
@@ -475,25 +474,22 @@ export type LexicalUpdateJSON<
  * ({@link LexicalNode.importJSON} and {@link LexicalNode.updateFromJSON}).
  *
  * Only `type` identifies the node here: every node-specific property is made
- * optional via `Partial`, and the deprecated `version` with them, since
- * parsing ignores it. Parsing is generally untrusted and must tolerate missing
- * or out-of-domain values, so implementations are expected to substitute
- * sensible defaults — see the {@link Parse} helpers such as
+ * optional via `Partial`. Parsing is generally untrusted and must tolerate
+ * missing or out-of-domain values, so implementations are expected to
+ * substitute sensible defaults — see the {@link Parse} helpers such as
  * {@link stringValue}, {@link numberValue}, and {@link enumValue}. This also
  * enables a "compact" serialization variant in which any property left at its
  * default is omitted.
  *
- * The export direction keeps `version` required: `exportJSON` always writes
- * it, so narrowing it on {@link SerializedLexicalNode} itself would break
- * every consumer that reads it off an exported node.
+ * The deprecated `version` needs no relaxing here — it is already optional on
+ * {@link SerializedLexicalNode}, because a compact export omits it.
  */
 export type SerializedPartial<T extends SerializedLexicalNode> = Omit<
   SerializedLexicalNode & Partial<T>,
-  '$slots' | 'version'
+  '$slots'
 > & {
   /** Slot values are parsed by the same rules, so they relax the same way. */
   $slots?: Record<string, SerializedPartial<SerializedLexicalNode>>;
-  version?: number;
 };
 
 /** @internal */

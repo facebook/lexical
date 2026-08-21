@@ -474,25 +474,10 @@ export interface BaseSerializedNode {
    */
   $slots?: Record<string, BaseSerializedNode>;
   type: string;
-  /** @deprecated Ignored when parsing; see {@link SerializedLexicalNode.version}. */
-  version: number;
-}
-
-/**
- * The same payload as {@link BaseSerializedNode} with the deprecated `version`
- * relaxed, mirroring {@link SerializedPartial} in core. Parsing ignores
- * `version`, and a compact export omits it, so this is the shape the clipboard
- * accepts and the loosest shape it can produce. A `BaseSerializedNode` is one
- * of these, so every existing caller still type-checks.
- *
- * @experimental
- */
-export interface BasePartialSerializedNode {
-  children?: BasePartialSerializedNode[];
-  /** @experimental named-slots */
-  $slots?: Record<string, BasePartialSerializedNode>;
-  type: string;
-  /** @deprecated Ignored when parsing; see {@link SerializedLexicalNode.version}. */
+  /**
+   * @deprecated Ignored when parsing, and omitted by a compact export; see
+   * {@link SerializedLexicalNode.version}.
+   */
   version?: number;
 }
 
@@ -500,7 +485,7 @@ function $appendNodesToJSON(
   editor: LexicalEditor,
   selection: BaseSelection | null,
   currentNode: LexicalNode,
-  targetArray: BasePartialSerializedNode[] = [],
+  targetArray: BaseSerializedNode[] = [],
 ): boolean {
   let shouldInclude =
     selection !== null ? currentNode.isSelected(selection) : true;
@@ -518,9 +503,9 @@ function $appendNodesToJSON(
   }
   // Route through the shared export so a selection honors the same form as
   // editorState.toJSON().
-  const serializedNode: BasePartialSerializedNode = $exportNodeJSON(target);
+  const serializedNode: BaseSerializedNode = $exportNodeJSON(target);
   const children = $isElementNode(target) ? target.getChildren() : [];
-  let childTarget: BasePartialSerializedNode[] = [];
+  let childTarget: BaseSerializedNode[] = [];
   if ($isElementNode(target)) {
     invariant(
       Array.isArray(serializedNode.children),
@@ -577,7 +562,7 @@ function $appendNodesToJSON(
   if (shouldInclude && !shouldExclude) {
     const slotNames = $getSlotNames(target);
     if (slotNames.length > 0) {
-      const serializedSlots: Record<string, BasePartialSerializedNode> = {};
+      const serializedSlots: Record<string, BaseSerializedNode> = {};
       for (const name of slotNames) {
         const slotNode = $getSlot(target, name);
         invariant(
@@ -586,7 +571,7 @@ function $appendNodesToJSON(
           target.constructor.name,
           name,
         );
-        const slotArray: BasePartialSerializedNode[] = [];
+        const slotArray: BaseSerializedNode[] = [];
         $appendNodesToJSON(editor, null, slotNode, slotArray);
         // A whole-slot export must serialize to exactly the slot value node.
         // A slot value that overrides excludeFromCopy would instead make
@@ -629,7 +614,7 @@ function $appendNodesToJSON(
  * @returns an object with the editor namespace and a list of serializable nodes as JavaScript objects.
  */
 export function $generateJSONFromSelectedNodes<
-  SerializedNode extends BasePartialSerializedNode,
+  SerializedNode extends BaseSerializedNode,
 >(
   editor: LexicalEditor,
   selection: BaseSelection | null,
@@ -683,7 +668,7 @@ export function $generateJSONFromSelectedNodes<
  * @returns an Array of Lexical Node objects.
  */
 export function $generateNodesFromSerializedNodes(
-  serializedNodes: BasePartialSerializedNode[],
+  serializedNodes: BaseSerializedNode[],
 ): LexicalNode[] {
   const nodes = [];
   for (const serializedNode of serializedNodes) {

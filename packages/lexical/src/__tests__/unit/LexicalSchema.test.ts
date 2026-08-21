@@ -34,7 +34,6 @@ import {
   withAccessors,
   withField,
   withGetter,
-  withSetter,
 } from 'lexical';
 import {assert, describe, expect, expectTypeOf, test} from 'vitest';
 
@@ -449,7 +448,7 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
     test('meta and setter are inherited from the inner schema', () => {
       // Introspection describes the accepted input domain, so generated
       // examples keep exercising the legacy forms.
-      const inner = withSetter(stringValue(), 'setFoo');
+      const inner = withAccessors(stringValue(), {setter: 'setFoo'});
       const t = transformValue(inner, s => s.length);
       expect(t.meta).toBe(inner.meta);
       expect(t.setter).toBe('setFoo');
@@ -539,19 +538,19 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
     });
   });
 
-  describe('withSetter propagation through combinators', () => {
+  describe('withAccessors setter propagation through combinators', () => {
     test('optional and nullable keep the inner setter name', () => {
       // A field like `language: optional(nullable(stringValue()))` must apply
       // through the setter recorded anywhere inside the combinator stack.
       // arrayValue is deliberately excluded: it wraps an *element*, so the
       // element's accessors are not the array property's.
-      const inner = withSetter(stringValue(), 'setFoo');
+      const inner = withAccessors(stringValue(), {setter: 'setFoo'});
       expect(optional(inner).setter).toBe('setFoo');
       expect(nullable(inner).setter).toBe('setFoo');
       expect(optional(nullable(inner)).setter).toBe('setFoo');
-      expect(withSetter(optional(stringValue()), 'setBar').setter).toBe(
-        'setBar',
-      );
+      expect(
+        withAccessors(optional(stringValue()), {setter: 'setBar'}).setter,
+      ).toBe('setBar');
     });
 
     test('withAccessors records both directions at once', () => {
@@ -562,7 +561,10 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
       expect(schema.getter).toBe('getFoo');
       expect(schema.setter).toBe('setFoo');
       // each direction can also be layered on independently
-      const layered = withGetter(withSetter(stringValue(), 'setA'), 'getA');
+      const layered = withGetter(
+        withAccessors(stringValue(), {setter: 'setA'}),
+        'getA',
+      );
       expect(layered.getter).toBe('getA');
       expect(layered.setter).toBe('setA');
       // withField is a getter that reads the node's own field

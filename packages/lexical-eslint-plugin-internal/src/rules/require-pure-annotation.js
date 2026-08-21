@@ -48,7 +48,6 @@ const DEFAULT_FUNCTIONS = [
   'withAccessors',
   'withField',
   'withGetter',
-  'withSetter',
 ];
 
 const PURE_ANNOTATION = /[#@]__PURE__/;

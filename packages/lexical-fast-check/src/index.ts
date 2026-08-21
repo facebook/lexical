@@ -6,59 +6,14 @@
  *
  */
 
-import type {
-  AnySerializationSchema,
-  Klass,
-  LexicalNode,
-  SerializationSchemaFields,
-  SerializationSchemaMeta,
-} from 'lexical';
+import type {Klass, LexicalNode, SerializationSchemaMeta} from 'lexical';
 
 import * as fc from 'fast-check';
-import {getComposedSchemaFields, getStaticNodeConfig} from 'lexical';
-
-/**
- * Read the {@link SerializationSchema} a node class declares on its `$config`
- * (the `json` field), if any. This is the introspection entry point for
- * tooling: the node is the single source of truth and this returns the schema
- * it published.
- *
- * No editor or node instance is required, but this is not a side-effect-free
- * read: resolving the config injects the class's synthesized statics and
- * compiles its accessor tables, so a class whose schema names an accessor it
- * does not have throws here rather than returning `undefined`.
- */
-export function nodeSerializationSchema(
-  klass: Klass<LexicalNode>,
-): AnySerializationSchema | undefined {
-  const {ownNodeConfig} = getStaticNodeConfig(klass);
-  return ownNodeConfig ? ownNodeConfig.json : undefined;
-}
-
-/**
- * Collect the serialized-property schemas a node inherits, walking from the
- * class up through its abstract bases (e.g. ElementNode, which declares its
- * schema under a well-known `Symbol.for('ElementNode')` key). Properties are
- * merged base-first so a subclass's schema overrides its ancestor's. Flat node
- * states (which serialize at the top level like schema fields) are included
- * when their value has an introspectable schema; a flat state re-declared by a
- * subclass keeps the ancestor's config, matching the shared node state built
- * by `createSharedNodeState`. The result describes every node-specific
- * property of the class's serialized JSON, mirroring what the base
- * `updateFromJSON` applies.
- */
-export function composeNodeSerializationSchema(
-  klass: Klass<LexicalNode>,
-): SerializationSchemaFields {
-  // The core composes this once per class for its own compiled setters and
-  // getters; deriving from the same primitive is what keeps the properties
-  // this generates in step with the ones a node actually parses and writes.
-  return getComposedSchemaFields(klass);
-}
+import {getComposedSchemaFields} from 'lexical';
 
 /**
  * Derive a fast-check arbitrary for the node-specific properties of `klass`'s
- * serialized JSON, composing the schemas it inherits ({@link composeNodeSerializationSchema})
+ * serialized JSON, composing the schemas it inherits
  * — so an element-based node generates the properties it gets from ElementNode
  * as well as its own. Spread the result with `type`/`version` to feed
  * `importJSON`. Because each property's schema is the same one the node uses
@@ -75,7 +30,7 @@ export function composeNodeSerializationSchema(
 export function nodeArbitrary(
   klass: Klass<LexicalNode>,
 ): fc.Arbitrary<{[key: string]: unknown}> {
-  const fields = composeNodeSerializationSchema(klass);
+  const fields = getComposedSchemaFields(klass);
   const record: {[key: string]: fc.Arbitrary<unknown>} = {};
   for (const key of Object.keys(fields)) {
     record[key] = metaArbitrary(fields[key].meta);

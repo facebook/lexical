@@ -6,17 +6,15 @@
  *
  */
 
-import {
-  composeNodeSerializationSchema,
-  nodeArbitrary,
-  nodeSerializationSchema,
-} from '@lexical/fast-check';
+import {nodeArbitrary} from '@lexical/fast-check';
 import * as fc from 'fast-check';
 import {
   createEditor,
   createState,
   ElementNode,
   enumValue,
+  getComposedSchemaFields,
+  getStaticNodeConfig,
   type Klass,
   type LexicalNode,
   numberValue,
@@ -131,24 +129,28 @@ describe('@lexical/fast-check', () => {
   }
 
   test('TextNode publishes its own schema on $config', () => {
-    expect(nodeSerializationSchema(TextNode)).toBeDefined();
+    expect(getStaticNodeConfig(TextNode).ownNodeConfig?.json).toBeDefined();
   });
 
   test('ParagraphNode composes the schema ElementNode declares (abstract)', () => {
     // ParagraphNode declares no schema of its own; it inherits ElementNode's,
     // which ElementNode publishes under Symbol.for('ElementNode').
-    expect(nodeSerializationSchema(ParagraphNode)).toBeUndefined();
     expect(
-      Object.keys(composeNodeSerializationSchema(ParagraphNode)).sort(),
-    ).toEqual(['direction', 'format', 'indent', 'textFormat', 'textStyle']);
+      getStaticNodeConfig(ParagraphNode).ownNodeConfig?.json,
+    ).toBeUndefined();
+    expect(Object.keys(getComposedSchemaFields(ParagraphNode)).sort()).toEqual([
+      'direction',
+      'format',
+      'indent',
+      'textFormat',
+      'textStyle',
+    ]);
   });
 
   test('a subclass schema merges with its abstract base schema', () => {
     // MergeNode's own `variant` is merged with the five properties it inherits
     // from ElementNode's abstract schema.
-    expect(
-      Object.keys(composeNodeSerializationSchema(MergeNode)).sort(),
-    ).toEqual([
+    expect(Object.keys(getComposedSchemaFields(MergeNode)).sort()).toEqual([
       'direction',
       'format',
       'indent',
@@ -162,9 +164,7 @@ describe('@lexical/fast-check', () => {
     // FlatStateNode declares no json schema, only a flat `count` state; its
     // value schema (numberValue) makes it introspectable, so it appears
     // alongside the five properties inherited from ElementNode.
-    expect(
-      Object.keys(composeNodeSerializationSchema(FlatStateNode)).sort(),
-    ).toEqual([
+    expect(Object.keys(getComposedSchemaFields(FlatStateNode)).sort()).toEqual([
       'count',
       'direction',
       'format',
@@ -205,7 +205,7 @@ describe('@lexical/fast-check', () => {
       numRuns: 200,
       seed: 42,
     });
-    const keys = Object.keys(composeNodeSerializationSchema(TextNode));
+    const keys = Object.keys(getComposedSchemaFields(TextNode));
     expect(keys.length).toBeGreaterThan(0);
     for (const key of keys) {
       expect(samples.some(props => !(key in props))).toBe(true);

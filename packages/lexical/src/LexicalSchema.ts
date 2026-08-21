@@ -92,7 +92,7 @@ export interface SerializationSchema<T> {
    * the base {@link LexicalNode.updateFromJSON} walks a node's `json` schema.
    * When omitted, the setter name defaults to `set<Prop>` for the property this
    * schema is bound to in an {@link objectValue} (e.g. `foo` → `setFoo`). Use
-   * {@link withSetter} to record a name that doesn't follow that convention
+   * {@link withAccessors} to record a name that doesn't follow that convention
    * (e.g. TextNode's `text` → `setTextContent`), or a {@link SchemaField} to
    * write the value straight to a node field.
    */
@@ -678,7 +678,7 @@ function unionAccessors(
  * `transform` must be pure and total over `inner`'s outputs: it runs once
  * when the schema is built to derive the {@link SerializationSchema.defaultValue}
  * (the transform of `inner`'s default) and once per parsed value. The `meta`
- * (and any setter recorded with {@link withSetter}) are inherited from
+ * (and any setter recorded with {@link withAccessors}) are inherited from
  * `inner`, so introspection describes the accepted input domain — tooling
  * that generates example JSON keeps generating the legacy forms, which is
  * exactly what a parser test wants to exercise.
@@ -866,28 +866,6 @@ export function objectValue<T extends {readonly [key: string]: unknown}>(
 }
 
 /**
- * Return a copy of `schema` that records the name of the node setter used to
- * apply its parsed value when the base {@link LexicalNode.updateFromJSON} walks
- * a node's `json` schema. Use this for an {@link objectValue} field whose setter
- * does not follow the default `set<Prop>` naming.
- *
- * @example
- * ```ts
- * objectValue({
- *   // applied with node.setTextContent(...) rather than the default node.setText(...)
- *   text: withSetter(stringValue(), 'setTextContent'),
- * });
- * ```
- * @__NO_SIDE_EFFECTS__
- */
-export function withSetter<T>(
-  schema: SerializationSchema<T>,
-  setter: SchemaAccessor,
-): SerializationSchema<T> {
-  return withAccessors(schema, {setter});
-}
-
-/**
  * Return a copy of `schema` that records the name of the node getter used to
  * read its value when the base {@link LexicalNode.exportJSON} walks a node's
  * `json` schema. Use this for an {@link objectValue} field whose getter does
@@ -954,7 +932,7 @@ export function withField<T>(
  * Return a copy of `schema` that records both accessor names at once, which is
  * the common case for a property whose node methods do not follow the default
  * `get<Prop>`/`set<Prop>` naming. Equivalent to composing {@link withGetter}
- * and {@link withSetter}; either may be omitted to keep the default (or an
+ * and {@link withGetter}; either may be omitted to keep the default (or an
  * already recorded) name for that direction.
  *
  * @example
@@ -981,7 +959,7 @@ export function withAccessors<T>(
     },
     // Naming an accessor says nothing about the domain, so the copy keeps the
     // original's default and equality rather than re-deriving them. This is
-    // also the one place that copy is built: withSetter, withGetter and
+    // also the one place that copy is built: withGetter and
     // withField all delegate here.
     schema.defaultValue,
     schema.isEqual,

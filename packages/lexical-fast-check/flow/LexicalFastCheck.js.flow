@@ -7,19 +7,7 @@
  * @flow strict
  */
 
-import type {
-  AnySerializationSchema,
-  LexicalNode,
-  SerializationSchemaFields,
-} from 'lexical';
-
-declare export function nodeSerializationSchema(
-  klass: Class<LexicalNode>,
-): AnySerializationSchema | void;
-
-declare export function composeNodeSerializationSchema(
-  klass: Class<LexicalNode>,
-): SerializationSchemaFields;
+import type {LexicalNode} from 'lexical';
 
 // fast-check has no Flow types; the arbitrary is opaque here.
 declare export function nodeArbitrary(

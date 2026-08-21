@@ -1800,7 +1800,7 @@ export type SerializationSchema<T> = Parse<T> & {
   readonly getter?: SchemaAccessor,
   readonly setter?: SchemaAccessor,
   readonly isEqual?: (a: T, b: T) => boolean,
-  readonly accepts?: (value: mixed) => boolean,
+  readonly accepts?: (value: unknown) => boolean,
 };
 declare export function $exportNodeJSON(
   node: LexicalNode,
@@ -1878,10 +1878,6 @@ export type SchemaAccessors = {
 declare export function isSchemaField(
   accessor: SchemaAccessor | void,
 ): implies accessor is SchemaField;
-declare export function withSetter<T>(
-  schema: SerializationSchema<T>,
-  setter: SchemaAccessor,
-): SerializationSchema<T>;
 declare export function withGetter<T>(
   schema: SerializationSchema<T>,
   getter: SchemaAccessor,

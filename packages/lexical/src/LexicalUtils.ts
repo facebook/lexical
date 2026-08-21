@@ -3216,7 +3216,7 @@ const IS_UNOPTIMIZED_DEV_BUILD =
  * A precompiled step for applying one of a node's serialized top-level
  * properties in {@link LexicalNode.updateFromJSON}: either a `json` schema field
  * applied through a named setter (`set<Prop>` by default, or the name recorded
- * with `withSetter`), or a flat NodeState applied through the single
+ * with `withAccessors`), or a flat NodeState applied through the single
  * {@link $setState} entry point. Compiled once per class and cached so the base
  * updateFromJSON iterates an array and applies each directly, without walking
  * the class chain or materializing an intermediate parsed object on every call.
@@ -3693,7 +3693,7 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
     // this fails in every build rather than only in DEV.
     invariant(
       typeof method === 'function',
-      '%s: json schema field "%s" has no setter %s(); name one with withSetter or declare {setter: null} if it is derived on import',
+      '%s: json schema field "%s" has no setter %s(); name one with withAccessors or declare {setter: null} if it is derived on import',
       klass.name,
       key,
       setter,

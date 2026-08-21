@@ -278,7 +278,6 @@ export {
   withAccessors,
   withField,
   withGetter,
-  withSetter,
 } from './LexicalSchema';
 export type {
   BaseSelection,

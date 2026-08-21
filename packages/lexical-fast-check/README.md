@@ -34,15 +34,8 @@ fc.assert(
 );
 ```
 
-Two lower-level helpers are also exported for tooling that wants to inspect
-what a node declares:
-
-- `nodeSerializationSchema(NodeClass)` — the `json` schema the class itself
-  declares, if any.
-- `composeNodeSerializationSchema(NodeClass)` — every node-specific property
-  of the class's serialized JSON, including those inherited from its abstract
-  bases and any flat `NodeState` whose value schema is introspectable.
-
-Both read the class's `$config`, so no editor or node instance is required — but
-resolving it injects the class's synthesized statics and compiles its accessor
-tables, so a class whose schema names an accessor it does not have throws here.
+`nodeArbitrary` reads the class's `$config`, so no editor or node instance is
+required — but resolving it injects the class's synthesized statics and compiles
+its accessor tables, so a class whose schema names an accessor it does not have
+throws here. To inspect what a node declares without generating anything, call
+`getComposedSchemaFields(NodeClass)` from `lexical` directly.

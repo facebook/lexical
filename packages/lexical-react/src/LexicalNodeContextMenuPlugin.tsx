@@ -221,6 +221,26 @@ const NodeContextMenuPlugin = forwardRef<
 
   useEffect(() => {
     function onContextMenu(e: MouseEvent) {
+      let visibleItems: ContextMenuType[] = [];
+      if (items) {
+        editor.read(() => {
+          const node =
+            $getNearestNodeFromDOMNode(e.target as Element) ?? $getRoot();
+          if (node) {
+            visibleItems = items!.filter(option =>
+              option.$showOn ? option.$showOn(node) : true,
+            );
+          }
+        });
+      }
+
+      // Every item is hidden for this node, so there is no menu to show. Let
+      // the browser's own context menu open rather than suppressing it and
+      // mounting a scroll-locking overlay around nothing.
+      if (visibleItems.length === 0) {
+        return;
+      }
+
       e.preventDefault();
 
       refs.setPositionReference({
@@ -237,19 +257,6 @@ const NodeContextMenuPlugin = forwardRef<
           };
         },
       });
-
-      let visibleItems: ContextMenuType[] = [];
-      if (items) {
-        editor.read(() => {
-          const node =
-            $getNearestNodeFromDOMNode(e.target as Element) ?? $getRoot();
-          if (node) {
-            visibleItems = items!.filter(option =>
-              option.$showOn ? option.$showOn(node) : true,
-            );
-          }
-        });
-      }
 
       const renderableItems = visibleItems.map((option, index) => {
         if (option.type === 'separator') {

@@ -1067,9 +1067,8 @@ describe('isEqual is total over the values a getter can return', () => {
   });
 });
 
-describe('a class compiles once, at registration', () => {
+describe('a misconfigured accessor fails at registration', () => {
   class MissingSetterNode extends ElementNode {
-    __label = '';
     $config() {
       return this.config('missing-setter-node', {
         extends: ElementNode,
@@ -1079,26 +1078,81 @@ describe('a class compiles once, at registration', () => {
     }
   }
 
+  test('and keeps failing, rather than registering in silence', () => {
+    const build = () =>
+      buildEditorFromExtensions(
+        defineExtension({name: '[missing-setter]', nodes: [MissingSetterNode]}),
+      );
+    // Registration is where the error names the class that is misconfigured;
+    // later it would surface from whichever autosave or copy handler happened
+    // to serialize one of these nodes first. Run it twice: the per-class record
+    // is dropped when compiling throws, and caching one whose tables never
+    // compiled would let the second attempt succeed against a broken class.
+    for (let i = 0; i < 2; i++) {
+      expect(build).toThrow('has no setter setLabel()');
+    }
+  });
+});
+
+describe('a misspelled field name is caught in both directions', () => {
+  class ImportOnlyFieldNode extends ElementNode {
+    __label = '';
+    $config() {
+      return this.config('import-only-field-node', {
+        extends: ElementNode,
+        // Import-only, and the field name is a typo of __label. Because the
+        // property is never exported, this declaration produces an ownField
+        // entry on the setter table and none on the getter table.
+        json: objectValue({
+          label: withAccessors(stringValue(), {
+            getter: null,
+            setter: '__lable',
+          }),
+        }),
+      });
+    }
+  }
+
   const build = () =>
     buildEditorFromExtensions(
       defineExtension({
         $initialEditorState: null,
-        name: '[missing-setter]',
-        nodes: [MissingSetterNode],
+        name: '[import-only-field]',
+        nodes: [ImportOnlyFieldNode],
       }),
     );
 
-  test('a misconfigured accessor throws where the class is registered', () => {
-    // Not later, out of whichever autosave or copy handler happens to be the
-    // first thing that serializes one of these nodes.
-    expect(build).toThrow('has no setter setLabel()');
+  test('exporting reports a typo that only the import side declares', () => {
+    // Whichever direction runs first validates both tables. Checking only the
+    // caller's would leave this one unreported for the whole process, since
+    // exporting (autosave) generally precedes importing (paste).
+    using editor = build();
+    editor.update(
+      () => {
+        const node = $create(ImportOnlyFieldNode);
+        expect(() => node.exportJSON()).toThrow(
+          'names a node field __lable that the node does not have',
+        );
+      },
+      {discrete: true},
+    );
   });
 
-  test('and keeps throwing, rather than registering in silence', () => {
-    // The per-class record is dropped when compiling throws, so a second
-    // attempt re-runs it. Caching a record whose tables never compiled would
-    // let this one succeed.
-    expect(build).toThrow('has no setter setLabel()');
-    expect(build).toThrow('has no setter setLabel()');
+  test('a swallowed failure does not retire the check', () => {
+    // What a serialization path throws does not always reach the caller —
+    // parseEditorState routes it to the editor's onError — so the class must
+    // not be marked validated until the whole pass has run.
+    using editor = build();
+    editor.update(
+      () => {
+        const node = $create(ImportOnlyFieldNode);
+        for (let i = 0; i < 2; i++) {
+          expect(() => node.exportJSON()).toThrow(
+            'names a node field __lable that the node does not have',
+          );
+        }
+      },
+      {discrete: true},
+    );
   });
 });

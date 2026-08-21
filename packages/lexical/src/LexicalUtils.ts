@@ -129,7 +129,7 @@ export function getPendingNodeToClone(): null | LexicalNode {
 }
 
 // Internal, module-private sentinel passed as the second argument to an
-// auto-synthesized clone (see getStaticNodeConfig) by the internal clone
+// auto-synthesized clone (see injectSynthesizedStatics) by the internal clone
 // wrappers ($cloneWithProperties / $copyNode). Those wrappers are contractually
 // responsible for calling `afterCloneFrom(node)` on the result exactly once, so
 // they pass this sentinel to tell the synthesized clone NOT to call it too.
@@ -3127,8 +3127,10 @@ export interface OwnStaticNodeConfig {
  *
  * The derived fields are filled in *after* the record is cached, because
  * compiling walks the class chain and re-enters this cache for `klass` itself.
- * They stay `undefined` until then — and remain so if compilation threw — so
- * each is read through a helper that fills it on demand.
+ * They are `undefined` only inside that window — a record whose compilation
+ * threw is dropped rather than left behind — so each is read through a helper
+ * that fills it, for the sole caller that can observe the window: a `$config()`
+ * body that serializes a node of the class being built.
  */
 interface NodeClassRecord {
   readonly config: OwnStaticNodeConfig;
@@ -3138,6 +3140,9 @@ interface NodeClassRecord {
   /** DEV only: whether validateOwnFields has run for this class. */
   ownFieldsValidated: boolean;
 }
+// A WeakMap so dynamically created node classes (tests, HMR reloads) stay
+// collectable — more so now that one record pins a class's composed schema,
+// both compiled tables, and every prototype method they resolved.
 const NODE_CLASS_CACHE = new WeakMap<Klass<LexicalNode>, NodeClassRecord>();
 
 /**
@@ -3151,31 +3156,38 @@ function getNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
 
 /**
  * The compiled export-direction table for a node class (see
- * {@link compileGetters}), compiled at registration by
- * {@link buildNodeClassRecord} and recompiled here only if that threw.
+ * {@link compileGetters}). {@link buildNodeClassRecord} fills this while the
+ * class is being registered, so the fill below is reached only by a class that
+ * serializes one of its own nodes from inside its `$config()` — the one window
+ * where the record is cached but not yet compiled.
  */
 function getCompiledGetters(
-  klass: Klass<LexicalNode>,
+  record: NodeClassRecord,
 ): readonly CompiledGetter[] {
-  const record = getNodeClassRecord(klass);
-  if (record.getters === undefined) {
-    record.getters = compileGetters(klass);
+  const {getters} = record;
+  if (getters !== undefined) {
+    return getters;
   }
-  return record.getters;
+  const compiled = compileGetters(record.config.klass);
+  record.getters = compiled;
+  return compiled;
 }
 
 /** The compiled import-direction table; the mirror of {@link getCompiledGetters}. */
 function getCompiledSetters(
-  klass: Klass<LexicalNode>,
+  record: NodeClassRecord,
 ): readonly CompiledSetter[] {
-  const record = getNodeClassRecord(klass);
-  if (record.setters === undefined) {
-    record.setters = compileSetters(klass);
+  const {setters} = record;
+  if (setters !== undefined) {
+    return setters;
   }
-  return record.setters;
+  const compiled = compileSetters(record.config.klass);
+  record.setters = compiled;
+  return compiled;
 }
+
 // Brands a getType() closure that Lexical synthesized (as opposed to a
-// user-defined static getType()). getStaticNodeConfig uses this to avoid
+// user-defined static getType()). buildNodeClassRecord uses this to avoid
 // re-entering a synthesized closure while deriving a node's type, which would
 // otherwise recurse infinitely for subclasses under compiled class output.
 const SYNTHESIZED_GET_TYPE: unique symbol = Symbol(
@@ -3530,8 +3542,14 @@ function ownFieldRecord(node: LexicalNode): Record<string, unknown> {
  * Check every field name a class's `json` schema declares (`withField`, or an
  * accessor named `__something`) against a real instance of it. A misspelled
  * one is silent, total loss of that property — nothing is ever exported, and
- * importing writes a field the node does not read — so it is worth catching in
- * both directions and regardless of what the field currently holds.
+ * importing writes a field the node does not read.
+ *
+ * Both compiled tables are checked, not just the caller's. A getter name and a
+ * setter name are declared independently — `withAccessors` takes them
+ * separately, and either direction may be `null` — so a class can carry an
+ * `ownField` entry on one side and not the other. Checking only the direction
+ * that happened to serialize first would leave the other side's name unchecked
+ * for the life of the process.
  *
  * Unlike the method-name checks in {@link compileGetters} / {@link compileSetters},
  * this one is DEV-only. A field exists on a constructed node, not on the
@@ -3542,28 +3560,30 @@ function ownFieldRecord(node: LexicalNode): Record<string, unknown> {
  * alone — which is why those fail in every build and this does not. Running it
  * once per class keeps it off the per-node path in DEV too.
  */
-function validateOwnFields(
-  klass: Klass<LexicalNode>,
-  node: LexicalNode,
-  entries: readonly (CompiledGetter | CompiledSetter)[],
-): void {
-  const record = getNodeClassRecord(klass);
+function validateOwnFields(record: NodeClassRecord, node: LexicalNode): void {
   if (record.ownFieldsValidated) {
     return;
   }
-  record.ownFieldsValidated = true;
+  const {klass} = record.config;
   const fields = ownFieldRecord(node);
-  for (const entry of entries) {
-    if (entry.kind === 'ownField') {
-      invariant(
-        hasOwn(fields, entry.field),
-        '%s: json schema field "%s" names a node field %s that the node does not have',
-        klass.name,
-        entry.key,
-        entry.field,
-      );
+  for (const entries of [record.getters, record.setters]) {
+    for (const entry of entries || EMPTY_GETTERS) {
+      if (entry.kind === 'ownField') {
+        invariant(
+          hasOwn(fields, entry.field),
+          '%s: json schema field "%s" names a node field %s that the node does not have',
+          klass.name,
+          entry.key,
+          entry.field,
+        );
+      }
     }
   }
+  // Recorded only once the whole pass has run. The editor catches what a
+  // serialization path throws — parseEditorState routes it to `_onError`
+  // rather than rethrowing — so marking the class first would let one caught
+  // failure retire the check with every field after it still unexamined.
+  record.ownFieldsValidated = true;
 }
 
 /**
@@ -3595,9 +3615,10 @@ export function $writeJSONGetters(
   compact: boolean,
 ): void {
   const klass = node.constructor as Klass<LexicalNode>;
-  const getters = getCompiledGetters(klass);
+  const record = getNodeClassRecord(klass);
+  const getters = getCompiledGetters(record);
   if (__DEV__) {
-    validateOwnFields(klass, node, getters);
+    validateOwnFields(record, node);
   }
   for (let i = 0; i < getters.length; i++) {
     const entry = getters[i];
@@ -3701,9 +3722,10 @@ export function $applyJSONSetters<T extends LexicalNode>(
   serializedNode: {readonly [key: string]: unknown},
 ): T {
   const klass = node.constructor as Klass<LexicalNode>;
-  const setters = getCompiledSetters(klass);
+  const record = getNodeClassRecord(klass);
+  const setters = getCompiledSetters(record);
   if (__DEV__) {
-    validateOwnFields(klass, node, setters);
+    validateOwnFields(record, node);
   }
   let self = node;
   for (let i = 0; i < setters.length; i++) {
@@ -3822,6 +3844,58 @@ function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
       }
     }
   }
+  const record: NodeClassRecord = {
+    composed: undefined,
+    config: {klass, ownNodeConfig, ownNodeType},
+    getters: undefined,
+    ownFieldsValidated: false,
+    setters: undefined,
+  };
+  // Cached before compiling, because compileSetters walks this class chain
+  // (which includes klass) and re-enters this cache, which must hit rather
+  // than recurse.
+  NODE_CLASS_CACHE.set(klass, record);
+  // Compiled eagerly rather than on first export/import so that a schema
+  // naming an accessor the class does not have fails while the class is being
+  // registered — where the error names the class that is misconfigured — and
+  // not later, out of an autosave or a copy handler.
+  //
+  // Dropping the record on the way out keeps that error attributable: without
+  // it a second createEditor() would find the cached record, never reach this
+  // block again, and register the broken class in silence, leaving the throw
+  // to whichever serialization call happened to come first.
+  try {
+    record.setters = compileSetters(klass);
+    record.getters = compileGetters(klass);
+  } catch (error) {
+    NODE_CLASS_CACHE.delete(klass);
+    throw error;
+  }
+  // Injected last, so that every throw above — the caller's own $config(), the
+  // DEV clone-arity invariant, a schema naming an accessor that does not
+  // exist — leaves the class exactly as it was found. Nothing above reads a
+  // synthesized static: compileSetters and compileGetters resolve names off
+  // `klass.prototype` and walk the config chain, never `klass.getType` or
+  // `klass.clone`. Assigning them earlier would make the rollback a half
+  // measure, since a class cannot be un-mutated: it would answer getType()
+  // with a real type while every path through the cache re-threw.
+  injectSynthesizedStatics(klass, isAbstract, ownNodeType, ownNodeConfig);
+  return record;
+}
+
+/**
+ * Give a concrete node class the statics it did not define for itself:
+ * `getType`, `clone`, `importJSON` and `importDOM`, each derived from what its
+ * `$config()` declared. A class that defines its own keeps it.
+ */
+function injectSynthesizedStatics(
+  klass: Klass<LexicalNode>,
+  isAbstract: boolean,
+  ownNodeType: undefined | string,
+  ownNodeConfig:
+    | undefined
+    | StaticNodeConfigValue<LexicalNode, string | symbol>,
+): void {
   if (!isAbstract && ownNodeType) {
     if (!hasOwnStaticMethod(klass, 'getType')) {
       // Guard against subclass inheritance: a subclass that does not define its
@@ -3840,7 +3914,7 @@ function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
         }
         return ownNodeType;
       };
-      // Brand the closure so getStaticNodeConfig can recognize it and avoid
+      // Brand the closure so buildNodeClassRecord can recognize it and avoid
       // calling it to derive the node type (which would recurse). See the note
       // at the `ownGetType` computation above.
       (synthesizedGetType as {[SYNTHESIZED_GET_TYPE]?: true})[
@@ -3906,34 +3980,6 @@ function buildNodeClassRecord(klass: Klass<LexicalNode>): NodeClassRecord {
       }
     }
   }
-  const record: NodeClassRecord = {
-    composed: undefined,
-    config: {klass, ownNodeConfig, ownNodeType},
-    getters: undefined,
-    ownFieldsValidated: false,
-    setters: undefined,
-  };
-  // Cached before compiling, because compileSetters walks this class chain
-  // (which includes klass) and re-enters this cache, which must hit rather
-  // than recurse.
-  NODE_CLASS_CACHE.set(klass, record);
-  // Compiled eagerly rather than on first export/import so that a schema
-  // naming an accessor the class does not have fails while the class is being
-  // registered — where the error names the class that is misconfigured — and
-  // not later, out of an autosave or a copy handler.
-  //
-  // Dropping the record on the way out keeps that error attributable: without
-  // it a second createEditor() would find the cached record, never reach this
-  // block again, and register the broken class in silence, leaving the throw
-  // to whichever serialization call happened to come first.
-  try {
-    record.setters = compileSetters(klass);
-    record.getters = compileGetters(klass);
-  } catch (error) {
-    NODE_CLASS_CACHE.delete(klass);
-    throw error;
-  }
-  return record;
 }
 
 /**

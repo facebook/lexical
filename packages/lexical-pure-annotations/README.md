@@ -137,7 +137,7 @@ of an expression statement would otherwise read as a block.
 `createCommand` is deliberately not inlined: `{type: x}` is more bytes than a
 call to a minified one-character name.
 
-Each inlined factory is marked `@lexicalInline <form>` where it is defined.
+Each inlined factory is marked `@lexical-inline <form>` where it is defined.
 For an import from a Lexical package the marker is documentation — the table
 is trusted, because this package ships alongside that Lexical. Everywhere
 else (a factory of your own, declared in the module or imported relatively)

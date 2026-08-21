@@ -25,7 +25,7 @@ import type {CompiledSelector, DOMImportFn, DOMImportRule} from './types';
  *
  * @experimental
  * @__NO_SIDE_EFFECTS__
- * @lexicalInline identity
+ * @lexical-inline identity
  */
 export function defineImportRule<const S extends CompiledSelector>(rule: {
   readonly name?: string;

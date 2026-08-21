@@ -124,7 +124,7 @@ export const PURE_FACTORY_FUNCTIONS: readonly string[] =
  * The factories that `inline` replaces with a literal, and the form each one
  * takes: `identity` returns its single argument, `args` returns all of its
  * arguments as an array, and `tuple` returns its fixed number of arguments
- * as an array. Each is marked `@lexicalInline <form>` where it is defined.
+ * as an array. Each is marked `@lexical-inline <form>` where it is defined.
  */
 export const INLINE_FACTORY_FORMS: ReadonlyMap<string, string> =
   impl.INLINE_FACTORY_FORMS;

@@ -50,7 +50,7 @@ import type {
  * ```
  *
  * @__NO_SIDE_EFFECTS__
- * @lexicalInline identity
+ * @lexical-inline identity
  */
 export function defineExtension<
   Config extends ExtensionConfigBase,
@@ -88,7 +88,7 @@ export function defineExtension<
  * ```
  *
  * @__NO_SIDE_EFFECTS__
- * @lexicalInline args
+ * @lexical-inline args
  */
 export function configExtension<
   Config extends ExtensionConfigBase,
@@ -125,7 +125,7 @@ export function configExtension<
  * ```
  *
  * @__NO_SIDE_EFFECTS__
- * @lexicalInline args
+ * @lexical-inline args
  */
 export function declarePeerDependency<
   Extension extends AnyLexicalExtension = never,

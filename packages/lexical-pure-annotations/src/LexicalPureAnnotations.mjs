@@ -62,7 +62,7 @@ export const PURE_FACTORY_FUNCTIONS = [
  * with no annotation to preserve and nothing left to pin the definition it
  * appears in.
  *
- * Each of these is marked `@lexicalInline <form>` where it is defined, and
+ * Each of these is marked `@lexical-inline <form>` where it is defined, and
  * the unit tests check both that the marker and this table agree and that
  * the real function still returns what the form claims. `createCommand` is
  * deliberately not here: `{type: x}` is more bytes than a call to a minified
@@ -82,7 +82,7 @@ const INLINE_FACTORIES = new Map([
 ]);
 
 /** The marker a definition uses to declare itself inlinable. */
-const INLINE_MARKER_RE = /@lexicalInline\s+(\w+)/;
+const INLINE_MARKER_RE = /@lexical-inline\s+(\w+)/;
 
 /**
  * The form each inlinable factory is replaced with, for the tests that keep
@@ -529,7 +529,7 @@ const resolvedFileCache = new Map();
 const pureDeclarationCache = new Map();
 
 /**
- * The form named by a declaration's `@lexicalInline` marker, if it has one.
+ * The form named by a declaration's `@lexical-inline` marker, if it has one.
  *
  * @param {undefined | ReadonlyArray<any>} comments
  * @returns {null | string}
@@ -562,7 +562,7 @@ function hasNoSideEffectsComment(comments) {
  * The names this module declares (at module scope) with a NO_SIDE_EFFECTS
  * annotation. Calls to these are safe to annotate wherever they appear,
  * because the definition itself says so. The value is the form from the
- * declaration's `@lexicalInline` marker, when it has one: purity alone is
+ * declaration's `@lexical-inline` marker, when it has one: purity alone is
  * evidence enough to annotate a call, but replacing one requires knowing the
  * shape of what the function returns.
  *
@@ -707,7 +707,7 @@ function collectFactoryNames(program, functions, opts) {
    * A call is only replaced by a literal when the shape of what the factory
    * returns is known. An import from a Lexical package is taken on trust
    * (this package ships with that Lexical); anything else has to say so
-   * itself with a `@lexicalInline` marker whose form matches the table.
+   * itself with a `@lexical-inline` marker whose form matches the table.
    *
    * @param {string} local
    * @param {string} name

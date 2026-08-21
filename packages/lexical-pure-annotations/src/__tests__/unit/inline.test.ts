@@ -306,7 +306,7 @@ describe('inlining', () => {
       [
         `/**`,
         ` * @__NO_SIDE_EFFECTS__`,
-        ` * @lexicalInline identity`,
+        ` * @lexical-inline identity`,
         ` */`,
         `function defineExtension(config) {`,
         `  return config;`,
@@ -437,7 +437,7 @@ describe('the inlined factories are still trivial', () => {
       windowsPathsNoEscape: true,
     })) {
       const code = fs.readFileSync(file, 'utf8');
-      if (!code.includes('@lexicalInline')) {
+      if (!code.includes('@lexical-inline')) {
         continue;
       }
       const ast = parse(code, {plugins: ['typescript'], sourceType: 'module'});
@@ -447,7 +447,7 @@ describe('the inlined factories are still trivial', () => {
             ? statement.declaration
             : statement;
         const marker = (statement.leadingComments || [])
-          .map(comment => /@lexicalInline\s+(\w+)/.exec(comment.value))
+          .map(comment => /@lexical-inline\s+(\w+)/.exec(comment.value))
           .find(Boolean);
         if (marker && declaration.type === 'FunctionDeclaration') {
           marked.set(declaration.id!.name, marker[1]);

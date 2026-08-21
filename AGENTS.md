@@ -82,13 +82,20 @@ everything the monorepo builds from source. The published package is also
 what consumers add to their own build when they compile Lexical from its
 `source` export condition rather than from `dist`.
 
+A hand-written annotation on one of these calls is a lint error
+(`@lexical/internal/no-pure-annotation`), and the rule is autofixable, so a
+branch written before the transform existed migrates with
+`pnpm run lint:fix`. Annotations on anything else — a third-party factory, or
+a call inside a function body, where the build never injects one — are left
+alone.
+
 When adding a new factory of this kind, annotate its definition with
 `@__NO_SIDE_EFFECTS__` and add its name to `PURE_FACTORY_FUNCTIONS` in
 `packages/lexical-pure-annotations/src/LexicalPureAnnotations.mjs`.
 
 A factory whose body is a trivial expression over its own arguments (like
 `safeCast`, `defineExtension`, or `configExtension`) is additionally marked
-`@lexicalInline <form>` and listed in that file's `INLINE_FACTORIES`: the
+`@lexical-inline <form>` and listed in that file's `INLINE_FACTORIES`: the
 build replaces calls to it with the expression it would have returned, which
 needs no annotation at all. **The body of a marked function is reproduced by
 the build**, so keep it trivial — `packages/lexical-pure-annotations`'s unit

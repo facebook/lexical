@@ -14,6 +14,7 @@
     "lexical": "link:../../../../../packages/lexical"
   },
   "devDependencies": {
+    "@lexical/pure-annotations": "link:../../../../../packages/lexical-pure-annotations",
     "typescript": "^5.9.2",
     "vite": "^7.3.2"
   },

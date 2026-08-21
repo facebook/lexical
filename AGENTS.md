@@ -72,15 +72,19 @@ a direct `lexical` import.
 
 Module-scope calls to the side-effect-free factories (`defineExtension`,
 `configExtension`, `safeCast`, `createCommand`, `createState`,
-`defineImportRule`, etc.) must be annotated with `/* @__PURE__ */` so
-bundlers can drop unused definitions from application bundles. This is
-enforced (with an autofixer) by the
-`@lexical/internal/require-pure-annotation` ESLint rule — run
-`pnpm run lint:fix` (also run by the pre-commit hook) to insert the
-annotations automatically. When adding a new factory of this kind,
-annotate its definition with `@__NO_SIDE_EFFECTS__` and add its name to
-the rule's default list in
-`packages/lexical-eslint-plugin-internal/src/rules/require-pure-annotation.js`.
+`defineImportRule`, etc.) need a `/* @__PURE__ */` annotation so bundlers
+can drop unused definitions from application bundles. **Do not write those
+annotations by hand** — they are injected at build time by
+`@lexical/pure-annotations` (`packages/lexical-pure-annotations`), which
+runs as a Rollup plugin in `scripts/build.mjs` for the published bundles
+and as a Vite plugin in `scripts/vite/lexicalMonorepoPlugin.ts` for
+everything the monorepo builds from source. The published package is also
+what consumers add to their own build when they compile Lexical from its
+`source` export condition rather than from `dist`.
+
+When adding a new factory of this kind, annotate its definition with
+`@__NO_SIDE_EFFECTS__` and add its name to `PURE_FACTORY_FUNCTIONS` in
+`packages/lexical-pure-annotations/src/LexicalPureAnnotations.mjs`.
 
 ## High-Level Architecture
 

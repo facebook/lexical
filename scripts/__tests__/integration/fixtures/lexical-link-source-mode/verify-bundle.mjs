@@ -46,6 +46,16 @@ const assertions = [
       'bundle does not reference any prebuilt artifact (no `Lexical*.{dev,prod,node}.{js,mjs}` paths)',
     test: () => !/Lexical[A-Za-z]*\.(dev|prod|node)\.m?js/.test(bundle),
   },
+  {
+    // The TypeScript sources carry no /* @__PURE__ */ annotations; they are
+    // injected at build time, by Lexical's own build for the published
+    // bundles and by the @lexical/pure-annotations vite plugin here. Without
+    // them a source-mode consumer cannot tree-shake unused extension and
+    // command definitions.
+    description:
+      'bundle annotates the factory calls (proves @lexical/pure-annotations ran)',
+    test: () => /\/\*\s*[@#]__PURE__\s*\*\/\s*defineExtension\(/.test(bundle),
+  },
 ];
 
 // Each directly-linked package must resolve to its monorepo source directory

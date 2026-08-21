@@ -692,7 +692,7 @@ export function registerAutoLink(
  * The given `matchers` and `changeHandlers` will be merged by
  * concatenating the configured arrays.
  */
-export const AutoLinkExtension = /* @__PURE__ */ defineExtension({
+export const AutoLinkExtension = defineExtension({
   config: defaultConfig,
   dependencies: [LinkExtension],
   mergeConfig(config, overrides) {

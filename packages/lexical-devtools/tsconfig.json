@@ -54,6 +54,7 @@
       "@lexical/offset": ["../lexical-offset/src/index.ts"],
       "@lexical/overflow": ["../lexical-overflow/src/index.ts"],
       "@lexical/plain-text": ["../lexical-plain-text/src/index.ts"],
+      "@lexical/pure-annotations": ["../lexical-pure-annotations/src/index.ts"],
       "@lexical/react/ExtensionComponent": [
         "../lexical-react/src/ExtensionComponent.tsx"
       ],

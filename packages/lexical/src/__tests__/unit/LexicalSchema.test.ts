@@ -6,6 +6,7 @@
  *
  */
 
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {
   $createParagraphNode,
   $createTextNode,
@@ -13,6 +14,7 @@ import {
   $isTabNode,
   arrayValue,
   booleanValue,
+  ElementNode,
   enumValue,
   type LexicalUpdateJSON,
   nullable,
@@ -31,7 +33,7 @@ import {
   withGetter,
   withSetter,
 } from 'lexical';
-import {describe, expect, expectTypeOf, test} from 'vitest';
+import {assert, describe, expect, expectTypeOf, test} from 'vitest';
 
 import {initializeUnitTest} from '../utils';
 
@@ -630,5 +632,85 @@ describe('the export and parse shapes differ only where parsing is looser', () =
         SerializedPartial<SerializedLexicalNode>['$slots']
       >[string]['version']
     >().toEqualTypeOf<number | undefined>();
+  });
+});
+
+describe('withField compiles to direct field access', () => {
+  class FieldNode extends ElementNode {
+    __label = 'default';
+    calls = 0;
+
+    $config() {
+      return this.config('field-node', {
+        extends: ElementNode,
+        json: objectValue({
+          label: withField(stringValue('default'), '__label'),
+        }),
+      });
+    }
+
+    afterCloneFrom(prevNode: this): void {
+      super.afterCloneFrom(prevNode);
+      this.__label = prevNode.__label;
+    }
+
+    // Present so a regression that resolved the conventional name instead of
+    // the field would be observable rather than silently equivalent.
+    setLabel(label: string): this {
+      const self = this.getWritable();
+      self.calls += 1;
+      self.__label = `via-setter:${label}`;
+      return self;
+    }
+
+    getLabel(): string {
+      return `via-getter:${this.getLatest().__label}`;
+    }
+  }
+
+  test('the field is read and written directly, not through the methods', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[with-field]',
+        nodes: [FieldNode],
+      }),
+    );
+    editor.update(
+      () => {
+        const node = FieldNode.importJSON({label: 'hello', type: 'field-node'});
+        assert(node instanceof FieldNode);
+        expect(node.__label).toBe('hello');
+        expect(node.calls).toBe(0);
+        expect(node.exportJSON()).toMatchObject({label: 'hello'});
+      },
+      {discrete: true},
+    );
+  });
+
+  test('an absent property still parses to the schema default', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[with-field-default]',
+        nodes: [FieldNode],
+      }),
+    );
+    editor.update(
+      () => {
+        const bare = FieldNode.importJSON({type: 'field-node'});
+        assert(bare instanceof FieldNode);
+        expect(bare.__label).toBe('default');
+      },
+      {discrete: true},
+    );
+  });
+
+  test('the field name is introspectable, which is what makes it compilable', () => {
+    // A codegen pass emitting a specialized parser reads the accessor names
+    // off the schema; the `__` prefix is what marks one as a field.
+    const schema = withField(stringValue(), '__label');
+    expect(schema.getter).toBe('__label');
+    expect(schema.setter).toBe('__label');
   });
 });

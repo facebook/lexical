@@ -8,7 +8,7 @@
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {$getRoot} from 'lexical';
-import {describe, expect, test} from 'vitest';
+import {assert, describe, expect, test} from 'vitest';
 
 import {$createImageNode, ImageNode} from '../../src/nodes/ImageNode';
 
@@ -72,6 +72,66 @@ describe('ImageNode serialization', () => {
         const restored = ImageNode.importJSON(sized.exportJSON()) as ImageNode;
         expect(restored.__width).toBe(42);
         expect(restored.__height).toBe(24);
+      },
+      {discrete: true},
+    );
+  });
+
+  test('an absent maxWidth keeps the constructor default', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[image-max-width]',
+        nodes: [ImageNode],
+      }),
+    );
+    editor.update(
+      () => {
+        // `maxWidth` is read straight off the field but applied through
+        // setMaxWidth, which treats `undefined` as "keep what you have" — a
+        // direct field write would store `undefined` over the default.
+        const restored = ImageNode.importJSON({
+          altText: 'alt',
+          src: 'x.png',
+          type: 'image',
+        });
+        assert(restored instanceof ImageNode);
+        expect(restored.__maxWidth).toBe(500);
+        expect(restored.exportJSON()).toMatchObject({maxWidth: 500});
+      },
+      {discrete: true},
+    );
+  });
+
+  test('showCaption applies as a direct field write', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[image-show-caption]',
+        nodes: [ImageNode],
+      }),
+    );
+    editor.update(
+      () => {
+        // withField declares showCaption to *be* __showCaption, so parsing
+        // assigns it with no setter call and exporting reads it back.
+        const restored = ImageNode.importJSON({
+          altText: 'alt',
+          showCaption: true,
+          src: 'x.png',
+          type: 'image',
+        });
+        assert(restored instanceof ImageNode);
+        expect(restored.__showCaption).toBe(true);
+        expect(restored.exportJSON()).toMatchObject({showCaption: true});
+        // absent parses to the schema default rather than leaking undefined
+        const bare = ImageNode.importJSON({
+          altText: 'a',
+          src: 'y.png',
+          type: 'image',
+        });
+        assert(bare instanceof ImageNode);
+        expect(bare.__showCaption).toBe(false);
       },
       {discrete: true},
     );

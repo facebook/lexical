@@ -3164,6 +3164,15 @@ type CompiledSetter =
       readonly setter: (this: LexicalNode, value: unknown) => LexicalNode;
     }
   | {
+      // The fast path: the property *is* a node field, declared with
+      // withField, so applying it is an assignment with no method call and no
+      // getWritable() — $applyJSONSetters already holds the writable node.
+      readonly kind: 'ownField';
+      readonly key: string;
+      readonly schema: AnySerializationSchema;
+      readonly field: string;
+    }
+  | {
       readonly kind: 'state';
       readonly key: string;
       readonly stateConfig: AnyStateConfig;
@@ -3346,11 +3355,21 @@ export function getComposedSchemaFields(
  * so {@link LexicalNode.exportJSON} writes an object without walking the class
  * chain on every call.
  */
-interface CompiledGetter {
-  readonly key: string;
-  // Resolved once at compile time, like the setter counterpart.
-  readonly getter: (this: LexicalNode) => unknown;
-}
+type CompiledGetter =
+  | {
+      readonly kind: 'method';
+      readonly key: string;
+      // Resolved once at compile time, like the setter counterpart.
+      readonly getter: (this: LexicalNode) => unknown;
+    }
+  | {
+      // The fast path, mirroring the setter side: the property *is* a node
+      // field, so reading it is a property access. getLatest() is resolved
+      // once per node by $writeJSONGetters rather than once per field.
+      readonly kind: 'ownField';
+      readonly key: string;
+      readonly field: string;
+    };
 
 const EMPTY_GETTERS: readonly CompiledGetter[] = [];
 const compiledGettersByClass = new WeakMap<
@@ -3380,26 +3399,11 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
     }
     const getterName = schema.getter || defaultGetterName(key);
     if (getterName.startsWith('__')) {
-      // withField: read the node's own field rather than call a method,
-      // still through getLatest() so the current version is observed. The
-      // field only exists once a node is constructed, so unlike the method
-      // below it is checked on first read rather than here.
-      fields.set(key, {
-        getter: function (this: LexicalNode) {
-          const latest = this.getLatest() as unknown as Record<string, unknown>;
-          if (__DEV__) {
-            invariant(
-              getterName in latest,
-              '%s: json schema field "%s" reads a field %s that the node does not have',
-              klass.name,
-              key,
-              getterName,
-            );
-          }
-          return latest[getterName];
-        },
-        key,
-      });
+      // withField: the property *is* this node field, so reading it is a
+      // property access — no method call, and getLatest() resolved once per
+      // node instead of once per field. The field only exists on a constructed
+      // node, so unlike the method below it is checked on first read.
+      fields.set(key, {field: getterName, key, kind: 'ownField'});
       continue;
     }
     const getter = prototype[getterName];
@@ -3416,9 +3420,19 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
     fields.set(key, {
       getter: getter as (this: LexicalNode) => unknown,
       key,
+      kind: 'method',
     });
   }
   return fields.size === 0 ? EMPTY_GETTERS : [...fields.values()];
+}
+
+/**
+ * Read a node field by name. A node type has no index signature, so a dynamic
+ * property access needs the widening cast; keeping it in one named place
+ * leaves the call sites cast-free.
+ */
+function ownFieldRecord(node: LexicalNode): Record<string, unknown> {
+  return node as unknown as Record<string, unknown>;
 }
 
 /**
@@ -3441,9 +3455,30 @@ export function $writeJSONGetters(
     getStaticNodeConfig(klass);
     getters = compiledGettersByClass.get(klass) || EMPTY_GETTERS;
   }
+  // Resolved on the first `ownField` read and shared by the rest. A method
+  // getter resolves the latest version itself, so a class with no `ownField`
+  // getters never pays for this at all.
+  let latest: Record<string, unknown> | undefined;
   for (let i = 0; i < getters.length; i++) {
     const entry = getters[i];
-    const value = entry.getter.call(node);
+    let value: unknown;
+    if (entry.kind === 'ownField') {
+      if (latest === undefined) {
+        latest = ownFieldRecord(node.getLatest());
+      }
+      if (__DEV__) {
+        invariant(
+          entry.field in latest,
+          '%s: json schema field "%s" reads a field %s that the node does not have',
+          klass.name,
+          entry.key,
+          entry.field,
+        );
+      }
+      value = latest[entry.field];
+    } else {
+      value = entry.getter.call(node);
+    }
     if (value !== undefined) {
       json[entry.key] = value;
     }
@@ -3465,6 +3500,13 @@ function compileSetters(klass: Klass<LexicalNode>): readonly CompiledSetter[] {
       continue;
     }
     const setterName = schema.setter || defaultSetterName(key);
+    if (setterName.startsWith('__')) {
+      // withField: the property *is* this node field, so applying it is an
+      // assignment — no method call, and no getWritable(), since the node
+      // $applyJSONSetters walks is writable by construction.
+      fields.set(key, {field: setterName, key, kind: 'ownField', schema});
+      continue;
+    }
     const setter = prototype[setterName];
     // A field the class cannot apply would be silently dropped from every
     // import — it exports but never comes back — so, like the getter mirror,
@@ -3534,15 +3576,18 @@ export function $applyJSONSetters<T extends LexicalNode>(
         // value is stored verbatim instead of being invoked as an updater.
         self = $setState(self, entry.stateConfig, () => parsed);
       }
+      continue;
+    }
+    const parsed = entry.schema(
+      hasOwn(serializedNode, entry.key) ? serializedNode[entry.key] : undefined,
+    );
+    if (entry.kind === 'ownField') {
+      // `self` is writable already — updateFromJSON starts from getWritable()
+      // and every setter that replaces it returns a writable node — so this is
+      // the whole of applying the property.
+      ownFieldRecord(self)[entry.field] = parsed;
     } else {
-      const next = entry.setter.call(
-        self,
-        entry.schema(
-          hasOwn(serializedNode, entry.key)
-            ? serializedNode[entry.key]
-            : undefined,
-        ),
-      );
+      const next = entry.setter.call(self, parsed);
       // Lexical setters conventionally return the writable node so calls can
       // be chained, but a `void` setter is perfectly valid — it has already
       // mutated the node through getWritable(). Only follow a return value

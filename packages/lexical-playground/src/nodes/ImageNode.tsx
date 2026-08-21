@@ -144,7 +144,10 @@ const imageNodeSchema = /* @__PURE__ */ objectValue({
     /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
     '$getSerializedHeight',
   ),
-  maxWidth: /* @__PURE__ */ withField(
+  // Read straight from the field, but applied through setMaxWidth: an absent
+  // `maxWidth` parses to `undefined`, and the setter reads that as "keep the
+  // constructor's default" rather than as a value to store.
+  maxWidth: /* @__PURE__ */ withGetter(
     /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
     '__maxWidth',
   ),

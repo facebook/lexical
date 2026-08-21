@@ -625,17 +625,29 @@ export function withGetter<T>(
 }
 
 /**
- * Return a copy of `schema` that reads its value straight from a node's
- * internal field (always `__`-prefixed, per the convention every Lexical node
- * field follows) rather than through a getter method, for a property the node
- * stores but exposes no getter for. The read still goes through
- * `getLatest()`, so it observes the current version of the node like a getter
- * would.
+ * Return a copy of `schema` that declares the serialized property to *be* a
+ * node field (always `__`-prefixed, per the convention every Lexical node
+ * field follows) rather than a pair of accessor methods.
+ *
+ * This is the fast path in both directions: exporting reads the field, and
+ * importing assigns it, with no method call on either side — and no
+ * `getWritable()` on import, since the node being parsed into is writable by
+ * construction. Reading resolves `getLatest()` once per node rather than once
+ * per property. Because the name is recorded on the schema, an introspecting
+ * tool (a codegen pass emitting a specialized parser for a hot node type) can
+ * see that a property is a plain field and compile it to a direct assignment;
+ * the `__` prefix is what marks an accessor name as a field rather than a
+ * method.
+ *
+ * The trade-off is that a field access is exactly that: normalization,
+ * validation or bookkeeping a `set<Prop>` method would do is skipped, and a
+ * subclass override of that method is not consulted. Use it when the property
+ * really is the field — which is also what makes it safe to compile away.
  *
  * @example
  * ```ts
  * objectValue({
- *   // read as node.getLatest().__id, since the node has no getId()
+ *   // exported as node.__id, imported as `writable.__id = value`
  *   id: withField(stringValue(), '__id'),
  * });
  * ```
@@ -645,7 +657,7 @@ export function withField<T>(
   schema: SerializationSchema<T>,
   field: `__${string}`,
 ): SerializationSchema<T> {
-  return withGetter(schema, field);
+  return withAccessors(schema, {getter: field, setter: field});
 }
 
 /**

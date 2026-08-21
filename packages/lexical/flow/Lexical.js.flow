@@ -1957,6 +1957,8 @@ declare export function withGetter<T>(
   schema: SerializationSchema<T>,
   getter: string | null,
 ): SerializationSchema<T>;
+// A `__`-prefixed field name, which marks the property as a node field read
+// and written directly rather than through accessor methods.
 declare export function withField<T>(
   schema: SerializationSchema<T>,
   field: string,

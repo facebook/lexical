@@ -86,6 +86,15 @@ When adding a new factory of this kind, annotate its definition with
 `@__NO_SIDE_EFFECTS__` and add its name to `PURE_FACTORY_FUNCTIONS` in
 `packages/lexical-pure-annotations/src/LexicalPureAnnotations.mjs`.
 
+A factory whose body is a trivial expression over its own arguments (like
+`safeCast`, `defineExtension`, or `configExtension`) is additionally marked
+`@lexicalInline <form>` and listed in that file's `INLINE_FACTORIES`: the
+build replaces calls to it with the expression it would have returned, which
+needs no annotation at all. **The body of a marked function is reproduced by
+the build**, so keep it trivial — `packages/lexical-pure-annotations`'s unit
+tests compare what the transform emits against what the real function returns
+and will fail if the two drift apart.
+
 ## High-Level Architecture
 
 ### Core Concepts

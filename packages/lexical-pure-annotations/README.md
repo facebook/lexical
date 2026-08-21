@@ -100,10 +100,52 @@ shares a name with a Lexical factory — annotating a call that does have side
 effects would let a bundler drop it. Mark your own factories
 `@__NO_SIDE_EFFECTS__` (and add them to `functions`) to opt them in.
 
+## Eliding the trivial factories
+
+Some of the factories are pure type-level helpers whose implementation is a
+trivial expression over their own arguments:
+
+| Factory | Returns | Form |
+| --- | --- | --- |
+| `safeCast(value)` | `value` | `identity` |
+| `defineExtension(extension)` | `extension` | `identity` |
+| `defineImportRule(rule)` | `rule` | `identity` |
+| `configExtension(...args)` | `args` | `args` |
+| `declarePeerDependency(name, config)` | `[name, config]` | `tuple` |
+
+With `inline: true` the call is replaced by that expression instead of being
+annotated:
+
+```js
+export const MarkExtension = defineExtension({name: '@lexical/mark', ...});
+// becomes
+export const MarkExtension = {name: '@lexical/mark', ...};
+```
+
+which is better than an annotation in every way that matters: a literal is
+inert for every bundler with nothing to preserve through minification, there
+is no nested call left to pin the definition, and the factory itself can be
+dropped from the bundle once nothing calls it. A call that does not fit its
+form — a spread argument, `declarePeerDependency` with one argument (which
+returns `[name, undefined]`, not `[name]`), or a call whose result is
+discarded — is annotated as usual.
+
+`createCommand` is deliberately not inlined: `{type: x}` is more bytes than a
+call to a minified one-character name.
+
+This is **off by default** because it reproduces those function bodies, so it
+assumes the Lexical you are building matches this package's version — they
+are released together with the same version number. Lexical's own build turns
+it on for the bundles it publishes. Each inlined factory is marked
+`@lexicalInline <form>` where it is defined, and the package's tests check
+that the marker and the table agree and that the real functions still return
+what the table claims.
+
 ## Options
 
 | Option | Default | Description |
 | --- | --- | --- |
+| `inline` | `false` | Replace calls to the trivial factories with the literal they would have returned (see above). |
 | `functions` | `PURE_FACTORY_FUNCTIONS` | Names of the factories whose module-scope calls are annotated. Pass your own list (or `[...PURE_FACTORY_FUNCTIONS, 'myFactory']`) to cover factories of your own. |
 | `sources` | `[/^lexical$/, /^@lexical\//]` | `RegExp` (or array) of module specifiers whose exports are trusted to be the factories without reading them. |
 | `relativeImports` | `true` | Whether to read relatively imported modules to look for a `@__NO_SIDE_EFFECTS__` declaration. |

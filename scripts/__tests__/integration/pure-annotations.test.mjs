@@ -14,14 +14,15 @@ import {describe, expect, test} from 'vitest';
 import {transformPureAnnotations} from '../../../packages/lexical-pure-annotations/src/LexicalPureAnnotations.mjs';
 import {packagesManager} from '../../shared/packagesManager.mjs';
 
-// The sources carry no `/* @__PURE__ */` annotations; the build injects them
-// with @lexical/pure-annotations so that a consumer's bundler can drop the
-// extension, command, and rule definitions their app never uses. Guard that:
-// re-running the transform over each built artifact must find nothing left to
-// annotate. A failure means the annotations did not make it into the
-// published output (e.g. the plugin was dropped from scripts/build.mjs, or it
-// ran somewhere the bundled code no longer matches), which downstream
-// consumers would only notice as a silently larger bundle.
+// The sources carry no `/* @__PURE__ */` annotations and still call the
+// trivial factories; the build injects the annotations and inlines those
+// calls with @lexical/pure-annotations, so that a consumer's bundler can drop
+// the extension, command, and rule definitions their app never uses. Guard
+// both: re-running the transform over each built artifact must find nothing
+// left to annotate and nothing left to inline. A failure means the transform
+// did not make it into the published output (e.g. the plugin was dropped from
+// scripts/build.mjs, or it stopped recognizing the code it produced), which
+// downstream consumers would only notice as a silently larger bundle.
 describe('published builds carry the pure annotations', () => {
   for (const pkg of packagesManager.getPublicPackages()) {
     test(pkg.getNpmName(), () => {
@@ -32,10 +33,15 @@ describe('published builds carry the pure annotations', () => {
       const offenders = files.flatMap(fn => {
         const result = transformPureAnnotations(fs.readFileSync(fn, 'utf8'), {
           filename: fn,
+          inline: true,
         });
         return result === null
           ? []
-          : [`${path.relative(process.cwd(), fn)} (${result.count})`];
+          : [
+              `${path.relative(process.cwd(), fn)}: ${result.count} to annotate, ${
+                result.inlined
+              } to inline`,
+            ];
       });
       expect(offenders).toEqual([]);
     });

@@ -94,6 +94,11 @@ export default defineConfig({
 });
 ```
 
+Because a `link:`ed checkout is the same version as the plugin, you can also
+pass `pureAnnotations({inline: true})`, which replaces calls to the trivial
+factories (`safeCast`, `defineExtension`, `configExtension`, ...) with the
+literal they would have returned rather than annotating them.
+
 `@lexical/pure-annotations` also exports the transform itself
 (`transformPureAnnotations`) for bundlers without a Rollup-style plugin API;
 see its README for the options.

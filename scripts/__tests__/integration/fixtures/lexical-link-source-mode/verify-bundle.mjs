@@ -63,6 +63,17 @@ const assertions = [
     test: () =>
       transformPureAnnotations(bundle, {filename: bundlePath}) === null,
   },
+  {
+    // With `inline`, the trivial factories are not called at all: the calls
+    // are replaced by the literal they would have returned, here and in the
+    // linked Lexical source alike.
+    description:
+      'the trivial factories are inlined away (no calls left in the bundle)',
+    test: () =>
+      !/\b(safeCast|defineExtension|configExtension|defineImportRule)\(/.test(
+        bundle,
+      ),
+  },
 ];
 
 // Each directly-linked package must resolve to its monorepo source directory

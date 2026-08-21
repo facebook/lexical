@@ -363,7 +363,12 @@ async function build(
       // they are injected here (and by the same plugin for consumers that
       // build from the `source` export condition) so that both this build
       // and downstream bundlers can drop unused definitions.
-      pureAnnotations(),
+      //
+      // `inline` additionally replaces the calls whose result is a trivial
+      // expression over their arguments with that expression. It is off by
+      // default in the published plugin because it reproduces those bodies,
+      // but here the Lexical being built is this one.
+      pureAnnotations({inline: true}),
       commonjs(),
       json(),
       replace(

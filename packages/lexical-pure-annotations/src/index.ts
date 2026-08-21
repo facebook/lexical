@@ -38,6 +38,18 @@ export interface TransformPureAnnotationsOptions {
    * to {@link PURE_FACTORY_FUNCTIONS}.
    */
   functions?: Iterable<string>;
+  /**
+   * Replace calls to the factories whose result is a trivial expression over
+   * their arguments (`safeCast`, `defineExtension`, `configExtension`,
+   * `declarePeerDependency`, `defineImportRule`) with that expression rather
+   * than annotating them — a literal needs no annotation to be dropped, and
+   * nothing is left to pin the definition it appears in.
+   *
+   * Off by default, because it assumes the Lexical being built matches this
+   * package's version. Lexical's own build turns it on for the bundles it
+   * publishes.
+   */
+  inline?: boolean;
   /** Extra `@babel/parser` plugins to parse the module with. */
   parserPlugins?: readonly unknown[];
   /**
@@ -61,6 +73,11 @@ export interface PureAnnotationsResult {
   code: string;
   /** The number of annotations that were inserted. */
   count: number;
+  /**
+   * The number of calls that were replaced by the literal they would have
+   * returned. Always 0 unless `inline` is set.
+   */
+  inlined: number;
   map?: PureAnnotationsSourceMap;
 }
 
@@ -102,6 +119,15 @@ export interface PureAnnotationsPlugin {
  */
 export const PURE_FACTORY_FUNCTIONS: readonly string[] =
   impl.PURE_FACTORY_FUNCTIONS;
+
+/**
+ * The factories that `inline` replaces with a literal, and the form each one
+ * takes: `identity` returns its single argument, `args` returns all of its
+ * arguments as an array, and `tuple` returns its fixed number of arguments
+ * as an array. Each is marked `@lexicalInline <form>` where it is defined.
+ */
+export const INLINE_FACTORY_FORMS: ReadonlyMap<string, string> =
+  impl.INLINE_FACTORY_FORMS;
 
 /**
  * Insert a `__PURE__` annotation before every module-scope call to one of the

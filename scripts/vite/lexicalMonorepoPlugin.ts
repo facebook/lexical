@@ -45,7 +45,8 @@ export default function lexicalMonorepoPlugin(): Plugin[] {
     // /* @__PURE__ */ annotations injected, exactly as consumers of the
     // `source` export condition do. Harmless when the aliases point at
     // `dist` instead: those bundles are already annotated and the transform
-    // is idempotent.
-    pureAnnotations(),
+    // is idempotent. `inline` is safe to turn on here because the Lexical
+    // being built is always this checkout's.
+    pureAnnotations({inline: true}),
   ];
 }

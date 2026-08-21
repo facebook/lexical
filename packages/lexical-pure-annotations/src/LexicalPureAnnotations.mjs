@@ -55,6 +55,46 @@ export const PURE_FACTORY_FUNCTIONS = [
   'safeCast',
 ];
 
+/**
+ * The factories whose implementation is a trivial expression over their own
+ * arguments, and the shape a call to them can be replaced with. Eliding the
+ * call is better than annotating it: a literal is inert for every bundler,
+ * with no annotation to preserve and nothing left to pin the definition it
+ * appears in.
+ *
+ * Each of these is marked `@lexicalInline <form>` where it is defined, and
+ * the unit tests check both that the marker and this table agree and that
+ * the real function still returns what the form claims. `createCommand` is
+ * deliberately not here: `{type: x}` is more bytes than a call to a minified
+ * one-character name.
+ *
+ * - `identity` returns its single argument
+ * - `args` returns all of its arguments as an array
+ * - `tuple` returns its `arity` arguments as an array
+ *
+ * @type {ReadonlyMap<string, {arity?: number, form: 'args' | 'identity' | 'tuple'}>}
+ */
+const INLINE_FACTORIES = new Map([
+  ['configExtension', {form: 'args'}],
+  ['declarePeerDependency', {arity: 2, form: 'tuple'}],
+  ['defineExtension', {form: 'identity'}],
+  ['defineImportRule', {form: 'identity'}],
+  ['safeCast', {form: 'identity'}],
+]);
+
+/** The marker a definition uses to declare itself inlinable. */
+const INLINE_MARKER_RE = /@lexicalInline\s+(\w+)/;
+
+/**
+ * The form each inlinable factory is replaced with, for the tests that keep
+ * this table honest and for anyone who wants to know what `inline` does.
+ *
+ * @type {ReadonlyMap<string, string>}
+ */
+export const INLINE_FACTORY_FORMS = new Map(
+  Array.from(INLINE_FACTORIES, ([name, spec]) => [name, spec.form]),
+);
+
 /** The annotation inserted before a module-scope factory call. */
 const ANNOTATION = '/* @__PURE__ */ ';
 
@@ -180,13 +220,17 @@ function hasPureAnnotation(code, offset) {
 
 /**
  * Walk every node that is evaluated when the module is initialized, calling
- * `visitor` with each module-scope call to one of `functions`.
+ * `visitor` with each module-scope call to one of `functions`. The second
+ * argument is true when the call's value is thrown away (it is the whole of
+ * an expression statement), which is the one place a call must not be
+ * replaced by a literal.
  *
  * @param {any} node
- * @param {ReadonlySet<string>} functions
- * @param {(node: any) => void} visitor
+ * @param {ReadonlyMap<string, string> | ReadonlySet<string>} functions
+ * @param {(node: any, discarded: boolean) => void} visitor
+ * @param {boolean} [discarded]
  */
-function visitModuleScopeCalls(node, functions, visitor) {
+function visitModuleScopeCalls(node, functions, visitor, discarded) {
   if (Array.isArray(node)) {
     for (const child of node) {
       visitModuleScopeCalls(child, functions, visitor);
@@ -205,15 +249,208 @@ function visitModuleScopeCalls(node, functions, visitor) {
     node.callee.type === 'Identifier' &&
     functions.has(node.callee.name)
   ) {
-    visitor(node);
+    visitor(node, discarded === true);
   }
   for (const key of Object.keys(node)) {
     if (!SKIPPED_KEYS.has(key)) {
       const value = node[key];
       if (value && typeof value === 'object') {
-        visitModuleScopeCalls(value, functions, visitor);
+        visitModuleScopeCalls(
+          value,
+          functions,
+          visitor,
+          node.type === 'ExpressionStatement' && key === 'expression',
+        );
       }
     }
+  }
+}
+
+/**
+ * True when a call to a factory of this form can be replaced by the literal
+ * it would have returned. Anything the form cannot account for — a spread
+ * argument, the wrong number of arguments, a comma expression that would
+ * lose its parentheses — is annotated instead.
+ *
+ * @param {any} node the call expression
+ * @param {{arity?: number, form: string}} spec
+ * @returns {boolean}
+ */
+function canInlineCall(node, spec) {
+  const args = node.arguments;
+  if (spec.form === 'identity') {
+    return (
+      args.length === 1 &&
+      args[0].type !== 'SpreadElement' &&
+      args[0].type !== 'SequenceExpression'
+    );
+  }
+  if (spec.form === 'tuple') {
+    return (
+      args.length === spec.arity &&
+      args.every(
+        /** @param {any} argument */ argument =>
+          argument.type !== 'SpreadElement',
+      )
+    );
+  }
+  return true;
+}
+
+/**
+ * Walk every node in the tree, calling `visit` with each node and the node
+ * and key that hold it. Unlike visitModuleScopeCalls this does not stop at
+ * function boundaries: it is used to prove that a name is *not* referenced
+ * anywhere else in the module.
+ *
+ * @param {any} node
+ * @param {(node: any, parent: any, key: string) => void} visit
+ * @param {any} [parent]
+ * @param {string} [key]
+ */
+function walkAllNodes(node, visit, parent, key) {
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      walkAllNodes(child, visit, parent, key);
+    }
+    return;
+  }
+  if (!node || typeof node !== 'object' || typeof node.type !== 'string') {
+    return;
+  }
+  visit(node, parent, /** @type {string} */ (key));
+  for (const childKey of Object.keys(node)) {
+    if (!SKIPPED_KEYS.has(childKey)) {
+      const value = node[childKey];
+      if (value && typeof value === 'object') {
+        walkAllNodes(value, visit, node, childKey);
+      }
+    }
+  }
+}
+
+/**
+ * True when an identifier node is a reference to a binding rather than a
+ * name in some other position (a property name, an import specifier, ...).
+ * Anything unrecognized counts as a reference, so an unexpected position
+ * keeps the import rather than removing one that is still needed.
+ *
+ * @param {any} node
+ * @param {any} parent
+ * @param {string} key
+ * @returns {boolean}
+ */
+function isValueReference(node, parent, key) {
+  if (node.type !== 'Identifier' && node.type !== 'JSXIdentifier') {
+    return false;
+  }
+  if (!parent) {
+    return true;
+  }
+  switch (parent.type) {
+    case 'ImportDefaultSpecifier':
+    case 'ImportNamespaceSpecifier':
+    case 'ImportSpecifier':
+      return false;
+    case 'ExportSpecifier':
+      // `export {imported as somethingElse}` still refers to the binding.
+      return key === 'local';
+    case 'OptionalMemberExpression':
+    case 'MemberExpression':
+      return key !== 'property' || parent.computed === true;
+    case 'ClassMethod':
+    case 'ClassProperty':
+    case 'ObjectMethod':
+    case 'ObjectProperty':
+      return key !== 'key' || parent.computed === true;
+    default:
+      return true;
+  }
+}
+
+/**
+ * Remove the import specifiers whose only uses were calls that have just
+ * been replaced by a literal, so the transform does not leave behind an
+ * import that nothing references (which bundlers then warn about).
+ *
+ * @param {MagicString} magicString
+ * @param {any} program
+ * @param {ReadonlyArray<any>} inlinedCalls the call nodes that were replaced
+ */
+function removeUnusedImports(magicString, program, inlinedCalls) {
+  const callees = new Set(inlinedCalls.map(node => node.callee));
+  const names = new Set(inlinedCalls.map(node => node.callee.name));
+  if (names.size === 0) {
+    return;
+  }
+  // A name is still needed if anything other than an inlined callee refers
+  // to it, anywhere in the module.
+  walkAllNodes(program, (node, parent, key) => {
+    if (
+      names.has(node.name) &&
+      !callees.has(node) &&
+      isValueReference(node, parent, key)
+    ) {
+      names.delete(node.name);
+    }
+  });
+  for (const statement of program.body) {
+    if (
+      statement.type !== 'ImportDeclaration' ||
+      statement.importKind === 'type'
+    ) {
+      continue;
+    }
+    const {specifiers} = statement;
+    const removable = specifiers.filter(
+      /** @param {any} specifier */ specifier =>
+        specifier.type === 'ImportSpecifier' &&
+        specifier.importKind !== 'type' &&
+        names.has(specifier.local.name),
+    );
+    if (removable.length === 0) {
+      continue;
+    }
+    if (removable.length === specifiers.length) {
+      magicString.remove(statement.start, statement.end);
+      continue;
+    }
+    for (const specifier of removable) {
+      const index = specifiers.indexOf(specifier);
+      if (index < specifiers.length - 1) {
+        magicString.remove(specifier.start, specifiers[index + 1].start);
+      } else {
+        magicString.remove(specifiers[index - 1].end, specifier.end);
+      }
+    }
+  }
+}
+
+/**
+ * Replace a call with the literal the factory would have returned, keeping
+ * the argument source text (and any nested edits within it) intact.
+ *
+ * @param {MagicString} magicString
+ * @param {string} code
+ * @param {any} node the call expression
+ * @param {{arity?: number, form: string}} spec
+ */
+function inlineCall(magicString, code, node, spec) {
+  const comment = blockCommentBefore(code, node.start);
+  if (comment !== null && PURE_ANNOTATION_RE.test(comment.value)) {
+    // Left in front of a literal the annotation does nothing, and bundlers
+    // report it as misplaced.
+    magicString.remove(comment.start, node.start);
+  }
+  const args = node.arguments;
+  if (spec.form === 'identity') {
+    magicString.remove(node.start, args[0].start);
+    magicString.remove(args[0].end, node.end);
+  } else if (args.length === 0) {
+    magicString.overwrite(node.start, node.end, '[]');
+  } else {
+    magicString.overwrite(node.start, args[0].start, '[');
+    magicString.overwrite(args[args.length - 1].end, node.end, ']');
   }
 }
 
@@ -371,14 +608,15 @@ function pureDeclaredNamesOfFile(filename, parserPlugins) {
  * @param {any} program
  * @param {ReadonlySet<string>} functions
  * @param {TransformPureAnnotationsOptions} opts
- * @returns {Set<string>}
+ * @returns {Map<string, string>} local name to the factory it refers to
  */
 function collectFactoryNames(program, functions, opts) {
   const sources = toRegExpArray(opts.sources, DEFAULT_SOURCES);
-  const names = new Set();
+  /** @type {Map<string, string>} */
+  const names = new Map();
   for (const name of pureDeclaredNames(program)) {
     if (functions.has(name)) {
-      names.add(name);
+      names.set(name, name);
     }
   }
   for (const statement of program.body) {
@@ -404,7 +642,7 @@ function collectFactoryNames(program, functions, opts) {
         continue;
       }
       if (trusted) {
-        names.add(specifier.local.name);
+        names.set(specifier.local.name, specifier.imported.name);
         continue;
       }
       const resolved = resolveRelativeSpecifier(
@@ -417,7 +655,7 @@ function collectFactoryNames(program, functions, opts) {
           specifier.imported.name,
         )
       ) {
-        names.add(specifier.local.name);
+        names.set(specifier.local.name, specifier.imported.name);
       }
     }
   }
@@ -444,6 +682,10 @@ function mayNeedAnnotations(code, functions) {
  *   to choose the TypeScript and JSX parser plugins.
  * @property {Iterable<string>} [functions] Names of the factories whose
  *   module-scope calls are annotated. Defaults to PURE_FACTORY_FUNCTIONS.
+ * @property {boolean} [inline] Replace calls to the factories whose result
+ *   is a trivial expression over their arguments with that expression,
+ *   rather than annotating them. Off by default: it assumes the Lexical
+ *   being built matches this package's version.
  * @property {ReadonlyArray<any>} [parserPlugins] Extra Babel parser
  *   plugins, for syntax the defaults do not cover.
  * @property {boolean} [relativeImports] Set to false to skip reading
@@ -458,6 +700,8 @@ function mayNeedAnnotations(code, functions) {
  * @typedef {Object} PureAnnotationsResult
  * @property {number} count Number of annotations that were inserted.
  * @property {string} code
+ * @property {number} inlined Number of calls that were replaced by the
+ *   literal they would have returned.
  * @property {any} [map]
  */
 
@@ -493,21 +737,40 @@ export function transformPureAnnotations(code, options) {
   }
   /** @type {Array<number>} */
   const offsets = [];
-  visitModuleScopeCalls(ast.program, factoryNames, node => {
-    if (!hasPureAnnotation(code, node.start)) {
+  /** @type {Array<[any, {arity?: number, form: string}]>} */
+  const inlined = [];
+  visitModuleScopeCalls(ast.program, factoryNames, (node, discarded) => {
+    const spec =
+      opts.inline === true
+        ? INLINE_FACTORIES.get(
+            /** @type {string} */ (factoryNames.get(node.callee.name)),
+          )
+        : undefined;
+    if (spec !== undefined && !discarded && canInlineCall(node, spec)) {
+      inlined.push([node, spec]);
+    } else if (!hasPureAnnotation(code, node.start)) {
       offsets.push(node.start);
     }
   });
-  if (offsets.length === 0) {
+  if (offsets.length === 0 && inlined.length === 0) {
     return null;
   }
   const magicString = new MagicString(code);
   for (const offset of offsets) {
     magicString.appendLeft(offset, ANNOTATION);
   }
+  for (const [node, spec] of inlined) {
+    inlineCall(magicString, code, node, spec);
+  }
+  removeUnusedImports(
+    magicString,
+    ast.program,
+    inlined.map(([node]) => node),
+  );
   return {
     code: magicString.toString(),
     count: offsets.length,
+    inlined: inlined.length,
     map:
       opts.sourceMap === false
         ? undefined
@@ -557,6 +820,10 @@ function cleanModuleId(id) {
  * @property {RegExp | ReadonlyArray<RegExp>} [include] Module ids to
  *   transform, defaults to every .js/.jsx/.ts/.tsx (and .mjs/.cjs/.mts/.cts)
  *   module.
+ * @property {boolean} [inline] Replace calls to the factories whose result
+ *   is a trivial expression over their arguments with that expression,
+ *   rather than annotating them. Off by default: it assumes the Lexical
+ *   being built matches this package's version.
  * @property {ReadonlyArray<any>} [parserPlugins] Extra Babel parser
  *   plugins, for syntax the defaults do not cover.
  * @property {boolean} [relativeImports] Set to false to skip reading
@@ -600,6 +867,7 @@ export function pureAnnotations(options) {
         result = transformPureAnnotations(code, {
           filename,
           functions,
+          inline: opts.inline,
           parserPlugins: opts.parserPlugins,
           relativeImports: opts.relativeImports,
           sourceMap: opts.sourceMap,

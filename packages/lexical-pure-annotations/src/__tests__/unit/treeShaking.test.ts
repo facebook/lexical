@@ -36,14 +36,14 @@ function virtualEntry(code: string): Plugin {
 
 async function bundleEntry(
   code: string,
-  {annotate}: {annotate: boolean},
+  {annotate, inline}: {annotate: boolean; inline?: boolean},
 ): Promise<string> {
   const build = await rollup({
     external: [FACTORIES],
     input: ENTRY,
     plugins: [
       virtualEntry(code),
-      ...(annotate ? [pureAnnotations() as Plugin] : []),
+      ...(annotate ? [pureAnnotations({inline}) as Plugin] : []),
     ],
     treeshake: 'smallest',
   });
@@ -102,6 +102,37 @@ describe('tree-shaking', () => {
     expect(await bundleEntry(code, {annotate: true})).not.toContain(
       'safeCast(',
     );
+  });
+
+  it('drops an inlined definition with no annotation involved at all', async () => {
+    // With `inline`, the definition is a plain object literal, which every
+    // bundler already knows it can drop — there is no annotation left to
+    // preserve, and nothing pins it if a nested call is missed.
+    const code = [
+      `import {defineExtension, safeCast} from '${FACTORIES}';`,
+      `const UnusedExtension = defineExtension({`,
+      `  config: safeCast({disabled: false}),`,
+      `  name: 'unused',`,
+      `});`,
+      `export const used = 1;`,
+    ].join('\n');
+
+    const bundled = await bundleEntry(code, {annotate: true, inline: true});
+    expect(bundled).not.toContain('unused');
+    expect(bundled).not.toContain('__PURE__');
+    // Nothing is imported from the factory module any more either.
+    expect(bundled).not.toContain(FACTORIES);
+  });
+
+  it('keeps an inlined definition that is used, as a literal', async () => {
+    const code = [
+      `import {defineExtension} from '${FACTORIES}';`,
+      `export const UsedExtension = defineExtension({name: 'used'});`,
+    ].join('\n');
+
+    const bundled = await bundleEntry(code, {annotate: true, inline: true});
+    expect(bundled).toContain(`{name: 'used'}`);
+    expect(bundled).not.toContain('defineExtension(');
   });
 
   it('leaves a call that only runs when a function is called', async () => {

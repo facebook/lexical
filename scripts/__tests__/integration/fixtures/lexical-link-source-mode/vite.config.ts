@@ -32,7 +32,10 @@ export default defineConfig({
     sourcemap: false,
     target: 'es2022',
   },
-  plugins: [pureAnnotations()],
+  // `inline` reproduces the bodies of the trivial factories, so it is opt-in
+  // for consumers and expects a matching Lexical version — which a fixture
+  // linked against this checkout has by construction.
+  plugins: [pureAnnotations({inline: true})],
   resolve: {
     conditions: ['source', 'development', 'module', 'browser', 'default'],
   },

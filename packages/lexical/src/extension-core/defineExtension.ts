@@ -125,13 +125,15 @@ export function configExtension<
  * ```
  *
  * @__NO_SIDE_EFFECTS__
- * @lexicalInline tuple
+ * @lexicalInline args
  */
 export function declarePeerDependency<
   Extension extends AnyLexicalExtension = never,
 >(
-  name: Extension['name'],
-  config?: Partial<LexicalExtensionConfig<Extension>>,
+  ...args: [
+    name: Extension['name'],
+    config?: Partial<LexicalExtensionConfig<Extension>>,
+  ]
 ): NormalizedPeerDependency<Extension> {
-  return [name, config] as NormalizedPeerDependency<Extension>;
+  return args as NormalizedPeerDependency<Extension>;
 }

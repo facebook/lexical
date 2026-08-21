@@ -70,13 +70,12 @@ export const PURE_FACTORY_FUNCTIONS = [
  *
  * - `identity` returns its single argument
  * - `args` returns all of its arguments as an array
- * - `tuple` returns its `arity` arguments as an array
  *
- * @type {ReadonlyMap<string, {arity?: number, form: 'args' | 'identity' | 'tuple'}>}
+ * @type {ReadonlyMap<string, {form: 'args' | 'identity'}>}
  */
 const INLINE_FACTORIES = new Map([
   ['configExtension', {form: 'args'}],
-  ['declarePeerDependency', {arity: 2, form: 'tuple'}],
+  ['declarePeerDependency', {form: 'args'}],
   ['defineExtension', {form: 'identity'}],
   ['defineImportRule', {form: 'identity'}],
   ['safeCast', {form: 'identity'}],
@@ -313,7 +312,7 @@ function visitModuleScopeCalls(node, functions, visitor, state) {
  * lose its parentheses — is annotated instead.
  *
  * @param {any} node the call expression
- * @param {{arity?: number, form: string}} spec
+ * @param {{form: string}} spec
  * @returns {boolean}
  */
 function canInlineCall(node, spec) {
@@ -323,15 +322,6 @@ function canInlineCall(node, spec) {
       args.length === 1 &&
       args[0].type !== 'SpreadElement' &&
       args[0].type !== 'SequenceExpression'
-    );
-  }
-  if (spec.form === 'tuple') {
-    return (
-      args.length === spec.arity &&
-      args.every(
-        /** @param {any} argument */ argument =>
-          argument.type !== 'SpreadElement',
-      )
     );
   }
   return true;
@@ -491,7 +481,7 @@ function removeUnusedImports(magicString, code, program, inlinedCalls) {
  * @param {MagicString} magicString
  * @param {string} code
  * @param {any} node the call expression
- * @param {{arity?: number, form: string}} spec
+ * @param {{form: string}} spec
  * @param {boolean} [statementStart] whether the call begins an expression
  *   statement, where an object literal would be read as a block
  */
@@ -856,7 +846,7 @@ export function transformPureAnnotations(code, options) {
   }
   /** @type {Array<number>} */
   const offsets = [];
-  /** @type {Array<[any, {arity?: number, form: string}, boolean]>} */
+  /** @type {Array<[any, {form: string}, boolean]>} */
   const inlined = [];
   visitModuleScopeCalls(ast.program, factoryNames, (node, position) => {
     const factory = /** @type {{inline: undefined | any, name: string}} */ (

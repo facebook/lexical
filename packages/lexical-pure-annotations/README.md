@@ -111,7 +111,7 @@ trivial expression over their own arguments:
 | `defineExtension(extension)` | `extension` | `identity` |
 | `defineImportRule(rule)` | `rule` | `identity` |
 | `configExtension(...args)` | `args` | `args` |
-| `declarePeerDependency(name, config)` | `[name, config]` | `tuple` |
+| `declarePeerDependency(...args)` | `args` | `args` |
 
 With `inline: true` the call is replaced by that expression instead of being
 annotated:
@@ -128,12 +128,11 @@ is no nested call left to pin the definition, and the factory itself can be
 dropped from the bundle once nothing calls it (the import it came from is
 removed along with the last call to it).
 
-A call that does not fit its form is annotated as usual: a spread argument,
-`declarePeerDependency` with one argument (which returns `[name, undefined]`,
-not `[name]`), or a call whose result is discarded. The call's own
-parentheses are kept where they were doing work — `safeCast(1 + 2) * 3` is
-not `1 + 2 * 3`, and an object literal at the start of an expression
-statement would otherwise read as a block.
+A call that does not fit its form is annotated as usual: a spread argument
+where a single parameter is expected, or a call whose result is discarded.
+The call's own parentheses are kept where they were doing work —
+`safeCast(1 + 2) * 3` is not `1 + 2 * 3`, and an object literal at the start
+of an expression statement would otherwise read as a block.
 
 `createCommand` is deliberately not inlined: `{type: x}` is more bytes than a
 call to a minified one-character name.

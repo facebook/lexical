@@ -125,22 +125,35 @@ describe('inlining', () => {
   });
 
   it('annotates rather than inlines when the call does not fit the form', () => {
-    const cases = [
-      // A spread argument cannot be mapped onto the parameters.
-      `export const c = safeCast(...values);`,
-      // `declarePeerDependency(name)` returns `[name, undefined]`, which is
-      // not what `[name]` would be.
-      `export const p = declarePeerDependency('peer');`,
-    ];
-    for (const line of cases) {
-      const result = inline(
-        [`import {declarePeerDependency, safeCast} from 'lexical';`, line].join(
-          '\n',
-        ),
-      )!;
-      expect(result.inlined).toBe(0);
-      expect(result.count).toBe(1);
-    }
+    // A spread argument cannot be mapped onto a single parameter.
+    const result = inline(
+      [
+        `import {safeCast} from 'lexical';`,
+        `export const c = safeCast(...values);`,
+      ].join('\n'),
+    )!;
+    expect(result.inlined).toBe(0);
+    expect(result.count).toBe(1);
+  });
+
+  it('inlines a peer dependency declared without a config', () => {
+    // `declarePeerDependency` returns its arguments, so one argument gives a
+    // one element tuple — which is what `NormalizedPeerDependency` describes.
+    expect(
+      inline(
+        [
+          `import {declarePeerDependency} from 'lexical';`,
+          `export const p = declarePeerDependency('peer');`,
+          `export const q = declarePeerDependency('other', {a: 1});`,
+        ].join('\n'),
+      )!.code,
+    ).toBe(
+      [
+        ``,
+        `export const p = ['peer'];`,
+        `export const q = ['other', {a: 1}];`,
+      ].join('\n'),
+    );
   });
 
   it('leaves a call whose result is discarded alone', () => {
@@ -399,18 +412,20 @@ describe('the inlined factories are still trivial', () => {
   });
 
   it('declarePeerDependency returns its arguments as an array', () => {
-    const expression = inlinedExpression(
-      'declarePeerDependency',
-      'lexical',
-      `'peer', CONFIG`,
-    );
-    // The generic is what gives `name` and `config` their types; this test
-    // is about what the function returns at runtime.
+    // The generic is what gives `name` and `config` their types; this test is
+    // about what the function returns at runtime, for both arities.
     const declarePeer = declarePeerDependency as (
       name: string,
       config?: unknown,
     ) => unknown;
-    expect(evaluate(expression)).toEqual(declarePeer('peer', SCOPE.CONFIG));
+    expect(
+      evaluate(inlinedExpression('declarePeerDependency', 'lexical', `'peer'`)),
+    ).toEqual(declarePeer('peer'));
+    expect(
+      evaluate(
+        inlinedExpression('declarePeerDependency', 'lexical', `'peer', CONFIG`),
+      ),
+    ).toEqual(declarePeer('peer', SCOPE.CONFIG));
   });
 
   it('is marked as inlinable wherever it is defined', () => {

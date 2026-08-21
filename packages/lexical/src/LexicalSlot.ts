@@ -20,7 +20,11 @@ import type {ElementNode} from './nodes/LexicalElementNode';
 import invariant from '@lexical/internal/invariant';
 
 import {$getEditor, $getNodeByKey, $isDecoratorNode, $isElementNode} from '.';
-import {$removeFromParent, iterStaticNodeConfigChain} from './LexicalUtils';
+import {
+  $markSlotsUsed,
+  $removeFromParent,
+  iterStaticNodeConfigChain,
+} from './LexicalUtils';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
 
@@ -482,16 +486,8 @@ export function $setSlot<T extends LexicalNode & SlotHostNode>(
   writableNode.__slotHost = writableSelf.__key;
   slots.set(name, writableNode.__key);
   $canonicalizeSlotOrder(writableSelf);
-  $setSlotsUsed();
+  $markSlotsUsed();
   return writableSelf;
-}
-
-function $setSlotsUsed() {
-  const editor = $getEditor();
-  editor._slotsUsed = true;
-  if (editor._pendingEditorState) {
-    editor._pendingEditorState._slotsUsed = true;
-  }
 }
 
 /**

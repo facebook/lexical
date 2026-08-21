@@ -257,10 +257,21 @@ export class QuoteNode extends ElementNode {
 
   // Mutation
 
-  insertNewAfter(_: RangeSelection, restoreSelection?: boolean): ParagraphNode {
+  insertNewAfter(
+    rangeSelection: RangeSelection,
+    restoreSelection?: boolean,
+  ): ParagraphNode {
     const newBlock = $createParagraphNode();
+    // Carry the block properties and the caret's pending text format over to
+    // the continuation block, the same way ParagraphNode.insertNewAfter does.
+    if (rangeSelection) {
+      newBlock.setTextFormat(rangeSelection.format);
+      newBlock.setTextStyle(rangeSelection.style);
+    }
     const direction = this.getDirection();
     newBlock.setDirection(direction);
+    newBlock.setFormat(this.getFormatType());
+    newBlock.setStyle(this.getStyle());
     this.insertAfter(newBlock, restoreSelection);
     return newBlock;
   }

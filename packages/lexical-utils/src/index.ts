@@ -753,6 +753,25 @@ export function $restoreEditorState(
 }
 
 /**
+ * Determine whether anything follows the given caret before the end of its
+ * nearest root (see {@link lexical!$isRootOrShadowRoot}).
+ */
+function $hasContentAfter(caret: PointCaret<'next'>): boolean {
+  let nodeCaret: NodeCaret<'next'>;
+  if ($isTextPointCaret(caret)) {
+    if (caret.offset < caret.origin.getTextContentSize()) {
+      return true;
+    }
+    nodeCaret = caret.getSiblingCaret();
+  } else {
+    nodeCaret = caret;
+  }
+  return (
+    $getAdjacentSiblingOrParentSiblingCaret(nodeCaret, 'shadowRoot') !== null
+  );
+}
+
+/**
  * If the selected insertion area is the root/shadow root node (see {@link lexical!$isRootOrShadowRoot}),
  * the node will be appended there, otherwise, it will be inserted before the insertion area.
  * If there is no selection where the node is to be inserted, it will be appended after any current nodes
@@ -779,7 +798,18 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
         .getFlipped()
         .insert($createParagraphNode());
   }
-  const insertCaret = $insertNodeToNearestRootAtCaret(node, initialCaret);
+  // Splitting at the end of a block would otherwise leave an empty copy of
+  // that block after the inserted node. That empty block is only useful when
+  // the insertion point is at the very end of its nearest root, where it is
+  // the only place left for the selection to go. Anywhere else it is a
+  // spurious extra paragraph (#5433).
+  const insertCaret = $insertNodeToNearestRootAtCaret(
+    node,
+    initialCaret,
+    $hasContentAfter(initialCaret)
+      ? {$shouldSplit: (_node, edge) => edge !== 'last'}
+      : undefined,
+  );
   const adjacent = $getAdjacentChildCaret(insertCaret);
   const selectionCaret = $isChildCaret(adjacent)
     ? $normalizeCaret(adjacent)

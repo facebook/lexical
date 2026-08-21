@@ -660,6 +660,7 @@ export function MentionsPlugin(): JSX.Element | null {
 
   return (
     <LexicalTypeaheadMenuPlugin<MentionTypeaheadOption>
+      menuAriaLabel="Mentions"
       onQueryChange={setQueryString}
       onSelectOption={onSelectOption}
       triggerFn={checkForMentionMatch}

@@ -3400,9 +3400,9 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
     const getterName = schema.getter || defaultGetterName(key);
     if (getterName.startsWith('__')) {
       // withField: the property *is* this node field, so reading it is a
-      // property access — no method call, and getLatest() resolved once per
-      // node instead of once per field. The field only exists on a constructed
-      // node, so unlike the method below it is checked on first read.
+      // property access — no method call, and no getLatest() (see
+      // $writeJSONGetters). The field only exists on a constructed node, so
+      // unlike the method below it is checked on first read.
       fields.set(key, {field: getterName, key, kind: 'ownField'});
       continue;
     }
@@ -3442,6 +3442,13 @@ function ownFieldRecord(node: LexicalNode): Record<string, unknown> {
  * stringified, so this is how an optional (or conditionally persisted)
  * property is expressed.
  *
+ * A field is read off `node` as given, with no `getLatest()`. Serializing a
+ * graph only needs to resolve its root: every node the walk reaches after that
+ * comes from the EditorState's node map — `$getRoot()`, `getChildren()`,
+ * `$getSlot()` — so it is already the current version. (An ephemeral node, such
+ * as the sliced clone the clipboard walk exports, is deliberately not in the
+ * map, and reading it as given is the only correct thing to do.)
+ *
  * @internal
  */
 export function $writeJSONGetters(
@@ -3455,27 +3462,21 @@ export function $writeJSONGetters(
     getStaticNodeConfig(klass);
     getters = compiledGettersByClass.get(klass) || EMPTY_GETTERS;
   }
-  // Resolved on the first `ownField` read and shared by the rest. A method
-  // getter resolves the latest version itself, so a class with no `ownField`
-  // getters never pays for this at all.
-  let latest: Record<string, unknown> | undefined;
   for (let i = 0; i < getters.length; i++) {
     const entry = getters[i];
     let value: unknown;
     if (entry.kind === 'ownField') {
-      if (latest === undefined) {
-        latest = ownFieldRecord(node.getLatest());
-      }
+      const fields = ownFieldRecord(node);
       if (__DEV__) {
         invariant(
-          entry.field in latest,
+          entry.field in fields,
           '%s: json schema field "%s" reads a field %s that the node does not have',
           klass.name,
           entry.key,
           entry.field,
         );
       }
-      value = latest[entry.field];
+      value = fields[entry.field];
     } else {
       value = entry.getter.call(node);
     }

@@ -630,10 +630,10 @@ export function withGetter<T>(
  * field follows) rather than a pair of accessor methods.
  *
  * This is the fast path in both directions: exporting reads the field, and
- * importing assigns it, with no method call on either side — and no
- * `getWritable()` on import, since the node being parsed into is writable by
- * construction. Reading resolves `getLatest()` once per node rather than once
- * per property. Because the name is recorded on the schema, an introspecting
+ * importing assigns it, with no method call on either side — and no version
+ * resolution either way, since the node being parsed into is writable by
+ * construction and the node being exported is one the walk already resolved
+ * from the EditorState. Because the name is recorded on the schema, an introspecting
  * tool (a codegen pass emitting a specialized parser for a hot node type) can
  * see that a property is a plain field and compile it to a direct assignment;
  * the `__` prefix is what marks an accessor name as a field rather than a

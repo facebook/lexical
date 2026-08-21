@@ -8,6 +8,7 @@
 
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {
+  $create,
   $createParagraphNode,
   $createTextNode,
   $getRoot,
@@ -635,14 +636,30 @@ describe('the export and parse shapes differ only where parsing is looser', () =
   });
 });
 
+class CountingNode extends ElementNode {
+  getLatestCalls = 0;
+
+  getLatest(): this {
+    const latest = super.getLatest();
+    latest.getLatestCalls += 1;
+    return latest;
+  }
+}
+
+class PlainCountingNode extends CountingNode {
+  $config() {
+    return this.config('plain-counting', {extends: CountingNode});
+  }
+}
+
 describe('withField compiles to direct field access', () => {
-  class FieldNode extends ElementNode {
+  class FieldNode extends CountingNode {
     __label = 'default';
     calls = 0;
 
     $config() {
       return this.config('field-node', {
-        extends: ElementNode,
+        extends: CountingNode,
         json: objectValue({
           label: withField(stringValue('default'), '__label'),
         }),
@@ -701,6 +718,35 @@ describe('withField compiles to direct field access', () => {
         const bare = FieldNode.importJSON({type: 'field-node'});
         assert(bare instanceof FieldNode);
         expect(bare.__label).toBe('default');
+      },
+      {discrete: true},
+    );
+  });
+
+  test('a field property adds no version resolution to an export', () => {
+    // ElementNode's own properties are method-backed and each resolve the
+    // latest version themselves, so the absolute count is theirs. What this
+    // pins is the delta: declaring a `withField` property must add nothing,
+    // because the walk already handed exportJSON the current node.
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[with-field-latest]',
+        nodes: [FieldNode, PlainCountingNode],
+      }),
+    );
+    editor.update(
+      () => {
+        const withFieldNode = $create(FieldNode);
+        const withoutFieldNode = $create(PlainCountingNode);
+        $getRoot().append(withFieldNode, withoutFieldNode);
+        const [a, b] = $getRoot().getChildren();
+        assert(a instanceof FieldNode && b instanceof PlainCountingNode);
+        a.getLatestCalls = 0;
+        b.getLatestCalls = 0;
+        a.exportJSON();
+        b.exportJSON();
+        expect(a.getLatestCalls).toBe(b.getLatestCalls);
       },
       {discrete: true},
     );

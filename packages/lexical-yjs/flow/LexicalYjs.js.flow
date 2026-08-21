@@ -110,6 +110,7 @@ export type BaseBinding = {
   editor: LexicalEditor,
   excludedProperties: ExcludedProperties,
   id: string,
+  isBootstrapping: boolean,
   nodeProperties: Map<string, {[property: string]: unknown}>,
 };
 

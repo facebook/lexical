@@ -14,10 +14,10 @@ import invariant from '@lexical/internal/invariant';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {objectKlassEquals} from '@lexical/utils';
 import {
-  $applySerializationContext,
   $caretFromPoint,
   $caretRangeFromSelection,
   $comparePointCaretNext,
+  $exportNodeJSON,
   $getCaretRange,
   $getCaretRangeInDirection,
   $getChildCaret,
@@ -516,10 +516,9 @@ function $appendNodesToJSON(
   if (selection !== null && $isTextNode(target)) {
     target = $sliceSelectedTextNodeContent(selection, target, 'clone');
   }
-  // Route through the serialization context so a selection export honors the
-  // same compaction as editorState.toJSON().
-  const serializedNode: BasePartialSerializedNode =
-    $applySerializationContext(target);
+  // Route through the shared export so a selection honors the same form as
+  // editorState.toJSON().
+  const serializedNode: BasePartialSerializedNode = $exportNodeJSON(target);
   const children = $isElementNode(target) ? target.getChildren() : [];
   let childTarget: BasePartialSerializedNode[] = [];
   if ($isElementNode(target)) {

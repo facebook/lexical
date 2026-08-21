@@ -15,9 +15,7 @@ import {
   $getRoot,
   $getSelection,
   $selectAll,
-  $withSerializationContext,
-  type AnySerializationStateConfigPair,
-  SerializationContextCompact,
+  $withCompactExport,
   type SerializedPartial,
   type SerializedTextNode,
 } from 'lexical';
@@ -42,9 +40,7 @@ const extension = defineExtension({
 // property equal to its default, so the payload is a partial text node.
 type SelectedTextJSON = SerializedPartial<SerializedTextNode>;
 
-function selectionJSON(
-  pairs: readonly AnySerializationStateConfigPair[] = [],
-): SelectedTextJSON[] {
+function selectionJSON(compact = false): SelectedTextJSON[] {
   using editor = buildEditorFromExtensions({
     dependencies: [extension],
     name: '[root]',
@@ -57,7 +53,8 @@ function selectionJSON(
   editor.update(
     () => {
       $selectAll();
-      nodes = $withSerializationContext(pairs)(
+      nodes = $withCompactExport(
+        compact,
         () =>
           $generateJSONFromSelectedNodes<SelectedTextJSON>(
             editor,
@@ -87,7 +84,7 @@ describe('selection export honors the serialization context', () => {
   });
 
   test('compact applies to a selection export too', () => {
-    const nodes = selectionJSON([[SerializationContextCompact, true]]);
+    const nodes = selectionJSON(true);
     expect(nodes).toEqual([
       {text: 'plain', type: 'text'},
       {format: 1, text: 'secret', type: 'text'},
@@ -97,7 +94,7 @@ describe('selection export honors the serialization context', () => {
   test('the legacy form can be forced at a call site', () => {
     // Whatever an editor is configured to do, a caller that needs the old
     // format for compatibility can ask for it around any export.
-    const [plain] = selectionJSON([[SerializationContextCompact, false]]);
+    const [plain] = selectionJSON(false);
     expect(plain.version).toBe(1);
   });
 });

@@ -1790,80 +1790,6 @@ export type StateValueConfig<V> = {
   resetOnCopyNode?: boolean;
 }
 
-/**
- * Context records (DOM render/import, JSON export)
- */
-export type ContextRecord<K> = {[string | symbol]: unknown};
-export type ContextConfig<Sym, V> = StateConfig<symbol, V>;
-export type ContextConfigPair<Ctx, V> = [ContextConfig<Ctx, V>, V];
-export type ContextConfigUpdater<Ctx, V> = {
-  readonly cfg: ContextConfig<Ctx, V>,
-  readonly updater: (prev: V) => V,
-};
-export type ContextPairOrUpdater<Ctx, V> =
-  | ContextConfigPair<Ctx, V>
-  | ContextConfigUpdater<Ctx, V>;
-// $FlowFixMe[unclear-type]
-export type AnyContextConfigPairOrUpdater<Ctx> = ContextPairOrUpdater<Ctx, any>;
-declare export function getContextValue<Ctx, V>(
-  contextRecord: void | ContextRecord<Ctx>,
-  cfg: ContextConfig<Ctx, V>,
-): V;
-declare export function contextFromPairs<Ctx>(
-  pairs: ReadonlyArray<AnyContextConfigPairOrUpdater<Ctx>>,
-  parent: void | ContextRecord<Ctx>,
-): void | ContextRecord<Ctx>;
-declare export function contextValue<Ctx, V>(
-  cfg: ContextConfig<Ctx, V>,
-  value: V,
-): ContextConfigPair<Ctx, V>;
-declare export function contextUpdater<Ctx, V>(
-  cfg: ContextConfig<Ctx, V>,
-  updater: (prev: V) => V,
-): ContextConfigUpdater<Ctx, V>;
-declare export function createContextState<Tag, V>(
-  tag: Tag,
-  name: string,
-  getDefaultValue: () => V,
-  isEqual?: (a: V, b: V) => boolean,
-): ContextConfig<Tag, V>;
-export type ContextScope = LexicalEditor | symbol;
-declare export function getContextRecord<Ctx>(
-  sym: Ctx,
-  scope: ContextScope,
-): void | ContextRecord<Ctx>;
-declare export function $withFullContext<Ctx, T>(
-  sym: Ctx,
-  contextRecord: ContextRecord<Ctx>,
-  f: () => T,
-  scope?: ContextScope,
-): T;
-declare export function $withContext<Ctx, Scope>(
-  sym: Ctx,
-  $defaults?: (scope: Scope) => void | ContextRecord<Ctx>,
-): (
-  cfg: ReadonlyArray<AnyContextConfigPairOrUpdater<Ctx>>,
-  scope?: Scope,
-) => <T>(f: () => T) => T;
-export type SerializationStateConfig<V> = ContextConfig<symbol, V>;
-export type SerializationStateConfigPair<V> = [SerializationStateConfig<V>, V];
-// $FlowFixMe[unclear-type] the pair is heterogeneous by construction
-export type AnySerializationStateConfigPair = SerializationStateConfigPair<any>;
-declare export function createSerializationState<V>(
-  name: string,
-  defaultValue: V,
-): SerializationStateConfig<V>;
-declare export var SerializationContextCompact: SerializationStateConfig<boolean>;
-declare export function $getSerializationContextValue<V>(
-  cfg: SerializationStateConfig<V>,
-): V;
-declare export function $withSerializationContext(
-  pairs: ReadonlyArray<AnySerializationStateConfigPair>,
-): <T>(f: () => T) => T;
-declare export function $applySerializationContext(
-  node: LexicalNode,
-): SerializedLexicalNode;
-
 export type Parse<T> = (value: unknown) => T;
 // A callable carrying its own metadata, so introspecting tooling
 // (getComposedSchemaFields, @lexical/fast-check) can read `meta` and
@@ -1873,7 +1799,16 @@ export type SerializationSchema<T> = Parse<T> & {
   readonly meta: SerializationSchemaMeta,
   readonly getter?: string | null,
   readonly setter?: string | null,
+  readonly isEqual?: (a: T, b: T) => boolean,
 };
+declare export function $exportNodeJSON(
+  node: LexicalNode,
+): SerializedLexicalNode;
+declare export function $isCompactExport(): boolean;
+declare export function $withCompactExport<T>(
+  compact: boolean,
+  f: () => T,
+): T;
 export type AnySerializationSchema = SerializationSchema<unknown>;
 export type SerializationSchemaFields = {
   readonly [key: string]: AnySerializationSchema,

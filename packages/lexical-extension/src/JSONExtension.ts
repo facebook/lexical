@@ -7,11 +7,10 @@
  */
 
 import {
-  $withSerializationContext,
+  $withCompactExport,
   defineExtension,
   type EditorState,
   safeCast,
-  SerializationContextCompact,
   type SerializedEditorState,
 } from 'lexical';
 
@@ -74,24 +73,14 @@ export interface JSONExtensionOutput {
  */
 export const JSONExtension = /* @__PURE__ */ defineExtension({
   build(editor, config): JSONExtensionOutput {
-    // Both configurations are fixed at build time, so the context closures are
-    // built once here rather than per export call.
-    const $withCompact = $withSerializationContext([
-      [SerializationContextCompact, true],
-    ]);
-    const $withLegacy = $withSerializationContext([
-      [SerializationContextCompact, false],
-    ]);
-    const $withConfigured = (compact: boolean) =>
-      compact ? $withCompact : $withLegacy;
     return {
       $exportJSON(editorState = editor.getEditorState(), options = {}) {
         const compact =
           options.compact === undefined ? config.compact : options.compact;
-        return $withConfigured(compact)(() => editorState.toJSON());
+        return $withCompactExport(compact, () => editorState.toJSON());
       },
       $withSerialization<T>(fn: () => T): T {
-        return $withConfigured(config.compact)(fn);
+        return $withCompactExport(config.compact, fn);
       },
     };
   },

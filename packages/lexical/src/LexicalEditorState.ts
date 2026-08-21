@@ -13,7 +13,7 @@ import type {BaseSelection} from './LexicalSelection';
 import invariant from '@lexical/internal/invariant';
 
 import {cloneMap} from './LexicalGenMap';
-import {$applySerializationContext} from './LexicalSerializedExport';
+import {$exportNodeJSON} from './LexicalSerializedExport';
 import {$getSlot, $getSlotNames} from './LexicalSlot';
 import {readEditorState} from './LexicalUpdates';
 import {$getRoot} from './LexicalUtils';
@@ -65,9 +65,9 @@ function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
 ): SerializedNode {
   const nodeClass = node.constructor;
 
-  // The active serialization context decides the form: the compact form drops
-  // properties that parsing would restore from their schema default anyway.
-  const serializedNode = $applySerializationContext(node);
+  // The active export decides the form: the compact form drops properties that
+  // parsing would restore from their schema default anyway.
+  const serializedNode = $exportNodeJSON(node);
 
   if ($isElementNode(node)) {
     const serializedChildren = (serializedNode as SerializedElementNode)

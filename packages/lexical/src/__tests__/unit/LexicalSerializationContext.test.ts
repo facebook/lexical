@@ -12,11 +12,9 @@ import {
   $createTextNode,
   $getRoot,
   $setSlot,
-  $withSerializationContext,
-  type AnySerializationStateConfigPair,
+  $withCompactExport,
   createEditor,
   type LexicalEditor,
-  SerializationContextCompact,
   type SerializedElementNode,
   type SerializedLexicalNode,
   type SerializedRootNode,
@@ -37,7 +35,7 @@ function childrenOf(node: SerializedLexicalNode): SerializedLexicalNode[] {
   return (node as SerializedElementNode).children;
 }
 
-describe('serialization context', () => {
+describe('compact export', () => {
   let editor: LexicalEditor;
 
   beforeEach(() => {
@@ -62,13 +60,9 @@ describe('serialization context', () => {
     );
   });
 
-  function toJSON(
-    pairs: readonly AnySerializationStateConfigPair[] = [],
-  ): SerializedRootNode {
+  function toJSON(compact = false): SerializedRootNode {
     return editor.read(() =>
-      $withSerializationContext(pairs)(
-        () => editor.getEditorState().toJSON().root,
-      ),
+      $withCompactExport(compact, () => editor.getEditorState().toJSON().root),
     );
   }
 
@@ -98,7 +92,7 @@ describe('serialization context', () => {
   });
 
   test('compact omits version and every default-valued property', () => {
-    const root = toJSON([[SerializationContextCompact, true]]);
+    const root = toJSON(true);
     const paragraph = childrenOf(root)[0];
     const [plain, bold] = childrenOf(paragraph);
     expect(root).not.toHaveProperty('version');
@@ -111,7 +105,7 @@ describe('serialization context', () => {
 
   test('compact JSON parses back to the same document as legacy JSON', () => {
     const legacy = toJSON();
-    const compact = toJSON([[SerializationContextCompact, true]]);
+    const compact = toJSON(true);
     expect(JSON.stringify(compact).length).toBeLessThan(
       JSON.stringify(legacy).length,
     );
@@ -137,13 +131,13 @@ describe('serialization context', () => {
     expect(fromCompact.toJSON()).toEqual(fromLegacy.toJSON());
   });
 
-  test('the context does not leak outside its callback', () => {
-    toJSON([[SerializationContextCompact, true]]);
+  test('the form does not leak outside its callback', () => {
+    toJSON(true);
     expect(childrenOf(toJSON())[0].version).toBe(1);
   });
 });
 
-describe('serialization context: slot hosts', () => {
+describe('compact export: slot hosts', () => {
   test('a decorator host keeps its slots in both forms', () => {
     using editor = buildEditorFromExtensions(
       defineExtension({
@@ -160,7 +154,8 @@ describe('serialization context: slot hosts', () => {
     );
     for (const compact of [false, true]) {
       const root = editor.read(() =>
-        $withSerializationContext([[SerializationContextCompact, compact]])(
+        $withCompactExport(
+          compact,
           () => editor.getEditorState().toJSON().root,
         ),
       );

@@ -86,7 +86,7 @@ import {
 } from './LexicalNode';
 import {$setState, type AnyStateConfig} from './LexicalNodeState';
 import {$normalizeSelection} from './LexicalNormalization';
-import {type AnySerializationSchema} from './LexicalSchema';
+import {type AnySerializationSchema, isSchemaDefault} from './LexicalSchema';
 import {
   $clampRangeSelectionToSlotFrame,
   type BaseSelection,
@@ -3363,7 +3363,13 @@ export function getComposedSchemaFields(
  */
 interface CompactRule {
   readonly derived: boolean;
-  readonly defaultValue: unknown;
+  /**
+   * Whether a written value would say the same thing as the default parsing
+   * restores — identity for a primitive domain, by content for an array or
+   * object one (see {@link SerializationSchema.isEqual}). Resolved with the
+   * accessor so the write path needs no second look at the schema.
+   */
+  readonly isDefault: (value: unknown) => boolean;
 }
 
 type CompiledGetter = CompactRule &
@@ -3417,9 +3423,9 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
       // $writeJSONGetters). The field only exists on a constructed node, so
       // unlike the method below it is checked on first read.
       fields.set(key, {
-        defaultValue: schema.defaultValue,
         derived: schema.setter === null,
         field: getterName,
+        isDefault: value => isSchemaDefault(schema, value),
         key,
         kind: 'ownField',
       });
@@ -3437,9 +3443,9 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
       getterName,
     );
     fields.set(key, {
-      defaultValue: schema.defaultValue,
       derived: schema.setter === null,
       getter: getter as (this: LexicalNode) => unknown,
+      isDefault: value => isSchemaDefault(schema, value),
       key,
       kind: 'method',
     });
@@ -3514,7 +3520,7 @@ export function $writeJSONGetters(
     } else {
       value = entry.getter.call(node);
     }
-    if (value !== undefined && !(compact && value === entry.defaultValue)) {
+    if (value !== undefined && !(compact && entry.isDefault(value))) {
       json[entry.key] = value;
     }
   }

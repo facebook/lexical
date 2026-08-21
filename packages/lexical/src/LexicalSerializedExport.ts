@@ -13,17 +13,67 @@ import invariant from '@lexical/internal/invariant';
 import {$isElementNode} from '.';
 
 /**
- * The node's own `exportJSON()` with the sanity checks every export walk
- * relied on: the serialized `type` must match the class, and an element must
- * carry a `children` array for the walk to fill.
- *
- * @internal
+ * Whether the export in progress is writing the compact form. A module-scope
+ * flag rather than something threaded through every walk: `editorState.toJSON()`
+ * takes no arguments, and the walk deliberately spans editors, so a nested one
+ * (an image caption) writes the same form as the document that contains it.
  */
-export function $validatedExportJSON(
-  node: LexicalNode,
-  compact: boolean,
-): SerializedLexicalNode {
-  const serializedNode = node.exportJSON(compact);
+let compactExport = false;
+
+/**
+ * Whether {@link $withCompactExport} is currently asking for the compact form.
+ * A node that writes its own `exportJSON` receives this as its argument and
+ * does not need to read it.
+ *
+ * @experimental
+ */
+export function $isCompactExport(): boolean {
+  return compactExport;
+}
+
+/**
+ * Run `f` writing the compact form of the document (or, with `false`, the
+ * legacy form), for any export it performs: `editorState.toJSON()`, the
+ * `@lexical/clipboard` selection export, and the nested editors those
+ * serialize.
+ *
+ * The compact form omits every property parsing would restore anyway — one
+ * whose value is its schema default, one the parser derives rather than reads,
+ * and the deprecated `version` — so the two forms describe the same document.
+ * It can only be read by a Lexical new enough to restore them, so keep writing
+ * the legacy form until every reader is upgraded.
+ *
+ * @example
+ * ```ts
+ * const compactJSON = $withCompactExport(true, () => editorState.toJSON());
+ * ```
+ *
+ * @experimental
+ */
+export function $withCompactExport<T>(compact: boolean, f: () => T): T {
+  const previous = compactExport;
+  try {
+    compactExport = compact;
+    return f();
+  } finally {
+    compactExport = previous;
+  }
+}
+
+/**
+ * Export one node's JSON in the form the active export asks for, with the
+ * sanity checks every export walk relies on: the serialized `type` must match
+ * the class, and an element must carry a `children` array for the walk to fill.
+ *
+ * Use this instead of calling `node.exportJSON()` directly when writing a
+ * serialization walk of your own — it is what `editorState.toJSON()` and the
+ * `@lexical/clipboard` selection export both call, so {@link $withCompactExport}
+ * governs every one of them alike.
+ *
+ * @experimental
+ */
+export function $exportNodeJSON(node: LexicalNode): SerializedLexicalNode {
+  const serializedNode = node.exportJSON(compactExport);
   const nodeClass = node.constructor;
   if (serializedNode.type !== nodeClass.getType()) {
     invariant(
@@ -45,41 +95,4 @@ export function $validatedExportJSON(
     );
   }
   return serializedNode;
-}
-
-type SerializationInterceptor = (node: LexicalNode) => SerializedLexicalNode;
-
-// The serialization-context machinery (currently just the compact form)
-// attaches here lazily: $withSerializationContext installs the interceptor the
-// first time it is called. Until then every export walk takes the plain
-// validated-export path below, so applications that never configure a
-// serialization context do not carry it — the walk holds no reference to it,
-// and bundlers drop it.
-let serializationInterceptor: null | SerializationInterceptor = null;
-
-/** @internal */
-export function setSerializationInterceptor(
-  interceptor: SerializationInterceptor,
-): void {
-  serializationInterceptor = interceptor;
-}
-
-/**
- * Export one node's JSON in whatever form the active serialization context
- * asks for. Use this instead of calling `node.exportJSON()` directly when
- * writing a serialization walk of your own — it is what `editorState.toJSON()`
- * and the `@lexical/clipboard` selection export both call, so a context set
- * with {@link $withSerializationContext} governs every one of them alike.
- *
- * Until `$withSerializationContext` has run, this is exactly the node's own
- * validated `exportJSON()`.
- *
- * @experimental
- */
-export function $applySerializationContext(
-  node: LexicalNode,
-): SerializedLexicalNode {
-  return serializationInterceptor
-    ? serializationInterceptor(node)
-    : $validatedExportJSON(node, false);
 }

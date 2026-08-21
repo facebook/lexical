@@ -8,32 +8,15 @@
 
 import type {DOMImportContextSymbol, DOMRenderContextSymbol} from './constants';
 import type {
-  AnyContextConfigPairOrUpdater,
   BaseSelection,
-  ContextConfig,
-  ContextConfigPair,
-  ContextConfigUpdater,
-  ContextPairOrUpdater,
-  ContextRecord,
   DOMExportOutput,
   DOMSlotForNode,
   EditorDOMRenderConfig,
   Klass,
   LexicalEditor,
   LexicalNode,
+  StateConfig,
 } from 'lexical';
-
-// The context record types live in core, where the JSON serialization context
-// is built on the same machinery; only the union of the symbols this package
-// tags its own contexts with is local.
-export type {
-  AnyContextConfigPairOrUpdater,
-  ContextConfig,
-  ContextConfigPair,
-  ContextConfigUpdater,
-  ContextPairOrUpdater,
-  ContextRecord,
-};
 
 /**
  * @experimental
@@ -43,6 +26,67 @@ export type {
 export type AnyContextSymbol =
   | typeof DOMRenderContextSymbol
   | typeof DOMImportContextSymbol;
+
+/**
+ * @experimental
+ *
+ * Context with a phantom type for its purpose (such as {@link DOMRenderContextSymbol}).
+ *
+ * A ContextRecord is a data structure used in the export and import pipelines
+ * to allow for information to be passed throughout the chain without explicit
+ * argument passing, e.g. to specify whether the intended use case for HTML
+ * export is for serialization or for clipboard copy.
+ */
+export type ContextRecord<_K extends symbol> = Record<string | symbol, unknown>;
+
+/**
+ * @experimental
+ *
+ * A data structure much like StateConfig (they share implementation details)
+ * but for managing context during an export or import pipeline rather than
+ * individual node state.
+ */
+export type ContextConfig<Sym extends symbol, V> = StateConfig<symbol, V> & {
+  readonly [K in Sym]?: true;
+};
+
+/**
+ * @experimental
+ *
+ * Update the context at `cfg` with updater, constructed with {@link contextUpdater}
+ */
+export type ContextConfigUpdater<Ctx extends AnyContextSymbol, V> = {
+  readonly cfg: ContextConfig<Ctx, V>;
+  /**
+   * @param prev The current or default value
+   * @returns The new value
+   */
+  readonly updater: (prev: V) => V;
+};
+
+/**
+ * @experimental
+ *
+ * Set the context at `cfg` to a specific value, constructed with {@link contextValue}
+ */
+export type ContextConfigPair<Ctx extends AnyContextSymbol, V> = readonly [
+  ContextConfig<Ctx, V>,
+  V,
+];
+
+/**
+ * @experimental
+ *
+ * Set or update a context value, constructed with {@link contextValue} or {@link contextUpdater}
+ */
+export type ContextPairOrUpdater<Ctx extends AnyContextSymbol, V> =
+  | ContextConfigPair<Ctx, V>
+  | ContextConfigUpdater<Ctx, V>;
+
+/** @experimental */
+export type AnyContextConfigPairOrUpdater<Ctx extends AnyContextSymbol> =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ContextPairOrUpdater<Ctx, any>;
 
 /** @experimental */
 export interface DOMRenderExtensionOutput {

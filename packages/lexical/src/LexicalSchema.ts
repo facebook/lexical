@@ -105,6 +105,54 @@ export interface SerializationSchema<T> {
    * `undefined` omits the property from the exported JSON.
    */
   readonly getter?: string | null;
+  /**
+   * Whether two values of this schema's domain say the same thing, for the
+   * comparisons that treat a value as absent: compaction dropping a property
+   * whose value is {@link SerializationSchema.defaultValue | the default}, and
+   * `optional({omitDefault})` / `nullable({defaultAsNull})`.
+   *
+   * Absent means identity, which is right for the primitive domains but never
+   * true of a reference-typed default: {@link arrayValue} and
+   * {@link objectValue} return a fresh value per parse, so without this an
+   * array-valued property equal to its default would still be written out.
+   * Mirrors `StateValueConfig.isEqual`, which exists for the same reason.
+   *
+   * Declared with method syntax deliberately: TypeScript checks a method's
+   * parameters bivariantly, which keeps `SerializationSchema<T>` assignable to
+   * {@link AnySerializationSchema}. A property would make the type invariant
+   * in `T` and every `AnySerializationSchema` position would reject it.
+   */
+  isEqual?(a: T, b: T): boolean;
+}
+
+/**
+ * Whether two values of `schema`'s domain say the same thing: identity, unless
+ * the schema declares otherwise. The identity test comes first so a primitive
+ * domain — every schema but {@link arrayValue} and {@link objectValue} — costs
+ * a comparison rather than a call.
+ *
+ * @internal
+ */
+export function isSchemaEqual<T>(
+  schema: SerializationSchema<T>,
+  a: T,
+  b: T,
+): boolean {
+  const {isEqual} = schema;
+  return a === b || (isEqual !== undefined && isEqual(a, b));
+}
+
+/**
+ * Whether `value` is the one `schema` would restore for an absent property, so
+ * writing it says nothing.
+ *
+ * @internal
+ */
+export function isSchemaDefault<T>(
+  schema: SerializationSchema<T>,
+  value: T,
+): boolean {
+  return isSchemaEqual(schema, value, schema.defaultValue);
 }
 
 /**
@@ -149,6 +197,7 @@ function makeSchema<T>(
   // with an optional member — would derive `undefined` and silently discard
   // the fallback its caller declared, so those pass it explicitly.
   defaultValue: T = parse(undefined),
+  isEqual?: (a: T, b: T) => boolean,
 ): SerializationSchema<T> {
   if (defaultValue !== null && typeof defaultValue === 'object') {
     // The default is metadata every parse shares, and StateConfig hands it
@@ -160,6 +209,7 @@ function makeSchema<T>(
   return Object.assign(parse, {
     defaultValue,
     getter: accessors.getter,
+    isEqual,
     meta,
     setter: accessors.setter,
   });
@@ -302,7 +352,7 @@ export function nullable<T>(
         return null;
       }
       const parsed = inner(value);
-      return defaultAsNull && parsed === inner.defaultValue ? null : parsed;
+      return defaultAsNull && isSchemaDefault(inner, parsed) ? null : parsed;
     },
     {defaultAsNull, inner, kind: 'nullable'},
     inner,
@@ -349,7 +399,7 @@ export function optional<T>(
         return undefined;
       }
       const parsed = inner(value);
-      return omitDefault && parsed === inner.defaultValue ? undefined : parsed;
+      return omitDefault && isSchemaDefault(inner, parsed) ? undefined : parsed;
     },
     {inner, kind: 'optional', omitDefault},
     inner,
@@ -514,6 +564,14 @@ export function arrayValue<T>(
     {item, kind: 'array'},
     // Deliberately not `item`: the item schema describes an element, so its
     // accessors belong to the element, not to the array-valued property.
+    undefined,
+    undefined,
+    // A parse returns a fresh array, so identity would never match the empty
+    // default and such a property could never be compacted. Compare by
+    // content, element-wise through the item schema.
+    (a, b) =>
+      a.length === b.length &&
+      a.every((entry, i) => isSchemaEqual(item, entry, b[i])),
   );
 }
 
@@ -567,6 +625,18 @@ export function objectValue<T extends {readonly [key: string]: unknown}>(
       return result as T;
     },
     {fields: fields as SerializationSchemaFields, kind: 'object'},
+    undefined,
+    undefined,
+    // As with arrayValue: a parse returns a fresh object, so compare the
+    // declared fields rather than the reference.
+    (a, b) =>
+      entries.every(([key, schema]) =>
+        isSchemaEqual(
+          schema,
+          (a as {readonly [k: string]: unknown})[key],
+          (b as {readonly [k: string]: unknown})[key],
+        ),
+      ),
   );
 }
 
@@ -589,10 +659,15 @@ export function withSetter<T>(
   schema: SerializationSchema<T>,
   setter: string | null,
 ): SerializationSchema<T> {
-  return makeSchema(value => schema(value), schema.meta, {
-    getter: schema.getter,
-    setter,
-  });
+  return makeSchema(
+    value => schema(value),
+    schema.meta,
+    {getter: schema.getter, setter},
+    // Naming an accessor says nothing about the domain, so the copy keeps the
+    // original's default and equality rather than re-deriving them.
+    schema.defaultValue,
+    schema.isEqual,
+  );
 }
 
 /**
@@ -618,10 +693,13 @@ export function withGetter<T>(
   schema: SerializationSchema<T>,
   getter: string | null,
 ): SerializationSchema<T> {
-  return makeSchema(value => schema(value), schema.meta, {
-    getter,
-    setter: schema.setter,
-  });
+  return makeSchema(
+    value => schema(value),
+    schema.meta,
+    {getter, setter: schema.setter},
+    schema.defaultValue,
+    schema.isEqual,
+  );
 }
 
 /**
@@ -682,8 +760,14 @@ export function withAccessors<T>(
   schema: SerializationSchema<T>,
   accessors: SchemaAccessors,
 ): SerializationSchema<T> {
-  return makeSchema(value => schema(value), schema.meta, {
-    getter: accessors.getter === undefined ? schema.getter : accessors.getter,
-    setter: accessors.setter === undefined ? schema.setter : accessors.setter,
-  });
+  return makeSchema(
+    value => schema(value),
+    schema.meta,
+    {
+      getter: accessors.getter === undefined ? schema.getter : accessors.getter,
+      setter: accessors.setter === undefined ? schema.setter : accessors.setter,
+    },
+    schema.defaultValue,
+    schema.isEqual,
+  );
 }

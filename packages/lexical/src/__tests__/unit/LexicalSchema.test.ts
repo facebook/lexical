@@ -13,6 +13,7 @@ import {
   $createTextNode,
   $getRoot,
   $isTabNode,
+  $withCompactExport,
   arrayValue,
   booleanValue,
   ElementNode,
@@ -758,5 +759,71 @@ describe('withField compiles to direct field access', () => {
     const schema = withField(stringValue(), '__label');
     expect(schema.getter).toBe('__label');
     expect(schema.setter).toBe('__label');
+  });
+});
+
+describe('reference-typed defaults compact by content', () => {
+  test('an array equal to its default is dropped, a differing one is not', () => {
+    // A parse returns a fresh array, so identity alone would never match the
+    // empty default and such a property could never be compacted.
+    const ids = arrayValue(stringValue());
+    expect(ids.isEqual!([], [])).toBe(true);
+    expect(ids.isEqual!(['a'], ['a'])).toBe(true);
+    expect(ids.isEqual!(['a'], ['b'])).toBe(false);
+    expect(ids.isEqual!(['a'], [])).toBe(false);
+  });
+
+  test('an object compares by its declared fields', () => {
+    const point = objectValue({x: numberValue(), y: numberValue()});
+    expect(point.isEqual!({x: 0, y: 0}, {x: 0, y: 0})).toBe(true);
+    expect(point.isEqual!({x: 1, y: 0}, {x: 0, y: 0})).toBe(false);
+  });
+
+  test('a node with an array property compacts it away when empty', () => {
+    class TagsNode extends ElementNode {
+      __tags: string[] = [];
+      $config() {
+        return this.config('tags-node', {
+          extends: ElementNode,
+          json: objectValue({
+            tags: withField(arrayValue(stringValue()), '__tags'),
+          }),
+        });
+      }
+      afterCloneFrom(prevNode: this): void {
+        super.afterCloneFrom(prevNode);
+        this.__tags = prevNode.__tags;
+      }
+    }
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[array-compaction]',
+        nodes: [TagsNode],
+      }),
+    );
+    editor.update(
+      () => {
+        const empty = $create(TagsNode);
+        const full = $create(TagsNode);
+        full.__tags = ['a'];
+        $getRoot().append(empty, full);
+      },
+      {discrete: true},
+    );
+    const root = editor.read(() =>
+      $withCompactExport(true, () => editor.getEditorState().toJSON().root),
+    );
+    const [emptyJSON, fullJSON] = root.children;
+    expect(emptyJSON).not.toHaveProperty('tags');
+    expect(fullJSON).toMatchObject({tags: ['a']});
+    // and it still round-trips
+    expect(
+      editor.parseEditorState(JSON.stringify({root})).read(() =>
+        $getRoot()
+          .getChildren()
+          .map(n => (n as TagsNode).__tags),
+      ),
+    ).toEqual([[], ['a']]);
   });
 });

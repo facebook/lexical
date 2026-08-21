@@ -1,4 +1,4 @@
-# React FAQ
+# FAQ
 
 ## My app does not work in dev when using StrictMode, help!?
 

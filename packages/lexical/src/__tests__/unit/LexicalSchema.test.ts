@@ -1066,3 +1066,39 @@ describe('isEqual is total over the values a getter can return', () => {
     expect(compared.isEqual([], compared.defaultValue)).toBe(true);
   });
 });
+
+describe('a class compiles once, at registration', () => {
+  class MissingSetterNode extends ElementNode {
+    __label = '';
+    $config() {
+      return this.config('missing-setter-node', {
+        extends: ElementNode,
+        // There is no setLabel() on this class.
+        json: objectValue({label: stringValue()}),
+      });
+    }
+  }
+
+  const build = () =>
+    buildEditorFromExtensions(
+      defineExtension({
+        $initialEditorState: null,
+        name: '[missing-setter]',
+        nodes: [MissingSetterNode],
+      }),
+    );
+
+  test('a misconfigured accessor throws where the class is registered', () => {
+    // Not later, out of whichever autosave or copy handler happens to be the
+    // first thing that serializes one of these nodes.
+    expect(build).toThrow('has no setter setLabel()');
+  });
+
+  test('and keeps throwing, rather than registering in silence', () => {
+    // The per-class record is dropped when compiling throws, so a second
+    // attempt re-runs it. Caching a record whose tables never compiled would
+    // let this one succeed.
+    expect(build).toThrow('has no setter setLabel()');
+    expect(build).toThrow('has no setter setLabel()');
+  });
+});

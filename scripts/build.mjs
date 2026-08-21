@@ -140,11 +140,12 @@ function resolveExternalEsm(id) {
  */
 const monorepoExternalsSet = new Set(Object.entries(wwwMappings).flat());
 const thirdPartyExternals = [
-  // @lexical/pure-annotations is a build-time tool that wraps
-  // @babel/parser and magic-string; they are declared dependencies and
-  // must not be inlined into its published bundle.
+  // @lexical/pure-annotations is a build-time tool: it wraps @babel/parser
+  // and magic-string (declared dependencies that must not be inlined into
+  // its published bundle) and reads relatively imported modules from disk.
   '@babel/parser',
   'magic-string',
+  'node:[a-z]+',
   'react',
   'react-dom',
   'yjs',

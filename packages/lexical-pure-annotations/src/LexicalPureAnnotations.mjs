@@ -22,6 +22,8 @@
 
 import {parse} from '@babel/parser';
 import MagicString from 'magic-string';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 /**
  * The Lexical factories that are annotated with `__NO_SIDE_EFFECTS__` at
@@ -61,6 +63,30 @@ const PURE_ANNOTATION_RE = /[#@]__PURE__/;
 
 /** The file extensions the bundler plugin transforms by default. */
 const DEFAULT_INCLUDE = /\.(?:[cm]?[jt]sx?)$/;
+
+/**
+ * Module specifiers whose exports are trusted to be the Lexical factories.
+ * Every factory in PURE_FACTORY_FUNCTIONS is declared side-effect free in
+ * these packages, so an import from one of them is evidence enough. A call
+ * to a same-named function from anywhere else is only annotated when the
+ * declaration it resolves to is itself marked side-effect free.
+ */
+const DEFAULT_SOURCES = [/^lexical$/, /^@lexical\//];
+
+/** Matches the annotation a definition uses to declare itself pure. */
+const NO_SIDE_EFFECTS_RE = /[#@]__NO_SIDE_EFFECTS__/;
+
+/** Extensions tried when resolving an extensionless relative import. */
+const RESOLVE_EXTENSIONS = [
+  '.ts',
+  '.tsx',
+  '.mts',
+  '.cts',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+];
 
 /**
  * Node types whose contents are not evaluated when the module is
@@ -192,6 +218,213 @@ function visitModuleScopeCalls(node, functions, visitor) {
 }
 
 /**
+ * Caches for the files read while resolving relative imports. They live for
+ * the lifetime of the process, which is what a build wants; a watch-mode
+ * process that changes whether a declaration is marked side-effect free has
+ * to be restarted for that to take effect (the annotations do not change
+ * behavior, only what a bundler is allowed to drop).
+ */
+const resolvedFileCache = new Map();
+const pureDeclarationCache = new Map();
+
+/**
+ * @param {undefined | ReadonlyArray<any>} comments
+ * @returns {boolean} true when one of the comments is a NO_SIDE_EFFECTS annotation
+ */
+function hasNoSideEffectsComment(comments) {
+  return (
+    comments !== undefined &&
+    comments !== null &&
+    comments.some(comment => NO_SIDE_EFFECTS_RE.test(comment.value))
+  );
+}
+
+/**
+ * The names this module declares (at module scope) with a NO_SIDE_EFFECTS
+ * annotation. Calls to these are safe to annotate wherever they appear,
+ * because the definition itself says so.
+ *
+ * @param {any} program
+ * @returns {Set<string>} the declared names
+ */
+function pureDeclaredNames(program) {
+  /** @type {Set<string>} */
+  const names = new Set();
+  for (const statement of program.body) {
+    const declaration =
+      statement.type === 'ExportNamedDeclaration' && statement.declaration
+        ? statement.declaration
+        : statement;
+    const declared = hasNoSideEffectsComment(
+      (statement.leadingComments || []).concat(
+        declaration === statement ? [] : declaration.leadingComments || [],
+      ),
+    );
+    if (declaration.type === 'FunctionDeclaration' && declaration.id) {
+      if (declared) {
+        names.add(declaration.id.name);
+      }
+    } else if (declaration.type === 'VariableDeclaration') {
+      for (const declarator of declaration.declarations) {
+        if (
+          declarator.id.type === 'Identifier' &&
+          (declared ||
+            hasNoSideEffectsComment(declarator.leadingComments) ||
+            (declarator.init &&
+              hasNoSideEffectsComment(declarator.init.leadingComments)))
+        ) {
+          names.add(declarator.id.name);
+        }
+      }
+    }
+  }
+  return names;
+}
+
+/**
+ * Resolve a relative import specifier to a file on disk, trying the
+ * extensions a bundler would (including the `.js` specifier TypeScript uses
+ * for a `.ts` file).
+ *
+ * @param {string} filename the importing module
+ * @param {string} specifier a relative specifier
+ * @returns {null | string} the resolved path, or null when there is no such file
+ */
+function resolveRelativeSpecifier(filename, specifier) {
+  const base = path.resolve(path.dirname(filename), specifier);
+  const cached = resolvedFileCache.get(base);
+  if (cached !== undefined) {
+    return cached;
+  }
+  /** @type {Array<string>} */
+  const candidates = [];
+  const extension = path.extname(base);
+  if (extension !== '') {
+    candidates.push(base);
+    if (/^\.[cm]?js$/.test(extension)) {
+      const withoutExtension = base.slice(0, -extension.length);
+      candidates.push(
+        withoutExtension + extension.replace('js', 'ts'),
+        withoutExtension + '.tsx',
+      );
+    }
+  }
+  for (const candidate of RESOLVE_EXTENSIONS) {
+    candidates.push(base + candidate);
+  }
+  for (const candidate of RESOLVE_EXTENSIONS) {
+    candidates.push(path.join(base, `index${candidate}`));
+  }
+  let resolved = null;
+  for (const candidate of candidates) {
+    try {
+      if (fs.statSync(candidate).isFile()) {
+        resolved = candidate;
+        break;
+      }
+    } catch (_err) {
+      // Not this candidate; try the next one.
+    }
+  }
+  resolvedFileCache.set(base, resolved);
+  return resolved;
+}
+
+/**
+ * The side-effect-free declarations of another file, parsed and cached.
+ *
+ * @param {string} filename
+ * @param {undefined | ReadonlyArray<any>} parserPlugins
+ * @returns {ReadonlySet<string>}
+ */
+function pureDeclaredNamesOfFile(filename, parserPlugins) {
+  const cached = pureDeclarationCache.get(filename);
+  if (cached !== undefined) {
+    return cached;
+  }
+  /** @type {Set<string>} */
+  let names = new Set();
+  try {
+    const ast = parse(fs.readFileSync(filename, 'utf8'), {
+      plugins: parserPluginsFor(filename, parserPlugins),
+      sourceType: 'module',
+    });
+    names = pureDeclaredNames(ast.program);
+  } catch (_err) {
+    // A file this cannot read or parse simply provides no evidence.
+  }
+  pureDeclarationCache.set(filename, names);
+  return names;
+}
+
+/**
+ * The local names in this module that refer to a side-effect-free factory,
+ * and may therefore have their module-scope calls annotated.
+ *
+ * A name qualifies when it is imported from a trusted Lexical package, when
+ * it is declared in this module with a NO_SIDE_EFFECTS annotation, or when
+ * it is imported from a relative module that declares it that way. A local
+ * helper that merely shares a name with one of the factories does not
+ * qualify, which is what keeps the transform from claiming that somebody
+ * else's `safeCast` or `createState` has no side effects.
+ *
+ * @param {any} program
+ * @param {ReadonlySet<string>} functions
+ * @param {TransformPureAnnotationsOptions} opts
+ * @returns {Set<string>}
+ */
+function collectFactoryNames(program, functions, opts) {
+  const sources = toRegExpArray(opts.sources, DEFAULT_SOURCES);
+  const names = new Set();
+  for (const name of pureDeclaredNames(program)) {
+    if (functions.has(name)) {
+      names.add(name);
+    }
+  }
+  for (const statement of program.body) {
+    if (statement.type !== 'ImportDeclaration') {
+      continue;
+    }
+    const source = statement.source.value;
+    const trusted = matchesAny(sources, source);
+    const relative =
+      !trusted &&
+      opts.relativeImports !== false &&
+      typeof opts.filename === 'string' &&
+      source.startsWith('.');
+    if (!trusted && !relative) {
+      continue;
+    }
+    for (const specifier of statement.specifiers) {
+      if (
+        specifier.type !== 'ImportSpecifier' ||
+        specifier.imported.type !== 'Identifier' ||
+        !functions.has(specifier.imported.name)
+      ) {
+        continue;
+      }
+      if (trusted) {
+        names.add(specifier.local.name);
+        continue;
+      }
+      const resolved = resolveRelativeSpecifier(
+        /** @type {string} */ (opts.filename),
+        source,
+      );
+      if (
+        resolved !== null &&
+        pureDeclaredNamesOfFile(resolved, opts.parserPlugins).has(
+          specifier.imported.name,
+        )
+      ) {
+        names.add(specifier.local.name);
+      }
+    }
+  }
+  return names;
+}
+
+/**
  * @param {string} code
  * @param {ReadonlySet<string>} functions
  * @returns {boolean} true when the source mentions any of the factories at all
@@ -213,7 +446,12 @@ function mayNeedAnnotations(code, functions) {
  *   module-scope calls are annotated. Defaults to PURE_FACTORY_FUNCTIONS.
  * @property {ReadonlyArray<any>} [parserPlugins] Extra Babel parser
  *   plugins, for syntax the defaults do not cover.
+ * @property {boolean} [relativeImports] Set to false to skip reading
+ *   relatively imported modules to look for a NO_SIDE_EFFECTS declaration.
  * @property {boolean} [sourceMap] Set to false to skip source map generation.
+ * @property {RegExp | ReadonlyArray<RegExp>} [sources] Module specifiers
+ *   whose exports are trusted to be the factories, defaults to `lexical` and
+ *   `@lexical/*`.
  */
 
 /**
@@ -241,17 +479,21 @@ export function transformPureAnnotations(code, options) {
     return null;
   }
   const ast = parse(code, {
-    // Comments are matched against the source text directly, so there is no
-    // need to pay for attaching them to the AST.
-    attachComment: false,
     errorRecovery: false,
     plugins: parserPluginsFor(opts.filename, opts.parserPlugins),
     sourceFilename: opts.filename,
     sourceType: 'module',
   });
+  // Only the calls whose callee resolves to a factory this module imported
+  // from Lexical (or to a declaration that says it is side-effect free) are
+  // annotated; a same-named local helper is left alone.
+  const factoryNames = collectFactoryNames(ast.program, functions, opts);
+  if (factoryNames.size === 0) {
+    return null;
+  }
   /** @type {Array<number>} */
   const offsets = [];
-  visitModuleScopeCalls(ast.program, functions, node => {
+  visitModuleScopeCalls(ast.program, factoryNames, node => {
     if (!hasPureAnnotation(code, node.start)) {
       offsets.push(node.start);
     }
@@ -317,7 +559,12 @@ function cleanModuleId(id) {
  *   module.
  * @property {ReadonlyArray<any>} [parserPlugins] Extra Babel parser
  *   plugins, for syntax the defaults do not cover.
+ * @property {boolean} [relativeImports] Set to false to skip reading
+ *   relatively imported modules to look for a NO_SIDE_EFFECTS declaration.
  * @property {boolean} [sourceMap] Set to false to skip source map generation.
+ * @property {RegExp | ReadonlyArray<RegExp>} [sources] Module specifiers
+ *   whose exports are trusted to be the factories, defaults to `lexical` and
+ *   `@lexical/*`.
  */
 
 /**
@@ -354,7 +601,9 @@ export function pureAnnotations(options) {
           filename,
           functions,
           parserPlugins: opts.parserPlugins,
+          relativeImports: opts.relativeImports,
           sourceMap: opts.sourceMap,
+          sources: opts.sources,
         });
       } catch (err) {
         // A module this plugin cannot parse is a module it has nothing to

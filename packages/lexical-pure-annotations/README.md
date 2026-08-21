@@ -77,21 +77,44 @@ const result = transformPureAnnotations(code, {filename});
 const annotated = result === null ? code : result.code;
 ```
 
+## Which calls get annotated
+
+A call is annotated only when the transform can establish that the function
+being called really is side-effect free. It resolves the callee to its binding
+in the module and annotates the call when that binding is:
+
+- **imported from a Lexical package** — a specifier matching `lexical` or
+  `@lexical/*` (configurable with `sources`). Every factory in
+  `PURE_FACTORY_FUNCTIONS` is declared `@__NO_SIDE_EFFECTS__` in those
+  packages, so the import is evidence enough. Aliased imports
+  (`import {defineExtension as define}`) are resolved too;
+- **declared in the same module with `@__NO_SIDE_EFFECTS__`** — how the
+  factory modules themselves are written; or
+- **imported from a relative module that declares it `@__NO_SIDE_EFFECTS__`**
+  — the imported file is read and parsed to check (turn this off with
+  `relativeImports: false`).
+
+Anything else is left alone. Your own `safeCast` from `./utils`, or a
+`createCommand` from some other library, will not be annotated just because it
+shares a name with a Lexical factory — annotating a call that does have side
+effects would let a bundler drop it. Mark your own factories
+`@__NO_SIDE_EFFECTS__` (and add them to `functions`) to opt them in.
+
 ## Options
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `functions` | `PURE_FACTORY_FUNCTIONS` | Names of the factories whose module-scope calls are annotated. Pass your own list (or `[...PURE_FACTORY_FUNCTIONS, 'myFactory']`) to cover factories of your own. |
+| `sources` | `[/^lexical$/, /^@lexical\//]` | `RegExp` (or array) of module specifiers whose exports are trusted to be the factories without reading them. |
+| `relativeImports` | `true` | Whether to read relatively imported modules to look for a `@__NO_SIDE_EFFECTS__` declaration. |
 | `include` | every `.js`/`.jsx`/`.ts`/`.tsx`/`.mjs`/`.cjs`/`.mts`/`.cts` module | `RegExp` (or array) matched against the module id with any query string removed. |
 | `exclude` | none | `RegExp` (or array) of module ids to skip. |
 | `enforce` | `'post'` | Vite plugin ordering. |
 | `parserPlugins` | none | Extra [`@babel/parser`](https://babeljs.io/docs/babel-parser#plugins) plugins, for syntax the defaults do not cover. |
 | `sourceMap` | `true` | Set to `false` to skip source map generation. |
 
-Matching is by the name at the call site, so a factory imported under an alias
-(`import {defineExtension as define}`) is not annotated. Modules that fail to
-parse are passed through unchanged with a warning rather than failing the
-build.
+Modules that fail to parse are passed through unchanged with a warning rather
+than failing the build.
 
 The transform is idempotent: a call that already has a `/* @__PURE__ */` (or
 terser's `/* #__PURE__ */`) annotation immediately before it is left alone.

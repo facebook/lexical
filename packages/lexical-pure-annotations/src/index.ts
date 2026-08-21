@@ -40,8 +40,21 @@ export interface TransformPureAnnotationsOptions {
   functions?: Iterable<string>;
   /** Extra `@babel/parser` plugins to parse the module with. */
   parserPlugins?: readonly unknown[];
+  /**
+   * Set to false to skip reading relatively imported modules to look for a
+   * `__NO_SIDE_EFFECTS__` declaration. Defaults to true.
+   */
+  relativeImports?: boolean;
   /** Set to false to skip source map generation. */
   sourceMap?: boolean;
+  /**
+   * Module specifiers whose exports are trusted to be the factories, without
+   * reading the module they come from. Defaults to `lexical` and
+   * `@lexical/*`; a call to a same-named function from anywhere else is only
+   * annotated when the declaration it resolves to is itself marked
+   * `__NO_SIDE_EFFECTS__`.
+   */
+  sources?: RegExp | readonly RegExp[];
 }
 
 export interface PureAnnotationsResult {

@@ -24,6 +24,9 @@
     "@babel/parser": "^8.0.0",
     "magic-string": "^0.30.21"
   },
+  "devDependencies": {
+    "rollup": "^4.61.0"
+  },
   "sideEffects": false,
   "module": "./dist/LexicalPureAnnotations.mjs",
   "exports": {

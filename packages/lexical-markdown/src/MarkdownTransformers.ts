@@ -315,7 +315,15 @@ export function parseMarkdownHardLineBreak(
   line: string,
 ): [string, MarkdownHardLineBreak] | null {
   if (line.endsWith('\\')) {
-    return [line.slice(0, -1), '\\'];
+    // A trailing backslash is a hard line break only when it is not itself
+    // escaped. `foo\\` is an escaped backslash — a literal `\` followed by an
+    // ordinary (soft) line ending — so only an odd-length run counts.
+    // https://spec.commonmark.org/0.31.2/#backslash-escapes
+    let backslashes = 0;
+    for (let i = line.length - 1; i >= 0 && line[i] === '\\'; i--) {
+      backslashes++;
+    }
+    return backslashes % 2 === 1 ? [line.slice(0, -1), '\\'] : null;
   }
 
   const spaces = line.match(/^(.*?\S)( {2,})$/);
@@ -381,6 +389,31 @@ export function $createMarkdownLineBreakNode(
   return lineBreakNode;
 }
 
+/**
+ * Block-level shortcuts convert by replacing the enclosing block, which
+ * discards it. A QuoteNode holds inline content, so there is nowhere to nest
+ * the new block and the quote would simply be lost. Import already refuses:
+ * `$convertFromMarkdownString('> # x')` keeps the quote and leaves `# x` as
+ * literal text, so the shortcut declines too rather than dropping the quote
+ * out from under the caret. See #7407.
+ */
+function $isUnreplaceableBlock(parentNode: ElementNode): boolean {
+  return $isQuoteNode(parentNode);
+}
+
+/**
+ * CommonMark: "If the leading code fence is indented N spaces, then up to N
+ * spaces of indentation are removed from each line of the content (if
+ * present)." https://spec.commonmark.org/0.31.2/#fenced-code-blocks
+ */
+function stripFenceIndent(line: string, indent: number): string {
+  let index = 0;
+  while (index < indent && (line[index] === ' ' || line[index] === '\t')) {
+    index++;
+  }
+  return line.slice(index);
+}
+
 const createBlockNode = (
   createNode: (match: string[]) => ElementNode,
 ): ElementTransformer['replace'] => {
@@ -417,7 +450,10 @@ function getIndent(whitespaces: string): number {
 
 const listReplace = (listType: ListType): ElementTransformer['replace'] => {
   return (parentNode, children, match, isImport) => {
-    if ($isHeadingNode(parentNode)) {
+    if (
+      $isHeadingNode(parentNode) ||
+      (!isImport && $isUnreplaceableBlock(parentNode))
+    ) {
       return false;
     }
 
@@ -536,6 +572,11 @@ const $listExport = (
   return output.join('\n');
 };
 
+const $replaceWithHeading = createBlockNode(match => {
+  const tag = ('h' + match[1].length) as HeadingTagType;
+  return $createHeadingNode(tag);
+});
+
 export const HEADING: ElementTransformer = {
   dependencies: [HeadingNode],
   export: (node, exportChildren) => {
@@ -546,10 +587,12 @@ export const HEADING: ElementTransformer = {
     return '#'.repeat(level) + ' ' + exportChildren(node);
   },
   regExp: HEADING_REGEX,
-  replace: createBlockNode(match => {
-    const tag = ('h' + match[1].length) as HeadingTagType;
-    return $createHeadingNode(tag);
-  }),
+  replace: (parentNode, children, match, isImport) => {
+    if (!isImport && $isUnreplaceableBlock(parentNode)) {
+      return false;
+    }
+    return $replaceWithHeading(parentNode, children, match, isImport);
+  },
   triggerOnEnter: true,
   type: 'element',
 };
@@ -658,10 +701,25 @@ export const CODE: MultilineElementTransformer = {
         const endMatch = line.match(multilineEndRegex);
         const linesInBetween = lines.slice(startLineIndex + 1, i);
 
-        const afterFullMatch = currentLine.slice(startMatch[0].length);
-        if (afterFullMatch.length > 0) {
-          linesInBetween.unshift(afterFullMatch);
-        }
+        // Everything after the opening fence is the info string, and only its
+        // first word is the language. When a language was captured, whatever
+        // follows it on that line is metadata (```js title="x", ```ts {1,3})
+        // and must not be prepended to the block's content.
+        // https://spec.commonmark.org/0.31.2/#fenced-code-blocks
+        //
+        // With no language captured the fence carries no info string, so the
+        // remainder is kept as content (``` code) as before.
+        //
+        // Either way the slot itself is always occupied: `replace` follows the
+        // default $importMultiline contract, where linesInBetween[0] is the
+        // remainder of the opening fence line and is discarded when blank. So
+        // an empty placeholder goes in when the remainder is metadata, and a
+        // blank remainder is unshifted rather than skipped — otherwise a code
+        // block that genuinely starts with a blank line would have that line
+        // mistaken for the (empty) remainder and dropped.
+        linesInBetween.unshift(
+          startMatch[2] ? '' : currentLine.slice(startMatch[0].length),
+        );
 
         CODE.replace(
           rootNode,
@@ -676,10 +734,7 @@ export const CODE: MultilineElementTransformer = {
     }
 
     const linesInBetween = lines.slice(startLineIndex + 1);
-    const afterFullMatch = currentLine.slice(startMatch[0].length);
-    if (afterFullMatch.length > 0) {
-      linesInBetween.unshift(afterFullMatch);
-    }
+    linesInBetween.unshift(currentLine.slice(startMatch[0].length));
 
     CODE.replace(rootNode, null, startMatch, null, linesInBetween, true);
     return [true, lines.length - 1];
@@ -704,12 +759,16 @@ export const CODE: MultilineElementTransformer = {
 
     const fence = startMatch[1] ? startMatch[1].trim() : '```';
     const language = startMatch[2] || undefined;
+    // `startMatch[1]` keeps the whitespace that precedes the opening fence.
+    const fenceIndent = startMatch[1]
+      ? startMatch[1].length - startMatch[1].trimStart().length
+      : 0;
 
     if (!children && linesInBetween) {
       if (linesInBetween.length === 1) {
         if (endMatch) {
           codeBlockNode = $createCodeNode(language);
-          code = linesInBetween[0];
+          code = stripFenceIndent(linesInBetween[0], fenceIndent);
         } else {
           codeBlockNode = $createCodeNode(language);
           code = linesInBetween[0].startsWith(' ')
@@ -734,7 +793,9 @@ export const CODE: MultilineElementTransformer = {
           linesInBetween.pop();
         }
 
-        code = linesInBetween.join('\n');
+        code = linesInBetween
+          .map(line => stripFenceIndent(line, fenceIndent))
+          .join('\n');
       }
 
       $setState(codeBlockNode, codeFenceState, fence);

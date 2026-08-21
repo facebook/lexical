@@ -116,6 +116,29 @@ const DEFAULT_SOURCES = [/^lexical$/, /^@lexical\//];
 /** Matches the annotation a definition uses to declare itself pure. */
 const NO_SIDE_EFFECTS_RE = /[#@]__NO_SIDE_EFFECTS__/;
 
+/**
+ * Expression types that read the same with or without the parentheses the
+ * call they replace was written with: they are a single delimited token, so
+ * no surrounding operator can bind into them. Anything else keeps the
+ * parentheses, which costs two characters a minifier removes anyway.
+ */
+const SELF_DELIMITING_TYPES = new Set([
+  'ArrayExpression',
+  'BigIntLiteral',
+  'BooleanLiteral',
+  'DecimalLiteral',
+  'Identifier',
+  'JSXElement',
+  'JSXFragment',
+  'NullLiteral',
+  'NumericLiteral',
+  'ObjectExpression',
+  'RegExpLiteral',
+  'StringLiteral',
+  'TemplateLiteral',
+  'ThisExpression',
+]);
+
 /** Extensions tried when resolving an extensionless relative import. */
 const RESOLVE_EXTENSIONS = [
   '.ts',
@@ -220,20 +243,24 @@ function hasPureAnnotation(code, offset) {
 
 /**
  * Walk every node that is evaluated when the module is initialized, calling
- * `visitor` with each module-scope call to one of `functions`. The second
- * argument is true when the call's value is thrown away (it is the whole of
- * an expression statement), which is the one place a call must not be
- * replaced by a literal.
+ * `visitor` with each module-scope call to one of `functions` and where it
+ * sits: `discarded` when the call's value is thrown away (it is the whole of
+ * an expression statement), and `statementStart` when it begins one, both of
+ * which constrain what it can be replaced with.
  *
  * @param {any} node
- * @param {ReadonlyMap<string, string> | ReadonlySet<string>} functions
- * @param {(node: any, discarded: boolean) => void} visitor
- * @param {boolean} [discarded]
+ * @param {ReadonlyMap<string, any> | ReadonlySet<string>} functions
+ * @param {(node: any, position: {discarded: boolean, statementStart: boolean}) => void} visitor
+ * @param {{discarded: boolean, statementStarts: Set<number>}} [state]
  */
-function visitModuleScopeCalls(node, functions, visitor, discarded) {
+function visitModuleScopeCalls(node, functions, visitor, state) {
+  const walkState = state || {discarded: false, statementStarts: new Set()};
   if (Array.isArray(node)) {
     for (const child of node) {
-      visitModuleScopeCalls(child, functions, visitor);
+      visitModuleScopeCalls(child, functions, visitor, {
+        discarded: false,
+        statementStarts: walkState.statementStarts,
+      });
     }
     return;
   }
@@ -243,24 +270,33 @@ function visitModuleScopeCalls(node, functions, visitor, discarded) {
   if (DEFERRED_TYPES.has(node.type)) {
     return;
   }
+  if (node.type === 'ExpressionStatement') {
+    // Every node that begins an expression statement starts at the same
+    // offset, so recording that one offset identifies the whole leftmost
+    // chain — the positions where an object literal would be read as a
+    // block, whatever it is nested in.
+    walkState.statementStarts.add(node.expression.start);
+  }
   if (
     node.type === 'CallExpression' &&
     node.callee &&
     node.callee.type === 'Identifier' &&
     functions.has(node.callee.name)
   ) {
-    visitor(node, discarded === true);
+    visitor(node, {
+      discarded: walkState.discarded,
+      statementStart: walkState.statementStarts.has(node.start),
+    });
   }
   for (const key of Object.keys(node)) {
     if (!SKIPPED_KEYS.has(key)) {
       const value = node[key];
       if (value && typeof value === 'object') {
-        visitModuleScopeCalls(
-          value,
-          functions,
-          visitor,
-          node.type === 'ExpressionStatement' && key === 'expression',
-        );
+        visitModuleScopeCalls(value, functions, visitor, {
+          discarded:
+            node.type === 'ExpressionStatement' && key === 'expression',
+          statementStarts: walkState.statementStarts,
+        });
       }
     }
   }
@@ -374,10 +410,11 @@ function isValueReference(node, parent, key) {
  * import that nothing references (which bundlers then warn about).
  *
  * @param {MagicString} magicString
+ * @param {string} code
  * @param {any} program
  * @param {ReadonlyArray<any>} inlinedCalls the call nodes that were replaced
  */
-function removeUnusedImports(magicString, program, inlinedCalls) {
+function removeUnusedImports(magicString, code, program, inlinedCalls) {
   const callees = new Set(inlinedCalls.map(node => node.callee));
   const names = new Set(inlinedCalls.map(node => node.callee.name));
   if (names.size === 0) {
@@ -402,27 +439,44 @@ function removeUnusedImports(magicString, program, inlinedCalls) {
       continue;
     }
     const {specifiers} = statement;
-    const removable = specifiers.filter(
+    const named = specifiers.filter(
       /** @param {any} specifier */ specifier =>
-        specifier.type === 'ImportSpecifier' &&
-        specifier.importKind !== 'type' &&
-        names.has(specifier.local.name),
+        specifier.type === 'ImportSpecifier',
+    );
+    const removable = named.filter(
+      /** @param {any} specifier */ specifier =>
+        specifier.importKind !== 'type' && names.has(specifier.local.name),
     );
     if (removable.length === 0) {
       continue;
     }
-    if (removable.length === specifiers.length) {
-      magicString.remove(statement.start, statement.end);
+    if (removable.length < named.length) {
+      // Some names are still used: take out each unused one along with the
+      // comma that separates it from the named import next to it.
+      for (const specifier of removable) {
+        const index = named.indexOf(specifier);
+        if (index < named.length - 1) {
+          magicString.remove(specifier.start, named[index + 1].start);
+        } else {
+          magicString.remove(named[index - 1].end, specifier.end);
+        }
+      }
       continue;
     }
-    for (const specifier of removable) {
-      const index = specifiers.indexOf(specifier);
-      if (index < specifiers.length - 1) {
-        magicString.remove(specifier.start, specifiers[index + 1].start);
-      } else {
-        magicString.remove(specifiers[index - 1].end, specifier.end);
-      }
+    const close = code.indexOf('}', named[named.length - 1].end);
+    if (named.length < specifiers.length) {
+      // A default or namespace import is still there, so only the braced
+      // clause and the comma before it go.
+      const previous = specifiers[specifiers.indexOf(named[0]) - 1];
+      magicString.remove(code.indexOf(',', previous.end), close + 1);
+      continue;
     }
+    // Nothing is imported from the module any more. Dropping the import
+    // drops the module, which is only safe because it has no side effects to
+    // run: the factories come either from a Lexical package (all of which
+    // are `sideEffects: false`) or from a module that declares functions
+    // side-effect free and inlinable.
+    magicString.remove(statement.start, statement.end);
   }
 }
 
@@ -434,8 +488,10 @@ function removeUnusedImports(magicString, program, inlinedCalls) {
  * @param {string} code
  * @param {any} node the call expression
  * @param {{arity?: number, form: string}} spec
+ * @param {boolean} [statementStart] whether the call begins an expression
+ *   statement, where an object literal would be read as a block
  */
-function inlineCall(magicString, code, node, spec) {
+function inlineCall(magicString, code, node, spec, statementStart) {
   const comment = blockCommentBefore(code, node.start);
   if (comment !== null && PURE_ANNOTATION_RE.test(comment.value)) {
     // Left in front of a literal the annotation does nothing, and bundlers
@@ -443,14 +499,28 @@ function inlineCall(magicString, code, node, spec) {
     magicString.remove(comment.start, node.start);
   }
   const args = node.arguments;
-  if (spec.form === 'identity') {
+  if (spec.form !== 'identity') {
+    // An array literal reads the same in every position.
+    if (args.length === 0) {
+      magicString.overwrite(node.start, node.end, '[]');
+    } else {
+      magicString.overwrite(node.start, args[0].start, '[');
+      magicString.overwrite(args[args.length - 1].end, node.end, ']');
+    }
+    return;
+  }
+  // The call's own parentheses were doing two jobs: grouping the argument
+  // (`safeCast(a || b).c` must not become `a || b.c`) and, at the start of an
+  // expression statement, keeping an object literal from being read as a
+  // block. Keep them unless the argument reads the same without them.
+  const keepParens =
+    statementStart === true || !SELF_DELIMITING_TYPES.has(args[0].type);
+  if (keepParens) {
+    magicString.overwrite(node.start, args[0].start, '(');
+    magicString.overwrite(args[0].end, node.end, ')');
+  } else {
     magicString.remove(node.start, args[0].start);
     magicString.remove(args[0].end, node.end);
-  } else if (args.length === 0) {
-    magicString.overwrite(node.start, node.end, '[]');
-  } else {
-    magicString.overwrite(node.start, args[0].start, '[');
-    magicString.overwrite(args[args.length - 1].end, node.end, ']');
   }
 }
 
@@ -463,6 +533,24 @@ function inlineCall(magicString, code, node, spec) {
  */
 const resolvedFileCache = new Map();
 const pureDeclarationCache = new Map();
+
+/**
+ * The form named by a declaration's `@lexicalInline` marker, if it has one.
+ *
+ * @param {undefined | ReadonlyArray<any>} comments
+ * @returns {null | string}
+ */
+function inlineMarkerForm(comments) {
+  if (comments) {
+    for (const comment of comments) {
+      const match = INLINE_MARKER_RE.exec(comment.value);
+      if (match) {
+        return match[1];
+      }
+    }
+  }
+  return null;
+}
 
 /**
  * @param {undefined | ReadonlyArray<any>} comments
@@ -479,38 +567,44 @@ function hasNoSideEffectsComment(comments) {
 /**
  * The names this module declares (at module scope) with a NO_SIDE_EFFECTS
  * annotation. Calls to these are safe to annotate wherever they appear,
- * because the definition itself says so.
+ * because the definition itself says so. The value is the form from the
+ * declaration's `@lexicalInline` marker, when it has one: purity alone is
+ * evidence enough to annotate a call, but replacing one requires knowing the
+ * shape of what the function returns.
  *
  * @param {any} program
- * @returns {Set<string>} the declared names
+ * @returns {Map<string, null | string>} declared name to its inline form
  */
 function pureDeclaredNames(program) {
-  /** @type {Set<string>} */
-  const names = new Set();
+  /** @type {Map<string, null | string>} */
+  const names = new Map();
   for (const statement of program.body) {
     const declaration =
       statement.type === 'ExportNamedDeclaration' && statement.declaration
         ? statement.declaration
         : statement;
-    const declared = hasNoSideEffectsComment(
-      (statement.leadingComments || []).concat(
-        declaration === statement ? [] : declaration.leadingComments || [],
-      ),
+    const comments = (statement.leadingComments || []).concat(
+      declaration === statement ? [] : declaration.leadingComments || [],
     );
+    const declared = hasNoSideEffectsComment(comments);
+    const inlineForm = inlineMarkerForm(comments);
     if (declaration.type === 'FunctionDeclaration' && declaration.id) {
       if (declared) {
-        names.add(declaration.id.name);
+        names.set(declaration.id.name, inlineForm);
       }
     } else if (declaration.type === 'VariableDeclaration') {
       for (const declarator of declaration.declarations) {
+        const declaratorComments = (declarator.leadingComments || []).concat(
+          (declarator.init && declarator.init.leadingComments) || [],
+        );
         if (
           declarator.id.type === 'Identifier' &&
-          (declared ||
-            hasNoSideEffectsComment(declarator.leadingComments) ||
-            (declarator.init &&
-              hasNoSideEffectsComment(declarator.init.leadingComments)))
+          (declared || hasNoSideEffectsComment(declaratorComments))
         ) {
-          names.add(declarator.id.name);
+          names.set(
+            declarator.id.name,
+            inlineForm || inlineMarkerForm(declaratorComments),
+          );
         }
       }
     }
@@ -572,15 +666,15 @@ function resolveRelativeSpecifier(filename, specifier) {
  *
  * @param {string} filename
  * @param {undefined | ReadonlyArray<any>} parserPlugins
- * @returns {ReadonlySet<string>}
+ * @returns {ReadonlyMap<string, null | string>}
  */
 function pureDeclaredNamesOfFile(filename, parserPlugins) {
   const cached = pureDeclarationCache.get(filename);
   if (cached !== undefined) {
     return cached;
   }
-  /** @type {Set<string>} */
-  let names = new Set();
+  /** @type {Map<string, null | string>} */
+  let names = new Map();
   try {
     const ast = parse(fs.readFileSync(filename, 'utf8'), {
       plugins: parserPluginsFor(filename, parserPlugins),
@@ -608,15 +702,35 @@ function pureDeclaredNamesOfFile(filename, parserPlugins) {
  * @param {any} program
  * @param {ReadonlySet<string>} functions
  * @param {TransformPureAnnotationsOptions} opts
- * @returns {Map<string, string>} local name to the factory it refers to
+ * @returns {Map<string, {inline: undefined | any, name: string}>} local name
+ *   to the factory it refers to, and the form it may be inlined with
  */
 function collectFactoryNames(program, functions, opts) {
   const sources = toRegExpArray(opts.sources, DEFAULT_SOURCES);
-  /** @type {Map<string, string>} */
+  /** @type {Map<string, {inline: undefined | any, name: string}>} */
   const names = new Map();
-  for (const name of pureDeclaredNames(program)) {
+  /**
+   * A call is only replaced by a literal when the shape of what the factory
+   * returns is known. An import from a Lexical package is taken on trust
+   * (this package ships with that Lexical); anything else has to say so
+   * itself with a `@lexicalInline` marker whose form matches the table.
+   *
+   * @param {string} local
+   * @param {string} name
+   * @param {null | string | undefined} markerForm
+   * @param {boolean} trusted
+   */
+  function add(local, name, markerForm, trusted) {
+    const spec = INLINE_FACTORIES.get(name);
+    const inline =
+      spec !== undefined && (trusted || markerForm === spec.form)
+        ? spec
+        : undefined;
+    names.set(local, {inline, name});
+  }
+  for (const [name, markerForm] of pureDeclaredNames(program)) {
     if (functions.has(name)) {
-      names.set(name, name);
+      add(name, name, markerForm, false);
     }
   }
   for (const statement of program.body) {
@@ -642,20 +756,21 @@ function collectFactoryNames(program, functions, opts) {
         continue;
       }
       if (trusted) {
-        names.set(specifier.local.name, specifier.imported.name);
+        add(specifier.local.name, specifier.imported.name, null, true);
         continue;
       }
       const resolved = resolveRelativeSpecifier(
         /** @type {string} */ (opts.filename),
         source,
       );
-      if (
-        resolved !== null &&
-        pureDeclaredNamesOfFile(resolved, opts.parserPlugins).has(
-          specifier.imported.name,
-        )
-      ) {
-        names.set(specifier.local.name, specifier.imported.name);
+      const declared =
+        resolved === null
+          ? undefined
+          : pureDeclaredNamesOfFile(resolved, opts.parserPlugins).get(
+              specifier.imported.name,
+            );
+      if (declared !== undefined) {
+        add(specifier.local.name, specifier.imported.name, declared, false);
       }
     }
   }
@@ -737,17 +852,19 @@ export function transformPureAnnotations(code, options) {
   }
   /** @type {Array<number>} */
   const offsets = [];
-  /** @type {Array<[any, {arity?: number, form: string}]>} */
+  /** @type {Array<[any, {arity?: number, form: string}, boolean]>} */
   const inlined = [];
-  visitModuleScopeCalls(ast.program, factoryNames, (node, discarded) => {
-    const spec =
-      opts.inline === true
-        ? INLINE_FACTORIES.get(
-            /** @type {string} */ (factoryNames.get(node.callee.name)),
-          )
-        : undefined;
-    if (spec !== undefined && !discarded && canInlineCall(node, spec)) {
-      inlined.push([node, spec]);
+  visitModuleScopeCalls(ast.program, factoryNames, (node, position) => {
+    const factory = /** @type {{inline: undefined | any, name: string}} */ (
+      factoryNames.get(node.callee.name)
+    );
+    const spec = opts.inline === true ? factory.inline : undefined;
+    if (
+      spec !== undefined &&
+      !position.discarded &&
+      canInlineCall(node, spec)
+    ) {
+      inlined.push([node, spec, position.statementStart]);
     } else if (!hasPureAnnotation(code, node.start)) {
       offsets.push(node.start);
     }
@@ -759,11 +876,12 @@ export function transformPureAnnotations(code, options) {
   for (const offset of offsets) {
     magicString.appendLeft(offset, ANNOTATION);
   }
-  for (const [node, spec] of inlined) {
-    inlineCall(magicString, code, node, spec);
+  for (const [node, spec, statementStart] of inlined) {
+    inlineCall(magicString, code, node, spec, statementStart);
   }
   removeUnusedImports(
     magicString,
+    code,
     ast.program,
     inlined.map(([node]) => node),
   );

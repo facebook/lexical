@@ -244,6 +244,88 @@ describe('inlining', () => {
     expect(result.code).not.toContain('import {');
   });
 
+  it('keeps the parentheses when the argument is not self-delimiting', () => {
+    // `safeCast(1 + 2) * 3` is 9; `1 + 2 * 3` is 7.
+    const result = inline(
+      [
+        `import {safeCast} from 'lexical';`,
+        `export const x = safeCast(1 + 2) * 3;`,
+        `export const y = safeCast(a || b).c;`,
+        `export const z = safeCast({a: 1});`,
+      ].join('\n'),
+    )!;
+    expect(result.code).toContain(`export const x = (1 + 2) * 3;`);
+    expect(result.code).toContain(`export const y = (a || b).c;`);
+    // An object literal needs no help.
+    expect(result.code).toContain(`export const z = {a: 1};`);
+  });
+
+  it('keeps the parentheses at the start of an expression statement', () => {
+    // `{name: 'e'}.name;` would be a block followed by a member expression.
+    const result = inline(
+      [
+        `import {defineExtension} from 'lexical';`,
+        `defineExtension({name: 'e'}).name;`,
+      ].join('\n'),
+    )!;
+    expect(result.code).toContain(`({name: 'e'}).name;`);
+  });
+
+  it('requires the marker to inline a factory it can see the source of', () => {
+    // Being side-effect free is what makes a call safe to *annotate*. It says
+    // nothing about the shape of what comes back, so a look-alike that is not
+    // marked inlinable is annotated instead.
+    const unmarked = inline(
+      [
+        `/**`,
+        ` * @__NO_SIDE_EFFECTS__`,
+        ` */`,
+        `function defineExtension(config) {`,
+        `  return {...config, extra: 1};`,
+        `}`,
+        `export const E = defineExtension({name: 'e'});`,
+      ].join('\n'),
+    )!;
+    expect(unmarked.inlined).toBe(0);
+    expect(unmarked.code).toContain(`${PURE} defineExtension({name: 'e'})`);
+
+    const marked = inline(
+      [
+        `/**`,
+        ` * @__NO_SIDE_EFFECTS__`,
+        ` * @lexicalInline identity`,
+        ` */`,
+        `function defineExtension(config) {`,
+        `  return config;`,
+        `}`,
+        `export const E = defineExtension({name: 'e'});`,
+      ].join('\n'),
+    )!;
+    expect(marked.inlined).toBe(1);
+    expect(marked.code).toContain(`export const E = {name: 'e'};`);
+  });
+
+  it('leaves the rest of an import declaration intact', () => {
+    const withDefault = inline(
+      [
+        `import React, {safeCast} from 'lexical';`,
+        `export const config = safeCast({a: 1});`,
+        `export const element = React;`,
+      ].join('\n'),
+    )!;
+    expect(withDefault.code).toContain(`import React from 'lexical';`);
+
+    const withNamespace = inline(
+      [
+        `import * as L from 'lexical';`,
+        `import {safeCast} from 'lexical';`,
+        `export const config = safeCast({a: 1});`,
+        `export const all = L;`,
+      ].join('\n'),
+    )!;
+    expect(withNamespace.code).toContain(`import * as L from 'lexical';`);
+  });
+
   it('does not inline unless asked to', () => {
     const code = [
       `import {safeCast} from 'lexical';`,

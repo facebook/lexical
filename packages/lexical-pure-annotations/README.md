@@ -125,21 +125,33 @@ export const MarkExtension = {name: '@lexical/mark', ...};
 which is better than an annotation in every way that matters: a literal is
 inert for every bundler with nothing to preserve through minification, there
 is no nested call left to pin the definition, and the factory itself can be
-dropped from the bundle once nothing calls it. A call that does not fit its
-form — a spread argument, `declarePeerDependency` with one argument (which
-returns `[name, undefined]`, not `[name]`), or a call whose result is
-discarded — is annotated as usual.
+dropped from the bundle once nothing calls it (the import it came from is
+removed along with the last call to it).
+
+A call that does not fit its form is annotated as usual: a spread argument,
+`declarePeerDependency` with one argument (which returns `[name, undefined]`,
+not `[name]`), or a call whose result is discarded. The call's own
+parentheses are kept where they were doing work — `safeCast(1 + 2) * 3` is
+not `1 + 2 * 3`, and an object literal at the start of an expression
+statement would otherwise read as a block.
 
 `createCommand` is deliberately not inlined: `{type: x}` is more bytes than a
 call to a minified one-character name.
 
+Each inlined factory is marked `@lexicalInline <form>` where it is defined.
+For an import from a Lexical package the marker is documentation — the table
+is trusted, because this package ships alongside that Lexical. Everywhere
+else (a factory of your own, declared in the module or imported relatively)
+the marker is what makes inlining possible at all: `@__NO_SIDE_EFFECTS__`
+says a call is safe to *drop*, but only the marker says what the call can be
+*replaced with*, so a same-named look-alike is annotated instead.
+
 This is **off by default** because it reproduces those function bodies, so it
 assumes the Lexical you are building matches this package's version — they
 are released together with the same version number. Lexical's own build turns
-it on for the bundles it publishes. Each inlined factory is marked
-`@lexicalInline <form>` where it is defined, and the package's tests check
-that the marker and the table agree and that the real functions still return
-what the table claims.
+it on for the bundles it publishes. The package's tests check that the
+markers in the tree and the table agree, and that the real functions still
+return what the table claims.
 
 ## Options
 

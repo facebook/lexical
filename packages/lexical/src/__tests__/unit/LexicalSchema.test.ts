@@ -472,11 +472,11 @@ describe('updateFromJSON tolerates partial and out-of-domain JSON', () => {
           // returning undefined from the getters its schema names.
           const paragraph = $createParagraphNode();
           paragraph.append($createTextNode('x').setFormat(1));
-          expect(paragraph.$getSerializedTextFormat()).toBeUndefined();
-          expect(paragraph.$getSerializedTextStyle()).toBeUndefined();
+          expect(paragraph.getSerializedTextFormat()).toBeUndefined();
+          expect(paragraph.getSerializedTextStyle()).toBeUndefined();
           // and a node that does carry them writes them out
           const styled = $createParagraphNode().setTextStyle('color: red');
-          expect(styled.$getSerializedTextStyle()).toBe('color: red');
+          expect(styled.getSerializedTextStyle()).toBe('color: red');
           expect(styled.exportJSON()).toMatchObject({textStyle: 'color: red'});
         });
       });

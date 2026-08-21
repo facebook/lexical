@@ -53,14 +53,10 @@ export {
   InitialStateExtension,
 } from './InitialStateExtension';
 export {
-  type AnySerializationOverride,
   type ExportJSONOptions,
   type JSONConfig,
   JSONExtension,
   type JSONExtensionOutput,
-  jsonOverride,
-  type NodeMatch,
-  type SerializationOverride,
 } from './JSONExtension';
 export {
   formatKeyboardShortcut,

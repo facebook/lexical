@@ -21,14 +21,11 @@ import {
   DecoratorBlockNode,
   type SerializedDecoratorBlockNode,
 } from '@lexical/react/LexicalDecoratorBlockNode';
-import {objectValue, stringValue, withAccessors} from 'lexical';
+import {objectValue, stringValue, withGetter} from 'lexical';
 import * as React from 'react';
 
 const figmaNodeSchema = /* @__PURE__ */ objectValue({
-  documentID: /* @__PURE__ */ withAccessors(/* @__PURE__ */ stringValue(), {
-    getter: '__id',
-    setter: 'setDocumentID',
-  }),
+  documentID: /* @__PURE__ */ withGetter(/* @__PURE__ */ stringValue(), '__id'),
 });
 
 type FigmaComponentProps = Readonly<{

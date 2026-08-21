@@ -24,15 +24,12 @@ import {
   objectValue,
   type Spread,
   stringValue,
-  withAccessors,
+  withGetter,
 } from 'lexical';
 import * as React from 'react';
 
 const youTubeNodeSchema = /* @__PURE__ */ objectValue({
-  videoID: /* @__PURE__ */ withAccessors(/* @__PURE__ */ stringValue(), {
-    getter: '__id',
-    setter: 'setVideoID',
-  }),
+  videoID: /* @__PURE__ */ withGetter(/* @__PURE__ */ stringValue(), '__id'),
 });
 
 type YouTubeComponentProps = Readonly<{

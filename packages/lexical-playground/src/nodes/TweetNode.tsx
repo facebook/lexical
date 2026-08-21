@@ -22,16 +22,13 @@ import {
   objectValue,
   type Spread,
   stringValue,
-  withAccessors,
+  withGetter,
 } from 'lexical';
 import * as React from 'react';
 import {type JSX, useCallback, useEffect, useRef, useState} from 'react';
 
 const tweetNodeSchema = /* @__PURE__ */ objectValue({
-  id: /* @__PURE__ */ withAccessors(/* @__PURE__ */ stringValue(), {
-    getter: '__id',
-    setter: 'setId',
-  }),
+  id: /* @__PURE__ */ withGetter(/* @__PURE__ */ stringValue(), '__id'),
 });
 
 const WIDGET_SCRIPT_URL = 'https://platform.twitter.com/widgets.js';

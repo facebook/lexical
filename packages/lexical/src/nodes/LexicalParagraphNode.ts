@@ -99,10 +99,16 @@ export class ParagraphNode extends ElementNode {
     };
   }
 
-  exportJSON(): SerializedParagraphNode {
-    const json = super.exportJSON();
-    // Provide backwards compatible values, see #7971
-    if (json.textFormat === undefined || json.textStyle === undefined) {
+  exportJSON(compact = false): SerializedParagraphNode {
+    const json = super.exportJSON(compact);
+    // Provide backwards compatible values, see #7971 — but only for the
+    // legacy form. The compact form is read by a parser that restores both
+    // from their schema defaults, which is the same thing this computes, so
+    // writing them would be bytes with nothing to say.
+    if (
+      !compact &&
+      (json.textFormat === undefined || json.textStyle === undefined)
+    ) {
       // Compute the same value that the reconciler would
       const firstTextNode = this.getChildren().find($isTextNode);
       if (firstTextNode) {

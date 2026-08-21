@@ -260,30 +260,8 @@ declare export function registerTabIndentation(
 /**
  * JSONExtension
  */
-export type NodeMatch<T extends LexicalNode> =
-  | Class<T>
-  | ((node: LexicalNode) => boolean);
-export type SerializationOverride<T extends LexicalNode> = {
-  readonly nodes: '*' | ReadonlyArray<NodeMatch<T>>;
-  readonly $exportJSON: (
-    node: T,
-    $next: () => SerializedLexicalNode,
-  ) => SerializedLexicalNode | null;
-};
-// $FlowFixMe[unclear-type]
-export type AnySerializationOverride = SerializationOverride<any>;
-declare export function jsonOverride<T extends LexicalNode>(
-  nodes: '*' | ReadonlyArray<NodeMatch<T>>,
-  config: {
-    readonly $exportJSON: (
-      node: T,
-      $next: () => SerializedLexicalNode,
-    ) => SerializedLexicalNode | null;
-  },
-): SerializationOverride<T>;
 export type JSONConfig = {
   compact: boolean;
-  overrides: ReadonlyArray<AnySerializationOverride>;
 };
 export type ExportJSONOptions = {
   readonly compact?: boolean;

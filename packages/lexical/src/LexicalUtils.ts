@@ -3355,21 +3355,34 @@ export function getComposedSchemaFields(
  * so {@link LexicalNode.exportJSON} writes an object without walking the class
  * chain on every call.
  */
-type CompiledGetter =
-  | {
-      readonly kind: 'method';
-      readonly key: string;
-      // Resolved once at compile time, like the setter counterpart.
-      readonly getter: (this: LexicalNode) => unknown;
-    }
-  | {
-      // The fast path, mirroring the setter side: the property *is* a node
-      // field, so reading it is a property access. getLatest() is resolved
-      // once per node by $writeJSONGetters rather than once per field.
-      readonly kind: 'ownField';
-      readonly key: string;
-      readonly field: string;
-    };
+/**
+ * What the compact form may drop for one property, resolved with the accessor
+ * so writing the compact form needs no second pass over the schema: a derived
+ * property (`{setter: null}`) is bytes nothing will ever read, and a value
+ * equal to the default parsing would restore says nothing either.
+ */
+interface CompactRule {
+  readonly derived: boolean;
+  readonly defaultValue: unknown;
+}
+
+type CompiledGetter = CompactRule &
+  (
+    | {
+        readonly kind: 'method';
+        readonly key: string;
+        // Resolved once at compile time, like the setter counterpart.
+        readonly getter: (this: LexicalNode) => unknown;
+      }
+    | {
+        // The fast path, mirroring the setter side: the property *is* a node
+        // field, so reading it is a property access — no method call and no
+        // version resolution (see $writeJSONGetters).
+        readonly kind: 'ownField';
+        readonly key: string;
+        readonly field: string;
+      }
+  );
 
 const EMPTY_GETTERS: readonly CompiledGetter[] = [];
 const compiledGettersByClass = new WeakMap<
@@ -3384,7 +3397,7 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
   // hand-written exportJSON produced for their own fields. It does *not*
   // reproduce it for a subclass: `{...super.exportJSON(), ownProps}` put the
   // subclass's properties last, and they now come first, with `type`/`version`
-  // appended by $exportJSONInto. The JSON is equivalent — key order carries no
+  // appended by exportJSONInto. The JSON is equivalent — key order carries no
   // meaning — but `JSON.stringify(editorState.toJSON())` is byte-different for
   // an existing document, so anything comparing serialized strings sees a
   // change. Composition already resolved each key to exactly one schema, so a
@@ -3403,7 +3416,13 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
       // property access — no method call, and no getLatest() (see
       // $writeJSONGetters). The field only exists on a constructed node, so
       // unlike the method below it is checked on first read.
-      fields.set(key, {field: getterName, key, kind: 'ownField'});
+      fields.set(key, {
+        defaultValue: schema.defaultValue,
+        derived: schema.setter === null,
+        field: getterName,
+        key,
+        kind: 'ownField',
+      });
       continue;
     }
     const getter = prototype[getterName];
@@ -3418,6 +3437,8 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
       getterName,
     );
     fields.set(key, {
+      defaultValue: schema.defaultValue,
+      derived: schema.setter === null,
       getter: getter as (this: LexicalNode) => unknown,
       key,
       kind: 'method',
@@ -3442,6 +3463,13 @@ function ownFieldRecord(node: LexicalNode): Record<string, unknown> {
  * stringified, so this is how an optional (or conditionally persisted)
  * property is expressed.
  *
+ * Compaction is applied here rather than as a pass over the finished object:
+ * with `compact`, a property the parser derives is skipped without calling its
+ * getter at all, and one whose value equals the schema default parsing would
+ * restore is simply not written. That leaves nothing for a later pass to
+ * inspect, so a node that generates its own `exportJSON` can inline the same
+ * decisions and never consult the schema at runtime.
+ *
  * A field is read off `node` as given, with no `getLatest()`. Serializing a
  * graph only needs to resolve its root: every node the walk reaches after that
  * comes from the EditorState's node map — `$getRoot()`, `getChildren()`,
@@ -3454,6 +3482,7 @@ function ownFieldRecord(node: LexicalNode): Record<string, unknown> {
 export function $writeJSONGetters(
   node: LexicalNode,
   json: {[key: string]: unknown},
+  compact: boolean,
 ): void {
   const klass = node.constructor as Klass<LexicalNode>;
   let getters = compiledGettersByClass.get(klass);
@@ -3464,6 +3493,11 @@ export function $writeJSONGetters(
   }
   for (let i = 0; i < getters.length; i++) {
     const entry = getters[i];
+    if (compact && entry.derived) {
+      // Nothing will read it back, so the compact form does not even call the
+      // getter to find out what it would have written.
+      continue;
+    }
     let value: unknown;
     if (entry.kind === 'ownField') {
       const fields = ownFieldRecord(node);
@@ -3480,7 +3514,7 @@ export function $writeJSONGetters(
     } else {
       value = entry.getter.call(node);
     }
-    if (value !== undefined) {
+    if (value !== undefined && !(compact && value === entry.defaultValue)) {
       json[entry.key] = value;
     }
   }

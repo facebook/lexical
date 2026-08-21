@@ -79,15 +79,15 @@ const tableNodeSchema = /* @__PURE__ */ objectValue({
   ),
   frozenColumnCount: /* @__PURE__ */ withAccessors(
     /* @__PURE__ */ numberValue(),
-    {getter: '$getSerializedFrozenColumnCount', setter: 'setFrozenColumns'},
+    {getter: 'getSerializedFrozenColumnCount', setter: 'setFrozenColumns'},
   ),
   frozenRowCount: /* @__PURE__ */ withAccessors(/* @__PURE__ */ numberValue(), {
-    getter: '$getSerializedFrozenRowCount',
+    getter: 'getSerializedFrozenRowCount',
     setter: 'setFrozenRows',
   }),
   rowStriping: /* @__PURE__ */ withGetter(
     /* @__PURE__ */ booleanValue(),
-    '$getSerializedRowStriping',
+    'getSerializedRowStriping',
   ),
 });
 
@@ -433,17 +433,17 @@ export class TableNode extends ElementNode {
   }
 
   /** @internal These three are omitted from the JSON when falsy. */
-  $getSerializedFrozenColumnCount(): number | undefined {
+  getSerializedFrozenColumnCount(): number | undefined {
     return this.getLatest().__frozenColumnCount || undefined;
   }
 
   /** @internal */
-  $getSerializedFrozenRowCount(): number | undefined {
+  getSerializedFrozenRowCount(): number | undefined {
     return this.getLatest().__frozenRowCount || undefined;
   }
 
   /** @internal */
-  $getSerializedRowStriping(): boolean | undefined {
+  getSerializedRowStriping(): boolean | undefined {
     return this.getLatest().__rowStriping || undefined;
   }
 

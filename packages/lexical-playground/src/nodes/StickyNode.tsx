@@ -34,7 +34,6 @@ import {
   type SerializedEditor,
   type SerializedLexicalNode,
   type Spread,
-  withAccessors,
   withGetter,
 } from 'lexical';
 import * as React from 'react';
@@ -50,20 +49,14 @@ type StickyNoteColor = 'pink' | 'yellow';
 const stickyNodeSchema = /* @__PURE__ */ objectValue({
   caption: /* @__PURE__ */ withGetter(
     /* @__PURE__ */ rawValue<SerializedEditor>(),
-    '$getSerializedCaption',
+    'getSerializedCaption',
   ),
-  color: /* @__PURE__ */ withAccessors(
+  color: /* @__PURE__ */ withGetter(
     /* @__PURE__ */ enumValue(['yellow', 'pink']),
-    {getter: '__color', setter: 'setColor'},
+    '__color',
   ),
-  xOffset: /* @__PURE__ */ withAccessors(/* @__PURE__ */ numberValue(), {
-    getter: '__x',
-    setter: 'setXOffset',
-  }),
-  yOffset: /* @__PURE__ */ withAccessors(/* @__PURE__ */ numberValue(), {
-    getter: '__y',
-    setter: 'setYOffset',
-  }),
+  xOffset: /* @__PURE__ */ withGetter(/* @__PURE__ */ numberValue(), '__x'),
+  yOffset: /* @__PURE__ */ withGetter(/* @__PURE__ */ numberValue(), '__y'),
 });
 
 export type SerializedStickyNode = Spread<
@@ -121,7 +114,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
   }
 
   /** @internal The nested caption editor's own serialized state. */
-  $getSerializedCaption(): SerializedEditor {
+  getSerializedCaption(): SerializedEditor {
     return this.getLatest().__caption.toJSON();
   }
 

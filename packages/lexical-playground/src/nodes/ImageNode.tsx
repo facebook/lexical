@@ -136,13 +136,13 @@ const imageNodeSchema = /* @__PURE__ */ objectValue({
   altText: /* @__PURE__ */ stringValue(),
   caption: /* @__PURE__ */ withGetter(
     /* @__PURE__ */ rawValue<SerializedEditor>(),
-    '$getSerializedCaption',
+    'getSerializedCaption',
   ),
   // An unsized dimension is the 'inherit' sentinel, which has always
   // serialized as 0 (and parses back through `|| 'inherit'`).
   height: /* @__PURE__ */ withGetter(
     /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
-    '$getSerializedHeight',
+    'getSerializedHeight',
   ),
   // Read straight from the field, but applied through setMaxWidth: an absent
   // `maxWidth` parses to `undefined`, and the setter reads that as "keep the
@@ -158,7 +158,7 @@ const imageNodeSchema = /* @__PURE__ */ objectValue({
   src: /* @__PURE__ */ stringValue(),
   width: /* @__PURE__ */ withGetter(
     /* @__PURE__ */ optional(/* @__PURE__ */ numberValue()),
-    '$getSerializedWidth',
+    'getSerializedWidth',
   ),
 });
 
@@ -195,18 +195,18 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   }
 
   /** @internal The nested caption editor's own serialized state. */
-  $getSerializedCaption(): SerializedEditor {
+  getSerializedCaption(): SerializedEditor {
     return this.getLatest().__caption.toJSON();
   }
 
   /** @internal 'inherit' has always serialized as 0. */
-  $getSerializedWidth(): number {
+  getSerializedWidth(): number {
     const width = this.getLatest().__width;
     return width === 'inherit' ? 0 : width;
   }
 
   /** @internal */
-  $getSerializedHeight(): number {
+  getSerializedHeight(): number {
     const height = this.getLatest().__height;
     return height === 'inherit' ? 0 : height;
   }

@@ -611,19 +611,35 @@ Because the node itself declares the schema, tooling can introspect it. The
 directly from a node class (`nodeArbitrary(TextNode)`), so a single
 declaration powers both parsing and example generation in tests.
 
-### Compact JSON and export overrides
+### Compact JSON
 
 By default `exportJSON` writes every property, producing the historical
 ("legacy") format, and a bare `editorState.toJSON()` always does — existing
-persistence pipelines are unaffected until you opt in. With schemas
-declared, Lexical can also write a *compact* form: a property whose value is
-strictly equal to its schema default is omitted, as is the deprecated
-`version` property when it is `1`. Parsing restores the defaults, so both
-forms describe the same document; the compact form is typically much
-smaller.
+persistence pipelines are unaffected until you opt in. With schemas declared,
+Lexical can also write a *compact* form, which omits:
 
-The compact form and per-node export overrides are configured with
-`JSONExtension` from `@lexical/extension`:
+- any property whose value is the schema default parsing would restore,
+- any property the parser derives rather than reads (declared `{setter: null}`,
+  such as `ListNode`'s `tag`),
+- the deprecated `version` property.
+
+Parsing restores each, so both forms describe the same document; the compact
+form is typically much smaller. Compaction happens as the properties are
+written rather than as a pass over the finished object, so a derived property
+is skipped without even calling its getter — and a node that generates its own
+`exportJSON` can inline the same decisions and never consult the schema at
+runtime.
+
+:::caution
+
+The compact form is readable only by a Lexical new enough to parse it — the
+omitted properties are restored from the schema, which older versions do not
+have. Persisted documents outlive the code that wrote them, so keep writing the
+legacy form until every reader is upgraded.
+
+:::
+
+It is configured with `JSONExtension` from `@lexical/extension`:
 
 ```ts
 import {
@@ -631,27 +647,11 @@ import {
   configExtension,
   getExtensionDependencyFromEditor,
   JSONExtension,
-  jsonOverride,
 } from '@lexical/extension';
 
 const editor = buildEditorFromExtensions({
   name: 'example',
-  dependencies: [
-    configExtension(JSONExtension, {
-      compact: true,
-      overrides: [
-        // Never serialize comment threads
-        jsonOverride([CommentNode], {$exportJSON: () => null}),
-        // Redact text content but keep formatting
-        jsonOverride([TextNode], {
-          $exportJSON: (node, $next) => ({
-            ...$next(),
-            text: '█'.repeat(node.getTextContentSize()),
-          }),
-        }),
-      ],
-    }),
-  ],
+  dependencies: [configExtension(JSONExtension, {compact: true})],
 });
 
 const {$exportJSON, $withSerialization} = getExtensionDependencyFromEditor(
@@ -662,22 +662,12 @@ const {$exportJSON, $withSerialization} = getExtensionDependencyFromEditor(
 const json = editor.read(() => $exportJSON());
 ```
 
-An override is middleware for a set of matchers (node classes, `$is*` type
-guards, or `'*'` for every node): call `$next()` for the JSON the node would
-otherwise produce and enhance it, return your own JSON to replace it (a
-replacement is authoritative — the walk does not append the node's live
-children), or return `null` to omit the node and its entire subtree (the
-root itself is never omitted). Overrides run highest priority first, and
-`overrides` configured by independent extensions concatenate rather than
-replace each other.
-
 The extension's output provides:
 
 - `$exportJSON(editorState?, options?)` — serialize an editor state (the
-  editor's current one by default) with the configured overrides and
-  compaction. `options.compact` overrides the configured `compact` for that
-  one call, e.g. to explicitly produce the legacy format for a consumer
-  that still requires it.
+  editor's current one by default) in the configured form. `options.compact`
+  overrides the configured `compact` for that one call, e.g. to explicitly
+  produce the legacy format for a consumer that still requires it.
 - `$withSerialization(fn)` — run `fn` with the configured serialization
   context installed, so JSON exports the extension does not own — an
   `editorState.toJSON()` call, or the `@lexical/clipboard` selection export

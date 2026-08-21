@@ -324,21 +324,15 @@ export {
   tokenizeRawText,
 } from './LexicalSelection';
 export {
-  $compactSerializedNode,
   $getSerializationContextValue,
   $withSerializationContext,
   type AnySerializationStateConfigPair,
   createSerializationState,
   SerializationContextCompact,
-  SerializationContextOverride,
-  type SerializationOverrideFn,
   type SerializationStateConfig,
   type SerializationStateConfigPair,
 } from './LexicalSerializationContext';
-export {
-  $applySerializationContext,
-  type AppliedSerialization,
-} from './LexicalSerializedExport';
+export {$applySerializationContext} from './LexicalSerializedExport';
 export type {SlotName} from './LexicalSlot';
 export {
   $getSlot,

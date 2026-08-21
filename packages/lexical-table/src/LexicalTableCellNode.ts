@@ -72,7 +72,7 @@ const tableCellNodeSchema = /* @__PURE__ */ objectValue({
   // enumValue's second argument would instead select values[0].
   verticalAlign: /* @__PURE__ */ withGetter(
     /* @__PURE__ */ enumValue([undefined, 'middle', 'bottom']),
-    '$getSerializedVerticalAlign',
+    'getSerializedVerticalAlign',
   ),
   // A width of 0 is not a real width, matching the historical
   // `serializedNode.width || undefined`.
@@ -269,7 +269,7 @@ export class TableCellNode extends ElementNode {
   }
 
   /** @internal Serialized `verticalAlign`, or undefined to omit it. */
-  $getSerializedVerticalAlign(): string | undefined {
+  getSerializedVerticalAlign(): string | undefined {
     const verticalAlign = this.getLatest().__verticalAlign;
     return isValidVerticalAlign(verticalAlign) ? verticalAlign : undefined;
   }

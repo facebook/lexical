@@ -1590,12 +1590,17 @@ export class LexicalNode {
    * declares (its own and those it inherits), reading each through its getter —
    * `get<Prop>` by default, or the name recorded with `withGetter`. A getter
    * that returns `undefined` omits its property. Override this only for output
-   * a schema can not describe, and call `super.exportJSON()` when you do.
+   * a schema can not describe, and call `super.exportJSON(compact)` when you do.
    *
+   * @param compact Write the compact form: omit a property the parser derives
+   *   rather than reads, one whose value is the schema default parsing would
+   *   restore, and the deprecated `version`. The two forms describe the same
+   *   document. A node that overrides this and ignores the flag simply keeps
+   *   writing the full form, which still parses.
    * */
-  exportJSON(): SerializedLexicalNode {
+  exportJSON(compact = false): SerializedLexicalNode {
     const json: {[key: string]: unknown} = {};
-    this.$exportJSONInto(json);
+    this.exportJSONInto(json, compact);
     return json as unknown as SerializedLexicalNode;
   }
 
@@ -1606,10 +1611,14 @@ export class LexicalNode {
    *
    * @internal
    */
-  $exportJSONInto(json: {[key: string]: unknown}): void {
-    $writeJSONGetters(this, json);
+  exportJSONInto(json: {[key: string]: unknown}, compact: boolean): void {
+    $writeJSONGetters(this, json, compact);
     json.type = this.__type;
-    json.version = 1;
+    if (!compact) {
+      // Deprecated and ignored on the way in; written only so the legacy form
+      // stays readable by older versions.
+      json.version = 1;
+    }
     const state = this.__state ? this.__state.toJSON() : undefined;
     if (state !== undefined) {
       Object.assign(json, state);

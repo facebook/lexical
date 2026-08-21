@@ -109,11 +109,11 @@ const elementNodeSchema = /* @__PURE__ */ objectValue({
   // that return undefined (and are therefore omitted) otherwise.
   textFormat: /* @__PURE__ */ withGetter(
     /* @__PURE__ */ numberValue(),
-    '$getSerializedTextFormat',
+    'getSerializedTextFormat',
   ),
   textStyle: /* @__PURE__ */ withGetter(
     /* @__PURE__ */ stringValue(),
-    '$getSerializedTextStyle',
+    'getSerializedTextStyle',
   ),
 });
 
@@ -902,7 +902,7 @@ export class ElementNode
    *
    * @internal
    */
-  $shouldSerializeTextStyles(): boolean {
+  shouldSerializeTextStyles(): boolean {
     if ($isRootOrShadowRoot(this)) {
       return false;
     }
@@ -922,29 +922,29 @@ export class ElementNode
   }
 
   /** @internal Serialized `textFormat`, or undefined to omit it. */
-  $getSerializedTextFormat(): number | undefined {
+  getSerializedTextFormat(): number | undefined {
     const textFormat = this.getTextFormat();
-    return textFormat !== 0 && this.$shouldSerializeTextStyles()
+    return textFormat !== 0 && this.shouldSerializeTextStyles()
       ? textFormat
       : undefined;
   }
 
   /** @internal Serialized `textStyle`, or undefined to omit it. */
-  $getSerializedTextStyle(): string | undefined {
+  getSerializedTextStyle(): string | undefined {
     const textStyle = this.getTextStyle();
-    return textStyle !== '' && this.$shouldSerializeTextStyles()
+    return textStyle !== '' && this.shouldSerializeTextStyles()
       ? textStyle
       : undefined;
   }
 
-  exportJSON(): SerializedElementNode {
+  exportJSON(compact = false): SerializedElementNode {
     // `children` is structural rather than schema-declared (the export walk
     // fills it), and leads for consistency with the historical property order.
     // The declared properties themselves are written by the base
     // implementation's compiled schema getters, which TypeScript cannot see,
     // hence the widening cast.
     const json: {[key: string]: unknown} = {children: []};
-    this.$exportJSONInto(json);
+    this.exportJSONInto(json, compact);
     return json as unknown as SerializedElementNode;
   }
 

@@ -1849,36 +1849,20 @@ export type SerializationStateConfig<V> = ContextConfig<symbol, V>;
 export type SerializationStateConfigPair<V> = [SerializationStateConfig<V>, V];
 // $FlowFixMe[unclear-type] the pair is heterogeneous by construction
 export type AnySerializationStateConfigPair = SerializationStateConfigPair<any>;
-export type SerializationOverrideFn = (
-  node: LexicalNode,
-  $next: () => SerializedLexicalNode,
-) => SerializedLexicalNode | null;
 declare export function createSerializationState<V>(
   name: string,
   defaultValue: V,
 ): SerializationStateConfig<V>;
 declare export var SerializationContextCompact: SerializationStateConfig<boolean>;
-declare export var SerializationContextOverride: SerializationStateConfig<
-  null | SerializationOverrideFn,
->;
 declare export function $getSerializationContextValue<V>(
   cfg: SerializationStateConfig<V>,
 ): V;
 declare export function $withSerializationContext(
   pairs: ReadonlyArray<AnySerializationStateConfigPair>,
 ): <T>(f: () => T) => T;
-declare export function $compactSerializedNode(
-  node: LexicalNode,
-  json: SerializedLexicalNode,
-): SerializedLexicalNode;
-export type AppliedSerialization = {
-  readonly serializedNode: SerializedLexicalNode,
-  readonly recurseChildren: boolean,
-};
 declare export function $applySerializationContext(
   node: LexicalNode,
-  isRoot: boolean,
-): AppliedSerialization | null;
+): SerializedLexicalNode;
 
 export type Parse<T> = (value: unknown) => T;
 // A callable carrying its own metadata, so introspecting tooling

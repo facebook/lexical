@@ -14,14 +14,10 @@ import {
   $createTextNode,
   $getRoot,
   $getSelection,
-  $isTextNode,
   $selectAll,
   $withSerializationContext,
   type AnySerializationStateConfigPair,
-  type LexicalNode,
   SerializationContextCompact,
-  SerializationContextOverride,
-  type SerializedLexicalNode,
   type SerializedPartial,
   type SerializedTextNode,
 } from 'lexical';
@@ -76,10 +72,6 @@ function selectionJSON(
 
 // A RangeSelection over a paragraph's contents yields its text nodes at the
 // top level of the payload, with no paragraph wrapper.
-function texts(nodes: SelectedTextJSON[]): (string | undefined)[] {
-  return nodes.map(node => node.text);
-}
-
 describe('selection export honors the serialization context', () => {
   test('legacy is the default', () => {
     const [plain] = selectionJSON();
@@ -100,34 +92,6 @@ describe('selection export honors the serialization context', () => {
       {text: 'plain', type: 'text'},
       {format: 1, text: 'secret', type: 'text'},
     ]);
-  });
-
-  test('an override can omit nodes from a selection export', () => {
-    const nodes = selectionJSON([
-      [
-        SerializationContextOverride,
-        (node: LexicalNode, $next: () => SerializedLexicalNode) =>
-          $isTextNode(node) && node.getTextContent() === 'secret'
-            ? null
-            : $next(),
-      ],
-    ]);
-    expect(texts(nodes)).toEqual(['plain']);
-  });
-
-  test('an override can replace nodes in a selection export', () => {
-    const nodes = selectionJSON([
-      [
-        SerializationContextOverride,
-        (node: LexicalNode, $next: () => SerializedLexicalNode) => {
-          const json = $next();
-          return $isTextNode(node) && node.getTextContent() === 'secret'
-            ? {...json, text: 'REDACTED'}
-            : json;
-        },
-      ],
-    ]);
-    expect(texts(nodes)).toEqual(['plain', 'REDACTED']);
   });
 
   test('the legacy form can be forced at a call site', () => {

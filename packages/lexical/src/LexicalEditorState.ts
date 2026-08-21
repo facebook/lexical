@@ -62,49 +62,26 @@ export function createEmptyEditorState(): EditorState {
 
 function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
   node: LexicalNode,
-  isRoot = false,
-): SerializedNode | null {
+): SerializedNode {
   const nodeClass = node.constructor;
 
-  // The active serialization context decides what this node contributes: an
-  // override may replace or omit it, and the compact form drops properties
-  // that parsing would restore from their schema default anyway. The default
-  // (non-overridden) export is validated by the context; a replacement is
-  // authoritative and is not recursed into.
-  const applied = $applySerializationContext(node, isRoot);
-  if (applied === null) {
-    return null;
-  }
-  const {recurseChildren, serializedNode} = applied;
+  // The active serialization context decides the form: the compact form drops
+  // properties that parsing would restore from their schema default anyway.
+  const serializedNode = $applySerializationContext(node);
 
-  if (recurseChildren && $isElementNode(node)) {
+  if ($isElementNode(node)) {
     const serializedChildren = (serializedNode as SerializedElementNode)
       .children;
     const children = node.getChildren();
-    // $validatedExportJSON checks this for the node's own export, but an
-    // override that enhances it can drop the array on the way through — say a
-    // `const {children, ...rest} = $next()`. Say so, rather than failing on
-    // `undefined.push` several frames deeper.
-    invariant(
-      Array.isArray(serializedChildren),
-      'LexicalNode: Node %s is an element but the JSON exported for it has no children array.',
-      nodeClass.name,
-    );
 
     for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      const serializedChildNode = $exportNodeToJSON(child);
-      if (serializedChildNode !== null) {
-        serializedChildren.push(serializedChildNode);
-      }
+      serializedChildren.push($exportNodeToJSON(children[i]));
     }
   }
 
   // Slots ride in a separate Map on every LexicalNode (an ElementNode or a
-  // DecoratorNode host), so serialize them outside the element branch. Like
-  // children, they are only attached to the node's own export, never to a
-  // replacement.
-  const slotNames = recurseChildren ? $getSlotNames(node) : [];
+  // DecoratorNode host), so serialize them outside the element branch.
+  const slotNames = $getSlotNames(node);
   if (slotNames.length > 0) {
     const serializedSlots: Record<string, SerializedLexicalNode> = {};
     for (const name of slotNames) {
@@ -115,17 +92,9 @@ function $exportNodeToJSON<SerializedNode extends SerializedLexicalNode>(
         nodeClass.name,
         name,
       );
-      const serializedSlotNode = $exportNodeToJSON(slotNode);
-      if (serializedSlotNode !== null) {
-        serializedSlots[name] = serializedSlotNode;
-      }
+      serializedSlots[name] = $exportNodeToJSON(slotNode);
     }
-    // An override may have omitted every slot value, in which case the host
-    // has no slots to write: an empty `$slots` object would be bytes that
-    // parse back to nothing.
-    if (Object.keys(serializedSlots).length > 0) {
-      serializedNode.$slots = serializedSlots;
-    }
+    serializedNode.$slots = serializedSlots;
   }
 
   // @ts-expect-error
@@ -201,7 +170,7 @@ export class EditorState {
   }
   toJSON(): SerializedEditorState {
     return readEditorState(null, this, () => ({
-      root: $exportNodeToJSON($getRoot(), true) as SerializedRootNode,
+      root: $exportNodeToJSON($getRoot()) as SerializedRootNode,
     }));
   }
 }

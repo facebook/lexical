@@ -517,28 +517,12 @@ function $appendNodesToJSON(
     target = $sliceSelectedTextNodeContent(selection, target, 'clone');
   }
   // Route through the serialization context so a selection export honors the
-  // same overrides and compaction as editorState.toJSON(); null means an
-  // override omitted this node, and with it its subtree. The default export is
-  // validated by the context; a replacement is authoritative and is not
-  // recursed into.
-  const applied = $applySerializationContext(target, false);
-  if (applied === null) {
-    return false;
-  }
-  const {recurseChildren} = applied;
-  const serializedNode: BasePartialSerializedNode = applied.serializedNode;
+  // same compaction as editorState.toJSON().
+  const serializedNode: BasePartialSerializedNode =
+    $applySerializationContext(target);
   const children = $isElementNode(target) ? target.getChildren() : [];
-  // Where the recursion below writes. Normally the node's own children array,
-  // which the walk owns. When an override replaced this node its JSON is
-  // authoritative, subtree included, so selected descendants must not be
-  // appended to it — they go to a scratch array that is spliced up in this
-  // node's place, exactly as an excluded element's children are. Descending
-  // either way matters: the recursion is also how a selection reaches nodes
-  // *inside* an element it merely passes through.
   let childTarget: BasePartialSerializedNode[] = [];
-  if (recurseChildren && $isElementNode(target)) {
-    // $validatedExportJSON checks this for the node's own export, but an
-    // override that enhances it can drop the array on the way through.
+  if ($isElementNode(target)) {
     invariant(
       Array.isArray(serializedNode.children),
       'LexicalNode: Node %s is an element but the JSON exported for it has no children array.',
@@ -591,7 +575,7 @@ function $appendNodesToJSON(
   // same condition as the push below (and as the HTML exporter): only emit
   // slots for a host that is itself emitted, so a host outside the selection
   // is never walked — its slots must not influence (or break) this export.
-  if (shouldInclude && !shouldExclude && recurseChildren) {
+  if (shouldInclude && !shouldExclude) {
     const slotNames = $getSlotNames(target);
     if (slotNames.length > 0) {
       const serializedSlots: Record<string, BasePartialSerializedNode> = {};
@@ -603,28 +587,15 @@ function $appendNodesToJSON(
           target.constructor.name,
           name,
         );
-        const slotExcluded =
-          $isElementNode(slotNode) && slotNode.excludeFromCopy('clone');
         const slotArray: BasePartialSerializedNode[] = [];
         $appendNodesToJSON(editor, null, slotNode, slotArray);
-        if (slotArray.length === 0 && !slotExcluded) {
-          // A serialization override omitted the slot value; skip the entry,
-          // matching how editorState.toJSON() exports the same document. That
-          // is the only other way to reach zero entries here: the recursion
-          // above passes a null selection, so nothing is deselected, and
-          // $setSlot only accepts a non-inline ElementNode or DecoratorNode,
-          // so the empty-TextNode reset cannot apply. An excluded slot value
-          // is not an omission: it falls through to the invariant below,
-          // which rejects that unsupported combination.
-          continue;
-        }
-        // A whole-slot export must serialize to exactly one node — whatever
-        // the slot value contributes, including JSON an override substituted
-        // for it. A slot value that overrides excludeFromCopy would instead
-        // make $appendNodesToJSON splice up its children (or emit nothing),
-        // leaving a dangling/undefined slot entry that breaks on paste.
+        // A whole-slot export must serialize to exactly the slot value node.
+        // A slot value that overrides excludeFromCopy would instead make
+        // $appendNodesToJSON splice up its children (or emit nothing), leaving
+        // a dangling/undefined slot entry that breaks on paste.
         invariant(
-          slotArray.length === 1 && !slotExcluded,
+          slotArray.length === 1 &&
+            !($isElementNode(slotNode) && slotNode.excludeFromCopy('clone')),
           'LexicalNode: slot "%s" on %s did not serialize to exactly the slot value node (got %s nodes); a slot value must not be excluded from copy.',
           name,
           target.constructor.name,
@@ -632,12 +603,7 @@ function $appendNodesToJSON(
         );
         serializedSlots[name] = slotArray[0];
       }
-      // An override may have omitted every slot value, in which case the host
-      // has no slots to write: an empty `$slots` object would be bytes that
-      // parse back to nothing.
-      if (Object.keys(serializedSlots).length > 0) {
-        serializedNode.$slots = serializedSlots;
-      }
+      serializedNode.$slots = serializedSlots;
     }
   }
 

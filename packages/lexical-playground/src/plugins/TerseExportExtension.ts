@@ -5,11 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {DOMOverrideOptions} from '@lexical/html';
 
 import {
   createRenderState,
   domOverride,
+  type DOMOverrideOptions,
   DOMRenderExtension,
 } from '@lexical/html';
 import {

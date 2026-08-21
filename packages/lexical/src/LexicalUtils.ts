@@ -6,27 +6,7 @@
  *
  */
 
-import type {
-  CommandPayloadType,
-  DOMSlotForNode,
-  EditorConfig,
-  EditorDOMRenderConfig,
-  EditorThemeClasses,
-  Klass,
-  LexicalCommand,
-  MutatedNodes,
-  MutationListeners,
-  NodeMutation,
-  RegisteredNode,
-  RegisteredNodes,
-  Spread,
-} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
-import type {
-  BaseSelection,
-  PointType,
-  RangeSelection,
-} from './LexicalSelection';
 import type {RootNode} from './nodes/LexicalRootNode';
 
 import invariant from '@lexical/internal/invariant';
@@ -43,14 +23,15 @@ import {
   $isRootNode,
   $isTabNode,
   $isTextNode,
+  CONTROL_OR_META,
   DecoratorNode,
   DEFAULT_EDITOR_DOM_CONFIG,
-  ElementFormatType,
+  type ElementFormatType,
   ElementNode,
   HISTORY_MERGE_TAG,
-  LineBreakNode,
+  type LineBreakNode,
   normalizeClassNames,
-  UpdateTag,
+  type UpdateTag,
 } from '.';
 import {
   CAN_USE_DOM,
@@ -62,6 +43,7 @@ import {
 import {
   COMPOSITION_START_CHAR,
   COMPOSITION_SUFFIX,
+  CONTROL_OR_OTHER_KEY,
   DOM_DOCUMENT_FRAGMENT_TYPE,
   DOM_DOCUMENT_TYPE,
   DOM_ELEMENT_TYPE,
@@ -74,8 +56,23 @@ import {
   RTL_REGEX,
   TEXT_TYPE_TO_FORMAT,
 } from './LexicalConstants';
-import {DOMSlot, ElementDOMSlot} from './LexicalDOMSlot';
-import {LexicalEditor} from './LexicalEditor';
+import {type DOMSlot, ElementDOMSlot} from './LexicalDOMSlot';
+import {
+  type AnyLexicalCommand,
+  type CommandPayloadArgs,
+  type CommandPayloadType,
+  type DOMSlotForNode,
+  type EditorConfig,
+  type EditorDOMRenderConfig,
+  type EditorThemeClasses,
+  type Klass,
+  LexicalEditor,
+  type MutatedNodes,
+  type MutationListeners,
+  type NodeMutation,
+  type RegisteredNode,
+  type RegisteredNodes,
+} from './LexicalEditor';
 import {flushRootMutations} from './LexicalMutations';
 import {
   $isEphemeral,
@@ -88,7 +85,12 @@ import {
   type StaticNodeConfigValue,
 } from './LexicalNode';
 import {$normalizeSelection} from './LexicalNormalization';
-import {$clampRangeSelectionToSlotFrame} from './LexicalSelection';
+import {
+  $clampRangeSelectionToSlotFrame,
+  type BaseSelection,
+  type PointType,
+  type RangeSelection,
+} from './LexicalSelection';
 import {
   $getSlot,
   $getSlotHostKey,
@@ -100,10 +102,12 @@ import {
   errorOnReadOnly,
   getActiveEditor,
   getActiveEditorState,
+  internalGetActiveEditor,
   internalGetActiveEditorState,
   isCurrentlyReadOnlyMode,
   triggerCommandListeners,
 } from './LexicalUpdates';
+import {TabNode} from './nodes/LexicalTabNode';
 import {type TextFormatType, TextNode} from './nodes/LexicalTextNode';
 
 const __DEV__ = process.env.NODE_ENV !== 'production';
@@ -122,8 +126,32 @@ export function getPendingNodeToClone(): null | LexicalNode {
   return node;
 }
 
+// Internal, module-private sentinel passed as the second argument to an
+// auto-synthesized clone (see getStaticNodeConfig) by the internal clone
+// wrappers ($cloneWithProperties / $copyNode). Those wrappers are contractually
+// responsible for calling `afterCloneFrom(node)` on the result exactly once, so
+// they pass this sentinel to tell the synthesized clone NOT to call it too.
+//
+// An auto-synthesized clone has no explicit body, so when it is called *without*
+// this sentinel — i.e. directly as `NodeClass.clone(node)`, a documented and
+// idiomatic pattern before the $config() port — it must copy the source node's
+// properties itself, otherwise callers silently get a default-constructed node
+// with lost state (e.g. HeadingNode's tag reverting to 'h1').
+//
+// The signal is per-call rather than a module global, so it is unaffected by
+// reentrancy: a clone (or afterCloneFrom) that happens to clone another node,
+// even in another editor, does not accidentally suppress that node's own
+// afterCloneFrom. It is also un-spoofable by external callers because the
+// sentinel is not exported. afterCloneFrom is not guaranteed idempotent (some
+// nodes accumulate state there, e.g. a version counter), so it is critical that
+// it runs exactly once per clone regardless of call path.
+const INTERNAL_SKIP_AFTER_CLONE_FROM: unique symbol = Symbol(
+  'INTERNAL_SKIP_AFTER_CLONE_FROM',
+);
+
 let keyCounter = 1;
 
+/** Resets the internal key counter, primarily for deterministic test output. */
 export function resetRandomKey(): void {
   keyCounter = 1;
 }
@@ -167,8 +195,20 @@ export const scheduleMicroTask: (fn: () => void) => void =
         Promise.resolve().then(fn);
       };
 
-export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
-  const activeElement = document.activeElement;
+/** Returns true if the active element (resolved from the anchor's root) is a decorator's own input (e.g. an input, textarea, or foreign contentEditable) rather than Lexical-managed content. */
+export function $isSelectionCapturedInDecoratorInput(
+  anchorDOM: Node,
+  preResolvedActiveElement?: Element | null,
+): boolean {
+  const activeElement =
+    preResolvedActiveElement !== undefined
+      ? preResolvedActiveElement
+      : (() => {
+          const root = anchorDOM.getRootNode();
+          return isDOMDocumentNode(root) || isDOMShadowRoot(root)
+            ? getActiveElementDeep(root)
+            : null;
+        })();
 
   if (!isHTMLElement(activeElement)) {
     return false;
@@ -180,36 +220,48 @@ export function isSelectionCapturedInDecoratorInput(anchorDOM: Node): boolean {
   if (activeElement.hasAttribute('data-lexical-slot')) {
     return false;
   }
+  const nearestNode = $getNearestNodeFromDOMNode(activeElement);
   const nodeName = activeElement.nodeName;
-
   return (
-    $isDecoratorNode($getNearestNodeFromDOMNode(anchorDOM)) &&
+    $isLexicalNode(nearestNode) &&
     (nodeName === 'INPUT' ||
       nodeName === 'TEXTAREA' ||
       (activeElement.contentEditable === 'true' &&
         getEditorPropertyFromDOMNode(activeElement) == null))
   );
 }
+/** @deprecated renamed to {@link $isSelectionCapturedInDecoratorInput} by @lexical/eslint-plugin rules-of-lexical */
+export const isSelectionCapturedInDecoratorInput =
+  $isSelectionCapturedInDecoratorInput;
 
+/** Returns true if the given DOM anchor and focus nodes are inside the editor's root element and not captured by a decorator input. */
 export function isSelectionWithinEditor(
   editor: LexicalEditor,
   anchorDOM: null | Node,
   focusDOM: null | Node,
 ): boolean {
   const rootElement = editor.getRootElement();
+  if (!rootElement) {
+    return false;
+  }
   try {
-    return (
-      rootElement !== null &&
-      rootElement.contains(anchorDOM) &&
-      rootElement.contains(focusDOM) &&
-      // Ignore if selection is within nested editor
-      anchorDOM !== null &&
-      !isSelectionCapturedInDecoratorInput(anchorDOM) &&
-      getNearestEditorFromDOMNode(anchorDOM) === editor
-    );
+    if (
+      !anchorDOM ||
+      !rootElement.contains(anchorDOM) ||
+      !rootElement.contains(focusDOM)
+    ) {
+      return false;
+    }
   } catch (_error) {
     return false;
   }
+  return (
+    getNearestEditorFromDOMNode(anchorDOM) === editor &&
+    editor.read(
+      'latest',
+      () => !$isSelectionCapturedInDecoratorInput(anchorDOM),
+    )
+  );
 }
 
 /**
@@ -220,6 +272,7 @@ export function isLexicalEditor(editor: unknown): editor is LexicalEditor {
   return editor instanceof LexicalEditor;
 }
 
+/** Returns the nearest LexicalEditor instance by walking up the DOM tree from the given node, or null if none is found. */
 export function getNearestEditorFromDOMNode(
   node: Node | null,
 ): LexicalEditor | null {
@@ -240,6 +293,7 @@ export function getEditorPropertyFromDOMNode(node: Node | null): unknown {
   return node ? node.__lexicalEditor : null;
 }
 
+/** Returns the text direction ('ltr' or 'rtl') of the given string, or null if it contains no strong directional characters. */
 export function getTextDirection(text: string): 'ltr' | 'rtl' | null {
   if (RTL_REGEX.test(text)) {
     return 'rtl';
@@ -280,6 +334,7 @@ export function isDOMDocumentNode(node: unknown): node is Document {
   return isDOMNode(node) && node.nodeType === DOM_DOCUMENT_TYPE;
 }
 
+/** Returns the first DOM Text node found by descending the firstChild chain from the given node, or null. */
 export function getDOMTextNode(element: Node | null): Text | null {
   let node = element;
   while (node != null) {
@@ -291,6 +346,7 @@ export function getDOMTextNode(element: Node | null): Text | null {
   return null;
 }
 
+/** Toggles the given text format type on a format bitmask, clearing mutually exclusive formats (subscript/superscript, lowercase/uppercase/capitalize). */
 export function toggleTextFormatType(
   format: number,
   type: TextFormatType,
@@ -321,6 +377,7 @@ export function toggleTextFormatType(
   return newFormat;
 }
 
+/** Returns true if the given node is a leaf (TextNode, LineBreakNode, or DecoratorNode). */
 export function $isLeafNode(
   node: LexicalNode | null | undefined,
 ): node is TextNode | LineBreakNode | DecoratorNode<unknown> {
@@ -546,6 +603,7 @@ export function internalMarkSiblingsAsDirty(node: LexicalNode) {
   }
 }
 
+/** Sets the active composition key, marking the previous and new composition nodes as dirty for re-rendering. */
 export function $setCompositionKey(compositionKey: null | NodeKey): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
@@ -605,6 +663,7 @@ export function $getNodeByKey(
   return node;
 }
 
+/** Returns the LexicalNode directly associated with the given DOM node, or null if the DOM node has no Lexical key. */
 export function $getNodeFromDOMNode(
   dom: Node,
   editorState?: EditorState,
@@ -639,6 +698,7 @@ export function getNodeKeyFromDOMNode(
   return (dom as Node & Record<typeof prop, NodeKey | undefined>)[prop];
 }
 
+/** Returns the nearest LexicalNode by walking up the DOM tree from the given node, or null if no Lexical node is found. */
 export function $getNearestNodeFromDOMNode(
   startingDOM: Node,
   editorState?: EditorState,
@@ -707,6 +767,7 @@ export function markNodesWithTypesAsDirty(
   );
 }
 
+/** Returns the RootNode of the active EditorState. */
 export function $getRoot(): RootNode {
   return internalGetRoot(getActiveEditorState());
 }
@@ -715,6 +776,7 @@ export function internalGetRoot(editorState: EditorState): RootNode {
   return editorState._nodeMap.get('root') as RootNode;
 }
 
+/** Sets the current selection in the active EditorState, marking it dirty and clamping to slot boundaries when applicable. */
 export function $setSelection(selection: null | BaseSelection): void {
   errorOnReadOnly();
   const editorState = getActiveEditorState();
@@ -815,8 +877,9 @@ export function $updateSelectedTextFromDOM(
   if (domSelection === null) {
     return;
   }
-  const anchorNode = domSelection.anchorNode;
-  let {anchorOffset, focusOffset} = domSelection;
+  const points = getDOMSelectionPoints(domSelection, editor._rootElement);
+  const anchorNode = points.anchorNode;
+  let {anchorOffset, focusOffset} = points;
   if (anchorNode !== null) {
     let textContent = getAnchorTextFromDOM(anchorNode);
     const node = $getNearestNodeFromDOMNode(anchorNode);
@@ -857,6 +920,11 @@ export function $updateTextNodeFromDOMContent(
 
   if (node.isAttached() && (compositionEnd || !node.isDirty())) {
     const isComposing = node.isComposing();
+
+    if (node.isToken() && isComposing) {
+      return;
+    }
+
     let normalizedTextContent = textContent;
 
     if (isComposing || compositionEnd) {
@@ -914,7 +982,7 @@ export function $updateTextNodeFromDOMContent(
       const nodeKey = node.getKey();
 
       if (
-        node.isToken() ||
+        (node.isToken() && !isComposing) ||
         (compositionKey !== null &&
           nodeKey === compositionKey &&
           !isComposing) ||
@@ -1042,11 +1110,29 @@ export type KeyboardEventModifiers = Pick<
  * not be pressed.
  */
 export type KeyboardEventModifierMask = {
-  [K in Exclude<keyof KeyboardEventModifiers, 'key'>]?:
+  [K in Exclude<keyof KeyboardEventModifiers, 'key' | 'code'>]?:
     | boolean
     | undefined
     | 'any';
 };
+
+export {CONTROL_OR_OTHER_KEY};
+
+/** @internal */
+export interface KeyboardEventControlOrOther {
+  [CONTROL_OR_OTHER_KEY]?: 'metaKey' | 'altKey';
+}
+
+/** @internal */
+export function keyboardEventMaskForPlatform(
+  mask: KeyboardEventModifierMask & KeyboardEventControlOrOther,
+  isApple: boolean,
+): KeyboardEventModifierMask {
+  const otherKey = mask[CONTROL_OR_OTHER_KEY];
+  return otherKey && isApple !== IS_APPLE
+    ? {...mask, ctrlKey: mask[otherKey], [otherKey]: mask.ctrlKey}
+    : mask;
+}
 
 function matchModifier(
   event: KeyboardEventModifiers,
@@ -1120,160 +1206,8 @@ export function isExactShortcutMatch(
   return event.code === expectedCode;
 }
 
-const CONTROL_OR_META = {ctrlKey: !IS_APPLE, metaKey: IS_APPLE};
-const CONTROL_OR_ALT = {altKey: IS_APPLE, ctrlKey: !IS_APPLE};
-
-export function isTab(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Tab', {
-    shiftKey: 'any',
-  });
-}
-
-export function isBold(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'b', CONTROL_OR_META);
-}
-
-export function isItalic(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'i', CONTROL_OR_META);
-}
-
-export function isUnderline(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'u', CONTROL_OR_META);
-}
-
-export function isParagraph(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Enter', {
-    altKey: 'any',
-    ctrlKey: 'any',
-    metaKey: 'any',
-  });
-}
-
-export function isLineBreak(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Enter', {
-    altKey: 'any',
-    ctrlKey: 'any',
-    metaKey: 'any',
-    shiftKey: true,
-  });
-}
-
-// Inserts a new line after the selection
-
-export function isOpenLineBreak(event: KeyboardEventModifiers): boolean {
-  // 79 = KeyO
-  return IS_APPLE && isExactShortcutMatch(event, 'o', {ctrlKey: true});
-}
-
-export function isDeleteWordBackward(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Backspace', CONTROL_OR_ALT);
-}
-
-export function isDeleteWordForward(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'Delete', CONTROL_OR_ALT);
-}
-
-export function isDeleteLineBackward(event: KeyboardEventModifiers): boolean {
-  return IS_APPLE && isExactShortcutMatch(event, 'Backspace', {metaKey: true});
-}
-
-export function isDeleteLineForward(event: KeyboardEventModifiers): boolean {
-  return (
-    IS_APPLE &&
-    (isExactShortcutMatch(event, 'Delete', {metaKey: true}) ||
-      isExactShortcutMatch(event, 'k', {ctrlKey: true}))
-  );
-}
-
-export function isDeleteBackward(event: KeyboardEventModifiers): boolean {
-  return (
-    isExactShortcutMatch(event, 'Backspace', {shiftKey: 'any'}) ||
-    (IS_APPLE && isExactShortcutMatch(event, 'h', {ctrlKey: true}))
-  );
-}
-
-export function isDeleteForward(event: KeyboardEventModifiers): boolean {
-  return (
-    isExactShortcutMatch(event, 'Delete', {}) ||
-    (IS_APPLE && isExactShortcutMatch(event, 'd', {ctrlKey: true}))
-  );
-}
-
-export function isUndo(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'z', CONTROL_OR_META);
-}
-
-export function isRedo(event: KeyboardEventModifiers): boolean {
-  if (IS_APPLE) {
-    return isExactShortcutMatch(event, 'z', {metaKey: true, shiftKey: true});
-  }
-  return (
-    isExactShortcutMatch(event, 'y', {ctrlKey: true}) ||
-    isExactShortcutMatch(event, 'z', {ctrlKey: true, shiftKey: true})
-  );
-}
-
-export function isCopy(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'c', CONTROL_OR_META);
-}
-
-export function isCut(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'x', CONTROL_OR_META);
-}
-
-export function isMoveBackward(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowLeft', {
-    shiftKey: 'any',
-  });
-}
-
-export function isMoveToStart(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowLeft', {
-    ...CONTROL_OR_META,
-    shiftKey: 'any',
-  });
-}
-
-export function isMoveForward(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowRight', {
-    shiftKey: 'any',
-  });
-}
-
-export function isMoveToEnd(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowRight', {
-    ...CONTROL_OR_META,
-    shiftKey: 'any',
-  });
-}
-
-export function isMoveUp(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowUp', {
-    altKey: 'any',
-    shiftKey: 'any',
-  });
-}
-
-export function isMoveDown(event: KeyboardEventModifiers): boolean {
-  return isExactShortcutMatch(event, 'ArrowDown', {
-    altKey: 'any',
-    shiftKey: 'any',
-  });
-}
-
 export function isModifier(event: KeyboardEventModifiers): boolean {
   return event.ctrlKey || event.shiftKey || event.altKey || event.metaKey;
-}
-
-export function isSpace(event: KeyboardEventModifiers): boolean {
-  return event.key === ' ';
-}
-
-export function controlOrMeta(metaKey: boolean, ctrlKey: boolean): boolean {
-  if (IS_APPLE) {
-    return metaKey;
-  }
-  return ctrlKey;
 }
 
 export function isBackspace(event: KeyboardEventModifiers): boolean {
@@ -1292,6 +1226,7 @@ export function isSelectAll(event: KeyboardEventModifiers): boolean {
   return isExactShortcutMatch(event, 'a', CONTROL_OR_META);
 }
 
+/** Selects all content within the root. If a selection is provided, scopes to the nearest root or shadow root; otherwise creates a new RangeSelection spanning the entire root. */
 export function $selectAll(selection?: RangeSelection | null): RangeSelection {
   const root = $getRoot();
 
@@ -1454,6 +1389,7 @@ function resolveElement(
   return block.getChildAtIndex(isBackward ? offset - 1 : offset);
 }
 
+/** Returns the node adjacent to the given selection point in the specified direction, or null if at a boundary. */
 export function $getAdjacentNode(
   focus: PointType,
   isBackward: boolean,
@@ -1493,12 +1429,17 @@ export function isFirefoxClipboardEvents(editor: LexicalEditor): boolean {
   );
 }
 
-export function dispatchCommand<TCommand extends LexicalCommand<unknown>>(
+export function dispatchCommand<TCommand extends AnyLexicalCommand>(
   editor: LexicalEditor,
   command: TCommand,
-  payload: CommandPayloadType<TCommand>,
+  ...args: CommandPayloadArgs<CommandPayloadType<TCommand>>
 ): boolean {
-  return triggerCommandListeners(editor, command, payload, editor);
+  return triggerCommandListeners(
+    editor,
+    command,
+    args[0] as CommandPayloadType<TCommand>,
+    editor,
+  );
 }
 
 export function getElementByKeyOrThrow(
@@ -1518,14 +1459,22 @@ export function getElementByKeyOrThrow(
   return element;
 }
 
+/** Returns the parent element of a DOM node, crossing shadow root boundaries and following slot assignments. */
 export function getParentElement(node: Node): HTMLElement | null {
   const parentElement =
     (node as HTMLSlotElement).assignedSlot || node.parentElement;
-  return isDocumentFragment(parentElement)
-    ? ((parentElement as unknown as ShadowRoot).host as HTMLElement)
-    : parentElement;
+  if (parentElement !== null) {
+    return parentElement;
+  }
+  // node.parentElement is null when the parent is a ShadowRoot (a
+  // DocumentFragment, not an Element). Cross the shadow boundary to the host so
+  // ancestor walks (getScrollParent, calculateZoomLevel) continue into the
+  // enclosing light-DOM tree instead of stopping at the boundary.
+  const parentNode = node.parentNode;
+  return isDOMShadowRoot(parentNode) ? (parentNode.host as HTMLElement) : null;
 }
 
+/** Returns the owner Document of the given EventTarget, or the target itself if it is a Document. */
 export function getDOMOwnerDocument(
   target: EventTarget | null,
 ): Document | null {
@@ -1545,6 +1494,18 @@ export function scrollIntoViewIfNeeded(
   const defaultView = getDefaultView(doc);
 
   if (doc === null || defaultView === null) {
+    return;
+  }
+  // A caret inside the editor can never sit entirely above the editor's own top
+  // edge. Safari violates this for a collapsed caret in RTL text: it returns a
+  // degenerate, out-of-bounds selection rect and reports the caret as
+  // `selection.type === 'Range'`, which routes execution here (the `#1482` case
+  // in `$updateDOMSelection`). Feeding that rect to the scroller jumps the
+  // viewport up on every keystroke. Guard only this above-the-editor case — a
+  // rect below the editor is the normal "scroll the caret into view" path and is
+  // deliberately left untouched. See #2495.
+  const rootRect = rootElement.getBoundingClientRect();
+  if (selectionRect.bottom < rootRect.top) {
     return;
   }
   let {top: currentTop, bottom: currentBottom} = selectionRect;
@@ -1580,7 +1541,10 @@ export function scrollIntoViewIfNeeded(
         targetBottom -= scrollPaddingBottom;
       }
     } else {
-      const targetRect = element.getBoundingClientRect();
+      // Reuse the rect already measured for the guard above on the first
+      // iteration (element === rootElement) to avoid a second layout flush.
+      const targetRect =
+        element === rootElement ? rootRect : element.getBoundingClientRect();
       targetTop = targetRect.top;
       targetBottom = targetRect.bottom;
     }
@@ -1611,11 +1575,13 @@ export function scrollIntoViewIfNeeded(
   }
 }
 
+/** Returns true if the given tag has been added to the current update via $addUpdateTag. */
 export function $hasUpdateTag(tag: UpdateTag): boolean {
   const editor = getActiveEditor();
   return editor._updateTags.has(tag);
 }
 
+/** Adds a tag to the current update, which can be read by update listeners and $hasUpdateTag. */
 export function $addUpdateTag(tag: UpdateTag): void {
   errorOnReadOnly();
   const editor = getActiveEditor();
@@ -1654,6 +1620,7 @@ export function $maybeMoveChildrenSelectionToParent(
   return selection;
 }
 
+/** Returns true if targetNode is an ancestor of child by walking up the parent chain. */
 export function $hasAncestor(
   child: LexicalNode,
   targetNode: LexicalNode,
@@ -1683,6 +1650,7 @@ export function getWindow(editor: LexicalEditor): Window {
 
 const InlineNodeBrand: unique symbol = Symbol.for('@lexical/InlineNodeBrand');
 
+/** Returns true if the given node is an inline ElementNode or an inline DecoratorNode. */
 export function $isInlineElementOrDecoratorNode<T>(node: LexicalNode): node is (
   | ElementNode
   | DecoratorNode<T>
@@ -1696,6 +1664,7 @@ export function $isInlineElementOrDecoratorNode<T>(node: LexicalNode): node is (
   );
 }
 
+/** Returns the given node itself (if it is a slot boundary) or its nearest ancestor that is a RootNode, ShadowRootNode, or slot boundary. */
 export function $getNearestRootOrShadowRoot(
   node: LexicalNode,
 ): RootNode | ElementNode {
@@ -1719,14 +1688,23 @@ export function $getNearestRootOrShadowRoot(
 const ShadowRootNodeBrand: unique symbol = Symbol.for(
   '@lexical/ShadowRootNodeBrand',
 );
-type ShadowRootNode = Spread<
-  {isShadowRoot(): true; [ShadowRootNodeBrand]: never},
-  ElementNode
->;
+export interface ShadowRootNode extends ElementNode {
+  [ShadowRootNodeBrand]: never;
+  isShadowRoot(): true;
+}
+
+/** Returns true if the given node is an ElementNode whose isShadowRoot() returns true. */
+export function $isShadowRootNode(
+  node: null | LexicalNode,
+): node is ShadowRootNode {
+  return $isElementNode(node) && node.isShadowRoot();
+}
+
+/** Returns true if the given node is a RootNode or a ShadowRootNode. */
 export function $isRootOrShadowRoot(
   node: null | LexicalNode,
 ): node is RootNode | ShadowRootNode {
-  return $isRootNode(node) || ($isElementNode(node) && node.isShadowRoot());
+  return $isRootNode(node) || $isShadowRootNode(node);
 }
 
 /**
@@ -1744,7 +1722,12 @@ export function $copyNode<T extends LexicalNode>(
   node: T,
   skipReset = false,
 ): T {
-  const copy = node.constructor.clone(node) as T;
+  const copy = (
+    node.constructor.clone as (
+      data: LexicalNode,
+      internalSkipAfterCloneFrom?: typeof INTERNAL_SKIP_AFTER_CLONE_FROM,
+    ) => T
+  )(node, INTERNAL_SKIP_AFTER_CLONE_FROM);
   $setNodeKey(copy, null);
   copy.afterCloneFrom(node);
   if (!skipReset) {
@@ -1753,6 +1736,7 @@ export function $copyNode<T extends LexicalNode>(
   return copy;
 }
 
+/** Applies any registered node replacement for the given node's type, returning the replacement node or the original if none is registered. */
 export function $applyNodeReplacement<N extends LexicalNode>(node: N): N {
   const editor = getActiveEditor();
   const nodeType = node.getType();
@@ -1843,9 +1827,9 @@ export function $getNodeByKeyOrThrow(key: NodeKey): LexicalNode {
   return node;
 }
 
-function createBlockCursorElement(editorConfig: EditorConfig): HTMLDivElement {
+function $createBlockCursorElement(editorConfig: EditorConfig): HTMLDivElement {
   const theme = editorConfig.theme;
-  const element = document.createElement('div');
+  const element = $getDocument().createElement('div');
   element.contentEditable = 'false';
   element.setAttribute('data-lexical-cursor', 'true');
   let blockCursorTheme = theme.blockCursor;
@@ -1862,11 +1846,28 @@ function createBlockCursorElement(editorConfig: EditorConfig): HTMLDivElement {
   return element;
 }
 
-function needsBlockCursor(node: null | LexicalNode): boolean {
-  return (
-    ($isDecoratorNode(node) || ($isElementNode(node) && !node.canBeEmpty())) &&
-    !node.isInline()
-  );
+/**
+ * Returns true if the given node needs a block cursor given an adjacent selection,
+ * the node must be non-inline and one of:
+ * - DecoratorNode
+ * - ShadowRootNode with a parent that is not also a ShadowRootNode
+ * - An ElementNode that can't be empty
+ */
+export function $needsBlockCursorBeside(node: null | LexicalNode): boolean {
+  if (!node || node.isInline()) {
+    return false;
+  }
+  if ($isDecoratorNode(node)) {
+    return true;
+  }
+  if ($isElementNode(node)) {
+    if (node.isShadowRoot()) {
+      const parent = node.getParent();
+      return !($isElementNode(parent) && parent.isShadowRoot());
+    }
+    return !node.canBeEmpty();
+  }
+  return false;
 }
 
 export function removeDOMBlockCursorElement(
@@ -1893,7 +1894,9 @@ export function $updateDOMBlockCursorElement(
     $isRangeSelection(nextSelection) &&
     nextSelection.isCollapsed() &&
     nextSelection.anchor.type === 'element' &&
-    rootElement.contains(document.activeElement)
+    // getActiveElement rather than document.activeElement, which reports the
+    // shadow host (outside rootElement) when the editor is in a shadow root
+    rootElement.contains(getActiveElement(rootElement))
   ) {
     const anchor = nextSelection.anchor;
     const elementNode = anchor.getNode();
@@ -1904,17 +1907,14 @@ export function $updateDOMBlockCursorElement(
 
     if (offset === elementNodeSize) {
       const child = elementNode.getChildAtIndex(offset - 1);
-      if (needsBlockCursor(child)) {
+      if ($needsBlockCursorBeside(child)) {
         isBlockCursor = true;
       }
     } else {
       const child = elementNode.getChildAtIndex(offset);
-      if (child !== null && needsBlockCursor(child)) {
-        const sibling = child.getPreviousSibling();
-        if (sibling === null || needsBlockCursor(sibling)) {
-          isBlockCursor = true;
-          insertBeforeElement = editor.getElementByKey(child.__key);
-        }
+      if (child !== null && $needsBlockCursorBeside(child)) {
+        isBlockCursor = true;
+        insertBeforeElement = editor.getElementByKey(child.__key);
       }
     }
     if (isBlockCursor) {
@@ -1930,7 +1930,7 @@ export function $updateDOMBlockCursorElement(
       ).element;
       if (blockCursorElement === null) {
         editor._blockCursorElement = blockCursorElement =
-          createBlockCursorElement(editor._config);
+          $createBlockCursorElement(editor._config);
       }
       rootElement.style.caretColor = 'transparent';
       if (insertBeforeElement === null) {
@@ -1971,6 +1971,446 @@ export function getDOMSelectionFromTarget(
   return defaultView ? defaultView.getSelection() : null;
 }
 
+/**
+ * @param node A value that may be a DOM ShadowRoot.
+ * @returns True if node is a DOM ShadowRoot (an open or closed shadow tree
+ *   root), false otherwise. A ShadowRoot is a DocumentFragment with a host.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function isDOMShadowRoot(node: unknown): node is ShadowRoot {
+  return isDocumentFragment(node) && 'host' in node;
+}
+
+/**
+ * Collects the DOM ShadowRoots between `node` and its document, innermost
+ * first. Returns an empty array when `node` is in the light DOM (its root is
+ * the Document) or is detached.
+ *
+ * Uses the standard {@link https://developer.mozilla.org/docs/Web/API/Node/getRootNode | Node.getRootNode}
+ * and `ShadowRoot.host` platform APIs to walk out of any nested shadow trees.
+ *
+ * @param node The DOM node to start from (typically the editor root element).
+ * @returns The enclosing ShadowRoots, innermost first.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+const EMPTY_SHADOW_ROOTS: ShadowRoot[] = [];
+
+export function getDOMShadowRoots(node: Node): ShadowRoot[] {
+  const root = node.getRootNode();
+  if (root === node || !isDOMShadowRoot(root)) {
+    return EMPTY_SHADOW_ROOTS;
+  }
+  const shadowRoots: ShadowRoot[] = [root];
+  let current: Node = root.host;
+  for (;;) {
+    const nextRoot = current.getRootNode();
+    if (nextRoot === current || !isDOMShadowRoot(nextRoot)) {
+      break;
+    }
+    shadowRoots.push(nextRoot);
+    current = nextRoot.host;
+  }
+  return shadowRoots;
+}
+
+/**
+ * Walks `root` and every open shadow root nested inside it, yielding each
+ * element that matches `selector`. `querySelectorAll` does not pierce
+ * shadow boundaries on its own; this descent does.
+ *
+ * @internal
+ */
+export function* findAllLexicalElementsDeep(
+  initialRoot: Document | ShadowRoot,
+): Generator<Element> {
+  const roots = [initialRoot];
+  let root;
+  while ((root = roots.pop())) {
+    yield* root.querySelectorAll('[data-lexical-editor="true"]');
+    // Resolve the owning document by nodeType, not `instanceof Document`:
+    // a Document from another realm (e.g. an iframe) is not an instance of
+    // this realm's Document constructor, so `instanceof` would misclassify it
+    // and fall back to the global `document`. A ShadowRoot's ownerDocument is
+    // always its (realm-correct) Document.
+    const doc = isDOMDocumentNode(root) ? root : root.ownerDocument;
+    const walker = doc.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+    let el;
+    while ((el = walker.nextNode() as null | Element)) {
+      if (el.shadowRoot) {
+        roots.push(el.shadowRoot);
+      }
+    }
+  }
+}
+
+/**
+ * Resolves the document that hosts an editor's root element, falling
+ * back to the global `document` when the editor isn't mounted. Use this
+ * over `editor.getRootElement()?.ownerDocument ?? document` so iframe /
+ * shadow-mounted editors land in the right realm.
+ *
+ * @internal
+ */
+export function getRootOwnerDocument(
+  rootElement: HTMLElement | null,
+): Document {
+  return rootElement !== null ? rootElement.ownerDocument : document;
+}
+
+/**
+ * Returns the {@link Document} that owns the active editor's root element.
+ * Falls back to `globalThis.document` when there is no active editor (e.g.
+ * a node method such as `createDOM` / `exportDOM` is invoked headlessly,
+ * outside of `editor.update()` / `editor.read()`), or when the active
+ * editor has no root element (e.g. headless mode with
+ * {@link @lexical/headless!withDOM | withDOM}).
+ *
+ * Use this inside `createDOM`, `updateDOM`, and `exportDOM` instead of the
+ * bare `document` global so the node works correctly when the editor lives
+ * inside a Shadow DOM or a cross-origin `<iframe>`.
+ *
+ * Unlike most `$`-prefixed helpers, this does NOT require an ambient active
+ * editor: it must remain callable from `createDOM` / `exportDOM`, which are
+ * public methods that consumers may legitimately call while serializing
+ * nodes headlessly. Throwing here would silently break every node whose DOM
+ * methods were migrated off the bare `document` global.
+ */
+export function $getDocument(): Document {
+  const editor = internalGetActiveEditor();
+  return getRootOwnerDocument(editor !== null ? editor._rootElement : null);
+}
+
+/**
+ * A subset of `Selection` covering the four boundary-point fields Lexical
+ * reads plus `direction`. Designed so a `Selection` instance can be returned
+ * where a `DOMSelectionBoundaryPoints` is expected (see {@link getDOMSelectionPoints}).
+ *
+ * `direction` is the standard
+ * {@link https://developer.mozilla.org/docs/Web/API/Selection/direction | Selection.direction}
+ * pass-through: `'forward'` / `'backward'` / `'none'` when the engine
+ * implements it, or `undefined` when a future engine ships
+ * `getComposedRanges` without `direction` (no current shipping
+ * configuration matches — every engine that ships the former also ships
+ * the latter). In the undefined case anchor/focus default to the composed
+ * StaticRange's tree order; callers needing strict backward fidelity
+ * inside a shadow root should check `direction !== undefined`.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export interface DOMSelectionBoundaryPoints {
+  anchorNode: Node | null;
+  anchorOffset: number;
+  direction?: undefined | 'forward' | 'backward' | 'none';
+  focusNode: Node | null;
+  focusOffset: number;
+}
+
+/**
+ * Resolves a DOM Selection's range through any DOM ShadowRoots enclosing
+ * `rootElement`, using the standard
+ * {@link https://developer.mozilla.org/docs/Web/API/Selection/getComposedRanges | Selection.getComposedRanges}
+ * platform API.
+ *
+ * When a selection is inside a shadow tree the browser retargets
+ * `Selection.getRangeAt`/`anchorNode`/`focusNode` to the shadow host, which
+ * hides the real nodes Lexical needs to resolve. Passing the enclosing shadow
+ * roots to `getComposedRanges` returns the un-retargeted boundary points as a
+ * {@link https://developer.mozilla.org/docs/Web/API/StaticRange | StaticRange}
+ * (in tree order, i.e. start before end).
+ *
+ * @returns The composed StaticRange, or `null` when `rootElement` is in the
+ *   light DOM, the platform does not implement `getComposedRanges`, or there
+ *   is no selection.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function getComposedStaticRange(
+  domSelection: Selection,
+  rootElement: HTMLElement | null,
+): StaticRange | null {
+  if (
+    rootElement === null ||
+    typeof domSelection.getComposedRanges !== 'function'
+  ) {
+    return null;
+  }
+  const shadowRoots = getDOMShadowRoots(rootElement);
+  if (shadowRoots.length === 0) {
+    return null;
+  }
+  // Prefer the standard dictionary form (Chrome, modern WebKit, Firefox);
+  // fall back to the legacy variadic form shipped by Safari 17–18.1. A
+  // browser that doesn't understand the dictionary may return an empty array
+  // rather than throwing, so check the result on each attempt before
+  // degrading.
+  const getComposedRanges = domSelection.getComposedRanges as (
+    ...args: unknown[]
+  ) => StaticRange[];
+  try {
+    const dictRange = getComposedRanges.call(domSelection, {shadowRoots})[0];
+    if (dictRange !== undefined) {
+      return dictRange;
+    }
+  } catch (_error) {
+    // Try the legacy variadic form.
+  }
+  try {
+    const variadicRange = getComposedRanges.apply(domSelection, shadowRoots)[0];
+    if (variadicRange !== undefined) {
+      return variadicRange;
+    }
+  } catch (_error) {
+    // Both forms failed — degrade.
+  }
+  return null;
+}
+
+/**
+ * Returns a live DOM Range for the Selection, resolved through any DOM
+ * ShadowRoots enclosing `rootElement`. Inside a shadow tree
+ * `Selection.getRangeAt(0)` is retargeted to the shadow host, so this builds a
+ * Range from the composed boundary points instead (see
+ * {@link getComposedStaticRange}); in the light DOM it returns
+ * `getRangeAt(0)` unchanged. Use this instead of `getRangeAt(0)` when the
+ * Range is needed for layout (e.g. `getBoundingClientRect`), which a
+ * StaticRange cannot provide.
+ *
+ * @returns A live Range, or null when the selection has no ranges.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function getDOMSelectionRange(
+  domSelection: Selection,
+  rootElement: HTMLElement | null,
+): Range | null {
+  const staticRange = getComposedStaticRange(domSelection, rootElement);
+  if (staticRange !== null) {
+    const range = staticRangeToLiveRange(staticRange);
+    if (range !== null) {
+      return range;
+    }
+  }
+  return domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null;
+}
+
+/**
+ * Resolves a DOM Selection's anchor/focus boundary points through any DOM
+ * ShadowRoots enclosing `rootElement`. Inside a shadow tree the boundary
+ * points come from {@link getComposedStaticRange} mapped back onto
+ * anchor/focus with the standard
+ * {@link https://developer.mozilla.org/docs/Web/API/Selection/direction | Selection.direction};
+ * in the light DOM (or when `getComposedRanges` is unavailable) the Selection's
+ * own anchorNode/focusNode are already correct, so the Selection is returned
+ * as-is (it satisfies {@link DOMSelectionBoundaryPoints}).
+ *
+ * Use this instead of reading `Selection.anchorNode`/`focusNode` directly,
+ * which are retargeted to the shadow host inside a shadow tree.
+ *
+ * @remarks
+ * The two return paths have different read semantics:
+ * - light DOM: the return aliases `domSelection`, so subsequent reads
+ *   reflect any post-call selection changes. The aliasing is intentional;
+ *   each `Selection` property read forces a synchronous style/layout
+ *   recalculation, so `$updateDOMSelection` defers these reads until they
+ *   are actually needed.
+ * - shadow DOM: the return is a snapshot taken at call time, including
+ *   `direction`. If a future engine ships `getComposedRanges` without
+ *   `Selection.direction` (no current shipping configuration matches),
+ *   the snapshot's `direction` is `undefined` and anchor/focus default
+ *   to the StaticRange's tree order — a backward selection will appear
+ *   forward.
+ *
+ * Read the four points immediately after the call, or compare identity
+ * via `points === domSelection` to detect when the return aliases
+ * `domSelection`, rather than caching the returned reference across
+ * selection mutations.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function getDOMSelectionPoints(
+  domSelection: Selection,
+  rootElement: HTMLElement | null,
+): DOMSelectionBoundaryPoints {
+  const staticRange = getComposedStaticRange(domSelection, rootElement);
+  if (staticRange === null) {
+    return domSelection as DOMSelectionBoundaryPoints;
+  }
+  return staticRangeToPoints(staticRange, readDirection(domSelection));
+}
+
+/**
+ * Resolves the live DOM Range (for layout reads like `getBoundingClientRect`)
+ * and the anchor/focus boundary points in one pass, sharing a single
+ * {@link getComposedStaticRange} read rather than computing it twice as a
+ * call to {@link getDOMSelectionRange} followed by {@link getDOMSelectionPoints}
+ * would. Use this at sites that need both shapes from the same selection.
+ *
+ * @returns The composed Range plus the boundary points; the Range is null
+ *   when the selection has no ranges.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function getDOMSelectionRangeAndPoints(
+  domSelection: Selection,
+  rootElement: HTMLElement | null,
+): {points: DOMSelectionBoundaryPoints; range: Range | null} {
+  const staticRange = getComposedStaticRange(domSelection, rootElement);
+  if (staticRange === null) {
+    return {
+      points: domSelection as DOMSelectionBoundaryPoints,
+      range: domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null,
+    };
+  }
+  const range =
+    staticRangeToLiveRange(staticRange) ??
+    (domSelection.rangeCount > 0 ? domSelection.getRangeAt(0) : null);
+  return {
+    points: staticRangeToPoints(staticRange, readDirection(domSelection)),
+    range,
+  };
+}
+
+// Build a live DOM Range from a StaticRange's endpoints, in the container's
+// own document so iframe / shadow trees resolve to the right Range constructor.
+// Returns null when the container is detached or the endpoints reject (the
+// caller can fall back to `domSelection.getRangeAt(0)` in that case).
+function staticRangeToLiveRange(staticRange: StaticRange): Range | null {
+  const doc = staticRange.startContainer.ownerDocument;
+  if (doc === null) {
+    return null;
+  }
+  const range = doc.createRange();
+  try {
+    range.setStart(staticRange.startContainer, staticRange.startOffset);
+    range.setEnd(staticRange.endContainer, staticRange.endOffset);
+    return range;
+  } catch (_error) {
+    return null;
+  }
+}
+
+// Map a StaticRange + Selection.direction to anchor/focus pairs. Selection
+// returns boundaries in tree order, so a backward direction reverses the
+// pair before mapping (matching what Selection.anchorNode/focusNode would
+// have reported in the light DOM). 'none' and undefined map to forward
+// (anchor=start): a 'none' selection is directionless (e.g. created via
+// Selection.addRange), which the spec pins to anchor=start/focus=end, so the
+// forward mapping is correct — only directional APIs ever report 'backward'.
+function staticRangeToPoints(
+  staticRange: StaticRange,
+  direction: 'forward' | 'backward' | 'none' | undefined,
+): DOMSelectionBoundaryPoints {
+  const {startContainer, startOffset, endContainer, endOffset} = staticRange;
+  return direction === 'backward'
+    ? {
+        anchorNode: endContainer,
+        anchorOffset: endOffset,
+        direction,
+        focusNode: startContainer,
+        focusOffset: startOffset,
+      }
+    : {
+        anchorNode: startContainer,
+        anchorOffset: startOffset,
+        direction,
+        focusNode: endContainer,
+        focusOffset: endOffset,
+      };
+}
+
+function readDirection(
+  domSelection: Selection,
+): 'forward' | 'backward' | 'none' | undefined {
+  return domSelection.direction as undefined | 'forward' | 'backward' | 'none';
+}
+
+/**
+ * Returns the focused element within the same Document or ShadowRoot as
+ * `node`, using the standard `DocumentOrShadowRoot.activeElement`.
+ *
+ * Unlike `document.activeElement` — which is retargeted to the outermost
+ * shadow host when focus is inside a shadow tree — this returns the focused
+ * element within `node`'s own tree (e.g. the editor's contentEditable when it
+ * lives inside a shadow root).
+ *
+ * @param node A node whose tree's active element is wanted.
+ * @returns The active element, or null.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function getActiveElement(node: Node): Element | null {
+  const root = node.getRootNode();
+  return isDOMDocumentNode(root) || isDOMShadowRoot(root)
+    ? root.activeElement
+    : null;
+}
+
+/**
+ * Descends from `root.activeElement` through nested open ShadowRoots to the
+ * deepest focused element. `document.activeElement` only reports the outermost
+ * shadow host; this walks into the shadow trees via `ShadowRoot.activeElement`
+ * to find the element that actually has focus.
+ *
+ * @param root The Document or ShadowRoot to start from.
+ * @returns The deepest active element, or null.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function getActiveElementDeep(
+  root: Document | ShadowRoot,
+): Element | null {
+  let active: Element | null = root.activeElement;
+  while (active !== null && active.shadowRoot !== null) {
+    const inner = active.shadowRoot.activeElement;
+    if (inner === null) {
+      break;
+    }
+    active = inner;
+  }
+  return active;
+}
+
+/**
+ * Returns the un-retargeted event target — the real element the user
+ * interacted with — for events observed by a listener above an enclosing
+ * DOM shadow root. `Event.target` is retargeted to the outermost shadow
+ * host in that case, hiding the actual element; `composedPath()[0]`
+ * returns the original target for `composed: true` events (most
+ * user-agent UI events: click, mousedown, pointerdown, focusin, etc.).
+ * Falls back to `event.target` when `composedPath` is unavailable or
+ * returns an empty array (e.g. the event has already finished
+ * dispatching).
+ *
+ * Pairs with the shadow-aware helpers above
+ * ({@link getDOMSelectionPoints}, {@link getActiveElement}) for the
+ * event side of the shadow boundary — useful when an
+ * `Element.contains(target)` check needs to test against an editor root
+ * inside a shadow tree.
+ *
+ * @param event The dispatched event.
+ * @returns The un-retargeted target, or null when the event has none.
+ *
+ * @experimental Shape may change as shadow DOM support stabilizes.
+ */
+export function getComposedEventTarget(event: Event): EventTarget | null {
+  const target = event.target;
+  if (
+    target !== null &&
+    isHTMLElement(target) &&
+    target.shadowRoot !== null &&
+    typeof event.composedPath === 'function'
+  ) {
+    const path = event.composedPath();
+    if (path.length > 0) {
+      return path[0];
+    }
+  }
+  return target;
+}
+
+/** Splits an ElementNode at the given child offset, returning [original, newCopy]. The original is mutated (children after offset moved out); the first element may be null per the return type contract. Recursively splits ancestors up to the nearest root or shadow root. */
 export function $splitNode(
   node: ElementNode,
   offset: number,
@@ -2375,7 +2815,12 @@ function computeTypeToNodeMap(editorState: EditorState): TypeToNodeMap {
  */
 export function $cloneWithProperties<T extends LexicalNode>(latestNode: T): T {
   const constructor = latestNode.constructor;
-  const mutableNode = constructor.clone(latestNode) as T;
+  const mutableNode = (
+    constructor.clone as (
+      data: LexicalNode,
+      internalSkipAfterCloneFrom?: typeof INTERNAL_SKIP_AFTER_CLONE_FROM,
+    ) => T
+  )(latestNode, INTERNAL_SKIP_AFTER_CLONE_FROM);
   mutableNode.afterCloneFrom(latestNode);
   if (__DEV__) {
     invariant(
@@ -2438,6 +2883,7 @@ export function $cloneWithPropertiesEphemeral<T extends LexicalNode>(
   return $markEphemeral($cloneWithProperties(latestNode));
 }
 
+/** Reads the indent level from a DOM element's `data-lexical-indent` attribute or `paddingInlineStart` style, and applies it to the given ElementNode. */
 export function setNodeIndentFromDOM(
   elementDom: HTMLElement,
   elementNode: ElementNode,
@@ -2560,10 +3006,16 @@ export function isDOMUnmanaged(elementDom: Node & LexicalPrivateDOM): boolean {
  * @experimental
  */
 export function $markSlotEditable(
-  element: HTMLElement,
+  element: HTMLElement & {__lexicalEditor?: undefined | LexicalEditor},
   editor: LexicalEditor = $getEditor(),
 ): void {
-  element.contentEditable = editor.isEditable() ? 'true' : 'false';
+  const editable = editor.isEditable();
+  element.contentEditable = editable ? 'true' : 'false';
+  if (editable) {
+    element.__lexicalEditor = editor;
+  } else {
+    delete element.__lexicalEditor;
+  }
 }
 
 /**
@@ -2658,21 +3110,67 @@ function isAbstractNodeClass(klass: Klass<LexicalNode>): boolean {
   );
 }
 
-/** @internal */
-export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
+export interface OwnStaticNodeConfig {
+  klass: Klass<LexicalNode>;
   ownNodeType: undefined | string;
   ownNodeConfig:
     | undefined
     | StaticNodeConfigValue<LexicalNode, string | symbol>;
-} {
+}
+const STATIC_NODE_CONFIG_CACHE = new WeakMap<
+  Klass<LexicalNode>,
+  OwnStaticNodeConfig
+>();
+// Brands a getType() closure that Lexical synthesized (as opposed to a
+// user-defined static getType()). getStaticNodeConfig uses this to avoid
+// re-entering a synthesized closure while deriving a node's type, which would
+// otherwise recurse infinitely for subclasses under compiled class output.
+const SYNTHESIZED_GET_TYPE: unique symbol = Symbol(
+  'lexical.synthesizedGetType',
+);
+
+// TextNode.length > 0 will only be true if the compiler output
+// is not ES6 compliant, in which case we can not provide this
+// warning. We also can't reliably provide this warning if the output
+// has been optimized because `arg=undefined` parameter defaults can
+// be stripped.
+const IS_UNOPTIMIZED_DEV_BUILD =
+  __DEV__ &&
+  // constructor(key=undefined)
+  TabNode.length === 0 &&
+  // constructor(text='', key?: NodeKey)
+  TextNode.length === 0 &&
+  // Class name mangling is another signal that this may be unreliable
+  TextNode.name === 'TextNode';
+
+/** @internal */
+export function getStaticNodeConfig(
+  klass: Klass<LexicalNode>,
+): OwnStaticNodeConfig {
+  const cache = STATIC_NODE_CONFIG_CACHE.get(klass);
+  if (cache) {
+    return cache;
+  }
   const nodeConfigRecord =
     klass.prototype != null && PROTOTYPE_CONFIG_METHOD in klass.prototype
       ? klass.prototype[PROTOTYPE_CONFIG_METHOD]()
       : undefined;
   const isAbstract = isAbstractNodeClass(klass);
-  const nodeType =
+  // Only trust a *user-defined* own static getType() to derive the node type.
+  // A getType() that we synthesized (branded with SYNTHESIZED_GET_TYPE) must
+  // not be called here: the synthesized closure defers to
+  // LexicalNode.getType.call(this) for a foreign `this`, which re-enters
+  // getStaticNodeConfig and — when the closure is inherited/own-copied onto a
+  // subclass by the compiled class output — causes infinite recursion
+  // (RangeError: Maximum call stack size exceeded). For such a class the type
+  // is derived from the $config record below instead. (#8867 follow-up.)
+  const ownGetType =
     !isAbstract && hasOwnStaticMethod(klass, 'getType')
-      ? klass.getType()
+      ? klass.getType
+      : undefined;
+  const nodeType =
+    ownGetType && !(SYNTHESIZED_GET_TYPE in ownGetType)
+      ? ownGetType.call(klass)
       : undefined;
   let ownNodeConfig:
     | undefined
@@ -2706,13 +3204,36 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
   }
   if (!isAbstract && ownNodeType) {
     if (!hasOwnStaticMethod(klass, 'getType')) {
-      klass.getType = () => ownNodeType;
+      // Guard against subclass inheritance: a subclass that does not define its
+      // own static getType() (nor its own $config()-derived type yet) would
+      // otherwise *inherit* this synthesized closure via the prototype chain and
+      // return the superclass's hardcoded `ownNodeType`. When that happens the
+      // subclass registers under the superclass's type, colliding with it
+      // (e.g. `CodeHighlightNode`/`HashtagNode` resolving to type 'text' and
+      // clashing with `TextNode`). Only return the captured type when invoked on
+      // the exact class it was synthesized for; otherwise defer to the base
+      // LexicalNode.getType(), which resolves the correct type for `this`.
+      const synthesizedForKlass = klass;
+      const synthesizedGetType = function (this: Klass<LexicalNode>): string {
+        if (this !== synthesizedForKlass) {
+          return LexicalNode.getType.call(this);
+        }
+        return ownNodeType;
+      };
+      // Brand the closure so getStaticNodeConfig can recognize it and avoid
+      // calling it to derive the node type (which would recurse). See the note
+      // at the `ownGetType` computation above.
+      (synthesizedGetType as {[SYNTHESIZED_GET_TYPE]?: true})[
+        SYNTHESIZED_GET_TYPE
+      ] = true;
+      klass.getType = synthesizedGetType;
     }
     if (!hasOwnStaticMethod(klass, 'clone')) {
       // TextNode.length > 0 will only be true if the compiler output
       // is not ES6 compliant, in which case we can not provide this
-      // warning
-      if (__DEV__ && TextNode.length === 0) {
+      // warning. We also can't reliably provide this warning if the output
+      // has been optimized.
+      if (__DEV__ && IS_UNOPTIMIZED_DEV_BUILD) {
         invariant(
           klass.length === 0,
           '%s (type %s) must implement a static clone method since its constructor has %s required arguments (expecting 0). Use an explicit default in the first argument of your constructor(prop: T=X, nodeKey?: NodeKey).',
@@ -2721,13 +3242,29 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
           String(klass.length),
         );
       }
-      klass.clone = (prevNode: LexicalNode) => {
+      klass.clone = (
+        prevNode: LexicalNode,
+        internalSkipAfterCloneFrom?: typeof INTERNAL_SKIP_AFTER_CLONE_FROM,
+      ) => {
         setPendingNodeToClone(prevNode);
-        return new klass();
+        const node = new klass();
+        // The internal clone wrappers ($cloneWithProperties / $copyNode) pass
+        // the module-private INTERNAL_SKIP_AFTER_CLONE_FROM sentinel because
+        // they call afterCloneFrom themselves. When this synthesized clone is
+        // instead called directly — e.g. `NodeClass.clone(node)`, an idiomatic
+        // pre-$config() pattern — the sentinel is absent, so we call
+        // afterCloneFrom here to preserve the documented clone() contract and
+        // avoid silent property loss. afterCloneFrom is not guaranteed
+        // idempotent, so this must run exactly once (see the sentinel
+        // definition for the full rationale).
+        if (internalSkipAfterCloneFrom !== INTERNAL_SKIP_AFTER_CLONE_FROM) {
+          node.afterCloneFrom(prevNode);
+        }
+        return node;
       };
     }
     if (!hasOwnStaticMethod(klass, 'importJSON')) {
-      if (__DEV__ && TextNode.length === 0) {
+      if (__DEV__ && IS_UNOPTIMIZED_DEV_BUILD) {
         invariant(
           klass.length === 0,
           '%s (type %s) must implement a static importJSON method since its constructor has %s required arguments (expecting 0). Use an explicit default in the first argument of your constructor(prop: T=X, nodeKey?: NodeKey).',
@@ -2736,9 +3273,11 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
           String(klass.length),
         );
       }
+      // TODO: replace $applyNodeReplacement with $create once `withKlass` is required.
       klass.importJSON =
         (ownNodeConfig && ownNodeConfig.$importJSON) ||
-        (serializedNode => new klass().updateFromJSON(serializedNode));
+        (serializedNode =>
+          $applyNodeReplacement(new klass()).updateFromJSON(serializedNode));
     }
     if (!hasOwnStaticMethod(klass, 'importDOM') && ownNodeConfig) {
       const {importDOM} = ownNodeConfig;
@@ -2747,7 +3286,29 @@ export function getStaticNodeConfig(klass: Klass<LexicalNode>): {
       }
     }
   }
-  return {ownNodeConfig, ownNodeType};
+  const result = {klass, ownNodeConfig, ownNodeType};
+  STATIC_NODE_CONFIG_CACHE.set(klass, result);
+  return result;
+}
+
+/**
+ * Collect all configuration for this class and its superclasses
+ *
+ * @internal
+ */
+export function* iterStaticNodeConfigChain(
+  klass: Klass<LexicalNode>,
+): Iterable<OwnStaticNodeConfig> {
+  for (
+    let current: null | Klass<LexicalNode> = klass;
+    current && (current === LexicalNode || $isLexicalNode(current.prototype));
+  ) {
+    const config = getStaticNodeConfig(current);
+    yield config;
+    current =
+      (config.ownNodeConfig && config.ownNodeConfig.extends) ||
+      getSuperclassOf(current);
+  }
 }
 
 /**
@@ -2775,12 +3336,7 @@ export function getRegisteredSubtypeMap(
     }
   }
   for (const [type, klass] of klassByType) {
-    for (
-      let current: Klass<LexicalNode> = klass;
-      $isLexicalNode(current.prototype);
-      current = Object.getPrototypeOf(current)
-    ) {
-      const {ownNodeType} = getStaticNodeConfig(current);
+    for (const {ownNodeType} of iterStaticNodeConfigChain(klass)) {
       const bucket = ownNodeType && subtypes.get(ownNodeType);
       if (bucket) {
         bucket.add(type);
@@ -2853,6 +3409,7 @@ export const $findMatchingParent: {
   return null;
 };
 
+/** Builds an ordered array of child node keys for the given ElementNode by walking its linked-list pointers. */
 export function $createChildrenArray(
   element: ElementNode,
   nodeMap: null | NodeMap,
@@ -2869,4 +3426,22 @@ export function $createChildrenArray(
     nodeKey = node.__next;
   }
   return children;
+}
+
+/**
+ * Look up the superclass of this class, prefer
+ * {@link iterStaticNodeConfigChain} when implementing loops.
+ *
+ * @internal
+ */
+export function getSuperclassOf(
+  klass: Klass<LexicalNode>,
+): null | Klass<LexicalNode> {
+  const viaStatic = Object.getPrototypeOf(klass);
+  if (typeof viaStatic === 'function' && viaStatic !== Function.prototype) {
+    return viaStatic; // healthy static chain
+  }
+  // static link severed by the loose transform — use the instance chain
+  const parentProto = klass.prototype && Object.getPrototypeOf(klass.prototype);
+  return parentProto ? parentProto.constructor : null;
 }

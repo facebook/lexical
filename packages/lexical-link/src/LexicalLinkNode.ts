@@ -6,35 +6,16 @@
  *
  */
 
-import type {
-  BaseSelection,
-  DOMConversionMap,
-  DOMConversionOutput,
-  EditorConfig,
-  LexicalCommand,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  Point,
-  PointCaret,
-  PointType,
-  RangeSelection,
-  SerializedElementNode,
-} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
-import {
-  $findMatchingParent,
-  $insertNodeToNearestRootAtCaret,
-  addClassNamesToElement,
-  isHTMLAnchorElement,
-} from '@lexical/utils';
 import {
   $applyNodeReplacement,
   $caretFromPoint,
   $copyNode,
+  $findMatchingParent,
   $getChildCaret,
+  $getDocument,
   $getSelection,
+  $insertNodeToNearestRootAtCaret,
   $isElementNode,
   $isNodeSelection,
   $isRangeSelection,
@@ -44,9 +25,23 @@ import {
   $rewindSiblingCaret,
   $setPointFromCaret,
   $setSelection,
+  addClassNamesToElement,
+  type BaseSelection,
   createCommand,
+  type DOMConversionOutput,
+  type EditorConfig,
   ElementNode,
-  Spread,
+  isHTMLAnchorElement,
+  type LexicalCommand,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type Point,
+  type PointCaret,
+  type PointType,
+  type RangeSelection,
+  type SerializedElementNode,
+  type Spread,
 } from 'lexical';
 
 export type LinkAttributes = {
@@ -87,16 +82,16 @@ export class LinkNode extends ElementNode {
   /** @internal */
   __title: null | string;
 
-  static getType(): string {
-    return 'link';
-  }
-
-  static clone(node: LinkNode): LinkNode {
-    return new LinkNode(
-      node.__url,
-      {rel: node.__rel, target: node.__target, title: node.__title},
-      node.__key,
-    );
+  $config() {
+    return this.config('link', {
+      extends: ElementNode,
+      importDOM: {
+        a: () => ({
+          conversion: $convertAnchorElement,
+          priority: 1,
+        }),
+      },
+    });
   }
 
   constructor(
@@ -121,7 +116,7 @@ export class LinkNode extends ElementNode {
   }
 
   createDOM(config: EditorConfig): LinkHTMLElementType {
-    const element = document.createElement('a');
+    const element = $getDocument().createElement('a');
     this.updateLinkDOM(null, element, config);
     addClassNamesToElement(element, config.theme.link);
     return element;
@@ -159,19 +154,6 @@ export class LinkNode extends ElementNode {
     return false;
   }
 
-  static importDOM(): DOMConversionMap | null {
-    return {
-      a: (node: Node) => ({
-        conversion: $convertAnchorElement,
-        priority: 1,
-      }),
-    };
-  }
-
-  static importJSON(serializedNode: SerializedLinkNode): LinkNode {
-    return $createLinkNode().updateFromJSON(serializedNode);
-  }
-
   updateFromJSON(serializedNode: LexicalUpdateJSON<SerializedLinkNode>): this {
     return super
       .updateFromJSON(serializedNode)
@@ -182,6 +164,7 @@ export class LinkNode extends ElementNode {
   }
 
   sanitizeUrl(url: string): string {
+    const rawUrl = url;
     url = formatUrl(url);
     try {
       const parsedUrl = new URL(formatUrl(url));
@@ -190,7 +173,37 @@ export class LinkNode extends ElementNode {
         return 'about:blank';
       }
     } catch {
-      return url;
+      // `new URL()` threw, so we could not verify the protocol via the
+      // parser. Preserve fail-secure behavior: default unparseable URLs to
+      // `about:blank` and only allow through inputs that positively match an
+      // allowlisted scheme.
+      //
+      // Check the ORIGINAL input, not the `formatUrl()` output: `formatUrl()`
+      // prepends `https://` to anything it does not recognize as already
+      // having a scheme, which would mask a control-character-obfuscated
+      // scheme (e.g. `java\x00script:` becomes `https://java\x00script:`).
+      //
+      // Before extracting the scheme, strip C0 control characters, DEL and
+      // whitespace, mirroring how browsers ignore these when resolving a
+      // scheme. Without this, control-character-obfuscated schemes that throw
+      // in `new URL()` but are still navigated by some browsers would slip
+      // past a naive scheme check and retain their original, attacker-
+      // controlled value. Stripping C0 control characters and DEL is the
+      // intended, security-relevant behavior here.
+      // eslint-disable-next-line no-control-regex
+      const normalizedUrl = rawUrl.replace(/[\u0000-\u001F\u007F\s]/g, '');
+      const schemeMatch = normalizedUrl.match(/^([a-z][a-z0-9+.-]*):/i);
+      if (
+        schemeMatch != null &&
+        !SUPPORTED_URL_PROTOCOLS.has(`${schemeMatch[1].toLowerCase()}:`)
+      ) {
+        // An explicit, non-allowlisted scheme survived normalization (e.g.
+        // `javascript:`, `data:`) — neutralize it. Inputs with no scheme
+        // (relative URLs such as `/path` or `#anchor`) or an allowlisted
+        // scheme are left unchanged: they cannot carry a dangerous scheme
+        // and are handled elsewhere.
+        return 'about:blank';
+      }
     }
     return url;
   }
@@ -290,22 +303,21 @@ export class LinkNode extends ElementNode {
   }
 
   isEmailURI(): boolean {
-    return this.__url.startsWith('mailto:');
+    return this.getURL().startsWith('mailto:');
   }
 
   isWebSiteURI(): boolean {
-    return (
-      this.__url.startsWith('https://') || this.__url.startsWith('http://')
-    );
+    const url = this.getURL();
+    return url.startsWith('https://') || url.startsWith('http://');
   }
 
   shouldMergeAdjacentLink(otherLink: LinkNode): boolean {
     return (
       this.getType() === otherLink.getType() &&
-      this.__url === otherLink.__url &&
-      this.__target === otherLink.__target &&
-      this.__rel === otherLink.__rel &&
-      this.__title === otherLink.__title
+      this.getURL() === otherLink.getURL() &&
+      this.getTarget() === otherLink.getTarget() &&
+      this.getRel() === otherLink.getRel() &&
+      this.getTitle() === otherLink.getTitle()
     );
   }
 }
@@ -494,21 +506,8 @@ export class AutoLinkNode extends LinkNode {
     this.__isUnlinked = prevNode.__isUnlinked;
   }
 
-  static getType(): string {
-    return 'autolink';
-  }
-
-  static clone(node: AutoLinkNode): AutoLinkNode {
-    return new AutoLinkNode(
-      node.__url,
-      {
-        isUnlinked: node.__isUnlinked,
-        rel: node.__rel,
-        target: node.__target,
-        title: node.__title,
-      },
-      node.__key,
-    );
+  $config() {
+    return this.config('autolink', {extends: LinkNode});
   }
 
   shouldMergeAdjacentLink(_otherLink: LinkNode): boolean {
@@ -516,7 +515,7 @@ export class AutoLinkNode extends LinkNode {
   }
 
   getIsUnlinked(): boolean {
-    return this.__isUnlinked;
+    return this.getLatest().__isUnlinked;
   }
 
   setIsUnlinked(value: boolean): this {
@@ -527,7 +526,7 @@ export class AutoLinkNode extends LinkNode {
 
   createDOM(config: EditorConfig): LinkHTMLElementType {
     if (this.__isUnlinked) {
-      return document.createElement('span');
+      return $getDocument().createElement('span');
     } else {
       return super.createDOM(config);
     }
@@ -544,21 +543,12 @@ export class AutoLinkNode extends LinkNode {
     );
   }
 
-  static importJSON(serializedNode: SerializedAutoLinkNode): AutoLinkNode {
-    return $createAutoLinkNode().updateFromJSON(serializedNode);
-  }
-
   updateFromJSON(
     serializedNode: LexicalUpdateJSON<SerializedAutoLinkNode>,
   ): this {
     return super
       .updateFromJSON(serializedNode)
       .setIsUnlinked(serializedNode.isUnlinked || false);
-  }
-
-  static importDOM(): null {
-    // TODO: Should link node should handle the import over autolink?
-    return null;
   }
 
   exportJSON(): SerializedAutoLinkNode {
@@ -568,19 +558,12 @@ export class AutoLinkNode extends LinkNode {
     };
   }
 
-  insertNewAfter(
-    _: RangeSelection,
-    restoreSelection = true,
-  ): null | ElementNode {
-    const linkNode = $createAutoLinkNode(this.__url, {
-      isUnlinked: this.__isUnlinked,
-      rel: this.__rel,
-      target: this.__target,
-      title: this.__title,
-    });
-    this.insertAfter(linkNode, restoreSelection);
-    return linkNode;
-  }
+  // insertNewAfter is deliberately not overridden: LinkNode's implementation
+  // uses $copyNode, which runs clone() + afterCloneFrom() and so carries the
+  // element props (format/indent/style/dir/textFormat/textStyle) and NodeState
+  // as well as the link attributes. Enumerating properties by hand here
+  // dropped all of those, and rebuilt the node as a base AutoLinkNode even for
+  // a subclass. AutoLinkNode.afterCloneFrom already carries __isUnlinked.
 }
 
 /**
@@ -796,8 +779,11 @@ export function $toggleLink(
           if (rel !== undefined) {
             existingLink.setRel(rel);
           }
+          if (title !== undefined) {
+            existingLink.setTitle(title);
+          }
         } else {
-          const linkNode = $createLinkNode(url, {rel, target});
+          const linkNode = $createLinkNode(url, {rel, target, title});
           node.insertBefore(linkNode);
           linkNode.append(node);
         }

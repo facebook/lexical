@@ -6,13 +6,10 @@
  *
  */
 
-import type {LexicalEditor, LexicalNode, RangeSelection} from 'lexical';
-
 import {
   $insertNodeToNearestRoot,
   $isAtEndOfNode,
   $isAtStartOfNode,
-  mergeRegister,
 } from '@lexical/utils';
 import {
   $createParagraphNode,
@@ -30,6 +27,10 @@ import {
   KEY_ARROW_UP_COMMAND,
   KEY_BACKSPACE_COMMAND,
   KEY_DELETE_COMMAND,
+  type LexicalEditor,
+  type LexicalNode,
+  mergeRegister,
+  type RangeSelection,
 } from 'lexical';
 
 // Find the slot host (Card / Review / PullQuote) that contains `start`. The

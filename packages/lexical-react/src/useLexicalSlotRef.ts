@@ -6,11 +6,13 @@
  *
  */
 
-import type {LexicalEditor, NodeKey} from 'lexical';
-import type {RefCallback} from 'react';
-
-import {mountSlotContainer, unmountSlotContainer} from 'lexical';
-import {useCallback} from 'react';
+import {
+  type LexicalEditor,
+  mountSlotContainer,
+  type NodeKey,
+  unmountSlotContainer,
+} from 'lexical';
+import {type RefCallback, useCallback} from 'react';
 
 /**
  * @experimental

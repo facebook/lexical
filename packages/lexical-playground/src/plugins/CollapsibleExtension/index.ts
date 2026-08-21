@@ -14,29 +14,23 @@ import {
   DOMImportExtension,
   sel,
 } from '@lexical/html';
-import {
-  $findMatchingParent,
-  $insertNodeToNearestRoot,
-  mergeRegister,
-} from '@lexical/utils';
+import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   $createParagraphNode,
+  $findMatchingParent,
   $getSelection,
-  $isInlineElementOrDecoratorNode,
-  $isLineBreakNode,
   $isRangeSelection,
-  $isTextNode,
   COMMAND_PRIORITY_LOW,
   configExtension,
   createCommand,
   defineExtension,
-  ElementNode,
   INSERT_PARAGRAPH_COMMAND,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_ARROW_UP_COMMAND,
   type LexicalNode,
+  mergeRegister,
 } from 'lexical';
 
 import {
@@ -190,33 +184,6 @@ const $onEscapeDown = () => {
   return false;
 };
 
-const $wrapInlineContentChildren = (node: CollapsibleContentNode) => {
-  if (node.isEmpty()) {
-    node.append($createParagraphNode());
-    return;
-  }
-
-  let paragraph: ElementNode | null = null;
-
-  for (const child of node.getChildren()) {
-    if (
-      !$isInlineElementOrDecoratorNode(child) &&
-      !$isLineBreakNode(child) &&
-      !$isTextNode(child) &&
-      !child.isParentRequired()
-    ) {
-      paragraph = null;
-      continue;
-    }
-
-    if (paragraph === null) {
-      paragraph = child.createParentElementNode();
-      child.insertBefore(paragraph);
-    }
-    paragraph.append(child);
-  }
-};
-
 export const CollapsibleExtension = /* @__PURE__ */ defineExtension({
   dependencies: [
     /* @__PURE__ */ configExtension(DOMImportExtension, {
@@ -242,16 +209,15 @@ export const CollapsibleExtension = /* @__PURE__ */ defineExtension({
             node.insertBefore(child);
           }
           node.remove();
-          return;
+        } else if (node.isEmpty()) {
+          node.append($createParagraphNode());
         }
-        $wrapInlineContentChildren(node);
       }),
 
       editor.registerNodeTransform(CollapsibleTitleNode, node => {
         const parent = node.getParent();
         if (!$isCollapsibleContainerNode(parent)) {
           node.replace($createParagraphNode().append(...node.getChildren()));
-          return;
         }
       }),
 

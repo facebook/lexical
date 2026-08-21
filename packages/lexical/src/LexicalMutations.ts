@@ -6,7 +6,6 @@
  *
  */
 
-import type {LexicalNode, TextNode} from '.';
 import type {LexicalEditor} from './LexicalEditor';
 import type {EditorState} from './LexicalEditorState';
 import type {LexicalPrivateDOM} from './LexicalNode';
@@ -18,14 +17,18 @@ import {
   $isRangeSelection,
   $isTextNode,
   $setSelection,
+  type LexicalNode,
+  type TextNode,
 } from '.';
 import {IS_FIREFOX} from './environment';
+import {isDecoratorBoundaryAnchorDOM} from './LexicalDOMSlot';
 import {updateEditorSync} from './LexicalUpdates';
 import {
   $getNodeByKey,
   $getNodeFromDOMNode,
   $updateTextNodeFromDOMContent,
   getDOMSelection,
+  getDOMSelectionPoints,
   getNodeKeyFromDOMNode,
   getParentElement,
   getWindow,
@@ -82,12 +85,14 @@ function $handleTextMutation(
   editor: LexicalEditor,
 ): void {
   const domSelection = getDOMSelection(getWindow(editor));
+  const domSelectionPoints =
+    domSelection && getDOMSelectionPoints(domSelection, editor._rootElement);
   let anchorOffset = null;
   let focusOffset = null;
 
-  if (domSelection !== null && domSelection.anchorNode === target) {
-    anchorOffset = domSelection.anchorOffset;
-    focusOffset = domSelection.focusOffset;
+  if (domSelectionPoints !== null && domSelectionPoints.anchorNode === target) {
+    anchorOffset = domSelectionPoints.anchorOffset;
+    focusOffset = domSelectionPoints.focusOffset;
   }
 
   const text = target.nodeValue;
@@ -200,6 +205,11 @@ function flushMutations(
               addedDOM !== blockCursorElement &&
               node === null &&
               !isManagedLineBreak(addedDOM, parentDOM, editor) &&
+              // The zero-size selection anchors the reconciler parks outside
+              // a leading / trailing block decorator (#8922) are keyless
+              // scaffolding, like the managed line break — don't evict them
+              // as foreign DOM.
+              !isDecoratorBoundaryAnchorDOM(addedDOM) &&
               // @experimental named-slots. Slot containers are keyless
               // reconciler scaffolding: a flush that observes one being
               // parked in its host or relocated by an explicit mount must
@@ -244,6 +254,11 @@ function flushMutations(
                 blockCursorElement === removedDOM
               ) {
                 targetDOM.appendChild(removedDOM);
+                unremovedBRs++;
+              } else if (isDecoratorBoundaryAnchorDOM(removedDOM)) {
+                // Position matters for these (leading vs trailing), so don't
+                // blindly re-append — the next reconcile of this element puts
+                // a fresh anchor on the right edge.
                 unremovedBRs++;
               }
             }

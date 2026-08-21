@@ -38,19 +38,24 @@ import {
   $parseSerializedNode,
   $setSelectionFromCaretRange,
   $splitAtPointCaretNext,
-  BaseSelection,
+  type BaseSelection,
   COMMAND_PRIORITY_CRITICAL,
   COPY_COMMAND,
   defineExtension,
+  findAllLexicalElementsDeep,
   getDOMSelection,
+  getDOMSelectionPoints,
+  getEditorPropertyFromDOMNode,
+  isHTMLElement,
+  isLexicalEditor,
   isSelectionWithinEditor,
-  LexicalEditor,
-  LexicalNode,
-  PointCaret,
-  RangeSelection,
+  type LexicalEditor,
+  type LexicalNode,
+  type PointCaret,
+  type RangeSelection,
   safeCast,
   SELECTION_INSERT_CLIPBOARD_NODES_COMMAND,
-  SerializedElementNode,
+  type SerializedElementNode,
   shallowMergeConfig,
 } from 'lexical';
 
@@ -214,19 +219,28 @@ function readDragMarker(dataTransfer: DataTransfer): LexicalDragMarker | null {
 }
 
 function findEditorRootByKey(key: string, doc: Document): HTMLElement | null {
-  const elements = doc.querySelectorAll('[data-lexical-editor="true"]');
-  for (const el of Array.from(elements)) {
-    const editor = (el as unknown as {__lexicalEditor?: {getKey: () => string}})
-      .__lexicalEditor;
-    if (editor && editor.getKey() === key) {
-      return el as HTMLElement;
+  for (const el of findAllLexicalElementsDeep(doc)) {
+    const editor = getEditorPropertyFromDOMNode(el);
+    if (
+      isLexicalEditor(editor) &&
+      editor.getKey() === key &&
+      isHTMLElement(el)
+    ) {
+      return el;
     }
   }
   return null;
 }
 
-function $resolveDropPointCaret(event: DragEvent): null | PointCaret<'next'> {
-  const hit = caretFromPoint(event.clientX, event.clientY);
+function $resolveDropPointCaret(
+  event: DragEvent,
+  editor: LexicalEditor,
+): null | PointCaret<'next'> {
+  const hit = caretFromPoint(
+    event.clientX,
+    event.clientY,
+    editor.getRootElement(),
+  );
   if (hit === null) {
     return null;
   }
@@ -284,7 +298,7 @@ function $doDrop(
     return false;
   }
 
-  const dropCaret = $resolveDropPointCaret(event);
+  const dropCaret = $resolveDropPointCaret(event, editor);
   if (dropCaret === null) {
     return false;
   }
@@ -498,8 +512,13 @@ function $appendNodesToJSON(
 ): boolean {
   let shouldInclude =
     selection !== null ? currentNode.isSelected(selection) : true;
+  // 'clone', not 'html': this builds the internal
+  // `application/x-lexical-editor` payload, the same destination the
+  // $sliceSelectedTextNodeContent and extractWithChild calls below already
+  // pass. Asking with 'html' dropped nodes that opt out of HTML export while
+  // asking to survive a clone (e.g. MarkNode).
   const shouldExclude =
-    $isElementNode(currentNode) && currentNode.excludeFromCopy('html');
+    $isElementNode(currentNode) && currentNode.excludeFromCopy('clone');
   let target = currentNode;
 
   if (selection !== null && $isTextNode(target)) {
@@ -717,7 +736,7 @@ export async function copyToClipboard(
   element.style.top = '-1000px';
   element.append(windowDocument.createTextNode('#'));
   rootElement.append(element);
-  const range = new Range();
+  const range = windowDocument.createRange();
   range.setStart(element, 0);
   range.setEnd(element, 1);
   domSelection.removeAllRanges();
@@ -768,8 +787,9 @@ function $copyToClipboardEvent(
     if (!domSelection) {
       return false;
     }
-    const anchorDOM = domSelection.anchorNode;
-    const focusDOM = domSelection.focusNode;
+    const points = getDOMSelectionPoints(domSelection, editor.getRootElement());
+    const anchorDOM = points.anchorNode;
+    const focusDOM = points.focusNode;
     if (
       anchorDOM !== null &&
       focusDOM !== null &&

@@ -15,11 +15,11 @@ import {
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
-  TableCellNode,
+  type TableCellNode,
   TableExtension,
   TableImportExtension,
-  TableNode,
-  TableRowNode,
+  type TableNode,
+  type TableRowNode,
 } from '@lexical/table';
 import {JSDOM} from 'jsdom';
 import {
@@ -39,6 +39,7 @@ function buildEditor() {
       // required.
       dependencies: [TableExtension],
       name: 'table-host',
+      theme: {tableScrollableWrapper: ''},
     }),
   );
 }

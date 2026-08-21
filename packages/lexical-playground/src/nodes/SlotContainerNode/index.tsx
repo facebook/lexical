@@ -6,9 +6,14 @@
  *
  */
 
-import type {DOMExportOutput, LexicalEditor, LexicalNode} from 'lexical';
-
-import {$create, ElementNode} from 'lexical';
+import {
+  $create,
+  $getDocument,
+  type DOMExportOutput,
+  ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
+} from 'lexical';
 
 // A generic editable slot value. It is a shadow root (like a table cell), so a
 // RangeSelection and SELECT_ALL stay scoped to its contents and Backspace at
@@ -19,14 +24,14 @@ export class SlotContainerNode extends ElementNode {
   }
 
   createDOM(): HTMLElement {
-    const div = document.createElement('div');
+    const div = $getDocument().createElement('div');
     div.className = 'lexical-slot-container';
     return div;
   }
 
   // Export as a fragment since it "is" the slot wrapper created by the host
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    return {element: document.createDocumentFragment()};
+    return {element: $getDocument().createDocumentFragment()};
   }
 
   updateDOM(): false {

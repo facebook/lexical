@@ -16,13 +16,16 @@ import {
   $createTableNode,
   $createTableNodeWithDimensions,
   $createTableRowNode,
+  $createTableSelectionFrom,
   $isTableCellNode,
   $isTableNode,
   $isTableRowNode,
   $isTableSelection,
   $mergeCells,
   INSERT_TABLE_COMMAND,
+  type TableCellNode,
   TableExtension,
+  type TableNode,
 } from '@lexical/table';
 import {
   $createParagraphNode,
@@ -32,9 +35,11 @@ import {
   $isElementNode,
   $isParagraphNode,
   $isRangeSelection,
+  $setSelection,
   defineExtension,
-  LexicalEditorWithDispose,
-  NodeKey,
+  FORMAT_ELEMENT_COMMAND,
+  type LexicalEditorWithDispose,
+  type NodeKey,
   SELECT_ALL_COMMAND,
 } from 'lexical';
 import {$assertNodeType} from 'lexical/src/__tests__/utils';
@@ -130,6 +135,51 @@ describe('TableExtension', () => {
     // And restored when re-enabled.
     hasHorizontalScroll.value = true;
     await Promise.resolve();
+    expect(div.querySelector('.table-scrollable-wrapper > table')).not.toBe(
+      null,
+    );
+  });
+
+  it('renders and removes the sticky scrollbar DOM when hasStickyScrollbar toggles', async () => {
+    // Also serves as regression coverage that enabling the feature in a
+    // non-layout environment without ResizeObserver (jsdom) does not throw
+    // from the mutation-listener attach path.
+    const div = document.createElement('div');
+    editor.setRootElement(div);
+    const {hasStickyScrollbar} = getExtensionDependencyFromEditor(
+      editor,
+      TableExtension,
+    ).output;
+    hasStickyScrollbar.value = true;
+    await Promise.resolve();
+
+    editor.update(
+      () => {
+        $getRoot().clear().selectEnd();
+        editor.dispatchCommand(INSERT_TABLE_COMMAND, {columns: '2', rows: '2'});
+      },
+      {discrete: true},
+    );
+
+    // outer wrapper (marked with the data attribute) > scrollable wrapper > table
+    expect(
+      div.querySelector(
+        '[data-lexical-sticky-scrollbar] > .table-scrollable-wrapper > table',
+      ),
+    ).not.toBe(null);
+    // The unmanaged scrollbar is the wrapper's next sibling, hidden from
+    // the accessibility tree, with its spacer child.
+    const scrollbar = div.querySelector(
+      '[data-lexical-sticky-scrollbar] > .table-scrollable-wrapper + div',
+    );
+    expect(scrollbar).not.toBe(null);
+    expect(scrollbar!.getAttribute('aria-hidden')).toBe('true');
+    expect(scrollbar!.firstElementChild).not.toBe(null);
+
+    // Toggling off restores the plain scrollable wrapper DOM.
+    hasStickyScrollbar.value = false;
+    await Promise.resolve();
+    expect(div.querySelector('[data-lexical-sticky-scrollbar]')).toBe(null);
     expect(div.querySelector('.table-scrollable-wrapper > table')).not.toBe(
       null,
     );
@@ -395,6 +445,75 @@ describe('TableExtension', () => {
           'Expected second cell child to be a paragraph node',
         );
         expect(cell2Child.getTextContent()).toBe('b');
+      });
+    });
+
+    test('SELECTION_INSERT_CLIPBOARD_NODES_COMMAND clips to selection boundary with TableSelection', () => {
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          const table = $createTableNode();
+          for (let r = 0; r < 2; r++) {
+            const row = $createTableRowNode();
+            for (let c = 0; c < 2; c++) {
+              const cell = $createTableCellNode();
+              cell.append(
+                $createParagraphNode().append($createTextNode(`${c},${r}`)),
+              );
+              row.append(cell);
+            }
+            table.append(row);
+          }
+          root.append(table);
+
+          const [tableMap] = $computeTableMapSkipCellCheck(table, null, null);
+          const tableSelection = $createTableSelectionFrom(
+            table,
+            tableMap[0][0].cell,
+            tableMap[1][1].cell,
+          );
+          $setSelection(tableSelection);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const template = $createTableNode();
+          for (let r = 0; r < 3; r++) {
+            const row = $createTableRowNode();
+            for (let c = 0; c < 3; c++) {
+              const cell = $createTableCellNode();
+              cell.append(
+                $createParagraphNode().append(
+                  $createTextNode(String.fromCharCode(65 + r * 3 + c)),
+                ),
+              );
+              row.append(cell);
+            }
+            template.append(row);
+          }
+          const selection = $getSelection();
+          assert($isTableSelection(selection), 'Expected table selection');
+          $insertGeneratedNodes(editor, [template], selection);
+        },
+        {discrete: true},
+      );
+
+      editor.read('latest', () => {
+        const root = $getRoot();
+        const table = root.getFirstChild();
+        assert($isTableNode(table), 'Expected table node');
+        const rows = table.getChildren().filter($isTableRowNode);
+        expect(rows.length).toBe(2);
+        expect(rows[0].getChildren().length).toBe(2);
+        const texts = rows.map(row =>
+          row.getChildren().map(cell => cell.getTextContent()),
+        );
+        expect(texts).toEqual([
+          ['A', 'B'],
+          ['D', 'E'],
+        ]);
       });
     });
   });
@@ -831,6 +950,149 @@ describe('TableExtension', () => {
         editor.setRootElement(null);
         document.body.removeChild(container);
       }
+    });
+  });
+
+  describe('FORMAT_ELEMENT_COMMAND on a full table selection (#8880)', () => {
+    let container: HTMLDivElement;
+
+    beforeEach(() => {
+      container = document.createElement('div');
+      editor.setRootElement(container);
+    });
+
+    afterEach(() => {
+      editor.setRootElement(null);
+    });
+
+    function $getCell(
+      table: TableNode,
+      row: number,
+      column: number,
+    ): TableCellNode {
+      const rowNode = $assertNodeType(
+        table.getChildAtIndex(row),
+        $isTableRowNode,
+      );
+      return $assertNodeType(rowNode.getChildAtIndex(column), $isTableCellNode);
+    }
+
+    function createTable(): TableNode {
+      editor.update(
+        () => {
+          const root = $getRoot().clear();
+          const table = $createTableNodeWithDimensions(3, 3, false);
+          root.append(table);
+        },
+        {discrete: true},
+      );
+      return editor.read(() =>
+        $assertNodeType($getRoot().getFirstChild(), $isTableNode),
+      );
+    }
+
+    const directions: {
+      name: string;
+      anchor: [number, number];
+      focus: [number, number];
+    }[] = [
+      {anchor: [0, 0], focus: [2, 2], name: 'top-left -> bottom-right'},
+      {anchor: [2, 2], focus: [0, 0], name: 'bottom-right -> top-left'},
+      {anchor: [0, 2], focus: [2, 0], name: 'top-right -> bottom-left'},
+      {anchor: [2, 0], focus: [0, 2], name: 'bottom-left -> top-right'},
+    ];
+
+    for (const {name, anchor, focus} of directions) {
+      it(`aligns the table when selected ${name}`, () => {
+        const table = createTable();
+        editor.update(
+          () => {
+            const anchorCell = $getCell(table, anchor[0], anchor[1]);
+            const focusCell = $getCell(table, focus[0], focus[1]);
+            $setSelection(
+              $createTableSelectionFrom(table, anchorCell, focusCell),
+            );
+            editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center');
+          },
+          {discrete: true},
+        );
+
+        editor.read(() => {
+          expect(table.getFormatType()).toBe('center');
+
+          for (let row = 0; row < 3; row++) {
+            for (let column = 0; column < 3; column++) {
+              const cell = $getCell(table, row, column);
+              const paragraph = $assertNodeType(
+                cell.getFirstChild(),
+                $isParagraphNode,
+              );
+              expect(paragraph.getFormatType()).toBe('');
+            }
+          }
+        });
+      });
+    }
+
+    it('aligns the table when the full selection includes a merged cell, selected in reverse', () => {
+      const table = createTable();
+      editor.update(
+        () => {
+          const cell0_2 = $getCell(table, 0, 2);
+          const cell1_2 = $getCell(table, 1, 2);
+          $mergeCells([cell0_2, cell1_2]);
+        },
+        {discrete: true},
+      );
+
+      editor.update(
+        () => {
+          const anchorCell = $getCell(table, 2, 2);
+          const focusCell = $getCell(table, 0, 0);
+          $setSelection(
+            $createTableSelectionFrom(table, anchorCell, focusCell),
+          );
+          editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify');
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        expect(table.getFormatType()).toBe('justify');
+      });
+    });
+
+    it('applies per-cell alignment (not table alignment) when only part of the table is selected, even in reverse direction', () => {
+      const table = createTable();
+      editor.update(
+        () => {
+          const anchorCell = $getCell(table, 1, 1);
+          const focusCell = $getCell(table, 0, 0);
+          $setSelection(
+            $createTableSelectionFrom(table, anchorCell, focusCell),
+          );
+          editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right');
+        },
+        {discrete: true},
+      );
+
+      editor.read(() => {
+        expect(table.getFormatType()).toBe('');
+
+        for (let row = 0; row < 3; row++) {
+          for (let column = 0; column < 3; column++) {
+            const cell = $getCell(table, row, column);
+            const paragraph = $assertNodeType(
+              cell.getFirstChild(),
+              $isParagraphNode,
+            );
+            const inSelectedSubset = row <= 1 && column <= 1;
+            expect(paragraph.getFormatType()).toBe(
+              inSelectedSubset ? 'right' : '',
+            );
+          }
+        }
+      });
     });
   });
 });

@@ -7,10 +7,17 @@
  */
 
 import type {LexicalEditor} from 'lexical';
-import type {ForwardedRef, JSX, RefCallback} from 'react';
 
 import * as React from 'react';
-import {forwardRef, useCallback, useMemo, useState} from 'react';
+import {
+  type ForwardedRef,
+  forwardRef,
+  type JSX,
+  type RefCallback,
+  useCallback,
+  useMemo,
+  useState,
+} from 'react';
 
 import {mergeRefs} from './mergeRefs';
 import useLayoutEffect from './useLayoutEffect';
@@ -125,7 +132,7 @@ function ContentEditableElementImpl(
       role={role}
       spellCheck={spellCheck}
       style={style}
-      tabIndex={tabIndex}
+      tabIndex={tabIndex ?? (isEditable ? undefined : -1)}
       {...rest}
     />
   );

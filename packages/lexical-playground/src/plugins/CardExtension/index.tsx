@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalCommand, LexicalNode, NodeKey, PointType} from 'lexical';
-
 import {NodeSelectionDataSelectedExtension} from '@lexical/extension';
 import {
   CoreImportExtension,
@@ -17,7 +15,6 @@ import {
   DOMRenderExtension,
   sel,
 } from '@lexical/html';
-import {mergeRegister} from '@lexical/utils';
 import {
   $createNodeSelection,
   $createParagraphNode,
@@ -41,6 +38,11 @@ import {
   KEY_ARROW_LEFT_COMMAND,
   KEY_ARROW_RIGHT_COMMAND,
   KEY_TAB_COMMAND,
+  type LexicalCommand,
+  type LexicalNode,
+  mergeRegister,
+  type NodeKey,
+  type PointType,
 } from 'lexical';
 
 import {registerHostChromeSelection} from '../../nodes/hostChromeSelection';

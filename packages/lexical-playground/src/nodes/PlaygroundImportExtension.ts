@@ -6,8 +6,6 @@
  *
  */
 
-import type {LexicalNode} from 'lexical';
-
 import {ClipboardDOMImportExtension} from '@lexical/clipboard';
 import {
   CoreImportExtension,
@@ -21,6 +19,7 @@ import {
   $isTextNode,
   configExtension,
   defineExtension,
+  type LexicalNode,
 } from 'lexical';
 
 import {parseAllowedFontSize} from '../plugins/ToolbarPlugin/fontSize';

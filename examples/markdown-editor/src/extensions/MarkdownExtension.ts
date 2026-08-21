@@ -9,7 +9,7 @@
 import {
   computed,
   EditorStateExtension,
-  ReadonlySignal,
+  type ReadonlySignal,
   TabIndentationExtension,
 } from '@lexical/extension';
 import {HistoryExtension} from '@lexical/history';

@@ -6,7 +6,7 @@
  *
  */
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {$createLinkNode, LinkExtension} from '@lexical/link';
 import {
   $createListItemNode,
@@ -35,26 +35,29 @@ import {
 } from '@lexical/selection';
 import {$createTableNodeWithDimensions} from '@lexical/table';
 import {
+  $create,
   $createLineBreakNode,
   $createParagraphNode,
   $createRangeSelection,
   $createTextNode,
   $getRoot,
   $getSelection,
+  $getSlot,
   $isElementNode,
   $isLineBreakNode,
   $isParagraphNode,
   $isRangeSelection,
   $isTextNode,
   $setSelection,
-  DecoratorNode,
+  $setSlot,
+  type DecoratorNode,
   ElementNode,
-  LexicalEditor,
-  LexicalNode,
-  ParagraphNode,
-  PointType,
+  type LexicalEditor,
+  type LexicalNode,
+  type ParagraphNode,
+  type PointType,
   type RangeSelection,
-  TextNode,
+  type TextNode,
 } from 'lexical';
 import {
   $assertNodeType,
@@ -69,7 +72,7 @@ import {
   TestComposer,
 } from 'lexical/src/__tests__/utils';
 import {act} from 'react';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, test, vi} from 'vitest';
 
 import {
@@ -2430,7 +2433,7 @@ describe('LexicalSelection tests', () => {
             offset: 0,
           };
         },
-        name: 'moves selection to to next text node if replacing with decorator',
+        name: 'moves selection to next text node if replacing with decorator',
       },
       {
         fn: () => {
@@ -3406,6 +3409,174 @@ describe('LexicalSelection tests', () => {
       expect(element.innerHTML).toStrictEqual(
         `<h1 dir="auto" style="padding-inline-start: calc(1 * var(--lexical-indent-base-value, 40px));"><span data-lexical-text="true">1.1</span></h1>`,
       );
+    });
+
+    test('Backward selection: focus at block end is skipped', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2 = $createTextNode('text 2');
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            $createParagraphNode().append(text2),
+          );
+
+          const selection = text1
+            .select()
+            .setTextNodeRange(text2, 0, text1, text1.getTextContentSize());
+
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isParagraphNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
+        expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Backward selection: non-zero focus offset converts both blocks', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2 = $createTextNode('text 2');
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            $createParagraphNode().append(text2),
+          );
+
+          const selection = text1
+            .select()
+            .setTextNodeRange(text2, 1, text1, text1.getTextContentSize() - 1);
+
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isHeadingNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
+        expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Backward selection spanning multiple blocks skips only focus block', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2 = $createTextNode('text 2');
+          const text3 = $createTextNode('text 3');
+          $getRoot().append(
+            $createParagraphNode().append(text1),
+            $createParagraphNode().append(text2),
+            $createParagraphNode().append(text3),
+          );
+
+          const selection = text1
+            .select()
+            .setTextNodeRange(
+              text3,
+              text3.getTextContentSize(),
+              text1,
+              text1.getTextContentSize(),
+            );
+
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isParagraphNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
+        expect($isHeadingNode(rootChildren[2])).toBe(true);
+        expect(rootChildren.length).toBe(3);
+      });
+    });
+
+    test('Backward selection: focus at block end with element point is skipped', () => {
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const text1 = $createTextNode('text 1');
+          const text2 = $createTextNode('text 2');
+          const paragraph2 = $createParagraphNode().append(text2);
+          $getRoot().append($createParagraphNode().append(text1), paragraph2);
+
+          const selection = $createRangeSelection();
+          $setSelection(selection);
+          $setAnchorPoint({
+            key: text2.getKey(),
+            offset: 0,
+            type: 'text',
+          });
+          $setFocusPoint({
+            key: paragraph2.getKey(),
+            offset: 0,
+            type: 'element',
+          });
+
+          $setBlocksType(selection, () => $createHeadingNode('h1'));
+        },
+        dependencies: [RichTextExtension],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const rootChildren = $getRoot().getChildren();
+        expect($isParagraphNode(rootChildren[0])).toBe(true);
+        expect($isHeadingNode(rootChildren[1])).toBe(true);
+        expect(rootChildren.length).toBe(2);
+      });
+    });
+
+    test('Bare slot value is skipped (#8894)', () => {
+      class TestSlotHost extends ElementNode {
+        $config() {
+          return this.config('test-slot-host', {
+            extends: ElementNode,
+            slots: ['content'],
+          });
+        }
+        createDOM(): HTMLElement {
+          return document.createElement('div');
+        }
+        updateDOM(): false {
+          return false;
+        }
+      }
+
+      using testEditor = buildEditorFromExtensions({
+        $initialEditorState: () => {
+          const root = $getRoot();
+          const host = $create(TestSlotHost);
+          const paragraph = $createParagraphNode();
+          const text = $createTextNode('slot text');
+          paragraph.append(text);
+          $setSlot(host, 'content', paragraph);
+          root.append(host);
+
+          $setBlocksType(text.select(0), () => $createHeadingNode('h1'));
+        },
+        dependencies: [
+          RichTextExtension,
+          defineExtension({name: '@test/slot-host', nodes: [TestSlotHost]}),
+        ],
+        name: '@test',
+      });
+      testEditor.read(() => {
+        const root = $getRoot();
+        const host = root.getFirstChild()!;
+        const paragraph = $assertNodeType(
+          $getSlot(host, 'content'),
+          $isParagraphNode,
+        );
+        expect(paragraph.getTextContent()).toBe('slot text');
+      });
     });
   });
 });

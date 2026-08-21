@@ -616,11 +616,15 @@ const ConsumesStyleSheetsRule = defineImportRule({
 });
 ```
 
-A fresh session record (a mutable child of the editor's
-`contextDefaults`) is created for every top-level
-`$generateNodesFromDOM` call. Per-call `options.context` pairs are
-seeded into it before any preprocessors run, and preprocess-time
-`ctx.session.set` writes mutate the same record.
+A fresh session record is created for every `$generateNodesFromDOM`
+call. It chains to the ambient import context when the call runs
+nested inside another import operation — a rule re-entering the walk
+for sub-content, or raw HTML inside a `@lexical/mdast` Markdown import
+— so states layered by the outer operation stay readable; the
+outermost call chains to the editor's `contextDefaults`. Per-call
+`options.context` pairs are seeded into it before any preprocessors
+run, and preprocess-time `ctx.session.set` writes mutate the same
+record (never the parent, so session writes don't leak outward).
 
 ## Preprocessors
 
@@ -827,6 +831,21 @@ const $installWordOverlay: DOMPreprocessFn = (dom, ctx, $next) => {
   }
   $next();
 };
+```
+
+That is the pattern, not something you have to write for Word lists
+specifically: `@lexical/list` ships this exact preprocess as
+`WordListImportExtension`. It is opt-in — `ListExtension` does not depend
+on it, so an editor that never pastes from Word does not bundle it:
+
+```ts
+import {WordListImportExtension} from '@lexical/list';
+import {defineExtension} from 'lexical';
+
+defineExtension({
+  dependencies: [WordListImportExtension],
+  name: 'my-editor',
+});
 ```
 
 See `packages/lexical-list/src/__tests__/unit/ListImportExtension.test.ts`

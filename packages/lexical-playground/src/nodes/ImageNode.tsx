@@ -6,18 +6,6 @@
  *
  */
 
-import type {
-  DOMExportOutput,
-  EditorConfig,
-  LexicalEditorWithDispose,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  RangeSelection,
-  SerializedEditor,
-  SerializedLexicalNode,
-  Spread,
-} from 'lexical';
 import type {JSX} from 'react';
 
 import {
@@ -36,12 +24,23 @@ import {
   $createRangeSelection,
   $extendCaretToRange,
   $getChildCaret,
+  $getDocument,
   $getRoot,
   $isElementNode,
   $isParagraphNode,
   configExtension,
   DecoratorNode,
   defineExtension,
+  type DOMExportOutput,
+  type EditorConfig,
+  type LexicalEditorWithDispose,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type RangeSelection,
+  type SerializedEditor,
+  type SerializedLexicalNode,
+  type Spread,
 } from 'lexical';
 import * as React from 'react';
 
@@ -137,8 +136,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   // Captions cannot yet be used within editor cells
   __captionsEnabled: boolean;
 
-  static getType(): string {
-    return 'image';
+  $config() {
+    return this.config('image', {extends: DecoratorNode});
   }
 
   static clone(node: ImageNode): ImageNode {
@@ -180,7 +179,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   }
 
   exportDOM(): DOMExportOutput {
-    const imgElement = document.createElement('img');
+    const imgElement = $getDocument().createElement('img');
     imgElement.setAttribute('src', this.__src);
     imgElement.setAttribute('alt', this.__altText);
     imgElement.setAttribute('width', this.__width.toString());
@@ -210,8 +209,8 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
         return $generateHtmlFromNodes(captionEditor, selection);
       });
       if (captionHtml) {
-        const figureElement = document.createElement('figure');
-        const figcaptionElement = document.createElement('figcaption');
+        const figureElement = $getDocument().createElement('figure');
+        const figcaptionElement = $getDocument().createElement('figcaption');
         figcaptionElement.innerHTML = captionHtml;
 
         figureElement.appendChild(imgElement);
@@ -279,7 +278,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
   // View
 
   createDOM(config: EditorConfig): HTMLElement {
-    const span = document.createElement('span');
+    const span = $getDocument().createElement('span');
     const theme = config.theme;
     const className = theme.image;
     if (className !== undefined) {

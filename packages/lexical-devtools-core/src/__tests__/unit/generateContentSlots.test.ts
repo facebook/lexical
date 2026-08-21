@@ -6,6 +6,7 @@
  *
  */
 
+import {generateContent} from '@lexical/devtools-core';
 import {buildEditorFromExtensions, defineExtension} from '@lexical/extension';
 import {
   $createParagraphNode,
@@ -20,8 +21,6 @@ import {
   TestShadowRootNode,
 } from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
-
-import {generateContent} from '../../generateContent';
 
 describe('generateContent named slots', () => {
   // A DecoratorNode host reached through the children channel must recurse

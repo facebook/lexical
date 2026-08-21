@@ -6,9 +6,7 @@
  *
  */
 
-import type {LexicalCommand} from 'lexical';
-
-import {createCommand} from 'lexical';
+import {createCommand, type LexicalCommand} from 'lexical';
 
 export type InsertTableCommandPayloadHeaders =
   | Readonly<{

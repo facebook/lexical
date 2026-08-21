@@ -13,7 +13,7 @@ import {
   configExtension,
   createCommand,
   defineExtension,
-  LexicalCommand,
+  type LexicalCommand,
 } from 'lexical';
 
 import {$createTweetNode, TweetNode} from '../../nodes/TweetNode';
@@ -36,7 +36,7 @@ export const TwitterExtension = /* @__PURE__ */ defineExtension({
   name: '@lexical/playground/Twitter',
   nodes: [TweetNode],
   register: editor =>
-    editor.registerCommand<string>(
+    editor.registerCommand(
       INSERT_TWEET_COMMAND,
       payload => {
         const tweetNode = $createTweetNode(payload);

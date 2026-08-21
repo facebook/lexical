@@ -6,22 +6,21 @@
  *
  */
 
-import type {LexicalEditor, LexicalNode} from 'lexical';
-
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
+import {$insertNodeToNearestRoot} from '@lexical/utils';
 import {
   $createRangeSelection,
   $getRoot,
   $isElementNode,
   $setSelection,
+  type LexicalEditor,
+  type LexicalNode,
 } from 'lexical';
 import {
   $createTestDecoratorNode,
   createTestEditor,
 } from 'lexical/src/__tests__/utils';
 import {beforeEach, describe, expect, it} from 'vitest';
-
-import {$insertNodeToNearestRoot} from '../..';
 
 describe('LexicalUtils#insertNodeToNearestRoot', () => {
   let editor: LexicalEditor;

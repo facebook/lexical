@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {AnyLexicalExtension, LexicalExtensionOutput} from 'lexical';
 import type {ComponentProps} from 'react';
 
 import {useExtensionComponent} from '@lexical/react/useExtensionComponent';
-import {type AnyLexicalExtension, type LexicalExtensionOutput} from 'lexical';
 
 /**
  * The lexical:extension prop combined with the props of the given Extension's

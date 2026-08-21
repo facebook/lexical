@@ -41,6 +41,7 @@ const sidebars = {
       items: [
         'concepts/editor-state',
         'concepts/nodes',
+        'concepts/decorators',
         'concepts/node-replacement',
         'concepts/node-state',
         'concepts/named-slots',
@@ -53,6 +54,8 @@ const sidebars = {
         'concepts/read-only',
         'concepts/history',
         'concepts/dom-events',
+        'concepts/keyboard-accessibility',
+        'concepts/shadow-dom',
         'concepts/traversals',
         'concepts/updates',
       ],
@@ -64,6 +67,7 @@ const sidebars = {
         'serialization/serialization',
         'serialization/dom-import',
         'serialization/dom-render',
+        'serialization/markdown-mdast',
       ],
       label: 'Serialization',
       type: 'category',
@@ -114,6 +118,7 @@ const sidebars = {
       label: 'Collaboration',
       type: 'category',
     },
+    'testing',
     'faq',
   ],
 };

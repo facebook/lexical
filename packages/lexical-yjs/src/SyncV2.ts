@@ -24,6 +24,8 @@
  * prefix. (NB: '$' couldn't be used as the prefix because it breaks XmlElement.toDOM().)
  */
 
+import type {BindingV2} from './Bindings';
+
 import invariant from '@lexical/internal/invariant';
 import {
   $getSelection,
@@ -37,21 +39,21 @@ import {
   $setSlot,
   ElementNode,
   getDeclaredSlots,
-  LexicalNode,
-  NodeKey,
+  type LexicalNode,
+  type NodeKey,
   RootNode,
   TextNode,
 } from 'lexical';
 import {
   ContentFormat,
   ContentString,
-  Doc as YDoc,
-  ID,
+  type Doc as YDoc,
+  type ID,
   isDeleted,
-  Item,
+  type Item,
   Map as YMap,
   Snapshot,
-  Text as YText,
+  type Text as YText,
   typeListToArraySnapshot,
   typeMapGetAllSnapshot,
   XmlElement,
@@ -59,7 +61,6 @@ import {
   XmlText,
 } from 'yjs';
 
-import {BindingV2} from './Bindings';
 import simpleDiffWithCursor from './simpleDiffWithCursor';
 import {
   $isSlotValueNode,

@@ -19,7 +19,7 @@ import {
   $isElementNode,
   $setSelection,
   createEditor,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
 import {beforeEach, describe, expect, test} from 'vitest';
 

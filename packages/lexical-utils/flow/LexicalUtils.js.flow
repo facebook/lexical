@@ -86,6 +86,9 @@ declare export function $findMatchingParent(
   findFn: (LexicalNode) => boolean,
 ): LexicalNode | null;
 declare export function mergeRegister(...func: (() => void)[]): () => void;
+declare export function dedupeSelectionRects(
+  rects: Iterable<ClientRect>,
+): ClientRect[];
 declare export function markSelection(
   editor: LexicalEditor,
   onReposition?: (node: HTMLElement[]) => void,
@@ -252,3 +255,8 @@ export type StateConfigWrapper<K extends string, V> = {
 declare export function makeStateWrapper<K extends string, V>(
   stateConfig: StateConfig<K, V>,
 ): StateConfigWrapper<K, V>;
+
+declare export function getScrollParent(
+  element: HTMLElement,
+  includeHidden: boolean,
+): HTMLElement | HTMLBodyElement;

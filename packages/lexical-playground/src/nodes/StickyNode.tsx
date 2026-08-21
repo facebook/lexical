@@ -6,17 +6,6 @@
  *
  */
 
-import type {
-  EditorConfig,
-  LexicalEditor,
-  LexicalEditorWithDispose,
-  LexicalNode,
-  LexicalUpdateJSON,
-  NodeKey,
-  SerializedEditor,
-  SerializedLexicalNode,
-  Spread,
-} from 'lexical';
 import type {JSX} from 'react';
 
 import {
@@ -28,10 +17,20 @@ import {PlainTextExtension} from '@lexical/plain-text';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
 import {
+  $getDocument,
   $setSelection,
   configExtension,
   DecoratorNode,
   defineExtension,
+  type EditorConfig,
+  type LexicalEditor,
+  type LexicalEditorWithDispose,
+  type LexicalNode,
+  type LexicalUpdateJSON,
+  type NodeKey,
+  type SerializedEditor,
+  type SerializedLexicalNode,
+  type Spread,
 } from 'lexical';
 import * as React from 'react';
 import {createPortal} from 'react-dom';
@@ -80,8 +79,8 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
   __color: StickyNoteColor;
   __caption: LexicalEditorWithDispose;
 
-  static getType(): string {
-    return 'sticky';
+  $config() {
+    return this.config('sticky', {extends: DecoratorNode});
   }
 
   static clone(node: StickyNode): StickyNode {
@@ -140,7 +139,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const div = document.createElement('div');
+    const div = $getDocument().createElement('div');
     div.style.display = 'contents';
     return div;
   }
@@ -172,7 +171,7 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
         nodeKey={this.getKey()}
         caption={this.__caption}
       />,
-      document.body,
+      editor.getRootElement()?.ownerDocument?.body ?? document.body,
     );
   }
 

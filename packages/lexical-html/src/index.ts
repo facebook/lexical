@@ -6,23 +6,13 @@
  *
  */
 
-import type {
-  BaseSelection,
-  DOMChildConversion,
-  DOMConversion,
-  DOMConversionFn,
-  EditorDOMRenderConfig,
-  ElementFormatType,
-  LexicalEditor,
-  LexicalNode,
-} from 'lexical';
-
 import invariant from '@lexical/internal/invariant';
 import {$sliceSelectedTextNodeContent} from '@lexical/selection';
 import {
   $assumeActiveEditor,
   $createLineBreakNode,
   $createParagraphNode,
+  $getDocument,
   $getEditor,
   $getEditorDOMRenderConfig,
   $getRoot,
@@ -34,12 +24,20 @@ import {
   $isRootOrShadowRoot,
   $isTextNode,
   ArtificialNode__DO_NOT_USE,
-  ElementNode,
+  type BaseSelection,
+  type DOMChildConversion,
+  type DOMConversion,
+  type DOMConversionFn,
+  type EditorDOMRenderConfig,
+  type ElementFormatType,
+  type ElementNode,
   isBlockDomNode,
   isDocumentFragment,
   isDOMDocumentNode,
   isHTMLElement,
   isInlineDomNode,
+  type LexicalEditor,
+  type LexicalNode,
 } from 'lexical';
 
 import {contextValue} from './ContextRecord';
@@ -270,8 +268,11 @@ export function $generateHtmlFromNodes(
   // If the caller is in a legacy `editorState.read(cb)` scope (no active editor),
   // establish one via internal API.
   $assumeActiveEditor(editor);
-  return $generateDOMFromNodes(document.createElement('div'), selection, editor)
-    .innerHTML;
+  return $generateDOMFromNodes(
+    $getDocument().createElement('div'),
+    selection,
+    editor,
+  ).innerHTML;
 }
 
 function $appendNodesToHTML(
@@ -299,7 +300,7 @@ function $appendNodesToHTML(
     return false;
   }
 
-  const fragment = document.createDocumentFragment();
+  const fragment = $getDocument().createDocumentFragment();
   const children = $getChildNodes
     ? $getChildNodes()
     : $isElementNode(target)
@@ -351,14 +352,25 @@ function $appendNodesToHTML(
         element.append(fragment);
       }
     }
-    parentElementAppend(element);
-
-    if (after) {
-      const newElement = after.call(target, element);
-      if (newElement) {
-        if (isDocumentFragment(element)) {
+    if (isDocumentFragment(element)) {
+      // Resolve `after` before handing the fragment to the parent: appending a
+      // DocumentFragment moves its children out and leaves it empty, so a
+      // replacement written into it afterwards would land in a detached,
+      // already-drained fragment and never reach the output.
+      if (after) {
+        const newElement = after.call(target, element);
+        if (newElement) {
           element.replaceChildren(newElement);
-        } else {
+        }
+      }
+      parentElementAppend(element);
+    } else {
+      // An HTMLElement has to be in the tree first so replaceWith() can swap
+      // it in place.
+      parentElementAppend(element);
+      if (after) {
+        const newElement = after.call(target, element);
+        if (newElement) {
           element.replaceWith(newElement);
         }
       }

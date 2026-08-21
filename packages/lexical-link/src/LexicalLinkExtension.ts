@@ -6,9 +6,13 @@
  *
  */
 
-import {effect, namedSignals, NamedSignalsOutput} from '@lexical/extension';
+import {
+  effect,
+  namedSignals,
+  type NamedSignalsOutput,
+} from '@lexical/extension';
 import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
-import {mergeRegister, objectKlassEquals} from '@lexical/utils';
+import {objectKlassEquals} from '@lexical/utils';
 import {
   $getSelection,
   $isElementNode,
@@ -18,7 +22,8 @@ import {
   COMMAND_PRIORITY_LOW,
   configExtension,
   defineExtension,
-  LexicalEditor,
+  type LexicalEditor,
+  mergeRegister,
   PASTE_COMMAND,
   shallowMergeConfig,
 } from 'lexical';
@@ -26,7 +31,7 @@ import {
 import {
   $linkNodeTransform,
   $toggleLink,
-  LinkAttributes,
+  type LinkAttributes,
   LinkNode,
   TOGGLE_LINK_COMMAND,
 } from './LexicalLinkNode';
@@ -78,13 +83,18 @@ export function registerLink(
           }
           return false;
         } else {
-          const {url, target, rel, title} = payload;
-          $toggleLink(url, {
-            ...attributes,
-            rel,
-            target,
-            title,
-          });
+          // Only the attributes the payload actually carries may override the
+          // configured defaults. Destructuring `rel`/`target`/`title` and
+          // spreading them unconditionally would write `undefined` over every
+          // configured value, since an explicit `undefined` still shadows a
+          // spread key.
+          const {url, ...payloadAttributes} = payload;
+          // Same gate as the string payload above: validateUrl is documented
+          // as rejecting URLs for this command, not for one of its two shapes.
+          if (validateUrl !== undefined && !validateUrl(url)) {
+            return false;
+          }
+          $toggleLink(url, {...attributes, ...payloadAttributes});
           return true;
         }
       },

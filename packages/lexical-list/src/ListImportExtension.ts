@@ -6,12 +6,12 @@
  *
  */
 
-import type {ChildSchema, DOMImportContext} from '@lexical/html';
-
 import {
   $isBlockLevel,
   $propagateTextAlignToBlockChildren,
+  type ChildSchema,
   defineImportRule,
+  type DOMImportContext,
   isElementOfTag,
   sel,
 } from '@lexical/html';

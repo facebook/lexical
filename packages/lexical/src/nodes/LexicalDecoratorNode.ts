@@ -7,13 +7,17 @@
  */
 
 import type {KlassConstructor, LexicalEditor} from '../LexicalEditor';
-import type {NodeKey, SlotChildNode, SlotHostNode} from '../LexicalNode';
 import type {ElementNode} from './LexicalElementNode';
 import type {EditorConfig} from 'lexical';
 
 import invariant from '@lexical/internal/invariant';
 
-import {LexicalNode} from '../LexicalNode';
+import {
+  LexicalNode,
+  type NodeKey,
+  type SlotChildNode,
+  type SlotHostNode,
+} from '../LexicalNode';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export interface DecoratorNode<T> {
@@ -78,6 +82,7 @@ export class DecoratorNode<T>
   }
 }
 
+/** Returns true if the given node is a DecoratorNode. */
 export function $isDecoratorNode<T>(
   node: LexicalNode | null | undefined,
 ): node is DecoratorNode<T> {

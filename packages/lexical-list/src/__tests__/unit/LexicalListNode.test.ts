@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import {$createLinkNode, $isLinkNode, LinkNode} from '@lexical/link';
+import {$createLinkNode, $isLinkNode, type LinkNode} from '@lexical/link';
 import {
   $createListItemNode,
   $createListNode,

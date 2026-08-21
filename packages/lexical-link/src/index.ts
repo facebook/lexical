@@ -7,13 +7,19 @@
  */
 
 export {
+  AutoLinkAnnounceExtension,
+  type AutoLinkAnnounceExtensionConfig,
+} from './AutoLinkAnnounceExtension';
+export {
   type ClickableLinkConfig,
   ClickableLinkExtension,
   registerClickableLink,
 } from './ClickableLinkExtension';
 export {
   type AutoLinkConfig,
+  autoLinkEmailMatcher,
   AutoLinkExtension,
+  autoLinkUrlMatcher,
   type ChangeHandler,
   createLinkMatcherWithRegExp,
   type LinkMatcher,

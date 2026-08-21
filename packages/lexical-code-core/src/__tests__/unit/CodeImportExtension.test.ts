@@ -6,7 +6,12 @@
  *
  */
 
-import {CodeExtension, CodeImportExtension} from '@lexical/code-core';
+import {
+  $isCodeNode,
+  CodeExtension,
+  CodeImportExtension,
+  type CodeNode,
+} from '@lexical/code-core';
 import {
   buildEditorFromExtensions,
   getExtensionDependencyFromEditor,
@@ -23,8 +28,6 @@ import {
   type LexicalNode,
 } from 'lexical';
 import {assert, describe, expect, test} from 'vitest';
-
-import {$isCodeNode, CodeNode} from '../../CodeNode';
 
 function buildEditor() {
   return buildEditorFromExtensions(
@@ -140,6 +143,7 @@ describe('CodeImportExtension', () => {
         // <table> rule out-prioritizes TableExtension's generic one.
         dependencies: [TableExtension, CodeExtension],
         name: 'table-code-host',
+        theme: {tableScrollableWrapper: ''},
       }),
     );
     importInto(

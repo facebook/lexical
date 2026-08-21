@@ -6,12 +6,10 @@
  *
  */
 
-import type {LexicalComposerContextType} from '@lexical/react/LexicalComposerContext';
-import type {JSX} from 'react';
-
 import {
   createLexicalComposerContext,
   LexicalComposerContext,
+  type LexicalComposerContextType,
 } from '@lexical/react/LexicalComposerContext';
 import {
   $createParagraphNode,
@@ -19,17 +17,18 @@ import {
   $getSelection,
   CAN_USE_DOM,
   createEditor,
-  EditorState,
-  EditorThemeClasses,
+  type EditorState,
+  type EditorThemeClasses,
+  getActiveElement,
   HISTORY_MERGE_TAG,
-  HTMLConfig,
-  Klass,
-  LexicalEditor,
-  LexicalNode,
-  LexicalNodeReplacement,
+  type HTMLConfig,
+  type Klass,
+  type LexicalEditor,
+  type LexicalNode,
+  type LexicalNodeReplacement,
 } from 'lexical';
 import * as React from 'react';
-import {useMemo} from 'react';
+import {type JSX, useMemo} from 'react';
 
 import useLayoutEffect from './shared/useLayoutEffect';
 
@@ -184,10 +183,16 @@ function initializeEditor(
       if (root.isEmpty()) {
         const paragraph = $createParagraphNode();
         root.append(paragraph);
-        const activeElement = CAN_USE_DOM ? document.activeElement : null;
+        const rootElement = editor.getRootElement();
+        // getActiveElement rather than document.activeElement, which reports
+        // the shadow host when the editor is in a shadow root.
+        const activeElement =
+          CAN_USE_DOM && rootElement !== null
+            ? getActiveElement(rootElement)
+            : null;
         if (
           $getSelection() !== null ||
-          (activeElement !== null && activeElement === editor.getRootElement())
+          (activeElement !== null && activeElement === rootElement)
         ) {
           paragraph.select();
         }

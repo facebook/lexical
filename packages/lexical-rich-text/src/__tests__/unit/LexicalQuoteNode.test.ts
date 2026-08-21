@@ -6,7 +6,7 @@
  *
  */
 
-import {$createQuoteNode, QuoteNode} from '@lexical/rich-text';
+import {$createQuoteNode, type QuoteNode} from '@lexical/rich-text';
 import {$createRangeSelection, $getRoot, ParagraphNode} from 'lexical';
 import {initializeUnitTest} from 'lexical/src/__tests__/utils';
 import {describe, expect, test} from 'vitest';
@@ -55,7 +55,11 @@ describe('LexicalQuoteNode tests', () => {
           '<blockquote class="my-quote-class"></blockquote>',
         );
         const newQuoteNode = $createQuoteNode();
-        const result = newQuoteNode.updateDOM(quoteNode, domElement);
+        const result = newQuoteNode.updateDOM(
+          quoteNode,
+          domElement,
+          editorConfig,
+        );
         expect(result).toBe(false);
         expect(domElement.outerHTML).toBe(
           '<blockquote class="my-quote-class"></blockquote>',

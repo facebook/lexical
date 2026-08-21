@@ -6,11 +6,12 @@
  *
  */
 
-import {IS_APPLE} from '@lexical/utils';
 import {
+  CONTROL_OR_META,
   defineExtension,
   isExactShortcutMatch,
   isHTMLElement,
+  registerEventListener,
   safeCast,
   stopLexicalPropagation,
 } from 'lexical';
@@ -21,7 +22,7 @@ import {effect} from './signals';
 function captureKeydown(e: KeyboardEvent) {
   const target = e.target;
   if (
-    isExactShortcutMatch(e, 'a', {ctrlKey: !IS_APPLE, metaKey: IS_APPLE}) &&
+    isExactShortcutMatch(e, 'a', CONTROL_OR_META) &&
     isHTMLElement(target) &&
     (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')
   ) {
@@ -54,9 +55,12 @@ export const PreventSelectAllExtension = /* @__PURE__ */ defineExtension({
       if (!stores.disabled.value) {
         return editor.registerRootListener(rootElement => {
           if (rootElement) {
-            rootElement.addEventListener('keydown', captureKeydown, true);
-            return () =>
-              rootElement.removeEventListener('keydown', captureKeydown, true);
+            return registerEventListener(
+              rootElement,
+              'keydown',
+              captureKeydown,
+              true,
+            );
           }
         });
       }

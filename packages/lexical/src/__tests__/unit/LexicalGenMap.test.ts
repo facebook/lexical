@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
+import {} from 'lexical';
 import {describe, expect, test} from 'vitest';
 
 import {cloneMap, GenMap} from '../../LexicalGenMap';

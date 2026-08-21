@@ -23,9 +23,9 @@ import {afterEach, assert, beforeEach, describe, expect, it} from 'vitest';
 import * as Y from 'yjs';
 
 import {
-  Client,
+  type Client,
   createTestConnection,
-  TestConnection,
+  type TestConnection,
   waitForReact,
 } from '../utils';
 
@@ -476,7 +476,7 @@ describe('Collaboration', () => {
 
         await waitForReact(() => {
           // Undo the insertion of the initial paragraph and text node
-          client1.getEditor().dispatchCommand(UNDO_COMMAND, undefined);
+          client1.getEditor().dispatchCommand(UNDO_COMMAND);
         });
 
         // We expect the safety check in syncYjsChangesToLexical to

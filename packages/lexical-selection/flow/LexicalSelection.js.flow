@@ -7,6 +7,7 @@
  * @flow strict
  */
 import type {
+  CaretDirection,
   ElementNode,
   LexicalEditor,
   LexicalNode,
@@ -57,6 +58,11 @@ declare export function $setBlocksType(
   createElement: () => ElementNode,
 ): void;
 declare export function $isAtNodeEnd(point: Point): boolean;
+declare export function $isAtEdgeOfElement(
+  point: Point,
+  element: ElementNode,
+  direction: CaretDirection,
+): boolean;
 declare export function $shouldOverrideDefaultCharacterSelection(
   selection: RangeSelection,
   isBackward: boolean,

@@ -935,7 +935,7 @@ test.describe('Markdown', () => {
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 800px; width: inherit" />
+                style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>
           <br data-lexical-managed-linebreak="true" />
@@ -975,13 +975,15 @@ test.describe('Markdown', () => {
                 alt="Yellow flower in tilt shift lens"
                 draggable="false"
                 src="${SAMPLE_IMAGE_URL}"
-                style="height: inherit; max-width: 800px; width: inherit" />
+                style="height: inherit; max-width: 500px; width: inherit" />
             </div>
           </span>
           <span data-lexical-text="true">just text in between</span>
           <span
             class="editor-equation"
             contenteditable="false"
+            role="math"
+            aria-label="Equation: 1"
             data-lexical-decorator="true">
             <img
               alt=""

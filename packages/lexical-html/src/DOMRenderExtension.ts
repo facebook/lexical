@@ -6,9 +6,14 @@
  *
  */
 import type {DOMRenderConfig, DOMRenderExtensionOutput} from './types';
-import type {InitialEditorConfig} from 'lexical';
 
-import {defineExtension, RootNode, shallowMergeConfig} from 'lexical';
+import {
+  $getDocument,
+  defineExtension,
+  type InitialEditorConfig,
+  RootNode,
+  shallowMergeConfig,
+} from 'lexical';
 
 import {compileDOMRenderConfigOverrides} from './compileDOMRenderConfigOverrides';
 import {DOMRenderExtensionName} from './constants';
@@ -62,7 +67,7 @@ export const DOMRenderExtension = /* @__PURE__ */ defineExtension<
       [
         RootNode,
         () => {
-          const element = document.createElement('div');
+          const element = $getDocument().createElement('div');
           element.role = 'textbox';
           return {element};
         },

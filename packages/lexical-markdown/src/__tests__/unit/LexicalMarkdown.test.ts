@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {$createCodeNode, CodeNode} from '@lexical/code-core';
 import {createHeadlessEditor} from '@lexical/headless';
 import {$generateHtmlFromNodes, $generateNodesFromDOM} from '@lexical/html';
@@ -17,7 +16,29 @@ import {
   ListItemNode,
   ListNode,
 } from '@lexical/list';
-import {$createQuoteNode, HeadingNode, QuoteNode} from '@lexical/rich-text';
+import {
+  $convertFromMarkdownString,
+  $convertSelectionToMarkdownString,
+  $convertToMarkdownString,
+  $generateNodesFromMarkdownString,
+  CHECK_LIST,
+  CODE,
+  type ElementTransformer,
+  HEADING,
+  LINK,
+  type MultilineElementTransformer,
+  registerMarkdownShortcuts,
+  type TextMatchTransformer,
+  type Transformer,
+  TRANSFORMERS,
+} from '@lexical/markdown';
+import {
+  $createHeadingNode,
+  $createQuoteNode,
+  $isHeadingNode,
+  HeadingNode,
+  QuoteNode,
+} from '@lexical/rich-text';
 import {
   $addUpdateTag,
   $copyNode,
@@ -40,30 +61,16 @@ import {
   $setState,
   COMPOSITION_END_TAG,
   KEY_ENTER_COMMAND,
+  TEXT_TYPE_TO_FORMAT,
   type TextNode,
 } from 'lexical';
 import {assert, describe, expect, it} from 'vitest';
 
 import {
-  $convertFromMarkdownString,
-  $convertSelectionToMarkdownString,
-  $convertToMarkdownString,
-  LINK,
-  registerMarkdownShortcuts,
-  TextMatchTransformer,
-  Transformer,
-} from '../..';
-import {
-  CHECK_LIST,
-  CODE,
-  ElementTransformer,
   hardLineBreakState,
-  HEADING,
   listMarkerState,
-  MultilineElementTransformer,
   normalizeMarkdown,
   parseMarkdownHardLineBreak,
-  TRANSFORMERS,
 } from '../../MarkdownTransformers';
 
 const HIGHLIGHT_TEXT_MATCH_IMPORT: TextMatchTransformer = {
@@ -1098,6 +1105,55 @@ describe('Markdown', () => {
     );
   });
 
+  it.each(['1. ', '- ', '* ', '+ '])(
+    'should preserve a heading when typing the "%s" list shortcut',
+    shortcut => {
+      const editor = createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+
+      registerMarkdownShortcuts(editor, TRANSFORMERS);
+
+      editor.update(
+        () => {
+          const heading = $createHeadingNode('h1');
+          const text = $createTextNode('Welcome to the playground');
+          heading.append(text);
+          $getRoot().append(heading);
+          text.select(0, 0);
+        },
+        {discrete: true},
+      );
+
+      for (const character of shortcut) {
+        editor.update(
+          () => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+              selection.insertText(character);
+            }
+          },
+          {discrete: true},
+        );
+      }
+
+      editor.read(() => {
+        const heading = $getRoot().getFirstChild();
+        expect($isHeadingNode(heading)).toBe(true);
+        expect(heading?.getTextContent()).toBe(
+          `${shortcut}Welcome to the playground`,
+        );
+      });
+    },
+  );
+
   it('can round-trip nested fenced code blocks (4 backticks wrapping 3 backticks)', () => {
     const markdown =
       '````markdown\n' +
@@ -1193,6 +1249,144 @@ describe('Markdown', () => {
     expect(exported).toBe(
       '````markdown\n```js\nconsole.log("hello");\n```\n````',
     );
+  });
+
+  describe('overlapping inline formats (#4895)', () => {
+    type Run = [text: string, format: number];
+
+    const BOLD = TEXT_TYPE_TO_FORMAT.bold;
+    const ITALIC = TEXT_TYPE_TO_FORMAT.italic;
+    const STRIKE = TEXT_TYPE_TO_FORMAT.strikethrough;
+    const INLINE_CODE = TEXT_TYPE_TO_FORMAT.code;
+
+    function overlapEditor() {
+      return createHeadlessEditor({
+        nodes: [
+          HeadingNode,
+          ListNode,
+          ListItemNode,
+          QuoteNode,
+          CodeNode,
+          LinkNode,
+        ],
+      });
+    }
+
+    /** Reads the document back as merged (text, format) runs. */
+    function $textRuns(): Run[] {
+      const out: Run[] = [];
+      for (const node of $getRoot().getAllTextNodes()) {
+        const format = node.getFormat();
+        const text = node.getTextContent();
+        const last = out[out.length - 1];
+        if (last && last[1] === format) {
+          last[0] += text;
+        } else {
+          out.push([text, format]);
+        }
+      }
+      return out;
+    }
+
+    /**
+     * Builds a one-paragraph document from explicit text-node format runs,
+     * asserts the exported markdown, and verifies that re-importing the
+     * export restores the same formatting.
+     */
+    function expectRoundTrip(runs: Run[], expected: string): void {
+      const editor = overlapEditor();
+      editor.update(
+        () => {
+          const paragraph = $createParagraphNode();
+          for (const [text, format] of runs) {
+            paragraph.append($createTextNode(text).setFormat(format));
+          }
+          $getRoot().clear().append(paragraph);
+        },
+        {discrete: true},
+      );
+      const markdown = editor.read(() =>
+        $convertToMarkdownString(TRANSFORMERS),
+      );
+      expect(markdown).toBe(expected);
+      const reimported = overlapEditor();
+      reimported.update(
+        () => {
+          $convertFromMarkdownString(markdown, TRANSFORMERS);
+        },
+        {discrete: true},
+      );
+      expect(reimported.read($textRuns)).toEqual(runs);
+    }
+
+    it('round-trips bold overlapping italic (the issue example)', () => {
+      expectRoundTrip(
+        [
+          ['he', 0],
+          ['llo', BOLD],
+          ['wor', BOLD | ITALIC],
+          ['ld', ITALIC],
+          ['!', 0],
+        ],
+        'he**llo*wor****ld*!',
+      );
+    });
+
+    it('round-trips italic overlapping bold', () => {
+      expectRoundTrip(
+        [
+          ['a', 0],
+          ['b', ITALIC],
+          ['c', ITALIC | BOLD],
+          ['d', BOLD],
+          ['e', 0],
+        ],
+        'a*b**c*****d**e',
+      );
+    });
+
+    it('round-trips strikethrough overlapping bold', () => {
+      expectRoundTrip(
+        [
+          ['a', STRIKE],
+          ['b', STRIKE | BOLD],
+          ['c', BOLD],
+        ],
+        '~~a**b**~~**c**',
+      );
+    });
+
+    it('round-trips a code span inside a bold run', () => {
+      expectRoundTrip(
+        [
+          ['a', BOLD],
+          ['b', BOLD | INLINE_CODE],
+          ['c', BOLD],
+        ],
+        '**a`b`c**',
+      );
+    });
+
+    it('imports a partially consumed delimiter run like CommonMark', () => {
+      // `**llo*wor****ld*` pairs `*wor*` first, leaving `***` of the four-
+      // marker run; the remaining `**` must still close the `**` opener
+      // (rule of 3 re-measured on the remaining lengths) and the final `*`
+      // opens the trailing emphasis.
+      const editor = overlapEditor();
+      editor.update(
+        () => {
+          $convertFromMarkdownString('he**llo*wor****ld*!', TRANSFORMERS);
+        },
+        {discrete: true},
+      );
+      expect(editor.read($textRuns)).toEqual([
+        ['he', 0],
+        ['llo', BOLD],
+        ['wor', BOLD | ITALIC],
+        ['ld', ITALIC],
+        ['!', 0],
+      ]);
+    });
   });
 
   describe('list marker', () => {
@@ -1712,6 +1906,63 @@ E3
 `);
   });
 
+  it('keeps fence-like lines that carry an info string as code content', () => {
+    const markdown = `
+\`\`\`ts
+const a = 1
+\`\`\`js
+const b = 2
+\`\`\`
+
+After
+`;
+    // The inner ```js carries an info string, so it is part of the code block's
+    // content. The block stays open until the bare ``` fence, and nothing after
+    // it is merged into the fence-like content lines.
+    expect(normalizeMarkdown(markdown, true)).toBe(markdown);
+  });
+
+  it('does not close a longer fence on a shorter inner fence', () => {
+    const markdown = `
+\`\`\`\`
+\`\`\`
+inner
+\`\`\`
+\`\`\`\`
+`;
+    expect(normalizeMarkdown(markdown, true)).toBe(markdown);
+  });
+
+  it('closes a shorter opening fence with a longer closing fence', () => {
+    // Per CommonMark a closing fence may be longer than the opening fence:
+    // https://spec.commonmark.org/0.31.2/#code-fences
+    const markdown = `\`\`\`
+line one
+line two
+\`\`\`\`
+after one
+after two`;
+    // The 4-backtick line closes the 3-backtick block, so the lines inside the
+    // block stay verbatim while the prose after the closing fence is merged.
+    expect(normalizeMarkdown(markdown, true)).toBe(`\`\`\`
+line one
+line two
+\`\`\`\`
+after one after two`);
+  });
+
+  it('keeps content unmerged in an unclosed code block', () => {
+    // Per CommonMark a fenced code block is also closed by the end of the
+    // document, even without a closing fence:
+    // https://spec.commonmark.org/0.31.2/#code-fences
+    const markdown = `\`\`\`
+line one
+line two`;
+    // Without a closing fence everything after the opening fence is code
+    // content, so the lines must stay verbatim instead of being merged as prose.
+    expect(normalizeMarkdown(markdown, true)).toBe(markdown);
+  });
+
   it('tables', () => {
     const markdown = `
 | a | b |
@@ -1878,6 +2129,17 @@ E3
   it('preserves leading whitespace on content lines', () => {
     const md = '   foo\n\nbar';
     expect(normalizeMarkdown(md, false)).toBe('   foo\n\nbar');
+  });
+
+  it('preserves indented fenced code blocks nested inside tags', () => {
+    const markdown = `
+<Banner>
+\`\`\`ts
+  indent 1;
+\`\`\`
+</Banner>
+`;
+    expect(normalizeMarkdown(markdown, false)).toBe(markdown);
   });
 });
 
@@ -2442,6 +2704,34 @@ describe('$convertSelectionToMarkdownString', () => {
     expect(result).toBe('Hello **Bold**');
   });
 
+  it('does not prefix a newline when the selection starts after the first block', () => {
+    const editor = createTestEditor();
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const firstText = $createTextNode('First');
+        const secondText = $createTextNode('Second');
+        const thirdText = $createTextNode('Third');
+        root.append(
+          $createParagraphNode().append(firstText),
+          $createParagraphNode().append(secondText),
+          $createParagraphNode().append(thirdText),
+        );
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(secondText, 'next', 0),
+            $getTextPointCaret(thirdText, 'next', 5),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
+    expect(result).toBe('Second\n\nThird');
+  });
+
   it('returns empty string for null selection', () => {
     const result = $convertSelectionToMarkdownString(TRANSFORMERS, null);
     expect(result).toBe('');
@@ -2799,5 +3089,163 @@ describe('Ordered list start adjustment (#8677)', () => {
     expect(editor.read(() => $generateHtmlFromNodes(editor))).toBe(
       '<ol start="5"><li value="5"></li></ol><ul><li value="1"><span style="white-space: pre-wrap;">A</span></li></ul>',
     );
+  });
+});
+
+describe('$generateNodesFromMarkdownString', () => {
+  function createTestEditor() {
+    return createHeadlessEditor({
+      nodes: [
+        HeadingNode,
+        ListNode,
+        ListItemNode,
+        QuoteNode,
+        CodeNode,
+        LinkNode,
+      ],
+    });
+  }
+
+  it('returns nodes without modifying the root', () => {
+    const editor = createTestEditor();
+
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append($createParagraphNode().append($createTextNode('existing')));
+      },
+      {discrete: true},
+    );
+
+    let nodes: ReturnType<typeof $generateNodesFromMarkdownString> = [];
+    editor.update(
+      () => {
+        nodes = $generateNodesFromMarkdownString(
+          '# Heading\n\nParagraph',
+          TRANSFORMERS,
+        );
+      },
+      {discrete: true},
+    );
+
+    expect(nodes).toHaveLength(2);
+    expect(nodes[0].getType()).toBe('heading');
+    expect(nodes[1].getType()).toBe('paragraph');
+
+    expect(editor.read(() => $getRoot().getTextContent())).toBe('existing');
+  });
+
+  it('produces the same nodes as $convertFromMarkdownString', () => {
+    const md = '# Title\n\n- item 1\n- item 2\n\n> quote\n\n```\ncode\n```';
+
+    const convertEditor = createTestEditor();
+    convertEditor.update(() => $convertFromMarkdownString(md, TRANSFORMERS), {
+      discrete: true,
+    });
+    const convertHtml = convertEditor.read(() =>
+      $generateHtmlFromNodes(convertEditor),
+    );
+
+    const generateEditor = createTestEditor();
+    generateEditor.update(
+      () => {
+        const nodes = $generateNodesFromMarkdownString(md, TRANSFORMERS);
+        $getRoot()
+          .clear()
+          .append(...nodes);
+      },
+      {discrete: true},
+    );
+    const generateHtml = generateEditor.read(() =>
+      $generateHtmlFromNodes(generateEditor),
+    );
+
+    expect(generateHtml).toBe(convertHtml);
+  });
+
+  it('returned nodes can be inserted at selection', () => {
+    const editor = createTestEditor();
+
+    editor.update(
+      () => {
+        $getRoot()
+          .clear()
+          .append(
+            $createParagraphNode().append($createTextNode('before')),
+            $createParagraphNode().append($createTextNode('after')),
+          );
+      },
+      {discrete: true},
+    );
+
+    editor.update(
+      () => {
+        const root = $getRoot();
+        root.select(1, 1);
+        const nodes = $generateNodesFromMarkdownString(
+          '**bold**',
+          TRANSFORMERS,
+        );
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          selection.insertNodes(nodes);
+        }
+      },
+      {discrete: true},
+    );
+
+    const html = editor.read(() => $generateHtmlFromNodes(editor));
+    expect(html).toContain('before');
+    expect(html).toContain('<strong');
+    expect(html).toContain('after');
+  });
+
+  it('handles adjacent line merging (commonmark)', () => {
+    const editor = createTestEditor();
+
+    let nodes: ReturnType<typeof $generateNodesFromMarkdownString> = [];
+    editor.update(
+      () => {
+        nodes = $generateNodesFromMarkdownString(
+          'line 1\nline 2',
+          TRANSFORMERS,
+          false,
+          true,
+        );
+      },
+      {discrete: true},
+    );
+
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0].getType()).toBe('paragraph');
+  });
+});
+
+describe('$convertSelectionToMarkdownString whitespace slices', () => {
+  it('does not emit a dangling closing tag when the selection slices a format down to whitespace', () => {
+    const editor = createHeadlessEditor({nodes: [LinkNode]});
+    editor.update(
+      () => {
+        const root = $getRoot();
+        const first = $createTextNode('a  ');
+        first.toggleFormat('bold');
+        first.setStyle('color: red');
+        const second = $createTextNode('b');
+        second.toggleFormat('bold');
+        root.append($createParagraphNode().append(first, second));
+        $setSelectionFromCaretRange(
+          $getCaretRange(
+            $getTextPointCaret(first, 'next', 1),
+            $getTextPointCaret(second, 'next', 1),
+          ),
+        );
+      },
+      {discrete: true},
+    );
+    const result = editor.read('latest', () =>
+      $convertSelectionToMarkdownString(TRANSFORMERS, $getSelection()),
+    );
+    expect(result).toBe('  **b**');
   });
 });

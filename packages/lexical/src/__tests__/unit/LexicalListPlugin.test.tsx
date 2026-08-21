@@ -6,8 +6,6 @@
  *
  */
 
-import type {JSX} from 'react';
-
 import {ListItemNode, ListNode} from '@lexical/list';
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';
@@ -22,7 +20,7 @@ import {
   $insertNodes,
   INDENT_CONTENT_COMMAND,
   KEY_ENTER_COMMAND,
-  LexicalEditor,
+  type LexicalEditor,
   OUTDENT_CONTENT_COMMAND,
 } from 'lexical';
 import {
@@ -30,8 +28,8 @@ import {
   html,
   TestComposer,
 } from 'lexical/src/__tests__/utils';
-import {act} from 'react';
-import {createRoot, Root} from 'react-dom/client';
+import {act, type JSX} from 'react';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, test, vi} from 'vitest';
 
 import {
@@ -90,7 +88,7 @@ describe('@lexical/list tests', () => {
     await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND);
       });
     });
 
@@ -115,7 +113,7 @@ describe('@lexical/list tests', () => {
     await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(REMOVE_LIST_COMMAND, undefined);
+        editor.dispatchCommand(REMOVE_LIST_COMMAND);
       });
     });
 
@@ -145,7 +143,7 @@ describe('@lexical/list tests', () => {
     await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND);
       });
     });
 
@@ -170,7 +168,7 @@ describe('@lexical/list tests', () => {
     await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+        editor.dispatchCommand(INDENT_CONTENT_COMMAND);
       });
     });
 
@@ -197,7 +195,7 @@ describe('@lexical/list tests', () => {
     await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(OUTDENT_CONTENT_COMMAND, undefined);
+        editor.dispatchCommand(OUTDENT_CONTENT_COMMAND);
       });
     });
 
@@ -228,10 +226,10 @@ describe('@lexical/list tests', () => {
     await act(async () => {
       await editor.update(() => {
         editor.focus();
-        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+        editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND);
         $insertNodes([$createTextNode('First item')]);
         editor.dispatchCommand(KEY_ENTER_COMMAND, null);
-        editor.dispatchCommand(INDENT_CONTENT_COMMAND, undefined);
+        editor.dispatchCommand(INDENT_CONTENT_COMMAND);
         $insertNodes([$createTextNode('Nested item')]);
         editor.dispatchCommand(KEY_ENTER_COMMAND, null);
         $setBlocksType($getSelection(), $createParagraphNode);

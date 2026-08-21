@@ -6,7 +6,7 @@
  *
  */
 
-import {$isBlockFullySelected, mergeRegister} from '@lexical/utils';
+import {$isBlockFullySelected} from '@lexical/utils';
 import {
   $getRoot,
   $getSelection,
@@ -19,7 +19,8 @@ import {
   $selectAll,
   COMMAND_PRIORITY_LOW,
   defineExtension,
-  LexicalNode,
+  type LexicalNode,
+  mergeRegister,
   safeCast,
   SELECT_ALL_COMMAND,
 } from 'lexical';

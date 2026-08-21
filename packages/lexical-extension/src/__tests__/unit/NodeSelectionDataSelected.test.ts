@@ -6,7 +6,10 @@
  *
  */
 
-import {buildEditorFromExtensions} from '@lexical/extension';
+import {
+  buildEditorFromExtensions,
+  NodeSelectionDataSelectedExtension,
+} from '@lexical/extension';
 import {
   $create,
   $createNodeSelection,
@@ -20,8 +23,6 @@ import {
   type NodeKey,
 } from 'lexical';
 import {describe, expect, test} from 'vitest';
-
-import {NodeSelectionDataSelectedExtension} from '../../NodeSelectionDataSelectedExtension';
 
 class HostNode extends ElementNode {
   $config() {

@@ -8,8 +8,12 @@
 
 import {effect, namedSignals} from '@lexical/extension';
 import {CoreImportExtension, DOMImportExtension} from '@lexical/html';
-import {mergeRegister} from '@lexical/utils';
-import {configExtension, defineExtension, safeCast} from 'lexical';
+import {
+  configExtension,
+  defineExtension,
+  mergeRegister,
+  safeCast,
+} from 'lexical';
 
 import {registerCheckList} from './checkList';
 import {ListItemNode} from './LexicalListItemNode';

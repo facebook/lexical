@@ -6,15 +6,16 @@
  *
  */
 
-import type {
-  EditorConfig,
-  LexicalNode,
-  NodeKey,
-  SerializedTextNode,
-  Spread,
+import {
+  $applyNodeReplacement,
+  $getDocument,
+  type EditorConfig,
+  type LexicalNode,
+  type NodeKey,
+  type SerializedTextNode,
+  type Spread,
+  TextNode,
 } from 'lexical';
-
-import {$applyNodeReplacement, TextNode} from 'lexical';
 
 export type SerializedEmojiNode = Spread<
   {
@@ -26,8 +27,8 @@ export type SerializedEmojiNode = Spread<
 export class EmojiNode extends TextNode {
   __className: string;
 
-  static getType(): string {
-    return 'emoji';
+  $config() {
+    return this.config('emoji', {extends: TextNode});
   }
 
   static clone(node: EmojiNode): EmojiNode {
@@ -40,7 +41,7 @@ export class EmojiNode extends TextNode {
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const dom = document.createElement('span');
+    const dom = $getDocument().createElement('span');
     const inner = super.createDOM(config);
     dom.className = this.__className;
     inner.className = 'emoji-inner';

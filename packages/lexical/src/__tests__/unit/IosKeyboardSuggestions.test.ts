@@ -36,8 +36,8 @@ import {
   isDOMTextNode,
   isHTMLElement,
   KEY_BACKSPACE_COMMAND,
-  LexicalEditor,
-  LexicalEditorWithDispose,
+  type LexicalEditor,
+  type LexicalEditorWithDispose,
 } from 'lexical';
 import {$assertNodeType, invariant} from 'lexical/src/__tests__/utils';
 import {assert, describe, expect, test, vi} from 'vitest';

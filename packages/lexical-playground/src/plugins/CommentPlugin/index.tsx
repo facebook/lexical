@@ -7,14 +7,6 @@
  */
 
 import type {Provider} from '@lexical/yjs';
-import type {
-  EditorState,
-  LexicalCommand,
-  LexicalEditor,
-  NodeKey,
-  RangeSelection,
-} from 'lexical';
-import type {JSX} from 'react';
 import type {Doc} from 'yjs';
 
 import './index.css';
@@ -39,7 +31,7 @@ import {OnChangePlugin} from '@lexical/react/LexicalOnChangePlugin';
 import {PlainTextPlugin} from '@lexical/react/LexicalPlainTextPlugin';
 import {createDOMRange, createRectsFromDOMRange} from '@lexical/selection';
 import {$isRootTextContentEmpty, $rootTextContent} from '@lexical/text';
-import {mergeRegister, registerNestedElementResolver} from '@lexical/utils';
+import {registerNestedElementResolver} from '@lexical/utils';
 import {
   $getNodeByKey,
   $getSelection,
@@ -50,11 +42,21 @@ import {
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_NORMAL,
   createCommand,
+  type EditorState,
+  getActiveElementDeep,
   getDOMSelection,
+  getRootOwnerDocument,
   KEY_ESCAPE_COMMAND,
+  type LexicalCommand,
+  type LexicalEditor,
+  mergeRegister,
+  type NodeKey,
+  type RangeSelection,
+  registerEventListener,
 } from 'lexical';
 import * as React from 'react';
 import {
+  type JSX,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -65,12 +67,12 @@ import {
 import {createPortal} from 'react-dom';
 
 import {
-  Comment,
-  Comments,
+  type Comment,
+  type Comments,
   CommentStore,
   createComment,
   createThread,
-  Thread,
+  type Thread,
   useCommentStore,
 } from '../../commenting';
 import useModal from '../../hooks/useModal';
@@ -106,11 +108,7 @@ function AddCommentBox({
   }, [anchorKey, editor]);
 
   useEffect(() => {
-    window.addEventListener('resize', updatePosition);
-
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-    };
+    return registerEventListener(window, 'resize', updatePosition);
   }, [editor, updatePosition]);
 
   useLayoutEffect(() => {
@@ -226,11 +224,11 @@ function CommentInputBox({
   const boxRef = useRef<HTMLDivElement>(null);
   const selectionState = useMemo(
     () => ({
-      container: document.createElement('div'),
-      elements: [],
+      elements: [] as HTMLSpanElement[],
     }),
     [],
   );
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const selectionRef = useRef<RangeSelection | null>(null);
   const author = useCollabAuthorName();
 
@@ -259,13 +257,18 @@ function CommentInputBox({
             correctedLeft = 10;
           }
           boxElem.style.left = `${correctedLeft}px`;
+          const doc = boxElem.ownerDocument;
           boxElem.style.top = `${
             bottom +
             20 +
-            (window.pageYOffset || document.documentElement.scrollTop)
+            ((doc.defaultView?.pageYOffset ?? 0) ||
+              doc.documentElement.scrollTop)
           }px`;
           const selectionRectsLength = selectionRects.length;
-          const {container} = selectionState;
+          const container = containerRef.current;
+          if (container === null) {
+            return;
+          }
           const elements: HTMLSpanElement[] = selectionState.elements;
           const elementsLength = elements.length;
 
@@ -273,7 +276,7 @@ function CommentInputBox({
             const selectionRect = selectionRects[i];
             let elem: HTMLSpanElement = elements[i];
             if (elem === undefined) {
-              elem = document.createElement('span');
+              elem = container.ownerDocument.createElement('span');
               elements[i] = elem;
               container.appendChild(elem);
             }
@@ -281,7 +284,8 @@ function CommentInputBox({
             elem.style.position = 'absolute';
             elem.style.top = `${
               selectionRect.top +
-              (window.pageYOffset || document.documentElement.scrollTop)
+              ((doc.defaultView?.pageYOffset ?? 0) ||
+                doc.documentElement.scrollTop)
             }px`;
             elem.style.left = `${selectionRect.left}px`;
             elem.style.height = `${selectionRect.height}px`;
@@ -301,24 +305,22 @@ function CommentInputBox({
   }, [editor, selectionState]);
 
   useLayoutEffect(() => {
-    updateLocation();
-    const container = selectionState.container;
-    const body = document.body;
-    if (body !== null) {
-      body.appendChild(container);
-      return () => {
-        body.removeChild(container);
-      };
+    const body = editor.getRootElement()?.ownerDocument?.body ?? document.body;
+    if (containerRef.current === null) {
+      containerRef.current = body.ownerDocument.createElement('div');
     }
-  }, [selectionState.container, updateLocation]);
+    const container = containerRef.current;
+    updateLocation();
+    body.appendChild(container);
+    return () => {
+      body.removeChild(container);
+    };
+  }, [editor, updateLocation]);
 
   useEffect(() => {
-    window.addEventListener('resize', updateLocation);
-
-    return () => {
-      window.removeEventListener('resize', updateLocation);
-    };
-  }, [updateLocation]);
+    const win = editor.getRootElement()?.ownerDocument?.defaultView ?? window;
+    return registerEventListener(win, 'resize', updateLocation);
+  }, [editor, updateLocation]);
 
   const onEscape = (event: KeyboardEvent): boolean => {
     event.preventDefault();
@@ -397,7 +399,7 @@ function CommentsComposer({
       submitAddComment(createComment(content, author), false, thread);
       const editor = editorRef.current;
       if (editor !== null) {
-        editor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined);
+        editor.dispatchCommand(CLEAR_EDITOR_COMMAND);
       }
     }
   };
@@ -580,7 +582,12 @@ function CommentsPanelList({
               markNodeKeys !== undefined &&
               (activeIDs === null || activeIDs.indexOf(id) === -1)
             ) {
-              const activeElement = document.activeElement;
+              // getActiveElementDeep rather than document.activeElement so the
+              // focused element is resolved through any shadow roots when
+              // restoring focus after the selection moves below.
+              const activeElement = getActiveElementDeep(
+                getRootOwnerDocument(editor.getRootElement()),
+              );
               // Move selection to the start of the mark, so that we
               // update the UI with the selected thread.
               editor.update(
@@ -949,8 +956,11 @@ export default function CommentPlugin({
   }, [editor, markNodeMap]);
 
   const onAddComment = () => {
-    editor.dispatchCommand(INSERT_INLINE_COMMAND, undefined);
+    editor.dispatchCommand(INSERT_INLINE_COMMAND);
   };
+
+  const portalTarget =
+    editor.getRootElement()?.ownerDocument?.body ?? document.body;
 
   return (
     <>
@@ -961,7 +971,7 @@ export default function CommentPlugin({
             cancelAddComment={cancelAddComment}
             submitAddComment={submitAddComment}
           />,
-          document.body,
+          portalTarget,
         )}
       {activeAnchorKey !== null &&
         activeAnchorKey !== undefined &&
@@ -972,7 +982,7 @@ export default function CommentPlugin({
             editor={editor}
             onAddComment={onAddComment}
           />,
-          document.body,
+          portalTarget,
         )}
       {createPortal(
         <Button
@@ -983,7 +993,7 @@ export default function CommentPlugin({
           title={showComments ? 'Hide Comments' : 'Show Comments'}>
           <i className="comments" />
         </Button>,
-        document.body,
+        portalTarget,
       )}
       {showComments &&
         createPortal(
@@ -994,7 +1004,7 @@ export default function CommentPlugin({
             activeIDs={activeIDs}
             markNodeMap={markNodeMap}
           />,
-          document.body,
+          portalTarget,
         )}
     </>
   );

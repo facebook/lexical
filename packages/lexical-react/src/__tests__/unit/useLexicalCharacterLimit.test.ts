@@ -6,259 +6,302 @@
  *
  */
 
+import type {OverflowNode} from '@lexical/overflow';
+
+import {buildEditorFromExtensions} from '@lexical/extension';
 import {
   $createOverflowNode,
   $isOverflowNode,
-  OverflowNode,
+  OverflowExtension,
 } from '@lexical/overflow';
 import {
   $createParagraphNode,
   $createTextNode,
-  $getNodeByKey,
   $getRoot,
   $getSelection,
-  $isNodeSelection,
   $isParagraphNode,
   $isRangeSelection,
+  $isTextNode,
   $setSlot,
-  LexicalEditor,
-  NodeKey,
+  type ElementNode,
+  type LexicalEditor,
+  type ParagraphNode,
 } from 'lexical';
 import {
-  $assertNodeType,
   $createTestDecoratorNode,
-  initializeUnitTest,
+  TestDecoratorNode,
 } from 'lexical/src/__tests__/utils';
-import {describe, expect, it} from 'vitest';
+import {afterEach, assert, describe, expect, test} from 'vitest';
 
 import {
   $mergePrevious,
   $wrapOverflowedNodes,
 } from '../../shared/useCharacterLimit';
 
-describe('LexicalNodeHelpers tests', () => {
-  initializeUnitTest(
-    testEnv => {
-      describe('merge', () => {
-        function $initializeEditorWithLeftRightOverflowNodes(): [
-          NodeKey,
-          NodeKey,
-        ] {
-          const root = $getRoot();
+function makeEditor(): LexicalEditor {
+  const editor = buildEditorFromExtensions({
+    dependencies: [OverflowExtension],
+    name: 'character-limit-test',
+    nodes: [TestDecoratorNode],
+  });
+  editor.setRootElement(document.createElement('div'));
+  return editor;
+}
 
-          const paragraph = $createParagraphNode();
-          const overflowLeft = $createOverflowNode();
-          const overflowRight = $createOverflowNode();
+function $setupLeftRightOverflow(): {
+  overflowLeft: OverflowNode;
+  overflowRight: OverflowNode;
+  paragraph: ParagraphNode;
+} {
+  const root = $getRoot();
+  root.clear();
+  const paragraph = $createParagraphNode();
+  const overflowLeft = $createOverflowNode();
+  const overflowRight = $createOverflowNode();
+  root.append(paragraph);
+  paragraph.append(overflowLeft, overflowRight);
+  return {overflowLeft, overflowRight, paragraph};
+}
 
-          root.append(paragraph);
+describe('useCharacterLimit', () => {
+  let editor: LexicalEditor;
 
-          paragraph.append(overflowLeft);
-          paragraph.append(overflowRight);
+  afterEach(() => {
+    editor.setRootElement(null);
+  });
 
-          return [overflowLeft.getKey(), overflowRight.getKey()];
+  describe('$mergePrevious', () => {
+    test('merges left overflow into right with selection in left', async () => {
+      editor = makeEditor();
+
+      await editor.update(() => {
+        const {overflowLeft, overflowRight, paragraph} =
+          $setupLeftRightOverflow();
+
+        const text1 = $createTextNode('1');
+        const text2 = $createTextNode('2');
+        const text3 = $createTextNode('3');
+        const text4 = $createTextNode('4');
+
+        overflowLeft.append(text1, text2);
+        text2.toggleFormat('bold');
+        overflowRight.append(text3, text4);
+        text4.toggleFormat('bold');
+
+        text1.select(1, 1);
+
+        $mergePrevious(overflowRight);
+
+        expect(paragraph.getChildrenSize()).toBe(1);
+        expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
+
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) {
+          throw new Error('Lost selection');
         }
 
-        it('merges an overflow node (left overflow selected)', async () => {
-          const editor: LexicalEditor = testEnv.editor;
-          let overflowLeftKey: NodeKey;
-          let overflowRightKey: NodeKey;
+        expect(selection.anchor.key).toBe(text1.getKey());
+        expect(selection.anchor.offset).toBe(1);
+        expect(selection.focus.key).toBe(text1.getKey());
+        expect(selection.focus.offset).toBe(1);
+      });
+    });
 
-          let text1Key: NodeKey;
+    test('merges with selection spanning both overflows', async () => {
+      editor = makeEditor();
 
-          await editor.update(() => {
-            [overflowLeftKey, overflowRightKey] =
-              $initializeEditorWithLeftRightOverflowNodes();
+      await editor.update(() => {
+        const {overflowLeft, overflowRight, paragraph} =
+          $setupLeftRightOverflow();
 
-            const overflowLeft = $assertNodeType(
-              $getNodeByKey(overflowLeftKey),
-              $isOverflowNode,
-            );
-            const overflowRight = $assertNodeType(
-              $getNodeByKey(overflowRightKey),
-              $isOverflowNode,
-            );
+        const text1 = $createTextNode('1');
+        const text2 = $createTextNode('2');
+        const text3 = $createTextNode('3');
+        const text4 = $createTextNode('4');
 
-            const text1 = $createTextNode('1');
-            const text2 = $createTextNode('2');
+        overflowLeft.append(text1, text2);
+        text2.toggleFormat('bold');
+        overflowRight.append(text3, text4);
+        text4.toggleFormat('bold');
 
-            const text3 = $createTextNode('3');
-            const text4 = $createTextNode('4');
+        const selection = text2.select(0, 0);
+        selection.focus.set(text3.getKey(), 1, 'text');
 
-            text1Key = text1.getKey();
+        $mergePrevious(overflowRight);
 
-            overflowLeft.append(text1, text2);
+        expect(paragraph.getChildrenSize()).toBe(1);
 
-            text2.toggleFormat('bold'); // Prevent merging with text1
+        const updatedSelection = $getSelection();
+        if (!$isRangeSelection(updatedSelection)) {
+          throw new Error('Lost selection');
+        }
 
-            overflowRight.append(text3, text4);
+        expect(updatedSelection.anchor.key).toBe(text2.getKey());
+        expect(updatedSelection.anchor.offset).toBe(0);
+        expect(updatedSelection.focus.key).toBe(text3.getKey());
+        expect(updatedSelection.focus.offset).toBe(1);
+      });
+    });
+  });
 
-            text4.toggleFormat('bold'); // Prevent merging with text3
+  describe('$wrapOverflowedNodes', () => {
+    test('merges adjacent overflow nodes when wrapping before existing overflow', async () => {
+      editor = makeEditor();
 
-            overflowLeft.select(1, 1);
-          });
-
-          await editor.update(() => {
-            const paragraph = $assertNodeType(
-              $getRoot().getFirstChild(),
-              $isParagraphNode,
-            );
-
-            const overflowRight = $assertNodeType(
-              $getNodeByKey(overflowRightKey),
-              $isOverflowNode,
-            );
-
-            $mergePrevious(overflowRight);
-
-            expect(paragraph.getChildrenSize()).toBe(1);
-            expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
-
-            const selection = $getSelection();
-
-            if (!$isRangeSelection(selection)) {
-              throw new Error('Lost selection');
-            }
-
-            if ($isNodeSelection(selection)) {
-              return;
-            }
-
-            expect(selection.anchor.key).toBe(text1Key);
-            expect(selection.anchor.offset).toBe(1);
-            expect(selection.focus.key).toBe(text1Key);
-            expect(selection.anchor.offset).toBe(1);
-          });
-        });
-
-        it('merges an overflow node (left-right overflow selected)', async () => {
-          const editor: LexicalEditor = testEnv.editor;
-          let overflowLeftKey: NodeKey;
-          let overflowRightKey: NodeKey;
-
-          let text2Key: NodeKey;
-          let text3Key: NodeKey;
-
-          await editor.update(() => {
-            [overflowLeftKey, overflowRightKey] =
-              $initializeEditorWithLeftRightOverflowNodes();
-            const overflowLeft = $assertNodeType(
-              $getNodeByKey(overflowLeftKey),
-              $isOverflowNode,
-            );
-            const overflowRight = $assertNodeType(
-              $getNodeByKey(overflowRightKey),
-              $isOverflowNode,
-            );
-
-            const text1 = $createTextNode('1');
-            const text2 = $createTextNode('2');
-
-            const text3 = $createTextNode('3');
-            const text4 = $createTextNode('4');
-
-            text2Key = text2.getKey();
-            text3Key = text3.getKey();
-
-            overflowLeft.append(text1);
-            overflowLeft.append(text2);
-
-            text2.toggleFormat('bold'); // Prevent merging with text1
-
-            overflowRight.append(text3);
-            overflowRight.append(text4);
-
-            text4.toggleFormat('bold'); // Prevent merging with text3
-
-            overflowLeft.select(1, 1);
-
-            const selection = $getSelection();
-
-            if (!$isRangeSelection(selection)) {
-              return;
-            }
-
-            selection.focus.set(overflowRightKey, 1, 'element');
-          });
-
-          await editor.update(() => {
-            const paragraph = $assertNodeType(
-              $getRoot().getFirstChild(),
-              $isParagraphNode,
-            );
-            const overflowRight = $assertNodeType(
-              $getNodeByKey(overflowRightKey),
-              $isOverflowNode,
-            );
-
-            $mergePrevious(overflowRight);
-
-            expect(paragraph.getChildrenSize()).toBe(1);
-            expect($isOverflowNode(paragraph.getFirstChild())).toBe(true);
-
-            const selection = $getSelection();
-
-            if (!$isRangeSelection(selection)) {
-              throw new Error('Lost selection');
-            }
-
-            if ($isNodeSelection(selection)) {
-              return;
-            }
-
-            expect(selection.anchor.key).toBe(text2Key);
-            expect(selection.anchor.offset).toBe(0);
-            expect(selection.focus.key).toBe(text3Key);
-            expect(selection.focus.offset).toBe(1);
-          });
-        });
+      await editor.update(() => {
+        const root = $getRoot();
+        root.clear();
+        const paragraph = $createParagraphNode();
+        const text = $createTextNode('abcde');
+        const overflow = $createOverflowNode();
+        overflow.append($createTextNode('f'));
+        paragraph.append(text, overflow);
+        root.append(paragraph);
       });
 
-      describe('$wrapOverflowedNodes', () => {
-        // A text-bearing non-inline decorator slotted into a host is skipped
-        // by the wrap loop (replacing it with an OverflowNode would throw),
-        // but its text is part of the root text content that funds `offset`
-        // — the budget must advance past it or every later wrap boundary
-        // lands late by the decorator's size.
-        it('advances the budget past a slotted decorator so the wrap boundary is exact', async () => {
-          const editor: LexicalEditor = testEnv.editor;
-          let hostKey: NodeKey;
-
-          await editor.update(() => {
-            const host = $createParagraphNode();
-            hostKey = host.getKey();
-            host.append($createTextNode('12345'));
-            $getRoot().append(host);
-            // TestDecoratorNode.getTextContent() === 'Hello world' (11
-            // chars); slots-first dfs counts it ahead of the host's text.
-            $setSlot(
-              host,
-              'media',
-              $createTestDecoratorNode().setIsInline(false),
-            );
-          });
-
-          await editor.update(() => {
-            // Budget: 11 (slotted decorator) + 2 ('12') = 13; '345' is over.
-            $wrapOverflowedNodes(13);
-          });
-
-          editor.read(() => {
-            const host = $assertNodeType(
-              $getNodeByKey(hostKey),
-              $isParagraphNode,
-            );
-            const [kept, overflow] = host.getChildren();
-            expect(kept.getTextContent()).toBe('12');
-            $assertNodeType(overflow, $isOverflowNode);
-            expect(overflow.getTextContent()).toBe('345');
-          });
-        });
+      await editor.update(() => {
+        const paragraph = $getRoot().getFirstChildOrThrow<ElementNode>();
+        const text = paragraph.getFirstChild();
+        if ($isTextNode(text)) {
+          text.setTextContent('abcdge');
+        }
       });
-    },
-    {
-      namespace: '',
-      nodes: [OverflowNode],
-      theme: {},
-    },
-  );
+
+      await editor.update(() => {
+        $wrapOverflowedNodes(5);
+      });
+
+      editor.read(() => {
+        const paragraph = $getRoot().getFirstChildOrThrow<ElementNode>();
+        const children = paragraph.getChildren();
+        expect(children.length).toBe(2);
+        expect(children[0].getTextContent()).toBe('abcdg');
+        expect($isOverflowNode(children[1])).toBe(true);
+        expect(children[1].getTextContent()).toBe('ef');
+      });
+    });
+
+    test('counts \\n\\n separators between paragraphs (#6329)', async () => {
+      editor = makeEditor();
+
+      await editor.update(() => {
+        const root = $getRoot();
+        root.clear();
+        root.append(
+          $createParagraphNode().append($createTextNode('123')),
+          $createParagraphNode().append($createTextNode('456')),
+        );
+      });
+
+      await editor.update(() => {
+        // "123\n\n456" — offset 5 means "123" (3) + separator (2) = 5,
+        // so all of P2 should be overflow.
+        $wrapOverflowedNodes(5);
+      });
+
+      editor.read(() => {
+        const root = $getRoot();
+        const p1 = root.getChildAtIndex(0);
+        const p2 = root.getChildAtIndex(1);
+        assert($isParagraphNode(p1));
+        assert($isParagraphNode(p2));
+        expect(p1.getTextContent()).toBe('123');
+        expect($isOverflowNode(p1.getFirstChild())).toBe(false);
+        const overflow = p2.getFirstChild();
+        assert($isOverflowNode(overflow));
+        expect(overflow.getTextContent()).toBe('456');
+      });
+    });
+
+    test('splits text correctly with separator budget (#6329)', async () => {
+      editor = makeEditor();
+
+      await editor.update(() => {
+        const root = $getRoot();
+        root.clear();
+        root.append(
+          $createParagraphNode().append($createTextNode('12')),
+          $createParagraphNode().append($createTextNode('3456')),
+        );
+      });
+
+      await editor.update(() => {
+        // "12\n\n3456" — offset 5 means "12" (2) + separator (2) + "3" (1) = 5,
+        // so "456" in P2 should be overflow.
+        $wrapOverflowedNodes(5);
+      });
+
+      editor.read(() => {
+        const root = $getRoot();
+        const p2 = root.getChildAtIndex(1);
+        assert($isParagraphNode(p2));
+        const [kept, overflow] = p2.getChildren();
+        expect(kept.getTextContent()).toBe('3');
+        assert($isOverflowNode(overflow));
+        expect(overflow.getTextContent()).toBe('456');
+      });
+    });
+
+    test('counts multiple separators across three paragraphs (#6329)', async () => {
+      editor = makeEditor();
+
+      await editor.update(() => {
+        const root = $getRoot();
+        root.clear();
+        root.append(
+          $createParagraphNode().append($createTextNode('abc')),
+          $createParagraphNode().append($createTextNode('de')),
+          $createParagraphNode().append($createTextNode('fgh')),
+        );
+      });
+
+      await editor.update(() => {
+        // "abc\n\nde\n\nfgh" — offset 9 means "abc"(3)+sep(2)+"de"(2)+sep(2)=9,
+        // so all of P3 should be overflow.
+        $wrapOverflowedNodes(9);
+      });
+
+      editor.read(() => {
+        const root = $getRoot();
+        const p1 = root.getChildAtIndex(0);
+        const p2 = root.getChildAtIndex(1);
+        const p3 = root.getChildAtIndex(2);
+        assert($isParagraphNode(p1));
+        assert($isParagraphNode(p2));
+        assert($isParagraphNode(p3));
+        expect(p1.getTextContent()).toBe('abc');
+        expect($isOverflowNode(p1.getFirstChild())).toBe(false);
+        expect(p2.getTextContent()).toBe('de');
+        expect($isOverflowNode(p2.getFirstChild())).toBe(false);
+        const overflow = p3.getFirstChild();
+        assert($isOverflowNode(overflow));
+        expect(overflow.getTextContent()).toBe('fgh');
+      });
+    });
+
+    test('advances the budget past a slotted decorator so the wrap boundary is exact', async () => {
+      editor = makeEditor();
+
+      await editor.update(() => {
+        const root = $getRoot();
+        root.clear();
+        const host = $createParagraphNode();
+        host.append($createTextNode('12345'));
+        root.append(host);
+        $setSlot(host, 'media', $createTestDecoratorNode().setIsInline(false));
+      });
+
+      await editor.update(() => {
+        $wrapOverflowedNodes(13);
+      });
+
+      editor.read(() => {
+        const host = $getRoot().getFirstChildOrThrow<ElementNode>();
+        const children = host.getChildren();
+        expect(children[0].getTextContent()).toBe('12');
+        expect($isOverflowNode(children[1])).toBe(true);
+        expect(children[1].getTextContent()).toBe('345');
+      });
+    });
+  });
 });

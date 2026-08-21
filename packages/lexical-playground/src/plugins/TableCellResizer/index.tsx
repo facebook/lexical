@@ -5,9 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {TableCellNode, TableDOMCell, TableMapType} from '@lexical/table';
-import type {LexicalEditor, NodeKey} from 'lexical';
-import type {JSX} from 'react';
 
 import './index.css';
 
@@ -21,19 +18,28 @@ import {
   $isTableRowNode,
   getDOMCellFromTarget,
   getTableElement,
+  type TableCellNode,
+  type TableDOMCell,
+  type TableMapType,
   TableNode,
 } from '@lexical/table';
-import {calculateZoomLevel, mergeRegister} from '@lexical/utils';
+import {calculateZoomLevel} from '@lexical/utils';
 import {
   $getNearestNodeFromDOMNode,
   isHTMLElement,
+  type LexicalEditor,
+  mergeRegister,
+  type NodeKey,
+  registerEventListener,
+  registerEventListeners,
   SKIP_SCROLL_INTO_VIEW_TAG,
 } from 'lexical';
 import * as React from 'react';
 import {
-  CSSProperties,
-  PointerEventHandler,
-  ReactPortal,
+  type CSSProperties,
+  type JSX,
+  type PointerEventHandler,
+  type ReactPortal,
   useCallback,
   useEffect,
   useMemo,
@@ -56,10 +62,12 @@ const ACTIVE_RESIZER_COLOR = '#76b6ff';
 function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
   const targetRef = useRef<HTMLElement | null>(null);
   const resizerRef = useRef<HTMLDivElement | null>(null);
-  const tableRectRef = useRef<ClientRect | null>(null);
+  const tableRectRef = useRef<DOMRect | null>(null);
   const [hasTable, setHasTable] = useState(false);
 
   const pointerStartPosRef = useRef<PointerPosition | null>(null);
+  const resizeCleanupRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => resizeCleanupRef.current?.(), []);
   const [pointerCurrentPos, updatePointerCurrentPos] =
     useState<PointerPosition | null>(null);
 
@@ -169,25 +177,26 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
     };
 
     const resizerContainer = resizerRef.current;
-    resizerContainer?.addEventListener('pointermove', onPointerMove, {
-      capture: true,
-    });
-
-    const removeRootListener = editor.registerRootListener(rootElement => {
-      if (rootElement) {
-        rootElement.addEventListener('pointermove', onPointerMove);
-        rootElement.addEventListener('pointerdown', onPointerDown);
-        return () => {
-          rootElement.removeEventListener('pointermove', onPointerMove);
-          rootElement.removeEventListener('pointerdown', onPointerDown);
-        };
-      }
-    });
-
-    return () => {
-      removeRootListener();
-      resizerContainer?.removeEventListener('pointermove', onPointerMove);
-    };
+    return mergeRegister(
+      editor.registerRootListener(rootElement => {
+        if (rootElement) {
+          return registerEventListeners(rootElement, {
+            pointerdown: onPointerDown,
+            pointermove: onPointerMove,
+          });
+        }
+      }),
+      resizerContainer
+        ? registerEventListener(
+            resizerContainer,
+            'pointermove',
+            onPointerMove,
+            {
+              capture: true,
+            },
+          )
+        : () => {},
+    );
   }, [activeCell, draggingDirection, editor, resetState, hasTable]);
 
   const isHeightChanging = (direction: PointerDraggingDirection) => {
@@ -344,7 +353,8 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
           }
 
           resetState();
-          document.removeEventListener('pointerup', handler);
+          resizeCleanupRef.current?.();
+          resizeCleanupRef.current = null;
         }
       };
       return handler;
@@ -371,7 +381,12 @@ function TableCellResizer({editor}: {editor: LexicalEditor}): JSX.Element {
         updatePointerCurrentPos(pointerStartPosRef.current);
         updateDraggingDirection(direction);
 
-        document.addEventListener('pointerup', pointerUpHandler(direction));
+        resizeCleanupRef.current?.();
+        resizeCleanupRef.current = registerEventListener(
+          activeCell.elem.ownerDocument,
+          'pointerup',
+          pointerUpHandler(direction),
+        );
       },
     [activeCell, pointerUpHandler],
   );
@@ -495,11 +510,14 @@ export default function TableCellResizerPlugin(): null | ReactPortal {
   const [editor] = useLexicalComposerContext();
   const isEditable = useLexicalEditable();
 
+  const portalTarget =
+    editor.getRootElement()?.ownerDocument?.body ?? document.body;
+
   return useMemo(
     () =>
       isEditable
-        ? createPortal(<TableCellResizer editor={editor} />, document.body)
+        ? createPortal(<TableCellResizer editor={editor} />, portalTarget)
         : null,
-    [editor, isEditable],
+    [editor, isEditable, portalTarget],
   );
 }

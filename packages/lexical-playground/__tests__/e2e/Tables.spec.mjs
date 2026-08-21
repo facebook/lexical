@@ -85,10 +85,10 @@ async function fillTablePartiallyWithText(page) {
   await page.keyboard.press('c');
 }
 
-const WRAPPER = IS_TABLE_HORIZONTAL_SCROLL ? [0] : [];
+const WRAPPER = IS_TABLE_HORIZONTAL_SCROLL ? [0, 0] : [];
 const nthTableSelector = nth =>
   IS_TABLE_HORIZONTAL_SCROLL
-    ? `div.PlaygroundEditorTheme__tableScrollableWrapper:nth-of-type(${nth}) > table`
+    ? `div:nth-of-type(${nth}) > div.PlaygroundEditorTheme__tableScrollableWrapper > table`
     : `table:nth-of-type(${nth})`;
 
 test.describe('Tables', () => {
@@ -5565,6 +5565,44 @@ test.describe('Tables', () => {
     );
   });
 
+  test('Aligns the table itself (not cell text) when the whole table is selected in reverse, e.g. bottom-right to top-left (#8880)', async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText);
+    await initialize({isCollab, page});
+
+    await focusEditor(page);
+    await insertTable(page, 3, 3);
+
+    await selectCellsFromTableCords(
+      page,
+      {x: 2, y: 2},
+      {x: 0, y: 0},
+      false,
+      true,
+    );
+
+    await selectFromAlignDropdown(page, '.center-align');
+
+    const tableIsCenterAligned = await evaluate(page, () => {
+      const table = document.querySelector('div[contenteditable="true"] table');
+      return table.classList.contains(
+        'PlaygroundEditorTheme__tableAlignmentCenter',
+      );
+    });
+    expect(tableIsCenterAligned).toBe(true);
+
+    const cellParagraphsWithTextAlign = await evaluate(page, () => {
+      const paragraphs = document.querySelectorAll(
+        'div[contenteditable="true"] table th p, div[contenteditable="true"] table td p',
+      );
+      return Array.from(paragraphs).filter(p => p.hasAttribute('style')).length;
+    });
+    expect(cellParagraphsWithTextAlign).toBe(0);
+  });
+
   test('Paste and insert new lines after unmerging cells', async ({
     page,
     isPlainText,
@@ -9326,6 +9364,71 @@ test.describe('Tables', () => {
     ).toHaveCount(0);
   });
 
+  test(`Drag-selecting to the edge of a scrollable table auto-scrolls it #7153`, async ({
+    page,
+    isPlainText,
+    isCollab,
+  }) => {
+    test.skip(isPlainText || isCollab);
+    // The horizontal scroll wrapper only exists when scrollable tables are on.
+    test.skip(!IS_TABLE_HORIZONTAL_SCROLL);
+    await initialize({isCollab, page});
+    await focusEditor(page);
+
+    // A table with many columns overflows the editor width, so it becomes
+    // horizontally scrollable.
+    await insertTable(page, 3, 15);
+
+    const wrapperSelector = 'div.PlaygroundEditorTheme__tableScrollableWrapper';
+    const getScroll = () =>
+      evaluate(
+        page,
+        selector => {
+          const wrapper = document.querySelector(selector);
+          return {
+            left: wrapper.scrollLeft,
+            max: wrapper.scrollWidth - wrapper.clientWidth,
+          };
+        },
+        wrapperSelector,
+      );
+
+    // Sanity check: the table is actually wider than its scroll container.
+    const {max} = await getScroll();
+    expect(max).toBeGreaterThan(0);
+
+    // Start a drag in a left-hand cell and hold the pointer just inside the
+    // right edge of the scroll container (within the auto-scroll edge zone),
+    // leaving the mouse button down.
+    const anchorBox = await selectorBoundingBox(
+      page,
+      `${nthTableSelector(1)} > tr:nth-of-type(2) > td:nth-child(2)`,
+    );
+    const wrapperBox = await selectorBoundingBox(page, wrapperSelector);
+    const holdY = anchorBox.y + anchorBox.height / 2;
+    await dragMouse(
+      page,
+      anchorBox,
+      {height: 0, width: 0, x: wrapperBox.x + wrapperBox.width - 5, y: holdY},
+      {mouseDown: true, mouseUp: false, slow: true},
+    );
+
+    // While the pointer is held near the edge, the requestAnimationFrame loop
+    // scrolls the wrapper all the way to the end...
+    await expect
+      .poll(async () => (await getScroll()).left, {timeout: 5000})
+      .toBeGreaterThanOrEqual(max - 1);
+
+    // ...and the selection focus reaches the last column (index 14), which was
+    // initially off-screen — the behavior that regressed in #7153.
+    await assertTableSelectionCoordinates(page, {
+      anchor: {x: 1},
+      focus: {x: 14},
+    });
+
+    await page.mouse.up();
+  });
+
   test.describe('shift-selection tests', () => {
     test('Range-select from above table into it selects the entire table', async ({
       page,
@@ -9471,8 +9574,8 @@ test.describe('Tables', () => {
   });
 
   test.describe('nested table shift-selection tests', () => {
-    const END_OF_INNER_TABLE = [1, ...WRAPPER, 2, 1, 1, 0, 2, 1]; // paragraph in the last cell
-    const START_OF_INNER_TABLE = [1, ...WRAPPER, 2, 1, 1, 0, 1, 0]; // paragraph in the first cell
+    const END_OF_INNER_TABLE = [1, ...WRAPPER, 2, 1, 1, ...WRAPPER, 2, 1]; // paragraph in the last cell
+    const START_OF_INNER_TABLE = [1, ...WRAPPER, 2, 1, 1, ...WRAPPER, 1, 0]; // paragraph in the first cell
     const TEXT_BEFORE_NESTED_TABLE = [1, ...WRAPPER, 2, 1, 0, 0, 0]; // the word "before"
     const TEXT_AFTER_NESTED_TABLE = [1, ...WRAPPER, 2, 1, 2, 0, 0]; // the word "after"
 

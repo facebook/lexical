@@ -6,6 +6,8 @@
  *
  */
 
+import type {ListType} from './LexicalListNode';
+
 import invariant from '@lexical/internal/invariant';
 import {$getNearestNodeOfType} from '@lexical/utils';
 import {
@@ -13,6 +15,7 @@ import {
   $createParagraphNode,
   $getChildCaret,
   $getSelection,
+  $getSlotHost,
   $isElementNode,
   $isLeafNode,
   $isRangeSelection,
@@ -20,10 +23,10 @@ import {
   $isTextNode,
   $normalizeCaret,
   $setPointFromCaret,
-  ElementNode,
-  LexicalNode,
-  NodeKey,
-  ParagraphNode,
+  type ElementNode,
+  type LexicalNode,
+  type NodeKey,
+  type ParagraphNode,
 } from 'lexical';
 
 import {
@@ -32,15 +35,14 @@ import {
   $isListItemNode,
   $isListNode,
   ListItemNode,
-  ListNode,
+  type ListNode,
 } from './';
-import {ListType} from './LexicalListNode';
 import {
   $getAllListItems,
   $getNewListStart,
   $getTopListNode,
+  $isNestedListNode,
   $removeHighestEmptyListParent,
-  isNestedListNode,
 } from './utils';
 
 function $isSelectingEmptyListItem(
@@ -61,7 +63,7 @@ function $isSelectingEmptyListItem(
  * the root/shadow root, it will replace the ListItemNode with a ListNode and the old ListItemNode.
  * Otherwise it will replace its parent with a new ListNode and re-insert the ListItemNode and any previous children.
  * If the selection's anchor node is not an empty ListItemNode, it will add a new ListNode or merge an existing ListNode,
- * unless the the node is a leaf node, in which case it will attempt to find a ListNode up the branch and replace it with
+ * unless the node is a leaf node, in which case it will attempt to find a ListNode up the branch and replace it with
  * a new ListNode, or create a new ListNode at the nearest root/shadow root.
  * @param listType - The type of list, "number" | "bullet" | "check".
  */
@@ -97,8 +99,14 @@ export function $insertList(listType: ListType): void {
           list.append(listItem);
         } else if ($isListItemNode(anchorNode)) {
           const parent = anchorNode.getParentOrThrow();
-          append(list, parent.getChildren());
-          parent.replace(list);
+          // A named-slot value has no __parent (its up-link is __slotHost);
+          // its slot assignment is managed by the node or extension that
+          // owns the slot, so converting it is a no-op rather than a
+          // replace (which would throw).
+          if ($getSlotHost(parent) === null) {
+            append(list, parent.getChildren());
+            parent.replace(list);
+          }
         }
 
         return;
@@ -113,6 +121,10 @@ export function $insertList(listType: ListType): void {
         $isElementNode(node) &&
         node.isEmpty() &&
         !$isListItemNode(node) &&
+        // A named-slot value's slot assignment is managed by the node or
+        // extension that owns the slot, so it is not eligible for list
+        // conversion (see $setBlocksType).
+        $getSlotHost(node) === null &&
         !handled.has(node.getKey())
       ) {
         $createListOrMerge(node, listType);
@@ -129,7 +141,10 @@ export function $insertList(listType: ListType): void {
         const parentKey = parent.getKey();
 
         if ($isListNode(parent)) {
-          if (!handled.has(parentKey)) {
+          // A list occupying a named slot is left as-is — its slot
+          // assignment is managed by the node or extension that owns the
+          // slot.
+          if (!handled.has(parentKey) && $getSlotHost(parent) === null) {
             const newListNode = $createListNode(listType);
             append(newListNode, parent.getChildren());
             parent.replace(newListNode);
@@ -228,8 +243,8 @@ export function mergeLists(list1: ListNode, list2: ListNode): void {
   if (
     listItem1 &&
     listItem2 &&
-    isNestedListNode(listItem1) &&
-    isNestedListNode(listItem2)
+    $isNestedListNode(listItem1) &&
+    $isNestedListNode(listItem2)
   ) {
     mergeLists(listItem1.getFirstChild(), listItem2.getFirstChild());
     listItem2.remove();
@@ -274,6 +289,13 @@ export function $removeList(): void {
     }
 
     for (const listNode of listNodes) {
+      // A list occupying a named slot is left as-is: unwinding it would
+      // insert siblings through the tree API (which would throw) and vacate
+      // a slot whose assignment is managed by the node or extension that
+      // owns it.
+      if ($getSlotHost(listNode) !== null) {
+        continue;
+      }
       let insertionPoint: ListNode | ParagraphNode = listNode;
 
       const listItems = $getAllListItems(listNode);
@@ -363,7 +385,7 @@ export function $handleIndent(listItemNode: ListItemNode): void {
   // go through each node and decide where to move it.
   const removed = new Set<NodeKey>();
 
-  if (isNestedListNode(listItemNode) || removed.has(listItemNode.getKey())) {
+  if ($isNestedListNode(listItemNode) || removed.has(listItemNode.getKey())) {
     return;
   }
 
@@ -373,7 +395,7 @@ export function $handleIndent(listItemNode: ListItemNode): void {
   const previousSibling = listItemNode.getPreviousSibling();
   // if there are nested lists on either side, merge them all together.
 
-  if (isNestedListNode(nextSibling) && isNestedListNode(previousSibling)) {
+  if ($isNestedListNode(nextSibling) && $isNestedListNode(previousSibling)) {
     const innerList = previousSibling.getFirstChild();
 
     if ($isListNode(innerList)) {
@@ -387,7 +409,7 @@ export function $handleIndent(listItemNode: ListItemNode): void {
         removed.add(nextSibling.getKey());
       }
     }
-  } else if (isNestedListNode(nextSibling)) {
+  } else if ($isNestedListNode(nextSibling)) {
     // if the ListItemNode is next to a nested ListNode, merge them
     const innerList = nextSibling.getFirstChild();
 
@@ -398,7 +420,7 @@ export function $handleIndent(listItemNode: ListItemNode): void {
         firstChild.insertBefore(listItemNode);
       }
     }
-  } else if (isNestedListNode(previousSibling)) {
+  } else if ($isNestedListNode(previousSibling)) {
     const innerList = previousSibling.getFirstChild();
 
     if ($isListNode(innerList)) {
@@ -433,7 +455,7 @@ export function $handleIndent(listItemNode: ListItemNode): void {
 export function $handleOutdent(listItemNode: ListItemNode): void {
   // go through each node and decide where to move it.
 
-  if (isNestedListNode(listItemNode)) {
+  if ($isNestedListNode(listItemNode)) {
     return;
   }
   const parentList = listItemNode.getParent();

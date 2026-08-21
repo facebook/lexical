@@ -7,11 +7,12 @@
  */
 
 import invariant from '@lexical/internal/invariant';
-import {$isAtNodeEnd} from '@lexical/selection';
+import {$isAtEdgeOfElement} from '@lexical/selection';
 import {
   $getSlotFrame,
   CAN_USE_BEFORE_INPUT,
   CAN_USE_DOM,
+  getParentElement,
   IS_ANDROID,
   IS_ANDROID_CHROME,
   IS_APPLE,
@@ -45,6 +46,7 @@ import {
   $getSlotHost,
   $getSlotNames,
   $getState,
+  $insertNodeToNearestRootAtCaret,
   $isChildCaret,
   $isElementNode,
   $isRangeSelection,
@@ -61,7 +63,7 @@ import {
   type CaretDirection,
   type CaretRange,
   type EditorState,
-  ElementNode,
+  type ElementNode,
   type Klass,
   type LexicalEditor,
   type LexicalNode,
@@ -69,15 +71,15 @@ import {
   type NodeCaret,
   type NodeKey,
   type PasteCommandType,
-  PointCaret,
+  type PointCaret,
   type PointType,
   type RangeSelection,
   type SiblingCaret,
-  SplitAtPointCaretNextOptions,
-  StateConfig,
-  ValueOrUpdater,
+  type StateConfig,
+  type ValueOrUpdater,
 } from 'lexical';
 
+export {default as dedupeSelectionRects} from './dedupeSelectionRects';
 export {default as markSelection} from './markSelection';
 export {default as positionNodeOnRange} from './positionNodeOnRange';
 export {default as selectionAlwaysOnDisplay} from './selectionAlwaysOnDisplay';
@@ -209,10 +211,22 @@ export function $getAdjacentCaret<D extends CaretDirection>(
 }
 
 /**
- * $dfs iterator (right to left). Tree traversal is done on the fly as new values are requested with O(1) memory.
- * @param startNode - The node to start the search, if omitted, it will start at the root node.
- * @param endNode - The node to end the search, if omitted, it will find all descendants of the startingNode.
- * @returns An iterator, each yielded value is a DFSNode. It will always return at least 1 node (the start node).
+ * Right-to-left mirror of {@link $dfs}. It returns all the nodes found in the
+ * search in an array of objects.
+ * Preorder traversal is used, meaning that nodes are listed in the order of when they are FIRST encountered.
+ *
+ * Children-only spine: named slot subtrees are skipped. Use {@link $reverseDfsWithSlots}
+ * when you need to descend into slots (e.g. character counting, slot-aware
+ * content extraction).
+ *
+ * The whole traversal is materialized. Use {@link $reverseDfsIterator} to walk
+ * it on the fly with O(1) memory.
+ *
+ * @param startNode - The node to start the search (inclusive), if omitted, it will start at the root node.
+ * @param endNode - The node to end the search (inclusive), if omitted, it will find all descendants of the startingNode. If endNode
+ * is an ElementNode, it will stop before visiting any of its children.
+ * @returns An array of objects of all the nodes found by the search, including their depth into the tree.
+ * \\{depth: number, node: LexicalNode\\} It will always return at least 1 node (the start node).
  */
 export function $reverseDfs(
   startNode?: LexicalNode,
@@ -774,70 +788,8 @@ export function $insertNodeToNearestRoot<T extends LexicalNode>(node: T): T {
   return node.getLatest();
 }
 
-/**
- * If the insertion caret is the root/shadow root node (see {@link lexical!$isRootOrShadowRoot}),
- * the node will be inserted there, otherwise the parent nodes will be split according to the
- * given options.
- * @param node - The node to be inserted
- * @param caret - The location to insert or split from
- * @returns The node after its insertion
- */
-export function $insertNodeToNearestRootAtCaret<
-  T extends LexicalNode,
-  D extends CaretDirection,
->(
-  node: T,
-  caret: PointCaret<D>,
-  options?: SplitAtPointCaretNextOptions,
-): NodeCaret<D> {
-  let insertCaret: PointCaret<'next'> = $getCaretInDirection(caret, 'next');
-  // Normalize boundary cases for TextPointCaret
-  if ($isTextPointCaret(insertCaret)) {
-    if (insertCaret.offset === 0) {
-      insertCaret = $getSiblingCaret(
-        insertCaret.origin,
-        'previous',
-      ).getFlipped();
-    } else if (insertCaret.offset === insertCaret.origin.getTextContentSize()) {
-      insertCaret = $getSiblingCaret(insertCaret.origin, 'next');
-    }
-  }
-  // Make sure we have a distinct node as the origin
-  if (insertCaret.origin.is(node)) {
-    invariant(
-      $isSiblingCaret(insertCaret),
-      '$insertNodeToNearestRootAtCaret node %s of type %s can not be inserted into itself',
-      node.getKey(),
-      node.getType(),
-    );
-    insertCaret = $rewindSiblingCaret(insertCaret);
-  }
-  // Handle split boundary conditions where node is being inserted adjacent to itself
-  if (
-    node.is(insertCaret.getNodeAtCaret()) ||
-    node.is(insertCaret.getFlipped().getNodeAtCaret())
-  ) {
-    node.remove(true);
-  }
-  for (
-    let nextCaret: null | PointCaret<'next'> = insertCaret;
-    nextCaret;
-    nextCaret = $splitAtPointCaretNext(nextCaret, options)
-  ) {
-    insertCaret = nextCaret;
-  }
-  invariant(
-    !$isTextPointCaret(insertCaret),
-    '$insertNodeToNearestRootAtCaret: An unattached TextNode can not be split',
-  );
-  insertCaret.insert(
-    node.isInline() ? $createParagraphNode().append(node) : node,
-  );
-  return $getCaretInDirection(
-    $getSiblingCaret(node.getLatest(), 'next'),
-    caret.direction,
-  );
-}
+// Re-exported from the `lexical` core package for backwards compatibility.
+export {$insertNodeToNearestRootAtCaret};
 
 /**
  * Inserts a node into leaf — the deepest accessible node at the carriage position
@@ -874,10 +826,10 @@ export function $insertNodeIntoLeaf(node: LexicalNode): void {
  * @param createElementNode - Creates a new lexical element to wrap the to-be-wrapped node and returns it.
  * @returns A new lexical element with the previous node appended within (as a child, including its children).
  */
-export function $wrapNodeInElement(
+export function $wrapNodeInElement<T extends ElementNode>(
   node: LexicalNode,
-  createElementNode: () => ElementNode,
-): ElementNode {
+  createElementNode: () => T,
+): T {
   const elementNode = createElementNode();
   node.replace(elementNode);
   elementNode.append(node);
@@ -896,9 +848,14 @@ export function objectKlassEquals<T>(
   object: unknown,
   objectClass: ObjectKlass<T>,
 ): object is T {
-  return object !== null
-    ? Object.getPrototypeOf(object).constructor.name === objectClass.name
-    : false;
+  if (object == null) {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(object);
+  if (prototype == null || prototype.constructor == null) {
+    return false;
+  }
+  return prototype.constructor.name === objectClass.name;
 }
 
 // Clipboard may contain files that we aren't allowed to read. While the event is arguably useless,
@@ -1003,15 +960,18 @@ function needsManualZoom(): boolean {
     // will be wider after zoom is applied
     // https://chromestatus.com/feature/5198254868529152
     // https://github.com/facebook/lexical/issues/6863
+    // eslint-disable-next-line no-restricted-syntax
     const div = document.createElement('div');
     div.style.position = 'absolute';
     div.style.opacity = '0';
     div.style.width = '100px';
     div.style.left = '-1000px';
+    // eslint-disable-next-line no-restricted-syntax
     document.body.appendChild(div);
     const noZoom = div.getBoundingClientRect();
     div.style.setProperty('zoom', '2');
     NEEDS_MANUAL_ZOOM = div.getBoundingClientRect().width === noZoom.width;
+    // eslint-disable-next-line no-restricted-syntax
     document.body.removeChild(div);
   }
   return NEEDS_MANUAL_ZOOM;
@@ -1030,9 +990,13 @@ export function calculateZoomLevel(
 ): number {
   let zoom = 1;
   if (needsManualZoom() || useManualZoom) {
+    // Read styles from the element's own realm so an iframe-mounted editor's
+    // zoom isn't computed through the top-level window (cross-realm
+    // getComputedStyle can return an empty zoom).
+    const win = (element && element.ownerDocument.defaultView) || window;
     while (element) {
-      zoom *= Number(window.getComputedStyle(element).getPropertyValue('zoom'));
-      element = element.parentElement;
+      zoom *= Number(win.getComputedStyle(element).getPropertyValue('zoom'));
+      element = getParentElement(element);
     }
   }
   return zoom;
@@ -1375,15 +1339,7 @@ export function $onEscapeDown(
  * container" test stays in one place.
  */
 export function $isAtStartOfNode(point: PointType, node: ElementNode): boolean {
-  if (point.offset !== 0) {
-    return false;
-  }
-  const first = node.getFirstDescendant() ?? node;
-  const anchorNode = point.getNode();
-  return (
-    anchorNode === first ||
-    ($isElementNode(anchorNode) && anchorNode.getFirstDescendant() === first)
-  );
+  return $isAtEdgeOfElement(point, node, 'previous');
 }
 
 /**
@@ -1393,13 +1349,7 @@ export function $isAtStartOfNode(point: PointType, node: ElementNode): boolean {
  * of a container" test stays in one place.
  */
 export function $isAtEndOfNode(point: PointType, node: ElementNode): boolean {
-  if (!$isAtNodeEnd(point)) {
-    return false;
-  }
-  const last = node.getLastDescendant() ?? node;
-  const anchorNode = point.getNode();
-  return (
-    anchorNode === last ||
-    ($isElementNode(anchorNode) && anchorNode.getLastDescendant() === last)
-  );
+  return $isAtEdgeOfElement(point, node, 'next');
 }
+
+export {getScrollParent} from './getScrollParent';

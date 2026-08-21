@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {AnyDOMRenderMatch, DOMRenderConfig, DOMRenderMatch} from './types';
+
 import {getKnownTypesAndNodes} from '@lexical/extension';
 import invariant from '@lexical/internal/invariant';
 import {
@@ -12,14 +14,14 @@ import {
   DEFAULT_EDITOR_DOM_CONFIG,
   type EditorDOMRenderConfig,
   getRegisteredSubtypeMap,
-  InitialEditorConfig,
-  Klass,
-  LexicalEditor,
+  type InitialEditorConfig,
+  iterStaticNodeConfigChain,
+  type Klass,
+  type LexicalEditor,
   type LexicalNode,
 } from 'lexical';
 
 import {ALWAYS_TRUE} from './constants';
-import {AnyDOMRenderMatch, DOMRenderConfig, DOMRenderMatch} from './types';
 
 type PredicateOrTypes =
   | ((node: LexicalNode) => boolean)
@@ -319,12 +321,8 @@ function sortedOverrides(
   const depthOf = (klass: Klass<LexicalNode>): number => {
     let depth = depths.get(klass);
     if (depth === undefined) {
-      depth = 0;
-      for (
-        let k: Klass<LexicalNode> = klass;
-        $isLexicalNode(k.prototype);
-        k = Object.getPrototypeOf(k)
-      ) {
+      depth = -1;
+      for (const _ of iterStaticNodeConfigChain(klass)) {
         depth++;
       }
       depths.set(klass, depth);

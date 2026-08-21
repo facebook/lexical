@@ -16,7 +16,7 @@ import {
   $getSelection,
   $isRangeSelection,
   $setSelection,
-  LexicalEditor,
+  type LexicalEditor,
   MOVE_TO_START,
 } from 'lexical';
 import {

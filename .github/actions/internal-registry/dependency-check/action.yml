@@ -1,0 +1,48 @@
+name: Internal registry dependency check
+description: >-
+  Checks that every dependency version pinned in the lockfile is available from
+  the configured registry. Takes a credential from the sibling `auth` action
+  rather than minting one itself, so there is a single implementation of the
+  OIDC exchange. The calling job must check out the repo. A fork pull request
+  cannot mint OIDC, so `auth` yields an empty token and this check is skipped
+  with a notice; enforce via a required merge_group run.
+
+inputs:
+  token:
+    description: >-
+      Registry credential, as produced by the sibling `auth` action. An empty
+      value skips the check, which is what a fork pull request produces.
+    required: true
+  lockfile:
+    description: >-
+      Path to the lockfile to check. Format is auto-detected by filename:
+      pnpm-lock.yaml, package-lock.json, or yarn.lock.
+    required: false
+    default: pnpm-lock.yaml
+  registry-url:
+    description: Registry base URL.
+    required: false
+    default: https://registry.facebook.net
+  node-version:
+    description: Node version used to run the check.
+    required: false
+    default: '24'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs.node-version }}
+    - name: Skip when no credential is available
+      if: inputs.token == ''
+      shell: bash
+      run: echo "::notice::No registry credential (most likely a fork pull request) — deferring to the required merge-queue run."
+    - name: Check dependencies are available in the registry
+      if: inputs.token != ''
+      shell: bash
+      env:
+        REGISTRY_URL: ${{ inputs.registry-url }}
+        REGISTRY_TOKEN: ${{ inputs.token }}
+        LOCKFILE: ${{ inputs.lockfile }}
+      run: node "${{ github.action_path }}/check.mjs"

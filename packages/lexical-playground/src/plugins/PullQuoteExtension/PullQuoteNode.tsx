@@ -6,13 +6,6 @@
  *
  */
 
-import type {
-  DOMExportOutput,
-  LexicalEditor,
-  LexicalNode,
-  NodeKey,
-  SlotChildNode,
-} from 'lexical';
 import type {JSX} from 'react';
 
 import {$appendNodeToHTML} from '@lexical/html';
@@ -22,10 +15,16 @@ import {
   $create,
   $createParagraphNode,
   $createTextNode,
+  $getDocument,
   $getSlot,
   $getSlotNames,
   $setSlot,
   DecoratorNode,
+  type DOMExportOutput,
+  type LexicalEditor,
+  type LexicalNode,
+  type NodeKey,
+  type SlotChildNode,
 } from 'lexical';
 
 import {$createSlotContainerNode} from '../../nodes/SlotContainerNode';
@@ -66,7 +65,7 @@ export class PullQuoteNode extends DecoratorNode<JSX.Element> {
   }
 
   createDOM(): HTMLElement {
-    const div = document.createElement('div');
+    const div = $getDocument().createElement('div');
     div.className = 'lexical-pullquote-node';
     return div;
   }
@@ -89,12 +88,12 @@ export class PullQuoteNode extends DecoratorNode<JSX.Element> {
   // `<blockquote>` importer (QuoteNode's importDOM also matches
   // `blockquote`).
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const host = document.createElement('div');
+    const host = $getDocument().createElement('div');
     host.className = 'lexical-pullquote-node';
     for (const name of $getSlotNames(this)) {
       const slot = $getSlot(this, name);
       if (slot) {
-        const wrapper = document.createElement('div');
+        const wrapper = $getDocument().createElement('div');
         wrapper.setAttribute('data-lexical-slot', name);
         $appendNodeToHTML(editor, slot, wrapper);
         host.append(wrapper);

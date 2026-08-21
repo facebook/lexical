@@ -6,7 +6,6 @@
  *
  */
 import type {DecoratorComponentProps} from './shared/types';
-import type {JSX} from 'react';
 
 import {
   effect,
@@ -17,7 +16,6 @@ import {
 import invariant from '@lexical/internal/invariant';
 import {ReactExtension} from '@lexical/react/ReactExtension';
 import {ReactProviderExtension} from '@lexical/react/ReactProviderExtension';
-import {mergeRegister} from '@lexical/utils';
 import {
   type AnyLexicalExtension,
   COMMAND_PRIORITY_CRITICAL,
@@ -27,9 +25,10 @@ import {
   defineExtension,
   type LexicalEditor,
   type LexicalExtensionOutput,
+  mergeRegister,
 } from 'lexical';
 import * as React from 'react';
-import {Suspense, useEffect, useState} from 'react';
+import {type JSX, Suspense, useEffect, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {type Container, createRoot, type Root} from 'react-dom/client';
 

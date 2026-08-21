@@ -16,11 +16,14 @@ import {
   $isQuoteNode,
   RichTextExtension,
   RichTextImportExtension,
+  ShadowRootQuoteRule,
 } from '@lexical/rich-text';
 import {JSDOM} from 'jsdom';
 import {
   $getEditor,
   $getRoot,
+  $isParagraphNode,
+  configExtension,
   defineExtension,
   type LexicalEditor,
   type LexicalNode,
@@ -83,6 +86,62 @@ describe('RichTextImportExtension', () => {
       const node = $getRoot().getFirstChild();
       assert($isQuoteNode(node), 'expected QuoteNode');
       expect(node.getTextContent()).toBe('quoted');
+    });
+  });
+
+  test('blockquote does not import as a shadow root by default', () => {
+    using editor = buildEditor();
+    importInto(editor, '<blockquote><p>a</p><p>b</p></blockquote>');
+    editor.read(() => {
+      const node = $getRoot().getFirstChild();
+      assert($isQuoteNode(node), 'expected QuoteNode');
+      expect(node.isShadowRoot()).toBe(false);
+    });
+  });
+
+  test('ShadowRootQuoteRule imports blockquote as a shadow root quote', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          RichTextExtension,
+          // Registered after RichTextExtension's own rules, so it takes
+          // priority over the default blockquote rule.
+          configExtension(DOMImportExtension, {rules: [ShadowRootQuoteRule]}),
+        ],
+        name: 'rich-text-shadow-root-quote-host',
+      }),
+    );
+    importInto(editor, '<blockquote><p>a</p><p>b</p></blockquote>');
+    editor.read(() => {
+      const node = $getRoot().getFirstChild();
+      assert($isQuoteNode(node), 'expected QuoteNode');
+      expect(node.isShadowRoot()).toBe(true);
+      const children = node.getChildren();
+      expect(children.length).toBe(2);
+      expect(children.every($isParagraphNode)).toBe(true);
+      expect(children.map(child => child.getTextContent())).toEqual(['a', 'b']);
+    });
+  });
+
+  test('ShadowRootQuoteRule wraps bare inline content in a paragraph', () => {
+    using editor = buildEditorFromExtensions(
+      defineExtension({
+        dependencies: [
+          RichTextExtension,
+          configExtension(DOMImportExtension, {rules: [ShadowRootQuoteRule]}),
+        ],
+        name: 'rich-text-shadow-root-quote-host',
+      }),
+    );
+    importInto(editor, '<blockquote>quoted</blockquote>');
+    editor.read(() => {
+      const node = $getRoot().getFirstChild();
+      assert($isQuoteNode(node), 'expected QuoteNode');
+      expect(node.isShadowRoot()).toBe(true);
+      const children = node.getChildren();
+      expect(children.length).toBe(1);
+      assert($isParagraphNode(children[0]), 'expected ParagraphNode');
+      expect(children[0].getTextContent()).toBe('quoted');
     });
   });
 

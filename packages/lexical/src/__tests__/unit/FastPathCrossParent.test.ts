@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {buildEditorFromExtensions} from '@lexical/extension';
 import {$createLinkNode, LinkExtension} from '@lexical/link';
 import {RichTextExtension} from '@lexical/rich-text';

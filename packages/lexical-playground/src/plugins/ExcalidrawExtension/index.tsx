@@ -7,7 +7,6 @@
  */
 import type {ExcalidrawInitialElements} from '../../ui/ExcalidrawModal';
 import type {AppState, BinaryFiles} from '@excalidraw/excalidraw/types';
-import type {JSX} from 'react';
 
 import '@excalidraw/excalidraw/index.css';
 
@@ -22,9 +21,9 @@ import {
   configExtension,
   createCommand,
   defineExtension,
-  LexicalCommand,
+  type LexicalCommand,
 } from 'lexical';
-import {useEffect, useState} from 'react';
+import {type JSX, useEffect, useState} from 'react';
 
 import {
   $createExcalidrawNode,

@@ -12,11 +12,11 @@ import {
   $createParagraphNode,
   $createTextNode,
   $getRoot,
-  LexicalEditor,
+  type LexicalEditor,
 } from 'lexical';
 import * as React from 'react';
 import {act} from 'react';
-import {createRoot, Root} from 'react-dom/client';
+import {createRoot, type Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 
 describe('LexicalComposer tests', () => {

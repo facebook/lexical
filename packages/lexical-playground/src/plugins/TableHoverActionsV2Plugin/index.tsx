@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {JSX} from 'react';
 
 import './index.css';
 
@@ -39,9 +38,13 @@ import {
   $getNearestNodeFromDOMNode,
   $getSiblingCaret,
   type EditorThemeClasses,
+  getComposedEventTarget,
+  isDOMNode,
   isHTMLElement,
+  mergeRegister,
+  registerEventListener,
 } from 'lexical';
-import {useEffect, useRef, useState} from 'react';
+import {type JSX, useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 
 import DropDown, {DropDownItem} from '../../ui/DropDown';
@@ -52,19 +55,19 @@ const SIDE_INDICATOR_SIZE_PX = 18;
 const TOP_BUTTON_OVERHANG = INDICATOR_SIZE_PX / 2;
 const LEFT_BUTTON_OVERHANG = SIDE_INDICATOR_SIZE_PX / 2;
 
-function getTableFromMouseEvent(
-  event: MouseEvent,
+function getTableFromTarget(
+  target: EventTarget | null,
   getTheme: () => EditorThemeClasses | null | undefined,
 ): {
   isOutside: boolean;
   tableElement: HTMLTableElement | null;
 } {
-  if (!isHTMLElement(event.target)) {
+  if (!isHTMLElement(target)) {
     return {isOutside: true, tableElement: null};
   }
 
   const cellSelector = `td${getThemeSelector(getTheme, 'tableCell')}, th${getThemeSelector(getTheme, 'tableCell')}`;
-  const cell = event.target.closest<HTMLTableCellElement>(cellSelector);
+  const cell = target.closest<HTMLTableCellElement>(cellSelector);
   const tableElement = cell?.closest<HTMLTableElement>('table') ?? null;
 
   return {
@@ -248,23 +251,29 @@ function TableHoverActionsV2({
     }
 
     const handleMouseMove = (event: MouseEvent) => {
+      const target = getComposedEventTarget(event);
       if (
         (floatingElemRef.current &&
-          event.target instanceof Node &&
-          floatingElemRef.current.contains(event.target)) ||
+          isDOMNode(target) &&
+          floatingElemRef.current.contains(target)) ||
         (leftFloatingElemRef.current &&
-          event.target instanceof Node &&
-          leftFloatingElemRef.current.contains(event.target))
+          isDOMNode(target) &&
+          leftFloatingElemRef.current.contains(target))
       ) {
         return;
       }
 
-      const {tableElement, isOutside} = getTableFromMouseEvent(event, getTheme);
+      const {tableElement, isOutside} = getTableFromTarget(target, getTheme);
+
+      // Check ownership against the editor's root rather than anchorElem so
+      // a shadow-rooted editor whose anchorElem still defaults to document.body
+      // doesn't reject every cell (Element.contains stops at the shadow host).
+      const editorRoot = editor.getRootElement();
 
       if (
         isOutside ||
         tableElement == null ||
-        (anchorElem && !anchorElem.contains(tableElement))
+        (editorRoot !== null && !editorRoot.contains(tableElement))
       ) {
         setIsVisible(false);
         setIsLeftVisible(false);
@@ -275,8 +284,8 @@ function TableHoverActionsV2({
       }
 
       const cellSelector = `td${getThemeSelector(getTheme, 'tableCell')}, th${getThemeSelector(getTheme, 'tableCell')}`;
-      const hoveredCell = isHTMLElement(event.target)
-        ? event.target.closest<HTMLTableCellElement>(cellSelector)
+      const hoveredCell = isHTMLElement(target)
+        ? target.closest<HTMLTableCellElement>(cellSelector)
         : null;
 
       if (!hoveredCell) {
@@ -329,14 +338,23 @@ function TableHoverActionsV2({
       }
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      setIsVisible(false);
-      setIsLeftVisible(false);
-    };
-  }, [anchorElem, getTheme, isEditable, leftRefs, refs, update, updateLeft]);
+    return mergeRegister(
+      registerEventListener(document, 'mousemove', handleMouseMove),
+      () => {
+        setIsVisible(false);
+        setIsLeftVisible(false);
+      },
+    );
+  }, [
+    editor,
+    anchorElem,
+    getTheme,
+    isEditable,
+    leftRefs,
+    refs,
+    update,
+    updateLeft,
+  ]);
 
   useEffect(() => {
     const handleMouseLeave = (event: MouseEvent) => {
@@ -361,9 +379,11 @@ function TableHoverActionsV2({
 
     return editor.registerRootListener(rootElement => {
       if (rootElement) {
-        rootElement.addEventListener('mouseleave', handleMouseLeave);
-        return () =>
-          rootElement.removeEventListener('mouseleave', handleMouseLeave);
+        return registerEventListener(
+          rootElement,
+          'mouseleave',
+          handleMouseLeave,
+        );
       }
     });
   }, [editor]);

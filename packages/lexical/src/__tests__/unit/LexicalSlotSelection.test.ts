@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-
 import {
   buildEditorFromExtensions,
   type LexicalEditorWithDispose,
@@ -25,7 +24,7 @@ import {
   $setSlot,
   defineExtension,
   getDOMSelection,
-  LexicalNode,
+  type LexicalNode,
 } from 'lexical';
 import {afterEach, assert, describe, expect, test} from 'vitest';
 

@@ -5,18 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
+import type {BindingV2} from './Bindings';
+
 import invariant from '@lexical/internal/invariant';
-import {$getRoot, $getState, createState, LexicalNode} from 'lexical';
+import {$getRoot, $getState, createState, type LexicalNode} from 'lexical';
 import {
   emptySnapshot,
-  ID,
+  type ID,
   iterateDeletedStructs,
   PermanentUserData,
-  Snapshot,
+  type Snapshot,
   snapshot as createSnapshot,
 } from 'yjs';
 
-import {BindingV2} from './Bindings';
 import {$createOrUpdateNodeFromYElement} from './SyncV2';
 
 const STATE_KEY = 'ychange';

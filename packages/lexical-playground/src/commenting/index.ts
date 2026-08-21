@@ -6,17 +6,15 @@
  *
  */
 
-import type {LexicalEditor} from 'lexical';
-
-import {Provider, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
-import {COMMAND_PRIORITY_LOW} from 'lexical';
+import {type Provider, TOGGLE_CONNECT_COMMAND} from '@lexical/yjs';
+import {COMMAND_PRIORITY_LOW, type LexicalEditor} from 'lexical';
 import {useEffect, useState} from 'react';
 import {
   Array as YArray,
   Map as YMap,
-  Transaction,
+  type Transaction,
   YArrayEvent,
-  YEvent,
+  type YEvent,
 } from 'yjs';
 
 export type Comment = {

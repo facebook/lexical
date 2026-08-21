@@ -6,16 +6,18 @@
  *
  */
 
-import type {DOMExportOutput, LexicalEditor, LexicalNode} from 'lexical';
-
 import {$appendNodeToHTML} from '@lexical/html';
 import {
   $create,
   $createParagraphNode,
+  $getDocument,
   $getSlot,
   $getSlotNames,
   $setSlot,
+  type DOMExportOutput,
   ElementNode,
+  type LexicalEditor,
+  type LexicalNode,
 } from 'lexical';
 
 // The Card is an ElementNode host that demonstrates the dual capability of
@@ -32,7 +34,7 @@ export class CardNode extends ElementNode {
   }
 
   createDOM(): HTMLElement {
-    const div = document.createElement('div');
+    const div = $getDocument().createElement('div');
     div.className = 'lexical-card-node';
     return div;
   }
@@ -60,12 +62,12 @@ export class CardNode extends ElementNode {
   // (the outer $appendNodesToHTML loop recurses into `target.getChildren()`
   // when no `$getChildNodes` override is supplied).
   exportDOM(editor: LexicalEditor): DOMExportOutput {
-    const element = document.createElement('div');
+    const element = $getDocument().createElement('div');
     element.className = 'lexical-card-node';
     for (const name of $getSlotNames(this)) {
       const slot = $getSlot(this, name);
       if (slot) {
-        const wrapper = document.createElement('div');
+        const wrapper = $getDocument().createElement('div');
         wrapper.setAttribute('data-lexical-slot', name);
         $appendNodeToHTML(editor, slot, wrapper);
         element.append(wrapper);

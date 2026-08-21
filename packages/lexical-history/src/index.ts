@@ -6,18 +6,15 @@
  *
  */
 
-import type {EditorState, LexicalEditor, LexicalNode, NodeKey} from 'lexical';
-
 import {
   batch,
   effect,
   getPeerDependencyFromEditor,
   namedSignals,
-  ReadonlySignal,
-  Signal,
+  type ReadonlySignal,
+  type Signal,
   signal,
 } from '@lexical/extension';
-import {mergeRegister} from '@lexical/utils';
 import {
   $isRangeSelection,
   $isRootNode,
@@ -32,9 +29,14 @@ import {
   configExtension,
   CUT_TAG,
   defineExtension,
+  type EditorState,
   HISTORIC_TAG,
   HISTORY_MERGE_TAG,
   HISTORY_PUSH_TAG,
+  type LexicalEditor,
+  type LexicalNode,
+  mergeRegister,
+  type NodeKey,
   PASTE_TAG,
   REDO_COMMAND,
   safeCast,
@@ -658,10 +660,11 @@ interface HistoryExtensionInit {
 /**
  * The output signals exposed by {@link HistoryExtension}.
  *
- * Config-derived signals (`delay`, `disabled`, `historyState`, `now`) are
- * writable so that peer extensions such as {@link SharedHistoryExtension} can
- * redirect them at runtime.  The `canUndo` / `canRedo` signals are
- * **readonly** for consumers — they are derived from the current
+ * Config-derived signals (`delay`, `disabled`, `historyState`, `maxDepth`,
+ * `now`) are writable so that peer extensions such as
+ * {@link SharedHistoryExtension} can redirect them at runtime.
+ * The `canUndo` / `canRedo` signals are **readonly** for
+ * consumers — they are derived from the current
  * {@link HistoryState} and kept in sync automatically.
  */
 export interface HistoryExtensionOutput {
@@ -817,6 +820,10 @@ export const SharedHistoryExtension = /* @__PURE__ */ defineExtension({
           output.delay.value = parentOutput.delay.value;
           output.historyState.value = parentOutput.historyState.value;
           output.now.value = parentOutput.now.value;
+          // The cap must come from the parent too: the child pushes onto the
+          // parent's shared undoStack, so applying the child's own (default
+          // null) maxDepth would silently void the limit the app configured.
+          output.maxDepth.value = parentOutput.maxDepth.value;
           // Note that toggling the parent history will force this to be changed
           output.disabled.value = parentOutput.disabled.value;
         });

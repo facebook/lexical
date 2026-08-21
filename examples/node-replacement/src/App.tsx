@@ -8,7 +8,7 @@
 
 import {AutoFocusPlugin} from '@lexical/react/LexicalAutoFocusPlugin';
 import {
-  InitialConfigType,
+  type InitialConfigType,
   LexicalComposer,
 } from '@lexical/react/LexicalComposer';
 import {ContentEditable} from '@lexical/react/LexicalContentEditable';

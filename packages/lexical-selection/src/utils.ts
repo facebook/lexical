@@ -5,13 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import type {ElementNode, LexicalEditor, LexicalNode} from 'lexical';
 
 import {
   $getEditor,
   $isRootNode,
   $isTextNode,
+  type ElementNode,
+  getRootOwnerDocument,
   getStyleObjectFromCSS,
+  type LexicalEditor,
+  type LexicalNode,
 } from 'lexical';
 
 function getDOMTextNode(element: Node | null): Text | null {
@@ -56,7 +59,9 @@ export function createDOMRange(
 ): Range | null {
   const anchorKey = anchorNode.getKey();
   const focusKey = focusNode.getKey();
-  const range = document.createRange();
+  // Resolve through the editor's own document so iframe / shadow-mounted
+  // editors don't end up with a Range bound to the wrong realm.
+  const range = getRootOwnerDocument(editor.getRootElement()).createRange();
   let anchorDOM: Node | Text | null = editor.getElementByKey(anchorKey);
   let focusDOM: Node | Text | null = editor.getElementByKey(focusKey);
   let anchorOffset = _anchorOffset;
@@ -125,9 +130,9 @@ export function createDOMRange(
  * @returns The selectionRects as an array.
  */
 export function createRectsFromDOMRange(
-  editor: LexicalEditor,
+  editor: Pick<LexicalEditor, 'getRootElement'>,
   range: Range,
-): ClientRect[] {
+): DOMRect[] {
   const rootElement = editor.getRootElement();
 
   if (rootElement === null) {
@@ -218,13 +223,18 @@ export function $getComputedStyleForElement(
 /**
  * Gets the computed DOM styles of the parent of the node.
  * @param node - The node to check its parent's styles for.
- * @returns the computed styles of the node or null if there is no DOM element or no default view for the document.
+ * @returns the computed styles of the node, or null if the node has no parent,
+ * there is no DOM element, or there is no default view for the document.
  */
 export function $getComputedStyleForParent(
   node: LexicalNode,
 ): CSSStyleDeclaration | null {
-  const parent = $isRootNode(node) ? node : node.getParentOrThrow();
-  return $getComputedStyleForElement(parent);
+  // A named-slot value has no parent — it links up to its host through
+  // __slotHost — so there is no parent element to measure. Detached nodes are
+  // parentless too. Treat both like a missing DOM element rather than
+  // throwing; every caller already handles null.
+  const parent = $isRootNode(node) ? node : node.getParent();
+  return parent && $getComputedStyleForElement(parent);
 }
 
 /**

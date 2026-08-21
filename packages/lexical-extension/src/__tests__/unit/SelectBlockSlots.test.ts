@@ -27,7 +27,7 @@ import {
   configExtension,
   defineExtension,
   ElementNode,
-  LexicalNode,
+  type LexicalNode,
   SELECT_ALL_COMMAND,
   type TextNode,
 } from 'lexical';

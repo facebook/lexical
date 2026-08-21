@@ -7,15 +7,8 @@
  */
 
 import type {DOMSlot, ElementDOMSlot} from './LexicalDOMSlot';
-import type {EditorState, SerializedEditorState} from './LexicalEditorState';
-import type {
-  DOMConversion,
-  DOMConversionMap,
-  DOMExportOutput,
-  DOMExportOutputMap,
-  LexicalPrivateDOM,
-  NodeKey,
-} from './LexicalNode';
+import type {KeyDownShortcut} from './LexicalEvents';
+import type {CompiledKeyboardShortcuts} from './LexicalKeyboardShortcuts';
 import type {ElementNode} from './nodes/LexicalElementNode';
 
 import invariant from '@lexical/internal/invariant';
@@ -25,13 +18,19 @@ import {
   $getRoot,
   $getSelection,
   $isElementNode,
-  BaseSelection,
+  type BaseSelection,
   mergeRegister,
+  type RangeSelection,
   TextNode,
 } from '.';
 import {FULL_RECONCILE, NO_DIRTY_NODES} from './LexicalConstants';
 import {DequeSet} from './LexicalDequeSet';
-import {cloneEditorState, createEmptyEditorState} from './LexicalEditorState';
+import {
+  cloneEditorState,
+  createEmptyEditorState,
+  type EditorState,
+  type SerializedEditorState,
+} from './LexicalEditorState';
 import {
   addRootElementEvents,
   registerDefaultCommandHandlers,
@@ -39,8 +38,16 @@ import {
 } from './LexicalEvents';
 import {GenMap} from './LexicalGenMap';
 import {flushRootMutations, initMutationObserver} from './LexicalMutations';
-import {LexicalNode} from './LexicalNode';
-import {createSharedNodeState, SharedNodeState} from './LexicalNodeState';
+import {
+  type DOMConversion,
+  type DOMConversionMap,
+  type DOMExportOutput,
+  type DOMExportOutputMap,
+  LexicalNode,
+  type LexicalPrivateDOM,
+  type NodeKey,
+} from './LexicalNode';
+import {createSharedNodeState, type SharedNodeState} from './LexicalNodeState';
 import {
   $commitPendingUpdates,
   $fullReconcile,
@@ -50,7 +57,11 @@ import {
   updateEditor,
   updateEditorSync,
 } from './LexicalUpdates';
-import {FOCUS_TAG, HISTORY_MERGE_TAG, UpdateTag} from './LexicalUpdateTags';
+import {
+  FOCUS_TAG,
+  HISTORY_MERGE_TAG,
+  type UpdateTag,
+} from './LexicalUpdateTags';
 import {
   $addUpdateTag,
   $onUpdate,
@@ -62,9 +73,11 @@ import {
   getCachedTypeToNodeMap,
   getDefaultView,
   getDOMSelection,
+  getParentElement,
   getRegisteredNode,
   getStaticNodeConfig,
   hasOwnStaticMethod,
+  iterStaticNodeConfigChain,
   markNodesWithTypesAsDirty,
   setNodeKeyOnDOMNode,
 } from './LexicalUtils';
@@ -216,6 +229,7 @@ export interface EditorThemeClasses {
   tableScrollableWrapper?: EditorThemeClassName;
   tableSelected?: EditorThemeClassName;
   tableSelection?: EditorThemeClassName;
+  tableStickyScrollbar?: EditorThemeClassName;
   text?: TextNodeThemeClasses;
   collaboration?: {
     cursor?: EditorThemeClassName;
@@ -237,6 +251,77 @@ export interface EditorConfig {
   disableEvents?: boolean;
   namespace: string;
   theme: EditorThemeClasses;
+}
+
+/** @internal */
+export interface CollapsedSelectionFormat {
+  format: number;
+  style: string;
+  offset: number;
+  key: NodeKey;
+  timeStamp: number;
+}
+
+/** @internal */
+export interface InputState {
+  compositionPhase: 'idle' | 'composing' | 'ending-firefox' | 'ending-safari';
+  compositionEndData: string;
+  hadOrphanedCompositionEvents: boolean;
+
+  lastKeyDownTimeStamp: number;
+  lastKeyCode: string | null;
+  lastBeforeInputInsertTextTimeStamp: number;
+  unprocessedBeforeInputData: string | null;
+  collapsedSelectionFormat: CollapsedSelectionFormat;
+  postDeleteSelectionToRestore: RangeSelection | null;
+
+  isSelectionChangeFromDOMUpdate: boolean;
+  /**
+   * The DOM boundary points the reconciler applied when it set
+   * isSelectionChangeFromDOMUpdate, so the selectionchange handler can tell
+   * "the event for our own update" apart from a user selection that arrives
+   * while the flag is stale. WebKit fires no selectionchange at all when the
+   * applied selection matches what the DOM already had, so the flag alone can
+   * outlive its event and swallow the next real one.
+   */
+  selectionChangeFromDOMUpdatePoints: null | {
+    anchorNode: Node;
+    anchorOffset: number;
+    focusNode: Node;
+    focusOffset: number;
+  };
+  isSelectionChangeFromMouseDown: boolean;
+  isInsertLineBreak: boolean;
+
+  isInsertTextAfterHandledSelectionCommand: boolean;
+  handledSelectionCommandTimeoutId: ReturnType<typeof setTimeout> | null;
+}
+
+/** @internal */
+export function createInputState(): InputState {
+  return {
+    collapsedSelectionFormat: {
+      format: 0,
+      key: 'root',
+      offset: 0,
+      style: '',
+      timeStamp: 0,
+    },
+    compositionEndData: '',
+    compositionPhase: 'idle',
+    hadOrphanedCompositionEvents: false,
+    handledSelectionCommandTimeoutId: null,
+    isInsertLineBreak: false,
+    isInsertTextAfterHandledSelectionCommand: false,
+    isSelectionChangeFromDOMUpdate: false,
+    isSelectionChangeFromMouseDown: false,
+    lastBeforeInputInsertTextTimeStamp: 0,
+    lastKeyCode: null,
+    lastKeyDownTimeStamp: 0,
+    postDeleteSelectionToRestore: null,
+    selectionChangeFromDOMUpdatePoints: null,
+    unprocessedBeforeInputData: null,
+  };
 }
 
 /**
@@ -599,10 +684,16 @@ function normalizePriority(
   return (priority & 7) as CommandListenerPriority;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type LexicalCommand<TPayload> = {
+declare const LexicalCommandBrand: unique symbol;
+
+export interface LexicalCommand<TPayload> {
   type?: string;
-};
+  // TPayload must be invariant
+  readonly [LexicalCommandBrand]?: (payload: TPayload) => TPayload;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyLexicalCommand = LexicalCommand<any>;
 
 /**
  * Type helper for extracting the payload type from a command.
@@ -624,16 +715,19 @@ export type LexicalCommand<TPayload> = {
  * }
  * ```
  */
-export type CommandPayloadType<TCommand extends LexicalCommand<unknown>> =
+export type CommandPayloadType<TCommand extends AnyLexicalCommand> =
   TCommand extends LexicalCommand<infer TPayload> ? TPayload : never;
+
+export type CommandPayloadArgs<TPayload> = [
+  TPayload extends undefined ? true : never,
+] extends [never]
+  ? [payload: TPayload]
+  : [payload?: TPayload];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyCommandListener = CommandListener<any>;
 
-type Commands = Map<
-  LexicalCommand<unknown>,
-  Tuple5<DequeSet<AnyCommandListener>>
->;
+type Commands = Map<AnyLexicalCommand, Tuple5<DequeSet<AnyCommandListener>>>;
 
 export type ListenerMap<T> = Map<T, undefined | (() => void)>;
 
@@ -715,6 +809,10 @@ export function resetEditor(
     editor._cascadeCount = 0;
   }
   editor._blockCursorElement = null;
+  if (editor._inputState.handledSelectionCommandTimeoutId !== null) {
+    clearTimeout(editor._inputState.handledSelectionCommandTimeoutId);
+  }
+  editor._inputState = createInputState();
 
   const observer = editor._observer;
 
@@ -786,9 +884,9 @@ export function getTransformSetFromKlass(
 ): Set<Transform<LexicalNode>> {
   const transforms = new Set<Transform<LexicalNode>>();
   const staticTransforms = new Set<(typeof klass)['transform']>();
-  let currentKlass: undefined | typeof klass = klass;
-  while (currentKlass) {
-    const {ownNodeConfig} = getStaticNodeConfig(currentKlass);
+  for (const {klass: currentKlass, ownNodeConfig} of iterStaticNodeConfigChain(
+    klass,
+  )) {
     const staticTransform = currentKlass.transform;
     if (!staticTransforms.has(staticTransform)) {
       staticTransforms.add(staticTransform);
@@ -802,13 +900,6 @@ export function getTransformSetFromKlass(
       if ($transform) {
         transforms.add($transform);
       }
-      currentKlass = ownNodeConfig.extends;
-    } else {
-      const parent = Object.getPrototypeOf(currentKlass);
-      currentKlass =
-        parent.prototype instanceof LexicalNode && parent !== LexicalNode
-          ? parent
-          : undefined;
     }
   }
   return transforms;
@@ -883,11 +974,32 @@ export function createEditor(editorConfig?: CreateEditorArgs): LexicalEditor {
       let replace: RegisteredNode['replace'] = null;
       let replaceWithKlass: RegisteredNode['replaceWithKlass'] = null;
 
-      if (typeof klass !== 'function') {
+      if (klass && typeof klass === 'object') {
         const options = klass;
         klass = options.replace;
         replace = options.with;
         replaceWithKlass = options.withKlass || null;
+      }
+      if (
+        typeof klass !== 'function' ||
+        !klass.prototype ||
+        !(klass === LexicalNode || klass.prototype instanceof LexicalNode)
+      ) {
+        let version = '<unknown>';
+        try {
+          version = JSON.parse(LEXICAL_VERSION);
+        } catch {
+          //
+        }
+        invariant(
+          false,
+          'createEditor: nodes[%s] %s is not a constructor that subclasses LexicalNode from the lexical package used by this editor (%s)',
+          String(i - nodes.length + (config.nodes ? config.nodes.length : 0)),
+          typeof klass === 'function'
+            ? `${klass.name}${typeof klass.getType === 'function' ? ` (type ${String(klass.getType())})` : ''}`
+            : String(klass),
+          String(version),
+        );
       }
       // For the side-effect of filling in the static methods
       void getStaticNodeConfig(klass);
@@ -1084,6 +1196,10 @@ export class LexicalEditor {
    */
   _slotsUsed: boolean;
   /** @internal */
+  _keyDownShortcuts: null | CompiledKeyboardShortcuts<KeyDownShortcut>;
+  /** @internal */
+  _inputState: InputState;
+  /** @internal */
   _createEditorArgs?: undefined | CreateEditorArgs;
 
   /** @internal */
@@ -1152,6 +1268,8 @@ export class LexicalEditor {
     this._window = null;
     this._blockCursorElement = null;
     this._slotsUsed = false;
+    this._keyDownShortcuts = null;
+    this._inputState = createInputState();
   }
 
   /**
@@ -1173,7 +1291,7 @@ export class LexicalEditor {
     return registerListener(this._listeners.update, listener);
   }
   /**
-   * Registers a listener for for when the editor changes between editable and non-editable states.
+   * Registers a listener for when the editor changes between editable and non-editable states.
    * Will trigger the provided callback each time the editor transitions between these states until the
    * teardown function is called.
    *
@@ -1483,11 +1601,11 @@ export class LexicalEditor {
    * @param type - the type of command listeners to trigger.
    * @param payload - the data to pass as an argument to the command listeners.
    */
-  dispatchCommand<TCommand extends LexicalCommand<unknown>>(
+  dispatchCommand<TCommand extends AnyLexicalCommand>(
     type: TCommand,
-    payload: CommandPayloadType<TCommand>,
+    ...args: CommandPayloadArgs<CommandPayloadType<TCommand>>
   ): boolean {
-    return dispatchCommand(this, type, payload);
+    return dispatchCommand(this, type, ...args);
   }
 
   /**
@@ -1564,7 +1682,7 @@ export class LexicalEditor {
           nextRootElement.classList.add(...classNames);
         }
         if (__DEV__) {
-          const nextRootElementParent = nextRootElement.parentElement;
+          const nextRootElementParent = getParentElement(nextRootElement);
           if (
             nextRootElementParent != null &&
             ['flex', 'inline-flex'].includes(

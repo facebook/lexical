@@ -23,3 +23,16 @@ export function definePureThing<T>(thing: T): T {
 export function defineImpureThing<T>(thing: T): T {
   return thing;
 }
+
+/**
+ * An overloaded factory, which is where the annotation ends up on a
+ * TSDeclareFunction signature rather than on the implementation. Lexical's
+ * own `domOverride` is written this way.
+ *
+ * @__NO_SIDE_EFFECTS__
+ */
+export function defineOverloadedThing(thing: string): string;
+export function defineOverloadedThing(thing: number): number;
+export function defineOverloadedThing(thing: unknown): unknown {
+  return thing;
+}

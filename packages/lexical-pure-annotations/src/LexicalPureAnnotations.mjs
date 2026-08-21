@@ -82,7 +82,14 @@ const INLINE_FACTORIES = new Map([
 ]);
 
 /** The marker a definition uses to declare itself inlinable. */
-const INLINE_MARKER_RE = /@lexical-inline\s+(\w+)/;
+// A JSDoc tag, so it has to start its line (after the comment's own `*`).
+// Prose that merely mentions the tag — including this file's own
+// documentation of it — is not a marker.
+const INLINE_MARKER_RE =
+  /^[^\S\n]*\*?[^\S\n]*@lexical-inline(?:[^\S\n]+(\S+))?[^\S\n]*$/m;
+
+/** The forms a `@lexical-inline` marker may name. */
+const INLINE_FORMS = new Set(['args', 'identity']);
 
 /**
  * The form each inlinable factory is replaced with, for the tests that keep
@@ -102,6 +109,17 @@ export const INLINE_FACTORY_FORMS = new Map(
 const ANNOTATION = '/* @__PURE__ */';
 
 /** Matches the contents of a comment that is already a pure annotation. */
+/**
+ * `overwrite` clears the intro and outro of every chunk it spans unless it is
+ * told to touch the content only — and an annotation this transform appended
+ * to a nested call lives in the outro of the chunk that ends where that call
+ * begins. Replacing a call's `factory(` with `([` would take the annotation
+ * on its first argument with it.
+ *
+ * @type {{contentOnly: true}}
+ */
+const CONTENT_ONLY = {contentOnly: true};
+
 const PURE_ANNOTATION_RE = /[#@]__PURE__/;
 
 /** The file extensions the bundler plugin transforms by default. */
@@ -446,14 +464,24 @@ function removeUnusedImports(magicString, code, program, inlinedCalls) {
     }
     if (removable.length < named.length) {
       // Some names are still used: take out each unused one along with the
-      // comma that separates it from the named import next to it.
-      for (const specifier of removable) {
-        const index = named.indexOf(specifier);
-        if (index < named.length - 1) {
-          magicString.remove(specifier.start, named[index + 1].start);
-        } else {
-          magicString.remove(named[index - 1].end, specifier.end);
+      // comma that separates it from the named import next to it. Adjacent
+      // unused ones go as a single range — two overlapping removals would
+      // leave the comma of the first behind (`import {a, } from 'x'`).
+      const removableSet = new Set(removable);
+      for (let start = 0; start < named.length; start++) {
+        if (!removableSet.has(named[start])) {
+          continue;
         }
+        let end = start;
+        while (end + 1 < named.length && removableSet.has(named[end + 1])) {
+          end++;
+        }
+        if (end + 1 < named.length) {
+          magicString.remove(named[start].start, named[end + 1].start);
+        } else {
+          magicString.remove(named[start - 1].end, named[end].end);
+        }
+        start = end;
       }
       continue;
     }
@@ -494,12 +522,21 @@ function inlineCall(magicString, code, node, spec, statementStart) {
   }
   const args = node.arguments;
   if (spec.form !== 'identity') {
-    // An array literal reads the same in every position.
+    // Parenthesized so that the replacement binds exactly like the call it
+    // replaces, wherever that call was: a bare `[` at the start of an
+    // expression statement is a member access on whatever the previous line
+    // ended with, which is how ASI reads `f()\n[a, b].length`. Minifiers
+    // drop the parentheses again.
     if (args.length === 0) {
-      magicString.overwrite(node.start, node.end, '[]');
+      magicString.overwrite(node.start, node.end, '([])', CONTENT_ONLY);
     } else {
-      magicString.overwrite(node.start, args[0].start, '[');
-      magicString.overwrite(args[args.length - 1].end, node.end, ']');
+      magicString.overwrite(node.start, args[0].start, '([', CONTENT_ONLY);
+      magicString.overwrite(
+        args[args.length - 1].end,
+        node.end,
+        '])',
+        CONTENT_ONLY,
+      );
     }
     return;
   }
@@ -510,8 +547,8 @@ function inlineCall(magicString, code, node, spec, statementStart) {
   const keepParens =
     statementStart === true || !SELF_DELIMITING_TYPES.has(args[0].type);
   if (keepParens) {
-    magicString.overwrite(node.start, args[0].start, '(');
-    magicString.overwrite(args[0].end, node.end, ')');
+    magicString.overwrite(node.start, args[0].start, '(', CONTENT_ONLY);
+    magicString.overwrite(args[0].end, node.end, ')', CONTENT_ONLY);
   } else {
     magicString.remove(node.start, args[0].start);
     magicString.remove(args[0].end, node.end);
@@ -531,15 +568,31 @@ const pureDeclarationCache = new Map();
 /**
  * The form named by a declaration's `@lexical-inline` marker, if it has one.
  *
+ * A marker naming a form this transform does not implement is an error
+ * rather than a marker that silently does nothing: the whole point of the
+ * marker is to say what a call may be replaced with, and a typo would leave
+ * the factory quietly un-inlined.
+ *
  * @param {undefined | ReadonlyArray<any>} comments
+ * @param {undefined | string} filename the module the comments came from
  * @returns {null | string}
  */
-function inlineMarkerForm(comments) {
+function inlineMarkerForm(comments, filename) {
   if (comments) {
     for (const comment of comments) {
       const match = INLINE_MARKER_RE.exec(comment.value);
       if (match) {
-        return match[1];
+        const form = match[1] || '';
+        if (!INLINE_FORMS.has(form)) {
+          const where = filename ? ` in ${filename}` : '';
+          throw new Error(
+            `@lexical/pure-annotations: unknown @lexical-inline form ` +
+              `${form ? `"${form}"` : '(none given)'}${where}. Write ` +
+              `\`@lexical-inline <form>\` with one of: ` +
+              `${Array.from(INLINE_FORMS).sort().join(', ')}.`,
+          );
+        }
+        return form;
       }
     }
   }
@@ -567,9 +620,10 @@ function hasNoSideEffectsComment(comments) {
  * shape of what the function returns.
  *
  * @param {any} program
+ * @param {undefined | string} filename the module being read, for errors
  * @returns {Map<string, null | string>} declared name to its inline form
  */
-function pureDeclaredNames(program) {
+function pureDeclaredNames(program, filename) {
   /** @type {Map<string, null | string>} */
   const names = new Map();
   for (const statement of program.body) {
@@ -581,8 +635,15 @@ function pureDeclaredNames(program) {
       declaration === statement ? [] : declaration.leadingComments || [],
     );
     const declared = hasNoSideEffectsComment(comments);
-    const inlineForm = inlineMarkerForm(comments);
-    if (declaration.type === 'FunctionDeclaration' && declaration.id) {
+    const inlineForm = inlineMarkerForm(comments, filename);
+    if (
+      // An overloaded function carries its documentation — and so its
+      // annotation — on the first signature, which is a TSDeclareFunction;
+      // the implementation that follows is a bare FunctionDeclaration.
+      (declaration.type === 'FunctionDeclaration' ||
+        declaration.type === 'TSDeclareFunction') &&
+      declaration.id
+    ) {
       if (declared) {
         names.set(declaration.id.name, inlineForm);
       }
@@ -597,7 +658,7 @@ function pureDeclaredNames(program) {
         ) {
           names.set(
             declarator.id.name,
-            inlineForm || inlineMarkerForm(declaratorComments),
+            inlineForm || inlineMarkerForm(declaratorComments, filename),
           );
         }
       }
@@ -667,17 +728,21 @@ function pureDeclaredNamesOfFile(filename, parserPlugins) {
   if (cached !== undefined) {
     return cached;
   }
-  /** @type {Map<string, null | string>} */
-  let names = new Map();
+  /** @type {null | any} */
+  let program = null;
   try {
-    const ast = parse(fs.readFileSync(filename, 'utf8'), {
+    program = parse(fs.readFileSync(filename, 'utf8'), {
       plugins: parserPluginsFor(filename, parserPlugins),
       sourceType: 'module',
-    });
-    names = pureDeclaredNames(ast.program);
+    }).program;
   } catch (_err) {
-    // A file this cannot read or parse simply provides no evidence.
+    // A file this cannot read or parse simply provides no evidence. A
+    // malformed marker inside a file it *can* read is a different matter:
+    // reading the declarations happens outside this catch so that its error
+    // reaches the build.
   }
+  const names =
+    program === null ? new Map() : pureDeclaredNames(program, filename);
   pureDeclarationCache.set(filename, names);
   return names;
 }
@@ -717,12 +782,20 @@ function collectFactoryNames(program, functions, opts) {
   function add(local, name, markerForm, trusted) {
     const spec = INLINE_FACTORIES.get(name);
     const inline =
-      spec !== undefined && (trusted || markerForm === spec.form)
-        ? spec
-        : undefined;
+      spec !== undefined
+        ? // One of Lexical's own: an import from a Lexical package is taken
+          // on trust, anything else has to agree with the table.
+          trusted || markerForm === spec.form
+          ? spec
+          : undefined
+        : // A factory of your own: its marker is the only thing that says
+          // what its calls may be replaced with, so it is the authority.
+          markerForm
+          ? {form: markerForm}
+          : undefined;
     names.set(local, {inline, name});
   }
-  for (const [name, markerForm] of pureDeclaredNames(program)) {
+  for (const [name, markerForm] of pureDeclaredNames(program, opts.filename)) {
     if (functions.has(name)) {
       add(name, name, markerForm, false);
     }
@@ -813,6 +886,33 @@ function mayNeedAnnotations(code, functions) {
  *   literal they would have returned.
  * @property {any} [map]
  */
+
+/**
+ * The local names in `code` whose module-scope calls this transform would
+ * annotate — the same decision {@link transformPureAnnotations} makes, for
+ * tooling that needs to ask about a module without rewriting it (Lexical's
+ * `no-pure-annotation` ESLint rule removes a hand-written annotation only
+ * for a name this returns, so that the build is guaranteed to put it back).
+ *
+ * @param {string} code
+ * @param {TransformPureAnnotationsOptions} [options]
+ * @returns {Set<string>} the local names in this module that refer to a
+ *   side-effect-free factory
+ */
+export function pureFactoryNames(code, options) {
+  const opts = options || {};
+  const functions = new Set(opts.functions || PURE_FACTORY_FUNCTIONS);
+  if (functions.size === 0) {
+    return new Set();
+  }
+  const ast = parse(code, {
+    errorRecovery: false,
+    plugins: parserPluginsFor(opts.filename, opts.parserPlugins),
+    sourceFilename: opts.filename,
+    sourceType: 'module',
+  });
+  return new Set(collectFactoryNames(ast.program, functions, opts).keys());
+}
 
 /**
  * Insert a `__PURE__` annotation before every module-scope call to one of the

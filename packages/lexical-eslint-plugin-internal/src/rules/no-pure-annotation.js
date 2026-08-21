@@ -6,34 +6,28 @@
  *
  */
 
+// Imported from source (rather than by package name) so that linting works
+// before the packages have been built, as scripts/build.mjs does. The rule
+// asks the transform which names it would annotate rather than keeping a
+// second list of its own: an annotation is only removed when the build is
+// guaranteed to put it back.
+import {
+  PURE_FACTORY_FUNCTIONS,
+  pureFactoryNames,
+} from '../../../lexical-pure-annotations/src/LexicalPureAnnotations.mjs';
+
 /**
- * The factory functions whose module-scope calls the build annotates for
- * itself, with the `@lexical/pure-annotations` transform. A `\/* @__PURE__ *\/`
- * written in the source is redundant there: the transform is idempotent and
- * would leave it alone, but keeping them in the tree is what this project
- * moved away from — they invite cargo-culting into positions where an
- * annotation does nothing (inside a function body, on a call whose callee
- * is not side-effect free at all).
+ * A `\/* @__PURE__ *\/` written in the source is redundant where the build
+ * injects one: the transform is idempotent and would leave it alone, but
+ * keeping them in the tree is what this project moved away from — they
+ * invite cargo-culting into positions where an annotation does nothing
+ * (inside a function body, on a call whose callee is not side-effect free at
+ * all).
  *
  * This is the inverse of the `require-pure-annotation` rule it replaces, so
  * a branch written before the transform existed migrates with
  * `pnpm run lint:fix`.
  */
-const DEFAULT_FUNCTIONS = [
-  'configExtension',
-  'createCommand',
-  'createContextState',
-  'createImportState',
-  'createRenderState',
-  'createState',
-  'declarePeerDependency',
-  'defineExtension',
-  'defineImportRule',
-  'defineOverlayRules',
-  'domOverride',
-  'safeCast',
-];
-
 const PURE_ANNOTATION = /[#@]__PURE__/;
 
 /**
@@ -66,14 +60,38 @@ const rule = {
   create(context) {
     const sourceCode = context.sourceCode;
     const [options] = context.options;
-    const functions = new Set(
-      (options && options.functions) || DEFAULT_FUNCTIONS,
-    );
+    const functions = (options && options.functions) || PURE_FACTORY_FUNCTIONS;
+    /** @type {undefined | ReadonlySet<string>} */
+    let factoryNames;
+    /**
+     * The names the build would annotate in this module, resolved by the
+     * transform itself: imported from a Lexical package, declared here as
+     * side-effect free, or imported from a relative module that declares it
+     * that way. A same-named local helper does not qualify, and removing its
+     * annotation would shrink nothing and grow the bundle.
+     *
+     * @returns {ReadonlySet<string>}
+     */
+    function resolvedFactoryNames() {
+      if (factoryNames === undefined) {
+        try {
+          factoryNames = pureFactoryNames(sourceCode.getText(), {
+            filename: context.filename,
+            functions,
+          });
+        } catch {
+          // Syntax the transform's parser does not cover: say nothing rather
+          // than remove an annotation on a guess.
+          factoryNames = new Set();
+        }
+      }
+      return factoryNames;
+    }
 
     return {
       CallExpression(node) {
         const {callee} = node;
-        if (callee.type !== 'Identifier' || !functions.has(callee.name)) {
+        if (callee.type !== 'Identifier') {
           return;
         }
         if (!isModuleScopeEvaluation(node)) {
@@ -86,6 +104,9 @@ const rule = {
           annotation.type !== 'Block' ||
           !PURE_ANNOTATION.test(annotation.value)
         ) {
+          return;
+        }
+        if (!resolvedFactoryNames().has(callee.name)) {
           return;
         }
         context.report({

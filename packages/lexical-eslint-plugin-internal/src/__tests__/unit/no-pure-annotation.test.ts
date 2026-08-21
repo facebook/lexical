@@ -26,68 +26,85 @@ describe('no-pure-annotation', () => {
   });
 
   it('passes RuleTester', () => {
+    const IMPORT = `import {defineExtension, safeCast} from 'lexical';`;
     ruleTester.run('no-pure-annotation', rule, {
       invalid: [
         {
-          code: `export const MyExtension = /* @__PURE__ */ defineExtension({name: 'my'});`,
+          code: `${IMPORT}\nexport const E = /* @__PURE__ */ defineExtension({name: 'e'});`,
           errors: [{messageId: 'unnecessaryPureAnnotation'}],
-          output: `export const MyExtension = defineExtension({name: 'my'});`,
+          output: `${IMPORT}\nexport const E = defineExtension({name: 'e'});`,
         },
         {
           // Terser's # sigil is the same annotation.
-          code: `export const MY_COMMAND = /* #__PURE__ */ createCommand('MY_COMMAND');`,
+          code: `import {createCommand} from 'lexical';\nexport const C = /* #__PURE__ */ createCommand('C');`,
           errors: [{messageId: 'unnecessaryPureAnnotation'}],
-          output: `export const MY_COMMAND = createCommand('MY_COMMAND');`,
+          output: `import {createCommand} from 'lexical';\nexport const C = createCommand('C');`,
         },
         {
           // Prettier moves a long one onto its own line; the fix takes the
           // line break with it.
-          code: `export const E =\n  /* @__PURE__ */\n  defineExtension({name: 'e'});`,
+          code: `${IMPORT}\nexport const E =\n  /* @__PURE__ */\n  defineExtension({name: 'e'});`,
           errors: [{messageId: 'unnecessaryPureAnnotation'}],
-          output: `export const E =\n  defineExtension({name: 'e'});`,
+          output: `${IMPORT}\nexport const E =\n  defineExtension({name: 'e'});`,
         },
         {
           // Nested argument-position calls were annotated too.
-          code: `export const E = /* @__PURE__ */ defineExtension({config: /* @__PURE__ */ safeCast({a: 1}), name: 'e'});`,
+          code: `${IMPORT}\nexport const E = /* @__PURE__ */ defineExtension({config: /* @__PURE__ */ safeCast({a: 1}), name: 'e'});`,
           errors: [
             {messageId: 'unnecessaryPureAnnotation'},
             {messageId: 'unnecessaryPureAnnotation'},
           ],
-          output: `export const E = defineExtension({config: safeCast({a: 1}), name: 'e'});`,
+          output: `${IMPORT}\nexport const E = defineExtension({config: safeCast({a: 1}), name: 'e'});`,
+        },
+        {
+          // An aliased import is the same factory.
+          code: `import {defineExtension as define} from '@lexical/extension';\nexport const E = /* @__PURE__ */ define({name: 'e'});`,
+          errors: [{messageId: 'unnecessaryPureAnnotation'}],
+          output: `import {defineExtension as define} from '@lexical/extension';\nexport const E = define({name: 'e'});`,
+        },
+        {
+          // A factory declared in this module as side-effect free, which is
+          // how the factory modules themselves are written.
+          code: `/**\n * @__NO_SIDE_EFFECTS__\n */\nexport function createCommand(type) {\n  return {type};\n}\nexport const C = /* @__PURE__ */ createCommand('C');`,
+          errors: [{messageId: 'unnecessaryPureAnnotation'}],
+          output: `/**\n * @__NO_SIDE_EFFECTS__\n */\nexport function createCommand(type) {\n  return {type};\n}\nexport const C = createCommand('C');`,
         },
         {
           // Custom function list replaces the default.
-          code: `const x = /* @__PURE__ */ myFactory();`,
+          code: `import {myFactory} from 'lexical';\nconst x = /* @__PURE__ */ myFactory();`,
           errors: [{messageId: 'unnecessaryPureAnnotation'}],
           options: [{functions: ['myFactory']}],
-          output: `const x = myFactory();`,
+          output: `import {myFactory} from 'lexical';\nconst x = myFactory();`,
         },
       ],
       valid: [
         {
           // What the sources should look like.
-          code: `export const MyExtension = defineExtension({name: 'my'});`,
+          code: `${IMPORT}\nexport const E = defineExtension({name: 'e'});`,
         },
         {
-          // Not one of the factories the build annotates: somebody wrote
-          // this annotation on purpose and it is not ours to remove.
+          // Somebody else's same-named helper: the build will not annotate
+          // this call, so its annotation is load-bearing and not ours to
+          // remove. This is the reason the rule resolves the binding rather
+          // than matching on the name.
+          code: `import {safeCast} from './my-utils';\nexport const config = /* @__PURE__ */ safeCast({a: 1});`,
+        },
+        {
+          // Not one of the factories the build annotates.
           code: `const rule = {match: /* @__PURE__ */ sel.tag('o:p')};\nexport default rule;`,
         },
         {
           // Deferred calls are never annotated by the build, so an
           // annotation there was deliberate too.
-          code: `export function make() { return /* @__PURE__ */ createCommand('LATE'); }`,
-        },
-        {
-          code: `export const lazy = () => /* @__PURE__ */ defineImportRule({name: 'r'});`,
+          code: `${IMPORT}\nexport function make() { return /* @__PURE__ */ defineExtension({name: 'e'}); }`,
         },
         {
           // A comment that is not the annotation.
-          code: `export const E = /* the extension */ defineExtension({name: 'e'});`,
+          code: `${IMPORT}\nexport const E = /* the extension */ defineExtension({name: 'e'});`,
         },
         {
           // Custom function list replaces the default.
-          code: `const x = /* @__PURE__ */ defineExtension({name: 'n'});`,
+          code: `${IMPORT}\nexport const E = /* @__PURE__ */ defineExtension({name: 'n'});`,
           options: [{functions: ['myFactory']}],
         },
       ],

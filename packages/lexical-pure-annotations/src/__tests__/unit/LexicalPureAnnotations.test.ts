@@ -284,6 +284,22 @@ describe('which calls count as a factory', () => {
     ).toBeNull();
   });
 
+  it('follows a relative import to an overloaded declaration', () => {
+    // The annotation is on the first signature (a TSDeclareFunction), not on
+    // the implementation that follows it.
+    const result = transformPureAnnotations(
+      [
+        `import {defineOverloadedThing} from './fixtures/factories';`,
+        `export const thing = defineOverloadedThing('x');`,
+      ].join('\n'),
+      {
+        filename: path.join(__dirname, 'virtual.ts'),
+        functions: ['defineOverloadedThing'],
+      },
+    );
+    expect(result!.code).toContain(`= ${PURE}defineOverloadedThing('x')`);
+  });
+
   it('accepts a custom trusted source list', () => {
     const code = [
       `import {defineExtension} from '@my-org/lexical-extras';`,

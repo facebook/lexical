@@ -145,7 +145,7 @@ const thirdPartyExternals = [
   // its published bundle) and reads relatively imported modules from disk.
   '@babel/parser',
   'magic-string',
-  'node:[a-z]+',
+  'node:[a-z_]+',
   'react',
   'react-dom',
   'yjs',

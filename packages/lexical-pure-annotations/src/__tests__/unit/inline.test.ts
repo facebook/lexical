@@ -94,7 +94,7 @@ describe('inlining', () => {
           `export const dep = configExtension(Other, {a: 1});`,
         ].join('\n'),
       )!.code,
-    ).toContain(`export const dep = [Other, {a: 1}];`);
+    ).toContain(`export const dep = ([Other, {a: 1}]);`);
   });
 
   it('leaves nothing to annotate once the whole definition is a literal', () => {
@@ -150,8 +150,8 @@ describe('inlining', () => {
     ).toBe(
       [
         ``,
-        `export const p = ['peer'];`,
-        `export const q = ['other', {a: 1}];`,
+        `export const p = (['peer']);`,
+        `export const q = (['other', {a: 1}]);`,
       ].join('\n'),
     );
   });
@@ -166,6 +166,107 @@ describe('inlining', () => {
     )!;
     expect(result.inlined).toBe(0);
     expect(result.code).toContain(`${PURE}defineExtension({name: 'e'});`);
+  });
+
+  it('fails on a marker naming a form it does not implement', () => {
+    // A typo would otherwise leave the factory quietly un-inlined, which is
+    // exactly what the marker exists to prevent.
+    const declaration = (marker: string) =>
+      [
+        `/**`,
+        ` * @__NO_SIDE_EFFECTS__`,
+        ` * ${marker}`,
+        ` */`,
+        `export function mk(a) { return a; }`,
+        `export const v = mk({x: 1});`,
+      ].join('\n');
+    const options = {filename: '/repo/src/mk.ts', functions: ['mk']};
+    expect(() =>
+      transformPureAnnotations(declaration('@lexical-inline tuple'), options),
+    ).toThrow(
+      /unknown @lexical-inline form "tuple" in \/repo\/src\/mk\.ts.*args, identity/s,
+    );
+    expect(() =>
+      transformPureAnnotations(declaration('@lexical-inline'), options),
+    ).toThrow(/\(none given\)/);
+    expect(() =>
+      transformPureAnnotations(
+        declaration('@lexical-inline identity'),
+        options,
+      ),
+    ).not.toThrow();
+  });
+
+  it('lets a factory of your own authorize its own inlining', () => {
+    // For a name that is not one of Lexical's, the marker is the only thing
+    // that says what a call may be replaced with.
+    const code = [
+      `/**`,
+      ` * @__NO_SIDE_EFFECTS__`,
+      ` * @lexical-inline identity`,
+      ` */`,
+      `export function mk(a) { return a; }`,
+      `export const v = mk({x: 1});`,
+    ].join('\n');
+    const result = transformPureAnnotations(code, {
+      filename: '/repo/src/mk.ts',
+      functions: ['mk'],
+      inline: true,
+    })!;
+    expect(result.code).toContain(`export const v = {x: 1};`);
+    expect(result.inlined).toBe(1);
+  });
+
+  it('removes a run of unused specifiers without stranding a comma', () => {
+    // Removing two adjacent specifiers as separate ranges overlaps, and the
+    // comma of the first survives: `import {createCommand, } from 'lexical'`.
+    expect(
+      inline(
+        [
+          `import {createCommand, defineExtension, safeCast} from 'lexical';`,
+          `export const C = createCommand('C');`,
+          `export const E = defineExtension({config: safeCast({a: 1}), name: 'e'});`,
+        ].join('\n'),
+      )!.code,
+    ).toBe(
+      [
+        `import {createCommand} from 'lexical';`,
+        `export const C = ${PURE}createCommand('C');`,
+        `export const E = {config: {a: 1}, name: 'e'};`,
+      ].join('\n'),
+    );
+  });
+
+  it('parenthesizes the array so it binds where the call did', () => {
+    // Without the parentheses ASI reads the `[` as a member access on
+    // whatever the previous line ended with: `f()[A, {}].length`.
+    expect(
+      inline(
+        [
+          `import {configExtension} from 'lexical';`,
+          `const x = f()`,
+          `configExtension(A, {}).length;`,
+        ].join('\n'),
+      )!.code,
+    ).toBe(['', `const x = f()`, `([A, {}]).length;`].join('\n'));
+  });
+
+  it('keeps the annotation on a nested call it inlines around', () => {
+    // The annotation is appended where the nested call begins, which is
+    // inside the range the enclosing call's `factory(` is overwritten with.
+    expect(
+      inline(
+        [
+          `import {createCommand, defineExtension} from 'lexical';`,
+          `export const E = defineExtension(createCommand('X'));`,
+        ].join('\n'),
+      )!.code,
+    ).toBe(
+      [
+        `import {createCommand} from 'lexical';`,
+        `export const E = (${PURE}createCommand('X'));`,
+      ].join('\n'),
+    );
   });
 
   it('removes the import once nothing calls the factory any more', () => {

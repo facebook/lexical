@@ -122,9 +122,9 @@ export const PURE_FACTORY_FUNCTIONS: readonly string[] =
 
 /**
  * The factories that `inline` replaces with a literal, and the form each one
- * takes: `identity` returns its single argument, `args` returns all of its
- * arguments as an array, and `tuple` returns its fixed number of arguments
- * as an array. Each is marked `@lexical-inline <form>` where it is defined.
+ * takes: `identity` returns its single argument and `args` returns all of its
+ * arguments as an array. Each is marked `@lexical-inline <form>` where it is
+ * defined.
  */
 export const INLINE_FACTORY_FORMS: ReadonlyMap<string, string> =
   impl.INLINE_FACTORY_FORMS;
@@ -139,6 +139,21 @@ export function transformPureAnnotations(
   options?: TransformPureAnnotationsOptions,
 ): PureAnnotationsResult | null {
   return impl.transformPureAnnotations(code, options);
+}
+
+/**
+ * The local names in `code` whose module-scope calls the transform would
+ * annotate: imported from a Lexical package, declared in the module as
+ * side-effect free, or imported from a relative module that declares it that
+ * way. For tooling that needs the same decision without rewriting the module
+ * — a lint rule that removes a hand-written annotation only where the build
+ * puts one back. Throws on source it cannot parse.
+ */
+export function pureFactoryNames(
+  code: string,
+  options?: TransformPureAnnotationsOptions,
+): ReadonlySet<string> {
+  return impl.pureFactoryNames(code, options);
 }
 
 /**

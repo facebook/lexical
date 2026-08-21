@@ -130,9 +130,11 @@ removed along with the last call to it).
 
 A call that does not fit its form is annotated as usual: a spread argument
 where a single parameter is expected, or a call whose result is discarded.
-The call's own parentheses are kept where they were doing work —
-`safeCast(1 + 2) * 3` is not `1 + 2 * 3`, and an object literal at the start
-of an expression statement would otherwise read as a block.
+The replacement is parenthesized wherever bare syntax would not bind the way
+the call did — `safeCast(1 + 2) * 3` is not `1 + 2 * 3`, an object literal at
+the start of an expression statement would read as a block, and an `args`
+array is always wrapped, since a leading `[` is a member access on whatever
+the previous line ended with. Minifiers drop the parentheses again.
 
 `createCommand` is deliberately not inlined: `{type: x}` is more bytes than a
 call to a minified one-character name.
@@ -143,7 +145,14 @@ is trusted, because this package ships alongside that Lexical. Everywhere
 else (a factory of your own, declared in the module or imported relatively)
 the marker is what makes inlining possible at all: `@__NO_SIDE_EFFECTS__`
 says a call is safe to *drop*, but only the marker says what the call can be
-*replaced with*, so a same-named look-alike is annotated instead.
+*replaced with*, so a same-named look-alike is annotated instead. Add your
+factory's name to `functions`, mark it with the form its body takes, and its
+calls are inlined like Lexical's own.
+
+A marker that names a form the transform does not implement (a typo, or a
+form from an older version) throws, naming the file and the forms it accepts.
+Failing is the point: a marker that silently did nothing would leave the
+factory un-inlined with no sign of it.
 
 This is **off by default** because it reproduces those function bodies, so it
 assumes the Lexical you are building matches this package's version — they

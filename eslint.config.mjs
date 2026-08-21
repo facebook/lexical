@@ -457,7 +457,7 @@ export default [
   // existed migrates: `pnpm run lint:fix`. Annotations on anything else
   // (a third-party factory, a call inside a function body) are untouched.
   {
-    files: ['packages/**', 'examples/**', 'dev-examples/**', 'scripts/**'],
+    files: ['packages/**', 'examples/**', 'dev-examples/**'],
     ignores: ['packages/lexical-pure-annotations/**'],
     rules: {
       '@lexical/internal/no-pure-annotation': ERROR,

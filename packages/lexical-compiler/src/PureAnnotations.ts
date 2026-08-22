@@ -6,7 +6,7 @@
  *
  */
 
-import * as impl from './LexicalCompiler.mjs';
+import * as impl from './passes/pureAnnotations.mjs';
 
 // The comments here spell the annotations without their leading sigil
 // (`__PURE__`) because bundlers scan comments for annotations, and one that

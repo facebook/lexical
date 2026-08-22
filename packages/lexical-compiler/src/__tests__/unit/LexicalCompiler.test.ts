@@ -300,6 +300,22 @@ describe('which calls count as a factory', () => {
     expect(result!.code).toContain(`= ${PURE}defineOverloadedThing('x')`);
   });
 
+  it('respects a block that rebinds a factory name', () => {
+    const result = transformPureAnnotations(
+      [
+        `import {safeCast} from 'lexical';`,
+        `export const ok = safeCast({a: 1});`,
+        `{`,
+        `  const safeCast = otherLib.cast;`,
+        `  shadowed = safeCast({b: 2});`,
+        `}`,
+      ].join('\n'),
+    )!;
+    expect(result.count).toBe(1);
+    expect(result.code).toContain(`export const ok = ${PURE}safeCast({a: 1});`);
+    expect(result.code).toContain(`shadowed = safeCast({b: 2});`);
+  });
+
   it('accepts a custom trusted source list', () => {
     const code = [
       `import {defineExtension} from '@my-org/lexical-extras';`,

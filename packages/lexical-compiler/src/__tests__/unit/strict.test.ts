@@ -68,6 +68,57 @@ describe('namespaces', () => {
     ).toBeNull();
   });
 
+  it('does not trust a namespace name from anywhere else', () => {
+    // `sel` is a short name somebody else may well export. Only the
+    // specifier decides: a Lexical package, or a module that marks the
+    // object where it is declared.
+    for (const source of ['d3-selection', 'some-css-lib', './othersel']) {
+      expect(
+        transformPureAnnotations(
+          [
+            `import {sel} from '${source}';`,
+            `export const match = sel.tag('p');`,
+          ].join('\n'),
+          {filename: path.join(__dirname, 'virtual.ts')},
+        ),
+      ).toBeNull();
+    }
+  });
+
+  it('only follows a named import, not a namespace or default import', () => {
+    // `import * as sel` binds the module, whose other exports are not
+    // covered by the marker, and a default export is not the marked object.
+    for (const header of [
+      `import * as sel from '@lexical/html';`,
+      `import sel from '@lexical/html';`,
+    ]) {
+      expect(
+        transformPureAnnotations(
+          [header, `export const match = sel.tag('p');`].join('\n'),
+          {filename: 'test.ts'},
+        ),
+      ).toBeNull();
+    }
+  });
+
+  it('respects a block that rebinds the name', () => {
+    // Inside the block `sel` is somebody else's, and may have side effects.
+    const result = transformPureAnnotations(
+      [
+        `import {sel} from '@lexical/html';`,
+        `export const ok = sel.tag('p');`,
+        `{`,
+        `  const sel = otherLib.sel;`,
+        `  shadowed = sel.tag('div');`,
+        `}`,
+      ].join('\n'),
+      {filename: 'test.ts'},
+    )!;
+    expect(result.count).toBe(1);
+    expect(result.code).toContain(`export const ok = ${PURE}sel.tag('p');`);
+    expect(result.code).toContain(`shadowed = sel.tag('div');`);
+  });
+
   it('follows a relative import to a marked namespace, and its aliases', () => {
     const result = transformPureAnnotations(
       [

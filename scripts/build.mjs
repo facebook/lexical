@@ -20,7 +20,7 @@ import minimist from 'minimist';
 import path from 'path';
 import {rollup} from 'rollup';
 
-import {pureAnnotations} from '../packages/lexical-compiler/src/LexicalCompiler.mjs';
+import {pureAnnotations} from '../packages/lexical-compiler/src/passes/pureAnnotations.mjs';
 import transformErrorMessages from './error-codes/transform-error-messages.mjs';
 import {exec} from './shared/childProcess.mjs';
 import {packagesManager} from './shared/packagesManager.mjs';

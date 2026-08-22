@@ -11,7 +11,7 @@ import {glob} from 'glob';
 import path from 'node:path';
 import {describe, expect, test} from 'vitest';
 
-import {transformPureAnnotations} from '../../../packages/lexical-compiler/src/LexicalCompiler.mjs';
+import {transformPureAnnotations} from '../../../packages/lexical-compiler/src/passes/pureAnnotations.mjs';
 import {packagesManager} from '../../shared/packagesManager.mjs';
 
 // The sources carry no `/* @__PURE__ */` annotations and still call the

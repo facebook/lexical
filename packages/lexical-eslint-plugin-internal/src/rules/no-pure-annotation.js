@@ -15,7 +15,7 @@ import {
   PURE_FACTORY_FUNCTIONS,
   pureCallNames,
   rootObjectName,
-} from '../../../lexical-compiler/src/LexicalCompiler.mjs';
+} from '../../../lexical-compiler/src/passes/pureAnnotations.mjs';
 
 /**
  * A `\/* @__PURE__ *\/` written in the source is redundant where the build

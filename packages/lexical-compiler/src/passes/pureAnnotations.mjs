@@ -7,11 +7,14 @@
  */
 
 /**
- * For bootstrapping reasons this module is written in plain JavaScript: the
- * monorepo's own Rollup build imports it directly from source to annotate
- * the packages it is building, which happens before anything has been
- * compiled. `src/index.ts` is the typed facade that the published package
- * is built from.
+ * The tree-shaking pass: the implementation behind
+ * `@lexical/compiler/PureAnnotations`, whose typed facade is
+ * `src/PureAnnotations.ts`. A pass lives here as plain JavaScript for
+ * bootstrapping reasons — `scripts/build.mjs` runs under plain node and
+ * imports it from source to annotate the packages it is building, before
+ * anything has been compiled, and node cannot load TypeScript. Its types
+ * are JSDoc, and `tsconfig.scripts.json` type-checks this directory with
+ * `checkJs` and `strict`.
  *
  * The comments here spell the annotations without their leading sigil
  * (`__PURE__`, `__NO_SIDE_EFFECTS__`) because bundlers scan comments for
@@ -259,6 +262,9 @@ const DEFERRED_TYPES = new Set([
 ]);
 
 /** AST properties that never contain child nodes worth visiting. */
+/** @type {ReadonlySet<string>} */
+const EMPTY_NAMES = new Set();
+
 const SKIPPED_KEYS = new Set([
   'comments',
   'extra',
@@ -352,6 +358,52 @@ export function rootObjectName(callee) {
 }
 
 /**
+ * The names a nested block binds for itself with `let`, `const`, `class` or
+ * a function declaration. Only these shadow an outer binding: `var` is
+ * scoped to the module, so a `var` of an imported name is a redeclaration
+ * error rather than a shadow.
+ *
+ * @param {any} node
+ * @returns {null | Set<string>} the names, or null when this node binds none
+ */
+function blockScopedNames(node) {
+  // Only a nested block: the module's own declarations are the bindings the
+  // transform resolved in the first place, not shadows of them.
+  const body =
+    node.type === 'BlockStatement'
+      ? node.body
+      : node.type === 'SwitchCase'
+        ? node.consequent
+        : null;
+  if (body === null) {
+    return null;
+  }
+  /** @type {null | Set<string>} */
+  let names = null;
+  /** @param {string} name */
+  const add = name => {
+    names = names || new Set();
+    names.add(name);
+  };
+  for (const statement of body) {
+    if (statement.type === 'VariableDeclaration' && statement.kind !== 'var') {
+      for (const declarator of statement.declarations) {
+        if (declarator.id.type === 'Identifier') {
+          add(declarator.id.name);
+        }
+      }
+    } else if (
+      (statement.type === 'FunctionDeclaration' ||
+        statement.type === 'ClassDeclaration') &&
+      statement.id
+    ) {
+      add(statement.id.name);
+    }
+  }
+  return names;
+}
+
+/**
  * Walk every node that is evaluated when the module is initialized, calling
  * `visitor` with each module-scope call to one of the factories, or to a
  * method of one of the namespaces, and where it sits: `discarded` when the
@@ -363,15 +415,20 @@ export function rootObjectName(callee) {
  * @param {any} node
  * @param {{functions: ReadonlyMap<string, any> | ReadonlySet<string>, namespaces?: ReadonlySet<string>}} names
  * @param {(node: any, position: {discarded: boolean, namespace?: boolean, statementStart: boolean}) => void} visitor
- * @param {{discarded: boolean, statementStarts: Set<number>}} [state]
+ * @param {{discarded: boolean, shadowed: ReadonlySet<string>, statementStarts: Set<number>}} [state]
  */
 function visitModuleScopeCalls(node, names, visitor, state) {
   const {functions, namespaces} = names;
-  const walkState = state || {discarded: false, statementStarts: new Set()};
+  const walkState = state || {
+    discarded: false,
+    shadowed: EMPTY_NAMES,
+    statementStarts: new Set(),
+  };
   if (Array.isArray(node)) {
     for (const child of node) {
       visitModuleScopeCalls(child, names, visitor, {
         discarded: false,
+        shadowed: walkState.shadowed,
         statementStarts: walkState.statementStarts,
       });
     }
@@ -398,15 +455,30 @@ function visitModuleScopeCalls(node, names, visitor, state) {
       discarded: walkState.discarded,
       statementStart: walkState.statementStarts.has(node.start),
     };
-    if (node.callee.type === 'Identifier' && functions.has(node.callee.name)) {
+    if (
+      node.callee.type === 'Identifier' &&
+      functions.has(node.callee.name) &&
+      !walkState.shadowed.has(node.callee.name)
+    ) {
       visitor(node, position);
     } else if (namespaces !== undefined && namespaces.size > 0) {
       const root = rootObjectName(node.callee);
-      if (root !== null && namespaces.has(root)) {
+      if (
+        root !== null &&
+        namespaces.has(root) &&
+        !walkState.shadowed.has(root)
+      ) {
         visitor(node, {...position, namespace: true});
       }
     }
   }
+  // A block that rebinds one of the names is talking about something else
+  // inside itself, and that something else may well have side effects.
+  const bound = blockScopedNames(node);
+  const shadowed =
+    bound === null
+      ? walkState.shadowed
+      : new Set([...walkState.shadowed, ...bound]);
   for (const key of Object.keys(node)) {
     if (!SKIPPED_KEYS.has(key)) {
       const value = node[key];
@@ -414,6 +486,7 @@ function visitModuleScopeCalls(node, names, visitor, state) {
         visitModuleScopeCalls(value, names, visitor, {
           discarded:
             node.type === 'ExpressionStatement' && key === 'expression',
+          shadowed,
           statementStarts: walkState.statementStarts,
         });
       }

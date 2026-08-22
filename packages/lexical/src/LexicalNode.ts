@@ -539,7 +539,7 @@ export function $generatedExportJSON(
   if (generated === undefined) {
     return undefined;
   }
-  const json = generated(node as never);
+  const json = generated(node);
   const state = node.__state ? node.__state.toJSON() : undefined;
   if (state !== undefined) {
     Object.assign(json, state);

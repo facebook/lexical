@@ -3997,7 +3997,7 @@ export function $applyJSONSetters<T extends LexicalNode>(
     // Generated only for a class whose every property is one of its own fields
     // (see the codegen), so there is no setter that could replace the node and
     // nothing to thread through: `node` is the result.
-    generated.updateFromJSON(node as never, serializedNode);
+    generated.updateFromJSON(node, serializedNode);
     return node;
   }
   const setters = getCompiledSetters(record);

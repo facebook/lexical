@@ -86,14 +86,21 @@ const HEADER = `/**
 `;
 
 const STUB = `${HEADER}
+import type {LexicalNode} from './LexicalNode';
+
 /** @internal */
 export interface GeneratedJSON {
   readonly shape: string;
-  readonly exportJSON: (node: never) => {[key: string]: unknown};
-  readonly updateFromJSON?: (
-    node: never,
+  // Method syntax, so TypeScript checks the parameter bivariantly and a
+  // function generated for one class is assignable here — the same reason
+  // SerializationSchema.isEqual is declared this way. The alternative is to
+  // widen the parameter to 'never', which no generated function actually
+  // accepts and every call site then has to cast back.
+  exportJSON(node: LexicalNode): {[key: string]: unknown};
+  updateFromJSON?(
+    node: LexicalNode,
     json: {readonly [key: string]: unknown},
-  ) => void;
+  ): void;
 }
 
 /** @internal */
@@ -563,6 +570,7 @@ writeFileSync(
 // Type-only, so this module has no runtime imports at all. A value import of
 // the node classes would be a cycle — they import LexicalNode, which imports
 // this — and would evaluate a class before its base was initialized.
+import type {LexicalNode} from './LexicalNode';
 ${TARGETS.filter(hasFields)
   .map(k => `import type {${k.name}} from './nodes/${MODULES[k.name]}';`)
   .sort()
@@ -581,11 +589,16 @@ ${TARGETS.filter(hasFields)
  */
 export interface GeneratedJSON {
   readonly shape: string;
-  readonly exportJSON: (node: never) => {[key: string]: unknown};
-  readonly updateFromJSON?: (
-    node: never,
+  // Method syntax, so TypeScript checks the parameter bivariantly and a
+  // function generated for one class is assignable here — the same reason
+  // SerializationSchema.isEqual is declared this way. The alternative is to
+  // widen the parameter to 'never', which no generated function actually
+  // accepts and every call site then has to cast back.
+  exportJSON(node: LexicalNode): {[key: string]: unknown};
+  updateFromJSON?(
+    node: LexicalNode,
     json: {readonly [key: string]: unknown},
-  ) => void;
+  ): void;
 }
 ${
   needsNum
@@ -607,10 +620,10 @@ const GENERATED = new Map<string, GeneratedJSON>([
 ${generated
   .map(
     ({klass, updateFromJSON}) =>
-      `  [\n    '${klass.getType()}',\n    {\n      shape: ${JSON.stringify(shapeOf(klass))},\n      exportJSON: export${klass.name} as GeneratedJSON['exportJSON'],${
+      `  [\n    '${klass.getType()}',\n    {\n      shape: ${JSON.stringify(shapeOf(klass))},\n      exportJSON: export${klass.name},${
         updateFromJSON === null
           ? ''
-          : `\n      updateFromJSON: update${klass.name} as GeneratedJSON['updateFromJSON'],`
+          : `\n      updateFromJSON: update${klass.name},`
       }\n    },\n  ],`,
   )
   .join('\n')}

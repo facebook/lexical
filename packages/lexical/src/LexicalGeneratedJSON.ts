@@ -16,6 +16,7 @@
 // Type-only, so this module has no runtime imports at all. A value import of
 // the node classes would be a cycle — they import LexicalNode, which imports
 // this — and would evaluate a class before its base was initialized.
+import type {LexicalNode} from './LexicalNode';
 import type {ParagraphNode} from './nodes/LexicalParagraphNode';
 import type {TabNode} from './nodes/LexicalTabNode';
 import type {TextNode} from './nodes/LexicalTextNode';
@@ -33,11 +34,16 @@ import type {TextNode} from './nodes/LexicalTextNode';
  */
 export interface GeneratedJSON {
   readonly shape: string;
-  readonly exportJSON: (node: never) => {[key: string]: unknown};
-  readonly updateFromJSON?: (
-    node: never,
+  // Method syntax, so TypeScript checks the parameter bivariantly and a
+  // function generated for one class is assignable here — the same reason
+  // SerializationSchema.isEqual is declared this way. The alternative is to
+  // widen the parameter to 'never', which no generated function actually
+  // accepts and every call site then has to cast back.
+  exportJSON(node: LexicalNode): {[key: string]: unknown};
+  updateFromJSON?(
+    node: LexicalNode,
     json: {readonly [key: string]: unknown},
-  ) => void;
+  ): void;
 }
 
 // The JSON number grammar, anchored, matching numberValue: `Number()` alone
@@ -268,8 +274,8 @@ const GENERATED = new Map<string, GeneratedJSON>([
     {
       shape:
         'text|detail=__detail|format=__format|mode=__mode|style=__style|text=__text|detail<__detail|format<__format|mode<__mode|style<__style|text<__text',
-      exportJSON: exportTextNode as GeneratedJSON['exportJSON'],
-      updateFromJSON: updateTextNode as GeneratedJSON['updateFromJSON'],
+      exportJSON: exportTextNode,
+      updateFromJSON: updateTextNode,
     },
   ],
   [
@@ -277,14 +283,14 @@ const GENERATED = new Map<string, GeneratedJSON>([
     {
       shape:
         'paragraph|direction=getDirection()|format=getFormatType()|indent=getIndent()|textFormat=getSerializedTextFormat()|textStyle=getSerializedTextStyle()|direction<setDirection()|format<setFormat()|indent<setIndent()|textFormat<setTextFormat()|textStyle<setTextStyle()',
-      exportJSON: exportParagraphNode as GeneratedJSON['exportJSON'],
+      exportJSON: exportParagraphNode,
     },
   ],
   [
     'linebreak',
     {
       shape: 'linebreak',
-      exportJSON: exportLineBreakNode as GeneratedJSON['exportJSON'],
+      exportJSON: exportLineBreakNode,
     },
   ],
   [
@@ -292,7 +298,7 @@ const GENERATED = new Map<string, GeneratedJSON>([
     {
       shape:
         'tab|detail=getDetail()|mode=getMode()|text=getTextContent()|format=__format|style=__style|format<__format|style<__style',
-      exportJSON: exportTabNode as GeneratedJSON['exportJSON'],
+      exportJSON: exportTabNode,
     },
   ],
 ]);

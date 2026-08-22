@@ -95,17 +95,21 @@ describe('generated exportJSON', () => {
       expect(getGeneratedExporter('sub-text')).toBeUndefined();
     });
 
-    test('a class that overrides exportJSON gets no generated exporter', () => {
-      // ParagraphNode back-fills textFormat/textStyle from its first text child
-      // for #7971 — behavior its schema does not describe, so a literal
-      // generated from the schema alone would drop it.
-      expect(getGeneratedExporter('paragraph')).toBeUndefined();
+    test('the #7971 back-fill survives generation', () => {
+      // ParagraphNode writes textFormat/textStyle computed from its first text
+      // child, which no schema describes. It declares afterExportJSON instead
+      // of overriding exportJSON, so the generated exporter calls it and the
+      // values are still there.
+      expect(getGeneratedExporter('paragraph')).toBeDefined();
       testEnv.editor.update(
         () => {
-          const paragraph = $createParagraphNode()
-            .setTextFormat(1)
-            .setTextStyle('color: red');
-          expect(paragraph.exportJSON()).toEqual(walkExportJSON(paragraph));
+          const paragraph = $createParagraphNode();
+          paragraph.append($createTextNode('x').setFormat('bold'));
+          const json = paragraph.exportJSON();
+          // The first text child's format, not the paragraph's own.
+          expect(json.textFormat).toBe(1);
+          expect(json.textStyle).toBe('');
+          expect(json).toEqual(walkExportJSON(paragraph));
         },
         {discrete: true},
       );

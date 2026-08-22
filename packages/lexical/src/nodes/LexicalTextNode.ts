@@ -54,6 +54,7 @@ import {
   transformValue,
   unionValue,
   withAccessors,
+  withGetter,
 } from '../LexicalSchema';
 import {
   $generateNodesFromRawText,
@@ -117,38 +118,63 @@ export type TextMarks = TextMark[];
 
 // Single source of truth for parsing the node-specific properties of a
 // SerializedTextNode; declared on the node via `$config`.
+// Every property but `mode` is read straight off the field. Each conventional
+// accessor — getDetail, getFormat, getStyle, getTextContent — is exactly
+// `getLatest().__field`, and resolution is already guaranteed by the time a
+// property is read: an export walk reaches a node through the EditorState's
+// node map, so it is the current version by construction. Saying so in the
+// schema lets both the walk and the generated exporter skip a node-map lookup
+// per property. `mode` is stored as a bitmask and serialized as a name, so it
+// names the decode table rather than an accessor.
+//
+// The setters are unaffected: those do real work (setFormat normalizes a
+// legacy string, setTextContent enforces the node's mode).
 const textNodeSchema = /* @__PURE__ */ objectValue({
   // `format` and `detail` also accept the legacy string names that
   // hand-authored and older documents carry (e.g. `format: 'bold'`),
   // normalized to the stored numeric form.
-  detail: /* @__PURE__ */ transformValue(
-    /* @__PURE__ */ unionValue(
-      [
-        /* @__PURE__ */ numberValue(),
-        /* @__PURE__ */ enumValue(['directionless', 'unmergeable']),
-      ],
-      0,
+  detail: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ transformValue(
+      /* @__PURE__ */ unionValue(
+        [
+          /* @__PURE__ */ numberValue(),
+          /* @__PURE__ */ enumValue(['directionless', 'unmergeable']),
+        ],
+        0,
+      ),
+      value =>
+        typeof value === 'string' ? DETAIL_TYPE_TO_DETAIL[value] : value,
     ),
-    value => (typeof value === 'string' ? DETAIL_TYPE_TO_DETAIL[value] : value),
+    {field: '__detail'},
   ),
-  format: /* @__PURE__ */ transformValue(
-    /* @__PURE__ */ unionValue(
-      [
-        /* @__PURE__ */ numberValue(),
-        /* @__PURE__ */ enumValue(
-          Object.keys(TEXT_TYPE_TO_FORMAT) as TextFormatType[],
-        ),
-      ],
-      0,
+  format: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ transformValue(
+      /* @__PURE__ */ unionValue(
+        [
+          /* @__PURE__ */ numberValue(),
+          /* @__PURE__ */ enumValue(
+            Object.keys(TEXT_TYPE_TO_FORMAT) as TextFormatType[],
+          ),
+        ],
+        0,
+      ),
+      value => (typeof value === 'string' ? TEXT_TYPE_TO_FORMAT[value] : value),
     ),
-    value => (typeof value === 'string' ? TEXT_TYPE_TO_FORMAT[value] : value),
+    {field: '__format'},
   ),
-  mode: /* @__PURE__ */ enumValue(['normal', 'token', 'segmented']),
-  style: /* @__PURE__ */ stringValue(),
-  // TextNode reads and writes `text` through the TextContent accessors rather
-  // than the default getText/setText.
+  // Stored as a bitmask, serialized as the name; the table keeps it on the
+  // direct-read path instead of needing getMode().
+  mode: /* @__PURE__ */ withGetter(
+    /* @__PURE__ */ enumValue(['normal', 'token', 'segmented']),
+    {decode: TEXT_TYPE_TO_MODE, field: '__mode'},
+  ),
+  style: /* @__PURE__ */ withGetter(/* @__PURE__ */ stringValue(), {
+    field: '__style',
+  }),
+  // Written through setTextContent rather than the default setText, which
+  // TextNode does not have.
   text: /* @__PURE__ */ withAccessors(/* @__PURE__ */ stringValue(), {
-    getter: 'getTextContent',
+    getter: {field: '__text'},
     setter: 'setTextContent',
   }),
 });

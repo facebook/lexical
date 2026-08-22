@@ -63,7 +63,7 @@ const HEADER = `/**
 if (!process.env.LEXICAL_CODEGEN_PHASE_TWO) {
   writeFileSync(
     OUT,
-    `${HEADER}\n/** @internal */\nexport function getGeneratedExporter(_type: string): undefined {\n  return undefined;\n}\n`,
+    `${HEADER}\ntype GeneratedExporter = (\n  node: never,\n  compact: boolean,\n) => {[key: string]: unknown};\n\n/** @internal */\nexport function getGeneratedExporter(\n  _type: string,\n): undefined | GeneratedExporter {\n  return undefined;\n}\n`,
   );
   execFileSync('npx', ['tsx', fileURLToPath(import.meta.url)], {
     cwd: join(import.meta.dirname, '..'),
@@ -98,24 +98,38 @@ function defaultGetterName(key) {
   return `get${key.charAt(0).toUpperCase()}${key.slice(1)}`;
 }
 
+/** Lookup tables the generated module needs, by the const name given to each. */
+const decodeTables = new Map();
+
 /** The expression that reads one property off `node`. */
-function readExpression(schema, key) {
+function readExpression(klass, schema, key) {
   const {getter} = schema;
   if (getter === null) {
     return null;
   }
   if (isSchemaField(getter)) {
-    return `node.${getter.field}`;
+    if (getter.decode === undefined) {
+      return `node.${getter.field}`;
+    }
+    // The table is plain data, so it is inlined rather than imported: keeping
+    // this module free of runtime imports is what keeps it out of the cycle.
+    const name = `${klass.name.replace(/Node$/, '').toUpperCase()}_${key.toUpperCase()}`;
+    decodeTables.set(name, getter.decode);
+    return `${name}[node.${getter.field}]`;
   }
   return `node.${getter === undefined ? defaultGetterName(key) : getter}()`;
 }
 
 function generateExport(klass) {
   const type = klass.getType();
+  // A class with its own afterExportJSON adjusts the JSON after the schema's
+  // properties are written; the call is emitted only where one exists, so the
+  // classes that do not declare it pay nothing.
+  const after = hasAfterHook(klass);
   const fields = getComposedSchemaFields(klass);
   const reads = [];
   for (const [key, schema] of Object.entries(fields)) {
-    const expression = readExpression(schema, key);
+    const expression = readExpression(klass, schema, key);
     if (expression !== null) {
       reads.push({expression, key});
     }
@@ -148,26 +162,22 @@ function generateExport(klass) {
   if (reads.length === 0) {
     // Nothing to read, so the literal is the whole function.
     return `/** Generated from ${klass.name}'s \`json\` schema. Do not edit by hand. */
-function export${klass.name}(): {[key: string]: unknown} {
-  return {
-    ${literalEntries.join(',\n    ')},
-  };
+function export${klass.name}(${after ? `node: ${klass.name}, compact: boolean` : ''}): {[key: string]: unknown} {
+  ${after ? `const json: {[key: string]: unknown} = {\n    ${literalEntries.join(',\n    ')},\n  };\n  node.afterExportJSON(json, compact);\n  return json;` : `return {\n    ${literalEntries.join(',\n    ')},\n  };`}
 }`;
   }
   return `/** Generated from ${klass.name}'s \`json\` schema. Do not edit by hand. */
-function export${klass.name}(node: ${klass.name}): {[key: string]: unknown} {
+function export${klass.name}(node: ${klass.name}${after ? ', compact: boolean' : ''}): {[key: string]: unknown} {
 ${locals}
   if (
     ${defined}
   ) {
-    return {
-      ${literalEntries.join(',\n      ')},
-    };
+    ${after ? `const json: {[key: string]: unknown} = {\n      ${literalEntries.join(',\n      ')},\n    };\n    node.afterExportJSON(json, compact);\n    return json;` : `return {\n      ${literalEntries.join(',\n      ')},\n    };`}
   }
   const json: {[key: string]: unknown} = ${isElement ? '{children: []}' : '{}'};
 ${incrementalEntries}
   json.type = '${type}';
-  json.version = 1;
+  json.version = 1;${after ? '\n  node.afterExportJSON(json, compact);' : ''}
   return json;
 }`;
 }
@@ -191,6 +201,13 @@ function isElementish(klass) {
  * from its first text child for #7971 — so a literal generated from the schema
  * alone would silently drop it.
  */
+function hasAfterHook(klass) {
+  return Object.prototype.hasOwnProperty.call(
+    klass.prototype,
+    'afterExportJSON',
+  );
+}
+
 function isFullyDescribedBySchema(klass) {
   // hasOwnProperty rather than Object.hasOwn: this file is linted against the
   // browser baseline even though it only ever runs in Node.
@@ -218,6 +235,15 @@ for (const klass of TARGETS) {
 
 const body = generatable.map(generateExport).join('\n\n');
 
+// Emitted after the bodies, because generating them is what discovers which
+// tables are needed.
+const tables = [...decodeTables]
+  .map(
+    ([name, table]) =>
+      `const ${name}: {readonly [key: string]: string} = ${JSON.stringify(table, null, 2)};`,
+  )
+  .join('\n\n');
+
 writeFileSync(
   OUT,
   `${HEADER}
@@ -230,9 +256,9 @@ ${generatable
   .sort()
   .join('\n')}
 
-${body}
+${tables}${tables ? '\n\n' : ''}${body}
 
-type GeneratedExporter = (node: never) => {[key: string]: unknown};
+type GeneratedExporter = (\n  node: never,\n  compact: boolean,\n) => {[key: string]: unknown};
 
 const EXPORTERS = new Map<string, GeneratedExporter>([
 ${generatable.map(k => `  ['${k.getType()}', export${k.name} as GeneratedExporter],`).join('\n')}
@@ -256,5 +282,12 @@ export function getGeneratedExporter(
 }
 `,
 );
+
+// Formatted here so the checked-in file is both prettier-clean and exactly
+// what a regeneration produces — the drift check compares them byte for byte.
+execFileSync('npx', ['prettier', '--write', OUT], {
+  cwd: join(import.meta.dirname, '..'),
+  stdio: 'pipe',
+});
 
 process.stdout.write(`wrote ${OUT}\n`);

@@ -177,6 +177,19 @@ export function isSchemaDefault<T>(
  */
 export interface SchemaField {
   readonly field: string;
+  /**
+   * A lookup table from the stored field value to the serialized one, for a
+   * property whose two representations differ — TextNode stores `mode` as a
+   * bitmask and serializes it as a name.
+   *
+   * Without this such a property needs an accessor method, and a method is a
+   * call plus, by convention, a `getLatest()`. Stating the mapping keeps the
+   * property on the direct-read path: the table is a plain object of
+   * primitives, so it is as inlinable by a code generator as the field read is.
+   *
+   * The import direction is unaffected — the setter still does whatever it did.
+   */
+  readonly decode?: {readonly [key: string]: unknown};
 }
 
 /**

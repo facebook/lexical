@@ -3457,6 +3457,8 @@ type CompiledGetter = CompactRule &
         readonly kind: 'ownField';
         readonly key: string;
         readonly field: string;
+        /** Maps the stored value to the serialized one; see {@link SchemaField}. */
+        readonly decode?: {readonly [key: string]: unknown};
       }
   );
 
@@ -3504,6 +3506,7 @@ function compileGetters(klass: Klass<LexicalNode>): readonly CompiledGetter[] {
         key,
       );
       fields.set(key, {
+        decode: getter.decode,
         derived: schema.setter === null,
         field: getterName,
         isDefault: value => isSchemaDefault(schema, value),
@@ -3641,7 +3644,9 @@ export function $writeJSONGetters(
     }
     let value: unknown;
     if (entry.kind === 'ownField') {
-      value = ownFieldRecord(node)[entry.field];
+      const stored = ownFieldRecord(node)[entry.field];
+      value =
+        entry.decode === undefined ? stored : entry.decode[stored as string];
     } else {
       value = entry.getter.call(node);
     }

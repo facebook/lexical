@@ -16,16 +16,23 @@
 // Type-only, so this module has no runtime imports at all. A value import of
 // the node classes would be a cycle — they import LexicalNode, which imports
 // this — and would evaluate a class before its base was initialized.
+import type {ParagraphNode} from './nodes/LexicalParagraphNode';
 import type {TabNode} from './nodes/LexicalTabNode';
 import type {TextNode} from './nodes/LexicalTextNode';
 
+const TEXT_MODE: {readonly [key: string]: string} = {
+  '0': 'normal',
+  '1': 'token',
+  '2': 'segmented',
+};
+
 /** Generated from TextNode's `json` schema. Do not edit by hand. */
 function exportTextNode(node: TextNode): {[key: string]: unknown} {
-  const detail = node.getDetail();
-  const format = node.getFormat();
-  const mode = node.getMode();
-  const style = node.getStyle();
-  const text = node.getTextContent();
+  const detail = node.__detail;
+  const format = node.__format;
+  const mode = TEXT_MODE[node.__mode];
+  const style = node.__style;
+  const text = node.__text;
   if (
     detail !== undefined &&
     format !== undefined &&
@@ -64,6 +71,58 @@ function exportTextNode(node: TextNode): {[key: string]: unknown} {
   return json;
 }
 
+/** Generated from ParagraphNode's `json` schema. Do not edit by hand. */
+function exportParagraphNode(
+  node: ParagraphNode,
+  compact: boolean,
+): {[key: string]: unknown} {
+  const direction = node.getDirection();
+  const format = node.getFormatType();
+  const indent = node.getIndent();
+  const textFormat = node.getSerializedTextFormat();
+  const textStyle = node.getSerializedTextStyle();
+  if (
+    direction !== undefined &&
+    format !== undefined &&
+    indent !== undefined &&
+    textFormat !== undefined &&
+    textStyle !== undefined
+  ) {
+    const json: {[key: string]: unknown} = {
+      children: [],
+      direction,
+      format,
+      indent,
+      textFormat,
+      textStyle,
+      type: 'paragraph',
+      version: 1,
+    };
+    node.afterExportJSON(json, compact);
+    return json;
+  }
+  const json: {[key: string]: unknown} = {children: []};
+  if (direction !== undefined) {
+    json.direction = direction;
+  }
+  if (format !== undefined) {
+    json.format = format;
+  }
+  if (indent !== undefined) {
+    json.indent = indent;
+  }
+  if (textFormat !== undefined) {
+    json.textFormat = textFormat;
+  }
+  if (textStyle !== undefined) {
+    json.textStyle = textStyle;
+  }
+  json.type = 'paragraph';
+  json.version = 1;
+  node.afterExportJSON(json, compact);
+  return json;
+}
+
 /** Generated from LineBreakNode's `json` schema. Do not edit by hand. */
 function exportLineBreakNode(): {[key: string]: unknown} {
   return {
@@ -77,8 +136,8 @@ function exportTabNode(node: TabNode): {[key: string]: unknown} {
   const detail = node.getDetail();
   const mode = node.getMode();
   const text = node.getTextContent();
-  const format = node.getFormat();
-  const style = node.getStyle();
+  const format = node.__format;
+  const style = node.__style;
   if (
     detail !== undefined &&
     mode !== undefined &&
@@ -117,10 +176,14 @@ function exportTabNode(node: TabNode): {[key: string]: unknown} {
   return json;
 }
 
-type GeneratedExporter = (node: never) => {[key: string]: unknown};
+type GeneratedExporter = (
+  node: never,
+  compact: boolean,
+) => {[key: string]: unknown};
 
 const EXPORTERS = new Map<string, GeneratedExporter>([
   ['text', exportTextNode as GeneratedExporter],
+  ['paragraph', exportParagraphNode as GeneratedExporter],
   ['linebreak', exportLineBreakNode as GeneratedExporter],
   ['tab', exportTabNode as GeneratedExporter],
 ]);
